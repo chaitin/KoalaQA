@@ -1,0 +1,1 @@
+FROM chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/panda-wiki-raglite:1-2-15

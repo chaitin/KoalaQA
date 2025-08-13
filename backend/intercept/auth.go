@@ -1,0 +1,69 @@
+package intercept
+
+import (
+	"strings"
+
+	"github.com/chaitin/koalaqa/model"
+	"github.com/chaitin/koalaqa/pkg/config"
+	"github.com/chaitin/koalaqa/pkg/context"
+	"github.com/chaitin/koalaqa/pkg/jwt"
+	"github.com/chaitin/koalaqa/svc"
+)
+
+type auth struct {
+	freeAuth    bool
+	tokenPrefix string
+	jwt         *jwt.Generator
+	user        *svc.User
+}
+
+func newAuth(cfg config.Config, generator *jwt.Generator, user *svc.User) Interceptor {
+	return &auth{freeAuth: cfg.API.FreeAuth, jwt: generator, tokenPrefix: "Bearer", user: user}
+}
+
+func (a *auth) Intercept(ctx *context.Context) {
+	if a.freeAuth {
+		user, err := a.user.Admin(ctx)
+		if err != nil {
+			ctx.Unauthorized("get adimn failed")
+			ctx.Abort()
+			return
+		}
+
+		ctx.SetUser(model.UserInfo{
+			UID:      user.ID,
+			Username: user.Name,
+			Email:    user.Email,
+			Role:     user.Role,
+		})
+		ctx.Next()
+		return
+	}
+
+	token := ctx.GetHeader("Authorization")
+	splitToken := strings.Split(token, " ")
+	if len(splitToken) != 2 || splitToken[0] != a.tokenPrefix {
+		ctx.Unauthorized("invalid token")
+		ctx.Abort()
+		return
+	}
+
+	userInfo, err := a.jwt.Verify(splitToken[1])
+	if err != nil {
+		ctx.Unauthorized(err.Error())
+		ctx.Abort()
+		return
+	}
+
+	ctx.SetUser(*userInfo)
+
+	ctx.Next()
+}
+
+func (a *auth) Priority() int {
+	return 0
+}
+
+func init() {
+	registerAPIAuth(newAuth)
+}

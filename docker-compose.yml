@@ -1,0 +1,155 @@
+version: '3.8'
+
+services:
+  nginx:
+    container_name: koala-qa-nginx
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-nginx:latest
+    restart: always
+    ports:
+      - "80:80"
+    networks:
+      koala:
+        ipv4_address: "${SUBNET_PREFIX:-169.254.15}.10"
+  
+  api:
+    container_name: koala-qa-api
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-api:latest
+    restart: always
+    environment:
+      - API_DEV=true
+      - API_LISTEN=:8080
+      - MQ_NATS_PASSWORD=${MQ_PASSWORD}
+      - HTTPS_PROXY=${HTTPS_PROXY}
+      - HTTP_PROXY=${HTTP_PROXY}
+      - NO_PROXY=koala-qa-oss,koala-qa-raglite
+      - GLOG_GLOBAL_LEVEL=debug
+      - MQ_NATS_STREAMS=koala:koala.persistence.>
+      - OSS_MINIO_SECRET_KEY=${OSS_SECRET_KEY}
+      - DB_DSN=postgres://koala:${DB_PASSWORD}@koala-qa-db:5432/koala?sslmode=disable
+    networks:
+      koala:
+        ipv4_address: "${SUBNET_PREFIX:-169.254.15}.11"
+    depends_on:
+      - mq
+      - oss
+      - db
+      - raglite
+  
+  app:
+    container_name: koala-qa-app
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-app:latest
+    restart: always
+    networks:
+      koala:
+        ipv4_address: "${SUBNET_PREFIX:-169.254.15}.12"
+    depends_on:
+      - api
+  
+  mq:
+    container_name: koala-qa-mq
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-mq:latest
+    restart: always
+    command: [ "nats-server", "-c", "/etc/nats/nats.conf", "--user", "koala", "--pass", "${MQ_PASSWORD}" ]
+    volumes:
+      - ./data/nats:/data
+    networks:
+      koala:
+        ipv4_address: "${SUBNET_PREFIX:-169.254.15}.13"
+  
+  oss:
+    container_name: koala-qa-oss
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-oss:latest
+    restart: always
+    command: [ "minio", "server", "/data", "--console-address", "0.0.0.0:9001", "--address", "0.0.0.0:9000"]
+    volumes:
+      - ./data/oss:/data
+    environment:
+      - MINIO_ACCESS_KEY=koala
+      - MINIO_SECRET_KEY=${OSS_SECRET_KEY}
+    networks:
+      koala:
+        ipv4_address: "${SUBNET_PREFIX:-169.254.15}.14"
+  
+  db:
+    container_name: koala-qa-db
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-db:latest
+    restart: always
+    environment:
+      - POSTGRES_USER=koala
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=koala
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    networks:
+      koala:
+        ipv4_address: "${SUBNET_PREFIX:-169.254.15}.15"
+  
+  anydoc:
+    container_name: koala-qa-anydoc
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-anydoc:latest
+    restart: always
+    environment:
+      - MQ_NATS_URL=koala-qa-mq:4222
+      - MQ_NATS_USER=koala
+      - MQ_NATS_PASSWORD=${MQ_PASSWORD}
+      - HTTPS_PROXY=${HTTPS_PROXY}  
+      - HTTP_PROXY=${HTTP_PROXY}
+      - NO_PROXY=koala-qa-oss,koala-qa-mq
+      - GLOG_GLOBAL_LEVEL=debug
+      - MQ_NATS_STREAMS=anydoc:anydoc.persistence.>
+      - OSS_MINIO_ACCESS_KEY=koala
+      - OSS_MINIO_SECRET_KEY=${OSS_SECRET_KEY}
+      - OSS_MINIO_ENDPOINT=koala-qa-oss:9000
+      - CRAWLER_AUTO_INSTALL=true
+    networks:
+      koala:
+        ipv4_address: "${SUBNET_PREFIX:-169.254.15}.16"
+    depends_on:
+      - oss
+      - mq
+      - db
+  
+  qdrant:
+    container_name: koala-qa-qdrant
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-qdrant:latest
+    restart: always
+    volumes:
+      - ./data/qdrant:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY}
+    networks:
+      koala:
+        ipv4_address: "${SUBNET_PREFIX:-169.254.15}.17"
+  
+  raglite:
+    container_name: koala-qa-raglite
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-raglite:latest
+    restart: always
+    environment:
+      - GIN_MODE=release
+      - DATABASE_HOST=koala-qa-db
+      - DATABASE_USER=koala
+      - DATABASE_PASSWORD=${DB_PASSWORD}
+      - MINIO_ENDPOINT=koala-qa-oss:9000
+      - MINIO_USER=koala
+      - MINIO_PASSWORD=${OSS_SECRET_KEY}
+      - QDRANT_HOST=koala-qa-qdrant
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
+      - RAGLITE_DEFAULT_API_TOKEN=koala
+      - HTTP_PROXY=${HTTP_PROXY}
+      - HTTPS_PROXY=${HTTPS_PROXY}
+      - NO_PROXY=koala-qa-oss,koala-qa-qdrant
+    networks:
+      koala:
+        ipv4_address: "${SUBNET_PREFIX:-169.254.15}.18"
+    depends_on:
+      - oss
+      - qdrant
+      - db
+  
+networks:
+  koala:
+    ipam:
+      driver: default
+      config:
+        - subnet: "${SUBNET_PREFIX:-169.254.15}.0/24"
