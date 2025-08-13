@@ -1,0 +1,15 @@
+.vscode/
+
+__debug*
+
+*.glog
+
+backend/docs/*
+backend/deploy/data
+**/node_modules/
+
+*.local.yaml
+
+.env
+
+data/
