@@ -1,17 +1,16 @@
 'use client';
 import { getDiscussion } from '@/api';
 import {
+  GetDiscussionParams,
   ModelDiscussion,
   ModelListRes,
-  GetDiscussionParams,
 } from '@/api/types';
-import { Card, CommonProvider, CusTabs, Icon } from '@/components';
+import { Card, CusTabs } from '@/components';
 import { AuthContext } from '@/components/authProvider';
+import { CommonContext } from '@/components/commonProvider';
 import { ImgLogo, ReleaseModal } from '@/components/discussion';
 import {
-  BBS_TAGS,
-  BBS_TAG_COLOR_ICON,
-  BBS_TOPICS,
+  BBS_TOPICS
 } from '@/constant/discussion';
 import ArrowCircleRightRoundedIcon from '@mui/icons-material/ArrowCircleRightRounded';
 import SearchIcon from '@mui/icons-material/Search';
@@ -28,7 +27,6 @@ import { useBoolean } from 'ahooks';
 import { redirect, useRouter, useSearchParams } from 'next/navigation';
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import DiscussCard, { DiscussCardMobile } from './discussCard';
-import { CommonContext } from '@/components/commonProvider';
 
 export type Status = 'hot' | 'new' | 'mine';
 
@@ -129,7 +127,8 @@ const Article = ({
     }
   };
 
-  const handleTopicClick = (t: string) => {
+  const handleTopicClick = (t: number) => {
+    fetchList({ tps: t + '' });
     // if (topics === t) {
     //   setTopics('');
     //   fetchList({ tps: '' });
@@ -179,7 +178,7 @@ const Article = ({
           display: { xs: 'none', sm: 'flex' },
         }}
       >
-        {groups.map((section) => (
+        {groups.origin.map((section) => (
           <Card
             key={section.id}
             sx={{
@@ -204,7 +203,7 @@ const Article = ({
                       backgroundColor: 'rgba(32,108,255,0.06)',
                     },
                   }}
-                  onClick={() => handleTopicClick(item.id! + '')}
+                  onClick={() => handleTopicClick(item.id!)}
                 >
                   <ImgLogo>#</ImgLogo>
                   <Box

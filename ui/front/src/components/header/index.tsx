@@ -153,7 +153,7 @@ const Header = () => {
                   boxShadow: 'none !important',
                 }}
                 onClick={() => {
-                  window.open('/', '_self');
+                  window.open('/admin', '_self');
                 }}
               >
                 后台管理

@@ -17,6 +17,8 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { Box, Button, IconButton, Stack, TextField } from '@mui/material';
 import { Icon } from 'ct-mui';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import DeleteIcon from '@mui/icons-material/Delete';
 import {
   CSSProperties,
   forwardRef,
@@ -91,7 +93,7 @@ const LinkItem = forwardRef<HTMLDivElement, LinkItemProps>(
             }}
             {...dragHandleProps}
           >
-            <Icon type='icon-drag' />
+            <DragIndicatorIcon/>
           </IconButton>
           <Box
             sx={{
@@ -263,7 +265,7 @@ const Item = forwardRef<HTMLDivElement, ItemProps>(
               }}
               {...dragHandleProps}
             >
-              <Icon type='icon-drag' />
+              <DragIndicatorIcon/>
             </IconButton>
             <Controller
               control={control}
@@ -285,7 +287,7 @@ const Item = forwardRef<HTMLDivElement, ItemProps>(
               )}
             />
             <IconButton size='small' onClick={handleRemove}>
-              <Icon type='icon-icon_tool_close' />
+              <DeleteIcon/>
             </IconButton>
           </Stack>
 

@@ -1,7 +1,5 @@
 'use client';
-import {
-  ModelDiscussionDetail
-} from '@/api';
+import { ModelDiscussionDetail } from '@/api';
 import { postDiscussion, putDiscussionDiscId } from '@/api/Discussion';
 import defaultAvatar from '@/asset/img/default_avatar.png';
 import { Icon } from '@/components';
@@ -17,13 +15,14 @@ import {
   FormHelperText,
   Stack,
   styled,
-  TextField
+  TextField,
 } from '@mui/material';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import z from 'zod';
+import { CommonContext } from './commonProvider';
 
 export const Tag = styled(Chip)({
   borderRadius: '3px',
@@ -89,7 +88,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
     resolver: zodResolver(schema),
   });
   const [loading, setLoading] = useState(false);
-
+  const { groups } = useContext(CommonContext);
   const onSubmit = handleSubmit(async (params) => {
     setLoading(true);
     let newParams = { ...params, group_ids: [1] };
@@ -141,7 +140,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
           size='small'
           autoComplete='off'
         />
-        {/* <Controller
+        <Controller
           name='group_ids'
           control={control}
           rules={{ required: '请输入相关话题' }}
@@ -149,29 +148,33 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
             <Autocomplete
               multiple
               id='tags-filled'
-              options={groups}
+              options={groups.flat}
               value={field.value as any}
               onChange={(_, value) => {
                 field.onChange(value);
               }}
               size='small'
               freeSolo
-              renderTags={(value: readonly string[], getTagProps) =>
-                value.map((option: string, index: number) => {
-                  const { key, ...tagProps } = getTagProps({ index });
-                  const label = `# ${option}`;
-                  return (
-                    <Tag
-                      key={key}
-                      label={label}
-                      size='small'
-                      sx={{
-                        backgroundColor: '#F2F3F5',
-                      }}
-                      {...tagProps}
-                    />
-                  );
-                })
+              renderTags={(value: readonly string[], getTagProps) =>{
+                console.log(value, 'value')
+                return ''
+              }
+                // value.map((option: string, index: number) => {
+                //   alert(JSON.stringify(option))
+                //   const { key, ...tagProps } = getTagProps({ index });
+                //   const label = `# ${option}`;
+                //   return (
+                //     <Tag
+                //       key={key}
+                //       label={label}
+                //       size='small'
+                //       sx={{
+                //         backgroundColor: '#F2F3F5',
+                //       }}
+                //       {...tagProps}
+                //     />
+                //   );
+                // })
               }
               renderInput={(params) => (
                 <TextField
@@ -185,7 +188,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
               )}
             />
           )}
-        /> */}
+        />
         {status === 'edit' && (
           <Controller
             name='tags'

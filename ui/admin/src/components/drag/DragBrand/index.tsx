@@ -16,7 +16,14 @@ import { FC, useCallback, useEffect, useState } from 'react';
 import { Control, FieldErrors, useFieldArray, useForm } from 'react-hook-form';
 import Item from './Item';
 import SortableItem from './SortableItem';
-import { getAdminGroup, getGroup } from '@/api';
+import {
+  getAdminGroup,
+  getGroup,
+  ModelGroupItemInfo,
+  ModelGroupWithItem,
+  putAdminGroup,
+} from '@/api';
+import { set } from 'zod';
 
 interface DragBrandProps {
   control: Control<any>;
@@ -35,9 +42,15 @@ const DragBrand = () => {
     watch,
     setValue,
     formState: { errors },
-  } = useForm({
+  } = useForm<{
+    brand_groups: {
+      name: string;
+      id: number;
+      links: { name: string; id: number }[];
+    }[];
+  }>({
     defaultValues: {
-      brand_groups: [] as any,
+      brand_groups: [],
     },
   });
   const {
@@ -53,15 +66,19 @@ const DragBrand = () => {
   const handleDragStart = useCallback((event: DragStartEvent) => {
     setActiveId(event.active.id as string);
   }, []);
-  useEffect(() => {
+  const fetchData = () => {
     getAdminGroup().then((res) => {
       reset({
         brand_groups: res.items?.map((item) => ({
           name: item.name,
+          id: item.id,
           links: item.items,
         })),
       });
     });
+  };
+  useEffect(() => {
+    fetchData();
   }, []);
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
@@ -95,7 +112,9 @@ const DragBrand = () => {
 
   const handleAddBrandGroup = () => {
     appendBrandGroup({
-      links: [{ name: '' }],
+      name: '',
+      id: 0,
+      links: [{ name: '', id: 0 }],
     });
     setIsEdit(true);
   };
@@ -116,7 +135,16 @@ const DragBrand = () => {
 
   const onSubmit = handleSubmit((data) => {
     console.log(data);
-    
+    putAdminGroup({
+      groups: data.brand_groups.map((item, index) => ({
+        name: item.name,
+        id: item.id,
+        index,
+        items: item.links.map((link, i) => ({ ...link, index: i })),
+      })),
+    }).then(() => {
+      setIsEdit(false);
+    });
   });
 
   return (

@@ -51,16 +51,17 @@ export enum ModelFileType {
   FileTypeJSON = 3,
   FileTypeURL = 4,
   FileTypeDOCX = 5,
-  FileTypePPTX = 6,
-  FileTypeXLSX = 7,
-  FileTypeXLS = 8,
-  FileTypePDF = 9,
-  FileTypeImage = 10,
-  FileTypeCSV = 11,
-  FileTypeXML = 12,
-  FileTypeZIP = 13,
-  FileTypeEPub = 14,
-  FileTypeMax = 15,
+  FileTypeDOC = 6,
+  FileTypePPTX = 7,
+  FileTypeXLSX = 8,
+  FileTypeXLS = 9,
+  FileTypePDF = 10,
+  FileTypeImage = 11,
+  FileTypeCSV = 12,
+  FileTypeXML = 13,
+  FileTypeZIP = 14,
+  FileTypeEPub = 15,
+  FileTypeMax = 16,
 }
 
 export enum ModelDocType {
@@ -221,13 +222,16 @@ export interface ModelExportOpt {
   space_id?: string;
 }
 
-export interface ModelGroupItem {
-  created_at?: number;
-  groupID?: number;
+export interface ModelGroupItemInfo {
   id?: number;
   index?: number;
   name?: string;
-  updated_at?: number;
+}
+
+export interface ModelGroupWithItem {
+  id?: number;
+  index?: number;
+  name?: string;
 }
 
 export type ModelJSONBModelExportOpt = Record<string, any>;
@@ -421,34 +425,8 @@ export interface SvcFileExportReq {
   uuid: string;
 }
 
-export interface SvcGICreateReq {
-  name: string;
-}
-
-export interface SvcGIUpdateIndexReq {
-  index?: number;
-}
-
-export interface SvcGIUpdateReq {
-  name: string;
-}
-
-export interface SvcGroupCreateReq {
-  name: string;
-}
-
-export interface SvcGroupItemInfo {
-  id?: number;
-  name?: string;
-}
-
 export interface SvcGroupUpdateReq {
-  name: string;
-}
-
-export interface SvcGroupWithItem {
-  id?: number;
-  name?: string;
+  groups?: ModelGroupWithItem[];
 }
 
 export interface SvcKBCreateReq {
@@ -474,6 +452,7 @@ export interface SvcKBUpdateReq {
 export interface SvcLoginMethodGetRes {
   auth_types?: number[];
   enable_register?: boolean;
+  public_access?: boolean;
 }
 
 export interface SvcMKCreateReq {
@@ -675,7 +654,8 @@ export interface GetAdminKbKbIdDocumentParams {
     | 12
     | 13
     | 14
-    | 15;
+    | 15
+    | 16;
   /** @min 1 */
   page?: number;
   /** @min 1 */
@@ -702,7 +682,8 @@ export interface GetAdminKbKbIdQuestionParams {
     | 12
     | 13
     | 14
-    | 15;
+    | 15
+    | 16;
   /** @min 1 */
   page?: number;
   /** @min 1 */

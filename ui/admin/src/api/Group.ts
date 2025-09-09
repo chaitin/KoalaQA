@@ -13,11 +13,10 @@
 import request, { ContentType, RequestParams } from "./httpClient";
 import {
   ContextResponse,
+  ModelGroupItemInfo,
+  ModelGroupWithItem,
   ModelListRes,
-  SvcGroupCreateReq,
-  SvcGroupItemInfo,
   SvcGroupUpdateReq,
-  SvcGroupWithItem,
 } from "./types";
 
 /**
@@ -29,8 +28,8 @@ import {
  * @request GET:/admin/group
  * @response `200` `(ContextResponse & {
     data?: (ModelListRes & {
-    items?: ((SvcGroupWithItem & {
-    items?: (SvcGroupItemInfo)[],
+    items?: ((ModelGroupWithItem & {
+    items?: (ModelGroupItemInfo)[],
 
 }))[],
 
@@ -43,8 +42,8 @@ export const getAdminGroup = (params: RequestParams = {}) =>
   request<
     ContextResponse & {
       data?: ModelListRes & {
-        items?: (SvcGroupWithItem & {
-          items?: SvcGroupItemInfo[];
+        items?: (ModelGroupWithItem & {
+          items?: ModelGroupItemInfo[];
         })[];
       };
     }
@@ -59,73 +58,21 @@ export const getAdminGroup = (params: RequestParams = {}) =>
  * No description
  *
  * @tags group
- * @name PostAdminGroup
- * @summary create group
- * @request POST:/admin/group
- * @response `200` `(ContextResponse & {
-    data?: number,
-
-})` OK
- */
-
-export const postAdminGroup = (
-  req: SvcGroupCreateReq,
-  params: RequestParams = {},
-) =>
-  request<
-    ContextResponse & {
-      data?: number;
-    }
-  >({
-    path: `/admin/group`,
-    method: "POST",
-    body: req,
-    type: ContentType.Json,
-    format: "json",
-    ...params,
-  });
-
-/**
- * No description
- *
- * @tags group
- * @name PutAdminGroupGroupId
+ * @name PutAdminGroup
  * @summary update group
- * @request PUT:/admin/group/{group_id}
+ * @request PUT:/admin/group
  * @response `200` `ContextResponse` OK
  */
 
-export const putAdminGroupGroupId = (
-  groupId: number,
+export const putAdminGroup = (
   req: SvcGroupUpdateReq,
   params: RequestParams = {},
 ) =>
   request<ContextResponse>({
-    path: `/admin/group/${groupId}`,
+    path: `/admin/group`,
     method: "PUT",
     body: req,
     type: ContentType.Json,
-    format: "json",
-    ...params,
-  });
-
-/**
- * No description
- *
- * @tags group
- * @name DeleteAdminGroupGroupId
- * @summary delete group
- * @request DELETE:/admin/group/{group_id}
- * @response `200` `ContextResponse` OK
- */
-
-export const deleteAdminGroupGroupId = (
-  groupId: number,
-  params: RequestParams = {},
-) =>
-  request<ContextResponse>({
-    path: `/admin/group/${groupId}`,
-    method: "DELETE",
     format: "json",
     ...params,
   });

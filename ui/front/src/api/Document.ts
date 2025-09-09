@@ -17,7 +17,7 @@ import {
   DeleteAdminKbKbIdDocumentDocIdParams,
   GetAdminKbKbIdDocumentDocIdParams,
   GetAdminKbKbIdDocumentParams,
-  ModelKBDocument,
+  ModelKBDocumentDetail,
   ModelListRes,
   PostAdminKbDocumentFileListPayload,
   PutAdminKbKbIdDocumentDocIdParams,
@@ -283,7 +283,7 @@ export const getAdminKbKbIdDocument = (
  * @summary get kb document detail
  * @request GET:/admin/kb/{kb_id}/document/{doc_id}
  * @response `200` `(ContextResponse & {
-    data?: ModelKBDocument,
+    data?: ModelKBDocumentDetail,
 
 })` OK
  */
@@ -294,7 +294,7 @@ export const getAdminKbKbIdDocumentDocId = (
 ) =>
   request<
     ContextResponse & {
-      data?: ModelKBDocument;
+      data?: ModelKBDocumentDetail;
     }
   >({
     path: `/admin/kb/${kbId}/document/${docId}`,

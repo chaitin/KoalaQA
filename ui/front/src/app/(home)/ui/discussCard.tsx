@@ -24,19 +24,15 @@ const DiscussCard = ({
 }: {
   data: ModelDiscussionListItem;
   keywords?: string;
-  onTopicClick(t: string): void;
+  onTopicClick(t: number): void;
   onTagClick(t: string): void;
 }) => {
   const it = data;
   const router = useRouter();
-  const {groups} = useContext(CommonContext)
-   const currentGroups = useMemo(()=>{
-    const _groups = groups.reduce((acc, item)=> {
-      acc.push(...(item?.items || []))
-      return acc
-    }, [] as ModelGroupItemInfo[])
-    return _groups.filter(item => it.group_ids?.includes(item.id!))
-  },[groups, it.group_ids])
+  const { groups } = useContext(CommonContext);
+  const currentGroups = useMemo(() => {
+    return groups.flat.filter((item) => it.group_ids?.includes(item.id!));
+  }, [groups, it.group_ids]);
   return (
     <Card
       key={it.id}
@@ -124,16 +120,16 @@ const DiscussCard = ({
 
       <Stack direction='row' justifyContent='space-between'>
         <Stack direction='row' gap={2}>
-          {it.tags?.map((item: string) => {
-            const label = `# ${item}`;
+          {currentGroups?.map((item) => {
+            const label = `# ${item.name}`;
             return (
               <Tag
                 sx={{ backgroundColor: 'rgba(32, 108, 255, 0.1)' }}
-                key={item}
+                key={item.id}
                 label={label}
                 size='small'
                 onClick={() => {
-                  onTopicClick(item);
+                  onTopicClick(item.id!);
                 }}
               />
             );
@@ -211,7 +207,7 @@ const DiscussCard = ({
                 sx={{
                   // color: it.is_like ? 'primary.main' : 'rgba(0,0,0,0.5)',
                   fontSize: 14,
-                  color: '#FF8500'
+                  color: '#FF8500',
                 }}
               />
               <Typography
@@ -236,19 +232,15 @@ export const DiscussCardMobile = ({
 }: {
   data: ModelDiscussionListItem;
   keywords?: string;
-  onTopicClick(t: string): void;
+  onTopicClick(t: number): void;
   onTagClick(t: string): void;
 }) => {
   const it = data;
   const router = useRouter();
-  const {groups} = useContext(CommonContext)
-  const currentGroups = useMemo(()=>{
-    const _groups = groups.reduce((acc, item)=> {
-      acc.push(...(item?.items || []))
-      return acc
-    }, [] as ModelGroupItemInfo[])
-    return _groups.filter(item => it.group_ids?.includes(item.id!))
-  },[groups, it.group_ids])
+  const { groups } = useContext(CommonContext);
+  const currentGroups = useMemo(() => {
+    return groups.flat.filter((item) => it.group_ids?.includes(item.id!));
+  }, [groups, it.group_ids]);
   return (
     <Card
       key={it.id}
@@ -279,7 +271,10 @@ export const DiscussCardMobile = ({
           target='_blank'
           sx={{ width: '100%', whiteSpace: 'wrap' }}
         >
-          <MatchedString keywords={keywords} str={it.title || ''}></MatchedString>
+          <MatchedString
+            keywords={keywords}
+            str={it.title || ''}
+          ></MatchedString>
         </Title>
 
         {/* {data.status === DomainDiscussionStatus.DiscussionStatusClose && (
@@ -327,16 +322,16 @@ export const DiscussCardMobile = ({
       </Stack>
       <Stack direction='row' gap='8px 12px' flexWrap='wrap'>
         {currentGroups?.map((item) => {
-          const label = `# ${item}`;
+          const label = `# ${item.id}`;
           return (
             <Tag
               key={item.id}
               label={item.name}
               size='small'
               sx={{ backgroundColor: 'rgba(32, 108, 255, 0.1)' }}
-              // onClick={() => {
-              //   onTopicClick(item);
-              // }}
+              onClick={() => {
+                onTopicClick(item.id!);
+              }}
             />
           );
         })}

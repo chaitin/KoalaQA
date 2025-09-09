@@ -18,9 +18,12 @@ export const CommonContext = createContext<{
   setShowHeaderSearch: Dispatch<SetStateAction<boolean>>;
   keywords: string;
   setKeywords: Dispatch<SetStateAction<string>>;
-  groups: (ModelGroupWithItem & {
-    items?: ModelGroupItemInfo[];
-  })[];
+  groups: {
+    origin: (ModelGroupWithItem & {
+      items?: ModelGroupItemInfo[];
+    })[];
+    flat: ModelGroupItemInfo[];
+  };
   fetchGroup: () => void;
 }>({
   headerStyle: {},
@@ -29,7 +32,10 @@ export const CommonContext = createContext<{
   setShowHeaderSearch: () => {},
   keywords: '',
   setKeywords: () => {},
-  groups: [],
+  groups: {
+    origin: [],
+    flat: [],
+  },
   fetchGroup: () => {},
 });
 
@@ -37,14 +43,26 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
   const [showHeaderSearch, setShowHeaderSearch] = useState(false);
   const [headerStyle, setHeaderStyle] = useState({});
   const [keywords, setKeywords] = useState('');
-  const [groups, setGroups] = useState<
-    (ModelGroupWithItem & {
+  const [groups, setGroups] = useState<{
+    origin: (ModelGroupWithItem & {
       items?: ModelGroupItemInfo[];
-    })[]
-  >([]);
+    })[];
+    flat: ModelGroupItemInfo[];
+  }>({
+    origin: [],
+    flat: [],
+  });
 
   const fetchGroup = () => {
-    getGroup().then((r) => setGroups(r.items?.filter((i) => !!i.items) || []));
+    getGroup().then((r) =>
+      setGroups({
+        origin: r.items ?? [],
+        flat: (r.items?.filter((i) => !!i.items) || []).reduce((acc, item) => {
+          acc.push(...(item.items || []));
+          return acc;
+        }, [] as ModelGroupItemInfo[]),
+      })
+    );
   };
   useEffect(() => {
     fetchGroup();

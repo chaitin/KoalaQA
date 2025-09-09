@@ -109,9 +109,9 @@ const AdminDocument = () => {
   };
 
   return (
-    <Card sx={{ flex: 1, height: '100%' }}>
+    <Card sx={{ flex: 1, height: '100%', overflow: 'auto' }}>
       <Grid container spacing={2}>
-        <Grid size={{ xs: 6, sm: 6, md: 6, lg: 6, xl: 6 }}>
+        <Grid size={{ sm: 12, md: 6 }}>
           <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
             <Typography variant='body2' sx={{ mb: 2 }}>
               知识学习

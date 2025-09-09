@@ -51,16 +51,17 @@ export enum ModelFileType {
   FileTypeJSON = 3,
   FileTypeURL = 4,
   FileTypeDOCX = 5,
-  FileTypePPTX = 6,
-  FileTypeXLSX = 7,
-  FileTypeXLS = 8,
-  FileTypePDF = 9,
-  FileTypeImage = 10,
-  FileTypeCSV = 11,
-  FileTypeXML = 12,
-  FileTypeZIP = 13,
-  FileTypeEPub = 14,
-  FileTypeMax = 15,
+  FileTypeDOC = 6,
+  FileTypePPTX = 7,
+  FileTypeXLSX = 8,
+  FileTypeXLS = 9,
+  FileTypePDF = 10,
+  FileTypeImage = 11,
+  FileTypeCSV = 12,
+  FileTypeXML = 13,
+  FileTypeZIP = 14,
+  FileTypeEPub = 15,
+  FileTypeMax = 16,
 }
 
 export enum ModelDocType {
@@ -145,11 +146,14 @@ export interface ModelDiscussion {
 export interface ModelDiscussionComment {
   accepted?: boolean;
   content?: string;
+  dislike?: number;
   id?: number;
+  like?: number;
   replies?: ModelDiscussionReply[];
   updated_at?: number;
   user_avatar?: string;
   user_id?: number;
+  user_liked?: boolean;
   user_name?: string;
 }
 
@@ -209,10 +213,13 @@ export interface ModelDiscussionListItem {
 export interface ModelDiscussionReply {
   accepted?: boolean;
   content?: string;
+  dislike?: number;
   id?: number;
+  like?: number;
   updated_at?: number;
   user_avatar?: string;
   user_id?: number;
+  user_liked?: boolean;
   user_name?: string;
 }
 
@@ -236,26 +243,6 @@ export interface ModelGroupWithItem {
 export type ModelJSONBModelExportOpt = Record<string, any>;
 
 export type ModelJSONBModelPlatformOpt = Record<string, any>;
-
-export interface ModelKBDocument {
-  created_at?: number;
-  desc?: string;
-  doc_id?: string;
-  doc_type?: ModelDocType;
-  export_opt?: ModelJSONBModelExportOpt;
-  file_type?: ModelFileType;
-  id?: number;
-  json?: number[];
-  kb_id?: number;
-  markdown?: number[];
-  platform?: PlatformPlatformType;
-  platform_opt?: ModelJSONBModelPlatformOpt;
-  rag_id?: string;
-  status?: ModelDocStatus;
-  summary?: string;
-  title?: string;
-  updated_at?: number;
-}
 
 export interface ModelKBDocumentDetail {
   created_at?: number;
@@ -412,7 +399,7 @@ export interface SvcDocListItem {
 
 export interface SvcDocUpdateReq {
   desc?: string;
-  markdown?: number[];
+  markdown?: string;
   title: string;
 }
 
@@ -628,11 +615,6 @@ export interface PutAdminBotPayload {
   unknown_prompt: string;
 }
 
-export interface PutAdminGroupParams {
-  /** group id */
-  groupId: number;
-}
-
 export interface PostAdminKbDocumentFileListPayload {
   /**
    * upload file
@@ -668,7 +650,8 @@ export interface GetAdminKbKbIdDocumentParams {
     | 12
     | 13
     | 14
-    | 15;
+    | 15
+    | 16;
   /** @min 1 */
   page?: number;
   /** @min 1 */
@@ -716,7 +699,8 @@ export interface GetAdminKbKbIdQuestionParams {
     | 12
     | 13
     | 14
-    | 15;
+    | 15
+    | 16;
   /** @min 1 */
   page?: number;
   /** @min 1 */
