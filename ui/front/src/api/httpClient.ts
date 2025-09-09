@@ -30,10 +30,10 @@ import type {
 } from "axios";
 import axios from "axios";
 import { message as alert } from "ct-mui";
-import { redirect } from "next/navigation";
 
 export type QueryParamsType = Record<string | number, any>;
 
+const pathnameWhiteList = ["/login"];
 export interface FullRequestParams
   extends Omit<AxiosRequestConfig, "data" | "params" | "url" | "responseType"> {
   /** set parameter to `true` for call `securityWorker` for this request */
@@ -108,13 +108,6 @@ export class HttpClient<SecurityDataType = unknown> {
         return Promise.reject(response);
       },
       (error) => {
-        if (error.response?.status === 401) {
-          if (typeof window !== "undefined") {
-            window.location.href = "/login";
-          } else {
-            redirect("/login");
-          }
-        }
         if (alert.error) alert.error(error.response?.statusText || "网络异常");
         return Promise.reject(error.response);
       },

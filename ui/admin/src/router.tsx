@@ -1,7 +1,6 @@
 import LinearProgress from '@mui/material/LinearProgress';
 import { styled } from '@mui/material/styles';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import MainLayout from './layouts/mainLayout/user';
 import AdminLayout from './layouts/mainLayout/admin';
 import { type LazyExoticComponent, Suspense, forwardRef, lazy } from 'react';
 import { type JSX } from 'react/jsx-runtime';
@@ -46,14 +45,14 @@ const routerConfig = [
     children: [
       {
         index: true,
-        element: <Navigate to='/admin/ai' replace />,
+        element: <Navigate to='/ai' replace />,
       },
       {
         path: 'ai',
         element: <AdminKnowledge />,
       },
       {
-        path: 'knowledge/:id?/:tab?',
+        path: 'ai/:id?/:tab?',
         element: <AdminKnowledgeDetail />,
       },
       {

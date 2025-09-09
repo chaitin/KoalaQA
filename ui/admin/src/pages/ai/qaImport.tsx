@@ -1,16 +1,11 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-import {
-  Box,
-  Button,
-  IconButton,
-  Stack,
-  TextField
-} from '@mui/material';
+import { Box, Button, IconButton, Stack, TextField } from '@mui/material';
 
 import {
   getAdminKbKbIdQuestionQaId,
   postAdminKbKbIdQuestion,
+  putAdminKbKbIdQuestionQaId,
   SvcDocListItem,
 } from '@/api';
 import Card from '@/components/card';
@@ -26,10 +21,15 @@ import z from 'zod';
 const schema = z.object({
   title: z.string().min(1, '必填').default(''),
   markdown: z.string().min(1, '必填').default(''),
+  id: z.number().optional(),
 });
 
-const QaImport = (props: { refresh: () => void }) => {
-  const { refresh } = props;
+const QaImport = (props: {
+  refresh: (params: any) => void;
+  editItem: SvcDocListItem | null;
+  setEditItem: React.Dispatch<React.SetStateAction<SvcDocListItem | null>>;
+}) => {
+  const { refresh, editItem, setEditItem } = props;
   const ref = useRef(null);
   const [isFullscreen, { enterFullscreen, exitFullscreen }] = useFullscreen(
     ref,
@@ -39,10 +39,9 @@ const QaImport = (props: { refresh: () => void }) => {
   );
 
   const [showCreate, setShowCreate] = useState(false);
-  const [editItem, setEditItem] = useState<SvcDocListItem | null>(null);
   const { id } = useParams();
   const kb_id = +(id || '0');
-  const { register, formState, handleSubmit, reset, control } = useForm({
+  const { register, formState, handleSubmit, reset, control, watch } = useForm({
     resolver: zodResolver(schema),
   });
   const creat = () => {
@@ -53,21 +52,31 @@ const QaImport = (props: { refresh: () => void }) => {
     setEditItem(null);
     reset(schema.parse({}));
   };
-  const handleEdit = async (item: SvcDocListItem) => {
-    const detail = await getAdminKbKbIdQuestionQaId(kb_id, item.id!);
-    setEditItem(item);
-    setShowCreate(true);
-    reset(detail);
+  const handleEdit = async (data: z.infer<typeof schema>) => {
+    await putAdminKbKbIdQuestionQaId(kb_id, data.id!, {
+      title: data.title || '',
+      markdown: data.markdown as any,
+    });
+    setEditItem(null);
+    setShowCreate(false);
   };
 
   const handleOk = (data: z.infer<typeof schema>) => {
     postAdminKbKbIdQuestion(kb_id, data).then(() => {
       handleCancel();
       Message.success('保存成功');
-      refresh();
+      refresh({});
     });
   };
-
+  useEffect(() => {
+    if (editItem) {
+      getAdminKbKbIdQuestionQaId(kb_id, editItem.id!).then((r) => {
+        console.log(r);
+        reset(r);
+      });
+      setShowCreate(true);
+    }
+  }, [editItem]);
   return (
     <>
       <Button
@@ -86,7 +95,7 @@ const QaImport = (props: { refresh: () => void }) => {
             alignItems={'center'}
             justifyContent={'space-between'}
           >
-            <Box>手动录入</Box>
+            <Box>{editItem ? '编辑' : '手动录入'}</Box>
 
             <IconButton
               onClick={enterFullscreen}
@@ -120,6 +129,11 @@ const QaImport = (props: { refresh: () => void }) => {
             fullWidth
             error={Boolean(formState.errors.title?.message)}
             helperText={formState.errors.title?.message}
+            slotProps={{
+              'inputLabel': {
+                shrink: watch('title') ? true : undefined,
+              }
+            }}
             sx={{
               mb: 2,
             }}
@@ -156,7 +170,7 @@ const QaImport = (props: { refresh: () => void }) => {
             <Button
               size='small'
               variant='contained'
-              onClick={handleSubmit(handleOk)}
+              onClick={handleSubmit(editItem ? handleEdit : handleOk)}
             >
               确认
             </Button>

@@ -13,9 +13,9 @@
 import request, { RequestParams } from "./httpClient";
 import {
   ContextResponse,
+  ModelGroupItemInfo,
+  ModelGroupWithItem,
   ModelListRes,
-  SvcGroupItemInfo,
-  SvcGroupWithItem,
 } from "./types";
 
 /**
@@ -27,8 +27,8 @@ import {
  * @request GET:/group
  * @response `200` `(ContextResponse & {
     data?: (ModelListRes & {
-    items?: ((SvcGroupWithItem & {
-    items?: (SvcGroupItemInfo)[],
+    items?: ((ModelGroupWithItem & {
+    items?: (ModelGroupItemInfo)[],
 
 }))[],
 
@@ -41,8 +41,8 @@ export const getGroup = (params: RequestParams = {}) =>
   request<
     ContextResponse & {
       data?: ModelListRes & {
-        items?: (SvcGroupWithItem & {
-          items?: SvcGroupItemInfo[];
+        items?: (ModelGroupWithItem & {
+          items?: ModelGroupItemInfo[];
         })[];
       };
     }

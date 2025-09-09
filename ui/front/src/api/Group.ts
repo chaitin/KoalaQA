@@ -16,7 +16,6 @@ import {
   ModelGroupItemInfo,
   ModelGroupWithItem,
   ModelListRes,
-  PutAdminGroupParams,
   SvcGroupUpdateReq,
 } from "./types";
 
@@ -66,7 +65,6 @@ export const getAdminGroup = (params: RequestParams = {}) =>
  */
 
 export const putAdminGroup = (
-  { groupId, ...query }: PutAdminGroupParams,
   req: SvcGroupUpdateReq,
   params: RequestParams = {},
 ) =>

@@ -1,9 +1,6 @@
 import { Ellipsis, message, Modal, Table } from '@c-x/ui';
-
 import Card from '@/components/card';
-
 import {
-  deleteAdminKbKbIdDocumentDocId,
   deleteAdminKbKbIdQuestionQaId,
   getAdminKbKbIdQuestion,
   ModelDocStatus,
@@ -24,7 +21,7 @@ const AdminDocument = () => {
   const { id } = useParams();
   const kb_id = +(id || '0');
   const [title, setTitle] = useState(query.title);
-  const [file_type, setFile_type] = useState(query.file_type);
+  const [editItem, setEditItem] = useState<SvcDocListItem | null>(null);
   const {
     data,
     loading,
@@ -100,7 +97,7 @@ const AdminDocument = () => {
               variant='text'
               size='small'
               color='primary'
-              disabled
+              onClick={() => setEditItem(record)}
             >
               编辑
             </Button>
@@ -121,7 +118,7 @@ const AdminDocument = () => {
 
   return (
     <Stack component={Card} sx={{ height: '100%' }}>
-       <QaImport refresh={fetchData} />
+       <QaImport refresh={fetchData} setEditItem={setEditItem} editItem={editItem}  />
       <Stack direction='row' alignItems='center' spacing={2} sx={{ mb: 2 }}>
         <Typography variant='caption'>共 {data?.total || 0} 个问题</Typography>
         <TextField
