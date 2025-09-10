@@ -1751,6 +1751,25 @@ const docTemplate = `{
                     "user"
                 ],
                 "summary": "list user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
