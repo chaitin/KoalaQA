@@ -180,7 +180,7 @@ func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListRe
 	pageFuncs := []repo.QueryOptFunc{repo.QueryWithPagination(req.Pagination)}
 	switch req.Filter {
 	case DiscussionListFilterHot:
-		pageFuncs = append(pageFuncs, repo.QueryWithOrderBy(`"like", created_at DESC`))
+		pageFuncs = append(pageFuncs, repo.QueryWithOrderBy(`"like" DESC, created_at DESC`))
 	case DiscussionListFilterNew:
 		pageFuncs = append(pageFuncs, repo.QueryWithOrderBy("created_at DESC"))
 	case DiscussionListFilterMine:
