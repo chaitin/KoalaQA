@@ -191,7 +191,7 @@ export class HttpClient<SecurityDataType = unknown> {
     ) {
       body = JSON.stringify(body);
     }
-    const Authorization = localStorage.getItem("auth_token") || "";
+    const Authorization = JSON.parse(localStorage.getItem("auth_token")) || "";
 
     return this.instance.request({
       ...requestParams,
