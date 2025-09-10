@@ -5,7 +5,7 @@ COMMIT_HASH ?= $(shell git rev-parse HEAD)
 BUILD_TIME ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 
 image.api:
-	cd backend && docker build \
+	cd backend && DOCKER_BUILDKIT=1 docker build \
 		--build-arg VERSION=${VERSION} \
 		--build-arg COMMIT_HASH=${COMMIT_HASH} \
 		--build-arg BUILD_TIME=${BUILD_TIME} \
@@ -14,7 +14,7 @@ image.api:
 		-t swr.cn-east-3.myhuaweicloud.com/koala-qa/api:${TAG} .
 
 image.app:
-	cd ui && docker build \
+	cd ui && DOCKER_BUILDKIT=1 docker build \
 		--build-arg HTTP_PROXY=${HTTP_PROXY} \
 		--build-arg HTTPS_PROXY=${HTTPS_PROXY} \
 		-t swr.cn-east-3.myhuaweicloud.com/koala-qa/app:${TAG} .

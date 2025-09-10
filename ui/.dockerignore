@@ -1,70 +1,74 @@
-# Dependencies
-**/node_modules
-**/npm-debug.log*
-**/yarn-debug.log*
-**/yarn-error.log*
-**/pnpm-debug.log*
+# Node modules - will be installed in container
+node_modules
+*/node_modules
+.pnpm-store
 
 # Build outputs
-**/dist
-**/.next
-**/out
+dist
+.next
+build
 
 # Development files
-**/.env.local
-**/.env.development.local
-**/.env.test.local
-**/.env.production.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# IDE and editor files
-**/.vscode
-**/.idea
-**/*.swp
-**/*.swo
-**/*~
+# Version control
+.git
+.gitignore
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
 
 # OS generated files
-**/.DS_Store
-**/Thumbs.db
-
-# Git
-**/.git
-**/.gitignore
-
-# Docker
-**/Dockerfile
-**/docker-compose*.yml
-**/.dockerignore
+.DS_Store
+Thumbs.db
 
 # Logs
-**/logs
-**/*.log
+*.log
+logs
 
 # Runtime data
-**/pids
-**/*.pid
-**/*.seed
-**/*.pid.lock
+pids
+*.pid
+*.seed
+*.pid.lock
 
 # Coverage directory used by tools like istanbul
-**/coverage
-**/.nyc_output
+coverage
 
-# ESLint cache
-**/.eslintcache
+# Dependency directories
+jspm_packages/
 
 # Optional npm cache directory
-**/.npm
+.npm
 
 # Optional REPL history
-**/.node_repl_history
+.node_repl_history
 
 # Output of 'npm pack'
-**/*.tgz
+*.tgz
 
 # Yarn Integrity file
-**/.yarn-integrity
+.yarn-integrity
 
-# Documentation
-**/README.md
-**/docs
+# dotenv environment variables file
+.env
+
+# next.js build output
+.next
+
+# Nuxt.js build / generate output
+.nuxt
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
