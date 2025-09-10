@@ -10,6 +10,7 @@ import Cookies from 'js-cookie';
 import { usePathname, useRouter } from 'next/navigation';
 import { useContext, useEffect, useState } from 'react';
 import LoggedInView from './loggedInView';
+import Link from 'next/link';
 
 const Header = () => {
   const [token, setToken] = useLocalStorageState<string>('auth_token');
@@ -138,21 +139,20 @@ const Header = () => {
         >
           {user.uid ?
             <>
-              <Button
-                variant='contained'
-                sx={{
-                  borderRadius: 1,
-                  height: 44,
-                  width: 122,
-                  fontSize: 14,
-                  boxShadow: 'none !important',
-                }}
-                onClick={() => {
-                  window.open(window.location.origin + '/admin', '_self');
-                }}
-              >
-                后台管理
-              </Button>
+              <Link href={window.location.origin + '/admin/ai'}>
+                <Button
+                  variant='contained'
+                  sx={{
+                    borderRadius: 1,
+                    height: 44,
+                    width: 122,
+                    fontSize: 14,
+                    boxShadow: 'none !important',
+                  }}
+                >
+                  后台管理
+                </Button>
+              </Link>
               <LoggedInView />
             </>
           : <>
