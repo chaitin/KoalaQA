@@ -67,9 +67,9 @@ func (l *LLM) Chat(ctx context.Context, req GenerateReq) (string, bool, error) {
 	if err != nil {
 		return "", false, err
 	}
-	for _, msg := range msgs {
-		fmt.Println(msg.Role, msg.Content)
-	}
+	// for _, msg := range msgs {
+	// 	fmt.Println(msg.Role, msg.Content)
+	// }
 	logger.Debug("wait llm response")
 	res, err := cm.Generate(ctx, msgs)
 	if err != nil {
