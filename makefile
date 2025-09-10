@@ -19,6 +19,10 @@ image.app:
 		--build-arg HTTPS_PROXY=${HTTPS_PROXY} \
 		-t swr.cn-east-3.myhuaweicloud.com/koala-qa/app:${TAG} .
 
+image.nginx:
+	cd docker/nginx && DOCKER_BUILDKIT=1 docker build \
+		-t swr.cn-east-3.myhuaweicloud.com/koala-qa/nginx:1.28.0 .
+
 run:
 	$(eval APP_TAG := $(shell grep -A 5 "^  app:" docker-compose.yml | grep "image:" | sed 's/.*://' | xargs))
 	make -e HTTP_PROXY=${HTTP_PROXY} HTTPS_PROXY=${HTTPS_PROXY} TAG=${APP_TAG} image.app
