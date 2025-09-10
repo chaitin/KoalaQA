@@ -11,6 +11,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useContext, useEffect, useState } from 'react';
 import LoggedInView from './loggedInView';
 import Link from 'next/link';
+import { ModelUserRole } from '@/api';
 
 const Header = () => {
   const [token, setToken] = useLocalStorageState<string>('auth_token');
@@ -63,7 +64,9 @@ const Header = () => {
   useEffect(() => {
     runSearch(keyword);
   }, [keyword]);
-
+  useEffect(() => {
+    console.log('Build ID:', process.env.NEXT_PUBLIC_BUILD_ID);
+  }, []);
   return (
     <AppBar
       position='fixed'
@@ -137,7 +140,7 @@ const Header = () => {
           gap={3}
           sx={{ position: 'absolute', top: 0, bottom: 0, right: 40 }}
         >
-          {user.uid ?
+          {user.role === ModelUserRole.UserRoleAdmin ?
             <>
               <Link href={window.location.origin + '/admin/ai'}>
                 <Button

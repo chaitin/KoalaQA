@@ -1,11 +1,5 @@
 /** @type {import('next').NextConfig} */
 
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const isProd = process.env.NODE_ENV === 'production';
 
 const nextConfig = {
   // output: 'export',
@@ -42,6 +36,14 @@ const nextConfig = {
     }
     return rewritesPath;
   },
-};
+  // generateBuildId: async () => {
+  //   const commitHash = require('child_process')
+  //     .execSync('git rev-parse --short HEAD')
+  //     .toString()
+  //     .trim();
+  //   process.env.NEXT_PUBLIC_BUILD_ID = commitHash; // 暴露给客户端
+  //   return process.env.GIT_HASH
+  // },
+}
 
 export default nextConfig;
