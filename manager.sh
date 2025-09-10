@@ -44,9 +44,9 @@ fi
 echo -e "${GREEN}Architecture: $ARCH${NC}"
 
 if [[ "$ARCH" == "x86_64" ]]; then
-    URL="https://raw.githubusercontent.com/chaitin/KoalaQA/refs/heads/main/installer_amd64"
+    URL="https://github.com/chaitin/KoalaQA/raw/refs/heads/main/installer_amd64"
 elif [[ "$ARCH" == "aarch64" ]]; then
-    URL="https://raw.githubusercontent.com/chaitin/KoalaQA/refs/heads/main/installer_arm64"
+    URL="https://github.com/chaitin/KoalaQA/raw/refs/heads/main/installer_arm64"
 fi
 FILE_NAME="/tmp/koala-qa-installer"
 
