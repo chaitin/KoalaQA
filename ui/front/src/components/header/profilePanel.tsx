@@ -11,13 +11,8 @@ import {
 import { useLocalStorageState } from 'ahooks';
 import React from 'react';
 import { InfoCard } from './components';
-export interface ProfilePanelProps {
-  userInfo: any | null;
-  verified: boolean;
-  promotionInfo?: any;
-}
 
-const ProfilePanel: React.FC<ProfilePanelProps> = () => {
+const ProfilePanel = () => {
   const [, setToken] = useLocalStorageState('auth-token');
   const handleLogout = () => {
     postUserLogout().then(() => {
