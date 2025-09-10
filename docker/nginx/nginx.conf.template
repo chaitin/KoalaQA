@@ -23,32 +23,28 @@ http {
     gzip on;
     gzip_types application/javascript text/css image/png image/jpeg image/gif application/json;
 
+    map $https_port $redirect_port {
+        default :$https_port;
+        443 "";
+    }
+
     upstream app {
         server koala-qa-app;
     }
 
     server {
-        listen 80;
+        listen ${HTTP_PORT};
         server_name _;
-       
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-Port $http_x_forwarded_port;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
+        
+        set $https_port ${HTTPS_PORT};
+        
         location / {
-            proxy_pass http://app;
-            proxy_http_version 1.1;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection 'upgrade';
-            proxy_set_header Host $host;
-            proxy_cache_bypass $http_upgrade;
+            return 301 https://$host$redirect_port$request_uri;
         }
     }
 
     server {
-        listen 443 ssl http2;
+        listen ${HTTPS_PORT} ssl http2;
         server_name _;
 
         ssl_certificate /etc/nginx/ssl/koala.crt;
