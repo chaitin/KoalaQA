@@ -17,12 +17,10 @@ COPY front/package.json front/pnpm-lock.yaml ./front/
 
 WORKDIR /app/admin
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
-    --mount=type=cache,target=/app/admin/node_modules \
     pnpm install --verbose --frozen-lockfile
 
 WORKDIR /app/front
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
-    --mount=type=cache,target=/app/front/node_modules \
     pnpm install --verbose --frozen-lockfile
 
 WORKDIR /app
