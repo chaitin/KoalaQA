@@ -58,15 +58,6 @@ export enum ContentType {
   Text = "text/plain",
 }
 
-const redirectToLogin = () => {
-  const redirectAfterLogin = encodeURIComponent(location.href);
-  const search = `redirect=${redirectAfterLogin}`;
-  const pathname = location.pathname.startsWith("/user")
-    ? "/user/login"
-    : "/login";
-  window.location.href = `${pathname}?${search}`;
-};
-
 type ExtractDataProp<T> = T extends { data?: infer U } ? U : T;
 
 export class HttpClient<SecurityDataType = unknown> {
@@ -106,7 +97,7 @@ export class HttpClient<SecurityDataType = unknown> {
       (error) => {
         if (error.response?.status === 401) {
           window.location.href = "/login";
-          localStorage.removeItem("panda_wiki_token");
+          localStorage.removeItem("auth-token");
         }
         Message.error(error.response?.statusText || "网络异常");
         return Promise.reject(error.response);
@@ -200,7 +191,7 @@ export class HttpClient<SecurityDataType = unknown> {
     ) {
       body = JSON.stringify(body);
     }
-    const token = localStorage.getItem("panda_wiki_token") || "";
+    const token = localStorage.getItem("auth-token") || "";
 
     return this.instance.request({
       ...requestParams,

@@ -18,10 +18,10 @@ export interface ProfilePanelProps {
 }
 
 const ProfilePanel: React.FC<ProfilePanelProps> = () => {
-  const [, setToken] = useLocalStorageState('token');
+  const [, setToken] = useLocalStorageState('auth-token');
   const handleLogout = () => {
     postUserLogout().then(() => {
-      setToken('');
+      setToken(undefined);
       window.open('/login', '_self');
     });
   };
