@@ -66,7 +66,7 @@ jobs:
           context: ${{ matrix.service.context }}
           file: ${{ matrix.service.dockerfile }}
           push: true
-          tags: ${{ env.HUAWEI_REGISTRY }}/${{ env.HUAWEI_NAMESPACE }}/koala-qa-${{ matrix.service.name }}:${{ matrix.service.tag }}
+          tags: ${{ env.HUAWEI_REGISTRY }}/${{ env.HUAWEI_NAMESPACE }}/${{ matrix.service.name }}:${{ matrix.service.tag }}
           platforms: linux/amd64,linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
