@@ -312,13 +312,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         }}
       >
         <Stack direction='row' gap={1}>
-          {user?.head_img_url ?
-            <img
-              src={user.head_img_url}
-              alt='头像'
-              style={{ width: 28, height: 28, borderRadius: '50%' }}
-            />
-          : <Avatar size={28} />}
+          <Avatar size={28} />
 
           <MdEditor style={{ flex: 1 }} value={comment} onChange={setComment} />
         </Stack>
