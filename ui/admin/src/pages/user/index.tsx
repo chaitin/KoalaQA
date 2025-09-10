@@ -114,11 +114,17 @@ const AdminDocument = () => {
       title: '最近一次登录',
       dataIndex: 'last_login',
       render: (_, record) => {
-        return record?.last_login
-          ? dayjs((record?.last_login || 0) * 1000).format(
-              'YYYY-MM-DD HH:mm:ss'
-            )
-          : '暂未登录';
+        const time = (record?.last_login || 0) * 1000;
+        return record.last_login === 0 ? (
+          '-'
+        ) : (
+          <Stack>
+            <Typography variant='body2'>{dayjs(time).fromNow()}</Typography>
+            <Typography variant='caption' sx={{ color: 'text.secondary' }}>
+              {dayjs(time).format('YYYY-MM-DD HH:mm:ss')}
+            </Typography>
+          </Stack>
+        );
       },
     },
     {
@@ -231,11 +237,19 @@ const AdminDocument = () => {
             name='role'
             control={control}
             render={({ field }) => (
-              <Select labelId='select-label' fullWidth label='角色' {...field}>
+              <Select
+                labelId='select-label'
+                fullWidth
+                label='角色'
+                {...field}
+                onChange={(e) => field.onChange(Number(e.target.value))}
+              >
                 {Object.entries(transRole)
                   .slice(1, -1)
                   .map(([key, value]) => (
-                    <MenuItem value={key}>{value}</MenuItem>
+                    <MenuItem key={key} value={key}>
+                      {value}
+                    </MenuItem>
                   ))}
               </Select>
             )}
