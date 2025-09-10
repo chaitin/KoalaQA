@@ -1,0 +1,81 @@
+name: App and UI Images
+
+on:
+  push:
+    tags: ["v*"]
+
+env:
+  HUAWEI_REGISTRY: swr.cn-east-3.myhuaweicloud.com
+  HUAWEI_NAMESPACE: koala-qa
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - name: api
+            dockerfile: backend/Dockerfile
+            context: backend
+          - name: app
+            dockerfile: ui/Dockerfile
+            context: ui
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract tag name and build time
+        id: extract_tag
+        run: |
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          echo "build_time=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Huawei Cloud Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.HUAWEI_REGISTRY }}
+          username: ${{ secrets.HUAWEI_CLOUD_USERNAME }}
+          password: ${{ secrets.HUAWEI_CLOUD_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.service.context }}
+          file: ${{ matrix.service.dockerfile }}
+          push: true
+          tags: ${{ env.HUAWEI_REGISTRY }}/${{ env.HUAWEI_NAMESPACE }}/koala-qa-${{ matrix.service.name }}:${{ steps.extract_tag.outputs.tag }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+          sbom: false
+          build-args: |
+            VERSION=${{ steps.extract_tag.outputs.tag }}
+            COMMIT_HASH=${{ github.sha }}
+            BUILD_TIME=${{ steps.extract_tag.outputs.build_time }}
+            HTTP_PROXY=${{ secrets.HTTP_PROXY }}
+            HTTPS_PROXY=${{ secrets.HTTPS_PROXY }}
+
+  notify:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Extract tag name
+        id: extract_tag
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Build result notification
+        run: |
+          if [ "${{ needs.build-and-push.result }}" == "success" ]; then
+            echo "✅ App and UI images built successfully!"
+            echo "🚀 Images pushed to Huawei Cloud: ${{ env.HUAWEI_REGISTRY }}/${{ env.HUAWEI_NAMESPACE }}"
+            echo "📦 Tag: ${{ steps.extract_tag.outputs.tag }}"
+          else
+            echo "❌ App and UI image build failed, please check logs"
+            exit 1
+          fi
