@@ -36,7 +36,7 @@ func (c *logger) Warn(ctx context.Context, msg string, data ...interface{}) {
 		return
 	}
 
-	c.logger.WithContext(ctx).Info(msg, data...)
+	c.logger.WithContext(ctx).Warn(msg, data...)
 }
 
 func (c *logger) Error(ctx context.Context, msg string, data ...interface{}) {
@@ -44,7 +44,7 @@ func (c *logger) Error(ctx context.Context, msg string, data ...interface{}) {
 		return
 	}
 
-	c.logger.WithContext(ctx).Info(msg, data...)
+	c.logger.WithContext(ctx).Error(msg, data...)
 }
 
 func (c *logger) Trace(ctx context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error) {
