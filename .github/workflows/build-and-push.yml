@@ -1,0 +1,110 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches: [main, develop]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+env:
+  HUAWEI_REGISTRY: swr.cn-east-3.myhuaweicloud.com
+  HUAWEI_NAMESPACE: koala-qa
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - name: nginx
+            dockerfile: docker/nginx/Dockerfile
+            context: docker/nginx
+            base_image: nginx:1.28.0
+          - name: anydoc
+            dockerfile: docker/anydoc/Dockerfile
+            context: docker/anydoc
+            base_image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/anydoc:v0.1.7
+          - name: db
+            dockerfile: docker/db/Dockerfile
+            context: docker/db
+            base_image: postgres:17.6-alpine3.22
+          - name: mq
+            dockerfile: docker/mq/Dockerfile
+            context: docker/mq
+            base_image: nats:2.11.8-alpine3.22
+          - name: oss
+            dockerfile: docker/oss/Dockerfile
+            context: docker/oss
+            base_image: minio/minio:RELEASE.2025-04-22T22-12-26Z-cpuv1
+          - name: qdrant
+            dockerfile: docker/qdrant/Dockerfile
+            context: docker/qdrant
+            base_image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/panda-wiki-qdrant:v1.14.1
+          - name: raglite
+            dockerfile: docker/raglite/Dockerfile
+            context: docker/raglite
+            base_image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/panda-wiki-raglite:1-2-15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Huawei Cloud Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.HUAWEI_REGISTRY }}
+          username: ${{ secrets.HUAWEI_CLOUD_USERNAME }}
+          password: ${{ secrets.HUAWEI_CLOUD_PASSWORD }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.HUAWEI_REGISTRY }}/${{ env.HUAWEI_NAMESPACE }}/koala-qa-${{ matrix.service.name }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,prefix={{branch}}-
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.service.context }}
+          file: ${{ matrix.service.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Security scan
+        if: github.event_name != 'pull_request'
+        uses: anchore/scan-action@v3
+        with:
+          image: ${{ env.HUAWEI_REGISTRY }}/${{ env.HUAWEI_NAMESPACE }}/koala-qa-${{ matrix.service.name }}:${{ github.sha }}
+          fail-build: false
+          severity-cutoff: high
+
+  notify:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Build result notification
+        if: github.event_name != 'pull_request'
+        run: |
+          if [ "${{ needs.build-and-push.result }}" == "success" ]; then
+            echo "✅ All images built successfully!"
+            echo "🚀 Images pushed to Huawei Cloud: ${{ env.HUAWEI_REGISTRY }}/${{ env.HUAWEI_NAMESPACE }}"
+          else
+            echo "❌ Image build failed, please check logs"
+            exit 1
+          fi
