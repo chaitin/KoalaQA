@@ -37,6 +37,9 @@ const AdminKnowledge = LazyLoadable(
 const AdminKnowledgeDetail = LazyLoadable(
   lazy(() => import('@/pages/ai/detail'))
 );
+const User = LazyLoadable(
+  lazy(() => import('@/pages/user'))
+);
 
 const routerConfig = [
   {
@@ -54,6 +57,10 @@ const routerConfig = [
       {
         path: 'ai/:id?/:tab?',
         element: <AdminKnowledgeDetail />,
+      },
+      {
+        path: 'users',
+        element: <User />,
       },
       {
         path: 'settings',

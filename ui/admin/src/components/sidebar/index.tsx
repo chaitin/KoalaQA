@@ -22,14 +22,14 @@ export const ADMIN_MENUS = [
     show: true,
     disabled: false,
   },
-  // {
-  //   label: '用户管理',
-  //   value: '/admin/users',
-  //   pathname: '/admin/users',
-  //   icon: 'icon-zhanghao',
-  //   show: true,
-  //   disabled: false,
-  // },
+  {
+    label: '用户管理',
+    value: '/admin/users',
+    pathname: '/admin/users',
+    icon: 'icon-zhanghao',
+    show: true,
+    disabled: false,
+  },
   {
     label: '通用设置',
     value: '/admin/settings',
