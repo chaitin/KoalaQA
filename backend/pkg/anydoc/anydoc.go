@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -165,7 +166,7 @@ func (a *anydoc) List(ctx context.Context, platform platform.PlatformType, optFu
 	method := http.MethodGet
 	var contentType string
 
-	var body *bytes.Reader
+	var body io.Reader
 	if o.reader != nil {
 		method = http.MethodPost
 
