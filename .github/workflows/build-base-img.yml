@@ -1,11 +1,11 @@
-name: Build and Push Docker Images
+name: Base Images
 
 on:
   push:
-    branches: [main, develop]
-    tags: ["v*"]
-  pull_request:
     branches: [main]
+    paths:
+      - "docker/**"
+      - ".github/workflows/build-and-push.yml"
 
 env:
   HUAWEI_REGISTRY: swr.cn-east-3.myhuaweicloud.com
@@ -72,14 +72,6 @@ jobs:
           cache-to: type=gha,mode=max
           provenance: false
           sbom: false
-
-      - name: Security scan
-        if: github.event_name != 'pull_request'
-        uses: anchore/scan-action@v3
-        with:
-          image: ${{ env.HUAWEI_REGISTRY }}/${{ env.HUAWEI_NAMESPACE }}/koala-qa-${{ matrix.service.name }}:${{ matrix.service.tag }}
-          fail-build: false
-          severity-cutoff: high
 
   notify:
     needs: build-and-push
