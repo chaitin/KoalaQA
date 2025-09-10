@@ -14,7 +14,10 @@ image.api:
 		-t swr.cn-east-3.myhuaweicloud.com/koala-qa/api:${TAG} .
 
 image.app:
-	cd ui && docker build -t swr.cn-east-3.myhuaweicloud.com/koala-qa/app:${TAG} .
+	cd ui && docker build \
+		--build-arg HTTP_PROXY=${HTTP_PROXY} \
+		--build-arg HTTPS_PROXY=${HTTPS_PROXY} \
+		-t swr.cn-east-3.myhuaweicloud.com/koala-qa/app:${TAG} .
 
 run:
 	$(eval APP_TAG := $(shell grep -A 5 "^  app:" docker-compose.yml | grep "image:" | sed 's/.*://' | xargs))
