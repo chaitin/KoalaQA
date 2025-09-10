@@ -13,6 +13,7 @@ type user struct {
 // List
 // @Summary list user
 // @Tags user
+// @Param req query svc.UserListReq true "request params"
 // @Produce json
 // @Success 200 {object} context.Response{data=model.ListRes{items=[]svc.UserListItem}}
 // @Router /admin/user [get]
