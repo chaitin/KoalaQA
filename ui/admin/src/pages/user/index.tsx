@@ -3,39 +3,54 @@ import {
   getAdminKbKbIdQuestion,
   getAdminUser,
   ModelUserRole,
+  putAdminUserUserId,
   SvcUserListItem,
 } from '@/api';
 import Card from '@/components/card';
 import { useListQueryParams } from '@/hooks/useListQueryParams';
 import { message, Modal, Table } from '@c-x/ui';
-import { Box, Button, Stack, TextField, Typography } from '@mui/material';
-import { useRequest } from 'ahooks';
+import {
+  Box,
+  Button,
+  Stack,
+  TextField,
+  Select,
+  Typography,
+  MenuItem,
+  InputLabel,
+  FormControl,
+} from '@mui/material';
+import { useBoolean, useRequest } from 'ahooks';
 import { ColumnsType } from 'ct-mui/dist/Table';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { useParams } from 'react-router-dom';
 
-const transRole = (role: ModelUserRole) => {
-  switch (role) {
-    case ModelUserRole.UserRoleUnknown:
-      return '未知';
-    case ModelUserRole.UserRoleAdmin:
-      return '超级管理员';
-    case ModelUserRole.UserRoleOperator:
-      return '前台管理员';
-    case ModelUserRole.UserRoleUser:
-      return '用户';
-    default:
-      return '未知';
-  }
+const transRole: Record<ModelUserRole, string> = {
+  [ModelUserRole.UserRoleUnknown]: '未知',
+  [ModelUserRole.UserRoleAdmin]: '超级管理员',
+  [ModelUserRole.UserRoleOperator]: '前台管理员',
+  [ModelUserRole.UserRoleUser]: '用户',
+  [ModelUserRole.UserRoleMax]: '未知',
 };
+
 const AdminDocument = () => {
   const { query, setPage, setPageSize, page, pageSize, setParams } =
     useListQueryParams();
   const { id } = useParams();
-  const kb_id = +(id || '0');
+  const { reset, register, handleSubmit, watch, control } = useForm({
+    defaultValues: {
+      name: '',
+      role: 1,
+    },
+  });
   const [title, setTitle] = useState(query.title);
   const [editItem, setEditItem] = useState<SvcUserListItem | null>(null);
+  const cancelEdit = () => {
+    setEditItem(null);
+    reset();
+  };
   const {
     data,
     loading,
@@ -67,6 +82,15 @@ const AdminDocument = () => {
       },
     });
   };
+  const putUser = handleSubmit((data) => {
+    if (editItem) {
+      putAdminUserUserId(editItem.id!, data).then(() => {
+        message.success('修改成功');
+        fetchData({});
+        cancelEdit();
+      });
+    }
+  });
   const columns: ColumnsType<SvcUserListItem> = [
     {
       title: '用户名',
@@ -83,16 +107,18 @@ const AdminDocument = () => {
       title: '角色',
       dataIndex: 'role',
       render: (_, record) => {
-        return transRole(record.role || ModelUserRole.UserRoleUnknown);
+        return transRole[record.role || ModelUserRole.UserRoleUnknown];
       },
     },
     {
       title: '最近一次登录',
       dataIndex: 'last_login',
       render: (_, record) => {
-        return dayjs((record?.last_login || 0) * 1000).format(
-          'YYYY-MM-DD HH:mm:ss'
-        );
+        return record?.last_login
+          ? dayjs((record?.last_login || 0) * 1000).format(
+              'YYYY-MM-DD HH:mm:ss'
+            )
+          : '暂未登录';
       },
     },
     {
@@ -106,7 +132,10 @@ const AdminDocument = () => {
               variant='text'
               size='small'
               color='primary'
-              onClick={() => setEditItem(record)}
+              onClick={() => {
+                setEditItem(record);
+                reset(record);
+              }}
             >
               编辑
             </Button>
@@ -174,6 +203,45 @@ const AdminDocument = () => {
           },
         }}
       />
+      <Modal
+        open={!!editItem}
+        onCancel={cancelEdit}
+        sx={{
+          py: 2,
+        }}
+        title='编辑用户'
+        onOk={putUser}
+      >
+        <FormControl fullWidth sx={{ my: 2 }}>
+          <TextField
+            {...register('name')}
+            label='用户名'
+            required
+            slotProps={{
+              inputLabel: {
+                shrink: !watch('name') || undefined,
+              },
+            }}
+          />
+        </FormControl>
+
+        <FormControl fullWidth sx={{ my: 2 }}>
+          <InputLabel id='select-label'>角色</InputLabel>
+          <Controller
+            name='role'
+            control={control}
+            render={({ field }) => (
+              <Select labelId='select-label' fullWidth label='角色' {...field}>
+                {Object.entries(transRole)
+                  .slice(1, -1)
+                  .map(([key, value]) => (
+                    <MenuItem value={key}>{value}</MenuItem>
+                  ))}
+              </Select>
+            )}
+          />
+        </FormControl>
+      </Modal>
     </Stack>
   );
 };

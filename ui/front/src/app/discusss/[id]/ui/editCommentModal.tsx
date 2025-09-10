@@ -3,7 +3,6 @@ import Modal from '@/components/modal';
 import MdEditor from '@/components/mdEditor';
 import { ModelDiscussionDetail } from '@/api/types';
 import { putDiscussionDiscId } from '@/api/Discussion';
-import useBindCaptcha from '@/hooks/useBindCaptcha';
 
 interface EditCommentModalProps {
   data: ModelDiscussionDetail;
@@ -18,9 +17,6 @@ const EditCommentModal: React.FC<EditCommentModalProps> = ({
   onClose,
 }) => {
   const [value, setValue] = useState(data?.content || '');
-  const [captcha, _, loading] = useBindCaptcha('edit-comment-id', {
-    init: open,
-  });
   useEffect(() => {
     if (data) {
       setValue(data.content || '');
@@ -50,7 +46,6 @@ const EditCommentModal: React.FC<EditCommentModalProps> = ({
       onOk={onSubmit}
       okButtonProps={{
         disabled: !value.trim(),
-        loading,
         id: 'edit-comment-id',
       }}
       width={800}
