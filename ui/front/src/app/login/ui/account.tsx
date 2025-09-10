@@ -7,11 +7,10 @@ import { aesCbcEncrypt } from '@/utils/aes';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Stack, TextField } from '@mui/material';
 import { useLocalStorageState } from 'ahooks';
-import { useRouter } from 'next/navigation';
+import Cookies from 'js-cookie';
 import { useContext, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import z from 'zod';
-import Cookies from 'js-cookie';
 
 const schema = z.object({
   email: z.email('邮箱格式不正确').default(''),
