@@ -29,10 +29,6 @@ type minioClient struct {
 }
 
 func (mc *minioClient) Upload(ctx context.Context, dir string, reader io.Reader, optFuncs ...optFunc) (string, error) {
-	if dir == "" || (dir != "/" && !strings.HasPrefix(dir, "/")) {
-		dir = "/" + dir
-	}
-
 	o := getOpt(optFuncs...)
 
 	if o.public {
@@ -110,7 +106,7 @@ func (mc *minioClient) Upload(ctx context.Context, dir string, reader io.Reader,
 		return u.String(), nil
 	}
 
-	return path.Join(o.bucket, fullFilename), nil
+	return path.Join("/", o.bucket, fullFilename), nil
 }
 
 func (mc *minioClient) Delete(ctx context.Context, path string, optFuncs ...optFunc) error {
