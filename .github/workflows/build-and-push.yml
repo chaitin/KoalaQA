@@ -20,31 +20,31 @@ jobs:
           - name: nginx
             dockerfile: docker/nginx/Dockerfile
             context: docker/nginx
-            base_image: nginx:1.28.0
+            tag: "1.28.0"
           - name: anydoc
             dockerfile: docker/anydoc/Dockerfile
             context: docker/anydoc
-            base_image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/anydoc:v0.1.7
+            tag: "v0.1.7"
           - name: db
             dockerfile: docker/db/Dockerfile
             context: docker/db
-            base_image: postgres:17.6-alpine3.22
+            tag: "17.6-alpine3.22"
           - name: mq
             dockerfile: docker/mq/Dockerfile
             context: docker/mq
-            base_image: nats:2.11.8-alpine3.22
+            tag: "2.11.8-alpine3.22"
           - name: oss
             dockerfile: docker/oss/Dockerfile
             context: docker/oss
-            base_image: minio/minio:RELEASE.2025-04-22T22-12-26Z-cpuv1
+            tag: "RELEASE.2025-04-22T22-12-26Z-cpuv1"
           - name: qdrant
             dockerfile: docker/qdrant/Dockerfile
             context: docker/qdrant
-            base_image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/panda-wiki-qdrant:v1.14.1
+            tag: "v1.14.1"
           - name: raglite
             dockerfile: docker/raglite/Dockerfile
             context: docker/raglite
-            base_image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/panda-wiki-raglite:1-2-15
+            tag: "1-2-15"
 
     steps:
       - name: Checkout code
@@ -60,27 +60,13 @@ jobs:
           username: ${{ secrets.HUAWEI_CLOUD_USERNAME }}
           password: ${{ secrets.HUAWEI_CLOUD_PASSWORD }}
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.HUAWEI_REGISTRY }}/${{ env.HUAWEI_NAMESPACE }}/koala-qa-${{ matrix.service.name }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=sha,prefix={{branch}}-
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: ${{ matrix.service.context }}
           file: ${{ matrix.service.dockerfile }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ env.HUAWEI_REGISTRY }}/${{ env.HUAWEI_NAMESPACE }}/koala-qa-${{ matrix.service.name }}:${{ matrix.service.tag }}
           platforms: linux/amd64,linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -89,7 +75,7 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: anchore/scan-action@v3
         with:
-          image: ${{ env.HUAWEI_REGISTRY }}/${{ env.HUAWEI_NAMESPACE }}/koala-qa-${{ matrix.service.name }}:${{ github.sha }}
+          image: ${{ env.HUAWEI_REGISTRY }}/${{ env.HUAWEI_NAMESPACE }}/koala-qa-${{ matrix.service.name }}:${{ matrix.service.tag }}
           fail-build: false
           severity-cutoff: high
 
