@@ -12,7 +12,14 @@ type GroupItem struct {
 }
 
 func (g *GroupItem) FilterIDs(ctx context.Context, groupIDs *model.Int64Array) error {
-	return g.model(ctx).Select("id").Where("id =ANY(?)", groupIDs).Scan(groupIDs).Error
+	var filterGroupIDs []int64
+	err := g.model(ctx).Select("id").Where("id =ANY(?)", groupIDs).Scan(&filterGroupIDs).Error
+	if err != nil {
+		return err
+	}
+
+	*groupIDs = filterGroupIDs
+	return nil
 }
 
 func newGroupItem(db *database.DB) *GroupItem {
