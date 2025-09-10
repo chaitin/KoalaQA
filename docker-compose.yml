@@ -21,7 +21,7 @@ services:
       - MQ_NATS_PASSWORD=${MQ_PASSWORD}
       - HTTPS_PROXY=${HTTPS_PROXY}
       - HTTP_PROXY=${HTTP_PROXY}
-      - NO_PROXY=koala-qa-oss,koala-qa-raglite
+      - NO_PROXY=koala-qa-oss,koala-qa-raglite,${NO_PROXY}
       - GLOG_GLOBAL_LEVEL=debug
       - MQ_NATS_STREAMS=koala:koala.persistence.>
       - OSS_MINIO_SECRET_KEY=${OSS_SECRET_KEY}
@@ -58,7 +58,7 @@ services:
   
   oss:
     container_name: koala-qa-oss
-    image: swr.cn-east-3.myhuaweicloud.com/koala-qa/oss::RELEASE.2025-04-22T22-12-26Z-cpuv1
+    image: swr.cn-east-3.myhuaweicloud.com/koala-qa/oss:RELEASE.2025-04-22T22-12-26Z-cpuv1
     restart: always
     command: [ "minio", "server", "/data", "--console-address", "0.0.0.0:9001", "--address", "0.0.0.0:9000"]
     volumes:
@@ -94,7 +94,7 @@ services:
       - MQ_NATS_PASSWORD=${MQ_PASSWORD}
       - HTTPS_PROXY=${HTTPS_PROXY}  
       - HTTP_PROXY=${HTTP_PROXY}
-      - NO_PROXY=koala-qa-oss,koala-qa-mq
+      - NO_PROXY=koala-qa-oss,koala-qa-mq,${NO_PROXY}
       - GLOG_GLOBAL_LEVEL=debug
       - MQ_NATS_STREAMS=anydoc:anydoc.persistence.>
       - OSS_MINIO_ACCESS_KEY=koala
@@ -138,7 +138,7 @@ services:
       - RAGLITE_DEFAULT_API_TOKEN=koala
       - HTTP_PROXY=${HTTP_PROXY}
       - HTTPS_PROXY=${HTTPS_PROXY}
-      - NO_PROXY=koala-qa-oss,koala-qa-qdrant
+      - NO_PROXY=koala-qa-oss,koala-qa-qdrant,${NO_PROXY}
     networks:
       koala:
         ipv4_address: "${SUBNET_PREFIX:-169.254.15}.18"
