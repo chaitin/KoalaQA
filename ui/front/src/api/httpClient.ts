@@ -204,11 +204,10 @@ export class HttpClient<SecurityDataType = unknown> {
       if (typeof window === 'undefined') {
         const { cookies } = await import('next/headers');
         const cookieStore = await cookies();
-        const token = cookieStore.get("auth-token")?.value || null
-        console.log(token, '-----')
+        const token = cookieStore.get("auth_token")?.value || null
         resolve(token)
       } else {
-        resolve(JSON.parse(localStorage.getItem('auth-token')))
+        resolve(JSON.parse(localStorage.getItem('auth_token')))
       }
     });
     return this.instance.request({

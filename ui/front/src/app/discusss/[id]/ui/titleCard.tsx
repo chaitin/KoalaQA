@@ -1,34 +1,22 @@
 'use client';
-import React, { use, useRef, useState } from 'react';
+import { deleteDiscussionDiscId } from '@/api/Discussion';
+import { ModelDiscussionDetail } from '@/api/types';
+import { Card, Icon, MarkDown } from '@/components';
+import { ReleaseModal, Tag } from '@/components/discussion';
+import Modal from '@/components/modal';
+import { BBS_TAG_COLOR_ICON } from '@/constant/discussion';
 import {
-  Box,
-  Stack,
-  Typography,
-  Link,
-  IconButton,
   Menu,
   MenuItem,
+  Stack,
+  Typography
 } from '@mui/material';
 import { useBoolean } from 'ahooks';
-import { Card, MarkDown } from '@/components';
-import { useRouter } from 'next/navigation';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import RemoveRedEyeOutlinedIcon from '@mui/icons-material/RemoveRedEyeOutlined';
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
-import LinkIcon from '@mui/icons-material/Link';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import { formatNumber } from '@/utils';
-import { ModelDiscussionDetail } from '@/api/types';
-import { deleteDiscussionDiscId } from '@/api/Discussion';
-import { TopicLink } from '@/components/common';
-import { BBS_TAG_COLOR_ICON } from '@/constant/discussion';
-import { Icon } from '@/components';
-import { Tag } from '@/components/discussion';
-import Modal from '@/components/modal';
-import { ReleaseModal } from '@/components/discussion';
-import useBindCaptcha from '@/hooks/useBindCaptcha';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import { useRouter } from 'next/navigation';
+import { useRef } from 'react';
 
 dayjs.extend(relativeTime);
 dayjs.locale('zh-cn');

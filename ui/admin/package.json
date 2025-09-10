@@ -27,6 +27,7 @@
     "@yokowu/modelkit-ui": "0.4.2",
     "ahooks": "^3.8.4",
     "axios": "^1.9.0",
+    "clsx": "^2.1.1",
     "ct-mui": "1.0.1-beta.11",
     "dayjs": "^1.11.7",
     "decimal.js": "^10.5.0",

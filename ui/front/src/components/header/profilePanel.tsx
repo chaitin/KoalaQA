@@ -13,7 +13,7 @@ import { useLocalStorageState } from 'ahooks';
 import React, { useContext, useEffect } from 'react';
 import { InfoCard } from './components';
 import { AuthContext } from '../authProvider';
-
+import Cookies from 'js-cookie';
 
 const ProfilePanel = () => {
   const [, setToken] = useLocalStorageState<string>('auth_token');
@@ -21,10 +21,13 @@ const ProfilePanel = () => {
   const handleLogout = () => {
     postUserLogout().then(() => {
       setToken('');
-      window.open('/login', '_self');
+      Cookies.set('auth_token', '', {
+        path: '/login',
+        sameSite: 'Lax',
+      });
+      window.location.href = '/login';
     });
   };
-
 
   return (
     <InfoCard>
