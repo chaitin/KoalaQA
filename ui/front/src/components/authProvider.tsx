@@ -6,7 +6,7 @@ import { createContext, useEffect, useState } from 'react';
 export const AuthContext = createContext<{
   user: ModelUserInfo;
   loading: boolean;
-  fetchUser: () => void;
+  fetchUser: () => Promise<any>,
   setUser: React.Dispatch<
     React.SetStateAction<ModelUserInfo>
   >;
@@ -19,7 +19,7 @@ export const AuthContext = createContext<{
   },
   loading: false,
   setUser: () => {},
-  fetchUser: () => {},
+  fetchUser: () => Promise.resolve(),
 });
 
 export const encodeUrl = (url: string) => {
@@ -37,7 +37,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const fetchUser = () => {
     setLoading(true);
-    getUser()
+    return getUser()
       .then(setUser)
       .catch(() => {
         // redirectToLogin();

@@ -205,6 +205,7 @@ export class HttpClient<SecurityDataType = unknown> {
         const { cookies } = await import('next/headers');
         const cookieStore = await cookies();
         const token = cookieStore.get("auth-token")?.value || null
+        console.log(token, '-----')
         resolve(token)
       } else {
         resolve(JSON.parse(localStorage.getItem('auth-token')))

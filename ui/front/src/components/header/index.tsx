@@ -4,23 +4,19 @@ import { AuthContext } from '@/components/authProvider';
 import { CommonContext } from '@/components/commonProvider';
 import { ALL_TOOLKIT_LIST, TOOLKIT_LIST } from '@/constant/toolkit';
 import { AppBar, Button, Stack, Typography } from '@mui/material';
-import { useDebounceFn } from 'ahooks';
+import { useDebounceFn, useLocalStorageState } from 'ahooks';
 
+import Cookies from 'js-cookie';
 import { usePathname, useRouter } from 'next/navigation';
 import { useContext, useEffect, useState } from 'react';
 import LoggedInView from './loggedInView';
 
 const Header = () => {
-  const pathname = usePathname();
+  const [token, setToken] = useLocalStorageState<string>('auth_token');
   const [afterKeyword, setAfterKeyword] = useState('');
-  const { showHeaderSearch, headerStyle } = useContext(CommonContext);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectEl, setSelectEl] = useState<null | HTMLElement>(null);
   const [toolList, setToolList] = useState<any[]>(TOOLKIT_LIST);
   const [keyword, setKeyword] = useState('');
-  const open = Boolean(anchorEl);
 
-  const selectOpen = Boolean(selectEl);
   const { user } = useContext(AuthContext);
   const router = useRouter();
 
@@ -53,7 +49,16 @@ const Header = () => {
     setToolList(toolList);
     setAfterKeyword(k);
   };
-
+  useEffect(() => {
+    if (token) {
+      Cookies.set('auth_token', token, {
+        path: '/',
+        expires: 7, // 7 天
+        secure: true, // 如果你是 https
+        sameSite: 'Lax',
+      });
+    }
+  }, [token]);
   useEffect(() => {
     runSearch(keyword);
   }, [keyword]);

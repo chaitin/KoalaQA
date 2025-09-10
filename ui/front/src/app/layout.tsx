@@ -42,6 +42,7 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
+
   return (
     <html lang='zh-CN'>
       <meta httpEquiv='content-language' content='zh-CN'></meta>
