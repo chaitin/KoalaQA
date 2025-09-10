@@ -13,7 +13,7 @@ services:
   
   api:
     container_name: koala-qa-api
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-api:latest
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-api:v0.0.1
     restart: always
     environment:
       - API_DEV=true
@@ -37,7 +37,7 @@ services:
   
   app:
     container_name: koala-qa-app
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-app:latest
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-app:v0.0.1
     restart: always
     networks:
       koala:
