@@ -11,6 +11,9 @@ func TrimFistDir(path string) string {
 	}
 
 	split := strings.Split(path, string(filepath.Separator))
+	if split[0] == "" {
+		split = split[1:]
+	}
 
 	if len(split) < 2 {
 		return path
