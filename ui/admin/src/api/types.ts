@@ -684,6 +684,14 @@ export interface PostAdminKbKbIdQuestionFilePayload {
   file: File;
 }
 
+export interface GetAdminUserParams {
+  name?: string;
+  /** @min 1 */
+  page?: number;
+  /** @min 1 */
+  size?: number;
+}
+
 export interface GetDiscussionParams {
   /** page */
   page?: number;

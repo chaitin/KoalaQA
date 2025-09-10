@@ -13,6 +13,7 @@
 import request, { ContentType, RequestParams } from "./httpClient";
 import {
   ContextResponse,
+  GetAdminUserParams,
   GetUserLoginThirdParams,
   ModelListRes,
   ModelUserInfo,
@@ -39,7 +40,10 @@ import {
 })` OK
  */
 
-export const getAdminUser = (params: RequestParams = {}) =>
+export const getAdminUser = (
+  query: GetAdminUserParams,
+  params: RequestParams = {},
+) =>
   request<
     ContextResponse & {
       data?: ModelListRes & {
@@ -49,6 +53,7 @@ export const getAdminUser = (params: RequestParams = {}) =>
   >({
     path: `/admin/user`,
     method: "GET",
+    query: query,
     format: "json",
     ...params,
   });

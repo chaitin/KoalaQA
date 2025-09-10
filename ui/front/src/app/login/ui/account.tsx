@@ -15,15 +15,14 @@ import Cookies from 'js-cookie';
 
 const schema = z.object({
   email: z.email('邮箱格式不正确').default(''),
-  password: z.string().min(6, '密码不能少于 6 位').default(''),
+  password: z.string().min(5, '密码不能少于 5 位').default(''),
 });
 
 const Account = ({ isChecked }: { isChecked: boolean }) => {
-  const [token, setToken] = useLocalStorageState<string>('auth-token', {
+  const [,setToken] = useLocalStorageState<string>('auth_token', {
     defaultValue: '',
   });
   const { user, fetchUser } = useContext(AuthContext);
-  const router = useRouter(); // 获取 router 对象
   const {
     register,
     handleSubmit,
@@ -40,16 +39,14 @@ const Account = ({ isChecked }: { isChecked: boolean }) => {
     const { password, email } = data;
     const ciphertext = aesCbcEncrypt(password?.trim());
     return postUserLogin({ email, password: ciphertext })
-      .then((res) => {
+      .then(async (res) => {
         setToken(res);
-        Cookies.set('auth-token', token, {
+        fetchUser();
+        Cookies.set('auth_token', res, {
           path: '/',
           expires: 7, // 7 天
-          secure: true, // 如果你是 https
           sameSite: 'Lax',
         });
-        fetchUser();
-        router.replace('/');
       })
       .catch((e) => {
         Message.error(e || '登录失败');

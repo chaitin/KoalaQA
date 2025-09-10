@@ -97,7 +97,7 @@ export class HttpClient<SecurityDataType = unknown> {
       (error) => {
         if (error.response?.status === 401) {
           window.location.href = "/login";
-          localStorage.removeItem("auth-token");
+          // localStorage.removeItem("auth_token");
         }
         Message.error(error.response?.statusText || "网络异常");
         return Promise.reject(error.response);
@@ -191,12 +191,12 @@ export class HttpClient<SecurityDataType = unknown> {
     ) {
       body = JSON.stringify(body);
     }
-    const token = localStorage.getItem("auth-token") || "";
+    const Authorization = localStorage.getItem("auth_token") || "";
 
     return this.instance.request({
       ...requestParams,
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${Authorization}`,
         ...(requestParams.headers || {}),
         ...(type && type !== ContentType.FormData
           ? { "Content-Type": type }

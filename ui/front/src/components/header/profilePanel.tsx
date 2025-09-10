@@ -10,19 +10,21 @@ import {
   ListItemText,
 } from '@mui/material';
 import { useLocalStorageState } from 'ahooks';
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { InfoCard } from './components';
 import { AuthContext } from '../authProvider';
 
+
 const ProfilePanel = () => {
-  const [, setToken] = useLocalStorageState('auth-token');
+  const [, setToken] = useLocalStorageState<string>('auth_token');
   const { user } = useContext(AuthContext);
   const handleLogout = () => {
     postUserLogout().then(() => {
-      setToken(undefined);
+      setToken('');
       window.open('/login', '_self');
     });
   };
+
 
   return (
     <InfoCard>
