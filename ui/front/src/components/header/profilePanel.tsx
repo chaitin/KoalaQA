@@ -2,6 +2,7 @@
 import { postUserLogout } from '@/api';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import {
+  Box,
   List,
   ListItem,
   ListItemButton,
@@ -9,11 +10,13 @@ import {
   ListItemText,
 } from '@mui/material';
 import { useLocalStorageState } from 'ahooks';
-import React from 'react';
+import React, { useContext } from 'react';
 import { InfoCard } from './components';
+import { AuthContext } from '../authProvider';
 
 const ProfilePanel = () => {
   const [, setToken] = useLocalStorageState('auth-token');
+  const { user } = useContext(AuthContext);
   const handleLogout = () => {
     postUserLogout().then(() => {
       setToken(undefined);
@@ -23,6 +26,19 @@ const ProfilePanel = () => {
 
   return (
     <InfoCard>
+      <Box
+        sx={{
+          color: '#000',
+          fontSize: '16px',
+          lineHeight: '30px',
+          pl: 2,
+          pb: 2,
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+        }}
+      >
+        {user.username}
+      </Box>
       <List
         sx={{
           width: '100%',
