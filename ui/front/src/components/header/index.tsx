@@ -141,7 +141,7 @@ const Header = () => {
           gap={3}
           sx={{ position: 'absolute', top: 0, bottom: 0, right: 40 }}
         >
-          {user ? (
+          {user.uid? (
             <>
               <Button
                 variant='contained'

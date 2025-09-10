@@ -257,7 +257,7 @@ const Article = ({
             list={[
               { label: '热门讨论', value: 'hot' },
               { label: '最新讨论', value: 'new' },
-              { label: '我参与的', value: 'mine', disabled: !user?.user.uid },
+              { label: '我参与的', value: 'mine', disabled: !user?.uid },
             ]}
           />
 

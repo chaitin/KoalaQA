@@ -3,13 +3,7 @@ import { postUserRegister } from '@/api';
 import { Message } from '@/components';
 import { aesCbcEncrypt } from '@/utils/aes';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Box,
-  Button,
-  Stack,
-  TextField,
-  Typography
-} from '@mui/material';
+import { Box, Button, Stack, TextField, Typography } from '@mui/material';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
@@ -37,9 +31,10 @@ const Register = () => {
       return;
     }
     const password = aesCbcEncrypt(data.password.trim());
-    postUserRegister({...data, password}).then(() => {
+    const { re_password, ...submitData } = data;
+    postUserRegister({ ...submitData, password }).then(() => {
       Message.success('注册成功！');
-      redirect('/login')
+      redirect('/login');
     });
   };
   return (

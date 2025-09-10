@@ -131,7 +131,7 @@ export class HttpClient<SecurityDataType = unknown> {
       headers: {
         ...((method &&
           this.instance.defaults.headers[
-            method.toLowerCase() as keyof HeadersDefaults
+          method.toLowerCase() as keyof HeadersDefaults
           ]) ||
           {}),
         ...(params1.headers || {}),
@@ -200,10 +200,20 @@ export class HttpClient<SecurityDataType = unknown> {
     ) {
       body = JSON.stringify(body);
     }
-
+    const Authorization = await new Promise(async (resolve) => {
+      if (typeof window === 'undefined') {
+        const { cookies } = await import('next/headers');
+        const cookieStore = await cookies();
+        const token = cookieStore.get("auth-token")?.value || null
+        resolve(token)
+      } else {
+        resolve(JSON.parse(localStorage.getItem('auth-token')))
+      }
+    });
     return this.instance.request({
       ...requestParams,
       headers: {
+        Authorization: `Bearer ${Authorization}`,
         ...(requestParams.headers || {}),
         ...(type && type !== ContentType.FormData
           ? { "Content-Type": type }
