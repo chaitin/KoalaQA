@@ -32,6 +32,7 @@
     "cvss": "^1.0.5",
     "dayjs": "^1.11.11",
     "html-to-image": "^1.11.11",
+    "js-cookie": "^3.0.5",
     "next": "15.5.2",
     "pm2": "^6.0.5",
     "prettier": "^3.3.3",
@@ -62,6 +63,7 @@
   },
   "devDependencies": {
     "@ctzhian/cx-swagger-api": "^1.0.0",
+    "@types/js-cookie": "^3.0.6",
     "@types/node": "^20",
     "@types/qs": "^6.9.15",
     "@types/react": "19.1.0",

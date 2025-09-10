@@ -1,11 +1,26 @@
 'use client';
 
 import { ModelUserInfo, ModelUserRole, getUser } from '@/api';
-import { useLocalStorageState } from 'ahooks';
 import { createContext, useEffect, useState } from 'react';
 
-export const AuthContext = createContext({} as any);
-
+export const AuthContext = createContext<{
+  user: ModelUserInfo;
+  loading: boolean;
+  fetchUser: () => void;
+  setUser: React.Dispatch<
+    React.SetStateAction<ModelUserInfo>
+  >;
+}>({
+  user: {
+    email: '',
+    role: ModelUserRole.UserRoleUnknown,
+    uid: 0,
+    username: '',
+  },
+  loading: false,
+  setUser: () => {},
+  fetchUser: () => {},
+});
 
 export const encodeUrl = (url: string) => {
   const d = new URL(url);
@@ -13,33 +28,24 @@ export const encodeUrl = (url: string) => {
 };
 
 const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [token,] = useLocalStorageState<string>('token', {
-    defaultValue: '',
-  });
-  const [user, setUser] = useState<{
-    token: string;
-    user: ModelUserInfo;
-  }>({
-    token: '',
-    user: {
-      email: '',
-      role: ModelUserRole.UserRoleUnknown,
-      uid: 0,
-      username: '',
-    },
+  const [user, setUser] = useState<ModelUserInfo>({
+    email: '',
+    role: ModelUserRole.UserRoleUnknown,
+    uid: 0,
+    username: '',
   });
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
+  const fetchUser = () => {
     setLoading(true);
     getUser()
-      .then((res) => {
-        setUser((pre) => ({ user: res, token: token || pre.token }));
-      })
+      .then(setUser)
       .catch(() => {
         // redirectToLogin();
       })
       .finally(() => setLoading(false));
+  };
+  useEffect(() => {
+    fetchUser();
   }, []);
   return (
     <AuthContext.Provider
@@ -47,6 +53,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         user,
         loading,
         setUser,
+        fetchUser,
       }}
     >
       {children}

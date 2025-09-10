@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { useContext, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import z from 'zod';
+import Cookies from 'js-cookie';
 
 const schema = z.object({
   email: z.email('邮箱格式不正确').default(''),
@@ -18,10 +19,10 @@ const schema = z.object({
 });
 
 const Account = ({ isChecked }: { isChecked: boolean }) => {
-  const [token, setToken] = useLocalStorageState<string>('token', {
+  const [token, setToken] = useLocalStorageState<string>('auth-token', {
     defaultValue: '',
   });
-  const { user } = useContext(AuthContext);
+  const { user, fetchUser } = useContext(AuthContext);
   const router = useRouter(); // 获取 router 对象
   const {
     register,
@@ -31,9 +32,9 @@ const Account = ({ isChecked }: { isChecked: boolean }) => {
     resolver: zodResolver(schema),
   });
   useEffect(() => {
-    // if (user.email) {
-    //   redirect('/');
-    // }
+    if (user.email) {
+      window.location.href = '/';
+    }
   }, [user]);
   const onSubmit = (data: z.infer<typeof schema>) => {
     const { password, email } = data;
@@ -41,6 +42,13 @@ const Account = ({ isChecked }: { isChecked: boolean }) => {
     return postUserLogin({ email, password: ciphertext })
       .then((res) => {
         setToken(res);
+        Cookies.set('auth-token', token, {
+          path: '/',
+          expires: 7, // 7 天
+          secure: true, // 如果你是 https
+          sameSite: 'Lax',
+        });
+        fetchUser();
         router.replace('/');
       })
       .catch((e) => {

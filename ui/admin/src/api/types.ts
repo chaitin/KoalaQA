@@ -146,11 +146,14 @@ export interface ModelDiscussion {
 export interface ModelDiscussionComment {
   accepted?: boolean;
   content?: string;
+  dislike?: number;
   id?: number;
+  like?: number;
   replies?: ModelDiscussionReply[];
   updated_at?: number;
   user_avatar?: string;
   user_id?: number;
+  user_liked?: boolean;
   user_name?: string;
 }
 
@@ -210,10 +213,13 @@ export interface ModelDiscussionListItem {
 export interface ModelDiscussionReply {
   accepted?: boolean;
   content?: string;
+  dislike?: number;
   id?: number;
+  like?: number;
   updated_at?: number;
   user_avatar?: string;
   user_id?: number;
+  user_liked?: boolean;
   user_name?: string;
 }
 
@@ -237,26 +243,6 @@ export interface ModelGroupWithItem {
 export type ModelJSONBModelExportOpt = Record<string, any>;
 
 export type ModelJSONBModelPlatformOpt = Record<string, any>;
-
-export interface ModelKBDocument {
-  created_at?: number;
-  desc?: string;
-  doc_id?: string;
-  doc_type?: ModelDocType;
-  export_opt?: ModelJSONBModelExportOpt;
-  file_type?: ModelFileType;
-  id?: number;
-  json?: number[];
-  kb_id?: number;
-  markdown?: number[];
-  platform?: PlatformPlatformType;
-  platform_opt?: ModelJSONBModelPlatformOpt;
-  rag_id?: string;
-  status?: ModelDocStatus;
-  summary?: string;
-  title?: string;
-  updated_at?: number;
-}
 
 export interface ModelKBDocumentDetail {
   created_at?: number;
@@ -413,7 +399,7 @@ export interface SvcDocListItem {
 
 export interface SvcDocUpdateReq {
   desc?: string;
-  markdown?: number[];
+  markdown?: string;
   title: string;
 }
 
