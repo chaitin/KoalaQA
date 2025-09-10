@@ -69,7 +69,7 @@ func (c *logger) Trace(ctx context.Context, begin time.Time, fc func() (sql stri
 func newLogger() gormLogger.Interface {
 	return &logger{
 		level:                     gormLogger.Info,
-		logger:                    glog.Module("database", "gorm").Skip(2),
+		logger:                    glog.Module("database", "gorm").Skip(3),
 		ignoreRecordNotFoundError: false,
 		slowThreshold:             200 * time.Millisecond,
 	}

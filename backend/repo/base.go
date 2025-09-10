@@ -14,7 +14,7 @@ type base[T model.DBModel] struct {
 }
 
 func (b *base[T]) model(ctx context.Context) *gorm.DB {
-	return b.db.Model(b.m)
+	return b.db.WithContext(ctx).Model(b.m)
 }
 
 func (b *base[T]) List(ctx context.Context, res any, queryFuncs ...QueryOptFunc) error {
