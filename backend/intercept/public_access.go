@@ -10,12 +10,14 @@ import (
 type publicAccess struct {
 	svcAuth *svc.Auth
 	intAuth Interceptor
+	jwt     *jwt.Generator
 }
 
 func newPublicAccess(auth *svc.Auth, cfg config.Config, generator *jwt.Generator, user *svc.User) Interceptor {
 	return &publicAccess{
 		svcAuth: auth,
 		intAuth: newAuth(cfg, generator, user),
+		jwt:     generator,
 	}
 }
 
@@ -29,6 +31,11 @@ func (p *publicAccess) Intercept(ctx *context.Context) {
 
 	if !auth.PublicAccess {
 		p.intAuth.Intercept(ctx)
+	}
+
+	userInfo, err := authUser(ctx, p.jwt)
+	if err == nil {
+		ctx.SetUser(*userInfo)
 	}
 
 	ctx.Next()

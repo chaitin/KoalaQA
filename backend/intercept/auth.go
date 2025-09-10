@@ -1,6 +1,7 @@
 package intercept
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/chaitin/koalaqa/model"
@@ -10,15 +11,16 @@ import (
 	"github.com/chaitin/koalaqa/svc"
 )
 
+const tokenPrefix = "Bearer"
+
 type auth struct {
-	freeAuth    bool
-	tokenPrefix string
-	jwt         *jwt.Generator
-	user        *svc.User
+	freeAuth bool
+	jwt      *jwt.Generator
+	user     *svc.User
 }
 
 func newAuth(cfg config.Config, generator *jwt.Generator, user *svc.User) Interceptor {
-	return &auth{freeAuth: cfg.API.FreeAuth, jwt: generator, tokenPrefix: "Bearer", user: user}
+	return &auth{freeAuth: cfg.API.FreeAuth, jwt: generator, user: user}
 }
 
 func (a *auth) Intercept(ctx *context.Context) {
@@ -40,15 +42,7 @@ func (a *auth) Intercept(ctx *context.Context) {
 		return
 	}
 
-	token := ctx.GetHeader("Authorization")
-	splitToken := strings.Split(token, " ")
-	if len(splitToken) != 2 || splitToken[0] != a.tokenPrefix {
-		ctx.Unauthorized("invalid token")
-		ctx.Abort()
-		return
-	}
-
-	userInfo, err := a.jwt.Verify(splitToken[1])
+	userInfo, err := authUser(ctx, a.jwt)
 	if err != nil {
 		ctx.Unauthorized(err.Error())
 		ctx.Abort()
@@ -66,4 +60,14 @@ func (a *auth) Priority() int {
 
 func init() {
 	registerAPIAuth(newAuth)
+}
+
+func authUser(ctx *context.Context, j *jwt.Generator) (*model.UserInfo, error) {
+	token := ctx.GetHeader("Authorization")
+	splitToken := strings.Split(token, " ")
+	if len(splitToken) != 2 || splitToken[0] != tokenPrefix {
+		return nil, errors.New("invalid auth token")
+	}
+
+	return j.Verify(splitToken[1])
 }
