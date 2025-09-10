@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - "docker/**"
-      - ".github/workflows/build-and-push.yml"
+      - ".github/workflows/build-base-img.yml"
 
 env:
   HUAWEI_REGISTRY: swr.cn-east-3.myhuaweicloud.com
