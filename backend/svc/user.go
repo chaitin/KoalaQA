@@ -43,6 +43,7 @@ func (u *User) List(ctx context.Context, req UserListReq) (*model.ListRes[UserLi
 	err := u.repoUser.List(ctx, &res.Items,
 		repo.QueryWithILike("name", req.Name),
 		repo.QueryWithPagination(&req.Pagination),
+		repo.QueryWithOrderBy("created_at DESC"),
 	)
 	if err != nil {
 		return nil, err
@@ -130,7 +131,7 @@ func (u *User) Update(ctx context.Context, id uint, req UserUpdateReq) error {
 	}
 
 	if !user.Builtin {
-		updateM["name"] = req.Role
+		updateM["role"] = req.Role
 	}
 
 	if len(updateM) == 1 {
