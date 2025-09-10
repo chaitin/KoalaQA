@@ -31,6 +31,8 @@ func (p *publicAccess) Intercept(ctx *context.Context) {
 
 	if !auth.PublicAccess {
 		p.intAuth.Intercept(ctx)
+		ctx.Next()
+		return
 	}
 
 	userInfo, err := authUser(ctx, p.jwt)
