@@ -29,3 +29,6 @@ run: image.app image.api
 
 run.app: image.app
 	docker compose up -d
+
+run.api: image.api
+	docker compose up -d
