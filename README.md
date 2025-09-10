@@ -16,6 +16,11 @@
 
 KoalaQA 是由长亭科技开发的企业级智能问答和知识管理系统，集成了先进的RAG技术、多模态文档处理、智能对话和社区讨论功能。系统支持多种文档格式的智能解析，提供基于大语言模型的智能问答服务，并具备完整的用户管理和权限控制功能。
 
+## 📢 快速安装
+```bash
+bash -c "$(curl -fsSL https://github.com/chaitin/KoalaQA/raw/refs/heads/main/manager.sh)"
+```
+
 ## ✨ 核心功能
 
 ### 🧠 智能问答系统
