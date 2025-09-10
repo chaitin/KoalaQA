@@ -12,7 +12,6 @@ export interface LoggedInProps {
 
 const LoggedInView: React.FC = () => {
   const { user } = useContext(AuthContext);
-
   return (
     <Tooltip
       placement='bottom-end'
@@ -35,7 +34,7 @@ const LoggedInView: React.FC = () => {
       }}
       title={<ProfilePanel />}
     >
-      <Avatar size={36} />
+      <Box><Avatar size={36} /></Box>
     </Tooltip>
   );
 };

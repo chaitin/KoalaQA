@@ -2,22 +2,13 @@
 
 import { AuthContext } from '@/components/authProvider';
 import { CommonContext } from '@/components/commonProvider';
-import {
-  ALL_TOOLKIT_LIST,
-  TOOLKIT_LIST
-} from '@/constant/toolkit';
-import {
-  AppBar,
-  Button,
-  Stack,
-  Typography
-} from '@mui/material';
+import { ALL_TOOLKIT_LIST, TOOLKIT_LIST } from '@/constant/toolkit';
+import { AppBar, Button, Stack, Typography } from '@mui/material';
 import { useDebounceFn } from 'ahooks';
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useContext, useEffect, useState } from 'react';
 import LoggedInView from './loggedInView';
-
 
 const Header = () => {
   const pathname = usePathname();
@@ -132,16 +123,15 @@ const Header = () => {
           >
             Koala QA
           </Typography>
-
         </Stack>
-        
+
         <Stack
           direction='row'
           alignItems={'center'}
           gap={3}
           sx={{ position: 'absolute', top: 0, bottom: 0, right: 40 }}
         >
-          {user.uid? (
+          {user.uid ?
             <>
               <Button
                 variant='contained'
@@ -153,15 +143,14 @@ const Header = () => {
                   boxShadow: 'none !important',
                 }}
                 onClick={() => {
-                  window.open('/admin', '_self');
+                  window.open(window.location.origin + '/admin', '_self');
                 }}
               >
                 后台管理
               </Button>
               <LoggedInView />
             </>
-          ) : (
-            <>
+          : <>
               <Button
                 variant='outlined'
                 sx={{ borderRadius: 1, height: 44, width: 122, fontSize: 14 }}
@@ -187,7 +176,7 @@ const Header = () => {
                 登录
               </Button>
             </>
-          )}
+          }
         </Stack>
       </Stack>
     </AppBar>
