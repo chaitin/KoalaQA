@@ -56,6 +56,12 @@ func (m *initAdmin) Migrate(tx *gorm.DB) error {
 	}).Error
 }
 
-func newInitAdmin(cfg config.Config) migrator.Migrator {
-	return &initAdmin{email: cfg.API.AdminEmail, password: cfg.API.AdminPassword}
+func newInitAdmin(cfg config.Config) (migrator.Migrator, error) {
+	if cfg.API.AdminPassword == "" {
+		return nil, errors.New("empty env API_ADMIN_PASSWORD")
+	}
+	if cfg.API.AdminEmail == "" {
+		return nil, errors.New("empty env API_ADMIN_EMAIL")
+	}
+	return &initAdmin{email: cfg.API.AdminEmail, password: cfg.API.AdminPassword}, nil
 }
