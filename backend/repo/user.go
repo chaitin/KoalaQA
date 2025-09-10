@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/database"
@@ -32,6 +33,13 @@ func (u *User) CreateThird(ctx context.Context, user *third_auth.User) (uint, er
 		if txErr != nil && !errors.Is(txErr, gorm.ErrRecordNotFound) {
 			return txErr
 		} else if txErr == nil {
+			txErr = tx.Model(u.m).Where("id = ?", userThird.UserID).Updates(map[string]any{
+				"updated_at": time.Now(),
+				"last_login": time.Now(),
+			}).Error
+			if txErr != nil {
+				return txErr
+			}
 			return nil
 		}
 
@@ -41,6 +49,7 @@ func (u *User) CreateThird(ctx context.Context, user *third_auth.User) (uint, er
 			Builtin:   false,
 			Role:      user.Role,
 			Invisible: false,
+			LastLogin: model.Timestamp(time.Now().Unix()),
 		}
 		txErr = tx.Model(&model.User{}).Create(&dbUser).Error
 		if txErr != nil {

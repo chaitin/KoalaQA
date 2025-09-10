@@ -274,6 +274,15 @@ func (u *User) Login(ctx context.Context, req UserLoginReq) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	err = u.repoUser.Update(ctx, map[string]any{
+		"updated_at": time.Now(),
+		"last_login": time.Now(),
+	}, repo.QueryWithEqual("id", user.ID))
+	if err != nil {
+		return "", err
+	}
+
 	return token, nil
 }
 
