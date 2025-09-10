@@ -11,10 +11,10 @@ image.api:
 		--build-arg BUILD_TIME=${BUILD_TIME} \
 		--build-arg HTTP_PROXY=${HTTP_PROXY} \
 		--build-arg HTTPS_PROXY=${HTTPS_PROXY} \
-		-t chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-api:${TAG} .
+		-t swr.cn-east-3.myhuaweicloud.com/koala-qa/api:${TAG} .
 
 image.app:
-	cd ui && docker build -t chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-app:${TAG} .
+	cd ui && docker build -t swr.cn-east-3.myhuaweicloud.com/koala-qa/app:${TAG} .
 
 run:
 	$(eval APP_TAG := $(shell grep -A 5 "^  app:" docker-compose.yml | grep "image:" | sed 's/.*://' | xargs))
