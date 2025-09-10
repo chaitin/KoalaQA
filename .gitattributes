@@ -1,0 +1,2 @@
+installer_amd64 filter=lfs diff=lfs merge=lfs -text
+installer_arm64 filter=lfs diff=lfs merge=lfs -text
