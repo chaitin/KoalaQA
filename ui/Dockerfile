@@ -1,5 +1,8 @@
 FROM node:18-alpine AS base
 
+ARG HTTPS_PROXY=${HTTPS_PROXY}
+ARG HTTP_PROXY=${HTTP_PROXY}
+
 ENV HTTPS_PROXY=${HTTPS_PROXY}
 ENV HTTP_PROXY=${HTTP_PROXY}
 
@@ -13,10 +16,14 @@ COPY admin/package.json admin/pnpm-lock.yaml ./admin/
 COPY front/package.json front/pnpm-lock.yaml ./front/
 
 WORKDIR /app/admin
-RUN pnpm install --verbose
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    --mount=type=cache,target=/app/admin/node_modules \
+    pnpm install --verbose --frozen-lockfile
 
 WORKDIR /app/front
-RUN pnpm install --verbose
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+    --mount=type=cache,target=/app/front/node_modules \
+    pnpm install --verbose --frozen-lockfile
 
 WORKDIR /app
 COPY admin/ ./admin/
