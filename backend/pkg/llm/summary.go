@@ -75,7 +75,6 @@ const discussionSummaryTemplate = `
 1. 核心问题或主题
 2. 主要讨论观点
 3. 解决方案（如果有）
-4. 讨论结论或当前状态
 `
 
 // BuildSummaryPrompt 构建总结提示词
