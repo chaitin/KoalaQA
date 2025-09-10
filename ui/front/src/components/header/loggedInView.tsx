@@ -33,30 +33,9 @@ const LoggedInView: React.FC = () => {
           },
         },
       }}
-      title={
-        <ProfilePanel
-          userInfo={user}
-          verified={user.is_certified === 1}
-          promotionInfo={user.promotionInfo}
-        />
-      }
+      title={<ProfilePanel />}
     >
-      <Box>
-        {user.head_img_url ? (
-          <img
-            src={user.head_img_url}
-            alt='头像'
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              display: 'block',
-            }}
-          ></img>
-        ) : (
-          <Avatar size={36} />
-        )}
-      </Box>
+      <Avatar size={36} />
     </Tooltip>
   );
 };
