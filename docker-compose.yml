@@ -4,7 +4,7 @@ services:
     image: swr.cn-east-3.myhuaweicloud.com/koala-qa/nginx:1.28.0
     restart: always
     ports:
-      - "80:80"
+      - "${NGINX_PORT}:80"
     networks:
       koala:
         ipv4_address: "${SUBNET_PREFIX:-169.254.15}.10"
@@ -14,13 +14,10 @@ services:
     image: swr.cn-east-3.myhuaweicloud.com/koala-qa/api:v0.0.1
     restart: always
     environment:
-      - API_DEV=true
-      - API_LISTEN=:8080
       - MQ_NATS_PASSWORD=${MQ_PASSWORD}
       - HTTPS_PROXY=${HTTPS_PROXY}
       - HTTP_PROXY=${HTTP_PROXY}
       - NO_PROXY=koala-qa-oss,koala-qa-raglite,${NO_PROXY}
-      - GLOG_GLOBAL_LEVEL=debug
       - MQ_NATS_STREAMS=koala:koala.persistence.>
       - OSS_MINIO_SECRET_KEY=${OSS_SECRET_KEY}
       - DB_DSN=postgres://koala:${DB_PASSWORD}@koala-qa-db:5432/koala?sslmode=disable
