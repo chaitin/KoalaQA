@@ -29,6 +29,10 @@ type minioClient struct {
 }
 
 func (mc *minioClient) Upload(ctx context.Context, dir string, reader io.Reader, optFuncs ...optFunc) (string, error) {
+	if dir == "" || (dir != "/" && !strings.HasPrefix(dir, "/")) {
+		dir = "/" + dir
+	}
+
 	o := getOpt(optFuncs...)
 
 	if o.public {
