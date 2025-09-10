@@ -3,7 +3,7 @@ version: '3.8'
 services:
   nginx:
     container_name: koala-qa-nginx
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-nginx:latest
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-nginx:1.28.0
     restart: always
     ports:
       - "80:80"
@@ -47,7 +47,7 @@ services:
   
   mq:
     container_name: koala-qa-mq
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-mq:latest
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-mq:2.11.8-alpine3.22
     restart: always
     command: [ "nats-server", "-c", "/etc/nats/nats.conf", "--user", "koala", "--pass", "${MQ_PASSWORD}" ]
     volumes:
@@ -58,7 +58,7 @@ services:
   
   oss:
     container_name: koala-qa-oss
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-oss:latest
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-oss::RELEASE.2025-04-22T22-12-26Z-cpuv1
     restart: always
     command: [ "minio", "server", "/data", "--console-address", "0.0.0.0:9001", "--address", "0.0.0.0:9000"]
     volumes:
@@ -72,7 +72,7 @@ services:
   
   db:
     container_name: koala-qa-db
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-db:latest
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-db:17.6-alpine3.22
     restart: always
     environment:
       - POSTGRES_USER=koala
@@ -86,7 +86,7 @@ services:
   
   anydoc:
     container_name: koala-qa-anydoc
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-anydoc:latest
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-anydoc:v0.1.7
     restart: always
     environment:
       - MQ_NATS_URL=koala-qa-mq:4222
@@ -111,7 +111,7 @@ services:
   
   qdrant:
     container_name: koala-qa-qdrant
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-qdrant:latest
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-qdrant:v1.14.1
     restart: always
     volumes:
       - ./data/qdrant:/qdrant/storage
@@ -123,7 +123,7 @@ services:
   
   raglite:
     container_name: koala-qa-raglite
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-raglite:latest
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/koala-qa-raglite:1-2-15
     restart: always
     environment:
       - GIN_MODE=release
