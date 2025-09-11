@@ -4,7 +4,7 @@ import { Metadata } from 'next';
 import ArticleCard from './ui/article';
 
 export const metadata: Metadata = {
-  title: '技术讨论 | 长亭百川云',
+  title: '技术讨论 | Koala QA',
 };
 
 const Page = async (props: {

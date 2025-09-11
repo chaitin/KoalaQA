@@ -40,7 +40,7 @@ export const formatMeta = async (
   const keywordsIsEmpty = !keywords || (Array.isArray(keywords) && !keywords.length);
   const { description: parentDescription, keywords: parentKeywords } = await parent;
   return {
-    title: title + ' | 长亭百川云',
+    title: title + ' | Koala QA',
     description: description || parentDescription,
     keywords: keywordsIsEmpty ? parentKeywords : keywords,
   };

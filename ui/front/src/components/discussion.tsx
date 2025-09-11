@@ -1,13 +1,11 @@
 "use client";
-import {
-  ModelDiscussionDetail
-} from "@/api";
+import { ModelDiscussionDetail } from "@/api";
 import { postDiscussion, putDiscussionDiscId } from "@/api/Discussion";
 import defaultAvatar from "@/asset/img/default_avatar.png";
 import { Icon } from "@/components";
 import MdEditor from "@/components/mdEditor";
 import Modal from "@/components/modal";
-import { BBS_TAG_COLOR_ICON, BBS_TAGS } from "@/constant/discussion";
+import { BBS_TAG_COLOR_ICON } from "@/constant/discussion";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Autocomplete,
@@ -167,20 +165,9 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                 renderTags={(value: readonly string[], getTagProps) =>
                   value.map((option: string, index: number) => {
                     const { key, ...tagProps } = getTagProps({ index });
-                    const current =
-                      BBS_TAG_COLOR_ICON[
-                        option as keyof typeof BBS_TAG_COLOR_ICON
-                      ];
                     const label = (
                       <Stack direction="row" alignItems="center" gap={0.5}>
-                        {current ? (
-                          <>
-                            <Icon type={current.icon} />
-                            {option}
-                          </>
-                        ) : (
-                          `# ${option}`
-                        )}
+                        {`# ${option}`}
                       </Stack>
                     );
                     return (
@@ -189,8 +176,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                         label={label}
                         size="small"
                         sx={{
-                          backgroundColor:
-                            current?.backgroundColor || "#F2F3F5",
+                          backgroundColor: "#F2F3F5",
                         }}
                         {...tagProps}
                       />
@@ -335,108 +321,24 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
           />
           <FormHelperText>{errors.group_ids?.message as string}</FormHelperText>
         </FormControl>
-        {status === "edit" && (
+        <FormControl error={!!errors.content?.message}>
           <Controller
-            name="tags"
+            rules={{ required: "请输入内容" }}
+            name="content"
             control={control}
             render={({ field }) => (
-              <Autocomplete
-                multiple
-                id="tags-filled"
-                options={BBS_TAGS}
+              <MdEditor
                 value={field.value}
-                onChange={(_, value) => {
+                onChange={(value) => {
                   field.onChange(value);
                 }}
-                size="small"
-                renderOption={(props, option) => {
-                  const { key, ...optionProps } = props;
-                  const current =
-                    BBS_TAG_COLOR_ICON[
-                      option as keyof typeof BBS_TAG_COLOR_ICON
-                    ];
-                  return (
-                    <Box
-                      key={key}
-                      component="li"
-                      {...optionProps}
-                      sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                    >
-                      <Icon type={current.icon}></Icon> {option}
-                    </Box>
-                  );
-                }}
-                renderTags={(value: readonly string[], getTagProps) =>
-                  value.map((option: string, index: number) => {
-                    const { key, ...tagProps } = getTagProps({ index });
-                    const current =
-                      BBS_TAG_COLOR_ICON[
-                        option as keyof typeof BBS_TAG_COLOR_ICON
-                      ];
-                    const label = (
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        sx={{ lineHeight: 1 }}
-                        gap={0.5}
-                      >
-                        {current ? (
-                          <>
-                            <Icon type={current.icon} />
-                            {option}
-                          </>
-                        ) : (
-                          `# ${option}`
-                        )}
-                      </Stack>
-                    );
-
-                    return (
-                      <Tag
-                        key={key}
-                        label={label}
-                        size="small"
-                        sx={{
-                          backgroundColor:
-                            current?.backgroundColor || "#F2F3F5",
-                        }}
-                        {...tagProps}
-                      />
-                    );
-                  })
-                }
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="标签"
-                    placeholder="请输入标签"
-                  />
-                )}
               />
             )}
           />
-        )}
-
-        {status === "create" && (
-          <FormControl error={!!errors.content?.message}>
-            <Controller
-              rules={{ required: "请输入内容" }}
-              name="content"
-              control={control}
-              render={({ field }) => (
-                <MdEditor
-                  value={field.value}
-                  onChange={(value) => {
-                    field.onChange(value);
-                  }}
-                />
-              )}
-            />
-            <FormHelperText id="component-error-text">
-              {errors.content?.message as string}
-            </FormHelperText>
-          </FormControl>
-        )}
+          <FormHelperText id="component-error-text">
+            {errors.content?.message as string}
+          </FormHelperText>
+        </FormControl>
       </Stack>
     </Modal>
   );

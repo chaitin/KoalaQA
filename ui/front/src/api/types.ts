@@ -81,6 +81,11 @@ export enum ModelDiscussionType {
   DiscussionTypeBlog = "blog",
 }
 
+export enum ModelCommentLikeState {
+  CommentLikeStateLike = 1,
+  CommentLikeStateDislike = 2,
+}
+
 export interface AnydocListDoc {
   file_type?: string;
   id?: string;
@@ -153,7 +158,7 @@ export interface ModelDiscussionComment {
   updated_at?: number;
   user_avatar?: string;
   user_id?: number;
-  user_liked?: boolean;
+  user_like_state?: ModelCommentLikeState;
   user_name?: string;
 }
 
@@ -219,7 +224,7 @@ export interface ModelDiscussionReply {
   updated_at?: number;
   user_avatar?: string;
   user_id?: number;
-  user_liked?: boolean;
+  user_like_state?: ModelCommentLikeState;
   user_name?: string;
 }
 
@@ -303,6 +308,7 @@ export interface ModelPublicAddress {
 
 export interface ModelUserInfo {
   email?: string;
+  key?: string;
   role?: ModelUserRole;
   uid?: number;
   username?: string;
@@ -524,12 +530,6 @@ export interface SvcURLListReq {
   url: string;
 }
 
-export interface SvcUserCreateReq {
-  email: string;
-  name: string;
-  password: string;
-}
-
 export interface SvcUserListItem {
   builtin?: boolean;
   created_at?: number;
@@ -550,6 +550,11 @@ export interface SvcUserRegisterReq {
   email: string;
   name: string;
   password: string;
+}
+
+export interface SvcUserUpdateInfoReq {
+  name?: string;
+  password?: string;
 }
 
 export interface SvcUserUpdateReq {
@@ -765,6 +770,14 @@ export interface DeleteAdminSystemWebhookWebhookIdParams {
   webhookId: number;
 }
 
+export interface GetAdminUserParams {
+  name?: string;
+  /** @min 1 */
+  page?: number;
+  /** @min 1 */
+  size?: number;
+}
+
 export interface GetAdminUserUserIdParams {
   /** user id */
   userId: number;
@@ -861,6 +874,14 @@ export interface PostDiscussionDiscIdCommentCommentIdRevokeLikeParams {
   discId: string;
   /** comment_id */
   commentId: number;
+}
+
+export interface PutUserPayload {
+  /**
+   * avatar
+   * @format binary
+   */
+  avatar?: File;
 }
 
 export interface GetUserLoginThirdParams {
