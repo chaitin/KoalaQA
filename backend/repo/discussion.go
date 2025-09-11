@@ -70,7 +70,7 @@ func (d *Discussion) Detail(ctx context.Context, uid uint, id uint) (*model.Disc
 		Where("comments.discussion_id = ?", id).
 		Joins("left join users on users.id = comments.user_id").
 		Order("comments.created_at asc").
-		Select("comments.*, users.name as user_name, users.avatar as user_avatar, tmp_like.like, tmp_like.dislike, tmp_like.user_liked").
+		Select("comments.*, users.name as user_name, users.avatar as user_avatar, tmp_like.like, tmp_like.dislike, tmp_like.user_like_state").
 		Scopes(commentLikeScope).
 		Find(&res.Comments).Error
 	if err != nil {
@@ -83,7 +83,7 @@ func (d *Discussion) Detail(ctx context.Context, uid uint, id uint) (*model.Disc
 			Model(&model.Comment{}).
 			Joins("left join users on users.id = comments.user_id").
 			Order("comments.created_at asc").
-			Select("comments.*, users.name as user_name, users.avatar as user_avatar, tmp_like.like, tmp_like.dislike, tmp_like.user_liked").
+			Select("comments.*, users.name as user_name, users.avatar as user_avatar, tmp_like.like, tmp_like.dislike, tmp_like.user_like_state").
 			Scopes(commentLikeScope).
 			Where("parent_id = ?", c.ID).
 			Find(&replies).Error
