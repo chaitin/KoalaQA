@@ -143,9 +143,9 @@ const DiscussCard = ({
               label={item}
               size="small"
               sx={{ backgroundColor: "rgba(32, 108, 255, 0.1)" }}
-              onClick={() => {
-                onTagClick(item);
-              }}
+              // onClick={() => {
+              //   onTagClick(item);
+              // }}
             />
           ))}
         </Stack>

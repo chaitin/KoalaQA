@@ -3,7 +3,7 @@ import React, { CSSProperties, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import MarkDown from './markDown';
 import alert from '@/components/alert';
-import { postImageUpload } from '@/api';
+import { postDiscussionUpload } from '@/api';
 
 const Md = dynamic(() => import('react-markdown-editor-lite'), {
   ssr: false,
@@ -27,8 +27,8 @@ const MdEditor = (props: {
 
   const onImageUpload = (file: any) => {
     return new Promise((resolve) => {
-      postImageUpload({ file }).then((res) => {
-        resolve(res!.logo!);
+      postDiscussionUpload({ file }).then((res) => {
+        resolve(res);
       });
     });
   };
