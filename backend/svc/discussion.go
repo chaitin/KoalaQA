@@ -182,7 +182,7 @@ func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListRe
 	case DiscussionListFilterHot:
 		pageFuncs = append(pageFuncs, repo.QueryWithOrderBy(`"like" DESC, created_at DESC`))
 	case DiscussionListFilterNew:
-		pageFuncs = append(pageFuncs, repo.QueryWithOrderBy("created_at DESC"))
+		pageFuncs = append(pageFuncs, repo.QueryWithOrderBy("updated_at DESC"))
 	case DiscussionListFilterMine:
 		pageFuncs = append(pageFuncs, repo.QueryWithOrderBy("created_at DESC"))
 	}
