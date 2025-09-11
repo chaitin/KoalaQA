@@ -355,6 +355,15 @@ func (d *KBDocument) Detail(ctx context.Context, kbID uint, docID uint) (*model.
 	if err != nil {
 		return nil, err
 	}
+
+	markdownPath, err := d.oc.Sign(ctx, doc.Markdown, oss.WithBucket("anydoc"))
+	if err != nil {
+		return nil, err
+	}
+
+	doc.Markdown = markdownPath
+	doc.JSON = ""
+
 	return &doc, nil
 }
 

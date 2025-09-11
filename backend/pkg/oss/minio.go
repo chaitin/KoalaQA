@@ -97,13 +97,7 @@ func (mc *minioClient) Upload(ctx context.Context, dir string, reader io.Reader,
 	}
 
 	if o.retURL {
-		u, err := mc.mc.PresignedGetObject(ctx, o.bucket, fullFilename, time.Minute*10, url.Values{})
-		if err != nil {
-			return "", err
-		}
-
-		mc.logger.WithContext(ctx).With("bucket", o.bucket).With("full_filename", fullFilename).With("sign_url", u.String()).Debug("sign object url")
-		return u.String(), nil
+		return mc.Sign(ctx, fullFilename, WithBucket(o.bucket))
 	}
 
 	return path.Join("/", o.bucket, fullFilename), nil
@@ -139,6 +133,23 @@ func (mc *minioClient) Download(ctx context.Context, path string, optFuncs ...op
 		o.bucket = mc.buckets[0]
 	}
 	return mc.mc.GetObject(ctx, o.bucket, path, minio.GetObjectOptions{})
+}
+
+func (mc *minioClient) Sign(ctx context.Context, path string, optFuncs ...optFunc) (string, error) {
+	o := getOpt(optFuncs...)
+
+	if o.bucket == "" {
+		o.bucket = mc.buckets[0]
+	}
+
+	u, err := mc.mc.PresignedGetObject(ctx, o.bucket, path, time.Minute*10, url.Values{})
+	if err != nil {
+		return "", err
+	}
+
+	mc.logger.WithContext(ctx).With("bucket", o.bucket).With("sign_object", path).With("sign_url", u.String()).Debug("sign object url")
+
+	return u.String(), nil
 }
 
 func initMinio(ctx context.Context, mc *minio.Client, buckets ...string) error {
