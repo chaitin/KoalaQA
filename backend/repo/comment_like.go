@@ -108,7 +108,7 @@ func (c *CommentLike) RevokeLike(ctx context.Context, uid, commentID uint) error
 
 		switch commentLike.State {
 		case model.CommentLikeStateLike:
-			updateM["like"] = gorm.Expr("like - 1")
+			updateM["like"] = gorm.Expr(`"like" - 1`)
 		case model.CommentLikeStateDislike:
 			updateM["dislike"] = gorm.Expr("dislike - 1")
 		default:
