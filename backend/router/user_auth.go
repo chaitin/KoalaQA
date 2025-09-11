@@ -58,6 +58,31 @@ func (u *userAuth) Detail(ctx *context.Context) {
 	ctx.Success(ctx.GetUser())
 }
 
+// Update
+// @Summary update user
+// @Tags user
+// @Accept multipart/form-data
+// @Param avatar formData file false "avatar"
+// @Param req body svc.UserUpdateInfoReq true "req param"
+// @Produce json
+// @Success 200 {object} context.Response
+// @Router /user [put]
+func (u *userAuth) Update(ctx *context.Context) {
+	var req svc.UserUpdateInfoReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+	err = u.in.SvcU.UpdateInfo(ctx, ctx.GetUser().UID, req)
+	if err != nil {
+		ctx.InternalError(err, "update user info failed")
+		return
+	}
+
+	ctx.Success(nil)
+}
+
 type notifyType uint
 
 const (
@@ -77,20 +102,14 @@ type notifyReq struct {
 }
 
 func (u *userAuth) Notify(ctx *context.Context) {
-	userID, err := ctx.ParamUint("user_id")
-	if err != nil {
-		ctx.BadRequest(err)
-		return
-	}
-
 	conn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	if err != nil {
 		ctx.InternalError(err, "upgrade websocket failed")
 		return
 	}
 
-	t := topic.NewMessageNotifyUser(userID)
-	logger := u.logger.WithContext(ctx).With("user_id", userID)
+	t := topic.NewMessageNotifyUser(ctx.GetUser().UID)
+	logger := u.logger.WithContext(ctx).With("user_id", ctx.GetUser().UID)
 
 	defer func(c *websocket.Conn) {
 		u.in.Sub.Close(t)
@@ -100,7 +119,7 @@ func (u *userAuth) Notify(ctx *context.Context) {
 	go func() {
 		defer conn.Close()
 
-		listRes, e := u.in.SvcNotify.ListNotifyInfo(ctx, userID)
+		listRes, e := u.in.SvcNotify.ListNotifyInfo(ctx, ctx.GetUser().UID)
 		if e != nil {
 			logger.WithContext(ctx).WithErr(e).Warn("list user failed")
 			return
@@ -163,7 +182,7 @@ func (u *userAuth) Notify(ctx *context.Context) {
 
 			switch req.Type {
 			case notifyTypeUnread:
-				num, err := u.in.SvcNotify.UnreadTotal(ctx, userID)
+				num, err := u.in.SvcNotify.UnreadTotal(ctx, ctx.GetUser().UID)
 				if err != nil {
 					logger.WithContext(ctx).WithErr(err).Warn("unread total failed")
 					continue
@@ -177,7 +196,7 @@ func (u *userAuth) Notify(ctx *context.Context) {
 					continue
 				}
 			case notifyTypeRead:
-				err = u.in.SvcNotify.Read(ctx, userID, req.ID)
+				err = u.in.SvcNotify.Read(ctx, ctx.GetUser().UID, req.ID)
 				if err != nil {
 					logger.WithContext(ctx).WithErr(err).With("id", req.ID).Warn("set notify read failed")
 					continue
@@ -199,7 +218,8 @@ func (u *userAuth) Route(h server.Handler) {
 	g := h.Group("/user")
 	g.POST("/logout", u.Logout)
 	g.GET("", u.Detail)
-	g.GET("/:user_id/notify", u.Notify)
+	g.GET("/notify", u.Notify)
+	g.PUT("", u.Update)
 }
 
 type userAuthIn struct {
