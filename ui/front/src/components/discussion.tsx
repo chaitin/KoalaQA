@@ -1,8 +1,6 @@
 "use client";
 import {
-  ModelDiscussionDetail,
-  ModelGroupItemInfo,
-  ModelGroupWithItem,
+  ModelDiscussionDetail
 } from "@/api";
 import { postDiscussion, putDiscussionDiscId } from "@/api/Discussion";
 import defaultAvatar from "@/asset/img/default_avatar.png";
@@ -144,6 +142,90 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
           size="small"
           autoComplete="off"
         />
+        <FormControl error={!!errors.tags?.message}>
+          <Controller
+            name="tags"
+            control={control}
+            render={({ field }) => (
+              <Autocomplete
+                multiple
+                freeSolo
+                options={[]}
+                value={field.value || []}
+                onChange={(_, value) => {
+                  const normalized = Array.from(
+                    new Set(
+                      value
+                        .map((v) => (typeof v === "string" ? v.trim() : v))
+                        .filter(Boolean)
+                    )
+                  );
+                  field.onChange(normalized);
+                }}
+                filterSelectedOptions
+                size="small"
+                renderTags={(value: readonly string[], getTagProps) =>
+                  value.map((option: string, index: number) => {
+                    const { key, ...tagProps } = getTagProps({ index });
+                    const current =
+                      BBS_TAG_COLOR_ICON[
+                        option as keyof typeof BBS_TAG_COLOR_ICON
+                      ];
+                    const label = (
+                      <Stack direction="row" alignItems="center" gap={0.5}>
+                        {current ? (
+                          <>
+                            <Icon type={current.icon} />
+                            {option}
+                          </>
+                        ) : (
+                          `# ${option}`
+                        )}
+                      </Stack>
+                    );
+                    return (
+                      <Tag
+                        key={key}
+                        label={label}
+                        size="small"
+                        sx={{
+                          backgroundColor:
+                            current?.backgroundColor || "#F2F3F5",
+                        }}
+                        {...tagProps}
+                      />
+                    );
+                  })
+                }
+                renderOption={(props, option) => {
+                  const { key, ...optionProps } = props;
+                  const current =
+                    BBS_TAG_COLOR_ICON[
+                      option as string as keyof typeof BBS_TAG_COLOR_ICON
+                    ];
+                  return (
+                    <Box
+                      key={key}
+                      component="li"
+                      {...optionProps}
+                      sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                    >
+                      {current ? <Icon type={current.icon} /> : null} {option}
+                    </Box>
+                  );
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="标签"
+                    placeholder="输入后按回车可添加自定义标签"
+                  />
+                )}
+              />
+            )}
+          />
+          <FormHelperText>{errors.tags?.message as string}</FormHelperText>
+        </FormControl>
         <FormControl error={!!errors.group_ids?.message}>
           <Controller
             name="group_ids"
@@ -161,7 +243,9 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
                   {list.map((topic) => {
                     const options = topic.items || [];
-                    const valueForTopic = topic.items?.filter(i=> field.value?.includes(i.id!))
+                    const valueForTopic = topic.items?.filter((i) =>
+                      field.value?.includes(i.id!)
+                    );
                     return (
                       <Box
                         key={topic.id ?? topic.name}
@@ -187,12 +271,13 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                             );
                             const newIds = newValue.map((v: any) => getId(v));
                             // 合并来自各个 Autocomplete 的选择，去重后回传
-                            const merged = Array.from(new Set([...otherIds, ...newIds]));
+                            const merged = Array.from(
+                              new Set([...otherIds, ...newIds])
+                            );
                             field.onChange(merged);
                           }}
                           size="small"
                           renderOption={(props, option) => {
-                            const current = option.icon;
                             return (
                               <Box
                                 component="li"
@@ -203,7 +288,6 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                                   gap: 1,
                                 }}
                               >
-                                {current ? <Icon type={current} /> : null}
                                 {getLabel(option)}
                               </Box>
                             );
@@ -237,7 +321,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                           renderInput={(params) => (
                             <TextField
                               {...params}
-                              label={`选择 ${topic.name}`}
+                              label={`${topic.name}`}
                               placeholder="请选择"
                             />
                           )}
