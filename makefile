@@ -26,7 +26,7 @@ image.nginx:
 
 image.anydoc:
 	cd docker/anydoc && DOCKER_BUILDKIT=1 docker build \
-		-t swr.cn-east-3.myhuaweicloud.com/koala-qa/anydoc:v0.1.9 .
+		-t swr.cn-east-3.myhuaweicloud.com/koala-qa/anydoc:v0.2.0 .
 
 run: image.app image.api
 	docker compose up -d
