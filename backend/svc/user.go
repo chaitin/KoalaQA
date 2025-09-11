@@ -4,11 +4,14 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
+	"mime/multipart"
+	"path/filepath"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
-	"github.com/chaitin/koalaqa/pkg/database"
+	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/jwt"
+	"github.com/chaitin/koalaqa/pkg/oss"
 	"github.com/chaitin/koalaqa/pkg/third_auth"
 	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/repo"
@@ -20,6 +23,8 @@ type User struct {
 	repoUser *repo.User
 	repoSys  *repo.System
 	authMgmt *third_auth.Manager
+	oc       oss.Client
+	logger   *glog.Logger
 }
 
 type UserListReq struct {
@@ -64,35 +69,6 @@ type UserCreateReq struct {
 	Name     string `json:"name" binding:"required"`
 	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
-}
-
-func (u *User) Create(ctx context.Context, req UserCreateReq) (uint, error) {
-	var user model.User
-	err := u.repoUser.GetByEmail(ctx, &user, req.Email)
-	if err != nil && !errors.Is(err, database.ErrRecordNotFound) {
-		return 0, err
-	} else if err == nil {
-		return 0, errors.New("email already exist")
-	}
-
-	cryptPass, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return 0, err
-	}
-
-	createUser := model.User{
-		Name:     req.Name,
-		Email:    req.Email,
-		Password: string(cryptPass),
-		Role:     model.UserRoleUser,
-		Builtin:  false,
-	}
-	err = u.repoUser.Create(ctx, &createUser)
-	if err != nil {
-		return 0, err
-	}
-
-	return createUser.ID, nil
 }
 
 func (u *User) Detail(ctx context.Context, id uint) (*UserListItem, error) {
@@ -149,6 +125,74 @@ func (u *User) Update(ctx context.Context, id uint, req UserUpdateReq) error {
 	return nil
 }
 
+type UserUpdateInfoReq struct {
+	Name     string                `form:"name"`
+	Password string                `form:"password"`
+	Avatar   *multipart.FileHeader `form:"avatar" swaggerignore:"true"`
+}
+
+func (u *User) UpdateInfo(ctx context.Context, id uint, req UserUpdateInfoReq) error {
+	var user model.User
+	err := u.repoUser.GetByID(ctx, &user, id)
+	if err != nil {
+		return err
+	}
+
+	var avatarPath string
+	if req.Avatar != nil {
+		avatarF, err := req.Avatar.Open()
+		if err != nil {
+			return err
+		}
+		defer avatarF.Close()
+
+		avatarPath, err = u.oc.Upload(ctx, "avatar", avatarF,
+			oss.WithLimitSize(),
+			oss.WithFileSize(int(req.Avatar.Size)),
+			oss.WithExt(filepath.Ext(req.Avatar.Filename)),
+			oss.WithPublic(),
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	updateM := map[string]any{
+		"updated_at": time.Now(),
+	}
+
+	if avatarPath != "" {
+		updateM["avatar"] = avatarPath
+	}
+
+	if req.Name != "" {
+		updateM["name"] = req.Name
+	}
+
+	if req.Password != "" {
+		hashPass, err := u.convertPassword(req.Password)
+		if err != nil {
+			return err
+		}
+
+		updateM["password"] = hashPass
+	}
+
+	err = u.repoUser.Update(ctx, updateM, repo.QueryWithEqual("id", id))
+	if err != nil {
+		return err
+	}
+
+	if user.Avatar != "" {
+		err = u.oc.Delete(ctx, util.TrimFistDir(user.Avatar))
+		if err != nil {
+			u.logger.WithContext(ctx).WithErr(err).With("avatar", user.Avatar).Warn("remove user avatar failed")
+		}
+	}
+
+	return nil
+}
+
 func (u *User) Delete(ctx context.Context, id uint) error {
 	var user model.User
 	err := u.repoUser.GetByID(ctx, &user, id)
@@ -176,6 +220,24 @@ type UserRegisterReq struct {
 
 var aesKey = []byte("vzWE2R9GckGefVFd")
 
+func (u *User) convertPassword(password string) (string, error) {
+	pwd, err := base64.StdEncoding.DecodeString(password)
+	if err != nil {
+		return "", err
+	}
+	decryptPass, err := util.AESDecrypt(pwd, aesKey)
+	if err != nil {
+		return "", err
+	}
+
+	hashPass, err := bcrypt.GenerateFromPassword(decryptPass, bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+
+	return string(hashPass), nil
+}
+
 func (u *User) Register(ctx context.Context, req UserRegisterReq) error {
 	var loginConfig model.Auth
 	err := u.repoSys.GetValueByKey(ctx, &loginConfig, model.SystemKeyAuth)
@@ -187,11 +249,7 @@ func (u *User) Register(ctx context.Context, req UserRegisterReq) error {
 		return errors.New("register disabled")
 	}
 
-	pwd, err := base64.StdEncoding.DecodeString(req.Password)
-	if err != nil {
-		return err
-	}
-	decryptPass, err := util.AESDecrypt(pwd, aesKey)
+	hashPass, err := u.convertPassword(req.Password)
 	if err != nil {
 		return err
 	}
@@ -205,16 +263,11 @@ func (u *User) Register(ctx context.Context, req UserRegisterReq) error {
 		return errors.New("email already registered")
 	}
 
-	hashPass, err := bcrypt.GenerateFromPassword(decryptPass, bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
-
 	user := model.User{
 		Name:     req.Name,
 		Email:    req.Email,
 		Builtin:  false,
-		Password: string(hashPass),
+		Password: hashPass,
 		Role:     model.UserRoleUser,
 	}
 	err = u.repoUser.Create(ctx, &user)
@@ -345,12 +398,14 @@ func (u *User) LoginOIDCCallback(ctx context.Context, req LoginOIDCCallbackReq) 
 	})
 }
 
-func newUser(repoUser *repo.User, genrator *jwt.Generator, repoSys *repo.System, authMgmt *third_auth.Manager) *User {
+func newUser(repoUser *repo.User, genrator *jwt.Generator, repoSys *repo.System, authMgmt *third_auth.Manager, oc oss.Client) *User {
 	return &User{
 		jwt:      genrator,
 		repoUser: repoUser,
 		repoSys:  repoSys,
 		authMgmt: authMgmt,
+		oc:       oc,
+		logger:   glog.Module("svc", "user"),
 	}
 }
 

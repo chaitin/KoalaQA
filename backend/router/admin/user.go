@@ -35,32 +35,6 @@ func (u *user) List(ctx *context.Context) {
 	ctx.Success(res)
 }
 
-// Create
-// @Summary create user
-// @Tags user
-// @Accept json
-// @Param req body svc.UserCreateReq true "request params"
-// @Produce json
-// @Success 200 {object} context.Response{data=uint}
-// @Router /admin/user [post]
-func (u *user) Create(ctx *context.Context) {
-	var req svc.UserCreateReq
-
-	err := ctx.ShouldBindJSON(&req)
-	if err != nil {
-		ctx.BadRequest(err)
-		return
-	}
-
-	res, err := u.svcUser.Create(ctx, req)
-	if err != nil {
-		ctx.InternalError(err, "create user failed")
-		return
-	}
-
-	ctx.Success(res)
-}
-
 // Detail
 // @Summary user detail
 // @Tags user
@@ -142,7 +116,6 @@ func (u *user) Route(h server.Handler) {
 	{
 		g := h.Group("/user")
 		g.GET("", u.List)
-		g.POST("", u.Create)
 		{
 			userG := g.Group("/:user_id")
 			userG.GET("", u.Detail)
