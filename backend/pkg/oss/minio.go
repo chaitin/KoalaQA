@@ -137,10 +137,7 @@ func (mc *minioClient) Download(ctx context.Context, path string, optFuncs ...op
 
 	if o.bucket == "" {
 		o.bucket = mc.buckets[0]
-	} else if !slices.Contains(mc.buckets, o.bucket) {
-		return nil, ErrBucketNotConfigure
 	}
-
 	return mc.mc.GetObject(ctx, o.bucket, path, minio.GetObjectOptions{})
 }
 
