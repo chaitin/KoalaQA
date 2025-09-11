@@ -79,7 +79,7 @@ func (k *KBDoc) handleInsert(ctx context.Context, kbID uint, docID uint) error {
 		content = fmt.Sprintf(`问题：%s 的参考回答是：%s`, doc.Title, doc.Markdown)
 	case model.DocTypeDocument:
 		url := string(doc.Markdown)
-		r, err := oss.Download(ctx, url)
+		r, err := oss.Download(ctx, url, oss.WithBucket("anydoc"))
 		if err != nil {
 			logger.With("url", url).WithErr(err).Error("download markdown failed")
 			return nil
