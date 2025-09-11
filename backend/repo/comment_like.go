@@ -22,7 +22,7 @@ func (c *CommentLike) Like(ctx context.Context, uid, discID, commentID uint, sta
 
 		switch state {
 		case model.CommentLikeStateLike:
-			updateM["like"] = gorm.Expr("like + 1")
+			updateM["like"] = gorm.Expr(`"like" + 1`)
 		case model.CommentLikeStateDislike:
 			updateM["dislike"] = gorm.Expr("dislike + 1")
 		default:
@@ -69,7 +69,7 @@ func (c *CommentLike) Like(ctx context.Context, uid, discID, commentID uint, sta
 			case model.CommentLikeStateLike:
 				updateM["dislike"] = gorm.Expr("dislike - 1")
 			case model.CommentLikeStateDislike:
-				updateM["like"] = gorm.Expr("like - 1")
+				updateM["like"] = gorm.Expr(`"like" - 1`)
 			default:
 				return nil
 			}
