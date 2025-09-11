@@ -517,5 +517,5 @@ func (d *Discussion) RevokeLike(ctx context.Context, uid uint, commentID uint) e
 		return errors.New("comment not exist")
 	}
 
-	return d.in.CommLikeRepo.Delete(ctx, repo.QueryWithEqual("comment_id", commentID), repo.QueryWithEqual("user_id", uid))
+	return d.in.CommLikeRepo.RevokeLike(ctx, uid, commentID)
 }
