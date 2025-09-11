@@ -47,7 +47,7 @@ func (d *Discussion) Detail(ctx context.Context, uid uint, id uint) (*model.Disc
 	}
 	if len(res.GroupIDs) > 0 {
 		err = d.db.WithContext(ctx).
-			Model(&model.Group{}).
+			Model(&model.GroupItem{}).
 			Where("id = ANY(?)", res.GroupIDs).
 			Find(&res.Groups).Error
 		if err != nil {
@@ -59,9 +59,9 @@ func (d *Discussion) Detail(ctx context.Context, uid uint, id uint) (*model.Disc
 		return tx.Joins(`LEFT JOIN (SELECT comment_id,
 			COUNT(*) FILTER (WHERE state = ?) AS like,
 			COUNT(*) FILTER (WHERE state = ?) AS dislike,
-			ARRAY_AGG(user_id) FILTER (WHERE state = ?) @> ? AS user_liked
+			SUM(state) FILTER (WHERE user_id = ?) AS user_like_state
 			FROM comment_likes GROUP BY comment_id) AS tmp_like ON tmp_like.comment_id = comments.id`,
-			model.CommentLikeStateLike, model.CommentLikeStateDislike, model.CommentLikeStateLike, model.Int64Array{int64(uid)})
+			model.CommentLikeStateLike, model.CommentLikeStateDislike, uid)
 	}
 
 	err = d.db.WithContext(ctx).
