@@ -1,12 +1,16 @@
-'use client';
-import { ModelDiscussionDetail } from '@/api';
-import { postDiscussion, putDiscussionDiscId } from '@/api/Discussion';
-import defaultAvatar from '@/asset/img/default_avatar.png';
-import { Icon } from '@/components';
-import MdEditor from '@/components/mdEditor';
-import Modal from '@/components/modal';
-import { BBS_TAG_COLOR_ICON, BBS_TAGS } from '@/constant/discussion';
-import { zodResolver } from '@hookform/resolvers/zod';
+"use client";
+import {
+  ModelDiscussionDetail,
+  ModelGroupItemInfo,
+  ModelGroupWithItem,
+} from "@/api";
+import { postDiscussion, putDiscussionDiscId } from "@/api/Discussion";
+import defaultAvatar from "@/asset/img/default_avatar.png";
+import { Icon } from "@/components";
+import MdEditor from "@/components/mdEditor";
+import Modal from "@/components/modal";
+import { BBS_TAG_COLOR_ICON, BBS_TAGS } from "@/constant/discussion";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Autocomplete,
   Box,
@@ -16,64 +20,65 @@ import {
   Stack,
   styled,
   TextField,
-} from '@mui/material';
-import Image from 'next/image';
-import { useParams } from 'next/navigation';
-import React, { useContext, useEffect, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
-import z from 'zod';
-import { CommonContext } from './commonProvider';
+} from "@mui/material";
+import Image from "next/image";
+import { useParams } from "next/navigation";
+import React, { useContext, useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import z from "zod";
+import { CommonContext } from "./commonProvider";
 
 export const Tag = styled(Chip)({
-  borderRadius: '3px',
+  borderRadius: "3px",
   height: 22,
-  backgroundColor: '#F2F3F5',
+  backgroundColor: "#F2F3F5",
 });
 
-export const ImgLogo = styled('div')(({ theme }) => {
+export const ImgLogo = styled("div")(({ theme }) => {
   return {
     flexShrink: 0,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
     width: 24,
     height: 24,
-    padding: '2px',
-    border: '1px solid #eee',
-    borderRadius: '4px',
+    padding: "2px",
+    border: "1px solid #eee",
+    borderRadius: "4px",
     fontSize: 14,
     lineHeight: 1,
     fontWeight: 600,
-    textAlign: 'center',
-    backgroundColor: '#fff',
+    textAlign: "center",
+    backgroundColor: "#fff",
     img: {
-      display: 'block',
-      width: '100%',
-      height: '100%',
-      objectFit: 'contain',
+      display: "block",
+      width: "100%",
+      height: "100%",
+      objectFit: "contain",
     },
   };
 });
 
 interface ReleaseModalProps {
   data?: ModelDiscussionDetail;
-  status?: 'create' | 'edit';
+  selectedTags: string[];
+  status?: "create" | "edit";
   open: boolean;
   onClose: () => void;
   onOk: () => void;
 }
 const schema = z.object({
-  content: z.string().default(''),
+  content: z.string().default(""),
   group_ids: z.array(z.number()).default([]),
   tags: z.array(z.string()).default([]),
-  title: z.string().min(1, '请输入讨论主题').default(''),
+  title: z.string().min(1, "请输入讨论主题").default(""),
 });
 export const ReleaseModal: React.FC<ReleaseModalProps> = ({
   data,
   open,
   onClose,
   onOk,
-  status = 'create',
+  status = "create",
 }) => {
   const { id } = useParams();
   const {
@@ -91,12 +96,11 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
   const { groups } = useContext(CommonContext);
   const onSubmit = handleSubmit(async (params) => {
     setLoading(true);
-    let newParams = { ...params, group_ids: [1] };
     try {
-      if (status === 'edit') {
-        await putDiscussionDiscId({ discId: id + '' }, newParams).then(onOk);
+      if (status === "edit") {
+        await putDiscussionDiscId({ discId: id + "" }, params).then(onOk);
       } else {
-        await postDiscussion(newParams).then(onOk);
+        await postDiscussion(params).then(onOk);
       }
     } finally {
       setLoading(false);
@@ -110,99 +114,157 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
   }, [open]);
 
   useEffect(() => {
-    if (status === 'edit' && data && open) {
+    if (status === "edit" && data && open) {
       reset(data);
     }
   }, [data, open]);
 
   return (
     <Modal
-      title={`${status === 'create' ? '发布' : '编辑'}主题`}
+      title={`${status === "create" ? "发布" : "编辑"}主题`}
       open={open}
       onCancel={onClose}
       onOk={onSubmit}
-      okText='发布'
+      okText="发布"
       width={800}
       okButtonProps={{
         loading,
-        id: 'submit-discussion-id',
+        id: "submit-discussion-id",
       }}
     >
       <Stack gap={3}>
         <TextField
-          {...register('title')}
+          {...register("title")}
           required
-          variant='outlined'
-          label='讨论主题'
+          variant="outlined"
+          label="讨论主题"
           fullWidth
           error={Boolean(errors.title)}
           helperText={errors.title?.message as string}
-          size='small'
-          autoComplete='off'
+          size="small"
+          autoComplete="off"
         />
-        <Controller
-          name='group_ids'
-          control={control}
-          rules={{ required: '请输入相关话题' }}
-          render={({ field }) => (
-            <Autocomplete
-              multiple
-              id='tags-filled'
-              options={groups.flat}
-              value={field.value as any}
-              onChange={(_, value) => {
-                field.onChange(value);
-              }}
-              size='small'
-              freeSolo
-              renderTags={(value: readonly string[], getTagProps) =>{
-                console.log(value, 'value')
-                return ''
-              }
-                // value.map((option: string, index: number) => {
-                //   alert(JSON.stringify(option))
-                //   const { key, ...tagProps } = getTagProps({ index });
-                //   const label = `# ${option}`;
-                //   return (
-                //     <Tag
-                //       key={key}
-                //       label={label}
-                //       size='small'
-                //       sx={{
-                //         backgroundColor: '#F2F3F5',
-                //       }}
-                //       {...tagProps}
-                //     />
-                //   );
-                // })
-              }
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label='相关话题'
-                  required
-                  placeholder='请输入相关话题'
-                  error={Boolean(errors.group_ids)}
-                  helperText={errors.group_ids?.message as string}
-                />
-              )}
-            />
-          )}
-        />
-        {status === 'edit' && (
+        <FormControl error={!!errors.group_ids?.message}>
           <Controller
-            name='tags'
+            name="group_ids"
+            control={control}
+            render={({ field }) => {
+              const list =
+                typeof groups.origin !== "undefined" ? groups.origin : [];
+
+              const getId = (item: any) =>
+                (item?.id ?? item?.item_id) as number;
+              const getLabel = (item: any) =>
+                item?.name ?? item?.title ?? item?.label ?? "";
+
+              return (
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                  {list.map((topic) => {
+                    const options = topic.items || [];
+                    const valueForTopic = topic.items?.filter(i=> field.value?.includes(i.id!))
+                    return (
+                      <Box
+                        key={topic.id ?? topic.name}
+                        sx={{
+                          width: "calc(50% - 8px)",
+                          boxSizing: "border-box",
+                        }}
+                      >
+                        <Autocomplete
+                          multiple
+                          options={options}
+                          value={valueForTopic}
+                          isOptionEqualToValue={(option, value) =>
+                            getId(option) === getId(value)
+                          }
+                          getOptionLabel={(option) => getLabel(option)}
+                          onChange={(_, newValue) => {
+                            const existing = Array.isArray(field.value)
+                              ? [...(field.value as number[])]
+                              : [];
+                            const otherIds = existing.filter(
+                              (id) => !options.some((o: any) => getId(o) === id)
+                            );
+                            const newIds = newValue.map((v: any) => getId(v));
+                            // 合并来自各个 Autocomplete 的选择，去重后回传
+                            const merged = Array.from(new Set([...otherIds, ...newIds]));
+                            field.onChange(merged);
+                          }}
+                          size="small"
+                          renderOption={(props, option) => {
+                            const current = option.icon;
+                            return (
+                              <Box
+                                component="li"
+                                {...props}
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 1,
+                                }}
+                              >
+                                {current ? <Icon type={current} /> : null}
+                                {getLabel(option)}
+                              </Box>
+                            );
+                          }}
+                          renderTags={(value: readonly any[], getTagProps) =>
+                            value.map((option: any, index: number) => {
+                              const { key, ...tagProps } = getTagProps({
+                                index,
+                              });
+                              return (
+                                <Tag
+                                  key={key}
+                                  label={
+                                    <Stack
+                                      direction="row"
+                                      alignItems="center"
+                                      gap={0.5}
+                                    >
+                                      {option.icon ? (
+                                        <Icon type={option.icon} />
+                                      ) : null}
+                                      <span>{getLabel(option)}</span>
+                                    </Stack>
+                                  }
+                                  size="small"
+                                  {...tagProps}
+                                />
+                              );
+                            })
+                          }
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              label={`选择 ${topic.name}`}
+                              placeholder="请选择"
+                            />
+                          )}
+                        />
+                      </Box>
+                    );
+                  })}
+                </Box>
+              );
+            }}
+          />
+          <FormHelperText>{errors.group_ids?.message as string}</FormHelperText>
+        </FormControl>
+        {status === "edit" && (
+          <Controller
+            name="tags"
             control={control}
             render={({ field }) => (
               <Autocomplete
                 multiple
-                id='tags-filled'
+                id="tags-filled"
                 options={BBS_TAGS}
                 value={field.value}
                 onChange={(_, value) => {
                   field.onChange(value);
                 }}
-                size='small'
+                size="small"
                 renderOption={(props, option) => {
                   const { key, ...optionProps } = props;
                   const current =
@@ -212,9 +274,9 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                   return (
                     <Box
                       key={key}
-                      component='li'
+                      component="li"
                       {...optionProps}
-                      sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                      sx={{ display: "flex", alignItems: "center", gap: 1 }}
                     >
                       <Icon type={current.icon}></Icon> {option}
                     </Box>
@@ -229,17 +291,19 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                       ];
                     const label = (
                       <Stack
-                        direction='row'
-                        alignItems='center'
+                        direction="row"
+                        alignItems="center"
                         sx={{ lineHeight: 1 }}
                         gap={0.5}
                       >
-                        {current ?
+                        {current ? (
                           <>
                             <Icon type={current.icon} />
                             {option}
                           </>
-                        : `# ${option}`}
+                        ) : (
+                          `# ${option}`
+                        )}
                       </Stack>
                     );
 
@@ -247,10 +311,10 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                       <Tag
                         key={key}
                         label={label}
-                        size='small'
+                        size="small"
                         sx={{
                           backgroundColor:
-                            current?.backgroundColor || '#F2F3F5',
+                            current?.backgroundColor || "#F2F3F5",
                         }}
                         {...tagProps}
                       />
@@ -260,8 +324,8 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                 renderInput={(params) => (
                   <TextField
                     {...params}
-                    label='标签'
-                    placeholder='请输入标签'
+                    label="标签"
+                    placeholder="请输入标签"
                   />
                 )}
               />
@@ -269,11 +333,11 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
           />
         )}
 
-        {status === 'create' && (
+        {status === "create" && (
           <FormControl error={!!errors.content?.message}>
             <Controller
-              rules={{ required: '请输入内容' }}
-              name='content'
+              rules={{ required: "请输入内容" }}
+              name="content"
               control={control}
               render={({ field }) => (
                 <MdEditor
@@ -284,7 +348,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                 />
               )}
             />
-            <FormHelperText id='component-error-text'>
+            <FormHelperText id="component-error-text">
               {errors.content?.message as string}
             </FormHelperText>
           </FormControl>
@@ -296,8 +360,8 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
 
 const AvatarWrap = styled(Image)(({ theme }) => {
   return {
-    borderRadius: '50%',
-    display: 'block',
+    borderRadius: "50%",
+    display: "block",
   };
 });
 
@@ -305,7 +369,7 @@ export const Avatar = ({ src, size = 20 }: { src?: string; size: number }) => {
   return (
     <AvatarWrap
       src={src || defaultAvatar}
-      alt='头像'
+      alt="头像"
       width={size}
       height={size}
     />

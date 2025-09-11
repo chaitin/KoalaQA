@@ -68,7 +68,6 @@ export class HttpClient<SecurityDataType = unknown> {
           (error) => {
             if (error.response?.status === 401) {
               window.location.href = '/login'
-              localStorage.removeItem('panda_wiki_token')
             }
             Message.error(error.response?.statusText || "网络异常");
             return Promise.reject(error.response);
@@ -144,12 +143,16 @@ export class HttpClient<SecurityDataType = unknown> {
         if (type === ContentType.Text && body && body !== null && typeof body !== "string") {
           body = JSON.stringify(body);
         }
-        const token = localStorage.getItem('panda_wiki_token') || ''
+        let auth_token = ''
+        try {
+          auth_token = JSON.parse(localStorage.getItem("auth_token"))
+        } catch {}
+        const Authorization = auth_token || "";
 
         return this.instance.request({
           ...requestParams,
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${Authorization}`,
             ...(requestParams.headers || {}),
             ...(type && type !== ContentType.FormData ? { 'Content-Type': type } : {}),
           },
