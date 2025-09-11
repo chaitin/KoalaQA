@@ -54,7 +54,7 @@ const BaseDiscussCard = (props: {
 }) => {
   const router = useRouter();
   const { data, onOpt, disData, index, isReply } = props;
-  console.log(data)
+  console.log(data);
   const revokeLike = () => {
     postDiscussionDiscIdCommentCommentIdRevokeLike({
       discId: disData.uuid!,
@@ -159,85 +159,83 @@ const BaseDiscussCard = (props: {
           >
             更新于 {dayjs.unix(data.updated_at!).fromNow()}
           </Typography>
-          {!isReply && (
+          <Stack
+            direction="row"
+            gap={2}
+            alignItems="center"
+            sx={{ display: { xs: "none", sm: "flex" } }}
+          >
             <Stack
               direction="row"
-              gap={2}
               alignItems="center"
-              sx={{ display: { xs: "none", sm: "flex" } }}
+              gap={1}
+              sx={{
+                background: isLiked ? "rgba(32,108,255,0.1)" : "#F2F3F5",
+                borderRadius: 0.5,
+                px: 1,
+                py: "1px",
+                cursor: "pointer",
+                "&:hover": {
+                  background: isLiked
+                    ? "rgba(32,108,255,0.2)"
+                    : "rgba(0, 0, 0, 0.12)",
+                },
+              }}
+              onClick={() => handleLike()}
             >
-              <Stack
-                direction="row"
-                alignItems="center"
-                gap={1}
+              <ThumbUpAltOutlinedIcon
                 sx={{
-                  background: isLiked ? "rgba(32,108,255,0.1)" : "#F2F3F5",
-                  borderRadius: 0.5,
-                  px: 1,
-                  py: "1px",
-                  cursor: "pointer",
-                  "&:hover": {
-                    background: isLiked
-                      ? "rgba(32,108,255,0.2)"
-                      : "rgba(0, 0, 0, 0.12)",
-                  },
+                  color: isLiked ? "primary.main" : "rgba(0,0,0,0.5)",
+                  fontSize: 14,
                 }}
-                onClick={() => handleLike()}
-              >
-                <ThumbUpAltOutlinedIcon
-                  sx={{
-                    color: isLiked ? "primary.main" : "rgba(0,0,0,0.5)",
-                    fontSize: 14,
-                  }}
-                />
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontSize: 14,
-                    color: isLiked ? "primary.main" : "rgba(0,0,0,0.5)",
-                    lineHeight: "20px",
-                  }}
-                >
-                  {formatNumber(data.like || 0)}
-                </Typography>
-              </Stack>
-              <Stack
-                direction="row"
-                alignItems="center"
-                gap={1}
+              />
+              <Typography
+                variant="body2"
                 sx={{
-                  background: isDisliked ? "rgba(32,108,255,0.1)" : "#F2F3F5",
-                  borderRadius: 0.5,
-                  px: 1,
-                  py: "1px",
-                  cursor: "pointer",
-                  "&:hover": {
-                    background: isDisliked
-                      ? "rgba(32,108,255,0.2)"
-                      : "rgba(0, 0, 0, 0.12)",
-                  },
+                  fontSize: 14,
+                  color: isLiked ? "primary.main" : "rgba(0,0,0,0.5)",
+                  lineHeight: "20px",
                 }}
-                onClick={() => handleDislike()}
               >
-                <ThumbDownAltOutlinedIcon
-                  sx={{
-                    color: isDisliked ? "primary.main" : "rgba(0,0,0,0.5)",
-                    fontSize: 14,
-                  }}
-                />
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontSize: 14,
-                    lineHeight: "20px",
-                    color: isDisliked ? "primary.main" : "rgba(0,0,0,0.5)",
-                  }}
-                >
-                  {formatNumber(data.dislike || 0)}
-                </Typography>
-              </Stack>
+                {formatNumber(data.like || 0)}
+              </Typography>
             </Stack>
-          )}
+            <Stack
+              direction="row"
+              alignItems="center"
+              gap={1}
+              sx={{
+                background: isDisliked ? "rgba(32,108,255,0.1)" : "#F2F3F5",
+                borderRadius: 0.5,
+                px: 1,
+                py: "1px",
+                cursor: "pointer",
+                "&:hover": {
+                  background: isDisliked
+                    ? "rgba(32,108,255,0.2)"
+                    : "rgba(0, 0, 0, 0.12)",
+                },
+              }}
+              onClick={() => handleDislike()}
+            >
+              <ThumbDownAltOutlinedIcon
+                sx={{
+                  color: isDisliked ? "primary.main" : "rgba(0,0,0,0.5)",
+                  fontSize: 14,
+                }}
+              />
+              <Typography
+                variant="body2"
+                sx={{
+                  fontSize: 14,
+                  lineHeight: "20px",
+                  color: isDisliked ? "primary.main" : "rgba(0,0,0,0.5)",
+                }}
+              >
+                {formatNumber(data.dislike || 0)}
+              </Typography>
+            </Stack>
+          </Stack>
         </Stack>
       </Stack>
       <MarkDown
