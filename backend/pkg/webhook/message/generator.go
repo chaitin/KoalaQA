@@ -44,7 +44,7 @@ func (g *Generator) Discuss(ctx context.Context, msgType Type, dissID uint, user
 		Name string
 	}
 	err = g.in.RepoGroupItems.List(ctx, &groupItems,
-		repo.QueryWithEqualIn("id", discuss.GroupIDs),
+		repo.QueryWithEqual("id", discuss.GroupIDs, repo.EqualOPEqAny),
 		repo.QueryWithSelectColumn("name"),
 	)
 	if err != nil {
