@@ -81,6 +81,7 @@ type Client interface {
 	Upload(ctx context.Context, dir string, reader io.Reader, optFuncs ...optFunc) (string, error)
 	Delete(ctx context.Context, path string, optFuncs ...optFunc) error
 	Download(ctx context.Context, path string, optFuncs ...optFunc) (io.ReadCloser, error)
+	Sign(ctx context.Context, path string, optFuncs ...optFunc) (string, error)
 }
 
 func Upload(ctx context.Context, dir string, reader io.Reader, optFuncs ...optFunc) (string, error) {
