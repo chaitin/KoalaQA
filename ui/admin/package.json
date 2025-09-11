@@ -24,7 +24,7 @@
     "@mui/material": "^6.4.12",
     "@mui/utils": "^7.3.1",
     "@reduxjs/toolkit": "^2.8.2",
-    "@yokowu/modelkit-ui": "0.4.2",
+    "@yokowu/modelkit-ui": "2.2.0",
     "ahooks": "^3.8.4",
     "axios": "^1.9.0",
     "clsx": "^2.1.1",

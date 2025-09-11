@@ -14,12 +14,13 @@ import request, { ContentType, RequestParams } from "./httpClient";
 import {
   ContextResponse,
   DeleteAdminUserUserIdParams,
+  GetAdminUserParams,
   GetAdminUserUserIdParams,
   GetUserLoginThirdParams,
   ModelListRes,
   ModelUserInfo,
   PutAdminUserUserIdParams,
-  SvcUserCreateReq,
+  PutUserPayload,
   SvcUserListItem,
   SvcUserLoginReq,
   SvcUserRegisterReq,
@@ -42,7 +43,10 @@ import {
 })` OK
  */
 
-export const getAdminUser = (params: RequestParams = {}) =>
+export const getAdminUser = (
+  query: GetAdminUserParams,
+  params: RequestParams = {},
+) =>
   request<
     ContextResponse & {
       data?: ModelListRes & {
@@ -52,36 +56,7 @@ export const getAdminUser = (params: RequestParams = {}) =>
   >({
     path: `/admin/user`,
     method: "GET",
-    format: "json",
-    ...params,
-  });
-
-/**
- * No description
- *
- * @tags user
- * @name PostAdminUser
- * @summary create user
- * @request POST:/admin/user
- * @response `200` `(ContextResponse & {
-    data?: number,
-
-})` OK
- */
-
-export const postAdminUser = (
-  req: SvcUserCreateReq,
-  params: RequestParams = {},
-) =>
-  request<
-    ContextResponse & {
-      data?: number;
-    }
-  >({
-    path: `/admin/user`,
-    method: "POST",
-    body: req,
-    type: ContentType.Json,
+    query: query,
     format: "json",
     ...params,
   });
@@ -180,6 +155,26 @@ export const getUser = (params: RequestParams = {}) =>
   >({
     path: `/user`,
     method: "GET",
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name PutUser
+ * @summary update user
+ * @request PUT:/user
+ * @response `200` `ContextResponse` OK
+ */
+
+export const putUser = (req: PutUserPayload, params: RequestParams = {}) =>
+  request<ContextResponse>({
+    path: `/user`,
+    method: "PUT",
+    body: req,
+    type: ContentType.FormData,
     format: "json",
     ...params,
   });
