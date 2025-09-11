@@ -12,7 +12,7 @@ type Comment struct {
 }
 
 func newComment(db *database.DB) *Comment {
-	return &Comment{base: base[*model.Comment]{db: db}}
+	return &Comment{base: base[*model.Comment]{db: db, m: &model.Comment{}}}
 }
 
 func (c *Comment) Detail(ctx context.Context, id uint) (*model.CommentDetail, error) {

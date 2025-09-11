@@ -135,7 +135,7 @@ func (c *CommentLike) RevokeLike(ctx context.Context, uid, commentID uint) error
 }
 
 func newCommentLike(db *database.DB) *CommentLike {
-	return &CommentLike{base: base[*model.CommentLike]{db: db}}
+	return &CommentLike{base: base[*model.CommentLike]{db: db, m: &model.CommentLike{}}}
 }
 
 func init() {

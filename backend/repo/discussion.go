@@ -13,7 +13,7 @@ type Discussion struct {
 }
 
 func newDiscussion(db *database.DB) *Discussion {
-	return &Discussion{base: base[*model.Discussion]{db: db}}
+	return &Discussion{base: base[*model.Discussion]{db: db, m: &model.Discussion{}}}
 }
 
 func init() {
