@@ -4,11 +4,9 @@ import Card from '@/components/card';
 import { useAppDispatch } from '@/store';
 import { setPageName } from '@/store/slices/breadcrumb';
 import { Box, Stack, Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import Doc from './doc';
-import QaImport from './qaImport';
-import DocImport from './docImport';
 import Qa from './qa';
 
 const AdminDocument = () => {

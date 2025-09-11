@@ -1,10 +1,9 @@
 import {
   deleteAdminUserUserId,
-  getAdminKbKbIdQuestion,
   getAdminUser,
   ModelUserRole,
   putAdminUserUserId,
-  SvcUserListItem,
+  SvcUserListItem
 } from '@/api';
 import Card from '@/components/card';
 import { useListQueryParams } from '@/hooks/useListQueryParams';
@@ -12,15 +11,15 @@ import { message, Modal, Table } from '@c-x/ui';
 import {
   Box,
   Button,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
   Stack,
   TextField,
-  Select,
   Typography,
-  MenuItem,
-  InputLabel,
-  FormControl,
 } from '@mui/material';
-import { useBoolean, useRequest } from 'ahooks';
+import { useRequest } from 'ahooks';
 import { ColumnsType } from 'ct-mui/dist/Table';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';

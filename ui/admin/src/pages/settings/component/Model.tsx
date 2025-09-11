@@ -220,6 +220,7 @@ const Settings = () => {
         modelService={modelService}
         language='zh-CN'
         messageComponent={message}
+        is_close_model_remark={true}
       />
     </>
   );
