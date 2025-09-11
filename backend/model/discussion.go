@@ -1,6 +1,8 @@
 package model
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type DiscussionType string
 
@@ -48,16 +50,16 @@ type DiscussionListItem struct {
 }
 
 type DiscussionReply struct {
-	ID         uint      `json:"id"`
-	UpdatedAt  Timestamp `json:"updated_at"`
-	UserID     uint      `json:"user_id"`
-	UserName   string    `json:"user_name"`
-	UserAvatar string    `json:"user_avatar"`
-	UserLiked  bool      `json:"user_liked"`
-	Like       int64     `json:"like"`
-	Dislike    int64     `json:"dislike"`
-	Content    string    `json:"content"`
-	Accepted   bool      `json:"accepted"`
+	ID            uint             `json:"id"`
+	UpdatedAt     Timestamp        `json:"updated_at"`
+	UserID        uint             `json:"user_id"`
+	UserName      string           `json:"user_name"`
+	UserAvatar    string           `json:"user_avatar"`
+	UserLikeState CommentLikeState `json:"user_like_state"`
+	Like          int64            `json:"like"`
+	Dislike       int64            `json:"dislike"`
+	Content       string           `json:"content"`
+	Accepted      bool             `json:"accepted"`
 }
 
 type DiscussionComment struct {

@@ -2950,6 +2950,17 @@ const docTemplate = `{
                 }
             }
         },
+        "model.CommentLikeState": {
+            "type": "integer",
+            "enum": [
+                1,
+                2
+            ],
+            "x-enum-varnames": [
+                "CommentLikeStateLike",
+                "CommentLikeStateDislike"
+            ]
+        },
         "model.Discussion": {
             "type": "object",
             "properties": {
@@ -3048,8 +3059,8 @@ const docTemplate = `{
                 "user_id": {
                     "type": "integer"
                 },
-                "user_liked": {
-                    "type": "boolean"
+                "user_like_state": {
+                    "$ref": "#/definitions/model.CommentLikeState"
                 },
                 "user_name": {
                     "type": "string"
@@ -3248,8 +3259,8 @@ const docTemplate = `{
                 "user_id": {
                     "type": "integer"
                 },
-                "user_liked": {
-                    "type": "boolean"
+                "user_like_state": {
+                    "$ref": "#/definitions/model.CommentLikeState"
                 },
                 "user_name": {
                     "type": "string"
@@ -3550,6 +3561,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "email": {
+                    "type": "string"
+                },
+                "key": {
                     "type": "string"
                 },
                 "role": {
