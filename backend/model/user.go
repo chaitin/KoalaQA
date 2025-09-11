@@ -29,7 +29,7 @@ type UserInfo struct {
 	Role     UserRole `json:"role"`
 	Email    string   `json:"email"`
 	Username string   `json:"username"`
-	Key      string   `json:"string"`
+	Key      string   `json:"key"`
 }
 
 func (ui *UserInfo) IsAdmin() bool {

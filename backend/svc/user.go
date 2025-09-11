@@ -331,6 +331,7 @@ func (u *User) Login(ctx context.Context, req UserLoginReq) (string, error) {
 		Role:     user.Role,
 		Email:    user.Email,
 		Username: user.Name,
+		Key:      user.Key,
 	})
 	if err != nil {
 		return "", err
