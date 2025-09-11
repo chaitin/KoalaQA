@@ -78,6 +78,6 @@ func (d *DiscSummary) handle(ctx context.Context, discID uint) error {
 	if err := d.disc.Update(ctx, map[string]any{"summary": llmRes}, repo.QueryWithEqual("id", discID)); err != nil {
 		return err
 	}
-	d.logger.WithContext(ctx).With("disc_id", discID).With("summary", llmRes).Info("summary updated")
+	d.logger.WithContext(ctx).With("disc_id", discID).With("summary", llmRes).Debug("summary updated")
 	return nil
 }
