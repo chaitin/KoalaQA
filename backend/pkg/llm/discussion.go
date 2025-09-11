@@ -112,7 +112,7 @@ const discussionPromptTemplate = `
 - 问题尚未解决，重点提供实用的解决方案
 {{- end}}
 
-## 相关知识库文档
+## 知识库文档
 {{- if .KnowledgeDocuments}}
 {{- range $i, $doc := .KnowledgeDocuments}}
 ### 文档{{add $i 1}}：{{$doc.Title}}
