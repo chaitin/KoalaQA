@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"time"
 )
 
 var (
@@ -19,12 +20,15 @@ type opt struct {
 	fileSize  int // 设置文件大小，可以避免读出整个 reader 获取大小
 	ext       string
 
-	public bool
-	retURL bool
+	public      bool
+	retURL      bool
+	signTimeout time.Duration
 }
 
 func getOpt(optFuncs ...optFunc) opt {
-	var o opt
+	o := opt{
+		signTimeout: time.Minute * 10,
+	}
 
 	for _, optFunc := range optFuncs {
 		optFunc(&o)
@@ -74,6 +78,12 @@ func WithPublic() optFunc {
 func WithRetSignURL() optFunc {
 	return func(o *opt) {
 		o.retURL = true
+	}
+}
+
+func WithSignTimeout(t time.Duration) optFunc {
+	return func(o *opt) {
+		o.signTimeout = t
 	}
 }
 

@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/chaitin/koalaqa/pkg/config"
 	"github.com/chaitin/koalaqa/pkg/glog"
@@ -29,6 +28,7 @@ type minioClient struct {
 }
 
 func (mc *minioClient) Upload(ctx context.Context, dir string, reader io.Reader, optFuncs ...optFunc) (string, error) {
+	dir = strings.TrimPrefix(dir, "/")
 	o := getOpt(optFuncs...)
 
 	if o.public {
@@ -97,13 +97,14 @@ func (mc *minioClient) Upload(ctx context.Context, dir string, reader io.Reader,
 	}
 
 	if o.retURL {
-		return mc.Sign(ctx, fullFilename, WithBucket(o.bucket))
+		return mc.Sign(ctx, fullFilename, WithBucket(o.bucket), WithSignTimeout(o.signTimeout))
 	}
 
 	return path.Join("/", o.bucket, fullFilename), nil
 }
 
 func (mc *minioClient) Delete(ctx context.Context, path string, optFuncs ...optFunc) error {
+	path = strings.TrimPrefix(path, "/")
 	o := getOpt(optFuncs...)
 
 	if o.bucket == "" {
@@ -127,6 +128,7 @@ func (mc *minioClient) Delete(ctx context.Context, path string, optFuncs ...optF
 }
 
 func (mc *minioClient) Download(ctx context.Context, path string, optFuncs ...optFunc) (io.ReadCloser, error) {
+	path = strings.TrimPrefix(path, "/")
 	o := getOpt(optFuncs...)
 
 	if o.bucket == "" {
@@ -136,13 +138,15 @@ func (mc *minioClient) Download(ctx context.Context, path string, optFuncs ...op
 }
 
 func (mc *minioClient) Sign(ctx context.Context, path string, optFuncs ...optFunc) (string, error) {
+	path = strings.TrimPrefix(path, "/")
+
 	o := getOpt(optFuncs...)
 
 	if o.bucket == "" {
 		o.bucket = mc.buckets[0]
 	}
 
-	u, err := mc.mc.PresignedGetObject(ctx, o.bucket, path, time.Minute*10, url.Values{})
+	u, err := mc.mc.PresignedGetObject(ctx, o.bucket, path, o.signTimeout, url.Values{})
 	if err != nil {
 		return "", err
 	}
