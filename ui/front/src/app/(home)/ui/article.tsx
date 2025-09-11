@@ -356,6 +356,7 @@ const Article = ({
           router.refresh();
           releaseModalClose();
         }}
+        selectedTags={[]}
       />
     </Stack>
   );

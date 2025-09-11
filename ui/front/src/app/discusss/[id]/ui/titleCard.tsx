@@ -55,6 +55,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         open={releaseVisible}
         data={data}
         onClose={releaseClose}
+        selectedTags={[]}
         onOk={() => {
           releaseClose();
           router.refresh();
