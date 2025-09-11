@@ -41,15 +41,19 @@ type UserListItem struct {
 func (u *User) List(ctx context.Context, req UserListReq) (*model.ListRes[UserListItem], error) {
 	var res model.ListRes[UserListItem]
 	err := u.repoUser.List(ctx, &res.Items,
-		repo.QueryWithILike("name", req.Name),
 		repo.QueryWithPagination(&req.Pagination),
 		repo.QueryWithOrderBy("created_at DESC"),
+		repo.QueryWithILike("name", req.Name),
+		repo.QueryWithEqual("invisible", false),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	err = u.repoUser.Count(ctx, &res.Total, repo.QueryWithILike("name", req.Name))
+	err = u.repoUser.Count(ctx, &res.Total,
+		repo.QueryWithILike("name", req.Name),
+		repo.QueryWithEqual("invisible", false),
+	)
 	if err != nil {
 		return nil, err
 	}
