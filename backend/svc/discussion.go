@@ -158,6 +158,7 @@ type DiscussionListReq struct {
 	Pagination *model.Pagination    `json:"pagination" form:"pagination"`
 	Filter     DiscussionListFilter `json:"filter" form:"filter,default=hot"`
 	Type       model.DiscussionType `json:"type" form:"type,default=qa"`
+	GroupIDs   model.Int64Array     `json:"group_ids" form:"group_ids"`
 }
 
 func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListReq) (*model.ListRes[*model.DiscussionListItem], error) {
@@ -175,6 +176,10 @@ func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListRe
 	query = append(query, repo.QueryWithEqual("type", req.Type))
 	if req.Filter == DiscussionListFilterMine {
 		query = append(query, repo.QueryWithEqual("user_id", userID))
+	}
+
+	if len(req.GroupIDs) > 0 {
+		query = append(query, repo.QueryWithEqual("group_ids", req.GroupIDs, repo.EqualOPIntesect))
 	}
 
 	pageFuncs := []repo.QueryOptFunc{repo.QueryWithPagination(req.Pagination)}
@@ -221,7 +226,7 @@ func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*mo
 		ragIDs = append(ragIDs, record.DocID)
 	}
 	var discussions []*model.DiscussionListItem
-	err = d.in.DiscRepo.List(ctx, &discussions, repo.QueryWithEqualIn("rag_id", ragIDs))
+	err = d.in.DiscRepo.List(ctx, &discussions, repo.QueryWithEqual("rag_id", ragIDs, repo.EqualOPIn))
 	if err != nil {
 		return nil, err
 	}

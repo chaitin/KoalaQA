@@ -8,14 +8,27 @@ import (
 	"github.com/chaitin/koalaqa/pkg/util"
 )
 
+type eqOP uint
+
+const (
+	EqualOPEq eqOP = iota + 1
+	EqualOPIn
+	EqualOPEqAny
+	EqualOPIntesect
+)
+
+type eqVal struct {
+	op eqOP
+	v  any
+}
+
 type queryOpt struct {
 	columns []string
 	page    *model.Pagination
 
-	equals   map[string]any
-	ilikes   map[string]string
-	orderBy  []string
-	equalsIn map[string]any
+	equals  map[string]eqVal
+	ilikes  map[string]string
+	orderBy []string
 }
 
 func (lo *queryOpt) Scopes() []database.Scope {
@@ -24,7 +37,6 @@ func (lo *queryOpt) Scopes() []database.Scope {
 		paginationScope(lo.page),
 		ilikeScope(lo.ilikes),
 		equalScope(lo.equals),
-		equalInScope(lo.equalsIn),
 		orderByScope(lo.orderBy),
 	}
 }
@@ -43,27 +55,24 @@ func QueryWithSelectColumn(columns ...string) QueryOptFunc {
 	}
 }
 
-func QueryWithEqual(key string, val any) QueryOptFunc {
+func QueryWithEqual(key string, val any, op ...eqOP) QueryOptFunc {
 	return func(lo *queryOpt) {
 		if util.IsNil(val) {
 			return
 		}
 		if lo.equals == nil {
-			lo.equals = make(map[string]any)
+			lo.equals = make(map[string]eqVal)
 		}
-		lo.equals[key] = val
-	}
-}
 
-func QueryWithEqualIn(key string, vals any) QueryOptFunc {
-	return func(lo *queryOpt) {
-		if util.IsNil(vals) {
-			return
+		o := EqualOPEq
+		if len(op) > 0 {
+			o = op[0]
 		}
-		if lo.equalsIn == nil {
-			lo.equalsIn = make(map[string]any)
+
+		lo.equals[key] = eqVal{
+			op: o,
+			v:  val,
 		}
-		lo.equalsIn[key] = vals
 	}
 }
 
@@ -104,27 +113,21 @@ func selectColumnScope(columns []string) database.Scope {
 	}
 }
 
-func equalScope(kv map[string]any) database.Scope {
+func equalScope(kv map[string]eqVal) database.Scope {
 	return func(db *database.DB) *database.DB {
 		for k, v := range kv {
-			db = db.Where(k+" = ?", v)
-		}
-
-		return db
-	}
-}
-
-func equalInScope(kv map[string]any) database.Scope {
-	return func(db *database.DB) *database.DB {
-		for k, v := range kv {
-			switch v.(type) {
-			case model.Int64Array, model.StringArray:
-				db = db.Where(k+" =ANY(?)", v)
-			default:
-				db = db.Where(k+" in (?)", v)
+			switch v.op {
+			case EqualOPEq:
+				db = db.Where(k+" = ?", v)
+			case EqualOPIn:
+				db = db.Where(k+" IN (?)", v)
+			case EqualOPEqAny:
+				db = db.Where(k+" = ANY(?)", v)
+			case EqualOPIntesect:
+				db = db.Where(k+" && ?", v)
 			}
-
 		}
+
 		return db
 	}
 }
