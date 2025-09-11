@@ -1,24 +1,17 @@
 import {
   AnydocListRes,
   postAdminKbDocumentUrlExport,
-  postAdminKbDocumentUrlList
+  postAdminKbDocumentUrlList,
 } from '@/api';
 import { useExportDoc } from '@/hooks/useExportDoc';
-import {
-  Stack,
-  TextField
-} from '@mui/material';
+import { Stack, TextField } from '@mui/material';
 import { Modal } from 'ct-mui';
 import { useEffect, useState } from 'react';
 import Doc2Ai from './Doc2Ai';
 import { ImportDocProps } from './type';
 import { StepText } from './const';
 
-const URLImport = ({
-  open,
-  refresh,
-  onCancel,
-}: ImportDocProps) => {
+const URLImport = ({ open, refresh, onCancel }: ImportDocProps) => {
   const [step, setStep] = useState<keyof typeof StepText>('upload');
   const [loading, setLoading] = useState(false);
   const [url, setUrl] = useState('');
@@ -33,7 +26,7 @@ const URLImport = ({
       setStep('done');
       setLoading(false);
     },
-    setLoading
+    setLoading,
   });
   const handleCancel = () => {
     setIsCancelled(true);
@@ -44,21 +37,22 @@ const URLImport = ({
     setSelectIds([]);
     setLoading(false);
     onCancel();
-    refresh?.();
+    refresh?.({});
   };
 
   const handleURL = async () => {
-    const newQueue = url
-      .split('\n')
-      .map((url) => () => postAdminKbDocumentUrlList({ url }));
+    const newQueue = await Promise.all(
+      url.split('\n').map((url) => ()=>postAdminKbDocumentUrlList({ url }))
+    );
     setRequestQueue(newQueue);
   };
 
   const handleOk = async () => {
     if (step === 'done') {
       handleCancel();
-      refresh?.();
+      refresh?.({});
     } else if (step === 'upload') {
+      if (!url) return;
       setLoading(true);
       setIsCancelled(false);
       handleURL();
@@ -89,6 +83,7 @@ const URLImport = ({
         setRequestQueue(newQueue);
       } else {
         setLoading(false);
+        setStep('import');
         setRequestQueue([]);
       }
     } catch (error) {
