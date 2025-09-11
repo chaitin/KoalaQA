@@ -67,7 +67,7 @@ func (ns *natsSubscriber) Subscribe(ctx context.Context) error {
 		ns.logger.WithContext(ctx).With("topic", topic).Info("begin subscribe")
 
 		callback := func(msg *nats.Msg) {
-			ctx = trace.Context(ctx, msg.Header.Values("X-Trace-ID")...)
+			ctx := trace.Context(ctx, msg.Header.Values("X-Trace-ID")...)
 
 			typ := reflect.TypeOf(h.MsgType())
 			var val reflect.Value
