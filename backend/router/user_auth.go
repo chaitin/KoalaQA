@@ -30,7 +30,7 @@ type userAuth struct {
 // @Success 200 {object} context.Response
 // @Router /user/logout [post]
 func (u *userAuth) Logout(ctx *context.Context) {
-	err := u.in.SvcU.Logout(ctx)
+	err := u.in.SvcU.Logout(ctx, ctx.GetUser().UID)
 	if err != nil {
 		ctx.InternalError(err, "user logout failed")
 		return

@@ -21,6 +21,7 @@ type User struct {
 	Role      UserRole  `gorm:"column:role" json:"role"`
 	LastLogin Timestamp `gorm:"column:last_login;type:timestamp with time zone" json:"last_login"`
 	Invisible bool      `gorm:"column:invisible"`
+	Key       string    `gorm:"column:key;type:text;uniqueIndex"`
 }
 
 type UserInfo struct {
@@ -28,6 +29,7 @@ type UserInfo struct {
 	Role     UserRole `json:"role"`
 	Email    string   `json:"email"`
 	Username string   `json:"username"`
+	Key      string   `json:"string"`
 }
 
 func (ui *UserInfo) IsAdmin() bool {
