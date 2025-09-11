@@ -42,7 +42,7 @@ func (a *auth) Intercept(ctx *context.Context) {
 		return
 	}
 
-	userInfo, err := authUser(ctx, a.jwt)
+	userInfo, err := authUser(ctx, a.jwt, a.user)
 	if err != nil {
 		ctx.Unauthorized(err.Error())
 		ctx.Abort()
@@ -62,12 +62,26 @@ func init() {
 	registerAPIAuth(newAuth)
 }
 
-func authUser(ctx *context.Context, j *jwt.Generator) (*model.UserInfo, error) {
+func authUser(ctx *context.Context, j *jwt.Generator, user *svc.User) (*model.UserInfo, error) {
 	token := ctx.GetHeader("Authorization")
 	splitToken := strings.Split(token, " ")
 	if len(splitToken) != 2 || splitToken[0] != tokenPrefix {
 		return nil, errors.New("invalid auth token")
 	}
 
-	return j.Verify(splitToken[1])
+	userInfo, err := j.Verify(splitToken[1])
+	if err != nil {
+		return nil, err
+	}
+
+	item, err := user.Detail(ctx, userInfo.UID)
+	if err != nil {
+		return nil, err
+	}
+
+	if item.Key != userInfo.Key {
+		return nil, errors.New("invalid key")
+	}
+
+	return userInfo, nil
 }

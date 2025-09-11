@@ -10,6 +10,7 @@ import (
 	"github.com/chaitin/koalaqa/migration/migrator"
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/config"
+	"github.com/google/uuid"
 )
 
 type initAdmin struct {
@@ -39,6 +40,7 @@ func (m *initAdmin) Migrate(tx *gorm.DB) error {
 				Password:  string(hashPass),
 				Role:      model.UserRoleAdmin,
 				Invisible: false,
+				Key:       uuid.NewString(),
 			}).Error
 		}
 		return err

@@ -15,6 +15,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/third_auth"
 	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/repo"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -41,6 +42,7 @@ type UserListItem struct {
 	Builtin   bool            `json:"builtin"`
 	Email     string          `json:"email"`
 	LastLogin model.Timestamp `json:"last_login"`
+	Key       string          `json:"-"`
 }
 
 func (u *User) List(ctx context.Context, req UserListReq) (*model.ListRes[UserListItem], error) {
@@ -269,6 +271,7 @@ func (u *User) Register(ctx context.Context, req UserRegisterReq) error {
 		Builtin:  false,
 		Password: hashPass,
 		Role:     model.UserRoleUser,
+		Key:      uuid.NewString(),
 	}
 	err = u.repoUser.Create(ctx, &user)
 	if err != nil {
@@ -344,8 +347,11 @@ func (u *User) Login(ctx context.Context, req UserLoginReq) (string, error) {
 	return token, nil
 }
 
-func (u *User) Logout(ctx context.Context) error {
-	return nil
+func (u *User) Logout(ctx context.Context, uid uint) error {
+	return u.repoUser.Update(ctx, map[string]any{
+		"key":       uuid.NewString(),
+		"update_at": time.Now(),
+	}, repo.QueryWithEqual("id", uid))
 }
 
 type LoginThirdURLReq struct {

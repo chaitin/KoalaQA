@@ -11,6 +11,7 @@ type publicAccess struct {
 	svcAuth *svc.Auth
 	intAuth Interceptor
 	jwt     *jwt.Generator
+	svcUser *svc.User
 }
 
 func newPublicAccess(auth *svc.Auth, cfg config.Config, generator *jwt.Generator, user *svc.User) Interceptor {
@@ -18,6 +19,7 @@ func newPublicAccess(auth *svc.Auth, cfg config.Config, generator *jwt.Generator
 		svcAuth: auth,
 		intAuth: newAuth(cfg, generator, user),
 		jwt:     generator,
+		svcUser: user,
 	}
 }
 
@@ -35,7 +37,7 @@ func (p *publicAccess) Intercept(ctx *context.Context) {
 		return
 	}
 
-	userInfo, err := authUser(ctx, p.jwt)
+	userInfo, err := authUser(ctx, p.jwt, p.svcUser)
 	if err == nil {
 		ctx.SetUser(*userInfo)
 	}

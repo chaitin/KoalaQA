@@ -10,6 +10,7 @@ import (
 	"github.com/chaitin/koalaqa/migration/migrator"
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/oss"
+	"github.com/google/uuid"
 )
 
 type initBot struct {
@@ -36,6 +37,7 @@ func (m *initBot) Migrate(tx *gorm.DB) error {
 		Builtin:   true,
 		Role:      model.UserRoleUser,
 		Invisible: true,
+		Key:       uuid.NewString(),
 	}
 
 	err = tx.Create(&botUser).Error
