@@ -10,6 +10,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/llm"
 	"github.com/chaitin/koalaqa/pkg/rag"
+	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/repo"
 	"github.com/cloudwego/eino/components/prompt"
 	"github.com/cloudwego/eino/schema"
@@ -75,6 +76,9 @@ func (l *LLM) Chat(ctx context.Context, req GenerateReq) (string, bool, error) {
 	if err != nil {
 		logger.WithErr(err).Error("llm response failed")
 		return "", false, err
+	}
+	if util.NormalizeString(res.Content) == util.NormalizeString(req.DefaultAnswer) {
+		return req.DefaultAnswer, false, nil
 	}
 	logger.Debug("llm response success")
 	return res.Content, true, nil
