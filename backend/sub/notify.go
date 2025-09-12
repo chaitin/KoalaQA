@@ -63,6 +63,10 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 		return nil
 	}
 
+	if data.Type == model.MsgNotifyTypeLikeComment && data.ToID == botUserID {
+		return nil
+	}
+
 	var fromUser model.User
 	err = mn.user.GetByID(ctx, &fromUser, data.FromID)
 	if err != nil {
@@ -153,7 +157,7 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 
 		err = mn.pub.Publish(ctx, topic, model.MessageNotifyInfo{
 			ID:                  notify.ID,
-			MessageNotifyCommon: common,
+			MessageNotifyCommon: notify.MessageNotifyCommon,
 		})
 		if err != nil {
 			logger.WithErr(err).With("topic", topic).Warn("publish msg failed")
