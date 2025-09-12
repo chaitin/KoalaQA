@@ -11,25 +11,35 @@ import (
 	"github.com/chaitin/koalaqa/pkg/webhook/message"
 	"github.com/chaitin/koalaqa/repo"
 	"github.com/chaitin/koalaqa/svc"
+	"go.uber.org/fx"
 )
 
+type messageNotifyIn struct {
+	fx.In
+
+	Bot     *svc.Bot
+	User    *repo.User
+	Mn      *repo.MessageNotify
+	Pub     mq.Publisher `name:"memory_mq"`
+	NatsPub mq.Publisher
+}
 type messageNotify struct {
 	logger  *glog.Logger
 	bot     *svc.Bot
 	user    *repo.User
 	mn      *repo.MessageNotify
-	pub     mq.Publisher `name:"memory_mq"`
+	pub     mq.Publisher
 	natsPub mq.Publisher
 }
 
-func newMessageNotify(bot *svc.Bot, user *repo.User, mn *repo.MessageNotify, pub mq.Publisher, natsPub mq.Publisher) *messageNotify {
+func newMessageNotify(in messageNotifyIn) *messageNotify {
 	return &messageNotify{
 		logger:  glog.Module("sub", "message_notify"),
-		bot:     bot,
-		user:    user,
-		mn:      mn,
-		pub:     pub,
-		natsPub: natsPub,
+		bot:     in.Bot,
+		user:    in.User,
+		mn:      in.Mn,
+		pub:     in.Pub,
+		natsPub: in.NatsPub,
 	}
 }
 
