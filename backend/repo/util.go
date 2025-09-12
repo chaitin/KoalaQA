@@ -118,13 +118,13 @@ func equalScope(kv map[string]eqVal) database.Scope {
 		for k, v := range kv {
 			switch v.op {
 			case EqualOPEq:
-				db = db.Where(k+" = ?", v)
+				db = db.Where(k+" = ?", v.v)
 			case EqualOPIn:
-				db = db.Where(k+" IN (?)", v)
+				db = db.Where(k+" IN (?)", v.v)
 			case EqualOPEqAny:
-				db = db.Where(k+" = ANY(?)", v)
+				db = db.Where(k+" = ANY(?)", v.v)
 			case EqualOPIntesect:
-				db = db.Where(k+" && ?", v)
+				db = db.Where(k+" && ?", v.v)
 			}
 		}
 
