@@ -2,14 +2,12 @@ package svc
 
 import (
 	"context"
-	"sync"
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/repo"
 )
 
 type Group struct {
-	lock  sync.Mutex
 	repoG *repo.Group
 }
 
