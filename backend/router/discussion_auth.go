@@ -82,7 +82,7 @@ func (d *discussionAuth) Update(ctx *context.Context) {
 		ctx.BadRequest(err)
 		return
 	}
-	err = d.disc.Update(ctx.Request.Context(), ctx.Param("disc_id"), req)
+	err = d.disc.Update(ctx.Request.Context(), ctx.GetUser(), ctx.Param("disc_id"), req)
 	if err != nil {
 		ctx.InternalError(err, "failed to update discussion")
 		return
@@ -100,7 +100,7 @@ func (d *discussionAuth) Update(ctx *context.Context) {
 // @Success 200 {object} context.Response{data=any}
 // @Router /discussion/{disc_id} [delete]
 func (d *discussionAuth) Delete(ctx *context.Context) {
-	err := d.disc.Delete(ctx.Request.Context(), ctx.Param("disc_id"))
+	err := d.disc.Delete(ctx.Request.Context(), ctx.GetUser(), ctx.Param("disc_id"))
 	if err != nil {
 		ctx.InternalError(err, "failed to delete discussion")
 		return
@@ -155,7 +155,7 @@ func (d *discussionAuth) UpdateComment(ctx *context.Context) {
 		ctx.BadRequest(err)
 		return
 	}
-	err = d.disc.UpdateComment(ctx.Request.Context(), ctx.GetUser().UID, ctx.Param("disc_id"), commentID, req)
+	err = d.disc.UpdateComment(ctx.Request.Context(), ctx.GetUser(), ctx.Param("disc_id"), commentID, req)
 	if err != nil {
 		ctx.InternalError(err, "failed to update comment")
 		return
@@ -179,7 +179,7 @@ func (d *discussionAuth) DeleteComment(ctx *context.Context) {
 		ctx.BadRequest(err)
 		return
 	}
-	err = d.disc.DeleteComment(ctx.Request.Context(), ctx.GetUser().UID, ctx.Param("disc_id"), commentID)
+	err = d.disc.DeleteComment(ctx.Request.Context(), ctx.GetUser(), ctx.Param("disc_id"), commentID)
 	if err != nil {
 		ctx.InternalError(err, "failed to delete comment")
 		return
