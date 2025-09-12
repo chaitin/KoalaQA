@@ -64,13 +64,21 @@ func init() {
 }
 
 func authUser(ctx *context.Context, j *jwt.Generator, user *svc.User) (*model.UserInfo, error) {
-	token := ctx.GetHeader("Authorization")
-	splitToken := strings.Split(token, " ")
-	if len(splitToken) != 2 || splitToken[0] != tokenPrefix {
-		return nil, errors.New("invalid auth token")
+	var token = ""
+	if authToken := ctx.GetHeader("Authorization"); authToken != "" {
+		splitToken := strings.Split(authToken, " ")
+		if len(splitToken) != 2 || splitToken[0] != tokenPrefix {
+			return nil, errors.New("invalid auth token")
+		}
+		token = splitToken[1]
 	}
-
-	userInfo, err := j.Verify(splitToken[1])
+	if authToken, _ := ctx.Cookie("auth_token"); authToken != "" {
+		token = authToken
+	}
+	if token == "" {
+		return nil, errors.New("auth token is empty")
+	}
+	userInfo, err := j.Verify(token)
 	if err != nil {
 		return nil, err
 	}
