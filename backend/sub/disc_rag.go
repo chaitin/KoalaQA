@@ -65,7 +65,7 @@ func (d *DiscRag) Handle(ctx context.Context, msg mq.Message) error {
 
 func (d *DiscRag) handleInsert(ctx context.Context, discID uint) error {
 	logger := d.logger.WithContext(ctx).With("disc_id", discID)
-	logger.Info("handle insert discussion rag")
+	logger.Debug("handle insert discussion rag")
 	disc, err := d.disc.GetByID(ctx, discID)
 	if err != nil {
 		logger.WithContext(ctx).WithErr(err).Error("get discussion failed")
