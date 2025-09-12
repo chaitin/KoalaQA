@@ -72,8 +72,8 @@ const AdminDocument = () => {
       render: (_, record) => {
         if (!record?.status) return '-';
         return record.status === ModelDocStatus.DocStatusAppling
-          ? '未应用'
-          : '应用中';
+          ? '应用中'
+          : '未应用';
       },
     },
     {

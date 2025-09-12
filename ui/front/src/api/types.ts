@@ -18,6 +18,12 @@ export enum TopicTaskStatus {
   TaskStatusTimeout = "timeout",
 }
 
+export enum SvcDiscussionListFilter {
+  DiscussionListFilterHot = "hot",
+  DiscussionListFilterNew = "new",
+  DiscussionListFilterMine = "mine",
+}
+
 export enum PlatformPlatformType {
   PlatformUnknown = 0,
   PlatformConfluence = 1,
@@ -307,6 +313,7 @@ export interface ModelPublicAddress {
 }
 
 export interface ModelUserInfo {
+  avatar?: string;
   email?: string;
   key?: string;
   role?: ModelUserRole;
@@ -367,8 +374,7 @@ export interface SvcDiscussUploadFileReq {
 
 export interface SvcDiscussionCreateReq {
   content?: string;
-  /** @minItems 1 */
-  group_ids: number[];
+  group_ids?: number[];
   tags?: string[];
   title: string;
   type?: ModelDiscussionType;
@@ -794,16 +800,14 @@ export interface DeleteAdminUserUserIdParams {
 }
 
 export interface GetDiscussionParams {
-  /** page */
-  page?: number;
-  /** size */
-  size?: number;
-  /** keyword */
-  keyword?: string;
-  /** type */
-  type?: "qa" | "feedback" | "blog";
-  /** filter */
   filter?: "hot" | "new" | "mine";
+  group_ids?: number[];
+  keyword?: string;
+  /** @min 1 */
+  page?: number;
+  /** @min 1 */
+  size?: number;
+  type?: "qa" | "feedback" | "blog";
 }
 
 /** request params */
