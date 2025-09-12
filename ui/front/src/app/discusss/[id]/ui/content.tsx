@@ -1,10 +1,12 @@
 "use client";
 import {
   postDiscussionDiscIdComment,
+  postDiscussionDiscIdCommentCommentIdAccept,
   postDiscussionDiscIdCommentCommentIdDislike,
   postDiscussionDiscIdCommentCommentIdLike,
   postDiscussionDiscIdCommentCommentIdRevokeLike,
 } from "@/api";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ThumbUpAltOutlinedIcon from "@mui/icons-material/ThumbUpAltOutlined";
 import ThumbDownAltOutlinedIcon from "@mui/icons-material/ThumbDownAltOutlined";
 import {
@@ -22,6 +24,7 @@ import Modal from "@/components/modal";
 import {
   Box,
   Button,
+  IconButton,
   Menu,
   MenuItem,
   OutlinedInput,
@@ -48,13 +51,12 @@ const BaseDiscussCard = (props: {
   index: number;
   onOpt(
     event: React.MouseEvent<HTMLButtonElement>,
-    comment: ModelDiscussionComment,
-    index: number
+    comment: string,
+    index: ModelDiscussionComment | ModelDiscussionReply
   ): void;
 }) => {
   const router = useRouter();
   const { data, onOpt, disData, index, isReply } = props;
-  console.log(data);
   const revokeLike = () => {
     postDiscussionDiscIdCommentCommentIdRevokeLike({
       discId: disData.uuid!,
@@ -92,8 +94,8 @@ const BaseDiscussCard = (props: {
 
   return (
     <Box
-      sx={
-        isReply
+      sx={{
+        ...(isReply
           ? {
               p: { xs: 1.5, sm: 3 },
               backgroundColor: "rgba(242, 243, 245, 0.5)",
@@ -103,8 +105,16 @@ const BaseDiscussCard = (props: {
             }
           : {
               width: "100%",
-            }
-      }
+            }),
+        // 如果该评论为采纳（accepted），添加背景图片（SVG data URI）
+        backgroundImage: data?.accepted ? `url("/accepted.png")` : undefined,
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "right 40px",
+        backgroundSize: { xs: "80px", sm: "100px" },
+        "&:hover #accept_btn": {
+          display: "block",
+        },
+      }}
     >
       <Stack
         direction={{ xs: "column", sm: "row" }}
@@ -112,12 +122,7 @@ const BaseDiscussCard = (props: {
         alignItems={{ xs: "flex-start", sm: "center" }}
         sx={{ mb: 2, pb: 2, borderBottom: "1px solid #eee" }}
       >
-        <Stack
-          direction="row"
-          gap={1}
-          alignItems="center"
-          sx={{ width: { sm: "calc(100% - 290px)", xs: "100%" } }}
-        >
+        <Stack direction="row" gap={1} alignItems="center" sx={{ flex: 1 }}>
           {data.user_avatar ? (
             <img
               src={data.user_avatar}
@@ -235,6 +240,16 @@ const BaseDiscussCard = (props: {
                 {formatNumber(data.dislike || 0)}
               </Typography>
             </Stack>
+            {data.user_id === disData.current_user_id && (
+              <IconButton
+                sx={{ display: { xs: "none", sm: "flex" } }}
+                onClick={(e) => {
+                  onOpt(e, data.content || "", data);
+                }}
+              >
+                <MoreVertIcon />
+              </IconButton>
+            )}
           </Stack>
         </Stack>
       </Stack>
@@ -242,6 +257,7 @@ const BaseDiscussCard = (props: {
         content={data.content}
         sx={{
           backgroundColor: isReply ? "transparent !important" : "inherit",
+          minHeight: data?.accepted ? "100px" : "unset",
         }}
       />
       {!isReply &&
@@ -335,7 +351,9 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const { id }: { id: string } = useParams();
   const router = useRouter();
   const [comment, setComment] = useState("");
-  const [commentIndex, setCommentIndex] = useState<number | null>(null);
+  const [commentIndex, setCommentIndex] = useState<
+    ModelDiscussionComment | ModelDiscussionReply | null
+  >(null);
   const [historyComment, setHistoryComment] =
     useState<SvcCommentUpdateReq | null>(null);
   const [editCommentModalVisible, setEditCommentModalVisible] = useState(false);
@@ -344,7 +362,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const handleClick = (
     event: React.MouseEvent<HTMLButtonElement>,
     comment: SvcCommentUpdateReq,
-    index: number
+    index: ModelDiscussionComment | ModelDiscussionReply
   ) => {
     setAnchorEl(event.currentTarget);
     setHistoryComment(comment);
@@ -382,7 +400,19 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
       },
     });
   };
-
+  const handleAccept = () => {
+    Modal.confirm({
+      title: "确定采纳吗？",
+      okButtonProps: { color: "info" },
+      onOk: async () => {
+        await postDiscussionDiscIdCommentCommentIdAccept({
+          discId: data.uuid!,
+          commentId: data.id!,
+        });
+        router.refresh();
+      },
+    });
+  };
   const handleEditComment = () => {
     setEditCommentModalVisible(true);
     setAnchorEl(null);
@@ -396,8 +426,15 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         open={open}
         onClose={handleClose}
       >
-        <MenuItem onClick={handleEditComment}>编辑</MenuItem>
-        {commentIndex !== 0 && <MenuItem onClick={handleDelete}>删除</MenuItem>}
+        {commentIndex?.user_id == data.current_user_id && (
+          <MenuItem onClick={handleEditComment}>编辑</MenuItem>
+        )}
+        {commentIndex?.user_id == data.current_user_id && (
+          <MenuItem onClick={handleDelete}>删除</MenuItem>
+        )}
+        {commentIndex?.user_id == data.current_user_id && !data.accepted && (
+          <MenuItem onClick={handleAccept}>采纳</MenuItem>
+        )}
       </Menu>
       <EditCommentModal
         open={editCommentModalVisible}
@@ -408,6 +445,14 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         }}
         onClose={() => setEditCommentModalVisible(false)}
       />
+      {data.accepted && (
+        <DiscussCard
+          data={data.accepted}
+          index={0}
+          disData={data}
+          onOpt={handleClick}
+        />
+      )}
       {data.comments?.map((it, index) => (
         <DiscussCard
           data={it}
