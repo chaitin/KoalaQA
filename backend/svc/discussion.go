@@ -179,7 +179,7 @@ func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListRe
 	}
 
 	if len(req.GroupIDs) > 0 {
-		query = append(query, repo.QueryWithEqual("group_ids", req.GroupIDs, repo.EqualOPIntesect))
+		query = append(query, repo.QueryWithEqual("group_ids", req.GroupIDs, repo.EqualOPInclude))
 	}
 
 	pageFuncs := []repo.QueryOptFunc{repo.QueryWithPagination(req.Pagination)}
