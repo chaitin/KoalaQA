@@ -98,10 +98,13 @@ type DiscussionUpdateReq struct {
 	GroupIDs model.Int64Array `json:"group_ids"`
 }
 
-func (d *Discussion) Update(ctx context.Context, uuid string, req DiscussionUpdateReq) error {
+func (d *Discussion) Update(ctx context.Context, user model.UserInfo, uuid string, req DiscussionUpdateReq) error {
 	disc, err := d.in.DiscRepo.GetByUUID(ctx, uuid)
 	if err != nil {
 		return err
+	}
+	if !user.CanOperator(disc.UserID) {
+		return errors.New("not allowed to update discussion")
 	}
 	if err := d.in.DiscRepo.Update(ctx, map[string]any{
 		"title":     req.Title,
@@ -124,10 +127,13 @@ func (d *Discussion) ossDir(uuid string) string {
 	return fmt.Sprintf("assets/discussion/%s", uuid)
 }
 
-func (d *Discussion) Delete(ctx context.Context, uuid string) error {
+func (d *Discussion) Delete(ctx context.Context, user model.UserInfo, uuid string) error {
 	disc, err := d.in.DiscRepo.GetByUUID(ctx, uuid)
 	if err != nil {
 		return err
+	}
+	if !user.CanOperator(disc.UserID) {
+		return errors.New("not allowed to delete discussion")
 	}
 	if err := d.in.DiscRepo.Delete(ctx, repo.QueryWithEqual("uuid", uuid)); err != nil {
 		return err
@@ -313,10 +319,17 @@ type CommentUpdateReq struct {
 	Bot     bool   `json:"-" swaggerignore:"true"`
 }
 
-func (d *Discussion) UpdateComment(ctx context.Context, uid uint, discUUID string, commentID uint, req CommentUpdateReq) error {
+func (d *Discussion) UpdateComment(ctx context.Context, user model.UserInfo, discUUID string, commentID uint, req CommentUpdateReq) error {
 	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
 	if err != nil {
 		return err
+	}
+	comment, err := d.GetCommentByID(ctx, commentID)
+	if err != nil {
+		return err
+	}
+	if !user.CanOperator(comment.UserID) {
+		return errors.New("not allowed to update comment")
 	}
 	if err := d.in.CommRepo.Update(ctx, map[string]any{
 		"content": req.Content,
@@ -338,7 +351,7 @@ func (d *Discussion) UpdateComment(ctx context.Context, uid uint, discUUID strin
 type CommentDeleteReq struct {
 }
 
-func (d *Discussion) DeleteComment(ctx context.Context, uid uint, discUUID string, commentID uint) error {
+func (d *Discussion) DeleteComment(ctx context.Context, user model.UserInfo, discUUID string, commentID uint) error {
 	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
 	if err != nil {
 		return err
@@ -346,6 +359,9 @@ func (d *Discussion) DeleteComment(ctx context.Context, uid uint, discUUID strin
 	var comment model.Comment
 	if err := d.in.CommRepo.GetByID(ctx, &comment, commentID); err != nil {
 		return err
+	}
+	if !user.CanOperator(comment.UserID) {
+		return errors.New("not allowed to delete comment")
 	}
 	if err := d.in.CommRepo.Delete(ctx, repo.QueryWithEqual("id", commentID)); err != nil {
 		return err
