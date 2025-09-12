@@ -99,7 +99,7 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 	if !answered {
 		d.logger.Debug("llm not know the answer")
 	}
-	d.logger.WithContext(ctx).With("disc_id", data.DiscID).With("comment_id", commentID).Info("comment created")
+	d.logger.WithContext(ctx).With("disc_id", data.DiscID).With("comment_id", commentID).Debug("comment created")
 	return nil
 }
 

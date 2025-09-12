@@ -61,7 +61,7 @@ func (d *Comment) Handle(ctx context.Context, msg mq.Message) error {
 
 func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange) error {
 	logger := d.logger.WithContext(ctx).With("comment_id", data.CommID)
-	logger.Info("handle insert comment")
+	logger.Debug("handle insert comment")
 	bot, err := d.bot.Get(ctx)
 	if err != nil {
 		logger.WithContext(ctx).WithErr(err).Error("get bot failed")
@@ -90,7 +90,7 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 	if !answered {
 		logger.Debug("llm not know the answer")
 	}
-	logger.WithContext(ctx).With("comment_id", newID).Info("comment created")
+	logger.WithContext(ctx).With("comment_id", newID).Debug("comment created")
 	return nil
 }
 
