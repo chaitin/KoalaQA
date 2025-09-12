@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import Modal from '@/components/modal';
+import { ModelDiscussionComment } from '@/api/types';
 import MdEditor from '@/components/mdEditor';
-import { ModelDiscussionDetail } from '@/api/types';
-import { putDiscussionDiscId } from '@/api/Discussion';
+import Modal from '@/components/modal';
+import React, { useEffect, useState } from 'react';
 
 interface EditCommentModalProps {
-  data: ModelDiscussionDetail;
+  data: ModelDiscussionComment;
   open: boolean;
-  onOk: () => void;
+  onOk: (val: string) => void;
   onClose: () => void;
 }
 const EditCommentModal: React.FC<EditCommentModalProps> = ({
@@ -24,18 +23,7 @@ const EditCommentModal: React.FC<EditCommentModalProps> = ({
   }, [data]);
 
   const onSubmit = async () => {
-    putDiscussionDiscId(
-      { discId: data.id + '' },
-      {
-        ...data,
-        content: value,
-        group_ids: data.group_ids || [],
-        tags: data.tags || [],
-        title: data.title || '',
-      }
-    ).then(() => {
-      onOk();
-    });
+    onOk(value);
   };
 
   return (
