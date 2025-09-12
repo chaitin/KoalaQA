@@ -17,7 +17,7 @@ type MessageNotify struct {
 
 	UserID uint `gorm:"column:user_id"` // 通知到谁，除了发给机器人的信息，user_id 与 to_id 相同
 
-	MessageNotifyInfo
+	MessageNotifyCommon
 	Read bool `gorm:"column:read;default:false"`
 }
 
@@ -25,7 +25,7 @@ func init() {
 	registerAutoMigrate(&MessageNotify{})
 }
 
-type MessageNotifyInfo struct {
+type MessageNotifyCommon struct {
 	DiscussID    uint          `gorm:"column:discussion_id" json:"discuss_id"`
 	DiscussUUID  string        `gorm:"column:discuss_uuid;type:text" json:"discuss_uuid"`
 	DiscussTitle string        `gorm:"disucss_title" json:"discuss_title"`
@@ -36,4 +36,10 @@ type MessageNotifyInfo struct {
 	ToID         uint          `gorm:"column:to_id" json:"to_id"`
 	ToName       string        `gorm:"column:to_name;type:text" json:"to_name"`
 	ToBot        bool          `gorm:"to_bot" json:"to_bot"`
+}
+
+type MessageNotifyInfo struct {
+	ID uint `gorm:"column:id" json:"id"`
+
+	MessageNotifyCommon
 }
