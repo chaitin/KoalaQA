@@ -1949,6 +1949,18 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
                         "enum": [
                             "qa",
                             "feedback",
@@ -3547,19 +3559,6 @@ const docTemplate = `{
                 }
             }
         },
-        "model.Pagination": {
-            "type": "object",
-            "properties": {
-                "page": {
-                    "type": "integer",
-                    "minimum": 1
-                },
-                "size": {
-                    "type": "integer",
-                    "minimum": 1
-                }
-            }
-        },
         "model.PublicAddress": {
             "type": "object",
             "required": [
@@ -3574,6 +3573,9 @@ const docTemplate = `{
         "model.UserInfo": {
             "type": "object",
             "properties": {
+                "avatar": {
+                    "type": "string"
+                },
                 "email": {
                     "type": "string"
                 },

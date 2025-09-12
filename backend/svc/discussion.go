@@ -154,11 +154,12 @@ const (
 )
 
 type DiscussionListReq struct {
-	Keyword    string               `json:"keyword" form:"keyword"`
-	Pagination *model.Pagination    `json:"pagination" form:"pagination"`
-	Filter     DiscussionListFilter `json:"filter" form:"filter,default=hot"`
-	Type       model.DiscussionType `json:"type" form:"type,default=qa"`
-	GroupIDs   model.Int64Array     `json:"group_ids" form:"group_ids"`
+	*model.Pagination
+
+	Keyword  string               `json:"keyword" form:"keyword"`
+	Filter   DiscussionListFilter `json:"filter" form:"filter,default=hot"`
+	Type     model.DiscussionType `json:"type" form:"type,default=qa"`
+	GroupIDs model.Int64Array     `json:"group_ids" form:"group_ids"`
 }
 
 func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListReq) (*model.ListRes[*model.DiscussionListItem], error) {
