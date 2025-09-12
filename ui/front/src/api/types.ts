@@ -169,6 +169,8 @@ export interface ModelDiscussionComment {
 }
 
 export interface ModelDiscussionDetail {
+  current_user_id: number,
+  accepted?: ModelDiscussionComment;
   comment?: number;
   comments?: ModelDiscussionComment[];
   content?: string;
@@ -386,9 +388,9 @@ export interface SvcDiscussionSearchReq {
 }
 
 export interface SvcDiscussionUpdateReq {
-  content: string;
-  group_ids: number[];
-  tags: string[];
+  content?: string;
+  group_ids?: number[];
+  tags?: string[];
   title: string;
 }
 
