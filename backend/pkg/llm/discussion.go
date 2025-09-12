@@ -130,8 +130,7 @@ const discussionPromptTemplate = `
 {{- if .NewComment}}
 **回复目标**：针对新评论ID {{.NewComment.ID}} 进行回复
 {{- end}}
-
-请基于以上信息生成你的回复内容：`
+`
 
 // CommentNode 评论节点，用于构建层级结构
 type CommentNode struct {
