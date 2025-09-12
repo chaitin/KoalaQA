@@ -27,6 +27,7 @@ func init() {
 
 type MessageNotifyInfo struct {
 	DiscussID    uint          `gorm:"column:discussion_id" json:"discuss_id"`
+	DiscussUUID  string        `gorm:"column:discuss_uuid;type:text" json:"discuss_uuid"`
 	DiscussTitle string        `gorm:"disucss_title" json:"discuss_title"`
 	Type         MsgNotifyType `gorm:"column:type" json:"type"`
 	FromID       uint          `gorm:"column:from_id" json:"from_id"`
