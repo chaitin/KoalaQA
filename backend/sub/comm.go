@@ -65,6 +65,28 @@ func (d *Comment) Handle(ctx context.Context, msg mq.Message) error {
 func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange) error {
 	logger := d.logger.WithContext(ctx).With("comment_id", data.CommID)
 	logger.Debug("handle insert comment")
+	comment, err := d.disc.GetCommentByID(ctx, data.CommID)
+	if err != nil {
+		logger.WithErr(err).Warn("get comment failed")
+		return nil
+	}
+	if comment.Bot {
+		logger.Debug("comment is bot, skip")
+		return nil
+	}
+	if comment.ParentID == 0 {
+		logger.Debug("comment is the root comment, skip")
+		return nil
+	}
+	parentComment, err := d.disc.GetCommentByID(ctx, comment.ParentID)
+	if err != nil {
+		logger.WithErr(err).Warn("get parent comment failed")
+		return nil
+	}
+	if !parentComment.Bot {
+		logger.Debug("parent comment is not bot, skip")
+		return nil
+	}
 	bot, err := d.bot.Get(ctx)
 	if err != nil {
 		logger.WithContext(ctx).WithErr(err).Error("get bot failed")
@@ -94,11 +116,6 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 		disc, err := d.disc.GetByID(ctx, data.DiscID)
 		if err != nil {
 			logger.WithErr(err).Warn("get discussion failed")
-			return nil
-		}
-		comment, err := d.disc.GetCommentByID(ctx, data.CommID)
-		if err != nil {
-			logger.WithErr(err).Warn("get comment failed")
 			return nil
 		}
 		notifyMsg := topic.MsgMessageNotify{
