@@ -331,6 +331,7 @@ func (u *User) Login(ctx context.Context, req UserLoginReq) (string, error) {
 		Role:     user.Role,
 		Email:    user.Email,
 		Username: user.Name,
+		Avatar:   user.Avatar,
 		Key:      user.Key,
 	})
 	if err != nil {
@@ -392,16 +393,18 @@ func (u *User) LoginOIDCCallback(ctx context.Context, req LoginOIDCCallbackReq) 
 		return "", err
 	}
 
-	userID, err := u.repoUser.CreateThird(ctx, user)
+	dbUser, err := u.repoUser.CreateThird(ctx, user)
 	if err != nil {
 		return "", err
 	}
 
 	return u.jwt.Gen(ctx, model.UserInfo{
-		UID:      userID,
-		Role:     user.Role,
-		Email:    user.Email,
-		Username: user.Name,
+		UID:      dbUser.ID,
+		Role:     dbUser.Role,
+		Email:    dbUser.Email,
+		Username: dbUser.Name,
+		Avatar:   dbUser.Avatar,
+		Key:      dbUser.Key,
 	})
 }
 
