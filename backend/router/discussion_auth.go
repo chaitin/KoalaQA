@@ -140,6 +140,7 @@ func (d *discussionAuth) CreateComment(ctx *context.Context) {
 // @Accept json
 // @Produce json
 // @Param disc_id path string true "disc_id"
+// @Param comment_id path number true "comment_id"
 // @Param comment body svc.CommentUpdateReq true "comment"
 // @Success 200 {object} context.Response{data=any}
 // @Router /discussion/{disc_id}/comment/{comment_id} [put]
