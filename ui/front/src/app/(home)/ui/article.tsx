@@ -74,11 +74,7 @@ const Article = ({
     return params.toString();
   };
 
-  const fetchList = ({
-    st = status,
-    se = search,
-    tps = topics,
-  }) => {
+  const fetchList = ({ st = status, se = search, tps = topics }) => {
     setPage(1);
     const params: GetDiscussionParams = {
       page: 1,
@@ -163,8 +159,9 @@ const Article = ({
                     p: 1,
                     cursor: "pointer",
                     borderRadius: 1,
-                    backgroundColor:
-                      topics === item ? "rgba(32,108,255,0.06)" : "transparent",
+                    backgroundColor: topics.includes(item.id || -1)
+                      ? "rgba(32,108,255,0.06)"
+                      : "transparent",
                     "&:hover": {
                       backgroundColor: "rgba(32,108,255,0.06)",
                     },
@@ -182,7 +179,9 @@ const Article = ({
                       whiteSpace: "nowrap",
                       textOverflow: "ellipsis",
                       fontSize: 14,
-                      color: topics === item ? "primary.main" : "#000",
+                      color: topics.includes(item.id || -1)
+                        ? "primary.main"
+                        : "#000",
                       fontWeight: topics === item ? 500 : 400,
                     }}
                   >

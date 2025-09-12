@@ -1,17 +1,52 @@
 "use client";
 import { AuthContext } from "@/components/authProvider";
-import { Stack, Typography, Box, Divider, Tooltip, Badge } from "@mui/material";
+import {
+  Stack,
+  Typography,
+  Box,
+  Divider,
+  Tooltip,
+  Badge,
+  Button,
+} from "@mui/material";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import { Avatar } from "@/components/discussion";
 import React, { useContext, useEffect, useState, useRef } from "react";
 import ProfilePanel from "./profilePanel";
 import { useRouter } from "next/navigation";
 
-type MsgNotifyType = number;
+enum MsgNotifyType {
+  MsgNotifyTypeUnknown,
+  MsgNotifyTypeReplyDiscuss, // 回答了你的问题
+  MsgNotifyTypeReplyComment, // 回复了你的回答
+  MsgNotifyTypeApplyComment, // 采纳了你的回答
+  MsgNotifyTypeLikeComment, //赞同了你的回答
+  MsgNotifyTypeDislikeComment, // 不喜欢你的回答 、不喜欢机器人的回答（仅管理员）
+  MsgNotifyTypeBotUnknown, //提出了机器人无法回答的问题（仅管理员
+}
+const getNotificationText = (info: MessageNotifyInfo): string => {
+  switch (info.type) {
+    case MsgNotifyType.MsgNotifyTypeReplyDiscuss:
+      return "回答了你的问题";
+    case MsgNotifyType.MsgNotifyTypeReplyComment:
+      return "回复了你的回答";
+    case MsgNotifyType.MsgNotifyTypeApplyComment:
+      return "采纳了你的回答";
+    case MsgNotifyType.MsgNotifyTypeLikeComment:
+      return "赞同了你的回答";
+    case MsgNotifyType.MsgNotifyTypeDislikeComment:
+      return info?.to_bot ? "不喜欢机器人的回答" : "不喜欢你的回答";
+    case MsgNotifyType.MsgNotifyTypeBotUnknown:
+      return "提出了机器人无法回答的问题";
+    default:
+      return "";
+  }
+};
 
 type MessageNotifyInfo = {
   discuss_id: number;
   discuss_title: string;
+  discuss_uuid: string;
   type: MsgNotifyType;
   from_id: number;
   from_name: string;
@@ -19,6 +54,7 @@ type MessageNotifyInfo = {
   to_id: number;
   to_name: string;
   to_bot: boolean;
+  id: Number;
 };
 export interface LoggedInProps {
   user: any | null;
@@ -54,6 +90,7 @@ const LoggedInView: React.FC = () => {
         case 3: // 消息内容
           const newNotification = message.data as MessageNotifyInfo;
           setNotifications((prev) => [newNotification, ...prev]);
+          ws.send(JSON.stringify({ type: 1 }));
           break;
       }
     };
@@ -72,19 +109,12 @@ const LoggedInView: React.FC = () => {
   const handleNotificationClick = (notification: MessageNotifyInfo) => {
     // 使用已存在的 ws 连接
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      const id = (notification as any).id ?? notification.discuss_id;
-      wsRef.current.send(JSON.stringify({ type: 2, id }));
+      wsRef.current.send(JSON.stringify({ type: 2, id: notification.id }));
 
       // 更新UI
       setUnreadCount((c) => Math.max(0, c - 1));
-      setNotifications((prev) =>
-        prev.filter(
-          (n) =>
-            ((n as any).id ?? n.discuss_id) !==
-            ((notification as any).id ?? notification.discuss_id)
-        )
-      );
-      // router.push(`/discusss/${notification.discuss_id}`);
+      setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
+      router.push(`/discusss/${notification.discuss_uuid}`);
     }
   };
 
@@ -154,13 +184,8 @@ const LoggedInView: React.FC = () => {
             },
           },
         }}
-        open
         title={
-          <Stack spacing={2} sx={{ maxHeight: 400, overflowY: "auto" }}>
-            <Typography variant="h6" sx={{ fontWeight: 500 }}>
-              通知消息 ({unreadCount})
-            </Typography>
-            <Divider />
+          <Stack spacing={1} sx={{ maxHeight: 400, overflowY: "auto" }}>
             {notifications.length === 0 ? (
               <Box sx={{ p: 2, textAlign: "center", color: "text.secondary" }}>
                 暂无通知
@@ -178,13 +203,47 @@ const LoggedInView: React.FC = () => {
                     },
                     borderRadius: 1,
                   }}
-                  onClick={() => handleNotificationClick(notification)}
+                  direction="row"
+                  alignItems="center"
                 >
-                  <Typography variant="body2" sx={{ mb: 1 }}>
-                    {notification.from_bot ? "系统" : notification.from_name}{" "}
-                    在帖子 《{notification.discuss_title}》中{" "}
-                    {notification.type === 1 ? "回复了你" : "提到了你"}
-                  </Typography>
+                  <Box onClick={() => handleNotificationClick(notification)}>
+                    <Typography
+                      variant="body1"
+                      sx={{ display: "inline", pr: 1 }}
+                    >
+                      {notification.from_name}
+                    </Typography>
+                    <Typography sx={{ display: "inline" }} variant="caption">
+                      {getNotificationText(notification)}
+                    </Typography>
+                  </Box>
+
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (
+                        wsRef.current &&
+                        wsRef.current.readyState === WebSocket.OPEN
+                      ) {
+                        wsRef.current.send(
+                          JSON.stringify({ type: 2, id: notification.id })
+                        );
+                      }
+                      setUnreadCount((c) => Math.max(0, c - 1));
+                      setNotifications((prev) =>
+                        prev.filter((n) => n.id !== notification.id)
+                      );
+                    }}
+                    sx={{
+                      ml: 1,
+                      flexShrink: 0,
+                      borderRadius: 1,
+                      fontSize: "12px",
+                    }}
+                    size="small"
+                  >
+                    忽略
+                  </Button>
                 </Stack>
               ))
             )}
