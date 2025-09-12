@@ -66,7 +66,7 @@ interface ReleaseModalProps {
 const schema = z.object({
   content: z.string().default(""),
   group_ids: z.array(z.number()).default([]),
-  tags: z.array(z.string()).default([]),
+  tags: z.array(z.string()).default([]).optional(),
   title: z.string().min(1, "请输入讨论主题").default(""),
 });
 export const ReleaseModal: React.FC<ReleaseModalProps> = ({
