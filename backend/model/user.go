@@ -37,6 +37,10 @@ func (ui *UserInfo) IsAdmin() bool {
 	return ui.Role == UserRoleAdmin
 }
 
+func (ui *UserInfo) CanOperator(uid uint) bool {
+	return ui.Role == UserRoleOperator || ui.Role == UserRoleAdmin || ui.UID == uid
+}
+
 func init() {
 	registerAutoMigrate(&User{})
 }
