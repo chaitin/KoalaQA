@@ -23,6 +23,7 @@ type opt struct {
 	public      bool
 	retURL      bool
 	signTimeout time.Duration
+	signURL     string
 }
 
 func getOpt(optFuncs ...optFunc) opt {
@@ -84,6 +85,12 @@ func WithRetSignURL() optFunc {
 func WithSignTimeout(t time.Duration) optFunc {
 	return func(o *opt) {
 		o.signTimeout = t
+	}
+}
+
+func WithSignURL(url string) optFunc {
+	return func(o *opt) {
+		o.signURL = url
 	}
 }
 

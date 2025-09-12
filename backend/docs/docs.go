@@ -1911,9 +1911,6 @@ const docTemplate = `{
         "/discussion": {
             "get": {
                 "description": "list discussions",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1923,20 +1920,31 @@ const docTemplate = `{
                 "summary": "list discussions",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "page",
-                        "name": "page",
+                        "enum": [
+                            "hot",
+                            "new",
+                            "mine"
+                        ],
+                        "type": "string",
+                        "x-enum-varnames": [
+                            "DiscussionListFilterHot",
+                            "DiscussionListFilterNew",
+                            "DiscussionListFilterMine"
+                        ],
+                        "name": "filter",
                         "in": "query"
                     },
                     {
-                        "type": "integer",
-                        "description": "size",
-                        "name": "size",
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "group_ids",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "keyword",
                         "name": "keyword",
                         "in": "query"
                     },
@@ -1947,19 +1955,12 @@ const docTemplate = `{
                             "blog"
                         ],
                         "type": "string",
-                        "description": "type",
-                        "name": "type",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "hot",
-                            "new",
-                            "mine"
+                        "x-enum-varnames": [
+                            "DiscussionTypeQA",
+                            "DiscussionTypeFeedback",
+                            "DiscussionTypeBlog"
                         ],
-                        "type": "string",
-                        "description": "filter",
-                        "name": "filter",
+                        "name": "type",
                         "in": "query"
                     }
                 ],
@@ -3546,6 +3547,19 @@ const docTemplate = `{
                 }
             }
         },
+        "model.Pagination": {
+            "type": "object",
+            "properties": {
+                "page": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "size": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
         "model.PublicAddress": {
             "type": "object",
             "required": [
@@ -3747,7 +3761,6 @@ const docTemplate = `{
         "svc.DiscussionCreateReq": {
             "type": "object",
             "required": [
-                "group_ids",
                 "title"
             ],
             "properties": {
@@ -3756,7 +3769,6 @@ const docTemplate = `{
                 },
                 "group_ids": {
                     "type": "array",
-                    "minItems": 1,
                     "items": {
                         "type": "integer"
                     }
@@ -3777,6 +3789,19 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
+        },
+        "svc.DiscussionListFilter": {
+            "type": "string",
+            "enum": [
+                "hot",
+                "new",
+                "mine"
+            ],
+            "x-enum-varnames": [
+                "DiscussionListFilterHot",
+                "DiscussionListFilterNew",
+                "DiscussionListFilterMine"
+            ]
         },
         "svc.DiscussionSearchReq": {
             "type": "object",
