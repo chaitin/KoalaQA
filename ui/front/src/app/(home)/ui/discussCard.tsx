@@ -31,7 +31,7 @@ const DiscussCard = ({
   const currentGroups = useMemo(() => {
     return groups.flat.filter((item) => it.group_ids?.includes(item.id!));
   }, [groups, it.group_ids]);
-  console.log(it.tags)
+  
   return (
     <Card
       key={it.id}

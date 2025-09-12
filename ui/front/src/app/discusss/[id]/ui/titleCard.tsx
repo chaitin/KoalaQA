@@ -38,7 +38,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
       },
     });
   };
-  console.log(data);
+
   return (
     <Card
       sx={{
@@ -146,9 +146,9 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                 label={label}
                 sx={{ backgroundColor: "rgba(32, 108, 255, 0.1)" }}
                 size="small"
-                onClick={() => {
-                  window.open(`/discussion?topic=${item.id}`, "_blank");
-                }}
+                // onClick={() => {
+                //   window.open(`/discussion?topic=${item.id}`, "_blank");
+                // }}
               />
             );
           })}
