@@ -71,7 +71,7 @@ func (k *KBDoc) handleInsert(ctx context.Context, kbID uint, docID uint) error {
 	doc, err := k.doc.GetByID(ctx, kbID, docID)
 	if err != nil {
 		logger.WithErr(err).Error("doc not found")
-		return err
+		return nil
 	}
 	var content string
 	switch doc.DocType {
