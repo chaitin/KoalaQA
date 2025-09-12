@@ -256,9 +256,10 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 	if err != nil {
 		return 0, err
 	}
+	parentID := d.getParentID(ctx, req.CommentID)
 	comment := model.Comment{
 		DiscussionID: disc.ID,
-		ParentID:     d.getParentID(ctx, req.CommentID),
+		ParentID:     parentID,
 		UserID:       uid,
 		Content:      req.Content,
 		Bot:          req.Bot,
@@ -283,6 +284,26 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 			DiscID:   disc.ID,
 			DiscUUID: discUUID,
 		})
+		toID := disc.UserID
+		typ := model.MsgNotifyTypeReplyDiscuss
+		if parentID > 0 {
+			typ = model.MsgNotifyTypeReplyComment
+			var parentComment model.Comment
+			err := d.in.CommRepo.GetByID(ctx, &parentComment, parentID)
+			if err != nil {
+				return 0, err
+			}
+			toID = parentComment.UserID
+		}
+		notifyMsg := topic.MsgMessageNotify{
+			DiscussID:    disc.ID,
+			DiscussTitle: disc.Title,
+			DiscussUUID:  disc.UUID,
+			Type:         typ,
+			FromID:       uid,
+			ToID:         toID,
+		}
+		d.in.Pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	}
 	return comment.ID, nil
 }
@@ -502,4 +523,13 @@ func (d *Discussion) RevokeLike(ctx context.Context, uid uint, commentID uint) e
 	}
 
 	return d.in.CommLikeRepo.RevokeLike(ctx, uid, commentID)
+}
+
+func (d *Discussion) GetCommentByID(ctx context.Context, id uint) (*model.Comment, error) {
+	var comment model.Comment
+	err := d.in.CommRepo.GetByID(ctx, &comment, id)
+	if err != nil {
+		return nil, err
+	}
+	return &comment, nil
 }
