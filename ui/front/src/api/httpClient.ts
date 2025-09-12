@@ -207,7 +207,11 @@ export class HttpClient<SecurityDataType = unknown> {
         const token = cookieStore.get("auth_token")?.value || null;
         resolve(token);
       } else {
-        resolve(JSON.parse(localStorage.getItem("auth_token")));
+        let token = "";
+        try {
+          token = JSON.parse(localStorage.getItem("auth_token"));
+        } catch (e) {}
+        resolve(token);
       }
     });
     return this.instance.request({
@@ -217,6 +221,7 @@ export class HttpClient<SecurityDataType = unknown> {
         ...(type && type !== ContentType.FormData
           ? { "Content-Type": type }
           : {}),
+        Authorization: `Bearer ${Authorization}`,
       },
       params: query,
       responseType: responseFormat,
