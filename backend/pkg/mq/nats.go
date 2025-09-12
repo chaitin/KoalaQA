@@ -56,9 +56,8 @@ type natsSubscriberIn struct {
 	Handlers []Handler[Message] `group:"mq_handler"`
 }
 type natsSubscriber struct {
-	in            natsSubscriberIn
-	logger        *glog.Logger
-	subscriptions []*nats.Subscription
+	in     natsSubscriberIn
+	logger *glog.Logger
 }
 
 func (ns *natsSubscriber) Subscribe(ctx context.Context) error {
@@ -106,7 +105,7 @@ func (ns *natsSubscriber) Subscribe(ctx context.Context) error {
 
 		for range h.Concurrent() {
 			if topic.Persistence() {
-				s, err := ns.in.JS.js.QueueSubscribe(topic.Name(), h.Group(), callback,
+				_, err := ns.in.JS.js.QueueSubscribe(topic.Name(), h.Group(), callback,
 					nats.AckExplicit(),
 					nats.MaxDeliver(3),
 					nats.DeliverAll(),
@@ -117,7 +116,6 @@ func (ns *natsSubscriber) Subscribe(ctx context.Context) error {
 				if err != nil {
 					return err
 				}
-				ns.subscriptions = append(ns.subscriptions, s)
 			} else {
 				_, err := ns.in.JS.conn.QueueSubscribe(topic.Name(), h.Group(), callback)
 				if err != nil {
@@ -131,14 +129,6 @@ func (ns *natsSubscriber) Subscribe(ctx context.Context) error {
 }
 
 func (ns *natsSubscriber) Close(ctx context.Context) {
-	for _, subscription := range ns.subscriptions {
-		ns.logger.WithContext(ctx).With("topic", subscription).Info("topic unsubscribe")
-		err := subscription.Unsubscribe()
-		if err != nil {
-			ns.logger.WithContext(ctx).WithErr(err).With("topic", subscription.Subject).Warn("unsubscribe failed")
-		}
-	}
-
 	ns.in.JS.conn.Close()
 }
 
