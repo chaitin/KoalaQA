@@ -20,7 +20,6 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import DocImport from "./docImport";
 import MarkDown from "@/components/markDown";
-import request from "@/api/httpClient";
 
 // 新增：用于请求 markdown 内容
 const fetchMarkdownContent = async (url: string): Promise<string> => {
@@ -118,8 +117,8 @@ const AdminDocument = () => {
       render: (_, record) => {
         if (!record?.status) return "-";
         return record.status === ModelDocStatus.DocStatusAppling
-          ? "未应用"
-          : "应用中";
+          ? "应用中"
+          : "未应用";
       },
     },
     {
@@ -239,11 +238,17 @@ const AdminDocument = () => {
         open={!!detail}
         title={detail?.title || "文档详情"}
         onCancel={() => setDetail(null)}
-        width={"80%"}
-        showCancel={false}
-        onOk={() => setDetail(null)}
+        footer={
+          <Button variant="text" onClick={() => setDetail(null)}>
+            关闭
+          </Button>
+        }
       >
         <Box sx={{ maxHeight: 600, overflow: "auto", pr: 1 }}>
+          <Typography variant="subtitle1" sx={{ mb: 1 }}>
+            {detail?.title || "-"}
+          </Typography>
+
           {detail ? (
             <MarkDown content={markdownContent || "未查询到回答内容"} />
           ) : (

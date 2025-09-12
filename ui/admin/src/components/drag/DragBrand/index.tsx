@@ -1,4 +1,8 @@
 import {
+  getAdminGroup,
+  putAdminGroup
+} from '@/api';
+import {
   closestCenter,
   DndContext,
   DragEndEvent,
@@ -12,24 +16,11 @@ import {
 import { rectSortingStrategy, SortableContext } from '@dnd-kit/sortable';
 import { Box, Button, Stack } from '@mui/material';
 import { Icon } from 'ct-mui';
-import { FC, useCallback, useEffect, useState } from 'react';
-import { Control, FieldErrors, useFieldArray, useForm } from 'react-hook-form';
+import { useCallback, useEffect, useState } from 'react';
+import { useFieldArray, useForm } from 'react-hook-form';
 import Item from './Item';
 import SortableItem from './SortableItem';
-import {
-  getAdminGroup,
-  getGroup,
-  ModelGroupItemInfo,
-  ModelGroupWithItem,
-  putAdminGroup,
-} from '@/api';
-import { set } from 'zod';
 
-interface DragBrandProps {
-  control: Control<any>;
-  errors: FieldErrors<any>;
-  setIsEdit: (value: boolean) => void;
-}
 
 const DragBrand = () => {
   const [isEdit, setIsEdit] = useState(false);

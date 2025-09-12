@@ -119,18 +119,11 @@ const LinkItem = forwardRef<HTMLDivElement, LinkItemProps>(
                   field.onChange(e.target.value);
                   setIsEdit(true);
                 }}
-                // error={
-                //   !!errors.brand_groups?.[groupIndex]?.links?.[linkIndex]?.url
-                // }
-                // helperText={
-                //   errors.brand_groups?.[groupIndex]?.links?.[linkIndex]?.url
-                //     ?.message
-                // }
               />
             )}
           />
           <IconButton size='small' sx={{ flexShrink: 0 }} onClick={onRemove}>
-            <Icon type='icon-icon_tool_close' />
+            <DeleteIcon/>
           </IconButton>
         </Stack>
       </Box>

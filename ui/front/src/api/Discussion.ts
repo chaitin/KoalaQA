@@ -66,7 +66,6 @@ export const getDiscussion = (
     path: `/discussion`,
     method: "GET",
     query: query,
-    type: ContentType.Json,
     format: "json",
     ...params,
   });
