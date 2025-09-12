@@ -169,12 +169,12 @@ export interface ModelDiscussionComment {
 }
 
 export interface ModelDiscussionDetail {
-  current_user_id: number,
   accepted?: ModelDiscussionComment;
   comment?: number;
   comments?: ModelDiscussionComment[];
   content?: string;
   created_at?: number;
+  current_user_id?: number;
   dislike?: number;
   group_ids?: number[];
   groups?: ModelDiscussionGroup[];
@@ -844,7 +844,8 @@ export interface PostDiscussionDiscIdCommentParams {
 export interface PutDiscussionDiscIdCommentCommentIdParams {
   /** disc_id */
   discId: string;
-  commentId: string;
+  /** comment_id */
+  commentId: number;
 }
 
 export interface DeleteDiscussionDiscIdCommentCommentIdParams {

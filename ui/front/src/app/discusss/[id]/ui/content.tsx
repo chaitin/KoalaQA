@@ -1,10 +1,12 @@
 "use client";
 import {
+  deleteDiscussionDiscIdCommentCommentId,
   postDiscussionDiscIdComment,
   postDiscussionDiscIdCommentCommentIdAccept,
   postDiscussionDiscIdCommentCommentIdDislike,
   postDiscussionDiscIdCommentCommentIdLike,
   postDiscussionDiscIdCommentCommentIdRevokeLike,
+  putDiscussionDiscIdCommentCommentId,
 } from "@/api";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ThumbUpAltOutlinedIcon from "@mui/icons-material/ThumbUpAltOutlined";
@@ -369,20 +371,20 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
     setCommentIndex(index);
   };
   const { user } = useContext(AuthContext);
-
   const handleClose = () => {
     setAnchorEl(null);
   };
-  const onSubmit = () => {
+  const onSubmit = (comment: string) => {
     // @ts-ignore
-    return postDiscussionDiscIdComment(
-      { discId: id },
+    return putDiscussionDiscIdCommentCommentId(
+      { discId: id, commentId: commentIndex?.id! },
       {
         content: comment,
       }
     ).then(() => {
       router.refresh();
       setComment("");
+      setEditCommentModalVisible(false);
     });
   };
 
@@ -392,11 +394,12 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
       title: "确定删除吗？",
       okButtonProps: { color: "error" },
       onOk: async () => {
-        // await commentDelete(historyComment!.id!, historyComment!.id).then(
-        //   () => {
-        //     router.refresh();
-        //   }
-        // );
+        if (!commentIndex) return;
+        await deleteDiscussionDiscIdCommentCommentId({
+          discId: data.uuid!,
+          commentId: commentIndex.id!,
+        });
+        router.refresh();
       },
     });
   };
@@ -405,9 +408,10 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
       title: "确定采纳吗？",
       okButtonProps: { color: "info" },
       onOk: async () => {
+        if (!commentIndex) return;
         await postDiscussionDiscIdCommentCommentIdAccept({
           discId: data.uuid!,
-          commentId: data.id!,
+          commentId: commentIndex.id!,
         });
         router.refresh();
       },
@@ -438,20 +442,12 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
       </Menu>
       <EditCommentModal
         open={editCommentModalVisible}
-        data={historyComment!}
-        onOk={() => {
-          setEditCommentModalVisible(false);
-          router.refresh();
-        }}
+        data={commentIndex!}
+        onOk={onSubmit}
         onClose={() => setEditCommentModalVisible(false)}
       />
       {data.accepted && (
-        <DiscussCard
-          data={data.accepted}
-          index={0}
-          disData={data}
-          onOpt={handleClick}
-        />
+        <DiscussCard data={data.accepted} index={0} disData={data} />
       )}
       {data.comments?.map((it, index) => (
         <DiscussCard
@@ -462,29 +458,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
           onOpt={handleClick}
         />
       ))}
-      <Card
-        sx={{
-          boxShadow: "rgba(0, 28, 85, 0.04) 0px 4px 10px 0px",
-          cursor: "auto",
-        }}
-      >
-        <Stack direction="row" gap={1}>
-          <Avatar size={28} />
-
-          <MdEditor style={{ flex: 1 }} value={comment} onChange={setComment} />
-        </Stack>
-        <Stack direction="row" justifyContent="flex-end" sx={{ mt: 2 }}>
-          <LoadingBtn
-            id="s-captcha-button"
-            variant="contained"
-            size="small"
-            disabled={!comment.trim()}
-            onClick={onSubmit}
-          >
-            发布
-          </LoadingBtn>
-        </Stack>
-      </Card>
     </Stack>
   );
 };
