@@ -58,7 +58,7 @@ func (d *DiscSummary) Handle(ctx context.Context, msg mq.Message) error {
 
 func (d *DiscSummary) handle(ctx context.Context, discID uint) error {
 	logger := d.logger.WithContext(ctx).With("disc_id", discID)
-	logger.Info("handle insert or update discussion comment")
+	logger.Debug("handle insert or update discussion comment")
 	prompt, err := d.llm.GenerateSummaryPrompt(ctx, discID)
 	if err != nil {
 		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
