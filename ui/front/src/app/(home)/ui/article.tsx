@@ -9,7 +9,6 @@ import { Card, CusTabs } from "@/components";
 import { AuthContext } from "@/components/authProvider";
 import { CommonContext } from "@/components/commonProvider";
 import { ImgLogo, ReleaseModal } from "@/components/discussion";
-import { BBS_TOPICS } from "@/constant/discussion";
 import ArrowCircleRightRoundedIcon from "@mui/icons-material/ArrowCircleRightRounded";
 import SearchIcon from "@mui/icons-material/Search";
 import {
@@ -30,27 +29,17 @@ export type Status = "hot" | "new" | "mine";
 
 const Article = ({
   data,
-  topics: topicsList,
+  topics,
 }: {
   data: ModelListRes & {
     items?: ModelDiscussion[];
   };
-  topics: ModelDiscussion[];
+  topics: number[];
 }) => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useContext(AuthContext);
   const { groups } = useContext(CommonContext);
-  const urlTopic = searchParams.get("topic") || "";
-  const urlTag = searchParams.get("tag") || "";
-  const [topics, setTopics] = useState<string>(urlTopic);
-  const [showTopicsList, setShowTopicsList] = useState(() => {
-    if (urlTopic && !BBS_TOPICS.includes(urlTopic)) {
-      return [...BBS_TOPICS, urlTopic];
-    }
-    return [...BBS_TOPICS];
-  });
-  const [tags, setTags] = useState<string>(urlTag);
   const [
     releaseModalVisible,
     { setTrue: releaseModalOpen, setFalse: releaseModalClose },
@@ -88,7 +77,6 @@ const Article = ({
   const fetchList = ({
     st = status,
     se = search,
-    tgs = tags,
     tps = topics,
   }) => {
     setPage(1);
@@ -115,43 +103,23 @@ const Article = ({
     setArticleData(data);
   }, [data]);
 
-  const handleTagClick = (tag: string) => {
-    if (tags === tag) {
-      setTags("");
-      fetchList({ tgs: "" });
-    } else {
-      setTags(tag);
-      fetchList({ tgs: tag });
-    }
-  };
 
   const handleTopicClick = (t: number) => {
-    fetchList({ tps: t + "" });
-    // if (topics === t) {
-    //   setTopics('');
-    //   fetchList({ tps: '' });
-    // } else {
-    //   if (!showTopicsList.includes(t)) {
-    //     setShowTopicsList([...showTopicsList, t]);
-    //   }
-    //   setTopics(t);
-    //   fetchList({ tps: t });
-    // }
-  };
-
-  useEffect(() => {
-    if (urlTopic || urlTag) {
-      const params = new URLSearchParams(searchParams.toString());
-      params.delete("topic");
-      params.delete("tag");
-      const query = params.toString();
-      window.history.replaceState(
-        null,
-        "",
-        `/discussion${query ? "?" + query : ""}`
-      );
+    let newTopics: number[];
+    if (topics.includes(t)) {
+      // 已选中则取消
+      newTopics = topics.filter((item) => item !== t);
+    } else {
+      // 未选中则添加
+      newTopics = [...topics, t];
     }
-  }, [urlTag, urlTopic]);
+    // 更新 url 参数
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tps", newTopics.join(","));
+    router.replace(`/?${params.toString()}`);
+    // 这里如果需要同步本地 topics 状态，也可以 setTopics(newTopics)
+    fetchList({ tps: newTopics });
+  };
 
   return (
     <Stack
@@ -298,40 +266,41 @@ const Article = ({
             发帖提问
           </Button>
         </Stack>
-        {searchParams.get("search") && (!articleData.items || articleData.items.length === 0) && (
-          <Card
-            sx={{
-              p: 3,
-              boxShadow: "rgba(0, 28, 85, 0.04) 0px 4px 10px 0px",
-              textAlign: "center",
-            }}
-          >
-            <Stack gap={1.5} alignItems="center">
-              <Typography variant="h6">没搜到想要的答案？发帖提问获取帮助</Typography>
-              <Button
-                variant="contained"
-                onClick={() => {
-                  releaseModalOpen();
-                }}
-              >
-                发帖提问
-              </Button>
-            </Stack>
-          </Card>
-        )}
+        {searchParams.get("search") &&
+          (!articleData.items || articleData.items.length === 0) && (
+            <Card
+              sx={{
+                p: 3,
+                boxShadow: "rgba(0, 28, 85, 0.04) 0px 4px 10px 0px",
+                textAlign: "center",
+              }}
+            >
+              <Stack gap={1.5} alignItems="center">
+                <Typography variant="h6">
+                  没搜到想要的答案？发帖提问获取帮助
+                </Typography>
+                <Button
+                  variant="contained"
+                  onClick={() => {
+                    releaseModalOpen();
+                  }}
+                >
+                  发帖提问
+                </Button>
+              </Stack>
+            </Card>
+          )}
         {articleData.items?.map((it) => (
           <React.Fragment key={it.uuid}>
             <DiscussCard
               data={it}
               keywords={searchRef.current}
               onTopicClick={handleTopicClick}
-              onTagClick={handleTagClick}
             />
             <DiscussCardMobile
               data={it}
               keywords={searchRef.current}
               onTopicClick={handleTopicClick}
-              onTagClick={handleTagClick}
             />
           </React.Fragment>
         ))}

@@ -20,12 +20,10 @@ const DiscussCard = ({
   data,
   keywords,
   onTopicClick,
-  onTagClick,
 }: {
   data: ModelDiscussionListItem;
   keywords?: string;
   onTopicClick(t: number): void;
-  onTagClick(t: string): void;
 }) => {
   const it = data;
   const router = useRouter();
@@ -242,12 +240,10 @@ export const DiscussCardMobile = ({
   data,
   keywords,
   onTopicClick,
-  onTagClick,
 }: {
   data: ModelDiscussionListItem;
   keywords?: string;
   onTopicClick(t: number): void;
-  onTagClick(t: string): void;
 }) => {
   const it = data;
   const router = useRouter();
@@ -353,9 +349,6 @@ export const DiscussCardMobile = ({
             label={item}
             size="small"
             sx={{ backgroundColor: "rgba(32, 108, 255, 0.1)" }}
-            onClick={() => {
-              onTagClick(item);
-            }}
           />
         ))}
       </Stack>

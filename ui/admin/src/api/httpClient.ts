@@ -194,12 +194,10 @@ export class HttpClient<SecurityDataType = unknown> {
     try {
       auth_token = JSON.parse(localStorage.getItem("auth_token"));
     } catch {}
-    const Authorization = auth_token || "";
-
     return this.instance.request({
       ...requestParams,
       headers: {
-        Authorization: `Bearer ${Authorization}`,
+        Authorization: `Bearer ${auth_token}`,
         ...(requestParams.headers || {}),
         ...(type && type !== ContentType.FormData
           ? { "Content-Type": type }

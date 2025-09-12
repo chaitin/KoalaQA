@@ -1,0 +1,195 @@
+"use client";
+import React, { useState, useEffect } from 'react'
+import { Stack, Slider, Box } from '@mui/material'
+import { postUserAvatar } from '@/api/user'
+import { Area } from 'react-easy-crop/types'
+import Cropper from 'react-easy-crop'
+import Modal2 from '@/components/Modal2'
+import { Message } from '@cx/ui'
+
+export const createImage = (url: string) =>
+  new Promise((resolve, reject) => {
+    const image = new Image()
+    image.addEventListener('load', () => resolve(image))
+    image.addEventListener('error', (error) => reject(error))
+    image.setAttribute('crossOrigin', 'anonymous') // needed to avoid cross-origin issues on CodeSandbox
+    image.src = url
+  })
+
+export function getRadianAngle(degreeValue: number) {
+  return (degreeValue * Math.PI) / 180
+}
+
+/**
+ * Returns the new bounding area of a rotated rectangle.
+ */
+export function rotateSize(width: number, height: number, rotation: number) {
+  const rotRad = getRadianAngle(rotation)
+
+  return {
+    width: Math.abs(Math.cos(rotRad) * width) + Math.abs(Math.sin(rotRad) * height),
+    height: Math.abs(Math.sin(rotRad) * width) + Math.abs(Math.cos(rotRad) * height),
+  }
+}
+
+/**
+ * This function was adapted from the one in the ReadMe of https://github.com/DominicTobias/react-image-crop
+ */
+export async function getCroppedImg(
+  imageSrc: string,
+  pixelCrop: Area,
+  rotation = 0,
+  flip = { horizontal: false, vertical: false },
+) {
+  const image = (await createImage(imageSrc)) as HTMLImageElement
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+
+  if (!ctx) {
+    return null
+  }
+
+  const rotRad = getRadianAngle(rotation)
+
+  // calculate bounding box of the rotated image
+  const { width: bBoxWidth, height: bBoxHeight } = rotateSize(image.width, image.height, rotation)
+
+  // set canvas size to match the bounding box
+  canvas.width = bBoxWidth
+  canvas.height = bBoxHeight
+
+  // translate canvas context to a central location to allow rotating and flipping around the center
+  ctx.translate(bBoxWidth / 2, bBoxHeight / 2)
+  ctx.rotate(rotRad)
+  ctx.scale(flip.horizontal ? -1 : 1, flip.vertical ? -1 : 1)
+  ctx.translate(-image.width / 2, -image.height / 2)
+
+  // draw rotated image
+  ctx.drawImage(image, 0, 0)
+
+  const croppedCanvas = document.createElement('canvas')
+
+  const croppedCtx = croppedCanvas.getContext('2d')
+
+  if (!croppedCtx) {
+    return null
+  }
+
+  // Set the size of the cropped canvas
+  croppedCanvas.width = pixelCrop.width
+  croppedCanvas.height = pixelCrop.height
+
+  // Draw the cropped image onto the new canvas
+  croppedCtx.drawImage(
+    canvas,
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height,
+    0,
+    0,
+    pixelCrop.width,
+    pixelCrop.height,
+  )
+
+  // As Base64 string
+  // return croppedCanvas.toDataURL('image/jpeg');
+
+  // As a blob
+  // return new Promise((resolve, reject) => {
+  //   croppedCanvas.toBlob((file) => {
+  //     resolve(URL.createObjectURL(file));
+  //   }, "image/jpeg");
+  // });
+
+  // As a file
+  return new Promise((resolve, reject) => {
+    croppedCanvas.toBlob((file) => {
+      resolve(file)
+    }, 'image/png')
+  })
+}
+
+interface CropImageModalProps {
+  open: boolean
+  onCancel: () => void
+  onOk: (img: string) => void
+  url: string
+}
+
+const CropImageModal: React.FC<CropImageModalProps> = ({ open, onCancel, onOk, url }) => {
+  const [crop, setCrop] = useState({ x: 0, y: 0 })
+  const [rotation, setRotation] = useState(0)
+  const [zoom, setZoom] = useState(1)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
+  const onCropComplete = (croppedArea: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels)
+  }
+
+  const onSubmit = () => {
+    return (
+      getCroppedImg(url, croppedAreaPixels!, rotation)
+        // @ts-ignore
+        .then((res: File) => {
+          return postUserAvatar(res).then((res) => {
+            return onOk(res.head_img_url)
+          })
+        })
+        .catch((err) => {
+          console.log(err)
+        })
+    )
+  }
+
+  useEffect(() => {
+    if (!open) {
+      setCrop({ x: 0, y: 0 })
+      setRotation(0)
+      setZoom(1)
+      setCroppedAreaPixels(null)
+    }
+  }, [open])
+
+  return (
+    <Modal2 title='裁剪头像' width={800} open={open} onCancel={onCancel} onOk={onSubmit}>
+      <Box
+        sx={{
+          position: 'relative',
+          width: '100%',
+          height: '40vh',
+          background: '#fff',
+        }}
+      >
+        <Cropper
+          image={url}
+          crop={crop}
+          rotation={rotation}
+          zoom={zoom}
+          aspect={1}
+          onCropChange={setCrop}
+          onRotationChange={setRotation}
+          onCropComplete={onCropComplete}
+          onZoomChange={setZoom}
+        />
+      </Box>
+      <Stack alignItems='center' gap={2} sx={{ mt: 2 }}>
+        <Stack direction='row' alignItems='center' gap={2} sx={{ width: 300 }}>
+          <Box sx={{ color: 'rgba(0,0,0,0.5)', width: 40, fontSize: 12 }}>缩放</Box>
+          <Slider value={zoom} min={1} max={3} step={0.1} onChange={(e, zoom) => setZoom(zoom as number)} />
+        </Stack>
+        <Stack direction='row' alignItems='center' gap={2} sx={{ width: 300 }}>
+          <Box sx={{ color: 'rgba(0,0,0,0.5)', width: 40, fontSize: 12 }}>旋转</Box>
+          <Slider
+            value={rotation}
+            min={0}
+            max={360}
+            step={1}
+            onChange={(e, rotation) => setRotation(rotation as number)}
+          />
+        </Stack>
+      </Stack>
+    </Modal2>
+  )
+}
+
+export default CropImageModal
