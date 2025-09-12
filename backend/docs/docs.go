@@ -2355,6 +2355,13 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "type": "number",
+                        "description": "comment_id",
+                        "name": "comment_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
                         "description": "comment",
                         "name": "comment",
                         "in": "body",
