@@ -38,6 +38,7 @@ func (d *Discussion) DetailByUUID(ctx context.Context, uid uint, uuid string) (*
 
 func (d *Discussion) Detail(ctx context.Context, uid uint, id uint) (*model.DiscussionDetail, error) {
 	var res model.DiscussionDetail
+	res.CurrentUserID = uid
 	err := d.model(ctx).Where("discussions.id = ?", id).
 		Joins("left join users on users.id = discussions.user_id").
 		Select("discussions.*, users.name as user_name, users.avatar as user_avatar").

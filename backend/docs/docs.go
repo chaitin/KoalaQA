@@ -3083,6 +3083,9 @@ const docTemplate = `{
         "model.DiscussionDetail": {
             "type": "object",
             "properties": {
+                "accepted": {
+                    "$ref": "#/definitions/model.DiscussionComment"
+                },
                 "comment": {
                     "type": "integer"
                 },
@@ -3096,6 +3099,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "created_at": {
+                    "type": "integer"
+                },
+                "current_user_id": {
                     "type": "integer"
                 },
                 "dislike": {
@@ -3816,9 +3822,6 @@ const docTemplate = `{
         "svc.DiscussionUpdateReq": {
             "type": "object",
             "required": [
-                "content",
-                "group_ids",
-                "tags",
                 "title"
             ],
             "properties": {

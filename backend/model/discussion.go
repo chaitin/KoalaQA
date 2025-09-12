@@ -73,12 +73,13 @@ type DiscussionGroup struct {
 }
 type DiscussionDetail struct {
 	Discussion
-	UserID     uint                `json:"user_id"`
-	UserName   string              `json:"user_name"`
-	UserAvatar string              `json:"user_avatar"`
-	Accepted   *DiscussionComment  `json:"accepted" gorm:"-"`
-	Groups     []DiscussionGroup   `json:"groups" gorm:"-"`
-	Comments   []DiscussionComment `json:"comments" gorm:"-"`
+	CurrentUserID uint                `json:"current_user_id"`
+	UserID        uint                `json:"user_id"`
+	UserName      string              `json:"user_name"`
+	UserAvatar    string              `json:"user_avatar"`
+	Accepted      *DiscussionComment  `json:"accepted" gorm:"-"`
+	Groups        []DiscussionGroup   `json:"groups" gorm:"-"`
+	Comments      []DiscussionComment `json:"comments" gorm:"-"`
 }
 
 func init() {
