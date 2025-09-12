@@ -73,7 +73,8 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 		return nil
 	}
 
-	if data.Type == model.MsgNotifyTypeLikeComment && data.ToID == botUserID {
+	if data.Type == model.MsgNotifyTypeLikeComment && data.ToID == botUserID || data.FromID == data.ToID {
+		logger.With("msg", data).With("bot_user_id", botUserID).Debug("ignore message notify")
 		return nil
 	}
 
