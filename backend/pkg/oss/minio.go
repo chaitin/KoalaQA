@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"mime"
+	"net/http"
 	"net/url"
 	"path"
 	"path/filepath"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/chaitin/koalaqa/pkg/config"
 	"github.com/chaitin/koalaqa/pkg/glog"
+	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -97,7 +99,7 @@ func (mc *minioClient) Upload(ctx context.Context, dir string, reader io.Reader,
 	}
 
 	if o.retURL {
-		return mc.Sign(ctx, fullFilename, WithBucket(o.bucket), WithSignTimeout(o.signTimeout))
+		return mc.Sign(ctx, fullFilename, WithBucket(o.bucket), WithSignTimeout(o.signTimeout), WithSignURL(o.signURL))
 	}
 
 	return path.Join("/", o.bucket, fullFilename), nil
@@ -146,9 +148,27 @@ func (mc *minioClient) Sign(ctx context.Context, path string, optFuncs ...optFun
 		o.bucket = mc.buckets[0]
 	}
 
-	u, err := mc.mc.PresignedGetObject(ctx, o.bucket, path, o.signTimeout, url.Values{})
+	var signURL *url.URL
+	if o.signURL != "" {
+		var err error
+		signURL, err = util.ParseHTTP(o.signURL)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	header := make(http.Header)
+	if signURL != nil {
+		header.Set("Host", signURL.Host)
+	}
+
+	u, err := mc.mc.PresignHeader(ctx, http.MethodGet, o.bucket, path, o.signTimeout, url.Values{}, header)
 	if err != nil {
 		return "", err
+	}
+
+	if signURL != nil {
+		u.Scheme = signURL.Scheme
 	}
 
 	mc.logger.WithContext(ctx).With("bucket", o.bucket).With("sign_object", path).With("sign_url", u.String()).Debug("sign object url")

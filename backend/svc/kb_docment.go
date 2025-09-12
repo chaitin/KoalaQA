@@ -28,11 +28,12 @@ type baseExportReq struct {
 }
 
 type KBDocument struct {
-	repoDoc *repo.KBDocument
-	cache   cache.Cache[topic.TaskMeta]
-	anydoc  anydoc.Anydoc
-	pub     mq.Publisher
-	oc      oss.Client
+	repoDoc       *repo.KBDocument
+	cache         cache.Cache[topic.TaskMeta]
+	svcPublicAddr *PublicAddress
+	anydoc        anydoc.Anydoc
+	pub           mq.Publisher
+	oc            oss.Client
 }
 
 type FeishuListReq struct {
@@ -356,7 +357,12 @@ func (d *KBDocument) Detail(ctx context.Context, kbID uint, docID uint) (*model.
 		return nil, err
 	}
 
-	markdownPath, err := d.oc.Sign(ctx, doc.Markdown, oss.WithBucket("anydoc"))
+	publicAddress, err := d.svcPublicAddr.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	markdownPath, err := d.oc.Sign(ctx, doc.Markdown, oss.WithBucket("anydoc"), oss.WithSignURL(publicAddress.Address))
 	if err != nil {
 		return nil, err
 	}
@@ -401,13 +407,14 @@ func (d *KBDocument) UploadFile(ctx context.Context, kbID uint, req UploadFileRe
 	)
 }
 
-func newDocument(repoDoc *repo.KBDocument, c cache.Cache[topic.TaskMeta], doc anydoc.Anydoc, pub mq.Publisher, oc oss.Client) *KBDocument {
+func newDocument(repoDoc *repo.KBDocument, c cache.Cache[topic.TaskMeta], doc anydoc.Anydoc, pub mq.Publisher, oc oss.Client, pa *PublicAddress) *KBDocument {
 	return &KBDocument{
-		repoDoc: repoDoc,
-		cache:   c,
-		anydoc:  doc,
-		pub:     pub,
-		oc:      oc,
+		repoDoc:       repoDoc,
+		cache:         c,
+		anydoc:        doc,
+		pub:           pub,
+		oc:            oc,
+		svcPublicAddr: pa,
 	}
 }
 
