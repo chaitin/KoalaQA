@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/topic"
@@ -15,14 +16,16 @@ type Comment struct {
 	llm    *svc.LLM
 	bot    *svc.Bot
 	disc   *svc.Discussion
+	pub    mq.Publisher
 }
 
-func NewComment(disc *svc.Discussion, bot *svc.Bot, llm *svc.LLM) *Comment {
+func NewComment(disc *svc.Discussion, bot *svc.Bot, llm *svc.LLM, pub mq.Publisher) *Comment {
 	return &Comment{
 		llm:    llm,
 		logger: glog.Module("sub.comment"),
 		disc:   disc,
 		bot:    bot,
+		pub:    pub,
 	}
 }
 
@@ -88,7 +91,25 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 		return err
 	}
 	if !answered {
-		logger.Debug("llm not know the answer")
+		disc, err := d.disc.GetByID(ctx, data.DiscID)
+		if err != nil {
+			logger.WithErr(err).Warn("get discussion failed")
+			return nil
+		}
+		comment, err := d.disc.GetCommentByID(ctx, data.CommID)
+		if err != nil {
+			logger.WithErr(err).Warn("get comment failed")
+			return nil
+		}
+		notifyMsg := topic.MsgMessageNotify{
+			DiscussID:    disc.ID,
+			DiscussTitle: disc.Title,
+			DiscussUUID:  disc.UUID,
+			Type:         model.MsgNotifyTypeBotUnknown,
+			FromID:       comment.UserID,
+			ToID:         bot.UserID,
+		}
+		d.pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	}
 	logger.WithContext(ctx).With("comment_id", newID).Debug("comment created")
 	return nil

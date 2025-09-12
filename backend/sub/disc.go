@@ -16,13 +16,15 @@ type Disc struct {
 	logger *glog.Logger
 	llm    *svc.LLM
 	bot    *svc.Bot
+	pub    mq.Publisher
 }
 
-func NewDisc(disc *svc.Discussion, llm *svc.LLM, bot *svc.Bot) *Disc {
+func NewDisc(disc *svc.Discussion, llm *svc.LLM, bot *svc.Bot, pub mq.Publisher) *Disc {
 	return &Disc{
 		disc:   disc,
 		llm:    llm,
 		bot:    bot,
+		pub:    pub,
 		logger: glog.Module("sub.discussion.change"),
 	}
 }
@@ -97,7 +99,20 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 		return err
 	}
 	if !answered {
-		d.logger.Debug("llm not know the answer")
+		disc, err := d.disc.GetByID(ctx, data.DiscID)
+		if err != nil {
+			logger.WithErr(err).Warn("get discussion failed")
+			return nil
+		}
+		notifyMsg := topic.MsgMessageNotify{
+			DiscussID:    disc.ID,
+			DiscussTitle: disc.Title,
+			DiscussUUID:  disc.UUID,
+			Type:         model.MsgNotifyTypeBotUnknown,
+			FromID:       disc.UserID,
+			ToID:         bot.UserID,
+		}
+		d.pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	}
 	d.logger.WithContext(ctx).With("disc_id", data.DiscID).With("comment_id", commentID).Debug("comment created")
 	return nil
