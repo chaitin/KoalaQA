@@ -24,7 +24,7 @@ services:
       - MQ_NATS_PASSWORD=${MQ_PASSWORD}
       - HTTPS_PROXY=${HTTPS_PROXY}
       - HTTP_PROXY=${HTTP_PROXY}
-      - NO_PROXY=koala-qa-oss,koala-qa-raglite,${NO_PROXY}
+      - NO_PROXY=koala-qa-oss,koala-qa-raglite,koala-qa-anydoc,${NO_PROXY}
       - MQ_NATS_STREAMS=koala:koala.persistence.>
       - OSS_MINIO_SECRET_KEY=${OSS_SECRET_KEY}
       - DB_DSN=postgres://koala:${DB_PASSWORD}@koala-qa-db:5432/koala?sslmode=disable
@@ -36,6 +36,7 @@ services:
       - oss
       - db
       - raglite
+      - anydoc
   
   app:
     container_name: koala-qa-app
@@ -94,9 +95,9 @@ services:
       - MQ_NATS_URL=koala-qa-mq:4222
       - MQ_NATS_USER=koala
       - MQ_NATS_PASSWORD=${MQ_PASSWORD}
-      - HTTPS_PROXY=${HTTPS_PROXY}  
-      - HTTP_PROXY=${HTTP_PROXY}
-      - NO_PROXY=koala-qa-oss,koala-qa-mq,${NO_PROXY}
+      - https_proxy=${HTTPS_PROXY}  
+      - http_proxy=${HTTP_PROXY}
+      - no_proxy=koala-qa-oss,koala-qa-mq,${NO_PROXY}
       - GLOG_GLOBAL_LEVEL=debug
       - MQ_NATS_STREAMS=anydoc:anydoc.persistence.>
       - OSS_MINIO_ACCESS_KEY=koala
