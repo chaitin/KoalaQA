@@ -55,7 +55,7 @@ type DiscussionCreateReq struct {
 	Content  string               `json:"content"`
 	Type     model.DiscussionType `json:"type"`
 	Tags     []string             `json:"tags"`
-	GroupIDs model.Int64Array     `json:"group_ids" binding:"required,min=1"`
+	GroupIDs model.Int64Array     `json:"group_ids"`
 }
 
 func (d *Discussion) generateUUID() string {
