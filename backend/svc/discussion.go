@@ -92,10 +92,10 @@ func (d *Discussion) Create(ctx context.Context, req DiscussionCreateReq) (uint,
 }
 
 type DiscussionUpdateReq struct {
-	Title    string   `json:"title" binding:"required"`
-	Content  string   `json:"content" binding:"required"`
-	Tags     []string `json:"tags" binding:"required"`
-	GroupIDs []int64  `json:"group_ids" binding:"required"`
+	Title    string           `json:"title" binding:"required"`
+	Content  string           `json:"content"`
+	Tags     []string         `json:"tags"`
+	GroupIDs model.Int64Array `json:"group_ids"`
 }
 
 func (d *Discussion) Update(ctx context.Context, uuid string, req DiscussionUpdateReq) error {
