@@ -350,8 +350,8 @@ func (u *User) Login(ctx context.Context, req UserLoginReq) (string, error) {
 
 func (u *User) Logout(ctx context.Context, uid uint) error {
 	return u.repoUser.Update(ctx, map[string]any{
-		"key":       uuid.NewString(),
-		"update_at": time.Now(),
+		"key":        uuid.NewString(),
+		"updated_at": time.Now(),
 	}, repo.QueryWithEqual("id", uid))
 }
 
