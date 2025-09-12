@@ -52,6 +52,7 @@ func (p *publicAccess) Intercept(ctx *context.Context) {
 		ctx.SetUser(model.UserInfo{
 			UID:      user.ID,
 			Username: user.Name,
+			Avatar:   user.Avatar,
 			Email:    user.Email,
 			Role:     user.Role,
 		})
