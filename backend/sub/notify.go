@@ -70,6 +70,7 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 
 	notifyInfo := model.MessageNotifyInfo{
 		DiscussID:    data.DiscussID,
+		DiscussUUID:  data.DiscussUUID,
 		DiscussTitle: data.DiscussTitle,
 		Type:         data.Type,
 		FromID:       data.From.ID,

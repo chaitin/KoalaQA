@@ -417,7 +417,10 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 		return err
 	}
 	notifyMsg := topic.MsgMessageNotify{
-		Type: model.MsgNotifyTypeApplyComment,
+		DiscussID:    disc.ID,
+		DiscussTitle: disc.Title,
+		DiscussUUID:  disc.UUID,
+		Type:         model.MsgNotifyTypeApplyComment,
 		From: topic.MsgNotifyUser{
 			ID:   user.UID,
 			Name: user.Username,
@@ -454,7 +457,10 @@ func (d *Discussion) LikeComment(ctx context.Context, userInfo model.UserInfo, d
 	}
 
 	notifyMsg := topic.MsgMessageNotify{
-		Type: model.MsgNotifyTypeLikeComment,
+		DiscussID:    disc.ID,
+		DiscussUUID:  disc.UUID,
+		DiscussTitle: disc.Title,
+		Type:         model.MsgNotifyTypeLikeComment,
 		From: topic.MsgNotifyUser{
 			ID:   userInfo.UID,
 			Name: userInfo.Username,
@@ -495,7 +501,10 @@ func (d *Discussion) DislikeComment(ctx context.Context, userInfo model.UserInfo
 	}
 
 	notifyMsg := topic.MsgMessageNotify{
-		Type: model.MsgNotifyTypeDislikeComment,
+		DiscussID:    disc.ID,
+		DiscussUUID:  disc.UUID,
+		DiscussTitle: disc.Title,
+		Type:         model.MsgNotifyTypeDislikeComment,
 		From: topic.MsgNotifyUser{
 			ID:   userInfo.UID,
 			Name: userInfo.Username,
