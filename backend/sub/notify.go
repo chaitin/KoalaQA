@@ -63,25 +63,37 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 		return nil
 	}
 
+	var fromUser model.User
+	err = mn.user.GetByID(ctx, &fromUser, data.FromID)
+	if err != nil {
+		return err
+	}
+
+	var toUser model.User
+	err = mn.user.GetByID(ctx, &toUser, data.FromID)
+	if err != nil {
+		return err
+	}
+
 	var (
-		topics          []mq.Topic
+		topics          = make(map[uint]mq.Topic)
 		dbMessageNotify []model.MessageNotify
 	)
 
-	notifyInfo := model.MessageNotifyInfo{
+	common := model.MessageNotifyCommon{
 		DiscussID:    data.DiscussID,
 		DiscussUUID:  data.DiscussUUID,
 		DiscussTitle: data.DiscussTitle,
 		Type:         data.Type,
-		FromID:       data.From.ID,
-		FromName:     data.From.Name,
-		FromBot:      data.From.ID == botUserID,
-		ToID:         data.To.ID,
-		ToName:       data.To.Name,
-		ToBot:        data.To.ID == botUserID,
+		FromID:       data.FromID,
+		FromName:     fromUser.Name,
+		FromBot:      data.FromID == botUserID,
+		ToID:         data.ToID,
+		ToName:       toUser.Name,
+		ToBot:        data.ToID == botUserID,
 	}
 
-	if data.To.ID == botUserID {
+	if data.ToID == botUserID {
 		var users []model.User
 		err = mn.user.List(ctx, &users, repo.QueryWithEqual("role", model.UserRoleAdmin))
 		if err != nil {
@@ -91,25 +103,25 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 
 		for _, user := range users {
 			dbMessageNotify = append(dbMessageNotify, model.MessageNotify{
-				UserID:            user.ID,
-				MessageNotifyInfo: notifyInfo,
-				Read:              false,
+				UserID:              user.ID,
+				MessageNotifyCommon: common,
+				Read:                false,
 			})
 
-			topics = append(topics, topic.NewMessageNotifyUser(user.ID))
+			topics[user.ID] = topic.NewMessageNotifyUser(user.ID)
 		}
 
 		switch data.Type {
 		case model.MsgNotifyTypeDislikeComment:
 			err = mn.natsPub.Publish(ctx, topic.TopicDiscussWebhook, topic.MsgDiscussWebhook{
 				MsgType:   message.TypeDislikeBotComment,
-				UserID:    data.From.ID,
+				UserID:    data.FromID,
 				DiscussID: data.DiscussID,
 			})
 		case model.MsgNotifyTypeBotUnknown:
 			err = mn.natsPub.Publish(ctx, topic.TopicDiscussWebhook, topic.MsgDiscussWebhook{
 				MsgType:   message.TypeDislikeBotComment,
-				UserID:    data.From.ID,
+				UserID:    data.FromID,
 				DiscussID: data.DiscussID,
 			})
 		}
@@ -118,12 +130,12 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 		}
 	} else {
 		dbMessageNotify = append(dbMessageNotify, model.MessageNotify{
-			UserID:            data.To.ID,
-			MessageNotifyInfo: notifyInfo,
-			Read:              false,
+			UserID:              data.ToID,
+			MessageNotifyCommon: common,
+			Read:                false,
 		})
 
-		topics = append(topics, topic.NewMessageNotifyUser(data.To.ID))
+		topics[data.ToID] = topic.NewMessageNotifyUser(data.ToID)
 	}
 
 	err = mn.mn.BatchCreate(ctx, dbMessageNotify...)
@@ -132,8 +144,17 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 		return nil
 	}
 
-	for _, topic := range topics {
-		err = mn.pub.Publish(ctx, topic, notifyInfo)
+	for _, notify := range dbMessageNotify {
+		topic, ok := topics[notify.UserID]
+		if !ok {
+			logger.With("notify", notify.UserID).Warn("can not find topic to notify, skip")
+			continue
+		}
+
+		err = mn.pub.Publish(ctx, topic, model.MessageNotifyInfo{
+			ID:                  notify.ID,
+			MessageNotifyCommon: common,
+		})
 		if err != nil {
 			logger.WithErr(err).With("topic", topic).Warn("publish msg failed")
 		}
