@@ -98,7 +98,7 @@ services:
       - https_proxy=${HTTPS_PROXY}  
       - http_proxy=${HTTP_PROXY}
       - no_proxy=koala-qa-oss,koala-qa-mq,${NO_PROXY}
-      - GLOG_GLOBAL_LEVEL=debug
+      - GLOG_GLOBAL_LEVEL=${GLOG_GLOBAL_LEVEL}
       - MQ_NATS_STREAMS=anydoc:anydoc.persistence.>
       - OSS_MINIO_ACCESS_KEY=koala
       - OSS_MINIO_SECRET_KEY=${OSS_SECRET_KEY}
