@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
-	"github.com/chaitin/koalaqa/pkg/database"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/oss"
@@ -421,14 +420,8 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 		DiscussTitle: disc.Title,
 		DiscussUUID:  disc.UUID,
 		Type:         model.MsgNotifyTypeApplyComment,
-		From: topic.MsgNotifyUser{
-			ID:   user.UID,
-			Name: user.Username,
-		},
-		To: topic.MsgNotifyUser{
-			ID:   comment.UserID,
-			Name: comment.UserName,
-		},
+		FromID:       user.UID,
+		ToID:         comment.UserID,
 	}
 	d.in.Pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	return nil
@@ -445,12 +438,6 @@ func (d *Discussion) LikeComment(ctx context.Context, userInfo model.UserInfo, d
 		return err
 	}
 
-	var user model.User
-	err = d.in.UserRepo.GetByID(ctx, &user, comment.UserID)
-	if err != nil && !errors.Is(err, database.ErrRecordNotFound) {
-		return err
-	}
-
 	err = d.in.CommLikeRepo.Like(ctx, userInfo.UID, disc.ID, commentID, model.CommentLikeStateLike)
 	if err != nil {
 		return err
@@ -461,14 +448,8 @@ func (d *Discussion) LikeComment(ctx context.Context, userInfo model.UserInfo, d
 		DiscussUUID:  disc.UUID,
 		DiscussTitle: disc.Title,
 		Type:         model.MsgNotifyTypeLikeComment,
-		From: topic.MsgNotifyUser{
-			ID:   userInfo.UID,
-			Name: userInfo.Username,
-		},
-		To: topic.MsgNotifyUser{
-			ID:   comment.UserID,
-			Name: user.Name,
-		},
+		FromID:       userInfo.UID,
+		ToID:         comment.UserID,
 	}
 	err = d.in.Pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	if err != nil {
@@ -489,12 +470,6 @@ func (d *Discussion) DislikeComment(ctx context.Context, userInfo model.UserInfo
 		return err
 	}
 
-	var user model.User
-	err = d.in.UserRepo.GetByID(ctx, &user, comment.UserID)
-	if err != nil && !errors.Is(err, database.ErrRecordNotFound) {
-		return err
-	}
-
 	err = d.in.CommLikeRepo.Like(ctx, userInfo.UID, disc.ID, commentID, model.CommentLikeStateDislike)
 	if err != nil {
 		return err
@@ -505,14 +480,8 @@ func (d *Discussion) DislikeComment(ctx context.Context, userInfo model.UserInfo
 		DiscussUUID:  disc.UUID,
 		DiscussTitle: disc.Title,
 		Type:         model.MsgNotifyTypeDislikeComment,
-		From: topic.MsgNotifyUser{
-			ID:   userInfo.UID,
-			Name: userInfo.Username,
-		},
-		To: topic.MsgNotifyUser{
-			ID:   comment.UserID,
-			Name: user.Name,
-		},
+		FromID:       userInfo.UID,
+		ToID:         comment.UserID,
 	}
 	err = d.in.Pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	if err != nil {
