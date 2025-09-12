@@ -11,6 +11,7 @@ type MsgNotifyUser struct {
 
 type MsgMessageNotify struct {
 	DiscussID    uint                `json:"discussid"`
+	DiscussUUID  string              `json:"discuss_uuid"`
 	DiscussTitle string              `json:"doscuss_title"`
 	Type         model.MsgNotifyType `json:"type"`
 	From         MsgNotifyUser       `json:"from"`
