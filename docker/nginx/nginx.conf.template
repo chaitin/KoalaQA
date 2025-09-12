@@ -9,10 +9,11 @@ http {
     include /etc/nginx/mime.types;
     default_type application/octet-stream;
 
-    log_format main '$remote_addr - $remote_user [$time_local] $status "$request" $body_bytes_sent "$http_referer" "$http_user_agent" "$http_x_forwarded_for" "$host"';
+    log_format main '$remote_addr - $remote_user [$time_local] $status "$request" $body_bytes_sent "$http_referer" "$http_user_agent" "$http_x_forwarded_for" "$http_host"';
 
     error_log /dev/stderr error;
     access_log off;
+    # access_log /dev/stdout main;
 
     sendfile on;
     keepalive_timeout 65;
@@ -56,19 +57,16 @@ http {
         ssl_session_cache shared:SSL:10m;
         ssl_session_timeout 5m;
 
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-Port $http_x_forwarded_port;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
         location / {
             proxy_pass http://app;
             proxy_http_version 1.1;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-Port $http_x_forwarded_port;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection 'upgrade';
-            proxy_set_header Host $host;
-            proxy_cache_bypass $http_upgrade;
         }
     }
 }
