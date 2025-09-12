@@ -178,6 +178,7 @@ func (l *LLM) queryKnowledgeDocuments(ctx context.Context, query string) ([]llm.
 	for _, record := range records {
 		ragIDs = append(ragIDs, record.DocID)
 	}
+	logger.With("rag_ids", ragIDs).Debug("RAG query success")
 	var docs []model.KBDocument
 	if err := l.doc.GetByRagIDs(ctx, &docs, ragIDs); err != nil {
 		return nil, fmt.Errorf("get document detail failed: %w", err)
@@ -190,6 +191,6 @@ func (l *LLM) queryKnowledgeDocuments(ctx context.Context, query string) ([]llm.
 			Source:  strconv.Itoa(int(doc.ID)),
 		})
 	}
-	logger.With("knowledge_docs_count", len(knowledgeDocs)).Debug("query knowledge documents success")
+	logger.With("knowledges", knowledgeDocs).Debug("query knowledge documents success")
 	return knowledgeDocs, nil
 }
