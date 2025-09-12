@@ -169,6 +169,7 @@ func (mc *minioClient) Sign(ctx context.Context, path string, optFuncs ...optFun
 
 	if signURL != nil {
 		u.Scheme = signURL.Scheme
+		u.Host = signURL.Host
 	}
 
 	mc.logger.WithContext(ctx).With("bucket", o.bucket).With("sign_object", path).With("sign_url", u.String()).Debug("sign object url")
