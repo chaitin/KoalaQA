@@ -29,13 +29,8 @@ func (d *discussion) Route(h server.Handler) {
 // @Summary list discussions
 // @Description list discussions
 // @Tags discussion
-// @Accept json
 // @Produce json
-// @Param page query int false "page"
-// @Param size query int false "size"
-// @Param keyword query string false "keyword"
-// @Param type query model.DiscussionType false "type"
-// @Param filter query svc.DiscussionListFilter false "filter"
+// @Param req query svc.DiscussionListReq false "req params"
 // @Success 200 {object} context.Response{data=model.ListRes{items=[]model.DiscussionListItem}}
 // @Router /discussion [get]
 func (d *discussion) List(ctx *context.Context) {
