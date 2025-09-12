@@ -357,18 +357,21 @@ func (d *KBDocument) Detail(ctx context.Context, kbID uint, docID uint) (*model.
 		return nil, err
 	}
 
-	publicAddress, err := d.svcPublicAddr.Get(ctx)
-	if err != nil {
-		return nil, err
-	}
+	// 文档的 markdown 是 oss path，需要签名才能访问
+	if doc.DocType == model.DocTypeDocument {
+		publicAddress, err := d.svcPublicAddr.Get(ctx)
+		if err != nil {
+			return nil, err
+		}
 
-	markdownPath, err := d.oc.Sign(ctx, doc.Markdown, oss.WithBucket("anydoc"), oss.WithSignURL(publicAddress.Address))
-	if err != nil {
-		return nil, err
-	}
+		markdownPath, err := d.oc.Sign(ctx, doc.Markdown, oss.WithBucket("anydoc"), oss.WithSignURL(publicAddress.Address))
+		if err != nil {
+			return nil, err
+		}
 
-	doc.Markdown = markdownPath
-	doc.JSON = ""
+		doc.Markdown = markdownPath
+		doc.JSON = ""
+	}
 
 	return &doc, nil
 }

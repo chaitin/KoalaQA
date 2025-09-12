@@ -8,6 +8,7 @@ import (
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/database"
 	"github.com/chaitin/koalaqa/pkg/third_auth"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -19,8 +20,8 @@ func (u *User) GetByEmail(ctx context.Context, res any, email string) error {
 	return u.model(ctx).Where("email = ?", email).First(&res).Error
 }
 
-func (u *User) CreateThird(ctx context.Context, user *third_auth.User) (uint, error) {
-	var userID uint = 0
+func (u *User) CreateThird(ctx context.Context, user *third_auth.User) (*model.User, error) {
+	var dbUser model.User
 	err := u.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		err := tx.Exec(`SELECT pg_advisory_xact_lock(?)`, user.HashUint()).Error
 		if err != nil {
@@ -40,16 +41,23 @@ func (u *User) CreateThird(ctx context.Context, user *third_auth.User) (uint, er
 			if txErr != nil {
 				return txErr
 			}
+
+			txErr = tx.Model(u.m).Where("id = ?", userThird.UserID).First(&dbUser).Error
+			if txErr != nil {
+				return nil
+			}
+
 			return nil
 		}
 
-		dbUser := model.User{
+		dbUser = model.User{
 			Name:      user.Name,
 			Email:     user.Email,
 			Builtin:   false,
 			Role:      user.Role,
 			Invisible: false,
 			LastLogin: model.Timestamp(time.Now().Unix()),
+			Key:       uuid.NewString(),
 		}
 		txErr = tx.Model(&model.User{}).Create(&dbUser).Error
 		if txErr != nil {
@@ -67,14 +75,13 @@ func (u *User) CreateThird(ctx context.Context, user *third_auth.User) (uint, er
 			return txErr
 		}
 
-		userID = dbUser.ID
 		return nil
 	})
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return userID, nil
+	return &dbUser, nil
 }
 
 func newUser(db *database.DB) *User {
