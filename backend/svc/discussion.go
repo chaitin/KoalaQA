@@ -275,12 +275,14 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 		return 0, err
 	}
 
-	err = d.in.DiscRepo.Update(ctx, map[string]any{
-		"updated_at": time.Now(),
-		"comment":    gorm.Expr("comment+1"),
-	}, repo.QueryWithEqual("id", disc.ID))
-	if err != nil {
-		d.logger.WithContext(ctx).WithErr(err).With("disc_id", disc.ID).Warn("incr comment number failed")
+	if parentID == req.CommentID {
+		err = d.in.DiscRepo.Update(ctx, map[string]any{
+			"updated_at": time.Now(),
+			"comment":    gorm.Expr("comment+1"),
+		}, repo.QueryWithEqual("id", disc.ID))
+		if err != nil {
+			d.logger.WithContext(ctx).WithErr(err).With("disc_id", disc.ID).Warn("incr comment number failed")
+		}
 	}
 
 	if !req.Bot {
