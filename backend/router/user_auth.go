@@ -89,6 +89,8 @@ const (
 	notifyTypeUnread notifyType = iota + 1
 	notifyTypeRead
 	notifyTypeInfo
+	notifyTypePing
+	notifyTypePong
 )
 
 type notifyRes struct {
@@ -121,7 +123,7 @@ func (u *userAuth) Notify(ctx *context.Context) {
 
 		listRes, e := u.in.SvcNotify.ListNotifyInfo(ctx, ctx.GetUser().UID)
 		if e != nil {
-			logger.WithContext(ctx).WithErr(e).Warn("list user failed")
+			logger.WithErr(e).Warn("list user failed")
 			return
 		}
 
@@ -131,7 +133,7 @@ func (u *userAuth) Notify(ctx *context.Context) {
 				Data: item,
 			})
 			if err != nil {
-				logger.WithContext(ctx).WithErr(e).Warn("list message failed")
+				logger.WithErr(e).Warn("list message failed")
 				return
 			}
 		}
@@ -139,7 +141,7 @@ func (u *userAuth) Notify(ctx *context.Context) {
 		e = u.in.Sub.Subscribe(ctx, t, func(ctx goCtx.Context, data mq.Message) error {
 			notifyData, ok := data.(model.MessageNotifyInfo)
 			if !ok {
-				logger.WithContext(ctx).With("data", data).Warn("invalid data type")
+				logger.With("data", data).Warn("invalid data type")
 				return nil
 			}
 
@@ -148,14 +150,14 @@ func (u *userAuth) Notify(ctx *context.Context) {
 				Data: notifyData,
 			})
 			if subErr != nil {
-				logger.WithContext(ctx).WithErr(subErr).With("notify_data", notifyData).Warn("send notify data failed")
+				logger.WithErr(subErr).With("notify_data", notifyData).Warn("send notify data failed")
 				return nil
 			}
 
 			return nil
 		})
 		if e != nil {
-			logger.WithContext(ctx).WithErr(e).Warn("subscribe failed")
+			logger.WithErr(e).Warn("subscribe failed")
 		}
 	}()
 
@@ -167,7 +169,7 @@ func (u *userAuth) Notify(ctx *context.Context) {
 				return
 			}
 
-			logger.WithContext(ctx).WithErr(err).Error("read ws message error")
+			logger.WithErr(err).Error("read ws message error")
 			return
 		}
 
@@ -176,15 +178,23 @@ func (u *userAuth) Notify(ctx *context.Context) {
 			var req notifyReq
 			err = json.Unmarshal(message, &req)
 			if err != nil {
-				logger.WithContext(ctx).WithErr(err).With("message", string(message)).Warn("unmarshal message failed")
+				logger.WithErr(err).With("message", string(message)).Warn("unmarshal message failed")
 				continue
 			}
 
 			switch req.Type {
+			case notifyTypePing:
+				err = conn.WriteJSON(notifyRes{
+					Type: notifyTypePong,
+					Data: struct{}{},
+				})
+				if err != nil {
+					logger.WithErr(err).Warn("send pong failed")
+				}
 			case notifyTypeUnread:
 				num, err := u.in.SvcNotify.UnreadTotal(ctx, ctx.GetUser().UID)
 				if err != nil {
-					logger.WithContext(ctx).WithErr(err).Warn("unread total failed")
+					logger.WithErr(err).Warn("unread total failed")
 					continue
 				}
 				err = conn.WriteJSON(notifyRes{
@@ -192,20 +202,20 @@ func (u *userAuth) Notify(ctx *context.Context) {
 					Data: num,
 				})
 				if err != nil {
-					logger.WithContext(ctx).WithErr(err).Warn("send unread failse")
+					logger.WithErr(err).Warn("send unread failse")
 					continue
 				}
 			case notifyTypeRead:
 				err = u.in.SvcNotify.Read(ctx, ctx.GetUser().UID, req.ID)
 				if err != nil {
-					logger.WithContext(ctx).WithErr(err).With("id", req.ID).Warn("set notify read failed")
+					logger.WithErr(err).With("id", req.ID).Warn("set notify read failed")
 					continue
 				}
 			}
 		case websocket.PingMessage:
 			err = conn.WriteMessage(websocket.PongMessage, []byte("pong"))
 			if err != nil {
-				logger.WithContext(ctx).WithErr(err).Error("write pong failed")
+				logger.WithErr(err).Error("write pong failed")
 			}
 		case websocket.CloseMessage:
 			logger.Info("receive close message")
