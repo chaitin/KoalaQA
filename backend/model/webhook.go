@@ -9,7 +9,7 @@ const (
 type Webhook struct {
 	Base
 
-	Name string `gorm:"column:name;type:text"`
+	Name string `gorm:"column:name;type:text" json:"name"`
 	WebhookConfig
 }
 
