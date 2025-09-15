@@ -242,7 +242,9 @@ const BaseDiscussCard = (props: {
                 {formatNumber(data.dislike || 0)}
               </Typography>
             </Stack>
-            {data.user_id === disData.current_user_id && (
+            {[data.user_id, disData.user_id].includes(
+              disData.current_user_id
+            ) && (
               <IconButton
                 sx={{ display: { xs: "none", sm: "flex" } }}
                 onClick={(e) => {
@@ -356,6 +358,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const [commentIndex, setCommentIndex] = useState<
     ModelDiscussionComment | ModelDiscussionReply | null
   >(null);
+  const [mdEditShow, setMdEditShow] = useState(false);
   const [historyComment, setHistoryComment] =
     useState<SvcCommentUpdateReq | null>(null);
   const [editCommentModalVisible, setEditCommentModalVisible] = useState(false);
@@ -373,6 +376,18 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const { user } = useContext(AuthContext);
   const handleClose = () => {
     setAnchorEl(null);
+  };
+  const onCommentSubmit = () => {
+    postDiscussionDiscIdComment(
+      { discId: id },
+      {
+        content: comment,
+      }
+    ).then(() => {
+      setComment("");
+      setMdEditShow(false);
+      router.refresh();
+    });
   };
   const onSubmit = (comment: string) => {
     // @ts-ignore
@@ -436,7 +451,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         {commentIndex?.user_id == data.current_user_id && (
           <MenuItem onClick={handleDelete}>删除</MenuItem>
         )}
-        {commentIndex?.user_id == data.current_user_id && !data.accepted && (
+        {data?.user_id == data.current_user_id && !data.accepted && (
           <MenuItem onClick={handleAccept}>采纳</MenuItem>
         )}
       </Menu>
@@ -458,6 +473,20 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
           onOpt={handleClick}
         />
       ))}
+      <Card>
+        <MdEditor style={{ flex: 1 }} value={comment} onChange={setComment} />
+        <Stack direction="row" justifyContent="flex-end" sx={{ mt: 2 }}>
+          <LoadingBtn
+            id="s-captcha-button"
+            variant="contained"
+            size="small"
+            disabled={!comment.trim()}
+            onClick={onCommentSubmit}
+          >
+            发布
+          </LoadingBtn>
+        </Stack>
+      </Card>
     </Stack>
   );
 };
