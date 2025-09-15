@@ -33,7 +33,7 @@ func (g *Generator) Discuss(ctx context.Context, msgType Type, dissID uint, user
 	var discuss struct {
 		UUID     string
 		Title    string
-		GroupIDs model.Int64Array
+		GroupIDs model.Int64Array `gorm:"type:bigint[]"`
 	}
 	err := g.in.RepoDiscuss.GetByID(ctx, &discuss, dissID, repo.QueryWithSelectColumn("title", "group_ids"))
 	if err != nil {
