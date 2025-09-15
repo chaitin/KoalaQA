@@ -32,7 +32,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
       title: "确定删除话题吗？",
       okButtonProps: { color: "error" },
       onOk: async () => {
-        await deleteDiscussionDiscId({ discId: data.id + "" }).then(() => {
+        await deleteDiscussionDiscId({ discId: data.uuid + "" }).then(() => {
           router.push("/");
         });
       },

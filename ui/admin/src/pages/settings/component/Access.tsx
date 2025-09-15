@@ -2,14 +2,14 @@ import {
   getAdminSystemPublicAddress,
   ModelPublicAddress,
   putAdminSystemPublicAddress,
-} from "@/api";
-import Card from "@/components/card";
-import { message } from "@c-x/ui";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Box, Button, Stack, TextField } from "@mui/material";
-import { useRequest } from "ahooks";
-import { useForm } from "react-hook-form";
-import z from "zod";
+} from '@/api';
+import Card from '@/components/card';
+import { message } from '@c-x/ui';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Box, Button, Stack, TextField } from '@mui/material';
+import { useRequest } from 'ahooks';
+import { useForm } from 'react-hook-form';
+import z from 'zod';
 
 const accessSchema = z.object({
   address: z.string().trim().min(1).max(255),
@@ -27,7 +27,7 @@ const Access = () => {
 
   // 获取当前配置
   const { data } = useRequest(getAdminSystemPublicAddress, {
-    onSuccess: (res) => {
+    onSuccess: res => {
       reset({
         address: res.address,
       });
@@ -38,10 +38,10 @@ const Access = () => {
   const onSubmit = async (data: ModelPublicAddress) => {
     try {
       await putAdminSystemPublicAddress(data);
-      reset(data)
-      message.success("保存成功");
+      reset(data);
+      message.success('保存成功');
     } catch (error) {
-      message.error("保存失败");
+      message.error('保存失败');
     }
   };
 
@@ -50,7 +50,7 @@ const Access = () => {
       <Box
         sx={{
           fontSize: 14,
-          lineHeight: "32px",
+          lineHeight: '32px',
           flexShrink: 0,
           mb: 2,
         }}
@@ -63,12 +63,12 @@ const Access = () => {
           <TextField
             fullWidth
             label="用户实际访问地址"
-            {...register("address")}
+            {...register('address')}
             error={!!errors.address}
             helperText={errors.address?.message}
             slotProps={{
               inputLabel: {
-                shrink: !!watch("address") || undefined,
+                shrink: !!watch('address') || undefined,
               },
             }}
           />

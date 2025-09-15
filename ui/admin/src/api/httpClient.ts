@@ -91,6 +91,7 @@ export class HttpClient<SecurityDataType = unknown> {
           Message.error(res.message || "网络异常");
           return Promise.reject(res);
         }
+        alert('---')
         Message.error(response.statusText);
         return Promise.reject(response);
       },
