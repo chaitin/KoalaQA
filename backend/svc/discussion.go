@@ -475,9 +475,12 @@ func (d *Discussion) LikeComment(ctx context.Context, userInfo model.UserInfo, d
 		return err
 	}
 
-	err = d.in.CommLikeRepo.Like(ctx, userInfo.UID, disc.ID, commentID, model.CommentLikeStateLike)
+	changed, err := d.in.CommLikeRepo.Like(ctx, userInfo.UID, disc.ID, commentID, model.CommentLikeStateLike)
 	if err != nil {
 		return err
+	}
+	if !changed {
+		return nil
 	}
 
 	notifyMsg := topic.MsgMessageNotify{
@@ -507,9 +510,12 @@ func (d *Discussion) DislikeComment(ctx context.Context, userInfo model.UserInfo
 		return err
 	}
 
-	err = d.in.CommLikeRepo.Like(ctx, userInfo.UID, disc.ID, commentID, model.CommentLikeStateDislike)
+	changed, err := d.in.CommLikeRepo.Like(ctx, userInfo.UID, disc.ID, commentID, model.CommentLikeStateDislike)
 	if err != nil {
 		return err
+	}
+	if !changed {
+		return nil
 	}
 
 	notifyMsg := topic.MsgMessageNotify{
