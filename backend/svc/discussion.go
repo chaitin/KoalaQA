@@ -275,7 +275,7 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 		return 0, err
 	}
 
-	if parentID == req.CommentID {
+	if req.CommentID == 0 {
 		err = d.in.DiscRepo.Update(ctx, map[string]any{
 			"updated_at": time.Now(),
 			"comment":    gorm.Expr("comment+1"),
