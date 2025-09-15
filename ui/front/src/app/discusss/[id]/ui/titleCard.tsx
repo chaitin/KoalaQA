@@ -38,7 +38,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
       },
     });
   };
-  console.log(data);
+  
   return (
     <Card
       sx={{

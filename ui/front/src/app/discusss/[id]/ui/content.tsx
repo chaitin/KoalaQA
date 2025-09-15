@@ -57,8 +57,15 @@ const BaseDiscussCard = (props: {
     index: ModelDiscussionComment | ModelDiscussionReply
   ): void;
 }) => {
-  const router = useRouter();
   const { data, onOpt, disData, index, isReply } = props;
+  const router = useRouter()
+  // 检查是否有可用的菜单项
+  const hasMenuItems =
+    // 是当前用户的评论（可以编辑和删除）
+    data.user_id === disData.current_user_id ||
+    // 是问题作者且问题未被采纳（可以采纳）
+    (disData.user_id === disData.current_user_id && !disData.accepted);
+
   const revokeLike = () => {
     postDiscussionDiscIdCommentCommentIdRevokeLike({
       discId: disData.uuid!,
@@ -242,9 +249,8 @@ const BaseDiscussCard = (props: {
                 {formatNumber(data.dislike || 0)}
               </Typography>
             </Stack>
-            {[data.user_id, disData.user_id].includes(
-              disData.current_user_id
-            ) && (
+            {/* 只在有可用菜单项时显示 MoreVertIcon */}
+            {hasMenuItems && (
               <IconButton
                 sx={{ display: { xs: "none", sm: "flex" } }}
                 onClick={(e) => {
@@ -402,7 +408,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
       setEditCommentModalVisible(false);
     });
   };
-
+  console.log(data);
   const handleDelete = () => {
     setAnchorEl(null);
     Modal.confirm({
@@ -451,7 +457,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         {commentIndex?.user_id == data.current_user_id && (
           <MenuItem onClick={handleDelete}>删除</MenuItem>
         )}
-        {data?.user_id == data.current_user_id && !data.accepted && (
+        {(data?.user_id == data.current_user_id) && !data.accepted && (
           <MenuItem onClick={handleAccept}>采纳</MenuItem>
         )}
       </Menu>
@@ -462,7 +468,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         onClose={() => setEditCommentModalVisible(false)}
       />
       {data.accepted && (
-        <DiscussCard data={data.accepted} index={0} disData={data} />
+        <DiscussCard data={data.accepted} index={0} disData={data} onOpt={handleClick}/>
       )}
       {data.comments?.map((it, index) => (
         <DiscussCard
