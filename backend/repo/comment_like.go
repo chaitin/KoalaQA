@@ -14,8 +14,9 @@ type CommentLike struct {
 	base[*model.CommentLike]
 }
 
-func (c *CommentLike) Like(ctx context.Context, uid, discID, commentID uint, state model.CommentLikeState) error {
-	return c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+func (c *CommentLike) Like(ctx context.Context, uid, discID, commentID uint, state model.CommentLikeState) (bool, error) {
+	changed := false
+	e := c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		updateM := map[string]any{
 			"updated_at": time.Now(),
 		}
@@ -85,8 +86,11 @@ func (c *CommentLike) Like(ctx context.Context, uid, discID, commentID uint, sta
 			return err
 		}
 
+		changed = true
 		return nil
 	})
+
+	return changed, e
 }
 
 func (c *CommentLike) RevokeLike(ctx context.Context, uid, commentID uint) error {
