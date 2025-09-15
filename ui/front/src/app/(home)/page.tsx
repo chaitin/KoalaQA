@@ -2,7 +2,6 @@ import { getDiscussion } from "@/api";
 import { Stack } from "@mui/material";
 import { Metadata } from "next";
 import ArticleCard from "./ui/article";
-import { group } from "console";
 
 export const metadata: Metadata = {
   title: "技术讨论 | Koala QA",

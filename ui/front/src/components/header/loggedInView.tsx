@@ -1,19 +1,11 @@
-"use client";
-import { AuthContext } from "@/components/authProvider";
-import {
-  Stack,
-  Typography,
-  Box,
-  Divider,
-  Tooltip,
-  Badge,
-  Button,
-} from "@mui/material";
-import NotificationsIcon from "@mui/icons-material/Notifications";
-import { Avatar } from "@/components/discussion";
-import React, { useContext, useEffect, useState, useRef } from "react";
-import ProfilePanel from "./profilePanel";
-import { useRouter } from "next/navigation";
+'use client';
+import { AuthContext } from '@/components/authProvider';
+import { Stack, Typography, Box, Tooltip, Badge, Button } from '@mui/material';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import { Avatar } from '@/components/discussion';
+import React, { useContext, useEffect, useState, useRef } from 'react';
+import ProfilePanel from './profilePanel';
+import { useRouter } from 'next/navigation';
 
 enum MsgNotifyType {
   MsgNotifyTypeUnknown,
@@ -27,19 +19,19 @@ enum MsgNotifyType {
 const getNotificationText = (info: MessageNotifyInfo): string => {
   switch (info.type) {
     case MsgNotifyType.MsgNotifyTypeReplyDiscuss:
-      return "回答了你的问题";
+      return '回答了你的问题';
     case MsgNotifyType.MsgNotifyTypeReplyComment:
-      return "回复了你的回答";
+      return '回复了你的回答';
     case MsgNotifyType.MsgNotifyTypeApplyComment:
-      return "采纳了你的回答";
+      return '采纳了你的回答';
     case MsgNotifyType.MsgNotifyTypeLikeComment:
-      return "赞同了你的回答";
+      return '赞同了你的回答';
     case MsgNotifyType.MsgNotifyTypeDislikeComment:
-      return info?.to_bot ? "不喜欢机器人的回答" : "不喜欢你的回答";
+      return info?.to_bot ? '不喜欢机器人的回答' : '不喜欢你的回答';
     case MsgNotifyType.MsgNotifyTypeBotUnknown:
-      return "提出了机器人无法回答的问题";
+      return '提出了机器人无法回答的问题';
     default:
-      return "";
+      return '';
   }
 };
 
@@ -68,11 +60,13 @@ const LoggedInView: React.FC = () => {
   const router = useRouter();
   // 保存 ws 实例的 ref
   const wsRef = useRef<WebSocket | null>(null);
+  // 保存 ping 定时器的 ref
+  const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("auth_token");
-    const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const url = new URL("/api/user/notify", window.location.href);
+    const token = localStorage.getItem('auth_token');
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const url = new URL('/api/user/notify', window.location.href);
     url.protocol = wsProtocol;
     const wsUrlBase = url.toString();
     const wsUrl = token ? `${wsUrlBase}` : wsUrlBase;
@@ -98,9 +92,35 @@ const LoggedInView: React.FC = () => {
     // 连接建立后请求未读消息数
     ws.onopen = () => {
       ws.send(JSON.stringify({ type: 1 }));
+
+      // 启动 ping 定时器，每30秒发送一次 ping
+      pingIntervalRef.current = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          // 发送 ping 消息，使用 type: 'ping' 作为心跳标识
+          ws.send(JSON.stringify({ type: 4 }));
+        }
+      }, 30000); // 30秒
+    };
+    // 添加错误处理和重连逻辑
+    ws.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+
+    ws.onclose = (event) => {
+      console.log('WebSocket closed:', event.code, event.reason);
+      // 清理 ping 定时器
+      if (pingIntervalRef.current) {
+        clearInterval(pingIntervalRef.current);
+        pingIntervalRef.current = null;
+      }
     };
 
     return () => {
+      // 清理 ping 定时器
+      if (pingIntervalRef.current) {
+        clearInterval(pingIntervalRef.current);
+        pingIntervalRef.current = null;
+      }
       ws.close();
       wsRef.current = null;
     };
@@ -121,99 +141,54 @@ const LoggedInView: React.FC = () => {
   return (
     <>
       <Tooltip
-        placement="bottom-end"
+        placement='bottom-end'
         slotProps={{
           tooltip: {
             sx: {
-              backgroundColor: "#fff",
-              boxShadow: "0px 20px 40px 0px rgba(0,28,85,0.06)",
-              minWidth: "300px",
-              padding: "20px",
-              borderRadius: "8px",
+              backgroundColor: '#fff',
+              boxShadow: '0px 20px 40px 0px rgba(0,28,85,0.06)',
+              minWidth: '300px',
+              padding: '20px',
+              borderRadius: '8px',
+              color: 'primary.main',
             },
           },
           popper: {
             sx: {
-              paddingRight: "24px",
-              margin: "0px -24px 0px 0px !important",
-            },
-          },
-        }}
-        title={<ProfilePanel />}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          {/* 头像：浅蓝色渐变背景，悬停有阴影 */}
-          <Box
-            sx={{
-              width: 36,
-              height: 36,
-              borderRadius: "50%",
-              background: "linear-gradient(180deg, #F5FAFF 0%, #EDF6FF 100%)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "background .18s, box-shadow .18s, transform .08s",
-              "&:hover": {
-                background: "#E6F3FF",
-                boxShadow: "0 6px 12px rgba(11,92,255,0.12)",
-                transform: "translateY(-1px)",
-              },
-            }}
-          >
-            <Avatar size={36} src={user?.avatar} />
-          </Box>
-        </Box>
-      </Tooltip>
-      <Tooltip
-        placement="bottom-end"
-        slotProps={{
-          tooltip: {
-            sx: {
-              backgroundColor: "#fff",
-              boxShadow: "0px 20px 40px 0px rgba(0,28,85,0.06)",
-              minWidth: "300px",
-              padding: "20px",
-              borderRadius: "8px",
-              color: "primary.main",
-            },
-          },
-          popper: {
-            sx: {
-              paddingRight: "24px",
-              margin: "0px -24px 0px 0px !important",
+              paddingRight: '24px',
+              margin: '0px -24px 0px 0px !important',
             },
           },
         }}
         title={
-          <Stack spacing={1} sx={{ maxHeight: 400, overflowY: "auto" }}>
-            {notifications.length === 0 ? (
-              <Box sx={{ p: 2, textAlign: "center", color: "text.secondary" }}>
+          <Stack spacing={1} sx={{ maxHeight: 400, overflowY: 'auto' }}>
+            {notifications.length === 0 ?
+              <Box sx={{ p: 2, textAlign: 'center', color: 'text.secondary' }}>
                 暂无通知
               </Box>
-            ) : (
-              notifications.map((notification, index) => (
+            : notifications.map((notification, index) => (
                 <Stack
                   key={index}
                   sx={{
                     py: 1,
                     px: 2,
-                    cursor: "pointer",
-                    "&:hover": {
-                      bgcolor: "action.hover",
+                    cursor: 'pointer',
+                    '&:hover': {
+                      bgcolor: 'action.hover',
                     },
                     borderRadius: 1,
                   }}
-                  direction="row"
-                  alignItems="center"
+                  direction='row'
+                  alignItems='center'
                 >
                   <Box onClick={() => handleNotificationClick(notification)}>
                     <Typography
-                      variant="body1"
-                      sx={{ display: "inline", pr: 1 }}
+                      variant='body1'
+                      sx={{ display: 'inline', pr: 1 }}
                     >
                       {notification.from_name}
                     </Typography>
-                    <Typography sx={{ display: "inline" }} variant="caption">
+                    <Typography sx={{ display: 'inline' }} variant='caption'>
                       {getNotificationText(notification)}
                     </Typography>
                   </Box>
@@ -238,31 +213,31 @@ const LoggedInView: React.FC = () => {
                       ml: 1,
                       flexShrink: 0,
                       borderRadius: 1,
-                      fontSize: "12px",
+                      fontSize: '12px',
                     }}
-                    size="small"
+                    size='small'
                   >
                     忽略
                   </Button>
                 </Stack>
               ))
-            )}
+            }
           </Stack>
         }
       >
         <Badge
           badgeContent={unreadCount}
-          overlap="circular"
+          overlap='circular'
           sx={{
-            "& .MuiBadge-badge": {
-              backgroundColor: "#FF3B30",
+            '& .MuiBadge-badge': {
+              backgroundColor: '#FF3B30',
               minWidth: 20,
               height: 20,
               borderRadius: 10,
               fontSize: 12,
               fontWeight: 600,
-              boxShadow: "0 4px 12px rgba(11,92,255,0.12)",
-              transform: "translate(10%, -20%)",
+              boxShadow: '0 4px 12px rgba(11,92,255,0.12)',
+              transform: 'translate(10%, -20%)',
             },
           }}
         >
@@ -270,23 +245,67 @@ const LoggedInView: React.FC = () => {
             sx={{
               width: 44,
               height: 44,
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "#F4F8FF",
-              transition: "background .18s, transform .08s",
-              cursor: "pointer",
-              "&:hover": {
-                backgroundColor: "#E6F0FF",
-                transform: "translateY(-1px)",
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#F4F8FF',
+              transition: 'background .18s, transform .08s',
+              cursor: 'pointer',
+              '&:hover': {
+                backgroundColor: '#E6F0FF',
+                transform: 'translateY(-1px)',
               },
-              "&:active": { transform: "translateY(0)" },
+              '&:active': { transform: 'translateY(0)' },
             }}
           >
-            <NotificationsIcon sx={{ color: "#0B5FFF" }} />
+            <NotificationsIcon sx={{ color: '#0B5FFF' }} />
           </Box>
         </Badge>
+      </Tooltip>
+      <Tooltip
+        placement='bottom-end'
+        slotProps={{
+          tooltip: {
+            sx: {
+              backgroundColor: '#fff',
+              boxShadow: '0px 20px 40px 0px rgba(0,28,85,0.06)',
+              minWidth: '300px',
+              padding: '20px',
+              borderRadius: '8px',
+            },
+          },
+          popper: {
+            sx: {
+              paddingRight: '24px',
+              margin: '0px -24px 0px 0px !important',
+            },
+          },
+        }}
+        title={<ProfilePanel />}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {/* 头像：浅蓝色渐变背景，悬停有阴影 */}
+          <Box
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              background: 'linear-gradient(180deg, #F5FAFF 0%, #EDF6FF 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background .18s, box-shadow .18s, transform .08s',
+              '&:hover': {
+                background: '#E6F3FF',
+                boxShadow: '0 6px 12px rgba(11,92,255,0.12)',
+                transform: 'translateY(-1px)',
+              },
+            }}
+          >
+            <Avatar size={36} src={user?.avatar} />
+          </Box>
+        </Box>
       </Tooltip>
     </>
   );

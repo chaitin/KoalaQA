@@ -345,6 +345,7 @@ const Article = ({
           releaseModalClose();
         }}
         selectedTags={[]}
+        initialTitle={searchParams.get("search") || ""}
       />
     </Stack>
   );
