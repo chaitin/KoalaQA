@@ -36,3 +36,6 @@ run.app: image.app
 
 run.api: image.api
 	docker compose up -d
+
+swagger:
+	cd backend && make swagger

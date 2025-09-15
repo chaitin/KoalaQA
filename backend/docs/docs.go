@@ -3090,9 +3090,6 @@ const docTemplate = `{
         "model.DiscussionDetail": {
             "type": "object",
             "properties": {
-                "accepted": {
-                    "$ref": "#/definitions/model.DiscussionComment"
-                },
                 "comment": {
                     "type": "integer"
                 },
