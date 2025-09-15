@@ -135,7 +135,7 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 			})
 		case model.MsgNotifyTypeBotUnknown:
 			err = mn.natsPub.Publish(ctx, topic.TopicDiscussWebhook, topic.MsgDiscussWebhook{
-				MsgType:   message.TypeDislikeBotComment,
+				MsgType:   message.TypeBotUnknown,
 				UserID:    data.FromID,
 				DiscussID: data.DiscussID,
 			})

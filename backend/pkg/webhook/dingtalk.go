@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/pkg/webhook/message"
@@ -62,18 +63,16 @@ type responseMsg struct {
 	ErrMsg  string `json:"errmsg"`
 }
 
-func (d *dingtalk) signQuery() url.Values {
-	v := make(url.Values)
-
+func (d *dingtalk) signQuery(q url.Values) url.Values {
 	timestamp := time.Now().UnixMilli()
 	strToHash := fmt.Sprintf("%d\n%s", timestamp, d.sign)
 	hmac256 := hmac.New(sha256.New, []byte(d.sign))
 	hmac256.Write([]byte(strToHash))
 	data := hmac256.Sum(nil)
 
-	v.Set("timestamp", strconv.FormatInt(timestamp, 10))
-	v.Set("sign", base64.StdEncoding.EncodeToString(data))
-	return v
+	q.Set("timestamp", strconv.FormatInt(timestamp, 10))
+	q.Set("sign", base64.StdEncoding.EncodeToString(data))
+	return q
 }
 
 func (d *dingtalk) Send(ctx context.Context, msg message.Message) error {
@@ -93,9 +92,9 @@ func (d *dingtalk) Send(ctx context.Context, msg message.Message) error {
 		return err
 	}
 
-	u.RawQuery = d.signQuery().Encode()
+	u.RawQuery = d.signQuery(u.Query()).Encode()
 
-	snedMsg, err := msg.Message()
+	snedMsg, err := msg.Message(model.WebhookTypeDingtalk)
 	if err != nil {
 		return err
 	}
