@@ -75,7 +75,7 @@ func (g *Generator) Discuss(ctx context.Context, msgType Type, dissID uint, user
 		return nil, err
 	}
 
-	body := discussBody{
+	body := DiscussBody{
 		Heading:    discuss.Title,
 		GroupItems: itemStr,
 		Username:   user.Name,
@@ -84,13 +84,9 @@ func (g *Generator) Discuss(ctx context.Context, msgType Type, dissID uint, user
 
 	switch msgType {
 	case TypeDislikeBotComment:
-		return newBotDislikeComment(body), nil
+		return NewBotDislikeComment(body), nil
 	case TypeBotUnknown:
-		return newBotUnknown(body), nil
-	case TypeNewFeedback:
-		return newFeedback(body), nil
-	case TypeNewBlog:
-		return newBlog(body), nil
+		return NewBotUnknown(body), nil
 	default:
 		return nil, fmt.Errorf("action %d not support", msgType)
 	}
