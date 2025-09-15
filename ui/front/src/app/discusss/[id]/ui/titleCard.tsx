@@ -38,7 +38,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
       },
     });
   };
-
+  console.log(data);
   return (
     <Card
       sx={{
@@ -128,7 +128,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           color: "rgba(0,0,0,0.5)",
         }}
       >
-        发布于 {dayjs.unix(data.created_at!).fromNow()}
+        {data.user_name} 发布于 {dayjs.unix(data.created_at!).fromNow()}
       </Typography>
       <Stack
         direction="row"
@@ -192,7 +192,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
             variant="body2"
             sx={{ fontSize: 12, color: "rgba(0,0,0,0.5)" }}
           >
-            发布于 {dayjs.unix(data.created_at!).fromNow()}
+            {data.user_name} 发布于 {dayjs.unix(data.created_at!).fromNow()}
           </Typography>
         </Stack>
       </Stack>
