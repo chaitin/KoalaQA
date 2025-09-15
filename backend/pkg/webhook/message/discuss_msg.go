@@ -3,15 +3,28 @@ package message
 import (
 	"bytes"
 	"text/template"
+
+	"github.com/chaitin/koalaqa/model"
 )
 
-var discussTpl = template.New(`** {{ .MsgTitle }} **
-{{ .HeadingPrefix }}：{{ .Heading }}
-分类：{{ .GroupItems }}
-用户：{{ .Username }}
-[点击查看详情]({{ .URL }})`)
+var discussDingtalkTpl = template.New("webhook_discuss_dingtalk")
 
-type discussBody struct {
+func init() {
+	var err error
+	discussDingtalkTpl, err = discussDingtalkTpl.Parse(`{{ .TitlePrefix }} {{ .MsgTitle }} {{ .TitleSuffix }}
+{{ .HeadingPrefix }}：{{ .Heading }}
+
+分类：{{ .GroupItems }}
+
+用户：{{ .Username }}
+
+[点击查看详情]({{ .URL }})`)
+	if err != nil {
+		panic(err)
+	}
+}
+
+type DiscussBody struct {
 	Heading    string
 	GroupItems string
 	Username   string
@@ -23,7 +36,12 @@ type disscussMsg struct {
 	MsgTitle      string
 	HeadingPrefix string
 
-	discussBody
+	DiscussBody
+}
+
+type SendMsg struct {
+	*disscussMsg
+	webhookMsg
 }
 
 func (d *disscussMsg) Type() Type {
@@ -34,9 +52,12 @@ func (d *disscussMsg) Title() string {
 	return d.MsgTitle
 }
 
-func (d *disscussMsg) Message() (string, error) {
+func (d *disscussMsg) Message(webhookType model.WebhookType) (string, error) {
 	var buff bytes.Buffer
-	err := discussTpl.Execute(&buff, d)
+	err := discussDingtalkTpl.Execute(&buff, SendMsg{
+		disscussMsg: d,
+		webhookMsg:  newWebhookMsg(webhookType),
+	})
 	if err != nil {
 		return "", err
 	}
@@ -44,38 +65,20 @@ func (d *disscussMsg) Message() (string, error) {
 	return buff.String(), nil
 }
 
-func newBotDislikeComment(body discussBody) Message {
+func NewBotDislikeComment(body DiscussBody) Message {
 	return &disscussMsg{
 		MsgType:       TypeDislikeBotComment,
 		MsgTitle:      "不喜欢智能机器人的回答",
 		HeadingPrefix: "问题",
-		discussBody:   body,
+		DiscussBody:   body,
 	}
 }
 
-func newBotUnknown(body discussBody) Message {
+func NewBotUnknown(body DiscussBody) Message {
 	return &disscussMsg{
 		MsgType:       TypeBotUnknown,
 		MsgTitle:      "智能机器人无法解答问题",
 		HeadingPrefix: "问题",
-		discussBody:   body,
-	}
-}
-
-func newFeedback(body discussBody) Message {
-	return &disscussMsg{
-		MsgType:       TypeNewFeedback,
-		MsgTitle:      "有用户提交了新的反馈",
-		HeadingPrefix: "反馈",
-		discussBody:   body,
-	}
-}
-
-func newBlog(body discussBody) Message {
-	return &disscussMsg{
-		MsgType:       TypeNewBlog,
-		MsgTitle:      "有用户发表了新的博客",
-		HeadingPrefix: "标题",
-		discussBody:   body,
+		DiscussBody:   body,
 	}
 }
