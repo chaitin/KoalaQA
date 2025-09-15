@@ -60,8 +60,50 @@ jobs:
             HTTP_PROXY=${{ secrets.HTTP_PROXY }}
             HTTPS_PROXY=${{ secrets.HTTPS_PROXY }}
 
-  notify:
+  update-compose:
     needs: build-and-push
+    runs-on: ubuntu-latest
+    if: needs.build-and-push.result == 'success'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Extract tag name
+        id: extract_tag
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Update docker-compose.yml
+        run: |
+          # 更新 API 服务的镜像标签
+          sed -i "s|image: swr.cn-east-3.myhuaweicloud.com/koala-qa/api:.*|image: swr.cn-east-3.myhuaweicloud.com/koala-qa/api:${{ steps.extract_tag.outputs.tag }}|g" docker-compose.yml
+
+          # 更新 APP 服务的镜像标签
+          sed -i "s|image: swr.cn-east-3.myhuaweicloud.com/koala-qa/app:.*|image: swr.cn-east-3.myhuaweicloud.com/koala-qa/app:${{ steps.extract_tag.outputs.tag }}|g" docker-compose.yml
+
+          # 显示更改内容
+          echo "📝 Updated docker-compose.yml:"
+          git diff docker-compose.yml
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          # 检查是否有更改
+          if git diff --quiet docker-compose.yml; then
+            echo "🔄 No changes needed in docker-compose.yml"
+          else
+            git add docker-compose.yml
+            git commit -m "🚀 Auto-update docker-compose.yml with tag ${{ steps.extract_tag.outputs.tag }}"
+            git push origin main
+            echo "✅ Successfully updated docker-compose.yml with new image tags"
+          fi
+
+  notify:
+    needs: [build-and-push, update-compose]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -75,6 +117,12 @@ jobs:
             echo "✅ App and UI images built successfully!"
             echo "🚀 Images pushed to Huawei Cloud: ${{ env.HUAWEI_REGISTRY }}/${{ env.HUAWEI_NAMESPACE }}"
             echo "📦 Tag: ${{ steps.extract_tag.outputs.tag }}"
+            
+            if [ "${{ needs.update-compose.result }}" == "success" ]; then
+              echo "🔄 docker-compose.yml updated successfully"
+            else
+              echo "⚠️ docker-compose.yml update failed, but images were built successfully"
+            fi
           else
             echo "❌ App and UI image build failed, please check logs"
             exit 1
