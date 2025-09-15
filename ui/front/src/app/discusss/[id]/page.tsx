@@ -58,7 +58,6 @@ const Page = async (props: { params: Promise<{ id: string }> }) => {
         gap={3}
       >
         <Content data={data}></Content>
-        {/* <InfoRelevance data={data} /> */}
       </Stack>
     </Box>
   );

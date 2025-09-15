@@ -444,7 +444,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   };
 
   return (
-    <Stack id="comment-card" gap={3} sx={{ width: { xs: "100%", sm: 896 } }}>
+    <Stack id="comment-card" gap={3} sx={{ width: { xs: "100%"} }}>
       <Menu
         id="basic-menu"
         anchorEl={anchorEl}
