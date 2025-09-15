@@ -110,6 +110,7 @@ func (u *user) Route(h server.Handler) {
 	g.POST("/register", u.Register)
 	g.POST("/login", u.Login)
 	g.GET("/login/third", u.LoginThirdURL)
+	g.GET("/login/third/callback/oidc", u.LoginOIDCCallback)
 }
 
 func newUser(u *svc.User) server.Router {
