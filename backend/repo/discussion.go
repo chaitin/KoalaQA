@@ -56,18 +56,6 @@ func (d *Discussion) Detail(ctx context.Context, uid uint, id uint) (*model.Disc
 		}
 	}
 
-	var accepteComment model.DiscussionComment
-	_ = d.db.WithContext(ctx).
-		Model(&model.Comment{}).
-		Where("comments.discussion_id = ?", id).
-		Where("comments.accepted = ?", true).
-		Joins("left join users on users.id = comments.user_id").
-		Select("comments.*, users.name as user_name, users.avatar as user_avatar").
-		First(&accepteComment).Error
-	if accepteComment.ID > 0 {
-		res.Accepted = &accepteComment
-	}
-
 	commentLikeScope := func(tx *gorm.DB) *gorm.DB {
 		return tx.Joins(`LEFT JOIN (SELECT comment_id,
 			COUNT(*) FILTER (WHERE state = ?) AS like,
