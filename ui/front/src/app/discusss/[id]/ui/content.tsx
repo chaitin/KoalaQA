@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import {
   deleteDiscussionDiscIdCommentCommentId,
   postDiscussionDiscIdComment,
@@ -7,22 +7,22 @@ import {
   postDiscussionDiscIdCommentCommentIdLike,
   postDiscussionDiscIdCommentCommentIdRevokeLike,
   putDiscussionDiscIdCommentCommentId,
-} from "@/api";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import ThumbUpAltOutlinedIcon from "@mui/icons-material/ThumbUpAltOutlined";
-import ThumbDownAltOutlinedIcon from "@mui/icons-material/ThumbDownAltOutlined";
+} from '@/api';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import ThumbUpAltOutlinedIcon from '@mui/icons-material/ThumbUpAltOutlined';
+import ThumbDownAltOutlinedIcon from '@mui/icons-material/ThumbDownAltOutlined';
 import {
   ModelCommentLikeState,
   ModelDiscussionComment,
   ModelDiscussionDetail,
   ModelDiscussionReply,
   SvcCommentUpdateReq,
-} from "@/api/types";
-import { Card, MarkDown } from "@/components";
-import { AuthContext } from "@/components/authProvider";
-import { Avatar } from "@/components/discussion";
-import MdEditor from "@/components/mdEditor";
-import Modal from "@/components/modal";
+} from '@/api/types';
+import { Card, MarkDown } from '@/components';
+import { AuthContext } from '@/components/authProvider';
+import { Avatar } from '@/components/discussion';
+import MdEditor from '@/components/mdEditor';
+import Modal from '@/components/modal';
 import {
   Box,
   Button,
@@ -32,19 +32,19 @@ import {
   OutlinedInput,
   Stack,
   Typography,
-} from "@mui/material";
-import dayjs from "dayjs";
-import "dayjs/locale/zh-cn";
-import relativeTime from "dayjs/plugin/relativeTime";
-import { useParams, useRouter } from "next/navigation";
-import React, { useContext, useId, useState } from "react";
-import EditCommentModal from "./editCommentModal";
+} from '@mui/material';
+import dayjs from 'dayjs';
+import 'dayjs/locale/zh-cn';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import { useParams, useRouter } from 'next/navigation';
+import React, { useContext, useId, useState } from 'react';
+import EditCommentModal from './editCommentModal';
 
-import LoadingBtn from "@/components/loadingButton";
-import { formatNumber } from "@/utils";
+import LoadingBtn from '@/components/loadingButton';
+import { formatNumber } from '@/utils';
 
 dayjs.extend(relativeTime);
-dayjs.locale("zh-cn");
+dayjs.locale('zh-cn');
 
 const BaseDiscussCard = (props: {
   isReply?: boolean;
@@ -58,13 +58,15 @@ const BaseDiscussCard = (props: {
   ): void;
 }) => {
   const { data, onOpt, disData, index, isReply } = props;
-  const router = useRouter()
+  const router = useRouter();
   // 检查是否有可用的菜单项
   const hasMenuItems =
     // 是当前用户的评论（可以编辑和删除）
     data.user_id === disData.current_user_id ||
-    // 是问题作者且问题未被采纳（可以采纳）
-    (disData.user_id === disData.current_user_id && !disData.accepted);
+    // 是问题作者且问题未被采纳，且不是回复（只有评论可以被采纳）
+    (disData.user_id === disData.current_user_id &&
+      !disData.accepted &&
+      !isReply);
 
   const revokeLike = () => {
     postDiscussionDiscIdCommentCommentIdRevokeLike({
@@ -104,54 +106,52 @@ const BaseDiscussCard = (props: {
   return (
     <Box
       sx={{
-        ...(isReply
-          ? {
-              p: { xs: 1.5, sm: 3 },
-              backgroundColor: "rgba(242, 243, 245, 0.5)",
-              mt: 2,
-              borderRadius: 2,
-              width: "100%",
-            }
-          : {
-              width: "100%",
-            }),
+        ...(isReply ?
+          {
+            p: { xs: 1.5, sm: 3 },
+            backgroundColor: 'rgba(242, 243, 245, 0.5)',
+            mt: 2,
+            borderRadius: 2,
+            width: '100%',
+          }
+        : {
+            width: '100%',
+          }),
         // 如果该评论为采纳（accepted），添加背景图片（SVG data URI）
         backgroundImage: data?.accepted ? `url("/accepted.png")` : undefined,
-        backgroundRepeat: "no-repeat",
-        backgroundPosition: "right 40px",
-        backgroundSize: { xs: "80px", sm: "100px" },
-        "&:hover #accept_btn": {
-          display: "block",
+        backgroundRepeat: 'no-repeat',
+        backgroundPosition: 'right 40px',
+        backgroundSize: { xs: '80px', sm: '100px' },
+        '&:hover #accept_btn': {
+          display: 'block',
         },
       }}
     >
       <Stack
-        direction={{ xs: "column", sm: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "flex-start", sm: "center" }}
-        sx={{ mb: 2, pb: 2, borderBottom: "1px solid #eee" }}
+        direction={{ xs: 'column', sm: 'row' }}
+        justifyContent='space-between'
+        alignItems={{ xs: 'flex-start', sm: 'center' }}
+        sx={{ mb: 2, pb: 2, borderBottom: '1px solid #eee' }}
       >
-        <Stack direction="row" gap={1} alignItems="center" sx={{ flex: 1 }}>
-          {data.user_avatar ? (
+        <Stack direction='row' gap={1} alignItems='center' sx={{ flex: 1 }}>
+          {data.user_avatar ?
             <img
               src={data.user_avatar}
-              alt="头像"
-              style={{ height: 28, width: 28, borderRadius: "50%" }}
+              alt='头像'
+              style={{ height: 28, width: 28, borderRadius: '50%' }}
             />
-          ) : (
-            <Avatar size={28} />
-          )}
+          : <Avatar size={28} />}
 
           <Typography
-            className="text-ellipsis"
+            className='text-ellipsis'
             sx={{
               fontSize: 16,
-              color: "#000",
-              cursor: "pointer",
-              "&:hover": {
-                color: "primary.main",
+              color: '#000',
+              cursor: 'pointer',
+              '&:hover': {
+                color: 'primary.main',
               },
-              maxWidth: { xs: "calc(100% - 82px)", sm: "auto" },
+              maxWidth: { xs: 'calc(100% - 82px)', sm: 'auto' },
             }}
           >
             {data.user_name}
@@ -159,91 +159,89 @@ const BaseDiscussCard = (props: {
         </Stack>
 
         <Stack
-          direction="row"
+          direction='row'
           gap={2}
-          alignItems="center"
-          sx={{ mt: { xs: "12px", sm: 0 } }}
+          alignItems='center'
+          sx={{ mt: { xs: '12px', sm: 0 } }}
         >
           <Typography
-            variant="body2"
+            variant='body2'
             sx={{
               fontSize: 12,
-              color: "rgba(0,0,0,0.5)",
+              color: 'rgba(0,0,0,0.5)',
             }}
           >
             更新于 {dayjs.unix(data.updated_at!).fromNow()}
           </Typography>
           <Stack
-            direction="row"
+            direction='row'
             gap={2}
-            alignItems="center"
-            sx={{ display: { xs: "none", sm: "flex" } }}
+            alignItems='center'
+            sx={{ display: { xs: 'none', sm: 'flex' } }}
           >
             <Stack
-              direction="row"
-              alignItems="center"
+              direction='row'
+              alignItems='center'
               gap={1}
               sx={{
-                background: isLiked ? "rgba(32,108,255,0.1)" : "#F2F3F5",
+                background: isLiked ? 'rgba(32,108,255,0.1)' : '#F2F3F5',
                 borderRadius: 0.5,
                 px: 1,
-                py: "1px",
-                cursor: "pointer",
-                "&:hover": {
-                  background: isLiked
-                    ? "rgba(32,108,255,0.2)"
-                    : "rgba(0, 0, 0, 0.12)",
+                py: '1px',
+                cursor: 'pointer',
+                '&:hover': {
+                  background:
+                    isLiked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
                 },
               }}
               onClick={() => handleLike()}
             >
               <ThumbUpAltOutlinedIcon
                 sx={{
-                  color: isLiked ? "primary.main" : "rgba(0,0,0,0.5)",
+                  color: isLiked ? 'primary.main' : 'rgba(0,0,0,0.5)',
                   fontSize: 14,
                 }}
               />
               <Typography
-                variant="body2"
+                variant='body2'
                 sx={{
                   fontSize: 14,
-                  color: isLiked ? "primary.main" : "rgba(0,0,0,0.5)",
-                  lineHeight: "20px",
+                  color: isLiked ? 'primary.main' : 'rgba(0,0,0,0.5)',
+                  lineHeight: '20px',
                 }}
               >
                 {formatNumber(data.like || 0)}
               </Typography>
             </Stack>
             <Stack
-              direction="row"
-              alignItems="center"
+              direction='row'
+              alignItems='center'
               gap={1}
               sx={{
-                background: isDisliked ? "rgba(32,108,255,0.1)" : "#F2F3F5",
+                background: isDisliked ? 'rgba(32,108,255,0.1)' : '#F2F3F5',
                 borderRadius: 0.5,
                 px: 1,
-                py: "1px",
-                cursor: "pointer",
-                "&:hover": {
-                  background: isDisliked
-                    ? "rgba(32,108,255,0.2)"
-                    : "rgba(0, 0, 0, 0.12)",
+                py: '1px',
+                cursor: 'pointer',
+                '&:hover': {
+                  background:
+                    isDisliked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
                 },
               }}
               onClick={() => handleDislike()}
             >
               <ThumbDownAltOutlinedIcon
                 sx={{
-                  color: isDisliked ? "primary.main" : "rgba(0,0,0,0.5)",
+                  color: isDisliked ? 'primary.main' : 'rgba(0,0,0,0.5)',
                   fontSize: 14,
                 }}
               />
               <Typography
-                variant="body2"
+                variant='body2'
                 sx={{
                   fontSize: 14,
-                  lineHeight: "20px",
-                  color: isDisliked ? "primary.main" : "rgba(0,0,0,0.5)",
+                  lineHeight: '20px',
+                  color: isDisliked ? 'primary.main' : 'rgba(0,0,0,0.5)',
                 }}
               >
                 {formatNumber(data.dislike || 0)}
@@ -252,9 +250,9 @@ const BaseDiscussCard = (props: {
             {/* 只在有可用菜单项时显示 MoreVertIcon */}
             {hasMenuItems && (
               <IconButton
-                sx={{ display: { xs: "none", sm: "flex" } }}
+                sx={{ display: { xs: 'none', sm: 'flex' } }}
                 onClick={(e) => {
-                  onOpt(e, data.content || "", data);
+                  onOpt(e, data.content || '', data);
                 }}
               >
                 <MoreVertIcon />
@@ -266,8 +264,8 @@ const BaseDiscussCard = (props: {
       <MarkDown
         content={data.content}
         sx={{
-          backgroundColor: isReply ? "transparent !important" : "inherit",
-          minHeight: data?.accepted ? "100px" : "unset",
+          backgroundColor: isReply ? 'transparent !important' : 'inherit',
+          minHeight: data?.accepted ? '100px' : 'unset',
         }}
       />
       {!isReply &&
@@ -289,7 +287,7 @@ const DiscussCard = (props: any) => {
   const idKey = useId();
   const { id }: { id: string } = useParams();
   const { user } = useContext(AuthContext);
-  const [comment, setComment] = useState("");
+  const [comment, setComment] = useState('');
   const router = useRouter();
   const [mdEditShow, setMdEditShow] = useState(false);
   const onSubmit = () => {
@@ -300,7 +298,7 @@ const DiscussCard = (props: any) => {
         comment_id: props.data.id,
       }
     ).then(() => {
-      setComment("");
+      setComment('');
       setMdEditShow(false);
       router.refresh();
     });
@@ -309,8 +307,8 @@ const DiscussCard = (props: any) => {
   return (
     <Card
       sx={{
-        boxShadow: "rgba(0, 28, 85, 0.04) 0px 4px 10px 0px",
-        cursor: "auto",
+        boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
+        cursor: 'auto',
         pt: 2,
       }}
     >
@@ -320,21 +318,21 @@ const DiscussCard = (props: any) => {
           mt: 3,
         }}
       >
-        <Box sx={{ display: !mdEditShow ? "none" : "block" }}>
+        <Box sx={{ display: !mdEditShow ? 'none' : 'block' }}>
           <MdEditor value={comment} onChange={setComment} />
           <Stack
-            direction="row"
+            direction='row'
             gap={2}
-            justifyContent="flex-end"
+            justifyContent='flex-end'
             sx={{ mt: 2 }}
           >
-            <Button size="small" onClick={() => setMdEditShow(false)}>
+            <Button size='small' onClick={() => setMdEditShow(false)}>
               取消
             </Button>
             <LoadingBtn
               id={idKey}
-              variant="contained"
-              size="small"
+              variant='contained'
+              size='small'
               disabled={!comment.trim()}
               onClick={onSubmit}
             >
@@ -344,9 +342,9 @@ const DiscussCard = (props: any) => {
         </Box>
         <OutlinedInput
           fullWidth
-          size="small"
-          sx={{ display: mdEditShow ? "none" : "block" }}
-          placeholder="回复"
+          size='small'
+          sx={{ display: mdEditShow ? 'none' : 'block' }}
+          placeholder='回复'
           onFocus={() => {
             setMdEditShow(true);
           }}
@@ -360,13 +358,10 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const { data } = props;
   const { id }: { id: string } = useParams();
   const router = useRouter();
-  const [comment, setComment] = useState("");
+  const [comment, setComment] = useState('');
   const [commentIndex, setCommentIndex] = useState<
     ModelDiscussionComment | ModelDiscussionReply | null
   >(null);
-  const [mdEditShow, setMdEditShow] = useState(false);
-  const [historyComment, setHistoryComment] =
-    useState<SvcCommentUpdateReq | null>(null);
   const [editCommentModalVisible, setEditCommentModalVisible] = useState(false);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -376,10 +371,8 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
     index: ModelDiscussionComment | ModelDiscussionReply
   ) => {
     setAnchorEl(event.currentTarget);
-    setHistoryComment(comment);
     setCommentIndex(index);
   };
-  const { user } = useContext(AuthContext);
   const handleClose = () => {
     setAnchorEl(null);
   };
@@ -390,8 +383,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         content: comment,
       }
     ).then(() => {
-      setComment("");
-      setMdEditShow(false);
+      setComment('');
       router.refresh();
     });
   };
@@ -404,16 +396,15 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
       }
     ).then(() => {
       router.refresh();
-      setComment("");
+      setComment('');
       setEditCommentModalVisible(false);
     });
   };
-  console.log(data);
   const handleDelete = () => {
     setAnchorEl(null);
     Modal.confirm({
-      title: "确定删除吗？",
-      okButtonProps: { color: "error" },
+      title: '确定删除吗？',
+      okButtonProps: { color: 'error' },
       onOk: async () => {
         if (!commentIndex) return;
         await deleteDiscussionDiscIdCommentCommentId({
@@ -426,8 +417,8 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   };
   const handleAccept = () => {
     Modal.confirm({
-      title: "确定采纳吗？",
-      okButtonProps: { color: "info" },
+      title: '确定采纳吗？',
+      okButtonProps: { color: 'info' },
       onOk: async () => {
         if (!commentIndex) return;
         await postDiscussionDiscIdCommentCommentIdAccept({
@@ -442,11 +433,10 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
     setEditCommentModalVisible(true);
     setAnchorEl(null);
   };
-
   return (
-    <Stack id="comment-card" gap={3} sx={{ width: { xs: "100%"} }}>
+    <Stack id='comment-card' gap={3} sx={{ width: { xs: '100%' } }}>
       <Menu
-        id="basic-menu"
+        id='basic-menu'
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
@@ -457,9 +447,12 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         {commentIndex?.user_id == data.current_user_id && (
           <MenuItem onClick={handleDelete}>删除</MenuItem>
         )}
-        {(data?.user_id == data.current_user_id) && !data.accepted && (
-          <MenuItem onClick={handleAccept}>采纳</MenuItem>
-        )}
+        {data?.user_id == data.current_user_id &&
+          !data.accepted &&
+          !data.comments?.[0].accepted &&
+          (commentIndex as any)?.replies && (
+            <MenuItem onClick={handleAccept}>采纳</MenuItem>
+          )}
       </Menu>
       <EditCommentModal
         open={editCommentModalVisible}
@@ -467,9 +460,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         onOk={onSubmit}
         onClose={() => setEditCommentModalVisible(false)}
       />
-      {data.accepted && (
-        <DiscussCard data={data.accepted} index={0} disData={data} onOpt={handleClick}/>
-      )}
       {data.comments?.map((it, index) => (
         <DiscussCard
           data={it}
@@ -481,11 +471,11 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
       ))}
       <Card>
         <MdEditor style={{ flex: 1 }} value={comment} onChange={setComment} />
-        <Stack direction="row" justifyContent="flex-end" sx={{ mt: 2 }}>
+        <Stack direction='row' justifyContent='flex-end' sx={{ mt: 2 }}>
           <LoadingBtn
-            id="s-captcha-button"
-            variant="contained"
-            size="small"
+            id='s-captcha-button'
+            variant='contained'
+            size='small'
             disabled={!comment.trim()}
             onClick={onCommentSubmit}
           >

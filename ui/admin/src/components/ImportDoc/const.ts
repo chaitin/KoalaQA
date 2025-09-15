@@ -6,7 +6,7 @@ export const StepText = {
     showCancel: true,
   },
   'pull-done': {
-    okText: '拉取数据',
+    okText: '导入数据',
     showCancel: true,
   },
   import: {

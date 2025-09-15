@@ -170,7 +170,7 @@ const Sidebar = () => {
           variant='outlined'
           color='dark'
           onClick={() =>
-            window.open('https://monkeycode.docs.baizhi.cloud/', '_blank')
+            window.open('https://koalaqa.docs.baizhi.cloud/welcome', '_blank')
           }
         >
           <Icon
@@ -185,7 +185,7 @@ const Sidebar = () => {
           variant='outlined'
           color='dark'
           onClick={() =>
-            window.open('https://github.com/chaitin/MonkeyCode', '_blank')
+            window.open('https://github.com/chaitin/KoalaQA', '_blank')
           }
         >
           <Icon
@@ -213,7 +213,7 @@ const Sidebar = () => {
       <Modal
         open={showQrcode}
         onCancel={() => setShowQrcode(false)}
-        title='欢迎加入 MonkeyCode 交流群'
+        title='欢迎加入 KoalaQA 交流群'
         footer={null}
       >
         <Stack alignItems={'center'} justifyContent={'center'} sx={{ my: 2 }}>
