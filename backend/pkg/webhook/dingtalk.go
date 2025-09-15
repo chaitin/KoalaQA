@@ -3,8 +3,6 @@ package webhook
 import (
 	"bytes"
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -65,13 +63,9 @@ type responseMsg struct {
 
 func (d *dingtalk) signQuery(q url.Values) url.Values {
 	timestamp := time.Now().UnixMilli()
-	strToHash := fmt.Sprintf("%d\n%s", timestamp, d.sign)
-	hmac256 := hmac.New(sha256.New, []byte(d.sign))
-	hmac256.Write([]byte(strToHash))
-	data := hmac256.Sum(nil)
 
 	q.Set("timestamp", strconv.FormatInt(timestamp, 10))
-	q.Set("sign", base64.StdEncoding.EncodeToString(data))
+	q.Set("sign", base64.StdEncoding.EncodeToString(util.HMACSha256(d.sign, fmt.Sprintf("%d\n%s", timestamp, d.sign))))
 	return q
 }
 
