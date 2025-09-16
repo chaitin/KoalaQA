@@ -124,7 +124,7 @@ func (u *user) Route(h server.Handler) {
 	g := h.Group("/user")
 	g.POST("/register", u.Register)
 	g.POST("/login", u.Login)
-	g.GET("/login_method")
+	g.GET("/login_method", u.LoginMethod)
 	g.GET("/login/third", u.LoginThirdURL)
 	g.GET("/login/third/callback/oidc", u.LoginOIDCCallback)
 }
