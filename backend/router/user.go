@@ -37,6 +37,22 @@ func (u *user) Register(ctx *context.Context) {
 	ctx.Success(nil)
 }
 
+// LoginMethod
+// @Summary login_method detail
+// @Tags user
+// @Produce json
+// @Success 200 {object} context.Response{data=svc.AuthFrontendGetRes}
+// @Router /user/login_method [get]
+func (u *user) LoginMethod(ctx *context.Context) {
+	res, err := u.svcU.LoginMethod(ctx)
+	if err != nil {
+		ctx.InternalError(err, "get login_method failed")
+		return
+	}
+
+	ctx.Success(res)
+}
+
 // Login
 // @Summary user login
 // @Tags user
@@ -109,6 +125,7 @@ func (u *user) Route(h server.Handler) {
 	g := h.Group("/user")
 	g.POST("/register", u.Register)
 	g.POST("/login", u.Login)
+	g.GET("/login_method")
 	g.GET("/login/third", u.LoginThirdURL)
 	g.GET("/login/third/callback/oidc", u.LoginOIDCCallback)
 }
