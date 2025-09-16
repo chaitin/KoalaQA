@@ -8,6 +8,7 @@ require (
 	github.com/chaitin/pandawiki/sdk/rag v0.0.0-20250828122102-9a4a7cbbd5b6
 	github.com/cloudwego/eino v0.4.7
 	github.com/coreos/go-oidc/v3 v3.15.0
+	github.com/gin-contrib/sessions v0.0.0-20190101140330-dc5246754963
 	github.com/gin-gonic/gin v1.10.1
 	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/google/uuid v1.6.0
@@ -55,7 +56,6 @@ require (
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.9 // indirect
 	github.com/getkin/kin-openapi v0.118.0 // indirect
-	github.com/gin-contrib/sessions v0.0.0-20190101140330-dc5246754963 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
