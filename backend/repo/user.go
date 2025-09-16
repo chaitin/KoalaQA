@@ -10,6 +10,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/third_auth"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type User struct {
@@ -59,7 +60,10 @@ func (u *User) CreateThird(ctx context.Context, user *third_auth.User) (*model.U
 			LastLogin: model.Timestamp(time.Now().Unix()),
 			Key:       uuid.NewString(),
 		}
-		txErr = tx.Model(&model.User{}).Create(&dbUser).Error
+		txErr = tx.Model(&model.User{}).Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "email"}},
+			DoNothing: true,
+		}).Create(&dbUser).Error
 		if txErr != nil {
 			return txErr
 		}
