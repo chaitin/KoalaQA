@@ -46,8 +46,9 @@ const (
 )
 
 type AuthInfo struct {
-	Type   AuthType   `json:"type" binding:"min=1,max=2"`
-	Config AuthConfig `json:"config"`
+	Type       AuthType   `json:"type" binding:"min=1,max=2"`
+	Config     AuthConfig `json:"config"`
+	ButtonDesc string     `json:"button_desc"`
 }
 
 type Auth struct {
