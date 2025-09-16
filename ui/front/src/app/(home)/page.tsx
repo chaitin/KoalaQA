@@ -2,6 +2,7 @@ import { getDiscussion, getGroup } from "@/api";
 import { Stack } from "@mui/material";
 import { Metadata } from "next";
 import ArticleCard from "./ui/article";
+import GroupsInitializer from "@/components/groupsInitializer";
 
 export const metadata: Metadata = {
   title: "技术讨论 | Koala QA",
@@ -31,10 +32,12 @@ const Page = async (props: {
   ]);
 
   return (
-    <Stack gap={3} sx={{ minHeight: "100vh" }}>
-      <h1 style={{ display: "none" }}>问答</h1>
-      <ArticleCard data={data} topics={topics} groups={groupsData} />
-    </Stack>
+    <GroupsInitializer groupsData={groupsData}>
+      <Stack gap={3} sx={{ minHeight: "100vh" }}>
+        <h1 style={{ display: "none" }}>问答</h1>
+        <ArticleCard data={data} topics={topics} groups={groupsData} />
+      </Stack>
+    </GroupsInitializer>
   );
 };
 
