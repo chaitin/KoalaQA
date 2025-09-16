@@ -17,7 +17,7 @@ import type {
   ResponseType,
 } from "axios";
 import axios from "axios";
-import { message as alert } from "ct-mui";
+import alert from "@/components/alert";
 import { redirect } from "next/navigation";
 import { getServerPathname } from "@/utils/getServerHeader";
 
@@ -63,6 +63,59 @@ export enum ContentType {
 
 type ExtractDataProp<T> = T extends { data?: infer U } ? U : T;
 
+// CSRF token 缓存
+let csrfTokenCache: string | null = null;
+let csrfTokenPromise: Promise<string> | null = null;
+
+// 获取CSRF token的函数
+const getCsrfToken = async (): Promise<string> => {
+  // 如果已经有缓存的token，直接返回
+  if (csrfTokenCache) {
+    return csrfTokenCache;
+  }
+
+  // 如果正在获取token，等待现有的请求
+  if (csrfTokenPromise) {
+    return csrfTokenPromise;
+  }
+
+  // 创建新的获取token的Promise
+  csrfTokenPromise = new Promise(async (resolve, reject) => {
+    try {
+      const response = await axios.get('/api/csrf', {
+        withCredentials: true,
+      });
+
+      let token = '';
+      if (response.data && response.data.success && response.data.data) {
+        token = response.data.data;
+      } else if (response.data && typeof response.data === 'string') {
+        token = response.data;
+      }
+
+      if (token) {
+        csrfTokenCache = token;
+        resolve(token);
+      } else {
+        reject(new Error('Failed to get CSRF token'));
+      }
+    } catch (error) {
+      console.error('Failed to fetch CSRF token:', error);
+      reject(error);
+    } finally {
+      // 清除Promise缓存，允许重试
+      csrfTokenPromise = null;
+    }
+  });
+
+  return csrfTokenPromise;
+};
+
+// 清除CSRF token缓存的函数（在token失效时调用）
+export const clearCsrfTokenCache = () => {
+  csrfTokenCache = null;
+  csrfTokenPromise = null;
+};
 export class HttpClient<SecurityDataType = unknown> {
   public instance: AxiosInstance;
   private securityData: SecurityDataType | null = null;
@@ -98,6 +151,10 @@ export class HttpClient<SecurityDataType = unknown> {
         return Promise.reject(response);
       },
       (error) => {
+        // 如果是CSRF token相关错误，清除缓存
+        if (error.response?.status === 403 || error.response?.status === 419) {
+          clearCsrfTokenCache();
+        }
         if(alert.error) alert.error(error.response?.statusText || "网络异常");
         return Promise.reject(error.response);
       },
@@ -190,29 +247,30 @@ export class HttpClient<SecurityDataType = unknown> {
     ) {
       body = JSON.stringify(body);
     }
-    const Authorization = await new Promise(async (resolve) => {
-      if (typeof window === "undefined") {
-        const { cookies } = await import("next/headers");
-        const cookieStore = await cookies();
-        const token = cookieStore.get("auth_token")?.value || null;
-        resolve(token);
-      } else {
-        let token = "";
-        try {
-          token = JSON.parse(localStorage.getItem("auth_token"));
-        } catch (e) {}
-        resolve(token);
+    
+    // 准备headers
+    const headers: Record<string, string> = {
+      ...(requestParams.headers || {}),
+      ...(type && type !== ContentType.FormData
+        ? { "Content-Type": type }
+        : {}),
+    };
+
+    // 对于非GET请求，添加CSRF token
+    const method = params.method?.toUpperCase() || 'GET';
+    if (method !== 'GET') {
+      try {
+        const csrfToken = await getCsrfToken();
+        headers['X-CSRF-TOKEN'] = csrfToken;
+      } catch (error) {
+        console.error('Failed to get CSRF token for request:', error);
+        // 继续执行请求，让服务器处理CSRF验证失败
       }
-    });
+    }
+
     return this.instance.request({
       ...requestParams,
-      headers: {
-        ...(requestParams.headers || {}),
-        ...(type && type !== ContentType.FormData
-          ? { "Content-Type": type }
-          : {}),
-      Authorization: `Bearer ${Authorization}`,
-      },
+      headers,
       params: query,
       responseType: responseFormat,
       data: body,

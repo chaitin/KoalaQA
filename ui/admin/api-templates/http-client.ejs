@@ -23,6 +23,59 @@ export interface FullRequestParams extends Omit<AxiosRequestConfig, "data" | "pa
 }
 
 export type RequestParams = Omit<FullRequestParams, "body" | "method" | "query" | "path">;
+// CSRF token 缓存
+let csrfTokenCache: string | null = null;
+let csrfTokenPromise: Promise<string> | null = null;
+
+// 获取CSRF token的函数
+const getCsrfToken = async (): Promise<string> => {
+  // 如果已经有缓存的token，直接返回
+  if (csrfTokenCache) {
+    return csrfTokenCache;
+  }
+
+  // 如果正在获取token，等待现有的请求
+  if (csrfTokenPromise) {
+    return csrfTokenPromise;
+  }
+
+  // 创建新的获取token的Promise
+  csrfTokenPromise = new Promise(async (resolve, reject) => {
+    try {
+      const response = await axios.get("/api/csrf", {
+        withCredentials: true,
+      });
+
+      let token = "";
+      if (response.data && response.data.success && response.data.data) {
+        token = response.data.data;
+      } else if (response.data && typeof response.data === "string") {
+        token = response.data;
+      }
+
+      if (token) {
+        csrfTokenCache = token;
+        resolve(token);
+      } else {
+        reject(new Error("Failed to get CSRF token"));
+      }
+    } catch (error) {
+      console.error("Failed to fetch CSRF token:", error);
+      reject(error);
+    } finally {
+      // 清除Promise缓存，允许重试
+      csrfTokenPromise = null;
+    }
+  });
+
+  return csrfTokenPromise;
+};
+
+// 清除CSRF token缓存的函数（在token失效时调用）
+export const clearCsrfTokenCache = () => {
+  csrfTokenCache = null;
+  csrfTokenPromise = null;
+};
 
 export interface ApiConfig<SecurityDataType = unknown> extends Omit<AxiosRequestConfig, "data" | "cancelToken"> {
   securityWorker?: (securityData: SecurityDataType | null) => Promise<AxiosRequestConfig | void> | AxiosRequestConfig | void;
@@ -66,6 +119,10 @@ export class HttpClient<SecurityDataType = unknown> {
             return Promise.reject(response);
           },
           (error) => {
+            // 如果是CSRF token相关错误，清除缓存
+            if (error.response?.status === 403 || error.response?.status === 419) {
+              clearCsrfTokenCache();
+            }
             if (error.response?.status === 401) {
               window.location.href = '/login'
             }
@@ -143,19 +200,24 @@ export class HttpClient<SecurityDataType = unknown> {
         if (type === ContentType.Text && body && body !== null && typeof body !== "string") {
           body = JSON.stringify(body);
         }
-        let auth_token = ''
-        try {
-          auth_token = JSON.parse(localStorage.getItem("auth_token"))
-        } catch {}
-        const Authorization = auth_token || "";
+        const headers = {
+          ...(requestParams.headers || {}),
+          ...(type && type !== ContentType.FormData ? { 'Content-Type': type } : {}),
+        }
+        const method = params.method?.toUpperCase() || "GET";
 
+        if (method !== "GET") {
+          try {
+            const csrfToken = await getCsrfToken();
+            headers["X-CSRF-TOKEN"] = csrfToken;
+          } catch (error) {
+            console.error("Failed to get CSRF token for request:", error);
+            // 继续执行请求，让服务器处理CSRF验证失败
+          }
+        }
         return this.instance.request({
           ...requestParams,
-          headers: {
-            Authorization: `Bearer ${Authorization}`,
-            ...(requestParams.headers || {}),
-            ...(type && type !== ContentType.FormData ? { 'Content-Type': type } : {}),
-          },
+          headers,
           params: query,
           responseType: responseFormat,
           data: body,

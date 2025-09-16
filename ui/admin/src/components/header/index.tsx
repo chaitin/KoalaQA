@@ -32,12 +32,12 @@ const Header = () => {
       <Bread />
 
       <Stack direction={'row'} alignItems={'center'} gap={2}>
-        <Tooltip title='退出登录'>
+        <Tooltip title="退出登录">
           <IconButton
-            size='small'
+            size="small"
             sx={{
               bgcolor: '#fff',
-
+              color: 'primary.main',
               '&:hover': {
                 color: 'primary.main',
               },

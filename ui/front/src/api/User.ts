@@ -21,6 +21,7 @@ import {
   ModelUserInfo,
   PutAdminUserUserIdParams,
   PutUserPayload,
+  SvcAuthFrontendGetRes,
   SvcUserListItem,
   SvcUserLoginReq,
   SvcUserRegisterReq,
@@ -234,6 +235,31 @@ export const getUserLoginThird = (
     path: `/user/login/third`,
     method: "GET",
     query: query,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name GetUserLoginMethod
+ * @summary login_method detail
+ * @request GET:/user/login_method
+ * @response `200` `(ContextResponse & {
+    data?: SvcAuthFrontendGetRes,
+
+})` OK
+ */
+
+export const getUserLoginMethod = (params: RequestParams = {}) =>
+  request<
+    ContextResponse & {
+      data?: SvcAuthFrontendGetRes;
+    }
+  >({
+    path: `/user/login_method`,
+    method: "GET",
     format: "json",
     ...params,
   });

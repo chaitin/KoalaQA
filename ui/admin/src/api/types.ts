@@ -18,6 +18,12 @@ export enum TopicTaskStatus {
   TaskStatusTimeout = "timeout",
 }
 
+export enum SvcDiscussionListFilter {
+  DiscussionListFilterHot = "hot",
+  DiscussionListFilterNew = "new",
+  DiscussionListFilterMine = "mine",
+}
+
 export enum PlatformPlatformType {
   PlatformUnknown = 0,
   PlatformConfluence = 1,
@@ -81,6 +87,11 @@ export enum ModelDiscussionType {
   DiscussionTypeBlog = "blog",
 }
 
+export enum ModelCommentLikeState {
+  CommentLikeStateLike = 1,
+  CommentLikeStateDislike = 2,
+}
+
 export interface AnydocListDoc {
   file_type?: string;
   id?: string;
@@ -118,7 +129,12 @@ export interface ModelAuthConfigOauth {
 }
 
 export interface ModelAuthInfo {
+  button_desc?: string;
   config?: ModelAuthConfig;
+  /**
+   * @min 1
+   * @max 2
+   */
   type?: number;
 }
 
@@ -153,7 +169,7 @@ export interface ModelDiscussionComment {
   updated_at?: number;
   user_avatar?: string;
   user_id?: number;
-  user_liked?: boolean;
+  user_like_state?: ModelCommentLikeState;
   user_name?: string;
 }
 
@@ -162,6 +178,7 @@ export interface ModelDiscussionDetail {
   comments?: ModelDiscussionComment[];
   content?: string;
   created_at?: number;
+  current_user_id?: number;
   dislike?: number;
   group_ids?: number[];
   groups?: ModelDiscussionGroup[];
@@ -219,7 +236,7 @@ export interface ModelDiscussionReply {
   updated_at?: number;
   user_avatar?: string;
   user_id?: number;
-  user_liked?: boolean;
+  user_like_state?: ModelCommentLikeState;
   user_name?: string;
 }
 
@@ -302,7 +319,9 @@ export interface ModelPublicAddress {
 }
 
 export interface ModelUserInfo {
+  avatar?: string;
   email?: string;
+  key?: string;
   role?: ModelUserRole;
   uid?: number;
   username?: string;
@@ -334,6 +353,17 @@ export interface ModelWebhookConfig {
   url: string;
 }
 
+export interface SvcAuthFrontendGetAuth {
+  button_desc?: string;
+  type?: number;
+}
+
+export interface SvcAuthFrontendGetRes {
+  auth_types?: SvcAuthFrontendGetAuth[];
+  enable_register?: boolean;
+  public_access?: boolean;
+}
+
 export interface SvcBotGetRes {
   avatar?: string;
   name?: string;
@@ -361,8 +391,7 @@ export interface SvcDiscussUploadFileReq {
 
 export interface SvcDiscussionCreateReq {
   content?: string;
-  /** @minItems 1 */
-  group_ids: number[];
+  group_ids?: number[];
   tags?: string[];
   title: string;
   type?: ModelDiscussionType;
@@ -374,9 +403,9 @@ export interface SvcDiscussionSearchReq {
 }
 
 export interface SvcDiscussionUpdateReq {
-  content: string;
-  group_ids: number[];
-  tags: string[];
+  content?: string;
+  group_ids?: number[];
+  tags?: string[];
   title: string;
 }
 
@@ -433,12 +462,6 @@ export interface SvcKBListItem {
 export interface SvcKBUpdateReq {
   desc?: string;
   name: string;
-}
-
-export interface SvcLoginMethodGetRes {
-  auth_types?: number[];
-  enable_register?: boolean;
-  public_access?: boolean;
 }
 
 export interface SvcMKCreateReq {
@@ -524,12 +547,6 @@ export interface SvcURLListReq {
   url: string;
 }
 
-export interface SvcUserCreateReq {
-  email: string;
-  name: string;
-  password: string;
-}
-
 export interface SvcUserListItem {
   builtin?: boolean;
   created_at?: number;
@@ -550,6 +567,11 @@ export interface SvcUserRegisterReq {
   email: string;
   name: string;
   password: string;
+}
+
+export interface SvcUserUpdateInfoReq {
+  name?: string;
+  password?: string;
 }
 
 export interface SvcUserUpdateReq {
@@ -693,16 +715,14 @@ export interface GetAdminUserParams {
 }
 
 export interface GetDiscussionParams {
-  /** page */
-  page?: number;
-  /** size */
-  size?: number;
-  /** keyword */
-  keyword?: string;
-  /** type */
-  type?: "qa" | "feedback" | "blog";
-  /** filter */
   filter?: "hot" | "new" | "mine";
+  group_ids?: number[];
+  keyword?: string;
+  /** @min 1 */
+  page?: number;
+  /** @min 1 */
+  size?: number;
+  type?: "qa" | "feedback" | "blog";
 }
 
 /** request params */
@@ -712,6 +732,14 @@ export interface PostDiscussionUploadPayload {
    * @format binary
    */
   file: File;
+}
+
+export interface PutUserPayload {
+  /**
+   * avatar
+   * @format binary
+   */
+  avatar?: File;
 }
 
 export interface GetUserLoginThirdParams {
