@@ -9,29 +9,14 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import {
-  rectSortingStrategy,
-  SortableContext,
-  useSortable,
-} from '@dnd-kit/sortable';
+import { rectSortingStrategy, SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Box, Button, IconButton, Stack, TextField } from '@mui/material';
 import { Icon } from 'ct-mui';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import DeleteIcon from '@mui/icons-material/Delete';
-import {
-  CSSProperties,
-  forwardRef,
-  HTMLAttributes,
-  useCallback,
-  useState,
-} from 'react';
-import {
-  Control,
-  Controller,
-  FieldErrors,
-  useFieldArray,
-} from 'react-hook-form';
+import { CSSProperties, forwardRef, HTMLAttributes, useCallback, useState } from 'react';
+import { Control, Controller, FieldErrors, useFieldArray } from 'react-hook-form';
 
 export type ItemProps = HTMLAttributes<HTMLDivElement> & {
   groupIndex: number;
@@ -72,7 +57,7 @@ const LinkItem = forwardRef<HTMLDivElement, LinkItemProps>(
       style,
       ...props
     },
-    ref,
+    ref
   ) => {
     const inlineStyles: CSSProperties = {
       opacity: withOpacity ? '0.5' : '1',
@@ -82,9 +67,9 @@ const LinkItem = forwardRef<HTMLDivElement, LinkItemProps>(
 
     return (
       <Box ref={ref} style={inlineStyles} {...props}>
-        <Stack gap={1} alignItems='center' direction='row'>
+        <Stack gap={1} alignItems="center" direction="row">
           <IconButton
-            size='small'
+            size="small"
             sx={{
               cursor: 'grab',
               color: 'text.secondary',
@@ -93,7 +78,7 @@ const LinkItem = forwardRef<HTMLDivElement, LinkItemProps>(
             }}
             {...dragHandleProps}
           >
-            <DragIndicatorIcon/>
+            <DragIndicatorIcon />
           </IconButton>
           <Box
             sx={{
@@ -113,8 +98,8 @@ const LinkItem = forwardRef<HTMLDivElement, LinkItemProps>(
               <TextField
                 {...field}
                 fullWidth
-                label='类别名称'
-                placeholder='类别名称'
+                label="类别名称"
+                placeholder="类别名称"
                 onChange={e => {
                   field.onChange(e.target.value);
                   setIsEdit(true);
@@ -122,24 +107,19 @@ const LinkItem = forwardRef<HTMLDivElement, LinkItemProps>(
               />
             )}
           />
-          <IconButton size='small' sx={{ flexShrink: 0 }} onClick={onRemove}>
-            <DeleteIcon/>
+          <IconButton size="small" sx={{ flexShrink: 0, color: 'primary.main' }} onClick={onRemove}>
+            <DeleteIcon />
           </IconButton>
         </Stack>
       </Box>
     );
-  },
+  }
 );
 
 const SortableLinkItem: React.FC<LinkItemProps> = ({ linkId, ...rest }) => {
-  const {
-    isDragging,
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-  } = useSortable({ id: linkId });
+  const { isDragging, attributes, listeners, setNodeRef, transform, transition } = useSortable({
+    id: linkId,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -175,7 +155,7 @@ const Item = forwardRef<HTMLDivElement, ItemProps>(
       setIsEdit,
       ...props
     },
-    ref,
+    ref
   ) => {
     const [activeId, setActiveId] = useState<string | null>(null);
     const sensors = useSensors(useSensor(MouseSensor), useSensor(TouchSensor));
@@ -208,17 +188,17 @@ const Item = forwardRef<HTMLDivElement, ItemProps>(
         const { active, over } = event;
         if (active.id !== over?.id) {
           const oldIndex = linkFields.findIndex(
-            (_, index) => `link-${groupIndex}-${index}` === active.id,
+            (_, index) => `link-${groupIndex}-${index}` === active.id
           );
           const newIndex = linkFields.findIndex(
-            (_, index) => `link-${groupIndex}-${index}` === over!.id,
+            (_, index) => `link-${groupIndex}-${index}` === over!.id
           );
           moveLink(oldIndex, newIndex);
           setIsEdit(true);
         }
         setActiveId(null);
       },
-      [linkFields, moveLink, setIsEdit, groupIndex],
+      [linkFields, moveLink, setIsEdit, groupIndex]
     );
 
     const handleLinkDragCancel = useCallback(() => {
@@ -226,7 +206,7 @@ const Item = forwardRef<HTMLDivElement, ItemProps>(
     }, []);
 
     const handleAddLink = () => {
-      appendLink({ name: ''});
+      appendLink({ name: '' });
       setIsEdit(true);
     };
 
@@ -247,9 +227,9 @@ const Item = forwardRef<HTMLDivElement, ItemProps>(
             pb: 1,
           }}
         >
-          <Stack direction='row' alignItems='center' gap={1} sx={{ mb: 1 }}>
+          <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1 }}>
             <IconButton
-              size='small'
+              size="small"
               sx={{
                 cursor: 'grab',
                 color: 'text.secondary',
@@ -258,7 +238,7 @@ const Item = forwardRef<HTMLDivElement, ItemProps>(
               }}
               {...dragHandleProps}
             >
-              <DragIndicatorIcon/>
+              <DragIndicatorIcon />
             </IconButton>
             <Controller
               control={control}
@@ -268,8 +248,8 @@ const Item = forwardRef<HTMLDivElement, ItemProps>(
                 <TextField
                   {...field}
                   fullWidth
-                  placeholder='输入分类名称'
-                  label='分类名称'
+                  placeholder="输入分类名称"
+                  label="分类名称"
                   onChange={e => {
                     field.onChange(e.target.value);
                     setIsEdit(true);
@@ -279,8 +259,8 @@ const Item = forwardRef<HTMLDivElement, ItemProps>(
                 />
               )}
             />
-            <IconButton size='small' onClick={handleRemove}>
-              <DeleteIcon/>
+            <IconButton size="small" onClick={handleRemove}>
+              <DeleteIcon sx={{ flexShrink: 0, color: 'primary.main' }} />
             </IconButton>
           </Stack>
 
@@ -303,9 +283,7 @@ const Item = forwardRef<HTMLDivElement, ItemProps>(
                 onDragCancel={handleLinkDragCancel}
               >
                 <SortableContext
-                  items={linkFields.map(
-                    (_, index) => `link-${groupIndex}-${index}`,
-                  )}
+                  items={linkFields.map((_, index) => `link-${groupIndex}-${index}`)}
                   strategy={rectSortingStrategy}
                 >
                   <Stack gap={1}>
@@ -342,10 +320,8 @@ const Item = forwardRef<HTMLDivElement, ItemProps>(
           )}
 
           <Button
-            size='small'
-            startIcon={
-              <Icon type='icon-add' sx={{ fontSize: '12px !important' }} />
-            }
+            size="small"
+            startIcon={<Icon type="icon-add" sx={{ fontSize: '12px !important' }} />}
             onClick={handleAddLink}
             sx={{ mt: 1 }}
           >
@@ -354,7 +330,7 @@ const Item = forwardRef<HTMLDivElement, ItemProps>(
         </Box>
       </Box>
     );
-  },
+  }
 );
 
 export default Item;
