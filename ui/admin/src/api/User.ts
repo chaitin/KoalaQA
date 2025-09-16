@@ -17,7 +17,8 @@ import {
   GetUserLoginThirdParams,
   ModelListRes,
   ModelUserInfo,
-  SvcUserCreateReq,
+  PutUserPayload,
+  SvcAuthFrontendGetRes,
   SvcUserListItem,
   SvcUserLoginReq,
   SvcUserRegisterReq,
@@ -54,36 +55,6 @@ export const getAdminUser = (
     path: `/admin/user`,
     method: "GET",
     query: query,
-    format: "json",
-    ...params,
-  });
-
-/**
- * No description
- *
- * @tags user
- * @name PostAdminUser
- * @summary create user
- * @request POST:/admin/user
- * @response `200` `(ContextResponse & {
-    data?: number,
-
-})` OK
- */
-
-export const postAdminUser = (
-  req: SvcUserCreateReq,
-  params: RequestParams = {},
-) =>
-  request<
-    ContextResponse & {
-      data?: number;
-    }
-  >({
-    path: `/admin/user`,
-    method: "POST",
-    body: req,
-    type: ContentType.Json,
     format: "json",
     ...params,
   });
@@ -190,6 +161,26 @@ export const getUser = (params: RequestParams = {}) =>
  * No description
  *
  * @tags user
+ * @name PutUser
+ * @summary update user
+ * @request PUT:/user
+ * @response `200` `ContextResponse` OK
+ */
+
+export const putUser = (req: PutUserPayload, params: RequestParams = {}) =>
+  request<ContextResponse>({
+    path: `/user`,
+    method: "PUT",
+    body: req,
+    type: ContentType.FormData,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
  * @name PostUserLogin
  * @summary user login
  * @request POST:/user/login
@@ -241,6 +232,31 @@ export const getUserLoginThird = (
     path: `/user/login/third`,
     method: "GET",
     query: query,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name GetUserLoginMethod
+ * @summary login_method detail
+ * @request GET:/user/login_method
+ * @response `200` `(ContextResponse & {
+    data?: SvcAuthFrontendGetRes,
+
+})` OK
+ */
+
+export const getUserLoginMethod = (params: RequestParams = {}) =>
+  request<
+    ContextResponse & {
+      data?: SvcAuthFrontendGetRes;
+    }
+  >({
+    path: `/user/login_method`,
+    method: "GET",
     format: "json",
     ...params,
   });

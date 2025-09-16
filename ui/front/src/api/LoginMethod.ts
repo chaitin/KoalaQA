@@ -11,7 +11,7 @@
  */
 
 import request, { ContentType, RequestParams } from "./httpClient";
-import { ContextResponse, ModelAuth, SvcLoginMethodGetRes } from "./types";
+import { ContextResponse, ModelAuth } from "./types";
 
 /**
  * No description
@@ -21,7 +21,7 @@ import { ContextResponse, ModelAuth, SvcLoginMethodGetRes } from "./types";
  * @summary login_method detail
  * @request GET:/admin/system/login_method
  * @response `200` `(ContextResponse & {
-    data?: SvcLoginMethodGetRes,
+    data?: ModelAuth,
 
 })` OK
  */
@@ -29,7 +29,7 @@ import { ContextResponse, ModelAuth, SvcLoginMethodGetRes } from "./types";
 export const getAdminSystemLoginMethod = (params: RequestParams = {}) =>
   request<
     ContextResponse & {
-      data?: SvcLoginMethodGetRes;
+      data?: ModelAuth;
     }
   >({
     path: `/admin/system/login_method`,

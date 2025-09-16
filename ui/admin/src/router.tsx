@@ -15,7 +15,7 @@ const LoaderWrapper = styled('div')({
 
 const Loader = () => (
   <LoaderWrapper>
-    <LinearProgress color='primary' />
+    <LinearProgress color="primary" />
   </LoaderWrapper>
 );
 
@@ -28,18 +28,10 @@ const LazyLoadable = (
     </Suspense>
   ));
 
-const GeneralSetting = LazyLoadable(
-  lazy(() => import('@/pages/settings'))
-);
-const AdminKnowledge = LazyLoadable(
-  lazy(() => import('@/pages/ai'))
-);
-const AdminKnowledgeDetail = LazyLoadable(
-  lazy(() => import('@/pages/ai/detail'))
-);
-const User = LazyLoadable(
-  lazy(() => import('@/pages/user'))
-);
+const GeneralSetting = LazyLoadable(lazy(() => import('@/pages/settings')));
+const AdminKnowledge = LazyLoadable(lazy(() => import('@/pages/ai')));
+const AdminKnowledgeDetail = LazyLoadable(lazy(() => import('@/pages/ai/detail')));
+const User = LazyLoadable(lazy(() => import('@/pages/user')));
 
 const routerConfig = [
   {
@@ -48,7 +40,7 @@ const routerConfig = [
     children: [
       {
         index: true,
-        element: <Navigate to='/ai' replace />,
+        element: <Navigate to="/admin/ai" replace />,
       },
       {
         path: 'ai',

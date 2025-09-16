@@ -129,7 +129,12 @@ export interface ModelAuthConfigOauth {
 }
 
 export interface ModelAuthInfo {
+  button_desc?: string;
   config?: ModelAuthConfig;
+  /**
+   * @min 1
+   * @max 2
+   */
   type?: number;
 }
 
@@ -169,7 +174,6 @@ export interface ModelDiscussionComment {
 }
 
 export interface ModelDiscussionDetail {
-  accepted?: ModelDiscussionComment;
   comment?: number;
   comments?: ModelDiscussionComment[];
   content?: string;
@@ -349,6 +353,17 @@ export interface ModelWebhookConfig {
   url: string;
 }
 
+export interface SvcAuthFrontendGetAuth {
+  button_desc?: string;
+  type?: number;
+}
+
+export interface SvcAuthFrontendGetRes {
+  auth_types?: SvcAuthFrontendGetAuth[];
+  enable_register?: boolean;
+  public_access?: boolean;
+}
+
 export interface SvcBotGetRes {
   avatar?: string;
   name?: string;
@@ -447,12 +462,6 @@ export interface SvcKBListItem {
 export interface SvcKBUpdateReq {
   desc?: string;
   name: string;
-}
-
-export interface SvcLoginMethodGetRes {
-  auth_types?: number[];
-  enable_register?: boolean;
-  public_access?: boolean;
 }
 
 export interface SvcMKCreateReq {
