@@ -27,7 +27,7 @@ const GroupsInitializer: React.FC<GroupsInitializerProps> = ({ groupsData, child
     };
     
     setGroups(processedGroups);
-  }, [groupsData, setGroups]);
+  }, [groupsData]); // 移除setGroups依赖，因为现在它是稳定的
 
   return <>{children}</>;
 };

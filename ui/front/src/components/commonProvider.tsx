@@ -7,6 +7,7 @@ import {
   Dispatch,
   SetStateAction,
   Suspense,
+  useCallback,
   useEffect,
   useState,
 } from 'react';
@@ -74,7 +75,7 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
   );
 
   // 设置groups数据的函数（供SSR页面调用）
-  const setGroups = (newGroups: {
+  const setGroups = useCallback((newGroups: {
     origin: (ModelGroupWithItem & {
       items?: ModelGroupItemInfo[];
     })[];
@@ -83,10 +84,10 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
     globalGroupsCache = newGroups;
     setGroupsState(newGroups);
     setGroupsLoading(false);
-  };
+  }, []);
 
   // 获取groups数据的函数（供客户端页面调用）
-  const fetchGroup = () => {
+  const fetchGroup = useCallback(() => {
     // 如果已有缓存，直接使用
     if (globalGroupsCache) {
       setGroupsState(globalGroupsCache);
@@ -118,7 +119,7 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
       .finally(() => {
         setGroupsLoading(false);
       });
-  };
+  }, []);
 
   useEffect(() => {
     // 只有在没有缓存数据时才发起请求
