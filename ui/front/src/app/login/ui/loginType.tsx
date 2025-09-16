@@ -1,67 +1,184 @@
 'use client';
 
+import { getUserLoginMethod } from '@/api';
+import { SvcAuthFrontendGetRes } from '@/api/types';
+import { AuthType } from '@/types/auth';
 import { Card } from '@/components';
-import { Box, Stack, Typography } from '@mui/material';
+import { Box, Button, Stack, Typography } from '@mui/material';
 import Link from 'next/link';
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Account from './account';
 
 const LoginType = () => {
+  const [authConfig, setAuthConfig] = useState<SvcAuthFrontendGetRes | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getUserLoginMethod()
+      .then((response) => {
+        // 使用类型断言来处理API响应
+        const apiResponse = response as any;
+        if (apiResponse && apiResponse.data) {
+          setAuthConfig(apiResponse.data);
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to fetch login methods:', error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  const handleOAuthLogin = (type: number) => {
+    // 根据type跳转到对应的OAuth登录页面
+    window.location.href = `/api/panel/oauth/ct/redirect?type=${type}`;
+  };
+
+  // 判断是否支持不同的登录方式
+  const hasPasswordLogin = authConfig?.auth_types?.some(auth => auth.type === AuthType.PASSWORD) || false;
+  const hasOAuthLogin = authConfig?.auth_types?.some(auth => auth.type === AuthType.OAUTH) || false;
+  const oauthConfig = authConfig?.auth_types?.find(auth => auth.type === AuthType.OAUTH);
+
+  // 根据配置决定显示哪种登录界面
+  if (!hasPasswordLogin && hasOAuthLogin) {
+    // 情况1：只有第三方登录，显示左侧样式（简单登录）
+    return (
+      <Suspense>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '100vh',
+            px: 2,
+          }}
+        >
+          <Card
+            sx={{
+              width: 400,
+              p: 4,
+              border: '1px solid #e0e0e0',
+              minHeight: 300,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+            }}
+          >
+            <Stack spacing={4} alignItems="center">
+              <Typography
+                variant='h1'
+                sx={{ fontSize: '24px', fontWeight: 600, color: '#666', textAlign: 'center' }}
+              >
+                登录
+              </Typography>
+
+              {/* 第三方登录按钮 */}
+              {oauthConfig && (
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  sx={{
+                    height: 48,
+                    color: '#40E0D0',
+                    backgroundColor: 'transparent',
+                    fontSize: '14px',
+                  }}
+                  onClick={() => handleOAuthLogin(oauthConfig.type!)}
+                >
+                  {oauthConfig.button_desc || '这里是你的文本 - 使用长者 Auth 登录'}
+                </Button>
+              )}
+
+              {/* 注册链接 */}
+              {authConfig?.enable_register && (
+                <Box sx={{ textAlign: 'center', color: 'rgba(0,0,0,0.4)', fontSize: 14 }}>
+                  还没有注册？
+                  <Box
+                    component={Link}
+                    href='/register'
+                    sx={{ color: '#40E0D0', ml: 0.5, textDecoration: 'none' }}
+                  >
+                    立即注册
+                  </Box>
+                </Box>
+              )}
+            </Stack>
+          </Card>
+        </Box>
+      </Suspense>
+    );
+  }
+
+  // 情况2：有账号密码登录（可能同时有第三方登录），显示右侧样式（完整登录表单）
   return (
     <Suspense>
-      <Card
+      <Box
         sx={{
           display: 'flex',
-          top: 'calc(50% - 222px)',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          position: 'absolute',
-          width: 494,
-          p: 5,
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+          px: 2,
         }}
       >
-        <Stack
+        <Card
           sx={{
-            pl: 5,
-            flex: 1,
-            '.ant-tabs-tab-btn': {
-              fontSize: 18,
-              mt: '-12px',
-            },
-            '.ant-tabs-nav': {
-              marginBottom: '40px !important',
-            },
-            '.ant-tabs-nav::before': {
-              borderBottom: 'none !important',
-            },
+            width: 400,
+            p: 4,
+            borderRadius: 2,
           }}
-          spacing={3}
         >
-          <Typography
-            variant='h1'
-            sx={{ fontSize: '24px', mt: '52px', fontWeight: 600, mb: '9px' }}
-          >
-            账号登录
-          </Typography>
-          <Account isChecked={true} />
-          <Stack
-            alignItems='center'
-            justifyContent='space-between'
-            sx={{ mt: 2, color: 'rgba(0,0,0,0.3)', fontSize: 14 }}
-          >
-            <Box sx={{ mt: 1.5 }}>
-              还没有注册？
-              <Box
-                component={Link}
-                href='/register'
-                sx={{ color: 'primary.main' }}
-              >
-                立即注册
+          <Stack spacing={3}>
+            <Typography
+              variant='h1'
+              sx={{ fontSize: '24px', fontWeight: 600, textAlign: 'center', color: '#333' }}
+            >
+              登录
+            </Typography>
+
+            {/* 账号密码登录 */}
+            <Account isChecked={true} />
+
+            {/* 注册链接 */}
+            {authConfig?.enable_register && (
+              <Box sx={{ textAlign: 'center', color: 'rgba(0,0,0,0.4)', fontSize: 14 }}>
+                还没有注册？
+                <Box
+                  component={Link}
+                  href='/register'
+                  sx={{ color: '#40E0D0', ml: 0.5, textDecoration: 'none' }}
+                >
+                  立即注册
+                </Box>
               </Box>
-            </Box>
+            )}
+
+            {/* 如果有第三方登录，显示分割线和第三方登录按钮 */}
+            {hasOAuthLogin && oauthConfig && (
+              <>
+                <Box sx={{ textAlign: 'center', color: 'rgba(0,0,0,0.4)', fontSize: 14, mt: 2 }}>
+                  使用其他登录方式
+                </Box>
+
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  sx={{
+                    height: 48,
+                    color: '#40E0D0',
+                    backgroundColor: 'transparent',
+                    fontSize: '14px',
+                  }}
+                  onClick={() => handleOAuthLogin(oauthConfig.type!)}
+                >
+                  {oauthConfig.button_desc || '这里是你的文本 - 使用长者 Auth 登录'}
+                </Button>
+              </>
+            )}
           </Stack>
-        </Stack>
-      </Card>
+        </Card>
+      </Box>
     </Suspense>
   );
 };

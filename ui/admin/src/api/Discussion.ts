@@ -56,7 +56,6 @@ export const getDiscussion = (
     path: `/discussion`,
     method: "GET",
     query: query,
-    type: ContentType.Json,
     format: "json",
     ...params,
   });
@@ -279,7 +278,7 @@ export const postDiscussionDiscIdComment = (
 
 export const putDiscussionDiscIdCommentCommentId = (
   discId: string,
-  commentId: string,
+  commentId: number,
   comment: SvcCommentUpdateReq,
   params: RequestParams = {},
 ) =>

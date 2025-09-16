@@ -1,10 +1,9 @@
 'use client';
-import { createTheme, Paper } from '@mui/material';
-import type { Shadows } from '@mui/material';
-import { zhCN } from '@mui/material/locale';
-import { zhCN as CuiZhCN } from '@c-x/ui/dist/local';
 import onData from '@/assets/images/nodata.png';
-import { common } from '@mui/material/colors';
+import { zhCN as CuiZhCN } from '@c-x/ui/dist/local';
+import type { Shadows } from '@mui/material';
+import { createTheme } from '@mui/material';
+import { zhCN } from '@mui/material/locale';
 
 const defaultTheme = createTheme();
 
@@ -12,7 +11,7 @@ const lightTheme = createTheme(
   {
     cssVariables: true,
     palette: {
-      // mode: 'light',
+      mode: 'dark',
       primary: {
         main: '#21222D',
       },
@@ -34,7 +33,7 @@ const lightTheme = createTheme(
       risk: {
         severe: '#FF6262',
         critical: '#FFA762',
-        suggest: '#FFCF62'
+        suggest: '#FFCF62',
       },
       disabled: {
         main: '#666',
@@ -179,7 +178,7 @@ const lightTheme = createTheme(
         styleOverrides: {
           root: {
             color: 'unset',
-            fontSize: '0.8rem', 
+            fontSize: '0.8rem',
             fontFamily: 'var(--font-gilory), var(--font-HarmonyOS)',
           },
           asterisk: {
@@ -197,14 +196,14 @@ const lightTheme = createTheme(
       MuiRadio: {
         styleOverrides: {
           root: {
-            fontSize: '0.8rem', 
+            fontSize: '0.8rem',
           },
         },
       },
       MuiFormControlLabel: {
         styleOverrides: {
           label: {
-            fontSize: '0.8rem', 
+            fontSize: '0.8rem',
           },
         },
       },

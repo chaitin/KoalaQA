@@ -11,6 +11,7 @@ import {
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import ThumbUpAltOutlinedIcon from '@mui/icons-material/ThumbUpAltOutlined';
 import ThumbDownAltOutlinedIcon from '@mui/icons-material/ThumbDownAltOutlined';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import {
   ModelCommentLikeState,
   ModelDiscussionComment,
@@ -117,11 +118,6 @@ const BaseDiscussCard = (props: {
         : {
             width: '100%',
           }),
-        // 如果该评论为采纳（accepted），添加背景图片（SVG data URI）
-        backgroundImage: data?.accepted ? `url("/accepted.png")` : undefined,
-        backgroundRepeat: 'no-repeat',
-        backgroundPosition: 'right 40px',
-        backgroundSize: { xs: '80px', sm: '100px' },
         '&:hover #accept_btn': {
           display: 'block',
         },
@@ -156,6 +152,28 @@ const BaseDiscussCard = (props: {
           >
             {data.user_name}
           </Typography>
+          {/* 已采纳标签 */}
+          {data?.accepted && (
+            <Stack
+              direction='row'
+              alignItems='center'
+              gap={0.5}
+              sx={{
+                backgroundColor: '#E8F5E8',
+                color: '#2E7D32',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                fontSize: 12,
+                fontWeight: 500,
+              }}
+            >
+              <CheckCircleIcon sx={{ fontSize: 14 }} />
+              <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
+                已采纳
+              </Typography>
+            </Stack>
+          )}
         </Stack>
 
         <Stack
@@ -265,7 +283,6 @@ const BaseDiscussCard = (props: {
         content={data.content}
         sx={{
           backgroundColor: isReply ? 'transparent !important' : 'inherit',
-          minHeight: data?.accepted ? '100px' : 'unset',
         }}
       />
       {!isReply &&
@@ -449,7 +466,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         )}
         {data?.user_id == data.current_user_id &&
           !data.accepted &&
-          !data.comments?.[0].accepted &&
+          !data.comments?.[0]?.accepted &&
           (commentIndex as any)?.replies && (
             <MenuItem onClick={handleAccept}>采纳</MenuItem>
           )}

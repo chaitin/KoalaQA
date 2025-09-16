@@ -1,11 +1,22 @@
 import Qrcode from '@/assets/images/qrcode.png';
-import { useCommonContext } from '@/hooks/context';
+import { useAuthContext } from '@/hooks/context';
+import { ModelUserRole } from '@/api/types';
 import { Icon, Modal } from '@c-x/ui';
 import { alpha, Box, Button, Stack, styled, useTheme } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 
-export const ADMIN_MENUS = [
+interface AdminMenuItem {
+  label: string;
+  value: string;
+  pathname: string;
+  icon: string;
+  show: boolean;
+  disabled: boolean;
+  roles?: ModelUserRole[]; // 允许访问的角色列表
+}
+
+export const ADMIN_MENUS: AdminMenuItem[] = [
   // {
   //   label: '仪表盘',
   //   value: '/admin/dashboard',
@@ -13,6 +24,7 @@ export const ADMIN_MENUS = [
   //   icon: 'icon-yibiaopan',
   //   show: true,
   //   disabled: false,
+  //   roles: [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator],
   // },
   {
     label: 'AI 设置',
@@ -21,6 +33,7 @@ export const ADMIN_MENUS = [
     icon: 'icon-duihuajilu1',
     show: true,
     disabled: false,
+    roles: [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator], // 管理员和客服运营都可以访问
   },
   {
     label: '用户管理',
@@ -29,6 +42,7 @@ export const ADMIN_MENUS = [
     icon: 'icon-zhanghao',
     show: true,
     disabled: false,
+    roles: [ModelUserRole.UserRoleAdmin], // 仅管理员可以访问
   },
   {
     label: '通用设置',
@@ -37,9 +51,9 @@ export const ADMIN_MENUS = [
     icon: 'icon-setting',
     show: true,
     disabled: false,
+    roles: [ModelUserRole.UserRoleAdmin], // 仅管理员可以访问
   },
 ];
-
 
 const SidebarButton = styled(Button)(({ theme }) => ({
   fontSize: 14,
@@ -62,6 +76,17 @@ const Sidebar = () => {
   const { pathname } = useLocation();
   const theme = useTheme();
   const [showQrcode, setShowQrcode] = useState(false);
+  const [user] = useAuthContext();
+
+  // 根据用户角色过滤菜单
+  const visibleMenus = useMemo(() => {
+    if (!user || !('role' in user)) return ADMIN_MENUS;
+
+    return ADMIN_MENUS.filter(menu => {
+      if (!menu.roles) return true; // 如果没有定义角色限制，则显示
+      return menu.roles.includes(user.role as ModelUserRole);
+    });
+  }, [user]);
 
   return (
     <Stack
@@ -79,7 +104,7 @@ const Sidebar = () => {
         direction={'row'}
         gap={1}
         alignItems={'center'}
-        justifyContent='center'
+        justifyContent="center"
         sx={{
           pb: 0,
           cursor: 'pointer',
@@ -88,10 +113,11 @@ const Sidebar = () => {
           },
         }}
         onClick={() => {
-          window.open('https://baizhi.cloud', '_blank');
+          setShowQrcode(false);
+          window.location.href = '/';
         }}
       >
-        <Icon type='icon-koala_flat' sx={{ fontSize: '30px' }}></Icon>
+        <Icon type="icon-koala_flat" sx={{ fontSize: '30px' }}></Icon>
         <Box
           sx={{
             fontSize: '16px',
@@ -107,7 +133,7 @@ const Sidebar = () => {
       </Stack>
 
       <Stack sx={{ pt: 2, flexGrow: 1 }} gap={1}>
-        {ADMIN_MENUS.map((it) => {
+        {visibleMenus.map(it => {
           let isActive = false;
           if (it.value === '/') {
             isActive = pathname === '/';
@@ -123,7 +149,7 @@ const Sidebar = () => {
                 zIndex: isActive ? 2 : 1,
                 color: isActive ? '#FFFFFF' : 'text.primary',
               }}
-              onClick={(e) => {
+              onClick={e => {
                 if (it.disabled) {
                   e.preventDefault();
                 }
@@ -139,13 +165,9 @@ const Sidebar = () => {
                   justifyContent: 'flex-start',
                   color: isActive ? '#FFFFFF' : 'text.primary',
                   fontWeight: isActive ? '500' : '400',
-                  boxShadow: isActive
-                    ? '0px 10px 25px 0px rgba(33,34,45,0.2)'
-                    : 'none',
+                  boxShadow: isActive ? '0px 10px 25px 0px rgba(33,34,45,0.2)' : 'none',
                   ':hover': {
-                    boxShadow: isActive
-                      ? '0px 10px 25px 0px rgba(33,34,45,0.2)'
-                      : 'none',
+                    boxShadow: isActive ? '0px 10px 25px 0px rgba(33,34,45,0.2)' : 'none',
                   },
                 }}
               >
@@ -154,9 +176,7 @@ const Sidebar = () => {
                   sx={{
                     mr: 1,
                     fontSize: 14,
-                    color: isActive
-                      ? '#FFFFFF'
-                      : alpha(theme.palette.text.primary, 0.2),
+                    color: isActive ? '#FFFFFF' : alpha(theme.palette.text.primary, 0.2),
                   }}
                 />
                 {it.label}
@@ -167,14 +187,12 @@ const Sidebar = () => {
       </Stack>
       <Stack gap={1} sx={{ flexShrink: 0 }}>
         <SidebarButton
-          variant='outlined'
-          color='dark'
-          onClick={() =>
-            window.open('https://koalaqa.docs.baizhi.cloud/welcome', '_blank')
-          }
+          variant="outlined"
+          color="dark"
+          onClick={() => window.open('https://koalaqa.docs.baizhi.cloud/welcome', '_blank')}
         >
           <Icon
-            type='icon-bangzhuwendang1'
+            type="icon-bangzhuwendang1"
             sx={{
               mr: 1,
             }}
@@ -182,27 +200,21 @@ const Sidebar = () => {
           帮助文档
         </SidebarButton>
         <SidebarButton
-          variant='outlined'
-          color='dark'
-          onClick={() =>
-            window.open('https://github.com/chaitin/KoalaQA', '_blank')
-          }
+          variant="outlined"
+          color="dark"
+          onClick={() => window.open('https://github.com/chaitin/KoalaQA', '_blank')}
         >
           <Icon
-            type='icon-github'
+            type="icon-github"
             sx={{
               mr: 1,
             }}
           />
           GitHub
         </SidebarButton>
-        <SidebarButton
-          variant='outlined'
-          color='dark'
-          onClick={() => setShowQrcode(true)}
-        >
+        <SidebarButton variant="outlined" color="dark" onClick={() => setShowQrcode(true)}>
           <Icon
-            type='icon-group'
+            type="icon-group"
             sx={{
               mr: 1,
             }}
@@ -213,11 +225,11 @@ const Sidebar = () => {
       <Modal
         open={showQrcode}
         onCancel={() => setShowQrcode(false)}
-        title='欢迎加入 KoalaQA 交流群'
+        title="欢迎加入 KoalaQA 交流群"
         footer={null}
       >
         <Stack alignItems={'center'} justifyContent={'center'} sx={{ my: 2 }}>
-          <Box component='img' src={Qrcode} sx={{ width: 300 }} />
+          <Box component="img" src={Qrcode} sx={{ width: 300 }} />
         </Stack>
       </Modal>
     </Stack>

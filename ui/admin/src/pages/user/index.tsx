@@ -3,9 +3,10 @@ import {
   getAdminUser,
   ModelUserRole,
   putAdminUserUserId,
-  SvcUserListItem
+  SvcUserListItem,
 } from '@/api';
 import Card from '@/components/card';
+import RoleInfo from '@/components/RoleInfo';
 import { useListQueryParams } from '@/hooks/useListQueryParams';
 import { message, Modal, Table } from '@c-x/ui';
 import {
@@ -28,15 +29,24 @@ import { useParams } from 'react-router-dom';
 
 const transRole: Record<ModelUserRole, string> = {
   [ModelUserRole.UserRoleUnknown]: '未知',
-  [ModelUserRole.UserRoleAdmin]: '超级管理员',
-  [ModelUserRole.UserRoleOperator]: '前台管理员',
+  [ModelUserRole.UserRoleAdmin]: '管理员',
+  [ModelUserRole.UserRoleOperator]: '客服运营',
   [ModelUserRole.UserRoleUser]: '用户',
   [ModelUserRole.UserRoleMax]: '未知',
 };
 
+// 角色描述信息
+const roleDescriptions: Record<ModelUserRole, string> = {
+  [ModelUserRole.UserRoleUnknown]: '',
+  [ModelUserRole.UserRoleAdmin]: '平台管理员，主要负责平台相关的配置，所有功能所有权限',
+  [ModelUserRole.UserRoleOperator]:
+    '平台内容的运营，主要对平台内容质量和响应速度负责，前台所有权限',
+  [ModelUserRole.UserRoleUser]: '普通用户',
+  [ModelUserRole.UserRoleMax]: '',
+};
+
 const AdminDocument = () => {
-  const { query, setPage, setPageSize, page, pageSize, setParams } =
-    useListQueryParams();
+  const { query, setPage, setPageSize, page, pageSize, setParams } = useListQueryParams();
   const { id } = useParams();
   const { reset, register, handleSubmit, watch, control } = useForm({
     defaultValues: {
@@ -54,7 +64,7 @@ const AdminDocument = () => {
     data,
     loading,
     run: fetchData,
-  } = useRequest((params) => getAdminUser({ ...params }), { manual: true });
+  } = useRequest(params => getAdminUser({ ...params }), { manual: true });
   const deleteUser = (item: SvcUserListItem) => {
     Modal.confirm({
       title: '提示',
@@ -65,7 +75,7 @@ const AdminDocument = () => {
       content: (
         <>
           确定要删除
-          <Box component='span' sx={{ fontWeight: 700, color: 'text.primary' }}>
+          <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
             {item!.name}
           </Box>{' '}
           吗？
@@ -81,7 +91,7 @@ const AdminDocument = () => {
       },
     });
   };
-  const putUser = handleSubmit((data) => {
+  const putUser = handleSubmit(data => {
     if (editItem) {
       putAdminUserUserId(editItem.id!, data).then(() => {
         message.success('修改成功');
@@ -106,7 +116,9 @@ const AdminDocument = () => {
       title: '角色',
       dataIndex: 'role',
       render: (_, record) => {
-        return transRole[record.role || ModelUserRole.UserRoleUnknown];
+        return (
+          <RoleInfo role={record.role || ModelUserRole.UserRoleUnknown} showDescription={false} />
+        );
       },
     },
     {
@@ -118,8 +130,8 @@ const AdminDocument = () => {
           '-'
         ) : (
           <Stack>
-            <Typography variant='body2'>{dayjs(time).fromNow()}</Typography>
-            <Typography variant='caption' sx={{ color: 'text.secondary' }}>
+            <Typography variant="body2">{dayjs(time).fromNow()}</Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
               {dayjs(time).format('YYYY-MM-DD HH:mm:ss')}
             </Typography>
           </Stack>
@@ -132,11 +144,11 @@ const AdminDocument = () => {
       // width: 120,
       render: (_, record) => {
         return (
-          <Stack direction='row' alignItems='center' spacing={1}>
+          <Stack direction="row" alignItems="center" spacing={1}>
             <Button
-              variant='text'
-              size='small'
-              color='primary'
+              variant="text"
+              size="small"
+              color="primary"
               onClick={() => {
                 setEditItem(record);
                 reset(record);
@@ -144,12 +156,7 @@ const AdminDocument = () => {
             >
               编辑
             </Button>
-            <Button
-              variant='text'
-              size='small'
-              color='error'
-              onClick={() => deleteUser(record)}
-            >
+            <Button variant="text" size="small" color="error" onClick={() => deleteUser(record)}>
               删除
             </Button>
           </Stack>
@@ -162,18 +169,18 @@ const AdminDocument = () => {
     const _query = { ...query };
     delete _query.name;
     fetchData(_query);
-  }, [query]);
+  }, [fetchData, query]);
 
   return (
     <Stack component={Card} sx={{ height: '100%' }}>
-      <Stack direction='row' alignItems='center' spacing={2} sx={{ mb: 2 }}>
-        <Typography variant='caption'>共 {data?.total || 0} 个用户</Typography>
+      <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
+        <Typography variant="caption">共 {data?.total || 0} 个用户</Typography>
         <TextField
-          label='用户名'
+          label="用户名"
           value={title}
-          size='small'
-          onChange={(e) => setTitle(e.target.value)}
-          onKeyDown={(e) => {
+          size="small"
+          onChange={e => setTitle(e.target.value)}
+          onKeyDown={e => {
             if (e.key === 'Enter') {
               setParams({
                 title,
@@ -193,7 +200,7 @@ const AdminDocument = () => {
         loading={loading}
         columns={columns}
         dataSource={data?.items || []}
-        rowKey='id'
+        rowKey="id"
         pagination={{
           page,
           pageSize,
@@ -214,13 +221,13 @@ const AdminDocument = () => {
         sx={{
           py: 2,
         }}
-        title='编辑用户'
+        title="编辑用户"
         onOk={putUser}
       >
         <FormControl fullWidth sx={{ my: 2 }}>
           <TextField
             {...register('name')}
-            label='用户名'
+            label="用户名"
             required
             slotProps={{
               inputLabel: {
@@ -231,25 +238,42 @@ const AdminDocument = () => {
         </FormControl>
 
         <FormControl fullWidth sx={{ my: 2 }}>
-          <InputLabel id='select-label'>角色</InputLabel>
+          <InputLabel id="select-label">角色</InputLabel>
           <Controller
-            name='role'
+            name="role"
             control={control}
             render={({ field }) => (
               <Select
-                labelId='select-label'
+                labelId="select-label"
                 fullWidth
-                label='角色'
+                label="角色"
                 {...field}
-                onChange={(e) => field.onChange(Number(e.target.value))}
+                onChange={e => field.onChange(Number(e.target.value))}
               >
                 {Object.entries(transRole)
                   .slice(1, -1)
-                  .map(([key, value]) => (
-                    <MenuItem key={key} value={key}>
-                      {value}
-                    </MenuItem>
-                  ))}
+                  .map(([key, value]) => {
+                    const roleKey = Number(key) as ModelUserRole;
+                    const description = roleDescriptions[roleKey];
+                    return (
+                      <MenuItem key={key} value={key}>
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            {value}
+                          </Typography>
+                          {description && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ display: 'block', mt: 0.5 }}
+                            >
+                              {description}
+                            </Typography>
+                          )}
+                        </Box>
+                      </MenuItem>
+                    );
+                  })}
               </Select>
             )}
           />
