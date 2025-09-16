@@ -18,7 +18,7 @@ const schema = z.object({
 });
 
 const Account = ({ isChecked }: { isChecked: boolean }) => {
-  const [,setToken] = useLocalStorageState<string>('auth_token', {
+  const [, setToken] = useLocalStorageState<string>('auth_token', {
     defaultValue: '',
   });
   const { user, fetchUser } = useContext(AuthContext);
@@ -29,11 +29,11 @@ const Account = ({ isChecked }: { isChecked: boolean }) => {
   } = useForm({
     resolver: zodResolver(schema),
   });
-  // useEffect(() => {
-  //   if (user.email) {
-  //     window.location.href = '/';
-  //   }
-  // }, [user]);
+  useEffect(() => {
+    if (user.email) {
+      window.location.href = '/';
+    }
+  }, [user]);
   const onSubmit = (data: z.infer<typeof schema>) => {
     const { password, email } = data;
     const ciphertext = aesCbcEncrypt(password?.trim());

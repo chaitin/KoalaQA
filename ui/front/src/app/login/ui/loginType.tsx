@@ -63,29 +63,7 @@ const LoginType = () => {
   );
 
   if (loading) {
-    return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '100vh',
-          px: 2,
-        }}
-      >
-        <Card
-          sx={{
-            width: 400,
-            p: 4,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <Typography>加载中...</Typography>
-        </Card>
-      </Box>
-    );
+    return;
   }
 
   // 根据配置决定显示哪种登录界面
