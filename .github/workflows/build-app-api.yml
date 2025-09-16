@@ -104,6 +104,10 @@ jobs:
             git add docker-compose.yml
             git commit -m "🚀 Auto-update docker-compose.yml with tag ${{ steps.extract_tag.outputs.tag }}"
             
+            echo "🔄 Rebasing with latest main branch..."
+            git fetch origin main
+            git rebase origin/main
+            
             echo "🚀 Pushing changes to main branch..."
             git push origin main
             echo "✅ Successfully updated docker-compose.yml with new image tags"
