@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/chaitin/koalaqa/pkg/glog"
-	"github.com/chaitin/koalaqa/pkg/llm"
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/topic"
 	"github.com/chaitin/koalaqa/repo"
@@ -64,9 +63,8 @@ func (d *DiscSummary) handle(ctx context.Context, discID uint) error {
 		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
 		return nil
 	}
-	llmRes, answered, err := d.llm.Chat(ctx, svc.GenerateReq{
+	llmRes, answered, err := d.llm.Summary(ctx, svc.GenerateReq{
 		Question:      prompt,
-		SystemPrompt:  llm.SystemSummaryPrompt,
 		DefaultAnswer: "当前帖子的信息不足以生成总结",
 	})
 	if err != nil {
@@ -74,6 +72,7 @@ func (d *DiscSummary) handle(ctx context.Context, discID uint) error {
 	}
 	if !answered {
 		d.logger.Debug("llm not know the how to summary")
+		return nil
 	}
 	if err := d.disc.Update(ctx, map[string]any{"summary": llmRes}, repo.QueryWithEqual("id", discID)); err != nil {
 		return err
