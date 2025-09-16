@@ -64,7 +64,7 @@ func (d *DiscSummary) handle(ctx context.Context, discID uint) error {
 		return nil
 	}
 	llmRes, answered, err := d.llm.Summary(ctx, svc.GenerateReq{
-		Question:      prompt,
+		Prompt:        prompt,
 		DefaultAnswer: "当前帖子的信息不足以生成总结",
 	})
 	if err != nil {

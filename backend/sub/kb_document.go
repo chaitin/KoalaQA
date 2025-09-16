@@ -76,7 +76,7 @@ func (k *KBDoc) handleInsert(ctx context.Context, kbID uint, docID uint) error {
 	var content string
 	switch doc.DocType {
 	case model.DocTypeQuestion:
-		content = fmt.Sprintf(`问题：%s 的参考回答是：%s`, doc.Title, doc.Markdown)
+		content = fmt.Sprintf(`问题：%s\n答案:\n%s`, doc.Title, doc.Markdown)
 	case model.DocTypeDocument:
 		url := string(doc.Markdown)
 		r, err := oss.Download(ctx, url, oss.WithBucket("anydoc"))
