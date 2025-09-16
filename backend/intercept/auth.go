@@ -67,10 +67,9 @@ func authUser(ctx *context.Context, j *jwt.Generator, user *svc.User) (*model.Us
 	var token = ""
 	if authToken := ctx.GetHeader("Authorization"); authToken != "" {
 		splitToken := strings.Split(authToken, " ")
-		if len(splitToken) != 2 || splitToken[0] != tokenPrefix {
-			return nil, errors.New("invalid auth token")
+		if len(splitToken) == 2 && splitToken[0] == tokenPrefix {
+			token = splitToken[1]
 		}
-		token = splitToken[1]
 	}
 	if authToken, _ := ctx.Cookie("auth_token"); authToken != "" {
 		token = authToken
