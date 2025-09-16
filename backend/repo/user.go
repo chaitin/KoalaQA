@@ -10,7 +10,6 @@ import (
 	"github.com/chaitin/koalaqa/pkg/third_auth"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type User struct {
@@ -24,13 +23,13 @@ func (u *User) GetByEmail(ctx context.Context, res any, email string) error {
 func (u *User) CreateThird(ctx context.Context, user *third_auth.User) (*model.User, error) {
 	var dbUser model.User
 	err := u.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		err := tx.Exec(`SELECT pg_advisory_xact_lock(?)`, user.HashUint()).Error
-		if err != nil {
-			return err
+		txErr := tx.Exec(`SELECT pg_advisory_xact_lock(?)`, user.HashUint()).Error
+		if txErr != nil {
+			return txErr
 		}
 
 		var userThird model.UserThird
-		txErr := tx.Model(&model.UserThird{}).Where("third_id = ? AND type = ?", user.ThirdID, user.Type).
+		txErr = tx.Model(&model.UserThird{}).Where("third_id = ? AND type = ?", user.ThirdID, user.Type).
 			First(&userThird).Error
 		if txErr != nil && !errors.Is(txErr, gorm.ErrRecordNotFound) {
 			return txErr
@@ -51,21 +50,25 @@ func (u *User) CreateThird(ctx context.Context, user *third_auth.User) (*model.U
 			return nil
 		}
 
-		dbUser = model.User{
-			Name:      user.Name,
-			Email:     user.Email,
-			Builtin:   false,
-			Role:      user.Role,
-			Invisible: false,
-			LastLogin: model.Timestamp(time.Now().Unix()),
-			Key:       uuid.NewString(),
-		}
-		txErr = tx.Model(&model.User{}).Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "email"}},
-			DoNothing: true,
-		}).Create(&dbUser).Error
+		txErr = tx.Model(&model.User{}).Where("email = ?", user.Email).First(&dbUser).Error
 		if txErr != nil {
-			return txErr
+			if !errors.Is(txErr, database.ErrRecordNotFound) {
+				return txErr
+			}
+
+			dbUser = model.User{
+				Name:      user.Name,
+				Email:     user.Email,
+				Builtin:   false,
+				Role:      user.Role,
+				Invisible: false,
+				LastLogin: model.Timestamp(time.Now().Unix()),
+				Key:       uuid.NewString(),
+			}
+			txErr = tx.Model(&model.User{}).Create(&dbUser).Error
+			if txErr != nil {
+				return txErr
+			}
 		}
 
 		userThird = model.UserThird{
