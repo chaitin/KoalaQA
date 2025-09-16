@@ -2966,7 +2966,9 @@ const docTemplate = `{
                     "$ref": "#/definitions/model.AuthConfig"
                 },
                 "type": {
-                    "type": "integer"
+                    "type": "integer",
+                    "maximum": 2,
+                    "minimum": 1
                 }
             }
         },
