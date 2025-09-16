@@ -78,13 +78,14 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 		logger.WithContext(ctx).WithErr(err).Error("get bot failed")
 		return nil
 	}
-	prompt, err := d.llm.GenerateChatPrompt(ctx, data.DiscID, 0)
+	question, prompt, err := d.llm.GenerateChatPrompt(ctx, data.DiscID, 0)
 	if err != nil {
 		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
 		return nil
 	}
 	llmRes, answered, err := d.llm.Answer(ctx, svc.GenerateReq{
-		Question:      prompt,
+		Question:      question,
+		Prompt:        prompt,
 		DefaultAnswer: bot.UnknownPrompt,
 	})
 	if err != nil {

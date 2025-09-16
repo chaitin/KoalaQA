@@ -103,13 +103,6 @@ const discussionPromptTemplate = `
 {{- end}}
 {{- end}}
 
-{{- if .Discussion.Resolved}}
-- 讨论已解决，可以确认解决方案的有效性或提供额外的相关建议
-{{- else}}
-- 问题尚未解决，重点提供实用的解决方案
-{{- end}}
-
-
 ## 回复要求
 {{- if .NewComment}}
 **回复目标**：针对新评论ID {{.NewComment.ID}} 进行回复
@@ -123,6 +116,17 @@ type CommentNode struct {
 	Level    int
 	IsNew    bool
 	IsBot    bool
+}
+
+func (t *DiscussionPromptTemplate) Question() string {
+	q := t.Discussion.Title
+	if t.Discussion.Content != "" {
+		q += " " + t.Discussion.Content
+	}
+	if t.NewComment != nil {
+		q += " " + t.NewComment.Content
+	}
+	return q
 }
 
 // BuildPrompt 构建完整的提示词
