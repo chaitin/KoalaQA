@@ -126,7 +126,7 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
     if (!globalGroupsCache) {
       fetchGroup();
     }
-  }, []);
+  }, [fetchGroup]);
 
   return (
     <CommonContext.Provider
