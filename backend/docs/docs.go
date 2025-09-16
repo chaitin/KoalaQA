@@ -2962,6 +2962,9 @@ const docTemplate = `{
         "model.AuthInfo": {
             "type": "object",
             "properties": {
+                "button_desc": {
+                    "type": "string"
+                },
                 "config": {
                     "$ref": "#/definitions/model.AuthConfig"
                 },
