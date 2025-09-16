@@ -154,10 +154,24 @@ export class HttpClient<SecurityDataType = unknown> {
           if (res.success) {
             return res.data;
           }
-          if (alert.error) alert.error(res.message || "网络异常");
+
+          // 检查请求路径，如果是 api/user 则不展示报错信息
+          const requestUrl = response.config?.url || '';
+          const shouldShowError = !requestUrl.includes('/user');
+
+          if (alert.error && shouldShowError) {
+            alert.error(res.message || "网络异常");
+          }
           return Promise.reject(res);
         }
-        if (alert.error) alert.error(response.statusText);
+
+        // 检查请求路径，如果是 api/user 则不展示报错信息
+        const requestUrl = response.config?.url || '';
+        const shouldShowError = !requestUrl.includes('/user');
+
+        if (alert.error && shouldShowError) {
+          alert.error(response.statusText);
+        }
         return Promise.reject(response);
       },
       (error) => {
@@ -165,7 +179,14 @@ export class HttpClient<SecurityDataType = unknown> {
         if (error.response?.status === 403 || error.response?.status === 419) {
           clearCsrfTokenCache();
         }
-        if (alert.error) alert.error(error.response?.statusText || "网络异常");
+
+        // 检查请求路径，如果是 api/user 则不展示报错信息
+        const requestUrl = error.config?.url || '';
+        const shouldShowError = !requestUrl.includes('/user');
+
+        if (alert.error && shouldShowError) {
+          alert.error(error.response?.statusText || "网络异常");
+        }
         return Promise.reject(error.response);
       },
     );
@@ -188,7 +209,7 @@ export class HttpClient<SecurityDataType = unknown> {
       headers: {
         ...((method &&
           this.instance.defaults.headers[
-            method.toLowerCase() as keyof HeadersDefaults
+          method.toLowerCase() as keyof HeadersDefaults
           ]) ||
           {}),
         ...(params1.headers || {}),
