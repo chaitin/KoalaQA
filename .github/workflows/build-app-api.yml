@@ -85,19 +85,15 @@ jobs:
 
       - name: Update docker-compose.yml
         run: |
-          # 更新 API 服务的镜像标签
           sed -i "s|image: swr.cn-east-3.myhuaweicloud.com/koala-qa/api:.*|image: swr.cn-east-3.myhuaweicloud.com/koala-qa/api:${{ steps.extract_tag.outputs.tag }}|g" docker-compose.yml
 
-          # 更新 APP 服务的镜像标签
           sed -i "s|image: swr.cn-east-3.myhuaweicloud.com/koala-qa/app:.*|image: swr.cn-east-3.myhuaweicloud.com/koala-qa/app:${{ steps.extract_tag.outputs.tag }}|g" docker-compose.yml
 
-          # 显示更改内容
           echo "📝 Updated docker-compose.yml:"
           git diff docker-compose.yml
 
       - name: Commit and push changes
         run: |
-          # 检查是否有更改
           if git diff --quiet docker-compose.yml; then
             echo "🔄 No changes needed in docker-compose.yml"
           else
