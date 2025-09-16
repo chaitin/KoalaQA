@@ -6,6 +6,7 @@ import (
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/third_auth"
 	"github.com/chaitin/koalaqa/repo"
+	"go.uber.org/fx"
 )
 
 type Auth struct {
@@ -67,13 +68,13 @@ func (l *Auth) FrontendGet(ctx context.Context) (*AuthFrontendGetRes, error) {
 	return &res, nil
 }
 
-func (l *Auth) Update(ctx context.Context, req model.Auth) error {
+func (l *Auth) updateAuthMgmt(ctx context.Context, auth model.Auth) error {
 	publicAddress, err := l.svcPublicAddr.Get(ctx)
 	if err != nil {
 		return err
 	}
 
-	for _, authInfo := range req.AuthInfos {
+	for _, authInfo := range auth.AuthInfos {
 		if authInfo.Type == model.AuthTypePassword {
 			continue
 		}
@@ -87,6 +88,15 @@ func (l *Auth) Update(ctx context.Context, req model.Auth) error {
 		}
 	}
 
+	return nil
+}
+
+func (l *Auth) Update(ctx context.Context, req model.Auth) error {
+	err := l.updateAuthMgmt(ctx, req)
+	if err != nil {
+		return nil
+	}
+
 	err = l.repoSys.Create(ctx, &model.System[any]{
 		Key:   model.SystemKeyAuth,
 		Value: model.NewJSONBAny(req),
@@ -97,12 +107,24 @@ func (l *Auth) Update(ctx context.Context, req model.Auth) error {
 	return nil
 }
 
-func newAuth(sys *repo.System, authMgmt *third_auth.Manager, publicAddr *PublicAddress) *Auth {
-	return &Auth{
+func newAuth(lc fx.Lifecycle, sys *repo.System, authMgmt *third_auth.Manager, publicAddr *PublicAddress) *Auth {
+	auth := &Auth{
 		repoSys:       sys,
 		svcPublicAddr: publicAddr,
 		authMgmt:      authMgmt,
 	}
+	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			var dbAuth model.Auth
+			err := auth.repoSys.GetValueByKey(ctx, &dbAuth, model.SystemKeyAuth)
+			if err != nil {
+				return err
+			}
+
+			return auth.updateAuthMgmt(ctx, dbAuth)
+		},
+	})
+	return auth
 }
 
 func init() {
