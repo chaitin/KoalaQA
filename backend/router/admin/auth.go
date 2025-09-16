@@ -15,7 +15,7 @@ type auth struct {
 // @Summary login_method detail
 // @Tags login_method
 // @Produce json
-// @Success 200 {object} context.Response{data=svc.LoginMethodGetRes}
+// @Success 200 {object} context.Response{data=model.Auth}
 // @Router /admin/system/login_method [get]
 func (l *auth) Get(ctx *context.Context) {
 	cfg, err := l.svcAuth.Get(ctx)
