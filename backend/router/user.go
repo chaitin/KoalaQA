@@ -116,9 +116,8 @@ func (u *user) LoginOIDCCallback(ctx *context.Context) {
 		return
 	}
 
-	ctx.SetCookie("__koala_third_token", token, 60, "/", "", false, true)
+	ctx.SetCookie("auth_token", token, 60, "/", "", false, true)
 	ctx.Redirect(http.StatusFound, "/")
-
 }
 
 func (u *user) Route(h server.Handler) {
