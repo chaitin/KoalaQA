@@ -24,10 +24,10 @@ func init() {
 // Get
 // @Summary get csrf
 // @Description get csrf
-// @Tags discussion
+// @Tags csrf
 // @Produce json
 // @Success 200 {object} context.Response{data=string}
-// @Router /discussion [get]
+// @Router /csrf [get]
 func (c *csrf) Get(ctx *context.Context) {
 	ctx.Success(ginCsrf.GetToken(ctx.Context))
 }
