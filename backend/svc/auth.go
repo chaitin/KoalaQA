@@ -5,6 +5,7 @@ import (
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/third_auth"
+	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/repo"
 	"go.uber.org/fx"
 )
@@ -74,14 +75,24 @@ func (l *Auth) updateAuthMgmt(ctx context.Context, auth model.Auth) error {
 		return err
 	}
 
+	u, err := util.ParseHTTP(publicAddress.Address)
+	if err != nil {
+		return err
+	}
+
 	for _, authInfo := range auth.AuthInfos {
 		if authInfo.Type == model.AuthTypePassword {
 			continue
 		}
 
+		switch authInfo.Type {
+		case model.AuthTypeOIDC:
+			u.Path = "/api/user/login/third/callback/oidc"
+		}
+
 		err = l.authMgmt.Update(authInfo.Type, third_auth.Config{
 			Config:      authInfo.Config,
-			CallbackURL: publicAddress.Address,
+			CallbackURL: u.String(),
 		})
 		if err != nil {
 			return err
