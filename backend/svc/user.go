@@ -22,8 +22,8 @@ import (
 type User struct {
 	jwt      *jwt.Generator
 	repoUser *repo.User
-	repoSys  *repo.System
 	authMgmt *third_auth.Manager
+	svcAuth  *Auth
 	oc       oss.Client
 	logger   *glog.Logger
 }
@@ -241,13 +241,12 @@ func (u *User) convertPassword(password string) (string, error) {
 }
 
 func (u *User) Register(ctx context.Context, req UserRegisterReq) error {
-	var loginConfig model.Auth
-	err := u.repoSys.GetValueByKey(ctx, &loginConfig, model.SystemKeyAuth)
+	auth, err := u.svcAuth.Get(ctx)
 	if err != nil {
 		return err
 	}
 
-	if !loginConfig.EnableRegister {
+	if !auth.EnableRegister {
 		return errors.New("register disabled")
 	}
 
@@ -287,13 +286,16 @@ type UserLoginReq struct {
 }
 
 func (u *User) canAuth(ctx context.Context, t model.AuthType) (bool, error) {
-	var auth model.Auth
-	err := u.repoSys.GetValueByKey(ctx, &auth, model.SystemKeyAuth)
+	auth, err := u.svcAuth.Get(ctx)
 	if err != nil {
 		return false, err
 	}
 
 	return auth.CanAuth(t), nil
+}
+
+func (u *User) LoginMethod(ctx context.Context) (*AuthFrontendGetRes, error) {
+	return u.svcAuth.FrontendGet(ctx)
 }
 
 func (u *User) Login(ctx context.Context, req UserLoginReq) (string, error) {
@@ -408,11 +410,11 @@ func (u *User) LoginOIDCCallback(ctx context.Context, req LoginOIDCCallbackReq) 
 	})
 }
 
-func newUser(repoUser *repo.User, genrator *jwt.Generator, repoSys *repo.System, authMgmt *third_auth.Manager, oc oss.Client) *User {
+func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth, authMgmt *third_auth.Manager, oc oss.Client) *User {
 	return &User{
 		jwt:      genrator,
 		repoUser: repoUser,
-		repoSys:  repoSys,
+		svcAuth:  auth,
 		authMgmt: authMgmt,
 		oc:       oc,
 		logger:   glog.Module("svc", "user"),

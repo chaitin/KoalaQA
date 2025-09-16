@@ -1446,7 +1446,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/svc.LoginMethodGetRes"
+                                            "$ref": "#/definitions/model.Auth"
                                         }
                                     }
                                 }
@@ -2817,6 +2817,37 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/login_method": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "login_method detail",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/svc.AuthFrontendGetRes"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/user/logout": {
             "post": {
                 "produces": [
@@ -3714,6 +3745,34 @@ const docTemplate = `{
                 "PlatformYuQue"
             ]
         },
+        "svc.AuthFrontendGetAuth": {
+            "type": "object",
+            "properties": {
+                "button_desc": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "integer"
+                }
+            }
+        },
+        "svc.AuthFrontendGetRes": {
+            "type": "object",
+            "properties": {
+                "auth_types": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/svc.AuthFrontendGetAuth"
+                    }
+                },
+                "enable_register": {
+                    "type": "boolean"
+                },
+                "public_access": {
+                    "type": "boolean"
+                }
+            }
+        },
         "svc.BotGetRes": {
             "type": "object",
             "properties": {
@@ -4006,23 +4065,6 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
-                }
-            }
-        },
-        "svc.LoginMethodGetRes": {
-            "type": "object",
-            "properties": {
-                "auth_types": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "enable_register": {
-                    "type": "boolean"
-                },
-                "public_access": {
-                    "type": "boolean"
                 }
             }
         },

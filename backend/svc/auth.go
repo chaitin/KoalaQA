@@ -19,27 +19,49 @@ type AuthInfo struct {
 	URL  string         `json:"url"`
 }
 
-type LoginMethodGetRes struct {
-	EnableRegister bool             `json:"enable_register"`
-	PublicAccess   bool             `json:"public_access"`
-	AuthTypes      []model.AuthType `json:"auth_types"`
-}
-
-func (l *Auth) Get(ctx context.Context) (*LoginMethodGetRes, error) {
+func (l *Auth) Get(ctx context.Context) (*model.Auth, error) {
 	var data model.Auth
 	err := l.repoSys.GetValueByKey(ctx, &data, model.SystemKeyAuth)
 	if err != nil {
 		return nil, err
 	}
 
-	res := LoginMethodGetRes{
+	for i := range data.AuthInfos {
+		data.AuthInfos[i].Config.Oauth.ClientSecret = ""
+	}
+
+	return &data, nil
+}
+
+type AuthFrontendGetAuth struct {
+	Type       model.AuthType `json:"type"`
+	ButtonDesc string         `json:"button_desc"`
+}
+
+type AuthFrontendGetRes struct {
+	EnableRegister bool                  `json:"enable_register"`
+	PublicAccess   bool                  `json:"public_access"`
+	AuthTypes      []AuthFrontendGetAuth `json:"auth_types"`
+}
+
+func (l *Auth) FrontendGet(ctx context.Context) (*AuthFrontendGetRes, error) {
+	var data model.Auth
+	err := l.repoSys.GetValueByKey(ctx, &data, model.SystemKeyAuth)
+	if err != nil {
+		return nil, err
+	}
+
+	res := AuthFrontendGetRes{
 		EnableRegister: data.EnableRegister,
 		PublicAccess:   data.PublicAccess,
-		AuthTypes:      make([]model.AuthType, 0),
+		AuthTypes:      make([]AuthFrontendGetAuth, 0),
 	}
 
 	for _, authInfo := range data.AuthInfos {
-		res.AuthTypes = append(res.AuthTypes, authInfo.Type)
+		res.AuthTypes = append(res.AuthTypes, AuthFrontendGetAuth{
+			Type:       authInfo.Type,
+			ButtonDesc: authInfo.ButtonDesc,
+		})
 	}
 
 	return &res, nil
