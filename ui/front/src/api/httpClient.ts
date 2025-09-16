@@ -140,7 +140,7 @@ export class HttpClient<SecurityDataType = unknown> {
     ...axiosConfig
   }: ApiConfig<SecurityDataType> = {}) {
     this.instance = axios.create({
-      withCredentials: true,
+      withCredentials: true, // 确保客户端请求自动发送cookie
       ...axiosConfig,
       baseURL: axiosConfig.baseURL || "/api",
     });
@@ -149,25 +149,19 @@ export class HttpClient<SecurityDataType = unknown> {
     this.securityWorker = securityWorker;
     this.instance.interceptors.response.use(
       (response) => {
+        const requestUrl = response.config?.url || '';
+        const shouldShowError = requestUrl !== '/user'
         if (response.status === 200) {
           const res = response.data;
           if (res.success) {
             return res.data;
           }
 
-          // 检查请求路径，如果是 api/user 则不展示报错信息
-          const requestUrl = response.config?.url || '';
-          const shouldShowError = !requestUrl.includes('/user');
-
           if (alert.error && shouldShowError) {
             alert.error(res.message || "网络异常");
           }
           return Promise.reject(res);
         }
-
-        // 检查请求路径，如果是 api/user 则不展示报错信息
-        const requestUrl = response.config?.url || '';
-        const shouldShowError = !requestUrl.includes('/user');
 
         if (alert.error && shouldShowError) {
           alert.error(response.statusText);
@@ -182,10 +176,10 @@ export class HttpClient<SecurityDataType = unknown> {
 
         // 检查请求路径，如果是 api/user 则不展示报错信息
         const requestUrl = error.config?.url || '';
-        const shouldShowError = !requestUrl.includes('/user');
+        const shouldShowError = requestUrl !== '/user'
 
         if (alert.error && shouldShowError) {
-          alert.error(error.response?.statusText || "网络异常");
+          alert.error(error.message || "网络异常");
         }
         return Promise.reject(error.response);
       },
@@ -279,12 +273,34 @@ export class HttpClient<SecurityDataType = unknown> {
       body = JSON.stringify(body);
     }
 
+    // 获取Authorization token
+    const Authorization = await new Promise(async (resolve) => {
+      if (typeof window === "undefined") {
+        // SSR环境：从cookies中获取token
+        const { cookies } = await import("next/headers");
+        const cookieStore = await cookies();
+        const token = cookieStore.get("auth_token")?.value || null;
+        resolve(token);
+      } else {
+        // 客户端环境：从localStorage获取token
+        let token = "";
+        try {
+          token = JSON.parse(localStorage.getItem("auth_token") || '""');
+        } catch (e) {
+          // 如果解析失败，尝试直接获取字符串值
+          token = localStorage.getItem("auth_token") || "";
+        }
+        resolve(token);
+      }
+    });
+
     // 准备headers
     const headers: Record<string, string> = {
       ...(requestParams.headers || {}),
       ...(type && type !== ContentType.FormData
         ? { "Content-Type": type }
         : {}),
+      ...(Authorization ? { Authorization: `Bearer ${Authorization}` } : {}),
     };
 
     // 对于非GET请求，添加CSRF token
@@ -299,14 +315,57 @@ export class HttpClient<SecurityDataType = unknown> {
       }
     }
 
-    return this.instance.request({
+    // 在SSR环境中，需要手动转发cookie
+    const requestConfig: any = {
       ...requestParams,
       headers,
       params: query,
       responseType: responseFormat,
       data: body,
       url: path,
-    });
+    };
+
+    // 如果是SSR环境，转发所有cookie到API请求
+    if (typeof window === "undefined") {
+      try {
+        const { cookies } = await import("next/headers");
+        const cookieStore = await cookies();
+
+        // 方法1: 转发所有cookie（推荐用于开发环境）
+        const allCookies = cookieStore.toString();
+        if (allCookies) {
+          requestConfig.headers.Cookie = allCookies;
+        }
+
+        // 方法2: 如果需要选择性转发，可以使用下面的代码
+        // const cookiesToForward = ['auth_token', 'session_id', 'csrf_token', '_vercel_jwt'];
+        // const cookieValues = cookiesToForward
+        //   .map(name => {
+        //     const value = cookieStore.get(name)?.value;
+        //     return value ? `${name}=${value}` : null;
+        //   })
+        //   .filter(Boolean);
+        // 
+        // if (cookieValues.length > 0) {
+        //   requestConfig.headers.Cookie = cookieValues.join('; ');
+        // }
+
+        // 调试信息（生产环境可以移除）
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[SSR] API Request to ${path}`);
+          console.log(`[SSR] Cookies available:`, !!allCookies);
+          console.log(`[SSR] Authorization token:`, !!Authorization);
+          if (allCookies) {
+            console.log(`[SSR] Cookie header:`, allCookies.substring(0, 100) + '...');
+          }
+        }
+      } catch (error) {
+        // 在某些情况下cookies可能不可用，忽略错误
+        console.warn("Failed to get cookies in SSR:", error);
+      }
+    }
+
+    return this.instance.request(requestConfig);
   };
 }
 export default new HttpClient({
