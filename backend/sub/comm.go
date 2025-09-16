@@ -97,7 +97,7 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
 		return nil
 	}
-	llmRes, answered, err := d.llm.Chat(ctx, svc.GenerateReq{
+	llmRes, answered, err := d.llm.Answer(ctx, svc.GenerateReq{
 		Question:      prompt,
 		DefaultAnswer: bot.UnknownPrompt,
 	})

@@ -74,30 +74,13 @@ func createTestComments() []model.CommentDetail {
 	}
 }
 
-// 测试辅助函数：创建测试用的知识文档
-func createTestKnowledgeDocs() []KnowledgeDocument {
-	return []KnowledgeDocument{
-		{
-			Title:   "Redis性能优化最佳实践",
-			Content: "1. 使用连接池减少连接开销\n2. 合理设置过期时间避免内存泄漏\n3. 避免使用大key影响性能\n4. 使用pipeline批量操作\n5. 监控内存使用情况",
-			Source:  "Redis官方文档",
-		},
-		{
-			Title:   "Redis集群部署指南",
-			Content: "Redis Cluster提供自动分片和高可用性，但需要至少6个节点（3主3从）。配置相对复杂，需要考虑网络分区、故障转移等问题。",
-			Source:  "运维最佳实践",
-		},
-	}
-}
-
 // TestBasicPromptGeneration 测试基础提示词生成
 func TestBasicPromptGeneration(t *testing.T) {
 	discussion := createTestDiscussion()
 	allComments := createTestComments()
 	newComment := &allComments[2] // 用户李工的评论
-	knowledgeDocs := createTestKnowledgeDocs()
 
-	template := NewDiscussionPromptTemplate(discussion, allComments, newComment, knowledgeDocs)
+	template := NewDiscussionPromptTemplate(discussion, allComments, newComment)
 
 	prompt, err := template.BuildPrompt()
 	if err != nil {
@@ -133,7 +116,7 @@ func TestCommentTreeStructure(t *testing.T) {
 	discussion := createTestDiscussion()
 	allComments := createTestComments()
 
-	template := NewDiscussionPromptTemplate(discussion, allComments, nil, nil)
+	template := NewDiscussionPromptTemplate(discussion, allComments, nil)
 	commentTree := template.buildCommentTree()
 
 	// 验证根评论数量
@@ -170,7 +153,7 @@ func TestBotReplyDetection(t *testing.T) {
 	allComments := createTestComments()
 	newComment := &allComments[3] // 对BOT回复的评论
 
-	template := NewDiscussionPromptTemplate(discussion, allComments, newComment, nil)
+	template := NewDiscussionPromptTemplate(discussion, allComments, newComment)
 	template.ExtractBotReplies()
 
 	// 验证BOT历史回复提取
@@ -200,9 +183,8 @@ func TestPromptWithReplyToBot(t *testing.T) {
 	discussion := createTestDiscussion()
 	allComments := createTestComments()
 	newComment := &allComments[3] // 对BOT回复的评论
-	knowledgeDocs := createTestKnowledgeDocs()
 
-	template := NewDiscussionPromptTemplate(discussion, allComments, newComment, knowledgeDocs)
+	template := NewDiscussionPromptTemplate(discussion, allComments, newComment)
 
 	prompt, err := template.BuildPrompt()
 	if err != nil {
@@ -224,9 +206,8 @@ func TestPromptWithReplyToBot(t *testing.T) {
 func TestEmptyComments(t *testing.T) {
 	discussion := createTestDiscussion()
 	allComments := []model.CommentDetail{} // 空评论列表
-	knowledgeDocs := createTestKnowledgeDocs()
 
-	template := NewDiscussionPromptTemplate(discussion, allComments, nil, knowledgeDocs)
+	template := NewDiscussionPromptTemplate(discussion, allComments, nil)
 
 	prompt, err := template.BuildPrompt()
 	if err != nil {
@@ -250,9 +231,8 @@ func TestResolvedDiscussion(t *testing.T) {
 
 	allComments := createTestComments()
 	newComment := &allComments[2]
-	knowledgeDocs := createTestKnowledgeDocs()
 
-	template := NewDiscussionPromptTemplate(discussion, allComments, newComment, knowledgeDocs)
+	template := NewDiscussionPromptTemplate(discussion, allComments, newComment)
 
 	prompt, err := template.BuildPrompt()
 	if err != nil {
@@ -274,9 +254,8 @@ func TestNoKnowledgeDocuments(t *testing.T) {
 	discussion := createTestDiscussion()
 	allComments := createTestComments()
 	newComment := &allComments[2]
-	knowledgeDocs := []KnowledgeDocument{} // 空知识文档
 
-	template := NewDiscussionPromptTemplate(discussion, allComments, newComment, knowledgeDocs)
+	template := NewDiscussionPromptTemplate(discussion, allComments, newComment)
 
 	prompt, err := template.BuildPrompt()
 	if err != nil {
@@ -307,9 +286,7 @@ func TestDirectReplyToPost(t *testing.T) {
 		UserName: "新用户小明",
 	}
 
-	knowledgeDocs := createTestKnowledgeDocs()
-
-	template := NewDiscussionPromptTemplate(discussion, allComments, directReply, knowledgeDocs)
+	template := NewDiscussionPromptTemplate(discussion, allComments, directReply)
 
 	prompt, err := template.BuildPrompt()
 	if err != nil {
@@ -380,9 +357,8 @@ func TestComplexCommentTree(t *testing.T) {
 	}
 
 	newComment := &allComments[2] // 用户B的评论
-	knowledgeDocs := createTestKnowledgeDocs()
 
-	template := NewDiscussionPromptTemplate(discussion, allComments, newComment, knowledgeDocs)
+	template := NewDiscussionPromptTemplate(discussion, allComments, newComment)
 	commentTree := template.buildCommentTree()
 
 	// 验证评论树结构
@@ -413,7 +389,7 @@ func TestBotHistoryExtraction(t *testing.T) {
 	allComments := createTestComments()
 	newComment := &allComments[2] // 非BOT评论
 
-	template := NewDiscussionPromptTemplate(discussion, allComments, newComment, nil)
+	template := NewDiscussionPromptTemplate(discussion, allComments, newComment)
 	template.ExtractBotReplies()
 
 	// 验证BOT历史回复数量
@@ -477,7 +453,7 @@ func TestRenderComment(t *testing.T) {
 	discussion := createTestDiscussion()
 	allComments := createTestComments()
 
-	template := NewDiscussionPromptTemplate(discussion, allComments, &allComments[2], nil)
+	template := NewDiscussionPromptTemplate(discussion, allComments, &allComments[2])
 	commentTree := template.buildCommentTree()
 
 	// 测试渲染根评论
@@ -515,9 +491,8 @@ func TestFullPromptWithAllFeatures(t *testing.T) {
 
 	allComments := createTestComments()
 	newComment := &allComments[3] // 对BOT回复的评论
-	knowledgeDocs := createTestKnowledgeDocs()
 
-	template := NewDiscussionPromptTemplate(discussion, allComments, newComment, knowledgeDocs)
+	template := NewDiscussionPromptTemplate(discussion, allComments, newComment)
 
 	prompt, err := template.BuildPrompt()
 	if err != nil {
@@ -563,12 +538,11 @@ func BenchmarkPromptGeneration(b *testing.B) {
 	discussion := createTestDiscussion()
 	allComments := createTestComments()
 	newComment := &allComments[2]
-	knowledgeDocs := createTestKnowledgeDocs()
 
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		template := NewDiscussionPromptTemplate(discussion, allComments, newComment, knowledgeDocs)
+		template := NewDiscussionPromptTemplate(discussion, allComments, newComment)
 		_, err := template.BuildPrompt()
 		if err != nil {
 			b.Fatalf("生成提示词失败: %v", err)

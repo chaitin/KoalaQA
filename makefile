@@ -1,3 +1,8 @@
+ifneq (,$(wildcard .env))
+    include .env
+    export
+endif
+
 PLATFORM ?= linux/amd64
 ARCH ?= amd64
 VERSION ?= dev
@@ -43,3 +48,6 @@ swagger:
 tag:
 	@VERSION=$(filter-out $@,$(MAKECMDGOALS)); \
 	git tag $$VERSION && git push origin $$VERSION
+
+%:
+	@:
