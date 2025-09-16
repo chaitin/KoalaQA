@@ -1,6 +1,6 @@
 'use client';
 
-import { getUserLoginMethod } from '@/api';
+import { getUserLoginMethod, getUserLoginThird } from '@/api';
 import { SvcAuthFrontendGetRes } from '@/api/types';
 import { AuthType } from '@/types/auth';
 import { Card } from '@/components';
@@ -10,16 +10,16 @@ import { Suspense, useEffect, useState } from 'react';
 import Account from './account';
 
 const LoginType = () => {
-  const [authConfig, setAuthConfig] = useState<SvcAuthFrontendGetRes | null>(null);
+  const [authConfig, setAuthConfig] = useState<SvcAuthFrontendGetRes | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getUserLoginMethod()
       .then((response) => {
-        // 使用类型断言来处理API响应
-        const apiResponse = response as any;
-        if (apiResponse && apiResponse.data) {
-          setAuthConfig(apiResponse.data);
+        if (response) {
+          setAuthConfig(response);
         }
       })
       .catch((error) => {
@@ -30,15 +30,63 @@ const LoginType = () => {
       });
   }, []);
 
-  const handleOAuthLogin = (type: number) => {
-    // 根据type跳转到对应的OAuth登录页面
-    window.location.href = `/api/panel/oauth/ct/redirect?type=${type}`;
+  const handleOAuthLogin = async (type: number) => {
+    try {
+      // 调用getUserLoginThird接口获取跳转URL
+      const response = await getUserLoginThird({ type });
+
+      // 使用类型断言处理API响应
+      const apiResponse = response as any;
+      if (apiResponse && apiResponse.data) {
+        // 自动跳转到第三方登录页面
+        window.location.href = apiResponse.data;
+      } else if (typeof response === 'string') {
+        // 如果直接返回字符串URL
+        window.location.href = response;
+      } else {
+        console.error('Failed to get third party login URL');
+      }
+    } catch (error) {
+      console.error('Error getting third party login URL:', error);
+    }
   };
 
   // 判断是否支持不同的登录方式
-  const hasPasswordLogin = authConfig?.auth_types?.some(auth => auth.type === AuthType.PASSWORD) || false;
-  const hasOAuthLogin = authConfig?.auth_types?.some(auth => auth.type === AuthType.OAUTH) || false;
-  const oauthConfig = authConfig?.auth_types?.find(auth => auth.type === AuthType.OAUTH);
+  const hasPasswordLogin =
+    authConfig?.auth_types?.some((auth) => auth.type === AuthType.PASSWORD) ||
+    false;
+  const hasOAuthLogin =
+    authConfig?.auth_types?.some((auth) => auth.type === AuthType.OAUTH) ||
+    false;
+  const oauthConfig = authConfig?.auth_types?.find(
+    (auth) => auth.type === AuthType.OAUTH
+  );
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+          px: 2,
+        }}
+      >
+        <Card
+          sx={{
+            width: 400,
+            p: 4,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <Typography>加载中...</Typography>
+        </Card>
+      </Box>
+    );
+  }
 
   // 根据配置决定显示哪种登录界面
   if (!hasPasswordLogin && hasOAuthLogin) {
@@ -65,10 +113,15 @@ const LoginType = () => {
               justifyContent: 'center',
             }}
           >
-            <Stack spacing={4} alignItems="center">
+            <Stack spacing={4} alignItems='center'>
               <Typography
                 variant='h1'
-                sx={{ fontSize: '24px', fontWeight: 600, color: '#666', textAlign: 'center' }}
+                sx={{
+                  fontSize: '24px',
+                  fontWeight: 600,
+                  color: '#666',
+                  textAlign: 'center',
+                }}
               >
                 登录
               </Typography>
@@ -76,7 +129,7 @@ const LoginType = () => {
               {/* 第三方登录按钮 */}
               {oauthConfig && (
                 <Button
-                  variant="outlined"
+                  variant='outlined'
                   fullWidth
                   sx={{
                     height: 48,
@@ -86,13 +139,19 @@ const LoginType = () => {
                   }}
                   onClick={() => handleOAuthLogin(oauthConfig.type!)}
                 >
-                  {oauthConfig.button_desc || '这里是你的文本 - 使用长者 Auth 登录'}
+                  {oauthConfig.button_desc || 'Auth 登录'}
                 </Button>
               )}
 
               {/* 注册链接 */}
               {authConfig?.enable_register && (
-                <Box sx={{ textAlign: 'center', color: 'rgba(0,0,0,0.4)', fontSize: 14 }}>
+                <Box
+                  sx={{
+                    textAlign: 'center',
+                    color: 'rgba(0,0,0,0.4)',
+                    fontSize: 14,
+                  }}
+                >
                   还没有注册？
                   <Box
                     component={Link}
@@ -132,7 +191,12 @@ const LoginType = () => {
           <Stack spacing={3}>
             <Typography
               variant='h1'
-              sx={{ fontSize: '24px', fontWeight: 600, textAlign: 'center', color: '#333' }}
+              sx={{
+                fontSize: '24px',
+                fontWeight: 600,
+                textAlign: 'center',
+                color: '#333',
+              }}
             >
               登录
             </Typography>
@@ -142,7 +206,13 @@ const LoginType = () => {
 
             {/* 注册链接 */}
             {authConfig?.enable_register && (
-              <Box sx={{ textAlign: 'center', color: 'rgba(0,0,0,0.4)', fontSize: 14 }}>
+              <Box
+                sx={{
+                  textAlign: 'center',
+                  color: 'rgba(0,0,0,0.4)',
+                  fontSize: 14,
+                }}
+              >
                 还没有注册？
                 <Box
                   component={Link}
@@ -157,12 +227,19 @@ const LoginType = () => {
             {/* 如果有第三方登录，显示分割线和第三方登录按钮 */}
             {hasOAuthLogin && oauthConfig && (
               <>
-                <Box sx={{ textAlign: 'center', color: 'rgba(0,0,0,0.4)', fontSize: 14, mt: 2 }}>
+                <Box
+                  sx={{
+                    textAlign: 'center',
+                    color: 'rgba(0,0,0,0.4)',
+                    fontSize: 14,
+                    mt: 2,
+                  }}
+                >
                   使用其他登录方式
                 </Box>
 
                 <Button
-                  variant="outlined"
+                  variant='outlined'
                   fullWidth
                   sx={{
                     height: 48,
@@ -172,7 +249,7 @@ const LoginType = () => {
                   }}
                   onClick={() => handleOAuthLogin(oauthConfig.type!)}
                 >
-                  {oauthConfig.button_desc || '这里是你的文本 - 使用长者 Auth 登录'}
+                  {oauthConfig.button_desc || 'Auth 登录'}
                 </Button>
               </>
             )}

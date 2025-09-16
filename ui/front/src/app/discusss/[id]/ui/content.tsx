@@ -66,7 +66,7 @@ const BaseDiscussCard = (props: {
     data.user_id === disData.current_user_id ||
     // 是问题作者且问题未被采纳，且不是回复（只有评论可以被采纳）
     (disData.user_id === disData.current_user_id &&
-      !disData.accepted &&
+      !disData.comments?.[0]?.accepted &&
       !isReply);
 
   const revokeLike = () => {
@@ -465,7 +465,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
           <MenuItem onClick={handleDelete}>删除</MenuItem>
         )}
         {data?.user_id == data.current_user_id &&
-          !data.accepted &&
           !data.comments?.[0]?.accepted &&
           (commentIndex as any)?.replies && (
             <MenuItem onClick={handleAccept}>采纳</MenuItem>
