@@ -44,29 +44,55 @@ func init() {
 
 type GenerateReq struct {
 	Question      string `json:"question"`
-	SystemPrompt  string `json:"system_prompt"`
 	DefaultAnswer string `json:"default_answer"`
 }
 
-func (l *LLM) Chat(ctx context.Context, req GenerateReq) (string, bool, error) {
-	cm, err := l.kit.GetChatModel(ctx)
+func (l *LLM) Answer(ctx context.Context, req GenerateReq) (string, bool, error) {
+	knowledgeDocuments, err := l.queryKnowledgeDocuments(ctx, req.Question)
 	if err != nil {
 		return "", false, err
 	}
-	logger := l.logger.WithContext(ctx)
-	if req.SystemPrompt == "" {
-		req.SystemPrompt = llm.SystemChatPrompt
+	res, err := l.chat(ctx, llm.SystemChatPrompt, req.Question, map[string]any{
+		"DefaultAnswer":      req.DefaultAnswer,
+		"CurrentDate":        time.Now().Format("2006-01-02"),
+		"KnowledgeDocuments": knowledgeDocuments,
+	})
+	if err != nil {
+		return "", false, err
 	}
-	template := prompt.FromMessages(schema.GoTemplate,
-		schema.SystemMessage(req.SystemPrompt),
-		schema.UserMessage(req.Question),
-	)
-	msgs, err := template.Format(ctx, map[string]any{
+	if util.NormalizeString(res) == util.NormalizeString(req.DefaultAnswer) {
+		return req.DefaultAnswer, false, nil
+	}
+	return res, true, nil
+}
+
+func (l *LLM) Summary(ctx context.Context, req GenerateReq) (string, bool, error) {
+	res, err := l.chat(ctx, llm.SystemSummaryPrompt, req.Question, map[string]any{
 		"DefaultAnswer": req.DefaultAnswer,
 		"CurrentDate":   time.Now().Format("2006-01-02"),
 	})
 	if err != nil {
 		return "", false, err
+	}
+	if util.NormalizeString(res) == util.NormalizeString(req.DefaultAnswer) {
+		return req.DefaultAnswer, false, nil
+	}
+	return res, true, nil
+}
+
+func (l *LLM) chat(ctx context.Context, sMsg string, uMsg string, params map[string]any) (string, error) {
+	cm, err := l.kit.GetChatModel(ctx)
+	if err != nil {
+		return "", err
+	}
+	logger := l.logger.WithContext(ctx)
+	template := prompt.FromMessages(schema.GoTemplate,
+		schema.SystemMessage(sMsg),
+		schema.UserMessage(uMsg),
+	)
+	msgs, err := template.Format(ctx, params)
+	if err != nil {
+		return "", err
 	}
 	for _, msg := range msgs {
 		logger.With("role", msg.Role, "content", msg.Content).Debug("format message")
@@ -75,13 +101,10 @@ func (l *LLM) Chat(ctx context.Context, req GenerateReq) (string, bool, error) {
 	res, err := cm.Generate(ctx, msgs)
 	if err != nil {
 		logger.WithErr(err).Error("llm response failed")
-		return "", false, err
-	}
-	if util.NormalizeString(res.Content) == util.NormalizeString(req.DefaultAnswer) {
-		return req.DefaultAnswer, false, nil
+		return "", err
 	}
 	logger.Debug("llm response success")
-	return res.Content, true, nil
+	return res.Content, nil
 }
 
 func (l *LLM) GenerateChatPrompt(ctx context.Context, discID uint, commID uint) (string, error) {
@@ -118,13 +141,8 @@ func (l *LLM) GenerateChatPrompt(ctx context.Context, discID uint, commID uint) 
 	if newComment != nil {
 		query += " " + newComment.Content
 	}
-	knowledgeDocs, err := l.queryKnowledgeDocuments(ctx, query)
-	if err != nil {
-		logger.WithErr(err).Warn("query knowledge documents failed, continue generate prompt")
-	}
-
 	// 5. 创建提示词模版并生成提示词
-	template := llm.NewDiscussionPromptTemplate(discussion, allComments, newComment, knowledgeDocs)
+	template := llm.NewDiscussionPromptTemplate(discussion, allComments, newComment)
 
 	prompt, err := template.BuildPrompt()
 	if err != nil {

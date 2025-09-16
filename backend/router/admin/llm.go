@@ -40,7 +40,7 @@ func (l *llm) Generate(ctx *context.Context) {
 		ctx.BadRequest(err)
 		return
 	}
-	res, _, err := l.svc.Chat(ctx, req)
+	res, _, err := l.svc.Answer(ctx, req)
 	if err != nil {
 		ctx.InternalError(err, "generate failed")
 		return

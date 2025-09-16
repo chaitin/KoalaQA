@@ -23,9 +23,6 @@ type DiscussionPromptTemplate struct {
 	// 触发回复的新评论
 	NewComment *model.CommentDetail
 
-	// 知识库文档
-	KnowledgeDocuments []KnowledgeDocument
-
 	// BOT的历史回复（用于保持对话连续性）
 	BotHistoryReplies []model.CommentDetail
 
@@ -112,19 +109,6 @@ const discussionPromptTemplate = `
 - 问题尚未解决，重点提供实用的解决方案
 {{- end}}
 
-## 知识库文档
-{{- if .KnowledgeDocuments}}
-{{- range $i, $doc := .KnowledgeDocuments}}
-### 文档{{add $i 1}}：{{$doc.Title}}
-{{- if $doc.Source}}
-来源：{{$doc.Source}}
-{{- end}}
-内容：
-{{$doc.Content}}
-
-{{- end}}
-
-{{- end}}
 
 ## 回复要求
 {{- if .NewComment}}
@@ -340,13 +324,11 @@ func NewDiscussionPromptTemplate(
 	discussion *model.DiscussionDetail,
 	allComments []model.CommentDetail,
 	newComment *model.CommentDetail,
-	knowledgeDocs []KnowledgeDocument,
 ) *DiscussionPromptTemplate {
 	return &DiscussionPromptTemplate{
-		Discussion:         discussion,
-		AllComments:        allComments,
-		NewComment:         newComment,
-		KnowledgeDocuments: knowledgeDocs,
+		Discussion:  discussion,
+		AllComments: allComments,
+		NewComment:  newComment,
 	}
 }
 
