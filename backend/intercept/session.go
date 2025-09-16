@@ -16,7 +16,7 @@ func newSession() Interceptor {
 	store := cookie.NewStore([]byte(util.RandomString(16)))
 	store.Options(sessions.Options{
 		Path:     "/",
-		MaxAge:   30,
+		MaxAge:   86400,
 		HttpOnly: true,
 	})
 
