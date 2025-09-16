@@ -46,14 +46,14 @@ const (
 )
 
 type AuthInfo struct {
-	Type   AuthType   `json:"type"`
+	Type   AuthType   `json:"type" binding:"min=1,max=2"`
 	Config AuthConfig `json:"config"`
 }
 
 type Auth struct {
 	EnableRegister bool       `json:"enable_register"`
 	PublicAccess   bool       `json:"public_access"`
-	AuthInfos      []AuthInfo `json:"auth_infos" binding:"omitempty,dive,min=1,max=2"`
+	AuthInfos      []AuthInfo `json:"auth_infos" binding:"omitempty,dive"`
 }
 
 func (a *Auth) CanAuth(t AuthType) bool {
