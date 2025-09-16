@@ -115,6 +115,9 @@ func (e *Engine) GroupInterceptors(relativePath string, interceptors ...intercep
 }
 
 func (r *Engine) Init() {
+	sort.Slice(r.in.Interceptors, func(i, j int) bool {
+		return r.in.Interceptors[i].Priority() < r.in.Interceptors[j].Priority()
+	})
 	for _, interceptor := range r.in.Interceptors {
 		r.e.Use(wrapHandler(interceptor.Intercept))
 	}

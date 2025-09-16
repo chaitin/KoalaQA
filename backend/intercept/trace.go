@@ -30,7 +30,7 @@ func (t *trace) Intercept(ctx *context.Context) {
 }
 
 func (t *trace) Priority() int {
-	return -1
+	return -100
 }
 
 func init() {
