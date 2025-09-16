@@ -9,6 +9,7 @@ import {
 } from '@/api/types';
 import { Card, CusTabs } from '@/components';
 import { AuthContext } from '@/components/authProvider';
+import { CommonContext } from '@/components/commonProvider';
 import { ImgLogo, ReleaseModal } from '@/components/discussion';
 import ArrowCircleRightRoundedIcon from '@mui/icons-material/ArrowCircleRightRounded';
 import SearchIcon from '@mui/icons-material/Search';
@@ -37,7 +38,7 @@ const Article = ({
     items?: ModelDiscussion[];
   };
   topics: number[];
-  groups: ModelListRes & {
+  groups?: ModelListRes & {
     items?: (ModelGroupWithItem & {
       items?: ModelGroupItemInfo[];
     })[];
@@ -46,18 +47,22 @@ const Article = ({
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useContext(AuthContext);
+  const { groups: contextGroups, groupsLoading } = useContext(CommonContext);
 
-  // 处理从SSR传入的groups数据
-  const groups = {
-    origin: groupsData.items ?? [],
-    flat: (groupsData.items?.filter((i) => !!i.items) || []).reduce(
-      (acc, item) => {
-        acc.push(...(item.items || []));
-        return acc;
-      },
-      [] as ModelGroupItemInfo[]
-    ),
-  };
+  // 优先使用SSR传入的groups数据，否则使用Context中的数据
+  const groups =
+    groupsData ?
+      {
+        origin: groupsData.items ?? [],
+        flat: (groupsData.items?.filter((i) => !!i.items) || []).reduce(
+          (acc, item) => {
+            acc.push(...(item.items || []));
+            return acc;
+          },
+          [] as ModelGroupItemInfo[]
+        ),
+      }
+    : contextGroups;
 
   const [
     releaseModalVisible,
@@ -167,60 +172,93 @@ const Article = ({
           display: { xs: 'none', sm: 'flex' },
         }}
       >
-        {groups.origin.map((section) => (
-          <Card
-            key={section.id}
-            sx={{
-              p: 2,
-              boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
-            }}
-          >
-            <Stack gap={1}>
-              {section.items?.map((item) => (
-                <Stack
-                  direction='row'
-                  key={item.id}
-                  gap={1.5}
-                  alignItems='center'
-                  sx={{
-                    p: 1,
-                    cursor: 'pointer',
-                    borderRadius: 1,
-                    backgroundColor:
-                      topics.includes(item.id || -1) ?
-                        'rgba(32,108,255,0.06)'
-                      : 'transparent',
-                    '&:hover': {
-                      backgroundColor: 'rgba(32,108,255,0.06)',
-                    },
-                  }}
-                  onClick={() => handleTopicClick(item.id!)}
-                >
-                  <ImgLogo>#</ImgLogo>
-                  <Box
-                    sx={{
-                      flex: 1,
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      overflow: 'hidden',
-                      whiteSpace: 'nowrap',
-                      textOverflow: 'ellipsis',
-                      fontSize: 14,
-                      color:
-                        topics.includes(item.id || -1) ? 'primary.main' : (
-                          '#000'
-                        ),
-                      fontWeight: topics === item ? 500 : 400,
-                    }}
-                  >
-                    {item.name}
-                  </Box>
+        {!groupsData && groupsLoading ?
+          // 只有在客户端渲染且正在加载时显示骨架屏
+          <>
+            {[1, 2, 3].map((index) => (
+              <Card
+                key={index}
+                sx={{
+                  p: 2,
+                  boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
+                }}
+              >
+                <Stack gap={1}>
+                  {[1, 2, 3, 4].map((itemIndex) => (
+                    <Box
+                      key={itemIndex}
+                      sx={{
+                        height: 32,
+                        backgroundColor: 'rgba(0, 0, 0, 0.06)',
+                        borderRadius: 1,
+                        animation: 'pulse 1.5s ease-in-out infinite',
+                        '@keyframes pulse': {
+                          '0%': { opacity: 1 },
+                          '50%': { opacity: 0.4 },
+                          '100%': { opacity: 1 },
+                        },
+                      }}
+                    />
+                  ))}
                 </Stack>
-              ))}
-            </Stack>
-          </Card>
-        ))}
+              </Card>
+            ))}
+          </>
+        : groups.origin.map((section) => (
+            <Card
+              key={section.id}
+              sx={{
+                p: 2,
+                boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
+              }}
+            >
+              <Stack gap={1}>
+                {section.items?.map((item) => (
+                  <Stack
+                    direction='row'
+                    key={item.id}
+                    gap={1.5}
+                    alignItems='center'
+                    sx={{
+                      p: 1,
+                      cursor: 'pointer',
+                      borderRadius: 1,
+                      backgroundColor:
+                        topics.includes(item.id || -1) ?
+                          'rgba(32,108,255,0.06)'
+                        : 'transparent',
+                      '&:hover': {
+                        backgroundColor: 'rgba(32,108,255,0.06)',
+                      },
+                    }}
+                    onClick={() => handleTopicClick(item.id!)}
+                  >
+                    <ImgLogo>#</ImgLogo>
+                    <Box
+                      sx={{
+                        flex: 1,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        overflow: 'hidden',
+                        whiteSpace: 'nowrap',
+                        textOverflow: 'ellipsis',
+                        fontSize: 14,
+                        color:
+                          topics.includes(item.id || -1) ? 'primary.main' : (
+                            '#000'
+                          ),
+                        fontWeight: topics === item ? 500 : 400,
+                      }}
+                    >
+                      {item.name}
+                    </Box>
+                  </Stack>
+                ))}
+              </Stack>
+            </Card>
+          ))
+        }
       </Stack>
       <Stack gap={3} sx={{ width: { xs: '100%', sm: 876 } }}>
         <Stack
