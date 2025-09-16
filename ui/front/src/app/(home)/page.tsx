@@ -1,4 +1,4 @@
-import { getDiscussion } from "@/api";
+import { getDiscussion, getGroup } from "@/api";
 import { Stack } from "@mui/material";
 import { Metadata } from "next";
 import ArticleCard from "./ui/article";
@@ -23,11 +23,17 @@ const Page = async (props: {
     if (search) params.set("keyword", search);
     if(topics.length) topics.forEach(id => params.append('group_ids', id+''));
     getDiscussion(params);
-  const data = await getDiscussion(params);
+  
+  // 并行获取讨论数据和groups数据
+  const [data, groupsData] = await Promise.all([
+    getDiscussion(params),
+    getGroup()
+  ]);
+
   return (
     <Stack gap={3} sx={{ minHeight: "100vh" }}>
       <h1 style={{ display: "none" }}>问答</h1>
-      <ArticleCard data={data} topics={topics} />
+      <ArticleCard data={data} topics={topics} groups={groupsData} />
     </Stack>
   );
 };
