@@ -27,10 +27,6 @@ const DiscussCard = ({
 }) => {
   const it = data;
   const router = useRouter();
-  const { groups } = useContext(CommonContext);
-  const currentGroups = useMemo(() => {
-    return groups.flat.filter((item) => it.group_ids?.includes(item.id!));
-  }, [groups, it.group_ids]);
   
   return (
     <Card
@@ -121,20 +117,6 @@ const DiscussCard = ({
 
       <Stack direction="row" justifyContent="space-between">
         <Stack direction="row" gap={2}>
-          {currentGroups?.map((item) => {
-            const label = `# ${item.name}`;
-            return (
-              <Tag
-                sx={{ backgroundColor: "rgba(32, 108, 255, 0.1)" }}
-                key={item.id}
-                label={label}
-                size="small"
-                onClick={() => {
-                  onTopicClick(item.id!);
-                }}
-              />
-            );
-          })}
           {it?.tags?.map((item) => (
             <Tag
               key={item}
@@ -247,7 +229,6 @@ export const DiscussCardMobile = ({
 }) => {
   const it = data;
   const router = useRouter();
-  const { groups } = useContext(CommonContext);
   return (
     <Card
       key={it.id}
@@ -330,19 +311,6 @@ export const DiscussCardMobile = ({
         </Stack>
       </Stack>
       <Stack direction="row" gap="8px 12px" flexWrap="wrap">
-        {groups.flat?.map((item) => {
-          return (
-            <Tag
-              key={item.id}
-              label={item.name}
-              size="small"
-              sx={{ backgroundColor: "rgba(32, 108, 255, 0.1)" }}
-              onClick={() => {
-                onTopicClick(item.id!);
-              }}
-            />
-          );
-        })}
         {it?.tags?.map((item) => (
           <Tag
             key={item}

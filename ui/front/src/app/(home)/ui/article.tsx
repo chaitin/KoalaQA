@@ -4,10 +4,11 @@ import {
   GetDiscussionParams,
   ModelDiscussion,
   ModelListRes,
+  ModelGroupWithItem,
+  ModelGroupItemInfo,
 } from '@/api/types';
 import { Card, CusTabs } from '@/components';
 import { AuthContext } from '@/components/authProvider';
-import { CommonContext } from '@/components/commonProvider';
 import { ImgLogo, ReleaseModal } from '@/components/discussion';
 import ArrowCircleRightRoundedIcon from '@mui/icons-material/ArrowCircleRightRounded';
 import SearchIcon from '@mui/icons-material/Search';
@@ -30,16 +31,34 @@ export type Status = 'hot' | 'new' | 'mine';
 const Article = ({
   data,
   topics,
+  groups: groupsData,
 }: {
   data: ModelListRes & {
     items?: ModelDiscussion[];
   };
   topics: number[];
+  groups: ModelListRes & {
+    items?: (ModelGroupWithItem & {
+      items?: ModelGroupItemInfo[];
+    })[];
+  };
 }) => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useContext(AuthContext);
-  const { groups } = useContext(CommonContext);
+
+  // 处理从SSR传入的groups数据
+  const groups = {
+    origin: groupsData.items ?? [],
+    flat: (groupsData.items?.filter((i) => !!i.items) || []).reduce(
+      (acc, item) => {
+        acc.push(...(item.items || []));
+        return acc;
+      },
+      [] as ModelGroupItemInfo[]
+    ),
+  };
+
   const [
     releaseModalVisible,
     { setTrue: releaseModalOpen, setFalse: releaseModalClose },
@@ -51,6 +70,7 @@ const Article = ({
   const searchRef = useRef(search);
   const [articleData, setArticleData] = useState(data);
   const [page, setPage] = useState(1);
+
   const fetchMoreList = () => {
     const new_page = page + 1;
     setPage(new_page);
@@ -115,6 +135,7 @@ const Article = ({
     // 这里如果需要同步本地 topics 状态，也可以 setTopics(newTopics)
     fetchList({ tps: newTopics });
   };
+
   const handleAsk = () => {
     if (user?.email) {
       releaseModalOpen();
@@ -122,6 +143,7 @@ const Article = ({
       router.push(`/login`);
     }
   };
+
   return (
     <Stack
       gap={3}
@@ -193,16 +215,6 @@ const Article = ({
                     }}
                   >
                     {item.name}
-                    {/* <Box
-                    sx={{
-                      backgroundColor: 'rgba(99,115,129,0.06)',
-                      px: 1,
-                      borderRadius: '2px',
-                      color: 'rgba(0,0,0,0.5)',
-                    }}
-                  >
-                    {topicsList.find((it) => it. === item)?.count || 0}
-                  </Box> */}
                   </Box>
                 </Stack>
               ))}
