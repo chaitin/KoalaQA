@@ -92,8 +92,8 @@ const LoginMethod: React.FC = () => {
   // 获取当前配置
   const { data, loading } = useRequest(getAdminSystemLoginMethod, {
     onSuccess: res => {
-      if (res.data) {
-        const { enable_register, public_access, auth_infos } = res.data;
+      if (res) {
+        const { enable_register, public_access, auth_infos } = res;
 
         // 从 auth_infos 中提取认证类型
         const authTypes = auth_infos?.map((info: ModelAuthInfo) => info.type).filter(Boolean) ?? [
