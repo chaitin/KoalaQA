@@ -75,6 +75,14 @@ jobs:
         id: extract_tag
         run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
+      - name: Setup git and checkout main branch
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          git checkout main
+          git pull origin main
+
       - name: Update docker-compose.yml
         run: |
           # 更新 API 服务的镜像标签
@@ -89,15 +97,14 @@ jobs:
 
       - name: Commit and push changes
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-
           # 检查是否有更改
           if git diff --quiet docker-compose.yml; then
             echo "🔄 No changes needed in docker-compose.yml"
           else
             git add docker-compose.yml
             git commit -m "🚀 Auto-update docker-compose.yml with tag ${{ steps.extract_tag.outputs.tag }}"
+            
+            echo "🚀 Pushing changes to main branch..."
             git push origin main
             echo "✅ Successfully updated docker-compose.yml with new image tags"
           fi
