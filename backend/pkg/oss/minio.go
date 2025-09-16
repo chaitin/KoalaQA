@@ -249,4 +249,10 @@ func init() {
 	mime.AddExtensionType(".image", "image/jpeg")
 	mime.AddExtensionType(".md", "text/markdown")
 	mime.AddExtensionType(".pdf", "application/pdf")
+	mime.AddExtensionType(".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	mime.AddExtensionType(".xls", "application/vnd.ms-excel")
+	mime.AddExtensionType(".doc", "application/msword")
+	mime.AddExtensionType(".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+	mime.AddExtensionType(".ppt", "application/vnd.ms-powerpoint")
+	mime.AddExtensionType(".pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation")
 }
