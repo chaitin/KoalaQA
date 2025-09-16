@@ -121,7 +121,7 @@ func (u *user) LoginOIDCCallback(ctx *context.Context) {
 }
 
 func (u *user) Route(h server.Handler) {
-	g := h.Group("/user")
+	g := h.Group("/api/user")
 	g.POST("/register", u.Register)
 	g.POST("/login", u.Login)
 	g.GET("/login_method", u.LoginMethod)
@@ -134,5 +134,5 @@ func newUser(u *svc.User) server.Router {
 }
 
 func init() {
-	registerApiNoAuthRouter(newUser)
+	registerGlobalRouter(newUser)
 }
