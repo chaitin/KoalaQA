@@ -39,3 +39,7 @@ run.api: image.api
 
 swagger:
 	cd backend && make swagger
+
+tag:
+	@VERSION=$(filter-out $@,$(MAKECMDGOALS)); \
+	git tag $$VERSION && git push origin $$VERSION
