@@ -6,10 +6,8 @@ import { createContext, useEffect, useState } from 'react';
 export const AuthContext = createContext<{
   user: ModelUserInfo;
   loading: boolean;
-  fetchUser: () => Promise<any>,
-  setUser: React.Dispatch<
-    React.SetStateAction<ModelUserInfo>
-  >;
+  fetchUser: () => Promise<any>;
+  setUser: React.Dispatch<React.SetStateAction<ModelUserInfo>>;
 }>({
   user: {
     email: '',
@@ -39,13 +37,28 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setLoading(true);
     return getUser()
       .then(setUser)
-      .catch(() => {
-        // redirectToLogin();
+      .catch((error) => {
+        // 如果是401错误，说明需要登录，但不在这里处理重定向
+        // 重定向逻辑已经在httpClient中处理了
+        console.log('User not authenticated:', error);
       })
       .finally(() => setLoading(false));
   };
   useEffect(() => {
-    fetchUser();
+    // 在登录相关页面不自动获取用户信息，避免401错误
+    if (typeof window !== 'undefined') {
+      const currentPath = window.location.pathname;
+      const isAuthPage =
+        currentPath.startsWith('/login') || currentPath.startsWith('/register');
+
+      if (!isAuthPage) {
+        fetchUser();
+      } else {
+        setLoading(false);
+      }
+    } else {
+      fetchUser();
+    }
   }, []);
   return (
     <AuthContext.Provider

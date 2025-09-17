@@ -10,6 +10,7 @@ import { useLocalStorageState } from 'ahooks';
 import Cookies from 'js-cookie';
 import { useContext, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useSearchParams } from 'next/navigation';
 import z from 'zod';
 
 const schema = z.object({
@@ -22,6 +23,9 @@ const Account = ({ isChecked }: { isChecked: boolean }) => {
     defaultValue: '',
   });
   const { user, fetchUser } = useContext(AuthContext);
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect');
+
   const {
     register,
     handleSubmit,
@@ -29,23 +33,32 @@ const Account = ({ isChecked }: { isChecked: boolean }) => {
   } = useForm({
     resolver: zodResolver(schema),
   });
+
   useEffect(() => {
-    if (user.email) {
-      window.location.href = '/';
+    if (user.email && user.uid) {
+      // 如果用户已登录，重定向到指定页面或首页
+      const targetUrl = redirectUrl || '/';
+      // 使用setTimeout避免在渲染过程中立即重定向
+      setTimeout(() => {
+        window.location.href = targetUrl;
+      }, 100);
     }
-  }, [user]);
+  }, [user.email, user.uid, redirectUrl]);
   const onSubmit = (data: z.infer<typeof schema>) => {
     const { password, email } = data;
     const ciphertext = aesCbcEncrypt(password?.trim());
     return postUserLogin({ email, password: ciphertext })
       .then(async (res) => {
         setToken(res);
-        fetchUser();
         Cookies.set('auth_token', res, {
           path: '/',
           expires: 7, // 7 天
           sameSite: 'Lax',
         });
+
+        // 登录成功后重定向
+        const targetUrl = redirectUrl || '/';
+        window.location.href = targetUrl;
       })
       .catch((e) => {
         Message.error(e || '登录失败');

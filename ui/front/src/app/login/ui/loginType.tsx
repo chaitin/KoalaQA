@@ -7,6 +7,7 @@ import { Card } from '@/components';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import Link from 'next/link';
 import { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Account from './account';
 
 const LoginType = () => {
@@ -14,6 +15,8 @@ const LoginType = () => {
     null
   );
   const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect');
 
   useEffect(() => {
     getUserLoginMethod()
@@ -37,15 +40,26 @@ const LoginType = () => {
 
       // 使用类型断言处理API响应
       const apiResponse = response as any;
+      let oauthUrl = '';
+      
       if (apiResponse && apiResponse.data) {
-        // 自动跳转到第三方登录页面
-        window.location.href = apiResponse.data;
+        oauthUrl = apiResponse.data;
       } else if (typeof response === 'string') {
-        // 如果直接返回字符串URL
-        window.location.href = response;
+        oauthUrl = response;
       } else {
         console.error('Failed to get third party login URL');
+        return;
       }
+
+      // 如果有重定向URL，将其添加到OAuth URL的state参数中
+      if (redirectUrl) {
+        const url = new URL(oauthUrl);
+        url.searchParams.set('state', encodeURIComponent(redirectUrl));
+        oauthUrl = url.toString();
+      }
+
+      // 自动跳转到第三方登录页面
+      window.location.href = oauthUrl;
     } catch (error) {
       console.error('Error getting third party login URL:', error);
     }
