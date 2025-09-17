@@ -1,6 +1,6 @@
 "use client";
 
-import { ModelUserRole } from "@/api";
+import { ModelUserRole, getUserLoginMethod } from "@/api";
 import { AppBar, Button, Stack, Typography } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -16,6 +16,7 @@ interface HeaderProps {
 const Header = ({ initialUser = null }: HeaderProps) => {
   const [token, setToken] = useLocalStorageState<string>("auth_token");
   const [user, setUser] = useState(initialUser);
+  const [registrationEnabled, setRegistrationEnabled] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -31,6 +32,21 @@ const Header = ({ initialUser = null }: HeaderProps) => {
 
   useEffect(() => {
     console.log("Build ID:", process.env.NEXT_PUBLIC_BUILD_ID);
+  }, []);
+
+  // 检查注册是否启用
+  useEffect(() => {
+    const checkRegistrationStatus = async () => {
+      try {
+        const response = await getUserLoginMethod();
+        setRegistrationEnabled(response?.enable_register ?? true);
+      } catch (error) {
+        console.error('Failed to check registration status:', error);
+        setRegistrationEnabled(false);
+      }
+    };
+
+    checkRegistrationStatus();
   }, []);
 
   // 如果初始用户为空但有token，可能需要重新获取用户信息
@@ -134,15 +150,17 @@ const Header = ({ initialUser = null }: HeaderProps) => {
             <LoggedInView user={user} />
           ) : (
             <>
-              <Button
-                variant="outlined"
-                sx={{ borderRadius: 1, height: 44, width: 122, fontSize: 14 }}
-                onClick={() => {
-                  window.open("/register", "_self");
-                }}
-              >
-                立即注册
-              </Button>
+              {registrationEnabled && (
+                <Button
+                  variant="outlined"
+                  sx={{ borderRadius: 1, height: 44, width: 122, fontSize: 14 }}
+                  onClick={() => {
+                    window.open("/register", "_self");
+                  }}
+                >
+                  立即注册
+                </Button>
+              )}
               <Button
                 variant="contained"
                 sx={{

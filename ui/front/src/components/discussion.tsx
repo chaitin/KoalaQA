@@ -140,7 +140,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
           {...register('title')}
           required
           variant='outlined'
-          label='讨论主题'
+          label='你遇到了什么问题？'
           fullWidth
           error={Boolean(errors.title)}
           helperText={errors.title?.message as string}
@@ -318,6 +318,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                           renderInput={(params) => (
                             <TextField
                               {...params}
+                              required
                               label={`${topic.name}`}
                               placeholder='请选择'
                             />
