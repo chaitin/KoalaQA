@@ -12,7 +12,7 @@ import (
 )
 
 type Claims struct {
-	model.UserInfo
+	model.UserCore
 	jwt.RegisteredClaims `json:"-"`
 }
 
@@ -31,10 +31,10 @@ func newGenerator(cfg config.Config) *Generator {
 // Gen 生成 jwt
 // pwd 当前用户是否使用密码登录
 // tfa 当前用户是否使用 tfa 登录
-func (g *Generator) Gen(ctx context.Context, userInfo model.UserInfo) (string, error) {
-	g.logger.WithContext(ctx).With("claims_info", userInfo).Debug("begin generate jwt")
+func (g *Generator) Gen(ctx context.Context, userCore model.UserCore) (string, error) {
+	g.logger.WithContext(ctx).With("claims_info", userCore).Debug("begin generate jwt")
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
-		userInfo,
+		userCore,
 		jwt.RegisteredClaims{
 			Issuer:    "chaitin-koala",
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(g.cfg.Expire) * time.Second)),
@@ -51,7 +51,7 @@ func (g *Generator) Gen(ctx context.Context, userInfo model.UserInfo) (string, e
 
 }
 
-func (g *Generator) Verify(token string) (*model.UserInfo, error) {
+func (g *Generator) Verify(token string) (*model.UserCore, error) {
 	var claims Claims
 	_, err := jwt.ParseWithClaims(token, &claims, func(t *jwt.Token) (interface{}, error) {
 		if t.Method.Alg() != jwt.SigningMethodHS256.Alg() {
@@ -64,5 +64,5 @@ func (g *Generator) Verify(token string) (*model.UserInfo, error) {
 		return nil, err
 	}
 
-	return &claims.UserInfo, nil
+	return &claims.UserCore, nil
 }

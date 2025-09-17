@@ -24,13 +24,17 @@ type User struct {
 	Key       string    `gorm:"column:key;type:text;uniqueIndex"`
 }
 
+type UserCore struct {
+	UID uint   `json:"uid"`
+	Key string `json:"key"`
+}
+
 type UserInfo struct {
-	UID      uint     `json:"uid"`
+	UserCore
 	Role     UserRole `json:"role"`
 	Email    string   `json:"email"`
 	Username string   `json:"username"`
 	Avatar   string   `json:"avatar"`
-	Key      string   `json:"key"`
 }
 
 func (ui *UserInfo) IsAdmin() bool {
