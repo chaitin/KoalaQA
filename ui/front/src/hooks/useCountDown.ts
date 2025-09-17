@@ -49,7 +49,7 @@ const useCountDown = (key: string) => {
     return () => {
       clearInterval(timerRef.current);
     };
-  }, []);
+  }, [countDown]);
 
   return [countDown, start, stop] as const;
 };

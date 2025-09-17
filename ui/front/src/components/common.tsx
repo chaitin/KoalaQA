@@ -1,6 +1,7 @@
 'use client';
 import { alpha, styled } from '@mui/material';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export const LinkText = styled(Link)(({ theme }) => ({
   color: theme.palette.primary.main,
@@ -37,9 +38,12 @@ export const LinkImage: React.FC<LinkImageProps> = ({ url, picture }) => {
       style={{ cursor: 'pointer', position: 'relative' }}
       target='_blank'
     >
-      <img
+      <Image
         src={picture}
         alt='广告图'
+        width={0}
+        height={0}
+        sizes="100vw"
         style={{ width: '100%', height: 'auto', borderRadius: '8px' }}
       />
       {/* <Box
