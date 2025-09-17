@@ -277,10 +277,15 @@ export class HttpClient<SecurityDataType = unknown> {
     const Authorization = await new Promise(async (resolve) => {
       if (typeof window === "undefined") {
         // SSR环境：从cookies中获取token
-        const { cookies } = await import("next/headers");
-        const cookieStore = await cookies();
-        const token = cookieStore.get("auth_token")?.value || null;
-        resolve(token);
+        try {
+          const { cookies } = await import("next/headers");
+          const cookieStore = await cookies();
+          const token = cookieStore.get("auth_token")?.value || null;
+          resolve(token);
+        } catch (error) {
+          console.warn("Failed to get cookies in SSR:", error);
+          resolve(null);
+        }
       } else {
         // 客户端环境：从localStorage获取token
         let token = "";

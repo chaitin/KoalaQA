@@ -12,6 +12,8 @@ import { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 import * as React from 'react';
 import 'react-markdown-editor-lite/lib/index.css';
+import { cookies } from 'next/headers';
+import { getUser } from '@/api';
 
 import Header from '../components/header';
 import Scroll from './scroll';
@@ -41,7 +43,26 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
+async function getUserData() {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('auth_token')?.value;
+    
+    if (!token) {
+      return null;
+    }
+
+    // 使用getUser API，httpClient会自动处理cookie转发
+    const userData = await getUser();
+    return userData || null;
+  } catch (error) {
+    console.error('Failed to fetch user data:', error);
+    return null;
+  }
+}
+
 export default async function RootLayout(props: { children: React.ReactNode }) {
+  const user = await getUserData();
 
   return (
     <html lang='zh-CN'>
@@ -70,7 +91,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
                 <AppRouterCacheProvider>
                   <ThemeProvider theme={theme}>
                     <CssBaseline />
-                    <Header />
+                    <Header initialUser={user} />
                     {props.children}
                     <Scroll />
                   </ThemeProvider>
