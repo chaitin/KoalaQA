@@ -2,10 +2,12 @@ package message
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/chaitin/koalaqa/model"
+	"github.com/chaitin/koalaqa/pkg/database"
 	"github.com/chaitin/koalaqa/repo"
 	"go.uber.org/fx"
 )
@@ -64,15 +66,13 @@ func (g *Generator) Discuss(ctx context.Context, msgType Type, dissID uint, user
 		return nil, err
 	}
 
+	discussURL := ""
 	var publicAddress model.PublicAddress
 	err = g.in.RepoSystem.GetValueByKey(ctx, &publicAddress, model.SystemKeyPublicAddress)
-	if err != nil {
+	if err != nil && !errors.Is(err, database.ErrRecordNotFound) {
 		return nil, err
-	}
-
-	discussURL, err := publicAddress.FullURL(discuss.UUID)
-	if err != nil {
-		return nil, err
+	} else if err == nil {
+		discussURL = publicAddress.FullURL(discuss.UUID)
 	}
 
 	body := DiscussBody{
