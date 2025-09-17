@@ -77,19 +77,25 @@ func authUser(ctx *context.Context, j *jwt.Generator, user *svc.User) (*model.Us
 	if token == "" {
 		return nil, errors.New("auth token is empty")
 	}
-	userInfo, err := j.Verify(token)
+	userCore, err := j.Verify(token)
 	if err != nil {
 		return nil, err
 	}
 
-	item, err := user.Detail(ctx, userInfo.UID)
+	item, err := user.Detail(ctx, userCore.UID)
 	if err != nil {
 		return nil, err
 	}
 
-	if item.Key != userInfo.Key {
+	if item.Key != userCore.Key {
 		return nil, errors.New("invalid key")
 	}
 
-	return userInfo, nil
+	return &model.UserInfo{
+		UserCore: *userCore,
+		Role:     item.Role,
+		Email:    item.Email,
+		Username: item.Email,
+		Avatar:   item.Avatar,
+	}, nil
 }

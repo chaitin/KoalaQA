@@ -39,6 +39,7 @@ type UserListItem struct {
 
 	Name      string          `json:"name"`
 	Role      model.UserRole  `json:"role"`
+	Avatar    string          `json:"avatar"`
 	Builtin   bool            `json:"builtin"`
 	Email     string          `json:"email"`
 	LastLogin model.Timestamp `json:"last_login"`
