@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path"
 	"strings"
 
 	"github.com/chaitin/koalaqa/model"
@@ -72,7 +73,7 @@ func (g *Generator) Discuss(ctx context.Context, msgType Type, dissID uint, user
 	if err != nil && !errors.Is(err, database.ErrRecordNotFound) {
 		return nil, err
 	} else if err == nil {
-		discussURL = publicAddress.FullURL(discuss.UUID)
+		discussURL = publicAddress.FullURL(path.Join("discuss", discuss.UUID))
 	}
 
 	body := DiscussBody{
