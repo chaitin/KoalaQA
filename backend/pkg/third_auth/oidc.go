@@ -53,7 +53,9 @@ func (o *oidc) Check(ctx context.Context) error {
 }
 
 func (o *oidc) AuthURL(ctx context.Context) (string, error) {
-	provider, err := oidcAuth.NewProvider(context.Background(), o.cfg.URL)
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, util.HTTPClient)
+
+	provider, err := oidcAuth.NewProvider(ctx, o.cfg.URL)
 	if err != nil {
 		return "", err
 	}
@@ -71,13 +73,15 @@ func (o *oidc) AuthURL(ctx context.Context) (string, error) {
 }
 
 func (o *oidc) User(ctx context.Context, code string, optFuncs ...userOptFunc) (*User, error) {
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, util.HTTPClient)
+
 	opt := getUserOpt(optFuncs...)
 
 	if opt.state == "" {
 		return nil, errors.New("empty state")
 	}
 
-	provider, err := oidcAuth.NewProvider(context.Background(), o.cfg.URL)
+	provider, err := oidcAuth.NewProvider(ctx, o.cfg.URL)
 	if err != nil {
 		return nil, err
 	}
