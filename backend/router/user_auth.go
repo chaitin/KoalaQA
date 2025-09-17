@@ -165,11 +165,11 @@ func (u *userAuth) Notify(ctx *context.Context) {
 		mt, message, err := conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err) {
-				logger.Info("receive websocket close error")
+				logger.Warn("receive unexpected close error")
 				return
 			}
 
-			logger.WithErr(err).Error("read ws message error")
+			logger.WithErr(err).Debug("read ws message error")
 			return
 		}
 

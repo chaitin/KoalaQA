@@ -96,7 +96,8 @@ func (l *LLM) chat(ctx context.Context, sMsg string, uMsg string, params map[str
 		return "", err
 	}
 	for _, msg := range msgs {
-		logger.With("role", msg.Role, "content", msg.Content).Debug("format message")
+		fmt.Println(msg.Role, msg.Content)
+		// logger.With("role", msg.Role, "content", msg.Content).Debug("format message")
 	}
 	logger.Debug("wait llm response")
 	res, err := cm.Generate(ctx, msgs)
