@@ -62,6 +62,10 @@ type responseMsg struct {
 }
 
 func (d *dingtalk) signQuery(q url.Values) url.Values {
+	if d.sign == "" {
+		return q
+	}
+
 	timestamp := time.Now().UnixMilli()
 
 	q.Set("timestamp", strconv.FormatInt(timestamp, 10))
@@ -105,6 +109,8 @@ func (d *dingtalk) Send(ctx context.Context, msg message.Message) error {
 	if err != nil {
 		return err
 	}
+
+	d.logger.WithContext(ctx).With("send_url", u.String()).Debug("new webhook request")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), bytes.NewReader(dataByes))
 	if err != nil {
