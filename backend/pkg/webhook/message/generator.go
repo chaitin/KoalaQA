@@ -9,6 +9,7 @@ import (
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/database"
+	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/repo"
 	"go.uber.org/fx"
 )
@@ -23,12 +24,14 @@ type generatorIn struct {
 }
 
 type Generator struct {
-	in generatorIn
+	in     generatorIn
+	logger *glog.Logger
 }
 
 func NewGenerator(in generatorIn) *Generator {
 	return &Generator{
-		in: in,
+		in:     in,
+		logger: glog.Module("webhook", "message", "generator"),
 	}
 }
 
@@ -82,6 +85,8 @@ func (g *Generator) Discuss(ctx context.Context, msgType Type, dissID uint, user
 		Username:   user.Name,
 		URL:        discussURL,
 	}
+
+	g.logger.WithContext(ctx).With("discuss_body", body).Debug("generate discuss message")
 
 	switch msgType {
 	case TypeDislikeBotComment:
