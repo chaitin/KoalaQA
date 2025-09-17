@@ -3,13 +3,15 @@ package router
 import (
 	"net/http"
 
+	"github.com/chaitin/koalaqa/pkg/config"
 	"github.com/chaitin/koalaqa/pkg/context"
 	"github.com/chaitin/koalaqa/server"
 	"github.com/chaitin/koalaqa/svc"
 )
 
 type user struct {
-	svcU *svc.User
+	expire int
+	svcU   *svc.User
 }
 
 // Register
@@ -116,7 +118,7 @@ func (u *user) LoginOIDCCallback(ctx *context.Context) {
 		return
 	}
 
-	ctx.SetCookie("auth_token", token, 60, "/", "", false, true)
+	ctx.SetCookie("auth_token", token, u.expire, "/", "", false, true)
 	ctx.Redirect(http.StatusFound, "/")
 }
 
@@ -129,8 +131,11 @@ func (u *user) Route(h server.Handler) {
 	g.GET("/login/third/callback/oidc", u.LoginOIDCCallback)
 }
 
-func newUser(u *svc.User) server.Router {
-	return &user{svcU: u}
+func newUser(cfg config.Config, u *svc.User) server.Router {
+	return &user{
+		expire: int(cfg.JWT.Expire),
+		svcU:   u,
+	}
 }
 
 func init() {
