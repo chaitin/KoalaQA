@@ -28,14 +28,14 @@ type PublicAddress struct {
 	Address string `json:"address" binding:"required,http_url"`
 }
 
-func (s PublicAddress) FullURL(p string) (string, error) {
+func (s PublicAddress) FullURL(p string) string {
 	u, err := util.ParseHTTP(s.Address)
 	if err != nil {
-		return "", err
+		return ""
 	}
 
 	u.Path = p
-	return u.String(), nil
+	return u.String()
 }
 
 type AuthType uint
