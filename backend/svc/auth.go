@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/chaitin/koalaqa/model"
+	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/third_auth"
-	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/repo"
 	"go.uber.org/fx"
 )
@@ -14,6 +14,7 @@ type Auth struct {
 	repoSys       *repo.System
 	svcPublicAddr *PublicAddress
 	authMgmt      *third_auth.Manager
+	logger        *glog.Logger
 }
 
 type AuthInfo struct {
@@ -75,31 +76,23 @@ func (l *Auth) updateAuthMgmt(ctx context.Context, auth model.Auth) error {
 		return err
 	}
 
-	if publicAddress.Address == "" {
-		return nil
-	}
-
-	u, err := util.ParseHTTP(publicAddress.Address)
-	if err != nil {
-		return err
-	}
-
 	for _, authInfo := range auth.AuthInfos {
-		if authInfo.Type == model.AuthTypePassword {
-			continue
-		}
+		callbackAddress := ""
 
 		switch authInfo.Type {
 		case model.AuthTypeOIDC:
-			u.Path = "/api/user/login/third/callback/oidc"
+			callbackAddress = publicAddress.FullURL("/api/user/login/third/callback/oidc")
+		default:
+			continue
 		}
 
 		err = l.authMgmt.Update(authInfo.Type, third_auth.Config{
 			Config:      authInfo.Config,
-			CallbackURL: u.String(),
+			CallbackURL: callbackAddress,
 		})
 		if err != nil {
-			return err
+			l.logger.WithContext(ctx).WithErr(err).With("config", authInfo.Config).Warn("update auth mgnt failed")
+			continue
 		}
 	}
 
@@ -127,6 +120,7 @@ func newAuth(lc fx.Lifecycle, sys *repo.System, authMgmt *third_auth.Manager, pu
 		repoSys:       sys,
 		svcPublicAddr: publicAddr,
 		authMgmt:      authMgmt,
+		logger:        glog.Module("svc", "auth"),
 	}
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
