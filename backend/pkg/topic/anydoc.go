@@ -5,7 +5,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/anydoc/platform"
 )
 
-var AnydocTaskExportTopic = newTopic("anydoc.persistence.doc.task.export", true)
+var AnydocTaskExportTopic = newTopic("anydoc.doc.task.export", false)
 
 type TaskStatus string
 
