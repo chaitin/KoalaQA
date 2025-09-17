@@ -75,6 +75,10 @@ func (l *Auth) updateAuthMgmt(ctx context.Context, auth model.Auth) error {
 		return err
 	}
 
+	if publicAddress.Address == "" {
+		return nil
+	}
+
 	u, err := util.ParseHTTP(publicAddress.Address)
 	if err != nil {
 		return err
