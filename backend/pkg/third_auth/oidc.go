@@ -23,6 +23,8 @@ type oidc struct {
 }
 
 func (o *oidc) Check(ctx context.Context) error {
+	ctx = context.WithValue(ctx, oauth2.HTTPClient, util.HTTPClient)
+
 	_, err := util.ParseHTTP(o.cfg.URL)
 	if err != nil {
 		return err
@@ -40,7 +42,7 @@ func (o *oidc) Check(ctx context.Context) error {
 		return errors.New("empty oidc client_secret")
 	}
 
-	provider, err := oidcAuth.NewProvider(context.Background(), o.cfg.URL)
+	provider, err := oidcAuth.NewProvider(ctx, o.cfg.URL)
 	if err != nil {
 		return err
 	}
