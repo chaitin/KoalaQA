@@ -18,26 +18,20 @@ type oidc struct {
 	cfg         model.AuthConfigOauth
 	callbackURL string
 
-	oauthCfg oauth2.Config
-
-	logger   *glog.Logger
-	provider *oidcAuth.Provider
-	cache    cache.Cache[struct{}]
+	logger *glog.Logger
+	cache  cache.Cache[struct{}]
 }
 
-func (o *oidc) setup() error {
+func (o *oidc) Check(ctx context.Context) error {
 	_, err := util.ParseHTTP(o.cfg.URL)
 	if err != nil {
 		return err
 	}
 
-	callbakU, err := util.ParseHTTP(o.callbackURL)
+	_, err = util.ParseHTTP(o.callbackURL)
 	if err != nil {
 		return err
 	}
-	callbakU.RawPath = "/api/user/login/oidc"
-	callbakU.Fragment = ""
-	callbakU.RawQuery = ""
 
 	if o.cfg.ClientID == "" {
 		return errors.New("empty oidc client_id")
@@ -46,31 +40,34 @@ func (o *oidc) setup() error {
 		return errors.New("empty oidc client_secret")
 	}
 
-	o.provider, err = oidcAuth.NewProvider(context.Background(), o.cfg.URL)
+	provider, err := oidcAuth.NewProvider(context.Background(), o.cfg.URL)
 	if err != nil {
 		return err
 	}
 
-	if o.provider.Endpoint().AuthURL == "" {
+	if provider.Endpoint().AuthURL == "" {
 		return errors.New("invalid oidc url")
-	}
-
-	o.oauthCfg = oauth2.Config{
-		ClientID:     o.cfg.ClientID,
-		ClientSecret: o.cfg.ClientSecret,
-		Endpoint:     o.provider.Endpoint(),
-		RedirectURL:  callbakU.String(),
-		Scopes:       []string{oidcAuth.ScopeOpenID, "profile", "email"},
 	}
 
 	return nil
 }
 
 func (o *oidc) AuthURL(ctx context.Context) (string, error) {
+	provider, err := oidcAuth.NewProvider(context.Background(), o.cfg.URL)
+	if err != nil {
+		return "", err
+	}
+
 	state := uuid.NewString()
 	o.cache.Set(state, struct{}{})
 
-	return o.oauthCfg.AuthCodeURL(state), nil
+	return (&oauth2.Config{
+		ClientID:     o.cfg.ClientID,
+		ClientSecret: o.cfg.ClientSecret,
+		Endpoint:     provider.Endpoint(),
+		RedirectURL:  o.callbackURL,
+		Scopes:       []string{oidcAuth.ScopeOpenID, "profile", "email"},
+	}).AuthCodeURL(state), nil
 }
 
 func (o *oidc) User(ctx context.Context, code string, optFuncs ...userOptFunc) (*User, error) {
@@ -80,12 +77,25 @@ func (o *oidc) User(ctx context.Context, code string, optFuncs ...userOptFunc) (
 		return nil, errors.New("empty state")
 	}
 
+	provider, err := oidcAuth.NewProvider(context.Background(), o.cfg.URL)
+	if err != nil {
+		return nil, err
+	}
+
+	oauthCfg := oauth2.Config{
+		ClientID:     o.cfg.ClientID,
+		ClientSecret: o.cfg.ClientSecret,
+		Endpoint:     provider.Endpoint(),
+		RedirectURL:  o.callbackURL,
+		Scopes:       []string{oidcAuth.ScopeOpenID, "profile", "email"},
+	}
+
 	_, ok := o.cache.Get(opt.state)
 	if !ok {
 		return nil, errors.New("invalid state")
 	}
 
-	token, err := o.oauthCfg.Exchange(ctx, code)
+	token, err := oauthCfg.Exchange(ctx, code)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +106,7 @@ func (o *oidc) User(ctx context.Context, code string, optFuncs ...userOptFunc) (
 	}
 
 	o.logger.WithContext(ctx).With("id_token", rawIDToken).Debug("oidc id_token")
-	idToken, err := o.provider.Verifier(&oidcAuth.Config{ClientID: o.cfg.ClientID}).Verify(ctx, rawIDToken)
+	idToken, err := provider.Verifier(&oidcAuth.Config{ClientID: o.cfg.ClientID}).Verify(ctx, rawIDToken)
 	if err != nil {
 		return nil, err
 	}
@@ -132,17 +142,13 @@ func (o *oidc) User(ctx context.Context, code string, optFuncs ...userOptFunc) (
 	}, nil
 }
 
-func newOIDC(cfg Config) (Author, error) {
+func newOIDC(cfg Config) Author {
 	o := oidc{
 		logger:      glog.Module("third_auth", "oidc"),
 		cfg:         cfg.Config.Oauth,
 		callbackURL: cfg.CallbackURL,
 		cache:       cache.New[struct{}](time.Minute * 10),
 	}
-	err := o.setup()
-	if err != nil {
-		return nil, err
-	}
 
-	return &o, nil
+	return &o
 }
