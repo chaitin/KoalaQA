@@ -12,6 +12,7 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import ThumbUpAltOutlinedIcon from '@mui/icons-material/ThumbUpAltOutlined';
 import ThumbDownAltOutlinedIcon from '@mui/icons-material/ThumbDownAltOutlined';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import Image from 'next/image';
 import {
   ModelCommentLikeState,
   ModelDiscussionComment,
@@ -131,10 +132,12 @@ const BaseDiscussCard = (props: {
       >
         <Stack direction='row' gap={1} alignItems='center' sx={{ flex: 1 }}>
           {data.user_avatar ?
-            <img
+            <Image
               src={data.user_avatar}
               alt='头像'
-              style={{ height: 28, width: 28, borderRadius: '50%' }}
+              width={28}
+              height={28}
+              style={{ borderRadius: '50%' }}
             />
           : <Avatar size={28} />}
 

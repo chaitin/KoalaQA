@@ -11,6 +11,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import { useRouter } from 'next/navigation';
 import { CommonContext } from '@/components/commonProvider';
 import { useContext, useMemo } from 'react';
+import Image from 'next/image';
 
 dayjs.extend(relativeTime);
 dayjs.locale('zh-cn');
@@ -98,9 +99,11 @@ const DiscussCard = ({
           </Stack>
           <Stack direction='row' alignItems='center' gap={1}>
             {it.user_avatar ?
-              <img
+              <Image
                 src={it.user_avatar}
-                style={{ width: 16, height: 16, borderRadius: '50%' }}
+                width={16}
+                height={16}
+                style={{ borderRadius: '50%' }}
                 alt='头像'
               />
             : <Avatar size={16} />}
@@ -327,9 +330,11 @@ export const DiscussCardMobile = ({
         </Stack>
         <Stack direction='row' alignItems='center' gap={1}>
           {it.user_avatar ?
-            <img
+            <Image
               src={it.user_avatar}
-              style={{ width: 16, height: 16, borderRadius: '50%' }}
+              width={16}
+              height={16}
+              style={{ borderRadius: '50%' }}
               alt='头像'
             />
           : <Avatar size={16} />}
