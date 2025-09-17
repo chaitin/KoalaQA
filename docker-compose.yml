@@ -89,7 +89,7 @@ services:
   
   anydoc:
     container_name: koala-qa-anydoc
-    image: swr.cn-east-3.myhuaweicloud.com/koala-qa/anydoc:v0.2.4
+    image: swr.cn-east-3.myhuaweicloud.com/koala-qa/anydoc:v0.3.0
     restart: always
     environment:
       - MQ_NATS_URL=koala-qa-mq:4222
@@ -99,7 +99,6 @@ services:
       - http_proxy=${HTTP_PROXY}
       - no_proxy=koala-qa-oss,koala-qa-mq,${NO_PROXY}
       - GLOG_GLOBAL_LEVEL=${GLOG_GLOBAL_LEVEL}
-      - MQ_NATS_STREAMS=anydoc:anydoc.persistence.>
       - OSS_MINIO_ACCESS_KEY=koala
       - OSS_MINIO_SECRET_KEY=${OSS_SECRET_KEY}
       - OSS_MINIO_ENDPOINT=koala-qa-oss:9000
