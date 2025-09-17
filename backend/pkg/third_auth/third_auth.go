@@ -48,6 +48,7 @@ func getUserOpt(funcs ...userOptFunc) userOpt {
 }
 
 type Author interface {
+	Check(ctx context.Context) error
 	AuthURL(ctx context.Context) (string, error)
 	User(ctx context.Context, code string, optFuncs ...userOptFunc) (*User, error)
 }

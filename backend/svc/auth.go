@@ -70,7 +70,7 @@ func (l *Auth) FrontendGet(ctx context.Context) (*AuthFrontendGetRes, error) {
 	return &res, nil
 }
 
-func (l *Auth) updateAuthMgmt(ctx context.Context, auth model.Auth, errRet bool) error {
+func (l *Auth) updateAuthMgmt(ctx context.Context, auth model.Auth, checkCfg bool) error {
 	publicAddress, err := l.svcPublicAddr.Get(ctx)
 	if err != nil {
 		return err
@@ -89,14 +89,10 @@ func (l *Auth) updateAuthMgmt(ctx context.Context, auth model.Auth, errRet bool)
 		err = l.authMgmt.Update(authInfo.Type, third_auth.Config{
 			Config:      authInfo.Config,
 			CallbackURL: callbackAddress,
-		})
+		}, checkCfg)
 		if err != nil {
 			l.logger.WithContext(ctx).WithErr(err).With("config", authInfo.Config).Warn("update auth mgnt failed")
-			if errRet {
-				return err
-			}
-
-			continue
+			return err
 		}
 	}
 
