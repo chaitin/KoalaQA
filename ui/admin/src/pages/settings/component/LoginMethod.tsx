@@ -33,14 +33,12 @@ import { z } from 'zod';
 enum AuthType {
   PASSWORD = 1, // 密码认证
   OIDC = 2, // OIDC认证
-  WECHAT = 3, // 企业微信（预留）
 }
 
 // 登录方式选项
 const AUTH_TYPE_OPTIONS = [
   { label: '密码认证', value: AuthType.PASSWORD },
   { label: 'OIDC', value: AuthType.OIDC },
-  { label: '企业微信', value: AuthType.WECHAT, disabled: true }, // 暂不支持
 ];
 
 // Zod 验证模式
@@ -51,12 +49,17 @@ const loginMethodSchema = z.object({
     .array(z.number())
     .min(1, '至少需要选择一个登录方式')
     .refine(types => types.length > 0, '至少需要选择一个登录方式'),
+  password_config: z
+    .object({
+      button_desc: z.string().optional(),
+    })
+    .optional(),
   oidc_config: z
     .object({
       url: z.string().url('请输入有效的URL地址').optional().or(z.literal('')),
       client_id: z.string().optional(),
       client_secret: z.string().optional(),
-      button_text: z.string().optional(),
+      button_desc: z.string().optional(),
     })
     .optional(),
 });
@@ -77,16 +80,20 @@ const LoginMethod: React.FC = () => {
       enable_register: true,
       public_access: true,
       auth_types: [AuthType.PASSWORD],
+      password_config: {
+        button_desc: '密码登录',
+      },
       oidc_config: {
         url: '',
         client_id: '',
         client_secret: '',
-        button_text: 'OIDC 登录',
+        button_desc: 'OIDC 登录',
       },
     },
   });
 
   const watchedAuthTypes = watch('auth_types');
+  const isPasswordSelected = watchedAuthTypes?.includes(AuthType.PASSWORD) ?? false;
   const isOidcSelected = watchedAuthTypes?.includes(AuthType.OIDC) ?? false;
 
   // 获取当前配置
@@ -95,31 +102,33 @@ const LoginMethod: React.FC = () => {
       if (res) {
         const { enable_register, public_access, auth_infos } = res;
 
-        // 从 auth_infos 中提取认证类型
+        // 从 auth_infos 中提取认证类型和配置
         const authTypes = auth_infos?.map((info: ModelAuthInfo) => info.type).filter(Boolean) ?? [
           AuthType.PASSWORD,
         ];
 
-        // 如果有 OIDC 配置，加载配置信息
+        // 获取密码认证配置
+        const passwordInfo = auth_infos?.find(
+          (info: ModelAuthInfo) => info.type === AuthType.PASSWORD
+        );
+        const passwordConfig = {
+          button_desc: passwordInfo?.button_desc ?? '密码登录',
+        };
+
+        // 获取 OIDC 配置
         const oidcInfo = auth_infos?.find((info: ModelAuthInfo) => info.type === AuthType.OIDC);
-        const oidcConfig = oidcInfo?.config?.oauth
-          ? {
-              url: oidcInfo.config.oauth.url ?? '',
-              client_id: oidcInfo.config.oauth.client_id ?? '',
-              client_secret: oidcInfo.config.oauth.client_secret ?? '',
-              button_text: 'OIDC 登录',
-            }
-          : {
-              url: '',
-              client_id: '',
-              client_secret: '',
-              button_text: 'OIDC 登录',
-            };
+        const oidcConfig = {
+          url: oidcInfo?.config?.oauth?.url ?? '',
+          client_id: oidcInfo?.config?.oauth?.client_id ?? '',
+          client_secret: oidcInfo?.config?.oauth?.client_secret ?? '',
+          button_desc: oidcInfo?.button_desc ?? 'OIDC 登录',
+        };
 
         reset({
           enable_register: enable_register ?? true,
           public_access: public_access ?? true,
           auth_types: authTypes as number[],
+          password_config: passwordConfig,
           oidc_config: oidcConfig,
         });
       }
@@ -147,8 +156,10 @@ const LoginMethod: React.FC = () => {
       const authInfos: ModelAuthInfo[] = formData.auth_types.map(type => {
         const authInfo: ModelAuthInfo = { type };
 
-        // 如果选择了OIDC，添加配置
-        if (type === AuthType.OIDC && formData.oidc_config) {
+        if (type === AuthType.PASSWORD) {
+          authInfo.button_desc = formData.password_config?.button_desc || '密码登录';
+        } else if (type === AuthType.OIDC && formData.oidc_config) {
+          authInfo.button_desc = formData.oidc_config.button_desc || 'OIDC 登录';
           const config: ModelAuthConfig = {
             oauth: {
               url: formData.oidc_config.url || '',
@@ -282,7 +293,7 @@ const LoginMethod: React.FC = () => {
                   )}
                 >
                   {AUTH_TYPE_OPTIONS.map(option => (
-                    <MenuItem key={option.value} value={option.value} disabled={option.disabled}>
+                    <MenuItem key={option.value} value={option.value}>
                       {option.label}
                     </MenuItem>
                   ))}
@@ -294,6 +305,56 @@ const LoginMethod: React.FC = () => {
               至少选择一个，默认密码认证
             </Typography>
           </FormControl>
+
+          {/* 密码认证配置 */}
+          {isPasswordSelected && (
+            <Box
+              sx={{
+                border: '2px solid #e8f5e8',
+                borderRadius: 2,
+                backgroundColor: '#fafbfc',
+                p: 3,
+                mt: 2,
+                position: 'relative',
+                '&::before': {
+                  content: '"密码认证配置"',
+                  position: 'absolute',
+                  top: -12,
+                  left: 16,
+                  backgroundColor: '#fafbfc',
+                  px: 1,
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  color: '#2e7d32',
+                },
+              }}
+            >
+              <Controller
+                name="password_config.button_desc"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="按钮文案"
+                    placeholder="密码登录"
+                    fullWidth
+                    size="small"
+                    helperText="登录页面显示的按钮文字"
+                    slotProps={{
+                      inputLabel: {
+                        shrink: !!field.value || undefined,
+                      },
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        backgroundColor: 'white',
+                      },
+                    }}
+                  />
+                )}
+              />
+            </Box>
+          )}
 
           {/* OIDC 配置 */}
           {isOidcSelected && (
@@ -399,7 +460,7 @@ const LoginMethod: React.FC = () => {
                 />
 
                 <Controller
-                  name="oidc_config.button_text"
+                  name="oidc_config.button_desc"
                   control={control}
                   render={({ field }) => (
                     <TextField
