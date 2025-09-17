@@ -485,6 +485,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
               name: '发表评论',
               content: comment,
             }}
+            onCancel={() => setMdEditShow(false)}
             onSave={async (content) => {
               await onCommentSubmit();
             }}

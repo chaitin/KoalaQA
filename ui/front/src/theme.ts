@@ -41,6 +41,13 @@ const theme = createTheme(
       background: {
         default: '#F1F2F8',
       },
+      action: {
+        active: 'rgba(33, 34, 45, 0.54)',
+        hover: 'rgba(33, 34, 45, 0.04)',
+        selected: 'rgba(33, 34, 45, 0.08)',
+        disabled: 'rgba(33, 34, 45, 0.26)',
+        disabledBackground: 'rgba(33, 34, 45, 0.12)',
+      },
     },
     // typography: {
     //   fontFamily: roboto.style.fontFamily,
