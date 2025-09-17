@@ -22,7 +22,7 @@ import {
 import { Card, MarkDown } from '@/components';
 import { AuthContext } from '@/components/authProvider';
 import { Avatar } from '@/components/discussion';
-import MdEditor from '@/components/mdEditor';
+import EditorWrap from '@/components/editor/edit/Wrap';
 import Modal from '@/components/modal';
 import {
   Box,
@@ -307,18 +307,17 @@ const DiscussCard = (props: any) => {
   const [comment, setComment] = useState('');
   const router = useRouter();
   const [mdEditShow, setMdEditShow] = useState(false);
-  const onSubmit = () => {
-    postDiscussionDiscIdComment(
+  const onSubmit = async () => {
+    await postDiscussionDiscIdComment(
       { discId: id },
       {
         content: comment,
         comment_id: props.data.id,
       }
-    ).then(() => {
-      setComment('');
-      setMdEditShow(false);
-      router.refresh();
-    });
+    );
+    setComment('');
+    setMdEditShow(false);
+    router.refresh();
   };
 
   return (
@@ -335,27 +334,19 @@ const DiscussCard = (props: any) => {
           mt: 3,
         }}
       >
-        <Box sx={{ display: !mdEditShow ? 'none' : 'block' }}>
-          <MdEditor value={comment} onChange={setComment} />
-          <Stack
-            direction='row'
-            gap={2}
-            justifyContent='flex-end'
-            sx={{ mt: 2 }}
-          >
-            <Button size='small' onClick={() => setMdEditShow(false)}>
-              取消
-            </Button>
-            <LoadingBtn
-              id={idKey}
-              variant='contained'
-              size='small'
-              disabled={!comment.trim()}
-              onClick={onSubmit}
-            >
-              发布
-            </LoadingBtn>
-          </Stack>
+        <Box sx={{ display: !mdEditShow ? 'none' : 'block', height: 400 }}>
+          <EditorWrap
+            detail={{
+              id: 'reply-editor',
+              name: '回复',
+              content: comment,
+            }}
+            onSave={async (content) => {
+              await onSubmit();
+            }}
+            onCancel={() => setMdEditShow(false)}
+            onContentChange={setComment}
+          />
         </Box>
         <OutlinedInput
           fullWidth
@@ -382,6 +373,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const [editCommentModalVisible, setEditCommentModalVisible] = useState(false);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
+  const [mdEditShow, setMdEditShow] = useState(false);
   const handleClick = (
     event: React.MouseEvent<HTMLButtonElement>,
     comment: SvcCommentUpdateReq,
@@ -393,16 +385,15 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const handleClose = () => {
     setAnchorEl(null);
   };
-  const onCommentSubmit = () => {
-    postDiscussionDiscIdComment(
+  const onCommentSubmit = async () => {
+    await postDiscussionDiscIdComment(
       { discId: id },
       {
         content: comment,
       }
-    ).then(() => {
-      setComment('');
-      router.refresh();
-    });
+    );
+    setComment('');
+    router.refresh();
   };
   const onSubmit = (comment: string) => {
     // @ts-ignore
@@ -485,19 +476,33 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
           onOpt={handleClick}
         />
       ))}
-      <Card>
-        <MdEditor style={{ flex: 1 }} value={comment} onChange={setComment} />
-        <Stack direction='row' justifyContent='flex-end' sx={{ mt: 2 }}>
-          <LoadingBtn
-            id='s-captcha-button'
-            variant='contained'
-            size='small'
-            disabled={!comment.trim()}
-            onClick={onCommentSubmit}
-          >
-            发布
-          </LoadingBtn>
-        </Stack>
+
+      <Card sx={{ height: 500 }}>
+        <Box sx={{ display: mdEditShow ? 'block' : 'none' }}>
+          <EditorWrap
+            detail={{
+              id: 'main-comment-editor',
+              name: '发表评论',
+              content: comment,
+            }}
+            onSave={async (content) => {
+              await onCommentSubmit();
+            }}
+            onContentChange={setComment}
+          />
+        </Box>
+        <OutlinedInput
+          fullWidth
+          size='small'
+          sx={{
+            display: mdEditShow ? 'none' : 'block',
+            minHeight: '100%',
+          }}
+          placeholder='发表评论'
+          onFocus={() => {
+            setMdEditShow(true);
+          }}
+        />
       </Card>
     </Stack>
   );

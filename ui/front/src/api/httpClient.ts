@@ -180,17 +180,20 @@ export class HttpClient<SecurityDataType = unknown> {
           if (typeof window !== "undefined") {
             // 检查当前是否已经在登录相关页面，避免死循环
             const currentPath = window.location.pathname;
-            const isAuthPage = currentPath.startsWith('/login') || 
-                              currentPath.startsWith('/register') 
-            
+            const isAuthPage = currentPath.startsWith('/login') ||
+              currentPath.startsWith('/register')
             if (!isAuthPage) {
+              console.log(error.response)
               // 清除本地存储的认证信息
               localStorage.removeItem("auth_token");
-              
+
+              // 清除cookie中的认证信息
+              document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax';
+
               // 获取当前页面路径作为重定向参数
               const fullPath = window.location.pathname + window.location.search;
               const loginUrl = `/login?redirect=${encodeURIComponent(fullPath)}`;
-              
+
               // 重定向到登录页
               window.location.href = loginUrl;
             }
