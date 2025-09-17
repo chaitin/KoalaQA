@@ -29,10 +29,6 @@ func (l *Auth) Get(ctx context.Context) (*model.Auth, error) {
 		return nil, err
 	}
 
-	for i := range data.AuthInfos {
-		data.AuthInfos[i].Config.Oauth.ClientSecret = ""
-	}
-
 	return &data, nil
 }
 
