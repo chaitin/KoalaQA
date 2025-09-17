@@ -33,7 +33,10 @@ func (a *auth) Intercept(ctx *context.Context) {
 		}
 
 		ctx.SetUser(model.UserInfo{
-			UID:      user.ID,
+			UserCore: model.UserCore{
+				UID: user.ID,
+				Key: user.Key,
+			},
 			Username: user.Name,
 			Avatar:   user.Avatar,
 			Email:    user.Email,
