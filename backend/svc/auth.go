@@ -44,8 +44,7 @@ type AuthFrontendGetRes struct {
 }
 
 func (l *Auth) FrontendGet(ctx context.Context) (*AuthFrontendGetRes, error) {
-	var data model.Auth
-	err := l.repoSys.GetValueByKey(ctx, &data, model.SystemKeyAuth)
+	data, err := l.Get(ctx)
 	if err != nil {
 		return nil, err
 	}
