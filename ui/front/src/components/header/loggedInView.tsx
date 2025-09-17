@@ -50,11 +50,12 @@ type MessageNotifyInfo = {
 };
 export interface LoggedInProps {
   user: any | null;
-  verified: boolean;
+  verified?: boolean;
 }
 
-const LoggedInView: React.FC = () => {
-  const { user } = useContext(AuthContext);
+const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
+  const { user: contextUser } = useContext(AuthContext);
+  const user = propUser || contextUser;
   const [notifications, setNotifications] = useState<MessageNotifyInfo[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const router = useRouter();

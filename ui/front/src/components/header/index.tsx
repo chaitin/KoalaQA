@@ -1,56 +1,23 @@
 "use client";
 
-import { AuthContext } from "@/components/authProvider";
-import { CommonContext } from "@/components/commonProvider";
-import { ALL_TOOLKIT_LIST, TOOLKIT_LIST } from "@/constant/toolkit";
+import { ModelUserRole } from "@/api";
 import { AppBar, Button, Stack, Typography } from "@mui/material";
-import { useDebounceFn, useLocalStorageState } from "ahooks";
-
-import Cookies from "js-cookie";
-import { usePathname, useRouter } from "next/navigation";
-import { useContext, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import LoggedInView from "./loggedInView";
 import Link from "next/link";
-import { ModelUserRole } from "@/api";
+import Cookies from "js-cookie";
+import { useLocalStorageState } from "ahooks";
 
-const Header = () => {
+interface HeaderProps {
+  initialUser?: any | null;
+}
+
+const Header = ({ initialUser = null }: HeaderProps) => {
   const [token, setToken] = useLocalStorageState<string>("auth_token");
-  const [afterKeyword, setAfterKeyword] = useState("");
-  const [toolList, setToolList] = useState<any[]>(TOOLKIT_LIST);
-  const [keyword, setKeyword] = useState("");
-
-  const { user } = useContext(AuthContext);
+  const [user, setUser] = useState(initialUser);
   const router = useRouter();
 
-  const { run: runSearch } = useDebounceFn(
-    (k: string) => {
-      handleSearch(k.trim());
-    },
-    { wait: 500 }
-  );
-
-  const handleSearch = (k: string) => {
-    if (k === "") {
-      setToolList(TOOLKIT_LIST);
-      setAfterKeyword(k);
-      return;
-    }
-    const toolList = ALL_TOOLKIT_LIST.reduce((prev, cur) => {
-      const tools = cur.tools.filter((item) =>
-        item.name.toUpperCase().includes(k.toUpperCase())
-      );
-      if (tools.length) {
-        prev.push({
-          name: cur.name,
-          tools,
-        });
-      }
-      return prev;
-    }, [] as any[]);
-
-    setToolList(toolList);
-    setAfterKeyword(k);
-  };
   useEffect(() => {
     if (token) {
       Cookies.set("auth_token", token, {
@@ -61,12 +28,20 @@ const Header = () => {
       });
     }
   }, [token]);
-  useEffect(() => {
-    runSearch(keyword);
-  }, [keyword]);
+
   useEffect(() => {
     console.log("Build ID:", process.env.NEXT_PUBLIC_BUILD_ID);
   }, []);
+
+  // 如果初始用户为空但有token，可能需要重新获取用户信息
+  useEffect(() => {
+    if (!initialUser && token) {
+      // 这里可以添加客户端获取用户信息的逻辑
+      // 或者触发页面刷新以重新获取服务端数据
+    }
+    setUser(initialUser);
+  }, [initialUser, token]);
+
   return (
     <AppBar
       position="fixed"
@@ -76,7 +51,6 @@ const Header = () => {
         zIndex: 100,
         boxShadow:
           "0px 2px 6px 0px rgba(0,0,0,0.1), 0px 2px 6px 0px rgba(218,220,224,0.5)",
-        // ...headerStyle,
       }}
     >
       <Stack
@@ -140,8 +114,8 @@ const Header = () => {
           gap={3}
           sx={{ position: "absolute", top: 0, bottom: 0, right: 40 }}
         >
-          {user.role == ModelUserRole.UserRoleAdmin && (
-            <Link href={window.location.origin + "/admin/ai"}>
+          {user?.role == ModelUserRole.UserRoleAdmin && (
+            <Link href="/admin/ai">
               <Button
                 variant="contained"
                 sx={{
@@ -156,8 +130,8 @@ const Header = () => {
               </Button>
             </Link>
           )}
-          {user.uid ? (
-            <LoggedInView />
+          {user?.uid ? (
+            <LoggedInView user={user} />
           ) : (
             <>
               <Button
