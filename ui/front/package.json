@@ -14,6 +14,7 @@
   "dependencies": {
     "@ant-design/nextjs-registry": "^1.0.0",
     "@antv/g2": "^5.2.1",
+    "@ctzhian/tiptap": "^1.2.0",
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
@@ -28,7 +29,7 @@
     "axios": "^1.8.4",
     "codemirror": "^5.65.17",
     "crypto-js": "^4.2.0",
-    "ct-mui": "2.0.0",
+    "ct-mui": "1.0.1-beta.11",
     "cvss": "^1.0.5",
     "dayjs": "^1.11.11",
     "html-to-image": "^1.11.11",

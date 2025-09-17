@@ -43,7 +43,7 @@ const DiscussCard = ({
   return (
     <Card
       key={it.id}
-      href={`/discusss/${it.id}`}
+      href={`/discuss/${it.id}`}
       sx={{
         boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
         cursor: 'auto',
@@ -72,7 +72,7 @@ const DiscussCard = ({
         >
           <Title
             className='title text-ellipsis'
-            href={`/discusss/${it.uuid}`}
+            href={`/discuss/${it.uuid}`}
             target='_blank'
           >
             <MatchedString
@@ -186,7 +186,7 @@ const DiscussCard = ({
                 },
               }}
               onClick={() => {
-                router.push(`/discusss/${it.uuid}`);
+                router.push(`/discuss/${it.uuid}`);
               }}
             >
               <ThumbUpAltOutlinedIcon
@@ -223,7 +223,7 @@ const DiscussCard = ({
                 // },
               }}
               onClick={() => {
-                router.push(`/discusss/${it.uuid}`);
+                router.push(`/discuss/${it.uuid}`);
               }}
             >
               <ChatIcon
@@ -284,7 +284,7 @@ export const DiscussCardMobile = ({
         width: '100%',
       }}
       onClick={() => {
-        router.push(`/discusss/${it.id}`);
+        router.push(`/discuss/${it.id}`);
       }}
     >
       <Stack
@@ -297,7 +297,7 @@ export const DiscussCardMobile = ({
       >
         <Title
           className='title multiline-ellipsis'
-          href={`/discusss/${it.id}`}
+          href={`/discuss/${it.id}`}
           target='_blank'
           sx={{ width: '100%', whiteSpace: 'wrap' }}
         >
