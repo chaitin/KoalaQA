@@ -36,6 +36,8 @@ func (u *userAuth) Logout(ctx *context.Context) {
 		return
 	}
 
+	ctx.SetCookie("auth_token", "", -1, "/", "", false, true)
+
 	ctx.Success(nil)
 }
 
