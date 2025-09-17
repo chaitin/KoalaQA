@@ -174,6 +174,30 @@ export class HttpClient<SecurityDataType = unknown> {
           clearCsrfTokenCache();
         }
 
+        // 处理401未授权错误 - 重定向到登录页
+        if (error.response?.status === 401) {
+          // 只在客户端环境下进行重定向
+          if (typeof window !== "undefined") {
+            // 检查当前是否已经在登录相关页面，避免死循环
+            const currentPath = window.location.pathname;
+            const isAuthPage = currentPath.startsWith('/login') || 
+                              currentPath.startsWith('/register') 
+            
+            if (!isAuthPage) {
+              // 清除本地存储的认证信息
+              localStorage.removeItem("auth_token");
+              
+              // 获取当前页面路径作为重定向参数
+              const fullPath = window.location.pathname + window.location.search;
+              const loginUrl = `/login?redirect=${encodeURIComponent(fullPath)}`;
+              
+              // 重定向到登录页
+              window.location.href = loginUrl;
+            }
+            return Promise.reject(error.response);
+          }
+        }
+
         // 检查请求路径，如果是 api/user 则不展示报错信息
         const requestUrl = error.config?.url || '';
         const shouldShowError = requestUrl !== '/user'

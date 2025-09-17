@@ -135,7 +135,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
       // 更新UI
       setUnreadCount((c) => Math.max(0, c - 1));
       setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
-      router.push(`/discusss/${notification.discuss_uuid}`);
+      router.push(`/discuss/${notification.discuss_uuid}`);
     }
   };
 

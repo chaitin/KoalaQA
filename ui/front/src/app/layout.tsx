@@ -12,6 +12,7 @@ import { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 import * as React from 'react';
 import 'react-markdown-editor-lite/lib/index.css';
+import '@ctzhian/tiptap/dist/index.css';
 import { cookies } from 'next/headers';
 import { getUser } from '@/api';
 
