@@ -26,18 +26,23 @@ func (m *Manager) updateAuthor(t model.AuthType, author Author) {
 	m.lock.Unlock()
 }
 
-func (m *Manager) Update(t model.AuthType, cfg Config) error {
+func (m *Manager) Update(t model.AuthType, cfg Config, checkCfg bool) error {
+	var author Author
 	switch t {
 	case model.AuthTypeOIDC:
-		author, err := newOIDC(cfg)
-		if err != nil {
-			return err
-		}
-
-		m.updateAuthor(t, author)
+		author = newOIDC(cfg)
 	default:
 		return errors.ErrUnsupported
 	}
+
+	if checkCfg {
+		err := author.Check(context.Background())
+		if err != nil {
+			return err
+		}
+	}
+
+	m.updateAuthor(t, author)
 
 	return nil
 }
