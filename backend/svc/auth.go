@@ -70,7 +70,7 @@ func (l *Auth) FrontendGet(ctx context.Context) (*AuthFrontendGetRes, error) {
 	return &res, nil
 }
 
-func (l *Auth) updateAuthMgmt(ctx context.Context, auth model.Auth) error {
+func (l *Auth) updateAuthMgmt(ctx context.Context, auth model.Auth, errRet bool) error {
 	publicAddress, err := l.svcPublicAddr.Get(ctx)
 	if err != nil {
 		return err
@@ -92,6 +92,10 @@ func (l *Auth) updateAuthMgmt(ctx context.Context, auth model.Auth) error {
 		})
 		if err != nil {
 			l.logger.WithContext(ctx).WithErr(err).With("config", authInfo.Config).Warn("update auth mgnt failed")
+			if errRet {
+				return err
+			}
+
 			continue
 		}
 	}
@@ -100,9 +104,9 @@ func (l *Auth) updateAuthMgmt(ctx context.Context, auth model.Auth) error {
 }
 
 func (l *Auth) Update(ctx context.Context, req model.Auth) error {
-	err := l.updateAuthMgmt(ctx, req)
+	err := l.updateAuthMgmt(ctx, req, true)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	err = l.repoSys.Create(ctx, &model.System[any]{
@@ -130,7 +134,7 @@ func newAuth(lc fx.Lifecycle, sys *repo.System, authMgmt *third_auth.Manager, pu
 				return err
 			}
 
-			return auth.updateAuthMgmt(ctx, dbAuth)
+			return auth.updateAuthMgmt(ctx, dbAuth, false)
 		},
 	})
 	return auth
