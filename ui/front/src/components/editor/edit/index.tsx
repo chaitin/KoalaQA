@@ -3,7 +3,6 @@
 import { Box, CircularProgress, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { NodeDetail } from '..';
-import LoadingEditorWrap from './Loading';
 import EditorWrap from './Wrap';
 
 interface EditProps {
@@ -14,12 +13,12 @@ interface EditProps {
   onSave?: (content: string, nodeId: string, kbId: string) => Promise<void>;
 }
 
-const Edit = ({ 
-  nodeId, 
-  kbId, 
-  onNodeDetailChange, 
+const Edit = ({
+  nodeId,
+  kbId,
+  onNodeDetailChange,
   onGetNodeDetail,
-  onSave
+  onSave,
 }: EditProps) => {
   const [loading, setLoading] = useState(false);
   const [detail, setDetail] = useState<NodeDetail | null>(null);
@@ -27,15 +26,15 @@ const Edit = ({
 
   const getDetail = async () => {
     if (!nodeId || !kbId || !onGetNodeDetail) return;
-    
+
     setLoading(true);
     setError('');
-    
+
     try {
       const res = await onGetNodeDetail(nodeId, kbId);
       setDetail(res);
       onNodeDetailChange?.(res);
-      
+
       // 滚动到顶部
       setTimeout(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -65,11 +64,11 @@ const Edit = ({
           p: 4,
         }}
       >
-        <Stack alignItems="center" spacing={2}>
-          <Typography variant="h6" color="error">
+        <Stack alignItems='center' spacing={2}>
+          <Typography variant='h6' color='error'>
             加载失败
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant='body2' color='text.secondary'>
             {error}
           </Typography>
         </Stack>
@@ -88,7 +87,7 @@ const Edit = ({
           p: 4,
         }}
       >
-        <Typography variant="body1" color="text.secondary">
+        <Typography variant='body1' color='text.secondary'>
           请选择要编辑的文档
         </Typography>
       </Box>
@@ -127,16 +126,21 @@ const Edit = ({
         },
       }}
     >
-      {loading ? (
-        <LoadingEditorWrap />
-      ) : (
-        detail && <EditorWrap 
-          detail={detail} 
-          onSave={onSave ? async (content: string) => {
-            if (nodeId && kbId) {
-              await onSave(content, nodeId, kbId);
-            }
-          } : undefined}
+      {!loading && detail && (
+        <EditorWrap
+          detail={detail}
+          onCancel={() => {
+            setDetail(null);
+          }}
+          onSave={
+            onSave ?
+              async (content: string) => {
+                if (nodeId && kbId) {
+                  await onSave(content, nodeId, kbId);
+                }
+              }
+            : undefined
+          }
         />
       )}
     </Box>

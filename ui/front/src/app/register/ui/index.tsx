@@ -1,12 +1,12 @@
 'use client';
-import { postUserRegister } from '@/api';
+import { getUserLoginMethod, postUserRegister } from '@/api';
 import { Message } from '@/components';
 import { aesCbcEncrypt } from '@/utils/aes';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Box, Button, Stack, TextField, Typography } from '@mui/material';
+import { Box, Button, Stack, TextField, Typography, CircularProgress } from '@mui/material';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import z from 'zod';
 
@@ -18,6 +18,9 @@ const schema = z.object({
 });
 
 const Register = () => {
+  const [loading, setLoading] = useState(true);
+  const [registrationEnabled, setRegistrationEnabled] = useState(false);
+  
   const {
     register,
     handleSubmit,
@@ -25,6 +28,34 @@ const Register = () => {
   } = useForm({
     resolver: zodResolver(schema),
   });
+
+  useEffect(() => {
+    const checkRegistrationStatus = async () => {
+      try {
+        const response = await getUserLoginMethod();
+        const enabled = response?.enable_register ?? false;
+        setRegistrationEnabled(enabled);
+        
+        if (!enabled) {
+          // 如果注册被禁用，显示404页面
+          setTimeout(() => {
+            window.location.replace('/register/not-found');
+          }, 100);
+        }
+      } catch (error) {
+        console.error('Failed to check registration status:', error);
+        setRegistrationEnabled(false);
+        setTimeout(() => {
+          window.location.replace('/register/not-found');
+        }, 100);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkRegistrationStatus();
+  }, []);
+
   const handleRegister = (data: z.infer<typeof schema>, err: any) => {
     if (data.password !== data.re_password) {
       Message.error('两次密码不一致');
@@ -37,6 +68,25 @@ const Register = () => {
       redirect('/login');
     });
   };
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: 200,
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!registrationEnabled) {
+    return null; // 将被重定向到not-found页面
+  }
   return (
     <>
       <Typography

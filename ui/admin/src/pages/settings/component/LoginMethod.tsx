@@ -15,6 +15,8 @@ import {
   FormControl,
   FormControlLabel,
   FormHelperText,
+  IconButton,
+  InputAdornment,
   InputLabel,
   MenuItem,
   OutlinedInput,
@@ -24,8 +26,9 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useRequest } from 'ahooks';
-import React from 'react';
+import React, { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -67,6 +70,8 @@ const loginMethodSchema = z.object({
 type LoginMethodFormData = z.infer<typeof loginMethodSchema>;
 
 const LoginMethod: React.FC = () => {
+  const [showClientSecret, setShowClientSecret] = useState(false);
+
   const {
     control,
     handleSubmit,
@@ -443,11 +448,26 @@ const LoginMethod: React.FC = () => {
                       placeholder="your-client-secret"
                       required
                       fullWidth
-                      type="password"
+                      type={showClientSecret ? 'text' : 'password'}
                       size="small"
                       slotProps={{
                         inputLabel: {
                           shrink: !!field.value || undefined,
+                        },
+                        input: {
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                aria-label="toggle client secret visibility"
+                                onClick={() => setShowClientSecret(!showClientSecret)}
+                                onMouseDown={event => event.preventDefault()}
+                                edge="end"
+                                size="small"
+                              >
+                                {showClientSecret ? <VisibilityOff /> : <Visibility />}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
                         },
                       }}
                       sx={{
