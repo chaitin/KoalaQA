@@ -329,13 +329,9 @@ func (u *User) Login(ctx context.Context, req UserLoginReq) (string, error) {
 		return "", err
 	}
 
-	token, err := u.jwt.Gen(ctx, model.UserInfo{
-		UID:      user.ID,
-		Role:     user.Role,
-		Email:    user.Email,
-		Username: user.Name,
-		Avatar:   user.Avatar,
-		Key:      user.Key,
+	token, err := u.jwt.Gen(ctx, model.UserCore{
+		UID: user.ID,
+		Key: user.Key,
 	})
 	if err != nil {
 		return "", err
@@ -401,13 +397,9 @@ func (u *User) LoginOIDCCallback(ctx context.Context, req LoginOIDCCallbackReq) 
 		return "", err
 	}
 
-	return u.jwt.Gen(ctx, model.UserInfo{
-		UID:      dbUser.ID,
-		Role:     dbUser.Role,
-		Email:    dbUser.Email,
-		Username: dbUser.Name,
-		Avatar:   dbUser.Avatar,
-		Key:      dbUser.Key,
+	return u.jwt.Gen(ctx, model.UserCore{
+		UID: dbUser.ID,
+		Key: dbUser.Key,
 	})
 }
 
