@@ -26,17 +26,9 @@ func (u *User) HashUint() uint64 {
 	return binary.BigEndian.Uint64(util.MD5(fmt.Sprintf("%s|%d", u.ThirdID, u.Type)))
 }
 
-type userOpt struct {
-	state string
-}
+type userOpt struct{}
 
 type userOptFunc func(o *userOpt)
-
-func UserWithState(state string) userOptFunc {
-	return func(o *userOpt) {
-		o.state = state
-	}
-}
 
 func getUserOpt(funcs ...userOptFunc) userOpt {
 	var o userOpt
@@ -49,6 +41,6 @@ func getUserOpt(funcs ...userOptFunc) userOpt {
 
 type Author interface {
 	Check(ctx context.Context) error
-	AuthURL(ctx context.Context) (string, error)
+	AuthURL(ctx context.Context, state string) (string, error)
 	User(ctx context.Context, code string, optFuncs ...userOptFunc) (*User, error)
 }

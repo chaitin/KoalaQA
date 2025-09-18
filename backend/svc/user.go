@@ -359,7 +359,7 @@ type LoginThirdURLReq struct {
 	Type model.AuthType `form:"type" binding:"required"`
 }
 
-func (u *User) LoginThirdURL(ctx context.Context, req LoginThirdURLReq) (string, error) {
+func (u *User) LoginThirdURL(ctx context.Context, state string, req LoginThirdURLReq) (string, error) {
 	ok, err := u.canAuth(ctx, req.Type)
 	if err != nil {
 		return "", err
@@ -369,7 +369,7 @@ func (u *User) LoginThirdURL(ctx context.Context, req LoginThirdURLReq) (string,
 		return "", errors.New("third login disabled")
 	}
 
-	return u.authMgmt.AuthURL(ctx, req.Type)
+	return u.authMgmt.AuthURL(ctx, req.Type, state)
 }
 
 type LoginOIDCCallbackReq struct {
@@ -387,7 +387,7 @@ func (u *User) LoginOIDCCallback(ctx context.Context, req LoginOIDCCallbackReq) 
 		return "", errors.New("oidc login disabled")
 	}
 
-	user, err := u.authMgmt.User(ctx, model.AuthTypeOIDC, req.Code, third_auth.UserWithState(req.State))
+	user, err := u.authMgmt.User(ctx, model.AuthTypeOIDC, req.Code)
 	if err != nil {
 		return "", err
 	}
