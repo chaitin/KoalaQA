@@ -98,7 +98,7 @@ func authUser(ctx *context.Context, j *jwt.Generator, user *svc.User) (*model.Us
 		UserCore: *userCore,
 		Role:     item.Role,
 		Email:    item.Email,
-		Username: item.Email,
+		Username: item.Name,
 		Avatar:   item.Avatar,
 	}, nil
 }
