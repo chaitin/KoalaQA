@@ -3,7 +3,8 @@ import { ModelDiscussionDetail } from '@/api';
 import { postDiscussion, putDiscussionDiscId } from '@/api/Discussion';
 import defaultAvatar from '@/asset/img/default_avatar.png';
 import { Icon } from '@/components';
-import MdEditor from '@/components/mdEditor';
+import EditorWrap from '@/components/editor/edit/Wrap';
+import { NodeDetail } from '@/components/editor';
 import Modal from '@/components/modal';
 import { BBS_TAG_COLOR_ICON } from '@/constant/discussion';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,6 +17,7 @@ import {
   Stack,
   styled,
   TextField,
+  Typography,
 } from '@mui/material';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
@@ -92,16 +94,19 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
   });
   const [loading, setLoading] = useState(false);
   const { groups } = useContext(CommonContext);
-  const router = useRouter()
+  const router = useRouter();
   const onSubmit = handleSubmit(async (params) => {
     setLoading(true);
     try {
       if (status === 'edit') {
         await putDiscussionDiscId({ discId: id + '' }, params).then(onOk);
+        // 编辑成功后刷新当前页面
+        router.refresh();
       } else {
         await postDiscussion(params).then(onOk);
+        // 创建成功后跳转到首页
+        router.replace('/');
       }
-      router.replace('/')
     } finally {
       setLoading(false);
     }
@@ -334,19 +339,62 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
           <FormHelperText>{errors.group_ids?.message as string}</FormHelperText>
         </FormControl>
         <FormControl error={!!errors.content?.message}>
-          <Controller
-            rules={{ required: '请输入内容' }}
-            name='content'
-            control={control}
-            render={({ field }) => (
-              <MdEditor
-                value={field.value}
-                onChange={(value) => {
-                  field.onChange(value);
+          <Box
+            sx={{
+              border: '1px solid #e0e0e0',
+              borderRadius: 2,
+              overflow: 'hidden',
+              backgroundColor: '#fff',
+            }}
+          >
+            {/* 编辑器标题 */}
+            <Box
+              sx={{
+                px: 2,
+                py: 1.5,
+                backgroundColor: '#f8f9fa',
+                borderBottom: '1px solid #e0e0e0',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+              }}
+            >
+              <Icon type='icon-edit' sx={{ fontSize: 16, color: '#666' }} />
+              <Typography
+                variant='subtitle2'
+                sx={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: '#333',
                 }}
+              >
+                编辑内容
+              </Typography>
+            </Box>
+
+            {/* 编辑器内容 */}
+            <Box sx={{ p: 0 }}>
+              <Controller
+                rules={{ required: '请输入内容' }}
+                name='content'
+                control={control}
+                render={({ field }) => (
+                  <EditorWrap
+                    detail={{ content: field.value || '' }}
+                    onCancel={() => {
+                      // 在讨论编辑器中，取消操作不需要特殊处理
+                    }}
+                    onSave={(content) => {
+                      field.onChange(content);
+                    }}
+                    onContentChange={(content) => {
+                      field.onChange(content);
+                    }}
+                  />
+                )}
               />
-            )}
-          />
+            </Box>
+          </Box>
           <FormHelperText id='component-error-text'>
             {errors.content?.message as string}
           </FormHelperText>

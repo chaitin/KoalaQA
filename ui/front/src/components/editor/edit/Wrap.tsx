@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, Button, GlobalStyles } from '@mui/material';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { NodeDetail } from '..';
 import SaveIcon from '@mui/icons-material/Save';
 import { Editor, useTiptap } from '@ctzhian/tiptap';
@@ -35,11 +35,16 @@ interface WrapProps {
   onContentChange?: (content: string) => void;
 }
 
-const EditorWrap = ({ detail, onSave, onContentChange, onCancel }: WrapProps) => {
+const EditorWrap = ({
+  detail,
+  onSave,
+  onContentChange,
+  onCancel,
+}: WrapProps) => {
   const [isSaving, setIsSaving] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isFocused, setIsFocused] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
   const [originalContent, setOriginalContent] = useState(detail?.content || '');
 
   // 确保只在客户端渲染编辑器
@@ -57,11 +62,6 @@ const EditorWrap = ({ detail, onSave, onContentChange, onCancel }: WrapProps) =>
     [onContentChange]
   );
 
-  const handleStartEdit = useCallback(() => {
-    console.log('开始编辑模式');
-    setIsEditing(true);
-    setOriginalContent(detail?.content || '');
-  }, [detail?.content]);
   const handleUpload = async (
     file: File,
     onProgress?: (progress: { progress: number }) => void
@@ -79,11 +79,11 @@ const EditorWrap = ({ detail, onSave, onContentChange, onCancel }: WrapProps) =>
     return Promise.resolve('/static-file/' + key);
   };
   const editorRef = useTiptap({
-    editable: isEditing,
+    editable: true,
     content: detail?.content || '',
     onUpdate: handleUpdate,
     exclude: ['invisibleCharacters', 'youtube', 'mention'],
-    immediatelyRender: true,
+    immediatelyRender: false,
     onUpload: handleUpload,
     onFocus: () => {
       console.log('编辑器获得焦点');
@@ -97,11 +97,10 @@ const EditorWrap = ({ detail, onSave, onContentChange, onCancel }: WrapProps) =>
 
   // 这些函数需要在editorRef初始化后定义
   const handleCancelEdit = () => {
-    onCancel()
-    setIsEditing(false);
     if (editorRef.editor) {
       editorRef.editor.commands.setContent(originalContent);
     }
+    onCancel();
   };
 
   const handleSave = async () => {
@@ -111,7 +110,6 @@ const EditorWrap = ({ detail, onSave, onContentChange, onCancel }: WrapProps) =>
     try {
       const content = editorRef.getHTML();
       await onSave(content);
-      setIsEditing(false); // 保存成功后退出编辑模式
     } catch (error) {
       console.error('保存失败:', error);
     } finally {
@@ -129,20 +127,58 @@ const EditorWrap = ({ detail, onSave, onContentChange, onCancel }: WrapProps) =>
     setOriginalContent(detail?.content || '');
   }, [detail?.content, editorRef.editor]);
 
-  // 更新编辑器的可编辑状态
-  useEffect(() => {
+  // 聚焦编辑器的函数
+  const focusEditor = useCallback(() => {
     if (editorRef.editor) {
-      console.log('设置编辑器可编辑状态:', isEditing);
-      editorRef.editor.setEditable(isEditing);
-
-      // 如果进入编辑模式，尝试聚焦编辑器
-      if (isEditing) {
-        setTimeout(() => {
-          editorRef.editor?.commands.focus();
-        }, 100);
-      }
+      editorRef.editor.commands.focus();
+      // 将光标移到内容末尾
+      const docSize = editorRef.editor.state.doc.content.size;
+      editorRef.editor.commands.setTextSelection(docSize);
     }
-  }, [isEditing, editorRef.editor]);
+  }, []);
+
+  // 编辑器加载后自动聚焦
+  useEffect(() => {
+    if (editorRef.editor && isMounted) {
+      // 立即尝试聚焦
+      focusEditor();
+
+      // 延时再次尝试，确保聚焦成功
+      const timer1 = setTimeout(focusEditor, 100);
+      const timer2 = setTimeout(focusEditor, 300);
+
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+      };
+    }
+  }, [editorRef.editor, isMounted, focusEditor]);
+
+  // 监听组件可见性，当组件变为可见时聚焦编辑器
+  useEffect(() => {
+    if (!containerRef.current || !editorRef.editor) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
+            // 当组件超过50%可见时，聚焦编辑器
+            setTimeout(focusEditor, 100);
+          }
+        });
+      },
+      {
+        threshold: [0.5], // 当50%可见时触发
+        rootMargin: '0px',
+      }
+    );
+
+    observer.observe(containerRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [containerRef.current, editorRef.editor, focusEditor]);
 
   // 在服务端渲染时返回漂亮的占位符
   if (!isMounted) {
@@ -256,6 +292,7 @@ const EditorWrap = ({ detail, onSave, onContentChange, onCancel }: WrapProps) =>
     <>
       {globalStyles}
       <Box
+        ref={containerRef}
         sx={{
           height: '100%',
           display: 'flex',
@@ -337,7 +374,7 @@ const EditorWrap = ({ detail, onSave, onContentChange, onCancel }: WrapProps) =>
             transition: 'all 0.3s ease',
             position: 'relative',
             overflow: 'hidden',
-            cursor: !isEditing ? 'pointer' : 'text',
+            cursor: 'text',
             '&::before': {
               content: '""',
               position: 'absolute',
@@ -347,16 +384,8 @@ const EditorWrap = ({ detail, onSave, onContentChange, onCancel }: WrapProps) =>
               height: 2,
               transition: 'all 0.3s ease',
             },
-            '&:hover':
-              !isEditing ?
-                {
-                  '& .edit-hint': {
-                    opacity: 1,
-                  },
-                }
-              : {},
           }}
-          onClick={!isEditing ? handleStartEdit : undefined}
+          onClick={focusEditor}
         >
           {editorRef.editor ?
             <Editor editor={editorRef.editor} />
@@ -397,31 +426,6 @@ const EditorWrap = ({ detail, onSave, onContentChange, onCancel }: WrapProps) =>
               </Box>
             </Box>
           }
-
-          {/* 非编辑状态的提示 */}
-          {!isEditing && editorRef.editor && (
-            <Box
-              className='edit-hint'
-              sx={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                background: 'rgba(108, 117, 125, 0.9)',
-                color: 'white',
-                px: 3,
-                py: 1,
-                borderRadius: 2,
-                fontSize: 14,
-                fontWeight: 500,
-                opacity: 0,
-                transition: 'opacity 0.3s ease',
-                pointerEvents: 'none',
-              }}
-            >
-              点击编辑内容
-            </Box>
-          )}
         </Box>
 
         {/* 操作按钮区域 */}
@@ -435,33 +439,29 @@ const EditorWrap = ({ detail, onSave, onContentChange, onCancel }: WrapProps) =>
             borderTop: '1px solid rgba(0,0,0,0.05)',
           }}
         >
-          {isEditing && (
-            <>
-              <Button
-                variant='outlined'
-                onClick={handleCancelEdit}
-                disabled={isSaving}
-                sx={{
-                  textTransform: 'none',
-                  fontWeight: 500,
-                }}
-              >
-                取消
-              </Button>
-              <Button
-                variant='contained'
-                startIcon={<SaveIcon />}
-                onClick={handleSave}
-                disabled={isSaving}
-                sx={{
-                  textTransform: 'none',
-                  fontWeight: 500,
-                }}
-              >
-                {isSaving ? '保存中...' : '保存'}
-              </Button>
-            </>
-          )}
+          <Button
+            variant='outlined'
+            onClick={handleCancelEdit}
+            disabled={isSaving}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 500,
+            }}
+          >
+            取消
+          </Button>
+          <Button
+            variant='contained'
+            startIcon={<SaveIcon />}
+            onClick={handleSave}
+            disabled={isSaving}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 500,
+            }}
+          >
+            {isSaving ? '保存中...' : '保存'}
+          </Button>
         </Box>
       </Box>
     </>
