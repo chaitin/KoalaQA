@@ -25,14 +25,6 @@ const Toolbar = ({ editorRef, handleAiGenerate }: ToolbarProps) => {
     >
       <EditorToolbar
         editor={editorRef.editor}
-        menuInToolbarMore={[
-          {
-            id: 'ai',
-            label: '文本润色',
-            icon: <AiGenerate2Icon sx={{ fontSize: '1rem' }} />,
-            onClick: handleAiGenerate,
-          },
-        ]}
       />
     </Box>
   );
