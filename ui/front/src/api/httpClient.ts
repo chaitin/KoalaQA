@@ -126,6 +126,38 @@ export const clearCsrfTokenCache = () => {
   csrfTokenCache = null;
   csrfTokenPromise = null;
 };
+
+// 清除所有认证信息的函数
+export const clearAuthData = () => {
+  if (typeof window !== "undefined") {
+    // 清除本地存储的认证信息
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("userInfo");
+
+    // 清除所有相关的cookie
+    const cookiesToClear = [
+      "auth_token",
+      "session_id",
+      "csrf_token",
+      "_vercel_jwt",
+    ];
+    cookiesToClear.forEach((cookieName) => {
+      // 清除根路径的cookie
+      document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
+      // 清除当前路径的cookie
+      document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${window.location.pathname}; SameSite=Lax`;
+      // 清除域名级别的cookie
+      if (window.location.hostname !== "localhost") {
+        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname}; SameSite=Lax`;
+        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${window.location.hostname}; SameSite=Lax`;
+      }
+    });
+
+    // 清除CSRF token缓存
+    clearCsrfTokenCache();
+  }
+};
 export class HttpClient<SecurityDataType = unknown> {
   public instance: AxiosInstance;
   private securityData: SecurityDataType | null = null;
@@ -149,8 +181,8 @@ export class HttpClient<SecurityDataType = unknown> {
     this.securityWorker = securityWorker;
     this.instance.interceptors.response.use(
       (response) => {
-        const requestUrl = response.config?.url || '';
-        const shouldShowError = requestUrl !== '/user'
+        const requestUrl = response.config?.url || "";
+        const shouldShowError = requestUrl !== "/user";
         if (response.status === 200) {
           const res = response.data;
           if (res.success) {
@@ -180,18 +212,18 @@ export class HttpClient<SecurityDataType = unknown> {
           if (typeof window !== "undefined") {
             // 检查当前是否已经在登录相关页面，避免死循环
             const currentPath = window.location.pathname;
-            const isAuthPage = currentPath.startsWith('/login') ||
-              currentPath.startsWith('/register')
+            const isAuthPage =
+              currentPath.startsWith("/login") ||
+              currentPath.startsWith("/register");
             if (!isAuthPage) {
-              console.log(error.response)
-              // 清除本地存储的认证信息
-              localStorage.removeItem("auth_token");
+              console.log(error.response);
 
-              // 清除cookie中的认证信息
-              document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax';
+              // 清除所有认证信息
+              clearAuthData();
 
               // 获取当前页面路径作为重定向参数
-              const fullPath = window.location.pathname + window.location.search;
+              const fullPath =
+                window.location.pathname + window.location.search;
               const loginUrl = `/login?redirect=${encodeURIComponent(fullPath)}`;
 
               // 重定向到登录页
@@ -202,8 +234,8 @@ export class HttpClient<SecurityDataType = unknown> {
         }
 
         // 检查请求路径，如果是 api/user 则不展示报错信息
-        const requestUrl = error.config?.url || '';
-        const shouldShowError = requestUrl !== '/user'
+        const requestUrl = error.config?.url || "";
+        const shouldShowError = requestUrl !== "/user";
 
         if (alert.error && shouldShowError) {
           alert.error(error.message || "网络异常");
@@ -230,7 +262,7 @@ export class HttpClient<SecurityDataType = unknown> {
       headers: {
         ...((method &&
           this.instance.defaults.headers[
-          method.toLowerCase() as keyof HeadersDefaults
+            method.toLowerCase() as keyof HeadersDefaults
           ]) ||
           {}),
         ...(params1.headers || {}),
@@ -377,18 +409,21 @@ export class HttpClient<SecurityDataType = unknown> {
         //     return value ? `${name}=${value}` : null;
         //   })
         //   .filter(Boolean);
-        // 
+        //
         // if (cookieValues.length > 0) {
         //   requestConfig.headers.Cookie = cookieValues.join('; ');
         // }
 
         // 调试信息（生产环境可以移除）
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env.NODE_ENV === "development") {
           console.log(`[SSR] API Request to ${path}`);
           console.log(`[SSR] Cookies available:`, !!allCookies);
           console.log(`[SSR] Authorization token:`, !!Authorization);
           if (allCookies) {
-            console.log(`[SSR] Cookie header:`, allCookies.substring(0, 100) + '...');
+            console.log(
+              `[SSR] Cookie header:`,
+              allCookies.substring(0, 100) + "...",
+            );
           }
         }
       } catch (error) {
