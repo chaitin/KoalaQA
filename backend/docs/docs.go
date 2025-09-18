@@ -2752,6 +2752,11 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "name": "old_password",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
                         "name": "password",
                         "in": "formData"
                     }
