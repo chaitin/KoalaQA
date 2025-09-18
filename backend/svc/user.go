@@ -129,9 +129,10 @@ func (u *User) Update(ctx context.Context, id uint, req UserUpdateReq) error {
 }
 
 type UserUpdateInfoReq struct {
-	Name     string                `form:"name"`
-	Password string                `form:"password"`
-	Avatar   *multipart.FileHeader `form:"avatar" swaggerignore:"true"`
+	Name        string                `form:"name"`
+	OldPassword string                `form:"old_password"`
+	Password    string                `form:"password"`
+	Avatar      *multipart.FileHeader `form:"avatar" swaggerignore:"true"`
 }
 
 func (u *User) UpdateInfo(ctx context.Context, id uint, req UserUpdateInfoReq) error {
@@ -172,7 +173,12 @@ func (u *User) UpdateInfo(ctx context.Context, id uint, req UserUpdateInfoReq) e
 		updateM["name"] = req.Name
 	}
 
-	if req.Password != "" {
+	if req.Password != "" && req.OldPassword != "" {
+		err = u.checkPassword(req.OldPassword, user.Password)
+		if err != nil {
+			return err
+		}
+
 		hashPass, err := u.convertPassword(req.Password)
 		if err != nil {
 			return err
@@ -223,14 +229,27 @@ type UserRegisterReq struct {
 
 var aesKey = []byte("vzWE2R9GckGefVFd")
 
-func (u *User) convertPassword(password string) (string, error) {
+func (u *User) decryptReqPassword(password string) ([]byte, error) {
 	pwd, err := base64.StdEncoding.DecodeString(password)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	decryptPass, err := util.AESDecrypt(pwd, aesKey)
+	return util.AESDecrypt(pwd, aesKey)
+}
+
+func (u *User) checkPassword(password, hashPassword string) error {
+	decryptPass, err := u.decryptReqPassword(password)
 	if err != nil {
-		return "", err
+		return err
+	}
+
+	return bcrypt.CompareHashAndPassword([]byte(hashPassword), decryptPass)
+}
+
+func (u *User) convertPassword(password string) (string, error) {
+	decryptPass, err := u.decryptReqPassword(password)
+	if err != nil {
+		return "å", err
 	}
 
 	hashPass, err := bcrypt.GenerateFromPassword(decryptPass, bcrypt.DefaultCost)
@@ -309,22 +328,13 @@ func (u *User) Login(ctx context.Context, req UserLoginReq) (string, error) {
 		return "", errors.New("password login disabled")
 	}
 
-	pwd, err := base64.StdEncoding.DecodeString(req.Password)
-	if err != nil {
-		return "", err
-	}
-	decryptPass, err := util.AESDecrypt(pwd, aesKey)
-	if err != nil {
-		return "", err
-	}
-
 	var user model.User
 	err = u.repoUser.GetByEmail(ctx, &user, req.Email)
 	if err != nil {
 		return "", err
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), decryptPass)
+	err = u.checkPassword(req.Password, user.Password)
 	if err != nil {
 		return "", err
 	}
