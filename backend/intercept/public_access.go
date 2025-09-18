@@ -58,6 +58,7 @@ func (p *publicAccess) Intercept(ctx *context.Context) {
 			Avatar:   user.Avatar,
 			Email:    user.Email,
 			Role:     user.Role,
+			Builtin:  user.Builtin,
 		})
 	} else {
 		userInfo, err := authUser(ctx, p.jwt, p.svcUser)
