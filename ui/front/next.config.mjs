@@ -4,7 +4,7 @@
 const nextConfig = {
   // output: 'export',
   reactStrictMode: false,
-  output: 'standalone',
+  output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
   productionBrowserSourceMaps: true,
   images: {
     remotePatterns: [

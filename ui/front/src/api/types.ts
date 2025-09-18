@@ -320,6 +320,7 @@ export interface ModelPublicAddress {
 
 export interface ModelUserInfo {
   avatar?: string;
+  builtin?: boolean;
   email?: string;
   key?: string;
   role?: ModelUserRole;
@@ -548,6 +549,7 @@ export interface SvcURLListReq {
 }
 
 export interface SvcUserListItem {
+  avatar?: string;
   builtin?: boolean;
   created_at?: number;
   email?: string;
@@ -567,11 +569,6 @@ export interface SvcUserRegisterReq {
   email: string;
   name: string;
   password: string;
-}
-
-export interface SvcUserUpdateInfoReq {
-  name?: string;
-  password?: string;
 }
 
 export interface SvcUserUpdateReq {
@@ -898,6 +895,9 @@ export interface PutUserPayload {
    * @format binary
    */
   avatar?: File;
+  name?: string;
+  old_password?: string;
+  password?: string;
 }
 
 export interface GetUserLoginThirdParams {

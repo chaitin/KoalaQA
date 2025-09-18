@@ -23,7 +23,7 @@ export const OPT_LIST = [
   {
     name: '个人中心',
     icon: 'icon-gerenzhongxin',
-    link: '/console/personal/base',
+    link: '/profile',
   },
 ];
 const ProfilePanel = () => {
