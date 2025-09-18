@@ -41,6 +41,7 @@ func (a *auth) Intercept(ctx *context.Context) {
 			Avatar:   user.Avatar,
 			Email:    user.Email,
 			Role:     user.Role,
+			Builtin:  user.Builtin,
 		})
 		ctx.Next()
 		return
@@ -100,5 +101,6 @@ func authUser(ctx *context.Context, j *jwt.Generator, user *svc.User) (*model.Us
 		Email:    item.Email,
 		Username: item.Name,
 		Avatar:   item.Avatar,
+		Builtin:  item.Builtin,
 	}, nil
 }

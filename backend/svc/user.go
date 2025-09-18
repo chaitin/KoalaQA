@@ -173,7 +173,8 @@ func (u *User) UpdateInfo(ctx context.Context, id uint, req UserUpdateInfoReq) e
 		updateM["name"] = req.Name
 	}
 
-	if req.Password != "" && req.OldPassword != "" {
+	// 内置用户不能修改密码，现在能登录的内置用户只有 admin
+	if !user.Builtin && req.Password != "" && req.OldPassword != "" {
 		err = u.checkPassword(req.OldPassword, user.Password)
 		if err != nil {
 			return err

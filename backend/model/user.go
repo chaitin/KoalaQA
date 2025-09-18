@@ -35,6 +35,7 @@ type UserInfo struct {
 	Email    string   `json:"email"`
 	Username string   `json:"username"`
 	Avatar   string   `json:"avatar"`
+	Builtin  bool     `json:"builtin"`
 }
 
 func (ui *UserInfo) IsAdmin() bool {
