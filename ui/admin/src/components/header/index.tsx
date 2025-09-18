@@ -1,22 +1,20 @@
-// import { postAdminLogout } from '@/api/Admin';
-// import { postLogout } from '@/api/User';
+import { postUserLogout } from '@/api';
 import { message } from '@c-x/ui';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { IconButton, Stack, Tooltip } from '@mui/material';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import Bread from './Bread';
 
 const Header = () => {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
   const onLogout = async () => {
-    if (pathname.startsWith('/user')) {
-      // await postLogout();
-    } else {
-      // await postAdminLogout();
-    }
+    await postUserLogout();
     message.success('退出登录成功');
-    navigate('/login');
+    if (process.env.NODE_ENV === 'development') {
+      window.location.href = `${window.location.protocol}//${window.location.hostname}:3000/login`;
+    } else {
+      navigate('/login');
+    }
   };
   return (
     <Stack
