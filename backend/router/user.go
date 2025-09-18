@@ -1,12 +1,15 @@
 package router
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/chaitin/koalaqa/pkg/config"
 	"github.com/chaitin/koalaqa/pkg/context"
 	"github.com/chaitin/koalaqa/server"
 	"github.com/chaitin/koalaqa/svc"
+	"github.com/gin-contrib/sessions"
+	"github.com/google/uuid"
 )
 
 type user struct {
@@ -80,6 +83,8 @@ func (u *user) Login(ctx *context.Context) {
 	ctx.Success(token)
 }
 
+const stateKey = "third_login_state"
+
 // LoginThirdURL
 // @Summary get user third login url
 // @Tags user
@@ -95,11 +100,16 @@ func (u *user) LoginThirdURL(ctx *context.Context) {
 		return
 	}
 
-	authURL, err := u.svcU.LoginThirdURL(ctx, req)
+	state := uuid.NewString()
+	authURL, err := u.svcU.LoginThirdURL(ctx, state, req)
 	if err != nil {
 		ctx.InternalError(err, "get third auth url failed")
 		return
 	}
+
+	session := sessions.Default(ctx.Context)
+	session.Set(stateKey, state)
+	session.Save()
 
 	ctx.Success(authURL)
 }
@@ -111,6 +121,15 @@ func (u *user) LoginOIDCCallback(ctx *context.Context) {
 		ctx.BadRequest(err)
 		return
 	}
+
+	session := sessions.Default(ctx.Context)
+	state := session.Get(stateKey)
+	stateStr, ok := state.(string)
+	if !ok || stateStr != req.State {
+		ctx.BadRequest(errors.New("invalid state"))
+		return
+	}
+	session.Delete(stateKey)
 
 	token, err := u.svcU.LoginOIDCCallback(ctx, req)
 	if err != nil {
