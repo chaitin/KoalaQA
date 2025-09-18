@@ -1,38 +1,34 @@
-"use client";
+'use client';
 
-import { ModelUserRole, getUserLoginMethod } from "@/api";
-import { AppBar, Button, Stack, Typography } from "@mui/material";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import LoggedInView from "./loggedInView";
-import Link from "next/link";
-import Cookies from "js-cookie";
-import { useLocalStorageState } from "ahooks";
+import { ModelUserRole, getUserLoginMethod } from '@/api';
+import { AppBar, Button, Stack, Typography } from '@mui/material';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import LoggedInView from './loggedInView';
+import Link from 'next/link';
+import Cookies from 'js-cookie';
+import { useLocalStorageState } from 'ahooks';
 
 interface HeaderProps {
   initialUser?: any | null;
 }
 
 const Header = ({ initialUser = null }: HeaderProps) => {
-  const [token, setToken] = useLocalStorageState<string>("auth_token");
+  const [token, setToken] = useLocalStorageState<string>('auth_token');
   const [user, setUser] = useState(initialUser);
   const [registrationEnabled, setRegistrationEnabled] = useState(false);
   const router = useRouter();
-
+const [backHref, setBackHref] = useState('/admin/ai');
   useEffect(() => {
     if (token) {
-      Cookies.set("auth_token", token, {
-        path: "/",
+      Cookies.set('auth_token', token, {
+        path: '/',
         expires: 7, // 7 天
         secure: true, // 如果你是 https
-        sameSite: "Lax",
+        sameSite: 'Lax',
       });
     }
   }, [token]);
-
-  useEffect(() => {
-    console.log("Build ID:", process.env.NEXT_PUBLIC_BUILD_ID);
-  }, []);
 
   // 检查注册是否启用
   useEffect(() => {
@@ -57,38 +53,44 @@ const Header = ({ initialUser = null }: HeaderProps) => {
     }
     setUser(initialUser);
   }, [initialUser, token]);
-
+  // 使用状态来避免 hydration 不匹配
+  
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      setBackHref(`${window.location.protocol}//${window.location.hostname}:3400/admin/ai`);
+    }
+  }, []);
   return (
     <AppBar
-      position="fixed"
+      position='fixed'
       sx={{
-        backgroundColor: "#fff",
-        transition: "background-color 0.2s",
+        backgroundColor: '#fff',
+        transition: 'background-color 0.2s',
         zIndex: 100,
         boxShadow:
-          "0px 2px 6px 0px rgba(0,0,0,0.1), 0px 2px 6px 0px rgba(218,220,224,0.5)",
+          '0px 2px 6px 0px rgba(0,0,0,0.1), 0px 2px 6px 0px rgba(218,220,224,0.5)',
       }}
     >
       <Stack
-        justifyContent="center"
+        justifyContent='center'
         sx={{
           height: 64,
-          position: "relative",
-          background: "#fff",
-          display: { xs: "flex", sm: "none" },
+          position: 'relative',
+          background: '#fff',
+          display: { xs: 'flex', sm: 'none' },
         }}
       >
         <Typography
-          variant="h2"
+          variant='h2'
           sx={{
             ml: 2,
-            cursor: "pointer",
+            cursor: 'pointer',
             fontSize: 14,
             fontWeight: 700,
-            color: "#000",
+            color: '#000',
           }}
           onClick={() => {
-            router.push("/");
+            router.push('/');
           }}
         >
           Koala QA
@@ -96,28 +98,28 @@ const Header = ({ initialUser = null }: HeaderProps) => {
       </Stack>
 
       <Stack
-        direction="row"
+        direction='row'
         sx={{
           height: 64,
-          position: "relative",
-          display: { xs: "none", sm: "flex" },
+          position: 'relative',
+          display: { xs: 'none', sm: 'flex' },
         }}
-        alignItems="center"
-        justifyContent="space-between"
+        alignItems='center'
+        justifyContent='space-between'
       >
-        <Stack direction="row" alignItems="center">
+        <Stack direction='row' alignItems='center'>
           <Typography
-            variant="h2"
+            variant='h2'
             sx={{
               ml: 5,
               mr: 10,
-              cursor: "pointer",
+              cursor: 'pointer',
               fontSize: 14,
               fontWeight: 700,
-              color: "#000",
+              color: '#000',
             }}
             onClick={() => {
-              router.push("/");
+              router.push('/');
             }}
           >
             Koala QA
@@ -125,59 +127,58 @@ const Header = ({ initialUser = null }: HeaderProps) => {
         </Stack>
 
         <Stack
-          direction="row"
-          alignItems={"center"}
+          direction='row'
+          alignItems={'center'}
           gap={3}
-          sx={{ position: "absolute", top: 0, bottom: 0, right: 40 }}
+          sx={{ position: 'absolute', top: 0, bottom: 0, right: 40 }}
         >
           {user?.role == ModelUserRole.UserRoleAdmin && (
-            <Link href="/admin/ai">
+            <Link href={backHref}>
               <Button
-                variant="contained"
+                variant='contained'
                 sx={{
                   borderRadius: 1,
                   height: 44,
                   width: 122,
                   fontSize: 14,
-                  boxShadow: "none !important",
+                  boxShadow: 'none !important',
                 }}
               >
                 后台管理
               </Button>
             </Link>
           )}
-          {user?.uid ? (
+          {user?.uid ?
             <LoggedInView user={user} />
-          ) : (
-            <>
+          : <>
               {registrationEnabled && (
                 <Button
-                  variant="outlined"
+                  variant='outlined'
                   sx={{ borderRadius: 1, height: 44, width: 122, fontSize: 14 }}
                   onClick={() => {
-                    window.open("/register", "_self");
+                    window.open('/register', '_self');
                   }}
                 >
                   立即注册
                 </Button>
               )}
               <Button
-                variant="contained"
+                variant='contained'
                 sx={{
                   borderRadius: 1,
                   height: 44,
                   width: 122,
                   fontSize: 14,
-                  boxShadow: "none !important",
+                  boxShadow: 'none !important',
                 }}
                 onClick={() => {
-                  window.open("/login", "_self");
+                  window.open('/login', '_self');
                 }}
               >
                 登录
               </Button>
             </>
-          )}
+          }
         </Stack>
       </Stack>
     </AppBar>
