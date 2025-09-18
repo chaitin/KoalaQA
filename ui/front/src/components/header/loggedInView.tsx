@@ -65,6 +65,9 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    // 确保在客户端环境中执行
+    if (typeof window === 'undefined') return;
+    
     const token = localStorage.getItem('auth_token');
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const url = new URL('/api/user/notify', window.location.href);
