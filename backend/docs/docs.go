@@ -2746,13 +2746,14 @@ const docTemplate = `{
                         "in": "formData"
                     },
                     {
-                        "description": "req param",
-                        "name": "req",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/svc.UserUpdateInfoReq"
-                        }
+                        "type": "string",
+                        "name": "name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "name": "password",
+                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -4388,6 +4389,9 @@ const docTemplate = `{
         "svc.UserListItem": {
             "type": "object",
             "properties": {
+                "avatar": {
+                    "type": "string"
+                },
                 "builtin": {
                     "type": "boolean"
                 },
@@ -4440,17 +4444,6 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
-                "name": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                }
-            }
-        },
-        "svc.UserUpdateInfoReq": {
-            "type": "object",
-            "properties": {
                 "name": {
                     "type": "string"
                 },

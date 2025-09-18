@@ -65,7 +65,7 @@ func (u *userAuth) Detail(ctx *context.Context) {
 // @Tags user
 // @Accept multipart/form-data
 // @Param avatar formData file false "avatar"
-// @Param req body svc.UserUpdateInfoReq true "req param"
+// @Param req formData svc.UserUpdateInfoReq true "req param"
 // @Produce json
 // @Success 200 {object} context.Response
 // @Router /user [put]
