@@ -30,9 +30,12 @@ const globalStyles = (
 
 interface WrapProps {
   detail: NodeDetail;
-  onCancel: () => void;
+  onCancel?: () => void;
   onSave?: (content: string) => void;
   onContentChange?: (content: string) => void;
+  showActions?: boolean; // 是否显示底部的保存和取消按钮，默认为true
+  value?: string; // 用于双向绑定的值，当提供时会覆盖detail.content
+  onChange?: (value: string) => void; // 双向绑定的变更回调，类似input组件的onChange
 }
 
 const EditorWrap = ({
@@ -40,11 +43,13 @@ const EditorWrap = ({
   onSave,
   onContentChange,
   onCancel,
+  showActions = true,
+  value,
+  onChange,
 }: WrapProps) => {
   const [isSaving, setIsSaving] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isFocused, setIsFocused] = useState(false);
   const [originalContent, setOriginalContent] = useState(detail?.content || '');
 
   // 确保只在客户端渲染编辑器
@@ -54,12 +59,19 @@ const EditorWrap = ({
 
   const handleUpdate = useCallback(
     ({ editor }: { editor: any }) => {
-      if (editor && onContentChange) {
-        const content = editor.getHTML();
+      const content = editor.getHTML();
+
+      // 支持传统的onContentChange回调
+      if (onContentChange) {
         onContentChange(content);
       }
+
+      // 支持双向绑定的onChange回调
+      if (onChange) {
+        onChange(content);
+      }
     },
-    [onContentChange]
+    [onContentChange, onChange]
   );
 
   const handleUpload = async (
@@ -80,18 +92,16 @@ const EditorWrap = ({
   };
   const editorRef = useTiptap({
     editable: true,
-    content: detail?.content || '',
+    content: value || detail?.content || '',
     onUpdate: handleUpdate,
     exclude: ['invisibleCharacters', 'youtube', 'mention'],
     immediatelyRender: false,
     onUpload: handleUpload,
     onFocus: () => {
       console.log('编辑器获得焦点');
-      setIsFocused(true);
     },
     onBlur: () => {
       console.log('编辑器失去焦点');
-      setIsFocused(false);
     },
   });
 
@@ -100,7 +110,7 @@ const EditorWrap = ({
     if (editorRef.editor) {
       editorRef.editor.commands.setContent(originalContent);
     }
-    onCancel();
+    onCancel?.();
   };
 
   const handleSave = async () => {
@@ -117,15 +127,17 @@ const EditorWrap = ({
     }
   };
 
+  // 当value或detail.content变化时更新编辑器内容
   useEffect(() => {
-    if (editorRef.editor && detail?.content !== undefined) {
+    if (editorRef.editor) {
+      const newContent = value !== undefined ? value : detail?.content || '';
       const currentContent = editorRef.getHTML();
-      if (currentContent !== detail.content) {
-        editorRef.editor.commands.setContent(detail.content || '');
+      if (currentContent !== newContent) {
+        editorRef.editor.commands.setContent(newContent);
       }
     }
-    setOriginalContent(detail?.content || '');
-  }, [detail?.content, editorRef.editor]);
+    setOriginalContent(value !== undefined ? value : detail?.content || '');
+  }, [value, detail?.content, editorRef.editor]);
 
   // 聚焦编辑器的函数
   const focusEditor = useCallback(() => {
@@ -264,24 +276,26 @@ const EditorWrap = ({
             </Box>
           </Box>
 
-          {/* 保存按钮占位符 */}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-            <Button
-              variant='contained'
-              startIcon={<SaveIcon />}
-              disabled
-              sx={{
-                background: 'linear-gradient(45deg, #6c757d, #495057)',
-                borderRadius: 2,
-                px: 3,
-                py: 1,
-                textTransform: 'none',
-                fontWeight: 600,
-              }}
-            >
-              保存
-            </Button>
-          </Box>
+          {/* 保存按钮占位符 - 只在showActions为true时显示 */}
+          {showActions && (
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
+              <Button
+                variant='contained'
+                startIcon={<SaveIcon />}
+                disabled
+                sx={{
+                  background: 'linear-gradient(45deg, #6c757d, #495057)',
+                  borderRadius: 2,
+                  px: 3,
+                  py: 1,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                }}
+              >
+                保存
+              </Button>
+            </Box>
+          )}
         </Box>
       </>
     );
@@ -428,41 +442,43 @@ const EditorWrap = ({
           }
         </Box>
 
-        {/* 操作按钮区域 */}
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: 2,
-            p: 2,
-            background: 'rgba(248, 249, 250, 0.5)',
-            borderTop: '1px solid rgba(0,0,0,0.05)',
-          }}
-        >
-          <Button
-            variant='outlined'
-            onClick={handleCancelEdit}
-            disabled={isSaving}
+        {/* 操作按钮区域 - 只在showActions为true时显示 */}
+        {showActions && (
+          <Box
             sx={{
-              textTransform: 'none',
-              fontWeight: 500,
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: 2,
+              p: 2,
+              background: 'rgba(248, 249, 250, 0.5)',
+              borderTop: '1px solid rgba(0,0,0,0.05)',
             }}
           >
-            取消
-          </Button>
-          <Button
-            variant='contained'
-            startIcon={<SaveIcon />}
-            onClick={handleSave}
-            disabled={isSaving}
-            sx={{
-              textTransform: 'none',
-              fontWeight: 500,
-            }}
-          >
-            {isSaving ? '保存中...' : '保存'}
-          </Button>
-        </Box>
+            <Button
+              variant='outlined'
+              onClick={handleCancelEdit}
+              disabled={isSaving}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 500,
+              }}
+            >
+              取消
+            </Button>
+            <Button
+              variant='contained'
+              startIcon={<SaveIcon />}
+              onClick={handleSave}
+              disabled={isSaving}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 500,
+              }}
+            >
+              {isSaving ? '保存中...' : '保存'}
+            </Button>
+          </Box>
+        )}
       </Box>
     </>
   );

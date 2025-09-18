@@ -129,7 +129,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
 
   return (
     <Modal
-      title={`${status === 'create' ? '发布' : '编辑'}主题`}
+      title={`${status === 'create' ? '发帖' : '编辑'}提问`}
       open={open}
       onCancel={onClose}
       onOk={onSubmit}
@@ -390,6 +390,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                     onContentChange={(content) => {
                       field.onChange(content);
                     }}
+                    showActions={false}
                   />
                 )}
               />
