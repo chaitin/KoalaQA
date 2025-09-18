@@ -187,6 +187,10 @@ func (u *User) UpdateInfo(ctx context.Context, id uint, req UserUpdateInfoReq) e
 		updateM["password"] = hashPass
 	}
 
+	if len(updateM) == 1 {
+		return nil
+	}
+
 	err = u.repoUser.Update(ctx, updateM, repo.QueryWithEqual("id", id))
 	if err != nil {
 		return err
