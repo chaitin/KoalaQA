@@ -35,10 +35,7 @@ func (w *Webhook) setWebhook(id uint, webhook webhook.Webhook) {
 
 func (w *Webhook) List(ctx context.Context) (*model.ListRes[model.Webhook], error) {
 	var res model.ListRes[model.Webhook]
-	err := w.repoWebhook.List(ctx, &res.Items, repo.QueryWithSelectColumn(
-		"id", "created_at", "updated_at",
-		"name", "type", "url", "'' AS sign", "msg_types",
-	))
+	err := w.repoWebhook.List(ctx, &res.Items)
 	if err != nil {
 		return nil, err
 	}
