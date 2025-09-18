@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, CircularProgress, Stack, Typography } from '@mui/material';
+import { Box, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { NodeDetail } from '..';
 import EditorWrap from './Wrap';

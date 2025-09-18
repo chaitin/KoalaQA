@@ -51,15 +51,8 @@ const LoginType = () => {
         return;
       }
 
-      // 如果有重定向URL，将其添加到OAuth URL的state参数中
-      if (redirectUrl) {
-        const url = new URL(oauthUrl);
-        url.searchParams.set('state', encodeURIComponent(redirectUrl));
-        oauthUrl = url.toString();
-      }
-
       // 自动跳转到第三方登录页面
-      window.location.href = oauthUrl;
+      window.location.href = decodeURIComponent(oauthUrl);
     } catch (error) {
       console.error('Error getting third party login URL:', error);
     }

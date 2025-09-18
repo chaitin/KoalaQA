@@ -132,7 +132,8 @@ const BaseDiscussCard = (props: {
       >
         <Stack direction='row' gap={1} alignItems='center' sx={{ flex: 1 }}>
           {data.user_avatar ?
-            <Image
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
               src={data.user_avatar}
               alt='头像'
               width={28}

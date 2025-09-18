@@ -99,7 +99,8 @@ const DiscussCard = ({
           </Stack>
           <Stack direction='row' alignItems='center' gap={1}>
             {it.user_avatar ?
-              <Image
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
                 src={it.user_avatar}
                 width={16}
                 height={16}
