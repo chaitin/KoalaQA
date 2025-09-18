@@ -89,7 +89,7 @@ services:
   
   anydoc:
     container_name: koala-qa-anydoc
-    image: swr.cn-east-3.myhuaweicloud.com/koala-qa/anydoc:v0.3.0
+    image: swr.cn-east-3.myhuaweicloud.com/koala-qa/anydoc:v0.3.2
     restart: always
     environment:
       - MQ_NATS_URL=koala-qa-mq:4222
