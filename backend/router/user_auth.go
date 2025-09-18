@@ -71,7 +71,7 @@ func (u *userAuth) Detail(ctx *context.Context) {
 // @Router /user [put]
 func (u *userAuth) Update(ctx *context.Context) {
 	var req svc.UserUpdateInfoReq
-	err := ctx.ShouldBindJSON(&req)
+	err := ctx.ShouldBind(&req)
 	if err != nil {
 		ctx.BadRequest(err)
 		return
