@@ -41,7 +41,7 @@ func (g *Generator) Discuss(ctx context.Context, msgType Type, dissID uint, user
 		Title    string
 		GroupIDs model.Int64Array `gorm:"type:bigint[]"`
 	}
-	err := g.in.RepoDiscuss.GetByID(ctx, &discuss, dissID, repo.QueryWithSelectColumn("title", "group_ids"))
+	err := g.in.RepoDiscuss.GetByID(ctx, &discuss, dissID, repo.QueryWithSelectColumn("title", "group_ids", "uuid"))
 	if err != nil {
 		return nil, err
 	}
