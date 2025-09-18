@@ -10,7 +10,6 @@ import (
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/util"
 	oidcAuth "github.com/coreos/go-oidc/v3/oidc"
-	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 )
 
@@ -54,16 +53,13 @@ func (o *oidc) Check(ctx context.Context) error {
 	return nil
 }
 
-func (o *oidc) AuthURL(ctx context.Context) (string, error) {
+func (o *oidc) AuthURL(ctx context.Context, state string) (string, error) {
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, util.HTTPClient)
 
 	provider, err := oidcAuth.NewProvider(ctx, o.cfg.URL)
 	if err != nil {
 		return "", err
 	}
-
-	state := uuid.NewString()
-	o.cache.Set(state, struct{}{})
 
 	return (&oauth2.Config{
 		ClientID:     o.cfg.ClientID,
@@ -77,12 +73,6 @@ func (o *oidc) AuthURL(ctx context.Context) (string, error) {
 func (o *oidc) User(ctx context.Context, code string, optFuncs ...userOptFunc) (*User, error) {
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, util.HTTPClient)
 
-	opt := getUserOpt(optFuncs...)
-
-	if opt.state == "" {
-		return nil, errors.New("empty state")
-	}
-
 	provider, err := oidcAuth.NewProvider(ctx, o.cfg.URL)
 	if err != nil {
 		return nil, err
@@ -94,11 +84,6 @@ func (o *oidc) User(ctx context.Context, code string, optFuncs ...userOptFunc) (
 		Endpoint:     provider.Endpoint(),
 		RedirectURL:  o.callbackURL,
 		Scopes:       []string{oidcAuth.ScopeOpenID, "profile", "email"},
-	}
-
-	_, ok := o.cache.Get(opt.state)
-	if !ok {
-		return nil, errors.New("invalid state")
 	}
 
 	token, err := oauthCfg.Exchange(ctx, code)
