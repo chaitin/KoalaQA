@@ -47,7 +47,7 @@ func (d *discussionAuth) Route(h server.Handler) {
 // @Accept json
 // @Produce json
 // @Param discussion body svc.DiscussionCreateReq true "discussion"
-// @Success 200 {object} context.Response{data=uint}
+// @Success 200 {object} context.Response{data=string}
 // @Router /discussion [post]
 func (d *discussionAuth) Create(ctx *context.Context) {
 	var req svc.DiscussionCreateReq
