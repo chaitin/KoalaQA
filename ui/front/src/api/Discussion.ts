@@ -78,7 +78,7 @@ export const getDiscussion = (
  * @summary create discussion
  * @request POST:/discussion
  * @response `200` `(ContextResponse & {
-    data?: number,
+    data?: string,
 
 })` OK
  */
@@ -89,7 +89,7 @@ export const postDiscussion = (
 ) =>
   request<
     ContextResponse & {
-      data?: number;
+      data?: string;
     }
   >({
     path: `/discussion`,
