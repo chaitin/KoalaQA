@@ -2079,7 +2079,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "type": "integer"
+                                            "type": "string"
                                         }
                                     }
                                 }
@@ -3659,6 +3659,9 @@ const docTemplate = `{
             "properties": {
                 "avatar": {
                     "type": "string"
+                },
+                "builtin": {
+                    "type": "boolean"
                 },
                 "email": {
                     "type": "string"

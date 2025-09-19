@@ -61,11 +61,11 @@ func (d *Discussion) generateUUID() string {
 	return util.RandomString(16)
 }
 
-func (d *Discussion) Create(ctx context.Context, req DiscussionCreateReq) (uint, error) {
+func (d *Discussion) Create(ctx context.Context, req DiscussionCreateReq) (string, error) {
 	if len(req.GroupIDs) > 0 {
 		err := d.in.GroupItemRepo.FilterIDs(ctx, &req.GroupIDs)
 		if err != nil {
-			return 0, err
+			return "", err
 		}
 	}
 
@@ -80,7 +80,7 @@ func (d *Discussion) Create(ctx context.Context, req DiscussionCreateReq) (uint,
 	}
 	err := d.in.DiscRepo.Create(ctx, &disc)
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 	d.in.Pub.Publish(ctx, topic.TopicDiscChange, topic.MsgDiscChange{
 		OP:       topic.OPInsert,
@@ -88,7 +88,7 @@ func (d *Discussion) Create(ctx context.Context, req DiscussionCreateReq) (uint,
 		DiscUUID: disc.UUID,
 		Type:     string(disc.Type),
 	})
-	return disc.ID, nil
+	return disc.UUID, nil
 }
 
 type DiscussionUpdateReq struct {
