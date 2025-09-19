@@ -25,6 +25,7 @@ import { AuthContext } from '@/components/authProvider';
 import { Avatar } from '@/components/discussion';
 import EditorWrap from '@/components/editor/edit/Wrap';
 import Modal from '@/components/modal';
+import { useAuthCheck } from '@/hooks/useAuthCheck';
 import {
   Box,
   Button,
@@ -80,7 +81,13 @@ const BaseDiscussCard = (props: {
     data.user_like_state == ModelCommentLikeState.CommentLikeStateLike;
   const isDisliked =
     data.user_like_state == ModelCommentLikeState.CommentLikeStateDislike;
+  const { checkAuth } = useAuthCheck();
+
   const handleLike = async () => {
+    // 检查登录状态
+    const isAuthenticated = checkAuth();
+    if (!isAuthenticated) return;
+
     try {
       if (isLiked) await revokeLike();
       else
@@ -93,6 +100,10 @@ const BaseDiscussCard = (props: {
     }
   };
   const handleDislike = async () => {
+    // 检查登录状态
+    const isAuthenticated = checkAuth();
+    if (!isAuthenticated) return;
+
     try {
       if (isDisliked) await revokeLike();
       else
@@ -308,9 +319,15 @@ const DiscussCard = (props: any) => {
   const idKey = useId();
   const { id }: { id: string } = useParams();
   const { user } = useContext(AuthContext);
+  const { checkAuth } = useAuthCheck();
   const [comment, setComment] = useState('');
   const router = useRouter();
   const [mdEditShow, setMdEditShow] = useState(false);
+
+  // 检查登录状态，未登录则跳转到登录页
+  const checkLoginAndFocus = () => {
+    return checkAuth(() => setMdEditShow(true));
+  };
   const onSubmit = async () => {
     await postDiscussionDiscIdComment(
       { discId: id },
@@ -356,10 +373,8 @@ const DiscussCard = (props: any) => {
           fullWidth
           size='small'
           sx={{ display: mdEditShow ? 'none' : 'block' }}
-          placeholder='回复'
-          onFocus={() => {
-            setMdEditShow(true);
-          }}
+          placeholder={user?.uid ? '回复' : '请先登录后回复'}
+          onFocus={checkLoginAndFocus}
         />
       </Box>
     </Card>
@@ -369,6 +384,8 @@ const DiscussCard = (props: any) => {
 const Content = (props: { data: ModelDiscussionDetail }) => {
   const { data } = props;
   const { id }: { id: string } = useParams();
+  const { user } = useContext(AuthContext);
+  const { checkAuth } = useAuthCheck();
   const router = useRouter();
   const [comment, setComment] = useState('');
   const [commentIndex, setCommentIndex] = useState<
@@ -378,6 +395,11 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const [mdEditShow, setMdEditShow] = useState(false);
+
+  // 检查登录状态，未登录则跳转到登录页
+  const checkLoginAndFocusMain = () => {
+    return checkAuth(() => setMdEditShow(true));
+  };
   const handleClick = (
     event: React.MouseEvent<HTMLButtonElement>,
     comment: SvcCommentUpdateReq,
@@ -486,7 +508,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
           <EditorWrap
             detail={{
               id: 'main-comment-editor',
-              name: '发表评论',
+              name: '回答问题',
               content: comment,
             }}
             onCancel={() => setMdEditShow(false)}
@@ -503,10 +525,8 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
             display: mdEditShow ? 'none' : 'block',
             minHeight: '100%',
           }}
-          placeholder='发表评论'
-          onFocus={() => {
-            setMdEditShow(true);
-          }}
+          placeholder={user?.uid ? '回答问题' : '请先登录后回答问题'}
+          onFocus={checkLoginAndFocusMain}
         />
       </Card>
     </Stack>

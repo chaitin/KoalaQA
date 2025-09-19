@@ -17,6 +17,7 @@ const Header = ({ initialUser = null }: HeaderProps) => {
   const [token, setToken] = useLocalStorageState<string>('auth_token');
   const [user, setUser] = useState(initialUser);
   const [registrationEnabled, setRegistrationEnabled] = useState(false);
+  const [publicAccess, setPublicAccess] = useState(false);
   const router = useRouter();
 const [backHref, setBackHref] = useState('/admin/ai');
   useEffect(() => {
@@ -30,19 +31,21 @@ const [backHref, setBackHref] = useState('/admin/ai');
     }
   }, [token]);
 
-  // 检查注册是否启用
+  // 检查注册是否启用和公共访问状态
   useEffect(() => {
-    const checkRegistrationStatus = async () => {
+    const checkAuthConfig = async () => {
       try {
         const response = await getUserLoginMethod();
         setRegistrationEnabled(response?.enable_register ?? true);
+        setPublicAccess(response?.public_access ?? false);
       } catch (error) {
-        console.error('Failed to check registration status:', error);
+        console.error('Failed to check auth config:', error);
         setRegistrationEnabled(false);
+        setPublicAccess(false);
       }
     };
 
-    checkRegistrationStatus();
+    checkAuthConfig();
   }, []);
 
   // 如果初始用户为空但有token，可能需要重新获取用户信息
@@ -151,6 +154,7 @@ const [backHref, setBackHref] = useState('/admin/ai');
           {user?.uid ?
             <LoggedInView user={user} />
           : <>
+              {/* 在公共访问模式下，仍然显示登录和注册按钮，但用户可以选择不登录直接使用 */}
               {registrationEnabled && (
                 <Button
                   variant='outlined'

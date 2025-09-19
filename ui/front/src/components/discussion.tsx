@@ -104,7 +104,6 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
         router.refresh();
       } else {
         const uid = await postDiscussion(params);
-        onOk()
         console.log(uid)
         // 创建成功后跳转到首页
         router.replace(`/discuss/${uid}`);
@@ -349,31 +348,6 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
               backgroundColor: '#fff',
             }}
           >
-            {/* 编辑器标题 */}
-            <Box
-              sx={{
-                px: 2,
-                py: 1.5,
-                backgroundColor: '#f8f9fa',
-                borderBottom: '1px solid #e0e0e0',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-              }}
-            >
-              <Icon type='icon-edit' sx={{ fontSize: 16, color: '#666' }} />
-              <Typography
-                variant='subtitle2'
-                sx={{
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: '#333',
-                }}
-              >
-                编辑内容
-              </Typography>
-            </Box>
-
             {/* 编辑器内容 */}
             <Box sx={{ p: 0 }}>
               <Controller
