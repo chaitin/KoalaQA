@@ -7,6 +7,7 @@ import (
 	"mime/multipart"
 	"path/filepath"
 	"slices"
+	"time"
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/anydoc"
@@ -15,6 +16,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/oss"
 	"github.com/chaitin/koalaqa/pkg/topic"
+	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/repo"
 )
 
@@ -408,6 +410,303 @@ func (d *KBDocument) UploadFile(ctx context.Context, kbID uint, req UploadFileRe
 		oss.WithLimitSize(),
 		oss.WithPublic(),
 	)
+}
+
+type ListSpaceItem struct {
+	model.Base
+
+	Platform platform.PlatformType `json:"platform"`
+	Title    string                `json:"title"`
+	Total    int64                 `json:"total"`
+}
+
+func (d *KBDocument) ListSpace(ctx context.Context, kbID uint) (*model.ListRes[ListSpaceItem], error) {
+	var res model.ListRes[ListSpaceItem]
+	err := d.repoDoc.ListSpace(ctx, &res.Items, kbID,
+		repo.QueryWithEqual("parent_id", 0),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+type GetSpaceRes struct {
+	model.Base
+	Platform    platform.PlatformType          `json:"platform"`
+	PlatformOpt model.JSONB[model.PlatformOpt] `json:"platform_opt" swaggerignore:"true"`
+	Title       string                         `json:"title"`
+}
+
+func (d *KBDocument) GetSpace(ctx context.Context, kbID uint, spaceID uint) (*GetSpaceRes, error) {
+	var res GetSpaceRes
+	err := d.repoDoc.GetByID(ctx, &res, kbID, spaceID,
+		repo.QueryWithEqual("doc_type", model.DocTypeSpace),
+		repo.QueryWithEqual("parent_id", 0),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+type CreateSpaceReq struct {
+	Platform platform.PlatformType `json:"platform"`
+	Opt      model.PlatformOpt     `json:"opt"`
+	Title    string                `json:"title" binding:"required"`
+}
+
+func (d *KBDocument) checkPlatformOpt(p platform.PlatformType, opt model.PlatformOpt) error {
+	switch p {
+	case platform.PlatformPandawiki:
+		_, err := util.ParseHTTP(opt.URL)
+		if err != nil {
+			return err
+		}
+
+		if opt.AccessToken == "" {
+			return errors.New("empty access token")
+		}
+	default:
+		return errors.ErrUnsupported
+	}
+
+	return nil
+}
+
+func (d *KBDocument) CreateSpace(ctx context.Context, kbID uint, req CreateSpaceReq) (uint, error) {
+	err := d.checkPlatformOpt(req.Platform, req.Opt)
+	if err != nil {
+		return 0, err
+	}
+
+	doc := model.KBDocument{
+		KBID:        kbID,
+		Platform:    req.Platform,
+		PlatformOpt: model.NewJSONB(req.Opt),
+		Title:       req.Title,
+		FileType:    model.FileTypeFolder,
+		DocType:     model.DocTypeSpace,
+		Status:      model.DocStatusAppling,
+		ParentID:    0,
+	}
+	err = d.repoDoc.Create(ctx, &doc)
+	if err != nil {
+		return 0, err
+	}
+
+	return doc.ID, nil
+}
+
+type UpdateSpaceReq struct {
+	Opt   *model.PlatformOpt `json:"opt"`
+	Title string             `json:"title"`
+}
+
+func (d *KBDocument) UpdateSpace(ctx context.Context, kbID uint, docID uint, req UpdateSpaceReq) error {
+	doc, err := d.GetByID(ctx, kbID, docID)
+	if err != nil {
+		return err
+	}
+
+	updateM := map[string]any{
+		"updated_at": time.Now(),
+	}
+
+	if req.Opt != nil {
+		err = d.checkPlatformOpt(doc.Platform, *req.Opt)
+		if err != nil {
+			return err
+		}
+
+		updateM["platform_opt"] = model.NewJSONB(req.Opt)
+	}
+
+	if req.Title != "" {
+		updateM["title"] = req.Title
+	}
+
+	if len(updateM) == 1 {
+		return nil
+	}
+
+	err = d.repoDoc.Update(ctx, updateM,
+		repo.QueryWithEqual("kb_id", kbID),
+		repo.QueryWithEqual("id", docID),
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *KBDocument) DeleteSpace(ctx context.Context, kbID uint, docID uint) error {
+	// TODO: delete sub doc
+	err := d.repoDoc.Delete(ctx,
+		repo.QueryWithEqual("kb_id", kbID),
+		repo.QueryWithEqual("id", docID),
+		repo.QueryWithEqual("doc_type", model.DocTypeSpace),
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type ListSpaceKBReq struct {
+	SpaceID string `json:"space_id"`
+}
+
+type ListSpaceKBItem struct {
+	DocID    string         `json:"doc_id"`
+	Title    string         `json:"title"`
+	FileType model.FileType `json:"file_type"`
+	Desc     string         `json:"desc"`
+}
+
+func (d *KBDocument) ListSpaceKB(ctx context.Context, kbID uint, docID uint, req ListSpaceKBReq) (*model.ListRes[ListSpaceKBItem], error) {
+	doc, err := d.GetByID(ctx, kbID, docID)
+	if err != nil {
+		return nil, err
+	}
+
+	listRes, err := d.anydoc.List(ctx, doc.Platform,
+		anydoc.ListWithSpaceID(req.SpaceID),
+		anydoc.ListWithPlatformOpt(doc.PlatformOpt.Inner()),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	fileType := model.FileTypeFolder
+	if req.SpaceID != "" {
+		fileType = model.FileTypeFile
+	}
+
+	var res model.ListRes[ListSpaceKBItem]
+	for _, listDoc := range listRes.Docs {
+		res.Items = append(res.Items, ListSpaceKBItem{
+			DocID:    listDoc.ID,
+			Title:    listDoc.Title,
+			Desc:     listDoc.Summary,
+			FileType: fileType,
+		})
+	}
+
+	return &res, nil
+}
+
+type CreateSpaceForlderItem struct {
+	DocID string `json:"doc_id"`
+	Title string `json:"title"`
+}
+type CreateSpaceFolderReq struct {
+	Items []CreateSpaceForlderItem `json:"docs" binding:"required"`
+}
+
+func (d *KBDocument) CreateSpaceFolder(ctx context.Context, kbID uint, parentID uint, req CreateSpaceFolderReq) error {
+	parentDoc, err := d.GetByID(ctx, kbID, parentID)
+	if err != nil {
+		return err
+	}
+
+	if parentDoc.DocType != model.DocTypeSpace {
+		return errors.ErrUnsupported
+	}
+
+	docs := make([]model.KBDocument, 0)
+	exist := make(map[string]bool)
+
+	for _, item := range req.Items {
+		if exist[item.DocID] {
+			continue
+		}
+
+		docs = append(docs, model.KBDocument{
+			DocID:    item.DocID,
+			Title:    item.Title,
+			Platform: parentDoc.Platform,
+			FileType: model.FileTypeFolder,
+			Status:   model.DocStatusAppling,
+			ParentID: parentID,
+		})
+
+		exist[item.DocID] = true
+	}
+
+	if len(docs) == 0 {
+		return errors.New("doc not found")
+	}
+
+	err = d.repoDoc.BatchCreate(ctx, docs)
+	if err != nil {
+		return err
+	}
+
+	// TODO: 通知拉取内容
+
+	return nil
+}
+
+type ListSpaceFolderItem struct {
+	model.Base
+
+	DocID  string          `json:"doc_id"`
+	Title  string          `json:"title"`
+	Status model.DocStatus `json:"status"`
+	Total  int64           `json:"total"`
+}
+
+func (d *KBDocument) ListSpaceFolder(ctx context.Context, kbID uint, parentID uint) (*model.ListRes[ListSpaceFolderItem], error) {
+	var res model.ListRes[ListSpaceFolderItem]
+	err := d.repoDoc.ListSpace(ctx, &res, kbID,
+		repo.QueryWithEqual("parent_id", parentID),
+		repo.QueryWithEqual("file_type", model.FileTypeFolder),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID uint) error {
+	doc, err := d.GetByID(ctx, kbID, folderID)
+	if err != nil {
+		return nil
+	}
+
+	if doc.DocType != model.DocTypeSpace || doc.FileType != model.FileTypeFolder || doc.ParentID == 0 {
+		return errors.ErrUnsupported
+	}
+
+	// TODO: 通知更新
+
+	return nil
+}
+
+func (d *KBDocument) DeleteSpaceFolder(ctx context.Context, kbID uint, folderID uint) error {
+	doc, err := d.GetByID(ctx, kbID, folderID)
+	if err != nil {
+		return nil
+	}
+
+	if doc.DocType != model.DocTypeSpace || doc.FileType != model.FileTypeFolder || doc.ParentID == 0 {
+		return errors.ErrUnsupported
+	}
+
+	// TODO: 通知删除
+
+	err = d.repoDoc.Delete(ctx, repo.QueryWithEqual("kb_id", kbID), repo.QueryWithEqual("id", folderID))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func newDocument(repoDoc *repo.KBDocument, c cache.Cache[topic.TaskMeta], doc anydoc.Anydoc, pub mq.Publisher, oc oss.Client, pa *PublicAddress) *KBDocument {

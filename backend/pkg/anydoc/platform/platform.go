@@ -12,6 +12,7 @@ const (
 	PlatformURL
 	PlatformWikiJS
 	PlatformYuQue
+	PlatformPandawiki
 )
 
 type Platform interface {

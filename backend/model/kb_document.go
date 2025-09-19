@@ -17,6 +17,7 @@ const (
 	DocTypeUnknown DocType = iota
 	DocTypeQuestion
 	DocTypeDocument
+	DocTypeSpace
 )
 
 type FileType uint
@@ -38,6 +39,8 @@ const (
 	FileTypeXML
 	FileTypeZIP
 	FileTypeEPub
+	FileTypeFolder // 文件夹
+	FileTypeFile   // 未知文件类型
 	FileTypeMax
 )
 
@@ -71,6 +74,7 @@ type KBDocument struct {
 	FileType    FileType              `json:"file_type" gorm:"column:file_type"`
 	DocType     DocType               `json:"doc_type" gorm:"column:doc_type"`
 	Status      DocStatus             `json:"status" gorm:"column:status"`
+	ParentID    uint                  `json:"parent_id" gorm:"column:parent_id;type:bigint;default:0"`
 }
 
 type KBDocumentDetail struct {
