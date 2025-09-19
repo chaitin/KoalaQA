@@ -103,9 +103,11 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
         // 编辑成功后刷新当前页面
         router.refresh();
       } else {
-        await postDiscussion(params).then(onOk);
+        const uid = await postDiscussion(params);
+        onOk()
+        console.log(uid)
         // 创建成功后跳转到首页
-        router.replace('/');
+        router.replace(`/discuss/${uid}`);
       }
     } finally {
       setLoading(false);
