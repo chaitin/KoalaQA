@@ -15,10 +15,8 @@ const Toolbar = ({ editorRef, handleAiGenerate }: ToolbarProps) => {
     <Box
       sx={{
         width: 'auto',
-        border: '1px solid',
+        borderBottom: '1px solid',
         borderColor: 'divider',
-        borderRadius: '10px',
-        bgcolor: 'background.default',
         px: 0.5,
         mx: 1,
       }}
