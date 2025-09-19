@@ -681,9 +681,36 @@ const docTemplate = `{
                             13,
                             14,
                             15,
-                            16
+                            16,
+                            17,
+                            18
                         ],
                         "type": "integer",
+                        "x-enum-comments": {
+                            "FileTypeFile": "未知文件类型",
+                            "FileTypeFolder": "文件夹"
+                        },
+                        "x-enum-descriptions": [
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "文件夹",
+                            "未知文件类型",
+                            ""
+                        ],
                         "x-enum-varnames": [
                             "FileTypeUnknown",
                             "FileTypeMarkdown",
@@ -701,6 +728,8 @@ const docTemplate = `{
                             "FileTypeXML",
                             "FileTypeZIP",
                             "FileTypeEPub",
+                            "FileTypeFolder",
+                            "FileTypeFile",
                             "FileTypeMax"
                         ],
                         "name": "file_type",
@@ -921,9 +950,36 @@ const docTemplate = `{
                             13,
                             14,
                             15,
-                            16
+                            16,
+                            17,
+                            18
                         ],
                         "type": "integer",
+                        "x-enum-comments": {
+                            "FileTypeFile": "未知文件类型",
+                            "FileTypeFolder": "文件夹"
+                        },
+                        "x-enum-descriptions": [
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "",
+                            "文件夹",
+                            "未知文件类型",
+                            ""
+                        ],
                         "x-enum-varnames": [
                             "FileTypeUnknown",
                             "FileTypeMarkdown",
@@ -941,6 +997,8 @@ const docTemplate = `{
                             "FileTypeXML",
                             "FileTypeZIP",
                             "FileTypeEPub",
+                            "FileTypeFolder",
+                            "FileTypeFile",
                             "FileTypeMax"
                         ],
                         "name": "file_type",
@@ -1194,6 +1252,392 @@ const docTemplate = `{
                         "type": "integer",
                         "description": "qa_id",
                         "name": "qa_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/kb/{kb_id}/space": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "space"
+                ],
+                "summary": "list kb space",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "kb_id",
+                        "name": "kb_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/svc.ListSpaceItem"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "space"
+                ],
+                "summary": "create kb space",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "kb_id",
+                        "name": "kb_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "request param",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.CreateSpaceReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/kb/{kb_id}/space/{space_id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "space"
+                ],
+                "summary": "get kb space detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "kb_id",
+                        "name": "kb_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "space_id",
+                        "name": "space_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/svc.GetSpaceRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "platform_opt": {
+                                                            "$ref": "#/definitions/model.PlatformOpt"
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "space"
+                ],
+                "summary": "update kb space",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "kb_id",
+                        "name": "kb_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "space_id",
+                        "name": "space_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "request param",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.UpdateSpaceReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "space"
+                ],
+                "summary": "delete kb space",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "kb_id",
+                        "name": "kb_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "space_id",
+                        "name": "space_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/kb/{kb_id}/space/{space_id}/folder": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "space"
+                ],
+                "summary": "list kb space folder",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "kb_id",
+                        "name": "kb_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "space_id",
+                        "name": "space_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/svc.ListSpaceFolderItem"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/kb/{kb_id}/space/{space_id}/folder/{folder_id}": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "space"
+                ],
+                "summary": "update kb space folder",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "kb_id",
+                        "name": "kb_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "space_id",
+                        "name": "space_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "folder_id",
+                        "name": "folder_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "space"
+                ],
+                "summary": "delete kb space folder",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "kb_id",
+                        "name": "kb_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "space_id",
+                        "name": "space_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "folder_id",
+                        "name": "folder_id",
                         "in": "path",
                         "required": true
                     }
@@ -3393,12 +3837,14 @@ const docTemplate = `{
             "enum": [
                 0,
                 1,
-                2
+                2,
+                3
             ],
             "x-enum-varnames": [
                 "DocTypeUnknown",
                 "DocTypeQuestion",
-                "DocTypeDocument"
+                "DocTypeDocument",
+                "DocTypeSpace"
             ]
         },
         "model.ExportOpt": {
@@ -3431,7 +3877,34 @@ const docTemplate = `{
                 13,
                 14,
                 15,
-                16
+                16,
+                17,
+                18
+            ],
+            "x-enum-comments": {
+                "FileTypeFile": "未知文件类型",
+                "FileTypeFolder": "文件夹"
+            },
+            "x-enum-descriptions": [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "文件夹",
+                "未知文件类型",
+                ""
             ],
             "x-enum-varnames": [
                 "FileTypeUnknown",
@@ -3450,6 +3923,8 @@ const docTemplate = `{
                 "FileTypeXML",
                 "FileTypeZIP",
                 "FileTypeEPub",
+                "FileTypeFolder",
+                "FileTypeFile",
                 "FileTypeMax"
             ]
         },
@@ -3519,6 +3994,9 @@ const docTemplate = `{
                 },
                 "markdown": {
                     "type": "string"
+                },
+                "parent_id": {
+                    "type": "integer"
                 },
                 "platform": {
                     "$ref": "#/definitions/platform.PlatformType"
@@ -3640,6 +4118,26 @@ const docTemplate = `{
             "properties": {
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "model.PlatformOpt": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "app_id": {
+                    "type": "string"
+                },
+                "secret": {
+                    "type": "string"
+                },
+                "space_id": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
                 }
             }
         },
@@ -3772,7 +4270,8 @@ const docTemplate = `{
                 5,
                 6,
                 7,
-                8
+                8,
+                9
             ],
             "x-enum-varnames": [
                 "PlatformUnknown",
@@ -3783,7 +4282,8 @@ const docTemplate = `{
                 "PlatformSitemap",
                 "PlatformURL",
                 "PlatformWikiJS",
-                "PlatformYuQue"
+                "PlatformYuQue",
+                "PlatformPandawiki"
             ]
         },
         "svc.AuthFrontendGetAuth": {
@@ -3863,6 +4363,23 @@ const docTemplate = `{
             ],
             "properties": {
                 "content": {
+                    "type": "string"
+                }
+            }
+        },
+        "svc.CreateSpaceReq": {
+            "type": "object",
+            "required": [
+                "title"
+            ],
+            "properties": {
+                "opt": {
+                    "$ref": "#/definitions/model.PlatformOpt"
+                },
+                "platform": {
+                    "$ref": "#/definitions/platform.PlatformType"
+                },
+                "title": {
                     "type": "string"
                 }
             }
@@ -4044,6 +4561,26 @@ const docTemplate = `{
                 }
             }
         },
+        "svc.GetSpaceRes": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "platform": {
+                    "$ref": "#/definitions/platform.PlatformType"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "integer"
+                }
+            }
+        },
         "svc.GroupUpdateReq": {
             "type": "object",
             "properties": {
@@ -4106,6 +4643,55 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "svc.ListSpaceFolderItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "integer"
+                },
+                "doc_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/model.DocStatus"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "integer"
+                }
+            }
+        },
+        "svc.ListSpaceItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "platform": {
+                    "$ref": "#/definitions/platform.PlatformType"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "integer"
                 }
             }
         },
@@ -4390,6 +4976,17 @@ const docTemplate = `{
             ],
             "properties": {
                 "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "svc.UpdateSpaceReq": {
+            "type": "object",
+            "properties": {
+                "opt": {
+                    "$ref": "#/definitions/model.PlatformOpt"
+                },
+                "title": {
                     "type": "string"
                 }
             }
