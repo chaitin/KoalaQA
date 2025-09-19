@@ -11,6 +11,7 @@ import { Card, CusTabs } from '@/components';
 import { AuthContext } from '@/components/authProvider';
 import { CommonContext } from '@/components/commonProvider';
 import { ImgLogo, ReleaseModal } from '@/components/discussion';
+import { useAuthCheck } from '@/hooks/useAuthCheck';
 import ArrowCircleRightRoundedIcon from '@mui/icons-material/ArrowCircleRightRounded';
 import SearchIcon from '@mui/icons-material/Search';
 import {
@@ -47,6 +48,7 @@ const Article = ({
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useContext(AuthContext);
+  const { checkAuth } = useAuthCheck();
   const { groups: contextGroups, groupsLoading } = useContext(CommonContext);
 
   // 优先使用SSR传入的groups数据，否则使用Context中的数据
@@ -142,11 +144,7 @@ const Article = ({
   };
 
   const handleAsk = () => {
-    if (user?.email) {
-      releaseModalOpen();
-    } else {
-      router.push(`/login`);
-    }
+    checkAuth(() => releaseModalOpen());
   };
 
   return (
