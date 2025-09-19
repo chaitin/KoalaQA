@@ -100,6 +100,7 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 		return err
 	}
 	if !answered {
+		logger.Info("ai not know the answer, notify admin")
 		disc, err := d.disc.GetByID(ctx, data.DiscID)
 		if err != nil {
 			logger.WithErr(err).Warn("get discussion failed")
