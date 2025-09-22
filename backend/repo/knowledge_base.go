@@ -56,6 +56,14 @@ func (kb *KnowledgeBase) DeleteByID(ctx context.Context, id uint) error {
 	})
 }
 
+func (kb *KnowledgeBase) FirstID(ctx context.Context) (uint, error) {
+	var id uint
+	if err := kb.model(ctx).Limit(1).Pluck("id", &id).Error; err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
 func newKnowledgeBase(db *database.DB) *KnowledgeBase {
 	return &KnowledgeBase{
 		base: base[*model.KnowledgeBase]{db: db, m: &model.KnowledgeBase{}},

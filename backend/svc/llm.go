@@ -53,7 +53,7 @@ func (l *LLM) Answer(ctx context.Context, req GenerateReq) (string, bool, error)
 	if err != nil {
 		return "", false, err
 	}
-	res, err := l.chat(ctx, llm.SystemChatPrompt, req.Prompt, map[string]any{
+	res, err := l.Chat(ctx, llm.SystemChatPrompt, req.Prompt, map[string]any{
 		"DefaultAnswer":      req.DefaultAnswer,
 		"CurrentDate":        time.Now().Format("2006-01-02"),
 		"KnowledgeDocuments": knowledgeDocuments,
@@ -68,7 +68,7 @@ func (l *LLM) Answer(ctx context.Context, req GenerateReq) (string, bool, error)
 }
 
 func (l *LLM) Summary(ctx context.Context, req GenerateReq) (string, bool, error) {
-	res, err := l.chat(ctx, llm.SystemSummaryPrompt, req.Prompt, map[string]any{
+	res, err := l.Chat(ctx, llm.SystemSummaryPrompt, req.Prompt, map[string]any{
 		"DefaultAnswer": req.DefaultAnswer,
 		"CurrentDate":   time.Now().Format("2006-01-02"),
 	})
@@ -81,7 +81,7 @@ func (l *LLM) Summary(ctx context.Context, req GenerateReq) (string, bool, error
 	return res, true, nil
 }
 
-func (l *LLM) chat(ctx context.Context, sMsg string, uMsg string, params map[string]any) (string, error) {
+func (l *LLM) Chat(ctx context.Context, sMsg string, uMsg string, params map[string]any) (string, error) {
 	cm, err := l.kit.GetChatModel(ctx)
 	if err != nil {
 		return "", err
