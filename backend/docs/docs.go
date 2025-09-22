@@ -1607,6 +1607,70 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/kb/{kb_id}/space/{space_id}/remote": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "space"
+                ],
+                "summary": "list kb space remote doc",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "kb_id",
+                        "name": "kb_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "space_id",
+                        "name": "space_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "name": "space_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "data": {
+                                                            "$ref": "#/definitions/svc.ListSpaceKBItem"
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/admin/kb/{kb_id}/web": {
             "get": {
                 "produces": [
@@ -4104,9 +4168,6 @@ const docTemplate = `{
                 "status": {
                     "$ref": "#/definitions/model.DocStatus"
                 },
-                "summary": {
-                    "type": "string"
-                },
                 "title": {
                     "type": "string"
                 },
@@ -4758,6 +4819,9 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "rag_id": {
+                    "type": "string"
+                },
                 "status": {
                     "$ref": "#/definitions/model.DocStatus"
                 },
@@ -4792,6 +4856,23 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "integer"
+                }
+            }
+        },
+        "svc.ListSpaceKBItem": {
+            "type": "object",
+            "properties": {
+                "desc": {
+                    "type": "string"
+                },
+                "doc_id": {
+                    "type": "string"
+                },
+                "file_type": {
+                    "$ref": "#/definitions/model.FileType"
+                },
+                "title": {
+                    "type": "string"
                 }
             }
         },
@@ -5272,6 +5353,9 @@ const docTemplate = `{
                 "desc": {
                     "type": "string"
                 },
+                "docType": {
+                    "$ref": "#/definitions/model.DocType"
+                },
                 "doc_id": {
                     "type": "string"
                 },
@@ -5285,6 +5369,9 @@ const docTemplate = `{
                     "$ref": "#/definitions/model.ExportOpt"
                 },
                 "kbid": {
+                    "type": "integer"
+                },
+                "parentID": {
                     "type": "integer"
                 },
                 "platform": {
