@@ -23,7 +23,14 @@ func (w *kbWeb) List(ctx *context.Context) {
 		ctx.BadRequest(err)
 		return
 	}
-	res, err := w.svcDoc.ListWeb(ctx, kbID)
+	var req svc.ListWebReq
+	err = ctx.ShouldBindQuery(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+	req.KBID = kbID
+	res, err := w.svcDoc.ListWeb(ctx, req)
 	if err != nil {
 		ctx.InternalError(err, "list web failed")
 		return
