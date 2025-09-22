@@ -8,6 +8,7 @@ import (
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/anydoc"
 	"github.com/chaitin/koalaqa/pkg/config"
+	"github.com/chaitin/koalaqa/pkg/cron"
 	"github.com/chaitin/koalaqa/pkg/database"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/http"
@@ -53,6 +54,7 @@ func main() {
 		sub.Module,
 		webhook.Module,
 		third_auth.Module,
+		cron.Module(),
 	)
 	ctx := context.Background()
 	if err := app.Start(ctx); err != nil {
