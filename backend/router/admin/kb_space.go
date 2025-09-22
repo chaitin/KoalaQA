@@ -164,6 +164,44 @@ func (s *kbSpace) GetSpace(ctx *context.Context) {
 	ctx.Success(res)
 }
 
+// ListSpaceRemote
+// @Summary list kb space remote doc
+// @Tags space
+// @Param kb_id path uint true "kb_id"
+// @Param space_id path uint true "space_id"
+// @Param req query svc.ListSpaceKBReq true "req param"
+// @Produce json
+// @Success 200 {object} context.Response{data=model.ListRes{data=svc.ListSpaceKBItem}}
+// @Router /admin/kb/{kb_id}/space/{space_id}/remote [get]
+func (s *kbSpace) ListSpaceRemote(ctx *context.Context) {
+	kbID, err := ctx.ParamUint("kb_id")
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	spaceID, err := ctx.ParamUint("space_id")
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	var req svc.ListSpaceKBReq
+	err = ctx.ShouldBindQuery(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	res, err := s.svcDoc.ListSpaceRemote(ctx, kbID, spaceID, req)
+	if err != nil {
+		ctx.InternalError(err, "list space kb failed")
+		return
+	}
+
+	ctx.Success(res)
+}
+
 // ListSpaceFolder
 // @Summary list kb space folder
 // @Tags space
@@ -262,6 +300,7 @@ func (s *kbSpace) Route(h server.Handler) {
 	g.POST("", s.CreateSpace)
 	{
 		detailG := g.Group("/:space_id")
+		detailG.GET("/remote", s.ListSpaceRemote)
 		detailG.GET("", s.GetSpace)
 		detailG.PUT("", s.UpdateSpace)
 		detailG.DELETE("", s.DeleteSpace)
@@ -270,7 +309,7 @@ func (s *kbSpace) Route(h server.Handler) {
 			spaceFolderG.GET("", s.ListSpaceFolder)
 			{
 				spaceFolderDetailG := spaceFolderG.Group("/:folder_id")
-				spaceFolderDetailG.PUT("")
+				spaceFolderDetailG.PUT("", s.UpdateSpaceFolder)
 				spaceFolderDetailG.DELETE("", s.DeleteSpaceFolder)
 			}
 		}
