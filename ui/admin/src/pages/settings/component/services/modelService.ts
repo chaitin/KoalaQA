@@ -1,4 +1,11 @@
-import { getAdminModelList, postAdminModel, postAdminModelCheck, postAdminModelProviderSupported, putAdminModelId, SvcMKCreateReq } from '@/api';
+import {
+  getAdminModelList,
+  postAdminModel,
+  postAdminModelCheck,
+  postAdminModelProviderSupported,
+  putAdminModelId,
+  SvcMKCreateReq,
+} from '@/api';
 import type {
   ModelService as IModelService,
   Model,
@@ -7,7 +14,7 @@ import type {
   ListModelReq as UIGetModelNameData,
   ModelListItem as UIModelListItem,
   UpdateModelReq as UIUpdateModelData,
-} from '@yokowu/modelkit-ui';
+} from '@ctzhian/modelkit';
 
 type WithRequiredAndDefault<T> = {
   [P in keyof T]-?: T[P] extends undefined ? string : T[P];
@@ -31,9 +38,9 @@ const convertToKit = (data: UICreateModelData): SvcMKCreateReq => {
   return {
     ..._data,
     model: data.model_name || '',
-    type: (data.model_type as SvcMKCreateReq['type']) || 'chat'
+    type: (data.model_type as SvcMKCreateReq['type']) || 'chat',
   };
-}
+};
 // ModelService 实现
 export const modelService: IModelService = {
   async createModel(data: UICreateModelData) {
@@ -48,8 +55,8 @@ export const modelService: IModelService = {
 
     const models: UIModelListItem[] = result.models
       ? result.models?.map(item => ({
-        model: item.model || '',
-      }))
+          model: item.model || '',
+        }))
       : [];
     const error: string = '';
 
@@ -72,4 +79,3 @@ export const modelService: IModelService = {
     return { model };
   },
 };
-
