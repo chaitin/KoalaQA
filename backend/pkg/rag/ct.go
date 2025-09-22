@@ -68,12 +68,11 @@ func (c *CTRag) UpsertRecords(ctx context.Context, datasetID string, content str
 
 func (c *CTRag) QueryRecords(ctx context.Context, datasetIDs []string, query string, groupIDs []int) ([]*model.NodeContentChunk, error) {
 	chunks, _, err := c.client.RetrieveChunks(ctx, rag.RetrievalRequest{
-		DatasetIDs:             datasetIDs,
-		Question:               query,
-		TopK:                   10,
-		UserGroupIDs:           groupIDs,
-		SimilarityThreshold:    0.2,
-		VectorSimilarityWeight: 0.2,
+		DatasetIDs:          datasetIDs,
+		Question:            query,
+		TopK:                10,
+		UserGroupIDs:        groupIDs,
+		SimilarityThreshold: 0.3,
 	})
 	if err != nil {
 		return nil, err

@@ -1,0 +1,127 @@
+package sub
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/chaitin/koalaqa/model"
+	"github.com/chaitin/koalaqa/pkg/glog"
+	"github.com/chaitin/koalaqa/pkg/llm"
+	"github.com/chaitin/koalaqa/pkg/mq"
+	"github.com/chaitin/koalaqa/pkg/rag"
+	"github.com/chaitin/koalaqa/pkg/topic"
+	"github.com/chaitin/koalaqa/repo"
+	"github.com/chaitin/koalaqa/svc"
+)
+
+type QA struct {
+	Question string
+	Answer   string
+}
+
+type QAReview struct {
+	repo    *repo.KBDocument
+	comm    *repo.Comment
+	kb      *repo.KnowledgeBase
+	logger  *glog.Logger
+	rag     rag.Service
+	dataset *repo.Dataset
+	llm     *svc.LLM
+}
+
+func NewQA(repo *repo.KBDocument, comm *repo.Comment, kb *repo.KnowledgeBase, rag rag.Service, dataset *repo.Dataset, llm *svc.LLM) *QAReview {
+	return &QAReview{
+		repo:    repo,
+		comm:    comm,
+		kb:      kb,
+		rag:     rag,
+		dataset: dataset,
+		llm:     llm,
+		logger:  glog.Module("sub.qa_review"),
+	}
+}
+
+func (q *QAReview) MsgType() mq.Message {
+	return topic.MsgMessageNotify{}
+}
+
+func (q *QAReview) Topic() mq.Topic {
+	return topic.TopicMessageNotify
+}
+
+func (q *QAReview) Group() string {
+	return "koala_comment_accept_review"
+}
+
+func (q *QAReview) AckWait() time.Duration {
+	return time.Minute * 2
+}
+
+func (q *QAReview) Concurrent() uint {
+	return 10
+}
+
+func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
+	logger := q.logger.WithContext(ctx)
+	data := msg.(topic.MsgMessageNotify)
+	if data.Type != model.MsgNotifyTypeApplyComment {
+		return nil
+	}
+	var comment model.Comment
+	if err := q.comm.GetByID(ctx, &comment, data.CommentID); err != nil {
+		logger.WithErr(err).Warn("get comment failed")
+		return nil
+	}
+	kbID, err := q.kb.FirstID(ctx)
+	if err != nil {
+		logger.WithErr(err).Warn("get kb id failed")
+		return nil
+	}
+	chunks, err := q.rag.QueryRecords(ctx, []string{q.dataset.GetBackendID(ctx)}, comment.Content, nil)
+	if err != nil {
+		logger.WithErr(err).Warn("query rag records failed")
+		return nil
+	}
+	newQA := &model.KBDocument{
+		KBID:     kbID,
+		Title:    data.DiscussTitle,
+		Desc:     fmt.Sprintf("%d/%d ", data.DiscussID, comment.ID),
+		Markdown: []byte(comment.Content),
+		DocType:  model.DocTypeQuestion,
+		Status:   model.DocStatusPendingReview,
+	}
+	if len(chunks) == 0 {
+		return q.repo.Create(ctx, newQA)
+	}
+	docIds := make([]string, 0)
+	for _, chunk := range chunks {
+		docIds = append(docIds, chunk.DocID)
+	}
+	var docs []model.KBDocument
+	if err := q.repo.GetByRagIDs(ctx, &docs, docIds); err != nil {
+		logger.WithErr(err).Warn("get docs failed")
+		return nil
+	}
+	var qas []QA
+	for _, doc := range docs {
+		qas = append(qas, QA{
+			Question: doc.Title,
+			Answer:   string(doc.Markdown),
+		})
+	}
+	res, err := q.llm.Chat(ctx, llm.QASimilarityPrompt, "", map[string]any{
+		"NewQuestion": newQA.Title,
+		"NewAnswer":   string(newQA.Markdown),
+		"ExistingQAs": qas,
+	})
+	if err != nil {
+		logger.WithErr(err).Warn("check qa similarity failed")
+		return nil
+	}
+	if res == "true" {
+		logger.With("question", newQA.Title).Debug("qa similarity found")
+		return nil
+	}
+	return q.repo.Create(ctx, newQA)
+}
