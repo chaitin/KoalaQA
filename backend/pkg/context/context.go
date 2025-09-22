@@ -117,3 +117,16 @@ func (c *Context) ParamUint(key string) (uint, error) {
 
 	return uint(val), nil
 }
+
+func (c *Context) QueryUint(key string) (uint, error) {
+	strVal := c.Query(key)
+	if strVal == "" {
+		return 0, errors.New("query param not found")
+	}
+
+	val, err := strconv.ParseUint(strVal, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return uint(val), nil
+}
