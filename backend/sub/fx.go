@@ -11,6 +11,7 @@ var Module = fx.Options(
 	fx.Provide(mq.AsSubscriber(NewKBQA)),
 	fx.Provide(mq.AsSubscriber(newMessageNotify)),
 	fx.Provide(mq.AsSubscriber(newAnydocTask)),
+	fx.Provide(mq.AsSubscriber(NewQA)),
 	fx.Provide(mq.AsSubscriber(NewComment)),
 	fx.Provide(mq.AsSubscriber(NewDiscSummary)),
 	fx.Provide(mq.AsSubscriber(newDiscussWebhook)),

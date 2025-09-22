@@ -459,6 +459,7 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 		DiscussTitle: disc.Title,
 		DiscussUUID:  disc.UUID,
 		Type:         model.MsgNotifyTypeApplyComment,
+		CommentID:    commentID,
 		FromID:       user.UID,
 		ToID:         comment.UserID,
 	}
