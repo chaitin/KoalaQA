@@ -153,14 +153,14 @@ const AdminDocument = () => {
                       },
                     }}
                   >
-                    <MenuItem
+                    {/* <MenuItem
                       onClick={event => {
                         event.stopPropagation();
                         deleteKb(item);
                       }}
                     >
                       删除
-                    </MenuItem>
+                    </MenuItem> */}
                     <MenuItem
                       onClick={e => {
                         e.stopPropagation();
