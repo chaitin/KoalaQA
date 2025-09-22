@@ -5,7 +5,7 @@ import { Box, Button, Stack, useTheme } from '@mui/material';
 
 import ImportDoc from '@/components/ImportDoc';
 import { ImportDocType } from '@/components/ImportDoc/type';
-import { addOpacityToColor } from '@yokowu/modelkit-ui';
+import { addOpacityToColor } from '@ctzhian/modelkit';
 
 const DocImport = (props: { refresh: (params: any) => void }) => {
   const { refresh } = props;
@@ -78,10 +78,7 @@ const DocImport = (props: { refresh: (params: any) => void }) => {
           ),
         }))}
         context={
-          <Button
-            variant='contained'
-            sx={{ position: 'absolute', top: '13px', right: '16px' }}
-          >
+          <Button variant="contained" sx={{ position: 'absolute', top: '13px', right: '16px' }}>
             手动录入
           </Button>
         }
