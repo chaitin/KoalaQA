@@ -603,7 +603,7 @@ func (d *KBDocument) DeleteSpace(ctx context.Context, kbID uint, docID uint) err
 }
 
 type ListSpaceKBReq struct {
-	SpaceID string `json:"space_id"`
+	SpaceID string `form:"space_id"`
 }
 
 type ListSpaceKBItem struct {
@@ -613,7 +613,7 @@ type ListSpaceKBItem struct {
 	Desc     string         `json:"desc"`
 }
 
-func (d *KBDocument) ListSpaceKB(ctx context.Context, kbID uint, docID uint, req ListSpaceKBReq) (*model.ListRes[ListSpaceKBItem], error) {
+func (d *KBDocument) ListSpaceRemote(ctx context.Context, kbID uint, docID uint, req ListSpaceKBReq) (*model.ListRes[ListSpaceKBItem], error) {
 	doc, err := d.GetByID(ctx, kbID, docID)
 	if err != nil {
 		return nil, err
