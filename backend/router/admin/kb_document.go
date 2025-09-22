@@ -222,36 +222,6 @@ func (d *kbDocument) List(ctx *context.Context) {
 	ctx.Success(res)
 }
 
-// Update
-// @Summary update kb document
-// @Tags document
-// @Param kb_id path uint true "kb_id"
-// @Param doc_id path uint true "doc_id"
-// @Produce json
-// @Success 200 {object} context.Response{data=string}
-// @Router /admin/kb/{kb_id}/document/{doc_id} [put]
-func (d *kbDocument) Update(ctx *context.Context) {
-	kbID, err := ctx.ParamUint("kb_id")
-	if err != nil {
-		ctx.BadRequest(err)
-		return
-	}
-
-	docID, err := ctx.ParamUint("doc_id")
-	if err != nil {
-		ctx.BadRequest(err)
-		return
-	}
-
-	taskID, err := d.svcDoc.UpdateByPlatform(ctx, kbID, docID)
-	if err != nil {
-		ctx.InternalError(err, "update kb document failed")
-		return
-	}
-
-	ctx.Success(taskID)
-}
-
 // Detail
 // @Summary get kb document detail
 // @Tags document
@@ -323,7 +293,6 @@ func (d *kbDocument) Route(e server.Handler) {
 		pageG := e.Group("/kb/:kb_id/document")
 		pageG.GET("", d.List)
 		pageG.GET("/:doc_id", d.Detail)
-		pageG.PUT("/:doc_id", d.Update)
 		pageG.DELETE("/:doc_id", d.Delete)
 	}
 

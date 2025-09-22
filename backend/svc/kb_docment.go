@@ -709,6 +709,33 @@ func (d *KBDocument) DeleteSpaceFolder(ctx context.Context, kbID uint, folderID 
 	return nil
 }
 
+type ListWebItem struct {
+	model.Base
+
+	Title  string          `json:"title"`
+	Desc   string          `json:"desc"`
+	Status model.DocStatus `json:"status"`
+}
+
+func (d *KBDocument) ListWeb(ctx context.Context, kbID uint) (*model.ListRes[ListWebItem], error) {
+	var res model.ListRes[ListWebItem]
+	err := d.repoDoc.List(ctx, &res,
+		repo.QueryWithEqual("kb_id", kbID),
+		repo.QueryWithEqual("doc_type", model.DocTypeWeb),
+	)
+	if err != nil {
+		return nil, err
+	}
+	err = d.repoDoc.Count(ctx, &res.Total,
+		repo.QueryWithEqual("kb_id", kbID),
+		repo.QueryWithEqual("doc_type", model.DocTypeWeb),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
 func newDocument(repoDoc *repo.KBDocument, c cache.Cache[topic.TaskMeta], doc anydoc.Anydoc, pub mq.Publisher, oc oss.Client, pa *PublicAddress) *KBDocument {
 	return &KBDocument{
 		repoDoc:       repoDoc,
