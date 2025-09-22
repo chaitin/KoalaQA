@@ -106,7 +106,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
         const uid = await postDiscussion(params);
         console.log(uid)
         // 创建成功后跳转到首页
-        router.replace(`/discuss/${uid}`);
+        router.push(`/discuss/${uid}`);
       }
     } finally {
       setLoading(false);
@@ -391,7 +391,7 @@ const AvatarWrap = styled(Image)(({ theme }) => {
 export const Avatar = ({ src, size = 20 }: { src?: string; size: number }) => {
   return (
     <AvatarWrap
-      src={src || defaultAvatar}
+      src={src || defaultAvatar.src}
       alt='头像'
       width={size}
       height={size}

@@ -45,20 +45,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       .finally(() => setLoading(false));
   };
   useEffect(() => {
-    // 在登录相关页面不自动获取用户信息，避免401错误
-    if (typeof window !== 'undefined') {
-      const currentPath = window.location.pathname;
-      const isAuthPage =
-        currentPath.startsWith('/login') || currentPath.startsWith('/register');
-
-      if (!isAuthPage) {
-        fetchUser();
-      } else {
-        setLoading(false);
-      }
-    } else {
-      fetchUser();
-    }
+    fetchUser()
   }, []);
   return (
     <AuthContext.Provider
