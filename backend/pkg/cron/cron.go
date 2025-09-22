@@ -13,12 +13,12 @@ type Manager struct {
 type managerIn struct {
 	fx.In
 
-	tasks []Task `group:"cron_tasks"`
+	Tasks []Task `group:"cron_tasks"`
 }
 
 func NewManager(in managerIn) *Manager {
 	return &Manager{
-		tasks: in.tasks,
+		tasks: in.Tasks,
 		cron: cron.New(cron.WithParser(cron.NewParser(cron.Second|cron.Minute|cron.Hour|
 			cron.Dom|cron.Month|cron.DowOptional|cron.Descriptor)), cron.WithChain()),
 	}
