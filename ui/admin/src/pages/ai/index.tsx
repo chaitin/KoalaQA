@@ -59,7 +59,7 @@ const AdminDocument = () => {
       content: (
         <>
           确定要删除
-          <Box component='span' sx={{ fontWeight: 700, color: 'text.primary' }}>
+          <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
             {item.name}
           </Box>{' '}
           吗？
@@ -113,10 +113,10 @@ const AdminDocument = () => {
       <Grid container spacing={2}>
         <Grid size={{ sm: 12, md: 6 }}>
           <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
-            <Typography variant='body2' sx={{ mb: 2 }}>
+            <Typography variant="body2" sx={{ mb: 2 }}>
               知识学习
             </Typography>
-            {data?.items?.map((item) => (
+            {data?.items?.map(item => (
               <Card
                 key={item.id}
                 sx={{
@@ -125,29 +125,25 @@ const AdminDocument = () => {
                   bgcolor: '#F8F9FA',
                 }}
               >
-                <Stack
-                  direction='row'
-                  alignItems='center'
-                  justifyContent='space-between'
-                >
+                <Stack direction="row" alignItems="center" justifyContent="space-between">
                   <Typography
-                    variant='subtitle2'
+                    variant="subtitle2"
                     sx={{ cursor: 'pointer', flexGrow: 1 }}
                     onClick={() => toDetail(item)}
                   >
                     {item.name}
                   </Typography>
                   <IconButton
-                    id='basic-button'
+                    id="basic-button"
                     aria-controls={open ? 'basic-menu' : undefined}
-                    aria-haspopup='true'
+                    aria-haspopup="true"
                     aria-expanded={open ? 'true' : undefined}
                     onClick={clickOption}
                   >
                     <MoreHorizIcon />
                   </IconButton>
                   <Menu
-                    id='basic-menu'
+                    id="basic-menu"
                     anchorEl={anchorEl}
                     open={open}
                     onClose={closeOption}
@@ -158,7 +154,7 @@ const AdminDocument = () => {
                     }}
                   >
                     <MenuItem
-                      onClick={(event) => {
+                      onClick={event => {
                         event.stopPropagation();
                         deleteKb(item);
                       }}
@@ -166,7 +162,7 @@ const AdminDocument = () => {
                       删除
                     </MenuItem>
                     <MenuItem
-                      onClick={(e) => {
+                      onClick={e => {
                         e.stopPropagation();
                         handleEdit(item);
                       }}
@@ -176,42 +172,38 @@ const AdminDocument = () => {
                   </Menu>
                 </Stack>
                 <Stack
-                  direction='row'
-                  justifyContent='space-between'
-                  alignItems='center'
+                  direction="row"
+                  justifyContent="space-between"
+                  alignItems="center"
                   sx={{ width: '70%', flexGrow: 0 }}
                 >
                   <Stack
-                    direction='row'
-                    justifyContent='center'
-                    alignItems='center'
+                    direction="row"
+                    justifyContent="center"
+                    alignItems="center"
                     sx={{ flex: 1 }}
                     spacing={1}
                   >
-                    <Typography variant='body2'>问答对</Typography>
+                    <Typography variant="body2">问答对</Typography>
                     <Button
-                      variant='text'
-                      onClick={() =>
-                        navigator(`/admin/ai/${item.id}/qa?name=${item.name}`)
-                      }
+                      variant="text"
+                      onClick={() => navigator(`/admin/ai/${item.id}/qa?name=${item.name}`)}
                     >
                       {item.qa_count}
                     </Button>
                   </Stack>
-                  <Divider orientation='vertical' sx={{ height: '34px' }} />
+                  <Divider orientation="vertical" sx={{ height: '34px' }} />
                   <Stack
-                    direction='row'
-                    justifyContent='center'
-                    alignItems='center'
+                    direction="row"
+                    justifyContent="center"
+                    alignItems="center"
                     sx={{ flex: 1 }}
                     spacing={1}
                   >
-                    <Typography variant='body2'>知识库</Typography>
+                    <Typography variant="body2">知识库</Typography>
                     <Button
-                      variant='text'
-                      onClick={() =>
-                        navigator(`/admin/ai/${item.id}/doc?name=${item.name}`)
-                      }
+                      variant="text"
+                      onClick={() => navigator(`/admin/ai/${item.id}/doc?name=${item.name}`)}
                     >
                       {item.doc_count}
                     </Button>
@@ -219,7 +211,7 @@ const AdminDocument = () => {
                 </Stack>
               </Card>
             ))}
-            <Button
+            {/* <Button
               sx={{ mt: 2 }}
               size='small'
               startIcon={
@@ -228,13 +220,13 @@ const AdminDocument = () => {
               onClick={creatRepo}
             >
               添加一个知识库
-            </Button>
+            </Button> */}
           </Card>
         </Grid>
         <Grid size={{ sm: 12, md: 6 }}>
           <Bot />
           <Card sx={{ border: '1px solid', borderColor: 'divider', mt: 2 }}>
-            <Typography variant='body2' sx={{ mb: 0 }}>
+            <Typography variant="body2" sx={{ mb: 0 }}>
               模型管理
             </Typography>
             <Model />
@@ -250,18 +242,12 @@ const AdminDocument = () => {
         <Stack spacing={2}>
           <TextField
             {...register('name')}
-            label='名称'
+            label="名称"
             fullWidth
             error={Boolean(formState.errors.name?.message)}
             helperText={formState.errors.name?.message}
           />
-          <TextField
-            fullWidth
-            {...register('desc')}
-            label='描述'
-            multiline
-            minRows={3}
-          />
+          <TextField fullWidth {...register('desc')} label="描述" multiline minRows={3} />
         </Stack>
       </Modal>
     </Card>
