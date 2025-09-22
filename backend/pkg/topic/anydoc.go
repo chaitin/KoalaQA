@@ -43,8 +43,10 @@ type TaskMeta struct {
 
 	DBDocID   uint
 	KBID      uint
+	DocType   model.DocType
 	Platform  platform.PlatformType
 	Title     string
 	Desc      string
 	ExportOpt model.ExportOpt
+	ParentID  uint
 }

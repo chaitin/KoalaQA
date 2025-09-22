@@ -13,6 +13,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/anydoc"
 	"github.com/chaitin/koalaqa/pkg/anydoc/platform"
 	"github.com/chaitin/koalaqa/pkg/cache"
+	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/oss"
 	"github.com/chaitin/koalaqa/pkg/topic"
@@ -20,13 +21,20 @@ import (
 	"github.com/chaitin/koalaqa/repo"
 )
 
-type baseExportReq struct {
-	DBDocID uint   `json:"-"`
-	KBID    uint   `json:"kb_id" binding:"required"`
-	UUID    string `json:"uuid" binding:"required"`
-	DocID   string `json:"doc_id" binding:"required"`
-	Title   string `json:"title" binding:"required"`
-	Desc    string `json:"desc"`
+type BaseDBDoc struct {
+	ID       uint
+	Type     model.DocType
+	ParentID uint
+}
+
+type BaseExportReq struct {
+	DBDoc BaseDBDoc `json:"-"`
+
+	KBID  uint   `json:"kb_id" binding:"required"`
+	UUID  string `json:"uuid" binding:"required"`
+	DocID string `json:"doc_id" binding:"required"`
+	Title string `json:"title" binding:"required"`
+	Desc  string `json:"desc"`
 }
 
 type KBDocument struct {
@@ -36,6 +44,7 @@ type KBDocument struct {
 	anydoc        anydoc.Anydoc
 	pub           mq.Publisher
 	oc            oss.Client
+	logger        *glog.Logger
 }
 
 type FeishuListReq struct {
@@ -55,13 +64,22 @@ func (d *KBDocument) FeishuList(ctx context.Context, req FeishuListReq) (*anydoc
 }
 
 type FeishuExportReq struct {
-	baseExportReq
+	BaseExportReq
 	FileType string `json:"file_type" binding:"required"`
 	SpaceID  string `json:"space_id" binding:"required"`
 }
 
 func (d *KBDocument) FeishuExport(ctx context.Context, req FeishuExportReq) (string, error) {
-	return d.exportWithCache(ctx, platform.PlatformFeishu, req.baseExportReq, anydoc.ExportWithFeishu(req.SpaceID, req.FileType))
+	return d.exportWithCache(ctx, platform.PlatformFeishu, req.BaseExportReq, anydoc.ExportWithFeishu(req.SpaceID, req.FileType))
+}
+
+type PandawikiExportReq struct {
+	BaseExportReq
+	SpaceID string `json:"space_id" binding:"required"`
+}
+
+func (d *KBDocument) PandawikiExport(ctx context.Context, req PandawikiExportReq) (string, error) {
+	return d.exportWithCache(ctx, platform.PlatformPandawiki, req.BaseExportReq, anydoc.ExportWithSpaceID(req.SpaceID))
 }
 
 type YueQueListReq struct {
@@ -77,11 +95,11 @@ func (d *KBDocument) YuQueList(ctx context.Context, req YueQueListReq) (*anydoc.
 }
 
 type YuQueExportReq struct {
-	baseExportReq
+	BaseExportReq
 }
 
 func (d *KBDocument) YuQueExport(ctx context.Context, req YuQueExportReq) (string, error) {
-	return d.exportWithCache(ctx, platform.PlatformYuQue, req.baseExportReq)
+	return d.exportWithCache(ctx, platform.PlatformYuQue, req.BaseExportReq)
 }
 
 type FileListReq struct {
@@ -95,11 +113,11 @@ func (d *KBDocument) FileList(ctx context.Context, req FileListReq) (*anydoc.Lis
 }
 
 type FileExportReq struct {
-	baseExportReq
+	BaseExportReq
 }
 
 func (d *KBDocument) FileExport(ctx context.Context, req FileExportReq) (string, error) {
-	return d.exportWithCache(ctx, platform.PlatformFile, req.baseExportReq)
+	return d.exportWithCache(ctx, platform.PlatformFile, req.BaseExportReq)
 }
 
 type URLListReq struct {
@@ -113,11 +131,11 @@ func (d *KBDocument) URLList(ctx context.Context, req URLListReq) (*anydoc.ListR
 }
 
 type URLExportReq struct {
-	baseExportReq
+	BaseExportReq
 }
 
 func (d *KBDocument) URLExport(ctx context.Context, req URLExportReq) (string, error) {
-	return d.exportWithCache(ctx, platform.PlatformURL, req.baseExportReq)
+	return d.exportWithCache(ctx, platform.PlatformURL, req.BaseExportReq)
 }
 
 type SitemapListReq struct {
@@ -131,11 +149,11 @@ func (d *KBDocument) SitemapList(ctx context.Context, req SitemapListReq) (*anyd
 }
 
 type SitemapExportReq struct {
-	baseExportReq
+	BaseExportReq
 }
 
 func (d *KBDocument) SitemapExport(ctx context.Context, req SitemapExportReq) (string, error) {
-	return d.exportWithCache(ctx, platform.PlatformSitemap, req.baseExportReq)
+	return d.exportWithCache(ctx, platform.PlatformSitemap, req.BaseExportReq)
 }
 
 type TaskReq struct {
@@ -162,7 +180,7 @@ func (d *KBDocument) Task(ctx context.Context, req TaskReq) ([]topic.TaskMeta, e
 	return res, nil
 }
 
-func (d *KBDocument) exportWithCache(ctx context.Context, platform platform.PlatformType, baseInfo baseExportReq, optFuncs ...anydoc.ExportFunc) (string, error) {
+func (d *KBDocument) exportWithCache(ctx context.Context, platform platform.PlatformType, baseInfo BaseExportReq, optFuncs ...anydoc.ExportFunc) (string, error) {
 	o := anydoc.GetExportOpt(optFuncs...)
 	taskID, err := d.anydoc.Export(ctx, platform, baseInfo.UUID, baseInfo.DocID, anydoc.ExportWithOpt(o))
 	if err != nil {
@@ -170,11 +188,13 @@ func (d *KBDocument) exportWithCache(ctx context.Context, platform platform.Plat
 	}
 
 	d.cache.Set(taskID, topic.TaskMeta{
-		DBDocID:   baseInfo.DBDocID,
+		DBDocID:   baseInfo.DBDoc.ID,
 		KBID:      baseInfo.KBID,
 		Title:     baseInfo.Title,
 		Platform:  platform,
 		Desc:      baseInfo.Desc,
+		ParentID:  baseInfo.DBDoc.ParentID,
+		DocType:   baseInfo.DBDoc.Type,
 		ExportOpt: o,
 		TaskHead: topic.TaskHead{
 			TaskID: taskID,
@@ -314,13 +334,17 @@ func (d *KBDocument) UpdateByPlatform(ctx context.Context, kbID uint, docID uint
 		doc.Desc = listDoc.FileType
 	}
 
-	return d.exportWithCache(ctx, doc.Platform, baseExportReq{
-		DBDocID: doc.ID,
-		KBID:    kbID,
-		UUID:    listRes.UUID,
-		DocID:   doc.DocID,
-		Title:   doc.Title,
-		Desc:    doc.Desc,
+	return d.exportWithCache(ctx, doc.Platform, BaseExportReq{
+		DBDoc: BaseDBDoc{
+			ID:       doc.ID,
+			ParentID: doc.ParentID,
+			Type:     doc.DocType,
+		},
+		KBID:  kbID,
+		UUID:  listRes.UUID,
+		DocID: doc.DocID,
+		Title: doc.Title,
+		Desc:  doc.Desc,
 	}, anydoc.ExportWithOpt(doc.ExportOpt.Inner()))
 }
 
@@ -424,6 +448,27 @@ func (d *KBDocument) ListSpace(ctx context.Context, kbID uint) (*model.ListRes[L
 	var res model.ListRes[ListSpaceItem]
 	err := d.repoDoc.ListSpace(ctx, &res.Items, kbID,
 		repo.QueryWithEqual("parent_id", 0),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+type ListSpaceFolderDocItem struct {
+	model.Base
+
+	DocID string `json:"doc_id"`
+}
+
+func (d *KBDocument) ListSpaceFolderDoc(ctx context.Context, kbID uint, folderID uint) (*model.ListRes[ListSpaceFolderDocItem], error) {
+	var res model.ListRes[ListSpaceFolderDocItem]
+
+	err := d.repoDoc.List(ctx, &res.Items,
+		repo.QueryWithEqual("kb_id", kbID),
+		repo.QueryWithEqual("parent_id", folderID),
+		repo.QueryWithEqual("doc_type", model.DocTypeSpace),
 	)
 	if err != nil {
 		return nil, err
@@ -647,14 +692,59 @@ func (d *KBDocument) CreateSpaceFolder(ctx context.Context, kbID uint, parentID 
 		return err
 	}
 
-	// TODO: 通知拉取内容
+	for _, doc := range docs {
+		err = d.pub.Publish(ctx, topic.TopicKBSpace, topic.MsgKBSpace{
+			OP:       topic.OPInsert,
+			KBID:     kbID,
+			FolderID: doc.ID,
+		})
+		if err != nil {
+			d.logger.WithContext(ctx).WithErr(err).With("kb_id", kbID).With("folder_id", doc.ID).Warn("pub insert msg failed")
+		}
+	}
 
 	return nil
+}
+
+type CreateSpaceDocReq struct {
+	DocID string
+	Title string
+	Desc  string
+}
+
+func (d *KBDocument) CreateSpaceDoc(ctx context.Context, kbID uint, parentID uint, req CreateSpaceDocReq) (uint, error) {
+	parentDoc, err := d.GetByID(ctx, kbID, parentID)
+	if err != nil {
+		return 0, err
+	}
+
+	if parentDoc.DocType != model.DocTypeSpace {
+		return 0, errors.ErrUnsupported
+	}
+
+	doc := model.KBDocument{
+		KBID:     kbID,
+		Platform: parentDoc.Platform,
+		DocID:    req.DocID,
+		Title:    req.Title,
+		Desc:     req.Desc,
+		FileType: model.FileTypeFile,
+		DocType:  model.DocTypeSpace,
+		Status:   model.DocStatusAppling,
+		ParentID: parentID,
+	}
+	err = d.repoDoc.Create(ctx, &doc)
+	if err != nil {
+		return 0, err
+	}
+
+	return doc.ID, nil
 }
 
 type ListSpaceFolderItem struct {
 	model.Base
 
+	RagID  string          `json:"rag_id"`
 	DocID  string          `json:"doc_id"`
 	Title  string          `json:"title"`
 	Status model.DocStatus `json:"status"`
@@ -684,7 +774,14 @@ func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID 
 		return errors.ErrUnsupported
 	}
 
-	// TODO: 通知更新
+	err = d.pub.Publish(ctx, topic.TopicKBSpace, topic.MsgKBSpace{
+		OP:       topic.OPUpdate,
+		KBID:     kbID,
+		FolderID: folderID,
+	})
+	if err != nil {
+		d.logger.WithContext(ctx).WithErr(err).With("kb_id", kbID).With("folder_id", folderID).Warn("pub update msg failed")
+	}
 
 	return nil
 }
@@ -699,7 +796,14 @@ func (d *KBDocument) DeleteSpaceFolder(ctx context.Context, kbID uint, folderID 
 		return errors.ErrUnsupported
 	}
 
-	// TODO: 通知删除
+	err = d.pub.Publish(ctx, topic.TopicKBSpace, topic.MsgKBSpace{
+		OP:       topic.OPDelete,
+		KBID:     kbID,
+		FolderID: folderID,
+	})
+	if err != nil {
+		d.logger.WithContext(ctx).WithErr(err).With("kb_id", kbID).With("folder_id", folderID).Warn("pub delete msg failed")
+	}
 
 	err = d.repoDoc.Delete(ctx, repo.QueryWithEqual("kb_id", kbID), repo.QueryWithEqual("id", folderID))
 	if err != nil {
@@ -744,6 +848,7 @@ func newDocument(repoDoc *repo.KBDocument, c cache.Cache[topic.TaskMeta], doc an
 		pub:           pub,
 		oc:            oc,
 		svcPublicAddr: pa,
+		logger:        glog.Module("svc", "kb_document"),
 	}
 }
 

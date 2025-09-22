@@ -62,7 +62,7 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 			},
 			KBID:        meta.KBID,
 			Platform:    meta.Platform,
-			DocType:     model.DocTypeDocument,
+			DocType:     meta.DocType,
 			PlatformOpt: model.NewJSONB(taskInfo.PlatformOpt),
 			ExportOpt:   model.NewJSONB(meta.ExportOpt),
 			DocID:       taskInfo.DocID,
@@ -72,6 +72,7 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 			JSON:        []byte(taskInfo.JSON),
 			FileType:    taskInfo.DocType,
 			Status:      model.DocStatusAppling,
+			ParentID:    meta.ParentID,
 		}
 
 		err := t.repoDoc.CreateOnIDConflict(ctx, &doc)
