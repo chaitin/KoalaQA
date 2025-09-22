@@ -16,7 +16,7 @@ type spaceUpdate struct {
 }
 
 func (s *spaceUpdate) Period() string {
-	return "0 0 0 */1 * ?"
+	return "0 0 0 * * MON"
 }
 
 func (s *spaceUpdate) Run() {
