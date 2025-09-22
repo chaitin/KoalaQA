@@ -447,7 +447,7 @@ type ListSpaceItem struct {
 func (d *KBDocument) ListSpace(ctx context.Context, kbID uint) (*model.ListRes[ListSpaceItem], error) {
 	var res model.ListRes[ListSpaceItem]
 	err := d.repoDoc.ListSpace(ctx, &res.Items, kbID,
-		repo.QueryWithEqual("parent_id", 0),
+		repo.QueryWithEqual("kb_documents.parent_id", 0),
 	)
 	if err != nil {
 		return nil, err
@@ -754,7 +754,7 @@ type ListSpaceFolderItem struct {
 func (d *KBDocument) ListSpaceFolder(ctx context.Context, kbID uint, parentID uint) (*model.ListRes[ListSpaceFolderItem], error) {
 	var res model.ListRes[ListSpaceFolderItem]
 	err := d.repoDoc.ListSpace(ctx, &res, kbID,
-		repo.QueryWithEqual("parent_id", parentID),
+		repo.QueryWithEqual("kb_documents.parent_id", parentID),
 		repo.QueryWithEqual("file_type", model.FileTypeFolder),
 	)
 	if err != nil {
