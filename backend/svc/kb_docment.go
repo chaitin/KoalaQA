@@ -821,17 +821,26 @@ type ListWebItem struct {
 	Status model.DocStatus `json:"status"`
 }
 
-func (d *KBDocument) ListWeb(ctx context.Context, kbID uint) (*model.ListRes[ListWebItem], error) {
+type ListWebReq struct {
+	model.Pagination
+
+	KBID  uint    `json:"kb_id" swaggerignore:"true"`
+	Title *string `json:"title" form:"title"`
+}
+
+func (d *KBDocument) ListWeb(ctx context.Context, req ListWebReq) (*model.ListRes[ListWebItem], error) {
 	var res model.ListRes[ListWebItem]
 	err := d.repoDoc.List(ctx, &res,
-		repo.QueryWithEqual("kb_id", kbID),
+		repo.QueryWithEqual("kb_id", req.KBID),
 		repo.QueryWithEqual("doc_type", model.DocTypeWeb),
+		repo.QueryWithPagination(&req.Pagination),
+		repo.QueryWithILike("title", req.Title),
 	)
 	if err != nil {
 		return nil, err
 	}
 	err = d.repoDoc.Count(ctx, &res.Total,
-		repo.QueryWithEqual("kb_id", kbID),
+		repo.QueryWithEqual("kb_id", req.KBID),
 		repo.QueryWithEqual("doc_type", model.DocTypeWeb),
 	)
 	if err != nil {
