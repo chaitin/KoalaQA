@@ -17,10 +17,12 @@ type KnowledgeBase struct {
 
 type KBListItem struct {
 	model.Base
-	Name     string `json:"name"`
-	Desc     string `json:"desc"`
-	QACount  int64  `json:"qa_count"`
-	DocCount int64  `json:"doc_count"`
+	Name       string `json:"name"`
+	Desc       string `json:"desc"`
+	QACount    int64  `json:"qa_count"`
+	DocCount   int64  `json:"doc_count"`
+	WebCount   int64  `json:"web_count"`
+	SpaceCount int64  `json:"space_count"`
 }
 
 func (kb *KnowledgeBase) List(ctx context.Context) (*model.ListRes[KBListItem], error) {

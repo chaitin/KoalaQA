@@ -9,6 +9,7 @@ type DocStatus uint
 const (
 	DocStatusUnknown DocStatus = iota
 	DocStatusAppling
+	DocStatusPendingReview
 )
 
 type DocType uint
@@ -18,6 +19,7 @@ const (
 	DocTypeQuestion
 	DocTypeDocument
 	DocTypeSpace
+	DocTypeWeb
 )
 
 type FileType uint

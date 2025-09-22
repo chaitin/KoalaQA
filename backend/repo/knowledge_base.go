@@ -22,9 +22,21 @@ func (kb *KnowledgeBase) ListWithDocCount(ctx context.Context, res any) error {
 			"knowledge_bases.*",
 			"doc.qa_count as qa_count",
 			"doc.doc_count as doc_count",
+			"doc.web_count as web_count",
+			"doc.space_count as space_count",
 		}).
 			Joins("LEFT JOIN (?) as doc ON doc.kb_id = knowledge_bases.id",
-				kb.db.Model(&model.KBDocument{}).Select("kb_id, COUNT(*) FILTER (WHERE doc_type = ?) AS qa_count, COUNT(*) FILTER (WHERE doc_type = ?) AS doc_count", model.DocTypeQuestion, model.DocTypeDocument).Group("kb_id"),
+				kb.db.Model(&model.KBDocument{}).
+					Select(`kb_id,
+						COUNT(*) FILTER (WHERE doc_type = ?) AS qa_count,
+						COUNT(*) FILTER (WHERE doc_type = ?) AS doc_count,
+						COUNT(*) FILTER (WHERE doc_type = ?) AS web_count,
+						COUNT(*) FILTER (WHERE doc_type = ?) AS space_count`,
+						model.DocTypeQuestion,
+						model.DocTypeDocument,
+						model.DocTypeWeb,
+						model.DocTypeSpace).
+					Group("kb_id"),
 			)
 	})
 }
