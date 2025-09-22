@@ -70,7 +70,6 @@ type KBDocument struct {
 	DocID       string                `json:"doc_id" gorm:"column:doc_id;type:text"`
 	Title       string                `json:"title" gorm:"column:title;type:text"`
 	Desc        string                `json:"desc" gorm:"column:desc;type:text"`
-	Summary     string                `json:"summary" gorm:"column:summary;type:text"`
 	Markdown    []byte                `json:"markdown" gorm:"column:markdown;type:bytea"`
 	JSON        []byte                `json:"json" gorm:"column:json;type:bytea"`
 	FileType    FileType              `json:"file_type" gorm:"column:file_type"`
