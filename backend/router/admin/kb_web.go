@@ -13,7 +13,7 @@ type kbWeb struct {
 // List
 // @Summary list kb web
 // @Tags web
-// @Param kb_id path uint true "kb_id"
+// @Param req query svc.ListWebReq true "request params"
 // @Produce json
 // @Success 200 {object} context.Response{data=model.ListRes{items=[]svc.ListWebItem}}
 // @Router /admin/kb/{kb_id}/web [get]
