@@ -78,11 +78,6 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 		logger.WithErr(err).Warn("get kb id failed")
 		return nil
 	}
-	chunks, err := q.rag.QueryRecords(ctx, []string{q.dataset.GetBackendID(ctx)}, comment.Content, nil)
-	if err != nil {
-		logger.WithErr(err).Warn("query rag records failed")
-		return nil
-	}
 	newQA := &model.KBDocument{
 		KBID:     kbID,
 		Title:    data.DiscussTitle,
@@ -90,6 +85,11 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 		Markdown: []byte(comment.Content),
 		DocType:  model.DocTypeQuestion,
 		Status:   model.DocStatusPendingReview,
+	}
+	chunks, err := q.rag.QueryRecords(ctx, []string{q.dataset.GetBackendID(ctx)}, data.DiscussTitle, nil)
+	if err != nil {
+		logger.WithErr(err).Warn("query rag records failed")
+		return nil
 	}
 	if len(chunks) == 0 {
 		return q.repo.Create(ctx, newQA)
