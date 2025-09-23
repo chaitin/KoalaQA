@@ -1682,11 +1682,21 @@ const docTemplate = `{
                 "summary": "list kb web",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
-                        "description": "kb_id",
-                        "name": "kb_id",
-                        "in": "path",
-                        "required": true
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "title",
+                        "in": "query"
                     }
                 ],
                 "responses": {
