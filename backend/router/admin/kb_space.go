@@ -194,16 +194,16 @@ func (s *kbSpace) GetSpace(ctx *context.Context) {
 	ctx.Success(res)
 }
 
-// ListSpaceRemote
+// ListSpaceFolderRemote
 // @Summary list kb space remote doc
 // @Tags space
 // @Param kb_id path uint true "kb_id"
 // @Param space_id path uint true "space_id"
-// @Param req query svc.ListSpaceKBReq true "req param"
+// @Param req query svc.ListRemoteSpaceFolderReq true "req param"
 // @Produce json
 // @Success 200 {object} context.Response{data=model.ListRes{items=[]svc.ListSpaceKBItem}}
 // @Router /admin/kb/{kb_id}/space/{space_id}/remote [get]
-func (s *kbSpace) ListSpaceRemote(ctx *context.Context) {
+func (s *kbSpace) ListSpaceFolderRemote(ctx *context.Context) {
 	kbID, err := ctx.ParamUint("kb_id")
 	if err != nil {
 		ctx.BadRequest(err)
@@ -216,7 +216,7 @@ func (s *kbSpace) ListSpaceRemote(ctx *context.Context) {
 		return
 	}
 
-	var req svc.ListSpaceKBReq
+	var req svc.ListRemoteSpaceFolderReq
 	err = ctx.ShouldBindQuery(&req)
 	if err != nil {
 		ctx.BadRequest(err)
@@ -369,7 +369,7 @@ func (s *kbSpace) Route(h server.Handler) {
 	g.POST("", s.CreateSpace)
 	{
 		detailG := g.Group("/:space_id")
-		detailG.GET("/remote", s.ListSpaceRemote)
+		detailG.GET("/remote", s.ListSpaceFolderRemote)
 		detailG.PUT("/refresh", s.UpdateSpaceAllFolder)
 		detailG.GET("", s.GetSpace)
 		detailG.PUT("", s.UpdateSpace)
