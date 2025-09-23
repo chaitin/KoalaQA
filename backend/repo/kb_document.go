@@ -18,7 +18,10 @@ func (d *KBDocument) GetByID(ctx context.Context, res any, kbID uint, docID uint
 }
 
 func (d *KBDocument) GetByRagIDs(ctx context.Context, res any, ids []string) error {
-	return d.model(ctx).Where("rag_id in (?)", ids).Find(res).Error
+	return d.model(ctx).
+		Where("rag_id in (?)", ids).
+		Order("id desc").
+		Find(res).Error
 }
 
 func (d *KBDocument) CreateOnIDConflict(ctx context.Context, res any) error {

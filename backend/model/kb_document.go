@@ -76,6 +76,7 @@ type KBDocument struct {
 	DocType     DocType               `json:"doc_type" gorm:"column:doc_type"`
 	Status      DocStatus             `json:"status" gorm:"column:status"`
 	ParentID    uint                  `json:"parent_id" gorm:"column:parent_id;type:bigint;default:0"`
+	SimilarID   uint                  `json:"similar_id" gorm:"column:similar_id;type:bigint;default:0"`
 }
 
 type KBDocumentDetail struct {
