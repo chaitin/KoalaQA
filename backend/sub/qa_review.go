@@ -105,10 +105,16 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 	}
 	var qas []QA
 	for _, doc := range docs {
+		if doc.DocType != model.DocTypeQuestion {
+			continue
+		}
 		qas = append(qas, QA{
 			Question: doc.Title,
 			Answer:   string(doc.Markdown),
 		})
+		if newQA.SimilarID == 0 {
+			newQA.SimilarID = doc.ID
+		}
 	}
 	res, err := q.llm.Chat(ctx, llm.QASimilarityPrompt, "", map[string]any{
 		"NewQuestion": newQA.Title,
