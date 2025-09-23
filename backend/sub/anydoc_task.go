@@ -41,11 +41,12 @@ func (t *anydocTask) Concurrent() uint {
 
 func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 	taskInfo := msg.(topic.TaskInfo)
+	logger := t.logger.WithContext(ctx).With("task_info", taskInfo)
 
-	t.logger.WithContext(ctx).With("task_info", taskInfo).Debug("receive task result")
+	logger.Debug("receive task result")
 	meta, ok := t.cache.Get(taskInfo.TaskID)
 	if !ok {
-		t.logger.WithContext(ctx).With("task_info", taskInfo).Warn("task timeout")
+		logger.Warn("task timeout")
 		return nil
 	}
 	meta.TaskHead = taskInfo.TaskHead
@@ -56,6 +57,19 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 
 	switch meta.Status {
 	case topic.TaskStatusCompleted:
+		if meta.ParentID > 0 {
+			exist, err := t.repoDoc.ExistByID(ctx, meta.ParentID)
+			if err != nil {
+				logger.WithErr(err).With("parent_id", meta.ParentID).Warn("get parent doc failed")
+				return nil
+			}
+
+			if !exist {
+				logger.With("parent_id", meta.ParentID).Info("parent doc not eixst, skip")
+				return nil
+			}
+		}
+
 		doc := model.KBDocument{
 			Base: model.Base{
 				ID: meta.DBDocID,
@@ -78,7 +92,7 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 		err := t.repoDoc.CreateOnIDConflict(ctx, &doc)
 		if err != nil {
 			meta.Status = topic.TaskStatusFailed
-			t.logger.WithContext(ctx).WithErr(err).With("kb_document", doc).Error("create kb_document failed")
+			logger.WithErr(err).With("kb_document", doc).Error("create kb_document failed")
 			return nil
 		}
 
@@ -94,16 +108,16 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 		}
 		err = t.pub.Publish(ctx, topic.TopicKBDocumentRag, pubMsg)
 		if err != nil {
-			t.logger.WithContext(ctx).WithErr(err).With("pub_msg", pubMsg).Error("pub msg failed")
+			logger.WithErr(err).With("pub_msg", pubMsg).Error("pub msg failed")
 			return nil
 		}
 
 	case topic.TaskStatusFailed:
-		t.logger.WithContext(ctx).With("task_info", taskInfo).Warn("doc export task failed")
+		logger.Warn("doc export task failed")
 	case topic.TaskStatusInProgress, topic.TaskStatusPending:
 		return nil
 	default:
-		t.logger.WithContext(ctx).With("task_info", taskInfo).Warn("task status not support")
+		logger.Warn("task status not support")
 	}
 
 	return nil

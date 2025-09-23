@@ -35,7 +35,8 @@ func (d *KBDocument) ListSpace(ctx context.Context, res any, kbID uint, optFuncs
 	o := getQueryOpt(optFuncs...)
 
 	return d.model(ctx).
-		Joins("LEFT JOIN (select parent_id, COUNT(*) AS total FROM kb_documents where doc_type = ? AND parent_id != 0 GROUP BY parent_id) AS sub_doc ON sub_doc.parent_id = kb_documents.id", model.DocTypeSpace).
+		Select([]string{"kb_documents.*", "sub_doc.total"}).
+		Joins("LEFT JOIN (select parent_id, COUNT(*) AS total FROM kb_documents where kb_id = ? AND doc_type = ? AND parent_id != 0 GROUP BY parent_id) AS sub_doc ON sub_doc.parent_id = kb_documents.id", kbID, model.DocTypeSpace).
 		Where("kb_id = ?", kbID).
 		Where("doc_type = ?", model.DocTypeSpace).
 		Scopes(o.Scopes()...).

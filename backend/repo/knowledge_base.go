@@ -31,7 +31,7 @@ func (kb *KnowledgeBase) ListWithDocCount(ctx context.Context, res any) error {
 						COUNT(*) FILTER (WHERE doc_type = ?) AS qa_count,
 						COUNT(*) FILTER (WHERE doc_type = ?) AS doc_count,
 						COUNT(*) FILTER (WHERE doc_type = ?) AS web_count,
-						COUNT(*) FILTER (WHERE doc_type = ?) AS space_count`,
+						COUNT(*) FILTER (WHERE doc_type = ? AND parent_id = 0) AS space_count`,
 						model.DocTypeQuestion,
 						model.DocTypeDocument,
 						model.DocTypeWeb,
