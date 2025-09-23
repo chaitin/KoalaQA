@@ -370,7 +370,7 @@ func (s *kbSpace) Route(h server.Handler) {
 	{
 		detailG := g.Group("/:space_id")
 		detailG.GET("/remote", s.ListSpaceRemote)
-		detailG.GET("/refresh", s.UpdateSpaceAllFolder)
+		detailG.PUT("/refresh", s.UpdateSpaceAllFolder)
 		detailG.GET("", s.GetSpace)
 		detailG.PUT("", s.UpdateSpace)
 		detailG.DELETE("", s.DeleteSpace)
