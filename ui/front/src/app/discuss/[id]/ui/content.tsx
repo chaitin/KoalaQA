@@ -204,8 +204,10 @@ const BaseDiscussCard = (props: {
               color: 'rgba(0,0,0,0.5)',
             }}
           >
+          <time dateTime={dayjs.unix(data.updated_at!).format()} title={dayjs.unix(data.updated_at!).format('YYYY-MM-DD HH:mm:ss')}>
             更新于 {dayjs.unix(data.updated_at!).fromNow()}
-          </Typography>
+          </time>
+        </Typography>
           <Stack
             direction='row'
             gap={2}

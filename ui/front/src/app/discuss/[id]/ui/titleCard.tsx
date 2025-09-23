@@ -127,8 +127,10 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           color: 'rgba(0,0,0,0.5)',
         }}
       >
+      <time dateTime={dayjs.unix(data.created_at!).format()} title={dayjs.unix(data.created_at!).format('YYYY-MM-DD HH:mm:ss')}>
         {data.user_name} 发布于 {dayjs.unix(data.created_at!).fromNow()}
-      </Typography>
+      </time>
+    </Typography>
       <Stack
         direction='row'
         alignItems='flex-end'
@@ -191,7 +193,9 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
             variant='body2'
             sx={{ fontSize: 12, color: 'rgba(0,0,0,0.5)' }}
           >
-            {data.user_name} 发布于 {dayjs.unix(data.created_at!).fromNow()}
+            <time dateTime={dayjs.unix(data.created_at!).format()} title={dayjs.unix(data.created_at!).format('YYYY-MM-DD HH:mm:ss')}>
+              {data.user_name} 发布于 {dayjs.unix(data.created_at!).fromNow()}
+            </time>
           </Typography>
         </Stack>
       </Stack>
