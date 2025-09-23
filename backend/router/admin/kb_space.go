@@ -201,7 +201,7 @@ func (s *kbSpace) GetSpace(ctx *context.Context) {
 // @Param space_id path uint true "space_id"
 // @Param req query svc.ListSpaceKBReq true "req param"
 // @Produce json
-// @Success 200 {object} context.Response{data=model.ListRes{data=svc.ListSpaceKBItem}}
+// @Success 200 {object} context.Response{data=model.ListRes{data=[]svc.ListSpaceKBItem}}
 // @Router /admin/kb/{kb_id}/space/{space_id}/remote [get]
 func (s *kbSpace) ListSpaceRemote(ctx *context.Context) {
 	kbID, err := ctx.ParamUint("kb_id")
