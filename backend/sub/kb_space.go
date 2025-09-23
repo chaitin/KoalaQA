@@ -239,7 +239,7 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, kbID ui
 }
 
 func (k *kbSpace) handleDelete(ctx context.Context, logger *glog.Logger, kbID uint, folderID uint) error {
-	folder, err := k.doc.ListSpaceFolder(ctx, kbID, folderID)
+	folder, err := k.doc.ListSpaceFolderDoc(ctx, kbID, folderID)
 	if err != nil {
 		logger.WithErr(err).Warn("list space folder failed")
 		return nil
