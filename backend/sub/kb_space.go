@@ -3,6 +3,7 @@ package sub
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
@@ -15,44 +16,69 @@ import (
 	"github.com/chaitin/koalaqa/svc"
 )
 
-type KBSpace struct {
+type kbSpace struct {
 	logger *glog.Logger
 	doc    *svc.KBDocument
 	anydoc anydoc.Anydoc
 	cache  cache.Cache[topic.TaskMeta]
 	pub    mq.Publisher
+
+	running map[uint]bool
+	lock    sync.Mutex
 }
 
-func NewKBSpace(doc *svc.KBDocument, anydoc anydoc.Anydoc, cache cache.Cache[topic.TaskMeta], pub mq.Publisher) *KBSpace {
-	return &KBSpace{
-		logger: glog.Module("sub", "kb_space"),
-		anydoc: anydoc,
-		cache:  cache,
-		pub:    pub,
+func (k *kbSpace) run(id uint) bool {
+	k.lock.Lock()
+	defer k.lock.Unlock()
+
+	if k.running[id] {
+		return false
+	}
+
+	k.running[id] = true
+
+	return true
+}
+
+func (k *kbSpace) done(id uint) {
+	k.lock.Lock()
+	defer k.lock.Unlock()
+
+	delete(k.running, id)
+}
+
+func newKBSpace(doc *svc.KBDocument, anydoc anydoc.Anydoc, cache cache.Cache[topic.TaskMeta], pub mq.Publisher) *kbSpace {
+	return &kbSpace{
+		logger:  glog.Module("sub", "kb_space"),
+		doc:     doc,
+		anydoc:  anydoc,
+		cache:   cache,
+		pub:     pub,
+		running: make(map[uint]bool),
 	}
 }
 
-func (k *KBSpace) MsgType() mq.Message {
+func (k *kbSpace) MsgType() mq.Message {
 	return topic.MsgKBSpace{}
 }
 
-func (k *KBSpace) Topic() mq.Topic {
+func (k *kbSpace) Topic() mq.Topic {
 	return topic.TopicKBSpace
 }
 
-func (k *KBSpace) Group() string {
+func (k *kbSpace) Group() string {
 	return "koala_kb_space_folder"
 }
 
-func (k *KBSpace) AckWait() time.Duration {
+func (k *kbSpace) AckWait() time.Duration {
 	return time.Minute * 2
 }
 
-func (k *KBSpace) Concurrent() uint {
+func (k *kbSpace) Concurrent() uint {
 	return 4
 }
 
-func (k *KBSpace) getFolder(ctx context.Context, kbID uint, docID uint) (*model.KBDocument, error) {
+func (k *kbSpace) getFolder(ctx context.Context, kbID uint, docID uint) (*model.KBDocument, error) {
 	folderDoc, err := k.doc.GetByID(ctx, kbID, docID)
 	if err != nil {
 		return nil, err
@@ -76,7 +102,7 @@ func (k *KBSpace) getFolder(ctx context.Context, kbID uint, docID uint) (*model.
 	return folderDoc, nil
 }
 
-func (k *KBSpace) Handle(ctx context.Context, msg mq.Message) error {
+func (k *kbSpace) Handle(ctx context.Context, msg mq.Message) error {
 	docMsg := msg.(topic.MsgKBSpace)
 	logger := k.logger.WithContext(ctx).With("msg", docMsg)
 
@@ -94,7 +120,13 @@ func (k *KBSpace) Handle(ctx context.Context, msg mq.Message) error {
 	return nil
 }
 
-func (k *KBSpace) handleInsert(ctx context.Context, logger *glog.Logger, kbID uint, folderID uint) error {
+func (k *kbSpace) handleInsert(ctx context.Context, logger *glog.Logger, kbID uint, folderID uint) error {
+	if !k.run(folderID) {
+		logger.Info("task running, skip")
+		return nil
+	}
+	defer k.done(folderID)
+
 	folder, err := k.getFolder(ctx, kbID, folderID)
 	if err != nil {
 		logger.WithErr(err).Warn("get folder failed")
@@ -136,7 +168,13 @@ func (k *KBSpace) handleInsert(ctx context.Context, logger *glog.Logger, kbID ui
 	return nil
 }
 
-func (k *KBSpace) handleUpdate(ctx context.Context, logger *glog.Logger, kbID uint, folderID uint) error {
+func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, kbID uint, folderID uint) error {
+	if !k.run(folderID) {
+		logger.Info("task running, skip")
+		return nil
+	}
+	defer k.done(folderID)
+
 	folder, err := k.getFolder(ctx, kbID, folderID)
 	if err != nil {
 		logger.WithErr(err).Warn("get folder failed")
@@ -200,7 +238,7 @@ func (k *KBSpace) handleUpdate(ctx context.Context, logger *glog.Logger, kbID ui
 	return nil
 }
 
-func (k *KBSpace) handleDelete(ctx context.Context, logger *glog.Logger, kbID uint, folderID uint) error {
+func (k *kbSpace) handleDelete(ctx context.Context, logger *glog.Logger, kbID uint, folderID uint) error {
 	folder, err := k.doc.ListSpaceFolder(ctx, kbID, folderID)
 	if err != nil {
 		logger.WithErr(err).Warn("list space folder failed")

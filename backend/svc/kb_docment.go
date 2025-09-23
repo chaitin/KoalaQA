@@ -663,11 +663,11 @@ func (d *KBDocument) ListSpaceRemote(ctx context.Context, kbID uint, docID uint,
 }
 
 type CreateSpaceForlderItem struct {
-	DocID string `json:"doc_id"`
+	DocID string `json:"doc_id" binding:"required"`
 	Title string `json:"title"`
 }
 type CreateSpaceFolderReq struct {
-	Items []CreateSpaceForlderItem `json:"docs" binding:"required"`
+	Items []CreateSpaceForlderItem `json:"docs" binding:"required,dive"`
 }
 
 func (d *KBDocument) CreateSpaceFolder(ctx context.Context, kbID uint, parentID uint, req CreateSpaceFolderReq) error {
@@ -683,6 +683,15 @@ func (d *KBDocument) CreateSpaceFolder(ctx context.Context, kbID uint, parentID 
 	docs := make([]model.KBDocument, 0)
 	exist := make(map[string]bool)
 
+	existFolder, err := d.ListSpaceFolder(ctx, kbID, parentID)
+	if err != nil {
+		return err
+	}
+
+	for _, folder := range existFolder.Items {
+		exist[folder.DocID] = true
+	}
+
 	for _, item := range req.Items {
 		if exist[item.DocID] {
 			continue
@@ -690,10 +699,12 @@ func (d *KBDocument) CreateSpaceFolder(ctx context.Context, kbID uint, parentID 
 
 		docs = append(docs, model.KBDocument{
 			DocID:    item.DocID,
+			KBID:     kbID,
 			Title:    item.Title,
 			Platform: parentDoc.Platform,
 			FileType: model.FileTypeFolder,
 			Status:   model.DocStatusAppling,
+			DocType:  model.DocTypeSpace,
 			ParentID: parentID,
 		})
 
@@ -701,7 +712,7 @@ func (d *KBDocument) CreateSpaceFolder(ctx context.Context, kbID uint, parentID 
 	}
 
 	if len(docs) == 0 {
-		return errors.New("doc not found")
+		return nil
 	}
 
 	err = d.repoDoc.BatchCreate(ctx, docs)
@@ -789,6 +800,13 @@ func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID 
 
 	if doc.DocType != model.DocTypeSpace || doc.FileType != model.FileTypeFolder || doc.ParentID == 0 {
 		return errors.ErrUnsupported
+	}
+
+	err = d.repoDoc.Update(ctx, map[string]any{
+		"updated_at": time.Now(),
+	}, repo.QueryWithEqual("id", doc.ID))
+	if err != nil {
+		return err
 	}
 
 	err = d.pub.Publish(ctx, topic.TopicKBSpace, topic.MsgKBSpace{
