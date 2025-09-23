@@ -1736,7 +1736,7 @@ const docTemplate = `{
                                                 {
                                                     "type": "object",
                                                     "properties": {
-                                                        "data": {
+                                                        "items": {
                                                             "type": "array",
                                                             "items": {
                                                                 "$ref": "#/definitions/svc.ListSpaceKBItem"
