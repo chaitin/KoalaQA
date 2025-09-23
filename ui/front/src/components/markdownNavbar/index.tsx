@@ -207,7 +207,7 @@ const MarkdownNavbar: FC<MarkdownNavbarProps> = (props) => {
           scrollToTarget(currentHash);
           setCurrentListNo(t.listNo);
         }}
-        key={`title_anchor_${Math.random().toString(36).substring(2)}`}
+        key={`title_anchor_${t.index}`}
       >
         {/* <small>{t.listNo}</small> */}
         {t.text}

@@ -1,0 +1,4 @@
+# Ignore all EJS templates from Prettier formatting
+**/*.ejs
+api-templates/**/*.ejs
+*.ejs

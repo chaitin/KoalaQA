@@ -327,7 +327,6 @@ export interface ModelPlatformOpt {
   access_token?: string;
   app_id?: string;
   secret?: string;
-  space_id?: string;
   url?: string;
 }
 
@@ -707,7 +706,6 @@ export interface TopicTaskMeta {
   platform?: PlatformPlatformType;
   platform_id?: string;
   secret?: string;
-  space_id?: string;
   status?: TopicTaskStatus;
   task_id?: string;
   title?: string;

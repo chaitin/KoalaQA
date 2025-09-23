@@ -12,11 +12,11 @@ import {
   putAdminKbKbIdSpaceSpaceIdRefresh,
   SvcCreateSpaceReq,
   SvcListSpaceItem,
+  SvcListSpaceKBItem,
   SvcUpdateSpaceReq,
 } from '@/api';
 import Card from '@/components/card';
 import LoadingButton from '@/components/LoadingButton';
-import { getFileTypeName } from '@/utils/const';
 import { message, Modal } from '@c-x/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import AddIcon from '@mui/icons-material/Add';
@@ -29,15 +29,12 @@ import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import {
   Box,
-  Breadcrumbs,
   Button,
   Checkbox,
   Chip,
-  CircularProgress,
   FormControlLabel,
   Grid2 as Grid,
   IconButton,
-  Link,
   List,
   ListItem,
   ListItemIcon,
@@ -241,8 +238,14 @@ const KnowledgeBasePage = () => {
           platform: 9, // PandaWiki platform type
           opt: platformOpt,
         };
-        await postAdminKbKbIdSpace(kb_id, spaceData);
+        const newSpaceId = await postAdminKbKbIdSpace(kb_id, spaceData);
         message.success('创建成功');
+        // 创建成功后：选中新建空间并打开获取知识库弹窗
+        if (typeof newSpaceId === 'number') {
+          setSelectedSpaceId(newSpaceId);
+          fetchRemoteSpaces(newSpaceId);
+          setShowImportModal(true);
+        }
       }
       handleModalCancel();
       refreshSpaces();
@@ -448,9 +451,14 @@ const KnowledgeBasePage = () => {
                     <Stack direction="row" alignItems="center" spacing={2}>
                       <DescriptionIcon color="action" />
                       <Stack sx={{ flex: 1 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {folder.title}
-                        </Typography>
+                        <Stack direction="row" spacing={1}>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            {folder.title}
+                          </Typography>
+                          <Typography variant="caption">
+                            （共 {folder.total || 0} 个文档）
+                          </Typography>
+                        </Stack>
                         <Typography variant="caption" color="text.secondary">
                           更新于 {dayjs((folder.updated_at || 0) * 1000).fromNow()},
                           {formatDate(folder.updated_at)}
