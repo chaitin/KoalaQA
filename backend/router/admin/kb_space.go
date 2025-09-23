@@ -104,6 +104,36 @@ func (s *kbSpace) UpdateSpace(ctx *context.Context) {
 	ctx.Success(nil)
 }
 
+// UpdateSpaceAllFolder
+// @Summary update kb space all folder
+// @Tags space
+// @Param kb_id path uint true "kb_id"
+// @Param space_id path uint true "space_id"
+// @Produce json
+// @Success 200 {object} context.Response
+// @Router /admin/kb/{kb_id}/space/{space_id}/refresh [put]
+func (s *kbSpace) UpdateSpaceAllFolder(ctx *context.Context) {
+	kbID, err := ctx.ParamUint("kb_id")
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	spaceID, err := ctx.ParamUint("space_id")
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	err = s.svcDoc.UpdateSpaceAllFolder(ctx, kbID, spaceID)
+	if err != nil {
+		ctx.InternalError(err, "update space all folder failed")
+		return
+	}
+
+	ctx.Success(nil)
+}
+
 // DeleteSpace
 // @Summary delete kb space
 // @Tags space
@@ -301,6 +331,7 @@ func (s *kbSpace) Route(h server.Handler) {
 	{
 		detailG := g.Group("/:space_id")
 		detailG.GET("/remote", s.ListSpaceRemote)
+		detailG.GET("/refresh", s.UpdateSpaceAllFolder)
 		detailG.GET("", s.GetSpace)
 		detailG.PUT("", s.UpdateSpace)
 		detailG.DELETE("", s.DeleteSpace)
