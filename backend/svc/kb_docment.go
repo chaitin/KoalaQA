@@ -620,7 +620,7 @@ func (d *KBDocument) DeleteSpace(ctx context.Context, kbID uint, docID uint) err
 }
 
 type ListSpaceKBReq struct {
-	SpaceID string `form:"space_id"`
+	RemoteSpaceID string `form:"remote_space_id"`
 }
 
 type ListSpaceKBItem struct {
@@ -637,7 +637,7 @@ func (d *KBDocument) ListSpaceRemote(ctx context.Context, kbID uint, docID uint,
 	}
 
 	listRes, err := d.anydoc.List(ctx, doc.Platform,
-		anydoc.ListWithSpaceID(req.SpaceID),
+		anydoc.ListWithSpaceID(req.RemoteSpaceID),
 		anydoc.ListWithPlatformOpt(doc.PlatformOpt.Inner()),
 	)
 	if err != nil {
@@ -645,7 +645,7 @@ func (d *KBDocument) ListSpaceRemote(ctx context.Context, kbID uint, docID uint,
 	}
 
 	fileType := model.FileTypeFolder
-	if req.SpaceID != "" {
+	if req.RemoteSpaceID != "" {
 		fileType = model.FileTypeFile
 	}
 
