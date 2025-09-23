@@ -1713,7 +1713,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "name": "remote_space_id",
+                        "name": "remote_folder_id",
                         "in": "query"
                     }
                 ],
