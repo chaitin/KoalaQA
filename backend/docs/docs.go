@@ -1523,6 +1523,51 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "space"
+                ],
+                "summary": "create kb space folder",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "kb_id",
+                        "name": "kb_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "space_id",
+                        "name": "space_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "req param",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.CreateSpaceFolderReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
             }
         },
         "/admin/kb/{kb_id}/space/{space_id}/folder/{folder_id}": {
@@ -1846,6 +1891,40 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/llm/polish": {
+            "post": {
+                "description": "polish text",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "llm"
+                ],
+                "summary": "polish text",
+                "parameters": [
+                    {
+                        "description": "polish text",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.PolishReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "polish text",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -4567,6 +4646,31 @@ const docTemplate = `{
                 }
             }
         },
+        "svc.CreateSpaceFolderReq": {
+            "type": "object",
+            "required": [
+                "docs"
+            ],
+            "properties": {
+                "docs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/svc.CreateSpaceForlderItem"
+                    }
+                }
+            }
+        },
+        "svc.CreateSpaceForlderItem": {
+            "type": "object",
+            "properties": {
+                "doc_id": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
         "svc.CreateSpaceReq": {
             "type": "object",
             "required": [
@@ -5138,6 +5242,14 @@ const docTemplate = `{
                             "$ref": "#/definitions/model.LLMType"
                         }
                     ]
+                }
+            }
+        },
+        "svc.PolishReq": {
+            "type": "object",
+            "properties": {
+                "text": {
+                    "type": "string"
                 }
             }
         },

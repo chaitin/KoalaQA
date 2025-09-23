@@ -262,6 +262,45 @@ func (s *kbSpace) ListSpaceFolder(ctx *context.Context) {
 	ctx.Success(res)
 }
 
+// CreateSpaceFolder
+// @Summary create kb space folder
+// @Tags space
+// @Param kb_id path uint true "kb_id"
+// @Param space_id path uint true "space_id"
+// @Accept json
+// @Param req body svc.CreateSpaceFolderReq true "req param"
+// @Produce json
+// @Success 200 {object} context.Response
+// @Router /admin/kb/{kb_id}/space/{space_id}/folder [post]
+func (s *kbSpace) CreateSpaceFolder(ctx *context.Context) {
+	kbID, err := ctx.ParamUint("kb_id")
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	spaceID, err := ctx.ParamUint("space_id")
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	var req svc.CreateSpaceFolderReq
+	err = ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	err = s.svcDoc.CreateSpaceFolder(ctx, kbID, spaceID, req)
+	if err != nil {
+		ctx.InternalError(err, "create space folder failed")
+		return
+	}
+
+	ctx.Success(nil)
+}
+
 // DeleteSpaceFolder
 // @Summary delete kb space folder
 // @Tags space
@@ -338,6 +377,7 @@ func (s *kbSpace) Route(h server.Handler) {
 		{
 			spaceFolderG := detailG.Group("/folder")
 			spaceFolderG.GET("", s.ListSpaceFolder)
+			spaceFolderG.POST("", s.CreateSpaceFolder)
 			{
 				spaceFolderDetailG := spaceFolderG.Group("/:folder_id")
 				spaceFolderDetailG.PUT("", s.UpdateSpaceFolder)
