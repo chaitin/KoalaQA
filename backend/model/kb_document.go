@@ -51,7 +51,6 @@ type PlatformOpt struct {
 	AppID       string `json:"app_id,omitempty"`
 	Secret      string `json:"secret,omitempty"`
 	AccessToken string `json:"access_token,omitempty"`
-	SpaceID     string `json:"space_id,omitempty"`
 }
 
 type ExportOpt struct {

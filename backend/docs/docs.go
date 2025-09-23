@@ -4418,9 +4418,6 @@ const docTemplate = `{
                 "secret": {
                     "type": "string"
                 },
-                "space_id": {
-                    "type": "string"
-                },
                 "url": {
                     "type": "string"
                 }
@@ -5547,9 +5544,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "secret": {
-                    "type": "string"
-                },
-                "space_id": {
                     "type": "string"
                 },
                 "status": {
