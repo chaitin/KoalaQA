@@ -588,6 +588,22 @@ func (d *KBDocument) UpdateSpace(ctx context.Context, kbID uint, docID uint, req
 	return nil
 }
 
+func (d *KBDocument) UpdateSpaceAllFolder(ctx context.Context, kbID uint, docID uint) error {
+	listRes, err := d.ListSpaceFolder(ctx, kbID, docID)
+	if err != nil {
+		return err
+	}
+
+	for _, item := range listRes.Items {
+		err = d.UpdateSpaceFolder(ctx, kbID, item.ID)
+		if err != nil {
+			d.logger.WithContext(ctx).WithErr(err).With("folder_id", item.ID).Warn("update folder failed")
+		}
+	}
+
+	return nil
+}
+
 func (d *KBDocument) DeleteSpace(ctx context.Context, kbID uint, docID uint) error {
 	// TODO: delete sub doc
 	err := d.repoDoc.Delete(ctx,
