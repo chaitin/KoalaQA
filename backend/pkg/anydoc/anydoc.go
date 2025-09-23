@@ -77,7 +77,6 @@ func ListWithPlatformOpt(p model.PlatformOpt) listOptFunc {
 		o.appID = p.AppID
 		o.appSecret = p.Secret
 		o.accessToken = p.AccessToken
-		o.spaceID = p.SpaceID
 	}
 }
 
