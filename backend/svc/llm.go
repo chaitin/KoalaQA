@@ -213,3 +213,15 @@ func (l *LLM) queryKnowledgeDocuments(ctx context.Context, query string) ([]llm.
 	logger.With("knowledges", knowledgeDocs).Debug("query knowledge documents success")
 	return knowledgeDocs, nil
 }
+
+type PolishReq struct {
+	Text string `json:"text"`
+}
+
+func (l *LLM) Polish(ctx context.Context, req PolishReq) (string, error) {
+	res, err := l.Chat(ctx, llm.PolishTextPrompt, req.Text, nil)
+	if err != nil {
+		return "", err
+	}
+	return res, nil
+}

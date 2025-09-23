@@ -65,6 +65,7 @@ type API struct {
 	Listen        string `env:"LISTEN" envDefault:":8080"`
 	DEV           bool   `env:"DEV"`
 	FreeAuth      bool   `env:"FREE_AUTH"`
+	FreeCSRF      bool   `env:"FREE_CSRF"`
 	AdminPassword string `env:"ADMIN_PASSWORD"`
 	AdminEmail    string `env:"ADMIN_EMAIL"`
 }
