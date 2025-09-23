@@ -167,11 +167,11 @@ export const getUser = (params: RequestParams = {}) =>
  * @response `200` `ContextResponse` OK
  */
 
-export const putUser = (req: PutUserPayload, params: RequestParams = {}) =>
+export const putUser = (data: PutUserPayload, params: RequestParams = {}) =>
   request<ContextResponse>({
     path: `/user`,
     method: "PUT",
-    body: req,
+    body: data,
     type: ContentType.FormData,
     format: "json",
     ...params,

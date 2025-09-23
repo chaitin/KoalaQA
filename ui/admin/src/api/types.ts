@@ -34,6 +34,7 @@ export enum PlatformPlatformType {
   PlatformURL = 6,
   PlatformWikiJS = 7,
   PlatformYuQue = 8,
+  PlatformPandawiki = 9,
 }
 
 export enum ModelUserRole {
@@ -67,18 +68,25 @@ export enum ModelFileType {
   FileTypeXML = 13,
   FileTypeZIP = 14,
   FileTypeEPub = 15,
-  FileTypeMax = 16,
+  /** 文件夹 */
+  FileTypeFolder = 16,
+  /** 未知文件类型 */
+  FileTypeFile = 17,
+  FileTypeMax = 18,
 }
 
 export enum ModelDocType {
   DocTypeUnknown = 0,
   DocTypeQuestion = 1,
   DocTypeDocument = 2,
+  DocTypeSpace = 3,
+  DocTypeWeb = 4,
 }
 
 export enum ModelDocStatus {
   DocStatusUnknown = 0,
   DocStatusAppling = 1,
+  DocStatusPendingReview = 2,
 }
 
 export enum ModelDiscussionType {
@@ -272,11 +280,12 @@ export interface ModelKBDocumentDetail {
   json?: string;
   kb_id?: number;
   markdown?: string;
+  parent_id?: number;
   platform?: PlatformPlatformType;
   platform_opt?: ModelJSONBModelPlatformOpt;
   rag_id?: string;
+  similar_id?: number;
   status?: ModelDocStatus;
-  summary?: string;
   title?: string;
   updated_at?: number;
 }
@@ -314,12 +323,21 @@ export interface ModelListRes {
   total?: number;
 }
 
+export interface ModelPlatformOpt {
+  access_token?: string;
+  app_id?: string;
+  secret?: string;
+  space_id?: string;
+  url?: string;
+}
+
 export interface ModelPublicAddress {
   address: string;
 }
 
 export interface ModelUserInfo {
   avatar?: string;
+  builtin?: boolean;
   email?: string;
   key?: string;
   role?: ModelUserRole;
@@ -385,6 +403,21 @@ export interface SvcCommentUpdateReq {
   content: string;
 }
 
+export interface SvcCreateSpaceFolderReq {
+  docs: SvcCreateSpaceForlderItem[];
+}
+
+export interface SvcCreateSpaceForlderItem {
+  doc_id?: string;
+  title?: string;
+}
+
+export interface SvcCreateSpaceReq {
+  opt?: ModelPlatformOpt;
+  platform?: PlatformPlatformType;
+  title: string;
+}
+
 export interface SvcDiscussUploadFileReq {
   uuid?: string;
 }
@@ -421,6 +454,7 @@ export interface SvcDocListItem {
   file_type?: ModelFileType;
   id?: number;
   platform?: PlatformPlatformType;
+  similar_id?: number;
   status?: ModelDocStatus;
   title?: string;
   updated_at?: number;
@@ -440,6 +474,14 @@ export interface SvcFileExportReq {
   uuid: string;
 }
 
+export interface SvcGetSpaceRes {
+  created_at?: number;
+  id?: number;
+  platform?: PlatformPlatformType;
+  title?: string;
+  updated_at?: number;
+}
+
 export interface SvcGroupUpdateReq {
   groups?: ModelGroupWithItem[];
 }
@@ -456,12 +498,50 @@ export interface SvcKBListItem {
   id?: number;
   name?: string;
   qa_count?: number;
+  space_count?: number;
   updated_at?: number;
+  web_count?: number;
 }
 
 export interface SvcKBUpdateReq {
   desc?: string;
   name: string;
+}
+
+export interface SvcListSpaceFolderItem {
+  created_at?: number;
+  doc_id?: string;
+  id?: number;
+  rag_id?: string;
+  status?: ModelDocStatus;
+  title?: string;
+  total?: number;
+  updated_at?: number;
+}
+
+export interface SvcListSpaceItem {
+  created_at?: number;
+  id?: number;
+  platform?: PlatformPlatformType;
+  title?: string;
+  total?: number;
+  updated_at?: number;
+}
+
+export interface SvcListSpaceKBItem {
+  desc?: string;
+  doc_id?: string;
+  file_type?: ModelFileType;
+  title?: string;
+}
+
+export interface SvcListWebItem {
+  created_at?: number;
+  desc?: string;
+  id?: number;
+  status?: ModelDocStatus;
+  title?: string;
+  updated_at?: number;
 }
 
 export interface SvcMKCreateReq {
@@ -519,6 +599,10 @@ export interface SvcModelKitCheckReq {
   type: "chat" | "embedding" | "rerank";
 }
 
+export interface SvcPolishReq {
+  text?: string;
+}
+
 export interface SvcSitemapExportReq {
   desc?: string;
   doc_id: string;
@@ -547,7 +631,13 @@ export interface SvcURLListReq {
   url: string;
 }
 
+export interface SvcUpdateSpaceReq {
+  opt?: ModelPlatformOpt;
+  title?: string;
+}
+
 export interface SvcUserListItem {
+  avatar?: string;
   builtin?: boolean;
   created_at?: number;
   email?: string;
@@ -567,11 +657,6 @@ export interface SvcUserRegisterReq {
   email: string;
   name: string;
   password: string;
-}
-
-export interface SvcUserUpdateInfoReq {
-  name?: string;
-  password?: string;
 }
 
 export interface SvcUserUpdateReq {
@@ -612,11 +697,13 @@ export interface TopicTaskMeta {
   app_id?: string;
   dbdocID?: number;
   desc?: string;
+  docType?: ModelDocType;
   doc_id?: string;
   doc_type?: ModelFileType;
   err?: string;
   exportOpt?: ModelExportOpt;
   kbid?: number;
+  parentID?: number;
   platform?: PlatformPlatformType;
   platform_id?: string;
   secret?: string;
@@ -663,7 +750,9 @@ export interface GetAdminKbKbIdDocumentParams {
     | 13
     | 14
     | 15
-    | 16;
+    | 16
+    | 17
+    | 18;
   /** @min 1 */
   page?: number;
   /** @min 1 */
@@ -691,7 +780,9 @@ export interface GetAdminKbKbIdQuestionParams {
     | 13
     | 14
     | 15
-    | 16;
+    | 16
+    | 17
+    | 18;
   /** @min 1 */
   page?: number;
   /** @min 1 */
@@ -704,6 +795,23 @@ export interface GetAdminKbKbIdQuestionParams {
 export interface PostAdminKbKbIdQuestionFilePayload {
   /** upload file */
   file: File;
+}
+
+export interface GetAdminKbKbIdSpaceSpaceIdRemoteParams {
+  remote_folder_id?: string;
+  /** kb_id */
+  kbId: number;
+  /** space_id */
+  spaceId: number;
+}
+
+export interface GetAdminKbKbIdWebParams {
+  /** @min 1 */
+  page?: number;
+  /** @min 1 */
+  size?: number;
+  title?: string;
+  kbId: string;
 }
 
 export interface GetAdminUserParams {
@@ -740,6 +848,9 @@ export interface PutUserPayload {
    * @format binary
    */
   avatar?: File;
+  name?: string;
+  old_password?: string;
+  password?: string;
 }
 
 export interface GetUserLoginThirdParams {
