@@ -42,16 +42,10 @@ export type RequestParams = Omit<
   "body" | "method" | "query" | "path"
 >;
 // CSRF token 缓存
-let csrfTokenCache: string | null = null;
 let csrfTokenPromise: Promise<string> | null = null;
 
 // 获取CSRF token的函数
 const getCsrfToken = async (): Promise<string> => {
-  // 如果已经有缓存的token，直接返回
-  if (csrfTokenCache) {
-    return csrfTokenCache;
-  }
-
   // 如果正在获取token，等待现有的请求
   if (csrfTokenPromise) {
     return csrfTokenPromise;
@@ -72,7 +66,6 @@ const getCsrfToken = async (): Promise<string> => {
       }
 
       if (token) {
-        csrfTokenCache = token;
         resolve(token);
       } else {
         reject(new Error("Failed to get CSRF token"));
@@ -91,7 +84,6 @@ const getCsrfToken = async (): Promise<string> => {
 
 // 清除CSRF token缓存的函数（在token失效时调用）
 export const clearCsrfTokenCache = () => {
-  csrfTokenCache = null;
   csrfTokenPromise = null;
 };
 
