@@ -216,11 +216,12 @@ type DocListReq struct {
 type DocListItem struct {
 	model.Base
 
-	Platform platform.PlatformType `json:"platform"`
-	Title    string                `json:"title"`
-	Desc     string                `json:"desc"`
-	FileType model.FileType        `json:"file_type"`
-	Status   model.DocStatus       `json:"status"`
+	Platform  platform.PlatformType `json:"platform"`
+	Title     string                `json:"title"`
+	Desc      string                `json:"desc"`
+	FileType  model.FileType        `json:"file_type"`
+	Status    model.DocStatus       `json:"status"`
+	SimilarID uint                  `json:"similar_id"`
 }
 
 func (d *KBDocument) List(ctx context.Context, kbID uint, docType model.DocType, req DocListReq) (*model.ListRes[DocListItem], error) {
