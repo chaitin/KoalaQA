@@ -31,6 +31,7 @@ func (l *llm) Route(h server.Handler) {
 	{
 		g := h.Group("/llm")
 		g.POST("/generate", l.Generate)
+		g.POST("/polish", l.Polish)
 	}
 }
 
@@ -43,6 +44,20 @@ func (l *llm) Generate(ctx *context.Context) {
 	res, _, err := l.svc.Answer(ctx, req)
 	if err != nil {
 		ctx.InternalError(err, "generate failed")
+		return
+	}
+	ctx.Success(res)
+}
+
+func (l *llm) Polish(ctx *context.Context) {
+	var req svc.PolishReq
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+	res, err := l.svc.Polish(ctx, req)
+	if err != nil {
+		ctx.InternalError(err, "polish failed")
 		return
 	}
 	ctx.Success(res)

@@ -3,6 +3,7 @@ package intercept
 import (
 	"net/http"
 
+	"github.com/chaitin/koalaqa/pkg/config"
 	"github.com/chaitin/koalaqa/pkg/context"
 	tracePkg "github.com/chaitin/koalaqa/pkg/trace"
 	"github.com/chaitin/koalaqa/pkg/util"
@@ -15,7 +16,14 @@ type csrf struct {
 	handler gin.HandlerFunc
 }
 
-func newCsrf() Interceptor {
+func newCsrf(cfg config.Config) Interceptor {
+	if cfg.API.FreeCSRF {
+		return &csrf{
+			handler: func(c *gin.Context) {
+				c.Next()
+			},
+		}
+	}
 	return &csrf{
 		handler: ginCsrf.Middleware(ginCsrf.Options{
 			Secret: util.RandomString(16),
