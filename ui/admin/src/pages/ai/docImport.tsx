@@ -7,14 +7,23 @@ import ImportDoc from '@/components/ImportDoc';
 import { ImportDocType } from '@/components/ImportDoc/type';
 import { addOpacityToColor } from '@ctzhian/modelkit';
 
-const DocImport = (props: { refresh: (params: any) => void }) => {
-  const { refresh } = props;
+interface DocImportProps {
+  refresh: (params: any) => void;
+  // 添加新的 prop，用于指定允许的导入方式
+  allowedImportTypes?: ImportDocType[];
+}
+
+const DocImport = (props: DocImportProps) => {
+  const { refresh, allowedImportTypes } = props;
   const theme = useTheme();
   const [urlOpen, setUrlOpen] = useState(false);
   const [key, setKey] = useState<ImportDocType>('URL');
+  
   const close = () => {
     setUrlOpen(false);
   };
+  
+  // 定义所有可用的导入方式
   const ImportContentWays = {
     OfflineFile: {
       label: '通过离线文件导入',
@@ -38,10 +47,18 @@ const DocImport = (props: { refresh: (params: any) => void }) => {
       },
     },
   };
+  
+  // 根据 allowedImportTypes 过滤导入方式
+  const filteredImportWays = allowedImportTypes 
+    ? Object.entries(ImportContentWays).filter(([type]) => 
+        allowedImportTypes.includes(type as ImportDocType)
+      )
+    : Object.entries(ImportContentWays);
+  console.log(filteredImportWays)
   return (
     <>
       <MenuSelect
-        list={Object.entries(ImportContentWays).map(([key, value]) => ({
+        list={filteredImportWays.map(([key, value]) => ({
           key,
           label: (
             <Box key={key}>

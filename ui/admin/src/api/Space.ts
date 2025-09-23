@@ -1,0 +1,329 @@
+/* eslint-disable */
+/* tslint:disable */
+// @ts-nocheck
+/*
+ * ---------------------------------------------------------------
+ * ## THIS FILE WAS GENERATED VIA SWAGGER-TYPESCRIPT-API        ##
+ * ##                                                           ##
+ * ## AUTHOR: acacode                                           ##
+ * ## SOURCE: https://github.com/acacode/swagger-typescript-api ##
+ * ---------------------------------------------------------------
+ */
+
+import request, { ContentType, RequestParams } from "./httpClient";
+import {
+  ContextResponse,
+  GetAdminKbKbIdSpaceSpaceIdRemoteParams,
+  ModelListRes,
+  ModelPlatformOpt,
+  SvcCreateSpaceFolderReq,
+  SvcCreateSpaceReq,
+  SvcGetSpaceRes,
+  SvcListSpaceFolderItem,
+  SvcListSpaceItem,
+  SvcListSpaceKBItem,
+  SvcUpdateSpaceReq,
+} from "./types";
+
+/**
+ * No description
+ *
+ * @tags space
+ * @name GetAdminKbKbIdSpace
+ * @summary list kb space
+ * @request GET:/admin/kb/{kb_id}/space
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (SvcListSpaceItem)[],
+
+}),
+
+})` OK
+ */
+
+export const getAdminKbKbIdSpace = (kbId: number, params: RequestParams = {}) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: SvcListSpaceItem[];
+      };
+    }
+  >({
+    path: `/admin/kb/${kbId}/space`,
+    method: "GET",
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags space
+ * @name PostAdminKbKbIdSpace
+ * @summary create kb space
+ * @request POST:/admin/kb/{kb_id}/space
+ * @response `200` `(ContextResponse & {
+    data?: number,
+
+})` OK
+ */
+
+export const postAdminKbKbIdSpace = (
+  kbId: number,
+  req: SvcCreateSpaceReq,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: number;
+    }
+  >({
+    path: `/admin/kb/${kbId}/space`,
+    method: "POST",
+    body: req,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags space
+ * @name GetAdminKbKbIdSpaceSpaceId
+ * @summary get kb space detail
+ * @request GET:/admin/kb/{kb_id}/space/{space_id}
+ * @response `200` `(ContextResponse & {
+    data?: (SvcGetSpaceRes & {
+    platform_opt?: ModelPlatformOpt,
+
+}),
+
+})` OK
+ */
+
+export const getAdminKbKbIdSpaceSpaceId = (
+  kbId: number,
+  spaceId: number,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: SvcGetSpaceRes & {
+        platform_opt?: ModelPlatformOpt;
+      };
+    }
+  >({
+    path: `/admin/kb/${kbId}/space/${spaceId}`,
+    method: "GET",
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags space
+ * @name PutAdminKbKbIdSpaceSpaceId
+ * @summary update kb space
+ * @request PUT:/admin/kb/{kb_id}/space/{space_id}
+ * @response `200` `ContextResponse` OK
+ */
+
+export const putAdminKbKbIdSpaceSpaceId = (
+  kbId: number,
+  spaceId: number,
+  req: SvcUpdateSpaceReq,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/admin/kb/${kbId}/space/${spaceId}`,
+    method: "PUT",
+    body: req,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags space
+ * @name DeleteAdminKbKbIdSpaceSpaceId
+ * @summary delete kb space
+ * @request DELETE:/admin/kb/{kb_id}/space/{space_id}
+ * @response `200` `ContextResponse` OK
+ */
+
+export const deleteAdminKbKbIdSpaceSpaceId = (
+  kbId: number,
+  spaceId: number,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/admin/kb/${kbId}/space/${spaceId}`,
+    method: "DELETE",
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags space
+ * @name GetAdminKbKbIdSpaceSpaceIdFolder
+ * @summary list kb space folder
+ * @request GET:/admin/kb/{kb_id}/space/{space_id}/folder
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (SvcListSpaceFolderItem)[],
+
+}),
+
+})` OK
+ */
+
+export const getAdminKbKbIdSpaceSpaceIdFolder = (
+  kbId: number,
+  spaceId: number,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: SvcListSpaceFolderItem[];
+      };
+    }
+  >({
+    path: `/admin/kb/${kbId}/space/${spaceId}/folder`,
+    method: "GET",
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags space
+ * @name PostAdminKbKbIdSpaceSpaceIdFolder
+ * @summary create kb space folder
+ * @request POST:/admin/kb/{kb_id}/space/{space_id}/folder
+ * @response `200` `ContextResponse` OK
+ */
+
+export const postAdminKbKbIdSpaceSpaceIdFolder = (
+  kbId: number,
+  spaceId: number,
+  req: SvcCreateSpaceFolderReq,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/admin/kb/${kbId}/space/${spaceId}/folder`,
+    method: "POST",
+    body: req,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags space
+ * @name PutAdminKbKbIdSpaceSpaceIdFolderFolderId
+ * @summary update kb space folder
+ * @request PUT:/admin/kb/{kb_id}/space/{space_id}/folder/{folder_id}
+ * @response `200` `ContextResponse` OK
+ */
+
+export const putAdminKbKbIdSpaceSpaceIdFolderFolderId = (
+  kbId: number,
+  spaceId: number,
+  folderId: number,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/admin/kb/${kbId}/space/${spaceId}/folder/${folderId}`,
+    method: "PUT",
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags space
+ * @name DeleteAdminKbKbIdSpaceSpaceIdFolderFolderId
+ * @summary delete kb space folder
+ * @request DELETE:/admin/kb/{kb_id}/space/{space_id}/folder/{folder_id}
+ * @response `200` `ContextResponse` OK
+ */
+
+export const deleteAdminKbKbIdSpaceSpaceIdFolderFolderId = (
+  kbId: number,
+  spaceId: number,
+  folderId: number,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/admin/kb/${kbId}/space/${spaceId}/folder/${folderId}`,
+    method: "DELETE",
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags space
+ * @name PutAdminKbKbIdSpaceSpaceIdRefresh
+ * @summary update kb space all folder
+ * @request PUT:/admin/kb/{kb_id}/space/{space_id}/refresh
+ * @response `200` `ContextResponse` OK
+ */
+
+export const putAdminKbKbIdSpaceSpaceIdRefresh = (
+  kbId: number,
+  spaceId: number,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/admin/kb/${kbId}/space/${spaceId}/refresh`,
+    method: "PUT",
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags space
+ * @name GetAdminKbKbIdSpaceSpaceIdRemote
+ * @summary list kb space remote doc
+ * @request GET:/admin/kb/{kb_id}/space/{space_id}/remote
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (SvcListSpaceKBItem)[],
+
+}),
+
+})` OK
+ */
+
+export const getAdminKbKbIdSpaceSpaceIdRemote = (
+  { kbId, spaceId, ...query }: GetAdminKbKbIdSpaceSpaceIdRemoteParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: SvcListSpaceKBItem[];
+      };
+    }
+  >({
+    path: `/admin/kb/${kbId}/space/${spaceId}/remote`,
+    method: "GET",
+    query: query,
+    format: "json",
+    ...params,
+  });

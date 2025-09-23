@@ -39,6 +39,7 @@ const schema = z.object({
 const AdminDocument = () => {
   const navigator = useNavigate();
   const { data, refresh } = useRequest(getAdminKb);
+  const kbData = data?.items?.[0] as SvcKBListItem;
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
   const clickOption = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -116,111 +117,121 @@ const AdminDocument = () => {
             <Typography variant="body2" sx={{ mb: 2 }}>
               知识学习
             </Typography>
-            {data?.items?.map(item => (
+            {/* 替换原有的知识学习模块内容 */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* 问答对 */}
               <Card
-                key={item.id}
                 sx={{
                   border: '1px solid',
                   borderColor: 'divider',
                   bgcolor: '#F8F9FA',
+                  cursor: 'pointer',
                 }}
+                onClick={() => navigator(`/admin/ai/qa?id=${kbData?.id}`)}
               >
-                <Stack direction="row" alignItems="center" justifyContent="space-between">
-                  <Typography
-                    variant="subtitle2"
-                    sx={{ cursor: 'pointer', flexGrow: 1 }}
-                    onClick={() => toDetail(item)}
-                  >
-                    {item.name}
-                  </Typography>
-                  <IconButton
-                    id="basic-button"
-                    aria-controls={open ? 'basic-menu' : undefined}
-                    aria-haspopup="true"
-                    aria-expanded={open ? 'true' : undefined}
-                    onClick={clickOption}
-                  >
-                    <MoreHorizIcon />
-                  </IconButton>
-                  <Menu
-                    id="basic-menu"
-                    anchorEl={anchorEl}
-                    open={open}
-                    onClose={closeOption}
-                    slotProps={{
-                      list: {
-                        'aria-labelledby': 'basic-button',
-                      },
-                    }}
-                  >
-                    {/* <MenuItem
-                      onClick={event => {
-                        event.stopPropagation();
-                        deleteKb(item);
-                      }}
-                    >
-                      删除
-                    </MenuItem> */}
-                    <MenuItem
-                      onClick={e => {
-                        e.stopPropagation();
-                        handleEdit(item);
-                      }}
-                    >
-                      编辑
-                    </MenuItem>
-                  </Menu>
-                </Stack>
                 <Stack
                   direction="row"
-                  justifyContent="space-between"
                   alignItems="center"
-                  sx={{ width: '70%', flexGrow: 0 }}
+                  justifyContent="space-between"
+                  sx={{ py: 1 }}
                 >
-                  <Stack
-                    direction="row"
-                    justifyContent="center"
-                    alignItems="center"
-                    sx={{ flex: 1 }}
-                    spacing={1}
-                  >
-                    <Typography variant="body2">问答对</Typography>
-                    <Button
-                      variant="text"
-                      onClick={() => navigator(`/admin/ai/${item.id}/qa?name=${item.name}`)}
-                    >
-                      {item.qa_count}
-                    </Button>
+                  <Stack>
+                    <Typography variant="subtitle2">问答对</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      用于配置可直接命中的标准答案，解决常见高频问题
+                    </Typography>
                   </Stack>
-                  <Divider orientation="vertical" sx={{ height: '34px' }} />
-                  <Stack
-                    direction="row"
-                    justifyContent="center"
-                    alignItems="center"
-                    sx={{ flex: 1 }}
-                    spacing={1}
-                  >
-                    <Typography variant="body2">知识库</Typography>
-                    <Button
-                      variant="text"
-                      onClick={() => navigator(`/admin/ai/${item.id}/doc?name=${item.name}`)}
-                    >
-                      {item.doc_count}
-                    </Button>
-                  </Stack>
+                  <Typography variant="subtitle2" color="text.primary">
+                    {kbData?.qa_count || 0} 个问题
+                  </Typography>
                 </Stack>
               </Card>
-            ))}
-            {/* <Button
-              sx={{ mt: 2 }}
-              size='small'
-              startIcon={
-                <Icon type='icon-add' sx={{ fontSize: '12px !important' }} />
-              }
-              onClick={creatRepo}
-            >
-              添加一个知识库
-            </Button> */}
+
+              {/* 在线网页 */}
+              <Card
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: '#F8F9FA',
+                  cursor: 'pointer',
+                }}
+                onClick={() => navigator(`/admin/ai/web?id=${kbData?.id}`)}
+              >
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  sx={{ py: 1 }}
+                >
+                  <Stack>
+                    <Typography variant="subtitle2">在线网页</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      通过指定URL、Sitemap等方式自动抓取网页内容进行学习
+                    </Typography>
+                  </Stack>
+                  <Typography variant="subtitle2" color="text.primary">
+                    {kbData?.web_count || 0} 个网页
+                  </Typography>
+                </Stack>
+              </Card>
+
+              {/* 通用文档 */}
+              <Card
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: '#F8F9FA',
+                  cursor: 'pointer',
+                }}
+                onClick={() => navigator(`/admin/ai/doc?id=${kbData?.id}`)}
+              >
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  sx={{ py: 1 }}
+                >
+                  <Stack>
+                    <Typography variant="subtitle2">通用文档</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      通过上传离线文档等方式导入内容进行学习
+                    </Typography>
+                  </Stack>
+                  <Typography variant="subtitle2" color="text.primary">
+                    {kbData?.doc_count || 0} 个文档
+                  </Typography>
+                </Stack>
+              </Card>
+
+              {/* 知识库 */}
+              <Card
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: '#F8F9FA',
+                  cursor: 'pointer',
+                }}
+                onClick={() => navigator(`/admin/ai/kb?id=${kbData?.id}`)}
+              >
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  sx={{ py: 1 }}
+                >
+                  <Stack>
+                    <Typography variant="subtitle2">知识库</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      关联Pandawki、飞书等第三方知识库
+                    </Typography>
+                  </Stack>
+                  <Typography variant="subtitle2" color="text.primary">
+                    {kbData?.space_count || 0} 个知识库
+                  </Typography>
+                </Stack>
+              </Card>
+            </div>
+            {/* 移除原有的创建按钮 */}
           </Card>
         </Grid>
         <Grid size={{ sm: 12, md: 6 }}>

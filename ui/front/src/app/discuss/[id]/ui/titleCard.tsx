@@ -1,11 +1,10 @@
 'use client';
 import { deleteDiscussionDiscId } from '@/api/Discussion';
 import { ModelDiscussionDetail, ModelUserRole } from '@/api/types';
-import { Card, Icon, MarkDown } from '@/components';
+import { Card, MarkDown } from '@/components';
 import { AuthContext } from '@/components/authProvider';
 import { ReleaseModal, Tag } from '@/components/discussion';
 import Modal from '@/components/modal';
-import { BBS_TAG_COLOR_ICON } from '@/constant/discussion';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { IconButton, Menu, MenuItem, Stack, Typography } from '@mui/material';
 import { useBoolean } from 'ahooks';

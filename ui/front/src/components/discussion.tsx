@@ -4,9 +4,7 @@ import { postDiscussion, putDiscussionDiscId } from '@/api/Discussion';
 import defaultAvatar from '@/asset/img/default_avatar.png';
 import { Icon } from '@/components';
 import EditorWrap from '@/components/editor/edit/Wrap';
-import { NodeDetail } from '@/components/editor';
 import Modal from '@/components/modal';
-import { BBS_TAG_COLOR_ICON } from '@/constant/discussion';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Autocomplete,
@@ -17,7 +15,6 @@ import {
   Stack,
   styled,
   TextField,
-  Typography,
 } from '@mui/material';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
@@ -198,10 +195,6 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                 }
                 renderOption={(props, option) => {
                   const { key, ...optionProps } = props;
-                  const current =
-                    BBS_TAG_COLOR_ICON[
-                      option as string as keyof typeof BBS_TAG_COLOR_ICON
-                    ];
                   return (
                     <Box
                       key={key}
@@ -209,9 +202,6 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                       {...optionProps}
                       sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
                     >
-                      {current ?
-                        <Icon type={current.icon} />
-                      : null}{' '}
                       {option}
                     </Box>
                   );

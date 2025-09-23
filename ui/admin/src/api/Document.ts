@@ -305,35 +305,6 @@ export const getAdminKbKbIdDocumentDocId = (
  * No description
  *
  * @tags document
- * @name PutAdminKbKbIdDocumentDocId
- * @summary update kb document
- * @request PUT:/admin/kb/{kb_id}/document/{doc_id}
- * @response `200` `(ContextResponse & {
-    data?: string,
-
-})` OK
- */
-
-export const putAdminKbKbIdDocumentDocId = (
-  kbId: number,
-  docId: number,
-  params: RequestParams = {},
-) =>
-  request<
-    ContextResponse & {
-      data?: string;
-    }
-  >({
-    path: `/admin/kb/${kbId}/document/${docId}`,
-    method: "PUT",
-    format: "json",
-    ...params,
-  });
-
-/**
- * No description
- *
- * @tags document
  * @name DeleteAdminKbKbIdDocumentDocId
  * @summary delete kb document
  * @request DELETE:/admin/kb/{kb_id}/document/{doc_id}

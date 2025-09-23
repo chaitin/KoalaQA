@@ -1,9 +1,11 @@
 import {
   deleteAdminKbKbIdDocumentDocId,
-  getAdminKbKbIdDocument,
   getAdminKbKbIdDocumentDocId,
+  getAdminKbKbIdWeb,
   ModelDocStatus,
   ModelKBDocumentDetail,
+  PlatformPlatformType,
+  putAdminKbKbIdWebDocId,
   SvcDocListItem,
 } from '@/api';
 import Card from '@/components/card';
@@ -40,7 +42,7 @@ const AdminDocument = () => {
     data,
     loading,
     run: fetchData,
-  } = useRequest(params => getAdminKbKbIdDocument({ ...params, kbId: kb_id }), { manual: true });
+  } = useRequest(params => getAdminKbKbIdWeb({ ...params, kbId: kb_id }), { manual: true });
   const [detail, setDetail] = useState<ModelKBDocumentDetail | null>(null);
   const [markdownContent, setMarkdownContent] = useState<string>('');
 
@@ -55,6 +57,14 @@ const AdminDocument = () => {
     } else {
       setMarkdownContent(docDetail?.markdown || '');
     }
+  };
+  const updateDoc = (item: SvcDocListItem) => {
+    putAdminKbKbIdWebDocId(kb_id, item.id!).then(() => {
+      message.success('更新成功');
+      fetchData({
+        page: 1,
+      });
+    });
   };
   const deleteDoc = (item: SvcDocListItem) => {
     Modal.confirm({
@@ -126,6 +136,15 @@ const AdminDocument = () => {
       render: (_, record) => {
         return (
           <Stack direction="row" alignItems="center" spacing={1}>
+            <Button
+              variant="text"
+              size="small"
+              color="primary"
+              disabled={record.platform === PlatformPlatformType.PlatformFile}
+              onClick={() => updateDoc(record)}
+            >
+              更新
+            </Button>
             <Button variant="text" size="small" color="error" onClick={() => deleteDoc(record)}>
               删除
             </Button>
@@ -143,7 +162,7 @@ const AdminDocument = () => {
 
   return (
     <Stack component={Card} sx={{ height: '100%' }}>
-      <DocImport refresh={fetchData} allowedImportTypes={['OfflineFile']} />
+      <DocImport refresh={fetchData} allowedImportTypes={['Sitemap', 'URL']} />
       <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
         <Typography variant="caption">共 {data?.total} 个文档</Typography>
         <TextField
