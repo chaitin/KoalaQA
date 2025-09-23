@@ -49,6 +49,14 @@ func (l *llm) Generate(ctx *context.Context) {
 	ctx.Success(res)
 }
 
+// @Summary polish text
+// @Description polish text
+// @Tags llm
+// @Accept json
+// @Produce json
+// @Param req body svc.PolishReq true "polish text"
+// @Success 200 {string} string "polish text"
+// @Router /admin/llm/polish [post]
 func (l *llm) Polish(ctx *context.Context) {
 	var req svc.PolishReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
