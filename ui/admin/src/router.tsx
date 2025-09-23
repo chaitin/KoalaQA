@@ -20,7 +20,7 @@ const Loader = () => (
 );
 
 const LazyLoadable = (
-  Component: LazyExoticComponent<() => JSX.Element>
+  Component: LazyExoticComponent<(props: any) => JSX.Element>
 ): React.ForwardRefExoticComponent<any> =>
   forwardRef((props: any, ref: React.Ref<any>) => (
     <Suspense fallback={<Loader />}>
@@ -31,6 +31,7 @@ const LazyLoadable = (
 const GeneralSetting = LazyLoadable(lazy(() => import('@/pages/settings')));
 const AdminKnowledge = LazyLoadable(lazy(() => import('@/pages/ai')));
 const AdminKnowledgeDetail = LazyLoadable(lazy(() => import('@/pages/ai/detail')));
+const AdminKnowledgeBasePage = LazyLoadable(lazy(() => import('@/pages/ai/kb')));
 const User = LazyLoadable(lazy(() => import('@/pages/user')));
 
 const routerConfig = [
@@ -47,8 +48,20 @@ const routerConfig = [
         element: <AdminKnowledge />,
       },
       {
-        path: 'ai/:id?/:tab?',
-        element: <AdminKnowledgeDetail />,
+        path: 'ai/:id?/qa',
+        element: <AdminKnowledgeDetail tab='qa' />,
+      },
+      {
+        path: 'ai/:id?/doc',
+        element: <AdminKnowledgeDetail tab='doc' />,
+      },
+      {
+        path: 'ai/:id?/web',
+        element: <AdminKnowledgeDetail tab='web' />,
+      },
+      {
+        path: 'ai/kb',
+        element: <AdminKnowledgeBasePage />,
       },
       {
         path: 'users',

@@ -1,4 +1,5 @@
 import { ModelDiscussionComment } from '@/api/types';
+import EditorWrap from '@/components/editor/edit/Wrap';
 import MdEditor from '@/components/mdEditor';
 import Modal from '@/components/modal';
 import React, { useEffect, useState } from 'react';
@@ -38,7 +39,16 @@ const EditCommentModal: React.FC<EditCommentModalProps> = ({
       }}
       width={800}
     >
-      <MdEditor value={value} onChange={setValue} />
+      {/* <MdEditor value={value} onChange={setValue} /> */}
+      <EditorWrap
+        detail={{content: value}}
+        onCancel={() => {
+          // 在讨论编辑器中，取消操作不需要特殊处理
+        }}
+        onSave={setValue}
+        onContentChange={setValue}
+        showActions={false}
+      />
     </Modal>
   );
 };
