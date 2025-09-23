@@ -1713,7 +1713,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "name": "space_id",
+                        "name": "remote_space_id",
                         "in": "query"
                     }
                 ],
@@ -4289,6 +4289,9 @@ const docTemplate = `{
                 "rag_id": {
                     "type": "string"
                 },
+                "similar_id": {
+                    "type": "integer"
+                },
                 "status": {
                     "$ref": "#/definitions/model.DocStatus"
                 },
@@ -4810,6 +4813,9 @@ const docTemplate = `{
                 },
                 "platform": {
                     "$ref": "#/definitions/platform.PlatformType"
+                },
+                "similar_id": {
+                    "type": "integer"
                 },
                 "status": {
                     "$ref": "#/definitions/model.DocStatus"
