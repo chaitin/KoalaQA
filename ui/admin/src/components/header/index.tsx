@@ -2,18 +2,16 @@ import { postUserLogout } from '@/api';
 import { message } from '@c-x/ui';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { IconButton, Stack, Tooltip } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import Bread from './Bread';
 
 const Header = () => {
-  const navigate = useNavigate();
   const onLogout = async () => {
     await postUserLogout();
     message.success('退出登录成功');
     if (process.env.NODE_ENV === 'development') {
       window.location.href = `${window.location.protocol}//${window.location.hostname}:3000/login`;
     } else {
-      navigate('/login');
+      window.location.href = `${window.location.origin}/login`;
     }
   };
   return (

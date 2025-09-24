@@ -40,60 +40,18 @@ const AdminDocument = () => {
   const navigator = useNavigate();
   const { data, refresh } = useRequest(getAdminKb);
   const kbData = data?.items?.[0] as SvcKBListItem;
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const open = Boolean(anchorEl);
-  const clickOption = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    setAnchorEl(event.currentTarget);
-  };
-  const closeOption = () => {
-    setAnchorEl(null);
-  };
-  const deleteKb = (item: SvcKBListItem) => {
-    closeOption();
-    Modal.confirm({
-      title: '提示',
-      okText: '删除',
-      okButtonProps: {
-        color: 'error',
-      },
-      content: (
-        <>
-          确定要删除
-          <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
-            {item.name}
-          </Box>{' '}
-          吗？
-        </>
-      ),
-      onOk: () => {
-        deleteAdminKbKbId(item.id || 0).then(() => {
-          message.success('删除成功');
-          refresh();
-        });
-      },
-    });
-  };
-
   const [showCreate, setShowCreate] = useState(false);
   const [editItem, setEditItem] = useState<SvcKBListItem | null>(null);
   const { register, formState, handleSubmit, reset } = useForm({
     resolver: zodResolver(schema),
   });
-  const creatRepo = () => {
-    setShowCreate(true);
-  };
+
   const handleCancel = () => {
     setShowCreate(false);
     setEditItem(null);
     reset(schema.parse({}));
   };
-  const handleEdit = (item: SvcKBListItem) => {
-    setEditItem(item);
-    setShowCreate(true);
-    reset(item);
-    closeOption();
-  };
+
   const isPut = !!editItem;
   const handleOk = (data: SvcKBCreateReq) => {
     const reqHandle = isPut
@@ -104,9 +62,6 @@ const AdminDocument = () => {
       Message.success(isPut ? '修改成功' : '创建成功');
       refresh();
     });
-  };
-  const toDetail = (item: SvcKBListItem) => {
-    navigator(`/admin/ai/${item.id}/qa?name=${item.name}`);
   };
 
   return (

@@ -10,7 +10,7 @@
  * ---------------------------------------------------------------
  */
 
-import request, { ContentType, RequestParams } from "./httpClient";
+import request, { ContentType, RequestParams } from './httpClient';
 import {
   ContextResponse,
   GetAdminKbKbIdQuestionParams,
@@ -20,7 +20,7 @@ import {
   SvcDocCreateQAReq,
   SvcDocListItem,
   SvcDocUpdateReq,
-} from "./types";
+} from './types';
 
 /**
  * No description
@@ -40,7 +40,7 @@ import {
 
 export const getAdminKbKbIdQuestion = (
   { kbId, ...query }: GetAdminKbKbIdQuestionParams,
-  params: RequestParams = {},
+  params: RequestParams = {}
 ) =>
   request<
     ContextResponse & {
@@ -50,9 +50,9 @@ export const getAdminKbKbIdQuestion = (
     }
   >({
     path: `/admin/kb/${kbId}/question`,
-    method: "GET",
+    method: 'GET',
     query: query,
-    format: "json",
+    format: 'json',
     ...params,
   });
 
@@ -72,7 +72,7 @@ export const getAdminKbKbIdQuestion = (
 export const postAdminKbKbIdQuestion = (
   kbId: number,
   req: SvcDocCreateQAReq,
-  params: RequestParams = {},
+  params: RequestParams = {}
 ) =>
   request<
     ContextResponse & {
@@ -80,10 +80,10 @@ export const postAdminKbKbIdQuestion = (
     }
   >({
     path: `/admin/kb/${kbId}/question`,
-    method: "POST",
+    method: 'POST',
     body: req,
     type: ContentType.Json,
-    format: "json",
+    format: 'json',
     ...params,
   });
 
@@ -100,14 +100,14 @@ export const postAdminKbKbIdQuestion = (
 export const postAdminKbKbIdQuestionFile = (
   kbId: number,
   data: PostAdminKbKbIdQuestionFilePayload,
-  params: RequestParams = {},
+  params: RequestParams = {}
 ) =>
   request<ContextResponse>({
     path: `/admin/kb/${kbId}/question/file`,
-    method: "POST",
+    method: 'POST',
     body: data,
     type: ContentType.FormData,
-    format: "json",
+    format: 'json',
     ...params,
   });
 
@@ -127,7 +127,7 @@ export const postAdminKbKbIdQuestionFile = (
 export const getAdminKbKbIdQuestionQaId = (
   kbId: number,
   qaId: number,
-  params: RequestParams = {},
+  params: RequestParams = {}
 ) =>
   request<
     ContextResponse & {
@@ -135,8 +135,8 @@ export const getAdminKbKbIdQuestionQaId = (
     }
   >({
     path: `/admin/kb/${kbId}/question/${qaId}`,
-    method: "GET",
-    format: "json",
+    method: 'GET',
+    format: 'json',
     ...params,
   });
 
@@ -154,14 +154,14 @@ export const putAdminKbKbIdQuestionQaId = (
   kbId: number,
   qaId: number,
   req: SvcDocUpdateReq,
-  params: RequestParams = {},
+  params: RequestParams = {}
 ) =>
   request<ContextResponse>({
     path: `/admin/kb/${kbId}/question/${qaId}`,
-    method: "PUT",
+    method: 'PUT',
     body: req,
     type: ContentType.Json,
-    format: "json",
+    format: 'json',
     ...params,
   });
 
@@ -178,11 +178,11 @@ export const putAdminKbKbIdQuestionQaId = (
 export const deleteAdminKbKbIdQuestionQaId = (
   kbId: number,
   qaId: number,
-  params: RequestParams = {},
+  params: RequestParams = {}
 ) =>
   request<ContextResponse>({
     path: `/admin/kb/${kbId}/question/${qaId}`,
-    method: "DELETE",
-    format: "json",
+    method: 'DELETE',
+    format: 'json',
     ...params,
   });

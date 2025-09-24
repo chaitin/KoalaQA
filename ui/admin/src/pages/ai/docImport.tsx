@@ -18,11 +18,11 @@ const DocImport = (props: DocImportProps) => {
   const theme = useTheme();
   const [urlOpen, setUrlOpen] = useState(false);
   const [key, setKey] = useState<ImportDocType>('URL');
-  
+
   const close = () => {
     setUrlOpen(false);
   };
-  
+
   // 定义所有可用的导入方式
   const ImportContentWays = {
     OfflineFile: {
@@ -47,14 +47,14 @@ const DocImport = (props: DocImportProps) => {
       },
     },
   };
-  
+
   // 根据 allowedImportTypes 过滤导入方式
-  const filteredImportWays = allowedImportTypes 
-    ? Object.entries(ImportContentWays).filter(([type]) => 
+  const filteredImportWays = allowedImportTypes
+    ? Object.entries(ImportContentWays).filter(([type]) =>
         allowedImportTypes.includes(type as ImportDocType)
       )
     : Object.entries(ImportContentWays);
-  console.log(filteredImportWays)
+
   return (
     <>
       <MenuSelect
@@ -94,11 +94,7 @@ const DocImport = (props: DocImportProps) => {
             </Box>
           ),
         }))}
-        context={
-          <Button variant="contained" sx={{ position: 'absolute', top: '13px', right: '16px' }}>
-            手动录入
-          </Button>
-        }
+        context={<Button variant="contained">手动录入</Button>}
       />
       <ImportDoc type={key} open={urlOpen} refresh={refresh} onCancel={close} />
     </>
