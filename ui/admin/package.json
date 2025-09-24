@@ -13,7 +13,7 @@
   "dependencies": {
     "@c-x/ui": "^1.0.9",
     "@ctzhian/modelkit": "^2.3.3",
-    "@ctzhian/tiptap": "^1.2.0",
+    "@ctzhian/tiptap": "^1.6.6",
     "@ctzhian/ui": "^7.0.5",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",

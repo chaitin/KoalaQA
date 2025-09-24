@@ -52,8 +52,16 @@ const AIGenerate = ({
 
   const onCancel = () => {
     sseClientRef.current?.unsubscribe();
-    defaultEditor.editor.commands.setContent('');
-    readEditor.editor.commands.setContent('');
+    try {
+      if (defaultEditor.editor && (defaultEditor.editor as any).view) {
+        defaultEditor.editor.commands.setContent('');
+      }
+      if (readEditor.editor && (readEditor.editor as any).view) {
+        readEditor.editor.commands.setContent('');
+      }
+    } catch (e) {
+      console.warn('重置编辑器内容失败，忽略:', e);
+    }
     setContent('');
     onClose();
   };
@@ -75,9 +83,15 @@ const AIGenerate = ({
       onError: () => setLoading(false),
     });
     if (selectText) {
-      defaultEditor.editor.commands.setContent(selectText);
       setTimeout(() => {
-        onGenerate();
+        try {
+          if (defaultEditor.editor && (defaultEditor.editor as any).view) {
+            defaultEditor.editor.commands.setContent(selectText);
+          }
+          onGenerate();
+        } catch (e) {
+          console.warn('预填充或生成发生错误，忽略:', e);
+        }
       }, 60);
     }
   }, [selectText, open]);

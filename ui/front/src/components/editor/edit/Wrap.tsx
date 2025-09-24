@@ -95,6 +95,7 @@ const EditorWrap = ({
     content: value || detail?.content || '',
     onUpdate: handleUpdate,
     exclude: ['invisibleCharacters', 'youtube', 'mention'],
+    // SSR 环境需显式关闭立即渲染以避免水合不匹配
     immediatelyRender: false,
     onUpload: handleUpload,
     onFocus: () => {
@@ -102,6 +103,9 @@ const EditorWrap = ({
     },
     onBlur: () => {
       console.log('编辑器失去焦点');
+    },
+    onAiWritingGetSuggestion: async () => {
+      return '';
     },
   });
 
@@ -129,11 +133,20 @@ const EditorWrap = ({
 
   // 当value或detail.content变化时更新编辑器内容
   useEffect(() => {
-    if (editorRef.editor) {
+    if (editorRef.editor && (editorRef.editor as any).view) {
       const newContent = value !== undefined ? value : detail?.content || '';
       const currentContent = editorRef.getHTML();
       if (currentContent !== newContent) {
-        editorRef.editor.commands.setContent(newContent);
+        // 延迟到下一轮事件循环，确保所有插件与视图已完成挂载
+        setTimeout(() => {
+          if (editorRef.editor && (editorRef.editor as any).view) {
+            try {
+              editorRef.editor.commands.setContent(newContent);
+            } catch (e) {
+              console.warn('setContent 发生错误，已忽略本次更新:', e);
+            }
+          }
+        }, 0);
       }
     }
     setOriginalContent(value !== undefined ? value : detail?.content || '');
@@ -141,7 +154,7 @@ const EditorWrap = ({
 
   // 聚焦编辑器的函数
   const focusEditor = useCallback(() => {
-    if (editorRef.editor) {
+    if (editorRef.editor && (editorRef.editor as any).view) {
       editorRef.editor.commands.focus();
       // 将光标移到内容末尾
       const docSize = editorRef.editor.state.doc.content.size;
@@ -280,7 +293,7 @@ const EditorWrap = ({
           {showActions && (
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
               <Button
-                variant='contained'
+                variant="contained"
                 startIcon={<SaveIcon />}
                 disabled
                 sx={{
@@ -401,9 +414,10 @@ const EditorWrap = ({
           }}
           onClick={focusEditor}
         >
-          {editorRef.editor ?
+          {editorRef.editor ? (
             <Editor editor={editorRef.editor} />
-          : <Box
+          ) : (
+            <Box
               sx={{
                 height: '100%',
                 display: 'flex',
@@ -438,7 +452,7 @@ const EditorWrap = ({
                 编辑器加载中...
               </Box>
             </Box>
-          }
+          )}
         </Box>
 
         {/* 操作按钮区域 - 只在showActions为true时显示 */}
@@ -454,7 +468,7 @@ const EditorWrap = ({
             }}
           >
             <Button
-              variant='outlined'
+              variant="outlined"
               onClick={handleCancelEdit}
               disabled={isSaving}
               sx={{
@@ -465,7 +479,7 @@ const EditorWrap = ({
               取消
             </Button>
             <Button
-              variant='contained'
+              variant="contained"
               startIcon={<SaveIcon />}
               onClick={handleSave}
               disabled={isSaving}
