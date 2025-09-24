@@ -606,8 +606,19 @@ func (d *KBDocument) UpdateSpaceAllFolder(ctx context.Context, kbID uint, docID 
 }
 
 func (d *KBDocument) DeleteSpace(ctx context.Context, kbID uint, docID uint) error {
-	// TODO: delete sub doc
-	err := d.repoDoc.Delete(ctx,
+	folderRes, err := d.ListSpaceFolder(ctx, kbID, docID)
+	if err != nil {
+		return err
+	}
+
+	for _, folder := range folderRes.Items {
+		err = d.DeleteSpaceFolder(ctx, kbID, folder.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = d.repoDoc.Delete(ctx,
 		repo.QueryWithEqual("kb_id", kbID),
 		repo.QueryWithEqual("id", docID),
 		repo.QueryWithEqual("doc_type", model.DocTypeSpace),
