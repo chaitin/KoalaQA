@@ -24,7 +24,7 @@ func (t *anydocTask) Topic() mq.Topic {
 }
 
 func (t *anydocTask) Group() string {
-	return "koala_anydoc_task_export"
+	return "koala_persistence_anydoc_task_export"
 }
 
 func (t *anydocTask) MsgType() mq.Message {
@@ -133,5 +133,5 @@ func newAnydocTask(c cache.Cache[topic.TaskMeta], repoDoc *repo.KBDocument, pub 
 }
 
 func newCache() cache.Cache[topic.TaskMeta] {
-	return cache.New[topic.TaskMeta](time.Minute * 10)
+	return cache.New[topic.TaskMeta](time.Minute * 15)
 }
