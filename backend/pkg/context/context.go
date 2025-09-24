@@ -3,6 +3,7 @@ package context
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -107,14 +108,16 @@ func (c *Context) Forbidden(msg string) {
 func (c *Context) ParamUint(key string) (uint, error) {
 	strVal := c.Param(key)
 	if strVal == "" {
-		return 0, errors.New("param not found")
+		return 0, fmt.Errorf("param %s not found", key)
 	}
 
 	val, err := strconv.ParseUint(strVal, 10, 64)
 	if err != nil {
 		return 0, err
 	}
-
+	if val == 0 {
+		return 0, fmt.Errorf("param %s must be greater than zero", key)
+	}
 	return uint(val), nil
 }
 

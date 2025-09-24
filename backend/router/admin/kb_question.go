@@ -63,11 +63,6 @@ func (q *kbQuestion) Create(ctx *context.Context) {
 		ctx.BadRequest(err)
 		return
 	}
-	if kbID == 0 {
-		ctx.BadRequest(errors.New("kb_id is required"))
-		return
-	}
-
 	var req svc.DocCreateQAReq
 	err = ctx.ShouldBindJSON(&req)
 	if err != nil {
@@ -98,10 +93,6 @@ func (q *kbQuestion) Detail(ctx *context.Context) {
 		ctx.BadRequest(err)
 		return
 	}
-	if kbID == 0 {
-		ctx.BadRequest(errors.New("kb_id is required"))
-		return
-	}
 	qaID, err := ctx.ParamUint("qa_id")
 	if err != nil {
 		ctx.BadRequest(err)
@@ -130,10 +121,6 @@ func (q *kbQuestion) Update(ctx *context.Context) {
 	kbID, err := ctx.ParamUint("kb_id")
 	if err != nil {
 		ctx.BadRequest(err)
-		return
-	}
-	if kbID == 0 {
-		ctx.BadRequest(errors.New("kb_id is required"))
 		return
 	}
 	qaID, err := ctx.ParamUint("qa_id")
@@ -172,10 +159,6 @@ func (q *kbQuestion) Delete(ctx *context.Context) {
 		ctx.BadRequest(err)
 		return
 	}
-	if kbID == 0 {
-		ctx.BadRequest(errors.New("kb_id is required"))
-		return
-	}
 	qaID, err := ctx.ParamUint("qa_id")
 	if err != nil {
 		ctx.BadRequest(err)
@@ -206,21 +189,54 @@ func (q *kbQuestion) UploadFile(ctx *context.Context) {
 		ctx.BadRequest(err)
 		return
 	}
-
 	var req svc.UploadFileReq
 	err = ctx.ShouldBind(&req)
 	if err != nil {
 		ctx.BadRequest(err)
 		return
 	}
-
 	path, err := q.svc.UploadFile(ctx, kbID, req)
 	if err != nil {
 		ctx.InternalError(err, "upload file failed")
 		return
 	}
-
 	ctx.Success(path)
+}
+
+// Review
+// @Summary review kb question
+// @Tags question
+// @Param kb_id path uint true "kb_id"
+// @Param qa_id path uint true "qa_id"
+// @Param req body svc.ReviewReq true "request params"
+// @Produce json
+// @Success 200 {object} context.Response
+// @Router /admin/kb/{kb_id}/question/{qa_id}/review [post]
+func (q *kbQuestion) Review(ctx *context.Context) {
+	kbID, err := ctx.ParamUint("kb_id")
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+	qaID, err := ctx.ParamUint("qa_id")
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+	var req svc.ReviewReq
+	err = ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+	req.KBID = kbID
+	req.QAID = qaID
+	err = q.svc.Review(ctx, req)
+	if err != nil {
+		ctx.InternalError(err, "review question failed")
+		return
+	}
+	ctx.Success(nil)
 }
 
 func (q *kbQuestion) Route(h server.Handler) {
@@ -234,6 +250,7 @@ func (q *kbQuestion) Route(h server.Handler) {
 			detailG.GET("", q.Detail)
 			detailG.PUT("", q.Update)
 			detailG.DELETE("", q.Delete)
+			detailG.POST("/review", q.Review)
 		}
 	}
 }
