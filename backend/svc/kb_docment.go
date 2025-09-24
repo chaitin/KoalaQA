@@ -415,6 +415,7 @@ func (d *KBDocument) GetByID(ctx context.Context, kbID uint, docID uint) (*model
 func (d *KBDocument) UpdateRagID(ctx context.Context, kbID uint, docID uint, ragID string) error {
 	return d.repoDoc.Update(ctx, map[string]any{
 		"rag_id": ragID,
+		"status": model.DocStatusAppling,
 	}, repo.QueryWithEqual("id", docID), repo.QueryWithEqual("kb_id", kbID))
 }
 
@@ -893,6 +894,56 @@ func (d *KBDocument) ListWeb(ctx context.Context, req ListWebReq) (*model.ListRe
 		return nil, err
 	}
 	return &res, nil
+}
+
+type ReviewReq struct {
+	KBID    uint   `json:"kb_id" swaggerignore:"true"`
+	QAID    uint   `json:"qa_id" swaggerignore:"true"`
+	AddNew  bool   `json:"add_new" binding:"required"`
+	Content string `json:"content" binding:"required"`
+}
+
+func (d *KBDocument) Review(ctx context.Context, req ReviewReq) error {
+	doc, err := d.GetByID(ctx, req.KBID, req.QAID)
+	if err != nil {
+		return err
+	}
+
+	if doc.DocType != model.DocTypeQuestion {
+		return errors.ErrUnsupported
+	}
+	if req.AddNew {
+		err := d.repoDoc.UpdateByModel(ctx, &model.KBDocument{
+			Markdown: []byte(req.Content),
+		}, repo.QueryWithEqual("id", req.QAID))
+		if err != nil {
+			return err
+		}
+		d.pub.Publish(ctx, topic.TopicKBDocumentRag, topic.MsgKBDocument{
+			OP:    topic.OPUpdate,
+			KBID:  req.KBID,
+			DocID: req.QAID,
+		})
+		return nil
+	}
+	if doc.SimilarID == 0 {
+		return errors.New("similar doc not found")
+	}
+	if err := d.repoDoc.DeleteByID(ctx, req.QAID); err != nil {
+		return err
+	}
+	err = d.repoDoc.UpdateByModel(ctx, &model.KBDocument{
+		Markdown: []byte(req.Content),
+	}, repo.QueryWithEqual("id", doc.SimilarID))
+	if err != nil {
+		return err
+	}
+	d.pub.Publish(ctx, topic.TopicKBDocumentRag, topic.MsgKBDocument{
+		OP:    topic.OPUpdate,
+		KBID:  req.KBID,
+		DocID: doc.SimilarID,
+	})
+	return nil
 }
 
 func newDocument(repoDoc *repo.KBDocument, c cache.Cache[topic.TaskMeta], doc anydoc.Anydoc, pub mq.Publisher, oc oss.Client, pa *PublicAddress) *KBDocument {

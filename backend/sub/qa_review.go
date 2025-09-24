@@ -81,7 +81,7 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 	newQA := &model.KBDocument{
 		KBID:     kbID,
 		Title:    data.DiscussTitle,
-		Desc:     fmt.Sprintf("%d/%d ", data.DiscussID, comment.ID),
+		Desc:     fmt.Sprintf("%d/%d", data.DiscussID, comment.ID),
 		Markdown: []byte(comment.Content),
 		DocType:  model.DocTypeQuestion,
 		Status:   model.DocStatusPendingReview,
