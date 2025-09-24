@@ -1221,6 +1221,50 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/kb/{kb_id}/question/{qa_id}/review": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "question"
+                ],
+                "summary": "review kb question",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "kb_id",
+                        "name": "kb_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "qa_id",
+                        "name": "qa_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "request params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.ReviewReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/kb/{kb_id}/space": {
             "get": {
                 "produces": [
@@ -4665,6 +4709,9 @@ const docTemplate = `{
         },
         "svc.CreateSpaceForlderItem": {
             "type": "object",
+            "required": [
+                "doc_id"
+            ],
             "properties": {
                 "doc_id": {
                     "type": "string"
@@ -5255,6 +5302,21 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "text": {
+                    "type": "string"
+                }
+            }
+        },
+        "svc.ReviewReq": {
+            "type": "object",
+            "required": [
+                "add_new",
+                "content"
+            ],
+            "properties": {
+                "add_new": {
+                    "type": "boolean"
+                },
+                "content": {
                     "type": "string"
                 }
             }

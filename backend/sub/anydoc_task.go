@@ -81,7 +81,7 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 				}
 
 				if exist {
-					logger.With("parent_id", meta.ParentID).With("doc_id", meta.DocID).Info("doc alreay exist, skip")
+					logger.With("parent_id", meta.ParentID).With("doc_id", meta.DocID).Info("doc already exist, skip")
 					return nil
 				}
 			}

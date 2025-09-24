@@ -69,3 +69,7 @@ func (b *base[T]) Delete(ctx context.Context, queryFuncs ...QueryOptFunc) error 
 	o := getQueryOpt(queryFuncs...)
 	return b.model(ctx).Scopes(o.Scopes()...).Delete(nil).Error
 }
+
+func (b *base[T]) DeleteByID(ctx context.Context, id uint) error {
+	return b.model(ctx).Where("id = ?", id).Delete(nil).Error
+}
