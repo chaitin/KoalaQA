@@ -65,6 +65,9 @@ const LoginType = () => {
   const hasOAuthLogin =
     authConfig?.auth_types?.some((auth) => auth.type === AuthType.OAUTH) ||
     false;
+  const passwordConfig = authConfig?.auth_types?.find(
+    (auth) => auth.type === AuthType.PASSWORD
+  );
   const oauthConfig = authConfig?.auth_types?.find(
     (auth) => auth.type === AuthType.OAUTH
   );
@@ -108,7 +111,7 @@ const LoginType = () => {
                   textAlign: 'center',
                 }}
               >
-                登录
+                {'登录'}
               </Typography>
 
               {/* 第三方登录按钮 */}
@@ -187,7 +190,7 @@ const LoginType = () => {
             </Typography>
 
             {/* 账号密码登录 */}
-            <Account isChecked={true} />
+            <Account isChecked={true} passwordConfig={passwordConfig}/>
 
             {/* 注册链接 */}
             {authConfig?.enable_register && (

@@ -49,7 +49,7 @@ import { useRequest } from 'ahooks';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import z from 'zod';
 
 const spaceSchema = z.object({
@@ -68,8 +68,8 @@ const KnowledgeBasePage = () => {
   const [selectedFolders, setSelectedFolders] = useState<string[]>([]);
   const [expandedDocs, setExpandedDocs] = useState<Set<string>>(new Set());
   const [docDetails, setDocDetails] = useState<Record<string, SvcListSpaceKBItem[]>>({});
-  const { id } = useParams();
-  const kb_id = +(id || '1');
+  const [searchParams] = useSearchParams();
+  const kb_id = +searchParams.get('id')!;
 
   // 获取知识库空间列表
   const { data: spacesData, refresh: refreshSpaces } = useRequest(

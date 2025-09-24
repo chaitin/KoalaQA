@@ -50,7 +50,7 @@ const lightTheme = createTheme(
       },
       background: {
         default: '#fff',
-        paper: '#F1F2F8',
+        paper: '#fff',
       },
 
       text: {

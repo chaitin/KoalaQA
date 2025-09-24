@@ -1,5 +1,5 @@
 'use client';
-import { postUserLogin } from '@/api';
+import { postUserLogin, SvcAuthFrontendGetAuth } from '@/api';
 import { Message } from '@/components';
 import { AuthContext } from '@/components/authProvider';
 import LoadingBtn from '@/components/loadingButton';
@@ -18,7 +18,7 @@ const schema = z.object({
   password: z.string().min(5, '密码不能少于 5 位').default(''),
 });
 
-const Account = ({ isChecked }: { isChecked: boolean }) => {
+const Account = ({ isChecked, passwordConfig }: { isChecked: boolean, passwordConfig?: SvcAuthFrontendGetAuth }) => {
   const [, setToken] = useLocalStorageState<string>('auth_token', {
     defaultValue: '',
   });
@@ -98,7 +98,7 @@ const Account = ({ isChecked }: { isChecked: boolean }) => {
         disabled={!isChecked}
         sx={{ width: '100%' }}
       >
-        登录
+        {passwordConfig?.button_desc || '登录'}
       </LoadingBtn>
     </Stack>
   );

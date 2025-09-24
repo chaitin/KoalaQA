@@ -1,35 +1,35 @@
-import { Ellipsis, message, Modal, Table } from '@c-x/ui';
-import Card from '@/components/card';
 import {
   deleteAdminKbKbIdQuestionQaId,
   getAdminKbKbIdQuestion,
+  getAdminKbKbIdQuestionQaId,
   ModelDocStatus,
-  SvcDocListItem
+  ModelKBDocumentDetail,
+  SvcDocListItem,
 } from '@/api';
+import Card from '@/components/card';
 import { useListQueryParams } from '@/hooks/useListQueryParams';
+import { Ellipsis, message, Modal, Table } from '@c-x/ui';
 import { Box, Button, Stack, TextField, Typography } from '@mui/material';
 import { useRequest } from 'ahooks';
 import { ColumnsType } from 'ct-mui/dist/Table';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import QaImport from './qaImport';
+import LoadingBtn from '@/components/LoadingButton';
 
 const AdminDocument = () => {
-  const { query, setPage, setPageSize, page, pageSize, setParams } =
-    useListQueryParams();
-  const { id } = useParams();
-  const kb_id = +(id || '0');
+  const { query, setPage, setPageSize, page, pageSize, setParams } = useListQueryParams();
+  const [searchParams] = useSearchParams();
+  const kb_id = +searchParams.get('id')!;
   const [title, setTitle] = useState(query.title);
-  const [editItem, setEditItem] = useState<SvcDocListItem | null>(null);
+  const [editItem, setEditItem] = useState<ModelKBDocumentDetail | null>(null);
+
   const {
     data,
     loading,
     run: fetchData,
-  } = useRequest(
-    (params) => getAdminKbKbIdQuestion({ ...params, kbId: kb_id }),
-    { manual: true }
-  );
+  } = useRequest(params => getAdminKbKbIdQuestion({ ...params, kbId: kb_id }), { manual: true });
   const deleteDoc = (item: SvcDocListItem) => {
     Modal.confirm({
       title: '提示',
@@ -40,7 +40,7 @@ const AdminDocument = () => {
       content: (
         <>
           确定要删除
-          <Box component='span' sx={{ fontWeight: 700, color: 'text.primary' }}>
+          <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
             {item!.title}
           </Box>{' '}
           吗？
@@ -56,14 +56,25 @@ const AdminDocument = () => {
       },
     });
   };
+
+  const { runAsync: fetchDetail } = useRequest(
+    (qa_id: number) => getAdminKbKbIdQuestionQaId(kb_id, qa_id),
+    {
+      manual: true,
+      onSuccess: res => {
+        // 兼容 API 可能返回 {data: {...}} 或直接返回详情
+        const detail = (res as any)?.data ?? res;
+        setEditItem(detail as ModelKBDocumentDetail);
+      },
+    }
+  );
+
   const columns: ColumnsType<SvcDocListItem> = [
     {
       title: '问题',
       dataIndex: 'title',
       render: (_, record) => {
-        return (
-          <Ellipsis sx={{ fontSize: 14 }}>{record?.title || '-'}</Ellipsis>
-        );
+        return <Ellipsis sx={{ fontSize: 14 }}>{record?.title || '-'}</Ellipsis>;
       },
     },
     {
@@ -71,9 +82,45 @@ const AdminDocument = () => {
       dataIndex: 'status',
       render: (_, record) => {
         if (!record?.status) return '-';
-        return record.status === ModelDocStatus.DocStatusAppling
-          ? '应用中'
-          : '未应用';
+        if (record.status === ModelDocStatus.DocStatusAppling) {
+          return (
+            <Box
+              component="span"
+              sx={{
+                px: 1.5,
+                py: 0.5,
+                borderRadius: 1,
+                fontSize: '12px',
+                backgroundColor: '#f5f5f5',
+                color: '#666',
+              }}
+            >
+              应用中
+            </Box>
+          );
+        } else if (record.status === ModelDocStatus.DocStatusPendingReview) {
+          return (
+            <Box
+              component="span"
+              sx={{
+                px: 1.5,
+                py: 0.5,
+                borderRadius: 1,
+                fontSize: '12px',
+                backgroundColor: '#fff3cd',
+                color: '#856404',
+                cursor: 'pointer',
+                '&:hover': {
+                  backgroundColor: '#ffeaa7',
+                },
+              }}
+              onClick={() => setEditItem(record)}
+            >
+              待审核
+            </Box>
+          );
+        }
+        return '未应用';
       },
     },
     {
@@ -81,9 +128,7 @@ const AdminDocument = () => {
       dataIndex: 'updated_at',
       // width: 120,
       render: (_, record) => {
-        return dayjs((record?.updated_at || 0) * 1000).format(
-          'YYYY-MM-DD HH:mm:ss'
-        );
+        return dayjs((record?.updated_at || 0) * 1000).format('YYYY-MM-DD HH:mm:ss');
       },
     },
     {
@@ -91,19 +136,49 @@ const AdminDocument = () => {
       dataIndex: 'opt',
       // width: 120,
       render: (_, record) => {
+        const isPendingReview = record?.status === ModelDocStatus.DocStatusPendingReview;
+        const isApplying = record?.status === ModelDocStatus.DocStatusAppling;
+
         return (
-          <Stack direction='row' alignItems='center' spacing={1}>
-            <Button
-              variant='text'
-              size='small'
-              color='primary'
-              onClick={() => setEditItem(record)}
-            >
-              编辑
-            </Button>
-            <Button variant='text' size='small' color='error' onClick={() => deleteDoc(record)}>
-              删除
-            </Button>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            {isPendingReview ? (
+              <>
+                <LoadingBtn
+                  variant="text"
+                  size="small"
+                  color="primary"
+                  onClick={() => fetchDetail(record.id!)}
+                >
+                  查看
+                </LoadingBtn>
+                <Button variant="text" size="small" color="error" onClick={() => deleteDoc(record)}>
+                  删除
+                </Button>
+              </>
+            ) : isApplying ? (
+              <>
+                <LoadingBtn
+                  variant="text"
+                  size="small"
+                  color="primary"
+                  onClick={() => fetchDetail(record.id!)}
+                >
+                  编辑
+                </LoadingBtn>
+                <Button variant="text" size="small" color="error" onClick={() => deleteDoc(record)}>
+                  删除
+                </Button>
+              </>
+            ) : (
+              <LoadingBtn
+                variant="text"
+                size="small"
+                color="primary"
+                onClick={() => fetchDetail(record.id!)}
+              >
+                编辑
+              </LoadingBtn>
+            )}
           </Stack>
         );
       },
@@ -114,26 +189,34 @@ const AdminDocument = () => {
     const _query = { ...query };
     delete _query.name;
     fetchData(_query);
-  }, [query]);
+  }, [query, fetchData]);
 
   return (
-    <Stack component={Card} sx={{ height: '100%' }}>
-       <QaImport refresh={fetchData} setEditItem={setEditItem} editItem={editItem}  />
-      <Stack direction='row' alignItems='center' spacing={2} sx={{ mb: 2 }}>
-        <Typography variant='caption'>共 {data?.total || 0} 个问题</Typography>
-        <TextField
-          label='问题'
-          value={title}
-          size='small'
-          onChange={(e) => setTitle(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              setParams({
-                title,
-              });
-            }
-          }}
-        />
+    <Stack component={Card} sx={{ height: '100%', pt: 0 }}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        spacing={2}
+        sx={{ mb: 2 }}
+      >
+        <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
+          <Typography variant="caption">共 {data?.total || 0} 个问题</Typography>
+          <TextField
+            label="问题"
+            value={title}
+            size="small"
+            onChange={e => setTitle(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                setParams({
+                  title,
+                });
+              }
+            }}
+          />
+        </Stack>
+        <QaImport refresh={fetchData} setEditItem={setEditItem} editItem={editItem} />
       </Stack>
       <Table
         sx={{ mx: -2, flex: 1, overflow: 'auto' }}
@@ -146,7 +229,7 @@ const AdminDocument = () => {
         loading={loading}
         columns={columns}
         dataSource={data?.items || []}
-        rowKey='id'
+        rowKey="id"
         pagination={{
           page,
           pageSize,
