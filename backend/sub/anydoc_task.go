@@ -68,6 +68,23 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 				logger.With("parent_id", meta.ParentID).Info("parent doc not eixst, skip")
 				return nil
 			}
+
+			// 避免入库相同的数据
+			if meta.DBDocID == 0 {
+				exist, err = t.repoDoc.Exist(ctx,
+					repo.QueryWithEqual("parent_id", meta.ParentID),
+					repo.QueryWithEqual("doc_id", meta.DocID),
+				)
+				if err != nil {
+					logger.WithErr(err).With("parent_id", meta.ParentID).With("doc_id", meta.DocID).Warn("query doc doc failed")
+					return nil
+				}
+
+				if exist {
+					logger.With("parent_id", meta.ParentID).With("doc_id", meta.DocID).Info("doc alreay exist, skip")
+					return nil
+				}
+			}
 		}
 
 		doc := model.KBDocument{
