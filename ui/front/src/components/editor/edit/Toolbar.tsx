@@ -21,9 +21,7 @@ const Toolbar = ({ editorRef, handleAiGenerate }: ToolbarProps) => {
         mx: 1,
       }}
     >
-      <EditorToolbar
-        editor={editorRef.editor}
-      />
+      <EditorToolbar editor={editorRef.editor} />
     </Box>
   );
 };

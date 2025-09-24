@@ -101,6 +101,9 @@ const EditorWrap = ({
     onBlur: () => {
       console.log('编辑器失去焦点');
     },
+    onAiWritingGetSuggestion: async () => {
+      return '';
+    },
   });
 
   // 这些函数需要在editorRef初始化后定义
