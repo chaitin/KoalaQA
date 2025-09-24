@@ -865,7 +865,7 @@ type ListWebReq struct {
 
 func (d *KBDocument) ListWeb(ctx context.Context, req ListWebReq) (*model.ListRes[ListWebItem], error) {
 	var res model.ListRes[ListWebItem]
-	err := d.repoDoc.List(ctx, &res,
+	err := d.repoDoc.List(ctx, &res.Items,
 		repo.QueryWithEqual("kb_id", req.KBID),
 		repo.QueryWithEqual("doc_type", model.DocTypeWeb),
 		repo.QueryWithPagination(&req.Pagination),
