@@ -1,6 +1,8 @@
 package admin
 
 import (
+	"errors"
+
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/context"
 	"github.com/chaitin/koalaqa/server"
@@ -23,6 +25,10 @@ func (q *kbQuestion) List(ctx *context.Context) {
 	kbID, err := ctx.ParamUint("kb_id")
 	if err != nil {
 		ctx.BadRequest(err)
+		return
+	}
+	if kbID == 0 {
+		ctx.BadRequest(errors.New("kb_id is required"))
 		return
 	}
 
@@ -57,6 +63,10 @@ func (q *kbQuestion) Create(ctx *context.Context) {
 		ctx.BadRequest(err)
 		return
 	}
+	if kbID == 0 {
+		ctx.BadRequest(errors.New("kb_id is required"))
+		return
+	}
 
 	var req svc.DocCreateQAReq
 	err = ctx.ShouldBindJSON(&req)
@@ -88,6 +98,10 @@ func (q *kbQuestion) Detail(ctx *context.Context) {
 		ctx.BadRequest(err)
 		return
 	}
+	if kbID == 0 {
+		ctx.BadRequest(errors.New("kb_id is required"))
+		return
+	}
 	qaID, err := ctx.ParamUint("qa_id")
 	if err != nil {
 		ctx.BadRequest(err)
@@ -116,6 +130,10 @@ func (q *kbQuestion) Update(ctx *context.Context) {
 	kbID, err := ctx.ParamUint("kb_id")
 	if err != nil {
 		ctx.BadRequest(err)
+		return
+	}
+	if kbID == 0 {
+		ctx.BadRequest(errors.New("kb_id is required"))
 		return
 	}
 	qaID, err := ctx.ParamUint("qa_id")
@@ -152,6 +170,10 @@ func (q *kbQuestion) Delete(ctx *context.Context) {
 	kbID, err := ctx.ParamUint("kb_id")
 	if err != nil {
 		ctx.BadRequest(err)
+		return
+	}
+	if kbID == 0 {
+		ctx.BadRequest(errors.New("kb_id is required"))
 		return
 	}
 	qaID, err := ctx.ParamUint("qa_id")
