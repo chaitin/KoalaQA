@@ -142,36 +142,44 @@ const AdminDocument = () => {
   }, [query]);
 
   return (
-    <Stack component={Card} sx={{ height: '100%' }}>
-      <DocImport refresh={fetchData} allowedImportTypes={['OfflineFile']} />
-      <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
-        <Typography variant="caption">共 {data?.total} 个文档</Typography>
-        <TextField
-          label="标题"
-          value={title}
-          size="small"
-          onChange={e => setTitle(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter') {
-              setParams({
-                title,
-              });
-            }
-          }}
-        />
-        <TextField
-          label="类型"
-          value={file_type}
-          size="small"
-          onChange={e => setFile_type(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter') {
-              setParams({
-                file_type,
-              });
-            }
-          }}
-        />
+    <Stack component={Card} sx={{ height: '100%', pt: 0 }}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        spacing={2}
+        sx={{ mb: 2 }}
+      >
+        <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
+          <Typography variant="caption">共 {data?.total} 个文档</Typography>
+          <TextField
+            label="标题"
+            value={title}
+            size="small"
+            onChange={e => setTitle(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                setParams({
+                  title,
+                });
+              }
+            }}
+          />
+          <TextField
+            label="类型"
+            value={file_type}
+            size="small"
+            onChange={e => setFile_type(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                setParams({
+                  file_type,
+                });
+              }
+            }}
+          />
+        </Stack>
+        <DocImport refresh={fetchData} allowedImportTypes={['OfflineFile']} />
       </Stack>
       <Table
         sx={{ mx: -2, flex: 1, overflow: 'auto' }}
