@@ -73,6 +73,10 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 		logger.WithErr(err).Warn("get comment failed")
 		return nil
 	}
+	if comment.Bot {
+		logger.Debug("comment is bot, skip")
+		return nil
+	}
 	kbID, err := q.kb.FirstID(ctx)
 	if err != nil {
 		logger.WithErr(err).Warn("get kb id failed")
