@@ -70,6 +70,7 @@ type FeishuExportReq struct {
 }
 
 func (d *KBDocument) FeishuExport(ctx context.Context, req FeishuExportReq) (string, error) {
+	req.BaseExportReq.DBDoc.Type = model.DocTypeSpace
 	return d.exportWithCache(ctx, platform.PlatformFeishu, req.BaseExportReq, anydoc.ExportWithFeishu(req.SpaceID, req.FileType))
 }
 
@@ -79,6 +80,7 @@ type PandawikiExportReq struct {
 }
 
 func (d *KBDocument) PandawikiExport(ctx context.Context, req PandawikiExportReq) (string, error) {
+	req.BaseExportReq.DBDoc.Type = model.DocTypeSpace
 	return d.exportWithCache(ctx, platform.PlatformPandawiki, req.BaseExportReq, anydoc.ExportWithSpaceID(req.SpaceID))
 }
 
@@ -99,6 +101,7 @@ type YuQueExportReq struct {
 }
 
 func (d *KBDocument) YuQueExport(ctx context.Context, req YuQueExportReq) (string, error) {
+	req.BaseExportReq.DBDoc.Type = model.DocTypeSpace
 	return d.exportWithCache(ctx, platform.PlatformYuQue, req.BaseExportReq)
 }
 
@@ -117,6 +120,7 @@ type FileExportReq struct {
 }
 
 func (d *KBDocument) FileExport(ctx context.Context, req FileExportReq) (string, error) {
+	req.BaseExportReq.DBDoc.Type = model.DocTypeDocument
 	return d.exportWithCache(ctx, platform.PlatformFile, req.BaseExportReq)
 }
 
@@ -135,6 +139,7 @@ type URLExportReq struct {
 }
 
 func (d *KBDocument) URLExport(ctx context.Context, req URLExportReq) (string, error) {
+	req.BaseExportReq.DBDoc.Type = model.DocTypeWeb
 	return d.exportWithCache(ctx, platform.PlatformURL, req.BaseExportReq)
 }
 
@@ -153,6 +158,7 @@ type SitemapExportReq struct {
 }
 
 func (d *KBDocument) SitemapExport(ctx context.Context, req SitemapExportReq) (string, error) {
+	req.BaseExportReq.DBDoc.Type = model.DocTypeWeb
 	return d.exportWithCache(ctx, platform.PlatformSitemap, req.BaseExportReq)
 }
 
@@ -385,7 +391,7 @@ func (d *KBDocument) Detail(ctx context.Context, kbID uint, docID uint) (*model.
 	}
 
 	// 文档的 markdown 是 oss path，需要签名才能访问
-	if doc.DocType == model.DocTypeDocument {
+	if doc.DocType == model.DocTypeDocument || doc.DocType == model.DocTypeWeb {
 		publicAddress, err := d.svcPublicAddr.Get(ctx)
 		if err != nil {
 			return nil, err
