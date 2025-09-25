@@ -16,8 +16,8 @@ import { useRequest } from 'ahooks';
 import { ColumnsType } from 'ct-mui/dist/Table';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
 import DocImport from './docImport';
+import { useSearchParams } from 'react-router-dom';
 
 // 新增：用于请求 markdown 内容
 const fetchMarkdownContent = async (url: string): Promise<string> => {
@@ -32,8 +32,8 @@ const fetchMarkdownContent = async (url: string): Promise<string> => {
 
 const AdminDocument = () => {
   const { query, setPage, setPageSize, page, pageSize, setParams } = useListQueryParams();
-  const { id } = useParams();
-  const kb_id = +(id || '0');
+  const [searchParams] = useSearchParams();
+  const kb_id = +searchParams.get('id')!;
   const [title, setTitle] = useState(query.title);
   const [file_type, setFile_type] = useState(query.file_type);
   const {
