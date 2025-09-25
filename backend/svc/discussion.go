@@ -220,7 +220,13 @@ type DiscussionSearchReq struct {
 }
 
 func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*model.DiscussionListItem, error) {
-	records, err := d.in.Rag.QueryRecords(ctx, []string{d.in.Dataset.GetFrontendID(ctx)}, req.Keyword, nil)
+	records, err := d.in.Rag.QueryRecords(ctx, rag.QueryRecordsReq{
+		DatasetIDs:          []string{d.in.Dataset.GetFrontendID(ctx)},
+		Query:               req.Keyword,
+		GroupIDs:            nil,
+		TopK:                10,
+		SimilarityThreshold: 0.6,
+	})
 	if err != nil {
 		return nil, err
 	}

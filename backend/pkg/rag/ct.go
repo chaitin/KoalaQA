@@ -66,13 +66,19 @@ func (c *CTRag) UpsertRecords(ctx context.Context, datasetID string, content str
 	return docs[0].ID, nil
 }
 
-func (c *CTRag) QueryRecords(ctx context.Context, datasetIDs []string, query string, groupIDs []int) ([]*model.NodeContentChunk, error) {
+func (c *CTRag) QueryRecords(ctx context.Context, req QueryRecordsReq) ([]*model.NodeContentChunk, error) {
+	if req.TopK == 0 {
+		req.TopK = 10
+	}
+	if req.SimilarityThreshold == 0 {
+		req.SimilarityThreshold = 0.3
+	}
 	chunks, _, err := c.client.RetrieveChunks(ctx, rag.RetrievalRequest{
-		DatasetIDs:          datasetIDs,
-		Question:            query,
-		TopK:                10,
-		UserGroupIDs:        groupIDs,
-		SimilarityThreshold: 0.3,
+		DatasetIDs:          req.DatasetIDs,
+		Question:            req.Query,
+		TopK:                req.TopK,
+		UserGroupIDs:        req.GroupIDs,
+		SimilarityThreshold: req.SimilarityThreshold,
 	})
 	if err != nil {
 		return nil, err
@@ -86,9 +92,9 @@ func (c *CTRag) QueryRecords(ctx context.Context, datasetIDs []string, query str
 		})
 	}
 	c.logger.WithContext(ctx).
-		With("dataset_ids", datasetIDs).
-		With("query", query).
-		With("group_ids", groupIDs).
+		With("dataset_ids", req.DatasetIDs).
+		With("query", req.Query).
+		With("group_ids", req.GroupIDs).
 		With("nodes_len", len(nodes)).
 		Debug("query records success")
 	return nodes, nil
