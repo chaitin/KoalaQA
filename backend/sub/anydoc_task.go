@@ -102,7 +102,7 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 			Markdown:    []byte(taskInfo.Markdown),
 			JSON:        []byte(taskInfo.JSON),
 			FileType:    taskInfo.DocType,
-			Status:      model.DocStatusAppling,
+			Status:      model.DocStatusUnknown,
 			ParentID:    meta.ParentID,
 		}
 
