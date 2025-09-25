@@ -1,16 +1,7 @@
-import { ImportDocProps, ImportDocType } from './type';
-import ImportDocConfluence from './Confluence';
-import ImportDocYuque from './Yuque';
-import EpubImport from './Epub';
-import FeishuImport from './Feishu';
-import NotionImport from './Notion';
 import OfflineFileImport from './OfflineFile';
-import RSSImport from './RSS';
 import SitemapImport from './Sitemap';
+import { ImportDocProps, ImportDocType } from './type';
 import URLImport from './URL';
-import WikijsImport from './Wikijs';
-import ImportDocSiyuan from './Siyuan';
-import ImportDocMinDoc from './MinDoc';
 
 const ImportDoc = ({
   type,

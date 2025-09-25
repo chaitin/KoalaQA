@@ -3,10 +3,9 @@ import Card from '@/components/card';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import { Avatar, Box, Button, TextField, Typography } from '@mui/material';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { object, z } from 'zod';
-import { id } from 'zod/v4/locales';
+import { z } from 'zod';
 
 const formSchema = z.object({
   avatar: z.union([z.string(), z.instanceof(File)]),
@@ -44,17 +43,16 @@ const UserForm: React.FC = () => {
     }
   };
   useEffect(() => {
-    getAdminBot().then((res) => {
-      console.log(res)
+    getAdminBot().then(res => {
       reset(res);
     });
   }, []);
   return (
     <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
-      <Typography variant='body2' sx={{ mb: 2 }}>
+      <Typography variant="body2" sx={{ mb: 2 }}>
         社区智能机器人
       </Typography>
-      <Box component='form' onSubmit={handleSubmit(onSubmit)}>
+      <Box component="form" onSubmit={handleSubmit(onSubmit)}>
         <Box
           sx={{
             display: 'flex',
@@ -63,7 +61,7 @@ const UserForm: React.FC = () => {
           }}
         >
           <Controller
-            name='avatar'
+            name="avatar"
             control={control}
             render={({ field }) => (
               <Avatar
@@ -88,7 +86,7 @@ const UserForm: React.FC = () => {
                   const input = document.createElement('input');
                   input.type = 'file';
                   input.accept = 'image/*';
-                  input.onchange = (e) => {
+                  input.onchange = e => {
                     const files = (e.target as HTMLInputElement).files;
                     if (files && files.length > 0) {
                       field.onChange(files[0]);
@@ -103,32 +101,32 @@ const UserForm: React.FC = () => {
 
         <TextField
           {...register('name')}
-          label='名称'
+          label="名称"
           fullWidth
           required
           error={!!errors.name}
           helperText={errors.name?.message}
           sx={{ mb: 2 }}
           slotProps={{
-            'inputLabel': {
-              shrink: !!watch('name') || undefined
-            }
+            inputLabel: {
+              shrink: !!watch('name') || undefined,
+            },
           }}
         />
 
         <TextField
           {...register('unknown_prompt')}
-          label='无法回答提示'
+          label="无法回答提示"
           fullWidth
           multiline
           rows={4}
           error={!!errors.unknown_prompt}
           helperText={errors.unknown_prompt?.message}
           sx={{ mb: 3 }}
-           slotProps={{
-            'inputLabel': {
-              shrink: !!watch('unknown_prompt') || undefined
-            }
+          slotProps={{
+            inputLabel: {
+              shrink: !!watch('unknown_prompt') || undefined,
+            },
           }}
         />
         {isDirty && (
@@ -137,16 +135,12 @@ const UserForm: React.FC = () => {
               onClick={() => {
                 reset();
               }}
-              variant='outlined'
+              variant="outlined"
               sx={{ alignSelf: 'flex-start', mr: 2 }}
             >
               取消
             </Button>
-            <Button
-              type='submit'
-              variant='contained'
-              sx={{ alignSelf: 'flex-start' }}
-            >
+            <Button type="submit" variant="contained" sx={{ alignSelf: 'flex-start' }}>
               保存
             </Button>
           </>

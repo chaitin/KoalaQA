@@ -11,7 +11,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@c-x/ui": "^1.0.9",
     "@ctzhian/modelkit": "^2.3.3",
     "@ctzhian/tiptap": "^1.6.6",
     "@ctzhian/ui": "^7.0.5",
@@ -30,7 +29,6 @@
     "ahooks": "^3.8.4",
     "axios": "^1.9.0",
     "clsx": "^2.1.1",
-    "ct-mui": "1.0.1-beta.11",
     "dayjs": "^1.11.7",
     "decimal.js": "^10.5.0",
     "dnd-kit-sortable-tree": "^0.1.73",
@@ -50,6 +48,7 @@
     "rehype-sanitize": "^6.0.0",
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
+    "tailwindcss": "^4.1.13",
     "unist-util-visit": "^5.0.0",
     "vite-plugin-dts": "^4.5.4",
     "zod": "^4.0.17"

@@ -9,7 +9,7 @@ import {
 } from '@/api';
 import ClearIcon from '@mui/icons-material/Clear';
 import Card from '@/components/card';
-import { Ellipsis, message, Modal, Table } from '@c-x/ui';
+import { Ellipsis, message, Modal, Table } from '@ctzhian/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Box,

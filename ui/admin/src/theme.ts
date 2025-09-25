@@ -1,17 +1,16 @@
 'use client';
 import onData from '@/assets/images/nodata.png';
-import { zhCN as CuiZhCN } from '@c-x/ui/dist/local';
 import type { Shadows } from '@mui/material';
 import { createTheme } from '@mui/material';
 import { zhCN } from '@mui/material/locale';
-
+import { zhCN as CuiZhCN } from '@ctzhian/ui/dist/local';
 const defaultTheme = createTheme();
 
 const lightTheme = createTheme(
   {
     cssVariables: true,
     palette: {
-      mode: 'light',
+      // mode: 'light',
       primary: {
         main: '#21222D',
       },
@@ -50,7 +49,7 @@ const lightTheme = createTheme(
       },
       background: {
         default: '#fff',
-        paper: '#fff',
+        paper: '#F1F2F8',
       },
 
       text: {

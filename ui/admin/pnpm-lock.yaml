@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@c-x/ui':
-        specifier: ^1.0.9
-        version: 1.0.9(bf50a180e6e7b108bad2891e58013817)
       '@ctzhian/modelkit':
         specifier: ^2.3.3
         version: 2.3.3(41ca4493062d45b86f47acab24860314)
@@ -65,9 +62,6 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      ct-mui:
-        specifier: 1.0.1-beta.11
-        version: 1.0.1-beta.11(bf50a180e6e7b108bad2891e58013817)
       dayjs:
         specifier: ^1.11.7
         version: 1.11.14
@@ -125,6 +119,9 @@ importers:
       remark-gfm:
         specifier: ^4.0.1
         version: 4.0.1
+      tailwindcss:
+        specifier: ^4.1.13
+        version: 4.1.13
       unist-util-visit:
         specifier: ^5.0.0
         version: 5.0.0
@@ -294,18 +291,6 @@ packages:
   '@c-x/cx-swagger-api@1.0.1':
     resolution: {integrity: sha512-Yas86S5SmXTYzXOaSehxJ/S8t3OggXPucd0FsAjNY/WFz/wsRphlCfxlZoCVuxfmaCafwnfpiP3vSKvVsRWWzQ==}
     hasBin: true
-
-  '@c-x/ui@1.0.9':
-    resolution: {integrity: sha512-dBXpiKK0KPGJ/g3QOfPBm3lxdrt0uyjl8g9gXOCtcM/3Fa0kxUaG0V7HZSRQRnpbDGhDkw1GJZ1I+keQ/vsDaQ==}
-    peerDependencies:
-      '@emotion/react': ^11
-      '@emotion/styled': ^11
-      '@mui/icons-material': ^6
-      '@mui/lab': ^6.0.0-beta.7
-      '@mui/material': ^6
-      '@mui/utils': ^6
-      react: '>=16.9.0'
-      react-dom: '>=16.9.0'
 
   '@ctzhian/modelkit@2.3.3':
     resolution: {integrity: sha512-v/t/4RGAM/FVczmlOpSXmy/e/uRug8rfKrHQnoMReI+Tp3S25cm1PJHr+/1ncIKlgyMq5+uV69aF4AgMzWIb0g==}
@@ -1796,18 +1781,6 @@ packages:
   csstype@3.1.3:
     resolution: {integrity: sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==}
 
-  ct-mui@1.0.1-beta.11:
-    resolution: {integrity: sha512-iqVeBvB9otj1JeFyg94j2aKeCQJJPleevkAc67/yFh+RY/By4/xJTe+HNK53+hR/iSgET+tBVIw27B616plQTg==}
-    peerDependencies:
-      '@emotion/react': ^11.14.0
-      '@emotion/styled': ^11.14.0
-      '@mui/icons-material': ^6.2.0
-      '@mui/lab': 6.0.0-beta.19
-      '@mui/material': ^6.2.0
-      '@mui/utils': ^7.1.1
-      react: ^18.0.0 || ^19.0.0
-      react-dom: ^18.0.0 || ^19.0.0
-
   date-fns@4.1.0:
     resolution: {integrity: sha512-Ukq0owbQXxa/U3EGtsdVBkR1w7KOQ5gIBqdH2hkvknzZPYvBxb/aa6E8L7tmjFtkwZBu3UXBbjIgPo/Ez4xaNg==}
 
@@ -3264,6 +3237,9 @@ packages:
     resolution: {integrity: sha512-upi/0ZGkYgEcLeGieoz8gT74oWHA0E7JivX7aN9mAf+Tc7BQoRBvnIGHoPDw+f9TXTW4s6kGYCZJtauP6OYp7g==}
     hasBin: true
 
+  tailwindcss@4.1.13:
+    resolution: {integrity: sha512-i+zidfmTqtwquj4hMEwdjshYYgMbOrPzb9a0M3ZgNa0JMoZeFC6bxZvO8yr8ozS6ix2SDz0+mvryPeBs2TFE+w==}
+
   tinyexec@1.0.1:
     resolution: {integrity: sha512-5uC6DDlmeqiOwCPmK9jMSdOuZTh8bU39Ys6yidB+UTt5hfZUPGAypSgFRiEp+jbi9qH40BLDvy85jIU88wKSqw==}
 
@@ -3668,18 +3644,6 @@ snapshots:
       - encoding
       - magicast
       - typescript
-
-  '@c-x/ui@1.0.9(bf50a180e6e7b108bad2891e58013817)':
-    dependencies:
-      '@emotion/react': 11.14.0(@types/react@19.1.11)(react@19.1.1)
-      '@emotion/styled': 11.14.1(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@types/react@19.1.11)(react@19.1.1)
-      '@mui/icons-material': 6.5.0(@mui/material@6.5.0(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@types/react@19.1.11)(react@19.1.1))(@types/react@19.1.11)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@types/react@19.1.11)(react@19.1.1)
-      '@mui/lab': 6.0.0-beta.19(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@types/react@19.1.11)(react@19.1.1))(@mui/material@6.5.0(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@types/react@19.1.11)(react@19.1.1))(@types/react@19.1.11)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@types/react@19.1.11)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@mui/material': 6.5.0(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@types/react@19.1.11)(react@19.1.1))(@types/react@19.1.11)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@mui/utils': 7.3.1(@types/react@19.1.11)(react@19.1.1)
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-      react-virtuoso: 4.14.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
 
   '@ctzhian/modelkit@2.3.3(41ca4493062d45b86f47acab24860314)':
     dependencies:
@@ -5225,19 +5189,6 @@ snapshots:
       which: 2.0.2
 
   csstype@3.1.3: {}
-
-  ct-mui@1.0.1-beta.11(bf50a180e6e7b108bad2891e58013817):
-    dependencies:
-      '@babel/runtime': 7.28.3
-      '@emotion/react': 11.14.0(@types/react@19.1.11)(react@19.1.1)
-      '@emotion/styled': 11.14.1(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@types/react@19.1.11)(react@19.1.1)
-      '@mui/icons-material': 6.5.0(@mui/material@6.5.0(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@types/react@19.1.11)(react@19.1.1))(@types/react@19.1.11)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@types/react@19.1.11)(react@19.1.1)
-      '@mui/lab': 6.0.0-beta.19(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@types/react@19.1.11)(react@19.1.1))(@mui/material@6.5.0(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@types/react@19.1.11)(react@19.1.1))(@types/react@19.1.11)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@types/react@19.1.11)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@mui/material': 6.5.0(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@types/react@19.1.11)(react@19.1.1))(@types/react@19.1.11)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
-      '@mui/utils': 7.3.1(@types/react@19.1.11)(react@19.1.1)
-      react: 19.1.1
-      react-dom: 19.1.1(react@19.1.1)
-      react-virtuoso: 4.14.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
 
   date-fns@4.1.0: {}
 
@@ -7058,6 +7009,8 @@ snapshots:
       yargs: 17.7.2
     transitivePeerDependencies:
       - encoding
+
+  tailwindcss@4.1.13: {}
 
   tinyexec@1.0.1: {}
 

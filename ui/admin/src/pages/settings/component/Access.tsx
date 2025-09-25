@@ -4,7 +4,7 @@ import {
   putAdminSystemPublicAddress,
 } from '@/api';
 import Card from '@/components/card';
-import { message } from '@c-x/ui';
+import { message } from '@ctzhian/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Box, Button, Stack, TextField } from '@mui/material';
 import { useRequest } from 'ahooks';

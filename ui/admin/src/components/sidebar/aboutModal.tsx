@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import { useState } from 'react';
-import { Ellipsis, Modal } from '@c-x/ui';
+import { Ellipsis, Modal } from '@ctzhian/ui';
 import { Box, Button, Link, Stack } from '@mui/material';
 import { DomainLicenseResp } from '@/api/types';
 import ChangeLicense from './changeLicense';

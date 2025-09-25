@@ -17,7 +17,7 @@ import {
 } from '@/api';
 import Card from '@/components/card';
 import LoadingButton from '@/components/LoadingButton';
-import { message, Modal } from '@c-x/ui';
+import { message, Modal } from '@ctzhian/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';

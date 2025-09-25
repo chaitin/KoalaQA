@@ -1,4 +1,4 @@
-import { MenuSelect } from '@c-x/ui';
+import { MenuSelect } from '@ctzhian/ui';
 import { useState } from 'react';
 
 import { Box, Button, Stack, useTheme } from '@mui/material';
