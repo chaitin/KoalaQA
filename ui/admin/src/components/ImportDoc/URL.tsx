@@ -5,7 +5,7 @@ import {
 } from '@/api';
 import { useExportDoc } from '@/hooks/useExportDoc';
 import { Stack, TextField } from '@mui/material';
-import { Modal } from 'ct-mui';
+import { Modal } from '@ctzhian/ui';
 import { useEffect, useState } from 'react';
 import Doc2Ai from './Doc2Ai';
 import { ImportDocProps } from './type';

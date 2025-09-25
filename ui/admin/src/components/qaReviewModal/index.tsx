@@ -1,27 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import { getAdminKbKbIdQuestionQaId, ModelKBDocumentDetail, postAdminLlmPolish } from '@/api';
+import { message } from '@ctzhian/ui';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import CloseIcon from '@mui/icons-material/Close';
+import UndoIcon from '@mui/icons-material/Undo';
 import {
   Box,
   Button,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
-  TextField,
-  Stack,
-  Typography,
-  IconButton,
-  Tooltip,
+  DialogContent,
+  DialogTitle,
   Divider,
+  IconButton,
+  Stack,
+  TextField,
+  Tooltip,
+  Typography,
 } from '@mui/material';
-import MarkDown from '../markDown';
-import CloseIcon from '@mui/icons-material/Close';
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
-import UndoIcon from '@mui/icons-material/Undo';
-import { Message } from 'ct-mui';
 import { useRequest } from 'ahooks';
-import { postAdminLlmPolish, getAdminKbKbIdQuestionQaId } from '@/api';
-import { ModelKBDocumentDetail, ModelDocStatus } from '@/api';
+import React, { useEffect, useState } from 'react';
 import EditorWrap from '../editor/edit/Wrap';
+import MarkDown from '../markDown';
 
 interface QaReviewModalProps {
   open: boolean;
@@ -57,11 +56,11 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
       manual: true,
       onSuccess: result => {
         setAnswer(result);
-        Message.success('文本润色完成');
+        message.success('文本润色完成');
         setIsPolishing(false);
       },
       onError: () => {
-        Message.error('文本润色失败，请重试');
+        message.error('文本润色失败，请重试');
         setIsPolishing(false);
       },
     }
@@ -69,7 +68,7 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
 
   const handlePolish = () => {
     if (!answer?.trim()) {
-      Message.warning('请先输入回答内容');
+      message.warning('请先输入回答内容');
       return;
     }
     setOriginalAnswer(answer);
@@ -80,7 +79,7 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
   const handleRevert = () => {
     if (originalAnswer) {
       setAnswer(originalAnswer);
-      Message.success('已恢复原文');
+      message.success('已恢复原文');
     }
   };
 

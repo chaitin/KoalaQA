@@ -1,7 +1,7 @@
 import Qrcode from '@/assets/images/qrcode.png';
 import { useAuthContext } from '@/hooks/context';
 import { ModelUserRole } from '@/api/types';
-import { Icon, Modal } from '@c-x/ui';
+import { Icon, Modal } from '@ctzhian/ui';
 import { alpha, Box, Button, Stack, styled, useTheme } from '@mui/material';
 import { useMemo, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
@@ -27,15 +27,6 @@ export const ADMIN_MENUS: AdminMenuItem[] = [
   //   roles: [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator],
   // },
   {
-    label: 'AI 设置',
-    value: '/admin/ai',
-    pathname: '/admin/ai',
-    icon: 'icon-duihuajilu1',
-    show: true,
-    disabled: false,
-    roles: [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator], // 管理员和客服运营都可以访问
-  },
-  {
     label: '用户管理',
     value: '/admin/users',
     pathname: '/admin/users',
@@ -43,6 +34,15 @@ export const ADMIN_MENUS: AdminMenuItem[] = [
     show: true,
     disabled: false,
     roles: [ModelUserRole.UserRoleAdmin], // 仅管理员可以访问
+  },
+  {
+    label: 'AI 设置',
+    value: '/admin/ai',
+    pathname: '/admin/ai',
+    icon: 'icon-duihuajilu1',
+    show: true,
+    disabled: false,
+    roles: [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator], // 管理员和客服运营都可以访问
   },
   {
     label: '通用设置',

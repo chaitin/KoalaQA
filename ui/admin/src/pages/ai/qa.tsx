@@ -8,7 +8,7 @@ import {
 } from '@/api';
 import Card from '@/components/card';
 import { useListQueryParams } from '@/hooks/useListQueryParams';
-import { Ellipsis, message, Modal, Table } from '@c-x/ui';
+import { Ellipsis, message, Modal, Table } from '@ctzhian/ui';
 import { Box, Button, Stack, TextField, Typography } from '@mui/material';
 import { useRequest } from 'ahooks';
 import { ColumnsType } from 'ct-mui/dist/Table';

@@ -1,6 +1,6 @@
 import { CheckCircle } from '@mui/icons-material';
 import { Box, Stack, Typography, useTheme } from '@mui/material';
-import { Icon } from 'ct-mui';
+import { Icon } from '@ctzhian/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 

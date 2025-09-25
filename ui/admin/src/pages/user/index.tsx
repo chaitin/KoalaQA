@@ -8,7 +8,7 @@ import {
 import Card from '@/components/card';
 import RoleInfo from '@/components/RoleInfo';
 import { useListQueryParams } from '@/hooks/useListQueryParams';
-import { message, Modal, Table } from '@c-x/ui';
+import { message, Modal, Table } from '@ctzhian/ui';
 import {
   Box,
   Button,
@@ -21,11 +21,10 @@ import {
   Typography,
 } from '@mui/material';
 import { useRequest } from 'ahooks';
-import { ColumnsType } from 'ct-mui/dist/Table';
+import { ColumnsType } from '@ctzhian/ui/dist/Table';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { useParams } from 'react-router-dom';
 
 const transRole: Record<ModelUserRole, string> = {
   [ModelUserRole.UserRoleUnknown]: '未知',

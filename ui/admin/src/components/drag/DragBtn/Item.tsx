@@ -1,7 +1,7 @@
 
 import Avatar from '@/components/avatar';
 import { Box, Button, IconButton, Stack } from '@mui/material';
-import { Icon } from 'ct-mui';
+import { Icon } from '@ctzhian/ui';
 import { CSSProperties, forwardRef, HTMLAttributes } from 'react';
 
 export type ItemProps = HTMLAttributes<HTMLDivElement> & {
