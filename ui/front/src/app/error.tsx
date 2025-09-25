@@ -2,9 +2,18 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import error from '@/asset/img/500.png';
-import { Box, Stack, Button } from '@mui/material';
+import { Box, Stack, Button, Typography, Collapse } from '@mui/material';
+import { useState } from 'react';
 
-export default function Error() {
+export default function Error({
+  error: err,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  const [showDetail, setShowDetail] = useState(false);
+
   return (
     <Box
       sx={{
@@ -26,9 +35,78 @@ export default function Error() {
         alignItems='center'
       >
         <Image src={error} alt='500'></Image>
-        <Button component={Link} href='/' size='large'>
-          返回首页
-        </Button>
+        <Stack alignItems='center' gap={1} sx={{ maxWidth: 900, mx: 'auto', px: 2 }}>
+          <Typography variant='h6'>发生错误</Typography>
+          {(() => {
+            // 优先展示后端返回的 message/status/code
+            const isBackend: boolean = (err as any)?.isBackend;
+            const backendData: any = (err as any)?.data;
+            const status: any = (err as any)?.status;
+            const code: any = (err as any)?.code;
+            const url: any = (err as any)?.url;
+            if (isBackend) {
+              return (
+                <>
+                  <Typography variant='body2' color='text.secondary' sx={{ wordBreak: 'break-all', textAlign: 'center' }}>
+                    {backendData?.message || err.message}
+                  </Typography>
+                  {(status || code) && (
+                    <Typography variant='caption' color='text.disabled'>
+                      {status ? `HTTP ${status}` : ''} {code ? ` | Code: ${code}` : ''}
+                    </Typography>
+                  )}
+                  {url && (
+                    <Typography variant='caption' color='text.disabled'>
+                      接口: {url}
+                    </Typography>
+                  )}
+                </>
+              );
+            }
+            return (
+              err?.message && (
+                <Typography variant='body2' color='text.secondary' sx={{ wordBreak: 'break-all', textAlign: 'center' }}>
+                  {err.message}
+                </Typography>
+              )
+            );
+          })()}
+          {err?.digest && (
+            <Typography variant='caption' color='text.disabled'>
+              digest: {err.digest}
+            </Typography>
+          )}
+          <Button size='small' onClick={() => setShowDetail(v => !v)}>
+            {showDetail ? '隐藏详情' : '显示详情'}
+          </Button>
+          <Collapse in={showDetail} unmountOnExit sx={{ width: '100%' }}>
+            <Box
+              component='pre'
+              sx={{
+                width: '100%',
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+                p: 2,
+                bgcolor: 'background.paper',
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+                fontSize: 12,
+                lineHeight: 1.5,
+              }}
+            >
+              {process.env.NODE_ENV === 'development' ? err?.stack || '' : '生产环境默认隐藏堆栈信息'}
+            </Box>
+          </Collapse>
+        </Stack>
+        <Stack direction='row' gap={2}>
+          <Button variant='contained' onClick={reset} size='large'>
+            重试
+          </Button>
+          <Button component={Link} href='/' size='large'>
+            返回首页
+          </Button>
+        </Stack>
       </Stack>
     </Box>
   );

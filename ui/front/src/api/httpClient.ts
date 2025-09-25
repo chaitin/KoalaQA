@@ -242,13 +242,27 @@ export class HttpClient<SecurityDataType = unknown> {
           if (alert.error && shouldShowError) {
             alert.error(res.message || "网络异常");
           }
-          return Promise.reject(res);
+          // 标准化后端错误
+          const backendError: any = new Error(res.message || "网络异常");
+          backendError.isBackend = true;
+          backendError.status = response.status;
+          backendError.code = res.code;
+          backendError.data = res;
+          backendError.url = requestUrl;
+          return Promise.reject(backendError);
         }
 
         if (alert.error && shouldShowError) {
           alert.error(response.statusText);
         }
-        return Promise.reject(response);
+        // 非200响应同样标准化
+        const httpError: any = new Error(response.statusText || "HTTP错误");
+        httpError.isBackend = true;
+        httpError.status = response.status;
+        httpError.code = undefined;
+        httpError.data = response.data;
+        httpError.url = requestUrl;
+        return Promise.reject(httpError);
       },
       (error) => {
         // 如果是CSRF token相关错误，清除缓存
@@ -303,9 +317,19 @@ export class HttpClient<SecurityDataType = unknown> {
         const shouldShowError = requestUrl !== "/user";
 
         if (alert.error && shouldShowError) {
-          alert.error(error.message || "网络异常");
+          const backendMsg = error?.response?.data?.message;
+          alert.error(backendMsg || error.message || "网络异常");
         }
-        return Promise.reject(error.response);
+        // 统一抛出标准化的 Error
+        const normalized: any = new Error(
+          (error?.response?.data?.err || error.message || "请求失败") + `(trace_id: ${error?.response?.data?.trace_id})` || '',
+        );
+        normalized.isBackend = Boolean(error?.response);
+        normalized.status = error?.response?.status;
+        normalized.code = error?.response?.data?.code;
+        normalized.data = error?.response?.data;
+        normalized.url = error?.config?.url || "";
+        return Promise.reject(normalized);
       },
     );
   }
