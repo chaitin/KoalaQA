@@ -47,7 +47,6 @@ const roleDescriptions: Record<ModelUserRole, string> = {
 
 const AdminDocument = () => {
   const { query, setPage, setPageSize, page, pageSize, setParams } = useListQueryParams();
-  const { id } = useParams();
   const { reset, register, handleSubmit, watch, control } = useForm({
     defaultValues: {
       name: '',
