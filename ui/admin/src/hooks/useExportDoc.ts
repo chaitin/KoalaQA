@@ -1,8 +1,8 @@
 
-import { AnydocListRes, TopicTaskStatus, postAdminKbDocumentTask, postAdminKbDocumentFileExport } from "@/api";
+import { AnydocListRes, TopicTaskStatus, postAdminKbDocumentFileExport, postAdminKbDocumentTask } from "@/api";
 import { Message } from "ct-mui";
 import { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 
 export const finishedStatus = [
   TopicTaskStatus.TaskStatusCompleted,
@@ -13,8 +13,8 @@ export const useExportDoc = ({ onFinished, setLoading }: {
   onFinished: () => void;
   setLoading:  (loading: boolean) => void;
 }) => {
-  const { id } = useParams();
-  const kb_id = +(id || '0');
+  const [searchParams] = useSearchParams();
+  const kb_id = +searchParams.get('id')!;
   const [taskIds, setTaskIds] = useState<
     TaskType[]
   >([]);
