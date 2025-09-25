@@ -90,7 +90,13 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 		DocType:  model.DocTypeQuestion,
 		Status:   model.DocStatusPendingReview,
 	}
-	chunks, err := q.rag.QueryRecords(ctx, []string{q.dataset.GetBackendID(ctx)}, data.DiscussTitle, nil)
+	chunks, err := q.rag.QueryRecords(ctx, rag.QueryRecordsReq{
+		DatasetIDs:          []string{q.dataset.GetBackendID(ctx)},
+		Query:               data.DiscussTitle,
+		GroupIDs:            nil,
+		TopK:                1000,
+		SimilarityThreshold: 0.5,
+	})
 	if err != nil {
 		logger.WithErr(err).Warn("query rag records failed")
 		return nil
