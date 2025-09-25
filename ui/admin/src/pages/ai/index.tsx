@@ -1,19 +1,8 @@
-import {
-  getAdminKb,
-  postAdminKb,
-  putAdminKbKbId,
-  SvcKBCreateReq,
-  SvcKBListItem
-} from '@/api';
+import { getAdminKb, postAdminKb, putAdminKbKbId, SvcKBCreateReq, SvcKBListItem } from '@/api';
 import Card from '@/components/card';
-import { message, Modal } from '@ctzhian/ui';
+import { Icon, message, Modal } from '@ctzhian/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  Grid2 as Grid,
-  Stack,
-  TextField,
-  Typography
-} from '@mui/material';
+import { alpha, Grid2 as Grid, Stack, TextField, Typography } from '@mui/material';
 import { useRequest } from 'ahooks';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -37,6 +26,9 @@ const AdminDocument = () => {
     resolver: zodResolver(schema),
   });
 
+  // 添加hover状态管理
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+
   const handleCancel = () => {
     setShowCreate(false);
     setEditItem(null);
@@ -54,7 +46,44 @@ const AdminDocument = () => {
       refresh();
     });
   };
-
+  const knowledgeMenu = [
+    {
+      route: `/admin/ai/qa?id=${kbData?.id}`,
+      title: '问答对',
+      desc: '用于配置可直接命中的标准答案，解决常见高频问题',
+      icon: 'icon-wendadui-moren',
+      hoverIcon: 'icon-wendadui-xuanzhong',
+      count: kbData?.qa_count || 0,
+      subfix: '个问题',
+    },
+    {
+      route: `/admin/ai/web?id=${kbData?.id}`,
+      title: '在线网页',
+      desc: '通过指定URL、Sitemap等方式自动抓取网页内容进行学习',
+      icon: 'icon-zaixianwangye-moren',
+      hoverIcon: 'icon-zaixianwangye-xuanzhong',
+      count: kbData?.web_count || 0,
+      subfix: '个网页',
+    },
+    {
+      route: `/admin/ai/doc?id=${kbData?.id}`,
+      title: '通用文档',
+      desc: '通过上传离线文档等方式导入内容进行学习',
+      icon: 'icon-tongyongwendang-moren',
+      hoverIcon: 'icon-tongyongwendang-xuanzhong',
+      count: kbData?.doc_count || 0,
+      subfix: '个文档',
+    },
+    {
+      route: `/admin/ai/kb?id=${kbData?.id}`,
+      title: '知识库',
+      desc: '关联Pandawki、飞书等第三方知识库',
+      icon: 'icon-zhishiku-moren',
+      hoverIcon: 'icon-zhishiku-xuanzhong',
+      count: kbData?.space_count || 0,
+      subfix: '个知识库',
+    },
+  ];
   return (
     <Card sx={{ flex: 1, height: '100%', overflow: 'auto' }}>
       <Grid container spacing={2}>
@@ -66,116 +95,50 @@ const AdminDocument = () => {
             {/* 替换原有的知识学习模块内容 */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {/* 问答对 */}
-              <Card
-                sx={{
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  bgcolor: '#F8F9FA',
-                  cursor: 'pointer',
-                }}
-                onClick={() => navigator(`/admin/ai/qa?id=${kbData?.id}`)}
-              >
-                <Stack
-                  direction="row"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  sx={{ py: 1 }}
+              {knowledgeMenu.map(item => (
+                <Card
+                  key={item.title}
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    bgcolor: '#F8F9FA',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      borderColor: '#3860F4',
+                    },
+                  }}
+                  onClick={() => navigator(item.route)}
+                  onMouseEnter={() => setHoveredItem(item.title)}
+                  onMouseLeave={() => setHoveredItem(null)}
                 >
-                  <Stack>
-                    <Typography variant="subtitle2">问答对</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      用于配置可直接命中的标准答案，解决常见高频问题
-                    </Typography>
+                  <Stack direction="row" alignItems="center" sx={{ py: 1 }}>
+                    <Icon
+                      type={hoveredItem === item.title ? item.hoverIcon : item.icon}
+                      sx={{ fontSize: '26px' }}
+                    />
+                    <Stack sx={{ ml: '20px', mr: 'auto' }}>
+                      <Typography variant="subtitle2">{item.title}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {item.desc}
+                      </Typography>
+                    </Stack>
+                    <Stack direction="row" alignItems="center">
+                      <Typography variant="subtitle2" color="text.primary" sx={{ pr: 1 }}>
+                        {item.count}
+                      </Typography>
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          fontWeight: 400,
+                          color: theme => alpha(theme.palette.text.primary, 0.4),
+                        }}
+                      >
+                        {item.subfix}
+                      </Typography>
+                    </Stack>
                   </Stack>
-                  <Typography variant="subtitle2" color="text.primary">
-                    {kbData?.qa_count || 0} 个问题
-                  </Typography>
-                </Stack>
-              </Card>
-
-              {/* 在线网页 */}
-              <Card
-                sx={{
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  bgcolor: '#F8F9FA',
-                  cursor: 'pointer',
-                }}
-                onClick={() => navigator(`/admin/ai/web?id=${kbData?.id}`)}
-              >
-                <Stack
-                  direction="row"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  sx={{ py: 1 }}
-                >
-                  <Stack>
-                    <Typography variant="subtitle2">在线网页</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      通过指定URL、Sitemap等方式自动抓取网页内容进行学习
-                    </Typography>
-                  </Stack>
-                  <Typography variant="subtitle2" color="text.primary">
-                    {kbData?.web_count || 0} 个网页
-                  </Typography>
-                </Stack>
-              </Card>
-
-              {/* 通用文档 */}
-              <Card
-                sx={{
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  bgcolor: '#F8F9FA',
-                  cursor: 'pointer',
-                }}
-                onClick={() => navigator(`/admin/ai/doc?id=${kbData?.id}`)}
-              >
-                <Stack
-                  direction="row"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  sx={{ py: 1 }}
-                >
-                  <Stack>
-                    <Typography variant="subtitle2">通用文档</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      通过上传离线文档等方式导入内容进行学习
-                    </Typography>
-                  </Stack>
-                  <Typography variant="subtitle2" color="text.primary">
-                    {kbData?.doc_count || 0} 个文档
-                  </Typography>
-                </Stack>
-              </Card>
-
-              {/* 知识库 */}
-              <Card
-                sx={{
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  bgcolor: '#F8F9FA',
-                  cursor: 'pointer',
-                }}
-                onClick={() => navigator(`/admin/ai/kb?id=${kbData?.id}`)}
-              >
-                <Stack
-                  direction="row"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  sx={{ py: 1 }}
-                >
-                  <Stack>
-                    <Typography variant="subtitle2">知识库</Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      关联Pandawki、飞书等第三方知识库
-                    </Typography>
-                  </Stack>
-                  <Typography variant="subtitle2" color="text.primary">
-                    {kbData?.space_count || 0} 个知识库
-                  </Typography>
-                </Stack>
-              </Card>
+                </Card>
+              ))}
             </div>
             {/* 移除原有的创建按钮 */}
           </Card>
