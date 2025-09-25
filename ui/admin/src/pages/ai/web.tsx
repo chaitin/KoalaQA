@@ -12,7 +12,7 @@ import Card from '@/components/card';
 import { fileType } from '@/components/ImportDoc/const';
 import MarkDown from '@/components/markDown';
 import { useListQueryParams } from '@/hooks/useListQueryParams';
-import { Ellipsis, message, Modal, Table } from '@c-x/ui';
+import { Ellipsis, message, Modal, Table } from '@ctzhian/ui';
 import { Box, Button, Stack, TextField, Typography } from '@mui/material';
 import { useRequest } from 'ahooks';
 import { ColumnsType } from 'ct-mui/dist/Table';

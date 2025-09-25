@@ -9,7 +9,7 @@ import {
   Stack,
   TextField
 } from '@mui/material';
-import { Modal } from 'ct-mui';
+import { Modal } from '@ctzhian/ui';
 import { useEffect, useState } from 'react';
 import { StepText } from './const';
 import Doc2Ai from './Doc2Ai';
@@ -51,7 +51,7 @@ const SitemapImport = ({
     setSelectIds([]);
     setLoading(false);
     onCancel();
-    refresh?.();
+    refresh?.({});
   };
 
   const handleURL = async () => {
@@ -65,7 +65,7 @@ const SitemapImport = ({
   const handleOk = async () => {
     if (step === 'done') {
       handleCancel();
-      refresh?.();
+      refresh?.({});
     } else if (step === 'upload') {
       setLoading(true);
       setIsCancelled(false);

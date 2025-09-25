@@ -4,10 +4,10 @@ import Card from '@/components/card';
 import LottieIcon from '@/components/lottieIcon';
 import { useAppDispatch, useAppSelector } from '@/store';
 import { addOpacityToColor } from '@/utils';
-import { message } from '@c-x/ui';
+import { message } from '@ctzhian/ui';
 import { Box, Button, Stack, useTheme } from '@mui/material';
 import { DEFAULT_MODEL_PROVIDERS, ModelModal } from '@ctzhian/modelkit';
-import { Icon } from 'ct-mui';
+import { Icon } from '@ctzhian/ui';
 import { useEffect, useState } from 'react';
 import { modelService } from './services/modelService';
 

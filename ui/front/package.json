@@ -14,7 +14,7 @@
   "dependencies": {
     "@ant-design/nextjs-registry": "^1.0.0",
     "@antv/g2": "^5.2.1",
-    "@ctzhian/tiptap": "^1.6.6",
+    "@ctzhian/tiptap": "^1.2.0",
     "@ctzhian/ui": "^7.0.5",
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
@@ -60,6 +60,7 @@
     "sharp": "^0.33.4",
     "tohash": "^1.0.2",
     "xml-formatter": "^3.6.3",
+    "@koala-wiki/themes": "workspace:*",
     "zod": "^4.1.5"
   },
   "devDependencies": {

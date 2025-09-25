@@ -1,29 +1,20 @@
 import {
-  deleteAdminKbKbId,
   getAdminKb,
   postAdminKb,
   putAdminKbKbId,
   SvcKBCreateReq,
-  SvcKBListItem,
+  SvcKBListItem
 } from '@/api';
 import Card from '@/components/card';
-import { message, Modal } from '@c-x/ui';
+import { message, Modal } from '@ctzhian/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import {
-  Box,
-  Button,
-  Divider,
   Grid2 as Grid,
-  IconButton,
-  Menu,
-  MenuItem,
   Stack,
   TextField,
-  Typography,
+  Typography
 } from '@mui/material';
 import { useRequest } from 'ahooks';
-import { Icon, Message } from 'ct-mui';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
@@ -59,7 +50,7 @@ const AdminDocument = () => {
       : postAdminKb;
     reqHandle(data).then(() => {
       handleCancel();
-      Message.success(isPut ? '修改成功' : '创建成功');
+      message.success(isPut ? '修改成功' : '创建成功');
       refresh();
     });
   };

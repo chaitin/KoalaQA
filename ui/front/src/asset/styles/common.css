@@ -299,3 +299,7 @@ a {
 .sc-container .sc-mask {
   z-index: 1500 !important;
 }
+
+.tiptap + .ProseMirror .MuiSelect-root{
+  background-color: unset!important;
+}

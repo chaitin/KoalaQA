@@ -1,7 +1,7 @@
 import { AnydocListRes, TopicTaskStatus } from '@/api';
 import { TaskType } from '@/hooks/useExportDoc';
 import { Box, Button, Checkbox, Skeleton, Stack } from '@mui/material';
-import { Ellipsis, Icon } from 'ct-mui';
+import { Ellipsis, Icon } from '@ctzhian/ui';
 
 interface ImportDocProps {
   selectIds: string[];

@@ -18,7 +18,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { Modal } from 'ct-mui';
+import { Modal } from '@ctzhian/ui';
 import { useState } from 'react';
 import { FileRejection } from 'react-dropzone';
 import Doc2Ai from './Doc2Ai';
@@ -96,7 +96,7 @@ const OfflineFileImport = ({
     setUploadProgress(0);
     setLoading(false);
     onCancel();
-    refresh?.();
+    refresh?.({});
   };
 
   const getUrlByUploadFile = (
@@ -151,7 +151,7 @@ const OfflineFileImport = ({
   const handleOk = async () => {
     if (step === 'done') {
       handleCancel();
-      refresh?.();
+      refresh?.({});
     } else if (step === 'upload') {
       setLoading(true);
       handleFile();

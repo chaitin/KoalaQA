@@ -16,11 +16,12 @@ import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import UndoIcon from '@mui/icons-material/Undo';
 import { Box, Button, IconButton, Stack, TextField, Tooltip } from '@mui/material';
 import { useFullscreen, useRequest } from 'ahooks';
-import { Message, Modal } from 'ct-mui';
+import { message, Modal } from '@ctzhian/ui';
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useSearchParams } from 'react-router-dom';
 import z from 'zod';
+import LoadingBtn from '@/components/LoadingButton';
 
 const schema = z.object({
   title: z.string().min(1, '必填').default(''),
@@ -65,11 +66,11 @@ const QaImport = (props: {
       manual: true,
       onSuccess: result => {
         setValue('markdown', result);
-        Message.success('文本润色完成');
+        message.success('文本润色完成');
         setIsPolishing(false);
       },
       onError: () => {
-        Message.error('文本润色失败，请重试');
+        message.error('文本润色失败，请重试');
         setIsPolishing(false);
       },
     }
@@ -78,7 +79,7 @@ const QaImport = (props: {
   const handlePolish = () => {
     const currentText = watch('markdown');
     if (!currentText?.trim()) {
-      Message.warning('请先输入回答内容');
+      message.warning('请先输入回答内容');
       return;
     }
     setOriginalText(currentText);
@@ -89,7 +90,7 @@ const QaImport = (props: {
   const handleRevert = () => {
     if (originalText) {
       setValue('markdown', originalText);
-      Message.success('已恢复原文');
+      message.success('已恢复原文');
     }
   };
 
@@ -100,7 +101,7 @@ const QaImport = (props: {
       title: qaItem.title || '',
       markdown: qaItem.markdown,
     }).then(() => {
-      Message.success('审核通过');
+      message.success('审核通过');
       setShowReview(false);
       refresh({});
     });
@@ -109,7 +110,7 @@ const QaImport = (props: {
   const handleReviewReject = (qaItem: ModelKBDocumentDetail) => {
     // 拒绝审核，删除记录
     deleteAdminKbKbIdQuestionQaId(kb_id, qaItem.id!).then(() => {
-      Message.success('已拒绝');
+      message.success('已拒绝');
       setShowReview(false);
       refresh({});
     });
@@ -124,7 +125,7 @@ const QaImport = (props: {
       }).then(() => {
         // 删除当前待审核记录
         deleteAdminKbKbIdQuestionQaId(kb_id, qaItem.id!).then(() => {
-          Message.success('已更新历史问答');
+          message.success('已更新历史问答');
           setShowReview(false);
           refresh({});
         });
@@ -143,7 +144,7 @@ const QaImport = (props: {
   const handleOk = (data: z.infer<typeof schema>) => {
     postAdminKbKbIdQuestion(kb_id, data).then(() => {
       handleCancel();
-      Message.success('保存成功');
+      message.success('保存成功');
       refresh({});
     });
   };
@@ -226,30 +227,6 @@ const QaImport = (props: {
                   onChange={field.onChange}
                   showActions={false}
                 />
-                {/* <TextField
-                  autoComplete="off"
-                  margin="normal"
-                  placeholder={'请输入'}
-                  sx={{
-                    position: 'relative',
-                    borderWidth: 2,
-                    mt: 0,
-                  }}
-                  value={field.value}
-                  size="small"
-                  fullWidth
-                  error={Boolean(formState.errors.markdown?.message)}
-                  helperText={formState.errors.markdown?.message}
-                  multiline
-                  minRows={isFullscreen ? 30 : 8}
-                  onChange={field.onChange}
-                  slotProps={{
-                    inputLabel: {
-                      shrink: !!watch('markdown') || undefined,
-                    },
-                  }}
-                /> */}
-                {/* AI文本润色按钮 */}
                 <Box
                   sx={{
                     position: 'absolute',
@@ -278,6 +255,7 @@ const QaImport = (props: {
                   <Tooltip title="AI文本润色">
                     <IconButton
                       size="small"
+                      loading={polishLoading || isPolishing}
                       onClick={handlePolish}
                       disabled={polishLoading || isPolishing}
                       sx={{
@@ -298,13 +276,13 @@ const QaImport = (props: {
             <Button size="small" variant="text" onClick={handleCancel}>
               取消
             </Button>
-            <Button
+            <LoadingBtn
               size="small"
               variant="contained"
               onClick={handleSubmit(editItem ? handleEdit : handleOk)}
             >
               确认
-            </Button>
+            </LoadingBtn>
           </Stack>
         </Stack>
       </Modal>
