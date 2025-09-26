@@ -73,10 +73,6 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 		logger.WithErr(err).Warn("get comment failed")
 		return nil
 	}
-	if comment.Bot {
-		logger.Debug("comment is bot, skip")
-		return nil
-	}
 	kbID, err := q.kb.FirstID(ctx)
 	if err != nil {
 		logger.WithErr(err).Warn("get kb id failed")
@@ -102,6 +98,7 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 		return nil
 	}
 	if len(chunks) == 0 {
+		logger.With("question", newQA.Title).Info("no rag records found")
 		return q.repo.Create(ctx, newQA)
 	}
 	docIds := make([]string, 0)
@@ -123,6 +120,7 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 			Answer:   string(doc.Markdown),
 		})
 		if newQA.SimilarID == 0 {
+			logger.With("question", newQA.Title).With("similar_id", doc.ID).Info("set similar id")
 			newQA.SimilarID = doc.ID
 		}
 	}
