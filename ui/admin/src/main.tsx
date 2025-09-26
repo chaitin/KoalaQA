@@ -20,6 +20,7 @@ import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
 import { AuthContext, CommonContext } from './context';
 import router from './router';
 import { lightTheme } from './theme';
+import { getAdminModelList, getAdminUser, getUser, ModelLLM, ModelUserInfo } from './api';
 
 window.MonacoEnvironment = {
   getWorker: function (workerId: string, label: string) {
@@ -48,20 +49,27 @@ dayjs.extend(duration);
 dayjs.extend(relativeTime);
 
 const App = () => {
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<ModelUserInfo | null>(null);
   const [loading, setLoading] = useState(false);
-  const getModelList = () => {};
-
-  const getUser = () => {};
+  const [modelList, setModelList] = useState<ModelLLM[]>([]);
+  const getModelList = () => {
+    getAdminModelList().then(setModelList);
+  };
+  const getUserInfo = async () => {
+    const user = await getUser();
+    setUser(user);
+    if (user.uid) getModelList();
+  };
 
   useEffect(() => {
-    getUser();
+    getUserInfo();
   }, []);
   return (
     <ThemeProvider theme={lightTheme}>
       <CommonContext.Provider
         value={{
           kb_id: '',
+          modelList,
           refreshModel: getModelList,
         }}
       >

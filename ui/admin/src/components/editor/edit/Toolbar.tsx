@@ -20,6 +20,7 @@ const Toolbar = ({ editorRef, handleAiGenerate }: ToolbarProps) => {
         px: 0.5,
         mx: 1,
       }}
+      className="toolbar"
     >
       <EditorToolbar
         editor={editorRef.editor}
