@@ -1,8 +1,7 @@
 import { getAdminBot, putAdminBot } from '@/api';
 import Card from '@/components/card';
 import { zodResolver } from '@hookform/resolvers/zod';
-
-import { Avatar, Box, Button, TextField, Typography } from '@mui/material';
+import { Avatar, Box, Button, Stack, TextField, Typography } from '@mui/material';
 import React, { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -16,7 +15,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-const UserForm: React.FC = () => {
+const Bot: React.FC = () => {
   const {
     register,
     handleSubmit,
@@ -32,6 +31,7 @@ const UserForm: React.FC = () => {
       unknown_prompt: '',
     },
   });
+
   const onSubmit = (data: FormData) => {
     if (!dirtyFields.avatar) {
       putAdminBot({
@@ -42,112 +42,152 @@ const UserForm: React.FC = () => {
       putAdminBot(data as any);
     }
   };
+
   useEffect(() => {
     getAdminBot().then(res => {
       reset(res);
     });
   }, []);
+
   return (
-    <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
-      <Typography variant="body2" sx={{ mb: 2 }}>
+    <Card sx={{ border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}>
+      <Typography
+        variant="subtitle2"
+        sx={{ pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}
+      >
         社区智能机器人
       </Typography>
-      <Box component="form" onSubmit={handleSubmit(onSubmit)}>
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-          }}
-        >
-          <Controller
-            name="avatar"
-            control={control}
-            render={({ field }) => (
-              <Avatar
-                alt={'机器人头像'}
-                src={
-                  typeof field.value === 'string'
-                    ? field.value
-                    : field.value
-                    ? URL.createObjectURL(field.value)
-                    : ''
-                }
-                sx={{
-                  width: 80,
-                  height: 80,
-                  mb: 2,
-                  cursor: 'pointer',
-                  '&:hover': {
-                    opacity: 0.8,
-                  },
-                }}
-                onClick={() => {
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.accept = 'image/*';
-                  input.onchange = e => {
-                    const files = (e.target as HTMLInputElement).files;
-                    if (files && files.length > 0) {
-                      field.onChange(files[0]);
-                    }
-                  };
-                  input.click();
-                }}
-              />
-            )}
+
+      <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ p: 2 }}>
+        {/* 头像上传区域 */}
+        <Stack direction="row" sx={{ mb: 2 }} alignItems="center">
+          <Typography variant="subtitle2" sx={{ minWidth: '24%' }}>
+            头像
+          </Typography>
+
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Controller
+              name="avatar"
+              control={control}
+              render={({ field }) => (
+                <Avatar
+                  alt={'机器人头像'}
+                  variant="square"
+                  src={
+                    typeof field.value === 'string'
+                      ? field.value
+                      : field.value
+                      ? URL.createObjectURL(field.value)
+                      : ''
+                  }
+                  sx={{
+                    width: 78,
+                    height: 78,
+                    borderRadius: '4px',
+                    borderColor: 'divider',
+                    bgcolor: 'background.paper',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      opacity: 0.8,
+                      borderColor: 'primary.main',
+                    },
+                  }}
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = e => {
+                      const files = (e.target as HTMLInputElement).files;
+                      if (files && files.length > 0) {
+                        field.onChange(files[0]);
+                      }
+                    };
+                    input.click();
+                  }}
+                />
+              )}
+            />
+          </Box>
+        </Stack>
+
+        {/* 名称输入区域 */}
+        <Stack direction="row" sx={{ mb: 2 }} alignItems="center">
+          <Stack direction="row" sx={{ minWidth: '24%' }}>
+            <Typography
+              variant="subtitle2"
+              sx={{ minWidth: '24%', '&:last-letter': { color: 'error.main' } }}
+            >
+              名称
+            </Typography>
+            <Typography
+              variant="subtitle2"
+              sx={{ minWidth: '24%',color: 'error.main' }}
+            >
+              *
+            </Typography>
+          </Stack>
+
+          <TextField
+            {...register('name')}
+            placeholder="请输入机器人名称"
+            fullWidth
+            error={!!errors.name}
+            helperText={errors.name?.message}
+            slotProps={{
+              inputLabel: {
+                shrink: !!watch('name') || undefined,
+                sx: { display: 'none' },
+              },
+            }}
           />
-        </Box>
+        </Stack>
 
-        <TextField
-          {...register('name')}
-          label="名称"
-          fullWidth
-          required
-          error={!!errors.name}
-          helperText={errors.name?.message}
-          sx={{ mb: 2 }}
-          slotProps={{
-            inputLabel: {
-              shrink: !!watch('name') || undefined,
-            },
-          }}
-        />
+        {/* 无法回答提示区域 */}
+        <Stack direction="row" alignItems="self-start">
+          <Typography variant="subtitle2" sx={{ minWidth: '24%', pt: 1 }}>
+            无法回答提示
+          </Typography>
+          <TextField
+            {...register('unknown_prompt')}
+            placeholder="当机器人无法回答问题时的提示语"
+            fullWidth
+            multiline
+            rows={6}
+            error={!!errors.unknown_prompt}
+            helperText={errors.unknown_prompt?.message}
+            slotProps={{
+              inputLabel: {
+                shrink: !!watch('unknown_prompt') || undefined,
+                sx: { display: 'none' },
+              },
+            }}
+          />
+        </Stack>
 
-        <TextField
-          {...register('unknown_prompt')}
-          label="无法回答提示"
-          fullWidth
-          multiline
-          rows={4}
-          error={!!errors.unknown_prompt}
-          helperText={errors.unknown_prompt?.message}
-          sx={{ mb: 3 }}
-          slotProps={{
-            inputLabel: {
-              shrink: !!watch('unknown_prompt') || undefined,
-            },
-          }}
-        />
+        {/* 操作按钮 */}
         {isDirty && (
-          <>
+          <Stack
+            direction="row"
+            justifyContent="end"
+            sx={{ gap: 2, pt: 2, }}
+          >
             <Button
               onClick={() => {
                 reset();
               }}
               variant="outlined"
-              sx={{ alignSelf: 'flex-start', mr: 2 }}
+              sx={{ borderRadius: '6px' }}
             >
               取消
             </Button>
-            <Button type="submit" variant="contained" sx={{ alignSelf: 'flex-start' }}>
+            <Button type="submit" variant="contained" sx={{ borderRadius: '6px' }}>
               保存
             </Button>
-          </>
+          </Stack>
         )}
       </Box>
     </Card>
   );
 };
 
-export default UserForm;
+export default Bot;
