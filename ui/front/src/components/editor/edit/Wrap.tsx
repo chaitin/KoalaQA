@@ -88,13 +88,13 @@ const EditorWrap = ({
         },
       }
     );
-    return Promise.resolve('/static-file/' + key);
+    return Promise.resolve(key as string);
   };
   const editorRef = useTiptap({
     editable: true,
     content: value || detail?.content || '',
     onUpdate: handleUpdate,
-    exclude: ['invisibleCharacters', 'youtube', 'mention'],
+    exclude: ['invisibleCharacters', 'youtube', 'mention', 'aiWriting'],
     // SSR 环境需显式关闭立即渲染以避免水合不匹配
     immediatelyRender: false,
     onUpload: handleUpload,
@@ -103,9 +103,6 @@ const EditorWrap = ({
     },
     onBlur: () => {
       console.log('编辑器失去焦点');
-    },
-    onAiWritingGetSuggestion: async () => {
-      return '';
     },
   });
 

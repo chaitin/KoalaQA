@@ -390,3 +390,8 @@ select:-webkit-autofill {
     @apply bg-background text-foreground;
   }
 }
+@layer editor {
+  .toolbar {
+    --mui-palette-background-paper: transparent;
+  }
+}

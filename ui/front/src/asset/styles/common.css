@@ -303,3 +303,10 @@ a {
 .tiptap + .ProseMirror .MuiSelect-root{
   background-color: unset!important;
 }
+
+@layer editor {
+  .tiptap {
+    --mui-palette-background-paper: #ffffff;
+    --mui-palette-background-paper3: #f5f5f5;
+  }
+}
