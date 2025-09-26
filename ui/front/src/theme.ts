@@ -41,6 +41,7 @@ const theme = createTheme(
       background: {
         default: '#F1F2F8',
       },
+      divider: '#ECEEF1',
       action: {
         active: 'rgba(33, 34, 45, 0.54)',
         hover: 'rgba(33, 34, 45, 0.04)',

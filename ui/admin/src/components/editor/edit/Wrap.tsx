@@ -86,13 +86,13 @@ const EditorWrap = ({
         },
       }
     );
-    return Promise.resolve('/static-file/' + key);
+    return Promise.resolve(key as string);
   };
   const editorRef = useTiptap({
     editable: true,
     content: value || detail?.content || '',
     onUpdate: handleUpdate,
-    exclude: ['invisibleCharacters', 'youtube', 'mention'],
+    exclude: ['invisibleCharacters', 'youtube', 'mention', 'aiWriting'],
     immediatelyRender: false,
     onUpload: handleUpload,
     onFocus: () => {
@@ -100,9 +100,6 @@ const EditorWrap = ({
     },
     onBlur: () => {
       console.log('编辑器失去焦点');
-    },
-    onAiWritingGetSuggestion: async () => {
-      return '';
     },
   });
 

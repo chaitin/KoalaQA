@@ -1,12 +1,12 @@
 import { createContext } from 'react';
-import { DomainUser, DomainAdminUser, DomainModel } from '@/api/types';
+import { ModelUserInfo, ModelLLM } from '@/api/types';
 
 export const AuthContext = createContext<
   [
-    DomainUser | DomainAdminUser | null,
+    ModelUserInfo  | null,
     {
       loading: boolean;
-      setUser: (user: DomainUser | DomainAdminUser) => void;
+      setUser: (user: ModelUserInfo ) => void;
       refreshUser: () => void;
     }
   ]
@@ -22,7 +22,9 @@ export const AuthContext = createContext<
 export const CommonContext = createContext<{
   kb_id: string;
   refreshModel: () => void;
+  modelList: ModelLLM[];
 }>({
   kb_id: '',
+  modelList: [],
   refreshModel: () => {},
 });
