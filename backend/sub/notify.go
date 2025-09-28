@@ -111,6 +111,31 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 	}
 
 	if data.ToID == botUserID {
+		switch data.Type {
+		case model.MsgNotifyTypeDislikeComment:
+			err = mn.natsPub.Publish(ctx, topic.TopicDiscussWebhook, topic.MsgDiscussWebhook{
+				MsgType:   message.TypeDislikeBotComment,
+				UserID:    data.FromID,
+				DiscussID: data.DiscussID,
+			})
+			if err != nil {
+				logger.WithErr(err).Warn("send webhook message failed")
+			}
+
+			return nil
+		case model.MsgNotifyTypeBotUnknown:
+			err = mn.natsPub.Publish(ctx, topic.TopicDiscussWebhook, topic.MsgDiscussWebhook{
+				MsgType:   message.TypeBotUnknown,
+				UserID:    data.FromID,
+				DiscussID: data.DiscussID,
+			})
+			if err != nil {
+				logger.WithErr(err).Warn("send webhook message failed")
+			}
+
+			return nil
+		}
+
 		var users []model.User
 		err = mn.user.List(ctx, &users, repo.QueryWithEqual("role", model.UserRoleAdmin))
 		if err != nil {
@@ -126,24 +151,6 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 			})
 
 			topics[user.ID] = topic.NewMessageNotifyUser(user.ID)
-		}
-
-		switch data.Type {
-		case model.MsgNotifyTypeDislikeComment:
-			err = mn.natsPub.Publish(ctx, topic.TopicDiscussWebhook, topic.MsgDiscussWebhook{
-				MsgType:   message.TypeDislikeBotComment,
-				UserID:    data.FromID,
-				DiscussID: data.DiscussID,
-			})
-		case model.MsgNotifyTypeBotUnknown:
-			err = mn.natsPub.Publish(ctx, topic.TopicDiscussWebhook, topic.MsgDiscussWebhook{
-				MsgType:   message.TypeBotUnknown,
-				UserID:    data.FromID,
-				DiscussID: data.DiscussID,
-			})
-		}
-		if err != nil {
-			logger.WithErr(err).Warn("send webhook message failed")
 		}
 	} else {
 		dbMessageNotify = append(dbMessageNotify, model.MessageNotify{
