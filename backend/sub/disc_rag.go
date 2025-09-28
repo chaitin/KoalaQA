@@ -2,7 +2,6 @@ package sub
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/chaitin/koalaqa/pkg/glog"
@@ -71,8 +70,7 @@ func (d *DiscRag) handleInsert(ctx context.Context, discID uint) error {
 		logger.WithContext(ctx).WithErr(err).Error("get discussion failed")
 		return nil
 	}
-	content := fmt.Sprintf(`帖子标题：%s\n帖子内容：%s`, disc.Title, disc.Content)
-	ragID, err := d.rag.UpsertRecords(ctx, d.dataset.GetFrontendID(ctx), content, nil)
+	ragID, err := d.rag.UpsertRecords(ctx, d.dataset.GetFrontendID(ctx), disc.TitleContent(), nil)
 	if err != nil {
 		return err
 	}

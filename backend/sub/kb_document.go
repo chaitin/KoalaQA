@@ -77,7 +77,7 @@ func (k *KBDoc) handleInsert(ctx context.Context, kbID uint, docID uint) error {
 	switch doc.DocType {
 	case model.DocTypeQuestion:
 		content = fmt.Sprintf(`问题：%s\n答案:\n%s`, doc.Title, doc.Markdown)
-	case model.DocTypeDocument, model.DocTypeSpace:
+	case model.DocTypeDocument, model.DocTypeSpace, model.DocTypeWeb:
 		url := string(doc.Markdown)
 		r, err := oss.Download(ctx, url, oss.WithBucket("anydoc"))
 		if err != nil {
@@ -91,6 +91,9 @@ func (k *KBDoc) handleInsert(ctx context.Context, kbID uint, docID uint) error {
 			return nil
 		}
 		content = string(raw)
+	default:
+		logger.With("doc_type", doc.DocType).Error("doc type not support")
+		return nil
 	}
 	ragID, err := k.rag.UpsertRecords(ctx, k.dataset.GetBackendID(ctx), content, nil)
 	if err != nil {
