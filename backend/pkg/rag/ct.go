@@ -55,7 +55,7 @@ func (c *CTRag) UpsertRecords(ctx context.Context, datasetID string, content str
 	}
 	defer tempFile.Close()
 	c.logger.WithContext(ctx).With("dataset_id", datasetID).With("group_ids", groupIDs).Debug("upload document text")
-	docs, err := c.client.UploadDocumentsAndParse(ctx, datasetID, []string{tempFile.Name()}, groupIDs)
+	docs, err := c.client.UploadDocumentsAndParse(ctx, datasetID, []string{tempFile.Name()}, groupIDs, nil)
 	if err != nil {
 		return "", fmt.Errorf("upload document text failed: %w", err)
 	}
@@ -73,7 +73,7 @@ func (c *CTRag) QueryRecords(ctx context.Context, req QueryRecordsReq) ([]*model
 	if req.SimilarityThreshold == 0 {
 		req.SimilarityThreshold = 0.3
 	}
-	chunks, _, err := c.client.RetrieveChunks(ctx, rag.RetrievalRequest{
+	chunks, _, _, err := c.client.RetrieveChunks(ctx, rag.RetrievalRequest{
 		DatasetIDs:          req.DatasetIDs,
 		Question:            req.Query,
 		TopK:                req.TopK,

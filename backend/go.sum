@@ -41,6 +41,8 @@ github.com/chaitin/ModelKit v1.8.3 h1:qXhV4QYM7ZF2XZXlNQ2aaGd+9WU8K1xgThgWuP7MBN
 github.com/chaitin/ModelKit v1.8.3/go.mod h1:IBeqs9T8+vxMXhoer8daV0yrSPb5uaoAwQQW2Tz2qAg=
 github.com/chaitin/pandawiki/sdk/rag v0.0.0-20250828122102-9a4a7cbbd5b6 h1:qEmfuLoBBP+mn7sb5nX0iinO2gTR3yM3YUovUuoxqMU=
 github.com/chaitin/pandawiki/sdk/rag v0.0.0-20250828122102-9a4a7cbbd5b6/go.mod h1:c9cq9DFEaqynk1avg8CSOhZZOClQI1LmhCo8v7NAN3w=
+github.com/chaitin/pandawiki/sdk/rag v0.0.0-20250927130416-bcfc4bde3379 h1:75hNRIDe4I4+z8c/pvuu4PidAi7YFiv7YI1nRHIjGmU=
+github.com/chaitin/pandawiki/sdk/rag v0.0.0-20250927130416-bcfc4bde3379/go.mod h1:c9cq9DFEaqynk1avg8CSOhZZOClQI1LmhCo8v7NAN3w=
 github.com/cloudwego/base64x v0.1.6 h1:t11wG9AECkCDk5fMSoxmufanudBtJ+/HemLstXDLI2M=
 github.com/cloudwego/base64x v0.1.6/go.mod h1:OFcloc187FXDaYHvrNIjxSe8ncn0OOM8gEHfghB2IPU=
 github.com/cloudwego/eino v0.4.7 h1:wwqsFWCuzCQuhw1dYKqHjGWULzjDjFfN9sTn/cezYV4=
