@@ -21,6 +21,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/oss"
 	"github.com/chaitin/koalaqa/pkg/topic"
 	"github.com/chaitin/koalaqa/pkg/trace"
+	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/google/uuid"
 	"go.uber.org/fx"
 )
@@ -130,7 +131,6 @@ type anydoc struct {
 	cache    cache.Cache[topic.TaskMeta]
 	address  string
 	platform map[platform.PlatformType]platform.Platform
-	client   *http.Client
 	logger   *glog.Logger
 }
 
@@ -231,7 +231,7 @@ func (a *anydoc) List(ctx context.Context, platform platform.PlatformType, optFu
 		req.Header.Set("Content-Type", contentType)
 	}
 
-	resp, err := a.client.Do(req)
+	resp, err := util.HTTPClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -293,7 +293,7 @@ func (a *anydoc) Export(ctx context.Context, platform platform.PlatformType, id 
 
 	req.Header["X-Trace-ID"] = trace.TraceID(ctx)
 
-	resp, err := a.client.Do(req)
+	resp, err := util.HTTPClient.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -320,7 +320,6 @@ type in struct {
 	OC        oss.Client
 	Cache     cache.Cache[topic.TaskMeta]
 	Cfg       config.Config
-	Client    *http.Client
 	Platforms []platform.Platform `group:"anydoc_platforms"`
 }
 
@@ -349,7 +348,6 @@ func newAnydoc(i in) (Anydoc, error) {
 		oc:       i.OC,
 		cache:    i.Cache,
 		address:  strings.TrimSuffix(i.Cfg.Anydoc.Address, "/"),
-		client:   i.Client,
 		platform: platformM,
 		logger:   glog.Module("anydoc"),
 	}, nil

@@ -24,7 +24,7 @@ var (
 			},
 			Proxy: http.ProxyFromEnvironment,
 		},
-		Timeout: time.Minute * 5,
+		Timeout: time.Minute * 2,
 	}
 )
 

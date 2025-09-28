@@ -11,7 +11,6 @@ import (
 	"github.com/chaitin/koalaqa/pkg/cron"
 	"github.com/chaitin/koalaqa/pkg/database"
 	"github.com/chaitin/koalaqa/pkg/glog"
-	"github.com/chaitin/koalaqa/pkg/http"
 	"github.com/chaitin/koalaqa/pkg/jwt"
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/oss"
@@ -37,7 +36,6 @@ func main() {
 	glog.With("version", Version).With("git_commit", GitCommit, "build_time", BuildTime).Info("run app")
 	app := fx.New(
 		config.Module,
-		http.Module,
 		database.Moudle,
 		anydoc.Module(),
 		mq.Module,
