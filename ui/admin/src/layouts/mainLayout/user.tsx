@@ -3,18 +3,19 @@ import Header from '@/components/header';
 import Sidebar from '@/components/sidebar';
 import ModelManagementModal from '@/pages/settings/component/ModelManagementModal';
 import Access from '@/pages/settings/component/Access';
-import { Box, Modal, Stack } from '@mui/material';
+import { Box, Button, Modal, Stack, Typography } from '@mui/material';
 import { useContext, useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useLocalStorageState } from 'ahooks';
 import { AuthContext, CommonContext } from '@/context';
+import Card from '@/components/card';
 
 const MainLayout = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [showGuide, setShowGuide] = useState(false);
   const [needModel, setNeedModel] = useState(false);
   const [needAddress, setNeedAddress] = useState(false);
-  const [user]  = useContext(AuthContext);
+  const [user] = useContext(AuthContext);
   useEffect(() => {
     if (user?.uid) {
       setIsAuthenticated(true);
@@ -100,13 +101,14 @@ const MainLayout = () => {
       <Modal
         open={showGuide}
         onClose={() => {}} // 禁止遮罩关闭
+        disableEscapeKeyDown
         sx={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <Box
+        <Stack
           sx={{
             width: '80%',
             maxWidth: 800,
@@ -118,39 +120,40 @@ const MainLayout = () => {
             p: 3,
           }}
         >
-          <Stack spacing={3}>
-            {needAddress && (
-              <Box>
-                <Box sx={{ fontSize: 16, fontWeight: 600, mb: 1 }}>步骤一：配置访问地址</Box>
-                <Access
-                  // 在保存成功后，重新校验并尝试关闭
-                  onSaved={() => {
-                    setNeedAddress(false);
-                    checkNecessaryConfigurations().then(tryCloseGuide);
-                  }}
-                />
-              </Box>
-            )}
-
-            {needModel && (
-              <Box>
-                <Box sx={{ fontSize: 16, fontWeight: 600, mb: 1 }}>步骤二：配置模型</Box>
-                <ModelManagementModal
-                  open={true}
-                  mandatory={true}
-                  onConfigured={() => {
-                    setNeedModel(false);
-                    checkNecessaryConfigurations().then(tryCloseGuide);
-                  }}
-                />
-              </Box>
-            )}
-
-            {!needAddress && !needModel && (
-              <Box sx={{ fontSize: 14, color: 'success.main' }}>配置完成</Box>
-            )}
+          <Stack spacing={2}>
+            <Box>
+              <Box sx={{ fontSize: 16, fontWeight: 600, mb: 2 }}>社区基础配置</Box>
+              <Access
+                // 在保存成功后，重新校验并尝试关闭
+                onSaved={() => {
+                  setNeedAddress(false);
+                  checkNecessaryConfigurations().then(tryCloseGuide);
+                }}
+              />
+            </Box>
+            <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
+              <Typography variant="body2" sx={{ mb: 0 }}>
+                模型管理
+              </Typography>
+              <ModelManagementModal
+                open={true}
+                mandatory={true}
+                onConfigured={() => {
+                  setNeedModel(false);
+                  checkNecessaryConfigurations();
+                }}
+              />
+            </Card>
           </Stack>
-        </Box>
+          <Button
+            variant="outlined"
+            disabled={needAddress || needModel}
+            onClick={tryCloseGuide}
+            sx={{ ml: 'auto', mt: 2 }}
+          >
+            完成
+          </Button>
+        </Stack>
       </Modal>
     </>
   );

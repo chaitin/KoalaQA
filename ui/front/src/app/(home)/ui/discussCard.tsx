@@ -1,17 +1,14 @@
 import { ModelDiscussionListItem } from "@/api/types";
 import { Card, MatchedString, Title } from "@/app/(banner)/s/ui/common";
+import { MarkDown } from "@/components";
+import { CommonContext } from "@/components/commonProvider";
 import { Avatar, Tag } from "@/components/discussion";
-import { formatNumber } from "@/utils";
-import ThumbUpAltOutlinedIcon from "@mui/icons-material/ThumbUpAltOutlined";
-import ChatIcon from "@mui/icons-material/ChatTwoTone";
-import { Stack, Typography, Chip } from "@mui/material";
+import { Box, Chip, Stack, Typography } from "@mui/material";
 import dayjs from "dayjs";
 import "dayjs/locale/zh-cn";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { useRouter } from "next/navigation";
-import { CommonContext } from "@/components/commonProvider";
-import { useContext, useMemo } from "react";
 import Image from "next/image";
+import { useContext, useMemo } from "react";
 
 dayjs.extend(relativeTime);
 dayjs.locale("zh-cn");
@@ -26,7 +23,6 @@ const DiscussCard = ({
   onTopicClick(t: number): void;
 }) => {
   const it = data;
-  const router = useRouter();
   const { groups } = useContext(CommonContext);
 
   // 根据group_ids获取分组名称
@@ -45,9 +41,9 @@ const DiscussCard = ({
     <Card
       key={it.id}
       sx={{
-        boxShadow: "rgba(0, 28, 85, 0.04) 0px 4px 10px 0px",
-        cursor: "auto",
-        display: { xs: "none", sm: "block" },
+        boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
+        cursor: 'auto',
+        display: { xs: 'none', sm: 'block' },
       }}
     >
       <Stack
@@ -55,7 +51,7 @@ const DiscussCard = ({
         justifyContent="space-between"
         alignItems="center"
         gap={1}
-        sx={{ mb: 2 }}
+        sx={{ mb: 1 }}
       >
         <Stack
           direction="row"
@@ -131,6 +127,14 @@ const DiscussCard = ({
           </Stack>
         </Stack>
       </Stack>
+      <Box
+        sx={{ fontSize: 12, lineHeight: 1, mb: 1, color: "rgba(0,0,0,0.5)" }}
+      >
+        <MarkDown
+          content={it.content}
+          truncateLength={100} // 设置截断长度为100个字符，根据需要调整
+        />
+      </Box>
 
       <Stack direction="row" justifyContent="space-between">
         <Stack direction="row" gap={2} flexWrap="wrap" alignItems="center">
@@ -159,95 +163,11 @@ const DiscussCard = ({
               label={item}
               size="small"
               sx={{ backgroundColor: "rgba(32, 108, 255, 0.1)" }}
-              // onClick={() => {
-              //   onTagClick(item);
-              // }}
+            // onClick={() => {
+            //   onTagClick(item);
+            // }}
             />
           ))}
-        </Stack>
-        <Stack
-          direction="row"
-          justifyContent="flex-end"
-          alignItems="center"
-          sx={{ width: 120 }}
-        >
-          <Stack
-            direction="row"
-            gap={1}
-            alignItems="center"
-            justifyContent="flex-end"
-            sx={{ mt: "2px", flexShrink: 0, width: 100 }}
-          >
-            <Stack
-              direction="row"
-              alignItems="center"
-              gap={1}
-              sx={{
-                background: "rgba(32,108,255,0.1)",
-                borderRadius: 0.5,
-                px: 1,
-                py: "1px",
-                cursor: "pointer",
-                "&:hover": {
-                  background: "rgba(0, 0, 0, 0.12)",
-                },
-              }}
-              onClick={() => {
-                router.push(`/discuss/${it.uuid}`);
-              }}
-            >
-              <ThumbUpAltOutlinedIcon
-                sx={{
-                  // color: it.is_like ? 'primary.main' : 'rgba(0,0,0,0.5)',
-                  fontSize: 14,
-                }}
-              />
-              <Typography
-                variant="body2"
-                sx={{
-                  fontSize: 14,
-                  // color: it.is_like ? 'primary.main' : 'rgba(0,0,0,0.5)',
-                  lineHeight: "20px",
-                }}
-              >
-                {formatNumber(it.like || 0)}
-              </Typography>
-            </Stack>
-            <Stack
-              direction="row"
-              alignItems="center"
-              gap={1}
-              sx={{
-                background: "rgba(255,133,0,0.12)",
-                borderRadius: 0.5,
-                px: 1,
-                py: "1px",
-                cursor: "pointer",
-                // '&:hover': {
-                //   background: it.is_like
-                //     ? 'rgba(255,133,0,0.22)'
-                //     : 'rgba(0, 0, 0, 0.12)',
-                // },
-              }}
-              onClick={() => {
-                router.push(`/discuss/${it.uuid}`);
-              }}
-            >
-              <ChatIcon
-                sx={{
-                  // color: it.is_like ? 'primary.main' : 'rgba(0,0,0,0.5)',
-                  fontSize: 14,
-                  color: "#FF8500",
-                }}
-              />
-              <Typography
-                variant="body2"
-                sx={{ fontSize: 14, lineHeight: "20px", color: "#FF8500" }}
-              >
-                {formatNumber(it.comment || 0)}
-              </Typography>
-            </Stack>
-          </Stack>
         </Stack>
       </Stack>
     </Card>
@@ -257,14 +177,11 @@ const DiscussCard = ({
 export const DiscussCardMobile = ({
   data,
   keywords,
-  onTopicClick,
 }: {
   data: ModelDiscussionListItem;
   keywords?: string;
-  onTopicClick(t: number): void;
 }) => {
   const it = data;
-  const router = useRouter();
   const { groups } = useContext(CommonContext);
 
   // 根据group_ids获取分组名称
