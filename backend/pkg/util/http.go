@@ -3,9 +3,13 @@ package util
 import (
 	"crypto/tls"
 	"errors"
+	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"slices"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -20,9 +24,24 @@ var (
 			},
 			Proxy: http.ProxyFromEnvironment,
 		},
-		Timeout: time.Second * 30,
+		Timeout: time.Minute * 5,
 	}
 )
+
+func init() {
+	timeoutStr := strings.TrimSpace(os.Getenv("DEFAULT_HTTP_CLIENT_TIMEOUT"))
+	if timeoutStr == "" {
+		return
+	}
+
+	timeout, err := strconv.Atoi(timeoutStr)
+	if err != nil {
+		log.Printf("parse %s error: %s, use default", timeoutStr, err.Error())
+		return
+	}
+
+	HTTPClient.Timeout = time.Second * time.Duration(timeout)
+}
 
 func ParseHTTP(u string) (*url.URL, error) {
 	return ParseURL(u, "http", "https")
