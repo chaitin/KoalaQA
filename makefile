@@ -25,6 +25,11 @@ image.app:
 		--build-arg HTTPS_PROXY=${HTTPS_PROXY} \
 		-t swr.cn-east-3.myhuaweicloud.com/koala-qa/app:${IMG_TAG} .
 
+
+image.raglite:
+	cd docker/raglite && DOCKER_BUILDKIT=1 docker build \
+		-t swr.cn-east-3.myhuaweicloud.com/koala-qa/raglite:1-3-8 .
+
 image.nginx:
 	cd docker/nginx && DOCKER_BUILDKIT=1 docker build \
 		-t swr.cn-east-3.myhuaweicloud.com/koala-qa/nginx:1.28.0 .

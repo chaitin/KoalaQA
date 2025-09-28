@@ -12,7 +12,7 @@ services:
     networks:
       koala:
         ipv4_address: "${SUBNET_PREFIX:-169.254.15}.10"
-  
+
   api:
     container_name: koala-qa-api
     image: swr.cn-east-3.myhuaweicloud.com/koala-qa/api:v0.3.5
@@ -37,7 +37,7 @@ services:
       - db
       - raglite
       - anydoc
-  
+
   app:
     container_name: koala-qa-app
     image: swr.cn-east-3.myhuaweicloud.com/koala-qa/app:v0.3.5
@@ -47,23 +47,41 @@ services:
         ipv4_address: "${SUBNET_PREFIX:-169.254.15}.12"
     depends_on:
       - api
-  
+
   mq:
     container_name: koala-qa-mq
     image: swr.cn-east-3.myhuaweicloud.com/koala-qa/mq:2.11.8-alpine3.22
     restart: always
-    command: [ "nats-server", "-c", "/etc/nats/nats.conf", "--user", "koala", "--pass", "${MQ_PASSWORD}" ]
+    command:
+      [
+        "nats-server",
+        "-c",
+        "/etc/nats/nats.conf",
+        "--user",
+        "koala",
+        "--pass",
+        "${MQ_PASSWORD}",
+      ]
     volumes:
       - ./data/nats:/data
     networks:
       koala:
         ipv4_address: "${SUBNET_PREFIX:-169.254.15}.13"
-  
+
   oss:
     container_name: koala-qa-oss
     image: swr.cn-east-3.myhuaweicloud.com/koala-qa/oss:RELEASE.2025-04-22T22-12-26Z-cpuv1
     restart: always
-    command: [ "minio", "server", "/data", "--console-address", "0.0.0.0:9001", "--address", "0.0.0.0:9000"]
+    command:
+      [
+        "minio",
+        "server",
+        "/data",
+        "--console-address",
+        "0.0.0.0:9001",
+        "--address",
+        "0.0.0.0:9000",
+      ]
     volumes:
       - ./data/oss:/data
     environment:
@@ -72,7 +90,7 @@ services:
     networks:
       koala:
         ipv4_address: "${SUBNET_PREFIX:-169.254.15}.14"
-  
+
   db:
     container_name: koala-qa-db
     image: swr.cn-east-3.myhuaweicloud.com/koala-qa/db:17.6-alpine3.22
@@ -86,7 +104,7 @@ services:
     networks:
       koala:
         ipv4_address: "${SUBNET_PREFIX:-169.254.15}.15"
-  
+
   anydoc:
     container_name: koala-qa-anydoc
     image: swr.cn-east-3.myhuaweicloud.com/koala-qa/anydoc:v0.5.0
@@ -95,7 +113,7 @@ services:
       - MQ_NATS_URL=koala-qa-mq:4222
       - MQ_NATS_USER=koala
       - MQ_NATS_PASSWORD=${MQ_PASSWORD}
-      - https_proxy=${HTTPS_PROXY}  
+      - https_proxy=${HTTPS_PROXY}
       - http_proxy=${HTTP_PROXY}
       - no_proxy=koala-qa-oss,koala-qa-mq,${NO_PROXY}
       - GLOG_GLOBAL_LEVEL=${GLOG_GLOBAL_LEVEL}
@@ -110,7 +128,7 @@ services:
       - oss
       - mq
       - db
-  
+
   qdrant:
     container_name: koala-qa-qdrant
     image: swr.cn-east-3.myhuaweicloud.com/koala-qa/qdrant:v1.14.1
@@ -122,10 +140,10 @@ services:
     networks:
       koala:
         ipv4_address: "${SUBNET_PREFIX:-169.254.15}.17"
-  
+
   raglite:
     container_name: koala-qa-raglite
-    image: swr.cn-east-3.myhuaweicloud.com/koala-qa/raglite:1-2-15
+    image: swr.cn-east-3.myhuaweicloud.com/koala-qa/raglite:1-3-8
     restart: always
     environment:
       - GIN_MODE=release
@@ -148,7 +166,7 @@ services:
       - oss
       - qdrant
       - db
-  
+
 networks:
   koala:
     ipam:
