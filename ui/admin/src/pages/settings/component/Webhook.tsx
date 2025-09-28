@@ -27,7 +27,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useRequest } from 'ahooks';
-import { ColumnsType } from 'ct-mui/dist/Table';
+import { ColumnsType } from '@ctzhian/ui/dist/Table';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';

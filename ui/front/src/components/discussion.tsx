@@ -347,12 +347,6 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                 render={({ field }) => (
                   <EditorWrap
                     detail={{ content: field.value || '' }}
-                    onCancel={() => {
-                      // 在讨论编辑器中，取消操作不需要特殊处理
-                    }}
-                    onSave={(content) => {
-                      field.onChange(content);
-                    }}
                     onContentChange={(content) => {
                       field.onChange(content);
                     }}

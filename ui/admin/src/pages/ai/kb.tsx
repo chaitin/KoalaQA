@@ -432,7 +432,7 @@ const KnowledgeBasePage = () => {
                 sx={{ mb: 2 }}
               >
                 <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                  文档列表
+                  知识库列表
                 </Typography>
               </Stack>
               <Stack spacing={1}>
