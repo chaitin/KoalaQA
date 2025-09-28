@@ -1,7 +1,8 @@
-import { getAdminModelList } from '@/api';
+import { getAdminModelList, getAdminSystemPublicAddress } from '@/api';
 import Header from '@/components/header';
 import Sidebar from '@/components/sidebar';
 import ModelManagementModal from '@/pages/settings/component/ModelManagementModal';
+import Access from '@/pages/settings/component/Access';
 import { Box, Modal, Stack } from '@mui/material';
 import { useContext, useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
@@ -10,34 +11,44 @@ import { AuthContext, CommonContext } from '@/context';
 
 const MainLayout = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [showModelModal, setShowModelModal] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
+  const [needModel, setNeedModel] = useState(false);
+  const [needAddress, setNeedAddress] = useState(false);
   const [user]  = useContext(AuthContext);
   useEffect(() => {
     if (user?.uid) {
       setIsAuthenticated(true);
-      // 检查是否已配置模型
-      checkModelConfiguration();
+      // 登录后检查必要配置
+      checkNecessaryConfigurations();
     } else {
       setIsAuthenticated(false);
     }
   }, [user]);
 
-  const checkModelConfiguration = () => {
-    getAdminModelList()
-      .then(res => {
-        // 如果没有配置任何模型，则显示强制弹窗
-        if (res.length === 0) {
-          setShowModelModal(true);
-        }
-      })
-      .catch(() => {
-        // 如果获取模型列表失败，默认显示弹窗
-        setShowModelModal(true);
-      });
+  const checkNecessaryConfigurations = async () => {
+    try {
+      const [models, addr] = await Promise.all([
+        getAdminModelList(),
+        getAdminSystemPublicAddress(),
+      ]);
+      const lackModel = !models || models.length === 0;
+      const lackAddr = !addr || !addr.address || addr.address.trim() === '';
+      setNeedModel(lackModel);
+      setNeedAddress(lackAddr);
+      setShowGuide(lackModel || lackAddr);
+    } catch (e) {
+      // 网络或接口异常时，强制进入引导
+      setNeedModel(true);
+      setNeedAddress(true);
+      setShowGuide(true);
+    }
   };
 
-  const handleModelConfigured = () => {
-    setShowModelModal(false);
+  const tryCloseGuide = () => {
+    // 只有当两者都已配置时，才可关闭
+    if (!needModel && !needAddress) {
+      setShowGuide(false);
+    }
   };
 
   // 如果还在检查认证状态，显示加载状态
@@ -85,10 +96,10 @@ const MainLayout = () => {
         </Stack>
       </Stack>
 
-      {/* 强制模型配置弹窗 */}
+      {/* 强制配置引导弹窗（模型 + 访问地址） */}
       <Modal
-        open={showModelModal}
-        onClose={() => {}} // 禁用点击遮罩关闭
+        open={showGuide}
+        onClose={() => {}} // 禁止遮罩关闭
         sx={{
           display: 'flex',
           alignItems: 'center',
@@ -107,11 +118,38 @@ const MainLayout = () => {
             p: 3,
           }}
         >
-          <ModelManagementModal
-            open={showModelModal}
-            mandatory={true}
-            onConfigured={handleModelConfigured}
-          />
+          <Stack spacing={3}>
+            {needAddress && (
+              <Box>
+                <Box sx={{ fontSize: 16, fontWeight: 600, mb: 1 }}>步骤一：配置访问地址</Box>
+                <Access
+                  // 在保存成功后，重新校验并尝试关闭
+                  onSaved={() => {
+                    setNeedAddress(false);
+                    checkNecessaryConfigurations().then(tryCloseGuide);
+                  }}
+                />
+              </Box>
+            )}
+
+            {needModel && (
+              <Box>
+                <Box sx={{ fontSize: 16, fontWeight: 600, mb: 1 }}>步骤二：配置模型</Box>
+                <ModelManagementModal
+                  open={true}
+                  mandatory={true}
+                  onConfigured={() => {
+                    setNeedModel(false);
+                    checkNecessaryConfigurations().then(tryCloseGuide);
+                  }}
+                />
+              </Box>
+            )}
+
+            {!needAddress && !needModel && (
+              <Box sx={{ fontSize: 14, color: 'success.main' }}>配置完成</Box>
+            )}
+          </Stack>
         </Box>
       </Modal>
     </>

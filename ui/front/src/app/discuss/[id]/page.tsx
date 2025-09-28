@@ -18,7 +18,6 @@ export async function generateMetadata(
   return await formatMeta(
     {
       title: data.title,
-      // description: data.c,
       keywords: (data.group_ids || []).join(',') + (data.tags || []).join(','),
     },
     parent
