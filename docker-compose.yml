@@ -15,7 +15,7 @@ services:
   
   api:
     container_name: koala-qa-api
-    image: swr.cn-east-3.myhuaweicloud.com/koala-qa/api:v0.3.4
+    image: swr.cn-east-3.myhuaweicloud.com/koala-qa/api:v0.3.5
     restart: always
     environment:
       - GLOG_GLOBAL_LEVEL=${GLOG_GLOBAL_LEVEL}
@@ -40,7 +40,7 @@ services:
   
   app:
     container_name: koala-qa-app
-    image: swr.cn-east-3.myhuaweicloud.com/koala-qa/app:v0.3.4
+    image: swr.cn-east-3.myhuaweicloud.com/koala-qa/app:v0.3.5
     restart: always
     networks:
       koala:
