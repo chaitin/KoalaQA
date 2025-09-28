@@ -225,7 +225,7 @@ func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*mo
 		Query:               req.Keyword,
 		GroupIDs:            nil,
 		TopK:                10,
-		SimilarityThreshold: 0.3,
+		SimilarityThreshold: 0.2,
 	})
 	if err != nil {
 		return nil, err
