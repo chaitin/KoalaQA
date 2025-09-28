@@ -16,6 +16,7 @@ const (
 	EqualOPEqAny
 	EqualOPIntesect
 	EqualOPInclude
+	EqualOPContainAny
 )
 
 type eqVal struct {
@@ -128,6 +129,8 @@ func equalScope(kv map[string]eqVal) database.Scope {
 				db = db.Where(k+" && ?", v.v)
 			case EqualOPInclude:
 				db = db.Where(k+" @> ?", v.v)
+			case EqualOPContainAny:
+				db = db.Where(k+" && ?", v.v)
 			}
 		}
 
