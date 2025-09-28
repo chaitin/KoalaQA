@@ -8,11 +8,14 @@ import (
 	"github.com/chaitin/koalaqa/pkg/cache"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/mq"
+	"github.com/chaitin/koalaqa/pkg/oss"
 	"github.com/chaitin/koalaqa/pkg/topic"
+	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/repo"
 )
 
 type anydocTask struct {
+	oc      oss.Client
 	pub     mq.Publisher
 	repoDoc *repo.KBDocument
 	cache   cache.Cache[topic.TaskMeta]
@@ -87,6 +90,22 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 			}
 		}
 
+		var (
+			markdownPath string
+			jsonPath     string
+		)
+
+		if meta.DBDocID > 0 {
+			var dbDoc model.KBDocument
+			err := t.repoDoc.GetByID(ctx, &dbDoc, meta.KBID, meta.DBDocID)
+			if err != nil {
+				logger.WithErr(err).With("doc_id", meta.DBDocID).Warn("get db doc failed")
+			} else {
+				markdownPath = string(dbDoc.Markdown)
+				jsonPath = string(dbDoc.JSON)
+			}
+		}
+
 		doc := model.KBDocument{
 			Base: model.Base{
 				ID: meta.DBDocID,
@@ -111,6 +130,20 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 			meta.Status = topic.TaskStatusFailed
 			logger.WithErr(err).With("kb_document", doc).Error("create kb_document failed")
 			return nil
+		}
+
+		if markdownPath != "" && markdownPath != string(doc.Markdown) {
+			err = t.oc.Delete(ctx, util.TrimFistDir(markdownPath), oss.WithBucket(util.FirstDir(markdownPath)))
+			if err != nil {
+				logger.WithErr(err).With("dir", markdownPath).Warn("remove oss object failed")
+			}
+		}
+
+		if jsonPath != "" && jsonPath != string(doc.JSON) {
+			err = t.oc.Delete(ctx, util.TrimFistDir(jsonPath), oss.WithBucket(util.FirstDir(jsonPath)))
+			if err != nil {
+				logger.WithErr(err).With("dir", jsonPath).Warn("remove oss object failed")
+			}
 		}
 
 		op := topic.OPInsert
@@ -140,8 +173,9 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 	return nil
 }
 
-func newAnydocTask(c cache.Cache[topic.TaskMeta], repoDoc *repo.KBDocument, pub mq.Publisher) *anydocTask {
+func newAnydocTask(c cache.Cache[topic.TaskMeta], repoDoc *repo.KBDocument, pub mq.Publisher, oc oss.Client) *anydocTask {
 	return &anydocTask{
+		oc:      oc,
 		pub:     pub,
 		repoDoc: repoDoc,
 		cache:   c,

@@ -111,8 +111,6 @@ func (mc *minioClient) Delete(ctx context.Context, path string, optFuncs ...optF
 
 	if o.bucket == "" {
 		o.bucket = mc.buckets[0]
-	} else if !slices.Contains(mc.buckets, o.bucket) {
-		return ErrBucketNotConfigure
 	}
 
 	mc.logger.WithContext(ctx).With("bucket", o.bucket).With("path", path).Info("remove minio objects")
