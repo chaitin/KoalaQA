@@ -169,15 +169,6 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                 key={item}
                 label={label}
                 size='small'
-                sx={{
-                  // backgroundColor: current?.backgroundColor,
-                  '&:hover': {
-                    // backgroundColor: current?.color,
-                  },
-                }}
-                onClick={() => {
-                  window.open(`/discussion?tag=${item}`, '_blank');
-                }}
               />
             );
           })}
