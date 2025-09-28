@@ -60,7 +60,6 @@ const EditorWrap = ({
   const handleUpdate = useCallback(
     ({ editor }: { editor: any }) => {
       const content = editor.getHTML();
-
       // 支持传统的onContentChange回调
       if (onContentChange) {
         onContentChange(content);
