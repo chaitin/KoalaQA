@@ -45,7 +45,6 @@ const EditCommentModal: React.FC<EditCommentModalProps> = ({
         onCancel={() => {
           // 在讨论编辑器中，取消操作不需要特殊处理
         }}
-        onSave={setValue}
         onContentChange={setValue}
         showActions={false}
       />

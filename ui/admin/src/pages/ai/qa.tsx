@@ -11,12 +11,12 @@ import { useListQueryParams } from '@/hooks/useListQueryParams';
 import { Ellipsis, message, Modal, Table } from '@ctzhian/ui';
 import { Box, Button, Stack, TextField, Typography } from '@mui/material';
 import { useRequest } from 'ahooks';
-import { ColumnsType } from 'ct-mui/dist/Table';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import QaImport from './qaImport';
 import LoadingBtn from '@/components/LoadingButton';
+import { ColumnsType } from '@ctzhian/ui/dist/Table';
 
 const AdminDocument = () => {
   const { query, setPage, setPageSize, page, pageSize, setParams } = useListQueryParams();
@@ -114,7 +114,7 @@ const AdminDocument = () => {
                   backgroundColor: '#ffeaa7',
                 },
               }}
-              onClick={() => setEditItem(record)}
+              onClick={() => fetchDetail(record.id!)}
             >
               待审核
             </Box>

@@ -364,9 +364,6 @@ const DiscussCard = (props: any) => {
               name: '回复',
               content: comment,
             }}
-            onSave={async (content) => {
-              await onSubmit();
-            }}
             onCancel={() => setMdEditShow(false)}
             onContentChange={setComment}
           />
@@ -514,9 +511,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
               content: comment,
             }}
             onCancel={() => setMdEditShow(false)}
-            onSave={async (content) => {
-              await onCommentSubmit();
-            }}
             onContentChange={setComment}
           />
         </Box>
