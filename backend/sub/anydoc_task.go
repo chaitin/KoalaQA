@@ -10,7 +10,6 @@ import (
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/oss"
 	"github.com/chaitin/koalaqa/pkg/topic"
-	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/repo"
 )
 
@@ -133,14 +132,14 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 		}
 
 		if markdownPath != "" && markdownPath != string(doc.Markdown) {
-			err = t.oc.Delete(ctx, util.TrimFistDir(markdownPath), oss.WithBucket(util.FirstDir(markdownPath)))
+			err = t.oc.Delete(ctx, markdownPath, oss.WithBucket("anydoc"))
 			if err != nil {
 				logger.WithErr(err).With("dir", markdownPath).Warn("remove oss object failed")
 			}
 		}
 
 		if jsonPath != "" && jsonPath != string(doc.JSON) {
-			err = t.oc.Delete(ctx, util.TrimFistDir(jsonPath), oss.WithBucket(util.FirstDir(jsonPath)))
+			err = t.oc.Delete(ctx, jsonPath, oss.WithBucket("anydoc"))
 			if err != nil {
 				logger.WithErr(err).With("dir", jsonPath).Warn("remove oss object failed")
 			}
