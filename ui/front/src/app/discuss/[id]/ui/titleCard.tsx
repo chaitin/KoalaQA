@@ -110,15 +110,15 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
             ModelUserRole.UserRoleAdmin,
             ModelUserRole.UserRoleOperator,
           ].includes(user.role || ModelUserRole.UserRoleUnknown)) && (
-          <IconButton
-            size='small'
-            ref={anchorElRef}
-            onClick={menuOpen}
-            sx={{ display: { xs: 'none', sm: 'flex' } }}
-          >
-            <MoreVertIcon />
-          </IconButton>
-        )}
+            <IconButton
+              size='small'
+              ref={anchorElRef}
+              onClick={menuOpen}
+              sx={{ display: { xs: 'none', sm: 'flex' } }}
+            >
+              <MoreVertIcon />
+            </IconButton>
+          )}
       </Stack>
       <Typography
         sx={{
@@ -127,16 +127,16 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           color: 'rgba(0,0,0,0.5)',
         }}
       >
-      <time dateTime={dayjs.unix(data.created_at!).format()} title={dayjs.unix(data.created_at!).format('YYYY-MM-DD HH:mm:ss')}>
-        {data.user_name} 发布于 {dayjs.unix(data.created_at!).fromNow()}
-      </time>
-    </Typography>
+        <time dateTime={dayjs.unix(data.created_at!).format()} title={dayjs.unix(data.created_at!).format('YYYY-MM-DD HH:mm:ss')}>
+          {data.user_name} 发布于 {dayjs.unix(data.created_at!).fromNow()}
+        </time>
+      </Typography>
       <Stack
         direction='row'
         alignItems='flex-end'
         gap={2}
         justifyContent='space-between'
-        sx={{ mt: { xs: '12px', sm: 3 }, mb: 3 }}
+        sx={{ mt: { xs: '12px', sm: 3 }, mb: 1 }}
       >
         <Stack direction='row' flexWrap='wrap' gap='8px 16px'>
           {data.groups?.map((item) => {
@@ -147,9 +147,9 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                 label={label}
                 sx={{ backgroundColor: 'rgba(32, 108, 255, 0.1)' }}
                 size='small'
-                // onClick={() => {
-                //   window.open(`/discussion?topic=${item.id}`, "_blank");
-                // }}
+              // onClick={() => {
+              //   window.open(`/discussion?topic=${item.id}`, "_blank");
+              // }}
               />
             );
           })}

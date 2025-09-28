@@ -328,7 +328,7 @@ const EditorWrap = ({
             border: 'none',
             borderRadius: 2,
             padding: 1,
-            minHeight: 300,
+            minHeight: 200,
             fontSize: '15px',
             lineHeight: 1.7,
             color: '#212529',
@@ -396,7 +396,7 @@ const EditorWrap = ({
             borderRadius: 2,
             transition: 'all 0.3s ease',
             position: 'relative',
-            overflow: 'hidden',
+            overflow: 'auto',
             cursor: 'text',
             '&::before': {
               content: '""',

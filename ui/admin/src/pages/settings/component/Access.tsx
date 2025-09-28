@@ -14,7 +14,11 @@ import z from 'zod';
 const accessSchema = z.object({
   address: z.string().trim().min(1).max(255),
 });
-const Access = () => {
+interface AccessProps {
+  onSaved?: () => void;
+}
+
+const Access = ({ onSaved }: AccessProps) => {
   const {
     register,
     handleSubmit,
@@ -40,6 +44,7 @@ const Access = () => {
       await putAdminSystemPublicAddress(data);
       reset(data);
       message.success('保存成功');
+      onSaved?.();
     } catch (error) {
       message.error('保存失败');
     }
