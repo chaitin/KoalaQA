@@ -178,14 +178,30 @@ func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListRe
 		res.Total = int64(len(discs))
 		return &res, nil
 	}
+
+	groupM := make(map[uint]model.Int64Array)
+	if len(req.GroupIDs) > 0 {
+		var groupItems []model.GroupItem
+		err := d.in.GroupItemRepo.List(ctx, &groupItems, repo.QueryWithEqual("id", req.GroupIDs, repo.EqualOPEqAny))
+		if err != nil {
+			return nil, err
+		}
+
+		for _, item := range groupItems {
+			groupM[item.GroupID] = append(groupM[item.GroupID], int64(item.ID))
+		}
+	}
+
 	var query []repo.QueryOptFunc
 	query = append(query, repo.QueryWithEqual("type", req.Type))
 	if req.Filter == DiscussionListFilterMine {
 		query = append(query, repo.QueryWithEqual("user_id", userID))
 	}
 
-	if len(req.GroupIDs) > 0 {
-		query = append(query, repo.QueryWithEqual("group_ids", req.GroupIDs, repo.EqualOPInclude))
+	if len(groupM) > 0 {
+		for _, groupIDs := range groupM {
+			query = append(query, repo.QueryWithEqual("group_ids", groupIDs, repo.EqualOPContainAny))
+		}
 	}
 
 	pageFuncs := []repo.QueryOptFunc{repo.QueryWithPagination(req.Pagination)}
