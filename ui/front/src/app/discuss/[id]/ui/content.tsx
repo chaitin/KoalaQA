@@ -127,7 +127,7 @@ const BaseDiscussCard = (props: {
             borderRadius: 2,
             width: '100%',
           }
-        : {
+          : {
             width: '100%',
           }),
         '&:hover #accept_btn': {
@@ -151,7 +151,7 @@ const BaseDiscussCard = (props: {
               height={28}
               style={{ borderRadius: '50%' }}
             />
-          : <Avatar size={28} />}
+            : <Avatar size={28} />}
 
           <Typography
             className='text-ellipsis'
@@ -204,10 +204,10 @@ const BaseDiscussCard = (props: {
               color: 'rgba(0,0,0,0.5)',
             }}
           >
-          <time dateTime={dayjs.unix(data.updated_at!).format()} title={dayjs.unix(data.updated_at!).format('YYYY-MM-DD HH:mm:ss')}>
-            更新于 {dayjs.unix(data.updated_at!).fromNow()}
-          </time>
-        </Typography>
+            <time dateTime={dayjs.unix(data.updated_at!).format()} title={dayjs.unix(data.updated_at!).format('YYYY-MM-DD HH:mm:ss')}>
+              更新于 {dayjs.unix(data.updated_at!).fromNow()}
+            </time>
+          </Typography>
           <Stack
             direction='row'
             gap={2}
@@ -505,7 +505,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         />
       ))}
 
-      <Card sx={{ height: 500 }}>
+      <Card sx={{ minHeight: 200 }}>
         <Box sx={{ display: mdEditShow ? 'block' : 'none' }}>
           <EditorWrap
             detail={{
