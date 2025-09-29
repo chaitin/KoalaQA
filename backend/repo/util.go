@@ -24,11 +24,16 @@ type eqVal struct {
 	v  any
 }
 
+type kv struct {
+	key   string
+	value eqVal
+}
+
 type queryOpt struct {
 	columns []string
 	page    *model.Pagination
 
-	equals  map[string]eqVal
+	equals  []kv
 	ilikes  map[string]string
 	orderBy []string
 }
@@ -62,19 +67,19 @@ func QueryWithEqual(key string, val any, op ...eqOP) QueryOptFunc {
 		if util.IsNil(val) {
 			return
 		}
-		if lo.equals == nil {
-			lo.equals = make(map[string]eqVal)
-		}
 
 		o := EqualOPEq
 		if len(op) > 0 {
 			o = op[0]
 		}
 
-		lo.equals[key] = eqVal{
-			op: o,
-			v:  val,
-		}
+		lo.equals = append(lo.equals, kv{
+			key: key,
+			value: eqVal{
+				op: o,
+				v:  val,
+			},
+		})
 	}
 }
 
@@ -115,22 +120,22 @@ func selectColumnScope(columns []string) database.Scope {
 	}
 }
 
-func equalScope(kv map[string]eqVal) database.Scope {
+func equalScope(kv []kv) database.Scope {
 	return func(db *database.DB) *database.DB {
-		for k, v := range kv {
-			switch v.op {
+		for _, data := range kv {
+			switch data.value.op {
 			case EqualOPEq:
-				db = db.Where(k+" = ?", v.v)
+				db = db.Where(data.key+" = ?", data.value.v)
 			case EqualOPIn:
-				db = db.Where(k+" IN (?)", v.v)
+				db = db.Where(data.key+" IN (?)", data.value.v)
 			case EqualOPEqAny:
-				db = db.Where(k+" = ANY(?)", v.v)
+				db = db.Where(data.key+" = ANY(?)", data.value.v)
 			case EqualOPIntesect:
-				db = db.Where(k+" && ?", v.v)
+				db = db.Where(data.key+" && ?", data.value.v)
 			case EqualOPInclude:
-				db = db.Where(k+" @> ?", v.v)
+				db = db.Where(data.key+" @> ?", data.value.v)
 			case EqualOPContainAny:
-				db = db.Where(k+" && ?", v.v)
+				db = db.Where(data.key+" && ?", data.value.v)
 			}
 		}
 
