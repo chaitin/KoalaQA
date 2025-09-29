@@ -64,7 +64,7 @@ const Article = ({
           [] as ModelGroupItemInfo[]
         ),
       }
-    : contextGroups;
+      : contextGroups;
 
   const [
     releaseModalVisible,
@@ -139,8 +139,6 @@ const Article = ({
     const params = new URLSearchParams(searchParams.toString());
     params.set('tps', newTopics.join(','));
     router.replace(`/?${params.toString()}`);
-    // 这里如果需要同步本地 topics 状态，也可以 setTopics(newTopics)
-    fetchList({ tps: newTopics });
   };
 
   const handleAsk = () => {
@@ -202,7 +200,7 @@ const Article = ({
               </Card>
             ))}
           </>
-        : groups.origin.map((section) => (
+          : groups.origin.map((section) => (
             <Card
               key={section.id}
               sx={{
@@ -224,7 +222,7 @@ const Article = ({
                       backgroundColor:
                         topics.includes(item.id || -1) ?
                           'rgba(32,108,255,0.06)'
-                        : 'transparent',
+                          : 'transparent',
                       '&:hover': {
                         backgroundColor: 'rgba(32,108,255,0.06)',
                       },
@@ -335,12 +333,10 @@ const Article = ({
             <DiscussCard
               data={it}
               keywords={searchRef.current}
-              onTopicClick={handleTopicClick}
             />
             <DiscussCardMobile
               data={it}
               keywords={searchRef.current}
-              onTopicClick={handleTopicClick}
             />
           </React.Fragment>
         ))}
@@ -363,7 +359,7 @@ const Article = ({
             >
               查看更多
             </Button>
-          : <Divider>
+            : <Divider>
               <Typography
                 variant='body2'
                 sx={{

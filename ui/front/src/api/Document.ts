@@ -20,7 +20,6 @@ import {
   ModelKBDocumentDetail,
   ModelListRes,
   PostAdminKbDocumentFileListPayload,
-  PutAdminKbKbIdDocumentDocIdParams,
   SvcDocListItem,
   SvcFileExportReq,
   SvcSitemapExportReq,
@@ -299,34 +298,6 @@ export const getAdminKbKbIdDocumentDocId = (
   >({
     path: `/admin/kb/${kbId}/document/${docId}`,
     method: "GET",
-    format: "json",
-    ...params,
-  });
-
-/**
- * No description
- *
- * @tags document
- * @name PutAdminKbKbIdDocumentDocId
- * @summary update kb document
- * @request PUT:/admin/kb/{kb_id}/document/{doc_id}
- * @response `200` `(ContextResponse & {
-    data?: string,
-
-})` OK
- */
-
-export const putAdminKbKbIdDocumentDocId = (
-  { kbId, docId, ...query }: PutAdminKbKbIdDocumentDocIdParams,
-  params: RequestParams = {},
-) =>
-  request<
-    ContextResponse & {
-      data?: string;
-    }
-  >({
-    path: `/admin/kb/${kbId}/document/${docId}`,
-    method: "PUT",
     format: "json",
     ...params,
   });
