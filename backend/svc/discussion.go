@@ -476,6 +476,12 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 	}, repo.QueryWithEqual("id", commentID)); err != nil {
 		return err
 	}
+	if err := d.in.DiscRepo.Update(ctx, map[string]any{
+		"resolved":    true,
+		"resolved_at": model.Timestamp(time.Now().Unix()),
+	}, repo.QueryWithEqual("id", disc.ID)); err != nil {
+		return err
+	}
 	notifyMsg := topic.MsgMessageNotify{
 		DiscussID:    disc.ID,
 		DiscussTitle: disc.Title,
