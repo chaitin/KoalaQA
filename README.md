@@ -1,4 +1,4 @@
-<h1 style="text-align: center;">KoalaQA</h1>
+<h1 align="center">KoalaQA</h1>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Go-1.22%2B-00ADD8.svg" alt="Go" />
