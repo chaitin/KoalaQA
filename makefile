@@ -52,7 +52,32 @@ swagger:
 
 tag:
 	@VERSION=$(filter-out $@,$(MAKECMDGOALS)); \
-	git tag $$VERSION && git push origin $$VERSION
-
+	if [ -z "$$VERSION" ]; then \
+		echo "Error: Please specify version tag, e.g.: make tag v1.0.0"; \
+		exit 1; \
+	fi; \
+	if git tag -l | grep -q "^$$VERSION$$"; then \
+		echo "Warning: Tag '$$VERSION' already exists"; \
+		echo -n "Do you want to force overwrite this tag? (y/N): "; \
+		read -r answer; \
+		case $$answer in \
+			[Yy]* ) \
+				echo "Deleting existing tag..."; \
+				git tag -d $$VERSION 2>/dev/null || true; \
+				git push origin :refs/tags/$$VERSION 2>/dev/null || true; \
+				echo "Creating new tag..."; \
+				git tag $$VERSION && git push origin $$VERSION; \
+				echo "Tag '$$VERSION' has been successfully overwritten"; \
+				;; \
+			* ) \
+				echo "Operation cancelled"; \
+				exit 1; \
+				;; \
+		esac; \
+	else \
+		echo "Creating tag '$$VERSION'..."; \
+		git tag $$VERSION && git push origin $$VERSION; \
+		echo "Tag '$$VERSION' has been successfully created"; \
+	fi
 %:
 	@:
