@@ -1,12 +1,13 @@
 <h1 style="text-align: center;">KoalaQA</h1>
 
-<div align="center">
-[![Go](https://img.shields.io/badge/Go-1.25-00ADD8.svg)](https://golang.org/)
-[![React](https://img.shields.io/badge/React-19.1.0-61DAFB.svg)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-3178C6.svg)](https://www.typescriptlang.org/)
-[![Docker](https://img.shields.io/badge/Docker-支持-2496ED.svg)](https://www.docker.com/)
+<p align="center">
+  <img src="https://img.shields.io/badge/Go-1.22%2B-00ADD8.svg" alt="Go" />
+  <img src="https://img.shields.io/badge/React-18.0%2B-61DAFB.svg" alt="React" />
+  <img src="https://img.shields.io/badge/TypeScript-5.8.3%2B-3178C6.svg" alt="TS" />
+  <img src="https://img.shields.io/badge/Docker-支持-2496ED.svg" alt="Docker" />
+</p>
 
-</div>
+
 
 <p align="center">
   <a target="_blank" href="https://koalaqa.docs.baizhi.cloud/welcome">📖 产品文档</a> &nbsp;
