@@ -13,6 +13,7 @@ const (
 	PlatformWikiJS
 	PlatformYuQue
 	PlatformPandawiki
+	PlatformDingtalk
 )
 
 type Platform interface {

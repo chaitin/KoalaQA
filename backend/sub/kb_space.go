@@ -8,7 +8,6 @@ import (
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/anydoc"
-	"github.com/chaitin/koalaqa/pkg/anydoc/platform"
 	"github.com/chaitin/koalaqa/pkg/cache"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/mq"
@@ -143,25 +142,23 @@ func (k *kbSpace) handleInsert(ctx context.Context, logger *glog.Logger, kbID ui
 	}
 
 	for _, doc := range list.Docs {
-		switch folder.Platform {
-		case platform.PlatformPandawiki:
-			_, err = k.doc.PandawikiExport(ctx, svc.PandawikiExportReq{
-				BaseExportReq: svc.BaseExportReq{
-					DBDoc: svc.BaseDBDoc{
-						Type:     folder.DocType,
-						ParentID: folderID,
-					},
-					KBID:  kbID,
-					UUID:  list.UUID,
-					DocID: doc.ID,
-					Title: doc.Title,
-					Desc:  doc.Summary,
+		_, err = k.doc.SpaceExport(ctx, folder.Platform, svc.SpaceExportReq{
+			BaseExportReq: svc.BaseExportReq{
+				DBDoc: svc.BaseDBDoc{
+					Type:     folder.DocType,
+					ParentID: folderID,
 				},
-				SpaceID: folder.DocID,
-			})
-			if err != nil {
-				logger.WithErr(err).With("export_doc_id", doc.ID).Warn("export pandawiki doc failed")
-			}
+				KBID:  kbID,
+				UUID:  list.UUID,
+				DocID: doc.ID,
+				Title: doc.Title,
+				Desc:  doc.Summary,
+			},
+			SpaceID:  folder.DocID,
+			FileType: doc.FileType,
+		})
+		if err != nil {
+			logger.WithErr(err).With("export_doc_id", doc.ID).Warn("export space doc failed")
 		}
 	}
 
@@ -203,26 +200,24 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, kbID ui
 	}
 
 	for _, doc := range list.Docs {
-		switch folder.Platform {
-		case platform.PlatformPandawiki:
-			_, err = k.doc.PandawikiExport(ctx, svc.PandawikiExportReq{
-				BaseExportReq: svc.BaseExportReq{
-					DBDoc: svc.BaseDBDoc{
-						ID:       exist[doc.ID],
-						Type:     folder.DocType,
-						ParentID: folderID,
-					},
-					KBID:  kbID,
-					UUID:  list.UUID,
-					DocID: doc.ID,
-					Title: doc.Title,
-					Desc:  doc.Summary,
+		_, err = k.doc.SpaceExport(ctx, folder.Platform, svc.SpaceExportReq{
+			BaseExportReq: svc.BaseExportReq{
+				DBDoc: svc.BaseDBDoc{
+					ID:       exist[doc.ID],
+					Type:     folder.DocType,
+					ParentID: folderID,
 				},
-				SpaceID: folder.DocID,
-			})
-			if err != nil {
-				logger.WithErr(err).With("export_doc_id", doc.ID).Warn("export pandawiki doc failed")
-			}
+				KBID:  kbID,
+				UUID:  list.UUID,
+				DocID: doc.ID,
+				Title: doc.Title,
+				Desc:  doc.Summary,
+			},
+			SpaceID:  folder.DocID,
+			FileType: doc.FileType,
+		})
+		if err != nil {
+			logger.WithErr(err).With("export_doc_id", doc.ID).Warn("export space doc failed")
 		}
 
 		delete(exist, doc.ID)

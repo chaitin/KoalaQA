@@ -102,16 +102,15 @@ func GetExportOpt(funcs ...ExportFunc) (o model.ExportOpt) {
 	return
 }
 
-func ExportWithFeishu(spaceID, fileType string) ExportFunc {
-	return func(o *model.ExportOpt) {
-		o.SpaceID = spaceID
-		o.FileType = fileType
-	}
-}
-
 func ExportWithSpaceID(spaceID string) ExportFunc {
 	return func(o *model.ExportOpt) {
 		o.SpaceID = spaceID
+	}
+}
+
+func ExportWithFileType(fileType string) ExportFunc {
+	return func(o *model.ExportOpt) {
+		o.FileType = fileType
 	}
 }
 
