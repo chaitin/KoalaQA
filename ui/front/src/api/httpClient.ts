@@ -77,10 +77,6 @@ type ExtractDataProp<T> = T extends { data?: infer U } ? U : T;
 let csrfTokenCache: string | null = null;
 let csrfTokenPromise: Promise<string> | null = null;
 
-// 公共访问状态缓存
-let publicAccessCache: boolean | null = null;
-let publicAccessPromise: Promise<boolean> | null = null;
-
 // 获取CSRF token的函数
 const getCsrfToken = async (): Promise<string> => {
   // 如果已经有缓存的token，直接返回
@@ -131,51 +127,6 @@ export const clearCsrfTokenCache = () => {
   csrfTokenPromise = null;
 };
 
-// 获取公共访问状态的函数
-const getPublicAccessStatus = async (): Promise<boolean> => {
-  // 如果已经有缓存的状态，直接返回
-  if (publicAccessCache !== null) {
-    return publicAccessCache;
-  }
-
-  // 如果正在获取状态，等待现有的请求
-  if (publicAccessPromise) {
-    return publicAccessPromise;
-  }
-
-  // 创建新的获取状态的Promise
-  publicAccessPromise = new Promise(async (resolve) => {
-    try {
-      const response = await axios.get("/api/user/login_method", {
-        withCredentials: true,
-      });
-
-      const publicAccess = response.data?.data?.public_access ?? false;
-      publicAccessCache = publicAccess;
-      resolve(publicAccess);
-    } catch (error) {
-      console.error("Failed to fetch public access status:", error);
-      // 默认返回false，要求登录
-      publicAccessCache = false;
-      resolve(false);
-    } finally {
-      // 清除Promise缓存，允许重试
-      publicAccessPromise = null;
-    }
-  });
-
-  return publicAccessPromise;
-};
-
-// 清除公共访问状态缓存的函数
-export const clearPublicAccessCache = () => {
-  publicAccessCache = null;
-  publicAccessPromise = null;
-};
-
-// 导出公共访问状态获取函数，供其他组件使用
-export const checkPublicAccess = getPublicAccessStatus;
-
 // 清除所有认证信息的函数
 export const clearAuthData = () => {
   if (typeof window !== "undefined") {
@@ -203,9 +154,8 @@ export const clearAuthData = () => {
       }
     });
 
-    // 清除CSRF token缓存和公共访问状态缓存
+    // 清除CSRF token缓存
     clearCsrfTokenCache();
-    clearPublicAccessCache();
   }
 };
 export class HttpClient<SecurityDataType = unknown> {
@@ -242,27 +192,13 @@ export class HttpClient<SecurityDataType = unknown> {
           if (alert.error && shouldShowError) {
             alert.error(res.message || "网络异常");
           }
-          // 标准化后端错误
-          const backendError: any = new Error(res.message || "网络异常");
-          backendError.isBackend = true;
-          backendError.status = response.status;
-          backendError.code = res.code;
-          backendError.data = res;
-          backendError.url = requestUrl;
-          return Promise.reject(backendError);
+          return Promise.reject(res);
         }
 
         if (alert.error && shouldShowError) {
           alert.error(response.statusText);
         }
-        // 非200响应同样标准化
-        const httpError: any = new Error(response.statusText || "HTTP错误");
-        httpError.isBackend = true;
-        httpError.status = response.status;
-        httpError.code = undefined;
-        httpError.data = response.data;
-        httpError.url = requestUrl;
-        return Promise.reject(httpError);
+        return Promise.reject(response);
       },
       (error) => {
         // 如果是CSRF token相关错误，清除缓存
@@ -270,7 +206,7 @@ export class HttpClient<SecurityDataType = unknown> {
           clearCsrfTokenCache();
         }
 
-        // 处理401未授权错误 - 根据public_access状态决定是否重定向到登录页
+        // 处理401未授权错误 - 重定向到登录页
         if (error.response?.status === 401) {
           // 只在客户端环境下进行重定向
           if (typeof window !== "undefined") {
@@ -279,34 +215,19 @@ export class HttpClient<SecurityDataType = unknown> {
             const isAuthPage =
               currentPath.startsWith("/login") ||
               currentPath.startsWith("/register");
-
             if (!isAuthPage) {
-              // 检查是否启用了公共访问
-              getPublicAccessStatus().then((publicAccess) => {
-                if (!publicAccess) {
-                  console.log(error.response);
+              console.log(error.response);
 
-                  // 清除所有认证信息
-                  clearAuthData();
+              // 清除所有认证信息
+              clearAuthData();
 
-                  // 获取当前页面路径作为重定向参数
-                  const fullPath =
-                    window.location.pathname + window.location.search;
-                  const loginUrl = `/login?redirect=${encodeURIComponent(fullPath)}`;
+              // 获取当前页面路径作为重定向参数
+              const fullPath =
+                window.location.pathname + window.location.search;
+              const loginUrl = `/login?redirect=${encodeURIComponent(fullPath)}`;
 
-                  // 重定向到登录页
-                  window.location.href = loginUrl;
-                }
-                // 如果public_access为true，不进行重定向，允许匿名访问
-              }).catch(() => {
-                // 如果获取public_access状态失败，默认跳转到登录页
-                console.log(error.response);
-                clearAuthData();
-                const fullPath =
-                  window.location.pathname + window.location.search;
-                const loginUrl = `/login?redirect=${encodeURIComponent(fullPath)}`;
-                window.location.href = loginUrl;
-              });
+              // 重定向到登录页
+              window.location.href = loginUrl;
             }
             return Promise.reject(error.response);
           }
@@ -317,19 +238,9 @@ export class HttpClient<SecurityDataType = unknown> {
         const shouldShowError = requestUrl !== "/user";
 
         if (alert.error && shouldShowError) {
-          const backendMsg = error?.response?.data?.message;
-          alert.error(backendMsg || error.message || "网络异常");
+          alert.error(error.message || "网络异常");
         }
-        // 统一抛出标准化的 Error
-        const normalized: any = new Error(
-          (error?.response?.data?.err || error.message || "请求失败") + `(trace_id: ${error?.response?.data?.trace_id})` || '',
-        );
-        normalized.isBackend = Boolean(error?.response);
-        normalized.status = error?.response?.status;
-        normalized.code = error?.response?.data?.code;
-        normalized.data = error?.response?.data;
-        normalized.url = error?.config?.url || "";
-        return Promise.reject(normalized);
+        return Promise.reject(error.response);
       },
     );
   }
@@ -351,7 +262,7 @@ export class HttpClient<SecurityDataType = unknown> {
       headers: {
         ...((method &&
           this.instance.defaults.headers[
-          method.toLowerCase() as keyof HeadersDefaults
+            method.toLowerCase() as keyof HeadersDefaults
           ]) ||
           {}),
         ...(params1.headers || {}),

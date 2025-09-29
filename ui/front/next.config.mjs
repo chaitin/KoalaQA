@@ -42,7 +42,7 @@ const nextConfig = {
         ...[
           {
             source: '/api/:path*',
-            destination: 'http://10.9.35.17:8090/api/:path*',
+            destination: 'http://10.10.6.234:8080/api/:path*',
             basePath: false
           }
         ]

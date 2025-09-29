@@ -49,7 +49,7 @@ const ProfilePanel = () => {
     <InfoCard>
       <IdCard>
         <IdInfo>
-          <Avatar src={user.username} sx={{ width: 40 }} />
+          <Avatar src={user.avatar} sx={{ width: 40 }} />
           <Stack>
             <Box
               sx={{
@@ -65,25 +65,11 @@ const ProfilePanel = () => {
             >
               {user?.username}
             </Box>
-            <Row sx={{ gap: '8px' }}>
-              <Box
-                sx={{
-                  fontSize: '14px',
-                  textOverflow: 'ellipsis',
-                  maxWidth: '10rem',
-                  overflow: 'hidden',
-                  whiteSpace: 'nowrap',
-                  color: 'rgba(0, 0, 0, 0.5)',
-                }}
-              >
-                {user?.uid}
-              </Box>
-            </Row>
           </Stack>
         </IdInfo>
       </IdCard>
 
-      <Box sx={{ borderBottom: '1px dashed #EEEEEE', mb: 2.5 }}></Box>
+      <Box sx={{ borderBottom: '1px dashed #EEEEEE', my: 2.5 }}></Box>
 
       <List
         sx={{
