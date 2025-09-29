@@ -921,6 +921,7 @@ func (d *KBDocument) Review(ctx context.Context, req ReviewReq) error {
 	if req.AddNew {
 		err := d.repoDoc.UpdateByModel(ctx, &model.KBDocument{
 			Markdown: []byte(req.Content),
+			Status:   model.DocStatusPendingApply,
 		}, repo.QueryWithEqual("id", req.QAID))
 		if err != nil {
 			return err
@@ -940,6 +941,7 @@ func (d *KBDocument) Review(ctx context.Context, req ReviewReq) error {
 	}
 	err = d.repoDoc.UpdateByModel(ctx, &model.KBDocument{
 		Markdown: []byte(req.Content),
+		Status:   model.DocStatusPendingApply,
 	}, repo.QueryWithEqual("id", doc.SimilarID))
 	if err != nil {
 		return err

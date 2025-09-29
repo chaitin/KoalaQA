@@ -10,6 +10,7 @@ const (
 	DocStatusUnknown DocStatus = iota
 	DocStatusAppling
 	DocStatusPendingReview
+	DocStatusPendingApply
 )
 
 type DocType uint
