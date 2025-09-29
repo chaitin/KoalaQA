@@ -63,25 +63,15 @@ func (d *KBDocument) FeishuList(ctx context.Context, req FeishuListReq) (*anydoc
 	)
 }
 
-type FeishuExportReq struct {
+type SpaceExportReq struct {
 	BaseExportReq
 	FileType string `json:"file_type" binding:"required"`
 	SpaceID  string `json:"space_id" binding:"required"`
 }
 
-func (d *KBDocument) FeishuExport(ctx context.Context, req FeishuExportReq) (string, error) {
+func (d *KBDocument) SpaceExport(ctx context.Context, plat platform.PlatformType, req SpaceExportReq) (string, error) {
 	req.BaseExportReq.DBDoc.Type = model.DocTypeSpace
-	return d.exportWithCache(ctx, platform.PlatformFeishu, req.BaseExportReq, anydoc.ExportWithFeishu(req.SpaceID, req.FileType))
-}
-
-type PandawikiExportReq struct {
-	BaseExportReq
-	SpaceID string `json:"space_id" binding:"required"`
-}
-
-func (d *KBDocument) PandawikiExport(ctx context.Context, req PandawikiExportReq) (string, error) {
-	req.BaseExportReq.DBDoc.Type = model.DocTypeSpace
-	return d.exportWithCache(ctx, platform.PlatformPandawiki, req.BaseExportReq, anydoc.ExportWithSpaceID(req.SpaceID))
+	return d.exportWithCache(ctx, plat, req.BaseExportReq, anydoc.ExportWithSpaceID(req.SpaceID), anydoc.ExportWithFileType(req.FileType))
 }
 
 type YueQueListReq struct {
@@ -521,6 +511,10 @@ func (d *KBDocument) checkPlatformOpt(p platform.PlatformType, opt model.Platfor
 
 		if opt.AccessToken == "" {
 			return errors.New("empty access token")
+		}
+	case platform.PlatformFeishu, platform.PlatformDingtalk:
+		if opt.AppID == "" || opt.Secret == "" || opt.AccessToken == "" {
+			return errors.New("empty cerd data")
 		}
 	default:
 		return errors.ErrUnsupported
