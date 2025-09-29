@@ -18,13 +18,11 @@ const Page = async (props: {
   const topics = tps ? tps.split(",").map(Number) : [];
 
   const params = new URLSearchParams();
-    params.set("page", "1");
-    params.set("size", "10");
-    if (sort) params.set("filter", sort)
-    if (search) params.set("keyword", search);
-    if(topics.length) topics.forEach(id => params.append('group_ids', id+''));
-    getDiscussion(params);
-  
+  params.set("page", "1");
+  params.set("size", "10");
+  if (sort) params.set("filter", sort)
+  if (search) params.set("keyword", search);
+  if (topics.length) topics.forEach(id => params.append('group_ids', id + ''));
   // 并行获取讨论数据和groups数据
   const [data, groupsData] = await Promise.all([
     getDiscussion(params),

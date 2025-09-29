@@ -230,7 +230,7 @@ const LoginMethod: React.FC = () => {
               render={({ field }) => (
                 <FormControlLabel
                   control={<Switch checked={field.value} onChange={field.onChange} />}
-                  label="用户注册"
+                  label="开放用户注册"
                 />
               )}
             />
@@ -247,7 +247,7 @@ const LoginMethod: React.FC = () => {
               render={({ field }) => (
                 <FormControlLabel
                   control={<Switch checked={field.value} onChange={field.onChange} />}
-                  label="公开访问"
+                  label="允许访问控制"
                 />
               )}
             />
@@ -306,9 +306,6 @@ const LoginMethod: React.FC = () => {
               )}
             />
             {errors.auth_types && <FormHelperText>{errors.auth_types.message}</FormHelperText>}
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
-              至少选择一个，默认密码认证
-            </Typography>
           </FormControl>
 
           {/* 密码认证配置 */}
@@ -344,7 +341,6 @@ const LoginMethod: React.FC = () => {
                     placeholder="密码登录"
                     fullWidth
                     size="small"
-                    helperText="登录页面显示的按钮文字"
                     slotProps={{
                       inputLabel: {
                         shrink: !!field.value || undefined,
@@ -489,7 +485,6 @@ const LoginMethod: React.FC = () => {
                       placeholder="OIDC 登录"
                       fullWidth
                       size="small"
-                      helperText="登录页面显示的按钮文字"
                       slotProps={{
                         inputLabel: {
                           shrink: !!field.value || undefined,
@@ -503,21 +498,6 @@ const LoginMethod: React.FC = () => {
                     />
                   )}
                 />
-
-                <Box
-                  sx={{
-                    backgroundColor: '#e8f4fd',
-                    border: '1px solid #bbdefb',
-                    borderRadius: 1,
-                    p: 2,
-                    mt: 2,
-                  }}
-                >
-                  <Typography variant="body2" sx={{ color: '#1565c0', lineHeight: 1.5 }}>
-                    <strong>💡 说明：</strong>
-                    通过第三方账号首次登录的用户将自动注册账号，默认为普通用户角色
-                  </Typography>
-                </Box>
               </Stack>
             </Box>
           )}

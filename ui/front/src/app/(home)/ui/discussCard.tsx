@@ -1,14 +1,17 @@
 import { ModelDiscussionListItem } from "@/api/types";
 import { Card, MatchedString, Title } from "@/app/(banner)/s/ui/common";
-import { MarkDown } from "@/components";
+import { Icon, MarkDown } from "@/components";
 import { CommonContext } from "@/components/commonProvider";
 import { Avatar, Tag } from "@/components/discussion";
+import ChatIcon from '@mui/icons-material/ChatTwoTone';
 import { Box, Chip, Stack, Typography } from "@mui/material";
 import dayjs from "dayjs";
 import "dayjs/locale/zh-cn";
 import relativeTime from "dayjs/plugin/relativeTime";
 import Image from "next/image";
 import { useContext, useMemo } from "react";
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { formatNumber } from "@/utils";
 
 dayjs.extend(relativeTime);
 dayjs.locale("zh-cn");
@@ -16,11 +19,9 @@ dayjs.locale("zh-cn");
 const DiscussCard = ({
   data,
   keywords,
-  onTopicClick,
 }: {
   data: ModelDiscussionListItem;
   keywords?: string;
-  onTopicClick(t: number): void;
 }) => {
   const it = data;
   const { groups } = useContext(CommonContext);
@@ -71,11 +72,29 @@ const DiscussCard = ({
             href={`/discuss/${it.uuid}`}
             target="_blank"
           >
-            <MatchedString
-              keywords={keywords}
-              str={it.title || ""}
-            ></MatchedString>
+            {it.title || ""}
           </Title>
+          {data?.resolved && (
+            <Stack
+              direction='row'
+              alignItems='center'
+              gap={0.5}
+              sx={{
+                backgroundColor: '#E8F5E8',
+                color: '#2E7D32',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                fontSize: 12,
+                fontWeight: 500,
+              }}
+            >
+              <CheckCircleIcon sx={{ fontSize: 14 }} />
+              <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
+                已解决
+              </Typography>
+            </Stack>
+          )}
         </Stack>
         <Stack
           direction="row"
@@ -168,6 +187,39 @@ const DiscussCard = ({
             // }}
             />
           ))}
+        </Stack>
+      </Stack>
+      <Stack
+        direction='row'
+        justifyContent='flex-end'
+        alignItems='center'
+      >
+
+        <Stack
+          direction='row'
+          alignItems='center'
+          gap={1}
+          sx={{
+            background: 'rgba(255,133,0,0.12)',
+            borderRadius: 0.5,
+            px: 1,
+            py: '1px',
+            cursor: 'pointer',
+            color: '#FF8500',
+            '&:hover': {
+              background: !!it.comment
+                ? 'rgba(255,133,0,0.22)'
+                : 'rgba(0, 0, 0, 0.12)',
+            },
+          }}
+        >
+          <ChatIcon sx={{ width: 18, height: 18 }} />
+          <Typography
+            variant='body2'
+            sx={{ fontSize: 14, lineHeight: '20px', color: '#FF8500' }}
+          >
+            {formatNumber(it.comment || 0)}
+          </Typography>
         </Stack>
       </Stack>
     </Card>

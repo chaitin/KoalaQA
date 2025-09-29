@@ -81,7 +81,7 @@ const AdminDocument = () => {
       title: '状态',
       dataIndex: 'status',
       render: (_, record) => {
-        if (!record?.status) return '-';
+        if ([0, 3].includes(record?.status || 0)) return '待应用';
         if (record.status === ModelDocStatus.DocStatusAppling) {
           return (
             <Box

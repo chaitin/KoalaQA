@@ -119,7 +119,7 @@ const DragBrand = () => {
         }
         onClick={handleAddBrandGroup}
       >
-        添加一个分类
+        新增一个分类
       </Button>
     );
   }
@@ -184,7 +184,7 @@ const DragBrand = () => {
         }
         onClick={handleAddBrandGroup}
       >
-        添加一个分类
+        新增一个分类
       </Button>
       <Stack>
         {isEdit && (

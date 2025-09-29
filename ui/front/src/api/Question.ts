@@ -21,10 +21,12 @@ import {
   PostAdminKbKbIdQuestionFileParams,
   PostAdminKbKbIdQuestionFilePayload,
   PostAdminKbKbIdQuestionParams,
+  PostAdminKbKbIdQuestionQaIdReviewParams,
   PutAdminKbKbIdQuestionQaIdParams,
   SvcDocCreateQAReq,
   SvcDocListItem,
   SvcDocUpdateReq,
+  SvcReviewReq,
 } from "./types";
 
 /**
@@ -185,6 +187,30 @@ export const deleteAdminKbKbIdQuestionQaId = (
   request<ContextResponse>({
     path: `/admin/kb/${kbId}/question/${qaId}`,
     method: "DELETE",
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags question
+ * @name PostAdminKbKbIdQuestionQaIdReview
+ * @summary review kb question
+ * @request POST:/admin/kb/{kb_id}/question/{qa_id}/review
+ * @response `200` `ContextResponse` OK
+ */
+
+export const postAdminKbKbIdQuestionQaIdReview = (
+  { kbId, qaId, ...query }: PostAdminKbKbIdQuestionQaIdReviewParams,
+  req: SvcReviewReq,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/admin/kb/${kbId}/question/${qaId}/review`,
+    method: "POST",
+    body: req,
+    type: ContentType.Json,
     format: "json",
     ...params,
   });

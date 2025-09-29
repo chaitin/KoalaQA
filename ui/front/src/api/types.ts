@@ -34,6 +34,7 @@ export enum PlatformPlatformType {
   PlatformURL = 6,
   PlatformWikiJS = 7,
   PlatformYuQue = 8,
+  PlatformPandawiki = 9,
 }
 
 export enum ModelUserRole {
@@ -67,18 +68,25 @@ export enum ModelFileType {
   FileTypeXML = 13,
   FileTypeZIP = 14,
   FileTypeEPub = 15,
-  FileTypeMax = 16,
+  /** 文件夹 */
+  FileTypeFolder = 16,
+  /** 未知文件类型 */
+  FileTypeFile = 17,
+  FileTypeMax = 18,
 }
 
 export enum ModelDocType {
   DocTypeUnknown = 0,
   DocTypeQuestion = 1,
   DocTypeDocument = 2,
+  DocTypeSpace = 3,
+  DocTypeWeb = 4,
 }
 
 export enum ModelDocStatus {
   DocStatusUnknown = 0,
   DocStatusAppling = 1,
+  DocStatusPendingReview = 2,
 }
 
 export enum ModelDiscussionType {
@@ -272,11 +280,12 @@ export interface ModelKBDocumentDetail {
   json?: string;
   kb_id?: number;
   markdown?: string;
+  parent_id?: number;
   platform?: PlatformPlatformType;
   platform_opt?: ModelJSONBModelPlatformOpt;
   rag_id?: string;
+  similar_id?: number;
   status?: ModelDocStatus;
-  summary?: string;
   title?: string;
   updated_at?: number;
 }
@@ -312,6 +321,13 @@ export interface ModelLLMModelParam {
 
 export interface ModelListRes {
   total?: number;
+}
+
+export interface ModelPlatformOpt {
+  access_token?: string;
+  app_id?: string;
+  secret?: string;
+  url?: string;
 }
 
 export interface ModelPublicAddress {
@@ -386,6 +402,21 @@ export interface SvcCommentUpdateReq {
   content: string;
 }
 
+export interface SvcCreateSpaceFolderReq {
+  docs: SvcCreateSpaceForlderItem[];
+}
+
+export interface SvcCreateSpaceForlderItem {
+  doc_id: string;
+  title?: string;
+}
+
+export interface SvcCreateSpaceReq {
+  opt?: ModelPlatformOpt;
+  platform?: PlatformPlatformType;
+  title: string;
+}
+
 export interface SvcDiscussUploadFileReq {
   uuid?: string;
 }
@@ -422,6 +453,7 @@ export interface SvcDocListItem {
   file_type?: ModelFileType;
   id?: number;
   platform?: PlatformPlatformType;
+  similar_id?: number;
   status?: ModelDocStatus;
   title?: string;
   updated_at?: number;
@@ -441,6 +473,14 @@ export interface SvcFileExportReq {
   uuid: string;
 }
 
+export interface SvcGetSpaceRes {
+  created_at?: number;
+  id?: number;
+  platform?: PlatformPlatformType;
+  title?: string;
+  updated_at?: number;
+}
+
 export interface SvcGroupUpdateReq {
   groups?: ModelGroupWithItem[];
 }
@@ -457,12 +497,50 @@ export interface SvcKBListItem {
   id?: number;
   name?: string;
   qa_count?: number;
+  space_count?: number;
   updated_at?: number;
+  web_count?: number;
 }
 
 export interface SvcKBUpdateReq {
   desc?: string;
   name: string;
+}
+
+export interface SvcListSpaceFolderItem {
+  created_at?: number;
+  doc_id?: string;
+  id?: number;
+  rag_id?: string;
+  status?: ModelDocStatus;
+  title?: string;
+  total?: number;
+  updated_at?: number;
+}
+
+export interface SvcListSpaceItem {
+  created_at?: number;
+  id?: number;
+  platform?: PlatformPlatformType;
+  title?: string;
+  total?: number;
+  updated_at?: number;
+}
+
+export interface SvcListSpaceKBItem {
+  desc?: string;
+  doc_id?: string;
+  file_type?: ModelFileType;
+  title?: string;
+}
+
+export interface SvcListWebItem {
+  created_at?: number;
+  desc?: string;
+  id?: number;
+  status?: ModelDocStatus;
+  title?: string;
+  updated_at?: number;
 }
 
 export interface SvcMKCreateReq {
@@ -520,6 +598,15 @@ export interface SvcModelKitCheckReq {
   type: "chat" | "embedding" | "rerank";
 }
 
+export interface SvcPolishReq {
+  text?: string;
+}
+
+export interface SvcReviewReq {
+  add_new: boolean;
+  content: string;
+}
+
 export interface SvcSitemapExportReq {
   desc?: string;
   doc_id: string;
@@ -546,6 +633,11 @@ export interface SvcURLExportReq {
 
 export interface SvcURLListReq {
   url: string;
+}
+
+export interface SvcUpdateSpaceReq {
+  opt?: ModelPlatformOpt;
+  title?: string;
 }
 
 export interface SvcUserListItem {
@@ -609,15 +701,16 @@ export interface TopicTaskMeta {
   app_id?: string;
   dbdocID?: number;
   desc?: string;
+  docType?: ModelDocType;
   doc_id?: string;
   doc_type?: ModelFileType;
   err?: string;
   exportOpt?: ModelExportOpt;
   kbid?: number;
+  parentID?: number;
   platform?: PlatformPlatformType;
   platform_id?: string;
   secret?: string;
-  space_id?: string;
   status?: TopicTaskStatus;
   task_id?: string;
   title?: string;
@@ -670,7 +763,9 @@ export interface GetAdminKbKbIdDocumentParams {
     | 13
     | 14
     | 15
-    | 16;
+    | 16
+    | 17
+    | 18;
   /** @min 1 */
   page?: number;
   /** @min 1 */
@@ -681,13 +776,6 @@ export interface GetAdminKbKbIdDocumentParams {
 }
 
 export interface GetAdminKbKbIdDocumentDocIdParams {
-  /** kb_id */
-  kbId: number;
-  /** doc_id */
-  docId: number;
-}
-
-export interface PutAdminKbKbIdDocumentDocIdParams {
   /** kb_id */
   kbId: number;
   /** doc_id */
@@ -719,7 +807,9 @@ export interface GetAdminKbKbIdQuestionParams {
     | 13
     | 14
     | 15
-    | 16;
+    | 16
+    | 17
+    | 18;
   /** @min 1 */
   page?: number;
   /** @min 1 */
@@ -763,6 +853,114 @@ export interface DeleteAdminKbKbIdQuestionQaIdParams {
   kbId: number;
   /** qa_id */
   qaId: number;
+}
+
+export interface PostAdminKbKbIdQuestionQaIdReviewParams {
+  /** kb_id */
+  kbId: number;
+  /** qa_id */
+  qaId: number;
+}
+
+export interface GetAdminKbKbIdSpaceParams {
+  /** kb_id */
+  kbId: number;
+}
+
+export interface PostAdminKbKbIdSpaceParams {
+  /** kb_id */
+  kbId: number;
+}
+
+export interface GetAdminKbKbIdSpaceSpaceIdParams {
+  /** kb_id */
+  kbId: number;
+  /** space_id */
+  spaceId: number;
+}
+
+export interface PutAdminKbKbIdSpaceSpaceIdParams {
+  /** kb_id */
+  kbId: number;
+  /** space_id */
+  spaceId: number;
+}
+
+export interface DeleteAdminKbKbIdSpaceSpaceIdParams {
+  /** kb_id */
+  kbId: number;
+  /** space_id */
+  spaceId: number;
+}
+
+export interface GetAdminKbKbIdSpaceSpaceIdFolderParams {
+  /** kb_id */
+  kbId: number;
+  /** space_id */
+  spaceId: number;
+}
+
+export interface PostAdminKbKbIdSpaceSpaceIdFolderParams {
+  /** kb_id */
+  kbId: number;
+  /** space_id */
+  spaceId: number;
+}
+
+export interface PutAdminKbKbIdSpaceSpaceIdFolderFolderIdParams {
+  /** kb_id */
+  kbId: number;
+  /** space_id */
+  spaceId: number;
+  /** folder_id */
+  folderId: number;
+}
+
+export interface DeleteAdminKbKbIdSpaceSpaceIdFolderFolderIdParams {
+  /** kb_id */
+  kbId: number;
+  /** space_id */
+  spaceId: number;
+  /** folder_id */
+  folderId: number;
+}
+
+export interface PutAdminKbKbIdSpaceSpaceIdRefreshParams {
+  /** kb_id */
+  kbId: number;
+  /** space_id */
+  spaceId: number;
+}
+
+export interface GetAdminKbKbIdSpaceSpaceIdRemoteParams {
+  remote_folder_id?: string;
+  /** kb_id */
+  kbId: number;
+  /** space_id */
+  spaceId: number;
+}
+
+export interface GetAdminKbKbIdWebParams {
+  /** @min 1 */
+  page?: number;
+  /** @min 1 */
+  size?: number;
+  title?: string;
+  kbId: string;
+}
+
+export interface PutAdminKbKbIdWebDocIdParams {
+  /** kb_id */
+  kbId: number;
+  /** doc_id */
+  docId: number;
+}
+
+export interface DeleteAdminKbKbIdWebDocIdParams {
+  /** kb_id */
+  kbId: number;
+  /** doc_id */
+  docId: number;
 }
 
 export interface PutAdminModelIdParams {
