@@ -63,7 +63,7 @@ type natsSubscriber struct {
 func (ns *natsSubscriber) Subscribe(ctx context.Context) error {
 	for _, h := range ns.in.Handlers {
 		topic := h.Topic()
-		ns.logger.WithContext(ctx).With("topic", topic).Info("begin subscribe")
+		ns.logger.WithContext(ctx).With("topic", topic).Debug("begin subscribe")
 
 		callback := func(msg *nats.Msg) {
 			ctx := trace.Context(ctx, msg.Header.Values("X-Trace-ID")...)

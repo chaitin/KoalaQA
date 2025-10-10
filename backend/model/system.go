@@ -22,6 +22,7 @@ func init() {
 const (
 	SystemKeyPublicAddress = "public_address"
 	SystemKeyAuth          = "auth"
+	SystemKeyMachineID     = "machine_id"
 )
 
 type PublicAddress struct {

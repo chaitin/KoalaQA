@@ -17,9 +17,9 @@ func NewInfo() *Info {
 }
 
 func (v *Info) Print() {
-	fmt.Printf("📦 Version:    %s\n", Version)
-	fmt.Printf("⏰ BuildTime:  %s\n", BuildTime)
-	fmt.Printf("📝 GitCommit:  %s\n", GitCommit)
+	fmt.Printf("Version:    %s\n", Version)
+	fmt.Printf("BuildTime:  %s\n", BuildTime)
+	fmt.Printf("GitCommit:  %s\n", GitCommit)
 }
 
 func (v *Info) Version() string {
