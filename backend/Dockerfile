@@ -2,9 +2,10 @@ FROM golang:1.25-alpine AS build
 
 WORKDIR /app
 
-ARG VERSION="dev"
-ARG COMMIT_HASH="unknown"
-ARG BUILD_TIME="unknown"
+ARG VERSION
+ARG COMMIT_HASH
+ARG BUILD_TIME
+
 ARG HTTP_PROXY=${HTTP_PROXY}
 ARG HTTPS_PROXY=${HTTPS_PROXY}
 
@@ -20,9 +21,9 @@ COPY . .
 
 RUN CGO_ENABLED=0 go build \
     -ldflags "-s -w -extldflags -static \
-    -X 'main.Version=${VERSION}' \
-    -X 'main.GitCommit=${COMMIT_HASH}' \
-    -X 'main.BuildTime=${BUILD_TIME}'" \
+    -X 'github.com/chaitin/koalaqa/pkg/version.Version=${VERSION}' \
+    -X 'github.com/chaitin/koalaqa/pkg/version.GitCommit=${COMMIT_HASH}' \
+    -X 'github.com/chaitin/koalaqa/pkg/version.BuildTime=${BUILD_TIME}'" \
     -o koala-qa-app cmd/server/main.go
 
 FROM alpine:3.22
