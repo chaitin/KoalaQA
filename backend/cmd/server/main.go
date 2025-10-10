@@ -16,6 +16,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/oss"
 	"github.com/chaitin/koalaqa/pkg/rag"
 	"github.com/chaitin/koalaqa/pkg/third_auth"
+	"github.com/chaitin/koalaqa/pkg/version"
 	"github.com/chaitin/koalaqa/pkg/webhook"
 	"github.com/chaitin/koalaqa/repo"
 	"github.com/chaitin/koalaqa/router"
@@ -26,14 +27,7 @@ import (
 	"go.uber.org/fx"
 )
 
-var (
-	Version   = "dev"
-	GitCommit = "HEAD"
-	BuildTime string
-)
-
 func main() {
-	glog.With("version", Version).With("git_commit", GitCommit, "build_time", BuildTime).Info("run app")
 	app := fx.New(
 		config.Module,
 		database.Moudle,
@@ -53,6 +47,7 @@ func main() {
 		webhook.Module,
 		third_auth.Module,
 		cron.Module(),
+		fx.Provide(version.NewInfo),
 	)
 	ctx := context.Background()
 	if err := app.Start(ctx); err != nil {
