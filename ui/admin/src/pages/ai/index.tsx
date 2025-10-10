@@ -89,7 +89,7 @@ const AdminDocument = () => {
       <Grid container spacing={2}>
         <Grid size={{ sm: 12, md: 6 }}>
           <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
-            <Typography variant="body2" sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" sx={{ mb: 2 }}>
               知识学习
             </Typography>
             {/* 替换原有的知识学习模块内容 */}
@@ -146,7 +146,7 @@ const AdminDocument = () => {
         <Grid size={{ sm: 12, md: 6 }}>
           <Bot />
           <Card sx={{ border: '1px solid', borderColor: 'divider', mt: 2 }}>
-            <Typography variant="body2" sx={{ mb: 0 }}>
+            <Typography variant="subtitle2" sx={{ mb: 0 }}>
               模型管理
             </Typography>
             <Model />

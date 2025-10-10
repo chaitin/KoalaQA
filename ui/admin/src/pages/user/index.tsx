@@ -146,7 +146,7 @@ const AdminDocument = () => {
             <Button
               variant="text"
               size="small"
-              color="primary"
+              color="info"
               onClick={() => {
                 setEditItem(record);
                 reset(record);
@@ -171,8 +171,20 @@ const AdminDocument = () => {
 
   return (
     <Stack component={Card} sx={{ height: '100%' }}>
-      <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
-        <Typography variant="caption">共 {data?.total || 0} 个用户</Typography>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        spacing={2}
+        sx={{ mb: 2 }}
+      >
+        <Stack sx={{ fontSize: 14, color: 'text.secondary' }} direction="row" alignItems="center">
+          共
+          <Typography variant="subtitle2" sx={{ mx: 1, fontFamily: 'Mono' }}>
+            {data?.total || 0}
+          </Typography>{' '}
+          个用户
+        </Stack>
         <TextField
           label="用户名"
           value={title}

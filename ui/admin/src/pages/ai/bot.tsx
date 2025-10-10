@@ -2,6 +2,7 @@ import { getAdminBot, putAdminBot } from '@/api';
 import Card from '@/components/card';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Avatar, Box, Button, Stack, TextField, Typography } from '@mui/material';
+import FileUploadIcon from '@mui/icons-material/FileUpload';
 import React, { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -51,12 +52,31 @@ const Bot: React.FC = () => {
 
   return (
     <Card sx={{ border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}>
-      <Typography
-        variant="subtitle2"
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
         sx={{ pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}
       >
-        社区智能机器人
-      </Typography>
+        <Typography variant="subtitle2">社区智能机器人</Typography>
+        {/* 操作按钮 */}
+        {isDirty && (
+          <Stack direction="row" justifyContent="end" sx={{ gap: 2, my: '-8px' }}>
+            <Button
+              onClick={() => {
+                reset();
+              }}
+              variant="outlined"
+              sx={{ borderRadius: '6px' }}
+            >
+              取消
+            </Button>
+            <Button type="submit" variant="contained" sx={{ borderRadius: '6px' }}>
+              保存
+            </Button>
+          </Stack>
+        )}
+      </Stack>
 
       <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ p: 2 }}>
         {/* 头像上传区域 */}
@@ -104,7 +124,14 @@ const Bot: React.FC = () => {
                     };
                     input.click();
                   }}
-                />
+                >
+                  {!field.value && (
+                    <Stack sx={{ color: 'text.secondary' }} alignItems="center">
+                      <FileUploadIcon />
+                      <Typography variant="caption">点击上传</Typography>
+                    </Stack>
+                  )}
+                </Avatar>
               )}
             />
           </Box>
@@ -119,10 +146,7 @@ const Bot: React.FC = () => {
             >
               名称
             </Typography>
-            <Typography
-              variant="subtitle2"
-              sx={{ minWidth: '24%',color: 'error.main' }}
-            >
+            <Typography variant="subtitle2" sx={{ minWidth: '24%', color: 'error.main' }}>
               *
             </Typography>
           </Stack>
@@ -163,28 +187,6 @@ const Bot: React.FC = () => {
             }}
           />
         </Stack>
-
-        {/* 操作按钮 */}
-        {isDirty && (
-          <Stack
-            direction="row"
-            justifyContent="end"
-            sx={{ gap: 2, pt: 2, }}
-          >
-            <Button
-              onClick={() => {
-                reset();
-              }}
-              variant="outlined"
-              sx={{ borderRadius: '6px' }}
-            >
-              取消
-            </Button>
-            <Button type="submit" variant="contained" sx={{ borderRadius: '6px' }}>
-              保存
-            </Button>
-          </Stack>
-        )}
       </Box>
     </Card>
   );

@@ -14,7 +14,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Box, Button, IconButton, Stack, TextField } from '@mui/material';
 import { Icon } from '@ctzhian/ui';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import DeleteIcon from '@mui/icons-material/Delete';
+import RemoveCircle from '@mui/icons-material/RemoveCircle';
 import { CSSProperties, forwardRef, HTMLAttributes, useCallback, useState } from 'react';
 import { Control, Controller, FieldErrors, useFieldArray } from 'react-hook-form';
 
@@ -107,8 +107,12 @@ const LinkItem = forwardRef<HTMLDivElement, LinkItemProps>(
               />
             )}
           />
-          <IconButton size="small" sx={{ flexShrink: 0, color: 'primary.main' }} onClick={onRemove}>
-            <DeleteIcon />
+          <IconButton
+            size="small"
+            sx={{ flexShrink: 0, color: 'text.tertiary' }}
+            onClick={onRemove}
+          >
+            <Icon type="icon-guanbi-fill" />
           </IconButton>
         </Stack>
       </Box>
@@ -222,12 +226,13 @@ const Item = forwardRef<HTMLDivElement, ItemProps>(
             border: '1px solid',
             borderColor: 'divider',
             borderRadius: '10px',
-            p: 2,
+            px: 2,
+            py: 3,
             mb: 1,
             pb: 1,
           }}
         >
-          <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 1 }}>
+          <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 2 }}>
             <IconButton
               size="small"
               sx={{
@@ -260,7 +265,7 @@ const Item = forwardRef<HTMLDivElement, ItemProps>(
               )}
             />
             <IconButton size="small" onClick={handleRemove}>
-              <DeleteIcon sx={{ flexShrink: 0, color: 'primary.main' }} />
+              <Icon type="icon-guanbi-fill" sx={{ flexShrink: 0, color: 'text.tertiary' }} />
             </IconButton>
           </Stack>
 
@@ -268,11 +273,12 @@ const Item = forwardRef<HTMLDivElement, ItemProps>(
           {linkFields.length > 0 && (
             <Box
               sx={{
-                border: '1px dashed',
+                border: '1px solid',
                 borderColor: 'divider',
                 borderRadius: '10px',
-                py: 1,
+                py: 2,
                 pl: 2,
+                pr: 1,
               }}
             >
               <DndContext
@@ -319,12 +325,7 @@ const Item = forwardRef<HTMLDivElement, ItemProps>(
             </Box>
           )}
 
-          <Button
-            size="small"
-            startIcon={<Icon type="icon-add" sx={{ fontSize: '12px !important' }} />}
-            onClick={handleAddLink}
-            sx={{ mt: 1 }}
-          >
+          <Button size="small" variant="text" color="info" onClick={handleAddLink} sx={{ mt: 1 }}>
             添加一个类别
           </Button>
         </Box>
