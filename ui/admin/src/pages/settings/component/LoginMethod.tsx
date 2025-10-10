@@ -11,18 +11,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Box,
   Button,
-  Chip,
+  Checkbox,
   FormControl,
-  FormControlLabel,
   FormHelperText,
   IconButton,
   InputAdornment,
-  InputLabel,
   MenuItem,
   OutlinedInput,
   Select,
   Stack,
-  Switch,
   TextField,
   Typography,
 } from '@mui/material';
@@ -102,7 +99,7 @@ const LoginMethod: React.FC = () => {
   const isOidcSelected = watchedAuthTypes?.includes(AuthType.OIDC) ?? false;
 
   // 获取当前配置
-  const { data, loading } = useRequest(getAdminSystemLoginMethod, {
+  const { loading } = useRequest(getAdminSystemLoginMethod, {
     onSuccess: res => {
       if (res) {
         const { enable_register, public_access, auth_infos } = res;
@@ -209,312 +206,446 @@ const LoginMethod: React.FC = () => {
 
   return (
     <Card sx={{ mb: 2 }}>
-      <Box
-        sx={{
-          fontSize: 14,
-          lineHeight: '32px',
-          flexShrink: 0,
-          mb: 2,
-        }}
-      >
-        登录注册管理
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography
+          sx={{
+            fontSize: 14,
+            lineHeight: '32px',
+            flexShrink: 0,
+          }}
+          variant="subtitle2"
+        >
+          登录注册管理
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {isDirty && (
+            <Button
+              type="submit"
+              variant="contained"
+              size="small"
+              disabled={loading}
+              onClick={handleSubmit(onSubmit)}
+            >
+              保存
+            </Button>
+          )}
+        </Box>
       </Box>
 
       <Box component="form" onSubmit={handleSubmit(onSubmit)}>
-        <Stack spacing={3}>
-          {/* 用户注册开关 */}
-          <Box>
+        <Stack>
+          {/* 用户注册复选框 */}
+          <Box display="flex" alignItems="center">
+            <Typography variant="body2" sx={{ mr: 2, minWidth: 160 }}>
+              开放用户注册
+            </Typography>
             <Controller
               name="enable_register"
               control={control}
               render={({ field }) => (
-                <FormControlLabel
-                  control={<Switch checked={field.value} onChange={field.onChange} />}
-                  label="开放用户注册"
+                <Checkbox
+                  sx={theme => ({
+                    '& svg[data-testid="CheckBoxIcon"]': {
+                      fill: theme.palette.info.main,
+                    },
+                  })}
+                  checked={field.value}
+                  onChange={field.onChange}
                 />
               )}
             />
-            <Typography variant="body2" color="text.secondary" sx={{ ml: 4, mt: 0.5 }}>
-              选择禁用则前台不提供注册入口
-            </Typography>
           </Box>
 
           {/* 公开访问开关 */}
-          <Box>
+          <Box display="flex" alignItems="center">
+            <Typography variant="body2" sx={{ mr: 2, minWidth: 160 }}>
+              公开访问
+            </Typography>
             <Controller
               name="public_access"
               control={control}
               render={({ field }) => (
-                <FormControlLabel
-                  control={<Switch checked={field.value} onChange={field.onChange} />}
-                  label="允许访问控制"
+                <Checkbox
+                  checked={field.value}
+                  onChange={field.onChange}
+                  sx={theme => ({
+                    '& svg[data-testid="CheckBoxIcon"]': {
+                      fill: theme.palette.info.main,
+                    },
+                  })}
                 />
               )}
             />
-            <Typography variant="body2" color="text.secondary" sx={{ ml: 4, mt: 0.5 }}>
-              选择禁用则需要登录才可以访问整个社区；选择启用则默认不登录可以查看，需要登录后才可以发表
-            </Typography>
           </Box>
 
           {/* 登录方式选择 */}
-          <FormControl fullWidth error={!!errors.auth_types}>
-            <InputLabel>登录方式</InputLabel>
-            <Controller
-              name="auth_types"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  multiple
-                  value={field.value || []}
-                  onChange={field.onChange}
-                  input={<OutlinedInput label="登录方式" />}
-                  renderValue={selected => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {(selected as number[]).map(value => {
-                        const option = AUTH_TYPE_OPTIONS.find(opt => opt.value === value);
-                        return (
-                          <Chip
-                            key={value}
-                            label={option?.label}
-                            size="small"
-                            onDelete={() => handleRemoveAuthType(value)}
-                            deleteIcon={<span>×</span>}
-                            sx={{
-                              backgroundColor: '#f5f5f5',
-                              border: '1px solid #e0e0e0',
-                              '& .MuiChip-deleteIcon': {
-                                fontSize: '18px',
-                                color: '#666',
-                                '&:hover': {
-                                  color: '#333',
-                                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                                },
-                              },
-                            }}
-                          />
-                        );
-                      })}
-                    </Box>
+          <Box display="flex" alignItems="center">
+            <Typography variant="body2" sx={{ mr: 2, minWidth: 170 }}>
+              登录方式
+            </Typography>
+            <Box flex={1}>
+              <FormControl fullWidth error={!!errors.auth_types}>
+                <Controller
+                  name="auth_types"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      multiple
+                      value={field.value || []}
+                      onChange={field.onChange}
+                      input={<OutlinedInput />}
+                      sx={{
+                        '& .MuiSelect-select': {
+                          py: 1,
+                        },
+                      }}
+                      renderValue={selected => (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                          {(selected as number[]).map(value => {
+                            const option = AUTH_TYPE_OPTIONS.find(opt => opt.value === value);
+                            return (
+                              <Box
+                                key={value}
+                                sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 0.5,
+                                  backgroundColor: '#FFFFFF',
+                                  borderRadius: '16px',
+                                  padding: '2px 8px',
+                                  fontSize: '12px',
+                                  color: '#333333',
+                                }}
+                              >
+                                <Typography
+                                  variant="body2"
+                                  sx={{ fontSize: '12px', lineHeight: 'normal' }}
+                                >
+                                  {option?.label}
+                                </Typography>
+                                <IconButton
+                                  size="small"
+                                  onClick={e => {
+                                    e.stopPropagation();
+                                    handleRemoveAuthType(value);
+                                  }}
+                                  sx={{
+                                    padding: '2px',
+                                    ml: 0.5,
+                                    bgcolor: '#ccc',
+                                    color: 'white',
+                                    height: '12px',
+                                    fontSize: '14px',
+                                    lineHeight: '15px',
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  ×
+                                </IconButton>
+                              </Box>
+                            );
+                          })}
+                        </Box>
+                      )}
+                    >
+                      {AUTH_TYPE_OPTIONS.map(option => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
                   )}
-                >
-                  {AUTH_TYPE_OPTIONS.map(option => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </Select>
-              )}
-            />
-            {errors.auth_types && <FormHelperText>{errors.auth_types.message}</FormHelperText>}
-          </FormControl>
+                />
+                {errors.auth_types && <FormHelperText>{errors.auth_types.message}</FormHelperText>}
+              </FormControl>
+            </Box>
+          </Box>
 
           {/* 密码认证配置 */}
           {isPasswordSelected && (
-            <Box
-              sx={{
-                border: '2px solid #e8f5e8',
-                borderRadius: 2,
-                backgroundColor: '#fafbfc',
-                p: 3,
-                mt: 2,
-                position: 'relative',
-                '&::before': {
-                  content: '"密码认证配置"',
-                  position: 'absolute',
-                  top: -12,
-                  left: 16,
-                  backgroundColor: '#fafbfc',
-                  px: 1,
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  color: '#2e7d32',
-                },
-              }}
-            >
-              <Controller
-                name="password_config.button_desc"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="按钮文案"
-                    placeholder="密码登录"
-                    fullWidth
-                    size="small"
-                    slotProps={{
-                      inputLabel: {
-                        shrink: !!field.value || undefined,
-                      },
-                    }}
+            <>
+              <Box
+                sx={{
+                  borderTop: '1px dashed #e0e0e0',
+                  mt: 3,
+                }}
+              />
+              <Box
+                sx={{
+                  borderRadius: 1,
+                  backgroundColor: 'white',
+                  py: 3,
+                  minHeight: 64,
+                }}
+              >
+                <Box
+                  sx={{
+                    left: 16,
+                    backgroundColor: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    py: 0,
+                    fontSize: 14,
+                  }}
+                >
+                  <Box
                     sx={{
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: 'white',
-                      },
+                      width: 4,
+                      height: 12,
+                      borderRadius: 1,
+                      background: 'linear-gradient(180deg, #2458E5 0%, #5B8FFC 100%)',
+                      mr: 1,
+                      display: 'inline-block',
                     }}
                   />
-                )}
-              />
-            </Box>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 500,
+                      color: '#21222D',
+                      fontSize: 14,
+                    }}
+                  >
+                    密码认证配置
+                  </Typography>
+                </Box>
+                <Stack direction="row" alignItems="center" spacing={2} sx={{ mt: 2 }}>
+                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                    登录按钮文案
+                  </Typography>
+                  <Box sx={{ flex: 1 }}>
+                    <Controller
+                      name="password_config.button_desc"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          placeholder="请输入"
+                          fullWidth
+                          size="small"
+                          InputLabelProps={{
+                            shrink: false,
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              backgroundColor: '#F8F9FA',
+                              borderRadius: '10px',
+                            },
+                            '& .MuiInputBase-input': {
+                              fontSize: 14,
+                            },
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+                </Stack>
+              </Box>
+            </>
           )}
 
           {/* OIDC 配置 */}
           {isOidcSelected && (
-            <Box
-              sx={{
-                border: '2px solid #e3f2fd',
-                borderRadius: 2,
-                backgroundColor: '#fafbfc',
-                p: 3,
-                mt: 2,
-                position: 'relative',
-                '&::before': {
-                  content: '"OIDC 配置"',
-                  position: 'absolute',
-                  top: -12,
-                  left: 16,
-                  backgroundColor: '#fafbfc',
-                  px: 1,
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  color: '#1976d2',
-                },
-              }}
-            >
-              <Stack spacing={3}>
-                <Controller
-                  name="oidc_config.url"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="服务器地址"
-                      placeholder="https://your-oidc-server.com"
-                      required
-                      fullWidth
-                      type="url"
-                      size="small"
-                      error={!!errors.oidc_config?.url}
-                      helperText={errors.oidc_config?.url?.message}
-                      slotProps={{
-                        inputLabel: {
-                          shrink: !!field.value || undefined,
-                        },
-                      }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          backgroundColor: 'white',
-                        },
-                      }}
-                    />
-                  )}
-                />
+            <>
+              <Box
+                sx={{
+                  borderTop: '1px dashed #e0e0e0',
+                }}
+              />
+              <Box
+                sx={{
+                  borderRadius: 1,
+                  backgroundColor: 'white',
+                  py: 3,
+                  minHeight: 64,
+                }}
+              >
+                <Box
+                  sx={{
+                    left: 16,
+                    backgroundColor: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    py: 0,
+                    fontSize: 14,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 4,
+                      height: 12,
+                      borderRadius: 1,
+                      background: 'linear-gradient(180deg, #2458E5 0%, #5B8FFC 100%)',
+                      mr: 1,
+                      display: 'inline-block',
+                    }}
+                  />
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 500,
+                      color: '#21222D',
+                      fontSize: 14,
+                    }}
+                  >
+                    OIDC 配置
+                  </Typography>
+                </Box>
+              </Box>
 
-                <Controller
-                  name="oidc_config.client_id"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Client ID"
-                      placeholder="your-client-id"
-                      required
-                      fullWidth
-                      size="small"
-                      slotProps={{
-                        inputLabel: {
-                          shrink: !!field.value || undefined,
-                        },
-                      }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          backgroundColor: 'white',
-                        },
-                      }}
+              <Stack spacing={1.5}>
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                    服务器地址<span style={{ color: 'red' }}>*</span>
+                  </Typography>
+                  <Box sx={{ flex: 1 }}>
+                    <Controller
+                      name="oidc_config.url"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          placeholder="请输入"
+                          required
+                          fullWidth
+                          type="url"
+                          size="small"
+                          error={!!errors.oidc_config?.url}
+                          helperText={errors.oidc_config?.url?.message}
+                          InputLabelProps={{
+                            shrink: false,
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              backgroundColor: '#F8F9FA',
+                              borderRadius: '10px',
+                            },
+                            '& .MuiInputBase-input': {
+                              fontSize: 14,
+                            },
+                          }}
+                        />
+                      )}
                     />
-                  )}
-                />
+                  </Box>
+                </Stack>
 
-                <Controller
-                  name="oidc_config.client_secret"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Client Secret"
-                      placeholder="your-client-secret"
-                      required
-                      fullWidth
-                      type={showClientSecret ? 'text' : 'password'}
-                      size="small"
-                      slotProps={{
-                        inputLabel: {
-                          shrink: !!field.value || undefined,
-                        },
-                        input: {
-                          endAdornment: (
-                            <InputAdornment position="end">
-                              <IconButton
-                                aria-label="toggle client secret visibility"
-                                onClick={() => setShowClientSecret(!showClientSecret)}
-                                onMouseDown={event => event.preventDefault()}
-                                edge="end"
-                                size="small"
-                              >
-                                {showClientSecret ? <VisibilityOff /> : <Visibility />}
-                              </IconButton>
-                            </InputAdornment>
-                          ),
-                        },
-                      }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          backgroundColor: 'white',
-                        },
-                      }}
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                    Client ID<span style={{ color: 'red' }}>*</span>
+                  </Typography>
+                  <Box sx={{ flex: 1 }}>
+                    <Controller
+                      name="oidc_config.client_id"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          placeholder="请输入"
+                          required
+                          fullWidth
+                          size="small"
+                          InputLabelProps={{
+                            shrink: false,
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              backgroundColor: '#F8F9FA',
+                              borderRadius: '10px',
+                            },
+                            '& .MuiInputBase-input': {
+                              fontSize: 14,
+                            },
+                          }}
+                        />
+                      )}
                     />
-                  )}
-                />
+                  </Box>
+                </Stack>
 
-                <Controller
-                  name="oidc_config.button_desc"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="按钮文案"
-                      placeholder="OIDC 登录"
-                      fullWidth
-                      size="small"
-                      slotProps={{
-                        inputLabel: {
-                          shrink: !!field.value || undefined,
-                        },
-                      }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          backgroundColor: 'white',
-                        },
-                      }}
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                    Client Secret<span style={{ color: 'red' }}>*</span>
+                  </Typography>
+                  <Box sx={{ flex: 1 }}>
+                    <Controller
+                      name="oidc_config.client_secret"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          placeholder="请输入"
+                          required
+                          fullWidth
+                          type={showClientSecret ? 'text' : 'password'}
+                          size="small"
+                          InputProps={{
+                            endAdornment: (
+                              <InputAdornment position="end">
+                                <IconButton
+                                  aria-label="toggle client secret visibility"
+                                  onClick={() => setShowClientSecret(!showClientSecret)}
+                                  onMouseDown={event => event.preventDefault()}
+                                  edge="end"
+                                  size="small"
+                                >
+                                  {showClientSecret ? <VisibilityOff /> : <Visibility />}
+                                </IconButton>
+                              </InputAdornment>
+                            ),
+                          }}
+                          InputLabelProps={{
+                            shrink: false,
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              backgroundColor: '#F8F9FA',
+                              borderRadius: '10px',
+                            },
+                            '& .MuiInputBase-input': {
+                              fontSize: 14,
+                            },
+                          }}
+                        />
+                      )}
                     />
-                  )}
-                />
+                  </Box>
+                </Stack>
+
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                    按钮文案
+                  </Typography>
+                  <Box sx={{ flex: 1 }}>
+                    <Controller
+                      name="oidc_config.button_desc"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          placeholder="请输入"
+                          fullWidth
+                          size="small"
+                          InputLabelProps={{
+                            shrink: false,
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              backgroundColor: '#F8F9FA',
+                              borderRadius: '10px',
+                            },
+                            '& .MuiInputBase-input': {
+                              fontSize: 14,
+                            },
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+                </Stack>
               </Stack>
-            </Box>
+            </>
           )}
-
-          {/* 保存按钮 */}
-          <Box>
-            {isDirty && (
-              <Stack direction="row" spacing={2}>
-                <Button variant="outlined" onClick={() => reset()} disabled={loading}>
-                  取消
-                </Button>
-                <Button type="submit" variant="contained" color="primary" disabled={loading}>
-                  保存
-                </Button>
-              </Stack>
-            )}
-          </Box>
         </Stack>
       </Box>
     </Card>
