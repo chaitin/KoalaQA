@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,7 +11,6 @@ import (
 	"github.com/chaitin/koalaqa/pkg/aes"
 	"github.com/chaitin/koalaqa/pkg/config"
 	"github.com/chaitin/koalaqa/pkg/glog"
-	"github.com/chaitin/koalaqa/pkg/machine"
 	"github.com/chaitin/koalaqa/pkg/version"
 )
 
@@ -24,33 +22,18 @@ type InstallData struct {
 }
 
 type Reporter struct {
-	version   *version.Info
-	cfg       config.Config
-	logger    *glog.Logger
-	IDFile    string
-	machineID string
+	version *version.Info
+	cfg     config.Config
+	logger  *glog.Logger
 }
 
 func NewReport(version *version.Info, cfg config.Config) *Reporter {
 	r := &Reporter{
 		logger:  glog.Module("reporter"),
 		cfg:     cfg,
-		IDFile:  "/app/.machine_id",
 		version: version,
 	}
-	if _, err := r.readMachineID(); err != nil {
-		r.logger.With("error", err).Warn("read machine id file failed")
-	}
 	return r
-}
-
-func (r *Reporter) readMachineID() (string, error) {
-	data, err := os.ReadFile(r.IDFile)
-	if err != nil {
-		return "", err
-	}
-	r.machineID = string(data)
-	return r.machineID, nil
 }
 
 func (r *Reporter) Report(index string, data any) error {
@@ -83,37 +66,9 @@ func (r *Reporter) Report(index string, data any) error {
 	return nil
 }
 
-func (r *Reporter) GetMachineID() string {
-	return r.machineID
-}
-
-func (r *Reporter) ReportInstallation() error {
+func (r *Reporter) ReportInstallation(id string) error {
 	if r.cfg.API.DEV {
 		return nil
-	}
-
-	if r.machineID != "" {
-		return nil
-	}
-
-	id, err := machine.GenerateMachineID()
-	if err != nil {
-		r.logger.With("error", err).Warn("generate machine id failed")
-		return err
-	}
-	r.machineID = id
-
-	f, err := os.Create(r.IDFile)
-	if err != nil {
-		r.logger.With("error", err).Warn("create machine id file failed")
-		return err
-	}
-	defer f.Close()
-
-	_, err = f.WriteString(id)
-	if err != nil {
-		r.logger.With("error", err).Warn("write machine id file failed")
-		return err
 	}
 
 	return r.Report("koala-installation", InstallData{
