@@ -13,3 +13,5 @@ backend/deploy/data
 .env
 
 data/
+
+docker-compose.yml
