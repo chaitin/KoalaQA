@@ -4151,12 +4151,14 @@ const docTemplate = `{
             "enum": [
                 0,
                 1,
-                2
+                2,
+                3
             ],
             "x-enum-varnames": [
                 "DocStatusUnknown",
                 "DocStatusAppling",
-                "DocStatusPendingReview"
+                "DocStatusPendingReview",
+                "DocStatusPendingApply"
             ]
         },
         "model.DocType": {

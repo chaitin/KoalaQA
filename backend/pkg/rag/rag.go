@@ -7,15 +7,23 @@ import (
 )
 
 type QueryRecordsReq struct {
-	DatasetIDs          []string
-	Query               string
-	GroupIDs            []int
-	TopK                int
-	SimilarityThreshold float64
+	DatasetIDs          []string `json:"dataset_ids,omitempty"`
+	Query               string   `json:"query,omitempty"`
+	GroupIDs            []int    `json:"group_ids,omitempty"`
+	TopK                int      `json:"top_k,omitempty"`
+	SimilarityThreshold float64  `json:"similarity_threshold,omitempty"`
+}
+
+type UpdateDatasetReq struct {
+	ParserConfig ParserConfig `json:"parser_config,omitempty"`
+}
+
+type ParserConfig struct {
 }
 
 type Service interface {
 	CreateDataset(ctx context.Context) (string, error)
+	UpdateDataset(ctx context.Context, datasetID string, req UpdateDatasetReq) error
 	UpsertRecords(ctx context.Context, datasetID string, content string, groupIDs []int) (string, error)
 	QueryRecords(ctx context.Context, req QueryRecordsReq) ([]*model.NodeContentChunk, error)
 	DeleteRecords(ctx context.Context, datasetID string, docIDs []string) error
