@@ -35,7 +35,7 @@ func NewReport(version *version.Info, cfg config.Config) *Reporter {
 	r := &Reporter{
 		logger:  glog.Module("reporter"),
 		cfg:     cfg,
-		IDFile:  "/app/static/.machine_id",
+		IDFile:  "/app/.machine_id",
 		version: version,
 	}
 	if _, err := r.readMachineID(); err != nil {
