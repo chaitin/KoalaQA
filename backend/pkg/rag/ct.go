@@ -43,6 +43,17 @@ func (c *CTRag) CreateDataset(ctx context.Context) (string, error) {
 	return dataset.ID, nil
 }
 
+func (c *CTRag) UpdateDataset(ctx context.Context, datasetID string, req UpdateDatasetReq) error {
+	err := c.client.UpdateDataset(ctx, datasetID, rag.UpdateDatasetRequest{
+		ParserConfig: rag.ParserConfig{},
+	})
+	if err != nil {
+		return err
+	}
+	c.logger.WithContext(ctx).With("dataset_id", datasetID).Debug("update dataset success")
+	return nil
+}
+
 func (c *CTRag) UpsertRecords(ctx context.Context, datasetID string, content string, groupIDs []int) (string, error) {
 	tempFile, err := os.CreateTemp("", "*.md")
 	if err != nil {
