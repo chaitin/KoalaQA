@@ -7,9 +7,8 @@ import {
   SvcWebhookCreateReq,
   SvcWebhookUpdateReq,
 } from '@/api';
-import ClearIcon from '@mui/icons-material/Clear';
 import Card from '@/components/card';
-import { Ellipsis, message, Modal, Table } from '@ctzhian/ui';
+import { Icon, message, Modal } from '@ctzhian/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Box,
@@ -19,6 +18,7 @@ import {
   FormControlLabel,
   FormGroup,
   FormHelperText,
+  IconButton,
   InputLabel,
   MenuItem,
   Select,
@@ -27,7 +27,6 @@ import {
   Typography,
 } from '@mui/material';
 import { useRequest } from 'ahooks';
-import { ColumnsType } from '@ctzhian/ui/dist/Table';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -74,34 +73,6 @@ const Notification = () => {
     manual: true,
   });
 
-  const columns: ColumnsType<ModelWebhook> = [
-    {
-      title: '通知名称',
-      dataIndex: 'name',
-      render: text => <Ellipsis>{text}</Ellipsis>,
-    },
-    {
-      title: '通知方式',
-      dataIndex: 'type',
-      render: text => notificationTypes.find(t => t.value === text)?.label || text,
-    },
-    {
-      title: '操作',
-      width: 160,
-      dataIndex: 'opt',
-      render: (_, record) => (
-        <Stack direction="row" spacing={1}>
-          <Button size="small" color="primary" onClick={() => handleEdit(record)}>
-            修改
-          </Button>
-          <Button variant="text" size="small" color="error" onClick={() => handleDelete(record)}>
-            删除
-          </Button>
-        </Stack>
-      ),
-    },
-  ];
-
   const handleAdd = () => {
     setEditItem(null);
     reset({
@@ -130,7 +101,7 @@ const Notification = () => {
       message.success(editItem ? '修改成功' : '添加成功');
       setIsModalOpen(false);
       fetchData();
-    } catch (error) {
+    } catch {
       message.error(editItem ? '修改失败' : '添加失败');
     }
   };
@@ -144,7 +115,7 @@ const Notification = () => {
           await deleteAdminSystemWebhookWebhookId(item.id!);
           message.success('删除成功');
           fetchData();
-        } catch (error) {
+        } catch {
           message.error('删除失败');
         }
       },
@@ -153,24 +124,80 @@ const Notification = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   return (
     <Card sx={{ mt: 2 }}>
       <Stack spacing={2}>
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-          <Typography sx={{ fontSize: 14 }}>通知管理</Typography>
-          <Button variant="contained" color="primary" onClick={handleAdd}>
+          <Typography variant="subtitle2" sx={{ fontSize: 14 }}>
+            通知管理
+          </Typography>
+          <Button variant="text" color="info" onClick={handleAdd}>
             新增一个通知
           </Button>
         </Stack>
 
-        <Table
-          loading={loading}
-          columns={columns}
-          dataSource={data?.items || []}
-          pagination={false}
-        />
+        <Stack spacing={2}>
+          {loading ? (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography>加载中...</Typography>
+            </Box>
+          ) : (
+            (data?.items || []).map(item => (
+              <Box
+                key={item.id}
+                sx={{
+                  border: '1px solid #e0e0e0',
+                  borderRadius: 1,
+                  backgroundColor: 'white',
+                  p: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
+                  <Typography variant="body1" sx={{ fontWeight: 500, minWidth: 120 }}>
+                    {item.name}
+                  </Typography>
+                  <Box
+                    sx={{
+                      backgroundColor: '#f5f5f5',
+                      border: '1px solid #d0d0d0',
+                      borderRadius: '16px',
+                      padding: '4px 12px',
+                      fontSize: '12px',
+                      color: '#333333',
+                    }}
+                  >
+                    {notificationTypes.find(t => t.value === item.type)?.label || item.type}
+                  </Box>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => handleEdit(item)}
+                    sx={{
+                      borderColor: '#d0d0d0',
+                      color: '#333333',
+                      '&:hover': {
+                        borderColor: '#1976d2',
+                        color: '#1976d2',
+                      },
+                    }}
+                  >
+                    修改
+                  </Button>
+                  <IconButton size="small" onClick={() => handleDelete(item)}>
+                    <Icon type="icon-guanbi-fill" sx={{ flexShrink: 0, color: 'text.tertiary' }} />
+                  </IconButton>
+                </Box>
+              </Box>
+            ))
+          )}
+        </Stack>
 
         <Modal
           open={isModalOpen}

@@ -1,7 +1,6 @@
-import {
-  getAdminGroup,
-  putAdminGroup
-} from '@/api';
+import { getAdminGroup, putAdminGroup } from '@/api';
+import Card from '@/components/card';
+import LoadingButton from '@/components/LoadingButton';
 import {
   closestCenter,
   DndContext,
@@ -14,13 +13,11 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { rectSortingStrategy, SortableContext } from '@dnd-kit/sortable';
-import { Box, Button, Stack } from '@mui/material';
-import { Icon } from '@ctzhian/ui';
+import { Box, Button, Stack, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import Item from './Item';
 import SortableItem from './SortableItem';
-
 
 const DragBrand = () => {
   const [isEdit, setIsEdit] = useState(false);
@@ -58,9 +55,9 @@ const DragBrand = () => {
     setActiveId(event.active.id as string);
   }, []);
   const fetchData = () => {
-    getAdminGroup().then((res) => {
+    getAdminGroup().then(res => {
       reset({
-        brand_groups: res.items?.map((item) => ({
+        brand_groups: res.items?.map(item => ({
           name: item.name,
           id: item.id,
           links: item.items,
@@ -75,12 +72,8 @@ const DragBrand = () => {
     (event: DragEndEvent) => {
       const { active, over } = event;
       if (active.id !== over?.id) {
-        const oldIndex = brandGroupFields.findIndex(
-          (_, index) => `group-${index}` === active.id
-        );
-        const newIndex = brandGroupFields.findIndex(
-          (_, index) => `group-${index}` === over!.id
-        );
+        const oldIndex = brandGroupFields.findIndex((_, index) => `group-${index}` === active.id);
+        const newIndex = brandGroupFields.findIndex((_, index) => `group-${index}` === over!.id);
         move(oldIndex, newIndex);
         setIsEdit(true);
       }
@@ -110,22 +103,7 @@ const DragBrand = () => {
     setIsEdit(true);
   };
 
-  if (brandGroupFields.length === 0) {
-    return (
-      <Button
-        size='small'
-        startIcon={
-          <Icon type='icon-add' sx={{ fontSize: '12px !important' }} />
-        }
-        onClick={handleAddBrandGroup}
-      >
-        新增一个分类
-      </Button>
-    );
-  }
-
-  const onSubmit = handleSubmit((data) => {
-    console.log(data);
+  const onSubmit = handleSubmit(data => {
     putAdminGroup({
       groups: data.brand_groups.map((item, index) => ({
         name: item.name,
@@ -139,66 +117,75 @@ const DragBrand = () => {
   });
 
   return (
-    <>
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        onDragCancel={handleDragCancel}
-      >
-        <SortableContext
-          items={brandGroupFields.map((_, index) => `group-${index}`)}
-          strategy={rectSortingStrategy}
+    <Card>
+      <Stack direction="row" justifyContent="space-between" alignItems="center">
+        <Typography
+          variant="subtitle2"
+          sx={{
+            width: 156,
+            fontSize: 14,
+            lineHeight: '32px',
+            flexShrink: 0,
+            my: 1,
+          }}
         >
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {brandGroupFields.map((group, groupIndex) => (
-              <SortableItem
-                key={group.id}
-                id={`group-${groupIndex}`}
-                groupIndex={groupIndex}
-                control={control}
-                errors={errors}
-                setIsEdit={setIsEdit}
-                handleRemove={() => handleRemove(groupIndex)}
-              />
-            ))}
-          </Box>
-        </SortableContext>
-        <DragOverlay adjustScale style={{ transformOrigin: '0 0' }}>
-          {activeId ? (
-            <Item
-              isDragging
-              groupIndex={parseInt(activeId.split('-')[1])}
-              control={control}
-              errors={errors}
-              setIsEdit={setIsEdit}
-            />
-          ) : null}
-        </DragOverlay>
-      </DndContext>
-      <Button
-        size='small'
-        startIcon={
-          <Icon type='icon-add' sx={{ fontSize: '12px !important' }} />
-        }
-        onClick={handleAddBrandGroup}
-      >
-        新增一个分类
-      </Button>
-      <Stack>
+          分类管理
+        </Typography>
         {isEdit && (
-          <Button
-            sx={{ alignSelf: 'flex-start' }}
-            variant='contained'
-            size='small'
-            onClick={onSubmit}
-          >
+          <LoadingButton variant="contained" size="small" onClick={onSubmit}>
             保存
-          </Button>
+          </LoadingButton>
         )}
       </Stack>
-    </>
+      {brandGroupFields.length === 0 ? (
+        <Button size="small" variant="text" color="info" onClick={handleAddBrandGroup}>
+          新增一个分类
+        </Button>
+      ) : (
+        <>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
+          >
+            <SortableContext
+              items={brandGroupFields.map((_, index) => `group-${index}`)}
+              strategy={rectSortingStrategy}
+            >
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {brandGroupFields.map((group, groupIndex) => (
+                  <SortableItem
+                    key={group.id}
+                    id={`group-${groupIndex}`}
+                    groupIndex={groupIndex}
+                    control={control}
+                    errors={errors}
+                    setIsEdit={setIsEdit}
+                    handleRemove={() => handleRemove(groupIndex)}
+                  />
+                ))}
+              </Box>
+            </SortableContext>
+            <DragOverlay adjustScale style={{ transformOrigin: '0 0' }}>
+              {activeId ? (
+                <Item
+                  isDragging
+                  groupIndex={parseInt(activeId.split('-')[1])}
+                  control={control}
+                  errors={errors}
+                  setIsEdit={setIsEdit}
+                />
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+          <Button size="small" variant="text" color="info" onClick={handleAddBrandGroup}>
+            新增一个分类
+          </Button>
+        </>
+      )}
+    </Card>
   );
 };
 
