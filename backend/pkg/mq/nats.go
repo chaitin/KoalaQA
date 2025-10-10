@@ -122,7 +122,7 @@ func (ns *natsSubscriber) Subscribe(ctx context.Context) error {
 					return err
 				}
 			}
-			ns.logger.WithContext(ctx).With("topic", topic).Info("subscribe successfully")
+			ns.logger.WithContext(ctx).With("topic", topic).Debug("subscribe successfully")
 		}
 	}
 	return nil
