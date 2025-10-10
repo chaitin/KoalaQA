@@ -31,7 +31,7 @@
 使用 root 权限登录你的服务器，然后执行以下命令。
 
 ```
-bash -c "$(curl -fsSL https://github.com/chaitin/KoalaQA/raw/refs/heads/main/manager.sh)"
+bash -c "$(curl -fsSL https://release.baizhi.cloud/koala-qa/manager.sh)"
 ```
 
 根据命令提示的选项进行安装，命令执行过程将会持续几分钟，请耐心等待。
