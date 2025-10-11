@@ -1,4 +1,4 @@
-'use client';
+'use client'
 import {
   deleteDiscussionDiscIdCommentCommentId,
   postDiscussionDiscIdComment,
@@ -7,129 +7,115 @@ import {
   postDiscussionDiscIdCommentCommentIdLike,
   postDiscussionDiscIdCommentCommentIdRevokeLike,
   putDiscussionDiscIdCommentCommentId,
-} from '@/api';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
-import ThumbUpAltOutlinedIcon from '@mui/icons-material/ThumbUpAltOutlined';
-import ThumbDownAltOutlinedIcon from '@mui/icons-material/ThumbDownAltOutlined';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import Image from 'next/image';
+} from '@/api'
 import {
   ModelCommentLikeState,
   ModelDiscussionComment,
   ModelDiscussionDetail,
   ModelDiscussionReply,
   SvcCommentUpdateReq,
-} from '@/api/types';
-import { Card, MarkDown } from '@/components';
-import { AuthContext } from '@/components/authProvider';
-import { Avatar } from '@/components/discussion';
-import EditorWrap from '@/components/editor/edit/Wrap';
-import Modal from '@/components/modal';
-import { useAuthCheck } from '@/hooks/useAuthCheck';
-import {
-  Box,
-  Button,
-  IconButton,
-  Menu,
-  MenuItem,
-  OutlinedInput,
-  Stack,
-  Typography,
-} from '@mui/material';
-import dayjs from 'dayjs';
-import 'dayjs/locale/zh-cn';
-import relativeTime from 'dayjs/plugin/relativeTime';
-import { useParams, useRouter } from 'next/navigation';
-import React, { useContext, useId, useState } from 'react';
-import EditCommentModal from './editCommentModal';
+} from '@/api/types'
+import { Card, MarkDown } from '@/components'
+import { AuthContext } from '@/components/authProvider'
+import { Avatar } from '@/components/discussion'
+import EditorWrap from '@/components/editor/edit/Wrap'
+import Modal from '@/components/modal'
+import { useAuthCheck } from '@/hooks/useAuthCheck'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import MoreVertIcon from '@mui/icons-material/MoreVert'
+import ThumbDownAltOutlinedIcon from '@mui/icons-material/ThumbDownAltOutlined'
+import ThumbUpAltOutlinedIcon from '@mui/icons-material/ThumbUpAltOutlined'
+import { Box, Divider, IconButton, Menu, MenuItem, OutlinedInput, Stack, Typography } from '@mui/material'
+import dayjs from 'dayjs'
+import 'dayjs/locale/zh-cn'
+import relativeTime from 'dayjs/plugin/relativeTime'
+import { useParams, useRouter } from 'next/navigation'
+import React, { useContext, useState } from 'react'
+import EditCommentModal from './editCommentModal'
 
-import LoadingBtn from '@/components/loadingButton';
-import { formatNumber } from '@/utils';
+import { formatNumber } from '@/utils'
 
-dayjs.extend(relativeTime);
-dayjs.locale('zh-cn');
+dayjs.extend(relativeTime)
+dayjs.locale('zh-cn')
 
 const BaseDiscussCard = (props: {
-  isReply?: boolean;
-  data: ModelDiscussionComment | ModelDiscussionReply;
-  disData: ModelDiscussionDetail;
-  index: number;
+  isReply?: boolean
+  data: ModelDiscussionComment | ModelDiscussionReply
+  disData: ModelDiscussionDetail
+  index: number
   onOpt(
     event: React.MouseEvent<HTMLButtonElement>,
     comment: string,
-    index: ModelDiscussionComment | ModelDiscussionReply
-  ): void;
+    index: ModelDiscussionComment | ModelDiscussionReply,
+  ): void
 }) => {
-  const { data, onOpt, disData, index, isReply } = props;
-  const router = useRouter();
+  const { data, onOpt, disData, isReply } = props
+  const router = useRouter()
+  const [repliesCollapsed, setRepliesCollapsed] = useState(false)
   // 检查是否有可用的菜单项
   const hasMenuItems =
     // 是当前用户的评论（可以编辑和删除）
     data.user_id === disData.current_user_id ||
     // 是问题作者且问题未被采纳，且不是回复（只有评论可以被采纳）
-    (disData.user_id === disData.current_user_id &&
-      !disData.comments?.[0]?.accepted &&
-      !isReply);
+    (disData.user_id === disData.current_user_id && !disData.comments?.[0]?.accepted && !isReply)
 
   const revokeLike = () => {
     postDiscussionDiscIdCommentCommentIdRevokeLike({
       discId: disData.uuid!,
       commentId: data.id!,
-    });
-  };
-  const isLiked =
-    data.user_like_state == ModelCommentLikeState.CommentLikeStateLike;
-  const isDisliked =
-    data.user_like_state == ModelCommentLikeState.CommentLikeStateDislike;
-  const { checkAuth } = useAuthCheck();
+    })
+  }
+  const isLiked = data.user_like_state == ModelCommentLikeState.CommentLikeStateLike
+  const isDisliked = data.user_like_state == ModelCommentLikeState.CommentLikeStateDislike
+  const { checkAuth } = useAuthCheck()
 
   const handleLike = async () => {
     // 检查登录状态
-    const isAuthenticated = checkAuth();
-    if (!isAuthenticated) return;
+    const isAuthenticated = checkAuth()
+    if (!isAuthenticated) return
 
     try {
-      if (isLiked) await revokeLike();
+      if (isLiked) await revokeLike()
       else
         await postDiscussionDiscIdCommentCommentIdLike({
           discId: disData.uuid!,
           commentId: data.id!,
-        });
+        })
     } finally {
-      router.refresh();
+      router.refresh()
     }
-  };
+  }
   const handleDislike = async () => {
     // 检查登录状态
-    const isAuthenticated = checkAuth();
-    if (!isAuthenticated) return;
+    const isAuthenticated = checkAuth()
+    if (!isAuthenticated) return
 
     try {
-      if (isDisliked) await revokeLike();
+      if (isDisliked) await revokeLike()
       else
         await postDiscussionDiscIdCommentCommentIdDislike({
           discId: disData.uuid!,
           commentId: data.id!,
-        });
+        })
     } finally {
-      router.refresh();
+      router.refresh()
     }
-  };
+  }
 
   return (
     <Box
       sx={{
-        ...(isReply ?
-          {
-            p: { xs: 1.5, sm: 3 },
-            backgroundColor: 'rgba(242, 243, 245, 0.5)',
-            mt: 2,
-            borderRadius: 2,
-            width: '100%',
-          }
+        ...(isReply
+          ? {
+              p: { xs: 1.5, sm: 3 },
+              backgroundColor: '#F6F6FB',
+              mt: 2,
+              borderRadius: 2,
+              width: '100%',
+            }
           : {
-            width: '100%',
-          }),
+              width: '100%',
+            }),
         '&:hover #accept_btn': {
           display: 'block',
         },
@@ -139,34 +125,21 @@ const BaseDiscussCard = (props: {
         direction={{ xs: 'column', sm: 'row' }}
         justifyContent='space-between'
         alignItems={{ xs: 'flex-start', sm: 'center' }}
-        sx={{ mb: 2, pb: 2, borderBottom: '1px solid #eee' }}
+        sx={{ mb: 2, pb: 2, borderBottom: isReply ? 'none' : '1px solid #eee' }}
       >
         <Stack direction='row' gap={1} alignItems='center' sx={{ flex: 1 }}>
-          {data.user_avatar ?
+          {data.user_avatar ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={data.user_avatar}
-              alt='头像'
-              width={28}
-              height={28}
-              style={{ borderRadius: '50%' }}
-            />
-            : <Avatar size={28} />}
+            <img src={data.user_avatar} alt='头像' width={28} height={28} style={{ borderRadius: '50%' }} />
+          ) : (
+            <Avatar size={28} />
+          )}
 
-          <Typography
-            className='text-ellipsis'
-            sx={{
-              fontSize: 16,
-              color: '#000',
-              cursor: 'pointer',
-              '&:hover': {
-                color: 'primary.main',
-              },
-              maxWidth: { xs: 'calc(100% - 82px)', sm: 'auto' },
-            }}
-          >
+          <Typography className='text-ellipsis' variant='subtitle2'>
             {data.user_name}
           </Typography>
+        </Stack>
+        <Stack direction='row' gap={2} alignItems='center' sx={{ mt: { xs: '12px', sm: 0 } }}>
           {/* 已采纳标签 */}
           {data?.accepted && (
             <Stack
@@ -184,19 +157,9 @@ const BaseDiscussCard = (props: {
               }}
             >
               <CheckCircleIcon sx={{ fontSize: 14 }} />
-              <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
-                已采纳
-              </Typography>
+              <Typography sx={{ fontSize: 12, fontWeight: 500 }}>已采纳</Typography>
             </Stack>
           )}
-        </Stack>
-
-        <Stack
-          direction='row'
-          gap={2}
-          alignItems='center'
-          sx={{ mt: { xs: '12px', sm: 0 } }}
-        >
           <Typography
             variant='body2'
             sx={{
@@ -204,16 +167,14 @@ const BaseDiscussCard = (props: {
               color: 'rgba(0,0,0,0.5)',
             }}
           >
-            <time dateTime={dayjs.unix(data.updated_at!).format()} title={dayjs.unix(data.updated_at!).format('YYYY-MM-DD HH:mm:ss')}>
+            <time
+              dateTime={dayjs.unix(data.updated_at!).format()}
+              title={dayjs.unix(data.updated_at!).format('YYYY-MM-DD HH:mm:ss')}
+            >
               更新于 {dayjs.unix(data.updated_at!).fromNow()}
             </time>
           </Typography>
-          <Stack
-            direction='row'
-            gap={2}
-            alignItems='center'
-            sx={{ display: { xs: 'none', sm: 'flex' } }}
-          >
+          <Stack direction='row' gap={2} alignItems='center' sx={{ display: { xs: 'none', sm: 'flex' } }}>
             <Stack
               direction='row'
               alignItems='center'
@@ -225,15 +186,14 @@ const BaseDiscussCard = (props: {
                 py: '1px',
                 cursor: 'pointer',
                 '&:hover': {
-                  background:
-                    isLiked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
+                  background: isLiked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
                 },
               }}
               onClick={() => handleLike()}
             >
               <ThumbUpAltOutlinedIcon
                 sx={{
-                  color: isLiked ? 'primary.main' : 'rgba(0,0,0,0.5)',
+                  color: isLiked ? 'info.main' : 'rgba(0,0,0,0.5)',
                   fontSize: 14,
                 }}
               />
@@ -241,7 +201,7 @@ const BaseDiscussCard = (props: {
                 variant='body2'
                 sx={{
                   fontSize: 14,
-                  color: isLiked ? 'primary.main' : 'rgba(0,0,0,0.5)',
+                  color: isLiked ? 'info.main' : 'rgba(0,0,0,0.5)',
                   lineHeight: '20px',
                 }}
               >
@@ -259,15 +219,14 @@ const BaseDiscussCard = (props: {
                 py: '1px',
                 cursor: 'pointer',
                 '&:hover': {
-                  background:
-                    isDisliked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
+                  background: isDisliked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
                 },
               }}
               onClick={() => handleDislike()}
             >
               <ThumbDownAltOutlinedIcon
                 sx={{
-                  color: isDisliked ? 'primary.main' : 'rgba(0,0,0,0.5)',
+                  color: isDisliked ? 'info.main' : 'rgba(0,0,0,0.5)',
                   fontSize: 14,
                 }}
               />
@@ -276,7 +235,7 @@ const BaseDiscussCard = (props: {
                 sx={{
                   fontSize: 14,
                   lineHeight: '20px',
-                  color: isDisliked ? 'primary.main' : 'rgba(0,0,0,0.5)',
+                  color: isDisliked ? 'info.main' : 'rgba(0,0,0,0.5)',
                 }}
               >
                 {formatNumber(data.dislike || 0)}
@@ -287,7 +246,7 @@ const BaseDiscussCard = (props: {
               <IconButton
                 sx={{ display: { xs: 'none', sm: 'flex' } }}
                 onClick={(e) => {
-                  onOpt(e, data.content || '', data);
+                  onOpt(e, data.content || '', data)
                 }}
               >
                 <MoreVertIcon />
@@ -302,46 +261,63 @@ const BaseDiscussCard = (props: {
           backgroundColor: isReply ? 'transparent !important' : 'inherit',
         }}
       />
-      {!isReply &&
+      {!isReply && !!(data as ModelDiscussionComment)?.replies?.length && (
+        <>
+          <Divider sx={{ my: 2 }} />
+          <Stack direction='row' alignItems='center'>
+            <Typography variant='subtitle2'>评论({(data as ModelDiscussionComment)?.replies?.length})</Typography>
+            {/* 折叠/展开评论按钮 */}
+            <IconButton size='small' sx={{ ml: 1 }} onClick={() => setRepliesCollapsed?.((prev: boolean) => !prev)}>
+              {repliesCollapsed ? (
+                <span style={{ display: 'flex', alignItems: 'center' }}>
+                  <svg width='20' height='20' viewBox='0 0 24 24'>
+                    <path fill='currentColor' d='M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z' />
+                  </svg>
+                </span>
+              ) : (
+                <span style={{ display: 'flex', alignItems: 'center' }}>
+                  <svg width='20' height='20' viewBox='0 0 24 24'>
+                    <path fill='currentColor' d='M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6z' />
+                  </svg>
+                </span>
+              )}
+            </IconButton>
+          </Stack>
+        </>
+      )}
+      {!repliesCollapsed &&
+        !isReply &&
         (data as ModelDiscussionComment)?.replies?.map((it) => (
-          <BaseDiscussCard
-            isReply
-            key={it.id}
-            data={it}
-            disData={disData}
-            onOpt={onOpt}
-            index={1}
-          />
+          <BaseDiscussCard isReply key={it.id} data={it} disData={disData} onOpt={onOpt} index={1} />
         ))}
     </Box>
-  );
-};
+  )
+}
 
 const DiscussCard = (props: any) => {
-  const idKey = useId();
-  const { id }: { id: string } = useParams();
-  const { user } = useContext(AuthContext);
-  const { checkAuth } = useAuthCheck();
-  const [comment, setComment] = useState('');
-  const router = useRouter();
-  const [mdEditShow, setMdEditShow] = useState(false);
+  const { id }: { id: string } = useParams()
+  const { user } = useContext(AuthContext)
+  const { checkAuth } = useAuthCheck()
+  const [comment, setComment] = useState('')
+  const router = useRouter()
+  const [mdEditShow, setMdEditShow] = useState(false)
 
   // 检查登录状态，未登录则跳转到登录页
   const checkLoginAndFocus = () => {
-    return checkAuth(() => setMdEditShow(true));
-  };
+    return checkAuth(() => setMdEditShow(true))
+  }
   const onSubmit = async () => {
     await postDiscussionDiscIdComment(
       { discId: id },
       {
         content: comment,
         comment_id: props.data.id,
-      }
-    );
-    setComment('');
-    setMdEditShow(false);
-    router.refresh();
-  };
+      },
+    )
+    setComment('')
+    setMdEditShow(false)
+    router.refresh()
+  }
 
   return (
     <Card
@@ -361,11 +337,11 @@ const DiscussCard = (props: any) => {
           <EditorWrap
             detail={{
               id: 'reply-editor',
-              name: '回复',
+              name: '评论',
               content: comment,
             }}
             onSave={async () => {
-              await onSubmit();
+              await onSubmit()
             }}
             onCancel={() => setMdEditShow(false)}
             onContentChange={setComment}
@@ -375,119 +351,87 @@ const DiscussCard = (props: any) => {
           fullWidth
           size='small'
           sx={{ display: mdEditShow ? 'none' : 'block' }}
-          placeholder={user?.uid ? '回复' : '请先登录后回复'}
+          placeholder={user?.uid ? '评论' : '请先登录后评论'}
           onFocus={checkLoginAndFocus}
         />
       </Box>
     </Card>
-  );
-};
+  )
+}
 
 const Content = (props: { data: ModelDiscussionDetail }) => {
-  const { data } = props;
-  const { id }: { id: string } = useParams();
-  const { user } = useContext(AuthContext);
-  const { checkAuth } = useAuthCheck();
-  const router = useRouter();
-  const [comment, setComment] = useState('');
-  const [commentIndex, setCommentIndex] = useState<
-    ModelDiscussionComment | ModelDiscussionReply | null
-  >(null);
-  const [editCommentModalVisible, setEditCommentModalVisible] = useState(false);
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const open = Boolean(anchorEl);
-  const [mdEditShow, setMdEditShow] = useState(false);
+  const { data } = props
+  const { id }: { id: string } = useParams()
+  const router = useRouter()
+  const [commentIndex, setCommentIndex] = useState<ModelDiscussionComment | ModelDiscussionReply | null>(null)
+  const [editCommentModalVisible, setEditCommentModalVisible] = useState(false)
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
+  const open = Boolean(anchorEl)
 
-  // 检查登录状态，未登录则跳转到登录页
-  const checkLoginAndFocusMain = () => {
-    return checkAuth(() => setMdEditShow(true));
-  };
   const handleClick = (
     event: React.MouseEvent<HTMLButtonElement>,
-    comment: SvcCommentUpdateReq,
-    index: ModelDiscussionComment | ModelDiscussionReply
+    _comment: SvcCommentUpdateReq,
+    index: ModelDiscussionComment | ModelDiscussionReply,
   ) => {
-    setAnchorEl(event.currentTarget);
-    setCommentIndex(index);
-  };
+    setAnchorEl(event.currentTarget)
+    setCommentIndex(index)
+  }
   const handleClose = () => {
-    setAnchorEl(null);
-  };
-  const onCommentSubmit = async () => {
-    await postDiscussionDiscIdComment(
-      { discId: id },
-      {
-        content: comment,
-      }
-    );
-    setComment('');
-    router.refresh();
-  };
+    setAnchorEl(null)
+  }
   const onSubmit = (comment: string) => {
     // @ts-ignore
     return putDiscussionDiscIdCommentCommentId(
       { discId: id, commentId: commentIndex?.id! },
       {
         content: comment,
-      }
+      },
     ).then(() => {
-      router.refresh();
-      setComment('');
-      setEditCommentModalVisible(false);
-    });
-  };
+      router.refresh()
+      setEditCommentModalVisible(false)
+    })
+  }
   const handleDelete = () => {
-    setAnchorEl(null);
+    setAnchorEl(null)
     Modal.confirm({
       title: '确定删除吗？',
       okButtonProps: { color: 'error' },
       onOk: async () => {
-        if (!commentIndex) return;
+        if (!commentIndex) return
         await deleteDiscussionDiscIdCommentCommentId({
           discId: data.uuid!,
           commentId: commentIndex.id!,
-        });
-        router.refresh();
+        })
+        router.refresh()
       },
-    });
-  };
+    })
+  }
   const handleAccept = () => {
     Modal.confirm({
       title: '确定采纳吗？',
       okButtonProps: { color: 'info' },
       onOk: async () => {
-        if (!commentIndex) return;
+        if (!commentIndex) return
         await postDiscussionDiscIdCommentCommentIdAccept({
           discId: data.uuid!,
           commentId: commentIndex.id!,
-        });
-        router.refresh();
+        })
+        router.refresh()
       },
-    });
-  };
+    })
+  }
   const handleEditComment = () => {
-    setEditCommentModalVisible(true);
-    setAnchorEl(null);
-  };
+    setEditCommentModalVisible(true)
+    setAnchorEl(null)
+  }
   return (
     <Stack id='comment-card' gap={3} sx={{ width: { xs: '100%' } }}>
-      <Menu
-        id='basic-menu'
-        anchorEl={anchorEl}
-        open={open}
-        onClose={handleClose}
-      >
-        {commentIndex?.user_id == data.current_user_id && (
-          <MenuItem onClick={handleEditComment}>编辑</MenuItem>
+      <Menu id='basic-menu' anchorEl={anchorEl} open={open} onClose={handleClose}>
+        {commentIndex?.user_id == data.current_user_id && <MenuItem onClick={handleEditComment}>编辑</MenuItem>}
+        {commentIndex?.user_id == data.current_user_id && <MenuItem onClick={handleDelete}>删除</MenuItem>}
+        {data?.user_id == data.current_user_id && !data.comments?.[0]?.accepted && (commentIndex as any)?.replies && (
+          <MenuItem onClick={handleAccept}>采纳</MenuItem>
         )}
-        {commentIndex?.user_id == data.current_user_id && (
-          <MenuItem onClick={handleDelete}>删除</MenuItem>
-        )}
-        {data?.user_id == data.current_user_id &&
-          !data.comments?.[0]?.accepted &&
-          (commentIndex as any)?.replies && (
-            <MenuItem onClick={handleAccept}>采纳</MenuItem>
-          )}
       </Menu>
       <EditCommentModal
         open={editCommentModalVisible}
@@ -496,43 +440,10 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         onClose={() => setEditCommentModalVisible(false)}
       />
       {data.comments?.map((it, index) => (
-        <DiscussCard
-          data={it}
-          index={index}
-          key={it.id}
-          disData={data}
-          onOpt={handleClick}
-        />
+        <DiscussCard data={it} index={index} key={it.id} disData={data} onOpt={handleClick} />
       ))}
-
-      <Card sx={{ minHeight: 200 }}>
-        <Box sx={{ display: mdEditShow ? 'block' : 'none' }}>
-          <EditorWrap
-            detail={{
-              id: 'main-comment-editor',
-              name: '回答问题',
-              content: comment,
-            }}
-            onSave={async () => {
-              await onCommentSubmit();
-            }}
-            onCancel={() => setMdEditShow(false)}
-            onContentChange={setComment}
-          />
-        </Box>
-        <OutlinedInput
-          fullWidth
-          size='small'
-          sx={{
-            display: mdEditShow ? 'none' : 'block',
-            minHeight: '100%',
-          }}
-          placeholder={user?.uid ? '回答问题' : '请先登录后回答问题'}
-          onFocus={checkLoginAndFocusMain}
-        />
-      </Card>
     </Stack>
-  );
-};
+  )
+}
 
-export default Content;
+export default Content
