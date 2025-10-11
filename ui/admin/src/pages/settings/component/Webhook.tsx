@@ -158,7 +158,7 @@ const Notification = () => {
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
-                  <Typography variant="body1" sx={{ fontWeight: 500, minWidth: 120 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 500, minWidth: 120 }}>
                     {item.name}
                   </Typography>
                   <Box

@@ -117,19 +117,7 @@ const Sidebar = () => {
           window.location.href = '/';
         }}
       >
-        <Icon type="icon-koala_flat" sx={{ fontSize: '30px' }}></Icon>
-        <Box
-          sx={{
-            fontSize: '16px',
-            fontWeight: 'bold',
-            textAlign: 'center',
-            '&:first-letter': {
-              color: 'info.main',
-            },
-          }}
-        >
-          Koala QA
-        </Box>
+        <img src="logo-text.png" width={130} />
       </Stack>
 
       <Stack sx={{ pt: 2, flexGrow: 1 }} gap={1}>

@@ -206,7 +206,7 @@ const LoginMethod: React.FC = () => {
 
   return (
     <Card sx={{ mb: 2 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center">
         <Typography
           sx={{
             fontSize: 14,
@@ -230,7 +230,7 @@ const LoginMethod: React.FC = () => {
             </Button>
           )}
         </Box>
-      </Box>
+      </Stack>
 
       <Box component="form" onSubmit={handleSubmit(onSubmit)}>
         <Stack>
@@ -259,7 +259,7 @@ const LoginMethod: React.FC = () => {
           {/* 公开访问开关 */}
           <Box display="flex" alignItems="center">
             <Typography variant="body2" sx={{ mr: 2, minWidth: 160 }}>
-              公开访问
+              允许公开访问
             </Typography>
             <Controller
               name="public_access"
@@ -323,25 +323,6 @@ const LoginMethod: React.FC = () => {
                                 >
                                   {option?.label}
                                 </Typography>
-                                <IconButton
-                                  size="small"
-                                  onClick={e => {
-                                    e.stopPropagation();
-                                    handleRemoveAuthType(value);
-                                  }}
-                                  sx={{
-                                    padding: '2px',
-                                    ml: 0.5,
-                                    bgcolor: '#ccc',
-                                    color: 'white',
-                                    height: '12px',
-                                    fontSize: '14px',
-                                    lineHeight: '15px',
-                                    flexShrink: 0,
-                                  }}
-                                >
-                                  ×
-                                </IconButton>
                               </Box>
                             );
                           })}
