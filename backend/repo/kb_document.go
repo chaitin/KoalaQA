@@ -5,6 +5,7 @@ import (
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/database"
+	"github.com/chaitin/koalaqa/pkg/util"
 	"gorm.io/gorm/clause"
 )
 
@@ -17,11 +18,17 @@ func (d *KBDocument) GetByID(ctx context.Context, res any, kbID uint, docID uint
 	return d.model(ctx).Where("kb_id = ? and id = ?", kbID, docID).Scopes(o.Scopes()...).First(res).Error
 }
 
-func (d *KBDocument) GetByRagIDs(ctx context.Context, res any, ids []string) error {
-	return d.model(ctx).
+func (d *KBDocument) GetByRagIDs(ctx context.Context, ids []string) ([]model.KBDocument, error) {
+	var docs []model.KBDocument
+	if err := d.model(ctx).
 		Where("rag_id in (?)", ids).
-		Order("id desc").
-		Find(res).Error
+		Find(&docs).Error; err != nil {
+		return nil, err
+	}
+	docs = util.SortByKeys(docs, ids, func(doc model.KBDocument) string {
+		return doc.RagID
+	})
+	return docs, nil
 }
 
 func (d *KBDocument) CreateOnIDConflict(ctx context.Context, res any) error {
