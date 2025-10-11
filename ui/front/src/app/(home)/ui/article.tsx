@@ -1,12 +1,11 @@
 'use client'
 import { getDiscussion } from '@/api'
 import { GetDiscussionParams, ModelDiscussion, ModelGroupItemInfo, ModelGroupWithItem, ModelListRes } from '@/api/types'
-import { Card, CusTabs, Icon } from '@/components'
+import { Card, CusTabs } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import { CommonContext } from '@/components/commonProvider'
 import { ReleaseModal } from '@/components/discussion'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
-import ArrowCircleRightRoundedIcon from '@mui/icons-material/ArrowCircleRightRounded'
 import SearchIcon from '@mui/icons-material/Search'
 import { Box, Button, Divider, InputAdornment, OutlinedInput, Stack, Typography } from '@mui/material'
 import { useBoolean } from 'ahooks'
@@ -95,6 +94,7 @@ const Article = ({
 
   const onInputSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
+      console.log('----')
       redirect(`/?sort=${searchParams.get('sort')}&search=${search}`)
     }
   }

@@ -122,9 +122,7 @@ const DragBrand = () => {
         <Typography
           variant="subtitle2"
           sx={{
-            width: 156,
             fontSize: 14,
-            lineHeight: '32px',
             flexShrink: 0,
             my: 1,
           }}
