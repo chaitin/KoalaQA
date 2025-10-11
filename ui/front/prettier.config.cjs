@@ -1,5 +1,4 @@
 module.exports = {
-  parser: 'typescript',
   printWidth: 120,
   tabWidth: 2,
   useTabs: false,
@@ -19,3 +18,4 @@ module.exports = {
   htmlWhitespaceSensitivity: 'css',
   endOfLine: 'lf',
 }
+

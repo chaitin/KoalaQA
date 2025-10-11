@@ -1,18 +1,22 @@
 /** @type {import('next').NextConfig} */
 
-
 const nextConfig = {
-  // output: 'export',
-  reactStrictMode: false,
+  // 开启严格模式以发现潜在问题
+  reactStrictMode: true,
+  
+  // 生产环境使用 standalone 输出
   output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
-  productionBrowserSourceMaps: true,
+  
+  // 生产环境不暴露 source maps（安全考虑）
+  productionBrowserSourceMaps: false,
+  
+  // 图片优化配置
   images: {
-    // 允许加载本地图片
-    unoptimized: true,
+    // 开发环境可以 unoptimized，生产环境应该优化
+    unoptimized: process.env.NODE_ENV === 'development',
     
     // 配置远程图片域名白名单
     remotePatterns: [
-      // 添加开发环境可能需要的本地域名
       {
         protocol: 'http',
         hostname: 'localhost',
@@ -24,8 +28,8 @@ const nextConfig = {
     // 设置图片格式支持
     formats: ['image/webp', 'image/avif'],
     
-    // 设置图片大小限制
-    dangerouslyAllowSVG: false,
+    // SVG 安全配置
+    dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;"
   },
   
@@ -42,7 +46,7 @@ const nextConfig = {
         ...[
           {
             source: '/api/:path*',
-            destination: 'http://10.10.6.234:8080/api/:path*',
+            destination: 'http://10.9.35.17:8090/api/:path*',
             basePath: false
           }
         ]

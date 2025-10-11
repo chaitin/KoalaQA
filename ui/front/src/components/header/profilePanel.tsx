@@ -22,7 +22,7 @@ import { clearAuthData } from '@/api/httpClient';
 export const OPT_LIST = [
   {
     name: '个人中心',
-    icon: 'icon-gerenzhongxin',
+    icon: 'icon-iconfontgerenzhongxin',
     link: '/profile',
   },
 ];
