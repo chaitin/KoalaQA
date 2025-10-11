@@ -105,8 +105,8 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 	for _, chunk := range chunks {
 		docIds = append(docIds, chunk.DocID)
 	}
-	var docs []model.KBDocument
-	if err := q.repo.GetByRagIDs(ctx, &docs, docIds); err != nil {
+	docs, err := q.repo.GetByRagIDs(ctx, docIds)
+	if err != nil {
 		logger.WithErr(err).Warn("get docs failed")
 		return nil
 	}
