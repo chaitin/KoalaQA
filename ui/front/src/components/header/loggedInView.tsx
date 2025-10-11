@@ -1,11 +1,11 @@
-'use client';
-import { AuthContext } from '@/components/authProvider';
-import { Stack, Typography, Box, Tooltip, Badge, Button } from '@mui/material';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import { Avatar } from '@/components/discussion';
-import React, { useContext, useEffect, useState, useRef } from 'react';
-import ProfilePanel from './profilePanel';
-import { useRouter } from 'next/navigation';
+'use client'
+import { AuthContext } from '@/components/authProvider'
+import { Avatar } from '@/components/discussion'
+import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined'
+import { Badge, Box, Button, Stack, Tooltip, Typography } from '@mui/material'
+import { useRouter } from 'next/navigation'
+import React, { useContext, useEffect, useRef, useState } from 'react'
+import ProfilePanel from './profilePanel'
 
 enum MsgNotifyType {
   MsgNotifyTypeUnknown,
@@ -19,128 +19,128 @@ enum MsgNotifyType {
 const getNotificationText = (info: MessageNotifyInfo): string => {
   switch (info.type) {
     case MsgNotifyType.MsgNotifyTypeReplyDiscuss:
-      return '回答了你的问题';
+      return '回答了你的问题'
     case MsgNotifyType.MsgNotifyTypeReplyComment:
-      return '回复了你的回答';
+      return '回复了你的回答'
     case MsgNotifyType.MsgNotifyTypeApplyComment:
-      return '采纳了你的回答';
+      return '采纳了你的回答'
     case MsgNotifyType.MsgNotifyTypeLikeComment:
-      return '赞同了你的回答';
+      return '赞同了你的回答'
     case MsgNotifyType.MsgNotifyTypeDislikeComment:
-      return info?.to_bot ? '不喜欢机器人的回答' : '不喜欢你的回答';
+      return info?.to_bot ? '不喜欢机器人的回答' : '不喜欢你的回答'
     case MsgNotifyType.MsgNotifyTypeBotUnknown:
-      return '提出了机器人无法回答的问题';
+      return '提出了机器人无法回答的问题'
     default:
-      return '';
+      return ''
   }
-};
+}
 
 type MessageNotifyInfo = {
-  discuss_id: number;
-  discuss_title: string;
-  discuss_uuid: string;
-  type: MsgNotifyType;
-  from_id: number;
-  from_name: string;
-  from_bot: boolean;
-  to_id: number;
-  to_name: string;
-  to_bot: boolean;
-  id: Number;
-};
+  discuss_id: number
+  discuss_title: string
+  discuss_uuid: string
+  type: MsgNotifyType
+  from_id: number
+  from_name: string
+  from_bot: boolean
+  to_id: number
+  to_name: string
+  to_bot: boolean
+  id: Number
+}
 export interface LoggedInProps {
-  user: any | null;
-  verified?: boolean;
+  user: any | null
+  verified?: boolean
 }
 
 const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
-  const { user: contextUser } = useContext(AuthContext);
-  const user = propUser || contextUser;
-  const [notifications, setNotifications] = useState<MessageNotifyInfo[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const router = useRouter();
+  const { user: contextUser } = useContext(AuthContext)
+  const user = propUser || contextUser
+  const [notifications, setNotifications] = useState<MessageNotifyInfo[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const router = useRouter()
   // 保存 ws 实例的 ref
-  const wsRef = useRef<WebSocket | null>(null);
+  const wsRef = useRef<WebSocket | null>(null)
   // 保存 ping 定时器的 ref
-  const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     // 确保在客户端环境中执行
-    if (typeof window === 'undefined') return;
-    
-    const token = localStorage.getItem('auth_token');
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const url = new URL('/api/user/notify', window.location.href);
-    url.protocol = wsProtocol;
-    const wsUrlBase = url.toString();
-    const wsUrl = token ? `${wsUrlBase}` : wsUrlBase;
-    const ws = new WebSocket(wsUrl);
+    if (typeof window === 'undefined') return
+
+    const token = localStorage.getItem('auth_token')
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const url = new URL('/api/user/notify', window.location.href)
+    url.protocol = wsProtocol
+    const wsUrlBase = url.toString()
+    const wsUrl = token ? `${wsUrlBase}` : wsUrlBase
+    const ws = new WebSocket(wsUrl)
     // 保存 ws 实例
-    wsRef.current = ws;
+    wsRef.current = ws
 
     ws.onmessage = (event) => {
-      const message = JSON.parse(event.data);
+      const message = JSON.parse(event.data)
 
       switch (message.type) {
         case 1: // 未读数量
-          setUnreadCount(message.data as number);
-          break;
+          setUnreadCount(message.data as number)
+          break
         case 3: // 消息内容
-          const newNotification = message.data as MessageNotifyInfo;
-          setNotifications((prev) => [newNotification, ...prev]);
-          ws.send(JSON.stringify({ type: 1 }));
-          break;
+          const newNotification = message.data as MessageNotifyInfo
+          setNotifications((prev) => [newNotification, ...prev])
+          ws.send(JSON.stringify({ type: 1 }))
+          break
       }
-    };
+    }
 
     // 连接建立后请求未读消息数
     ws.onopen = () => {
-      ws.send(JSON.stringify({ type: 1 }));
+      ws.send(JSON.stringify({ type: 1 }))
 
       // 启动 ping 定时器，每30秒发送一次 ping
       pingIntervalRef.current = setInterval(() => {
         if (ws.readyState === WebSocket.OPEN) {
           // 发送 ping 消息，使用 type: 'ping' 作为心跳标识
-          ws.send(JSON.stringify({ type: 4 }));
+          ws.send(JSON.stringify({ type: 4 }))
         }
-      }, 30000); // 30秒
-    };
+      }, 30000) // 30秒
+    }
     // 添加错误处理和重连逻辑
     ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
+      console.error('WebSocket error:', error)
+    }
 
     ws.onclose = (event) => {
-      console.log('WebSocket closed:', event.code, event.reason);
+      console.log('WebSocket closed:', event.code, event.reason)
       // 清理 ping 定时器
       if (pingIntervalRef.current) {
-        clearInterval(pingIntervalRef.current);
-        pingIntervalRef.current = null;
+        clearInterval(pingIntervalRef.current)
+        pingIntervalRef.current = null
       }
-    };
+    }
 
     return () => {
       // 清理 ping 定时器
       if (pingIntervalRef.current) {
-        clearInterval(pingIntervalRef.current);
-        pingIntervalRef.current = null;
+        clearInterval(pingIntervalRef.current)
+        pingIntervalRef.current = null
       }
-      ws.close();
-      wsRef.current = null;
-    };
-  }, []);
+      ws.close()
+      wsRef.current = null
+    }
+  }, [])
 
   const handleNotificationClick = (notification: MessageNotifyInfo) => {
     // 使用已存在的 ws 连接
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: 2, id: notification.id }));
+      wsRef.current.send(JSON.stringify({ type: 2, id: notification.id }))
 
       // 更新UI
-      setUnreadCount((c) => Math.max(0, c - 1));
-      setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
-      router.push(`/discuss/${notification.discuss_uuid}`);
+      setUnreadCount((c) => Math.max(0, c - 1))
+      setNotifications((prev) => prev.filter((n) => n.id !== notification.id))
+      router.push(`/discuss/${notification.discuss_uuid}`)
     }
-  };
+  }
 
   return (
     <>
@@ -166,11 +166,10 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
         }}
         title={
           <Stack spacing={1} sx={{ maxHeight: 400, overflowY: 'auto' }}>
-            {notifications.length === 0 ?
-              <Box sx={{ p: 2, textAlign: 'center', color: 'text.secondary' }}>
-                暂无通知
-              </Box>
-            : notifications.map((notification, index) => (
+            {notifications.length === 0 ? (
+              <Box sx={{ p: 2, textAlign: 'center', color: 'text.secondary' }}>暂无通知</Box>
+            ) : (
+              notifications.map((notification, index) => (
                 <Stack
                   key={index}
                   sx={{
@@ -186,10 +185,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
                   alignItems='center'
                 >
                   <Box onClick={() => handleNotificationClick(notification)}>
-                    <Typography
-                      variant='body1'
-                      sx={{ display: 'inline', pr: 1 }}
-                    >
+                    <Typography variant='body1' sx={{ display: 'inline', pr: 1 }}>
                       {notification.from_name}
                     </Typography>
                     <Typography sx={{ display: 'inline' }} variant='caption'>
@@ -199,19 +195,12 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
 
                   <Button
                     onClick={(e) => {
-                      e.stopPropagation();
-                      if (
-                        wsRef.current &&
-                        wsRef.current.readyState === WebSocket.OPEN
-                      ) {
-                        wsRef.current.send(
-                          JSON.stringify({ type: 2, id: notification.id })
-                        );
+                      e.stopPropagation()
+                      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                        wsRef.current.send(JSON.stringify({ type: 2, id: notification.id }))
                       }
-                      setUnreadCount((c) => Math.max(0, c - 1));
-                      setNotifications((prev) =>
-                        prev.filter((n) => n.id !== notification.id)
-                      );
+                      setUnreadCount((c) => Math.max(0, c - 1))
+                      setNotifications((prev) => prev.filter((n) => n.id !== notification.id))
                     }}
                     sx={{
                       ml: 1,
@@ -225,7 +214,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
                   </Button>
                 </Stack>
               ))
-            }
+            )}
           </Stack>
         }
       >
@@ -235,6 +224,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
           sx={{
             '& .MuiBadge-badge': {
               backgroundColor: '#FF3B30',
+              display: !!unreadCount ? 'block' : 'none',
               minWidth: 20,
               height: 20,
               borderRadius: 10,
@@ -253,7 +243,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: '#F4F8FF',
+              backgroundColor: '#fff',
               transition: 'background .18s, transform .08s',
               cursor: 'pointer',
               '&:hover': {
@@ -263,7 +253,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
               '&:active': { transform: 'translateY(0)' },
             }}
           >
-            <NotificationsIcon sx={{ color: '#0B5FFF' }} />
+            <NotificationsNoneOutlinedIcon sx={{ color: '#000' }} />
           </Box>
         </Badge>
       </Tooltip>
@@ -292,10 +282,10 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
           {/* 头像：浅蓝色渐变背景，悬停有阴影 */}
           <Box
             sx={{
-              width: 36,
-              height: 36,
+              width: 44,
+              height: 44,
               borderRadius: '50%',
-              background: 'linear-gradient(180deg, #F5FAFF 0%, #EDF6FF 100%)',
+              background: '#fff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -312,7 +302,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
         </Box>
       </Tooltip>
     </>
-  );
-};
+  )
+}
 
-export default LoggedInView;
+export default LoggedInView

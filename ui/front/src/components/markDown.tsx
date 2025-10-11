@@ -1,12 +1,12 @@
 'use client';
 import React, { useState } from 'react';
 import { SxProps } from '@mui/material/styles';
-import { Box } from '@mui/material';
+import { Box, Dialog, IconButton } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 import rehypeRaw from 'rehype-raw';
-import { Image } from 'antd';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import { anOldHope } from 'react-syntax-highlighter/dist/esm/styles/hljs';
@@ -45,22 +45,58 @@ const MarkDown: React.FC<MarkDownProps> = (props) => {
       className='markdown-body'
       id='markdown-body'
     >
-      {previewSrc && (
-        <Image
-          alt='markdown-img'
-          width={0}
-          height={0}
-          style={{ display: 'none' }}
-          src={previewSrc}
-          preview={{
-            visible,
-            src: previewSrc,
-            onVisibleChange: (value) => {
-              setVisible(value);
+      {/* 图片预览 Dialog */}
+      <Dialog
+        open={visible}
+        onClose={() => setVisible(false)}
+        maxWidth="lg"
+        fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            boxShadow: 'none',
+          },
+        }}
+      >
+        <IconButton
+          onClick={() => setVisible(false)}
+          sx={{
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: 'white',
+            zIndex: 1,
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
             },
           }}
-        />
-      )}
+        >
+          <CloseIcon />
+        </IconButton>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            p: 2,
+            minHeight: '400px',
+          }}
+        >
+          {previewSrc && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={previewSrc}
+              alt="preview"
+              style={{
+                maxWidth: '100%',
+                maxHeight: '80vh',
+                objectFit: 'contain',
+              }}
+            />
+          )}
+        </Box>
+      </Dialog>
 
       {/* 如果需要截断，直接显示纯文本，否则正常渲染Markdown */}
       {truncateLength > 0 ? (
@@ -76,7 +112,7 @@ const MarkDown: React.FC<MarkDownProps> = (props) => {
             ],
           ]}
           components={{
-            h1: ({ node, ...props }) => <h2 {...props} />,
+            h1: ({ ...props }) => <h2 {...props} />,
             img: (props) => {
               const { style, src } = props;
               return src ? (
@@ -100,11 +136,12 @@ const MarkDown: React.FC<MarkDownProps> = (props) => {
               ) : null;
             },
             code(props) {
-              const { children, className, node, ...rest } = props;
+              const { children, className, ...rest } = props;
               const match = /language-(\w+)/.exec(className || '');
               return match ? (
                 <SyntaxHighlighter
                   showLineNumbers
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   {...(rest as any)}
                   language={match[1] || 'bash'}
                   style={anOldHope}

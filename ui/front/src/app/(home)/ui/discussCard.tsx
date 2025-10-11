@@ -1,42 +1,35 @@
-import { ModelDiscussionListItem } from "@/api/types";
-import { Card, MatchedString, Title } from "@/app/(banner)/s/ui/common";
-import { Icon, MarkDown } from "@/components";
-import { CommonContext } from "@/components/commonProvider";
-import { Avatar, Tag } from "@/components/discussion";
-import ChatIcon from '@mui/icons-material/ChatTwoTone';
-import { Box, Chip, Stack, Typography } from "@mui/material";
-import dayjs from "dayjs";
-import "dayjs/locale/zh-cn";
-import relativeTime from "dayjs/plugin/relativeTime";
-import Image from "next/image";
-import { useContext, useMemo } from "react";
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { formatNumber } from "@/utils";
+import { ModelDiscussionListItem } from '@/api/types'
+import { Card, MatchedString, Title } from '@/app/(banner)/s/ui/common'
+import { Icon, MarkDown } from '@/components'
+import { CommonContext } from '@/components/commonProvider'
+import { Avatar, Tag } from '@/components/discussion'
+import { formatNumber } from '@/utils'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import { Box, Chip, Stack, Typography } from '@mui/material'
+import dayjs from 'dayjs'
+import 'dayjs/locale/zh-cn'
+import relativeTime from 'dayjs/plugin/relativeTime'
+import Image from 'next/image'
+import { useContext, useMemo } from 'react'
 
-dayjs.extend(relativeTime);
-dayjs.locale("zh-cn");
+dayjs.extend(relativeTime)
+dayjs.locale('zh-cn')
 
-const DiscussCard = ({
-  data,
-  keywords,
-}: {
-  data: ModelDiscussionListItem;
-  keywords?: string;
-}) => {
-  const it = data;
-  const { groups } = useContext(CommonContext);
+const DiscussCard = ({ data, keywords }: { data: ModelDiscussionListItem; keywords?: string }) => {
+  const it = data
+  const { groups } = useContext(CommonContext)
 
   // 根据group_ids获取分组名称
   const groupNames = useMemo(() => {
-    if (!it.group_ids || !groups.flat.length) return [];
+    if (!it.group_ids || !groups.flat.length) return []
 
     return it.group_ids
       .map((groupId) => {
-        const group = groups.flat.find((g) => g.id === groupId);
-        return group?.name;
+        const group = groups.flat.find((g) => g.id === groupId)
+        return group?.name
       })
-      .filter(Boolean) as string[];
-  }, [it.group_ids, groups.flat]);
+      .filter(Boolean) as string[]
+  }, [it.group_ids, groups.flat])
 
   return (
     <Card
@@ -45,34 +38,45 @@ const DiscussCard = ({
         boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
         cursor: 'auto',
         display: { xs: 'none', sm: 'block' },
+        borderRadius: 2,
+        p: 3,
+        mb: 1,
+        '&:hover': {
+          boxShadow: 'rgba(0, 28, 85, 0.08) 0px 8px 20px 0px',
+        },
       }}
     >
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        gap={1}
-        sx={{ mb: 1 }}
-      >
+      {/* 标题和状态 */}
+      <Stack direction='row' justifyContent='space-between' alignItems='flex-start' sx={{ mb: 2 }}>
         <Stack
-          direction="row"
-          alignItems="center"
+          direction='row'
+          alignItems='center'
           gap={1}
           sx={{
-            width: "calc(100% - 248px)",
-            "&:hover": {
-              ".title": {
-                color: "primary.main",
+            flex: 1,
+            '&:hover': {
+              '.title': {
+                color: 'primary.main',
               },
             },
           }}
         >
           <Title
-            className="title text-ellipsis"
+            className='title'
             href={`/discuss/${it.uuid}`}
-            target="_blank"
+            target='_blank'
+            sx={{
+              fontSize: 16,
+              fontWeight: 500,
+              lineHeight: 1.4,
+              color: '#000',
+              textDecoration: 'none',
+              '&:hover': {
+                color: 'primary.main',
+              },
+            }}
           >
-            {it.title || ""}
+            {it.title || '从思源导出文档到 PandaWiki 怎么做?'}
           </Title>
           {data?.resolved && (
             <Stack
@@ -87,261 +91,214 @@ const DiscussCard = ({
                 borderRadius: 1,
                 fontSize: 12,
                 fontWeight: 500,
+                ml: 1,
               }}
             >
               <CheckCircleIcon sx={{ fontSize: 14 }} />
-              <Typography sx={{ fontSize: 12, fontWeight: 500 }}>
-                已解决
-              </Typography>
+              <Typography sx={{ fontSize: 12, fontWeight: 500 }}>已解决</Typography>
             </Stack>
           )}
         </Stack>
-        <Stack
-          direction="row"
-          justifyContent={"flex-end"}
-          alignItems="center"
-          gap={2}
-          sx={{ color: "#666", width: 240, flexShrink: 0 }}
-        >
-          <Stack direction="row" alignItems="center" gap={1}>
-            <Typography
-              variant="body2"
-              sx={{ fontSize: 12, lineHeight: 1, color: "rgba(0,0,0,0.5)" }}
-            >
-              <time dateTime={dayjs.unix(it.updated_at!).format()} title={dayjs.unix(it.updated_at!).format('YYYY-MM-DD HH:mm:ss')}>
-                更新于 {dayjs.unix(it.updated_at!).fromNow()}
-              </time>
-            </Typography>
-          </Stack>
-          <Stack direction="row" alignItems="center" gap={1}>
-            {it.user_avatar ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={it.user_avatar}
-                width={16}
-                height={16}
-                style={{ borderRadius: "50%" }}
-                alt="头像"
-              />
-            ) : (
-              <Avatar size={16} />
-            )}
 
-            <Typography
-              variant="body2"
-              className="text-ellipsis"
-              sx={{
-                maxWidth: 90,
-                fontSize: 12,
-                mt: "1px",
-                color: "rgba(0,0,0,0.5)",
-                "&:hover": {
-                  cursor: "pointer",
-                  color: "primary.main",
-                },
-              }}
-            >
-              {it.user_name}
-            </Typography>
-          </Stack>
+        {/* 用户信息和时间 */}
+        <Stack direction='row' alignItems='center' gap={1} sx={{ color: '#666', flexShrink: 0, ml: 2 }}>
+          {it.user_avatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={it.user_avatar} width={20} height={20} style={{ borderRadius: '50%' }} alt='头像' />
+          ) : (
+            <Avatar size={20} />
+          )}
+          <Typography
+            variant='body2'
+            sx={{
+              fontSize: 12,
+              color: 'rgba(0,0,0,0.6)',
+            }}
+          >
+            {it.user_name}
+          </Typography>
+          <Typography variant='body2' sx={{ fontSize: 12, color: 'rgba(0,0,0,0.5)' }}>
+            {dayjs.unix(it.updated_at!).fromNow()}
+          </Typography>
         </Stack>
       </Stack>
-      <Box
-        sx={{ fontSize: 12, lineHeight: 1, mb: 1, color: "rgba(0,0,0,0.5)" }}
-      >
-        <MarkDown
-          content={it.content}
-          truncateLength={100} // 设置截断长度为100个字符，根据需要调整
-        />
-      </Box>
-
-      <Stack direction="row" justifyContent="space-between">
-        <Stack direction="row" gap={2} flexWrap="wrap" alignItems="center">
+      <MarkDown
+        content={it.content}
+        truncateLength={100} // 设置截断长度为100个字符，根据需要调整
+      />
+      {/* 底部标签和评论数 */}
+      <Stack direction='row' justifyContent='space-between' alignItems='center'>
+        <Stack direction='row' gap={1} flexWrap='wrap' alignItems='center'>
           {/* 分组标签 */}
-          {groupNames.map((groupName) => (
-            <Chip
-              key={groupName}
-              label={groupName}
-              size="small"
-              sx={{
-                backgroundColor: "rgba(76, 175, 80, 0.1)",
-                color: "#4CAF50",
-                fontSize: "12px",
-                height: "24px",
-                "& .MuiChip-label": {
-                  px: 1,
-                },
-              }}
-            />
-          ))}
+          {groupNames.map((groupName, index) => {
+            const colors = ['#206CFF', '#FFA726', '#9C27B0', '#4CAF50']
+            const color = colors[index % colors.length]
+            return (
+              <Chip
+                key={groupName}
+                label={groupName}
+                size='small'
+                sx={{
+                  backgroundColor: `${color}15`,
+                  color: color,
+                  fontSize: '12px',
+                  height: '24px',
+                  fontWeight: 500,
+                  '& .MuiChip-label': {
+                    px: 1,
+                  },
+                }}
+              />
+            )
+          })}
 
-          {/* 标签 */}
+          {/* 其他标签 */}
           {it?.tags?.map((item) => (
             <Tag
               key={item}
               label={item}
-              size="small"
-              sx={{ backgroundColor: "rgba(32, 108, 255, 0.1)" }}
-            // onClick={() => {
-            //   onTagClick(item);
-            // }}
+              size='small'
+              sx={{ backgroundColor: 'rgba(0,0,0,0.06)', color: 'rgba(0,0,0,0.6)' }}
             />
           ))}
         </Stack>
-      </Stack>
-      <Stack
-        direction='row'
-        justifyContent='flex-end'
-        alignItems='center'
-      >
-
+        {/* 评论数 */}
         <Stack
           direction='row'
           alignItems='center'
           gap={1}
           sx={{
-            background: 'rgba(255,133,0,0.12)',
-            borderRadius: 0.5,
-            px: 1,
-            py: '1px',
+            borderRadius: 1,
+            px: 1.5,
+            py: 0.5,
             cursor: 'pointer',
             color: '#FF8500',
             '&:hover': {
-              background: !!it.comment
-                ? 'rgba(255,133,0,0.22)'
-                : 'rgba(0, 0, 0, 0.12)',
+              background: 'rgba(255,133,0,0.22)',
             },
           }}
         >
-          <ChatIcon sx={{ width: 18, height: 18 }} />
-          <Typography
-            variant='body2'
-            sx={{ fontSize: 14, lineHeight: '20px', color: '#FF8500' }}
-          >
-            {formatNumber(it.comment || 0)}
-          </Typography>
+          <Icon type='icon-xiaoxi' />
+          {formatNumber(it.comment || 0)}
         </Stack>
       </Stack>
     </Card>
-  );
-};
+  )
+}
 
-export const DiscussCardMobile = ({
-  data,
-  keywords,
-}: {
-  data: ModelDiscussionListItem;
-  keywords?: string;
-}) => {
-  const it = data;
-  const { groups } = useContext(CommonContext);
+export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionListItem; keywords?: string }) => {
+  const it = data
+  const { groups } = useContext(CommonContext)
 
   // 根据group_ids获取分组名称
   const groupNames = useMemo(() => {
-    if (!it.group_ids || !groups.flat.length) return [];
+    if (!it.group_ids || !groups.flat.length) return []
 
     return it.group_ids
       .map((groupId) => {
-        const group = groups.flat.find((g) => g.id === groupId);
-        return group?.name;
+        const group = groups.flat.find((g) => g.id === groupId)
+        return group?.name
       })
-      .filter(Boolean) as string[];
-  }, [it.group_ids, groups.flat]);
+      .filter(Boolean) as string[]
+  }, [it.group_ids, groups.flat])
   return (
     <Card
       key={it.id}
       sx={{
-        p: "20px",
-        display: { xs: "flex", sm: "none" },
-        flexDirection: "column",
+        p: '20px',
+        display: { xs: 'flex', sm: 'none' },
+        flexDirection: 'column',
         gap: 1.5,
-        boxShadow: "rgba(0, 28, 85, 0.04) 0px 4px 10px 0px",
-        cursor: "auto",
-        width: "100%",
+        boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
+        cursor: 'auto',
+        width: '100%',
       }}
     >
       <Stack
-        direction={"column"}
-        alignItems="flex-start"
+        direction={'column'}
+        alignItems='flex-start'
         gap={1}
         sx={{
-          width: "100%",
+          width: '100%',
         }}
       >
         <Title
-          className="title multiline-ellipsis"
+          className='title multiline-ellipsis'
           href={`/discuss/${it.uuid}`}
-          target="_blank"
-          sx={{ width: "100%", whiteSpace: "wrap" }}
+          target='_blank'
+          sx={{ width: '100%', whiteSpace: 'wrap' }}
         >
-          <MatchedString
-            keywords={keywords}
-            str={it.title || ""}
-          ></MatchedString>
+          <MatchedString keywords={keywords} str={it.title || ''}></MatchedString>
         </Title>
-
-        {/* {data.status === DomainDiscussionStatus.DiscussionStatusClose && (
-          <Tag label='讨论已关闭' />
-        )} */}
       </Stack>
-      <Stack
-        direction="row"
-        alignItems="center"
-        gap={3}
-        sx={{ color: "#666", width: 300, flexShrink: 0 }}
-      >
-        <Stack direction="row" alignItems="center" gap={1}>
-          <Typography
-            variant="body2"
-            sx={{ fontSize: 12, lineHeight: 1, color: "rgba(0,0,0,0.5)" }}
+      <Stack direction='row' alignItems='center' gap={3} sx={{ color: '#666', width: 300, flexShrink: 0 }}>
+        <Typography variant='body2' sx={{ fontSize: 12, lineHeight: 1, color: 'rgba(0,0,0,0.5)' }}>
+          <time
+            dateTime={dayjs.unix(it.updated_at!).format()}
+            title={dayjs.unix(it.updated_at!).format('YYYY-MM-DD HH:mm:ss')}
           >
-            <time dateTime={dayjs.unix(it.updated_at!).format()} title={dayjs.unix(it.updated_at!).format('YYYY-MM-DD HH:mm:ss')}>
-              更新于 {dayjs.unix(it.updated_at!).fromNow()}
-            </time>
-          </Typography>
-        </Stack>
-        <Stack direction="row" alignItems="center" gap={1}>
+            更新于 {dayjs.unix(it.updated_at!).fromNow()}
+          </time>
+        </Typography>
+        <Stack direction='row' alignItems='center' gap={1}>
           {it.user_avatar ? (
-            <Image
-              src={it.user_avatar}
-              width={16}
-              height={16}
-              style={{ borderRadius: "50%" }}
-              alt="头像"
-            />
+            <Image src={it.user_avatar} width={16} height={16} style={{ borderRadius: '50%' }} alt='头像' />
           ) : (
             <Avatar size={16} />
           )}
 
           <Typography
-            className="text-ellipsis"
+            className='text-ellipsis'
             sx={{
-              mt: "2px",
+              mt: '2px',
               fontSize: 12,
-              color: "rgba(0,0,0,0.5)",
-              "&:hover": {
-                cursor: "pointer",
-                color: "primary.main",
+              color: 'rgba(0,0,0,0.5)',
+              '&:hover': {
+                cursor: 'pointer',
+                color: 'primary.main',
               },
             }}
           >
             {it.user_name}
           </Typography>
         </Stack>
+        <Stack
+          direction='row'
+          alignItems='center'
+          gap={1}
+          sx={{
+            borderRadius: 1,
+            px: 1.5,
+            py: 0.5,
+            cursor: 'pointer',
+            color: '#FF8500',
+            ml: 'auto!important',
+            '&:hover': {
+              background: 'rgba(255,133,0,0.22)',
+            },
+          }}
+        >
+          <Icon type='icon-xiaoxi' />
+          {formatNumber(it.comment || 0)}
+        </Stack>
       </Stack>
-      <Stack direction="row" gap="8px 12px" flexWrap="wrap">
+      <MarkDown
+        content={it.content}
+        truncateLength={60} // 设置截断长度为100个字符，根据需要调整
+      />
+      <Stack direction='row' gap='8px 12px' flexWrap='wrap'>
         {/* 分组标签 */}
         {groupNames.map((groupName) => (
           <Chip
             key={groupName}
             label={groupName}
-            size="small"
+            size='small'
             sx={{
-              backgroundColor: "rgba(76, 175, 80, 0.1)",
-              color: "#4CAF50",
-              fontSize: "12px",
-              height: "24px",
-              "& .MuiChip-label": {
+              backgroundColor: 'rgba(76, 175, 80, 0.1)',
+              color: '#4CAF50',
+              fontSize: '12px',
+              height: '24px',
+              '& .MuiChip-label': {
                 px: 1,
               },
             }}
@@ -350,16 +307,11 @@ export const DiscussCardMobile = ({
 
         {/* 标签 */}
         {it?.tags?.map((item) => (
-          <Tag
-            key={item}
-            label={item}
-            size="small"
-            sx={{ backgroundColor: "rgba(32, 108, 255, 0.1)" }}
-          />
+          <Tag key={item} label={item} size='small' sx={{ backgroundColor: 'rgba(32, 108, 255, 0.1)' }} />
         ))}
       </Stack>
     </Card>
-  );
-};
+  )
+}
 
-export default DiscussCard;
+export default DiscussCard

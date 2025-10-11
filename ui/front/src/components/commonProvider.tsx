@@ -9,6 +9,7 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from 'react';
 
@@ -49,53 +50,50 @@ export const CommonContext = createContext<{
   setGroups: () => {},
 });
 
-// 全局缓存groups数据
-let globalGroupsCache: {
-  origin: (ModelGroupWithItem & {
-    items?: ModelGroupItemInfo[];
-  })[];
-  flat: ModelGroupItemInfo[];
-} | null = null;
-
 const CommonProvider = ({ children }: { children: React.ReactNode }) => {
   const [showHeaderSearch, setShowHeaderSearch] = useState(false);
   const [headerStyle, setHeaderStyle] = useState({});
   const [keywords, setKeywords] = useState('');
-  const [groupsLoading, setGroupsLoading] = useState(!globalGroupsCache);
+  const [groupsLoading, setGroupsLoading] = useState(true);
   const [groups, setGroupsState] = useState<{
     origin: (ModelGroupWithItem & {
       items?: ModelGroupItemInfo[];
     })[];
     flat: ModelGroupItemInfo[];
-  }>(
-    globalGroupsCache || {
-      origin: [],
-      flat: [],
-    }
-  );
+  }>({
+    origin: [],
+    flat: [],
+  });
+
+  // 使用 ref 替代模块级变量，避免 SSR 数据泄露
+  const isFetchingRef = useRef(false);
+  const hasFetchedRef = useRef(false);
 
   // 设置groups数据的函数（供SSR页面调用）
-  const setGroups = useCallback((newGroups: {
-    origin: (ModelGroupWithItem & {
-      items?: ModelGroupItemInfo[];
-    })[];
-    flat: ModelGroupItemInfo[];
-  }) => {
-    globalGroupsCache = newGroups;
-    setGroupsState(newGroups);
-    setGroupsLoading(false);
-  }, []);
+  const setGroups = useCallback(
+    (newGroups: {
+      origin: (ModelGroupWithItem & {
+        items?: ModelGroupItemInfo[];
+      })[];
+      flat: ModelGroupItemInfo[];
+    }) => {
+      setGroupsState(newGroups);
+      setGroupsLoading(false);
+      hasFetchedRef.current = true;
+    },
+    []
+  );
 
   // 获取groups数据的函数（供客户端页面调用）
   const fetchGroup = useCallback(() => {
-    // 如果已有缓存，直接使用
-    if (globalGroupsCache) {
-      setGroupsState(globalGroupsCache);
-      setGroupsLoading(false);
+    // 避免重复请求
+    if (isFetchingRef.current || hasFetchedRef.current) {
       return;
     }
 
+    isFetchingRef.current = true;
     setGroupsLoading(true);
+
     getGroup()
       .then((r) => {
         const newGroups = {
@@ -109,21 +107,21 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
           ),
         };
 
-        // 更新全局缓存
-        globalGroupsCache = newGroups;
         setGroupsState(newGroups);
+        hasFetchedRef.current = true;
       })
       .catch((error) => {
         console.error('Failed to fetch groups:', error);
       })
       .finally(() => {
         setGroupsLoading(false);
+        isFetchingRef.current = false;
       });
   }, []);
 
   useEffect(() => {
-    // 只有在没有缓存数据时才发起请求
-    if (!globalGroupsCache) {
+    // 只在客户端且未获取过数据时发起请求
+    if (!hasFetchedRef.current) {
       fetchGroup();
     }
   }, [fetchGroup]);

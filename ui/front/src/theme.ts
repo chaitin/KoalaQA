@@ -1,7 +1,7 @@
-'use client';
+'use client'
 // import { Roboto } from 'next/font/google';
-import { createTheme } from '@mui/material/styles';
-import { zhCN } from '@mui/material/locale';
+import { createTheme } from '@mui/material/styles'
+import { zhCN } from '@mui/material/locale'
 // const roboto = Roboto({
 //   weight: ['300', '400', '500', '700'],
 //   subsets: ['latin'],
@@ -10,17 +10,23 @@ import { zhCN } from '@mui/material/locale';
 
 declare module '@mui/material/styles' {
   interface Palette {
-    neutral?: Palette['primary'];
+    neutral?: Palette['primary']
   }
 
   // allow configuration using `createTheme`
   interface PaletteOptions {
-    neutral?: PaletteOptions['primary'];
+    neutral?: PaletteOptions['primary']
+  }
+
+  interface TypeBackground {
+    paper2?: string
+    paper3?: string
+    footer?: string
   }
 }
 declare module '@mui/material/Button' {
   interface ButtonPropsColorOverrides {
-    neutral?: true;
+    neutral?: true
   }
 }
 
@@ -40,6 +46,10 @@ const theme = createTheme(
       },
       background: {
         default: '#F1F2F8',
+        paper: '#FFFFFF',
+        paper2: '#F1F2F8',
+        paper3: '#F8F9FA',
+        footer: '#14141B',
       },
       divider: '#ECEEF1',
       action: {
@@ -106,7 +116,7 @@ const theme = createTheme(
       },
     },
   },
-  zhCN
-);
+  zhCN,
+)
 
-export default theme;
+export default theme
