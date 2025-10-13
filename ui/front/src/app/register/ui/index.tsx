@@ -12,7 +12,7 @@ import z from 'zod';
 
 const schema = z.object({
   name: z.string().min(1, '用户名不能为空').default(''),
-  email: z.email('邮箱格式不正确').default(''),
+  email: z.string().email('邮箱格式不正确').default(''),
   password: z.string().min(6, '密码不能少于 6 位').default(''),
   re_password: z.string().default(''),
 });
@@ -56,7 +56,7 @@ const Register = () => {
     checkRegistrationStatus();
   }, []);
 
-  const handleRegister = (data: z.infer<typeof schema>, err: any) => {
+  const handleRegister = (data: z.infer<typeof schema>) => {
     if (data.password !== data.re_password) {
       Message.error('两次密码不一致');
       return;
