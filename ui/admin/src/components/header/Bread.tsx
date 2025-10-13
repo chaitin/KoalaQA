@@ -20,7 +20,6 @@ const ADMIN_BREADCRUMB_MAP: Record<string, { title: string; to: string }> = ADMI
 const Bread = () => {
   const { pathname } = useLocation();
   const { pageName } = useAppSelector(state => state.breadcrumb);
-
   const breadcrumbs = useMemo(() => {
     const pathParts = pathname.split('/').filter(Boolean);
 

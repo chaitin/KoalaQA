@@ -41,6 +41,12 @@ function WarningBar(props: WarningProps) {
 }
 
 export function callAlert(props: WarningProps, time = 3000) {
+  // 检查是否在浏览器环境中
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    console.warn('callAlert called in SSR environment, skipping...');
+    return;
+  }
+
   const warningDom = document.createElement('div');
   document.body.appendChild(warningDom);
   warningDom.id = 'warning-window';

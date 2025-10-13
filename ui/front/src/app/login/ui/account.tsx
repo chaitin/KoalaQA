@@ -24,7 +24,7 @@ const Account = ({ isChecked, passwordConfig }: { isChecked: boolean, passwordCo
   });
   const { user } = useContext(AuthContext);
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get('redirect');
+  const redirectUrl = searchParams?.get('redirect');
 
   const {
     register,

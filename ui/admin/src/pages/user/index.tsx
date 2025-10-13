@@ -45,14 +45,14 @@ const roleDescriptions: Record<ModelUserRole, string> = {
 };
 
 const AdminDocument = () => {
-  const { query, setPage, setPageSize, page, pageSize, setParams } = useListQueryParams();
+  const { query, setPage, setSize, page, size, setParams } = useListQueryParams();
   const { reset, register, handleSubmit, watch, control } = useForm({
     defaultValues: {
       name: '',
       role: 1,
     },
   });
-  const [title, setTitle] = useState(query.title);
+  const [name, setName] = useState(query.name);
   const [editItem, setEditItem] = useState<SvcUserListItem | null>(null);
   const cancelEdit = () => {
     setEditItem(null);
@@ -164,20 +164,12 @@ const AdminDocument = () => {
   ];
 
   useEffect(() => {
-    const _query = { ...query };
-    delete _query.name;
-    fetchData(_query);
-  }, [fetchData, query]);
+    fetchData(query);
+  }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <Stack component={Card} sx={{ height: '100%' }}>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        spacing={2}
-        sx={{ mb: 2 }}
-      >
+      <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
         <Stack sx={{ fontSize: 14, color: 'text.secondary' }} direction="row" alignItems="center">
           共
           <Typography variant="subtitle2" sx={{ mx: 1, fontFamily: 'Mono' }}>
@@ -187,13 +179,13 @@ const AdminDocument = () => {
         </Stack>
         <TextField
           label="用户名"
-          value={title}
+          value={name}
           size="small"
-          onChange={e => setTitle(e.target.value)}
+          onChange={e => setName(e.target.value)}
           onKeyDown={e => {
             if (e.key === 'Enter') {
               setParams({
-                title,
+                name,
               });
             }
           }}
@@ -213,15 +205,11 @@ const AdminDocument = () => {
         rowKey="id"
         pagination={{
           page,
-          pageSize,
+          pageSize: size,
           total: data?.total || 0,
           onChange: (page: number, size: number) => {
             setPage(page);
-            setPageSize(size);
-            fetchData({
-              page: page,
-              size: size,
-            });
+            setSize(size);
           },
         }}
       />
@@ -264,23 +252,9 @@ const AdminDocument = () => {
                   .slice(1, -1)
                   .map(([key, value]) => {
                     const roleKey = Number(key) as ModelUserRole;
-                    const description = roleDescriptions[roleKey];
                     return (
                       <MenuItem key={key} value={key}>
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            {value}
-                          </Typography>
-                          {description && (
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              sx={{ display: 'block', mt: 0.5 }}
-                            >
-                              {description}
-                            </Typography>
-                          )}
-                        </Box>
+                        {value}
                       </MenuItem>
                     );
                   })}

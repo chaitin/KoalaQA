@@ -31,7 +31,6 @@ const LazyLoadable = (
 const GeneralSetting = LazyLoadable(lazy(() => import('@/pages/settings')));
 const AdminKnowledge = LazyLoadable(lazy(() => import('@/pages/ai')));
 const AdminKnowledgeDetail = LazyLoadable(lazy(() => import('@/pages/ai/detail')));
-const AdminKnowledgeBasePage = LazyLoadable(lazy(() => import('@/pages/ai/kb')));
 const User = LazyLoadable(lazy(() => import('@/pages/user')));
 
 const routerConfig = [
@@ -49,19 +48,19 @@ const routerConfig = [
       },
       {
         path: 'ai/:id?/qa',
-        element: <AdminKnowledgeDetail tab='qa' />,
+        element: <AdminKnowledgeDetail tab="qa" />,
       },
       {
         path: 'ai/:id?/doc',
-        element: <AdminKnowledgeDetail tab='doc' />,
+        element: <AdminKnowledgeDetail tab="doc" />,
       },
       {
         path: 'ai/:id?/web',
-        element: <AdminKnowledgeDetail tab='web' />,
+        element: <AdminKnowledgeDetail tab="web" />,
       },
       {
-        path: 'ai/kb',
-        element: <AdminKnowledgeBasePage />,
+        path: 'ai/:id?/kb',
+        element: <AdminKnowledgeDetail tab="kb" />,
       },
       {
         path: 'users',

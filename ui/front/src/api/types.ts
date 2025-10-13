@@ -87,6 +87,7 @@ export enum ModelDocStatus {
   DocStatusUnknown = 0,
   DocStatusAppling = 1,
   DocStatusPendingReview = 2,
+  DocStatusPendingApply = 3,
 }
 
 export enum ModelDiscussionType {

@@ -1,5 +1,5 @@
 import { getDiscussionDiscId } from '@/api'
-import { formatMeta } from '@/utils'
+import { formatMeta } from '@/lib/utils'
 import { Box, Stack } from '@mui/material'
 import { ResolvingMetadata } from 'next'
 import Content from './ui/content'
@@ -38,7 +38,7 @@ const Page = async (props: { params: Promise<{ id: string }> }) => {
         sx={{
           mt: '64px',
           width: '100%',
-          height: { xs: 200, sm: 300 },
+          height: 200,
           backgroundImage: 'url(/banner.png)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
@@ -53,7 +53,7 @@ const Page = async (props: { params: Promise<{ id: string }> }) => {
           zIndex: 1,
           width: { xs: '100%', sm: 800 },
           mx: 'auto',
-          mt:  { xs: '-100px', sm: '-260px' },
+          mt:  '-180px',
           pt: 11,
           pb: '100px',
           px: { xs: 2, sm: 0 },

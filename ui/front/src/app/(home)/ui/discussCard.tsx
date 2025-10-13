@@ -3,13 +3,13 @@ import { Card, MatchedString, Title } from '@/app/(banner)/s/ui/common'
 import { Icon, MarkDown } from '@/components'
 import { CommonContext } from '@/components/commonProvider'
 import { Avatar, Tag } from '@/components/discussion'
-import { formatNumber } from '@/utils'
+import { formatNumber } from '@/lib/utils'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import { Chip, Stack, Typography } from '@mui/material'
+import { Box, Chip, Stack, Typography } from '@mui/material'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import relativeTime from 'dayjs/plugin/relativeTime'
-import Image from 'next/image'
+import { LazyImage } from '@/components/optimized'
 import { useContext, useMemo } from 'react'
 
 dayjs.extend(relativeTime)
@@ -18,13 +18,13 @@ dayjs.locale('zh-cn')
 // 将Markdown中的图片替换为[图片]文本
 const replaceImagesWithText = (content: string): string => {
   if (!content) return content
-  
+
   // 替换Markdown图片语法: ![alt](url)
   let processedContent = content.replace(/!\[([^\]]*)\]\([^\)]+\)/g, '[图片]')
-  
+
   // 替换HTML img标签
   processedContent = processedContent.replace(/<img[^>]*>/gi, '[图片]')
-  
+
   return processedContent
 }
 
@@ -114,23 +114,25 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
         </Stack>
 
         {/* 用户信息和时间 */}
-        <Stack direction='row' alignItems='center' gap={1} sx={{ color: '#666', flexShrink: 0, ml: 2 }}>
+        <Stack direction='row' alignItems='center' gap={1} sx={{ color: '#666', flexShrink: 0, ml: 2, minWidth: 0 }}>
           {it.user_avatar ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={it.user_avatar} width={20} height={20} style={{ borderRadius: '50%' }} alt='头像' />
+            <LazyImage src={it.user_avatar} width={20} height={20} alt='头像' style={{ borderRadius: '50%', flexShrink: 0 }} />
           ) : (
-            <Avatar size={20} />
+            <Box sx={{ flexShrink: 0 }}>
+              <Avatar size={20} />
+            </Box>
           )}
           <Typography
             variant='body2'
             sx={{
               fontSize: 12,
               color: 'rgba(0,0,0,0.6)',
+              whiteSpace: 'nowrap',
             }}
           >
             {it.user_name}
           </Typography>
-          <Typography variant='body2' sx={{ fontSize: 12, color: 'rgba(0,0,0,0.5)' }}>
+          <Typography variant='body2' sx={{ fontSize: 12, color: 'rgba(0,0,0,0.5)', whiteSpace: 'nowrap', flexShrink: 0 }}>
             {dayjs.unix(it.updated_at!).fromNow()}
           </Typography>
         </Stack>
@@ -138,14 +140,18 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
       <MarkDown
         content={replaceImagesWithText(it.content || '')}
         truncateLength={100} // 设置截断长度为100个字符，根据需要调整
+        sx={{
+          fontSize: 12,
+          color: '#666',
+          lineHeight: 1.4,
+        }}
       />
       {/* 底部标签和评论数 */}
       <Stack direction='row' justifyContent='space-between' alignItems='center'>
         <Stack direction='row' gap={1} flexWrap='wrap' alignItems='center'>
           {/* 分组标签 */}
           {groupNames.map((groupName, index) => {
-            const colors = ['#206CFF', '#FFA726', '#9C27B0', '#4CAF50']
-            const color = colors[index % colors.length]
+            const color = '#206CFF'
             return (
               <Chip
                 key={groupName}
@@ -154,6 +160,7 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
                 sx={{
                   backgroundColor: `${color}15`,
                   color: color,
+                  borderRadius: '0',
                   fontSize: '12px',
                   height: '24px',
                   fontWeight: 500,
@@ -182,13 +189,8 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
           gap={1}
           sx={{
             borderRadius: 1,
-            px: 1.5,
             py: 0.5,
-            cursor: 'pointer',
             color: '#FF8500',
-            '&:hover': {
-              background: 'rgba(255,133,0,0.22)',
-            },
           }}
         >
           <Icon type='icon-xiaoxi' />
@@ -244,8 +246,8 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
           <MatchedString keywords={keywords} str={it.title || ''}></MatchedString>
         </Title>
       </Stack>
-      <Stack direction='row' alignItems='center' gap={3} sx={{ color: '#666', width: 300, flexShrink: 0 }}>
-        <Typography variant='body2' sx={{ fontSize: 12, lineHeight: 1, color: 'rgba(0,0,0,0.5)' }}>
+      <Stack direction='row' alignItems='center' gap={2} sx={{ color: '#666', flexShrink: 0, minWidth: 0 }}>
+        <Typography variant='body2' sx={{ fontSize: 12, lineHeight: 1, color: 'rgba(0,0,0,0.5)', whiteSpace: 'nowrap', flexShrink: 0 }}>
           <time
             dateTime={dayjs.unix(it.updated_at!).format()}
             title={dayjs.unix(it.updated_at!).format('YYYY-MM-DD HH:mm:ss')}
@@ -253,19 +255,21 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
             更新于 {dayjs.unix(it.updated_at!).fromNow()}
           </time>
         </Typography>
-        <Stack direction='row' alignItems='center' gap={1}>
+        <Stack direction='row' alignItems='center' gap={1} sx={{ minWidth: 0, flex: 1 }}>
           {it.user_avatar ? (
-            <Image src={it.user_avatar} width={16} height={16} style={{ borderRadius: '50%' }} alt='头像' />
+            <LazyImage src={it.user_avatar} width={16} height={16} alt='头像' style={{ borderRadius: '50%', flexShrink: 0 }} />
           ) : (
-            <Avatar size={16} />
+            <Box sx={{ flexShrink: 0 }}>
+              <Avatar size={16} />
+            </Box>
           )}
 
           <Typography
-            className='text-ellipsis'
             sx={{
               mt: '2px',
               fontSize: 12,
               color: 'rgba(0,0,0,0.5)',
+              whiteSpace: 'nowrap',
               '&:hover': {
                 cursor: 'pointer',
                 color: 'primary.main',
@@ -298,6 +302,11 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
       <MarkDown
         content={replaceImagesWithText(it.content || '')}
         truncateLength={60} // 设置截断长度为100个字符，根据需要调整
+        sx={{
+          fontSize: 12,
+          color: '#666',
+          lineHeight: 1.4,
+        }}
       />
       <Stack direction='row' gap='8px 12px' flexWrap='wrap'>
         {/* 分组标签 */}

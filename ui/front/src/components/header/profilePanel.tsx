@@ -1,7 +1,6 @@
 'use client';
 import { postUserLogout } from '@/api';
 import {
-  Avatar,
   Box,
   List,
   ListItem,
@@ -16,6 +15,14 @@ import { IdCard, IdInfo, InfoCard } from './components';
 import { AuthContext } from '../authProvider';
 import Icon from '../icon';
 import { clearAuthData } from '@/api/httpClient';
+import UserAvatar from '../UserAvatar';
+import { useSSRDebug } from '../SSRDebugger';
+// 简单的重定向函数
+const safeRedirect = (url: string) => {
+  if (typeof window !== 'undefined') {
+    window.location.href = url;
+  }
+};
 
 export const OPT_LIST = [
   {
@@ -27,19 +34,28 @@ export const OPT_LIST = [
 const ProfilePanel = () => {
   const [, setToken] = useLocalStorageState<string>('auth_token');
   const { user } = useContext(AuthContext);
+  
+  // SSR调试信息
+  useSSRDebug('ProfilePanel', { 
+    user: user ? { 
+      username: user.username, 
+      avatar: user.avatar,
+      uid: user.uid 
+    } : null 
+  });
   const handleLogout = () => {
     postUserLogout()
       .then(() => {
         // 使用统一的清除认证信息函数
         clearAuthData();
         setToken('');
-        window.location.href = '/login';
+        safeRedirect('/login');
       })
       .catch(() => {
         // 即使登出API失败，也要清除本地认证信息
         clearAuthData();
         setToken('');
-        window.location.href = '/login';
+        safeRedirect('/login');
       });
   };
 
@@ -47,7 +63,11 @@ const ProfilePanel = () => {
     <InfoCard>
       <IdCard>
         <IdInfo>
-          <Avatar src={user.avatar} sx={{ width: 40 }} />
+          <UserAvatar 
+            user={user} 
+            sx={{ width: 40, height: 40 }} 
+            debug={process.env.NODE_ENV === 'development'}
+          />
           <Stack>
             <Box
               sx={{
@@ -99,7 +119,7 @@ const ProfilePanel = () => {
                   },
                 }}
                 onClick={() => {
-                  window.open(item.link, '_target');
+                  safeRedirect(item.link);
                 }}
                 dense
               >

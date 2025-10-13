@@ -31,7 +31,7 @@ const fetchMarkdownContent = async (url: string): Promise<string> => {
 };
 
 const AdminDocument = () => {
-  const { query, setPage, setPageSize, page, pageSize, setParams } = useListQueryParams();
+  const { query, setPage, setSize, page, size, setParams } = useListQueryParams();
   const [searchParams] = useSearchParams();
   const kb_id = +searchParams.get('id')!;
   const [title, setTitle] = useState(query.title);
@@ -195,15 +195,11 @@ const AdminDocument = () => {
         rowKey="id"
         pagination={{
           page,
-          pageSize,
+          pageSize: size,
           total: data?.total || 0,
           onChange: (page: number, size: number) => {
             setPage(page);
-            setPageSize(size);
-            fetchData({
-              page: page,
-              size: size,
-            });
+            setSize(size);
           },
         }}
       />
