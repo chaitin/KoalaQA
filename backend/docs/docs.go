@@ -3466,6 +3466,37 @@ const docTemplate = `{
                 }
             }
         },
+        "/system/info": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system"
+                ],
+                "summary": "get system info",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/router.SystemInfoRes"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/user": {
             "get": {
                 "produces": [
@@ -4599,7 +4630,8 @@ const docTemplate = `{
                 6,
                 7,
                 8,
-                9
+                9,
+                10
             ],
             "x-enum-varnames": [
                 "PlatformUnknown",
@@ -4611,8 +4643,17 @@ const docTemplate = `{
                 "PlatformURL",
                 "PlatformWikiJS",
                 "PlatformYuQue",
-                "PlatformPandawiki"
+                "PlatformPandawiki",
+                "PlatformDingtalk"
             ]
+        },
+        "router.SystemInfoRes": {
+            "type": "object",
+            "properties": {
+                "version": {
+                    "type": "string"
+                }
+            }
         },
         "svc.AuthFrontendGetAuth": {
             "type": "object",
