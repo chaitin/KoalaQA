@@ -15,11 +15,9 @@ import {
   SvcListSpaceKBItem,
   SvcUpdateSpaceReq,
 } from '@/api';
-import Card from '@/components/card';
 import LoadingButton from '@/components/LoadingButton';
-import { message, Modal } from '@ctzhian/ui';
+import { Card, message, Modal } from '@ctzhian/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
-import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DescriptionIcon from '@mui/icons-material/Description';
 import EditIcon from '@mui/icons-material/Edit';
@@ -31,7 +29,6 @@ import {
   Box,
   Button,
   Checkbox,
-  Chip,
   FormControlLabel,
   Grid2 as Grid,
   IconButton,
@@ -49,7 +46,7 @@ import { useRequest } from 'ahooks';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import z from 'zod';
 
 const spaceSchema = z.object({
@@ -290,12 +287,13 @@ const KnowledgeBasePage = () => {
     }
     try {
       await postAdminKbKbIdSpaceSpaceIdFolder(kb_id, selectedSpaceId, {
-        docs: remoteData?.items?.filter(i => selectedFolders.includes(i.doc_id || '')) || [],
+        docs: (remoteData?.items?.filter(i => i.doc_id && selectedFolders.includes(i.doc_id)) ||
+          []) as any,
       });
       // 刷新文件夹列表
       refreshFolders();
-    } catch (error) {
-      message.error('导入失败: ' + error);
+    } catch {
+      message.error('导入失败');
       return;
     }
 
@@ -333,7 +331,7 @@ const KnowledgeBasePage = () => {
           return newSet;
         });
       }
-    } catch (error) {
+    } catch {
       message.error('获取文档详情失败');
     }
   };
@@ -356,64 +354,90 @@ const KnowledgeBasePage = () => {
     }
   };
   return (
-    <Card sx={{ flex: 1, height: '100%', overflow: 'auto' }}>
-      {/* 标题和创建按钮 */}
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-        <Typography variant="body2">共 {spaces.length} 个知识库</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreateSpace}>
-          关联知识库
-        </Button>
-      </Stack>
+    <>
+      <Grid container spacing={2} sx={{ height: '100%' }}>
+        {/* 左侧知识库分类列表 */}
+        <Grid size={{ xs: 12 }} sx={{ height: '100%', width: '373px', flexShrink: 0 }}>
+          <Card
+            sx={{ height: '100%', display: 'flex', flexDirection: 'column', boxShadow: 'none' }}
+          >
+            {/* 标题和创建按钮 */}
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+              sx={{ mb: 3 }}
+            >
+              <Typography variant="body2" sx={{ fontSize: 14, color: 'text.secondary' }}>
+                共 {spaces.length} 个知识库
+              </Typography>
+              <Button variant="contained" onClick={handleCreateSpace}>
+                关联知识库
+              </Button>
+            </Stack>
 
-      <Grid container spacing={2}>
-        {/* 左侧知识源列表 */}
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Card sx={{ border: '1px solid', borderColor: 'divider', height: 'fit-content' }}>
-            <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
-              知识源
-            </Typography>
-            <Stack spacing={1}>
+            {/* 知识库分类列表 */}
+            <Stack spacing={2} sx={{ flex: 1, boxShadow: 'none' }}>
               {spaces.map(space => (
-                <Card
+                <Box
                   key={space.id}
                   sx={{
-                    border: '1px solid',
-                    borderColor: selectedSpaceId === space.id ? 'primary.main' : 'divider',
-                    bgcolor: selectedSpaceId === space.id ? 'primary.50' : 'background.paper',
                     cursor: 'pointer',
+                    transition: 'all 0.2s ease',
                     '&:hover': {
-                      borderColor: 'primary.main',
+                      borderColor: '#3860F4',
+                      boxShadow: '0 2px 8px rgba(56, 96, 244, 0.1)',
                     },
                   }}
                   onClick={() => handleSpaceClick(space)}
                 >
-                  <Stack spacing={1} sx={{ flex: 1 }}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                  <Box sx={{ p: 3 }}>
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="flex-start"
+                      sx={{ mb: 2 }}
+                    >
+                      <Typography variant="body1" sx={{ fontWeight: 500, fontSize: '16px' }}>
                         {space.title}
                       </Typography>
-                      <IconButton size="small" onClick={e => handleMenuClick(e, space)}>
+                      <IconButton
+                        size="small"
+                        onClick={e => handleMenuClick(e, space)}
+                        sx={{
+                          color: 'text.secondary',
+                          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+                        }}
+                      >
                         <MoreHorizIcon fontSize="small" />
                       </IconButton>
                     </Stack>
                     <Stack direction="row" alignItems="center" justifyContent="space-between">
-                      <Chip
-                        label={getPlatformLabel(space.platform)}
-                        size="small"
-                        variant="outlined"
-                        sx={{ fontSize: '0.75rem' }}
-                      />
-                      <Typography variant="caption" color="text.secondary">
-                        {space.total || 0} 个知识库
+                      <Box
+                        sx={{
+                          backgroundColor: '#f5f5f5',
+                          border: '1px solid #d0d0d0',
+                          borderRadius: '16px',
+                          px: 2,
+                          py: 0.5,
+                          fontSize: '12px',
+                          color: '#333333',
+                          fontWeight: 400,
+                        }}
+                      >
+                        {getPlatformLabel(space.platform)}
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '14px' }}>
+                        知识库数量 {space.total || 0}
                       </Typography>
                     </Stack>
-                  </Stack>
-                </Card>
+                  </Box>
+                </Box>
               ))}
               {spaces.length === 0 && (
-                <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Box sx={{ textAlign: 'center', py: 8 }}>
                   <Typography variant="body2" color="text.secondary">
-                    暂无知识源，点击右上角按钮创建
+                    暂无知识库，点击右上角按钮创建
                   </Typography>
                 </Box>
               )}
@@ -421,136 +445,183 @@ const KnowledgeBasePage = () => {
           </Card>
         </Grid>
 
-        {/* 右侧文档列表 */}
-        <Grid size={{ xs: 12, md: 8 }}>
-          {selectedSpaceId ? (
-            <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-                sx={{ mb: 2 }}
-              >
-                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                  知识库列表
-                </Typography>
-              </Stack>
-              <Stack spacing={1}>
+        {/* 右侧知识库详细列表 */}
+        <Grid size={{ xs: 12 }} sx={{ height: '100%', flex: 1, minWidth: 0 }}>
+          <Card
+            sx={{ height: '100%', display: 'flex', flexDirection: 'column', boxShadow: 'none' }}
+          >
+            <Typography variant="body1" sx={{ mb: 3, fontWeight: 500, fontSize: '16px' }}>
+              知识库列表
+            </Typography>
+
+            {selectedSpaceId ? (
+              <Stack spacing={2} sx={{ flex: 1, overflow: 'auto' }}>
                 {folders.map(folder => (
-                  <Card
+                  <Box
                     key={folder.id}
                     sx={{
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      bgcolor: 'background.paper',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '8px',
+                      backgroundColor: 'white',
+                      transition: 'all 0.2s ease',
                       '&:hover': {
-                        bgcolor: 'action.hover',
+                        backgroundColor: '#f8f9fa',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
                       },
                     }}
                   >
-                    <Stack direction="row" alignItems="center" spacing={2}>
-                      <DescriptionIcon color="action" />
-                      <Stack sx={{ flex: 1 }}>
-                        <Stack direction="row" spacing={1}>
-                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    <Box sx={{ p: 3 }}>
+                      <Stack direction="row" alignItems="flex-start" spacing={2}>
+                        <Box
+                          sx={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: '8px',
+                            backgroundColor: '#f5f5f5',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <DescriptionIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                        </Box>
+                        <Stack sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography
+                            variant="body2"
+                            sx={{ fontWeight: 500, fontSize: '14px', mb: 0.5 }}
+                          >
                             {folder.title}
                           </Typography>
-                          <Typography variant="caption">
-                            （共 {folder.total || 0} 个文档）
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ fontSize: '12px', mb: 0.5 }}
+                          >
+                            共 {folder.total || 0} 个文档
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ fontSize: '12px', display: 'block' }}
+                          >
+                            更新于 {dayjs((folder.updated_at || 0) * 1000).fromNow()}{' '}
+                            {formatDate(folder.updated_at)}
                           </Typography>
                         </Stack>
-                        <Typography variant="caption" color="text.secondary">
-                          更新于 {dayjs((folder.updated_at || 0) * 1000).fromNow()},
-                          {formatDate(folder.updated_at)}
-                        </Typography>
-                      </Stack>
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Chip
-                          label={folder.status === 1 ? '应用中' : '同步中'}
-                          size="small"
-                          color={folder.status === 1 ? 'success' : 'warning'}
-                          variant="outlined"
-                        />
-                        <LoadingButton
-                          size="small"
-                          onClick={async e => {
-                            e.stopPropagation();
-                            if (!selectedSpaceId || !folder.id) return;
-
-                            try {
-                              await putAdminKbKbIdSpaceSpaceIdFolderFolderId(
-                                kb_id,
-                                selectedSpaceId,
-                                folder.id
-                              );
-                              message.success('更新成功');
-                              refreshFolders();
-                            } catch {
-                              message.error('更新失败');
-                            }
-                          }}
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          alignItems="center"
+                          sx={{ flexShrink: 0 }}
                         >
-                          <RefreshIcon fontSize="small" />
-                        </LoadingButton>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={async e => {
-                            e.stopPropagation();
-                            if (!selectedSpaceId || !folder.id) return;
+                          <Box
+                            sx={{
+                              backgroundColor: folder.status === 1 ? '#e3f2fd' : '#fff3e0',
+                              color: folder.status === 1 ? '#1976d2' : '#f57c00',
+                              borderRadius: '12px',
+                              px: 1.5,
+                              py: 0.5,
+                              fontSize: '12px',
+                              fontWeight: 400,
+                            }}
+                          >
+                            {folder.status === 1 ? '应用中' : '同步中'}
+                          </Box>
+                          <IconButton
+                            size="small"
+                            onClick={async e => {
+                              e.stopPropagation();
+                              if (!selectedSpaceId || !folder.id) return;
 
-                            Modal.confirm({
-                              title: '删除确认',
-                              content: `确定要删除文件夹 "${folder.title}" 吗？`,
-                              okText: '删除',
-                              okButtonProps: { color: 'error' },
-                              onOk: async () => {
-                                try {
-                                  // 确保 folder.id 存在
-                                  if (folder.id) {
-                                    await deleteAdminKbKbIdSpaceSpaceIdFolderFolderId(
-                                      kb_id,
-                                      selectedSpaceId,
-                                      folder.id
-                                    );
-                                    message.success('删除成功');
-                                    refreshFolders();
+                              try {
+                                await putAdminKbKbIdSpaceSpaceIdFolderFolderId(
+                                  kb_id,
+                                  selectedSpaceId,
+                                  folder.id
+                                );
+                                message.success('更新成功');
+                                refreshFolders();
+                              } catch {
+                                message.error('更新失败');
+                              }
+                            }}
+                            sx={{
+                              color: 'text.secondary',
+                              '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+                            }}
+                          >
+                            <RefreshIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={async e => {
+                              e.stopPropagation();
+                              if (!selectedSpaceId || !folder.id) return;
+
+                              Modal.confirm({
+                                title: '删除确认',
+                                content: `确定要删除文件夹 "${folder.title}" 吗？`,
+                                okText: '删除',
+                                okButtonProps: { color: 'error' },
+                                onOk: async () => {
+                                  try {
+                                    if (folder.id) {
+                                      await deleteAdminKbKbIdSpaceSpaceIdFolderFolderId(
+                                        kb_id,
+                                        selectedSpaceId,
+                                        folder.id
+                                      );
+                                      message.success('删除成功');
+                                      refreshFolders();
+                                    }
+                                  } catch {
+                                    message.error('删除失败');
                                   }
-                                } catch {
-                                  message.error('删除失败');
-                                }
-                              },
-                            });
-                          }}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
+                                },
+                              });
+                            }}
+                            sx={{
+                              '&:hover': { backgroundColor: 'rgba(244, 67, 54, 0.04)' },
+                            }}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Stack>
                       </Stack>
-                    </Stack>
-                  </Card>
+                    </Box>
+                  </Box>
                 ))}
                 {folders.length === 0 && !foldersLoading && (
-                  <Box sx={{ textAlign: 'center', py: 4 }}>
+                  <Box sx={{ textAlign: 'center', py: 8 }}>
                     <Typography variant="body2" color="text.secondary">
                       该知识库暂无文档
                     </Typography>
                   </Box>
                 )}
               </Stack>
-            </Card>
-          ) : (
-            <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
-              <Box sx={{ textAlign: 'center', py: 8 }}>
+            ) : (
+              <Box
+                sx={{
+                  textAlign: 'center',
+                  py: 8,
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                }}
+              >
                 <FolderIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
                 <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-                  请选择知识源
+                  请选择知识库
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  从左侧列表中选择一个知识源查看其文档
+                  从左侧列表中选择一个知识库查看其文档
                 </Typography>
               </Box>
-            </Card>
-          )}
+            )}
+          </Card>
         </Grid>
       </Grid>
 
@@ -746,7 +817,7 @@ const KnowledgeBasePage = () => {
           </List>
         </Box>
       </Modal>
-    </Card>
+    </>
   );
 };
 

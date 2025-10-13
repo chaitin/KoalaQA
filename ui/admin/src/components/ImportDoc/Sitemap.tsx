@@ -1,26 +1,17 @@
 import {
   AnydocListRes,
   postAdminKbDocumentSitemapExport,
-  postAdminKbDocumentSitemapList
+  postAdminKbDocumentSitemapList,
 } from '@/api';
 import { useExportDoc } from '@/hooks/useExportDoc';
-import { useAppSelector } from '@/store';
-import {
-  Stack,
-  TextField
-} from '@mui/material';
 import { Modal } from '@ctzhian/ui';
+import { Stack, TextField } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { StepText } from './const';
 import Doc2Ai from './Doc2Ai';
 import { ImportDocProps } from './type';
 
-const SitemapImport = ({
-  open,
-  refresh,
-  onCancel,
-}: ImportDocProps) => {
-  const { kb_id } = useAppSelector((state) => state.config);
+const SitemapImport = ({ open, refresh, onCancel }: ImportDocProps) => {
   const [step, setStep] = useState<keyof typeof StepText>('upload');
   const [loading, setLoading] = useState(false);
   const [url, setUrl] = useState('');
@@ -91,7 +82,7 @@ const SitemapImport = ({
     const requests = newQueue.splice(0, 2);
 
     try {
-      await Promise.all(requests.map((request) => request()));
+      await Promise.all(requests.map(request => request()));
       if (newQueue.length > 0 && !isCancelled) {
         setRequestQueue(newQueue);
       } else {
@@ -145,7 +136,7 @@ const SitemapImport = ({
             value={url}
             placeholder={'Sitemap 地址'}
             autoFocus
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={e => setUrl(e.target.value)}
           />
         </>
       )}

@@ -10,6 +10,35 @@ const nextConfig = {
   // 生产环境不暴露 source maps（安全考虑）
   productionBrowserSourceMaps: false,
   
+  // 忽略构建时的未处理Promise拒绝
+  onDemandEntries: {
+    // 忽略构建时的错误
+    maxInactiveAge: 25 * 1000,
+    pagesBufferLength: 2,
+  },
+  
+  // 性能优化：SWC 压缩在 Next.js 15+ 中默认启用
+  
+  // 启用实验性功能
+  experimental: {
+    // 优化包导入，减少 bundle 大小
+    optimizePackageImports: ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
+    
+    // 启用 PPR (Partial Prerendering) - Next.js 15 新特性
+    // ppr: 'incremental',
+  },
+  
+  // 编译器优化
+  compiler: {
+    // 移除 console.log (生产环境)
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn']
+    } : false,
+    
+    // Emotion 优化
+    emotion: true,
+  },
+  
   // 图片优化配置
   images: {
     // 开发环境可以 unoptimized，生产环境应该优化
@@ -28,15 +57,54 @@ const nextConfig = {
     // 设置图片格式支持
     formats: ['image/webp', 'image/avif'],
     
+    // 图片尺寸设备断点
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    
+    // 图片缓存优化
+    minimumCacheTTL: 60,
+    
     // SVG 安全配置
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;"
   },
   
+  // 配置需要转译的外部包
+  transpilePackages: ['@ctzhian/tiptap', '@ctzhian/ui'],
+  
+  // 性能日志
   logging: {
     fetches: {
       fullUrl: true
     }
+  },
+  
+  // 页面扩展名
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
+  
+  
+  // Headers 配置
+  async headers() {
+    return [
+      {
+        source: '/:all*(svg|jpg|png|webp|avif)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          }
+        ],
+      },
+      {
+        source: '/font/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          }
+        ],
+      }
+    ];
   },
   
   async rewrites() {

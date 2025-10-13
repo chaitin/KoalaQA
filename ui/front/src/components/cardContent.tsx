@@ -3,7 +3,7 @@ import { Box, Stack, Typography, BoxProps } from '@mui/material';
 import RemoveRedEyeOutlinedIcon from '@mui/icons-material/RemoveRedEyeOutlined';
 import ThumbUpAltOutlinedIcon from '@mui/icons-material/ThumbUpAltOutlined';
 import Link from 'next/link';
-import { formatNumber } from '@/utils';
+import { formatNumber } from '@/lib/utils';
 
 interface CardContentProps extends BoxProps {
   data: {

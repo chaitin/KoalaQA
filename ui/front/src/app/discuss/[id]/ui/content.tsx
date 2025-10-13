@@ -32,7 +32,7 @@ import { useParams, useRouter } from 'next/navigation'
 import React, { useContext, useState } from 'react'
 import EditCommentModal from './editCommentModal'
 
-import { formatNumber } from '@/utils'
+import { formatNumber } from '@/lib/utils'
 
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
@@ -124,7 +124,7 @@ const BaseDiscussCard = (props: {
         direction={{ xs: 'column', sm: 'row' }}
         justifyContent='space-between'
         alignItems={{ xs: 'flex-start', sm: 'center' }}
-        sx={{ mb: 2, pb: 2, borderBottom: isReply ? 'none' : '1px solid #eee' }}
+        sx={{ mb: 2, borderBottom: isReply ? 'none' : '1px solid #eee' }}
       >
         <Stack direction='row' gap={1} alignItems='center' sx={{ flex: 1 }}>
           {data.user_avatar ? (
@@ -299,7 +299,7 @@ const DiscussCard = (props: {
   index: number
   onOpt(event: React.MouseEvent<HTMLButtonElement>, comment: string, index: ModelDiscussionComment | ModelDiscussionReply): void
 }) => {
-  const { id }: { id: string } = useParams()
+  const { id }: { id: string } = useParams() || { id: '' }
   const { user } = useContext(AuthContext)
   const { checkAuth } = useAuthCheck()
   const [comment, setComment] = useState('')
@@ -365,7 +365,7 @@ const DiscussCard = (props: {
 
 const Content = (props: { data: ModelDiscussionDetail }) => {
   const { data } = props
-  const { id }: { id: string } = useParams()
+  const { id }: { id: string } = useParams() || { id: '' }
   const router = useRouter()
   const [commentIndex, setCommentIndex] = useState<ModelDiscussionComment | ModelDiscussionReply | null>(null)
   const [editCommentModalVisible, setEditCommentModalVisible] = useState(false)

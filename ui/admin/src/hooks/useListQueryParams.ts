@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 
 type Params = Record<string, string | number | undefined | null>;
 
-export function useListQueryParams(defaults: Params = { page: 1, pageSize: 10 }) {
+export function useListQueryParams(defaults: Params = { page: 1, size: 10 }) {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -29,13 +29,13 @@ export function useListQueryParams(defaults: Params = { page: 1, pageSize: 10 })
   };
 
   return {
-    query,               
+    query,
     page: Number(query.page) || 1,
-    pageSize: Number(query.pageSize) || 10,
+    size: Number(query.size) || 10,
     setPage: (p: number) => setParams({ page: p }),
-    setPageSize: (s: number) => setParams({ pageSize: s }),
+    setSize: (s: number) => setParams({ size: s }),
     setSearch: (obj: Params) => setParams({ ...obj, page: 1 }),
     setParams,
-    resetSearch: () => setParams({ page: 1, pageSize: defaults.pageSize }),
+    resetSearch: () => setParams({ page: 1, size: defaults.size }),
   };
 }

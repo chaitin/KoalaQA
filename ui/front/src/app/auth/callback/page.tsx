@@ -9,9 +9,9 @@ export default function AuthCallback() {
 
   useEffect(() => {
     // 获取OAuth回调参数
-    const code = searchParams.get('code');
-    const state = searchParams.get('state'); // 这里包含了原始的重定向URL
-    const error = searchParams.get('error');
+    const code = searchParams?.get('code');
+    const state = searchParams?.get('state'); // 这里包含了原始的重定向URL
+    const error = searchParams?.get('error');
 
     if (error) {
       console.error('OAuth login error:', error);

@@ -19,7 +19,7 @@ const ROUTER_NAME_TO_TITLE = {
 const Bread = () => {
   const pathname = usePathname();
   const pathArr = useMemo(() => {
-    return pathname
+    return (pathname || '')
       .split('/')
       .filter(
         (p) => ROUTER_NAME_TO_TITLE[p as keyof typeof ROUTER_NAME_TO_TITLE]

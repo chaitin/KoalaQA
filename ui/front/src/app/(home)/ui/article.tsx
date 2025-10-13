@@ -9,8 +9,8 @@ import { useAuthCheck } from '@/hooks/useAuthCheck'
 import SearchIcon from '@mui/icons-material/Search'
 import { Box, Button, Divider, InputAdornment, OutlinedInput, Stack, Typography } from '@mui/material'
 import { useBoolean } from 'ahooks'
-import { redirect, useRouter, useSearchParams } from 'next/navigation'
-import React, { useContext, useEffect, useRef, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import DiscussCard, { DiscussCardMobile } from './discussCard'
 
 export type Status = 'hot' | 'new' | 'mine'
@@ -48,8 +48,8 @@ const Article = ({
     : contextGroups
 
   const [releaseModalVisible, { setTrue: releaseModalOpen, setFalse: releaseModalClose }] = useBoolean(false)
-  const [status, setStatus] = useState<Status | 'search_key'>((searchParams.get('sort') as Status) || 'hot')
-  const [search, setSearch] = useState(searchParams.get('search') || '')
+  const [status, setStatus] = useState<Status>((searchParams?.get('sort') as Status) || 'hot')
+  const [search, setSearch] = useState(searchParams?.get('search') || '')
   const searchRef = useRef(search)
   const [articleData, setArticleData] = useState(data)
   const [page, setPage] = useState(1)
@@ -60,7 +60,19 @@ const Article = ({
     const params: GetDiscussionParams = {
       page: new_page,
       size: 10,
+      filter: status as 'hot' | 'new' | 'mine',
     }
+
+    // 如果有搜索关键词，添加到参数中
+    if (search && search.trim()) {
+      params.keyword = search.trim()
+    }
+
+    // 如果有选中的主题，添加到参数中
+    if (topics && topics.length > 0) {
+      params.group_ids = topics
+    }
+
     getDiscussion(params).then((res) => {
       if (res) {
         setArticleData((pre) => ({
@@ -72,12 +84,12 @@ const Article = ({
   }
 
   const createQueryString = (name: string, value: string) => {
-    const params = new URLSearchParams(searchParams.toString())
+    const params = new URLSearchParams(searchParams?.toString())
     params.set(name, value)
     return params.toString()
   }
 
-  const fetchList = ({ st = status, se: _se = search, tps: _tps = topics }) => {
+  const fetchList = useCallback((st: Status, se: string, tps: number[]) => {
     setPage(1)
     const params: GetDiscussionParams = {
       page: 1,
@@ -85,22 +97,75 @@ const Article = ({
       filter: st as 'hot' | 'new' | 'mine',
     }
 
+    // 如果有搜索关键词，添加到参数中
+    if (se && se.trim()) {
+      params.keyword = se.trim()
+    }
+
+    // 如果有选中的主题，添加到参数中
+    if (tps && tps.length > 0) {
+      params.group_ids = tps
+    }
+
     return getDiscussion(params).then((res) => {
       if (res) {
         setArticleData(res)
       }
     })
-  }
+  }, [])
 
   const onInputSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      redirect(`/?sort=${searchParams.get('sort')}&search=${search}`)
+      handleSearch()
     }
+  }
+
+  const handleSearch = () => {
+    const params = new URLSearchParams(searchParams?.toString())
+    
+    // 如果搜索内容为空，移除 search 参数，否则设置 search 参数
+    if (search && search.trim()) {
+      params.set('search', search.trim())
+    } else {
+      params.delete('search')
+    }
+    
+    // 如果没有指定排序方式，默认使用 hot
+    if (!params.get('sort')) {
+      params.set('sort', 'hot')
+    }
+    
+    router.push(`/?${params.toString()}`)
   }
 
   useEffect(() => {
     setArticleData(data)
   }, [data])
+
+  // 监听 URL 参数变化，刷新数据（但不改变输入框的值）
+  useEffect(() => {
+    const sortParam = (searchParams?.get('sort') as Status) || 'hot'
+    const tpsParam = searchParams?.get('tps')
+    const currentTopics = tpsParam ? tpsParam.split(',').map(Number) : []
+    
+    setStatus(sortParam)
+    // 注意：不在这里更新 search state，避免覆盖用户正在输入的内容
+  }, [searchParams])
+  
+  // 当 URL 中的搜索参数变化时，刷新数据
+  useEffect(() => {
+    const searchParam = searchParams?.get('search') || ''
+    const sortParam = (searchParams?.get('sort') as Status) || 'hot'
+    const tpsParam = searchParams?.get('tps')
+    const currentTopics = tpsParam ? tpsParam.split(',').map(Number) : []
+    
+    fetchList(sortParam, searchParam, currentTopics)
+  }, [searchParams, fetchList])
+
+  // 更新搜索引用
+  useEffect(() => {
+    searchRef.current = search
+  }, [search])
 
   const handleTopicClick = (t: number) => {
     let newTopics: number[]
@@ -112,7 +177,7 @@ const Article = ({
       newTopics = [...topics, t]
     }
     // 更新 url 参数
-    const params = new URLSearchParams(searchParams.toString())
+    const params = new URLSearchParams(searchParams?.toString())
     params.set('tps', newTopics.join(','))
     router.replace(`/?${params.toString()}`)
   }
@@ -136,7 +201,7 @@ const Article = ({
         sx={{
           mt: '64px',
           width: '100%',
-          height: { xs: 200, sm: 300 },
+          height: 200,
           backgroundImage: 'url(/banner.png)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
@@ -163,33 +228,40 @@ const Article = ({
       </Box>
 
       {/* 搜索栏 */}
-
-      <OutlinedInput
+      <Box
         sx={{
           width: { xs: '90%', sm: 600 },
-          height: 48,
           mx: 'auto',
           mt: '-30px',
           mb: 3,
-          backgroundColor: '#fff',
-          borderRadius: 3,
-          '.MuiOutlinedInput-notchedOutline': {
-            borderColor: 'transparent',
-          },
-          fontSize: 16,
-          boxShadow: '0px 2px 6px 0px rgba(0,0,0,0.1), 0px 2px 6px 0px rgba(218,220,224,0.5)',
-          px: 2,
+          display: 'flex',
+          gap: 1,
         }}
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        onKeyDown={onInputSearch}
-        placeholder='请输入任意内容,使用AI 搜索'
-        startAdornment={
-          <InputAdornment position='start'>
-            <SearchIcon sx={{ color: 'rgba(0,0,0,0.4)', mr: 1 }} />
-          </InputAdornment>
-        }
-      />
+      >
+        <OutlinedInput
+          sx={{
+            flex: 1,
+            height: 48,
+            backgroundColor: '#fff',
+            borderRadius: 3,
+            '.MuiOutlinedInput-notchedOutline': {
+              borderColor: 'transparent',
+            },
+            fontSize: 16,
+            boxShadow: '0px 2px 6px 0px rgba(0,0,0,0.1), 0px 2px 6px 0px rgba(218,220,224,0.5)',
+            px: 2,
+          }}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={onInputSearch}
+          placeholder='请输入任意内容,使用AI 搜索'
+          startAdornment={
+            <InputAdornment position='start'>
+              <SearchIcon sx={{ color: 'rgba(0,0,0,0.4)', mr: 1 }} />
+            </InputAdornment>
+          }
+        />
+      </Box>
 
       {/* 主要内容区域 */}
       <Stack
@@ -257,8 +329,7 @@ const Article = ({
               >
                 <Stack gap={0}>
                   {section.items?.map((item, index) => {
-                    const colors = ['#206CFF', '#FFA726', '#9C27B0', '#4CAF50']
-                    const color = colors[index % colors.length]
+                    const color = '#206CFF'
                     const icon = '#'
 
                     return (
@@ -280,7 +351,6 @@ const Article = ({
                           sx={{
                             width: 24,
                             height: 24,
-                            borderRadius: '50%',
                             backgroundColor: color,
                             display: 'flex',
                             alignItems: 'center',
@@ -352,7 +422,7 @@ const Article = ({
               发帖提问 👉
             </Button>
           </Stack>
-          {searchParams.get('search') && (!articleData.items || articleData.items.length === 0) && (
+          {searchParams?.get('search') && (!articleData.items || articleData.items.length === 0) && (
             <Card
               sx={{
                 p: 3,
@@ -411,12 +481,12 @@ const Article = ({
           open={releaseModalVisible}
           onClose={releaseModalClose}
           onOk={() => {
-            fetchList({})
+            fetchList(status, search, topics)
             router.refresh()
             releaseModalClose()
           }}
           selectedTags={[]}
-          initialTitle={searchParams.get('search') || ''}
+          initialTitle={searchParams?.get('search') || ''}
         />
       </Stack>
     </Stack>

@@ -237,8 +237,8 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
         >
           <Box
             sx={{
-              width: 44,
-              height: 44,
+              width: 36,
+              height: 36,
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
@@ -282,8 +282,8 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
           {/* 头像：浅蓝色渐变背景，悬停有阴影 */}
           <Box
             sx={{
-              width: 44,
-              height: 44,
+              width: 36,
+              height: 36,
               borderRadius: '50%',
               background: '#fff',
               display: 'flex',
