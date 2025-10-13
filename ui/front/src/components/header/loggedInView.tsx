@@ -46,7 +46,7 @@ type MessageNotifyInfo = {
   to_id: number
   to_name: string
   to_bot: boolean
-  id: Number
+  id: number
 }
 export interface LoggedInProps {
   user: any | null

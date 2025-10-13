@@ -30,7 +30,7 @@ export const authUtils = {
       try {
         const token = localStorage.getItem('auth_token');
         return token ? JSON.parse(token) : null;
-      } catch (e) {
+      } catch (_e) {
         return localStorage.getItem('auth_token');
       }
     }

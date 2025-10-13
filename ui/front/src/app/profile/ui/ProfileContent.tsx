@@ -10,8 +10,6 @@ import {
   Container,
   Divider,
   Stack,
-  Tab,
-  Tabs,
   TextField,
   Typography,
   IconButton,
@@ -83,7 +81,7 @@ function TabPanel(props: TabPanelProps) {
 
 export default function ProfileContent({ initialUser }: ProfileContentProps) {
   const { user, setUser } = useContext(AuthContext)
-  const [tabValue, setTabValue] = useState(0)
+  const tabValue = 0
   const [isEditingName, setIsEditingName] = useState(false)
   const [editName, setEditName] = useState(user?.username || '')
   const [isUploading, setIsUploading] = useState(false)
@@ -96,10 +94,6 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
     }
   }, [initialUser, setUser])
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue)
-  }
-
   const handleSaveName = async () => {
     if (!editName.trim()) return
 
@@ -107,7 +101,6 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
       await putUser({ name: editName })
       setUser({ ...user, username: editName })
       setIsEditingName(false)
-      console.log('用户名更新成功')
     } catch (error) {
       console.error('更新用户名失败:', error)
       alert('更新用户名失败，请重试')
@@ -137,7 +130,6 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
     setIsUploading(true)
     try {
       await putUser({ avatar: file })
-      console.log('头像上传成功')
 
       // 创建本地预览URL
       const previewUrl = URL.createObjectURL(file)
@@ -150,11 +142,6 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
     } finally {
       setIsUploading(false)
     }
-  }
-
-  const formatDate = (timestamp?: number) => {
-    if (!timestamp) return '-'
-    return dayjs.unix(timestamp).format('YYYY-MM-DD HH:mm:ss')
   }
 
   return (
@@ -312,7 +299,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
         open={changePasswordModalOpen}
         onClose={() => setChangePasswordModalOpen(false)}
         onSuccess={() => {
-          console.log('密码修改成功')
+          // 密码修改成功
         }}
       />
     </Container>

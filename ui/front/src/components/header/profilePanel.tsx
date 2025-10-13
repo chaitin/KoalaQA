@@ -1,6 +1,5 @@
 'use client';
 import { postUserLogout } from '@/api';
-import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import {
   Avatar,
   Box,
@@ -12,10 +11,9 @@ import {
   Stack,
 } from '@mui/material';
 import { useLocalStorageState } from 'ahooks';
-import React, { useContext, useEffect } from 'react';
-import { Badge, IdCard, IdInfo, InfoCard, Row, TagRow } from './components';
+import React, { useContext } from 'react';
+import { IdCard, IdInfo, InfoCard } from './components';
 import { AuthContext } from '../authProvider';
-import Cookies from 'js-cookie';
 import Icon from '../icon';
 import { clearAuthData } from '@/api/httpClient';
 

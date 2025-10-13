@@ -11,7 +11,7 @@ export const Tag = styled('div')(({ theme }) => ({
   fontSize: '12px',
 }));
 
-export const Title = styled(Link)(({ theme }) => ({
+export const Title = styled(Link)(() => ({
   fontSize: 16,
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
@@ -44,7 +44,7 @@ interface CardProps extends BoxProps {
 }
 
 export const Card = (props: CardProps) => {
-  const { href, ...other } = props;
+  const { href: _href, ...other } = props;
   return <CardWrap {...other} />;
 };
 

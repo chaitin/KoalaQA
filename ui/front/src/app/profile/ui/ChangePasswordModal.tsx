@@ -86,9 +86,9 @@ export default function ChangePasswordModal({
       // 提示用户重新登录
       alert('密码修改成功，请重新登录');
       window.location.href = '/login';
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('修改密码失败:', error);
-      setError(error?.message || '修改密码失败，请重试');
+      setError((error as Error)?.message || '修改密码失败，请重试');
     } finally {
       setLoading(false);
     }
