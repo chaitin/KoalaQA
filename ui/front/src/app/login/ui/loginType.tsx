@@ -2,12 +2,11 @@
 
 import { getUserLoginMethod, getUserLoginThird } from '@/api';
 import { SvcAuthFrontendGetRes } from '@/api/types';
-import { AuthType } from '@/types/auth';
 import { Card } from '@/components';
+import { AuthType } from '@/types/auth';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import Link from 'next/link';
 import { Suspense, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
 import Account from './account';
 
 const LoginType = () => {
@@ -15,8 +14,6 @@ const LoginType = () => {
     null
   );
   const [loading, setLoading] = useState(true);
-  const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get('redirect');
 
   useEffect(() => {
     getUserLoginMethod()
@@ -39,13 +36,13 @@ const LoginType = () => {
       const response = await getUserLoginThird({ type });
 
       // 使用类型断言处理API响应
-      const apiResponse = response as any;
+      const apiResponse = response as { data?: string } | string;
       let oauthUrl = '';
       
-      if (apiResponse && apiResponse.data) {
+      if (typeof apiResponse === 'object' && apiResponse.data) {
         oauthUrl = apiResponse.data;
-      } else if (typeof response === 'string') {
-        oauthUrl = response;
+      } else if (typeof apiResponse === 'string') {
+        oauthUrl = apiResponse;
       } else {
         console.error('Failed to get third party login URL');
         return;

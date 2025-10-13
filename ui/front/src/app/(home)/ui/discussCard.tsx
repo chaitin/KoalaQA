@@ -5,7 +5,7 @@ import { CommonContext } from '@/components/commonProvider'
 import { Avatar, Tag } from '@/components/discussion'
 import { formatNumber } from '@/utils'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import { Box, Chip, Stack, Typography } from '@mui/material'
+import { Chip, Stack, Typography } from '@mui/material'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -15,7 +15,20 @@ import { useContext, useMemo } from 'react'
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
 
-const DiscussCard = ({ data, keywords }: { data: ModelDiscussionListItem; keywords?: string }) => {
+// 将Markdown中的图片替换为[图片]文本
+const replaceImagesWithText = (content: string): string => {
+  if (!content) return content
+  
+  // 替换Markdown图片语法: ![alt](url)
+  let processedContent = content.replace(/!\[([^\]]*)\]\([^\)]+\)/g, '[图片]')
+  
+  // 替换HTML img标签
+  processedContent = processedContent.replace(/<img[^>]*>/gi, '[图片]')
+  
+  return processedContent
+}
+
+const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListItem; keywords?: string }) => {
   const it = data
   const { groups } = useContext(CommonContext)
 
@@ -123,7 +136,7 @@ const DiscussCard = ({ data, keywords }: { data: ModelDiscussionListItem; keywor
         </Stack>
       </Stack>
       <MarkDown
-        content={it.content}
+        content={replaceImagesWithText(it.content || '')}
         truncateLength={100} // 设置截断长度为100个字符，根据需要调整
       />
       {/* 底部标签和评论数 */}
@@ -283,7 +296,7 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
         </Stack>
       </Stack>
       <MarkDown
-        content={it.content}
+        content={replaceImagesWithText(it.content || '')}
         truncateLength={60} // 设置截断长度为100个字符，根据需要调整
       />
       <Stack direction='row' gap='8px 12px' flexWrap='wrap'>

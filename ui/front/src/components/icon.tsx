@@ -1,5 +1,5 @@
 'use client';
-import React, { type FC, forwardRef } from 'react';
+import { forwardRef } from 'react';
 
 import { styled, SvgIconProps } from '@mui/material';
 

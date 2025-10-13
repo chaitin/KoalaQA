@@ -7,11 +7,17 @@ import { useDebounceFn } from 'ahooks';
 
 import { MarkDown } from '@/components';
 
+interface MarkdownHeader {
+  text: string;
+  level: string;
+  node: HTMLElement;
+}
+
 const InfoRelevance = (props: { data: ModelDiscussionDetail }) => {
   const { data } = props;
   const isClickRef = useRef(false);
   const [viewHTag, setViewTag] = useState<HTMLElement>();
-  const [markdownTitle, setMarkdownTitle] = useState<any[]>([]);
+  const [markdownTitle, setMarkdownTitle] = useState<MarkdownHeader[]>([]);
 
   const getAllHTag = () => {
     const headers = document
@@ -22,7 +28,7 @@ const InfoRelevance = (props: { data: ModelDiscussionDetail }) => {
       return {
         text: (header as HTMLElement).innerText, // 标题文本
         level: header.tagName.toLowerCase().charAt(1), // 标题级别（1 表示 h1, 2 表示 h2, 依此类推）
-        node: header,
+        node: header as HTMLElement,
       };
     });
     const hash = decodeURI(location.hash.slice(1));
@@ -74,12 +80,18 @@ const InfoRelevance = (props: { data: ModelDiscussionDetail }) => {
     // setTimeout(() => {
     //   // getAllHTag();
     // }, 2000);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
   useEffect(() => {
-    document.addEventListener('scroll', () => {
+    const handleScroll = () => {
       run();
-    });
+    };
+    document.addEventListener('scroll', handleScroll);
+    return () => {
+      document.removeEventListener('scroll', handleScroll);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
     <Stack

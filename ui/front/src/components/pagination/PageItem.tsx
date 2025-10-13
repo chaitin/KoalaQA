@@ -68,6 +68,11 @@ const PageItem: React.FC<PageItemProp> = (props) => {
       case "end-ellipsis": {
         return <span>...</span>;
       }
+      case "first":
+      case "last":
+      default: {
+        return null;
+      }
     }
   };
 

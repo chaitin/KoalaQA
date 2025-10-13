@@ -6,7 +6,7 @@ import { createContext, useEffect, useState } from 'react';
 export const AuthContext = createContext<{
   user: ModelUserInfo;
   loading: boolean;
-  fetchUser: () => Promise<any>;
+  fetchUser: () => Promise<void>;
   setUser: React.Dispatch<React.SetStateAction<ModelUserInfo>>;
 }>({
   user: {
@@ -37,10 +37,9 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setLoading(true);
     return getUser()
       .then(setUser)
-      .catch((error) => {
+      .catch((_error) => {
         // 如果是401错误，说明需要登录，但不在这里处理重定向
         // 重定向逻辑已经在httpClient中处理了
-        console.log('User not authenticated:', error);
       })
       .finally(() => setLoading(false));
   };
