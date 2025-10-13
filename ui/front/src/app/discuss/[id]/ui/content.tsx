@@ -13,7 +13,6 @@ import {
   ModelDiscussionComment,
   ModelDiscussionDetail,
   ModelDiscussionReply,
-  SvcCommentUpdateReq,
 } from '@/api/types'
 import { Card, MarkDown } from '@/components'
 import { AuthContext } from '@/components/authProvider'
@@ -294,7 +293,12 @@ const BaseDiscussCard = (props: {
   )
 }
 
-const DiscussCard = (props: any) => {
+const DiscussCard = (props: {
+  data: ModelDiscussionComment
+  disData: ModelDiscussionDetail
+  index: number
+  onOpt(event: React.MouseEvent<HTMLButtonElement>, comment: string, index: ModelDiscussionComment | ModelDiscussionReply): void
+}) => {
   const { id }: { id: string } = useParams()
   const { user } = useContext(AuthContext)
   const { checkAuth } = useAuthCheck()
@@ -370,7 +374,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
 
   const handleClick = (
     event: React.MouseEvent<HTMLButtonElement>,
-    _comment: SvcCommentUpdateReq,
+    _comment: string,
     index: ModelDiscussionComment | ModelDiscussionReply,
   ) => {
     setAnchorEl(event.currentTarget)
@@ -380,9 +384,8 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
     setAnchorEl(null)
   }
   const onSubmit = (comment: string) => {
-    // @ts-ignore
     return putDiscussionDiscIdCommentCommentId(
-      { discId: id, commentId: commentIndex?.id! },
+      { discId: id, commentId: commentIndex?.id ?? 0 },
       {
         content: comment,
       },
@@ -429,9 +432,11 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
       <Menu id='basic-menu' anchorEl={anchorEl} open={open} onClose={handleClose}>
         {commentIndex?.user_id == data.current_user_id && <MenuItem onClick={handleEditComment}>编辑</MenuItem>}
         {commentIndex?.user_id == data.current_user_id && <MenuItem onClick={handleDelete}>删除</MenuItem>}
-        {data?.user_id == data.current_user_id && !data.comments?.[0]?.accepted && (commentIndex as any)?.replies && (
-          <MenuItem onClick={handleAccept}>采纳</MenuItem>
-        )}
+        {data?.user_id == data.current_user_id &&
+          !data.comments?.[0]?.accepted &&
+          'replies' in (commentIndex || {}) && (
+            <MenuItem onClick={handleAccept}>采纳</MenuItem>
+          )}
       </Menu>
       <EditCommentModal
         open={editCommentModalVisible}

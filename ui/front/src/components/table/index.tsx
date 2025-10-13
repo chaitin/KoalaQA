@@ -90,7 +90,7 @@ const Table: <T extends { [key: string]: unknown }>(
   } = props;
 
   const handleChangePage = useCallback(
-    (event: unknown, newPage: number) => {
+    (_event: unknown, newPage: number) => {
       pagination?.onChange({
         page: newPage,
         rowsPerPage: pagination.rowsPerPage,
@@ -162,8 +162,8 @@ const Table: <T extends { [key: string]: unknown }>(
   }, []);
 
   const onClickBodyRow = useCallback(
-    (row: any) => () => {
-      onRowClick && onRowClick(row);
+    (row: (typeof data)[number]) => () => {
+      onRowClick?.(row);
     },
     [onRowClick]
   );

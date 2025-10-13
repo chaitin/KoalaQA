@@ -57,7 +57,7 @@ const Article = ({
   const fetchMoreList = () => {
     const new_page = page + 1
     setPage(new_page)
-    let params: GetDiscussionParams = {
+    const params: GetDiscussionParams = {
       page: new_page,
       size: 10,
     }
@@ -77,12 +77,12 @@ const Article = ({
     return params.toString()
   }
 
-  const fetchList = ({ st = status, se = search, tps = topics }) => {
+  const fetchList = ({ st = status, se: _se = search, tps: _tps = topics }) => {
     setPage(1)
     const params: GetDiscussionParams = {
       page: 1,
       size: 10,
-      filter: st as any,
+      filter: st as 'hot' | 'new' | 'mine',
     }
 
     return getDiscussion(params).then((res) => {
@@ -94,7 +94,6 @@ const Article = ({
 
   const onInputSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      console.log('----')
       redirect(`/?sort=${searchParams.get('sort')}&search=${search}`)
     }
   }

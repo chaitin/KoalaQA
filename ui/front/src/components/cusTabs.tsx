@@ -34,8 +34,8 @@ const CusTabs: FC<RadioButtonProps> = ({
     v || defatValue || list[0].value
   );
   const handleChange = (
-    event: React.SyntheticEvent<Element, Event>,
-    id: any
+    _event: React.SyntheticEvent<Element, Event>,
+    id: string | number
   ) => {
     if (id !== null) {
       setValue(id);
@@ -52,7 +52,7 @@ const CusTabs: FC<RadioButtonProps> = ({
       value={value}
       onChange={
         change
-          ? (event: React.SyntheticEvent<Element, Event>, value: any) =>
+          ? (_event: React.SyntheticEvent<Element, Event>, value: string | number) =>
               change(value)
           : handleChange
       }

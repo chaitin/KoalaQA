@@ -15,7 +15,7 @@ import {
 
 export const CommonContext = createContext<{
   headerStyle: SxProps<Theme>;
-  setHeaderStyle: Dispatch<SetStateAction<{}>>;
+  setHeaderStyle: Dispatch<SetStateAction<SxProps<Theme>>>;
   showHeaderSearch: boolean;
   setShowHeaderSearch: Dispatch<SetStateAction<boolean>>;
   keywords: string;
@@ -52,7 +52,7 @@ export const CommonContext = createContext<{
 
 const CommonProvider = ({ children }: { children: React.ReactNode }) => {
   const [showHeaderSearch, setShowHeaderSearch] = useState(false);
-  const [headerStyle, setHeaderStyle] = useState({});
+  const [headerStyle, setHeaderStyle] = useState<SxProps<Theme>>({});
   const [keywords, setKeywords] = useState('');
   const [groupsLoading, setGroupsLoading] = useState(true);
   const [groups, setGroupsState] = useState<{

@@ -1,6 +1,5 @@
 import { ModelDiscussionComment } from '@/api/types';
 import EditorWrap from '@/components/editor/edit/Wrap';
-import MdEditor from '@/components/mdEditor';
 import Modal from '@/components/modal';
 import React, { useEffect, useState } from 'react';
 

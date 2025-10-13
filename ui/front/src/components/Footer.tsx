@@ -28,6 +28,7 @@ const Footer = () => {
         gap={0.5}
       >
         本网站由
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={'/inverse_logo-text.png'} alt='KoalaQA' width={90} height={16} />
          提供技术支持
       </Stack>

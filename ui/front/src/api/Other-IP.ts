@@ -116,7 +116,7 @@ export const openIPApp = (body: {
   org_id: number;
   package_id: number;
 }) =>
-  request<ResponseData<{}>>({
+  request<ResponseData<object>>({
     path: '/api/v1/apps/' + body.org_id + '/subscribe',
     method: 'post',
     body,

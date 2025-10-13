@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 /**
  * LocalStorage Hook - 类型安全的本地存储

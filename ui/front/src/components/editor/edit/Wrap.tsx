@@ -150,29 +150,29 @@ const EditorWrap = ({
 
   // 聚焦编辑器的函数
   const focusEditor = useCallback(() => {
-    if (editorRef.editor && (editorRef.editor as any).view) {
-      editorRef.editor.commands.focus();
-      // 将光标移到内容末尾
-      const docSize = editorRef.editor.state.doc.content.size;
-      editorRef.editor.commands.setTextSelection(docSize);
-    }
+    if (!editorRef.editor || !(editorRef.editor as any).view) return;
+    
+    editorRef.editor.commands.focus();
+    // 将光标移到内容末尾
+    const docSize = editorRef.editor.state.doc.content.size;
+    editorRef.editor.commands.setTextSelection(docSize);
   }, []);
 
   // 编辑器加载后自动聚焦
   useEffect(() => {
-    if (editorRef.editor && isMounted) {
-      // 立即尝试聚焦
-      focusEditor();
+    if (!editorRef.editor || !isMounted) return;
+    
+    // 立即尝试聚焦
+    focusEditor();
 
-      // 延时再次尝试，确保聚焦成功
-      const timer1 = setTimeout(focusEditor, 100);
-      const timer2 = setTimeout(focusEditor, 300);
+    // 延时再次尝试，确保聚焦成功
+    const timer1 = setTimeout(focusEditor, 100);
+    const timer2 = setTimeout(focusEditor, 300);
 
-      return () => {
-        clearTimeout(timer1);
-        clearTimeout(timer2);
-      };
-    }
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
   }, [editorRef.editor, isMounted, focusEditor]);
 
   // 监听组件可见性，当组件变为可见时聚焦编辑器

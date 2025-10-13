@@ -9,7 +9,6 @@ import {
 } from '@/constant';
 import { Avatar, Stack } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import React from 'react';
 
 export const ProfileComponent = styled('div')(({ theme }) => ({
   display: 'flex',

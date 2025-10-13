@@ -25,7 +25,7 @@ type ButtonSizeType = 'small' | 'medium' | 'large';
 
 export interface ButtonProps {
   children: React.ReactNode;
-  startIcon?: React.ReactElement<any>;
+  startIcon?: React.ReactElement;
   type?: ButtonType;
   size?: ButtonSizeType;
   sx?: SxProps;
@@ -164,7 +164,7 @@ const Button: React.FC<ButtonProps> = (props) => {
     (event: React.MouseEvent<HTMLElement>) => {
       event.stopPropagation();
       if (!disabled) {
-        onClick && onClick();
+        onClick?.();
       }
     },
     [disabled, onClick]

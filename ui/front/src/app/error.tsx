@@ -39,11 +39,12 @@ export default function Error({
           <Typography variant='h6'>发生错误</Typography>
           {(() => {
             // 优先展示后端返回的 message/status/code
-            const isBackend: boolean = (err as any)?.isBackend;
-            const backendData: any = (err as any)?.data;
-            const status: any = (err as any)?.status;
-            const code: any = (err as any)?.code;
-            const url: any = (err as any)?.url;
+            const errWithData = err as { isBackend?: boolean; data?: unknown; status?: number; code?: number; url?: string };
+            const isBackend: boolean = errWithData.isBackend ?? false;
+            const backendData = errWithData.data as { message?: string } | undefined;
+            const status: number | undefined = errWithData.status;
+            const code: number | undefined = errWithData.code;
+            const url: string | undefined = errWithData.url;
             if (isBackend) {
               return (
                 <>

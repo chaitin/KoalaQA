@@ -62,7 +62,7 @@ const Register = () => {
       return;
     }
     const password = aesCbcEncrypt(data.password.trim());
-    const { re_password, ...submitData } = data;
+    const { re_password: _re_password, ...submitData } = data;
     postUserRegister({ ...submitData, password }).then(() => {
       Message.success('注册成功！');
       redirect('/login');
@@ -129,7 +129,7 @@ const Register = () => {
         <Button
           variant='contained'
           onClick={handleSubmit(handleRegister, (e) => {
-            console.log(e);
+            console.error('注册表单验证失败:', e);
           })}
         >
           注册
