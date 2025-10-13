@@ -14,7 +14,7 @@ import { useSearchParams } from 'next/navigation';
 import z from 'zod';
 
 const schema = z.object({
-  email: z.email('邮箱格式不正确').default(''),
+  email: z.string().email('邮箱格式不正确').default(''),
   password: z.string().min(5, '密码不能少于 5 位').default(''),
 });
 
@@ -22,7 +22,7 @@ const Account = ({ isChecked, passwordConfig }: { isChecked: boolean, passwordCo
   const [, setToken] = useLocalStorageState<string>('auth_token', {
     defaultValue: '',
   });
-  const { user, fetchUser } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get('redirect');
 
