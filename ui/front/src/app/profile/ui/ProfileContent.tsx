@@ -14,11 +14,9 @@ import {
   Typography,
   IconButton,
 } from '@mui/material'
-import EditIcon from '@mui/icons-material/Edit'
 import SaveIcon from '@mui/icons-material/Save'
 import CancelIcon from '@mui/icons-material/Cancel'
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera'
-import LockIcon from '@mui/icons-material/Lock'
 import { useContext, useEffect, useState } from 'react'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
@@ -225,7 +223,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
                 ) : (
                   <>
                     <Typography sx={{ flex: 1 }}>{user?.username || '-'}</Typography>
-                    <Button startIcon={<EditIcon />} onClick={() => setIsEditingName(true)} size='small'>
+                    <Button onClick={() => setIsEditingName(true)} size='small' sx={{ minWidth: 60 }}>
                       修改
                     </Button>
                   </>
@@ -239,9 +237,9 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
               <Stack direction='row' spacing={2} alignItems='center'>
                 <Typography sx={{ width: 100, color: '#666' }}>邮箱</Typography>
                 <Typography sx={{ flex: 1 }}>{user?.email || '未绑定'}</Typography>
-                <Button size='small' variant='outlined' disabled sx={{ minWidth: 60 }}>
+                {/* <Button size='small' disabled sx={{ minWidth: 60 }}>
                   {user?.email ? '修改' : '绑定'}
-                </Button>
+                </Button> */}
               </Stack>
               <Divider sx={{ mt: 2 }} />
             </Box>
@@ -266,14 +264,11 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
             <Typography sx={{ flex: 1, color: '#999' }}>••••••••</Typography>
             {user?.builtin ? (
               <Button
-                startIcon={<LockIcon />}
                 size='small'
-                variant='outlined'
                 disabled
                 sx={{
                   minWidth: 80,
                   color: '#999',
-                  borderColor: '#ddd',
                 }}
                 title='内置用户不允许修改密码'
               >
@@ -281,10 +276,8 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
               </Button>
             ) : (
               <Button
-                startIcon={<LockIcon />}
                 onClick={() => setChangePasswordModalOpen(true)}
                 size='small'
-                variant='outlined'
                 sx={{ minWidth: 80 }}
               >
                 修改

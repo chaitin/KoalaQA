@@ -2,7 +2,15 @@ import { getAdminKb, postAdminKb, putAdminKbKbId, SvcKBCreateReq, SvcKBListItem 
 import Card from '@/components/card';
 import { Icon, message, Modal } from '@ctzhian/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { alpha, Grid2 as Grid, Stack, TextField, Typography } from '@mui/material';
+import {
+  alpha,
+  Box,
+  CircularProgress,
+  Grid2 as Grid,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { useRequest } from 'ahooks';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -18,7 +26,7 @@ const schema = z.object({
 
 const AdminDocument = () => {
   const navigator = useNavigate();
-  const { data, refresh } = useRequest(getAdminKb);
+  const { data, loading, refresh } = useRequest(getAdminKb);
   const kbData = data?.items?.[0] as SvcKBListItem;
   const [showCreate, setShowCreate] = useState(false);
   const [editItem, setEditItem] = useState<SvcKBListItem | null>(null);
@@ -93,53 +101,62 @@ const AdminDocument = () => {
               知识学习
             </Typography>
             {/* 替换原有的知识学习模块内容 */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* 问答对 */}
-              {knowledgeMenu.map(item => (
-                <Card
-                  key={item.title}
-                  sx={{
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    bgcolor: '#F8F9FA',
-                    cursor: 'pointer',
-                    '&:hover': {
-                      borderColor: '#3860F4',
-                    },
-                  }}
-                  onClick={() => navigator(item.route)}
-                  onMouseEnter={() => setHoveredItem(item.title)}
-                  onMouseLeave={() => setHoveredItem(null)}
-                >
-                  <Stack direction="row" alignItems="center" sx={{ py: 1 }}>
-                    <Icon
-                      type={hoveredItem === item.title ? item.hoverIcon : item.icon}
-                      sx={{ fontSize: '26px' }}
-                    />
-                    <Stack sx={{ ml: '20px', mr: 'auto' }}>
-                      <Typography variant="subtitle2">{item.title}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {item.desc}
-                      </Typography>
+            {loading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
+                <CircularProgress size={24} />
+                <Typography variant="body2" sx={{ ml: 2, color: 'text.secondary' }}>
+                  加载中...
+                </Typography>
+              </Box>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {/* 问答对 */}
+                {knowledgeMenu.map(item => (
+                  <Card
+                    key={item.title}
+                    sx={{
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      bgcolor: '#F8F9FA',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        borderColor: '#3860F4',
+                      },
+                    }}
+                    onClick={() => navigator(item.route)}
+                    onMouseEnter={() => setHoveredItem(item.title)}
+                    onMouseLeave={() => setHoveredItem(null)}
+                  >
+                    <Stack direction="row" alignItems="center" sx={{ py: 1 }}>
+                      <Icon
+                        type={hoveredItem === item.title ? item.hoverIcon : item.icon}
+                        sx={{ fontSize: '26px' }}
+                      />
+                      <Stack sx={{ ml: '20px', mr: 'auto' }}>
+                        <Typography variant="subtitle2">{item.title}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {item.desc}
+                        </Typography>
+                      </Stack>
+                      <Stack direction="row" alignItems="center">
+                        <Typography variant="subtitle2" color="text.primary" sx={{ pr: 1 }}>
+                          {item.count}
+                        </Typography>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{
+                            fontWeight: 400,
+                            color: theme => alpha(theme.palette.text.primary, 0.4),
+                          }}
+                        >
+                          {item.subfix}
+                        </Typography>
+                      </Stack>
                     </Stack>
-                    <Stack direction="row" alignItems="center">
-                      <Typography variant="subtitle2" color="text.primary" sx={{ pr: 1 }}>
-                        {item.count}
-                      </Typography>
-                      <Typography
-                        variant="subtitle2"
-                        sx={{
-                          fontWeight: 400,
-                          color: theme => alpha(theme.palette.text.primary, 0.4),
-                        }}
-                      >
-                        {item.subfix}
-                      </Typography>
-                    </Stack>
-                  </Stack>
-                </Card>
-              ))}
-            </div>
+                  </Card>
+                ))}
+              </div>
+            )}
             {/* 移除原有的创建按钮 */}
           </Card>
         </Grid>

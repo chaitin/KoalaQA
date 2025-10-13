@@ -1,4 +1,5 @@
 import { getUser } from '@/api'
+import { createServerFetch } from '@/lib/server-fetch'
 import '@/asset/styles/common.css'
 import '@/asset/styles/markdown.css'
 import { AuthProvider, CommonProvider } from '@/components'
@@ -18,19 +19,51 @@ import Header from '../components/header'
 import Scroll from './scroll'
 import Footer from '@/components/Footer'
 
+// 字体优化 - 添加 display swap 提升首屏性能
 const monoFont = localFont({
   src: '../asset/font/Mono.ttf',
   variable: '--font-mono',
+  display: 'swap',
+  preload: true,
 })
+
 const alimamashuheitiFont = localFont({
   src: '../asset/font/AlimamaShuHeiTi-Bold.ttf',
   variable: '--font-alimamashuheiti',
+  display: 'swap',
+  preload: true,
 })
 
+// 优化 metadata
 export const metadata: Metadata = {
-  title: '',
-  description: '',
-  keywords: [''],
+  title: {
+    default: 'Koala QA - 技术讨论社区',
+    template: '%s | Koala QA'
+  },
+  description: '一个专业的技术讨论和知识分享社区',
+  keywords: ['技术讨论', '问答', '知识分享', '开发者社区'],
+  authors: [{ name: 'Koala QA Team' }],
+  creator: 'Koala QA',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'zh_CN',
+    siteName: 'Koala QA',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
 }
 
 export const viewport: Viewport = {
@@ -38,8 +71,15 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  themeColor: '#ffffff',
 }
 
+// 创建服务端用户数据获取函数
+const getUserServer = createServerFetch('/user', {
+  next: { revalidate: 3600 } // 静态缓存，用户信息变化不频繁
+});
+
+// 用户数据获取 - 使用服务端优化
 async function getUserData() {
   try {
     const cookieStore = await cookies()
@@ -49,11 +89,14 @@ async function getUserData() {
       return null
     }
 
-    // 使用getUser API，httpClient会自动处理cookie转发
+    // 使用服务端优化的数据获取
     const userData = await getUser()
     return userData || null
   } catch (error) {
-    console.error('Failed to fetch user data:', error)
+    // 静默失败，不影响页面渲染
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Failed to fetch user data:', error)
+    }
     return null
   }
 }
@@ -63,18 +106,26 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
 
   return (
     <html lang='zh-CN'>
-      <meta httpEquiv='content-language' content='zh-CN'></meta>
-      <body className={monoFont.variable + ' ' + alimamashuheitiFont.variable}>
+      <head>
+        <meta httpEquiv='content-language' content='zh-CN' />
+        {/* DNS 预解析优化 */}
+        <link rel='dns-prefetch' href='//fonts.googleapis.com' />
+        <link rel='preconnect' href='//fonts.googleapis.com' crossOrigin='anonymous' />
+      </head>
+      <body className={`${monoFont.variable} ${alimamashuheitiFont.variable}`}>
+        {/* 图标字体预加载 - beforeInteractive 确保在交互前加载 */}
         <Script src='/font/iconfont.js' strategy='beforeInteractive' />
 
         <CommonProvider>
-          <AuthProvider>
+          <AuthProvider initialUser={user}>
             <AppRouterCacheProvider>
               <ThemeProvider theme={theme}>
                 <CssBaseline />
                 <Header initialUser={user} />
-                {props.children}
-                <Footer/>
+                <main id='main-content'>
+                  {props.children}
+                </main>
+                <Footer />
                 <Scroll />
               </ThemeProvider>
             </AppRouterCacheProvider>

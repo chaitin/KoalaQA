@@ -1,7 +1,7 @@
 import Card from '@/components/card';
 import { useAppDispatch } from '@/store';
 import { setPageName } from '@/store/slices/breadcrumb';
-import { Stack } from '@mui/material';
+import { Box, Stack } from '@mui/material';
 import { useEffect } from 'react';
 import Doc from './doc';
 import Qa from './qa';
@@ -11,9 +11,8 @@ import Kb from './kb';
 const AdminDocument = ({ tab }: { tab: 'qa' | 'doc' | 'web' | 'kb' }) => {
   const dispatch = useAppDispatch();
   useEffect(() => {
-    const pageName = tab === 'qa' ? '问答对' : 
-                     tab === 'doc' ? '通用文档' : 
-                     tab === 'web' ? '在线网页' : '知识库';
+    const pageName =
+      tab === 'qa' ? '问答对' : tab === 'doc' ? '通用文档' : tab === 'web' ? '在线网页' : '知识库';
     dispatch(setPageName(pageName));
     return () => {
       dispatch(setPageName(''));
@@ -21,15 +20,13 @@ const AdminDocument = ({ tab }: { tab: 'qa' | 'doc' | 'web' | 'kb' }) => {
   }, [tab]);
   return (
     <Stack
-      component={Card}
+      component={tab !== 'kb' ? Card : Box}
       sx={{
         height: '100%',
         position: 'relative',
       }}
     >
-      {tab === 'qa' ? <Qa /> : 
-       tab === 'doc' ? <Doc /> : 
-       tab === 'web' ? <Web /> : <Kb />}
+      {tab === 'qa' ? <Qa /> : tab === 'doc' ? <Doc /> : tab === 'web' ? <Web /> : <Kb />}
     </Stack>
   );
 };

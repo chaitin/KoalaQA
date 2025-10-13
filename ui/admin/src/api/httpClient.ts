@@ -10,6 +10,7 @@
  * ---------------------------------------------------------------
  */
 
+import { message } from "@ctzhian/ui";
 import type {
   AxiosInstance,
   AxiosRequestConfig,
@@ -17,7 +18,6 @@ import type {
   ResponseType,
 } from "axios";
 import axios from "axios";
-import { message } from "@ctzhian/ui";
 
 export type QueryParamsType = Record<string | number, any>;
 

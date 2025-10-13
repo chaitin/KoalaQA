@@ -77,7 +77,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
   status = 'create',
   initialTitle,
 }) => {
-  const { id } = useParams();
+  const { id } = useParams() || { id: '' };
   const {
     control,
     formState: { errors },

@@ -35,6 +35,7 @@ export enum PlatformPlatformType {
   PlatformWikiJS = 7,
   PlatformYuQue = 8,
   PlatformPandawiki = 9,
+  PlatformDingtalk = 10,
 }
 
 export enum ModelUserRole {
@@ -87,6 +88,7 @@ export enum ModelDocStatus {
   DocStatusUnknown = 0,
   DocStatusAppling = 1,
   DocStatusPendingReview = 2,
+  DocStatusPendingApply = 3,
 }
 
 export enum ModelDiscussionType {
@@ -370,6 +372,10 @@ export interface ModelWebhookConfig {
   url: string;
 }
 
+export interface RouterSystemInfoRes {
+  version?: string;
+}
+
 export interface SvcAuthFrontendGetAuth {
   button_desc?: string;
   type?: number;
@@ -407,7 +413,7 @@ export interface SvcCreateSpaceFolderReq {
 }
 
 export interface SvcCreateSpaceForlderItem {
-  doc_id?: string;
+  doc_id: string;
   title?: string;
 }
 
@@ -600,6 +606,11 @@ export interface SvcModelKitCheckReq {
 
 export interface SvcPolishReq {
   text?: string;
+}
+
+export interface SvcReviewReq {
+  add_new: boolean;
+  content: string;
 }
 
 export interface SvcSitemapExportReq {

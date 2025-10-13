@@ -24,7 +24,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const { user } = useContext(AuthContext)
   const [releaseVisible, { setFalse: releaseClose, setTrue: releaseOpen }] = useBoolean(false)
   const router = useRouter()
-  const { id }: { id: string } = useParams()
+  const { id }: { id: string } = useParams() || { id: '' }
   const { checkAuth } = useAuthCheck()
   const anchorElRef = useRef(null)
   const [comment, setComment] = useState('')
@@ -154,7 +154,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         alignItems='flex-end'
         gap={2}
         justifyContent='space-between'
-        sx={{ mt: { xs: '12px', sm: 3 }, mb: 1 }}
+        sx={{ my: 1 }}
       >
         <Stack direction='row' flexWrap='wrap' gap='8px 16px'>
           {data.groups?.map((item) => {

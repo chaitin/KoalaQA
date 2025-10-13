@@ -30,6 +30,15 @@ import type {
   ResponseType,
 } from "axios";
 import axios from "axios";
+import { 
+  generateCacheKey, 
+  getFromCache, 
+  setCache, 
+  clearCache,
+  dedupeRequest,
+  retryRequest 
+} from "@/lib/api-cache";
+import { API_CONSTANTS } from "@/lib/constants";
 
 export type QueryParamsType = Record<string | number, any>;
 
@@ -214,6 +223,7 @@ export class HttpClient<SecurityDataType = unknown> {
   private securityWorker?: ApiConfig<SecurityDataType>["securityWorker"];
   private secure?: boolean;
   private format?: ResponseType;
+  private pendingRequests = new Map<string, Promise<any>>();
 
   constructor({
     securityWorker,
@@ -312,6 +322,20 @@ export class HttpClient<SecurityDataType = unknown> {
     this.securityData = data;
   };
 
+  // 清除缓存的方法
+  public clearCache = (key?: string) => {
+    if (key) {
+      clearCache(key);
+    } else {
+      clearCache(); // 清除所有缓存
+    }
+  };
+
+  // 清除所有待处理的请求
+  public clearPendingRequests = () => {
+    this.pendingRequests.clear();
+  };
+
   protected mergeRequestParams(
     params1: AxiosRequestConfig,
     params2?: AxiosRequestConfig,
@@ -369,6 +393,24 @@ export class HttpClient<SecurityDataType = unknown> {
     body,
     ...params
   }: FullRequestParams): Promise<ExtractDataProp<T>> => {
+    // 生成缓存键和请求键
+    const cacheKey = generateCacheKey(path, { query, body, ...params });
+    const method = params.method?.toUpperCase() || "GET";
+    const requestKey = `${method}:${cacheKey}`;
+    
+    // 检查缓存（仅对 GET 请求）
+    if (method === "GET") {
+      const cached = getFromCache<ExtractDataProp<T>>(cacheKey);
+      if (cached !== null) {
+        return cached;
+      }
+    }
+
+    // 检查是否有相同的请求正在进行中（请求去重）
+    if (this.pendingRequests.has(requestKey)) {
+      return this.pendingRequests.get(requestKey);
+    }
+
     const secureParams =
       ((typeof secure === "boolean" ? secure : this.secure) &&
         this.securityWorker &&
@@ -431,7 +473,6 @@ export class HttpClient<SecurityDataType = unknown> {
     };
 
     // 对于非GET请求，添加CSRF token
-    const method = params.method?.toUpperCase() || "GET";
     if (method !== "GET") {
       try {
         const csrfToken = await getCsrfToken();
@@ -495,7 +536,32 @@ export class HttpClient<SecurityDataType = unknown> {
       }
     }
 
-    return this.instance.request(requestConfig);
+    // 创建请求 Promise 并添加到待处理请求中
+    const requestPromise = retryRequest(
+      () => this.instance.request(requestConfig),
+      {
+        maxRetries: API_CONSTANTS.RETRY_ATTEMPTS,
+        retryDelay: API_CONSTANTS.RETRY_DELAY,
+        shouldRetry: (error) => {
+          const status = error?.response?.status;
+          return !status || status >= 500;
+        }
+      }
+    ).then(result => {
+      // 缓存 GET 请求的结果
+      if (method === "GET") {
+        setCache(cacheKey, result, API_CONSTANTS.CACHE.MEDIUM);
+      }
+      return result;
+    }).finally(() => {
+      // 请求完成后从待处理列表中移除
+      this.pendingRequests.delete(requestKey);
+    });
+
+    // 将请求添加到待处理列表中
+    this.pendingRequests.set(requestKey, requestPromise);
+
+    return requestPromise;
   };
 }
 export default new HttpClient({

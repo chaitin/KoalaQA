@@ -1,8 +1,10 @@
 import Qrcode from '@/assets/images/qrcode.png';
 import { useAuthContext } from '@/hooks/context';
 import { ModelUserRole } from '@/api/types';
+import { getSystemInfo } from '@/api/System';
 import { Icon, Modal } from '@ctzhian/ui';
-import { alpha, Box, Button, Stack, styled, useTheme } from '@mui/material';
+import { Box, Button, Divider, Stack, styled, Typography } from '@mui/material';
+import { useRequest } from 'ahooks';
 import { useMemo, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 
@@ -74,9 +76,11 @@ const SidebarButton = styled(Button)(({ theme }) => ({
 
 const Sidebar = () => {
   const { pathname } = useLocation();
-  const theme = useTheme();
   const [showQrcode, setShowQrcode] = useState(false);
   const [user] = useAuthContext();
+
+  // 获取系统信息
+  const { data: systemInfo } = useRequest(getSystemInfo);
 
   // 根据用户角色过滤菜单
   const visibleMenus = useMemo(() => {
@@ -91,7 +95,7 @@ const Sidebar = () => {
   return (
     <Stack
       sx={{
-        width: 188,
+        width: 148,
         m: 2,
         zIndex: 999,
         p: 2,
@@ -117,8 +121,9 @@ const Sidebar = () => {
           window.location.href = '/';
         }}
       >
-        <img src="logo-text.png" width={130} />
+        <img src="/logo-text.png" width={130} />
       </Stack>
+      <Divider sx={{ mt: 2 }} />
 
       <Stack sx={{ pt: 2, flexGrow: 1 }} gap={1}>
         {visibleMenus.map(it => {
@@ -159,14 +164,6 @@ const Sidebar = () => {
                   },
                 }}
               >
-                <Icon
-                  type={it.icon}
-                  sx={{
-                    mr: 1,
-                    fontSize: 14,
-                    color: isActive ? '#FFFFFF' : alpha(theme.palette.text.primary, 0.2),
-                  }}
-                />
                 {it.label}
               </Button>
             </NavLink>
@@ -180,7 +177,7 @@ const Sidebar = () => {
           onClick={() => window.open('https://koalaqa.docs.baizhi.cloud/welcome', '_blank')}
         >
           <Icon
-            type="icon-bangzhuwendang1"
+            type="icon-wendang"
             sx={{
               mr: 1,
             }}
@@ -202,7 +199,7 @@ const Sidebar = () => {
         </SidebarButton>
         <SidebarButton variant="outlined" color="dark" onClick={() => setShowQrcode(true)}>
           <Icon
-            type="icon-group"
+            type="icon-taolunqu"
             sx={{
               mr: 1,
             }}
@@ -210,6 +207,25 @@ const Sidebar = () => {
           交流群
         </SidebarButton>
       </Stack>
+
+      {/* 版本号显示 */}
+      {systemInfo?.version && (
+        <Box sx={{ mt: 2, textAlign: 'center', fontSize: '12px' }}>
+          版本号
+          <Typography
+            variant="caption"
+            sx={{
+              color: 'text.secondary',
+              fontSize: '12px',
+              ml: 1,
+              opacity: 0.7,
+            }}
+          >
+            {systemInfo.version}
+          </Typography>
+        </Box>
+      )}
+
       <Modal
         open={showQrcode}
         onCancel={() => setShowQrcode(false)}

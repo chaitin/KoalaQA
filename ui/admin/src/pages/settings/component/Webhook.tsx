@@ -124,7 +124,7 @@ const Notification = () => {
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <Card sx={{ mt: 2 }}>
@@ -175,19 +175,7 @@ const Notification = () => {
                   </Box>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    onClick={() => handleEdit(item)}
-                    sx={{
-                      borderColor: '#d0d0d0',
-                      color: '#333333',
-                      '&:hover': {
-                        borderColor: '#1976d2',
-                        color: '#1976d2',
-                      },
-                    }}
-                  >
+                  <Button size="small" variant="outlined" onClick={() => handleEdit(item)}>
                     修改
                   </Button>
                   <IconButton size="small" onClick={() => handleDelete(item)}>

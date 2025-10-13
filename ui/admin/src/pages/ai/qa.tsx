@@ -19,7 +19,7 @@ import LoadingBtn from '@/components/LoadingButton';
 import { ColumnsType } from '@ctzhian/ui/dist/Table';
 
 const AdminDocument = () => {
-  const { query, setPage, setPageSize, page, pageSize, setParams } = useListQueryParams();
+  const { query, setPage, setSize, page, size, setParams } = useListQueryParams();
   const [searchParams] = useSearchParams();
   const kb_id = +searchParams.get('id')!;
   const [title, setTitle] = useState(query.title);
@@ -189,7 +189,7 @@ const AdminDocument = () => {
     const _query = { ...query };
     delete _query.name;
     fetchData(_query);
-  }, [query, fetchData]);
+  }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <Stack component={Card} sx={{ height: '100%', pt: 0 }}>
@@ -232,15 +232,11 @@ const AdminDocument = () => {
         rowKey="id"
         pagination={{
           page,
-          pageSize,
+          pageSize: size,
           total: data?.total || 0,
           onChange: (page: number, size: number) => {
             setPage(page);
-            setPageSize(size);
-            fetchData({
-              page: page,
-              size: size,
-            });
+            setSize(size);
           },
         }}
       />
