@@ -101,7 +101,6 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
         router.refresh();
       } else {
         const uid = await postDiscussion(params);
-        console.log(uid)
         // 创建成功后跳转到首页
         router.push(`/discuss/${uid}`);
       }

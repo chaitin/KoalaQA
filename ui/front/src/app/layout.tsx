@@ -1,5 +1,4 @@
 import { getUser } from '@/api'
-import { createServerFetch } from '@/lib/server-fetch'
 import '@/asset/styles/common.css'
 import '@/asset/styles/markdown.css'
 import { AuthProvider, CommonProvider } from '@/components'
@@ -15,9 +14,9 @@ import Script from 'next/script'
 import * as React from 'react'
 import 'react-markdown-editor-lite/lib/index.css'
 
+import Footer from '@/components/Footer'
 import Header from '../components/header'
 import Scroll from './scroll'
-import Footer from '@/components/Footer'
 
 // 字体优化 - 添加 display swap 提升首屏性能
 const monoFont = localFont({
@@ -73,11 +72,6 @@ export const viewport: Viewport = {
   userScalable: false,
   themeColor: '#ffffff',
 }
-
-// 创建服务端用户数据获取函数
-const getUserServer = createServerFetch('/user', {
-  next: { revalidate: 3600 } // 静态缓存，用户信息变化不频繁
-});
 
 // 用户数据获取 - 使用服务端优化
 async function getUserData() {
