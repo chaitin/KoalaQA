@@ -78,3 +78,15 @@ func (r *Reporter) ReportInstallation(id string) error {
 		Type:      "installation",
 	})
 }
+
+func (r *Reporter) ReportHeartbeat(id string) error {
+	if r.cfg.API.DEV {
+		return nil
+	}
+	return r.Report("koala-installation", InstallData{
+		MachineID: id,
+		Version:   r.version.Version(),
+		Timestamp: time.Now().Format(time.RFC3339),
+		Type:      "heartbeat",
+	})
+}
