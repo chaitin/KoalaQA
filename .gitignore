@@ -15,3 +15,6 @@ backend/deploy/data
 data/
 
 docker-compose.yml
+
+# macOS system files
+.DS_Store
