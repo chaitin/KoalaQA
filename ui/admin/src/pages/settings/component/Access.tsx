@@ -65,34 +65,38 @@ const Access = ({ onSaved }: AccessProps) => {
         </Typography>
         <Box sx={{ my: -1 }}>
           {isDirty && (
-            <Button type="submit" variant="contained" size="small" color="primary">
+            <Button
+              onClick={handleSubmit(onSubmit)}
+              type="submit"
+              variant="contained"
+              size="small"
+              color="primary"
+            >
               保存
             </Button>
           )}
         </Box>
       </Stack>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <Stack spacing={3}>
-          <Box display="flex" alignItems="center">
-            <Typography variant="body2" sx={{ mr: 2, minWidth: 170 }}>
-              用户实际访问地址
-            </Typography>
-            <TextField
-              fullWidth
-              {...register('address')}
-              required
-              error={!!errors.address}
-              helperText={errors.address?.message}
-              slotProps={{
-                inputLabel: {
-                  shrink: !!watch('address') || undefined,
-                },
-              }}
-            />
-          </Box>
-        </Stack>
-      </form>
+      <Stack spacing={3}>
+        <Box display="flex" alignItems="center">
+          <Typography variant="body2" sx={{ mr: 2, minWidth: 170 }}>
+            用户实际访问地址
+          </Typography>
+          <TextField
+            fullWidth
+            {...register('address')}
+            required
+            error={!!errors.address}
+            helperText={errors.address?.message}
+            slotProps={{
+              inputLabel: {
+                shrink: !!watch('address') || undefined,
+              },
+            }}
+          />
+        </Box>
+      </Stack>
     </Card>
   );
 };
