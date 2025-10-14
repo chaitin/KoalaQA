@@ -65,7 +65,7 @@ func (d *Comment) Handle(ctx context.Context, msg mq.Message) error {
 func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange) error {
 	logger := d.logger.WithContext(ctx).With("comment_id", data.CommID)
 	logger.Debug("handle insert comment")
-	go d.disc.IncrementComment(ctx, data.DiscUUID)
+	go d.disc.IncrementComment(data.DiscUUID)
 	comment, err := d.disc.GetCommentByID(ctx, data.CommID)
 	if err != nil {
 		logger.WithErr(err).Warn("get comment failed")
@@ -141,7 +141,7 @@ func (d *Comment) handleUpdate(ctx context.Context, data topic.MsgCommentChange)
 }
 
 func (d *Comment) handleDelete(ctx context.Context, data topic.MsgCommentChange) error {
-	go d.disc.DecrementComment(ctx, data.DiscUUID)
+	go d.disc.DecrementComment(data.DiscUUID)
 	d.logger.WithContext(ctx).With("comment_id", data.CommID).Info("handle delete comment")
 	return nil
 }
