@@ -313,6 +313,7 @@ a {
 
 /* Global scrollbar tweaks - make scrollbars slimmer and less obtrusive */
 html {
+  min-height: 101vh;
   scrollbar-width: thin; /* Firefox */
   scrollbar-color: rgba(0, 0, 0, 0.18) transparent; /* Firefox */
 }

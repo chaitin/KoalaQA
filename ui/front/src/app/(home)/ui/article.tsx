@@ -54,7 +54,12 @@ const Article = ({
   const [articleData, setArticleData] = useState(data)
   const [page, setPage] = useState(1)
 
-  const fetchMoreList = () => {
+  const fetchMoreList = useCallback(() => {
+    // 防止重复请求
+    if (page * 10 >= (articleData.total || 0)) {
+      return
+    }
+
     const new_page = page + 1
     setPage(new_page)
     const params: GetDiscussionParams = {
@@ -80,8 +85,12 @@ const Article = ({
           items: [...(pre.items || []), ...(res.items || [])],
         }))
       }
+    }).catch((error) => {
+      console.error('Failed to fetch more discussions:', error)
+      // 回退页码
+      setPage(page)
     })
-  }
+  }, [page, articleData.total, status, search, topics])
 
   const createQueryString = (name: string, value: string) => {
     const params = new URLSearchParams(searchParams?.toString())
@@ -111,6 +120,9 @@ const Article = ({
       if (res) {
         setArticleData(res)
       }
+    }).catch((error) => {
+      console.error('Failed to fetch discussions:', error)
+      // 保持当前数据，不重置为空
     })
   }, [])
 
@@ -120,54 +132,57 @@ const Article = ({
     }
   }
 
-  const handleSearch = () => {
-    const params = new URLSearchParams(searchParams?.toString())
+  const handleSearch = useCallback(() => {
+    const currentSearch = searchParams?.get('search') || ''
+    const trimmedSearch = search && search.trim() ? search.trim() : ''
     
-    // 如果搜索内容为空，移除 search 参数，否则设置 search 参数
-    if (search && search.trim()) {
-      params.set('search', search.trim())
-    } else {
-      params.delete('search')
+    // 只有在搜索内容真正变化时才更新 URL
+    if (currentSearch !== trimmedSearch) {
+      const params = new URLSearchParams(searchParams?.toString())
+      
+      // 如果搜索内容为空，移除 search 参数，否则设置 search 参数
+      if (trimmedSearch) {
+        params.set('search', trimmedSearch)
+      } else {
+        params.delete('search')
+      }
+      
+      // 如果没有指定排序方式，默认使用 hot
+      if (!params.get('sort')) {
+        params.set('sort', 'hot')
+      }
+      
+      router.push(`/?${params.toString()}`)
     }
-    
-    // 如果没有指定排序方式，默认使用 hot
-    if (!params.get('sort')) {
-      params.set('sort', 'hot')
-    }
-    
-    router.push(`/?${params.toString()}`)
-  }
+  }, [search, searchParams, router])
 
   useEffect(() => {
     setArticleData(data)
   }, [data])
 
-  // 监听 URL 参数变化，刷新数据（但不改变输入框的值）
+  // 监听 URL 参数变化，统一处理状态更新和数据获取
   useEffect(() => {
     const sortParam = (searchParams?.get('sort') as Status) || 'hot'
-    const tpsParam = searchParams?.get('tps')
-    const currentTopics = tpsParam ? tpsParam.split(',').map(Number) : []
-    
-    setStatus(sortParam)
-    // 注意：不在这里更新 search state，避免覆盖用户正在输入的内容
-  }, [searchParams])
-  
-  // 当 URL 中的搜索参数变化时，刷新数据
-  useEffect(() => {
     const searchParam = searchParams?.get('search') || ''
-    const sortParam = (searchParams?.get('sort') as Status) || 'hot'
     const tpsParam = searchParams?.get('tps')
     const currentTopics = tpsParam ? tpsParam.split(',').map(Number) : []
     
-    fetchList(sortParam, searchParam, currentTopics)
-  }, [searchParams, fetchList])
+    // 更新状态
+    setStatus(sortParam)
+    
+    // 只有在参数真正变化时才发起请求
+    if (sortParam !== status || searchParam !== searchRef.current || 
+        JSON.stringify(currentTopics) !== JSON.stringify(topics)) {
+      fetchList(sortParam, searchParam, currentTopics)
+    }
+  }, [searchParams, status, topics, fetchList])
 
   // 更新搜索引用
   useEffect(() => {
     searchRef.current = search
   }, [search])
 
-  const handleTopicClick = (t: number) => {
+  const handleTopicClick = useCallback((t: number) => {
     let newTopics: number[]
     if (topics.includes(t)) {
       // 已选中则取消
@@ -176,11 +191,18 @@ const Article = ({
       // 未选中则添加
       newTopics = [...topics, t]
     }
-    // 更新 url 参数
-    const params = new URLSearchParams(searchParams?.toString())
-    params.set('tps', newTopics.join(','))
-    router.replace(`/?${params.toString()}`)
-  }
+    
+    // 只有在主题真正变化时才更新 URL
+    if (JSON.stringify(newTopics) !== JSON.stringify(topics)) {
+      const params = new URLSearchParams(searchParams?.toString())
+      if (newTopics.length > 0) {
+        params.set('tps', newTopics.join(','))
+      } else {
+        params.delete('tps')
+      }
+      router.replace(`/?${params.toString()}`)
+    }
+  }, [topics, searchParams, router])
 
   const handleAsk = () => {
     checkAuth(() => releaseModalOpen())
@@ -254,7 +276,7 @@ const Article = ({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={onInputSearch}
-          placeholder='请输入任意内容,使用AI 搜索'
+          placeholder='输入任意内容，使用 AI 搜索'
           startAdornment={
             <InputAdornment position='start'>
               <SearchIcon sx={{ color: 'rgba(0,0,0,0.4)', mr: 1 }} />
@@ -280,7 +302,7 @@ const Article = ({
           sx={{
             width: 280,
             position: 'sticky',
-            top: 20,
+            top: 70,
             display: { xs: 'none', sm: 'flex' },
           }}
         >
@@ -400,9 +422,12 @@ const Article = ({
               sx={{ height: 40, py: '7px' }}
               value={status}
               onChange={(value: Status) => {
-                const query = createQueryString('sort', value)
-                setStatus(value)
-                router.replace(`/?${query}`)
+                // 只有在状态真正变化时才更新 URL
+                if (value !== status) {
+                  const query = createQueryString('sort', value)
+                  setStatus(value)
+                  router.replace(`/?${query}`)
+                }
               }}
               list={[
                 { label: '热门问题', value: 'hot' },

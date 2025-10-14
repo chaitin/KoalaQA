@@ -9,6 +9,7 @@ import {
 import Card from '@/components/card';
 import { fileType } from '@/components/ImportDoc/const';
 import MarkDown from '@/components/markDown';
+import StatusBadge from '@/components/StatusBadge';
 import { useListQueryParams } from '@/hooks/useListQueryParams';
 import { Ellipsis, message, Modal, Table } from '@ctzhian/ui';
 import { Box, Button, Stack, TextField, Typography } from '@mui/material';
@@ -99,7 +100,7 @@ const AdminDocument = () => {
       dataIndex: 'status',
       render: (_, record) => {
         if (!record?.status) return '-';
-        return record.status === ModelDocStatus.DocStatusAppling ? '应用中' : '未应用';
+        return <StatusBadge status={record.status} />;
       },
     },
     {

@@ -7,6 +7,7 @@ import {
   SvcDocListItem,
 } from '@/api';
 import Card from '@/components/card';
+import StatusBadge from '@/components/StatusBadge';
 import { useListQueryParams } from '@/hooks/useListQueryParams';
 import { Ellipsis, message, Modal, Table } from '@ctzhian/ui';
 import { Box, Button, Stack, TextField, Typography } from '@mui/material';
@@ -82,45 +83,10 @@ const AdminDocument = () => {
       dataIndex: 'status',
       render: (_, record) => {
         if ([0, 3].includes(record?.status || 0)) return '待应用';
-        if (record.status === ModelDocStatus.DocStatusAppling) {
-          return (
-            <Box
-              component="span"
-              sx={{
-                px: 1.5,
-                py: 0.5,
-                borderRadius: 1,
-                fontSize: '12px',
-                backgroundColor: '#f5f5f5',
-                color: '#666',
-              }}
-            >
-              应用中
-            </Box>
-          );
-        } else if (record.status === ModelDocStatus.DocStatusPendingReview) {
-          return (
-            <Box
-              component="span"
-              sx={{
-                px: 1.5,
-                py: 0.5,
-                borderRadius: 1,
-                fontSize: '12px',
-                backgroundColor: '#fff3cd',
-                color: '#856404',
-                cursor: 'pointer',
-                '&:hover': {
-                  backgroundColor: '#ffeaa7',
-                },
-              }}
-              onClick={() => fetchDetail(record.id!)}
-            >
-              待审核
-            </Box>
-          );
+        if (record.status === ModelDocStatus.DocStatusPendingReview) {
+          return <StatusBadge status={record.status} onClick={() => fetchDetail(record.id!)} />;
         }
-        return '未应用';
+        return <StatusBadge status={record.status} />;
       },
     },
     {

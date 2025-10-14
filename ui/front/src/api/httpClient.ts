@@ -40,6 +40,8 @@ import {
 } from "@/lib/api-cache";
 import { API_CONSTANTS } from "@/lib/constants";
 import { clearAllAuthCookies } from "@/utils/cookie";
+import { getPublicAccessStatus, clearPublicAccessCache } from "@/utils/publicAccess";
+import { clearAuthConfigCache } from "@/hooks/useAuthConfig";
 
 export type QueryParamsType = Record<string | number, any>;
 
@@ -87,9 +89,6 @@ type ExtractDataProp<T> = T extends { data?: infer U } ? U : T;
 let csrfTokenCache: string | null = null;
 let csrfTokenPromise: Promise<string> | null = null;
 
-// 公共访问状态缓存
-let publicAccessCache: boolean | null = null;
-let publicAccessPromise: Promise<boolean> | null = null;
 
 // 获取CSRF token的函数
 const getCsrfToken = async (): Promise<string> => {
@@ -141,48 +140,6 @@ export const clearCsrfTokenCache = () => {
   csrfTokenPromise = null;
 };
 
-// 获取公共访问状态的函数
-const getPublicAccessStatus = async (): Promise<boolean> => {
-  // 如果已经有缓存的状态，直接返回
-  if (publicAccessCache !== null) {
-    return publicAccessCache;
-  }
-
-  // 如果正在获取状态，等待现有的请求
-  if (publicAccessPromise) {
-    return publicAccessPromise;
-  }
-
-  // 创建新的获取状态的Promise
-  publicAccessPromise = new Promise(async (resolve) => {
-    try {
-      const response = await axios.get("/api/user/login_method", {
-        withCredentials: true,
-      });
-
-      const publicAccess = response.data?.data?.public_access ?? false;
-      publicAccessCache = publicAccess;
-      resolve(publicAccess);
-    } catch (error) {
-      console.error("Failed to fetch public access status:", error);
-      // 默认返回false，要求登录
-      publicAccessCache = false;
-      resolve(false);
-    } finally {
-      // 清除Promise缓存，允许重试
-      publicAccessPromise = null;
-    }
-  });
-
-  return publicAccessPromise;
-};
-
-// 清除公共访问状态缓存的函数
-export const clearPublicAccessCache = () => {
-  publicAccessCache = null;
-  publicAccessPromise = null;
-};
-
 // 导出公共访问状态获取函数，供其他组件使用
 export const checkPublicAccess = getPublicAccessStatus;
 
@@ -202,6 +159,9 @@ export const clearAuthData = () => {
     // 清除CSRF token缓存
     clearCsrfTokenCache();
     clearPublicAccessCache();
+    
+    // 清除认证配置缓存
+    clearAuthConfigCache();
     
     console.log("Authentication data cleared successfully");
   }
@@ -269,25 +229,13 @@ export class HttpClient<SecurityDataType = unknown> {
               currentPath.startsWith("/login") ||
               currentPath.startsWith("/register");
               
+            // 如果不在认证页面，直接重定向到登录页
+            // middleware已经处理了public_access的检查，这里不需要重复检查
             if (!isAuthPage) {
-              getPublicAccessStatus().then((publicAccess) => {
-                if (!publicAccess) {
-                  // 获取当前页面路径作为重定向参数
-                  const fullPath =
-                    window.location.pathname + window.location.search;
-                  const loginUrl = `/login?redirect=${encodeURIComponent(fullPath)}`;
-
-                  // 重定向到登录页
-                  window.location.href = loginUrl;
-                }
-                // 如果public_access为true，不进行重定向，允许匿名访问
-              }).catch(() => {
-                // 如果获取public_access状态失败，默认跳转到登录页
-                const fullPath =
-                  window.location.pathname + window.location.search;
-                const loginUrl = `/login?redirect=${encodeURIComponent(fullPath)}`;
-                window.location.href = loginUrl;
-              });
+              const fullPath =
+                window.location.pathname + window.location.search;
+              const loginUrl = `/login?redirect=${encodeURIComponent(fullPath)}`;
+              window.location.href = loginUrl;
             }
             return Promise.reject(error.response);
           }
