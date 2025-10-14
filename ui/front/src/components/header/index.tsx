@@ -153,7 +153,7 @@ const Header = ({ initialUser = null }: HeaderProps) => {
                   variant='outlined'
                   sx={{ borderRadius: 1, height: 44, width: 122, fontSize: 14 }}
                   onClick={() => {
-                    window.open('/register', '_self')
+                    router.push('/register')
                   }}
                 >
                   立即注册
@@ -169,7 +169,7 @@ const Header = ({ initialUser = null }: HeaderProps) => {
                   boxShadow: 'none !important',
                 }}
                 onClick={() => {
-                  window.open('/login', '_self')
+                  router.push('/login')
                 }}
               >
                 登录

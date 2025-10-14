@@ -32,6 +32,7 @@ const Page = async (props: { params: Promise<{ id: string }> }) => {
     if (item.accepted) return -1
     return 1
   })
+
   return (
     <Box>
       <Box

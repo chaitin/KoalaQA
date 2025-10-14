@@ -8,6 +8,7 @@ import {
   postDiscussionDiscIdCommentCommentIdRevokeLike,
   putDiscussionDiscIdCommentCommentId,
 } from '@/api'
+import { generateCacheKey, clearCache } from '@/lib/api-cache'
 import {
   ModelCommentLikeState,
   ModelDiscussionComment,
@@ -81,6 +82,9 @@ const BaseDiscussCard = (props: {
           commentId: data.id!,
         })
     } finally {
+      // 清除讨论详情的缓存
+      const cacheKey = generateCacheKey(`/discussion/${disData.uuid}`, {})
+      clearCache(cacheKey)
       router.refresh()
     }
   }
@@ -97,6 +101,9 @@ const BaseDiscussCard = (props: {
           commentId: data.id!,
         })
     } finally {
+      // 清除讨论详情的缓存
+      const cacheKey = generateCacheKey(`/discussion/${disData.uuid}`, {})
+      clearCache(cacheKey)
       router.refresh()
     }
   }
@@ -390,6 +397,9 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         content: comment,
       },
     ).then(() => {
+      // 清除讨论详情的缓存
+      const cacheKey = generateCacheKey(`/discussion/${id}`, {})
+      clearCache(cacheKey)
       router.refresh()
       setEditCommentModalVisible(false)
     })
@@ -405,6 +415,9 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
           discId: data.uuid!,
           commentId: commentIndex.id!,
         })
+        // 清除讨论详情的缓存
+        const cacheKey = generateCacheKey(`/discussion/${data.uuid}`, {})
+        clearCache(cacheKey)
         router.refresh()
       },
     })
@@ -419,6 +432,9 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
           discId: data.uuid!,
           commentId: commentIndex.id!,
         })
+        // 清除讨论详情的缓存
+        const cacheKey = generateCacheKey(`/discussion/${data.uuid}`, {})
+        clearCache(cacheKey)
         router.refresh()
       },
     })

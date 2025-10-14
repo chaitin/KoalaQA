@@ -6,6 +6,7 @@ import { Icon, Modal } from '@ctzhian/ui';
 import { Box, Button, Divider, Stack, styled, Typography } from '@mui/material';
 import { useRequest } from 'ahooks';
 import { useMemo, useState } from 'react';
+import logoText from '@/assets/images/logo-text.png';
 import { NavLink, useLocation } from 'react-router-dom';
 
 interface AdminMenuItem {
@@ -121,7 +122,7 @@ const Sidebar = () => {
           window.location.href = '/';
         }}
       >
-        <img src="/logo-text.png" width={130} />
+        <img src={logoText} width={130} />
       </Stack>
       <Divider sx={{ mt: 2 }} />
 

@@ -1,7 +1,6 @@
 import { getDiscussion, getGroup } from "@/api";
 import GroupsInitializer from "@/components/groupsInitializer";
 import { ApiParamsBuilder, batchApiCalls } from "@/lib/api-helpers";
-import { createServerFetch } from "@/lib/server-fetch";
 import { Stack } from "@mui/material";
 import { Metadata } from "next";
 import { Suspense } from "react";
@@ -11,13 +10,6 @@ export const metadata: Metadata = {
   title: "技术讨论 | Koala QA",
   description: "浏览和参与技术讨论，分享知识和经验",
 };
-
-// 启用增量静态再生成
-export const revalidate = 60; // 60秒
-
-// 使用服务端优化的数据获取
-const fetchDiscussionsServer = createServerFetch('/discussion', { next: { revalidate: 60 } });
-const fetchGroupsServer = createServerFetch('/group', { next: { revalidate: 3600 } });
 
 // 数据获取函数 - 使用新的工具
 async function fetchDiscussions(searchParams: { 
