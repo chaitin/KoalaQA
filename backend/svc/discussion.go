@@ -228,7 +228,26 @@ func (d *Discussion) Detail(ctx context.Context, uid uint, uuid string) (*model.
 	if err != nil {
 		return nil, err
 	}
+	go d.IncrementView(ctx, uuid)
 	return discussion, nil
+}
+
+func (d *Discussion) IncrementView(ctx context.Context, uuid string) {
+	d.in.DiscRepo.Update(ctx, map[string]any{
+		"view": gorm.Expr("view+1"),
+	}, repo.QueryWithEqual("uuid", uuid))
+}
+
+func (d *Discussion) IncrementComment(ctx context.Context, uuid string) {
+	d.in.DiscRepo.Update(ctx, map[string]any{
+		"comment": gorm.Expr("comment+1"),
+	}, repo.QueryWithEqual("uuid", uuid))
+}
+
+func (d *Discussion) DecrementComment(ctx context.Context, uuid string) {
+	d.in.DiscRepo.Update(ctx, map[string]any{
+		"comment": gorm.Expr("comment-1"),
+	}, repo.QueryWithEqual("uuid", uuid))
 }
 
 type DiscussionSearchReq struct {
