@@ -50,7 +50,7 @@ export default async function ProfilePage() {
     <Box
       sx={{
         minHeight: '100vh',
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#F1F2F8',
         pt: 11, // 为header留出空间
       }}
     >

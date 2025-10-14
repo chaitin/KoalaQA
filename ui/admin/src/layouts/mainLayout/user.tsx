@@ -105,6 +105,7 @@ const MainLayout = () => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          border: 'none',
         }}
       >
         <Stack
@@ -131,7 +132,7 @@ const MainLayout = () => {
               />
             </Box>
             <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
-              <Typography variant="body2" sx={{ mb: 0 }}>
+              <Typography variant="subtitle2" sx={{ mb: 0 }}>
                 模型管理
               </Typography>
               <ModelManagementModal

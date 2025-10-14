@@ -89,7 +89,7 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
               },
             }}
           >
-            {it.title || '从思源导出文档到 PandaWiki 怎么做?'}
+            {it.title}
           </Title>
           {data?.resolved && (
             <Stack

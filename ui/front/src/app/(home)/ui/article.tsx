@@ -160,23 +160,6 @@ const Article = ({
     setArticleData(data)
   }, [data])
 
-  // 监听 URL 参数变化，统一处理状态更新和数据获取
-  useEffect(() => {
-    const sortParam = (searchParams?.get('sort') as Status) || 'hot'
-    const searchParam = searchParams?.get('search') || ''
-    const tpsParam = searchParams?.get('tps')
-    const currentTopics = tpsParam ? tpsParam.split(',').map(Number) : []
-    
-    // 更新状态
-    setStatus(sortParam)
-    
-    // 只有在参数真正变化时才发起请求
-    if (sortParam !== status || searchParam !== searchRef.current || 
-        JSON.stringify(currentTopics) !== JSON.stringify(topics)) {
-      fetchList(sortParam, searchParam, currentTopics)
-    }
-  }, [searchParams, status, topics, fetchList])
-
   // 更新搜索引用
   useEffect(() => {
     searchRef.current = search
@@ -425,7 +408,6 @@ const Article = ({
                 // 只有在状态真正变化时才更新 URL
                 if (value !== status) {
                   const query = createQueryString('sort', value)
-                  setStatus(value)
                   router.replace(`/?${query}`)
                 }
               }}
