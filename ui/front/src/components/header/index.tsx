@@ -1,6 +1,6 @@
 'use client'
 
-import { ModelUserRole, getUserLoginMethod } from '@/api'
+import { ModelUserRole } from '@/api'
 import { AppBar, Button, Stack, Typography } from '@mui/material'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -10,18 +10,24 @@ import Cookies from 'js-cookie'
 import { useLocalStorageState } from 'ahooks'
 import Image from 'next/image'
 import SettingsIcon from '@mui/icons-material/Settings'
+import { useAuthConfig } from '@/hooks/useAuthConfig'
 
 interface HeaderProps {
   initialUser?: any | null
 }
 
 const Header = ({ initialUser = null }: HeaderProps) => {
-  const [token, setToken] = useLocalStorageState<string>('auth_token')
+  const [token] = useLocalStorageState<string>('auth_token')
   const [user, setUser] = useState(initialUser)
-  const [registrationEnabled, setRegistrationEnabled] = useState(false)
-  const [publicAccess, setPublicAccess] = useState(false)
   const router = useRouter()
   const [backHref, setBackHref] = useState('/admin/ai')
+  
+  // 使用新的 useAuthConfig hook
+  const { authConfig } = useAuthConfig()
+  
+  // 从 authConfig 中获取配置
+  const registrationEnabled = authConfig?.enable_register ?? true
+
   useEffect(() => {
     if (token) {
       Cookies.set('auth_token', token, {
@@ -32,23 +38,6 @@ const Header = ({ initialUser = null }: HeaderProps) => {
       })
     }
   }, [token])
-
-  // 检查注册是否启用和公共访问状态
-  useEffect(() => {
-    const checkAuthConfig = async () => {
-      try {
-        const response = await getUserLoginMethod()
-        setRegistrationEnabled(response?.enable_register ?? true)
-        setPublicAccess(response?.public_access ?? false)
-      } catch (error) {
-        console.error('Failed to check auth config:', error)
-        setRegistrationEnabled(false)
-        setPublicAccess(false)
-      }
-    }
-
-    checkAuthConfig()
-  }, [])
 
   // 如果初始用户为空但有token，可能需要重新获取用户信息
   useEffect(() => {

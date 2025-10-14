@@ -17,6 +17,7 @@ import {
   SvcUpdateSpaceReq,
 } from '@/api';
 import LoadingButton from '@/components/LoadingButton';
+import StatusBadge from '@/components/StatusBadge';
 import { Card, Icon, message, Modal } from '@ctzhian/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -572,20 +573,14 @@ const KnowledgeBasePage = () => {
                         </Typography>
                       </Stack>
                     </Stack>
-                    <Box
+                    <StatusBadge
+                      text={folder.status === 1 ? '应用中' : '同步中'}
+                      variant={folder.status === 1 ? 'applying' : 'default'}
                       sx={{
-                        backgroundColor:
-                          folder.status === 1 ? 'rgba(56, 96, 244, 0.10)' : '#fff3e0',
-                        color: folder.status === 1 ? '#3860F4' : '#f57c00',
-                        borderRadius: '12px',
-                        px: 1.5,
-                        py: 0.5,
-                        fontSize: '12px',
-                        fontWeight: 400,
+                        backgroundColor: folder.status === 1 ? undefined : '#fff3e0',
+                        color: folder.status === 1 ? undefined : '#f57c00',
                       }}
-                    >
-                      {folder.status === 1 ? '应用中' : '同步中'}
-                    </Box>
+                    />
                     <Stack alignItems="flex-end" spacing={1}>
                       <IconButton
                         size="small"
