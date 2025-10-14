@@ -205,13 +205,13 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         {!mdEditShow && (
           <Button
             variant='contained'
-            fullWidth
             onClick={checkLoginAndFocusMain}
             sx={{
               textTransform: 'none',
-              fontSize: 15,
+              fontSize: 14,
               fontWeight: 500,
-              py: 1.2,
+              py: 0.75,
+              px: 2,
               borderRadius: '6px',
               width: 'fit-content',
             }}
