@@ -93,13 +93,13 @@ const LinkItem = forwardRef<HTMLDivElement, LinkItemProps>(
           <Controller
             control={control}
             name={`brand_groups.${groupIndex}.links.${linkIndex}.name`}
-            rules={{ required: '请输入类别名称' }}
+            rules={{ required: '请输入选项名称' }}
             render={({ field }) => (
               <TextField
                 {...field}
                 fullWidth
-                label="类别名称"
-                placeholder="类别名称"
+                label="选项名称"
+                placeholder="选项名称"
                 onChange={e => {
                   field.onChange(e.target.value);
                   setIsEdit(true);
@@ -326,7 +326,7 @@ const Item = forwardRef<HTMLDivElement, ItemProps>(
           )}
 
           <Button size="small" variant="text" color="info" onClick={handleAddLink} sx={{ mt: 1 }}>
-            添加一个类别
+            新增一个选项
           </Button>
         </Box>
       </Box>
