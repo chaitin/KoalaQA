@@ -52,15 +52,15 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
         cursor: 'auto',
         display: { xs: 'none', sm: 'block' },
         borderRadius: 2,
-        p: 3,
-        mb: 1,
+        p: 2, // 减少内边距从3到2
+        mb: 0.5, // 减少卡片边距从1到0.5
         '&:hover': {
           boxShadow: 'rgba(0, 28, 85, 0.08) 0px 8px 20px 0px',
         },
       }}
     >
       {/* 标题和状态 */}
-      <Stack direction='row' justifyContent='space-between' alignItems='flex-start' sx={{ mb: 2 }}>
+      <Stack direction='row' justifyContent='space-between' alignItems='flex-start' sx={{ mb: 1.5 }}>
         <Stack
           direction='row'
           alignItems='center'
@@ -144,6 +144,7 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
           fontSize: 12,
           color: '#666',
           lineHeight: 1.4,
+          mb: 1.5, // 减少描述和标签间距
         }}
       />
       {/* 底部标签和评论数 */}
@@ -178,7 +179,12 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
               key={item}
               label={item}
               size='small'
-              sx={{ backgroundColor: 'rgba(0,0,0,0.06)', color: 'rgba(0,0,0,0.6)' }}
+              sx={{ 
+                backgroundColor: 'rgba(0,0,0,0.06)', 
+                color: 'rgba(0,0,0,0.6)',
+                fontSize: '12px', // 统一字体大小
+                height: '24px', // 统一高度
+              }}
             />
           ))}
         </Stack>
@@ -191,6 +197,7 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
             borderRadius: 1,
             py: 0.5,
             color: '#FF8500',
+            fontSize: '12px',
           }}
         >
           <Icon type='icon-xiaoxi' />
@@ -220,13 +227,14 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
     <Card
       key={it.id}
       sx={{
-        p: '20px',
+        p: 2, // 减少内边距
         display: { xs: 'flex', sm: 'none' },
         flexDirection: 'column',
-        gap: 1.5,
+        gap: 1, // 减少内部间距
         boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
         cursor: 'auto',
         width: '100%',
+        mb: 0.5, // 减少卡片间距
       }}
     >
       <Stack
@@ -293,6 +301,7 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
             '&:hover': {
               background: 'rgba(255,133,0,0.22)',
             },
+            fontSize: '12px',
           }}
         >
           <Icon type='icon-xiaoxi' />
@@ -306,6 +315,7 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
           fontSize: 12,
           color: '#666',
           lineHeight: 1.4,
+          mb: 1.5, // 减少描述和标签间距
         }}
       />
       <Stack direction='row' gap='8px 12px' flexWrap='wrap'>
@@ -329,7 +339,16 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
 
         {/* 标签 */}
         {it?.tags?.map((item) => (
-          <Tag key={item} label={item} size='small' sx={{ backgroundColor: 'rgba(32, 108, 255, 0.1)' }} />
+          <Tag 
+            key={item} 
+            label={item} 
+            size='small' 
+            sx={{ 
+              backgroundColor: 'rgba(32, 108, 255, 0.1)',
+              fontSize: '12px', // 统一字体大小
+              height: '24px', // 统一高度
+            }} 
+          />
         ))}
       </Stack>
     </Card>
