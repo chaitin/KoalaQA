@@ -2,7 +2,6 @@ import {
   deleteAdminKbKbIdDocumentDocId,
   getAdminKbKbIdDocumentDocId,
   getAdminKbKbIdWeb,
-  ModelDocStatus,
   ModelKBDocumentDetail,
   PlatformPlatformType,
   putAdminKbKbIdWebDocId,
@@ -11,6 +10,7 @@ import {
 import Card from '@/components/card';
 import { fileType } from '@/components/ImportDoc/const';
 import MarkDown from '@/components/markDown';
+import StatusBadge from '@/components/StatusBadge';
 import { useListQueryParams } from '@/hooks/useListQueryParams';
 import { Ellipsis, message, Modal, Table } from '@ctzhian/ui';
 import { Box, Button, Stack, TextField, Typography } from '@mui/material';
@@ -27,7 +27,7 @@ const fetchMarkdownContent = async (url: string): Promise<string> => {
     const res = await fetch(url);
     if (!res.ok) throw new Error('请求 markdown 内容失败');
     return await res.text();
-  } catch (e) {
+  } catch {
     return '加载内容失败';
   }
 };
@@ -109,7 +109,7 @@ const AdminDocument = () => {
       dataIndex: 'status',
       render: (_, record) => {
         if (!record?.status) return '-';
-        return record.status === ModelDocStatus.DocStatusAppling ? '应用中' : '未应用';
+        return <StatusBadge status={record.status} />;
       },
     },
     {
@@ -158,7 +158,7 @@ const AdminDocument = () => {
     const _query = { ...query };
     delete _query.name;
     fetchData(_query);
-  }, [query]);
+  }, [query, fetchData]);
 
   return (
     <Stack component={Card} sx={{ height: '100%', pt: 0 }}>

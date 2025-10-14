@@ -5,6 +5,7 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getPublicAccessStatus } from '@/utils/publicAccess';
 
 // 需要认证的路由
 const PROTECTED_ROUTES = [
@@ -33,38 +34,6 @@ function matchRoute(pathname: string, routes: string[]): boolean {
   });
 }
 
-/**
- * 获取public_access状态
- */
-async function getPublicAccessStatus(request: NextRequest): Promise<boolean> {
-  try {
-    // 构建API URL，使用与httpClient相同的逻辑
-    const baseURL = process.env.TARGET || '';
-    const apiUrl = `${baseURL}/api/user/login_method`;
-    
-    // 构建完整的URL
-    const fullUrl = new URL(apiUrl, request.url);
-    
-    const response = await fetch(fullUrl.toString(), {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      // 在middleware中不设置credentials，因为这是服务端请求
-    });
-
-    if (!response.ok) {
-      console.warn('Failed to fetch public access status:', response.status);
-      return false; // 默认要求登录
-    }
-
-    const data = await response.json();
-    return data?.data?.public_access ?? false;
-  } catch (error) {
-    console.error('Error fetching public access status:', error);
-    return false; // 默认要求登录
-  }
-}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -154,7 +123,8 @@ export async function middleware(request: NextRequest) {
 
     // 如果用户未登录，检查public_access状态
     try {
-      const publicAccess = await getPublicAccessStatus(request);
+      const baseURL = process.env.TARGET || '';
+      const publicAccess = await getPublicAccessStatus(baseURL, request);
       
       if (process.env.NODE_ENV === 'development') {
         console.log('[Middleware] Public access status:', publicAccess, 'for path:', pathname);

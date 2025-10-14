@@ -21,6 +21,7 @@ import { useRequest } from 'ahooks';
 import React, { useEffect, useState } from 'react';
 import EditorWrap from '../editor/edit/Wrap';
 import MarkDown from '../markDown';
+import dayjs from 'dayjs';
 
 interface QaReviewModalProps {
   open: boolean;
@@ -146,34 +147,45 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
           {/* 历史问答对（仅查看） */}
           {hasHistoricalQa && (
             <>
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>
-                  历史问答对
-                </Typography>
-                <TextField
-                  label="问题"
-                  value={historicalQaDetail?.title || ''}
-                  fullWidth
-                  disabled
-                  sx={{ mb: 2 }}
-                  slotProps={{
-                    inputLabel: { shrink: true },
-                  }}
-                />
+              <Box sx={{ flex: 1, bgcolor: 'background.paper', p: 2, overflow: 'auto' }}>
                 <Stack
-                  sx={{
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    py: 2,
-                    px: 1,
-                    borderRadius: '4px',
-                  }}
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  sx={{ mb: 2 }}
                 >
-                  <Typography variant="caption" sx={{ mb: 3 }}>
-                    回答：
+                  <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '60px' }}>
+                    历史版本
                   </Typography>
-                  <MarkDown content={historicalQaDetail?.markdown} />
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    {historicalQaDetail?.updated_at
+                      ? dayjs.unix(historicalQaDetail.updated_at).format('YYYY-MM-DD HH:mm:ss')
+                      : ''}
+                  </Typography>
                 </Stack>
+                <Stack direction="row" alignItems="center" sx={{ mb: 2 }}>
+                  <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '60px' }}>
+                    问题
+                  </Typography>
+                  <TextField
+                    value={historicalQaDetail?.title || ''}
+                    disabled
+                    size="small"
+                    sx={{
+                      flexGrow: 1,
+                      '& fieldset': {
+                        border: 'none',
+                      },
+                    }}
+                    slotProps={{
+                      inputLabel: { shrink: true },
+                    }}
+                  />
+                </Stack>
+                <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '120px' }}>
+                  回答
+                </Typography>
+                <MarkDown content={historicalQaDetail?.markdown} sx={{ p: 2, mt: 1 }} />
                 {/* <TextField
                   label="回答"
                   value={historicalQaDetail?.markdown || ''}
@@ -185,34 +197,41 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
                     inputLabel: { shrink: true },
                   }}
                 /> */}
-                <Typography variant="caption" sx={{ mt: 1, color: 'text.secondary' }}>
-                  历史问答对 -{' '}
-                  {historicalQaDetail?.updated_at
-                    ? new Date(historicalQaDetail.updated_at * 1000).toLocaleDateString()
-                    : ''}
-                </Typography>
               </Box>
-
-              <Divider orientation="vertical" flexItem />
             </>
           )}
 
           {/* 新问答对（可编辑） */}
           <Box sx={{ flex: 1 }}>
             <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>
-              {hasHistoricalQa ? '新问答对' : '问答对'}
+              {hasHistoricalQa ? '最新版本' : '问答对'}
             </Typography>
-            <TextField
-              label="问题"
-              value={question}
-              onChange={e => setQuestion(e.target.value)}
-              fullWidth
-              sx={{ mb: 2 }}
-              slotProps={{
-                inputLabel: { shrink: true },
+            <Stack direction="row" alignItems="center" sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '60px' }}>
+                问题
+              </Typography>
+              <TextField
+                value={question}
+                onChange={e => setQuestion(e.target.value)}
+                fullWidth
+                slotProps={{
+                  inputLabel: { shrink: true },
+                }}
+              />
+            </Stack>
+            <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '120px' }}>
+              回答
+            </Typography>
+            <Box
+              sx={{
+                position: 'relative',
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 1,
+                overflow: 'hidden',
+                mt: 1,
               }}
-            />
-            <Box sx={{ position: 'relative' }}>
+            >
               <EditorWrap
                 detail={{
                   content: answer,

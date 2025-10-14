@@ -1,34 +1,17 @@
 'use client';
 
-import { getUserLoginMethod, getUserLoginThird } from '@/api';
-import { SvcAuthFrontendGetRes } from '@/api/types';
+import { getUserLoginThird } from '@/api';
 import { Card } from '@/components';
 import { AuthType } from '@/types/auth';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import Link from 'next/link';
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense } from 'react';
 import Account from './account';
+import { useAuthConfig } from '@/hooks/useAuthConfig';
 
 const LoginType = () => {
-  const [authConfig, setAuthConfig] = useState<SvcAuthFrontendGetRes | null>(
-    null
-  );
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getUserLoginMethod()
-      .then((response) => {
-        if (response) {
-          setAuthConfig(response);
-        }
-      })
-      .catch((error) => {
-        console.error('Failed to fetch login methods:', error);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
+  // 使用新的 useAuthConfig hook
+  const { authConfig, loading } = useAuthConfig();
 
   const handleOAuthLogin = async (type: number) => {
     try {
