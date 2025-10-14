@@ -39,6 +39,7 @@ import {
   retryRequest 
 } from "@/lib/api-cache";
 import { API_CONSTANTS } from "@/lib/constants";
+import { clearAllAuthCookies } from "@/utils/cookie";
 
 export type QueryParamsType = Record<string | number, any>;
 
@@ -188,33 +189,21 @@ export const checkPublicAccess = getPublicAccessStatus;
 // 清除所有认证信息的函数
 export const clearAuthData = () => {
   if (typeof window !== "undefined") {
+    console.log("Clearing all authentication data...");
+    
     // 清除本地存储的认证信息
     localStorage.removeItem("auth_token");
     localStorage.removeItem("user");
     localStorage.removeItem("userInfo");
 
-    // 清除所有相关的cookie
-    const cookiesToClear = [
-      "auth_token",
-      "session_id",
-      "csrf_token",
-      "_vercel_jwt",
-    ];
-    cookiesToClear.forEach((cookieName) => {
-      // 清除根路径的cookie
-      document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
-      // 清除当前路径的cookie
-      document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=${window.location.pathname}; SameSite=Lax`;
-      // 清除域名级别的cookie
-      if (window.location.hostname !== "localhost") {
-        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname}; SameSite=Lax`;
-        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${window.location.hostname}; SameSite=Lax`;
-      }
-    });
+    // 使用工具函数清除所有认证相关的cookie，包括auth_token
+    clearAllAuthCookies();
 
     // 清除CSRF token缓存
     clearCsrfTokenCache();
     clearPublicAccessCache();
+    
+    console.log("Authentication data cleared successfully");
   }
 };
 export class HttpClient<SecurityDataType = unknown> {
@@ -266,36 +255,34 @@ export class HttpClient<SecurityDataType = unknown> {
           clearCsrfTokenCache();
         }
 
-        // 处理401未授权错误 - 重定向到登录页
+        // 处理401未授权错误 - 清除认证信息并重定向到登录页
         if (error.response?.status === 401) {
-          // 只在客户端环境下进行重定向
+          // 只在客户端环境下进行处理
           if (typeof window !== "undefined") {
-            // 检查当前是否已经在登录相关页面，避免死循环
+            console.log("401 Unauthorized error detected, clearing auth data:", error.response);
+            
+            // 立即清除所有认证信息，包括cookie中的auth_token
+            clearAuthData();
+            
             const currentPath = window.location.pathname;
             const isAuthPage =
               currentPath.startsWith("/login") ||
               currentPath.startsWith("/register");
+              
             if (!isAuthPage) {
               getPublicAccessStatus().then((publicAccess) => {
                 if (!publicAccess) {
-              console.log(error.response);
+                  // 获取当前页面路径作为重定向参数
+                  const fullPath =
+                    window.location.pathname + window.location.search;
+                  const loginUrl = `/login?redirect=${encodeURIComponent(fullPath)}`;
 
-              // 清除所有认证信息
-              clearAuthData();
-
-              // 获取当前页面路径作为重定向参数
-              const fullPath =
-                window.location.pathname + window.location.search;
-              const loginUrl = `/login?redirect=${encodeURIComponent(fullPath)}`;
-
-              // 重定向到登录页
-              window.location.href = loginUrl;
-               }
+                  // 重定向到登录页
+                  window.location.href = loginUrl;
+                }
                 // 如果public_access为true，不进行重定向，允许匿名访问
               }).catch(() => {
                 // 如果获取public_access状态失败，默认跳转到登录页
-                console.log(error.response);
-                clearAuthData();
                 const fullPath =
                   window.location.pathname + window.location.search;
                 const loginUrl = `/login?redirect=${encodeURIComponent(fullPath)}`;
@@ -398,13 +385,13 @@ export class HttpClient<SecurityDataType = unknown> {
     const method = params.method?.toUpperCase() || "GET";
     const requestKey = `${method}:${cacheKey}`;
     
-    // 检查缓存（仅对 GET 请求）
-    if (method === "GET") {
-      const cached = getFromCache<ExtractDataProp<T>>(cacheKey);
-      if (cached !== null) {
-        return cached;
-      }
-    }
+    // // 检查缓存（仅对 GET 请求）
+    // if (method === "GET") {
+    //   const cached = getFromCache<ExtractDataProp<T>>(cacheKey);
+    //   if (cached !== null) {
+    //     return cached;
+    //   }
+    // }
 
     // 检查是否有相同的请求正在进行中（请求去重）
     if (this.pendingRequests.has(requestKey)) {
@@ -499,26 +486,12 @@ export class HttpClient<SecurityDataType = unknown> {
         const { cookies } = await import("next/headers");
         const cookieStore = await cookies();
 
-        // 方法1: 转发所有cookie（推荐用于开发环境）
+        // 转发所有cookie（推荐用于开发环境）
         const allCookies = cookieStore.toString();
         if (allCookies) {
           requestConfig.headers.Cookie = allCookies;
         }
 
-        // 方法2: 如果需要选择性转发，可以使用下面的代码
-        // const cookiesToForward = ['auth_token', 'session_id', 'csrf_token', '_vercel_jwt'];
-        // const cookieValues = cookiesToForward
-        //   .map(name => {
-        //     const value = cookieStore.get(name)?.value;
-        //     return value ? `${name}=${value}` : null;
-        //   })
-        //   .filter(Boolean);
-        //
-        // if (cookieValues.length > 0) {
-        //   requestConfig.headers.Cookie = cookieValues.join('; ');
-        // }
-
-        // 调试信息（生产环境可以移除）
         if (process.env.NODE_ENV === "development") {
           console.log(`[SSR] API Request to ${path}`);
           console.log(`[SSR] Cookies available:`, !!allCookies);
@@ -548,10 +521,10 @@ export class HttpClient<SecurityDataType = unknown> {
         }
       }
     ).then(result => {
-      // 缓存 GET 请求的结果
-      if (method === "GET") {
-        setCache(cacheKey, result, API_CONSTANTS.CACHE.MEDIUM);
-      }
+      // // 缓存 GET 请求的结果
+      // if (method === "GET") {
+      //   setCache(cacheKey, result, API_CONSTANTS.CACHE.MEDIUM);
+      // }
       return result;
     }).finally(() => {
       // 请求完成后从待处理列表中移除

@@ -13,22 +13,24 @@ import {
   SvcCreateSpaceReq,
   SvcListSpaceItem,
   SvcListSpaceKBItem,
+  SvcListSpaceFolderItem,
   SvcUpdateSpaceReq,
 } from '@/api';
 import LoadingButton from '@/components/LoadingButton';
-import { Card, message, Modal } from '@ctzhian/ui';
+import { Card, Icon, message, Modal } from '@ctzhian/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DescriptionIcon from '@mui/icons-material/Description';
 import EditIcon from '@mui/icons-material/Edit';
 import FolderIcon from '@mui/icons-material/Folder';
 import GetAppIcon from '@mui/icons-material/GetApp';
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import {
   Box,
   Button,
   Checkbox,
+  Divider,
   FormControlLabel,
   Grid2 as Grid,
   IconButton,
@@ -59,6 +61,7 @@ const KnowledgeBasePage = () => {
   const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [currentSpace, setCurrentSpace] = useState<SvcListSpaceItem | null>(null);
+  const [currentFolder, setCurrentFolder] = useState<SvcListSpaceFolderItem | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [editSpace, setEditSpace] = useState<SvcListSpaceItem | null>(null);
@@ -141,9 +144,19 @@ const KnowledgeBasePage = () => {
     setCurrentSpace(space);
   };
 
+  const handleFolderMenuClick = (
+    event: React.MouseEvent<HTMLButtonElement>,
+    folder: SvcListSpaceFolderItem
+  ) => {
+    event.stopPropagation();
+    setAnchorEl(event.currentTarget);
+    setCurrentFolder(folder);
+  };
+
   const handleMenuClose = () => {
     setAnchorEl(null);
     setCurrentSpace(null);
+    setCurrentFolder(null);
   };
 
   const handleCreateSpace = () => {
@@ -184,6 +197,44 @@ const KnowledgeBasePage = () => {
       });
     }
     handleMenuClose();
+  };
+
+  const handleRefreshFolder = async () => {
+    if (!currentFolder || !selectedSpaceId) return;
+    handleMenuClose();
+
+    try {
+      await putAdminKbKbIdSpaceSpaceIdFolderFolderId(kb_id, selectedSpaceId, currentFolder.id!);
+      message.success('更新成功');
+      refreshFolders();
+    } catch {
+      message.error('更新失败');
+    }
+  };
+
+  const handleDeleteFolder = async () => {
+    if (!currentFolder || !selectedSpaceId) return;
+    handleMenuClose();
+
+    Modal.confirm({
+      title: '删除确认',
+      content: `确定要删除文件夹 "${currentFolder.title}" 吗？`,
+      okText: '删除',
+      okButtonProps: { color: 'error' },
+      onOk: async () => {
+        try {
+          await deleteAdminKbKbIdSpaceSpaceIdFolderFolderId(
+            kb_id,
+            selectedSpaceId,
+            currentFolder.id!
+          );
+          message.success('删除成功');
+          refreshFolders();
+        } catch {
+          message.error('删除失败');
+        }
+      },
+    });
   };
 
   const handleRefreshSpace = () => {
@@ -384,23 +435,60 @@ const KnowledgeBasePage = () => {
                   sx={{
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
+                    boxShadow:
+                      '0px 0px 10px 0px rgba(54,59,76,0.1), 0px 0px 1px 1px rgba(54,59,76,0.03)',
+                    borderRadius: '8px',
+                    border: '1px solid',
+                    borderColor: selectedSpaceId === space.id ? '#3248F2' : 'transparent',
                     '&:hover': {
-                      borderColor: '#3860F4',
-                      boxShadow: '0 2px 8px rgba(56, 96, 244, 0.1)',
+                      borderColor: '#3248F2',
+                      '& .kb_title': {
+                        color: '#3860F4',
+                      },
                     },
+                    ...(selectedSpaceId === space.id && {
+                      '& .kb_title': {
+                        color: '#3860F4',
+                      },
+                    }),
                   }}
                   onClick={() => handleSpaceClick(space)}
                 >
-                  <Box sx={{ p: 3 }}>
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      alignItems="flex-start"
-                      sx={{ mb: 2 }}
-                    >
-                      <Typography variant="body1" sx={{ fontWeight: 500, fontSize: '16px' }}>
+                  <Box sx={{ p: 2 }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                      <Typography variant="subtitle2" className="kb_title" sx={{ fontSize: 16 }}>
                         {space.title}
                       </Typography>
+                    </Stack>
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      justifyContent="space-between"
+                      sx={{ my: 2 }}
+                    >
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '12px' }}>
+                        知识库数量
+                      </Typography>
+                      <Typography variant="subtitle2" sx={{ fontSize: '12px', pr: '14px' }}>
+                        {space.total || 0}
+                      </Typography>
+                    </Stack>
+                    <Divider sx={{ borderStyle: 'dashed', mb: 2 }} />
+                    <Stack direction="row" alignItems="center" justifyContent="space-between">
+                      <Box
+                        sx={{
+                          background: '#1F2329',
+                          border: '1px solid #d0d0d0',
+                          borderRadius: '5px',
+                          px: 2,
+                          py: 0.5,
+                          fontSize: '12px',
+                          color: '#fff',
+                          fontWeight: 400,
+                        }}
+                      >
+                        {getPlatformLabel(space.platform)}
+                      </Box>
                       <IconButton
                         size="small"
                         onClick={e => handleMenuClick(e, space)}
@@ -409,27 +497,8 @@ const KnowledgeBasePage = () => {
                           '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
                         }}
                       >
-                        <MoreHorizIcon fontSize="small" />
+                        <MoreVertIcon fontSize="small" />
                       </IconButton>
-                    </Stack>
-                    <Stack direction="row" alignItems="center" justifyContent="space-between">
-                      <Box
-                        sx={{
-                          backgroundColor: '#f5f5f5',
-                          border: '1px solid #d0d0d0',
-                          borderRadius: '16px',
-                          px: 2,
-                          py: 0.5,
-                          fontSize: '12px',
-                          color: '#333333',
-                          fontWeight: 400,
-                        }}
-                      >
-                        {getPlatformLabel(space.platform)}
-                      </Box>
-                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '14px' }}>
-                        知识库数量 {space.total || 0}
-                      </Typography>
                     </Stack>
                   </Box>
                 </Box>
@@ -457,9 +526,16 @@ const KnowledgeBasePage = () => {
             {selectedSpaceId ? (
               <Stack spacing={2} sx={{ flex: 1, overflow: 'auto' }}>
                 {folders.map(folder => (
-                  <Box
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    spacing={2}
                     key={folder.id}
                     sx={{
+                      pl: 3,
+                      pr: 2,
+                      py: 2,
                       border: '1px solid #e0e0e0',
                       borderRadius: '8px',
                       backgroundColor: 'white',
@@ -470,128 +546,75 @@ const KnowledgeBasePage = () => {
                       },
                     }}
                   >
-                    <Box sx={{ p: 3 }}>
-                      <Stack direction="row" alignItems="flex-start" spacing={2}>
-                        <Box
-                          sx={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: '8px',
-                            backgroundColor: '#f5f5f5',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                          }}
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      justifyContent="space-between"
+                      spacing={2}
+                    >
+                      <Icon
+                        type="icon-tongyongwendang-moren"
+                        sx={{ color: 'text.secondary', fontSize: 20 }}
+                      />
+                      <Stack sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{ fontWeight: 500, fontSize: '14px', mb: 0.5 }}
                         >
-                          <DescriptionIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
-                        </Box>
-                        <Stack sx={{ flex: 1, minWidth: 0 }}>
-                          <Typography
-                            variant="body2"
-                            sx={{ fontWeight: 500, fontSize: '14px', mb: 0.5 }}
-                          >
-                            {folder.title}
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            sx={{ fontSize: '12px', mb: 0.5 }}
-                          >
-                            共 {folder.total || 0} 个文档
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            sx={{ fontSize: '12px', display: 'block' }}
-                          >
-                            更新于 {dayjs((folder.updated_at || 0) * 1000).fromNow()}{' '}
-                            {formatDate(folder.updated_at)}
-                          </Typography>
-                        </Stack>
-                        <Stack
-                          direction="row"
-                          spacing={1}
-                          alignItems="center"
-                          sx={{ flexShrink: 0 }}
+                          {folder.title}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ fontSize: '12px', mb: 0.5, '& b': { color: 'text.primary' } }}
                         >
-                          <Box
-                            sx={{
-                              backgroundColor: folder.status === 1 ? '#e3f2fd' : '#fff3e0',
-                              color: folder.status === 1 ? '#1976d2' : '#f57c00',
-                              borderRadius: '12px',
-                              px: 1.5,
-                              py: 0.5,
-                              fontSize: '12px',
-                              fontWeight: 400,
-                            }}
-                          >
-                            {folder.status === 1 ? '应用中' : '同步中'}
-                          </Box>
-                          <IconButton
-                            size="small"
-                            onClick={async e => {
-                              e.stopPropagation();
-                              if (!selectedSpaceId || !folder.id) return;
-
-                              try {
-                                await putAdminKbKbIdSpaceSpaceIdFolderFolderId(
-                                  kb_id,
-                                  selectedSpaceId,
-                                  folder.id
-                                );
-                                message.success('更新成功');
-                                refreshFolders();
-                              } catch {
-                                message.error('更新失败');
-                              }
-                            }}
-                            sx={{
-                              color: 'text.secondary',
-                              '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
-                            }}
-                          >
-                            <RefreshIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={async e => {
-                              e.stopPropagation();
-                              if (!selectedSpaceId || !folder.id) return;
-
-                              Modal.confirm({
-                                title: '删除确认',
-                                content: `确定要删除文件夹 "${folder.title}" 吗？`,
-                                okText: '删除',
-                                okButtonProps: { color: 'error' },
-                                onOk: async () => {
-                                  try {
-                                    if (folder.id) {
-                                      await deleteAdminKbKbIdSpaceSpaceIdFolderFolderId(
-                                        kb_id,
-                                        selectedSpaceId,
-                                        folder.id
-                                      );
-                                      message.success('删除成功');
-                                      refreshFolders();
-                                    }
-                                  } catch {
-                                    message.error('删除失败');
-                                  }
-                                },
-                              });
-                            }}
-                            sx={{
-                              '&:hover': { backgroundColor: 'rgba(244, 67, 54, 0.04)' },
-                            }}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Stack>
+                          共 <b>{folder.total || 0}</b> 个文档
+                        </Typography>
                       </Stack>
+                    </Stack>
+                    <Box
+                      sx={{
+                        backgroundColor:
+                          folder.status === 1 ? 'rgba(56, 96, 244, 0.10)' : '#fff3e0',
+                        color: folder.status === 1 ? '#3860F4' : '#f57c00',
+                        borderRadius: '12px',
+                        px: 1.5,
+                        py: 0.5,
+                        fontSize: '12px',
+                        fontWeight: 400,
+                      }}
+                    >
+                      {folder.status === 1 ? '应用中' : '同步中'}
                     </Box>
-                  </Box>
+                    <Stack alignItems="flex-end" spacing={1}>
+                      <IconButton
+                        size="small"
+                        onClick={e => handleFolderMenuClick(e, folder)}
+                        sx={{
+                          color: 'text.secondary',
+                          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+                        }}
+                      >
+                        <MoreVertIcon fontSize="small" />
+                      </IconButton>
+                      <Stack direction="row" alignItems="center" spacing={2} sx={{ pr: 1 }}>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ fontSize: '12px', display: 'block' }}
+                        >
+                          更新于 {dayjs((folder.updated_at || 0) * 1000).fromNow()}{' '}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ fontSize: '12px', display: 'block' }}
+                        >
+                          {formatDate(folder.updated_at)}
+                        </Typography>
+                      </Stack>
+                    </Stack>
+                  </Stack>
                 ))}
                 {folders.length === 0 && !foldersLoading && (
                   <Box sx={{ textAlign: 'center', py: 8 }}>
@@ -625,24 +648,40 @@ const KnowledgeBasePage = () => {
         </Grid>
       </Grid>
 
-      {/* 知识源操作菜单 */}
+      {/* 操作菜单 */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-        <MenuItem onClick={handleRefreshSpace}>
-          <RefreshIcon fontSize="small" sx={{ mr: 1 }} />
-          更新
-        </MenuItem>
-        <MenuItem onClick={handleGetSpaces}>
-          <GetAppIcon fontSize="small" sx={{ mr: 1 }} />
-          获取知识库
-        </MenuItem>
-        <MenuItem onClick={handleEditSpace}>
-          <EditIcon fontSize="small" sx={{ mr: 1 }} />
-          编辑
-        </MenuItem>
-        <MenuItem onClick={handleDeleteSpace} sx={{ color: 'error.main' }}>
-          <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
-          删除
-        </MenuItem>
+        {currentSpace && !currentFolder && (
+          <>
+            <MenuItem onClick={handleRefreshSpace}>
+              <RefreshIcon fontSize="small" sx={{ mr: 1 }} />
+              更新
+            </MenuItem>
+            <MenuItem onClick={handleGetSpaces}>
+              <GetAppIcon fontSize="small" sx={{ mr: 1 }} />
+              获取知识库
+            </MenuItem>
+            <MenuItem onClick={handleEditSpace}>
+              <EditIcon fontSize="small" sx={{ mr: 1 }} />
+              编辑
+            </MenuItem>
+            <MenuItem onClick={handleDeleteSpace} sx={{ color: 'error.main' }}>
+              <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+              删除
+            </MenuItem>
+          </>
+        )}
+        {currentFolder && !currentSpace && (
+          <>
+            <MenuItem onClick={handleRefreshFolder}>
+              <RefreshIcon fontSize="small" sx={{ mr: 1 }} />
+              更新
+            </MenuItem>
+            <MenuItem onClick={handleDeleteFolder} sx={{ color: 'error.main' }}>
+              <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+              删除
+            </MenuItem>
+          </>
+        )}
       </Menu>
 
       {/* 创建/编辑连接模态框 */}
