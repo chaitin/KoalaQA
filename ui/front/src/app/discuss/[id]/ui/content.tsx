@@ -250,7 +250,7 @@ const BaseDiscussCard = (props: {
             {/* 只在有可用菜单项时显示 MoreVertIcon */}
             {hasMenuItems && (
               <IconButton
-                sx={{ display: { xs: 'none', sm: 'flex' } }}
+                sx={{ display: { xs: 'none', sm: 'flex' }, p: 0 }}
                 onClick={(e) => {
                   onOpt(e, data.content || '', data)
                 }}

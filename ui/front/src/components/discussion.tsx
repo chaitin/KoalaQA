@@ -1,7 +1,6 @@
 'use client';
 import { ModelDiscussionDetail } from '@/api';
 import { postDiscussion, putDiscussionDiscId } from '@/api/Discussion';
-import defaultAvatar from '@/asset/img/default_avatar.png';
 import { Icon } from '@/components';
 import EditorWrap from '@/components/editor/edit/Wrap';
 import Modal from '@/components/modal';
@@ -374,7 +373,7 @@ const AvatarWrap = styled(Image)(({ theme }) => {
 export const Avatar = ({ src, size = 20 }: { src?: string; size: number }) => {
   return (
     <AvatarWrap
-      src={src || defaultAvatar.src}
+      src={src || ''}
       alt='头像'
       width={size}
       height={size}
