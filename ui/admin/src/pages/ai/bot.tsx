@@ -6,6 +6,7 @@ import FileUploadIcon from '@mui/icons-material/FileUpload';
 import React, { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { message } from '@ctzhian/ui';
 
 const formSchema = z.object({
   avatar: z.union([z.string(), z.instanceof(File)]),
@@ -33,15 +34,17 @@ const Bot: React.FC = () => {
     },
   });
 
-  const onSubmit = (data: FormData) => {
+  const onSubmit = async (data: FormData) => {
     if (!dirtyFields.avatar) {
-      putAdminBot({
+      await putAdminBot({
         name: data.name,
         unknown_prompt: data.unknown_prompt || '',
       });
     } else {
-      putAdminBot(data as any);
+      await putAdminBot(data as any);
     }
+    message.success('保存成功');
+    reset(data);
   };
 
   useEffect(() => {
@@ -71,14 +74,18 @@ const Bot: React.FC = () => {
             >
               取消
             </Button>
-            <Button type="submit" variant="contained" sx={{ borderRadius: '6px' }}>
+            <Button
+              onClick={handleSubmit(onSubmit)}
+              variant="contained"
+              sx={{ borderRadius: '6px' }}
+            >
               保存
             </Button>
           </Stack>
         )}
       </Stack>
 
-      <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ p: 2 }}>
+      <Box sx={{ p: 2 }}>
         {/* 头像上传区域 */}
         <Stack direction="row" sx={{ mb: 2 }} alignItems="center">
           <Typography variant="subtitle2" sx={{ minWidth: '24%' }}>
