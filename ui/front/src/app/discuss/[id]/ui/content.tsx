@@ -113,7 +113,7 @@ const BaseDiscussCard = (props: {
       sx={{
         ...(isReply
           ? {
-              p: { xs: 1.5, sm: 3 },
+              p: { xs: 1, sm: 2 },
               backgroundColor: '#F6F6FB',
               mt: 2,
               borderRadius: 2,
@@ -335,7 +335,7 @@ const DiscussCard = (props: {
       sx={{
         boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
         cursor: 'auto',
-        pt: 2,
+        pt: 1.5,
       }}
     >
       <BaseDiscussCard {...props}></BaseDiscussCard>

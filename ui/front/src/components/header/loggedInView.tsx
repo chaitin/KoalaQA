@@ -247,13 +247,12 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
               transition: 'background .18s, transform .08s',
               cursor: 'pointer',
               '&:hover': {
-                backgroundColor: '#E6F0FF',
-                transform: 'translateY(-1px)',
+                backgroundColor: '#F3F6FE',
               },
               '&:active': { transform: 'translateY(0)' },
             }}
           >
-            <NotificationsNoneOutlinedIcon sx={{ color: '#000' }} />
+            <NotificationsNoneOutlinedIcon sx={{ color: '#000', fontSize: 20 }} />
           </Box>
         </Badge>
       </Tooltip>
@@ -279,21 +278,19 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
         title={<ProfilePanel />}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {/* 头像：浅蓝色渐变背景，悬停有阴影 */}
+          {/* 头像 */}
           <Box
             sx={{
               width: 36,
               height: 36,
               borderRadius: '50%',
-              background: '#fff',
+              backgroundColor: '#fff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              transition: 'background .18s, box-shadow .18s, transform .08s',
+              transition: 'background .18s, transform .08s',
               '&:hover': {
-                background: '#E6F3FF',
-                boxShadow: '0 6px 12px rgba(11,92,255,0.12)',
-                transform: 'translateY(-1px)',
+                backgroundColor: '#F3F6FE',
               },
             }}
           >

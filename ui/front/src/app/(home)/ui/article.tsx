@@ -321,7 +321,7 @@ const Article = ({
               <Card
                 key={section.id}
                 sx={{
-                  p: 0,
+                  p: 2, // 添加内边距
                   boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
                   borderRadius: 2,
                   overflow: 'hidden',
@@ -338,9 +338,11 @@ const Article = ({
                         key={item.id}
                         alignItems='center'
                         sx={{
-                          p: 2,
+                          p: 1,
+                          m: 0.5, // 添加选项之间的间距
+                          borderRadius: 1, // 添加圆角
                           cursor: 'pointer',
-                          backgroundColor: topics.includes(item.id || -1) ? 'rgba(32,108,255,0.06)' : 'transparent',
+                          backgroundColor: topics.includes(item.id || -1) ? 'rgba(32,108,255,0.08)' : 'transparent',
                           '&:hover': {
                             backgroundColor: 'rgba(32,108,255,0.06)',
                           },
@@ -351,11 +353,13 @@ const Article = ({
                           sx={{
                             width: 24,
                             height: 24,
-                            backgroundColor: color,
+                            backgroundColor: 'rgba(32,108,255,0.1)', // 浅蓝色背景
+                            borderRadius: 1, // 添加圆角
+                            border: `1px solid ${color}`, // 深蓝色边框
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: '#fff',
+                            color: color, // #符号使用深蓝色
                             fontSize: 12,
                             fontWeight: 'bold',
                             mr: 2,
@@ -370,11 +374,11 @@ const Article = ({
                             justifyContent: 'space-between',
                             alignItems: 'center',
                             fontSize: 14,
-                            color: topics.includes(item.id || -1) ? 'primary.main' : '#000',
+                            color: topics.includes(item.id || -1) ? '#206CFF' : '#000', // 选中时使用主题蓝色
                             fontWeight: topics.includes(item.id || -1) ? 500 : 400,
                           }}
                         >
-                          <Typography sx={{ fontSize: 14, fontWeight: 'inherit' }}>{item.name}</Typography>
+                          <Typography sx={{ fontSize: 14, fontWeight: 'inherit', color: 'inherit' }}>{item.name}</Typography>
                         </Box>
                       </Stack>
                     )
