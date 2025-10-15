@@ -17,7 +17,7 @@ interface UserAvatarProps extends Omit<AvatarProps, 'src'> {
  */
 export const UserAvatar: React.FC<UserAvatarProps> = ({
   user,
-  fallbackSrc = '',
+  fallbackSrc = '/logo.png',
   showSkeleton = true,
   debug = false,
   sx,
