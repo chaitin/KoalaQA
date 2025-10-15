@@ -11,6 +11,7 @@ import 'dayjs/locale/zh-cn'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { LazyImage } from '@/components/optimized'
 import { useContext, useMemo } from 'react'
+import Link from 'next/link'
 
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
@@ -44,18 +45,51 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
       .filter(Boolean) as string[]
   }, [it.group_ids, groups.flat])
 
+  const handleCardClick = () => {
+    window.open(`/discuss/${it.uuid}`, '_blank')
+  }
+
   return (
     <Card
       key={it.id}
+      onClick={handleCardClick}
       sx={{
         boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
-        cursor: 'auto',
+        cursor: 'pointer',
         display: { xs: 'none', sm: 'block' },
         borderRadius: 2,
         p: 2, // 减少内边距从3到2
         mb: 0.5, // 减少卡片边距从1到0.5
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        position: 'relative',
+        overflow: 'hidden',
+        animation: 'fadeInUp 0.6s ease-out',
+        '@keyframes fadeInUp': {
+          '0%': {
+            opacity: 0,
+            transform: 'translateY(20px)',
+          },
+          '100%': {
+            opacity: 1,
+            transform: 'translateY(0)',
+          },
+        },
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: '-100%',
+          width: '100%',
+          height: '100%',
+          background: 'linear-gradient(90deg, transparent, rgba(32,108,255,0.05), transparent)',
+          transition: 'left 0.5s ease',
+        },
         '&:hover': {
           boxShadow: 'rgba(0, 28, 85, 0.08) 0px 8px 20px 0px',
+          transform: 'translateY(-4px)',
+          '&::before': {
+            left: '100%',
+          },
         },
       }}
     >
@@ -76,8 +110,6 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
         >
           <Title
             className='title'
-            href={`/discuss/${it.uuid}`}
-            target='_blank'
             sx={{
               fontSize: 16,
               fontWeight: 500,
@@ -116,7 +148,13 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
         {/* 用户信息和时间 */}
         <Stack direction='row' alignItems='center' gap={1} sx={{ color: '#666', flexShrink: 0, ml: 2, minWidth: 0 }}>
           {it.user_avatar ? (
-            <LazyImage src={it.user_avatar} width={20} height={20} alt='头像' style={{ borderRadius: '50%', flexShrink: 0 }} />
+            <LazyImage
+              src={it.user_avatar}
+              width={20}
+              height={20}
+              alt='头像'
+              style={{ borderRadius: '50%', flexShrink: 0 }}
+            />
           ) : (
             <Box sx={{ flexShrink: 0 }}>
               <Avatar size={20} />
@@ -132,7 +170,10 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
           >
             {it.user_name}
           </Typography>
-          <Typography variant='body2' sx={{ fontSize: 12, color: 'rgba(0,0,0,0.5)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+          <Typography
+            variant='body2'
+            sx={{ fontSize: 12, color: 'rgba(0,0,0,0.5)', whiteSpace: 'nowrap', flexShrink: 0 }}
+          >
             {dayjs.unix(it.updated_at!).fromNow()}
           </Typography>
         </Stack>
@@ -165,8 +206,14 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
                   fontSize: '12px',
                   height: '24px',
                   fontWeight: 500,
+                  transition: 'all 0.3s ease',
                   '& .MuiChip-label': {
                     px: 1,
+                  },
+                  '&:hover': {
+                    transform: 'scale(1.05)',
+                    backgroundColor: `${color}25`,
+                    boxShadow: `0 2px 8px ${color}30`,
                   },
                 }}
               />
@@ -179,11 +226,17 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
               key={item}
               label={item}
               size='small'
-              sx={{ 
-                backgroundColor: 'rgba(0,0,0,0.06)', 
+              sx={{
+                backgroundColor: 'rgba(0,0,0,0.06)',
                 color: 'rgba(0,0,0,0.6)',
                 fontSize: '12px', // 统一字体大小
                 height: '24px', // 统一高度
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'scale(1.05)',
+                  backgroundColor: 'rgba(0,0,0,0.1)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                },
               }}
             />
           ))}
@@ -198,6 +251,13 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
             py: 0.5,
             color: '#FF8500',
             fontSize: '12px',
+            transition: 'all 0.3s ease',
+            cursor: 'pointer',
+            '&:hover': {
+              transform: 'scale(1.05)',
+              backgroundColor: 'rgba(255, 133, 0, 0.1)',
+              boxShadow: '0 2px 8px rgba(255, 133, 0, 0.2)',
+            },
           }}
         >
           <Icon type='icon-xiaoxi' />
@@ -223,18 +283,55 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
       })
       .filter(Boolean) as string[]
   }, [it.group_ids, groups.flat])
+
+  const handleCardClick = () => {
+    window.open(`/discuss/${it.uuid}`, '_blank')
+  }
+
   return (
     <Card
       key={it.id}
+      onClick={handleCardClick}
       sx={{
         p: 2, // 减少内边距
         display: { xs: 'flex', sm: 'none' },
         flexDirection: 'column',
         gap: 1, // 减少内部间距
         boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
-        cursor: 'auto',
+        cursor: 'pointer',
         width: '100%',
         mb: 0.5, // 减少卡片间距
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        position: 'relative',
+        overflow: 'hidden',
+        animation: 'fadeInUp 0.6s ease-out',
+        '@keyframes fadeInUp': {
+          '0%': {
+            opacity: 0,
+            transform: 'translateY(20px)',
+          },
+          '100%': {
+            opacity: 1,
+            transform: 'translateY(0)',
+          },
+        },
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: '-100%',
+          width: '100%',
+          height: '100%',
+          background: 'linear-gradient(90deg, transparent, rgba(32,108,255,0.05), transparent)',
+          transition: 'left 0.5s ease',
+        },
+        '&:hover': {
+          boxShadow: 'rgba(0, 28, 85, 0.08) 0px 8px 20px 0px',
+          transform: 'translateY(-2px)',
+          '&::before': {
+            left: '100%',
+          },
+        },
       }}
     >
       <Stack
@@ -245,17 +342,17 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
           width: '100%',
         }}
       >
-        <Title
-          className='title multiline-ellipsis'
-          href={`/discuss/${it.uuid}`}
-          target='_blank'
-          sx={{ width: '100%', whiteSpace: 'wrap' }}
-        >
-          <MatchedString keywords={keywords} str={it.title || ''}></MatchedString>
-        </Title>
+        <Link href={`/discuss/${it.uuid}`} target='_blank' onClick={(e) => e.stopPropagation()}>
+          <Title className='title multiline-ellipsis' sx={{ width: '100%', whiteSpace: 'wrap' }}>
+            <MatchedString keywords={keywords} str={it.title || ''}></MatchedString>
+          </Title>
+        </Link>
       </Stack>
       <Stack direction='row' alignItems='center' gap={2} sx={{ color: '#666', flexShrink: 0, minWidth: 0 }}>
-        <Typography variant='body2' sx={{ fontSize: 12, lineHeight: 1, color: 'rgba(0,0,0,0.5)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+        <Typography
+          variant='body2'
+          sx={{ fontSize: 12, lineHeight: 1, color: 'rgba(0,0,0,0.5)', whiteSpace: 'nowrap', flexShrink: 0 }}
+        >
           <time
             dateTime={dayjs.unix(it.updated_at!).format()}
             title={dayjs.unix(it.updated_at!).format('YYYY-MM-DD HH:mm:ss')}
@@ -265,7 +362,13 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
         </Typography>
         <Stack direction='row' alignItems='center' gap={1} sx={{ minWidth: 0, flex: 1 }}>
           {it.user_avatar ? (
-            <LazyImage src={it.user_avatar} width={16} height={16} alt='头像' style={{ borderRadius: '50%', flexShrink: 0 }} />
+            <LazyImage
+              src={it.user_avatar}
+              width={16}
+              height={16}
+              alt='头像'
+              style={{ borderRadius: '50%', flexShrink: 0 }}
+            />
           ) : (
             <Box sx={{ flexShrink: 0 }}>
               <Avatar size={16} />
@@ -298,8 +401,11 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
             cursor: 'pointer',
             color: '#FF8500',
             ml: 'auto!important',
+            transition: 'all 0.3s ease',
             '&:hover': {
               background: 'rgba(255,133,0,0.22)',
+              transform: 'scale(1.05)',
+              boxShadow: '0 2px 8px rgba(255, 133, 0, 0.2)',
             },
             fontSize: '12px',
           }}
@@ -330,8 +436,14 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
               color: '#4CAF50',
               fontSize: '12px',
               height: '24px',
+              transition: 'all 0.3s ease',
               '& .MuiChip-label': {
                 px: 1,
+              },
+              '&:hover': {
+                transform: 'scale(1.05)',
+                backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                boxShadow: '0 2px 8px rgba(76, 175, 80, 0.3)',
               },
             }}
           />
@@ -339,15 +451,21 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
 
         {/* 标签 */}
         {it?.tags?.map((item) => (
-          <Tag 
-            key={item} 
-            label={item} 
-            size='small' 
-            sx={{ 
+          <Tag
+            key={item}
+            label={item}
+            size='small'
+            sx={{
               backgroundColor: 'rgba(32, 108, 255, 0.1)',
               fontSize: '12px', // 统一字体大小
               height: '24px', // 统一高度
-            }} 
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                transform: 'scale(1.05)',
+                backgroundColor: 'rgba(32, 108, 255, 0.2)',
+                boxShadow: '0 2px 8px rgba(32, 108, 255, 0.3)',
+              },
+            }}
           />
         ))}
       </Stack>

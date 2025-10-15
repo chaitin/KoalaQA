@@ -184,19 +184,6 @@ const AdminDocument = () => {
               }
             }}
           />
-          <TextField
-            label="类型"
-            value={file_type}
-            size="small"
-            onChange={e => setFile_type(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') {
-                setParams({
-                  file_type,
-                });
-              }
-            }}
-          />
         </Stack>
         <DocImport refresh={fetchData} allowedImportTypes={['Sitemap', 'URL']} />
       </Stack>
