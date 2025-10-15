@@ -32,6 +32,9 @@ const TypewriterText = ({
       setIsComplete(true)
       onComplete?.()
     }
+    
+    // 确保所有代码路径都有返回值
+    return undefined
   }, [currentIndex, text, speed, delay, isComplete, onComplete])
 
   return (

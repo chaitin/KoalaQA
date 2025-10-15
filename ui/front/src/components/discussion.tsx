@@ -2,6 +2,7 @@
 import { ModelDiscussionDetail } from '@/api';
 import { postDiscussion, putDiscussionDiscId } from '@/api/Discussion';
 import { Icon } from '@/components';
+import UserAvatar from '@/components/UserAvatar';
 import EditorWrap from '@/components/editor/edit/Wrap';
 import Modal from '@/components/modal';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -363,26 +364,22 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
   );
 };
 
-const AvatarWrap = styled(Image)(({ theme }) => {
-  return {
-    borderRadius: '50%',
-    display: 'block',
-    objectFit: 'contain',
-    objectPosition: 'center',
-    backgroundColor: '#f5f5f5',
-  };
-});
-
 export const Avatar = ({ src, size = 20 }: { src?: string; size: number }) => {
-  // 如果没有 src 或 src 为空字符串，使用默认头像
-  const avatarSrc = src && src.trim() !== '' ? src : '/logo.png';
+  // 构造用户对象以适配 UserAvatar 组件
+  const user = src && src.trim() !== '' ? { avatar: src } : undefined;
   
   return (
-    <AvatarWrap
-      src={avatarSrc}
-      alt='头像'
-      width={size}
-      height={size}
+    <UserAvatar
+      user={user}
+      fallbackSrc="/logo.png"
+      showSkeleton={false}
+      sx={{
+        width: size,
+        height: size,
+        objectFit: 'contain',
+        objectPosition: 'center',
+        backgroundColor: '#f5f5f5',
+      }}
     />
   );
 };
