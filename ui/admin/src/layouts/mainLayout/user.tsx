@@ -118,6 +118,7 @@ const MainLayout = () => {
             borderRadius: 2,
             boxShadow: 24,
             p: 3,
+            outline: 'none',
           }}
         >
           <Stack spacing={2}>

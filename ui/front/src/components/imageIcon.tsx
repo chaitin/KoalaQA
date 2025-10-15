@@ -19,6 +19,12 @@ export interface ImageIconProps {
 
 export const ImageIcon: React.FC<ImageIconProps> = (props) => {
   const { src, className, sx, id, onClick } = props;
+  
+  // 如果 src 为空字符串，不渲染组件
+  if (!src || (typeof src === 'string' && src.trim() === '')) {
+    return null;
+  }
+  
   return (
     <IconWrapper className={className} sx={sx} id={id} onClick={onClick}>
       <Image alt='icon' src={src} style={{ width: '100%', height: '100%' }} />

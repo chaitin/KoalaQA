@@ -78,18 +78,20 @@ const Article = ({
       params.group_ids = topics
     }
 
-    getDiscussion(params).then((res) => {
-      if (res) {
-        setArticleData((pre) => ({
-          total: res.total,
-          items: [...(pre.items || []), ...(res.items || [])],
-        }))
-      }
-    }).catch((error) => {
-      console.error('Failed to fetch more discussions:', error)
-      // 回退页码
-      setPage(page)
-    })
+    getDiscussion(params)
+      .then((res) => {
+        if (res) {
+          setArticleData((pre) => ({
+            total: res.total,
+            items: [...(pre.items || []), ...(res.items || [])],
+          }))
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to fetch more discussions:', error)
+        // 回退页码
+        setPage(page)
+      })
   }, [page, articleData.total, status, search, topics])
 
   const createQueryString = (name: string, value: string) => {
@@ -116,14 +118,16 @@ const Article = ({
       params.group_ids = tps
     }
 
-    return getDiscussion(params).then((res) => {
-      if (res) {
-        setArticleData(res)
-      }
-    }).catch((error) => {
-      console.error('Failed to fetch discussions:', error)
-      // 保持当前数据，不重置为空
-    })
+    return getDiscussion(params)
+      .then((res) => {
+        if (res) {
+          setArticleData(res)
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to fetch discussions:', error)
+        // 保持当前数据，不重置为空
+      })
   }, [])
 
   const onInputSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -135,23 +139,23 @@ const Article = ({
   const handleSearch = useCallback(() => {
     const currentSearch = searchParams?.get('search') || ''
     const trimmedSearch = search && search.trim() ? search.trim() : ''
-    
+
     // 只有在搜索内容真正变化时才更新 URL
     if (currentSearch !== trimmedSearch) {
       const params = new URLSearchParams(searchParams?.toString())
-      
+
       // 如果搜索内容为空，移除 search 参数，否则设置 search 参数
       if (trimmedSearch) {
         params.set('search', trimmedSearch)
       } else {
         params.delete('search')
       }
-      
+
       // 如果没有指定排序方式，默认使用 hot
       if (!params.get('sort')) {
         params.set('sort', 'hot')
       }
-      
+
       router.push(`/?${params.toString()}`)
     }
   }, [search, searchParams, router])
@@ -165,27 +169,30 @@ const Article = ({
     searchRef.current = search
   }, [search])
 
-  const handleTopicClick = useCallback((t: number) => {
-    let newTopics: number[]
-    if (topics.includes(t)) {
-      // 已选中则取消
-      newTopics = topics.filter((item) => item !== t)
-    } else {
-      // 未选中则添加
-      newTopics = [...topics, t]
-    }
-    
-    // 只有在主题真正变化时才更新 URL
-    if (JSON.stringify(newTopics) !== JSON.stringify(topics)) {
-      const params = new URLSearchParams(searchParams?.toString())
-      if (newTopics.length > 0) {
-        params.set('tps', newTopics.join(','))
+  const handleTopicClick = useCallback(
+    (t: number) => {
+      let newTopics: number[]
+      if (topics.includes(t)) {
+        // 已选中则取消
+        newTopics = topics.filter((item) => item !== t)
       } else {
-        params.delete('tps')
+        // 未选中则添加
+        newTopics = [...topics, t]
       }
-      router.replace(`/?${params.toString()}`)
-    }
-  }, [topics, searchParams, router])
+
+      // 只有在主题真正变化时才更新 URL
+      if (JSON.stringify(newTopics) !== JSON.stringify(topics)) {
+        const params = new URLSearchParams(searchParams?.toString())
+        if (newTopics.length > 0) {
+          params.set('tps', newTopics.join(','))
+        } else {
+          params.delete('tps')
+        }
+        router.replace(`/?${params.toString()}`)
+      }
+    },
+    [topics, searchParams, router],
+  )
 
   const handleAsk = () => {
     checkAuth(() => releaseModalOpen())
@@ -383,7 +390,9 @@ const Article = ({
                             fontWeight: topics.includes(item.id || -1) ? 500 : 400,
                           }}
                         >
-                          <Typography sx={{ fontSize: 14, fontWeight: 'inherit', color: 'inherit' }}>{item.name}</Typography>
+                          <Typography sx={{ fontSize: 14, fontWeight: 'inherit', color: 'inherit' }}>
+                            {item.name}
+                          </Typography>
                         </Box>
                       </Stack>
                     )
@@ -406,10 +415,8 @@ const Article = ({
               value={status}
               onChange={(value: Status) => {
                 // 只有在状态真正变化时才更新 URL
-                if (value !== status) {
-                  const query = createQueryString('sort', value)
-                  router.replace(`/?${query}`)
-                }
+                const query = createQueryString('sort', value)
+                router.replace(`/?${query}`)
               }}
               list={[
                 { label: '热门问题', value: 'hot' },

@@ -505,11 +505,11 @@ const KnowledgeBasePage = () => {
                 </Box>
               ))}
               {spaces.length === 0 && (
-                <Box sx={{ textAlign: 'center', py: 8 }}>
+                <Card sx={{ textAlign: 'center', py: 8 }}>
                   <Typography variant="body2" color="text.secondary">
                     暂无知识库，点击右上角按钮创建
                   </Typography>
-                </Box>
+                </Card>
               )}
             </Stack>
           </Card>
@@ -628,6 +628,7 @@ const KnowledgeBasePage = () => {
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'center',
+                  alignItems: 'center',
                 }}
               >
                 <FolderIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
