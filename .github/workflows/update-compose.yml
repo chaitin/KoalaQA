@@ -1,0 +1,186 @@
+name: Update Docker Compose
+
+on:
+  workflow_run:
+    workflows: ["Base Images", "App and API Images"]
+    types:
+      - completed
+
+env:
+  API_URL: https://baizhi.cloud:9443/api/open/site/1/static
+  COMPOSE_FILE_PATH: /koala-qa/docker-compose.yml
+
+jobs:
+  update-compose:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Extract tags from Dockerfiles
+        id: extract_tags
+        run: |
+          # Function to extract tag from Dockerfile
+          extract_tag() {
+            local dockerfile="$1"
+            if [ -f "$dockerfile" ]; then
+              # Extract the tag from FROM instruction
+              grep "^FROM" "$dockerfile" | head -1 | sed 's/.*://g' | tr -d ' \n\r'
+            else
+              echo "ERROR: Dockerfile not found: $dockerfile"
+              return 1
+            fi
+          }
+
+          # Extract tags from each service's Dockerfile
+          NGINX_TAG=$(extract_tag "docker/nginx/Dockerfile")
+          ANYDOC_TAG=$(extract_tag "docker/anydoc/Dockerfile")
+          DB_TAG=$(extract_tag "docker/db/Dockerfile")
+          MQ_TAG=$(extract_tag "docker/mq/Dockerfile")
+          OSS_TAG=$(extract_tag "docker/oss/Dockerfile")
+          QDRANT_TAG=$(extract_tag "docker/qdrant/Dockerfile")
+          RAGLITE_TAG=$(extract_tag "docker/raglite/Dockerfile")
+
+          # Output the extracted tags
+          echo "nginx_tag=$NGINX_TAG" >> $GITHUB_OUTPUT
+          echo "anydoc_tag=$ANYDOC_TAG" >> $GITHUB_OUTPUT
+          echo "db_tag=$DB_TAG" >> $GITHUB_OUTPUT
+          echo "mq_tag=$MQ_TAG" >> $GITHUB_OUTPUT
+          echo "oss_tag=$OSS_TAG" >> $GITHUB_OUTPUT
+          echo "qdrant_tag=$QDRANT_TAG" >> $GITHUB_OUTPUT
+          echo "raglite_tag=$RAGLITE_TAG" >> $GITHUB_OUTPUT
+
+          echo "Extracted tags:"
+          echo "  nginx: $NGINX_TAG"
+          echo "  anydoc: $ANYDOC_TAG"
+          echo "  db: $DB_TAG"
+          echo "  mq: $MQ_TAG"
+          echo "  oss: $OSS_TAG"
+          echo "  qdrant: $QDRANT_TAG"
+          echo "  raglite: $RAGLITE_TAG"
+
+      - name: Determine workflow type and update compose file
+        id: update_compose
+        run: |
+          WORKFLOW_NAME="${{ github.event.workflow_run.name }}"
+          echo "Workflow name: $WORKFLOW_NAME"
+
+          # Create a copy of docker-compose.yml to modify
+          cp docker-compose.yml docker-compose-updated.yml
+
+          if [ "$WORKFLOW_NAME" = "Base Images" ]; then
+            echo "Updating base image tags..."
+            # Update base image tags using extracted tags from Dockerfiles
+            sed -i "s|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/nginx:.*|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/nginx:${{ steps.extract_tags.outputs.nginx_tag }}|g" docker-compose-updated.yml
+            sed -i "s|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/anydoc:.*|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/anydoc:${{ steps.extract_tags.outputs.anydoc_tag }}|g" docker-compose-updated.yml
+            sed -i "s|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/db:.*|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/db:${{ steps.extract_tags.outputs.db_tag }}|g" docker-compose-updated.yml
+            sed -i "s|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/mq:.*|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/mq:${{ steps.extract_tags.outputs.mq_tag }}|g" docker-compose-updated.yml
+            sed -i "s|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/oss:.*|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/oss:${{ steps.extract_tags.outputs.oss_tag }}|g" docker-compose-updated.yml
+            sed -i "s|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/qdrant:.*|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/qdrant:${{ steps.extract_tags.outputs.qdrant_tag }}|g" docker-compose-updated.yml
+            sed -i "s|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/raglite:.*|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/raglite:${{ steps.extract_tags.outputs.raglite_tag }}|g" docker-compose-updated.yml
+            
+          elif [ "$WORKFLOW_NAME" = "App and API Images" ]; then
+            echo "Updating app and API image tags..."
+            # Extract the tag from the triggering workflow
+            # For App and API Images, we need to get the tag from the git ref
+            if [ -n "${{ github.event.workflow_run.head_branch }}" ]; then
+              # Try to extract tag from head_branch if it's a tag
+              TAG_NAME="${{ github.event.workflow_run.head_branch }}"
+              if [[ "$TAG_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+                echo "Found tag: $TAG_NAME"
+                sed -i "s|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/api:.*|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/api:$TAG_NAME|g" docker-compose-updated.yml
+                sed -i "s|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/app:.*|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/app:$TAG_NAME|g" docker-compose-updated.yml
+              else
+                echo "No valid tag found in head_branch: $TAG_NAME"
+                exit 1
+              fi
+            else
+              echo "No head_branch information available"
+              exit 1
+            fi
+          else
+            echo "Unknown workflow: $WORKFLOW_NAME"
+            exit 1
+          fi
+
+          echo "Updated docker-compose.yml:"
+          cat docker-compose-updated.yml
+
+      - name: Encode docker-compose.yml to base64
+        id: encode_compose
+        run: |
+          ENCODED_CONTENT=$(base64 -w 0 docker-compose-updated.yml)
+          echo "encoded_content=$ENCODED_CONTENT" >> $GITHUB_OUTPUT
+          echo "Content encoded successfully (length: ${#ENCODED_CONTENT})"
+
+      - name: Send API request
+        run: |
+          RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}" \
+            '${{ env.API_URL }}' \
+            -H 'sec-ch-ua-platform: "Linux"' \
+            -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36' \
+            -H 'sec-ch-ua: "Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"' \
+            -H 'Content-Type: application/json' \
+            -H 'sec-ch-ua-mobile: ?0' \
+            -H 'X-SLCE-API-TOKEN: ${{ secrets.SLCE_API_TOKEN }}' \
+            --data-raw '{
+              "path": "${{ env.COMPOSE_FILE_PATH }}",
+              "page": "${{ steps.encode_compose.outputs.encoded_content }}",
+              "zip": false,
+              "dir": false
+            }')
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1 | cut -d: -f2)
+          RESPONSE_BODY=$(echo "$RESPONSE" | head -n -1)
+
+          echo "HTTP Code: $HTTP_CODE"
+          echo "Response: $RESPONSE_BODY"
+
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            echo "✅ Successfully updated docker-compose.yml via API"
+            echo "🚀 Workflow: ${{ github.event.workflow_run.name }}"
+            echo "📦 Updated compose file sent to API"
+          else
+            echo "❌ API request failed with HTTP code: $HTTP_CODE"
+            echo "Response: $RESPONSE_BODY"
+            exit 1
+          fi
+
+      - name: Commit updated docker-compose.yml (optional)
+        if: success()
+        run: |
+          # Check if there are actual changes
+          if ! cmp -s docker-compose.yml docker-compose-updated.yml; then
+            echo "Changes detected, committing updated docker-compose.yml"
+            cp docker-compose-updated.yml docker-compose.yml
+            
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add docker-compose.yml
+            git commit -m "Auto-update docker-compose.yml after ${{ github.event.workflow_run.name }} workflow"
+            git push
+          else
+            echo "No changes detected in docker-compose.yml"
+          fi
+
+  notify:
+    needs: update-compose
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Update result notification
+        run: |
+          if [ "${{ needs.update-compose.result }}" == "success" ]; then
+            echo "✅ Docker Compose update completed successfully!"
+            echo "🔄 Triggered by: ${{ github.event.workflow_run.name }}"
+            echo "📋 docker-compose.yml has been updated and sent to API"
+          else
+            echo "❌ Docker Compose update failed, please check logs"
+            echo "🔄 Triggered by: ${{ github.event.workflow_run.name }}"
+            exit 1
+          fi
