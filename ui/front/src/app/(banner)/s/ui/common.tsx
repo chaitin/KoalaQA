@@ -11,7 +11,7 @@ export const Tag = styled('div')(({ theme }) => ({
   fontSize: '12px',
 }));
 
-export const Title = styled(Link)(() => ({
+export const Title = styled(Box)(() => ({
   fontSize: 16,
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',

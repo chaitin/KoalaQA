@@ -367,6 +367,9 @@ const AvatarWrap = styled(Image)(({ theme }) => {
   return {
     borderRadius: '50%',
     display: 'block',
+    objectFit: 'contain',
+    objectPosition: 'center',
+    backgroundColor: '#f5f5f5',
   };
 });
 
