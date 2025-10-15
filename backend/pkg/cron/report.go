@@ -37,11 +37,12 @@ func (r *report) Run() {
 	}
 }
 
-func newReport(v *version.Info, cfg config.Config) Task {
+func newReport(v *version.Info, cfg config.Config, s *repo.System) Task {
 	r := r.NewReport(v, cfg)
 	return &report{
 		logger: glog.Module("cron", "report"),
 		r:      r,
+		system: s,
 	}
 }
 
