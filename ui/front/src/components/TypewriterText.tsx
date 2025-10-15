@@ -40,25 +40,27 @@ const TypewriterText = ({
   return (
     <Typography {...props}>
       {displayedText}
-      <Box
-        component="span"
-        sx={{
-          display: 'inline-block',
-          width: '2px',
-          height: '1em',
-          backgroundColor: 'currentColor',
-          marginLeft: '2px',
-          animation: 'blink 1s infinite',
-          '@keyframes blink': {
-            '0%, 50%': {
-              opacity: 1,
+      {!isComplete && (
+        <Box
+          component="span"
+          sx={{
+            display: 'inline-block',
+            width: '2px',
+            height: '1em',
+            backgroundColor: 'currentColor',
+            marginLeft: '2px',
+            animation: 'blink 1s infinite',
+            '@keyframes blink': {
+              '0%, 50%': {
+                opacity: 1,
+              },
+              '51%, 100%': {
+                opacity: 0,
+              },
             },
-            '51%, 100%': {
-              opacity: 0,
-            },
-          },
-        }}
-      />
+          }}
+        />
+      )}
     </Typography>
   )
 }
