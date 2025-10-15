@@ -371,9 +371,12 @@ const AvatarWrap = styled(Image)(({ theme }) => {
 });
 
 export const Avatar = ({ src, size = 20 }: { src?: string; size: number }) => {
+  // 如果没有 src 或 src 为空字符串，使用默认头像
+  const avatarSrc = src && src.trim() !== '' ? src : '/logo.png';
+  
   return (
     <AvatarWrap
-      src={src || ''}
+      src={avatarSrc}
       alt='头像'
       width={size}
       height={size}
