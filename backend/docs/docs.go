@@ -4507,6 +4507,9 @@ const docTemplate = `{
                 "app_id": {
                     "type": "string"
                 },
+                "phone": {
+                    "type": "string"
+                },
                 "secret": {
                     "type": "string"
                 },
@@ -5656,6 +5659,9 @@ const docTemplate = `{
                 },
                 "parentID": {
                     "type": "integer"
+                },
+                "phone": {
+                    "type": "string"
                 },
                 "platform": {
                     "$ref": "#/definitions/platform.PlatformType"
