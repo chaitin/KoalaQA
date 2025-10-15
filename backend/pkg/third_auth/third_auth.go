@@ -22,8 +22,8 @@ type User struct {
 	Role    model.UserRole
 }
 
-func (u *User) HashUint() uint64 {
-	return binary.BigEndian.Uint64(util.MD5(fmt.Sprintf("%s|%d", u.ThirdID, u.Type)))
+func (u *User) HashInt() int {
+	return int(binary.BigEndian.Uint64(util.MD5(fmt.Sprintf("%s|%d", u.ThirdID, u.Type))))
 }
 
 type userOpt struct{}
