@@ -696,7 +696,7 @@ const Article = ({
         </Stack>
 
         {/* 浮动操作按钮 */}
-        <FloatingActionButton onAddClick={handleAsk} showAddButton={true} showScrollToTop={true} />
+        <FloatingActionButton onAddClick={handleAsk} showScrollToTop={true} />
       </Stack>
     </>
   )
