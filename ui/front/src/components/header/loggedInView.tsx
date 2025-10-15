@@ -225,8 +225,8 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
             '& .MuiBadge-badge': {
               backgroundColor: '#FF3B30',
               display: !!unreadCount ? 'block' : 'none',
-              minWidth: 20,
-              height: 20,
+              minWidth: 18,
+              height: 18,
               borderRadius: 10,
               fontSize: 12,
               fontWeight: 600,

@@ -71,6 +71,8 @@ export function LazyImage({
           ...props.style,
           opacity: isLoading ? 0 : 1,
           transition: 'opacity 0.3s ease-in-out',
+          objectFit: 'contain',
+          objectPosition: 'center',
         }}
       />
     </Box>

@@ -27,7 +27,16 @@ export const ImageIcon: React.FC<ImageIconProps> = (props) => {
   
   return (
     <IconWrapper className={className} sx={sx} id={id} onClick={onClick}>
-      <Image alt='icon' src={src} style={{ width: '100%', height: '100%' }} />
+      <Image 
+        alt='icon' 
+        src={src} 
+        style={{ 
+          width: '100%', 
+          height: '100%',
+          objectFit: 'contain',
+          objectPosition: 'center',
+        }} 
+      />
     </IconWrapper>
   );
 };

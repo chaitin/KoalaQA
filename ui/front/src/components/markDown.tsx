@@ -126,6 +126,10 @@ const MarkDown: React.FC<MarkDownProps> = (props) => {
                     marginLeft: '5px',
                     boxShadow: '0px 0px 3px 1px rgba(0,0,5,0.15)',
                     cursor: 'pointer',
+                    objectFit: 'contain',
+                    objectPosition: 'center',
+                    maxWidth: '100%',
+                    height: 'auto',
                   }}
                   referrerPolicy='no-referrer'
                   onClick={() => {
