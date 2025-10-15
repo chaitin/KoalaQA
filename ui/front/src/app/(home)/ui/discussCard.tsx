@@ -101,6 +101,7 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
           gap={1}
           sx={{
             flex: 1,
+            maxWidth: '70%',
             '&:hover': {
               '.title': {
                 color: 'primary.main',
@@ -116,6 +117,10 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
               lineHeight: 1.4,
               color: '#000',
               textDecoration: 'none',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              maxWidth: '100%',
               '&:hover': {
                 color: 'primary.main',
               },
@@ -133,6 +138,7 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
                 color: '#2E7D32',
                 px: 1,
                 py: 0.5,
+                flexShrink: 0,
                 borderRadius: 1,
                 fontSize: 12,
                 fontWeight: 500,
@@ -166,6 +172,7 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
               fontSize: 12,
               color: 'rgba(0,0,0,0.6)',
               whiteSpace: 'nowrap',
+              maxWidth: '120px', // 限制用户名最大宽度
             }}
           >
             {it.user_name}
@@ -189,8 +196,8 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
         }}
       />
       {/* 底部标签和评论数 */}
-      <Stack direction='row' justifyContent='space-between' alignItems='center'>
-        <Stack direction='row' gap={1} flexWrap='wrap' alignItems='center'>
+      <Stack direction='row' justifyContent='space-between' alignItems='flex-start' sx={{ minHeight: 0 }}>
+        <Stack direction='row' gap={1} flexWrap='wrap' alignItems='center' sx={{ flex: 1, minWidth: 0 }}>
           {/* 分组标签 */}
           {groupNames.map((groupName, index) => {
             const color = '#206CFF'
@@ -343,7 +350,20 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
         }}
       >
         <Link href={`/discuss/${it.uuid}`} target='_blank' onClick={(e) => e.stopPropagation()}>
-          <Title className='title multiline-ellipsis' sx={{ width: '100%', whiteSpace: 'wrap' }}>
+          <Title 
+            className='title multiline-ellipsis' 
+            sx={{ 
+              width: '100%', 
+              whiteSpace: 'normal',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              lineHeight: 1.4,
+              maxHeight: '2.8em', // 2行 * 1.4行高
+            }}
+          >
             <MatchedString keywords={keywords} str={it.title || ''}></MatchedString>
           </Title>
         </Link>
@@ -381,6 +401,9 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
               fontSize: 12,
               color: 'rgba(0,0,0,0.5)',
               whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              maxWidth: '100px', // 移动版限制更小的宽度
               '&:hover': {
                 cursor: 'pointer',
                 color: 'primary.main',
@@ -424,7 +447,7 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
           mb: 1.5, // 减少描述和标签间距
         }}
       />
-      <Stack direction='row' gap='8px 12px' flexWrap='wrap'>
+      <Stack direction='row' gap='8px 12px' flexWrap='wrap' sx={{ width: '100%', minHeight: 0 }}>
         {/* 分组标签 */}
         {groupNames.map((groupName) => (
           <Chip

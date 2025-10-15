@@ -80,7 +80,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   return (
     <Box sx={{ position: 'relative', ...sx }}>
       <Avatar
-        src={hasError ? fallbackSrc : avatarSrc}
+        src={avatarSrc}
         onLoad={handleImageLoad}
         onError={handleImageError}
         sx={{
