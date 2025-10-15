@@ -31,6 +31,7 @@ type listOpt struct {
 	appID       string
 	appSecret   string
 	accessToken string
+	phone       string
 	spaceID     string
 
 	url string
@@ -78,6 +79,7 @@ func ListWithPlatformOpt(p model.PlatformOpt) listOptFunc {
 		o.appID = p.AppID
 		o.appSecret = p.Secret
 		o.accessToken = p.AccessToken
+		o.phone = p.Phone
 	}
 }
 
@@ -199,6 +201,7 @@ func (a *anydoc) List(ctx context.Context, platform platform.PlatformType, optFu
 			"space_id":     o.spaceID,
 			"filename":     o.reader.Filename,
 			"url":          o.url,
+			"phone":        o.phone,
 		}
 
 		byteM, err := json.Marshal(m)
@@ -215,6 +218,7 @@ func (a *anydoc) List(ctx context.Context, platform platform.PlatformType, optFu
 		query.Set("access_token", o.accessToken)
 		query.Set("space_id", o.spaceID)
 		query.Set("url", o.url)
+		query.Set("phone", o.phone)
 
 		u.RawQuery = query.Encode()
 	}
