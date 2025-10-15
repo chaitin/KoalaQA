@@ -379,6 +379,7 @@ export const Avatar = ({ src, size = 20 }: { src?: string; size: number }) => {
         objectFit: 'contain',
         objectPosition: 'center',
         backgroundColor: '#f5f5f5',
+        borderRadius: '50%',
       }}
     />
   );
