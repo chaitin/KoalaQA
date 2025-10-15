@@ -26,10 +26,11 @@ type Discussion struct {
 	GroupIDs   Int64Array     `json:"group_ids" gorm:"column:group_ids;type:bigint[]"`
 	Resolved   bool           `json:"resolved" gorm:"column:resolved;type:boolean"`
 	ResolvedAt Timestamp      `json:"resolved_at" gorm:"column:resolved_at;type:timestamp with time zone"`
-	Like       uint           `json:"like" gorm:"column:like;type:bigint"`
-	Dislike    uint           `json:"dislike" gorm:"column:dislike;type:bigint"`
-	View       uint           `json:"view" gorm:"column:view;type:bigint"`
-	Comment    uint           `json:"comment" gorm:"column:comment;type:bigint"`
+	Hot        uint           `json:"hot" gorm:"column:hot;type:bigint;default:0"`
+	Like       uint           `json:"like" gorm:"column:like;type:bigint;default:0"`
+	Dislike    uint           `json:"dislike" gorm:"column:dislike;type:bigint;default:0"`
+	View       uint           `json:"view" gorm:"column:view;type:bigint;default:0"`
+	Comment    uint           `json:"comment" gorm:"column:comment;type:bigint;default:0"`
 	Type       DiscussionType `json:"type" gorm:"column:type;type:text;default:qa"`
 }
 
