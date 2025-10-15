@@ -235,7 +235,8 @@ func (d *Discussion) Detail(ctx context.Context, uid uint, uuid string) (*model.
 func (d *Discussion) IncrementView(uuid string) {
 	ctx := context.Background()
 	d.in.DiscRepo.Update(ctx, map[string]any{
-		"view": gorm.Expr("view+1"),
+		"view":       gorm.Expr("view+1"),
+		"updated_at": gorm.Expr("updated_at"),
 	}, repo.QueryWithEqual("uuid", uuid))
 
 	go d.RecalculateHot(uuid)
@@ -262,7 +263,8 @@ func (d *Discussion) DecrementComment(uuid string) {
 func (d *Discussion) RecalculateHot(uuid string) {
 	ctx := context.Background()
 	d.in.DiscRepo.Update(ctx, map[string]any{
-		"hot": gorm.Expr("view * 10 + comment * 5 + \"like\" * 2"),
+		"hot":        gorm.Expr("view * 10 + comment * 5 + \"like\" * 2"),
+		"updated_at": gorm.Expr("updated_at"),
 	}, repo.QueryWithEqual("uuid", uuid))
 }
 
