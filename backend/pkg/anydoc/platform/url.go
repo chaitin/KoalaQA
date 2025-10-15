@@ -1,5 +1,7 @@
 package platform
 
+import "net/http"
+
 type url struct {
 	prefix string
 }
@@ -10,6 +12,10 @@ func (u *url) Platform() PlatformType {
 
 func (u *url) ListURL() string {
 	return u.prefix + "/list"
+}
+
+func (s *url) ListMethod() string {
+	return http.MethodGet
 }
 
 func (u *url) ExportURL() string {

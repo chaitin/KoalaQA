@@ -1,5 +1,7 @@
 package platform
 
+import "net/http"
+
 type pandawiki struct {
 	prefix string
 }
@@ -10,6 +12,10 @@ func (s *pandawiki) Platform() PlatformType {
 
 func (s *pandawiki) ListURL() string {
 	return s.prefix + "/list"
+}
+
+func (s *pandawiki) ListMethod() string {
+	return http.MethodGet
 }
 
 func (s *pandawiki) ExportURL() string {

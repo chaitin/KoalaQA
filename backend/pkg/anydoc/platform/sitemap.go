@@ -1,5 +1,7 @@
 package platform
 
+import "net/http"
+
 type sitemap struct {
 	prefix string
 }
@@ -10,6 +12,10 @@ func (s *sitemap) Platform() PlatformType {
 
 func (s *sitemap) ListURL() string {
 	return s.prefix + "/list"
+}
+
+func (s *sitemap) ListMethod() string {
+	return http.MethodGet
 }
 
 func (s *sitemap) ExportURL() string {
