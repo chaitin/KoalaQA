@@ -169,29 +169,40 @@ func (a *anydoc) List(ctx context.Context, platform platform.PlatformType, optFu
 		return nil, err
 	}
 	u.Path = p.ListURL()
-	method := http.MethodGet
 	var contentType string
 
 	var body io.Reader
-	if o.reader != nil {
-		method = http.MethodPost
+	switch p.ListMethod() {
+	case http.MethodGet:
+		query := make(url.Values)
+		query.Set("uuid", o.uuid)
+		query.Set("app_id", o.appID)
+		query.Set("app_secret", o.appSecret)
+		query.Set("access_token", o.accessToken)
+		query.Set("space_id", o.spaceID)
+		query.Set("url", o.url)
+		query.Set("phone", o.phone)
 
-		r, err := o.reader.Open()
-		if err != nil {
-			return nil, err
-		}
-		defer r.Close()
+		u.RawQuery = query.Encode()
+	case http.MethodPost:
+		if o.reader != nil {
+			r, err := o.reader.Open()
+			if err != nil {
+				return nil, err
+			}
+			defer r.Close()
 
-		signURL, err := a.oc.Upload(ctx, "imports", r,
-			oss.WithExt(filepath.Ext(o.reader.Filename)),
-			oss.WithFileSize(int(o.reader.Size)),
-			oss.WithLimitSize(),
-			oss.WithRetSignURL(),
-		)
-		if err != nil {
-			return nil, err
+			signURL, err := a.oc.Upload(ctx, "imports", r,
+				oss.WithExt(filepath.Ext(o.reader.Filename)),
+				oss.WithFileSize(int(o.reader.Size)),
+				oss.WithLimitSize(),
+				oss.WithRetSignURL(),
+			)
+			if err != nil {
+				return nil, err
+			}
+			o.url = signURL
 		}
-		o.url = signURL
 
 		m := map[string]any{
 			"uuid":         o.uuid,
@@ -210,20 +221,9 @@ func (a *anydoc) List(ctx context.Context, platform platform.PlatformType, optFu
 		}
 
 		body = bytes.NewReader(byteM)
-	} else {
-		query := make(url.Values)
-		query.Set("uuid", o.uuid)
-		query.Set("app_id", o.appID)
-		query.Set("app_secret", o.appSecret)
-		query.Set("access_token", o.accessToken)
-		query.Set("space_id", o.spaceID)
-		query.Set("url", o.url)
-		query.Set("phone", o.phone)
-
-		u.RawQuery = query.Encode()
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, u.String(), body)
+	req, err := http.NewRequestWithContext(ctx, p.ListMethod(), u.String(), body)
 	if err != nil {
 		return nil, err
 	}
