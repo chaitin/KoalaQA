@@ -207,7 +207,7 @@ func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListRe
 	pageFuncs := []repo.QueryOptFunc{repo.QueryWithPagination(req.Pagination)}
 	switch req.Filter {
 	case DiscussionListFilterHot:
-		pageFuncs = append(pageFuncs, repo.QueryWithOrderBy(`"like" DESC, created_at DESC`))
+		pageFuncs = append(pageFuncs, repo.QueryWithOrderBy(`hot DESC, created_at DESC`))
 	case DiscussionListFilterNew:
 		pageFuncs = append(pageFuncs, repo.QueryWithOrderBy("updated_at DESC"))
 	case DiscussionListFilterMine:
@@ -237,6 +237,8 @@ func (d *Discussion) IncrementView(uuid string) {
 	d.in.DiscRepo.Update(ctx, map[string]any{
 		"view": gorm.Expr("view+1"),
 	}, repo.QueryWithEqual("uuid", uuid))
+
+	go d.RecalculateHot(uuid)
 }
 
 func (d *Discussion) IncrementComment(uuid string) {
@@ -244,12 +246,23 @@ func (d *Discussion) IncrementComment(uuid string) {
 	d.in.DiscRepo.Update(ctx, map[string]any{
 		"comment": gorm.Expr("comment+1"),
 	}, repo.QueryWithEqual("uuid", uuid))
+
+	go d.RecalculateHot(uuid)
 }
 
 func (d *Discussion) DecrementComment(uuid string) {
 	ctx := context.Background()
 	d.in.DiscRepo.Update(ctx, map[string]any{
 		"comment": gorm.Expr("comment-1"),
+	}, repo.QueryWithEqual("uuid", uuid))
+
+	go d.RecalculateHot(uuid)
+}
+
+func (d *Discussion) RecalculateHot(uuid string) {
+	ctx := context.Background()
+	d.in.DiscRepo.Update(ctx, map[string]any{
+		"hot": gorm.Expr("view * 10 + comment * 5 + \"like\" * 2"),
 	}, repo.QueryWithEqual("uuid", uuid))
 }
 
