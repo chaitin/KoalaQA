@@ -36,7 +36,7 @@ export function LazyImage({
   };
 
   // 确保 src 不为空字符串，如果为空则使用 fallback
-  const imageSrc = error ? fallback : (src && src.trim() !== '' ? src : fallback);
+  const imageSrc = error ? fallback : (src && typeof src === 'string' && src.trim() !== '' ? src : fallback);
 
   return (
     <Box
