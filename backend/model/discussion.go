@@ -61,6 +61,7 @@ type DiscussionReply struct {
 	Dislike       int64            `json:"dislike"`
 	Content       string           `json:"content"`
 	Accepted      bool             `json:"accepted"`
+	Bot           bool             `json:"bot"`
 }
 
 type DiscussionComment struct {
