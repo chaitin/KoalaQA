@@ -185,6 +185,7 @@ func (a *anydoc) List(ctx context.Context, platform platform.PlatformType, optFu
 
 		u.RawQuery = query.Encode()
 	case http.MethodPost:
+		filename := ""
 		if o.reader != nil {
 			r, err := o.reader.Open()
 			if err != nil {
@@ -202,6 +203,7 @@ func (a *anydoc) List(ctx context.Context, platform platform.PlatformType, optFu
 				return nil, err
 			}
 			o.url = signURL
+			filename = o.reader.Filename
 		}
 
 		m := map[string]any{
@@ -210,7 +212,7 @@ func (a *anydoc) List(ctx context.Context, platform platform.PlatformType, optFu
 			"app_secret":   o.appSecret,
 			"access_token": o.accessToken,
 			"space_id":     o.spaceID,
-			"filename":     o.reader.Filename,
+			"filename":     filename,
 			"url":          o.url,
 			"phone":        o.phone,
 		}
