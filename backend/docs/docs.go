@@ -3876,6 +3876,9 @@ const docTemplate = `{
                         "type": "integer"
                     }
                 },
+                "hot": {
+                    "type": "integer"
+                },
                 "id": {
                     "type": "integer"
                 },
@@ -3924,6 +3927,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "accepted": {
+                    "type": "boolean"
+                },
+                "bot": {
                     "type": "boolean"
                 },
                 "content": {
@@ -3996,6 +4002,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/model.DiscussionGroup"
                     }
+                },
+                "hot": {
+                    "type": "integer"
                 },
                 "id": {
                     "type": "integer"
@@ -4079,6 +4088,9 @@ const docTemplate = `{
                         "type": "integer"
                     }
                 },
+                "hot": {
+                    "type": "integer"
+                },
                 "id": {
                     "type": "integer"
                 },
@@ -4133,6 +4145,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "accepted": {
+                    "type": "boolean"
+                },
+                "bot": {
                     "type": "boolean"
                 },
                 "content": {
