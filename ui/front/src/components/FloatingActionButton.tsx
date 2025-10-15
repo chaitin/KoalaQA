@@ -7,14 +7,12 @@ interface FloatingActionButtonProps {
   onScrollToTop?: () => void
   onAddClick?: () => void
   showScrollToTop?: boolean
-  showAddButton?: boolean
 }
 
 const FloatingActionButton = ({
   onScrollToTop,
   onAddClick,
   showScrollToTop = true,
-  showAddButton = true,
 }: FloatingActionButtonProps) => {
   const [showScrollButton, setShowScrollButton] = useState(false)
 
@@ -48,39 +46,6 @@ const FloatingActionButton = ({
         gap: 2,
       }}
     >
-      {showAddButton && (
-        <Tooltip title="发帖提问" placement="left">
-          <Fab
-            color="primary"
-            size="medium"
-            onClick={onAddClick}
-            sx={{
-              backgroundColor: '#206CFF',
-              boxShadow: '0 4px 12px rgba(32, 108, 255, 0.3)',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              animation: 'pulse 2s ease-in-out infinite',
-              '@keyframes pulse': {
-                '0%, 100%': {
-                  boxShadow: '0 4px 12px rgba(32, 108, 255, 0.3)',
-                },
-                '50%': {
-                  boxShadow: '0 6px 20px rgba(32, 108, 255, 0.5)',
-                },
-              },
-              '&:hover': {
-                transform: 'scale(1.1)',
-                boxShadow: '0 6px 20px rgba(32, 108, 255, 0.4)',
-              },
-              '&:active': {
-                transform: 'scale(0.95)',
-              },
-            }}
-          >
-            <Add />
-          </Fab>
-        </Tooltip>
-      )}
-
       {showScrollToTop && showScrollButton && (
         <Tooltip title="回到顶部" placement="left">
           <Fab

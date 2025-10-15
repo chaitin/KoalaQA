@@ -145,11 +145,19 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
           borderRadius: 2,
           position: 'relative',
           overflow: 'hidden',
+          height: 170,
         }}
       >
         <Stack direction='row' spacing={3} alignItems='center' sx={{ position: 'relative', zIndex: 1 }}>
           <Box sx={{ position: 'relative' }}>
-            <Box sx={{ borderRadius: '50%', border: '1px solid rgba(255,255,255,0.6)' }}>
+            <Box
+              sx={{
+                borderRadius: '50%',
+                width: 100,
+                height: 100,
+                background: '#fff',
+              }}
+            >
               <UserAvatar
                 user={user}
                 sx={{
