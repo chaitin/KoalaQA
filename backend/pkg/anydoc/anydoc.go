@@ -150,12 +150,12 @@ func (a *anydocRes[T]) Error() error {
 	return fmt.Errorf("anydoc failed, msg: %s, err: %s", a.Msg, a.Err)
 }
 
-func (a *anydoc) List(ctx context.Context, platform platform.PlatformType, optFuncs ...listOptFunc) (*ListRes, error) {
+func (a *anydoc) List(ctx context.Context, plat platform.PlatformType, optFuncs ...listOptFunc) (*ListRes, error) {
 	var o listOpt
 	for _, f := range optFuncs {
 		f(&o)
 	}
-	p, ok := a.platform[platform]
+	p, ok := a.platform[plat]
 	if !ok {
 		return nil, errors.New("platform not supported")
 	}
@@ -215,6 +215,10 @@ func (a *anydoc) List(ctx context.Context, platform platform.PlatformType, optFu
 			"filename":     filename,
 			"url":          o.url,
 			"phone":        o.phone,
+		}
+
+		if plat == platform.PlatformDingtalk {
+			m["unionid"] = o.accessToken
 		}
 
 		byteM, err := json.Marshal(m)
