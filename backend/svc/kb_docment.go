@@ -513,7 +513,7 @@ func (d *KBDocument) checkPlatformOpt(p platform.PlatformType, opt model.Platfor
 			return errors.New("empty access token")
 		}
 	case platform.PlatformFeishu, platform.PlatformDingtalk:
-		if opt.AppID == "" || opt.Secret == "" || opt.AccessToken == "" {
+		if opt.AppID == "" || opt.Secret == "" || (opt.AccessToken == "" && opt.Phone == "") {
 			return errors.New("empty cerd data")
 		}
 	default:
