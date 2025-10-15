@@ -105,26 +105,6 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
         }}
         {...props}
       />
-
-      {/* 调试信息显示 */}
-      {debug && isMounted && (
-        <Box
-          sx={{
-            position: 'absolute',
-            top: -20,
-            left: 0,
-            fontSize: '10px',
-            background: 'rgba(0,0,0,0.7)',
-            color: 'white',
-            padding: '2px 4px',
-            borderRadius: '2px',
-            whiteSpace: 'nowrap',
-            zIndex: 1000,
-          }}
-        >
-          {user?.avatar ? 'Has Avatar' : 'No Avatar'} | {hasError ? 'Error' : 'OK'}
-        </Box>
-      )}
     </Box>
   )
 }

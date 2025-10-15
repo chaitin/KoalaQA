@@ -6,6 +6,9 @@ import { AuthContext } from '@/components/authProvider'
 import { CommonContext } from '@/components/commonProvider'
 import { ReleaseModal } from '@/components/discussion'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
+import FloatingActionButton from '@/components/FloatingActionButton'
+import ParticleBackground from '@/components/ParticleBackground'
+import TypewriterText from '@/components/TypewriterText'
 import SearchIcon from '@mui/icons-material/Search'
 import { Box, Button, Divider, InputAdornment, OutlinedInput, Stack, Typography } from '@mui/material'
 import { useBoolean } from 'ahooks'
@@ -199,15 +202,19 @@ const Article = ({
   }
 
   return (
-    <Stack
-      gap={0}
-      sx={{
-        zIndex: 1,
-        width: '100%',
-        minHeight: '100vh',
-        // backgroundColor: '#fff',
-      }}
-    >
+    <>
+      {/* 粒子背景 */}
+      {/* <ParticleBackground /> */}
+      
+      <Stack
+        gap={0}
+        sx={{
+          zIndex: 1,
+          width: '100%',
+          minHeight: '100vh',
+          // backgroundColor: '#fff',
+        }}
+      >
       {/* 横幅区域 */}
       <Box
         sx={{
@@ -222,9 +229,51 @@ const Article = ({
           alignItems: 'center',
           justifyContent: 'center',
           position: 'relative',
+          overflow: 'hidden',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'linear-gradient(45deg, rgba(32,108,255,0.1) 0%, rgba(32,108,255,0.05) 50%, rgba(32,108,255,0.1) 100%)',
+            animation: 'gradientShift 8s ease-in-out infinite',
+            zIndex: 0,
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            top: '-50%',
+            left: '-50%',
+            width: '200%',
+            height: '200%',
+            background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
+            animation: 'rotate 20s linear infinite',
+            zIndex: 0,
+          },
+          '@keyframes gradientShift': {
+            '0%, 100%': {
+              background: 'linear-gradient(45deg, rgba(32,108,255,0.1) 0%, rgba(32,108,255,0.05) 50%, rgba(32,108,255,0.1) 100%)',
+            },
+            '50%': {
+              background: 'linear-gradient(225deg, rgba(32,108,255,0.15) 0%, rgba(32,108,255,0.08) 50%, rgba(32,108,255,0.15) 100%)',
+            },
+          },
+          '@keyframes rotate': {
+            '0%': {
+              transform: 'rotate(0deg)',
+            },
+            '100%': {
+              transform: 'rotate(360deg)',
+            },
+          },
         }}
       >
-        <Typography
+        <TypewriterText
+          text="KoalaQA 社区"
+          speed={150}
+          delay={1000}
           variant='h2'
           sx={{
             color: '#fff',
@@ -233,10 +282,19 @@ const Article = ({
             textAlign: 'center',
             zIndex: 1,
             textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+            animation: 'textGlow 3s ease-in-out infinite alternate',
+            '@keyframes textGlow': {
+              '0%': {
+                textShadow: '0 2px 4px rgba(0,0,0,0.5), 0 0 20px rgba(255,255,255,0.3)',
+                transform: 'scale(1)',
+              },
+              '100%': {
+                textShadow: '0 2px 4px rgba(0,0,0,0.5), 0 0 30px rgba(255,255,255,0.5)',
+                transform: 'scale(1.02)',
+              },
+            },
           }}
-        >
-          KoalaQA 社区
-        </Typography>
+        />
       </Box>
 
       {/* 搜索栏 */}
@@ -248,6 +306,17 @@ const Article = ({
           mb: 3,
           display: 'flex',
           gap: 1,
+          animation: 'slideInUp 0.8s ease-out',
+          '@keyframes slideInUp': {
+            '0%': {
+              opacity: 0,
+              transform: 'translateY(30px)',
+            },
+            '100%': {
+              opacity: 1,
+              transform: 'translateY(0)',
+            },
+          },
         }}
       >
         <OutlinedInput
@@ -262,6 +331,28 @@ const Article = ({
             fontSize: 16,
             boxShadow: '0px 2px 6px 0px rgba(0,0,0,0.1), 0px 2px 6px 0px rgba(218,220,224,0.5)',
             px: 2,
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': {
+              boxShadow: '0px 4px 12px 0px rgba(0,0,0,0.15), 0px 4px 12px 0px rgba(218,220,224,0.6)',
+              transform: 'translateY(-2px)',
+            },
+            '&.Mui-focused': {
+              boxShadow: '0px 6px 20px 0px rgba(32,108,255,0.2), 0px 6px 20px 0px rgba(32,108,255,0.1)',
+              transform: 'translateY(-2px) scale(1.02)',
+              '.MuiOutlinedInput-notchedOutline': {
+                borderColor: '#206CFF',
+                borderWidth: 2,
+              },
+            },
+            '& .MuiInputAdornment-root': {
+              transition: 'all 0.3s ease',
+            },
+            '&.Mui-focused .MuiInputAdornment-root': {
+              transform: 'scale(1.1)',
+              '& .MuiSvgIcon-root': {
+                color: '#206CFF',
+              },
+            },
           }}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -294,6 +385,17 @@ const Article = ({
             position: 'sticky',
             top: 70,
             display: { xs: 'none', sm: 'flex' },
+            animation: 'slideInLeft 0.8s ease-out 0.2s both',
+            '@keyframes slideInLeft': {
+              '0%': {
+                opacity: 0,
+                transform: 'translateX(-50px)',
+              },
+              '100%': {
+                opacity: 1,
+                transform: 'translateX(0)',
+              },
+            },
           }}
         >
           {!groupsData && groupsLoading ? (
@@ -355,8 +457,29 @@ const Article = ({
                           borderRadius: 1, // 添加圆角
                           cursor: 'pointer',
                           backgroundColor: topics.includes(item.id || -1) ? 'rgba(32,108,255,0.08)' : 'transparent',
+                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          position: 'relative',
+                          overflow: 'hidden',
+                          '&::before': {
+                            content: '""',
+                            position: 'absolute',
+                            top: 0,
+                            left: '-100%',
+                            width: '100%',
+                            height: '100%',
+                            background: 'linear-gradient(90deg, transparent, rgba(32,108,255,0.1), transparent)',
+                            transition: 'left 0.5s ease',
+                          },
                           '&:hover': {
                             backgroundColor: 'rgba(32,108,255,0.06)',
+                            transform: 'translateX(4px)',
+                            boxShadow: '0 2px 8px rgba(32,108,255,0.15)',
+                            '&::before': {
+                              left: '100%',
+                            },
+                          },
+                          '&:active': {
+                            transform: 'translateX(2px) scale(0.98)',
                           },
                         }}
                         onClick={() => handleTopicClick(item.id!)}
@@ -375,6 +498,12 @@ const Article = ({
                             fontSize: 12,
                             fontWeight: 'bold',
                             mr: 2,
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                              transform: 'scale(1.1) rotate(5deg)',
+                              backgroundColor: 'rgba(32,108,255,0.2)',
+                              boxShadow: '0 2px 8px rgba(32,108,255,0.3)',
+                            },
                           }}
                         >
                           {icon}
@@ -402,7 +531,23 @@ const Article = ({
             ))
           )}
         </Stack>
-        <Stack gap={2} sx={{ width: { xs: '100%', sm: 900 } }}>
+        <Stack 
+          gap={2} 
+          sx={{ 
+            width: { xs: '100%', sm: 900 },
+            animation: 'slideInRight 0.8s ease-out 0.4s both',
+            '@keyframes slideInRight': {
+              '0%': {
+                opacity: 0,
+                transform: 'translateX(50px)',
+              },
+              '100%': {
+                opacity: 1,
+                transform: 'translateX(0)',
+              },
+            },
+          }}
+        >
           <Stack
             direction='row'
             gap={3}
@@ -411,7 +556,16 @@ const Article = ({
             sx={{ display: { xs: 'none', sm: 'flex' } }}
           >
             <CusTabs
-              sx={{ height: 40, py: '7px' }}
+              sx={{ 
+                height: 40, 
+                py: '7px',
+                '& .MuiTab-root': {
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                  },
+                },
+              }}
               value={status}
               onChange={(value: Status) => {
                 // 只有在状态真正变化时才更新 URL
@@ -430,8 +584,29 @@ const Article = ({
                 height: 40,
                 backgroundColor: '#333',
                 color: '#fff',
+                position: 'relative',
+                overflow: 'hidden',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: '-100%',
+                  width: '100%',
+                  height: '100%',
+                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
+                  transition: 'left 0.5s ease',
+                },
                 '&:hover': {
                   backgroundColor: '#555',
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                  '&::before': {
+                    left: '100%',
+                  },
+                },
+                '&:active': {
+                  transform: 'translateY(0) scale(0.98)',
                 },
               }}
               variant='contained'
@@ -472,9 +647,30 @@ const Article = ({
                   borderColor: '#fff !important',
                   boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
                   fontWeight: 400,
+                  position: 'relative',
+                  overflow: 'hidden',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: '-100%',
+                    width: '100%',
+                    height: '100%',
+                    background: 'linear-gradient(90deg, transparent, rgba(32,108,255,0.1), transparent)',
+                    transition: 'left 0.5s ease',
+                  },
                   '&:hover': {
                     fontWeight: 500,
                     border: '1px solid #206CFF !important',
+                    transform: 'translateY(-2px)',
+                    boxShadow: 'rgba(32, 108, 255, 0.15) 0px 8px 20px 0px',
+                    '&::before': {
+                      left: '100%',
+                    },
+                  },
+                  '&:active': {
+                    transform: 'translateY(0) scale(0.98)',
                   },
                 }}
                 fullWidth
@@ -482,11 +678,32 @@ const Article = ({
                 查看更多
               </Button>
             ) : (
-              <Divider>
+              <Divider
+                sx={{
+                  animation: 'fadeIn 1s ease-out',
+                  '@keyframes fadeIn': {
+                    '0%': {
+                      opacity: 0,
+                    },
+                    '100%': {
+                      opacity: 1,
+                    },
+                  },
+                }}
+              >
                 <Typography
                   variant='body2'
                   sx={{
                     color: '#666',
+                    animation: 'pulse 2s ease-in-out infinite',
+                    '@keyframes pulse': {
+                      '0%, 100%': {
+                        opacity: 0.6,
+                      },
+                      '50%': {
+                        opacity: 1,
+                      },
+                    },
                   }}
                 >
                   到底啦
@@ -507,7 +724,15 @@ const Article = ({
           initialTitle={searchParams?.get('search') || ''}
         />
       </Stack>
+      
+      {/* 浮动操作按钮 */}
+      <FloatingActionButton
+        onAddClick={handleAsk}
+        showAddButton={true}
+        showScrollToTop={true}
+      />
     </Stack>
+    </>
   )
 }
 
