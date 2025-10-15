@@ -9,12 +9,7 @@ import {
   putDiscussionDiscIdCommentCommentId,
 } from '@/api'
 import { generateCacheKey, clearCache } from '@/lib/api-cache'
-import {
-  ModelCommentLikeState,
-  ModelDiscussionComment,
-  ModelDiscussionDetail,
-  ModelDiscussionReply,
-} from '@/api/types'
+import { ModelCommentLikeState, ModelDiscussionComment, ModelDiscussionDetail, ModelDiscussionReply } from '@/api/types'
 import { Card, MarkDown } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import { Avatar } from '@/components/discussion'
@@ -177,6 +172,47 @@ const BaseDiscussCard = (props: {
           <Typography className='text-ellipsis' variant='subtitle2'>
             {data.user_name}
           </Typography>
+          {data.bot && (
+            <Box
+              sx={{
+                width: 22,
+                height: 18,
+                backgroundColor: 'white',
+                position: 'relative',
+                borderRadius: '3px',
+                background: 'linear-gradient(90deg, #4FC3F7 0%, #9C27B0 100%)',
+                p: '1.5px',
+              }}
+            >
+              <Stack
+                justifyContent='center'
+                alignItems='center'
+                sx={{
+                  borderRadius: '2px',
+                  background: '#fff',
+                  height: '100%',
+                  width: '100%',
+                }}
+              >
+                <Stack
+                  justifyContent='center'
+                  alignItems='center'
+                  sx={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    backgroundImage: 'linear-gradient(90deg, #4FC3F7 0%, #9C27B0 100%)',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    color: 'transparent',
+                    lineHeight: 1,
+                    fontFamily: 'Mono',
+                  }}
+                >
+                  AI
+                </Stack>
+              </Stack>
+            </Box>
+          )}
         </Stack>
         <Stack direction='row' gap={2} alignItems='center' sx={{ mt: { xs: '12px', sm: 0 } }}>
           {/* 已采纳标签 */}
@@ -297,8 +333,8 @@ const BaseDiscussCard = (props: {
             {/* 只在有可用菜单项时显示 MoreVertIcon */}
             {hasMenuItems && (
               <IconButton
-                sx={{ 
-                  display: { xs: 'none', sm: 'flex' }, 
+                sx={{
+                  display: { xs: 'none', sm: 'flex' },
                   p: 0,
                   transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                   transform: 'scale(1)',
@@ -333,9 +369,9 @@ const BaseDiscussCard = (props: {
           <Stack direction='row' alignItems='center'>
             <Typography variant='subtitle2'>评论({(data as ModelDiscussionComment)?.replies?.length})</Typography>
             {/* 折叠/展开评论按钮 */}
-            <IconButton 
-              size='small' 
-              sx={{ 
+            <IconButton
+              size='small'
+              sx={{
                 ml: 1,
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 transform: 'scale(1)',
@@ -347,27 +383,31 @@ const BaseDiscussCard = (props: {
                   transform: 'scale(0.95)',
                   transition: 'transform 0.1s ease-out',
                 },
-              }} 
+              }}
               onClick={() => setRepliesCollapsed?.((prev: boolean) => !prev)}
             >
               {repliesCollapsed ? (
-                <span style={{ 
-                  display: 'flex', 
-                  alignItems: 'center',
-                  transition: 'transform 0.2s ease-in-out',
-                  transform: 'rotate(0deg)',
-                }}>
+                <span
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    transition: 'transform 0.2s ease-in-out',
+                    transform: 'rotate(0deg)',
+                  }}
+                >
                   <svg width='20' height='20' viewBox='0 0 24 24'>
                     <path fill='currentColor' d='M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z' />
                   </svg>
                 </span>
               ) : (
-                <span style={{ 
-                  display: 'flex', 
-                  alignItems: 'center',
-                  transition: 'transform 0.2s ease-in-out',
-                  transform: 'rotate(180deg)',
-                }}>
+                <span
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    transition: 'transform 0.2s ease-in-out',
+                    transform: 'rotate(180deg)',
+                  }}
+                >
                   <svg width='20' height='20' viewBox='0 0 24 24'>
                     <path fill='currentColor' d='M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6z' />
                   </svg>
@@ -390,7 +430,11 @@ const DiscussCard = (props: {
   data: ModelDiscussionComment
   disData: ModelDiscussionDetail
   index: number
-  onOpt(event: React.MouseEvent<HTMLButtonElement>, comment: string, index: ModelDiscussionComment | ModelDiscussionReply): void
+  onOpt(
+    event: React.MouseEvent<HTMLButtonElement>,
+    comment: string,
+    index: ModelDiscussionComment | ModelDiscussionReply,
+  ): void
 }) => {
   const { id }: { id: string } = useParams() || { id: '' }
   const { user } = useContext(AuthContext)
@@ -454,7 +498,7 @@ const DiscussCard = (props: {
         <OutlinedInput
           fullWidth
           size='small'
-          sx={{ 
+          sx={{
             display: mdEditShow ? 'none' : 'block',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             '&:hover': {
@@ -553,9 +597,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         {commentIndex?.user_id == data.current_user_id && <MenuItem onClick={handleDelete}>删除</MenuItem>}
         {data?.user_id == data.current_user_id &&
           !data.comments?.[0]?.accepted &&
-          'replies' in (commentIndex || {}) && (
-            <MenuItem onClick={handleAccept}>采纳</MenuItem>
-          )}
+          'replies' in (commentIndex || {}) && <MenuItem onClick={handleAccept}>采纳</MenuItem>}
       </Menu>
       <EditCommentModal
         open={editCommentModalVisible}

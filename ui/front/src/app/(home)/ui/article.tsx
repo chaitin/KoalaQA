@@ -205,7 +205,7 @@ const Article = ({
     <>
       {/* 粒子背景 */}
       {/* <ParticleBackground /> */}
-      
+
       <Stack
         gap={0}
         sx={{
@@ -215,438 +215,354 @@ const Article = ({
           // backgroundColor: '#fff',
         }}
       >
-      {/* 横幅区域 */}
-      <Box
-        sx={{
-          mt: '64px',
-          width: '100%',
-          height: 200,
-          backgroundImage: 'url(/banner.png)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundBlendMode: 'overlay',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          position: 'relative',
-          overflow: 'hidden',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'linear-gradient(45deg, rgba(32,108,255,0.1) 0%, rgba(32,108,255,0.05) 50%, rgba(32,108,255,0.1) 100%)',
-            animation: 'gradientShift 8s ease-in-out infinite',
-            zIndex: 0,
-          },
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            top: '-50%',
-            left: '-50%',
-            width: '200%',
-            height: '200%',
-            background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
-            animation: 'rotate 20s linear infinite',
-            zIndex: 0,
-          },
-          '@keyframes gradientShift': {
-            '0%, 100%': {
-              background: 'linear-gradient(45deg, rgba(32,108,255,0.1) 0%, rgba(32,108,255,0.05) 50%, rgba(32,108,255,0.1) 100%)',
-            },
-            '50%': {
-              background: 'linear-gradient(225deg, rgba(32,108,255,0.15) 0%, rgba(32,108,255,0.08) 50%, rgba(32,108,255,0.15) 100%)',
-            },
-          },
-          '@keyframes rotate': {
-            '0%': {
-              transform: 'rotate(0deg)',
-            },
-            '100%': {
-              transform: 'rotate(360deg)',
-            },
-          },
-        }}
-      >
-        <TypewriterText
-          text="KoalaQA 社区"
-          speed={150}
-          delay={1000}
-          variant='h2'
+        {/* 横幅区域 */}
+        <Box
           sx={{
-            color: '#fff',
-            fontSize: { xs: 32, sm: 48 },
-            fontWeight: 700,
-            textAlign: 'center',
-            zIndex: 1,
-            textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-            animation: 'textGlow 3s ease-in-out infinite alternate',
-            '@keyframes textGlow': {
-              '0%': {
-                textShadow: '0 2px 4px rgba(0,0,0,0.5), 0 0 20px rgba(255,255,255,0.3)',
-                transform: 'scale(1)',
-              },
-              '100%': {
-                textShadow: '0 2px 4px rgba(0,0,0,0.5), 0 0 30px rgba(255,255,255,0.5)',
-                transform: 'scale(1.02)',
-              },
+            mt: '64px',
+            width: '100%',
+            height: 200,
+            backgroundImage: 'url(/banner.png)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundBlendMode: 'overlay',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            overflow: 'hidden',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 0,
+            },
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              top: '-50%',
+              left: '-50%',
+              width: '200%',
+              height: '200%',
+              zIndex: 0,
             },
           }}
-        />
-      </Box>
-
-      {/* 搜索栏 */}
-      <Box
-        sx={{
-          width: { xs: '90%', sm: 600 },
-          mx: 'auto',
-          mt: '-30px',
-          mb: 3,
-          display: 'flex',
-          gap: 1,
-          animation: 'slideInUp 0.8s ease-out',
-          '@keyframes slideInUp': {
-            '0%': {
-              opacity: 0,
-              transform: 'translateY(30px)',
-            },
-            '100%': {
-              opacity: 1,
-              transform: 'translateY(0)',
-            },
-          },
-        }}
-      >
-        <OutlinedInput
-          sx={{
-            flex: 1,
-            height: 48,
-            backgroundColor: '#fff',
-            borderRadius: 3,
-            '.MuiOutlinedInput-notchedOutline': {
-              borderColor: 'transparent',
-            },
-            fontSize: 16,
-            boxShadow: '0px 2px 6px 0px rgba(0,0,0,0.1), 0px 2px 6px 0px rgba(218,220,224,0.5)',
-            px: 2,
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            '&:hover': {
-              boxShadow: '0px 4px 12px 0px rgba(0,0,0,0.15), 0px 4px 12px 0px rgba(218,220,224,0.6)',
-              transform: 'translateY(-2px)',
-            },
-            '&.Mui-focused': {
-              boxShadow: '0px 6px 20px 0px rgba(32,108,255,0.2), 0px 6px 20px 0px rgba(32,108,255,0.1)',
-              transform: 'translateY(-2px) scale(1.02)',
-              '.MuiOutlinedInput-notchedOutline': {
-                borderColor: '#206CFF',
-                borderWidth: 2,
+        >
+          <Typography
+            variant='h2'
+            sx={{
+              color: '#fff',
+              fontSize: { xs: 32, sm: 48 },
+              fontWeight: 700,
+              textAlign: 'center',
+              zIndex: 1,
+              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+              animation: 'textGlow 3s ease-in-out infinite alternate',
+              '@keyframes textGlow': {
+                '0%': {
+                  textShadow: '0 2px 4px rgba(0,0,0,0.5), 0 0 20px rgba(255,255,255,0.3)',
+                  transform: 'scale(1)',
+                },
+                '100%': {
+                  textShadow: '0 2px 4px rgba(0,0,0,0.5), 0 0 30px rgba(255,255,255,0.5)',
+                  transform: 'scale(1.02)',
+                },
               },
-            },
-            '& .MuiInputAdornment-root': {
-              transition: 'all 0.3s ease',
-            },
-            '&.Mui-focused .MuiInputAdornment-root': {
-              transform: 'scale(1.1)',
-              '& .MuiSvgIcon-root': {
-                color: '#206CFF',
-              },
-            },
-          }}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onKeyDown={onInputSearch}
-          placeholder='输入任意内容，使用 AI 搜索'
-          startAdornment={
-            <InputAdornment position='start'>
-              <SearchIcon sx={{ color: 'rgba(0,0,0,0.4)', mr: 1 }} />
-            </InputAdornment>
-          }
-        />
-      </Box>
+            }}
+          >
+            KoalaQA 社区
+          </Typography>
+        </Box>
 
-      {/* 主要内容区域 */}
-      <Stack
-        gap={3}
-        direction='row'
-        alignItems='flex-start'
-        sx={{
-          width: { xs: '100%', sm: 1200 },
-          px: { xs: 2, sm: 0 },
-          mx: 'auto',
-          mb: { xs: 3, sm: '100px' },
-        }}
-      >
-        <Stack
-          gap={2}
+        {/* 搜索栏 */}
+        <Box
           sx={{
-            width: 280,
-            position: 'sticky',
-            top: 70,
-            display: { xs: 'none', sm: 'flex' },
-            animation: 'slideInLeft 0.8s ease-out 0.2s both',
-            '@keyframes slideInLeft': {
+            width: { xs: '90%', sm: 600 },
+            mx: 'auto',
+            mt: '-30px',
+            mb: 3,
+            display: 'flex',
+            gap: 1,
+            animation: 'slideInUp 0.8s ease-out',
+            '@keyframes slideInUp': {
               '0%': {
                 opacity: 0,
-                transform: 'translateX(-50px)',
+                transform: 'translateY(30px)',
               },
               '100%': {
                 opacity: 1,
-                transform: 'translateX(0)',
+                transform: 'translateY(0)',
               },
             },
           }}
         >
-          {!groupsData && groupsLoading ? (
-            // 只有在客户端渲染且正在加载时显示骨架屏
-            <>
-              {[1, 2, 3].map((index) => (
-                <Card
-                  key={index}
-                  sx={{
-                    p: 2,
-                    boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
-                  }}
-                >
-                  <Stack gap={1}>
-                    {[1, 2, 3, 4].map((itemIndex) => (
-                      <Box
-                        key={itemIndex}
-                        sx={{
-                          height: 32,
-                          backgroundColor: 'rgba(0, 0, 0, 0.06)',
-                          borderRadius: 1,
-                          animation: 'pulse 1.5s ease-in-out infinite',
-                          '@keyframes pulse': {
-                            '0%': { opacity: 1 },
-                            '50%': { opacity: 0.4 },
-                            '100%': { opacity: 1 },
-                          },
-                        }}
-                      />
-                    ))}
-                  </Stack>
-                </Card>
-              ))}
-            </>
-          ) : (
-            groups.origin.map((section) => (
-              <Card
-                key={section.id}
-                sx={{
-                  p: 2, // 添加内边距
-                  boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                }}
-              >
-                <Stack gap={0}>
-                  {section.items?.map((item, index) => {
-                    const color = '#206CFF'
-                    const icon = '#'
+          <OutlinedInput
+            sx={{
+              flex: 1,
+              height: 48,
+              backgroundColor: '#fff',
+              borderRadius: 3,
+              '.MuiOutlinedInput-notchedOutline': {
+                borderColor: 'transparent',
+              },
+              fontSize: 16,
+              boxShadow: '0px 2px 6px 0px rgba(0,0,0,0.1), 0px 2px 6px 0px rgba(218,220,224,0.5)',
+              px: 2,
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              '&:hover': {
+                boxShadow: '0px 4px 12px 0px rgba(0,0,0,0.15), 0px 4px 12px 0px rgba(218,220,224,0.6)',
+                transform: 'translateY(-2px)',
+              },
+              '&.Mui-focused': {
+                boxShadow: '0px 6px 20px 0px rgba(32,108,255,0.2), 0px 6px 20px 0px rgba(32,108,255,0.1)',
+                transform: 'translateY(-2px) scale(1.02)',
+                '.MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#206CFF',
+                  borderWidth: 2,
+                },
+              },
+              '& .MuiInputAdornment-root': {
+                transition: 'all 0.3s ease',
+              },
+              '&.Mui-focused .MuiInputAdornment-root': {
+                transform: 'scale(1.1)',
+                '& .MuiSvgIcon-root': {
+                  color: '#206CFF',
+                },
+              },
+            }}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={onInputSearch}
+            placeholder='输入任意内容，使用 AI 搜索'
+            startAdornment={
+              <InputAdornment position='start'>
+                <SearchIcon sx={{ color: 'rgba(0,0,0,0.4)', mr: 1 }} />
+              </InputAdornment>
+            }
+          />
+        </Box>
 
-                    return (
-                      <Stack
-                        direction='row'
-                        key={item.id}
-                        alignItems='center'
-                        sx={{
-                          p: 1,
-                          m: 0.5, // 添加选项之间的间距
-                          borderRadius: 1, // 添加圆角
-                          cursor: 'pointer',
-                          backgroundColor: topics.includes(item.id || -1) ? 'rgba(32,108,255,0.08)' : 'transparent',
-                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                          position: 'relative',
-                          overflow: 'hidden',
-                          '&::before': {
-                            content: '""',
-                            position: 'absolute',
-                            top: 0,
-                            left: '-100%',
-                            width: '100%',
-                            height: '100%',
-                            background: 'linear-gradient(90deg, transparent, rgba(32,108,255,0.1), transparent)',
-                            transition: 'left 0.5s ease',
-                          },
-                          '&:hover': {
-                            backgroundColor: 'rgba(32,108,255,0.06)',
-                            transform: 'translateX(4px)',
-                            boxShadow: '0 2px 8px rgba(32,108,255,0.15)',
-                            '&::before': {
-                              left: '100%',
-                            },
-                          },
-                          '&:active': {
-                            transform: 'translateX(2px) scale(0.98)',
-                          },
-                        }}
-                        onClick={() => handleTopicClick(item.id!)}
-                      >
-                        <Box
-                          sx={{
-                            width: 24,
-                            height: 24,
-                            backgroundColor: 'rgba(32,108,255,0.1)', // 浅蓝色背景
-                            borderRadius: 1, // 添加圆角
-                            border: `1px solid ${color}`, // 深蓝色边框
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: color, // #符号使用深蓝色
-                            fontSize: 12,
-                            fontWeight: 'bold',
-                            mr: 2,
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                              transform: 'scale(1.1) rotate(5deg)',
-                              backgroundColor: 'rgba(32,108,255,0.2)',
-                              boxShadow: '0 2px 8px rgba(32,108,255,0.3)',
-                            },
-                          }}
-                        >
-                          {icon}
-                        </Box>
-                        <Box
-                          sx={{
-                            flex: 1,
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            fontSize: 14,
-                            color: topics.includes(item.id || -1) ? '#206CFF' : '#000', // 选中时使用主题蓝色
-                            fontWeight: topics.includes(item.id || -1) ? 500 : 400,
-                          }}
-                        >
-                          <Typography sx={{ fontSize: 14, fontWeight: 'inherit', color: 'inherit' }}>
-                            {item.name}
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    )
-                  })}
-                </Stack>
-              </Card>
-            ))
-          )}
-        </Stack>
-        <Stack 
-          gap={2} 
-          sx={{ 
-            width: { xs: '100%', sm: 900 },
-            animation: 'slideInRight 0.8s ease-out 0.4s both',
-            '@keyframes slideInRight': {
-              '0%': {
-                opacity: 0,
-                transform: 'translateX(50px)',
-              },
-              '100%': {
-                opacity: 1,
-                transform: 'translateX(0)',
-              },
-            },
+        {/* 主要内容区域 */}
+        <Stack
+          gap={3}
+          direction='row'
+          alignItems='flex-start'
+          sx={{
+            width: { xs: '100%', sm: 1200 },
+            px: { xs: 2, sm: 0 },
+            mx: 'auto',
+            mb: { xs: 3, sm: '100px' },
           }}
         >
           <Stack
-            direction='row'
-            gap={3}
-            justifyContent='space-between'
-            alignItems='center'
-            sx={{ display: { xs: 'none', sm: 'flex' } }}
+            gap={2}
+            sx={{
+              width: 280,
+              position: 'sticky',
+              top: 70,
+              display: { xs: 'none', sm: 'flex' },
+              animation: 'slideInLeft 0.8s ease-out 0.2s both',
+              '@keyframes slideInLeft': {
+                '0%': {
+                  opacity: 0,
+                  transform: 'translateX(-50px)',
+                },
+                '100%': {
+                  opacity: 1,
+                  transform: 'translateX(0)',
+                },
+              },
+            }}
           >
-            <CusTabs
-              sx={{ 
-                height: 40, 
-                py: '7px',
-                '& .MuiTab-root': {
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    transform: 'translateY(-2px)',
-                  },
-                },
-              }}
-              value={status}
-              onChange={(value: Status) => {
-                // 只有在状态真正变化时才更新 URL
-                const query = createQueryString('sort', value)
-                router.replace(`/?${query}`)
-              }}
-              list={[
-                { label: '热门问题', value: 'hot' },
-                { label: '最新问题', value: 'new' },
-                { label: '我参与的', value: 'mine', disabled: !user?.email },
-              ]}
-            />
+            {!groupsData && groupsLoading ? (
+              // 只有在客户端渲染且正在加载时显示骨架屏
+              <>
+                {[1, 2, 3].map((index) => (
+                  <Card
+                    key={index}
+                    sx={{
+                      p: 2,
+                      boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
+                    }}
+                  >
+                    <Stack gap={1}>
+                      {[1, 2, 3, 4].map((itemIndex) => (
+                        <Box
+                          key={itemIndex}
+                          sx={{
+                            height: 32,
+                            backgroundColor: 'rgba(0, 0, 0, 0.06)',
+                            borderRadius: 1,
+                            animation: 'pulse 1.5s ease-in-out infinite',
+                            '@keyframes pulse': {
+                              '0%': { opacity: 1 },
+                              '50%': { opacity: 0.4 },
+                              '100%': { opacity: 1 },
+                            },
+                          }}
+                        />
+                      ))}
+                    </Stack>
+                  </Card>
+                ))}
+              </>
+            ) : (
+              groups.origin.map((section) => (
+                <Card
+                  key={section.id}
+                  sx={{
+                    p: 2, // 添加内边距
+                    boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <Stack gap={0}>
+                    {section.items?.map((item, index) => {
+                      const color = '#206CFF'
+                      const icon = '#'
 
-            <Button
-              sx={{
-                height: 40,
-                backgroundColor: '#333',
-                color: '#fff',
-                position: 'relative',
-                overflow: 'hidden',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  top: 0,
-                  left: '-100%',
-                  width: '100%',
-                  height: '100%',
-                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
-                  transition: 'left 0.5s ease',
-                },
-                '&:hover': {
-                  backgroundColor: '#555',
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                  '&::before': {
-                    left: '100%',
-                  },
-                },
-                '&:active': {
-                  transform: 'translateY(0) scale(0.98)',
-                },
-              }}
-              variant='contained'
-              onClick={handleAsk}
-            >
-              发帖提问 👉
-            </Button>
+                      return (
+                        <Stack
+                          direction='row'
+                          key={item.id}
+                          alignItems='center'
+                          sx={{
+                            p: 1,
+                            m: 0.5, // 添加选项之间的间距
+                            borderRadius: 1, // 添加圆角
+                            cursor: 'pointer',
+                            backgroundColor: topics.includes(item.id || -1) ? 'rgba(32,108,255,0.08)' : 'transparent',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            position: 'relative',
+                            overflow: 'hidden',
+                            '&::before': {
+                              content: '""',
+                              position: 'absolute',
+                              top: 0,
+                              left: '-100%',
+                              width: '100%',
+                              height: '100%',
+                              background: 'linear-gradient(90deg, transparent, rgba(32,108,255,0.1), transparent)',
+                              transition: 'left 0.5s ease',
+                            },
+                            '&:hover': {
+                              backgroundColor: 'rgba(32,108,255,0.06)',
+                              transform: 'translateX(4px)',
+                              boxShadow: '0 2px 8px rgba(32,108,255,0.15)',
+                              '&::before': {
+                                left: '100%',
+                              },
+                            },
+                            '&:active': {
+                              transform: 'translateX(2px) scale(0.98)',
+                            },
+                          }}
+                          onClick={() => handleTopicClick(item.id!)}
+                        >
+                          <Box
+                            sx={{
+                              width: 24,
+                              height: 24,
+                              backgroundColor: 'rgba(32,108,255,0.1)', // 浅蓝色背景
+                              borderRadius: 1, // 添加圆角
+                              border: `1px solid ${color}`, // 深蓝色边框
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: color, // #符号使用深蓝色
+                              fontSize: 12,
+                              fontWeight: 'bold',
+                              mr: 2,
+                              transition: 'all 0.3s ease',
+                              '&:hover': {
+                                transform: 'scale(1.1) rotate(5deg)',
+                                backgroundColor: 'rgba(32,108,255,0.2)',
+                                boxShadow: '0 2px 8px rgba(32,108,255,0.3)',
+                              },
+                            }}
+                          >
+                            {icon}
+                          </Box>
+                          <Box
+                            sx={{
+                              flex: 1,
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              fontSize: 14,
+                              color: topics.includes(item.id || -1) ? '#206CFF' : '#000', // 选中时使用主题蓝色
+                              fontWeight: topics.includes(item.id || -1) ? 500 : 400,
+                            }}
+                          >
+                            <Typography sx={{ fontSize: 14, fontWeight: 'inherit', color: 'inherit' }}>
+                              {item.name}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      )
+                    })}
+                  </Stack>
+                </Card>
+              ))
+            )}
           </Stack>
-          {searchParams?.get('search') && (!articleData.items || articleData.items.length === 0) && (
-            <Card
-              sx={{
-                p: 3,
-                boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
-                textAlign: 'center',
-              }}
+          <Stack
+            gap={2}
+            sx={{
+              width: { xs: '100%', sm: 900 },
+              animation: 'slideInRight 0.8s ease-out 0.4s both',
+              '@keyframes slideInRight': {
+                '0%': {
+                  opacity: 0,
+                  transform: 'translateX(50px)',
+                },
+                '100%': {
+                  opacity: 1,
+                  transform: 'translateX(0)',
+                },
+              },
+            }}
+          >
+            <Stack
+              direction='row'
+              gap={3}
+              justifyContent='space-between'
+              alignItems='center'
+              sx={{ display: { xs: 'none', sm: 'flex' } }}
             >
-              <Stack gap={1.5} alignItems='center'>
-                <Typography variant='h6'>没搜到想要的答案？发帖提问获取帮助</Typography>
-                <Button variant='contained' onClick={handleAsk}>
-                  发帖提问
-                </Button>
-              </Stack>
-            </Card>
-          )}
-          {articleData.items?.map((it) => (
-            <React.Fragment key={it.uuid}>
-              <DiscussCard data={it} keywords={searchRef.current} />
-              <DiscussCardMobile data={it} keywords={searchRef.current} />
-            </React.Fragment>
-          ))}
-          <Box sx={{ width: '100%', textAlign: 'center' }}>
-            {page * 10 < (articleData.total || 0) ? (
-              <Button
-                onClick={fetchMoreList}
-                variant='outlined'
+              <CusTabs
                 sx={{
-                  background: '#fff !important',
-                  borderColor: '#fff !important',
-                  boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
-                  fontWeight: 400,
+                  height: 40,
+                  py: '7px',
+                  '& .MuiTab-root': {
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                    },
+                  },
+                }}
+                value={status}
+                onChange={(value: Status) => {
+                  // 只有在状态真正变化时才更新 URL
+                  const query = createQueryString('sort', value)
+                  router.replace(`/?${query}`)
+                }}
+                list={[
+                  { label: '热门问题', value: 'hot' },
+                  { label: '最新问题', value: 'new' },
+                  { label: '我参与的', value: 'mine', disabled: !user?.email },
+                ]}
+              />
+
+              <Button
+                sx={{
+                  height: 40,
+                  backgroundColor: '#333',
+                  color: '#fff',
                   position: 'relative',
                   overflow: 'hidden',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -657,14 +573,13 @@ const Article = ({
                     left: '-100%',
                     width: '100%',
                     height: '100%',
-                    background: 'linear-gradient(90deg, transparent, rgba(32,108,255,0.1), transparent)',
+                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
                     transition: 'left 0.5s ease',
                   },
                   '&:hover': {
-                    fontWeight: 500,
-                    border: '1px solid #206CFF !important',
+                    backgroundColor: '#555',
                     transform: 'translateY(-2px)',
-                    boxShadow: 'rgba(32, 108, 255, 0.15) 0px 8px 20px 0px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
                     '&::before': {
                       left: '100%',
                     },
@@ -673,65 +588,116 @@ const Article = ({
                     transform: 'translateY(0) scale(0.98)',
                   },
                 }}
-                fullWidth
+                variant='contained'
+                onClick={handleAsk}
               >
-                查看更多
+                发帖提问 👉
               </Button>
-            ) : (
-              <Divider
+            </Stack>
+            {searchParams?.get('search') && (!articleData.items || articleData.items.length === 0) && (
+              <Card
                 sx={{
-                  animation: 'fadeIn 1s ease-out',
-                  '@keyframes fadeIn': {
-                    '0%': {
-                      opacity: 0,
-                    },
-                    '100%': {
-                      opacity: 1,
-                    },
-                  },
+                  p: 3,
+                  boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
+                  textAlign: 'center',
                 }}
               >
-                <Typography
-                  variant='body2'
+                <Stack gap={1.5} alignItems='center'>
+                  <Typography variant='h6'>没搜到想要的答案？发帖提问获取帮助</Typography>
+                  <Button variant='contained' onClick={handleAsk}>
+                    发帖提问
+                  </Button>
+                </Stack>
+              </Card>
+            )}
+            {articleData.items?.map((it) => (
+              <React.Fragment key={it.uuid}>
+                <DiscussCard data={it} keywords={searchRef.current} />
+                <DiscussCardMobile data={it} keywords={searchRef.current} />
+              </React.Fragment>
+            ))}
+            <Box sx={{ width: '100%', textAlign: 'center' }}>
+              {page * 10 < (articleData.total || 0) ? (
+                <Button
+                  onClick={fetchMoreList}
+                  variant='outlined'
                   sx={{
-                    color: '#666',
-                    animation: 'pulse 2s ease-in-out infinite',
-                    '@keyframes pulse': {
-                      '0%, 100%': {
-                        opacity: 0.6,
+                    background: '#fff !important',
+                    borderColor: '#fff !important',
+                    boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
+                    fontWeight: 400,
+                    position: 'relative',
+                    overflow: 'hidden',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      top: 0,
+                      left: '-100%',
+                      width: '100%',
+                      height: '100%',
+                      background: 'linear-gradient(90deg, transparent, rgba(32,108,255,0.1), transparent)',
+                      transition: 'left 0.5s ease',
+                    },
+                    '&:hover': {
+                      fontWeight: 500,
+                      border: '1px solid #206CFF !important',
+                      transform: 'translateY(-2px)',
+                      boxShadow: 'rgba(32, 108, 255, 0.15) 0px 8px 20px 0px',
+                      '&::before': {
+                        left: '100%',
                       },
-                      '50%': {
+                    },
+                    '&:active': {
+                      transform: 'translateY(0) scale(0.98)',
+                    },
+                  }}
+                  fullWidth
+                >
+                  查看更多
+                </Button>
+              ) : (
+                <Divider
+                  sx={{
+                    animation: 'fadeIn 1s ease-out',
+                    '@keyframes fadeIn': {
+                      '0%': {
+                        opacity: 0,
+                      },
+                      '100%': {
                         opacity: 1,
                       },
                     },
                   }}
                 >
-                  到底啦
-                </Typography>
-              </Divider>
-            )}
-          </Box>
+                  <Typography
+                    variant='body2'
+                    sx={{
+                      color: '#666',
+                    }}
+                  >
+                    到底啦
+                  </Typography>
+                </Divider>
+              )}
+            </Box>
+          </Stack>
+          <ReleaseModal
+            open={releaseModalVisible}
+            onClose={releaseModalClose}
+            onOk={() => {
+              fetchList(status, search, topics)
+              router.refresh()
+              releaseModalClose()
+            }}
+            selectedTags={[]}
+            initialTitle={searchParams?.get('search') || ''}
+          />
         </Stack>
-        <ReleaseModal
-          open={releaseModalVisible}
-          onClose={releaseModalClose}
-          onOk={() => {
-            fetchList(status, search, topics)
-            router.refresh()
-            releaseModalClose()
-          }}
-          selectedTags={[]}
-          initialTitle={searchParams?.get('search') || ''}
-        />
+
+        {/* 浮动操作按钮 */}
+        <FloatingActionButton onAddClick={handleAsk} showAddButton={true} showScrollToTop={true} />
       </Stack>
-      
-      {/* 浮动操作按钮 */}
-      <FloatingActionButton
-        onAddClick={handleAsk}
-        showAddButton={true}
-        showScrollToTop={true}
-      />
-    </Stack>
     </>
   )
 }
