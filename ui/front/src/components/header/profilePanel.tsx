@@ -1,28 +1,20 @@
-'use client';
-import { postUserLogout } from '@/api';
-import {
-  Box,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Stack,
-} from '@mui/material';
-import { useLocalStorageState } from 'ahooks';
-import React, { useContext } from 'react';
-import { IdCard, IdInfo, InfoCard } from './components';
-import { AuthContext } from '../authProvider';
-import Icon from '../icon';
-import { clearAuthData } from '@/api/httpClient';
-import UserAvatar from '../UserAvatar';
-import { useSSRDebug } from '../SSRDebugger';
+'use client'
+import { postUserLogout } from '@/api'
+import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Stack } from '@mui/material'
+import { useLocalStorageState } from 'ahooks'
+import React, { useContext } from 'react'
+import { IdCard, IdInfo, InfoCard } from './components'
+import { AuthContext } from '../authProvider'
+import Icon from '../icon'
+import { clearAuthData } from '@/api/httpClient'
+import UserAvatar from '../UserAvatar'
+import { useSSRDebug } from '../SSRDebugger'
 // 简单的重定向函数
 const safeRedirect = (url: string) => {
   if (typeof window !== 'undefined') {
-    window.location.href = url;
+    window.location.href = url
   }
-};
+}
 
 export const OPT_LIST = [
   {
@@ -30,44 +22,32 @@ export const OPT_LIST = [
     icon: 'icon-iconfontgerenzhongxin',
     link: '/profile',
   },
-];
+]
 const ProfilePanel = () => {
-  const [, setToken] = useLocalStorageState<string>('auth_token');
-  const { user } = useContext(AuthContext);
-  
-  // SSR调试信息
-  useSSRDebug('ProfilePanel', { 
-    user: user ? { 
-      username: user.username, 
-      avatar: user.avatar,
-      uid: user.uid 
-    } : null 
-  });
+  const [, setToken] = useLocalStorageState<string>('auth_token')
+  const { user } = useContext(AuthContext)
+
   const handleLogout = () => {
     postUserLogout()
       .then(() => {
         // 使用统一的清除认证信息函数
-        clearAuthData();
-        setToken('');
-        safeRedirect('/login');
+        clearAuthData()
+        setToken('')
+        safeRedirect('/login')
       })
       .catch(() => {
         // 即使登出API失败，也要清除本地认证信息
-        clearAuthData();
-        setToken('');
-        safeRedirect('/login');
-      });
-  };
+        clearAuthData()
+        setToken('')
+        safeRedirect('/login')
+      })
+  }
 
   return (
     <InfoCard>
       <IdCard>
         <IdInfo>
-          <UserAvatar 
-            user={user} 
-            sx={{ width: 40, height: 40 }} 
-            debug={process.env.NODE_ENV === 'development'}
-          />
+          <UserAvatar user={user} sx={{ width: 40, height: 40 }} />
           <Stack>
             <Box
               sx={{
@@ -119,7 +99,7 @@ const ProfilePanel = () => {
                   },
                 }}
                 onClick={() => {
-                  safeRedirect(item.link);
+                  safeRedirect(item.link)
                 }}
                 dense
               >
@@ -129,7 +109,7 @@ const ProfilePanel = () => {
                 <ListItemText sx={{ color: '#000' }} primary={item.name} />
               </ListItemButton>
             </ListItem>
-          );
+          )
         })}
         <ListItem
           disablePadding
@@ -153,17 +133,14 @@ const ProfilePanel = () => {
             }}
           >
             <ListItemIcon sx={{ minWidth: 34 }}>
-              <Icon
-                type={'icon-tuichu'}
-                sx={{ fontSize: 16, color: 'error.main' }}
-              />
+              <Icon type={'icon-tuichu'} sx={{ fontSize: 16, color: 'error.main' }} />
             </ListItemIcon>
             <ListItemText sx={{ color: 'error.main' }} primary='退出' />
           </ListItemButton>
         </ListItem>
       </List>
     </InfoCard>
-  );
-};
+  )
+}
 
-export default ProfilePanel;
+export default ProfilePanel

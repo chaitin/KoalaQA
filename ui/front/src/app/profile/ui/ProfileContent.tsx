@@ -2,18 +2,7 @@
 
 import { ModelUserInfo, ModelUserRole, putUser } from '@/api'
 import { AuthContext } from '@/components/authProvider'
-import {
-  Avatar,
-  Box,
-  Button,
-  Card,
-  Container,
-  Divider,
-  Stack,
-  TextField,
-  Typography,
-  IconButton,
-} from '@mui/material'
+import { Avatar, Box, Button, Card, Container, Divider, Stack, TextField, Typography, IconButton } from '@mui/material'
 import SaveIcon from '@mui/icons-material/Save'
 import CancelIcon from '@mui/icons-material/Cancel'
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera'
@@ -21,6 +10,7 @@ import { useContext, useEffect, useState } from 'react'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import ChangePasswordModal from './ChangePasswordModal'
+import UserAvatar from '@/components/UserAvatar'
 
 dayjs.locale('zh-cn')
 
@@ -159,17 +149,15 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
       >
         <Stack direction='row' spacing={3} alignItems='center' sx={{ position: 'relative', zIndex: 1 }}>
           <Box sx={{ position: 'relative' }}>
-            <Avatar
-              src={user?.avatar || '/logo.png'}
-              sx={{
-                width: 100,
-                height: 100,
-                border: '4px solid rgba(255,255,255,0.3)',
-                fontSize: 40,
-              }}
-            >
-              {user?.username?.charAt(0)?.toUpperCase()}
-            </Avatar>
+            <Box sx={{ borderRadius: '50%', border: '1px solid rgba(255,255,255,0.6)' }}>
+              <UserAvatar
+                user={user}
+                sx={{
+                  width: 100,
+                  height: 100,
+                }}
+              />
+            </Box>
             <IconButton
               component='label'
               sx={{
@@ -214,12 +202,12 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
                       size='small'
                       sx={{ flex: 1, maxWidth: 300 }}
                     />
-                    <IconButton onClick={handleSaveName} color='primary' size='small'>
-                      <SaveIcon />
-                    </IconButton>
-                    <IconButton onClick={handleCancelEdit} color='default' size='small'>
-                      <CancelIcon />
-                    </IconButton>
+                    <Button onClick={handleSaveName} variant='contained' size='small'>
+                      保存
+                    </Button>
+                    <Button onClick={handleCancelEdit} variant='text' size='small'>
+                      取消
+                    </Button>
                   </>
                 ) : (
                   <>
@@ -276,11 +264,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
                 修改
               </Button>
             ) : (
-              <Button
-                onClick={() => setChangePasswordModalOpen(true)}
-                size='small'
-                sx={{ minWidth: 80 }}
-              >
+              <Button onClick={() => setChangePasswordModalOpen(true)} size='small' sx={{ minWidth: 80 }}>
                 修改
               </Button>
             )}

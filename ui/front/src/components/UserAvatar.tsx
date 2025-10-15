@@ -8,7 +8,6 @@ interface UserAvatarProps extends Omit<AvatarProps, 'src'> {
   user?: ModelUserInfo
   fallbackSrc?: string
   showSkeleton?: boolean
-  debug?: boolean
 }
 
 /**
@@ -19,7 +18,6 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   user,
   fallbackSrc = '/logo.png',
   showSkeleton = true,
-  debug = false,
   sx,
   ...props
 }) => {
@@ -53,20 +51,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   }
 
   const avatarSrc = getAvatarSrc()
-  const shouldShowSkeleton = showSkeleton && isLoading && isMounted
-
-  // 调试信息
-  if (debug && isMounted) {
-    console.log('UserAvatar Debug:', {
-      user: user?.username,
-      avatar: user?.avatar,
-      avatarSrc,
-      isLoading,
-      hasError,
-      isMounted,
-    })
-  }
-
+  const shouldShowSkeleton = showSkeleton && isLoading && !isMounted
   const handleImageLoad = () => {
     setIsLoading(false)
     setHasError(false)
@@ -100,6 +85,9 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
         onError={handleImageError}
         sx={{
           ...sx,
+          '& img': {
+            objectFit: 'contain!important',
+          },
           // 确保头像在加载失败时有默认样式
           backgroundColor: hasError ? 'grey.300' : undefined,
         }}

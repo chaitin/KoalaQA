@@ -333,3 +333,26 @@ html {
 *::-webkit-scrollbar-thumb:hover {
   background-color: rgba(0, 0, 0, 0.28);
 }
+
+/* 全局图片样式 - 确保图片完整显示不被拉伸或剪裁 */
+img {
+  object-fit: contain;
+  object-position: center;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Next.js Image 组件样式 */
+.next-image {
+  object-fit: contain;
+  object-position: center;
+}
+
+/* 确保所有图片容器中的图片都使用 contain 模式 */
+.image-container img,
+.avatar img,
+.logo img,
+.icon img {
+  object-fit: contain;
+  object-position: center;
+}
