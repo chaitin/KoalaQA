@@ -35,6 +35,27 @@ import EditCommentModal from './editCommentModal'
 
 import { formatNumber } from '@/lib/utils'
 
+// 添加CSS动画样式
+const animationStyles = `
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+`
+
+// 注入样式
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement('style')
+  styleSheet.textContent = animationStyles
+  document.head.appendChild(styleSheet)
+}
+
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
 
@@ -118,9 +139,21 @@ const BaseDiscussCard = (props: {
               mt: 2,
               borderRadius: 2,
               width: '100%',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              transform: 'translateY(0)',
+              '&:hover': {
+                backgroundColor: '#F0F0F8',
+                transform: 'translateY(-1px)',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+              },
             }
           : {
               width: '100%',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              transform: 'translateY(0)',
+              '&:hover': {
+                transform: 'translateY(-1px)',
+              },
             }),
         '&:hover #accept_btn': {
           display: 'block',
@@ -191,8 +224,15 @@ const BaseDiscussCard = (props: {
                 px: 1,
                 py: '1px',
                 cursor: 'pointer',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                transform: 'scale(1)',
                 '&:hover': {
                   background: isLiked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
+                  transform: 'scale(1.05)',
+                },
+                '&:active': {
+                  transform: 'scale(0.95)',
+                  transition: 'transform 0.1s ease-out',
                 },
               }}
               onClick={() => handleLike()}
@@ -224,8 +264,15 @@ const BaseDiscussCard = (props: {
                 px: 1,
                 py: '1px',
                 cursor: 'pointer',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                transform: 'scale(1)',
                 '&:hover': {
                   background: isDisliked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
+                  transform: 'scale(1.05)',
+                },
+                '&:active': {
+                  transform: 'scale(0.95)',
+                  transition: 'transform 0.1s ease-out',
                 },
               }}
               onClick={() => handleDislike()}
@@ -250,7 +297,20 @@ const BaseDiscussCard = (props: {
             {/* 只在有可用菜单项时显示 MoreVertIcon */}
             {hasMenuItems && (
               <IconButton
-                sx={{ display: { xs: 'none', sm: 'flex' }, p: 0 }}
+                sx={{ 
+                  display: { xs: 'none', sm: 'flex' }, 
+                  p: 0,
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transform: 'scale(1)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                    transform: 'scale(1.1)',
+                  },
+                  '&:active': {
+                    transform: 'scale(0.95)',
+                    transition: 'transform 0.1s ease-out',
+                  },
+                }}
                 onClick={(e) => {
                   onOpt(e, data.content || '', data)
                 }}
@@ -273,15 +333,41 @@ const BaseDiscussCard = (props: {
           <Stack direction='row' alignItems='center'>
             <Typography variant='subtitle2'>评论({(data as ModelDiscussionComment)?.replies?.length})</Typography>
             {/* 折叠/展开评论按钮 */}
-            <IconButton size='small' sx={{ ml: 1 }} onClick={() => setRepliesCollapsed?.((prev: boolean) => !prev)}>
+            <IconButton 
+              size='small' 
+              sx={{ 
+                ml: 1,
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                transform: 'scale(1)',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  transform: 'scale(1.1)',
+                },
+                '&:active': {
+                  transform: 'scale(0.95)',
+                  transition: 'transform 0.1s ease-out',
+                },
+              }} 
+              onClick={() => setRepliesCollapsed?.((prev: boolean) => !prev)}
+            >
               {repliesCollapsed ? (
-                <span style={{ display: 'flex', alignItems: 'center' }}>
+                <span style={{ 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  transition: 'transform 0.2s ease-in-out',
+                  transform: 'rotate(0deg)',
+                }}>
                   <svg width='20' height='20' viewBox='0 0 24 24'>
                     <path fill='currentColor' d='M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z' />
                   </svg>
                 </span>
               ) : (
-                <span style={{ display: 'flex', alignItems: 'center' }}>
+                <span style={{ 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  transition: 'transform 0.2s ease-in-out',
+                  transform: 'rotate(180deg)',
+                }}>
                   <svg width='20' height='20' viewBox='0 0 24 24'>
                     <path fill='currentColor' d='M7.41 15.41 12 10.83l4.59 4.58L18 14l-6-6-6 6z' />
                   </svg>
@@ -336,6 +422,13 @@ const DiscussCard = (props: {
         boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
         cursor: 'auto',
         pt: 1.5,
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        transform: 'translateY(0)',
+        '&:hover': {
+          boxShadow: 'rgba(0, 28, 85, 0.12) 0px 8px 25px 0px',
+          transform: 'translateY(-2px)',
+        },
+        animation: `fadeInUp 0.6s ease-out ${props.index * 0.1}s both`,
       }}
     >
       <BaseDiscussCard {...props}></BaseDiscussCard>
@@ -361,7 +454,17 @@ const DiscussCard = (props: {
         <OutlinedInput
           fullWidth
           size='small'
-          sx={{ display: mdEditShow ? 'none' : 'block' }}
+          sx={{ 
+            display: mdEditShow ? 'none' : 'block',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': {
+              boxShadow: '0 2px 8px rgba(32, 108, 255, 0.1)',
+            },
+            '&.Mui-focused': {
+              boxShadow: '0 4px 12px rgba(32, 108, 255, 0.2)',
+              transform: 'translateY(-1px)',
+            },
+          }}
           placeholder={user?.uid ? '评论' : '请先登录后评论'}
           onFocus={checkLoginAndFocus}
         />
