@@ -138,7 +138,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
       <Card
         sx={{
           backgroundImage: "url('/auth.png')",
-          backgroundSize: '100% 100%',
+          backgroundSize: 'cover',
           color: 'white',
           p: 4,
           mb: 3,

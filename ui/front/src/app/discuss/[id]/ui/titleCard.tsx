@@ -16,6 +16,39 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 import { useParams, useRouter } from 'next/navigation'
 import { useContext, useRef, useState } from 'react'
 
+// 添加CSS动画样式
+const animationStyles = `
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 2px 8px rgba(32, 108, 255, 0.2);
+    }
+    50% {
+      box-shadow: 0 2px 8px rgba(32, 108, 255, 0.4);
+    }
+    100% {
+      box-shadow: 0 2px 8px rgba(32, 108, 255, 0.2);
+    }
+  }
+`
+
+// 注入样式
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement('style')
+  styleSheet.textContent = animationStyles
+  document.head.appendChild(styleSheet)
+}
+
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
 
@@ -64,6 +97,16 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
       sx={{
         boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
         cursor: 'auto',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        transform: 'translateY(0)',
+        '&:hover': {
+          boxShadow: 'rgba(0, 28, 85, 0.12) 0px 8px 25px 0px',
+          transform: 'translateY(-2px)',
+        },
+        '&:active': {
+          transform: 'translateY(0)',
+          transition: 'transform 0.1s ease-out',
+        },
       }}
     >
       <ReleaseModal
@@ -130,7 +173,24 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
             user.role || ModelUserRole.UserRoleUnknown,
           )) && (
-          <IconButton size='small' ref={anchorElRef} onClick={menuOpen} sx={{ display: { xs: 'none', sm: 'flex' } }}>
+          <IconButton 
+            size='small' 
+            ref={anchorElRef} 
+            onClick={menuOpen} 
+            sx={{ 
+              display: { xs: 'none', sm: 'flex' },
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              transform: 'scale(1)',
+              '&:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                transform: 'scale(1.1)',
+              },
+              '&:active': {
+                transform: 'scale(0.95)',
+                transition: 'transform 0.1s ease-out',
+              },
+            }}
+          >
             <MoreVertIcon />
           </IconButton>
         )}
@@ -157,13 +217,23 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         sx={{ my: 1 }}
       >
         <Stack direction='row' flexWrap='wrap' gap='8px 16px'>
-          {data.groups?.map((item) => {
+          {data.groups?.map((item, index) => {
             const label = `# ${item.name}`
             return (
               <Tag
                 key={item.id}
                 label={label}
-                sx={{ backgroundColor: 'rgba(32, 108, 255, 0.1)' }}
+                sx={{ 
+                  backgroundColor: 'rgba(32, 108, 255, 0.1)',
+                  transition: 'all 0.2s ease-in-out',
+                  transform: 'scale(1)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(32, 108, 255, 0.2)',
+                    transform: 'scale(1.05)',
+                    boxShadow: '0 2px 8px rgba(32, 108, 255, 0.2)',
+                  },
+                  animation: `fadeInUp 0.5s ease-out ${index * 0.1}s both`,
+                }}
                 size='small'
                 // onClick={() => {
                 //   window.open(`/discussion?topic=${item.id}`, "_blank");
@@ -171,13 +241,29 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
               />
             )
           })}
-          {data.tags?.map((item: string) => {
+          {data.tags?.map((item: string, index) => {
             const label = (
               <Stack direction='row' alignItems='center' sx={{ lineHeight: 1 }} gap={0.5}>
                 {item}
               </Stack>
             )
-            return <Tag key={item} label={label} size='small' />
+            return (
+              <Tag 
+                key={item} 
+                label={label} 
+                size='small'
+                sx={{
+                  transition: 'all 0.2s ease-in-out',
+                  transform: 'scale(1)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                    transform: 'scale(1.05)',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                  },
+                  animation: `fadeInUp 0.5s ease-out ${(data.groups?.length || 0 + index) * 0.1}s both`,
+                }}
+              />
+            )
           })}
         </Stack>
         <Stack
@@ -214,6 +300,19 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
               px: 2,
               borderRadius: '6px',
               width: 'fit-content',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              transform: 'translateY(0)',
+              boxShadow: '0 2px 8px rgba(32, 108, 255, 0.2)',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 16px rgba(32, 108, 255, 0.3)',
+                backgroundColor: 'primary.dark',
+              },
+              '&:active': {
+                transform: 'translateY(0)',
+                transition: 'transform 0.1s ease-out',
+              },
+              animation: 'pulse 2s infinite',
             }}
           >
             {user?.uid ? '回答问题' : '登录后回答问题'}
