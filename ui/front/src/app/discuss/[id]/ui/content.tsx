@@ -13,7 +13,6 @@ import { ModelCommentLikeState, ModelDiscussionComment, ModelDiscussionDetail, M
 import { Card, MarkDown } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import { Avatar } from '@/components/discussion'
-import { UserAvatar } from '@/components/UserAvatar'
 import EditorWrap from '@/components/editor/edit/Wrap'
 import Modal from '@/components/modal'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
@@ -163,14 +162,7 @@ const BaseDiscussCard = (props: {
         sx={{ mb: 2, borderBottom: isReply ? 'none' : '1px solid #eee' }}
       >
         <Stack direction='row' gap={1} alignItems='center' sx={{ flex: 1 }}>
-          <UserAvatar
-            user={{ avatar: data.user_avatar }}
-            showSkeleton={false}
-            sx={{
-              width: 28,
-              height: 28,
-            }}
-          />
+          <img src={data.user_avatar} width={28} height={28} style={{ borderRadius: '50%' }} />
 
           <Typography className='text-ellipsis' variant='subtitle2'>
             {data.user_name}
