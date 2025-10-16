@@ -8,7 +8,7 @@ ARCH ?= amd64
 VERSION ?= dev
 COMMIT_HASH ?= $(shell git rev-parse HEAD)
 BUILD_TIME ?= $(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
-IMG_TAG ?= $(shell grep -A 5 "^  app:" docker-compose.yml | grep "image:" | sed 's/.*://' | xargs)
+IMG_TAG ?= $(shell grep -A 5 "^  api:" docker-compose.yml | grep "image:" | sed 's/.*://' | xargs)
 
 image.api:
 	cd backend && DOCKER_BUILDKIT=1 docker build \
@@ -17,26 +17,26 @@ image.api:
 		--build-arg BUILD_TIME=${BUILD_TIME} \
 		--build-arg HTTP_PROXY=${HTTP_PROXY} \
 		--build-arg HTTPS_PROXY=${HTTPS_PROXY} \
-		-t swr.cn-east-3.myhuaweicloud.com/koala-qa/api:${IMG_TAG} .
+		-t chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/api:${IMG_TAG} .
 
 image.app:
 	cd ui && DOCKER_BUILDKIT=1 docker build \
 		--build-arg HTTP_PROXY=${HTTP_PROXY} \
 		--build-arg HTTPS_PROXY=${HTTPS_PROXY} \
-		-t swr.cn-east-3.myhuaweicloud.com/koala-qa/app:${IMG_TAG} .
+		-t chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/app:${IMG_TAG} .
 
 
 image.raglite:
 	cd docker/raglite && DOCKER_BUILDKIT=1 docker build \
-		-t swr.cn-east-3.myhuaweicloud.com/koala-qa/raglite:1-3-8 .
+		-t chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/raglite:1-3-8 .
 
 image.nginx:
 	cd docker/nginx && DOCKER_BUILDKIT=1 docker build \
-		-t swr.cn-east-3.myhuaweicloud.com/koala-qa/nginx:1.28.0 .
+		-t chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/nginx:1.28.0 .
 
 image.anydoc:
 	cd docker/anydoc && DOCKER_BUILDKIT=1 docker build \
-		-t swr.cn-east-3.myhuaweicloud.com/koala-qa/anydoc:v0.5.5 .
+		-t chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/anydoc:v0.5.5 .
 
 run: image.app image.api
 	docker compose up -d
