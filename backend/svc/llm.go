@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
+	"github.com/chaitin/koalaqa/pkg/config"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/llm"
 	"github.com/chaitin/koalaqa/pkg/rag"
@@ -24,9 +25,10 @@ type LLM struct {
 	disc    *repo.Discussion
 	comm    *repo.Comment
 	kit     *ModelKit
+	cfg     config.Config
 }
 
-func newLLM(rag rag.Service, dataset *repo.Dataset, doc *repo.KBDocument, disc *repo.Discussion, comm *repo.Comment, kit *ModelKit) *LLM {
+func newLLM(rag rag.Service, dataset *repo.Dataset, doc *repo.KBDocument, disc *repo.Discussion, comm *repo.Comment, kit *ModelKit, cfg config.Config) *LLM {
 	return &LLM{
 		rag:     rag,
 		dataset: dataset,
@@ -35,6 +37,7 @@ func newLLM(rag rag.Service, dataset *repo.Dataset, doc *repo.KBDocument, disc *
 		disc:    disc,
 		comm:    comm,
 		kit:     kit,
+		cfg:     cfg,
 	}
 }
 
@@ -57,6 +60,7 @@ func (l *LLM) Answer(ctx context.Context, req GenerateReq) (string, bool, error)
 		"DefaultAnswer":      req.DefaultAnswer,
 		"CurrentDate":        time.Now().Format("2006-01-02"),
 		"KnowledgeDocuments": knowledgeDocuments,
+		"AI_DEBUG":           l.cfg.RAG.DEBUG,
 	})
 	if err != nil {
 		return "", false, err
