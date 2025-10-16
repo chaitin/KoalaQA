@@ -591,40 +591,13 @@ const docTemplate = `{
                 "summary": "list remote doc",
                 "parameters": [
                     {
-                        "enum": [
-                            0,
-                            1,
-                            2,
-                            3,
-                            4,
-                            5,
-                            6,
-                            7,
-                            8,
-                            9,
-                            10
-                        ],
-                        "type": "integer",
-                        "x-enum-varnames": [
-                            "PlatformUnknown",
-                            "PlatformConfluence",
-                            "PlatformFeishu",
-                            "PlatformFile",
-                            "PlatformNotion",
-                            "PlatformSitemap",
-                            "PlatformURL",
-                            "PlatformWikiJS",
-                            "PlatformYuQue",
-                            "PlatformPandawiki",
-                            "PlatformDingtalk"
-                        ],
-                        "name": "platform",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "remote_folder_id",
-                        "in": "query"
+                        "description": "req param",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.ListRemoteReq"
+                        }
                     }
                 ],
                 "responses": {
@@ -5150,6 +5123,20 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "svc.ListRemoteReq": {
+            "type": "object",
+            "properties": {
+                "opt": {
+                    "$ref": "#/definitions/model.PlatformOpt"
+                },
+                "platform": {
+                    "$ref": "#/definitions/platform.PlatformType"
+                },
+                "remote_folder_id": {
                     "type": "string"
                 }
             }

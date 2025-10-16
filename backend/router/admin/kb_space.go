@@ -235,7 +235,7 @@ func (s *kbSpace) ListSpaceFolderRemote(ctx *context.Context) {
 // ListRemote
 // @Summary list remote doc
 // @Tags space
-// @Param req query svc.ListRemoteReq true "req param"
+// @Param req body svc.ListRemoteReq true "req param"
 // @Produce json
 // @Success 200 {object} context.Response{data=model.ListRes{items=[]svc.ListSpaceKBItem}}
 // @Router /admin/kb/space/remote [post]
