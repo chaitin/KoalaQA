@@ -635,26 +635,21 @@ func (d *KBDocument) DeleteSpace(ctx context.Context, kbID uint, docID uint) err
 	return nil
 }
 
-type ListRemoteSpaceFolderReq struct {
-	RemoteFolderID string `form:"remote_folder_id"`
+type ListRemoteReq struct {
+	Platform       platform.PlatformType `json:"platform"`
+	RemoteFolderID string                `json:"remote_folder_id"`
+	Opt            model.PlatformOpt     `json:"opt"`
 }
 
-type ListSpaceKBItem struct {
-	DocID    string         `json:"doc_id"`
-	Title    string         `json:"title"`
-	FileType model.FileType `json:"file_type"`
-	Desc     string         `json:"desc"`
-}
-
-func (d *KBDocument) ListSpaceRemote(ctx context.Context, kbID uint, docID uint, req ListRemoteSpaceFolderReq) (*model.ListRes[ListSpaceKBItem], error) {
-	doc, err := d.GetByID(ctx, kbID, docID)
+func (d *KBDocument) ListRemote(ctx context.Context, req ListRemoteReq) (*model.ListRes[ListSpaceKBItem], error) {
+	err := d.checkPlatformOpt(req.Platform, req.Opt)
 	if err != nil {
 		return nil, err
 	}
 
-	listRes, err := d.anydoc.List(ctx, doc.Platform,
+	listRes, err := d.anydoc.List(ctx, req.Platform,
 		anydoc.ListWithSpaceID(req.RemoteFolderID),
-		anydoc.ListWithPlatformOpt(doc.PlatformOpt.Inner()),
+		anydoc.ListWithPlatformOpt(req.Opt),
 	)
 	if err != nil {
 		return nil, err
@@ -676,6 +671,30 @@ func (d *KBDocument) ListSpaceRemote(ctx context.Context, kbID uint, docID uint,
 	}
 
 	return &res, nil
+}
+
+type ListRemoteSpaceFolderReq struct {
+	RemoteFolderID string `form:"remote_folder_id"`
+}
+
+type ListSpaceKBItem struct {
+	DocID    string         `json:"doc_id"`
+	Title    string         `json:"title"`
+	FileType model.FileType `json:"file_type"`
+	Desc     string         `json:"desc"`
+}
+
+func (d *KBDocument) ListSpaceRemote(ctx context.Context, kbID uint, docID uint, req ListRemoteSpaceFolderReq) (*model.ListRes[ListSpaceKBItem], error) {
+	doc, err := d.GetByID(ctx, kbID, docID)
+	if err != nil {
+		return nil, err
+	}
+
+	return d.ListRemote(ctx, ListRemoteReq{
+		Platform:       doc.Platform,
+		RemoteFolderID: req.RemoteFolderID,
+		Opt:            doc.PlatformOpt.Inner(),
+	})
 }
 
 type CreateSpaceForlderItem struct {
