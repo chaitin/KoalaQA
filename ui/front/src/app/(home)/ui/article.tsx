@@ -538,12 +538,6 @@ const Article = ({
                 sx={{
                   height: 40,
                   py: '7px',
-                  '& .MuiTab-root': {
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                    },
-                  },
                 }}
                 value={status}
                 onChange={(value: Status) => {
