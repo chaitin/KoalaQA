@@ -87,7 +87,7 @@ const KnowledgeBasePage = () => {
   const [expandedDocs, setExpandedDocs] = useState<Set<string>>(new Set());
   const [docDetails, setDocDetails] = useState<Record<string, SvcListSpaceKBItem[]>>({});
   const [selectedPlatform, setSelectedPlatform] = useState<number>(9);
-  const [dingtalkStep, setDingtalkStep] = useState<number>(1);
+  const [dingtalkStep, setDingtalkStep] = useState<number>(0);
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
   const [previewImageSrc, setPreviewImageSrc] = useState('');
   const [previewImageAlt, setPreviewImageAlt] = useState('');
@@ -129,7 +129,28 @@ const KnowledgeBasePage = () => {
 
   // 获取远程知识库列表
   const { data: remoteData, run: fetchRemoteSpaces } = useRequest(
-    (id: number) => getAdminKbKbIdSpaceSpaceIdRemote({ kbId: kb_id, spaceId: id }),
+    (id: number, platform?: number) => {
+      const promise = getAdminKbKbIdSpaceSpaceIdRemote({ kbId: kb_id, spaceId: id });
+
+      // 如果是飞书平台，在返回数据中添加云盘数据
+      if (platform === PlatformPlatformType.PlatformFeishu) {
+        return promise.then(response => {
+          if (response?.items) {
+            // 检查是否已经存在云盘数据，避免重复添加
+            const hasCloudDisk = response.items.some(item => item.doc_id === 'cloud_disk');
+            if (!hasCloudDisk) {
+              response.items.unshift({
+                doc_id: 'cloud_disk',
+                title: '云盘',
+              });
+            }
+          }
+          return response;
+        });
+      }
+
+      return promise;
+    },
     {
       manual: true,
     }
@@ -216,7 +237,7 @@ const KnowledgeBasePage = () => {
   };
 
   const handleCreateFeishu = () => {
-    handleCreateSpace(2); // 飞书 platform type
+    handleCreateSpace(PlatformPlatformType.PlatformFeishu); // 飞书 platform type
   };
 
   // 图片预览处理函数
@@ -351,7 +372,7 @@ const KnowledgeBasePage = () => {
       // 成功后执行 dingtalkGetSpaces 逻辑
       setCurrentSpace({ id: newSpaceId });
       setSelectedSpaceId(newSpaceId);
-      fetchRemoteSpaces(newSpaceId);
+      fetchRemoteSpaces(newSpaceId, spaceData.platform);
       setShowCreateModal(false);
       setShowImportModal(true);
       refreshSpaces();
@@ -365,7 +386,7 @@ const KnowledgeBasePage = () => {
   const handleGetSpaces = () => {
     if (currentSpace?.id) {
       setSelectedSpaceId(currentSpace.id || null);
-      fetchRemoteSpaces(currentSpace.id);
+      fetchRemoteSpaces(currentSpace.id, currentSpace.platform);
       setShowImportModal(true);
       refreshSpaces();
     }
@@ -423,7 +444,9 @@ const KnowledgeBasePage = () => {
       const platformOpt = {
         url: data.url,
         access_token: data.access_token,
-        ...(selectedPlatform === PlatformPlatformType.PlatformDingtalk && {
+        ...([PlatformPlatformType.PlatformDingtalk, PlatformPlatformType.PlatformFeishu].includes(
+          selectedPlatform
+        ) && {
           app_id: data.app_id,
           secret: data.secret,
           unionid: data.unionid,
@@ -454,7 +477,7 @@ const KnowledgeBasePage = () => {
         message.success('创建成功');
         setShowImportModal(true);
         setSelectedSpaceId(newSpaceId);
-        fetchRemoteSpaces(newSpaceId);
+        fetchRemoteSpaces(newSpaceId, selectedPlatform);
       }
       handleModalCancel();
       refreshSpaces();
@@ -861,9 +884,7 @@ const KnowledgeBasePage = () => {
       >
         <MenuItem onClick={handleCreatePandaWiki}>PandaWiki</MenuItem>
         <MenuItem onClick={handleCreateDingTalk}>钉钉</MenuItem>
-        <MenuItem onClick={handleCreateFeishu} disabled>
-          飞书
-        </MenuItem>
+        <MenuItem onClick={handleCreateFeishu}>飞书</MenuItem>
       </Menu>
 
       {/* 创建/编辑连接模态框 */}
@@ -885,11 +906,7 @@ const KnowledgeBasePage = () => {
           </Stack>
         }
         onOk={
-          selectedPlatform === PlatformPlatformType.PlatformDingtalk &&
-          dingtalkStep === 1 &&
-          !editSpace
-            ? handleDingtalkNextStep
-            : handleSubmit(handleModalOk)
+          dingtalkStep === 1 && !editSpace ? handleDingtalkNextStep : handleSubmit(handleModalOk)
         }
         okText={
           selectedPlatform === PlatformPlatformType.PlatformDingtalk &&
@@ -900,7 +917,7 @@ const KnowledgeBasePage = () => {
         }
         width={dingtalkStep === 2 ? 1000 : undefined}
         footer={
-          selectedPlatform === PlatformPlatformType.PlatformDingtalk && dingtalkStep === 2 ? (
+          dingtalkStep === 2 ? (
             <Stack direction="row" spacing={2} sx={{ px: 3, py: 2 }} justifyContent="flex-end">
               <Button variant="outlined" onClick={handleDingtalkPrevStep}>
                 上一步
@@ -912,10 +929,12 @@ const KnowledgeBasePage = () => {
           ) : undefined
         }
       >
-        {selectedPlatform === PlatformPlatformType.PlatformDingtalk ? (
-          // 钉钉文档配置
+        {[PlatformPlatformType.PlatformDingtalk, PlatformPlatformType.PlatformFeishu].includes(
+          selectedPlatform
+        ) ? (
+          // 钉钉和飞书文档配置
           <Stack spacing={3}>
-            {dingtalkStep === 1 ? (
+            {dingtalkStep !== 2 ? (
               // 第一步：基础配置
               <>
                 <TextField
@@ -945,45 +964,60 @@ const KnowledgeBasePage = () => {
                   helperText={formState.errors.secret?.message}
                   InputLabelProps={{ shrink: true }}
                 />
-                <Box>
-                  <Typography variant="body2" sx={{ mb: 2 }}>
-                    标识符类型
-                  </Typography>
-                  <RadioGroup
-                    value={identifierType}
-                    onChange={e =>
-                      setValue('identifier_type', e.target.value as 'unionid' | 'phone')
-                    }
-                    row
-                  >
-                    <FormControlLabel value="unionid" control={<Radio />} label="unionid" />
-                    <FormControlLabel value="phone" control={<Radio />} label="手机号" />
-                  </RadioGroup>
-                </Box>
-                {identifierType === 'unionid' ? (
+                {selectedPlatform === PlatformPlatformType.PlatformDingtalk && (
+                  <>
+                    <Box>
+                      <Typography variant="body2" sx={{ mb: 2 }}>
+                        标识符类型
+                      </Typography>
+                      <RadioGroup
+                        value={identifierType}
+                        onChange={e =>
+                          setValue('identifier_type', e.target.value as 'unionid' | 'phone')
+                        }
+                        row
+                      >
+                        <FormControlLabel value="unionid" control={<Radio />} label="unionid" />
+                        <FormControlLabel value="phone" control={<Radio />} label="手机号" />
+                      </RadioGroup>
+                    </Box>
+                    {identifierType === 'unionid' ? (
+                      <TextField
+                        {...register('access_token')}
+                        label="unionid"
+                        fullWidth
+                        placeholder="请输入unionid"
+                        error={Boolean(formState.errors.access_token?.message)}
+                        helperText={formState.errors.access_token?.message}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    ) : (
+                      <TextField
+                        {...register('phone')}
+                        label="手机号"
+                        fullWidth
+                        placeholder="请输入手机号"
+                        error={Boolean(formState.errors.phone?.message)}
+                        helperText={formState.errors.phone?.message}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    )}
+                  </>
+                )}
+                {selectedPlatform === PlatformPlatformType.PlatformFeishu && (
                   <TextField
                     {...register('access_token')}
-                    label="unionid"
+                    label="Access Token"
                     fullWidth
-                    placeholder="请输入unionid"
+                    placeholder="请输入access_token"
                     error={Boolean(formState.errors.access_token?.message)}
                     helperText={formState.errors.access_token?.message}
                     InputLabelProps={{ shrink: true }}
                   />
-                ) : (
-                  <TextField
-                    {...register('phone')}
-                    label="手机号"
-                    fullWidth
-                    placeholder="请输入手机号"
-                    error={Boolean(formState.errors.phone?.message)}
-                    helperText={formState.errors.phone?.message}
-                    InputLabelProps={{ shrink: true }}
-                  />
                 )}
               </>
-            ) : (
-              // 第二步：配置指导
+            ) : selectedPlatform === PlatformPlatformType.PlatformDingtalk ? (
+              // 第二步：配置指导（仅钉钉显示）
               <Stack spacing={3}>
                 <Box sx={{ textAlign: 'center', mb: 3 }}>
                   <Typography variant="h6" sx={{ mb: 2 }}>
@@ -1069,7 +1103,7 @@ const KnowledgeBasePage = () => {
                   </Box>
                 </Box>
               </Stack>
-            )}
+            ) : null}
           </Stack>
         ) : (
           // 其他平台配置
