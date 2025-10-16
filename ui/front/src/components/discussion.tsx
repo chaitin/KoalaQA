@@ -111,10 +111,29 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
 
   useEffect(() => {
     if (!open) {
-      reset();
+      // 关闭弹窗时清空所有表单数据
+      reset({
+        content: '',
+        group_ids: [],
+        tags: [],
+        title: '',
+      });
     } else if (status === 'create' && initialTitle) {
-      // 当打开创建模态框且有初始标题时，设置标题
-      reset({ title: initialTitle });
+      // 当打开创建模态框且有初始标题时，设置标题并清空其他字段
+      reset({ 
+        title: initialTitle,
+        content: '',
+        group_ids: [],
+        tags: [],
+      });
+    } else if (status === 'create') {
+      // 当打开创建模态框但没有初始标题时，清空所有字段
+      reset({
+        content: '',
+        group_ids: [],
+        tags: [],
+        title: '',
+      });
     }
   }, [open, initialTitle, status, reset]);
 

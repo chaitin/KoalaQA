@@ -168,6 +168,7 @@ const QaImport = (props: {
       <Modal
         open={showCreate}
         onCancel={handleCancel}
+        maskClosable={false}
         title={
           <Stack direction="row" alignItems={'center'} justifyContent={'space-between'}>
             <Box>{editItem ? '编辑' : '手动录入'}</Box>
@@ -183,7 +184,7 @@ const QaImport = (props: {
         width={800}
         footer={null}
       >
-        <Stack component={Card} sx={{ position: 'relative', pt: 2 }} ref={ref}>
+        <Stack component={Card} sx={{ position: 'relative', pt: 2, overflow: 'auto' }} ref={ref}>
           {isFullscreen && (
             <IconButton
               onClick={exitFullscreen}
@@ -298,9 +299,6 @@ const QaImport = (props: {
         onApprove={handleReviewApprove}
         onReject={handleReviewReject}
         onUpdateHistorical={handleUpdateHistorical}
-        historicalQa={
-          editItem?.similar_id ? ({ id: editItem.similar_id } as ModelKBDocumentDetail) : null
-        }
         kbId={kb_id}
       />
     </>

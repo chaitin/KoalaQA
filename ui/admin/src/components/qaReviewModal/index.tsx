@@ -1,27 +1,13 @@
 import { getAdminKbKbIdQuestionQaId, ModelKBDocumentDetail, postAdminLlmPolish } from '@/api';
-import { message } from '@ctzhian/ui';
+import { message, Modal } from '@ctzhian/ui';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
-import CloseIcon from '@mui/icons-material/Close';
 import UndoIcon from '@mui/icons-material/Undo';
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Divider,
-  IconButton,
-  Stack,
-  TextField,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Box, Button, IconButton, Stack, TextField, Tooltip, Typography } from '@mui/material';
 import { useRequest } from 'ahooks';
+import dayjs from 'dayjs';
 import React, { useEffect, useState } from 'react';
 import EditorWrap from '../editor/edit/Wrap';
 import MarkDown from '../markDown';
-import dayjs from 'dayjs';
 
 interface QaReviewModalProps {
   open: boolean;
@@ -30,7 +16,6 @@ interface QaReviewModalProps {
   onApprove: (qaItem: ModelKBDocumentDetail) => void;
   onReject: (qaItem: ModelKBDocumentDetail) => void;
   onUpdateHistorical?: (qaItem: ModelKBDocumentDetail) => void;
-  historicalQa?: ModelKBDocumentDetail | null;
   kbId: number;
 }
 
@@ -41,7 +26,6 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
   onApprove,
   onReject,
   onUpdateHistorical,
-  historicalQa,
   kbId,
 }) => {
   const [question, setQuestion] = useState('');
@@ -124,69 +108,72 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
   const hasHistoricalQa = !!qaItem?.similar_id && !!historicalQaDetail;
 
   return (
-    <Dialog
+    <Modal
       open={open}
-      onClose={onClose}
-      maxWidth="lg"
-      fullWidth
-      PaperProps={{
-        sx: { minHeight: '600px' },
-      }}
-    >
-      <DialogTitle>
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <Typography variant="h6">审核问答对</Typography>
-          <IconButton onClick={onClose} size="small">
-            <CloseIcon />
-          </IconButton>
-        </Stack>
-      </DialogTitle>
-
-      <DialogContent>
-        <Stack direction="row" spacing={3} sx={{ height: '500px' }}>
-          {/* 历史问答对（仅查看） */}
+      onCancel={onClose}
+      width="90%"
+      title={'审核问答对'}
+      maskClosable={false}
+      footer={
+        <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ p: 3 }}>
+          <Button onClick={handleReject} color="error">
+            拒绝
+          </Button>
           {hasHistoricalQa && (
-            <>
-              <Box sx={{ flex: 1, bgcolor: 'background.paper', p: 2, overflow: 'auto' }}>
-                <Stack
-                  direction="row"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  sx={{ mb: 2 }}
-                >
-                  <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '60px' }}>
-                    历史版本
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                    {historicalQaDetail?.updated_at
-                      ? dayjs.unix(historicalQaDetail.updated_at).format('YYYY-MM-DD HH:mm:ss')
-                      : ''}
-                  </Typography>
-                </Stack>
-                <Stack direction="row" alignItems="center" sx={{ mb: 2 }}>
-                  <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '60px' }}>
-                    问题
-                  </Typography>
-                  <TextField
-                    value={historicalQaDetail?.title || ''}
-                    disabled
-                    size="small"
-                    sx={{
-                      flexGrow: 1,
-                      '& fieldset': {
-                        border: 'none',
-                      },
-                    }}
-                    slotProps={{
-                      inputLabel: { shrink: true },
-                    }}
-                  />
-                </Stack>
-                <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '120px' }}>
-                  回答
+            <Button onClick={handleUpdateHistorical} variant="outlined">
+              更新历史问答
+            </Button>
+          )}
+          <Button onClick={handleApprove} variant="contained">
+            {hasHistoricalQa ? '创建新的问答' : '通过'}
+          </Button>
+        </Stack>
+      }
+    >
+      <Stack direction="row" spacing={3} sx={{ height: '500px' }}>
+        {/* 历史问答对（仅查看） */}
+        {hasHistoricalQa && (
+          <>
+            <Box sx={{ flex: 1, bgcolor: 'background.paper', p: 2, overflow: 'auto' }}>
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+                sx={{ mb: 2 }}
+              >
+                <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '60px' }}>
+                  历史版本
                 </Typography>
-                <MarkDown content={historicalQaDetail?.markdown} sx={{ p: 2, mt: 1 }} />
-                {/* <TextField
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  {historicalQaDetail?.updated_at
+                    ? dayjs.unix(historicalQaDetail.updated_at).format('YYYY-MM-DD HH:mm:ss')
+                    : ''}
+                </Typography>
+              </Stack>
+              <Stack direction="row" alignItems="center" sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '60px' }}>
+                  问题
+                </Typography>
+                <TextField
+                  value={historicalQaDetail?.title || ''}
+                  disabled
+                  size="small"
+                  sx={{
+                    flexGrow: 1,
+                    '& fieldset': {
+                      border: 'none',
+                    },
+                  }}
+                  slotProps={{
+                    inputLabel: { shrink: true },
+                  }}
+                />
+              </Stack>
+              <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '120px' }}>
+                回答
+              </Typography>
+              <MarkDown content={historicalQaDetail?.markdown} sx={{ p: 2, mt: 1 }} />
+              {/* <TextField
                   label="回答"
                   value={historicalQaDetail?.markdown || ''}
                   fullWidth
@@ -197,79 +184,63 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
                     inputLabel: { shrink: true },
                   }}
                 /> */}
-              </Box>
-            </>
-          )}
+            </Box>
+          </>
+        )}
 
-          {/* 新问答对（可编辑） */}
-          <Box sx={{ flex: 1 }}>
-            <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>
-              {hasHistoricalQa ? '最新版本' : '问答对'}
+        {/* 新问答对（可编辑） */}
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>
+            {hasHistoricalQa ? '最新版本' : '问答对'}
+          </Typography>
+          <Stack direction="row" alignItems="center" sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '60px' }}>
+              问题
             </Typography>
-            <Stack direction="row" alignItems="center" sx={{ mb: 2 }}>
-              <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '60px' }}>
-                问题
-              </Typography>
-              <TextField
-                value={question}
-                onChange={e => setQuestion(e.target.value)}
-                fullWidth
-                slotProps={{
-                  inputLabel: { shrink: true },
-                }}
-              />
-            </Stack>
-            <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '120px' }}>
-              回答
-            </Typography>
+            <TextField
+              value={question}
+              onChange={e => setQuestion(e.target.value)}
+              fullWidth
+              slotProps={{
+                inputLabel: { shrink: true },
+              }}
+            />
+          </Stack>
+          <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '120px' }}>
+            回答
+          </Typography>
+          <Box
+            sx={{
+              position: 'relative',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 1,
+              overflow: 'hidden',
+              mt: 1,
+            }}
+          >
+            <EditorWrap
+              detail={{
+                content: answer,
+              }}
+              onChange={setAnswer}
+              showActions={false}
+            />
+            {/* AI文本润色按钮 */}
             <Box
               sx={{
-                position: 'relative',
-                border: '1px solid',
-                borderColor: 'divider',
-                borderRadius: 1,
-                overflow: 'hidden',
-                mt: 1,
+                position: 'absolute',
+                bottom: 8,
+                right: 8,
+                display: 'flex',
+                gap: 1,
               }}
             >
-              <EditorWrap
-                detail={{
-                  content: answer,
-                }}
-                onChange={setAnswer}
-                showActions={false}
-              />
-              {/* AI文本润色按钮 */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  bottom: 8,
-                  right: 8,
-                  display: 'flex',
-                  gap: 1,
-                }}
-              >
-                {originalAnswer && (
-                  <Tooltip title="使用原文">
-                    <IconButton
-                      size="small"
-                      onClick={handleRevert}
-                      sx={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                        '&:hover': {
-                          backgroundColor: 'rgba(255, 255, 255, 1)',
-                        },
-                      }}
-                    >
-                      <UndoIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                )}
-                <Tooltip title="AI文本润色">
+              {originalAnswer && (
+                <Tooltip title="使用原文">
                   <IconButton
                     size="small"
-                    onClick={handlePolish}
-                    disabled={polishLoading || isPolishing}
+                    onClick={handleRevert}
                     sx={{
                       backgroundColor: 'rgba(255, 255, 255, 0.9)',
                       '&:hover': {
@@ -277,29 +248,30 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
                       },
                     }}
                   >
-                    <AutoFixHighIcon fontSize="small" />
+                    <UndoIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
-              </Box>
+              )}
+              <Tooltip title="AI文本润色">
+                <IconButton
+                  size="small"
+                  onClick={handlePolish}
+                  disabled={polishLoading || isPolishing}
+                  sx={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 1)',
+                    },
+                  }}
+                >
+                  <AutoFixHighIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
             </Box>
           </Box>
-        </Stack>
-      </DialogContent>
-
-      <DialogActions sx={{ p: 3, pt: 0 }}>
-        <Button onClick={handleReject} color="error">
-          拒绝
-        </Button>
-        {hasHistoricalQa && (
-          <Button onClick={handleUpdateHistorical} variant="outlined">
-            更新历史问答
-          </Button>
-        )}
-        <Button onClick={handleApprove} variant="contained">
-          {hasHistoricalQa ? '创建新的问答' : '通过'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+        </Box>
+      </Stack>
+    </Modal>
   );
 };
 

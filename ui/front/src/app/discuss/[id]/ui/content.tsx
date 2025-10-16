@@ -20,7 +20,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import ThumbDownAltOutlinedIcon from '@mui/icons-material/ThumbDownAltOutlined'
 import ThumbUpAltOutlinedIcon from '@mui/icons-material/ThumbUpAltOutlined'
-import { Box, Divider, IconButton, Menu, MenuItem, OutlinedInput, Stack, Typography } from '@mui/material'
+import { Box, Button, Divider, IconButton, Menu, MenuItem, OutlinedInput, Stack, Typography } from '@mui/material'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -71,9 +71,7 @@ const BaseDiscussCard = (props: {
   // 检查是否有可用的菜单项
   const hasMenuItems =
     // 是当前用户的评论（可以编辑和删除）
-    data.user_id === disData.current_user_id ||
-    // 是问题作者且问题未被采纳，且不是回复（只有评论可以被采纳）
-    (disData.user_id === disData.current_user_id && !disData.comments?.[0]?.accepted && !isReply)
+    data.user_id === disData.current_user_id
 
   const revokeLike = () => {
     postDiscussionDiscIdCommentCommentIdRevokeLike({
@@ -159,10 +157,10 @@ const BaseDiscussCard = (props: {
         direction={{ xs: 'column', sm: 'row' }}
         justifyContent='space-between'
         alignItems={{ xs: 'flex-start', sm: 'center' }}
-        sx={{ mb: 2, borderBottom: isReply ? 'none' : '1px solid #eee' }}
+        sx={{ mb: 2, borderBottom: isReply ? 'none' : '1px solid #eee', pb: '4px' }}
       >
         <Stack direction='row' gap={1} alignItems='center' sx={{ flex: 1 }}>
-          <img src={data.user_avatar} width={28} height={28} style={{ borderRadius: '50%' }} />
+          {data.user_avatar && <img src={data.user_avatar} width={28} height={28} style={{ borderRadius: '50%' }} />}
 
           <Typography className='text-ellipsis' variant='subtitle2'>
             {data.user_name}
@@ -230,6 +228,37 @@ const BaseDiscussCard = (props: {
               <Typography sx={{ fontSize: 12, fontWeight: 500 }}>已采纳</Typography>
             </Stack>
           )}
+          {/* 采纳按钮 - 只有问题作者且问题未被采纳，且不是回复时才显示 */}
+          {!isReply &&
+            disData.user_id === disData.current_user_id &&
+            !disData.comments?.[0]?.accepted &&
+            !data?.accepted && (
+              <Button
+                variant='outlined'
+                size='small'
+                sx={{ px: '4px', py: 0 }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  // 直接调用采纳逻辑
+                  Modal.confirm({
+                    title: '确定采纳这个回答吗？',
+                    okButtonProps: { color: 'info' },
+                    onOk: async () => {
+                      await postDiscussionDiscIdCommentCommentIdAccept({
+                        discId: disData.uuid!,
+                        commentId: data.id!,
+                      })
+                      // 清除讨论详情的缓存
+                      const cacheKey = generateCacheKey(`/discussion/${disData.uuid}`, {})
+                      clearCache(cacheKey)
+                      router.refresh()
+                    },
+                  })
+                }}
+              >
+                采纳
+              </Button>
+            )}
           <Typography
             variant='body2'
             sx={{
@@ -564,23 +593,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
       },
     })
   }
-  const handleAccept = () => {
-    Modal.confirm({
-      title: '确定采纳吗？',
-      okButtonProps: { color: 'info' },
-      onOk: async () => {
-        if (!commentIndex) return
-        await postDiscussionDiscIdCommentCommentIdAccept({
-          discId: data.uuid!,
-          commentId: commentIndex.id!,
-        })
-        // 清除讨论详情的缓存
-        const cacheKey = generateCacheKey(`/discussion/${data.uuid}`, {})
-        clearCache(cacheKey)
-        router.refresh()
-      },
-    })
-  }
   const handleEditComment = () => {
     setEditCommentModalVisible(true)
     setAnchorEl(null)
@@ -590,9 +602,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
       <Menu id='basic-menu' anchorEl={anchorEl} open={open} onClose={handleClose}>
         {commentIndex?.user_id == data.current_user_id && <MenuItem onClick={handleEditComment}>编辑</MenuItem>}
         {commentIndex?.user_id == data.current_user_id && <MenuItem onClick={handleDelete}>删除</MenuItem>}
-        {data?.user_id == data.current_user_id &&
-          !data.comments?.[0]?.accepted &&
-          'replies' in (commentIndex || {}) && <MenuItem onClick={handleAccept}>采纳</MenuItem>}
       </Menu>
       <EditCommentModal
         open={editCommentModalVisible}
