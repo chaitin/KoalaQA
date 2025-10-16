@@ -154,6 +154,7 @@ export interface ModelDiscussion {
   created_at?: number;
   dislike?: number;
   group_ids?: number[];
+  hot?: number;
   id?: number;
   like?: number;
   rag_id?: string;
@@ -171,6 +172,7 @@ export interface ModelDiscussion {
 
 export interface ModelDiscussionComment {
   accepted?: boolean;
+  bot?: boolean;
   content?: string;
   dislike?: number;
   id?: number;
@@ -192,6 +194,7 @@ export interface ModelDiscussionDetail {
   dislike?: number;
   group_ids?: number[];
   groups?: ModelDiscussionGroup[];
+  hot?: number;
   id?: number;
   like?: number;
   rag_id?: string;
@@ -220,6 +223,7 @@ export interface ModelDiscussionListItem {
   created_at?: number;
   dislike?: number;
   group_ids?: number[];
+  hot?: number;
   id?: number;
   like?: number;
   rag_id?: string;
@@ -239,6 +243,7 @@ export interface ModelDiscussionListItem {
 
 export interface ModelDiscussionReply {
   accepted?: boolean;
+  bot?: boolean;
   content?: string;
   dislike?: number;
   id?: number;
@@ -328,6 +333,7 @@ export interface ModelListRes {
 export interface ModelPlatformOpt {
   access_token?: string;
   app_id?: string;
+  phone?: string;
   secret?: string;
   url?: string;
 }
@@ -714,6 +720,7 @@ export interface TopicTaskMeta {
   exportOpt?: ModelExportOpt;
   kbid?: number;
   parentID?: number;
+  phone?: string;
   platform?: PlatformPlatformType;
   platform_id?: string;
   secret?: string;

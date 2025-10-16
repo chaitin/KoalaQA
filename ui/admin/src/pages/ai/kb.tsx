@@ -15,11 +15,13 @@ import {
   SvcListSpaceKBItem,
   SvcListSpaceFolderItem,
   SvcUpdateSpaceReq,
+  PlatformPlatformType,
 } from '@/api';
 import LoadingButton from '@/components/LoadingButton';
 import StatusBadge from '@/components/StatusBadge';
 import { Card, Icon, message, Modal } from '@ctzhian/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
+import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DescriptionIcon from '@mui/icons-material/Description';
 import EditIcon from '@mui/icons-material/Edit';
@@ -27,10 +29,15 @@ import FolderIcon from '@mui/icons-material/Folder';
 import GetAppIcon from '@mui/icons-material/GetApp';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import dingtalk_screen_1 from '@/assets/images/dingtalk_1.png';
+import dingtalk_screen_2 from '@/assets/images/dingtalk_2.png';
 import {
   Box,
   Button,
   Checkbox,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Divider,
   FormControlLabel,
   Grid2 as Grid,
@@ -41,6 +48,8 @@ import {
   ListItemText,
   Menu,
   MenuItem,
+  Radio,
+  RadioGroup,
   Stack,
   TextField,
   Typography,
@@ -54,13 +63,18 @@ import z from 'zod';
 
 const spaceSchema = z.object({
   title: z.string().min(1, '标题必填').default(''),
-  url: z.string().min(1, '后台地址必填').default(''),
-  access_token: z.string().min(1, 'API Token 必填').default(''),
+  url: z.string().optional(),
+  access_token: z.string().optional(),
+  app_id: z.string().optional(),
+  secret: z.string().optional(),
+  phone: z.string().optional(),
+  identifier_type: z.enum(['unionid', 'phone']).default('unionid'),
 });
 
 const KnowledgeBasePage = () => {
   const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [createMenuAnchorEl, setCreateMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [currentSpace, setCurrentSpace] = useState<SvcListSpaceItem | null>(null);
   const [currentFolder, setCurrentFolder] = useState<SvcListSpaceFolderItem | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -69,6 +83,11 @@ const KnowledgeBasePage = () => {
   const [selectedFolders, setSelectedFolders] = useState<string[]>([]);
   const [expandedDocs, setExpandedDocs] = useState<Set<string>>(new Set());
   const [docDetails, setDocDetails] = useState<Record<string, SvcListSpaceKBItem[]>>({});
+  const [selectedPlatform, setSelectedPlatform] = useState<number>(9);
+  const [dingtalkStep, setDingtalkStep] = useState<number>(1);
+  const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
+  const [previewImageSrc, setPreviewImageSrc] = useState('');
+  const [previewImageAlt, setPreviewImageAlt] = useState('');
   const [searchParams] = useSearchParams();
   const kb_id = +searchParams.get('id')!;
 
@@ -121,11 +140,16 @@ const KnowledgeBasePage = () => {
       onSuccess: data => {
         if (data && editSpace) {
           const spaceDetail = data;
-          const platformOpt = spaceDetail.platform_opt;
+          const platformOpt = spaceDetail.platform_opt as any;
+          setSelectedPlatform(spaceDetail.platform || 0);
           reset({
             title: spaceDetail.title || '',
             url: platformOpt?.url || '',
-            access_token: platformOpt?.access_token || '',
+            access_token: platformOpt?.unionid || platformOpt?.access_token || '',
+            app_id: platformOpt?.app_id || '',
+            secret: platformOpt?.secret || '',
+            phone: platformOpt?.phone || '',
+            identifier_type: platformOpt?.identifier_type || 'unionid',
           });
         }
       },
@@ -135,12 +159,15 @@ const KnowledgeBasePage = () => {
   const spaces = spacesData?.items || [];
   const folders = foldersData?.items || [];
 
-  const { register, formState, handleSubmit, reset } = useForm({
+  const { register, formState, handleSubmit, reset, watch, setValue } = useForm({
     resolver: zodResolver(spaceSchema),
   });
 
+  const identifierType = watch('identifier_type');
+
   const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>, space: SvcListSpaceItem) => {
     event.stopPropagation();
+    console.log(space);
     setAnchorEl(event.currentTarget);
     setCurrentSpace(space);
   };
@@ -160,15 +187,52 @@ const KnowledgeBasePage = () => {
     setCurrentFolder(null);
   };
 
-  const handleCreateSpace = () => {
+  const handleCreateMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setCreateMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleCreateMenuClose = () => {
+    setCreateMenuAnchorEl(null);
+  };
+
+  const handleCreateSpace = (platform: number = 9) => {
+    setSelectedPlatform(platform);
     setShowCreateModal(true);
     setEditSpace(null);
     reset(spaceSchema.parse({}));
+    handleCreateMenuClose();
+  };
+
+  const handleCreatePandaWiki = () => {
+    handleCreateSpace(9); // PandaWiki platform type
+  };
+
+  const handleCreateDingTalk = () => {
+    setDingtalkStep(1);
+    handleCreateSpace(PlatformPlatformType.PlatformDingtalk); // 钉钉 platform type
+  };
+
+  const handleCreateFeishu = () => {
+    handleCreateSpace(2); // 飞书 platform type
+  };
+
+  // 图片预览处理函数
+  const handleImagePreview = (src: string, alt: string) => {
+    setPreviewImageSrc(src);
+    setPreviewImageAlt(alt);
+    setImagePreviewOpen(true);
+  };
+
+  const handleImagePreviewClose = () => {
+    setImagePreviewOpen(false);
+    setPreviewImageSrc('');
+    setPreviewImageAlt('');
   };
 
   const handleEditSpace = () => {
     if (currentSpace) {
       setEditSpace(currentSpace);
+      setDingtalkStep(1); // 编辑时只显示第一步
       setShowCreateModal(true);
       // 获取完整的知识库详情以填充表单
       fetchSpaceDetail(currentSpace.id || 0);
@@ -252,11 +316,16 @@ const KnowledgeBasePage = () => {
     handleMenuClose();
   };
 
+  const dingtalkGetSpaces = () => {
+    setShowCreateModal(false);
+    handleGetSpaces();
+  };
   const handleGetSpaces = () => {
     if (currentSpace?.id) {
       setSelectedSpaceId(currentSpace.id || null);
       fetchRemoteSpaces(currentSpace.id);
       setShowImportModal(true);
+      refreshSpaces();
     }
     handleMenuClose();
   };
@@ -264,14 +333,36 @@ const KnowledgeBasePage = () => {
   const handleModalCancel = () => {
     setShowCreateModal(false);
     setEditSpace(null);
+    setDingtalkStep(1);
     reset(spaceSchema.parse({}));
   };
 
-  const handleModalOk = async (data: { title: string; url: string; access_token: string }) => {
+  const handleDingtalkNextStep = () => {
+    handleSubmit(data =>
+      handleModalOk(data).then(id => {
+        setCurrentSpace({ id });
+        fetchRemoteSpaces(id as any);
+      })
+    )();
+    setDingtalkStep(2);
+  };
+
+  const handleDingtalkPrevStep = () => {
+    setDingtalkStep(1);
+  };
+
+  const handleModalOk = async (data: any) => {
     try {
       const platformOpt = {
         url: data.url,
         access_token: data.access_token,
+        ...(selectedPlatform === PlatformPlatformType.PlatformDingtalk && {
+          app_id: data.app_id,
+          secret: data.secret,
+          unionid: data.unionid,
+          phone: data.phone,
+          identifier_type: data.identifier_type,
+        }),
       };
 
       if (editSpace) {
@@ -284,17 +375,19 @@ const KnowledgeBasePage = () => {
       } else {
         const spaceData: SvcCreateSpaceReq = {
           title: data.title,
-          platform: 9, // PandaWiki platform type
+          platform: selectedPlatform,
           opt: platformOpt,
         };
         const newSpaceId = await postAdminKbKbIdSpace(kb_id, spaceData);
         message.success('创建成功');
         // 创建成功后：选中新建空间并打开获取知识库弹窗
-        if (typeof newSpaceId === 'number') {
-          setSelectedSpaceId(newSpaceId);
-          fetchRemoteSpaces(newSpaceId);
-          setShowImportModal(true);
+        if (selectedPlatform === PlatformPlatformType.PlatformDingtalk) {
+          console.log(newSpaceId);
+          return newSpaceId;
         }
+        setShowImportModal(true);
+        setSelectedSpaceId(newSpaceId);
+        fetchRemoteSpaces(newSpaceId);
       }
       handleModalCancel();
       refreshSpaces();
@@ -395,10 +488,12 @@ const KnowledgeBasePage = () => {
 
   const getPlatformLabel = (platform?: number) => {
     switch (platform) {
-      case 9:
+      case PlatformPlatformType.PlatformPandawiki:
         return 'PandaWiki';
-      case 2:
+      case PlatformPlatformType.PlatformFeishu:
         return '飞书';
+      case PlatformPlatformType.PlatformDingtalk:
+        return '钉钉';
       case 4:
         return 'Notion';
       default:
@@ -411,7 +506,12 @@ const KnowledgeBasePage = () => {
         {/* 左侧知识库分类列表 */}
         <Grid size={{ xs: 12 }} sx={{ height: '100%', width: '373px', flexShrink: 0 }}>
           <Card
-            sx={{ height: '100%', display: 'flex', flexDirection: 'column', boxShadow: 'none' }}
+            sx={{
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: 'none',
+            }}
           >
             {/* 标题和创建按钮 */}
             <Stack
@@ -423,13 +523,13 @@ const KnowledgeBasePage = () => {
               <Typography variant="body2" sx={{ fontSize: 14, color: 'text.secondary' }}>
                 共 {spaces.length} 个知识库
               </Typography>
-              <Button variant="contained" onClick={handleCreateSpace}>
+              <Button variant="contained" onClick={handleCreateMenuClick}>
                 关联知识库
               </Button>
             </Stack>
 
             {/* 知识库分类列表 */}
-            <Stack spacing={2} sx={{ flex: 1, boxShadow: 'none' }}>
+            <Stack spacing={2} sx={{ flex: 1, boxShadow: 'none', overflow: 'auto' }}>
               {spaces.map(space => (
                 <Box
                   key={space.id}
@@ -505,7 +605,7 @@ const KnowledgeBasePage = () => {
                 </Box>
               ))}
               {spaces.length === 0 && (
-                <Card sx={{ textAlign: 'center', py: 8 }}>
+                <Card sx={{ textAlign: 'center', py: 8, boxShadow: 'none' }}>
                   <Typography variant="body2" color="text.secondary">
                     暂无知识库，点击右上角按钮创建
                   </Typography>
@@ -680,42 +780,254 @@ const KnowledgeBasePage = () => {
         )}
       </Menu>
 
+      {/* 创建知识库菜单 */}
+      <Menu
+        anchorEl={createMenuAnchorEl}
+        open={Boolean(createMenuAnchorEl)}
+        onClose={handleCreateMenuClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+      >
+        <MenuItem onClick={handleCreatePandaWiki}>PandaWiki</MenuItem>
+        <MenuItem onClick={handleCreateDingTalk}>钉钉</MenuItem>
+        <MenuItem onClick={handleCreateFeishu} disabled>
+          飞书
+        </MenuItem>
+      </Menu>
+
       {/* 创建/编辑连接模态框 */}
       <Modal
         open={showCreateModal}
         onCancel={handleModalCancel}
-        title={editSpace ? '编辑知识库' : '关联知识库'}
-        onOk={handleSubmit(handleModalOk)}
+        title={editSpace ? '编辑知识库' : `${getPlatformLabel(selectedPlatform)}文档`}
+        onOk={
+          selectedPlatform === PlatformPlatformType.PlatformDingtalk &&
+          dingtalkStep === 1 &&
+          !editSpace
+            ? handleDingtalkNextStep
+            : handleSubmit(handleModalOk)
+        }
+        okText={
+          selectedPlatform === PlatformPlatformType.PlatformDingtalk &&
+          dingtalkStep === 1 &&
+          !editSpace
+            ? '下一步'
+            : '确定'
+        }
+        width={dingtalkStep === 2 ? 1000 : undefined}
+        footer={
+          selectedPlatform === PlatformPlatformType.PlatformDingtalk && dingtalkStep === 2 ? (
+            <Stack direction="row" spacing={2} sx={{ px: 3, py: 2 }} justifyContent="flex-end">
+              <Button variant="contained" onClick={dingtalkGetSpaces}>
+                获取知识库
+              </Button>
+            </Stack>
+          ) : undefined
+        }
       >
-        <Stack spacing={3}>
-          <TextField
-            {...register('title')}
-            label="标题"
-            fullWidth
-            placeholder="请输入知识库标题"
-            error={Boolean(formState.errors.title?.message)}
-            helperText={formState.errors.title?.message}
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            {...register('url')}
-            label="PandaWiki 后台地址"
-            fullWidth
-            placeholder="https://your-pandawiki.com"
-            error={Boolean(formState.errors.url?.message)}
-            helperText={formState.errors.url?.message}
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            {...register('access_token')}
-            label="API Token"
-            fullWidth
-            placeholder="请输入 API Token"
-            error={Boolean(formState.errors.access_token?.message)}
-            helperText={formState.errors.access_token?.message}
-            InputLabelProps={{ shrink: true }}
-          />
-        </Stack>
+        {selectedPlatform === PlatformPlatformType.PlatformDingtalk ? (
+          // 钉钉文档配置
+          <Stack spacing={3}>
+            {dingtalkStep === 1 ? (
+              // 第一步：基础配置
+              <>
+                <TextField
+                  {...register('title')}
+                  label="名称"
+                  fullWidth
+                  placeholder="请输入知识库名称"
+                  error={Boolean(formState.errors.title?.message)}
+                  helperText={formState.errors.title?.message}
+                  InputLabelProps={{ shrink: true }}
+                />
+                <TextField
+                  {...register('app_id')}
+                  label="Client ID"
+                  fullWidth
+                  placeholder="请输入 Client ID"
+                  error={Boolean(formState.errors.app_id?.message)}
+                  helperText={formState.errors.app_id?.message}
+                  InputLabelProps={{ shrink: true }}
+                />
+                <TextField
+                  {...register('secret')}
+                  label="Client Secret"
+                  fullWidth
+                  placeholder="请输入 Client Secret"
+                  error={Boolean(formState.errors.secret?.message)}
+                  helperText={formState.errors.secret?.message}
+                  InputLabelProps={{ shrink: true }}
+                />
+                <Box>
+                  <Typography variant="body2" sx={{ mb: 2 }}>
+                    标识符类型
+                  </Typography>
+                  <RadioGroup
+                    value={identifierType}
+                    onChange={e =>
+                      setValue('identifier_type', e.target.value as 'unionid' | 'phone')
+                    }
+                    row
+                  >
+                    <FormControlLabel value="unionid" control={<Radio />} label="unionid" />
+                    <FormControlLabel value="phone" control={<Radio />} label="手机号" />
+                  </RadioGroup>
+                </Box>
+                {identifierType === 'unionid' ? (
+                  <TextField
+                    {...register('access_token')}
+                    label="unionid"
+                    fullWidth
+                    placeholder="请输入unionid"
+                    error={Boolean(formState.errors.access_token?.message)}
+                    helperText={formState.errors.access_token?.message}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                ) : (
+                  <TextField
+                    {...register('phone')}
+                    label="手机号"
+                    fullWidth
+                    placeholder="请输入手机号"
+                    error={Boolean(formState.errors.phone?.message)}
+                    helperText={formState.errors.phone?.message}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                )}
+              </>
+            ) : (
+              // 第二步：配置指导
+              <Stack spacing={3}>
+                <Box sx={{ textAlign: 'center', mb: 3 }}>
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    配置订阅事件
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: 'flex', gap: 4, flexDirection: { xs: 'column', md: 'row' } }}>
+                  {/* 步骤1 */}
+                  <Box sx={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                    <Box
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: '50%',
+                        backgroundColor: '#1976d2',
+                        color: 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '16px',
+                        fontWeight: 'bold',
+                        flexShrink: 0,
+                        mt: 0.5,
+                      }}
+                    >
+                      1
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="body2" sx={{ minHeight: 60, pt: '2px' }}>
+                        导航前往应用详情-开发配置-事件订阅，选择 Stream 模式推送，点击按钮进行验证。
+                      </Typography>
+                      <img
+                        src={dingtalk_screen_1}
+                        alt="钉钉配置步骤1"
+                        style={{
+                          width: '100%',
+                          height: 250,
+                          borderRadius: 8,
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => handleImagePreview(dingtalk_screen_1, '钉钉配置步骤1')}
+                      />
+                    </Box>
+                  </Box>
+
+                  {/* 步骤2 */}
+                  <Box sx={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                    <Box
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: '50%',
+                        backgroundColor: '#1976d2',
+                        color: 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '16px',
+                        fontWeight: 'bold',
+                        flexShrink: 0,
+                        mt: 0.5,
+                      }}
+                    >
+                      2
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="body2" sx={{ minHeight: 60, pt: '2px' }}>
+                        验证通过后，下方事件订阅启用钉钉文档导出完成事件。
+                      </Typography>
+                      <img
+                        src={dingtalk_screen_2}
+                        alt="钉钉配置步骤2"
+                        style={{
+                          width: '100%',
+                          height: 250,
+                          borderRadius: 8,
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => handleImagePreview(dingtalk_screen_2, '钉钉配置步骤2')}
+                      />
+                    </Box>
+                  </Box>
+                </Box>
+              </Stack>
+            )}
+          </Stack>
+        ) : (
+          // 其他平台配置
+          <Stack spacing={3}>
+            <TextField
+              {...register('title')}
+              label="标题"
+              fullWidth
+              placeholder="请输入知识库标题"
+              error={Boolean(formState.errors.title?.message)}
+              helperText={formState.errors.title?.message}
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              {...register('url')}
+              label={`${getPlatformLabel(selectedPlatform)} 后台地址`}
+              fullWidth
+              placeholder={
+                selectedPlatform === 9
+                  ? 'https://your-pandawiki.com'
+                  : selectedPlatform === PlatformPlatformType.PlatformDingtalk
+                  ? 'https://your-dingtalk.com'
+                  : 'https://your-feishu.com'
+              }
+              error={Boolean(formState.errors.url?.message)}
+              helperText={formState.errors.url?.message}
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              {...register('access_token')}
+              label="API Token"
+              fullWidth
+              placeholder="请输入 API Token"
+              error={Boolean(formState.errors.access_token?.message)}
+              helperText={formState.errors.access_token?.message}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Stack>
+        )}
       </Modal>
 
       {/* 获取知识库模态框 */}
@@ -852,6 +1164,55 @@ const KnowledgeBasePage = () => {
           </List>
         </Box>
       </Modal>
+
+      {/* 图片预览弹窗 */}
+      <Dialog
+        open={imagePreviewOpen}
+        onClose={handleImagePreviewClose}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: {
+            maxWidth: '90vw',
+            maxHeight: '90vh',
+            backgroundColor: 'transparent',
+            boxShadow: 'none',
+          },
+        }}
+      >
+        <DialogTitle sx={{ p: 0, position: 'relative' }}>
+          <IconButton
+            onClick={handleImagePreviewClose}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              color: 'white',
+              '&:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              },
+              zIndex: 1,
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent
+          sx={{ p: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+        >
+          <img
+            src={previewImageSrc}
+            alt={previewImageAlt}
+            style={{
+              maxWidth: '100%',
+              maxHeight: '100%',
+              objectFit: 'contain',
+              borderRadius: 8,
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
