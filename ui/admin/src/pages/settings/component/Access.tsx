@@ -8,7 +8,7 @@ import { message } from '@ctzhian/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Box, Button, Stack, TextField, Typography } from '@mui/material';
 import { useRequest } from 'ahooks';
-import { Controller, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import z from 'zod';
 
 const accessSchema = z.object({
