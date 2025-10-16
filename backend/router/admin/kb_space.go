@@ -238,7 +238,7 @@ func (s *kbSpace) ListSpaceFolderRemote(ctx *context.Context) {
 // @Param req query svc.ListRemoteReq true "req param"
 // @Produce json
 // @Success 200 {object} context.Response{data=model.ListRes{items=[]svc.ListSpaceKBItem}}
-// @Router /admin/kb/space/remote [get]
+// @Router /admin/kb/space/remote [post]
 func (s *kbSpace) ListRemote(ctx *context.Context) {
 	var req svc.ListRemoteReq
 	err := ctx.ShouldBindJSON(&req)

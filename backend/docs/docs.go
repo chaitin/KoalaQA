@@ -581,7 +581,7 @@ const docTemplate = `{
             }
         },
         "/admin/kb/space/remote": {
-            "get": {
+            "post": {
                 "produces": [
                     "application/json"
                 ],
