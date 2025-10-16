@@ -580,6 +580,90 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/kb/space/remote": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "space"
+                ],
+                "summary": "list remote doc",
+                "parameters": [
+                    {
+                        "enum": [
+                            0,
+                            1,
+                            2,
+                            3,
+                            4,
+                            5,
+                            6,
+                            7,
+                            8,
+                            9,
+                            10
+                        ],
+                        "type": "integer",
+                        "x-enum-varnames": [
+                            "PlatformUnknown",
+                            "PlatformConfluence",
+                            "PlatformFeishu",
+                            "PlatformFile",
+                            "PlatformNotion",
+                            "PlatformSitemap",
+                            "PlatformURL",
+                            "PlatformWikiJS",
+                            "PlatformYuQue",
+                            "PlatformPandawiki",
+                            "PlatformDingtalk"
+                        ],
+                        "name": "platform",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "remote_folder_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/svc.ListSpaceKBItem"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/admin/kb/{kb_id}": {
             "put": {
                 "consumes": [

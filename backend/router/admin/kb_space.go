@@ -232,6 +232,30 @@ func (s *kbSpace) ListSpaceFolderRemote(ctx *context.Context) {
 	ctx.Success(res)
 }
 
+// ListRemote
+// @Summary list remote doc
+// @Tags space
+// @Param req query svc.ListRemoteReq true "req param"
+// @Produce json
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]svc.ListSpaceKBItem}}
+// @Router /admin/kb/space/remote [get]
+func (s *kbSpace) ListRemote(ctx *context.Context) {
+	var req svc.ListRemoteReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	res, err := s.svcDoc.ListRemote(ctx, req)
+	if err != nil {
+		ctx.InternalError(err, "list remote failed")
+		return
+	}
+
+	ctx.Success(res)
+}
+
 // ListSpaceFolder
 // @Summary list kb space folder
 // @Tags space
@@ -364,6 +388,8 @@ func (s *kbSpace) UpdateSpaceFolder(ctx *context.Context) {
 }
 
 func (s *kbSpace) Route(h server.Handler) {
+	h.POST("/kb/space/remote", s.ListRemote)
+
 	g := h.Group("/kb/:kb_id/space")
 	g.GET("", s.ListSpace)
 	g.POST("", s.CreateSpace)
