@@ -15,7 +15,7 @@ func (f *file) ListURL() string {
 }
 
 func (f *file) ListMethod() string {
-	return http.MethodGet
+	return http.MethodPost
 }
 
 func (f *file) ExportURL() string {

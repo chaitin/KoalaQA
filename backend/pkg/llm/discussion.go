@@ -62,8 +62,8 @@ const discussionPromptTemplate = `
 暂无评论
 {{- end}}
 
-## 触发回复的新评论
 {{- if .NewComment}}
+## 触发回复的新评论
 ### 新评论ID：{{.NewComment.ID}}
 ### 新评论作者：{{.NewComment.UserName}}
 ### 新评论内容：{{.NewComment.Content}}
@@ -75,37 +75,13 @@ const discussionPromptTemplate = `
 ### 父评论内容：{{$parentComment.Content}}
 ### 父评论作者：{{$parentComment.UserName}}
 {{- end}}
-{{- else}}
-### 这是对主帖的直接回复
-{{- end}}
-{{- else}}
-暂无新评论
-{{- end}}
-
-{{- if .BotHistoryReplies}}
-### 你的历史回复：
-{{- range $i, $reply := .BotHistoryReplies}}
-{{add $i 1}}. [ID: {{$reply.ID}}]
 {{- end}}
 {{- end}}
 
-### 回复策略指导：
 {{- if .NewComment}}
-{{- if ne .NewComment.ParentID 0}}
-{{- $isReplyToBot := isReplyToBot .BotHistoryReplies .NewComment.ParentID}}
-{{- if $isReplyToBot}}
-- 新评论是对你之前回复的反馈，请展现连续对话能力，确认理解并提供进一步帮助
+针对新评论ID {{.NewComment.ID}} 进行回复
 {{- else}}
-- 新评论是对其他用户的回复，请结合上下文提供补充信息或不同观点
-{{- end}}
-{{- else}}
-- 新评论是对主帖的直接回复，请结合已有讨论提供有价值的补充信息
-{{- end}}
-{{- end}}
-
-## 回复要求
-{{- if .NewComment}}
-**回复目标**：针对新评论ID {{.NewComment.ID}} 进行回复
+请基于以上信息回复帖子。
 {{- end}}
 `
 
