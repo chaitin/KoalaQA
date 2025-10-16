@@ -26,7 +26,6 @@ services:
       - HTTP_PROXY=${HTTP_PROXY}
       - NO_PROXY=koala-qa-oss,koala-qa-raglite,koala-qa-anydoc,${NO_PROXY}
       - MQ_NATS_STREAMS=koala:koala.persistence.>
-      - RAG_DEBUG=${RAG_DEBUG}
       - OSS_MINIO_SECRET_KEY=${OSS_SECRET_KEY}
       - DB_DSN=postgres://koala:${DB_PASSWORD}@koala-qa-db:5432/koala?sslmode=disable
     networks:
