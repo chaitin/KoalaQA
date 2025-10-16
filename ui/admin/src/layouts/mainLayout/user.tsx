@@ -36,11 +36,14 @@ const MainLayout = () => {
       setNeedModel(lackModel);
       setNeedAddress(lackAddr);
       setShowGuide(lackModel || lackAddr);
-    } catch (e) {
+      // 返回检查结果
+      return { lackModel, lackAddr };
+    } catch {
       // 网络或接口异常时，强制进入引导
       setNeedModel(true);
       setNeedAddress(true);
       setShowGuide(true);
+      return { lackModel: true, lackAddr: true };
     }
   };
 
@@ -127,8 +130,13 @@ const MainLayout = () => {
               <Access
                 // 在保存成功后，重新校验并尝试关闭
                 onSaved={() => {
-                  setNeedAddress(false);
-                  checkNecessaryConfigurations().then(tryCloseGuide);
+                  // 重新检查配置状态
+                  checkNecessaryConfigurations().then(({ lackModel, lackAddr }) => {
+                    // 只有在检查完成后，如果两个都不需要了，才关闭弹窗
+                    if (!lackModel && !lackAddr) {
+                      setShowGuide(false);
+                    }
+                  });
                 }}
               />
             </Box>
@@ -140,8 +148,13 @@ const MainLayout = () => {
                 open={true}
                 mandatory={true}
                 onConfigured={() => {
-                  setNeedModel(false);
-                  checkNecessaryConfigurations();
+                  // 重新检查配置状态
+                  checkNecessaryConfigurations().then(({ lackModel, lackAddr }) => {
+                    // 只有在检查完成后，如果两个都不需要了，才关闭弹窗
+                    if (!lackModel && !lackAddr) {
+                      setShowGuide(false);
+                    }
+                  });
                 }}
               />
             </Card>
