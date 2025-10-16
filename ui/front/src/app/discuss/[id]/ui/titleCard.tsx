@@ -7,6 +7,7 @@ import { ReleaseModal, Tag } from '@/components/discussion'
 import EditorWrap from '@/components/editor/edit/Wrap'
 import Modal from '@/components/modal'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
+import { Ellipsis } from '@ctzhian/ui'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import { Box, Button, Divider, IconButton, Menu, MenuItem, Stack, Typography } from '@mui/material'
 import { useBoolean } from 'ahooks'
@@ -152,8 +153,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           gap={2}
           sx={{ width: { xs: '100%', sm: 'calc(100% - 80px)' } }}
         >
-          <Typography
-            variant='h1'
+          <Ellipsis
             sx={{
               fontSize: 20,
               display: { xs: '-webkit-box', sm: 'block' },
@@ -167,17 +167,17 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
             }}
           >
             {data.title}
-          </Typography>
+          </Ellipsis>
         </Stack>
         {(data.user_id === user.uid ||
           [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
             user.role || ModelUserRole.UserRoleUnknown,
           )) && (
-          <IconButton 
-            size='small' 
-            ref={anchorElRef} 
-            onClick={menuOpen} 
-            sx={{ 
+          <IconButton
+            size='small'
+            ref={anchorElRef}
+            onClick={menuOpen}
+            sx={{
               display: { xs: 'none', sm: 'flex' },
               transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
               transform: 'scale(1)',
@@ -209,13 +209,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           {data.user_name} 发布于 {dayjs.unix(data.created_at!).fromNow()}
         </time>
       </Typography>
-      <Stack
-        direction='row'
-        alignItems='flex-end'
-        gap={2}
-        justifyContent='space-between'
-        sx={{ my: 1 }}
-      >
+      <Stack direction='row' alignItems='flex-end' gap={2} justifyContent='space-between' sx={{ my: 1 }}>
         <Stack direction='row' flexWrap='wrap' gap='8px 16px'>
           {data.groups?.map((item, index) => {
             const label = `# ${item.name}`
@@ -223,7 +217,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
               <Tag
                 key={item.id}
                 label={label}
-                sx={{ 
+                sx={{
                   backgroundColor: 'rgba(32, 108, 255, 0.1)',
                   transition: 'all 0.2s ease-in-out',
                   transform: 'scale(1)',
@@ -248,9 +242,9 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
               </Stack>
             )
             return (
-              <Tag 
-                key={item} 
-                label={label} 
+              <Tag
+                key={item}
+                label={label}
                 size='small'
                 sx={{
                   transition: 'all 0.2s ease-in-out',
@@ -283,11 +277,11 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           </Typography>
         </Stack>
       </Stack>
-      <Divider sx={{mt: 2, mb: 1}} />
+      <Divider sx={{ mt: 2, mb: 1 }} />
       <MarkDown content={data.content} />
 
       {/* 回答问题按钮 */}
-      <Box sx={{ mt: 1, pt: 1}}>
+      <Box sx={{ mt: 1, pt: 1 }}>
         {!mdEditShow && (
           <Button
             variant='contained'

@@ -8,6 +8,7 @@ interface ScrollAnimationProps extends BoxProps {
   delay?: number
   duration?: number
   threshold?: number
+  immediate?: boolean // 新增：是否立即显示，不等待滚动
 }
 
 const ScrollAnimation = ({
@@ -16,12 +17,21 @@ const ScrollAnimation = ({
   delay = 0,
   duration = 0.6,
   threshold = 0.1,
+  immediate = false,
   ...props
 }: ScrollAnimationProps) => {
-  const [isVisible, setIsVisible] = useState(false)
+  const [isVisible, setIsVisible] = useState(immediate)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    // 如果是立即显示模式，直接设置可见
+    if (immediate) {
+      setTimeout(() => {
+        setIsVisible(true)
+      }, delay)
+      return
+    }
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -32,7 +42,7 @@ const ScrollAnimation = ({
       },
       {
         threshold,
-        rootMargin: '0px 0px -50px 0px',
+        rootMargin: '0px 0px 0px 0px',
       }
     )
 
@@ -45,7 +55,7 @@ const ScrollAnimation = ({
         observer.unobserve(ref.current)
       }
     }
-  }, [delay, threshold])
+  }, [delay, threshold, immediate])
 
   const getAnimationStyles = () => {
     const baseStyles = {

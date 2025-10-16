@@ -99,7 +99,6 @@ const Page = async (props: { params: Promise<{ id: string }> }) => {
     if (item.accepted) return -1
     return 1
   })
-
   return (
     <Box
       sx={{
@@ -167,7 +166,7 @@ const Page = async (props: { params: Promise<{ id: string }> }) => {
           minHeight: '100vh',
         }}
       >
-        <ScrollAnimation animation="fadeInUp" delay={200} duration={0.8}>
+        <ScrollAnimation animation="fadeInUp" delay={100} duration={0.6}>
           <TitleCard data={data}></TitleCard>
         </ScrollAnimation>
         <Box
@@ -176,7 +175,7 @@ const Page = async (props: { params: Promise<{ id: string }> }) => {
             display: { xs: 'block', sm: 'none' },
           }}
         />
-        <ScrollAnimation animation="fadeInUp" delay={400} duration={0.8}>
+        <ScrollAnimation animation="fadeInUp" delay={200} duration={0.6} immediate={true}>
           <Stack direction='row' alignItems='flex-start' sx={{ mt: { xs: 0, sm: 3 } }} gap={3}>
             <Content data={data}></Content>
           </Stack>
