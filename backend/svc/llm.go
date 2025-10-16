@@ -232,3 +232,16 @@ func (l *LLM) Polish(ctx context.Context, req PolishReq) (string, error) {
 	}
 	return res, nil
 }
+
+type UpdatePromptReq struct {
+	Prompt string `json:"prompt"`
+}
+
+func (l *LLM) UpdateSystemChatPrompt(ctx context.Context, req UpdatePromptReq) error {
+	llm.SystemChatPrompt = req.Prompt
+	return nil
+}
+
+func (l *LLM) GetSystemChatPrompt(ctx context.Context) (string, error) {
+	return llm.SystemChatPrompt, nil
+}

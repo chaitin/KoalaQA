@@ -16,3 +16,5 @@ data/
 
 # macOS system files
 .DS_Store
+
+sync_prompt.py
