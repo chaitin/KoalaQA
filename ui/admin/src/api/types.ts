@@ -519,6 +519,12 @@ export interface SvcKBUpdateReq {
   name: string;
 }
 
+export interface SvcListRemoteReq {
+  opt?: ModelPlatformOpt;
+  platform?: PlatformPlatformType;
+  remote_folder_id?: string;
+}
+
 export interface SvcListSpaceFolderItem {
   created_at?: number;
   doc_id?: string;

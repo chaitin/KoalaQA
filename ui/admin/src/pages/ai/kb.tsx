@@ -7,10 +7,12 @@ import {
   getAdminKbKbIdSpaceSpaceIdRemote,
   postAdminKbKbIdSpace,
   postAdminKbKbIdSpaceSpaceIdFolder,
+  postAdminKbSpaceRemote,
   putAdminKbKbIdSpaceSpaceId,
   putAdminKbKbIdSpaceSpaceIdFolderFolderId,
   putAdminKbKbIdSpaceSpaceIdRefresh,
   SvcCreateSpaceReq,
+  SvcListRemoteReq,
   SvcListSpaceItem,
   SvcListSpaceKBItem,
   SvcListSpaceFolderItem,
@@ -42,6 +44,7 @@ import {
   FormControlLabel,
   Grid2 as Grid,
   IconButton,
+  Link,
   List,
   ListItem,
   ListItemIcon,
@@ -316,9 +319,48 @@ const KnowledgeBasePage = () => {
     handleMenuClose();
   };
 
-  const dingtalkGetSpaces = () => {
-    setShowCreateModal(false);
-    handleGetSpaces();
+  const dingtalkGetSpaces = async () => {
+    try {
+      // 执行 handleDingtalkNextStep 的逻辑
+      const formData = await new Promise((resolve, reject) => {
+        handleSubmit(
+          data => resolve(data),
+          errors => reject(errors)
+        )();
+      });
+
+      // 创建知识库空间
+      const platformOpt = {
+        url: (formData as any).url,
+        access_token: (formData as any).access_token,
+        app_id: (formData as any).app_id,
+        secret: (formData as any).secret,
+        unionid: (formData as any).access_token,
+        phone: (formData as any).phone,
+        identifier_type: (formData as any).identifier_type,
+      };
+
+      const spaceData: SvcCreateSpaceReq = {
+        title: (formData as any).title,
+        platform: PlatformPlatformType.PlatformDingtalk,
+        opt: platformOpt,
+      };
+
+      const newSpaceId = await postAdminKbKbIdSpace(kb_id, spaceData);
+
+      // 成功后执行 dingtalkGetSpaces 逻辑
+      setCurrentSpace({ id: newSpaceId });
+      setSelectedSpaceId(newSpaceId);
+      fetchRemoteSpaces(newSpaceId);
+      setShowCreateModal(false);
+      setShowImportModal(true);
+      refreshSpaces();
+
+      message.success('知识库创建成功');
+    } catch (error) {
+      console.error('获取知识库失败:', error);
+      message.error('获取知识库失败，请检查配置是否正确');
+    }
   };
   const handleGetSpaces = () => {
     if (currentSpace?.id) {
@@ -337,14 +379,39 @@ const KnowledgeBasePage = () => {
     reset(spaceSchema.parse({}));
   };
 
-  const handleDingtalkNextStep = () => {
-    handleSubmit(data =>
-      handleModalOk(data).then(id => {
-        setCurrentSpace({ id });
-        fetchRemoteSpaces(id as any);
-      })
-    )();
-    setDingtalkStep(2);
+  const handleDingtalkNextStep = async () => {
+    try {
+      // 先验证表单
+      const formData = await new Promise((resolve, reject) => {
+        handleSubmit(
+          data => resolve(data),
+          errors => reject(errors)
+        )();
+      });
+
+      // 构建平台配置选项
+      const platformOpt = {
+        access_token: (formData as any).access_token,
+        app_id: (formData as any).app_id,
+        secret: (formData as any).secret,
+        phone: (formData as any).phone,
+        url: (formData as any).url,
+      };
+
+      // 调用 POST /admin/kb/space/remote 接口
+      const requestData: SvcListRemoteReq = {
+        platform: PlatformPlatformType.PlatformDingtalk,
+        opt: platformOpt,
+      };
+
+      await postAdminKbSpaceRemote(requestData);
+
+      // 成功后进入第二步
+      setDingtalkStep(2);
+    } catch (error) {
+      console.error('钉钉配置验证失败:', error);
+      message.error('配置验证失败，请检查填写的信息是否正确');
+    }
   };
 
   const handleDingtalkPrevStep = () => {
@@ -379,12 +446,12 @@ const KnowledgeBasePage = () => {
           opt: platformOpt,
         };
         const newSpaceId = await postAdminKbKbIdSpace(kb_id, spaceData);
-        message.success('创建成功');
         // 创建成功后：选中新建空间并打开获取知识库弹窗
         if (selectedPlatform === PlatformPlatformType.PlatformDingtalk) {
           console.log(newSpaceId);
           return newSpaceId;
         }
+        message.success('创建成功');
         setShowImportModal(true);
         setSelectedSpaceId(newSpaceId);
         fetchRemoteSpaces(newSpaceId);
@@ -746,38 +813,36 @@ const KnowledgeBasePage = () => {
 
       {/* 操作菜单 */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-        {currentSpace && !currentFolder && (
-          <>
-            <MenuItem onClick={handleRefreshSpace}>
+        {currentSpace &&
+          !currentFolder && [
+            <MenuItem key="refresh" onClick={handleRefreshSpace}>
               <RefreshIcon fontSize="small" sx={{ mr: 1 }} />
               更新
-            </MenuItem>
-            <MenuItem onClick={handleGetSpaces}>
+            </MenuItem>,
+            <MenuItem key="getSpaces" onClick={handleGetSpaces}>
               <GetAppIcon fontSize="small" sx={{ mr: 1 }} />
               获取知识库
-            </MenuItem>
-            <MenuItem onClick={handleEditSpace}>
+            </MenuItem>,
+            <MenuItem key="edit" onClick={handleEditSpace}>
               <EditIcon fontSize="small" sx={{ mr: 1 }} />
               编辑
-            </MenuItem>
-            <MenuItem onClick={handleDeleteSpace} sx={{ color: 'error.main' }}>
+            </MenuItem>,
+            <MenuItem key="delete" onClick={handleDeleteSpace} sx={{ color: 'error.main' }}>
               <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
               删除
-            </MenuItem>
-          </>
-        )}
-        {currentFolder && !currentSpace && (
-          <>
-            <MenuItem onClick={handleRefreshFolder}>
+            </MenuItem>,
+          ]}
+        {currentFolder &&
+          !currentSpace && [
+            <MenuItem key="refreshFolder" onClick={handleRefreshFolder}>
               <RefreshIcon fontSize="small" sx={{ mr: 1 }} />
               更新
-            </MenuItem>
-            <MenuItem onClick={handleDeleteFolder} sx={{ color: 'error.main' }}>
+            </MenuItem>,
+            <MenuItem key="deleteFolder" onClick={handleDeleteFolder} sx={{ color: 'error.main' }}>
               <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
               删除
-            </MenuItem>
-          </>
-        )}
+            </MenuItem>,
+          ]}
       </Menu>
 
       {/* 创建知识库菜单 */}
@@ -805,7 +870,20 @@ const KnowledgeBasePage = () => {
       <Modal
         open={showCreateModal}
         onCancel={handleModalCancel}
-        title={editSpace ? '编辑知识库' : `${getPlatformLabel(selectedPlatform)}文档`}
+        title={
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Box>{editSpace ? '编辑知识库' : `${getPlatformLabel(selectedPlatform)}文档`}</Box>
+            {selectedPlatform !== PlatformPlatformType.PlatformPandawiki && (
+              <Link
+                href="https://koalaqa.docs.baizhi.cloud/node/019951c2-e49b-7ea5-9f75-74f3851d53dd"
+                target="_blank"
+                sx={{ color: '#3248F2', fontSize: 14 }}
+              >
+                使用文档
+              </Link>
+            )}
+          </Stack>
+        }
         onOk={
           selectedPlatform === PlatformPlatformType.PlatformDingtalk &&
           dingtalkStep === 1 &&
@@ -824,6 +902,9 @@ const KnowledgeBasePage = () => {
         footer={
           selectedPlatform === PlatformPlatformType.PlatformDingtalk && dingtalkStep === 2 ? (
             <Stack direction="row" spacing={2} sx={{ px: 3, py: 2 }} justifyContent="flex-end">
+              <Button variant="outlined" onClick={handleDingtalkPrevStep}>
+                上一步
+              </Button>
               <Button variant="contained" onClick={dingtalkGetSpaces}>
                 获取知识库
               </Button>
