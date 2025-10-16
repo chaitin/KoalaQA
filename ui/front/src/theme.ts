@@ -32,6 +32,7 @@ declare module '@mui/material/Button' {
 
 const theme = createTheme(
   {
+    cssVariables: true, // 启用 CSS 变量
     palette: {
       mode: 'light',
       primary: {
@@ -39,6 +40,10 @@ const theme = createTheme(
       },
       error: {
         main: '#F64E54',
+      },
+      common: {
+        white: '#fff',
+        black: '#000',
       },
       neutral: {
         main: '#fff',

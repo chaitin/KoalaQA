@@ -1,6 +1,6 @@
-'use client';
+'use client'
 
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext } from 'react'
 import {
   Box,
   InputBase,
@@ -21,12 +21,12 @@ import {
   Typography,
   IconButton,
   Popover,
-} from '@mui/material';
-import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
-import ClearRoundedIcon from '@mui/icons-material/ClearRounded';
-import { useLocalStorageState } from 'ahooks';
-import { CommonContext } from './commonProvider';
-import { useRouter } from 'next/navigation';
+} from '@mui/material'
+import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
+import ClearRoundedIcon from '@mui/icons-material/ClearRounded'
+import { useLocalStorageState } from 'ahooks'
+import { CommonContext } from './commonProvider'
+import { useRouter } from 'next/navigation'
 
 const innerTheme = createTheme({
   palette: {
@@ -34,7 +34,7 @@ const innerTheme = createTheme({
       main: '#1A191C',
     },
   },
-});
+})
 
 export const SearchBaseInput = styled(InputBase)(({ theme }) => ({
   flex: 1,
@@ -53,7 +53,7 @@ export const SearchBaseInput = styled(InputBase)(({ theme }) => ({
   '&:focus-within': {
     borderColor: theme.palette.primary.main,
   },
-}));
+}))
 
 const SearchBaseWrapper = styled(Box)(({ theme }) => {
   return {
@@ -68,27 +68,27 @@ const SearchBaseWrapper = styled(Box)(({ theme }) => {
     '&:hover': {
       boxShadow: '0px 10px 40px 0px rgba(0,28,85,0.15)',
     },
-  };
-});
+  }
+})
 
 const SearchBaseButton = styled(Button)({
   width: 82,
   height: 40,
   borderRadius: '0px 4px 4px 0px',
-});
+})
 
 export const SearchBase = React.forwardRef(
   (
     props: {
-      type?: 'icon' | 'button' | 'icon-button';
-      open?: boolean;
-      setOpen?(open: boolean): void;
-      SearchBaseWrapperProps?: BoxProps;
-      SearchBaseInputProps?: InputBaseProps;
-      SearchBaseButtonProps?: ButtonProps;
-      SearchRoundedIconProps?: SvgIconProps;
+      type?: 'icon' | 'button' | 'icon-button'
+      open?: boolean
+      setOpen?(open: boolean): void
+      SearchBaseWrapperProps?: BoxProps
+      SearchBaseInputProps?: InputBaseProps
+      SearchBaseButtonProps?: ButtonProps
+      SearchRoundedIconProps?: SvgIconProps
     },
-    ref
+    ref,
   ) => {
     const {
       type = 'button',
@@ -97,20 +97,20 @@ export const SearchBase = React.forwardRef(
       SearchBaseInputProps,
       SearchBaseButtonProps,
       SearchRoundedIconProps,
-    } = props;
-    const { keywords } = useContext(CommonContext);
+    } = props
+    const { keywords } = useContext(CommonContext)
     return type === 'icon-button' ? (
       <SearchRoundedIcon
         {...SearchRoundedIconProps}
         onClick={() => {
-          setOpen?.(true);
+          setOpen?.(true)
         }}
       />
     ) : (
       <SearchBaseWrapper
         ref={ref}
         onClick={() => {
-          setOpen?.(true);
+          setOpen?.(true)
         }}
         {...SearchBaseWrapperProps}
       >
@@ -122,51 +122,46 @@ export const SearchBase = React.forwardRef(
           {...SearchBaseInputProps}
         />
         {type === 'button' && (
-          <ThemeProvider theme={innerTheme}>
-            <SearchBaseButton variant='contained' {...SearchBaseButtonProps}>
-              搜索
-            </SearchBaseButton>
-          </ThemeProvider>
+          <SearchBaseButton variant='contained' {...SearchBaseButtonProps}>
+            搜索
+          </SearchBaseButton>
         )}
       </SearchBaseWrapper>
-    );
-  }
-);
-SearchBase.displayName = 'SearchBase';
+    )
+  },
+)
+SearchBase.displayName = 'SearchBase'
 
 export const DialogSearch = (props: { open: boolean; onClose(): void }) => {
-  const { open, onClose } = props;
-  const { keywords, setKeywords } = useContext(CommonContext);
-  const router = useRouter();
-  const [recentSearch, setRecentSearch] = useLocalStorageState<string[]>(
-    'recent-search',
-    {
-      defaultValue: [],
-    }
-  );
+  const { open, onClose } = props
+  const { keywords, setKeywords } = useContext(CommonContext)
+  const router = useRouter()
+  const [recentSearch, setRecentSearch] = useLocalStorageState<string[]>('recent-search', {
+    defaultValue: [],
+  })
 
   const onSearch = () => {
     if (!keywords.trim()) {
-      return;
+      return
     }
-    onClose();
+    onClose()
     if (recentSearch) {
-      const index = recentSearch.indexOf(keywords);
+      const index = recentSearch.indexOf(keywords)
       if (index > -1) {
-        recentSearch.splice(index, 1);
-        recentSearch.unshift(keywords);
+        recentSearch.splice(index, 1)
+        recentSearch.unshift(keywords)
       } else {
         if (recentSearch.length >= 10) {
-          recentSearch.pop();
+          recentSearch.pop()
         }
-        recentSearch.unshift(keywords);
+        recentSearch.unshift(keywords)
       }
-      setRecentSearch([...recentSearch]);
+      setRecentSearch([...recentSearch])
     } else {
-      setRecentSearch([keywords]);
+      setRecentSearch([keywords])
     }
-    router.push(`/s?keywords=${keywords}`);
-  };
+    router.push(`/s?keywords=${keywords}`)
+  }
 
   return (
     <Dialog
@@ -194,11 +189,11 @@ export const DialogSearch = (props: { open: boolean; onClose(): void }) => {
           readOnly: false,
           autoFocus: true,
           onChange: (e) => {
-            setKeywords(e.target.value);
+            setKeywords(e.target.value)
           },
           onKeyDown: (e) => {
             if (e.key === 'Enter') {
-              onSearch();
+              onSearch()
             }
           },
           sx: {
@@ -215,15 +210,13 @@ export const DialogSearch = (props: { open: boolean; onClose(): void }) => {
             fontSize: 18,
           },
           onClick: () => {
-            onSearch();
+            onSearch()
           },
         }}
       />
 
       {!!recentSearch?.length && (
-        <Box
-          sx={{ py: 2, px: 1, mt: 2, backgroundColor: '#fff', borderRadius: 1 }}
-        >
+        <Box sx={{ py: 2, px: 1, mt: 2, backgroundColor: '#fff', borderRadius: 1 }}>
           <Stack sx={{ pl: 1 }}>
             <Typography variant='body2' sx={{ color: '#666' }}>
               最近搜索
@@ -238,17 +231,17 @@ export const DialogSearch = (props: { open: boolean; onClose(): void }) => {
                   <IconButton
                     size='small'
                     onClick={(e) => {
-                      e.stopPropagation();
-                      recentSearch.splice(index, 1);
-                      setRecentSearch([...recentSearch]);
+                      e.stopPropagation()
+                      recentSearch.splice(index, 1)
+                      setRecentSearch([...recentSearch])
                     }}
                   >
                     <ClearRoundedIcon sx={{ fontSize: 16 }} />
                   </IconButton>
                 }
                 onClick={() => {
-                  onClose();
-                  router.push(`/s?keywords=${k}`);
+                  onClose()
+                  router.push(`/s?keywords=${k}`)
                 }}
               >
                 <ListItemButton sx={{ pl: 1 }}>
@@ -260,8 +253,8 @@ export const DialogSearch = (props: { open: boolean; onClose(): void }) => {
         </Box>
       )}
     </Dialog>
-  );
-};
+  )
+}
 
 export const PopoverContent = React.forwardRef(() => {
   return (
@@ -276,32 +269,32 @@ export const PopoverContent = React.forwardRef(() => {
     >
       <Typography sx={{ p: 2 }}>The content of the Popover.</Typography>
     </Popover>
-  );
-});
-PopoverContent.displayName = 'PopoverContent';
+  )
+})
+PopoverContent.displayName = 'PopoverContent'
 
 const Search = React.forwardRef(
   (
     props: {
-      type?: 'icon' | 'button' | 'icon-button';
-      SearchBaseWrapperProps?: BoxProps;
-      SearchBaseInputProps?: InputBaseProps;
-      SearchBaseButtonProps?: ButtonProps;
-      SearchRoundedIconProps?: SvgIconProps;
+      type?: 'icon' | 'button' | 'icon-button'
+      SearchBaseWrapperProps?: BoxProps
+      SearchBaseInputProps?: InputBaseProps
+      SearchBaseButtonProps?: ButtonProps
+      SearchRoundedIconProps?: SvgIconProps
     },
-    ref
+    ref,
   ) => {
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(false)
     const {
       type = 'button',
       SearchBaseWrapperProps,
       SearchBaseInputProps,
       SearchBaseButtonProps,
       SearchRoundedIconProps,
-    } = props;
+    } = props
     const onClose = () => {
-      setOpen(false);
-    };
+      setOpen(false)
+    }
     return (
       <>
         <SearchBase
@@ -316,9 +309,9 @@ const Search = React.forwardRef(
         {/* <PopoverContent /> */}
         <DialogSearch open={open} onClose={onClose} />
       </>
-    );
-  }
-);
+    )
+  },
+)
 
-Search.displayName = 'Search';
-export default Search;
+Search.displayName = 'Search'
+export default Search
