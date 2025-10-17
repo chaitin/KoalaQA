@@ -71,20 +71,6 @@ func (l *LLM) Answer(ctx context.Context, req GenerateReq) (string, bool, error)
 	return res, true, nil
 }
 
-func (l *LLM) Summary(ctx context.Context, req GenerateReq) (string, bool, error) {
-	res, err := l.Chat(ctx, llm.SystemSummaryPrompt, req.Prompt, map[string]any{
-		"DefaultAnswer": req.DefaultAnswer,
-		"CurrentDate":   time.Now().Format("2006-01-02"),
-	})
-	if err != nil {
-		return "", false, err
-	}
-	if util.NormalizeString(res) == util.NormalizeString(req.DefaultAnswer) {
-		return req.DefaultAnswer, false, nil
-	}
-	return res, true, nil
-}
-
 func (l *LLM) Chat(ctx context.Context, sMsg string, uMsg string, params map[string]any) (string, error) {
 	cm, err := l.kit.GetChatModel(ctx)
 	if err != nil {
@@ -150,36 +136,8 @@ func (l *LLM) GenerateChatPrompt(ctx context.Context, discID uint, commID uint) 
 		return "", "", fmt.Errorf("generate prompt failed: %w", err)
 	}
 
-	logger.Debug("generate prompt success")
+	logger.With("prompt", prompt).Debug("generate prompt success")
 	return template.Question(), prompt, nil
-}
-
-func (l *LLM) GenerateSummaryPrompt(ctx context.Context, discID uint) (string, error) {
-	logger := l.logger.WithContext(ctx).With("discussion_id", discID)
-	logger.Debug("start generate summary prompt")
-	// 1. 获取讨论详情
-	discussion, err := l.disc.Detail(ctx, 0, discID)
-	if err != nil {
-		return "", fmt.Errorf("get discussion detail failed: %w", err)
-	}
-	// 2. 获取该讨论的所有评论
-	var allComments []model.CommentDetail
-	err = l.comm.List(ctx, &allComments,
-		repo.QueryWithEqual("discussion_id", discID),
-		repo.QueryWithOrderBy("created_at ASC"),
-	)
-	if err != nil {
-		return "", fmt.Errorf("get discussion comments failed: %w", err)
-	}
-	// 3. 创建提示词模版并生成提示词
-	template := llm.NewDiscussionSummaryTemplate(discussion, allComments)
-	prompt, err := template.BuildSummaryPrompt()
-	if err != nil {
-		return "", fmt.Errorf("generate summary prompt failed: %w", err)
-	}
-
-	logger.Debug("generate summary prompt success")
-	return prompt, nil
 }
 
 // queryKnowledgeDocuments 查询相关知识文档
