@@ -126,9 +126,9 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
             menuClose()
           }}
         >
-          编辑话题
+          编辑问题
         </MenuItem>
-        <MenuItem onClick={handleDelete}>删除话题</MenuItem>
+        <MenuItem onClick={handleDelete}>删除问题</MenuItem>
       </Menu>
       <Stack
         direction='row'
@@ -143,21 +143,17 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           gap={2}
           sx={{ width: { xs: '100%', sm: 'calc(100% - 80px)' } }}
         >
-          <Ellipsis
+          <Typography
             sx={{
               fontSize: 20,
-              display: { xs: '-webkit-box', sm: 'block' },
-              WebkitLineClamp: { sm: 1, xs: 2 },
-              WebkitBoxOrient: 'vertical',
-              textOverflow: { sm: 'ellipsis' },
-              whiteSpace: { sm: 'nowrap', xs: 'normal' },
-              overflow: 'hidden',
               fontWeight: 600,
-              maxWidth: { xs: '100%', sm: 'calc(100% - 90px)' },
+              whiteSpace: 'normal',
+              wordBreak: 'break-word',
+              width: '100%',
             }}
           >
             {data.title}
-          </Ellipsis>
+          </Typography>
         </Stack>
         {(data.user_id === user.uid ||
           [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
