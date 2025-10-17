@@ -7,25 +7,31 @@ import (
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/mq"
+	"github.com/chaitin/koalaqa/pkg/rag"
 	"github.com/chaitin/koalaqa/pkg/topic"
+	"github.com/chaitin/koalaqa/repo"
 	"github.com/chaitin/koalaqa/svc"
 )
 
 type Comment struct {
-	logger *glog.Logger
-	llm    *svc.LLM
-	bot    *svc.Bot
-	disc   *svc.Discussion
-	pub    mq.Publisher
+	logger  *glog.Logger
+	llm     *svc.LLM
+	bot     *svc.Bot
+	disc    *svc.Discussion
+	pub     mq.Publisher
+	rag     rag.Service
+	dataset *repo.Dataset
 }
 
-func NewComment(disc *svc.Discussion, bot *svc.Bot, llm *svc.LLM, pub mq.Publisher) *Comment {
+func NewComment(disc *svc.Discussion, bot *svc.Bot, llm *svc.LLM, pub mq.Publisher, rag rag.Service, dataset *repo.Dataset) *Comment {
 	return &Comment{
-		llm:    llm,
-		logger: glog.Module("sub.comment"),
-		disc:   disc,
-		bot:    bot,
-		pub:    pub,
+		llm:     llm,
+		logger:  glog.Module("sub.comment"),
+		disc:    disc,
+		bot:     bot,
+		pub:     pub,
+		rag:     rag,
+		dataset: dataset,
 	}
 }
 
@@ -66,6 +72,23 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 	logger := d.logger.WithContext(ctx).With("comment_id", data.CommID)
 	logger.Debug("handle insert comment")
 	go d.disc.IncrementComment(data.DiscUUID)
+	question, prompt, err := d.llm.GenerateChatPrompt(ctx, data.DiscID, data.CommID)
+	if err != nil {
+		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
+		return nil
+	}
+
+	// record rag
+	ragID, err := d.rag.UpsertRecords(ctx, d.dataset.GetFrontendID(ctx), prompt, nil)
+	if err != nil {
+		return err
+	}
+	err = d.disc.UpdateRagID(ctx, data.DiscID, ragID)
+	if err != nil {
+		return err
+	}
+
+	// ai answer
 	comment, err := d.disc.GetCommentByID(ctx, data.CommID)
 	if err != nil {
 		logger.WithErr(err).Warn("get comment failed")
@@ -91,11 +114,6 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 	bot, err := d.bot.Get(ctx)
 	if err != nil {
 		logger.WithContext(ctx).WithErr(err).Error("get bot failed")
-		return nil
-	}
-	question, prompt, err := d.llm.GenerateChatPrompt(ctx, data.DiscID, data.CommID)
-	if err != nil {
-		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
 		return nil
 	}
 	llmRes, answered, err := d.llm.Answer(ctx, svc.GenerateReq{

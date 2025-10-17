@@ -344,34 +344,32 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 		}
 	}
 
-	if !req.Bot {
-		d.in.Pub.Publish(ctx, topic.TopicCommentChange, topic.MsgCommentChange{
-			OP:       topic.OPInsert,
-			CommID:   comment.ID,
-			DiscID:   disc.ID,
-			DiscUUID: discUUID,
-		})
-		toID := disc.UserID
-		typ := model.MsgNotifyTypeReplyDiscuss
-		if parentID > 0 {
-			typ = model.MsgNotifyTypeReplyComment
-			var parentComment model.Comment
-			err := d.in.CommRepo.GetByID(ctx, &parentComment, parentID)
-			if err != nil {
-				return 0, err
-			}
-			toID = parentComment.UserID
+	d.in.Pub.Publish(ctx, topic.TopicCommentChange, topic.MsgCommentChange{
+		OP:       topic.OPInsert,
+		CommID:   comment.ID,
+		DiscID:   disc.ID,
+		DiscUUID: discUUID,
+	})
+	toID := disc.UserID
+	typ := model.MsgNotifyTypeReplyDiscuss
+	if parentID > 0 {
+		typ = model.MsgNotifyTypeReplyComment
+		var parentComment model.Comment
+		err := d.in.CommRepo.GetByID(ctx, &parentComment, parentID)
+		if err != nil {
+			return 0, err
 		}
-		notifyMsg := topic.MsgMessageNotify{
-			DiscussID:    disc.ID,
-			DiscussTitle: disc.Title,
-			DiscussUUID:  disc.UUID,
-			Type:         typ,
-			FromID:       uid,
-			ToID:         toID,
-		}
-		d.in.Pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
+		toID = parentComment.UserID
 	}
+	notifyMsg := topic.MsgMessageNotify{
+		DiscussID:    disc.ID,
+		DiscussTitle: disc.Title,
+		DiscussUUID:  disc.UUID,
+		Type:         typ,
+		FromID:       uid,
+		ToID:         toID,
+	}
+	d.in.Pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	return comment.ID, nil
 }
 
@@ -398,14 +396,12 @@ func (d *Discussion) UpdateComment(ctx context.Context, user model.UserInfo, dis
 	}, repo.QueryWithEqual("id", commentID)); err != nil {
 		return err
 	}
-	if !req.Bot {
-		d.in.Pub.Publish(ctx, topic.TopicCommentChange, topic.MsgCommentChange{
-			OP:       topic.OPUpdate,
-			CommID:   commentID,
-			DiscID:   disc.ID,
-			DiscUUID: discUUID,
-		})
-	}
+	d.in.Pub.Publish(ctx, topic.TopicCommentChange, topic.MsgCommentChange{
+		OP:       topic.OPUpdate,
+		CommID:   commentID,
+		DiscID:   disc.ID,
+		DiscUUID: discUUID,
+	})
 	return nil
 }
 
