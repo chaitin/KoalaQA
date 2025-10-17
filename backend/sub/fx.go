@@ -13,7 +13,6 @@ var Module = fx.Options(
 	fx.Provide(mq.AsSubscriber(newAnydocTask)),
 	fx.Provide(mq.AsSubscriber(NewQA)),
 	fx.Provide(mq.AsSubscriber(NewComment)),
-	fx.Provide(mq.AsSubscriber(NewDiscSummary)),
 	fx.Provide(mq.AsSubscriber(newDiscussWebhook)),
 	fx.Provide(mq.AsSubscriber(newKBSpace)),
 	fx.Provide(newCache),

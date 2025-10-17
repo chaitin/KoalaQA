@@ -40,8 +40,32 @@ type KnowledgeDocument struct {
 	Source  string `json:"source,omitempty"`
 }
 
-// 提示词模版常量
-const discussionPromptTemplate = `
+// 帖子模版常量（包含帖子信息和评论楼层结构）
+const discussionPostTemplate = `
+## 当前帖子信息
+### 帖子ID：{{.Discussion.ID}}
+### 帖子标题：{{.Discussion.Title}}
+### 帖子内容：{{.Discussion.Content}}
+### 发帖人：{{.Discussion.UserName}}
+### 发帖时间：{{formatTime .Discussion.CreatedAt}}
+{{- if .Discussion.Tags}}
+### 帖子标签：{{join .Discussion.Tags ", "}}
+{{- end}}
+### 解决状态：{{if .Discussion.Resolved}}已解决{{else}}待解决{{end}}
+
+## 评论楼层结构
+{{- if .CommentTree}}
+{{- range $i, $node := .CommentTree}}
+楼层{{add $i 1}} {{renderComment $node ""}}
+{{- end}}
+{{- else}}
+暂无评论
+{{- end}}
+
+`
+
+// 回复模版常量（针对新评论的回复）
+const discussionReplyTemplate = `
 ## 当前帖子信息
 ### 帖子ID：{{.Discussion.ID}}
 ### 帖子标题：{{.Discussion.Title}}
@@ -63,25 +87,9 @@ const discussionPromptTemplate = `
 {{- end}}
 
 {{- if .NewComment}}
-## 触发回复的新评论
-### 新评论ID：{{.NewComment.ID}}
-### 新评论作者：{{.NewComment.UserName}}
-### 新评论内容：{{.NewComment.Content}}
-### 新评论时间：{{formatTime .NewComment.CreatedAt}}
-{{- if ne .NewComment.ParentID 0}}
-### 父评论ID：{{.NewComment.ParentID}}（这是对某个评论的回复）
-{{- $parentComment := findCommentByID $.AllComments .NewComment.ParentID}}
-{{- if $parentComment}}
-### 父评论内容：{{$parentComment.Content}}
-### 父评论作者：{{$parentComment.UserName}}
-{{- end}}
-{{- end}}
-{{- end}}
-
-{{- if .NewComment}}
 针对新评论ID {{.NewComment.ID}} 进行回复
 {{- else}}
-请基于以上信息回复帖子。
+请基于以上信息回复帖子
 {{- end}}
 `
 
@@ -129,8 +137,64 @@ func (t *DiscussionPromptTemplate) BuildPrompt() (string, error) {
 	return buf.String(), nil
 }
 
-// initTemplate 初始化模版
+// BuildPostPrompt 构建帖子提示词（用于回复帖子）
+func (t *DiscussionPromptTemplate) BuildPostPrompt() (string, error) {
+	// 初始化帖子模版
+	if err := t.initPostTemplate(); err != nil {
+		return "", fmt.Errorf("初始化帖子模版失败: %w", err)
+	}
+
+	// 构建评论树
+	t.CommentTree = t.buildCommentTree()
+
+	// 提取BOT历史回复
+	t.ExtractBotReplies()
+
+	// 执行模版
+	var buf bytes.Buffer
+	if err := t.template.Execute(&buf, t); err != nil {
+		return "", fmt.Errorf("执行帖子模版失败: %w", err)
+	}
+
+	return buf.String(), nil
+}
+
+// BuildReplyPrompt 构建回复提示词（用于回复新评论）
+func (t *DiscussionPromptTemplate) BuildReplyPrompt() (string, error) {
+	if t.NewComment == nil {
+		return "", fmt.Errorf("新评论不能为空")
+	}
+
+	// 初始化回复模版
+	if err := t.initReplyTemplate(); err != nil {
+		return "", fmt.Errorf("初始化回复模版失败: %w", err)
+	}
+
+	// 构建评论树
+	t.CommentTree = t.buildCommentTree()
+
+	// 提取BOT历史回复
+	t.ExtractBotReplies()
+
+	// 执行模版
+	var buf bytes.Buffer
+	if err := t.template.Execute(&buf, t); err != nil {
+		return "", fmt.Errorf("执行回复模版失败: %w", err)
+	}
+
+	return buf.String(), nil
+}
+
+// initTemplate 初始化模版（兼容性方法，根据是否有新评论选择模版）
 func (t *DiscussionPromptTemplate) initTemplate() error {
+	if t.NewComment != nil {
+		return t.initReplyTemplate()
+	}
+	return t.initPostTemplate()
+}
+
+// initPostTemplate 初始化帖子模版
+func (t *DiscussionPromptTemplate) initPostTemplate() error {
 	funcMap := template.FuncMap{
 		"formatTime":      t.formatTime,
 		"join":            strings.Join,
@@ -140,7 +204,27 @@ func (t *DiscussionPromptTemplate) initTemplate() error {
 		"isReplyToBot":    t.isReplyToBot,
 	}
 
-	tmpl, err := template.New("discussion_prompt").Funcs(funcMap).Parse(discussionPromptTemplate)
+	tmpl, err := template.New("discussion_post_prompt").Funcs(funcMap).Parse(discussionPostTemplate)
+	if err != nil {
+		return err
+	}
+
+	t.template = tmpl
+	return nil
+}
+
+// initReplyTemplate 初始化回复模版
+func (t *DiscussionPromptTemplate) initReplyTemplate() error {
+	funcMap := template.FuncMap{
+		"formatTime":      t.formatTime,
+		"join":            strings.Join,
+		"add":             func(a, b int) int { return a + b },
+		"renderComment":   t.renderComment,
+		"findCommentByID": t.findCommentByID,
+		"isReplyToBot":    t.isReplyToBot,
+	}
+
+	tmpl, err := template.New("discussion_reply_prompt").Funcs(funcMap).Parse(discussionReplyTemplate)
 	if err != nil {
 		return err
 	}
@@ -311,76 +395,3 @@ func NewDiscussionPromptTemplate(
 		NewComment:  newComment,
 	}
 }
-
-// 使用示例：
-/*
-func ExampleUsage() {
-	// 准备数据
-	discussion := &model.DiscussionDetail{
-		Discussion: model.Discussion{
-			Base: model.Base{ID: 1001},
-			Title: "Redis缓存在高并发下的优化策略",
-			Content: "我们的系统在高峰期Redis响应变慢，求优化建议",
-			Tags: []string{"Redis", "缓存", "性能优化"},
-			Resolved: false,
-		},
-		UserName: "开发小王",
-	}
-
-	allComments := []model.CommentDetail{
-		{
-			Comment: model.Comment{
-				Base: model.Base{ID: 2001},
-				DiscussionID: 1001,
-				ParentID: 0,
-				Content: "可以考虑Redis集群方案",
-				Bot: false,
-			},
-			UserName: "用户张工",
-		},
-		{
-			Comment: model.Comment{
-				Base: model.Base{ID: 2002},
-				DiscussionID: 1001,
-				ParentID: 2001,
-				Content: "Redis集群确实是个好方案，根据文档建议...",
-				Bot: true,
-			},
-			UserName: "智能助手",
-		},
-	}
-
-	newComment := &model.CommentDetail{
-		Comment: model.Comment{
-			Base: model.Base{ID: 2003},
-			DiscussionID: 1001,
-			ParentID: 2001,
-			Content: "但是集群会增加运维复杂度，有没有其他方案？",
-			Bot: false,
-		},
-		UserName: "用户李工",
-	}
-
-	knowledgeDocs := []KnowledgeDocument{
-		{
-			Title: "Redis性能优化最佳实践",
-			Content: "1. 使用连接池\n2. 合理设置过期时间\n3. 避免大key...",
-			Source: "Redis官方文档",
-		},
-	}
-
-	// 创建模版实例
-	template := NewDiscussionPromptTemplate(discussion, allComments, newComment, knowledgeDocs)
-
-	// 生成提示词
-	prompt, err := template.BuildPrompt()
-	if err != nil {
-		log.Printf("生成提示词失败: %v", err)
-		return
-	}
-
-	// 使用提示词调用大模型
-	// response := callLLMWithPrompt(prompt)
-	fmt.Println(prompt)
-}
-*/
