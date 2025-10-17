@@ -132,21 +132,9 @@ const BaseDiscussCard = (props: {
               mt: 2,
               borderRadius: 2,
               width: '100%',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              transform: 'translateY(0)',
-              '&:hover': {
-                backgroundColor: '#F0F0F8',
-                transform: 'translateY(-1px)',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-              },
             }
           : {
               width: '100%',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              transform: 'translateY(0)',
-              '&:hover': {
-                transform: 'translateY(-1px)',
-              },
             }),
         '&:hover #accept_btn': {
           display: 'block',
@@ -490,13 +478,6 @@ const DiscussCard = (props: {
         boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
         cursor: 'auto',
         pt: 1.5,
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        transform: 'translateY(0)',
-        '&:hover': {
-          boxShadow: 'rgba(0, 28, 85, 0.12) 0px 8px 25px 0px',
-          transform: 'translateY(-2px)',
-        },
-        animation: `fadeInUp 0.6s ease-out ${props.index * 0.1}s both`,
       }}
     >
       <BaseDiscussCard {...props}></BaseDiscussCard>
