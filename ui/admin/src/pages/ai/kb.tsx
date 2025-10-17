@@ -54,6 +54,8 @@ import {
   Radio,
   RadioGroup,
   Stack,
+  Tab,
+  Tabs,
   TextField,
   Typography,
 } from '@mui/material';
@@ -720,7 +722,6 @@ const KnowledgeBasePage = () => {
                   <Stack
                     direction="row"
                     alignItems="center"
-                    justifyContent="space-between"
                     spacing={2}
                     key={folder.id}
                     sx={{
@@ -737,41 +738,33 @@ const KnowledgeBasePage = () => {
                       },
                     }}
                   >
-                    <Stack
-                      direction="row"
-                      alignItems="center"
-                      justifyContent="space-between"
-                      spacing={2}
-                    >
-                      <Icon
-                        type="icon-tongyongwendang-moren"
-                        sx={{ color: 'text.secondary', fontSize: 20 }}
-                      />
-                      <Stack sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography
-                          variant="subtitle2"
-                          sx={{ fontWeight: 500, fontSize: '14px', mb: 0.5 }}
-                        >
-                          {folder.title}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ fontSize: '12px', mb: 0.5, '& b': { color: 'text.primary' } }}
-                        >
-                          共 <b>{folder.total || 0}</b> 个文档
-                        </Typography>
-                      </Stack>
-                    </Stack>
-                    <StatusBadge
-                      text={folder.status === 1 ? '应用中' : '同步中'}
-                      variant={folder.status === 1 ? 'applying' : 'default'}
-                      sx={{
-                        backgroundColor: folder.status === 1 ? undefined : '#fff3e0',
-                        color: folder.status === 1 ? undefined : '#f57c00',
-                      }}
+                    <Icon
+                      type="icon-tongyongwendang-moren"
+                      sx={{ color: 'text.secondary', fontSize: 20, flexShrink: 0 }}
                     />
-                    <Stack alignItems="flex-end" spacing={1}>
+                    <Stack sx={{ width: '35%', minWidth: 0 }}>
+                      <Typography
+                        variant="subtitle2"
+                        sx={{ fontWeight: 500, fontSize: '14px', mb: 0.5 }}
+                      >
+                        {folder.title}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ fontSize: '12px', mb: 0.5, '& b': { color: 'text.primary' } }}
+                      >
+                        共 <b>{folder.total || 0}</b> 个文档
+                      </Typography>
+                    </Stack>
+                    <Box sx={{ width: '100px', flexShrink: 0 }}>
+                      <StatusBadge
+                        text={folder.status === 1 ? '应用中' : '同步中'}
+                        variant={folder.status === 1 ? 'applying' : 'default'}
+                      />
+                    </Box>
+                    <Box sx={{ flex: 1 }} />
+                    <Stack alignItems="flex-end" spacing={1} sx={{ flexShrink: 0 }}>
                       <IconButton
                         size="small"
                         onClick={e => handleFolderMenuClick(e, folder)}
@@ -839,30 +832,24 @@ const KnowledgeBasePage = () => {
         {currentSpace &&
           !currentFolder && [
             <MenuItem key="refresh" onClick={handleRefreshSpace}>
-              <RefreshIcon fontSize="small" sx={{ mr: 1 }} />
               更新
             </MenuItem>,
             <MenuItem key="getSpaces" onClick={handleGetSpaces}>
-              <GetAppIcon fontSize="small" sx={{ mr: 1 }} />
               获取知识库
             </MenuItem>,
             <MenuItem key="edit" onClick={handleEditSpace}>
-              <EditIcon fontSize="small" sx={{ mr: 1 }} />
               编辑
             </MenuItem>,
             <MenuItem key="delete" onClick={handleDeleteSpace} sx={{ color: 'error.main' }}>
-              <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
               删除
             </MenuItem>,
           ]}
         {currentFolder &&
           !currentSpace && [
             <MenuItem key="refreshFolder" onClick={handleRefreshFolder}>
-              <RefreshIcon fontSize="small" sx={{ mr: 1 }} />
               更新
             </MenuItem>,
             <MenuItem key="deleteFolder" onClick={handleDeleteFolder} sx={{ color: 'error.main' }}>
-              <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
               删除
             </MenuItem>,
           ]}
@@ -965,22 +952,68 @@ const KnowledgeBasePage = () => {
                   InputLabelProps={{ shrink: true }}
                 />
                 {selectedPlatform === PlatformPlatformType.PlatformDingtalk && (
-                  <>
-                    <Box>
-                      <Typography variant="body2" sx={{ mb: 2 }}>
-                        标识符类型
-                      </Typography>
-                      <RadioGroup
-                        value={identifierType}
-                        onChange={e =>
-                          setValue('identifier_type', e.target.value as 'unionid' | 'phone')
-                        }
-                        row
-                      >
-                        <FormControlLabel value="unionid" control={<Radio />} label="unionid" />
-                        <FormControlLabel value="phone" control={<Radio />} label="手机号" />
-                      </RadioGroup>
-                    </Box>
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Tabs
+                      value={identifierType}
+                      onChange={(_, value) => setValue('identifier_type', value as 'unionid' | 'phone')}
+                      sx={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        p: '4px',
+                        border: '1px solid',
+                        borderColor: 'rgba(0, 0, 0, 0.23)',
+                        minHeight: 40,
+                        height: 40,
+                        backgroundColor: 'transparent',
+                        borderRadius: '4px',
+                        flexShrink: 0,
+                        '& .MuiTabs-indicator': {
+                          top: '50%',
+                          bottom: 'auto',
+                          transform: 'translateY(-50%)',
+                          height: 32,
+                          borderRadius: '4px',
+                          backgroundColor: '#1F2329',
+                        },
+                      }}
+                    >
+                      <Tab
+                        value="unionid"
+                        label="unionid"
+                        sx={{
+                          zIndex: 1,
+                          px: 2,
+                          py: 0.5,
+                          minHeight: 32,
+                          height: 32,
+                          minWidth: 0,
+                          fontSize: '14px',
+                          textTransform: 'none',
+                          color: 'text.secondary',
+                          '&.Mui-selected': {
+                            color: '#fff',
+                          },
+                        }}
+                      />
+                      <Tab
+                        value="phone"
+                        label="手机号"
+                        sx={{
+                          zIndex: 1,
+                          px: 2,
+                          py: 0.5,
+                          minHeight: 32,
+                          height: 32,
+                          minWidth: 0,
+                          fontSize: '14px',
+                          textTransform: 'none',
+                          color: 'text.secondary',
+                          '&.Mui-selected': {
+                            color: '#fff',
+                          },
+                        }}
+                      />
+                    </Tabs>
                     {identifierType === 'unionid' ? (
                       <TextField
                         {...register('access_token')}
@@ -1002,7 +1035,7 @@ const KnowledgeBasePage = () => {
                         InputLabelProps={{ shrink: true }}
                       />
                     )}
-                  </>
+                  </Stack>
                 )}
                 {selectedPlatform === PlatformPlatformType.PlatformFeishu && (
                   <TextField
@@ -1019,87 +1052,85 @@ const KnowledgeBasePage = () => {
             ) : selectedPlatform === PlatformPlatformType.PlatformDingtalk ? (
               // 第二步：配置指导（仅钉钉显示）
               <Stack spacing={3}>
-                <Box sx={{ textAlign: 'center', mb: 3 }}>
-                  <Typography variant="h6" sx={{ mb: 2 }}>
-                    配置订阅事件
-                  </Typography>
-                </Box>
+                <Typography variant="h6" sx={{ textAlign: 'center', fontWeight: 600 }}>
+                  配置订阅事件
+                </Typography>
 
-                <Box sx={{ display: 'flex', gap: 4, flexDirection: { xs: 'column', md: 'row' } }}>
+                <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' }, alignItems: 'flex-start' }}>
                   {/* 步骤1 */}
-                  <Box sx={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-                    <Box
-                      sx={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: '50%',
-                        backgroundColor: '#1976d2',
-                        color: 'white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '16px',
-                        fontWeight: 'bold',
-                        flexShrink: 0,
-                        mt: 0.5,
-                      }}
-                    >
-                      1
-                    </Box>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" sx={{ minHeight: 60, pt: '2px' }}>
-                        导航前往应用详情-开发配置-事件订阅，选择 Stream 模式推送，点击按钮进行验证。
-                      </Typography>
-                      <img
-                        src={dingtalk_screen_1}
-                        alt="钉钉配置步骤1"
-                        style={{
-                          width: '100%',
-                          height: 250,
-                          borderRadius: 8,
-                          cursor: 'pointer',
+                  <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <Stack direction="row" alignItems="flex-start" gap={1.5} sx={{ mb: 2, minHeight: 48 }}>
+                      <Box
+                        sx={{
+                          width: 24,
+                          height: 24,
+                          borderRadius: '4px',
+                          backgroundColor: '#1F2329',
+                          color: 'white',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          flexShrink: 0,
                         }}
-                        onClick={() => handleImagePreview(dingtalk_screen_1, '钉钉配置步骤1')}
-                      />
-                    </Box>
+                      >
+                        1
+                      </Box>
+                      <Typography variant="body2" sx={{ lineHeight: 1.6, flex: 1 }}>
+                        导航前往<Box component="span" sx={{ fontWeight: 600 }}>应用详情-开发配置-事件订阅</Box>，选择 <Box component="span" sx={{ fontWeight: 600 }}>Stream 模式推送</Box>，点击按钮进行验证。
+                      </Typography>
+                    </Stack>
+                    <img
+                      src={dingtalk_screen_1}
+                      alt="钉钉配置步骤1"
+                      style={{
+                        width: '100%',
+                        height: 250,
+                        borderRadius: 8,
+                        cursor: 'pointer',
+                        objectFit: 'cover',
+                      }}
+                      onClick={() => handleImagePreview(dingtalk_screen_1, '钉钉配置步骤1')}
+                    />
                   </Box>
 
                   {/* 步骤2 */}
-                  <Box sx={{ flex: 1, display: 'flex', alignItems: 'flex-start', gap: 2 }}>
-                    <Box
-                      sx={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: '50%',
-                        backgroundColor: '#1976d2',
-                        color: 'white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '16px',
-                        fontWeight: 'bold',
-                        flexShrink: 0,
-                        mt: 0.5,
-                      }}
-                    >
-                      2
-                    </Box>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" sx={{ minHeight: 60, pt: '2px' }}>
-                        验证通过后，下方事件订阅启用钉钉文档导出完成事件。
-                      </Typography>
-                      <img
-                        src={dingtalk_screen_2}
-                        alt="钉钉配置步骤2"
-                        style={{
-                          width: '100%',
-                          height: 250,
-                          borderRadius: 8,
-                          cursor: 'pointer',
+                  <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    <Stack direction="row" alignItems="flex-start" gap={1.5} sx={{ mb: 2, minHeight: 48 }}>
+                      <Box
+                        sx={{
+                          width: 24,
+                          height: 24,
+                          borderRadius: '4px',
+                          backgroundColor: '#1F2329',
+                          color: 'white',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '14px',
+                          fontWeight: 'bold',
+                          flexShrink: 0,
                         }}
-                        onClick={() => handleImagePreview(dingtalk_screen_2, '钉钉配置步骤2')}
-                      />
-                    </Box>
+                      >
+                        2
+                      </Box>
+                      <Typography variant="body2" sx={{ lineHeight: 1.6, flex: 1 }}>
+                        验证通过后，下方事件订阅启用<Box component="span" sx={{ fontWeight: 600 }}>钉钉文档导出完成事件</Box>。
+                      </Typography>
+                    </Stack>
+                    <img
+                      src={dingtalk_screen_2}
+                      alt="钉钉配置步骤2"
+                      style={{
+                        width: '100%',
+                        height: 250,
+                        borderRadius: 8,
+                        cursor: 'pointer',
+                        objectFit: 'cover',
+                      }}
+                      onClick={() => handleImagePreview(dingtalk_screen_2, '钉钉配置步骤2')}
+                    />
                   </Box>
                 </Box>
               </Stack>

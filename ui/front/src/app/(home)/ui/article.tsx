@@ -259,17 +259,6 @@ const Article = ({
               textAlign: 'center',
               zIndex: 1,
               textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-              animation: 'textGlow 3s ease-in-out infinite alternate',
-              '@keyframes textGlow': {
-                '0%': {
-                  textShadow: '0 2px 4px rgba(0,0,0,0.5), 0 0 20px rgba(255,255,255,0.3)',
-                  transform: 'scale(1)',
-                },
-                '100%': {
-                  textShadow: '0 2px 4px rgba(0,0,0,0.5), 0 0 30px rgba(255,255,255,0.5)',
-                  transform: 'scale(1.02)',
-                },
-              },
             }}
           >
             KoalaQA 社区
@@ -432,33 +421,16 @@ const Article = ({
                           alignItems='center'
                           sx={{
                             p: 1,
-                            m: 0.5, // 添加选项之间的间距
-                            borderRadius: 1, // 添加圆角
+                            m: 0.5,
+                            borderRadius: 1,
                             cursor: 'pointer',
                             backgroundColor: topics.includes(item.id || -1) ? 'rgba(32,108,255,0.08)' : 'transparent',
-                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                            position: 'relative',
-                            overflow: 'hidden',
-                            '&::before': {
-                              content: '""',
-                              position: 'absolute',
-                              top: 0,
-                              left: '-100%',
-                              width: '100%',
-                              height: '100%',
-                              background: 'linear-gradient(90deg, transparent, rgba(32,108,255,0.1), transparent)',
-                              transition: 'left 0.5s ease',
-                            },
+                            transition: 'all 0.2s ease',
                             '&:hover': {
-                              backgroundColor: 'rgba(32,108,255,0.06)',
-                              transform: 'translateX(4px)',
-                              boxShadow: '0 2px 8px rgba(32,108,255,0.15)',
-                              '&::before': {
-                                left: '100%',
-                              },
+                              backgroundColor: 'rgba(32,108,255,0.05)',
                             },
                             '&:active': {
-                              transform: 'translateX(2px) scale(0.98)',
+                              backgroundColor: 'rgba(32,108,255,0.1)',
                             },
                           }}
                           onClick={() => handleTopicClick(item.id!)}
@@ -467,22 +439,16 @@ const Article = ({
                             sx={{
                               width: 24,
                               height: 24,
-                              backgroundColor: 'rgba(32,108,255,0.1)', // 浅蓝色背景
-                              borderRadius: 1, // 添加圆角
-                              border: `1px solid ${color}`, // 深蓝色边框
+                              backgroundColor: 'rgba(32,108,255,0.1)',
+                              borderRadius: 1,
+                              border: `1px solid ${color}`,
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              color: color, // #符号使用深蓝色
+                              color: color,
                               fontSize: 12,
                               fontWeight: 'bold',
                               mr: 2,
-                              transition: 'all 0.3s ease',
-                              '&:hover': {
-                                transform: 'scale(1.1) rotate(5deg)',
-                                backgroundColor: 'rgba(32,108,255,0.2)',
-                                boxShadow: '0 2px 8px rgba(32,108,255,0.3)',
-                              },
                             }}
                           >
                             {icon}
@@ -557,29 +523,12 @@ const Article = ({
                   height: 40,
                   backgroundColor: '#333',
                   color: '#fff',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: '-100%',
-                    width: '100%',
-                    height: '100%',
-                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
-                    transition: 'left 0.5s ease',
-                  },
+                  transition: 'all 0.2s ease',
                   '&:hover': {
-                    backgroundColor: '#555',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                    '&::before': {
-                      left: '100%',
-                    },
+                    backgroundColor: '#444',
                   },
                   '&:active': {
-                    transform: 'translateY(0) scale(0.98)',
+                    backgroundColor: '#555',
                   },
                 }}
                 variant='contained'

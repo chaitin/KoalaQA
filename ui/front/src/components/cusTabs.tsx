@@ -86,8 +86,16 @@ const CusTabs: FC<RadioButtonProps> = ({
             minHeight: 0,
             minWidth: 0,
             fontSize: '12px',
+            transition: 'all 0.2s ease',
             '&.Mui-selected': {
               color: '#fff',
+            },
+            '&:not(.Mui-selected):hover': {
+              backgroundColor: 'rgba(0, 0, 0, 0.04)',
+              borderRadius: '4px',
+            },
+            '&:not(.Mui-selected):active': {
+              backgroundColor: 'rgba(0, 0, 0, 0.08)',
             },
           }}
           key={item.value}
