@@ -93,7 +93,7 @@ func (m *Memory) Subscribe(ctx context.Context, topic Topic, handler func(ctx co
 	for {
 		select {
 		case <-c.stop:
-			m.logger.WithContext(ctx).With("topic", topic).Info("subscribe close")
+			m.logger.WithContext(ctx).With("topic", topic).Debug("subscribe close")
 			return nil
 		case msg := <-c.messge:
 			ctx = trace.Context(ctx, trace.TraceID(msg.header.ctx)...)
