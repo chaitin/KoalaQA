@@ -2,33 +2,30 @@ package message
 
 import (
 	"bytes"
+	"strings"
 	"text/template"
+	"time"
 
 	"github.com/chaitin/koalaqa/model"
 )
 
-var discussDingtalkTpl = template.New("webhook_discuss_dingtalk")
+var discussDingtalkTpl = template.New("webhook_discuss")
 
 func init() {
 	var err error
-	discussDingtalkTpl, err = discussDingtalkTpl.Parse(`{{ .TitlePrefix }} {{ .MsgTitle }} {{ .TitleSuffix }}
-{{ .HeadingPrefix }}：{{ .Heading }}
+	discussDingtalkTpl, err = discussDingtalkTpl.Funcs(template.FuncMap{
+		"string_join": strings.Join,
+	}).Parse(`{{ .TitlePrefix }} {{ .MsgTitle }} {{ .TitleSuffix }}
+{{ .HeadingPrefix }}：{{ .Discussion.Title }}
 
-分类：{{ .GroupItems }}
+分类：{{ string_join .Discussion.Groups "、" }}
 
-用户：{{ .Username }}
+用户：{{ .User.Name }}
 
-[点击查看详情]({{ .URL }})`)
+[点击查看详情]({{ .Discussion.URL }})`)
 	if err != nil {
 		panic(err)
 	}
-}
-
-type DiscussBody struct {
-	Heading    string
-	GroupItems string
-	Username   string
-	URL        string
 }
 
 type disscussMsg struct {
@@ -36,7 +33,7 @@ type disscussMsg struct {
 	MsgTitle      string
 	HeadingPrefix string
 
-	DiscussBody
+	Common
 }
 
 type SendMsg struct {
@@ -65,20 +62,29 @@ func (d *disscussMsg) Message(webhookType model.WebhookType) (string, error) {
 	return buff.String(), nil
 }
 
-func NewBotDislikeComment(body DiscussBody) Message {
+func (d *disscussMsg) Data() Data {
+	return Data{
+		Common:    d.Common,
+		Type:      d.MsgType,
+		TypeDesc:  d.MsgTitle,
+		Timestamp: time.Now().UnixMilli(),
+	}
+}
+
+func NewBotDislikeComment(body Common) Message {
 	return &disscussMsg{
 		MsgType:       TypeDislikeBotComment,
 		MsgTitle:      "不喜欢智能机器人的回答",
 		HeadingPrefix: "问题",
-		DiscussBody:   body,
+		Common:        body,
 	}
 }
 
-func NewBotUnknown(body DiscussBody) Message {
+func NewBotUnknown(body Common) Message {
 	return &disscussMsg{
 		MsgType:       TypeBotUnknown,
 		MsgTitle:      "智能机器人无法解答问题",
 		HeadingPrefix: "问题",
-		DiscussBody:   body,
+		Common:        body,
 	}
 }

@@ -9,10 +9,44 @@ const (
 	TypeBotUnknown
 )
 
+type commonUserThird struct {
+	Type model.AuthType `json:"type"`
+	ID   string         `json:"id"`
+}
+
+type commonUser struct {
+	ID     uint              `json:"id"`
+	Thirds []commonUserThird `json:"thirds"`
+	Name   string            `json:"name"`
+}
+
+type commonDiscussion struct {
+	ID     uint     `json:"id"`
+	UUID   string   `json:"uuid"`
+	Title  string   `json:"title"`
+	Groups []string `json:"Groups"`
+	Tags   []string `json:"Tags"`
+	URL    string   `json:"url"`
+}
+
+type Data struct {
+	Common
+
+	Type      Type   `json:"type"`
+	TypeDesc  string `json:"type_desc"`
+	Timestamp int64  `json:"timestamp"`
+}
+
+type Common struct {
+	User       commonUser       `json:"user"`
+	Discussion commonDiscussion `json:"discussion"`
+}
+
 type Message interface {
 	Type() Type
 	Title() string
 	Message(webhookType model.WebhookType) (string, error)
+	Data() Data
 }
 
 type webhookMsg struct {
