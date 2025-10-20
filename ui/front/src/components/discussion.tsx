@@ -65,7 +65,7 @@ interface ReleaseModalProps {
 }
 const schema = z.object({
   content: z.string().default(''),
-  group_ids: z.array(z.number()).default([]),
+  group_ids: z.array(z.number()).min(1, '请选择至少一个分类').default([]),
   tags: z.array(z.string()).default([]).optional(),
   title: z.string().min(1, '请输入讨论主题').default(''),
 });
@@ -236,8 +236,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
           />
           <FormHelperText>{errors.tags?.message as string}</FormHelperText>
         </FormControl>
-        <FormControl error={!!errors.group_ids?.message}>
-          <Controller
+        <Controller
             name='group_ids'
             control={control}
             render={({ field }) => {
@@ -335,6 +334,8 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                               required
                               label={`${topic.name}`}
                               placeholder='请选择'
+                              error={Boolean(errors.group_ids)}
+                              helperText={errors.group_ids?.message as string}
                             />
                           )}
                         />
@@ -345,8 +346,6 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
               );
             }}
           />
-          <FormHelperText>{errors.group_ids?.message as string}</FormHelperText>
-        </FormControl>
         <FormControl error={!!errors.content?.message}>
           <Box
             sx={{
