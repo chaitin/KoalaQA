@@ -21,12 +21,13 @@ type commonUser struct {
 }
 
 type commonDiscussion struct {
-	ID     uint     `json:"id"`
-	UUID   string   `json:"uuid"`
-	Title  string   `json:"title"`
-	Groups []string `json:"Groups"`
-	Tags   []string `json:"Tags"`
-	URL    string   `json:"url"`
+	ID        uint            `json:"id"`
+	CreatedAt model.Timestamp `json:"created_at"`
+	UUID      string          `json:"uuid"`
+	Title     string          `json:"title"`
+	Groups    []string        `json:"Groups"`
+	Tags      []string        `json:"Tags"`
+	URL       string          `json:"url"`
 }
 
 type Data struct {
