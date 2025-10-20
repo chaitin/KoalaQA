@@ -1,4 +1,4 @@
-import { Box, Grid2 as Grid, Stack } from '@mui/material';
+import { Box, Grid, Stack } from '@mui/material';
 import GroupTagManager from './component/Topic';
 import Access from './component/Access';
 import Webhook from './component/Webhook';

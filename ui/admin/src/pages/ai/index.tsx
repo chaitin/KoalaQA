@@ -6,7 +6,7 @@ import {
   alpha,
   Box,
   CircularProgress,
-  Grid2 as Grid,
+  Grid,
   Stack,
   TextField,
   Typography,
