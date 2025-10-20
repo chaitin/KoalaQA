@@ -38,6 +38,11 @@ export enum PlatformPlatformType {
   PlatformDingtalk = 10,
 }
 
+export enum ModelWebhookType {
+  WebhookTypeDingtalk = 1,
+  WebhookTypeHTTP = 2,
+}
+
 export enum ModelUserRole {
   UserRoleUnknown = 0,
   UserRoleAdmin = 1,
@@ -360,9 +365,9 @@ export interface ModelWebhook {
   sign?: string;
   /**
    * @min 1
-   * @max 1
+   * @max 2
    */
-  type: number;
+  type: ModelWebhookType;
   updated_at?: number;
   url: string;
 }
@@ -372,9 +377,9 @@ export interface ModelWebhookConfig {
   sign?: string;
   /**
    * @min 1
-   * @max 1
+   * @max 2
    */
-  type: number;
+  type: ModelWebhookType;
   url: string;
 }
 
@@ -653,6 +658,10 @@ export interface SvcURLListReq {
   url: string;
 }
 
+export interface SvcUpdatePromptReq {
+  prompt?: string;
+}
+
 export interface SvcUpdateSpaceReq {
   opt?: ModelPlatformOpt;
   title?: string;
@@ -696,9 +705,9 @@ export interface SvcWebhookCreateReq {
   sign?: string;
   /**
    * @min 1
-   * @max 1
+   * @max 2
    */
-  type: number;
+  type: ModelWebhookType;
   url: string;
 }
 
@@ -708,9 +717,9 @@ export interface SvcWebhookUpdateReq {
   sign?: string;
   /**
    * @min 1
-   * @max 1
+   * @max 2
    */
-  type: number;
+  type: ModelWebhookType;
   url: string;
 }
 
@@ -754,6 +763,16 @@ export interface PostAdminKbDocumentFileListPayload {
   file: File;
 }
 
+export interface PutAdminKbKbIdParams {
+  /** kb id */
+  kbId: number;
+}
+
+export interface DeleteAdminKbKbIdParams {
+  /** kb id */
+  kbId: number;
+}
+
 export interface GetAdminKbKbIdDocumentParams {
   file_type?:
     | 0
@@ -782,6 +801,20 @@ export interface GetAdminKbKbIdDocumentParams {
   title?: string;
   /** kb_id */
   kbId: number;
+}
+
+export interface GetAdminKbKbIdDocumentDocIdParams {
+  /** kb_id */
+  kbId: number;
+  /** doc_id */
+  docId: number;
+}
+
+export interface DeleteAdminKbKbIdDocumentDocIdParams {
+  /** kb_id */
+  kbId: number;
+  /** doc_id */
+  docId: number;
 }
 
 export interface GetAdminKbKbIdQuestionParams {
@@ -814,9 +847,117 @@ export interface GetAdminKbKbIdQuestionParams {
   kbId: number;
 }
 
+export interface PostAdminKbKbIdQuestionParams {
+  /** kb_id */
+  kbId: number;
+}
+
 export interface PostAdminKbKbIdQuestionFilePayload {
   /** upload file */
   file: File;
+}
+
+export interface PostAdminKbKbIdQuestionFileParams {
+  /** kb_id */
+  kbId: number;
+}
+
+export interface GetAdminKbKbIdQuestionQaIdParams {
+  /** kb_id */
+  kbId: number;
+  /** qa_id */
+  qaId: number;
+}
+
+export interface PutAdminKbKbIdQuestionQaIdParams {
+  /** kb_id */
+  kbId: number;
+  /** qa_id */
+  qaId: number;
+}
+
+export interface DeleteAdminKbKbIdQuestionQaIdParams {
+  /** kb_id */
+  kbId: number;
+  /** qa_id */
+  qaId: number;
+}
+
+export interface PostAdminKbKbIdQuestionQaIdReviewParams {
+  /** kb_id */
+  kbId: number;
+  /** qa_id */
+  qaId: number;
+}
+
+export interface GetAdminKbKbIdSpaceParams {
+  /** kb_id */
+  kbId: number;
+}
+
+export interface PostAdminKbKbIdSpaceParams {
+  /** kb_id */
+  kbId: number;
+}
+
+export interface GetAdminKbKbIdSpaceSpaceIdParams {
+  /** kb_id */
+  kbId: number;
+  /** space_id */
+  spaceId: number;
+}
+
+export interface PutAdminKbKbIdSpaceSpaceIdParams {
+  /** kb_id */
+  kbId: number;
+  /** space_id */
+  spaceId: number;
+}
+
+export interface DeleteAdminKbKbIdSpaceSpaceIdParams {
+  /** kb_id */
+  kbId: number;
+  /** space_id */
+  spaceId: number;
+}
+
+export interface GetAdminKbKbIdSpaceSpaceIdFolderParams {
+  /** kb_id */
+  kbId: number;
+  /** space_id */
+  spaceId: number;
+}
+
+export interface PostAdminKbKbIdSpaceSpaceIdFolderParams {
+  /** kb_id */
+  kbId: number;
+  /** space_id */
+  spaceId: number;
+}
+
+export interface PutAdminKbKbIdSpaceSpaceIdFolderFolderIdParams {
+  /** kb_id */
+  kbId: number;
+  /** space_id */
+  spaceId: number;
+  /** folder_id */
+  folderId: number;
+}
+
+export interface DeleteAdminKbKbIdSpaceSpaceIdFolderFolderIdParams {
+  /** kb_id */
+  kbId: number;
+  /** space_id */
+  spaceId: number;
+  /** folder_id */
+  folderId: number;
+}
+
+export interface PutAdminKbKbIdSpaceSpaceIdRefreshParams {
+  /** kb_id */
+  kbId: number;
+  /** space_id */
+  spaceId: number;
 }
 
 export interface GetAdminKbKbIdSpaceSpaceIdRemoteParams {
@@ -836,12 +977,60 @@ export interface GetAdminKbKbIdWebParams {
   kbId: string;
 }
 
+export interface PutAdminKbKbIdWebDocIdParams {
+  /** kb_id */
+  kbId: number;
+  /** doc_id */
+  docId: number;
+}
+
+export interface DeleteAdminKbKbIdWebDocIdParams {
+  /** kb_id */
+  kbId: number;
+  /** doc_id */
+  docId: number;
+}
+
+export interface PutAdminModelIdParams {
+  id: string;
+}
+
+export interface GetAdminSystemWebhookWebhookIdParams {
+  /** wenhook id */
+  webhookId: number;
+}
+
+export interface PutAdminSystemWebhookWebhookIdParams {
+  /** wenhook id */
+  webhookId: number;
+}
+
+export interface DeleteAdminSystemWebhookWebhookIdParams {
+  /** wenhook id */
+  webhookId: number;
+}
+
 export interface GetAdminUserParams {
   name?: string;
   /** @min 1 */
   page?: number;
   /** @min 1 */
   size?: number;
+}
+
+export interface GetAdminUserUserIdParams {
+  /** user id */
+  userId: number;
+}
+
+export interface PutAdminUserUserIdParams {
+  /** user id */
+  userId: number;
+}
+
+export interface DeleteAdminUserUserIdParams {
+  /** user id */
+  userId: number;
 }
 
 export interface GetDiscussionParams {
@@ -862,6 +1051,68 @@ export interface PostDiscussionUploadPayload {
    * @format binary
    */
   file: File;
+}
+
+export interface GetDiscussionDiscIdParams {
+  /** disc_id */
+  discId: string;
+}
+
+export interface PutDiscussionDiscIdParams {
+  /** disc_id */
+  discId: string;
+}
+
+export interface DeleteDiscussionDiscIdParams {
+  /** disc_id */
+  discId: string;
+}
+
+export interface PostDiscussionDiscIdCommentParams {
+  /** disc_id */
+  discId: string;
+}
+
+export interface PutDiscussionDiscIdCommentCommentIdParams {
+  /** disc_id */
+  discId: string;
+  /** comment_id */
+  commentId: number;
+}
+
+export interface DeleteDiscussionDiscIdCommentCommentIdParams {
+  /** disc_id */
+  discId: string;
+  /** comment_id */
+  commentId: number;
+}
+
+export interface PostDiscussionDiscIdCommentCommentIdAcceptParams {
+  /** disc_id */
+  discId: string;
+  /** comment_id */
+  commentId: number;
+}
+
+export interface PostDiscussionDiscIdCommentCommentIdDislikeParams {
+  /** disc_id */
+  discId: string;
+  /** comment_id */
+  commentId: number;
+}
+
+export interface PostDiscussionDiscIdCommentCommentIdLikeParams {
+  /** disc_id */
+  discId: string;
+  /** comment_id */
+  commentId: number;
+}
+
+export interface PostDiscussionDiscIdCommentCommentIdRevokeLikeParams {
+  /** disc_id */
+  discId: string;
+  /** comment_id */
+  commentId: number;
 }
 
 export interface PutUserPayload {
