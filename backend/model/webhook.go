@@ -4,6 +4,7 @@ type WebhookType uint
 
 const (
 	WebhookTypeDingtalk = iota + 1
+	WebhookTypeHTTP
 )
 
 type Webhook struct {
