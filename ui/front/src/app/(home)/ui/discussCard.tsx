@@ -58,38 +58,12 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
         cursor: 'pointer',
         display: { xs: 'none', sm: 'block' },
         borderRadius: 2,
-        p: 2, // 减少内边距从3到2
-        mb: 0.5, // 减少卡片边距从1到0.5
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        position: 'relative',
-        overflow: 'hidden',
-        animation: 'fadeInUp 0.6s ease-out',
-        '@keyframes fadeInUp': {
-          '0%': {
-            opacity: 0,
-            transform: 'translateY(20px)',
-          },
-          '100%': {
-            opacity: 1,
-            transform: 'translateY(0)',
-          },
-        },
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: '-100%',
-          width: '100%',
-          height: '100%',
-          background: 'linear-gradient(90deg, transparent, rgba(32,108,255,0.05), transparent)',
-          transition: 'left 0.5s ease',
-        },
+        p: 2,
+        mb: 0.5,
+        transition: 'all 0.2s ease',
         '&:hover': {
-          boxShadow: 'rgba(0, 28, 85, 0.08) 0px 8px 20px 0px',
-          transform: 'translateY(-4px)',
-          '&::before': {
-            left: '100%',
-          },
+          boxShadow: 'rgba(0, 28, 85, 0.06) 0px 6px 15px 0px',
+          transform: 'translateY(-1px)',
         },
       }}
     >
@@ -209,18 +183,12 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
                 sx={{
                   backgroundColor: `${color}15`,
                   color: color,
-                  borderRadius: '0',
+                  borderRadius: '4px',
                   fontSize: '12px',
                   height: '24px',
                   fontWeight: 500,
-                  transition: 'all 0.3s ease',
                   '& .MuiChip-label': {
                     px: 1,
-                  },
-                  '&:hover': {
-                    transform: 'scale(1.05)',
-                    backgroundColor: `${color}25`,
-                    boxShadow: `0 2px 8px ${color}30`,
                   },
                 }}
               />
@@ -236,14 +204,8 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
               sx={{
                 backgroundColor: 'rgba(0,0,0,0.06)',
                 color: 'rgba(0,0,0,0.6)',
-                fontSize: '12px', // 统一字体大小
-                height: '24px', // 统一高度
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  transform: 'scale(1.05)',
-                  backgroundColor: 'rgba(0,0,0,0.1)',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                },
+                fontSize: '12px',
+                height: '24px',
               }}
             />
           ))}
@@ -258,13 +220,6 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
             py: 0.5,
             color: '#FF8500',
             fontSize: '12px',
-            transition: 'all 0.3s ease',
-            cursor: 'pointer',
-            '&:hover': {
-              transform: 'scale(1.05)',
-              backgroundColor: 'rgba(255, 133, 0, 0.1)',
-              boxShadow: '0 2px 8px rgba(255, 133, 0, 0.2)',
-            },
           }}
         >
           <Icon type='icon-xiaoxi' />
@@ -300,44 +255,18 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
       key={it.id}
       onClick={handleCardClick}
       sx={{
-        p: 2, // 减少内边距
+        p: 2,
         display: { xs: 'flex', sm: 'none' },
         flexDirection: 'column',
-        gap: 1, // 减少内部间距
+        gap: 1,
         boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
         cursor: 'pointer',
         width: '100%',
-        mb: 0.5, // 减少卡片间距
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        position: 'relative',
-        overflow: 'hidden',
-        animation: 'fadeInUp 0.6s ease-out',
-        '@keyframes fadeInUp': {
-          '0%': {
-            opacity: 0,
-            transform: 'translateY(20px)',
-          },
-          '100%': {
-            opacity: 1,
-            transform: 'translateY(0)',
-          },
-        },
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: '-100%',
-          width: '100%',
-          height: '100%',
-          background: 'linear-gradient(90deg, transparent, rgba(32,108,255,0.05), transparent)',
-          transition: 'left 0.5s ease',
-        },
+        mb: 0.5,
+        transition: 'all 0.2s ease',
         '&:hover': {
-          boxShadow: 'rgba(0, 28, 85, 0.08) 0px 8px 20px 0px',
-          transform: 'translateY(-2px)',
-          '&::before': {
-            left: '100%',
-          },
+          boxShadow: 'rgba(0, 28, 85, 0.06) 0px 6px 15px 0px',
+          transform: 'translateY(-1px)',
         },
       }}
     >
@@ -421,15 +350,8 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
             borderRadius: 1,
             px: 1.5,
             py: 0.5,
-            cursor: 'pointer',
             color: '#FF8500',
             ml: 'auto!important',
-            transition: 'all 0.3s ease',
-            '&:hover': {
-              background: 'rgba(255,133,0,0.22)',
-              transform: 'scale(1.05)',
-              boxShadow: '0 2px 8px rgba(255, 133, 0, 0.2)',
-            },
             fontSize: '12px',
           }}
         >
@@ -457,16 +379,11 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
             sx={{
               backgroundColor: 'rgba(76, 175, 80, 0.1)',
               color: '#4CAF50',
+              borderRadius: '4px',
               fontSize: '12px',
               height: '24px',
-              transition: 'all 0.3s ease',
               '& .MuiChip-label': {
                 px: 1,
-              },
-              '&:hover': {
-                transform: 'scale(1.05)',
-                backgroundColor: 'rgba(76, 175, 80, 0.2)',
-                boxShadow: '0 2px 8px rgba(76, 175, 80, 0.3)',
               },
             }}
           />
@@ -480,14 +397,8 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
             size='small'
             sx={{
               backgroundColor: 'rgba(32, 108, 255, 0.1)',
-              fontSize: '12px', // 统一字体大小
-              height: '24px', // 统一高度
-              transition: 'all 0.3s ease',
-              '&:hover': {
-                transform: 'scale(1.05)',
-                backgroundColor: 'rgba(32, 108, 255, 0.2)',
-                boxShadow: '0 2px 8px rgba(32, 108, 255, 0.3)',
-              },
+              fontSize: '12px',
+              height: '24px',
             }}
           />
         ))}
