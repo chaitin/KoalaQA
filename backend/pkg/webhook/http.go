@@ -48,7 +48,7 @@ func newHttpHook(u string, sign string, msgTypes []message.Type) (Webhook, error
 }
 
 func (h *httpHook) signBody(body []byte) string {
-	return hex.EncodeToString(util.HMACSha256(h.sign, string(body)))
+	return "sha256=" + hex.EncodeToString(util.HMACSha256(h.sign, string(body)))
 }
 
 func (h *httpHook) Send(ctx context.Context, msg message.Message) error {
