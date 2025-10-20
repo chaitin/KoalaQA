@@ -2034,6 +2034,61 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/llm/system-prompt": {
+            "get": {
+                "description": "get system chat prompt",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "llm"
+                ],
+                "summary": "get system chat prompt",
+                "responses": {
+                    "200": {
+                        "description": "system chat prompt",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "update system chat prompt",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "llm"
+                ],
+                "summary": "update system chat prompt",
+                "parameters": [
+                    {
+                        "description": "update prompt",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.UpdatePromptReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "success",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/model": {
             "post": {
                 "consumes": [
@@ -4655,9 +4710,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
-                    "type": "integer",
-                    "maximum": 1,
-                    "minimum": 1
+                    "maximum": 2,
+                    "minimum": 1,
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.WebhookType"
+                        }
+                    ]
                 },
                 "updated_at": {
                     "type": "integer"
@@ -4684,14 +4743,29 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
-                    "type": "integer",
-                    "maximum": 1,
-                    "minimum": 1
+                    "maximum": 2,
+                    "minimum": 1,
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.WebhookType"
+                        }
+                    ]
                 },
                 "url": {
                     "type": "string"
                 }
             }
+        },
+        "model.WebhookType": {
+            "type": "integer",
+            "enum": [
+                1,
+                2
+            ],
+            "x-enum-varnames": [
+                "WebhookTypeDingtalk",
+                "WebhookTypeHTTP"
+            ]
         },
         "platform.PlatformType": {
             "type": "integer",
@@ -5541,6 +5615,14 @@ const docTemplate = `{
                 }
             }
         },
+        "svc.UpdatePromptReq": {
+            "type": "object",
+            "properties": {
+                "prompt": {
+                    "type": "string"
+                }
+            }
+        },
         "svc.UpdateSpaceReq": {
             "type": "object",
             "properties": {
@@ -5656,9 +5738,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
-                    "type": "integer",
-                    "maximum": 1,
-                    "minimum": 1
+                    "maximum": 2,
+                    "minimum": 1,
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.WebhookType"
+                        }
+                    ]
                 },
                 "url": {
                     "type": "string"
@@ -5686,9 +5772,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
-                    "type": "integer",
-                    "maximum": 1,
-                    "minimum": 1
+                    "maximum": 2,
+                    "minimum": 1,
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.WebhookType"
+                        }
+                    ]
                 },
                 "url": {
                     "type": "string"
