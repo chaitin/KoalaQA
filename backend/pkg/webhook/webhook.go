@@ -16,6 +16,8 @@ func New(cfg model.WebhookConfig) (Webhook, error) {
 	switch cfg.Type {
 	case model.WebhookTypeDingtalk:
 		return newDingtalk(cfg.URL, cfg.Sign, cfg.MsgTypes)
+	case model.WebhookTypeHTTP:
+		return newHttpHook(cfg.URL, cfg.Sign, cfg.MsgTypes)
 	default:
 		return nil, fmt.Errorf("webhook type %d not support", cfg.Type)
 	}
