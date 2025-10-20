@@ -25,8 +25,8 @@ type commonDiscussion struct {
 	CreatedAt model.Timestamp `json:"created_at"`
 	UUID      string          `json:"uuid"`
 	Title     string          `json:"title"`
-	Groups    []string        `json:"Groups"`
-	Tags      []string        `json:"Tags"`
+	Groups    []string        `json:"groups"`
+	Tags      []string        `json:"tags"`
 	URL       string          `json:"url"`
 }
 
