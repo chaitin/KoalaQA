@@ -28,9 +28,10 @@ type QAReview struct {
 	rag     rag.Service
 	dataset *repo.Dataset
 	llm     *svc.LLM
+	disc    *svc.Discussion
 }
 
-func NewQA(repo *repo.KBDocument, comm *repo.Comment, kb *repo.KnowledgeBase, rag rag.Service, dataset *repo.Dataset, llm *svc.LLM) *QAReview {
+func NewQA(repo *repo.KBDocument, comm *repo.Comment, kb *repo.KnowledgeBase, rag rag.Service, dataset *repo.Dataset, llm *svc.LLM, disc *svc.Discussion) *QAReview {
 	return &QAReview{
 		repo:    repo,
 		comm:    comm,
@@ -38,6 +39,7 @@ func NewQA(repo *repo.KBDocument, comm *repo.Comment, kb *repo.KnowledgeBase, ra
 		rag:     rag,
 		dataset: dataset,
 		llm:     llm,
+		disc:    disc,
 		logger:  glog.Module("sub.qa_review"),
 	}
 }
@@ -68,6 +70,26 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 	if data.Type != model.MsgNotifyTypeApplyComment {
 		return nil
 	}
+	discussion, err := q.disc.GetByID(ctx, data.DiscussID)
+	if err != nil {
+		logger.WithErr(err).Warn("get discussion failed")
+		return nil
+	}
+	aiQuestion, err := q.llm.Chat(ctx, llm.SystemQuestionSummaryPrompt, discussion.TitleContent(), nil)
+	if err != nil {
+		logger.WithErr(err).Warn("summary discussion question failed")
+		return nil
+	}
+	_, answer, err := q.llm.GenerateChatPrompt(ctx, data.DiscussID, 0)
+	if err != nil {
+		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
+		return nil
+	}
+	aiAnswer, err := q.llm.Chat(ctx, llm.SystemAnswerSummaryPrompt, answer, nil)
+	if err != nil {
+		logger.WithErr(err).Warn("summary discussion answer failed")
+		return nil
+	}
 	var comment model.Comment
 	if err := q.comm.GetByID(ctx, &comment, data.CommentID); err != nil {
 		logger.WithErr(err).Warn("get comment failed")
@@ -80,9 +102,9 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 	}
 	newQA := &model.KBDocument{
 		KBID:     kbID,
-		Title:    data.DiscussTitle,
+		Title:    aiQuestion,
 		Desc:     fmt.Sprintf("%d/%d", data.DiscussID, comment.ID),
-		Markdown: []byte(comment.Content),
+		Markdown: []byte(aiAnswer),
 		DocType:  model.DocTypeQuestion,
 		Status:   model.DocStatusPendingReview,
 	}
@@ -124,7 +146,7 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 			newQA.SimilarID = doc.ID
 		}
 	}
-	res, err := q.llm.Chat(ctx, llm.QASimilarityPrompt, "", map[string]any{
+	like, err := q.llm.Chat(ctx, llm.QASimilarityPrompt, "", map[string]any{
 		"NewQuestion": newQA.Title,
 		"NewAnswer":   string(newQA.Markdown),
 		"ExistingQAs": qas,
@@ -133,7 +155,7 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 		logger.WithErr(err).Warn("check qa similarity failed")
 		return nil
 	}
-	if res == "true" {
+	if like == "true" {
 		logger.With("question", newQA.Title).Debug("qa similarity found")
 		return nil
 	}
