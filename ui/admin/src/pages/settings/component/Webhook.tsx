@@ -2,6 +2,7 @@ import {
   deleteAdminSystemWebhookWebhookId,
   getAdminSystemWebhook,
   ModelWebhook,
+  ModelWebhookType,
   postAdminSystemWebhook,
   putAdminSystemWebhookWebhookId,
   SvcWebhookCreateReq,
@@ -31,7 +32,10 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
-const notificationTypes = [{ value: 1, label: '钉钉机器人' }];
+const notificationTypes = [
+  { value: ModelWebhookType.WebhookTypeDingtalk, label: '钉钉机器人' },
+  { value: ModelWebhookType.WebhookTypeHTTP, label: '自定义 Webhook' },
+];
 
 const contentOptions = [
   { value: 1, label: '点踩 AI 的回答' },
@@ -42,13 +46,27 @@ const contentOptions = [
 ];
 
 // 定义表单验证 schema
-const webhookSchema = z.object({
-  name: z.string().min(1, '请输入通知名称').default(''),
-  url: z.url('请输入有效的URL地址').min(1, '请输入URL地址'),
-  sign: z.string().optional().default(''), // 加签密钥可选
-  type: z.number().default(1),
-  msg_types: z.array(z.number()).min(1, '请至少选择一项通知内容'),
-});
+const webhookSchema = z
+  .object({
+    name: z.string().min(1, '请输入通知名称').default(''),
+    url: z.url('请输入有效的URL地址').min(1, '请输入URL地址'),
+    sign: z.string().default(''), // 加签密钥，根据type动态验证
+    type: z.number().default(ModelWebhookType.WebhookTypeDingtalk),
+    msg_types: z.array(z.number()).min(1, '请至少选择一项通知内容'),
+  })
+  .refine(
+    data => {
+      // 当type为WebhookTypeHTTP时，sign字段必填
+      if (data.type === ModelWebhookType.WebhookTypeHTTP) {
+        return data.sign && data.sign.trim().length > 0;
+      }
+      return true;
+    },
+    {
+      message: 'Webhook类型时加签密钥为必填项',
+      path: ['sign'], // 指定错误路径
+    }
+  );
 
 const Notification = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -210,16 +228,17 @@ const Notification = () => {
                 <Select
                   labelId="notification-type-label"
                   id="notification-type"
-                  value={watch('type') ?? 1}
+                  value={watch('type') ?? ModelWebhookType.WebhookTypeDingtalk}
                   label="通知方式"
                   onChange={e =>
-                    setValue('type', Number((e.target as HTMLInputElement).value), {
+                    setValue('type', Number(e.target.value), {
                       shouldDirty: true,
                       shouldTouch: true,
                     })
                   }
                 >
-                  <MenuItem value={1}>钉钉机器人</MenuItem>
+                  <MenuItem value={ModelWebhookType.WebhookTypeDingtalk}>钉钉机器人</MenuItem>
+                  <MenuItem value={ModelWebhookType.WebhookTypeHTTP}>自定义 Webhook</MenuItem>
                 </Select>
                 {errors.type && <FormHelperText>{errors.type?.message}</FormHelperText>}
               </FormControl>
@@ -235,9 +254,10 @@ const Notification = () => {
 
             <TextField
               fullWidth
-              label="加签密钥（可选）"
+              label={`加签密钥${watch('type') === ModelWebhookType.WebhookTypeHTTP ? '（必填）' : '（可选）'}`}
               error={!!errors.sign}
               helperText={errors.sign?.message}
+              required={watch('type') === ModelWebhookType.WebhookTypeHTTP}
               {...register('sign')}
             />
 
