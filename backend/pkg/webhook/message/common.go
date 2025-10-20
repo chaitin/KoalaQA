@@ -31,12 +31,13 @@ func newCommonGetter(in commonGetterIn) *commonGetter {
 
 func (c *commonGetter) Message(ctx context.Context, dissID uint, userID uint) (*Common, error) {
 	var discuss struct {
-		UUID     string
-		Title    string
-		GroupIDs model.Int64Array  `gorm:"type:bigint[]"`
-		Tags     model.StringArray `gorm:"type:text[]"`
+		CreatedAt model.Timestamp `gorm:"type:timestamp with time zone"`
+		UUID      string
+		Title     string
+		GroupIDs  model.Int64Array  `gorm:"type:bigint[]"`
+		Tags      model.StringArray `gorm:"type:text[]"`
 	}
-	err := c.in.RepoDiscuss.GetByID(ctx, &discuss, dissID, repo.QueryWithSelectColumn("title", "group_ids", "uuid", "tags"))
+	err := c.in.RepoDiscuss.GetByID(ctx, &discuss, dissID, repo.QueryWithSelectColumn("created_at", "title", "group_ids", "uuid", "tags"))
 	if err != nil {
 		return nil, err
 	}
@@ -88,12 +89,13 @@ func (c *commonGetter) Message(ctx context.Context, dissID uint, userID uint) (*
 
 	return &Common{
 		Discussion: commonDiscussion{
-			ID:     dissID,
-			UUID:   discuss.UUID,
-			Title:  discuss.Title,
-			Groups: items,
-			Tags:   discuss.Tags,
-			URL:    discussURL,
+			ID:        dissID,
+			CreatedAt: discuss.CreatedAt,
+			UUID:      discuss.UUID,
+			Title:     discuss.Title,
+			Groups:    items,
+			Tags:      discuss.Tags,
+			URL:       discussURL,
 		},
 		User: commonUser{
 			ID:     userID,
