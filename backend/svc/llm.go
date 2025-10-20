@@ -95,7 +95,7 @@ func (l *LLM) Chat(ctx context.Context, sMsg string, uMsg string, params map[str
 		logger.WithErr(err).Error("llm response failed")
 		return "", err
 	}
-	logger.Debug("llm response success")
+	logger.With("response", res.Content).Debug("llm response success")
 	return res.Content, nil
 }
 
