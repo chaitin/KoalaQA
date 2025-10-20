@@ -199,8 +199,10 @@ const AdminDocument = () => {
           pageSize: size,
           total: data?.total || 0,
           onChange: (page: number, size: number) => {
-            setPage(page);
-            setSize(size);
+            setParams({
+              page,
+              size,
+            });
           },
         }}
       />
