@@ -214,7 +214,7 @@ func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListRe
 	var query []repo.QueryOptFunc
 	query = append(query, repo.QueryWithEqual("type", req.Type))
 	if req.Filter == DiscussionListFilterMine {
-		query = append(query, repo.QueryWithEqual("user_id", userID))
+		query = append(query, repo.QueryWithEqual("members", userID, repo.EqualOPEqAny))
 	}
 
 	if len(groupM) > 0 {
@@ -287,10 +287,24 @@ func (d *Discussion) RecalculateHot(uuid string) {
 	}, repo.QueryWithEqual("uuid", uuid))
 }
 
-func (d *Discussion) LikeDiscussion(ctx context.Context, discUUID string, uid uint) error {
-	if err := d.in.DiscRepo.LikeDiscussion(ctx, discUUID, uid); err != nil {
+func (d *Discussion) LikeDiscussion(ctx context.Context, discUUID string, user model.UserInfo) error {
+	if err := d.in.DiscRepo.LikeDiscussion(ctx, discUUID, user.UID); err != nil {
 		return err
 	}
+	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
+	if err != nil {
+		return err
+	}
+	notifyMsg := topic.MsgMessageNotify{
+		DiscussID:      disc.ID,
+		DiscussionType: disc.Type,
+		DiscussUUID:    disc.UUID,
+		DiscussTitle:   disc.Title,
+		Type:           model.MsgNotifyTypeLikeDiscussion,
+		FromID:         user.UID,
+		ToID:           disc.UserID,
+	}
+	_ = d.in.Pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	go d.RecalculateHot(discUUID)
 	return nil
 }
@@ -366,6 +380,12 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 	}
 	err = d.in.CommRepo.Create(ctx, &comment)
 	if err != nil {
+		return 0, err
+	}
+
+	if err = d.in.DiscRepo.Update(ctx, map[string]any{
+		"members": gorm.Expr("array_append(members, ?)", uid),
+	}, repo.QueryWithEqual("id", disc.ID)); err != nil {
 		return 0, err
 	}
 

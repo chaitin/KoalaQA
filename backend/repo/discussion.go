@@ -37,15 +37,15 @@ func (d *Discussion) DetailByUUID(ctx context.Context, uid uint, uuid string) (*
 	if err != nil {
 		return nil, err
 	}
-	var userLike bool
+	var userLike int64
 	err = d.db.WithContext(ctx).
 		Model(&model.DiscLike{}).
-		Where("discussion_id = ? AND user_id = ?", id, uid).
-		First(&userLike).Error
+		Where("uuid = ? AND user_id = ?", uuid, uid).
+		Count(&userLike).Error
 	if err != nil {
 		return nil, err
 	}
-	detail.UserLike = userLike
+	detail.UserLike = userLike > 0
 	return detail, nil
 }
 

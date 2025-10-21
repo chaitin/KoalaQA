@@ -10,6 +10,7 @@ const (
 	MsgNotifyTypeLikeComment
 	MsgNotifyTypeDislikeComment
 	MsgNotifyTypeBotUnknown
+	MsgNotifyTypeLikeDiscussion
 )
 
 type MessageNotify struct {

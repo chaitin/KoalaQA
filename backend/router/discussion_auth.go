@@ -120,7 +120,7 @@ func (d *discussionAuth) Delete(ctx *context.Context) {
 // @Success 200 {object} context.Response{data=any}
 // @Router /discussion/{disc_id}/like [post]
 func (d *discussionAuth) LikeDiscussion(ctx *context.Context) {
-	err := d.disc.LikeDiscussion(ctx.Request.Context(), ctx.Param("disc_id"), ctx.GetUser().UID)
+	err := d.disc.LikeDiscussion(ctx.Request.Context(), ctx.Param("disc_id"), ctx.GetUser())
 	if err != nil {
 		ctx.InternalError(err, "failed to like discussion")
 		return
