@@ -1,5 +1,5 @@
 'use client';
-import { ModelDiscussionDetail } from '@/api';
+import { ModelDiscussionDetail, ModelDiscussionType } from '@/api';
 import { postDiscussion, putDiscussionDiscId } from '@/api/Discussion';
 import { Icon } from '@/components';
 import UserAvatar from '@/components/UserAvatar';
@@ -64,9 +64,32 @@ interface ReleaseModalProps {
   initialTitle?: string;
   type?: 'qa' | 'feedback' | 'blog';
 }
+// 创建自定义验证函数，确保每个分类下至少选择一个子选项
+const validateGroupSelection = (groupIds: number[], groups: any[]) => {
+  if (!groups || groups.length === 0) {
+    return true; // 如果没有分类数据，跳过验证
+  }
+  
+  // 检查每个分类是否至少有一个子选项被选中
+  for (const group of groups) {
+    if (group.items && group.items.length > 0) {
+      const hasSelection = group.items.some((item: any) => 
+        groupIds.includes(item.id!)
+      );
+      if (!hasSelection) {
+        return false;
+      }
+    }
+  }
+  
+  return true;
+};
+
 const schema = z.object({
   content: z.string().default(''),
-  group_ids: z.array(z.number()).min(1, '请选择至少一个分类').default([]),
+  group_ids: z.array(z.number())
+    .min(1, '请选择至少一个分类')
+    .default([]),
   tags: z.array(z.string()).default([]).optional(),
   title: z.string().min(1, '请输入讨论主题').default(''),
 });
@@ -92,9 +115,19 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
     resolver: zodResolver(schema),
   });
   const [loading, setLoading] = useState(false);
+  const [groupValidationError, setGroupValidationError] = useState<string>('');
   const { groups } = useContext(CommonContext);
   const router = useRouter();
   const onSubmit = handleSubmit(async (params) => {
+    // 自定义验证：确保每个分类下至少选择一个子选项
+    if (!validateGroupSelection(params.group_ids, groups.origin)) {
+      setGroupValidationError('请确保每个分类下至少选择一个子选项');
+      return; // 阻止提交
+    }
+    
+    // 清除验证错误
+    setGroupValidationError('');
+
     setLoading(true);
     try {
       if (status === 'edit') {
@@ -102,7 +135,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
         // 编辑成功后刷新当前页面
         router.refresh();
       } else {
-        const uid = await postDiscussion({ ...params, type });
+        const uid = await postDiscussion({ ...params, type: type as ModelDiscussionType });
         // 创建成功后跳转到首页
         router.push(`/discuss/${uid}`);
       }
@@ -113,13 +146,14 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
 
   useEffect(() => {
     if (!open) {
-      // 关闭弹窗时清空所有表单数据
+      // 关闭弹窗时清空所有表单数据和验证错误
       reset({
         content: '',
         group_ids: [],
         tags: [],
         title: '',
       });
+      setGroupValidationError('');
     } else if (status === 'create' && initialTitle) {
       // 当打开创建模态框且有初始标题时，设置标题并清空其他字段
       const defaultGroupIds = getDefaultGroupIds();
@@ -303,6 +337,8 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                               new Set([...otherIds, ...newIds])
                             );
                             field.onChange(merged);
+                            // 清除验证错误
+                            setGroupValidationError('');
                           }}
                           size='small'
                           renderOption={(props, option) => {
@@ -352,8 +388,8 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                               required
                               label={`${topic.name}`}
                               placeholder='请选择'
-                              error={Boolean(errors.group_ids)}
-                              helperText={errors.group_ids?.message as string}
+                              error={Boolean(errors.group_ids) || Boolean(groupValidationError)}
+                              helperText={errors.group_ids?.message as string || groupValidationError}
                             />
                           )}
                         />
