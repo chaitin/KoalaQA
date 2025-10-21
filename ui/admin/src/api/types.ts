@@ -108,6 +108,7 @@ export enum ModelCommentLikeState {
 }
 
 export interface AnydocListDoc {
+  file?: boolean;
   file_type?: string;
   id?: string;
   summary?: string;
@@ -212,6 +213,7 @@ export interface ModelDiscussionDetail {
   updated_at?: number;
   user_avatar?: string;
   user_id?: number;
+  user_like?: boolean;
   user_name?: string;
   uuid?: string;
   view?: number;
@@ -1113,6 +1115,16 @@ export interface PostDiscussionDiscIdCommentCommentIdRevokeLikeParams {
   discId: string;
   /** comment_id */
   commentId: number;
+}
+
+export interface PostDiscussionDiscIdLikeParams {
+  /** disc_id */
+  discId: string;
+}
+
+export interface PostDiscussionDiscIdRevokeLikeParams {
+  /** disc_id */
+  discId: string;
 }
 
 export interface PutUserPayload {

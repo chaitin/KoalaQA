@@ -210,20 +210,41 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
             />
           ))}
         </Stack>
-        {/* 评论数 */}
+        {/* 评论数和投票数 */}
         <Stack
           direction='row'
           alignItems='center'
-          gap={1}
+          gap={2}
           sx={{
             borderRadius: 1,
             py: 0.5,
-            color: '#FF8500',
             fontSize: '12px',
           }}
         >
-          <Icon type='icon-xiaoxi' />
-          {formatNumber(it.comment || 0)}
+          {/* 投票数 */}
+          <Stack
+            direction='row'
+            alignItems='center'
+            gap={0.5}
+            sx={{
+              color: '#4CAF50',
+            }}
+          >
+            <Icon type='icon-dianzan' />
+            {formatNumber((it.like || 0) - (it.dislike || 0))}
+          </Stack>
+          {/* 评论数 */}
+          <Stack
+            direction='row'
+            alignItems='center'
+            gap={0.5}
+            sx={{
+              color: '#FF8500',
+            }}
+          >
+            <Icon type='icon-xiaoxi' />
+            {formatNumber(it.comment || 0)}
+          </Stack>
         </Stack>
       </Stack>
     </Card>
@@ -345,18 +366,39 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
         <Stack
           direction='row'
           alignItems='center'
-          gap={1}
+          gap={1.5}
           sx={{
             borderRadius: 1,
             px: 1.5,
             py: 0.5,
-            color: '#FF8500',
             ml: 'auto!important',
             fontSize: '12px',
           }}
         >
-          <Icon type='icon-xiaoxi' />
-          {formatNumber(it.comment || 0)}
+          {/* 投票数 */}
+          <Stack
+            direction='row'
+            alignItems='center'
+            gap={0.5}
+            sx={{
+              color: '#4CAF50',
+            }}
+          >
+            <Icon type='icon-dianzan' />
+            {formatNumber((it.like || 0))}
+          </Stack>
+          {/* 评论数 */}
+          <Stack
+            direction='row'
+            alignItems='center'
+            gap={0.5}
+            sx={{
+              color: '#FF8500',
+            }}
+          >
+            <Icon type='icon-xiaoxi' />
+            {formatNumber(it.comment || 0)}
+          </Stack>
         </Stack>
       </Stack>
       <MarkDown

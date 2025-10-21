@@ -38,11 +38,11 @@ const notificationTypes = [
 ];
 
 const contentOptions = [
+  { value: 3, label: '有新的提问' },
   { value: 1, label: '点踩 AI 的回答' },
   { value: 2, label: 'AI 无法解答问题' },
-  // { value: "new_feedback", label: "有新的反馈" },
-  // { value: "new_reply", label: "点赞 AI 的回答" },
-  // { value: "new_comment", label: "有新的反馈" },
+  { value: 4, label: '有新的反馈' },
+  // { value: 5, label: '有新的博客' },
 ];
 
 // 定义表单验证 schema

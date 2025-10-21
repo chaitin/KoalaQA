@@ -1,24 +1,7 @@
-/* eslint-disable */
-/* tslint:disable */
-// @ts-nocheck
-/*
- * ---------------------------------------------------------------
- * ## THIS FILE WAS GENERATED VIA SWAGGER-TYPESCRIPT-API        ##
- * ##                                                           ##
- * ## AUTHOR: acacode                                           ##
- * ## SOURCE: https://github.com/acacode/swagger-typescript-api ##
- * ---------------------------------------------------------------
- */
-
+<%
+const { apiConfig, generateResponses, config } = it;
+%>
 import alert from "@/components/alert";
-import { clearAuthConfigCache } from "@/hooks/useAuthConfig";
-import { clearCache, generateCacheKey, retryRequest } from "@/lib/api-cache";
-import { API_CONSTANTS } from "@/lib/constants";
-import { clearAllAuthCookies } from "@/utils/cookie";
-import {
-  clearPublicAccessCache,
-  getPublicAccessStatus,
-} from "@/utils/publicAccess";
 import type {
   AxiosInstance,
   AxiosRequestConfig,
@@ -26,6 +9,18 @@ import type {
   ResponseType,
 } from "axios";
 import axios from "axios";
+import { 
+  generateCacheKey, 
+  getFromCache, 
+  setCache, 
+  clearCache,
+  dedupeRequest,
+  retryRequest 
+} from "@/lib/api-cache";
+import { API_CONSTANTS } from "@/lib/constants";
+import { clearAllAuthCookies } from "@/utils/cookie";
+import { getPublicAccessStatus, clearPublicAccessCache } from "@/utils/publicAccess";
+import { clearAuthConfigCache } from "@/hooks/useAuthConfig";
 
 export type QueryParamsType = Record<string | number, any>;
 
@@ -130,7 +125,7 @@ export const checkPublicAccess = getPublicAccessStatus;
 export const clearAuthData = () => {
   if (typeof window !== "undefined") {
     console.log("Clearing all authentication data...");
-
+    
     // 清除本地存储的认证信息
     localStorage.removeItem("auth_token");
     localStorage.removeItem("user");
@@ -142,10 +137,10 @@ export const clearAuthData = () => {
     // 清除CSRF token缓存
     clearCsrfTokenCache();
     clearPublicAccessCache();
-
+    
     // 清除认证配置缓存
     clearAuthConfigCache();
-
+    
     console.log("Authentication data cleared successfully");
   }
 };
@@ -203,19 +198,16 @@ export class HttpClient<SecurityDataType = unknown> {
         if (error.response?.status === 401) {
           // 只在客户端环境下进行处理
           if (typeof window !== "undefined") {
-            console.log(
-              "401 Unauthorized error detected, clearing auth data:",
-              error.response,
-            );
-
+            console.log("401 Unauthorized error detected, clearing auth data:", error.response);
+            
             // 立即清除所有认证信息，包括cookie中的auth_token
             clearAuthData();
-
+            
             const currentPath = window.location.pathname;
             const isAuthPage =
               currentPath.startsWith("/login") ||
               currentPath.startsWith("/register");
-
+              
             // 如果不在认证页面，直接重定向到登录页
             // middleware已经处理了public_access的检查，这里不需要重复检查
             if (!isAuthPage) {
@@ -319,7 +311,7 @@ export class HttpClient<SecurityDataType = unknown> {
     const cacheKey = generateCacheKey(path, { query, body, ...params });
     const method = params.method?.toUpperCase() || "GET";
     const requestKey = `${method}:${cacheKey}`;
-
+    
     // 检查是否有相同的请求正在进行中（请求去重）
     if (this.pendingRequests.has(requestKey)) {
       return this.pendingRequests.get(requestKey);
@@ -445,16 +437,14 @@ export class HttpClient<SecurityDataType = unknown> {
         shouldRetry: (error) => {
           const status = error?.response?.status;
           return !status || status >= 500;
-        },
-      },
-    )
-      .then((result) => {
-        return result;
-      })
-      .finally(() => {
-        // 请求完成后从待处理列表中移除
-        this.pendingRequests.delete(requestKey);
-      });
+        }
+      }
+    ).then(result => {
+      return result;
+    }).finally(() => {
+      // 请求完成后从待处理列表中移除
+      this.pendingRequests.delete(requestKey);
+    });
 
     // 将请求添加到待处理列表中
     this.pendingRequests.set(requestKey, requestPromise);

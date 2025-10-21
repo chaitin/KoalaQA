@@ -62,6 +62,7 @@ interface ReleaseModalProps {
   onClose: () => void;
   onOk: () => void;
   initialTitle?: string;
+  type?: 'qa' | 'feedback' | 'blog';
 }
 const schema = z.object({
   content: z.string().default(''),
@@ -76,6 +77,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
   onOk,
   status = 'create',
   initialTitle,
+  type = 'qa',
 }) => {
   const { id } = useParams() || { id: '' };
   const {
@@ -100,7 +102,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
         // 编辑成功后刷新当前页面
         router.refresh();
       } else {
-        const uid = await postDiscussion(params);
+        const uid = await postDiscussion({ ...params, type });
         // 创建成功后跳转到首页
         router.push(`/discuss/${uid}`);
       }
@@ -120,22 +122,38 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
       });
     } else if (status === 'create' && initialTitle) {
       // 当打开创建模态框且有初始标题时，设置标题并清空其他字段
+      const defaultGroupIds = getDefaultGroupIds();
       reset({ 
         title: initialTitle,
         content: '',
-        group_ids: [],
+        group_ids: defaultGroupIds,
         tags: [],
       });
     } else if (status === 'create') {
       // 当打开创建模态框但没有初始标题时，清空所有字段
+      const defaultGroupIds = getDefaultGroupIds();
       reset({
         content: '',
-        group_ids: [],
+        group_ids: defaultGroupIds,
         tags: [],
         title: '',
       });
     }
   }, [open, initialTitle, status, reset]);
+
+  // 获取默认选中的分类ID（所有分类的第一个子项）
+  const getDefaultGroupIds = () => {
+    if (!groups.origin || groups.origin.length === 0) return [];
+    const defaultIds: number[] = [];
+    
+    groups.origin.forEach(group => {
+      if (group.items && group.items.length > 0) {
+        defaultIds.push(group.items[0].id!);
+      }
+    });
+    
+    return defaultIds;
+  };
 
   useEffect(() => {
     if (status === 'edit' && data && open) {
@@ -145,7 +163,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
 
   return (
     <Modal
-      title={`${status === 'create' ? '发帖' : '编辑'}提问`}
+      title={`${status === 'create' ? (type === 'feedback' ? '提交反馈' : '发帖提问') : '编辑'}`}
       open={open}
       onCancel={onClose}
       onOk={onSubmit}
@@ -161,7 +179,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
           {...register('title')}
           required
           variant='outlined'
-          label='你遇到了什么问题？'
+          label={type === 'feedback' ? '反馈标题' : '你遇到了什么问题？'}
           fullWidth
           error={Boolean(errors.title)}
           helperText={errors.title?.message as string}

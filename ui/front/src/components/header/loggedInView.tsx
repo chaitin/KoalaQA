@@ -7,6 +7,14 @@ import { useRouter } from 'next/navigation'
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import ProfilePanel from './profilePanel'
 
+// 内容类型枚举
+enum ContentType {
+  FEEDBACK = 'feedback',
+  QA = 'qa', 
+  ARTICLE = 'article', // 新增文章类型
+}
+
+// 消息通知类型枚举
 enum MsgNotifyType {
   MsgNotifyTypeUnknown,
   MsgNotifyTypeReplyDiscuss, // 回答了你的问题
@@ -15,21 +23,127 @@ enum MsgNotifyType {
   MsgNotifyTypeLikeComment, //赞同了你的回答
   MsgNotifyTypeDislikeComment, // 不喜欢你的回答 、不喜欢机器人的回答（仅管理员）
   MsgNotifyTypeBotUnknown, //提出了机器人无法回答的问题（仅管理员
+  MsgNotifyTypeLikeFeedback, //点赞了你的反馈
 }
+
+// 内容类型配置接口
+interface ContentTypeConfig {
+  // 回复/评论相关
+  replyAction: string // 回复动作文本
+  commentAction: string // 评论动作文本
+  // 采纳相关
+  applyAction: string // 采纳动作文本
+  // 点赞相关
+  likeAction: string // 点赞动作文本
+  // 不喜欢相关
+  dislikeAction: string // 不喜欢动作文本
+  dislikeBotAction: string // 不喜欢机器人动作文本
+  // 特殊动作
+  botUnknownAction: string // 机器人无法回答动作文本
+  likeFeedbackAction: string // 点赞反馈动作文本
+}
+
+// 内容类型配置映射
+const CONTENT_TYPE_CONFIGS: Record<ContentType, ContentTypeConfig> = {
+  [ContentType.FEEDBACK]: {
+    replyAction: '评论了你的反馈',
+    commentAction: '回复了你的评论',
+    applyAction: '采纳了你的评论',
+    likeAction: '点赞了你的评论',
+    dislikeAction: '不喜欢你的评论',
+    dislikeBotAction: '不喜欢机器人的评论',
+    botUnknownAction: '提出了机器人无法回答的问题',
+    likeFeedbackAction: '点赞了你的反馈',
+  },
+  [ContentType.QA]: {
+    replyAction: '回答了你的问题',
+    commentAction: '回复了你的回答',
+    applyAction: '采纳了你的回答',
+    likeAction: '赞同了你的回答',
+    dislikeAction: '不喜欢你的回答',
+    dislikeBotAction: '不喜欢机器人的回答',
+    botUnknownAction: '提出了机器人无法回答的问题',
+    likeFeedbackAction: '点赞了你的反馈',
+  },
+  [ContentType.ARTICLE]: {
+    replyAction: '评论了你的文章',
+    commentAction: '回复了你的评论',
+    applyAction: '采纳了你的评论',
+    likeAction: '点赞了你的评论',
+    dislikeAction: '不喜欢你的评论',
+    dislikeBotAction: '不喜欢机器人的评论',
+    botUnknownAction: '提出了机器人无法回答的问题',
+    likeFeedbackAction: '点赞了你的反馈',
+  },
+}
+
+/**
+ * 内容类型配置管理器
+ */
+class ContentTypeConfigManager {
+  private static instance: ContentTypeConfigManager
+  private configs: Record<string, ContentTypeConfig> = { ...CONTENT_TYPE_CONFIGS }
+  
+  private constructor() {}
+  
+  static getInstance(): ContentTypeConfigManager {
+    if (!ContentTypeConfigManager.instance) {
+      ContentTypeConfigManager.instance = new ContentTypeConfigManager()
+    }
+    return ContentTypeConfigManager.instance
+  }
+  
+  /**
+   * 获取内容类型配置
+   * @param contentType 内容类型
+   * @returns 配置对象
+   */
+  getConfig(contentType: string): ContentTypeConfig {
+    return this.configs[contentType] || this.configs[ContentType.QA]
+  }
+  
+  /**
+   * 注册新的内容类型配置
+   * @param contentType 内容类型
+   * @param config 配置对象
+   */
+  registerConfig(contentType: string, config: ContentTypeConfig): void {
+    this.configs[contentType] = config
+  }
+  
+  /**
+   * 获取所有支持的内容类型
+   * @returns 内容类型数组
+   */
+  getSupportedTypes(): string[] {
+    return Object.keys(this.configs)
+  }
+}
+
+/**
+ * 获取通知文本
+ * @param info 消息通知信息
+ * @returns 格式化的通知文本
+ */
 const getNotificationText = (info: MessageNotifyInfo): string => {
+  const configManager = ContentTypeConfigManager.getInstance()
+  const config = configManager.getConfig(info.discussion_type)
+  
   switch (info.type) {
     case MsgNotifyType.MsgNotifyTypeReplyDiscuss:
-      return '回答了你的问题'
+      return config.replyAction
     case MsgNotifyType.MsgNotifyTypeReplyComment:
-      return '回复了你的回答'
+      return config.commentAction
     case MsgNotifyType.MsgNotifyTypeApplyComment:
-      return '采纳了你的回答'
+      return config.applyAction
     case MsgNotifyType.MsgNotifyTypeLikeComment:
-      return '赞同了你的回答'
+      return config.likeAction
     case MsgNotifyType.MsgNotifyTypeDislikeComment:
-      return info?.to_bot ? '不喜欢机器人的回答' : '不喜欢你的回答'
+      return info?.to_bot ? config.dislikeBotAction : config.dislikeAction
     case MsgNotifyType.MsgNotifyTypeBotUnknown:
-      return '提出了机器人无法回答的问题'
+      return config.botUnknownAction
+    case MsgNotifyType.MsgNotifyTypeLikeFeedback:
+      return config.likeFeedbackAction
     default:
       return ''
   }
@@ -39,6 +153,7 @@ type MessageNotifyInfo = {
   discuss_id: number
   discuss_title: string
   discuss_uuid: string
+  discussion_type: ContentType
   type: MsgNotifyType
   from_id: number
   from_name: string
@@ -48,6 +163,33 @@ type MessageNotifyInfo = {
   to_bot: boolean
   id: number
 }
+
+// 导出内容类型配置管理器，供其他模块使用
+export const getContentTypeConfigManager = () => ContentTypeConfigManager.getInstance()
+
+// 导出内容类型枚举，供其他模块使用
+export { ContentType, MsgNotifyType, type ContentTypeConfig }
+
+/**
+ * 使用示例：
+ * 
+ * // 在其他模块中注册新的内容类型
+ * const configManager = getContentTypeConfigManager()
+ * configManager.registerConfig('video', {
+ *   replyAction: '评论了你的视频',
+ *   commentAction: '回复了你的评论',
+ *   applyAction: '采纳了你的评论',
+ *   likeAction: '点赞了你的评论',
+ *   dislikeAction: '不喜欢你的评论',
+ *   dislikeBotAction: '不喜欢机器人的评论',
+ *   botUnknownAction: '提出了机器人无法回答的问题',
+ *   likeFeedbackAction: '点赞了你的反馈',
+ * })
+ * 
+ * // 获取支持的内容类型
+ * const supportedTypes = configManager.getSupportedTypes()
+ * console.log('支持的内容类型:', supportedTypes)
+ */
 export interface LoggedInProps {
   user: any | null
   verified?: boolean

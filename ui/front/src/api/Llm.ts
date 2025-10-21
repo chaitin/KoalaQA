@@ -11,7 +11,7 @@
  */
 
 import request, { ContentType, RequestParams } from "./httpClient";
-import { SvcPolishReq } from "./types";
+import { SvcPolishReq, SvcUpdatePromptReq } from "./types";
 
 /**
  * @description polish text
@@ -30,6 +30,48 @@ export const postAdminLlmPolish = (
   request<string>({
     path: `/admin/llm/polish`,
     method: "POST",
+    body: req,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description get system chat prompt
+ *
+ * @tags llm
+ * @name GetAdminLlmSystemPrompt
+ * @summary get system chat prompt
+ * @request GET:/admin/llm/system-prompt
+ * @response `200` `string` system chat prompt
+ */
+
+export const getAdminLlmSystemPrompt = (params: RequestParams = {}) =>
+  request<string>({
+    path: `/admin/llm/system-prompt`,
+    method: "GET",
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description update system chat prompt
+ *
+ * @tags llm
+ * @name PutAdminLlmSystemPrompt
+ * @summary update system chat prompt
+ * @request PUT:/admin/llm/system-prompt
+ * @response `200` `string` success
+ */
+
+export const putAdminLlmSystemPrompt = (
+  req: SvcUpdatePromptReq,
+  params: RequestParams = {},
+) =>
+  request<string>({
+    path: `/admin/llm/system-prompt`,
+    method: "PUT",
     body: req,
     type: ContentType.Json,
     format: "json",
