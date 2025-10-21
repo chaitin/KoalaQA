@@ -21,6 +21,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/oss"
 	"github.com/chaitin/koalaqa/pkg/topic"
 	"github.com/chaitin/koalaqa/pkg/trace"
+	"github.com/chaitin/koalaqa/pkg/tree"
 	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/google/uuid"
 	"go.uber.org/fx"
@@ -90,6 +91,7 @@ type ListRes struct {
 
 type ListDoc struct {
 	ID       string `json:"id"`
+	File     bool   `json:"file"`
 	FileType string `json:"file_type"`
 	Title    string `json:"title"`
 	Summary  string `json:"summary"`
@@ -251,20 +253,31 @@ func (a *anydoc) List(ctx context.Context, plat platform.PlatformType, optFuncs 
 		return nil, fmt.Errorf("anydoc list status code: %d", resp.StatusCode)
 	}
 
-	var res anydocRes[ListRes]
+	var (
+		docRes anydocRes[*tree.Node[ListDoc]]
+		res    = ListRes{
+			UUID: o.uuid,
+		}
+	)
 	err = json.NewDecoder(resp.Body).Decode(&res)
 	if err != nil {
 		return nil, err
 	}
 
-	err = res.Error()
+	err = docRes.Error()
 	if err != nil {
 		return nil, err
 	}
 
-	res.Data.UUID = o.uuid
+	docRes.Data.Range(func(value ListDoc) {
+		if !value.File {
+			return
+		}
 
-	return &res.Data, nil
+		res.Docs = append(res.Docs, value)
+	})
+
+	return &res, nil
 }
 
 func (a *anydoc) Export(ctx context.Context, platform platform.PlatformType, id string, docID string, optFuncs ...ExportFunc) (string, error) {
