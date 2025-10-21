@@ -15,6 +15,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/rag"
 	"github.com/chaitin/koalaqa/pkg/topic"
 	"github.com/chaitin/koalaqa/pkg/util"
+	"github.com/chaitin/koalaqa/pkg/webhook/message"
 	"github.com/chaitin/koalaqa/repo"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
@@ -37,11 +38,20 @@ type discussionIn struct {
 type Discussion struct {
 	in discussionIn
 
-	logger *glog.Logger
+	logger      *glog.Logger
+	webhookType map[model.DiscussionType]message.Type
 }
 
 func newDiscussion(in discussionIn) *Discussion {
-	return &Discussion{in: in, logger: glog.Module("svc", "discussion")}
+	return &Discussion{
+		in:     in,
+		logger: glog.Module("svc", "discussion"),
+		webhookType: map[model.DiscussionType]message.Type{
+			model.DiscussionTypeQA:       message.TypeNewQA,
+			model.DiscussionTypeFeedback: message.TypeNewFeedback,
+			model.DiscussionTypeBlog:     message.TypeNewBlog,
+		},
+	}
 }
 
 func init() {
@@ -88,6 +98,15 @@ func (d *Discussion) Create(ctx context.Context, req DiscussionCreateReq) (strin
 		DiscUUID: disc.UUID,
 		Type:     string(disc.Type),
 	})
+
+	if webhookType, ok := d.webhookType[disc.Type]; ok {
+		d.in.Pub.Publish(ctx, topic.TopicDiscussWebhook, topic.MsgDiscussWebhook{
+			MsgType:   webhookType,
+			UserID:    req.UserID,
+			DiscussID: disc.ID,
+		})
+	}
+
 	return disc.UUID, nil
 }
 
