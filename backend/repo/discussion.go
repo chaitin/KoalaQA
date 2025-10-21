@@ -109,3 +109,50 @@ func (d *Discussion) List(ctx context.Context, res any, queryFuncs ...QueryOptFu
 		Scopes(o.Scopes()...).
 		Find(res).Error
 }
+
+func (d *Discussion) LikeDiscussion(ctx context.Context, discUUID string, uid uint) error {
+	return d.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		err := tx.Exec(`SELECT pg_advisory_xact_lock(?)`, uid).Error
+		if err != nil {
+			return err
+		}
+		err = tx.Model(&model.Discussion{}).
+			Where("uuid = ?", discUUID).
+			Updates(map[string]any{
+				"like":       gorm.Expr(`"like" + 1`),
+				"updated_at": gorm.Expr("updated_at"),
+			}).Error
+		if err != nil {
+			return err
+		}
+		err = tx.Create(&model.DiscLike{
+			UUID:   discUUID,
+			UserID: uid,
+		}).Error
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
+func (d *Discussion) RevokeLikeDiscussion(ctx context.Context, discUUID string, uid uint) error {
+	return d.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		err := tx.Exec(`SELECT pg_advisory_xact_lock(?)`, uid).Error
+		if err != nil {
+			return err
+		}
+		err = tx.Model(&model.DiscLike{}).Where("uuid = ? AND user_id = ?", discUUID, uid).Delete(nil).Error
+		if err != nil {
+			return err
+		}
+		err = tx.Model(&model.Discussion{}).Where("uuid = ?", discUUID).Updates(map[string]any{
+			"like":       gorm.Expr(`"like" - 1`),
+			"updated_at": gorm.Expr("updated_at"),
+		}).Error
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+}

@@ -3855,6 +3855,9 @@ const docTemplate = `{
         "anydoc.ListDoc": {
             "type": "object",
             "properties": {
+                "file": {
+                    "type": "boolean"
+                },
                 "file_type": {
                     "type": "string"
                 },
