@@ -215,7 +215,11 @@ func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListRe
 	var query []repo.QueryOptFunc
 	query = append(query, repo.QueryWithEqual("type", req.Type))
 	if req.Filter == DiscussionListFilterMine {
+<<<<<<< HEAD
 		query = append(query, repo.QueryWithEqual("members", userID, repo.EqualOPValIn))
+=======
+		query = append(query, repo.QueryWithEqual("members", userID, repo.EqualOPEqAny))
+>>>>>>> feat: disc (#13)
 	}
 
 	if len(groupM) > 0 {
@@ -388,6 +392,19 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 		"members": gorm.Expr("array_append(members, ?)", uid),
 	}, repo.QueryWithEqual("id", disc.ID)); err != nil {
 		return 0, err
+<<<<<<< HEAD
+=======
+	}
+
+	if req.CommentID == 0 {
+		err = d.in.DiscRepo.Update(ctx, map[string]any{
+			"updated_at": time.Now(),
+			"comment":    gorm.Expr("comment+1"),
+		}, repo.QueryWithEqual("id", disc.ID))
+		if err != nil {
+			d.logger.WithContext(ctx).WithErr(err).With("disc_id", disc.ID).Warn("incr comment number failed")
+		}
+>>>>>>> feat: disc (#13)
 	}
 
 	d.in.Pub.Publish(ctx, topic.TopicCommentChange, topic.MsgCommentChange{
