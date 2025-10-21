@@ -214,7 +214,7 @@ func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListRe
 	var query []repo.QueryOptFunc
 	query = append(query, repo.QueryWithEqual("type", req.Type))
 	if req.Filter == DiscussionListFilterMine {
-		query = append(query, repo.QueryWithEqual("members", userID, repo.EqualOPEqAny))
+		query = append(query, repo.QueryWithEqual("members", userID, repo.EqualOPValIn))
 	}
 
 	if len(groupM) > 0 {
