@@ -9,7 +9,14 @@ import {
   putDiscussionDiscIdCommentCommentId,
 } from '@/api'
 import { generateCacheKey, clearCache } from '@/lib/api-cache'
-import { ModelCommentLikeState, ModelDiscussionComment, ModelDiscussionDetail, ModelDiscussionReply, ModelDiscussionType, ModelUserRole } from '@/api/types'
+import {
+  ModelCommentLikeState,
+  ModelDiscussionComment,
+  ModelDiscussionDetail,
+  ModelDiscussionReply,
+  ModelDiscussionType,
+  ModelUserRole,
+} from '@/api/types'
 import { Card, MarkDown } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import { Avatar } from '@/components/discussion'
@@ -74,9 +81,7 @@ const BaseDiscussCard = (props: {
     // 是当前用户的评论（可以编辑和删除）
     data.user_id === disData.current_user_id ||
     // 管理员、客服运营可以编辑和删除任何评论
-    [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
-      user?.role || ModelUserRole.UserRoleUnknown
-    )
+    [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(user?.role || ModelUserRole.UserRoleUnknown)
 
   const revokeLike = async () => {
     return postDiscussionDiscIdCommentCommentIdRevokeLike({
@@ -268,46 +273,48 @@ const BaseDiscussCard = (props: {
             </time>
           </Typography>
           <Stack direction='row' gap={2} alignItems='center' sx={{ display: { xs: 'none', sm: 'flex' } }}>
-            <Stack
-              direction='row'
-              alignItems='center'
-              gap={1}
-              sx={{
-                background: isLiked ? 'rgba(32,108,255,0.1)' : '#F2F3F5',
-                borderRadius: 0.5,
-                px: 1,
-                py: '1px',
-                cursor: 'pointer',
-                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                transform: 'scale(1)',
-                '&:hover': {
-                  background: isLiked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
-                  transform: 'scale(1.05)',
-                },
-                '&:active': {
-                  transform: 'scale(0.95)',
-                  transition: 'transform 0.1s ease-out',
-                },
-              }}
-              onClick={() => handleLike()}
-            >
-              <ThumbUpAltOutlinedIcon
+            {!isReply && (
+              <Stack
+                direction='row'
+                alignItems='center'
+                gap={1}
                 sx={{
-                  color: isLiked ? 'info.main' : 'rgba(0,0,0,0.5)',
-                  fontSize: 14,
+                  background: isLiked ? 'rgba(32,108,255,0.1)' : '#F2F3F5',
+                  borderRadius: 0.5,
+                  px: 1,
+                  py: '1px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transform: 'scale(1)',
+                  '&:hover': {
+                    background: isLiked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
+                    transform: 'scale(1.05)',
+                  },
+                  '&:active': {
+                    transform: 'scale(0.95)',
+                    transition: 'transform 0.1s ease-out',
+                  },
                 }}
-              />
-              <Typography
-                variant='body2'
-                sx={{
-                  fontSize: 14,
-                  color: isLiked ? 'info.main' : 'rgba(0,0,0,0.5)',
-                  lineHeight: '20px',
-                }}
+                onClick={() => handleLike()}
               >
-                {formatNumber(data.like || 0)}
-              </Typography>
-            </Stack>
+                <ThumbUpAltOutlinedIcon
+                  sx={{
+                    color: isLiked ? 'info.main' : 'rgba(0,0,0,0.5)',
+                    fontSize: 14,
+                  }}
+                />
+                <Typography
+                  variant='body2'
+                  sx={{
+                    fontSize: 14,
+                    color: isLiked ? 'info.main' : 'rgba(0,0,0,0.5)',
+                    lineHeight: '20px',
+                  }}
+                >
+                  {formatNumber(data.like || 0)}
+                </Typography>
+              </Stack>
+            )}
             {/* 在反馈类型的讨论中隐藏点踩按钮 */}
             {disData.type !== ModelDiscussionType.DiscussionTypeFeedback && (
               <Stack
@@ -591,13 +598,13 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   return (
     <Stack id='comment-card' gap={3} sx={{ width: { xs: '100%' } }}>
       <Menu id='basic-menu' anchorEl={anchorEl} open={open} onClose={handleClose}>
-        {(commentIndex?.user_id == data.current_user_id || 
+        {(commentIndex?.user_id == data.current_user_id ||
           [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
-            user?.role || ModelUserRole.UserRoleUnknown
+            user?.role || ModelUserRole.UserRoleUnknown,
           )) && <MenuItem onClick={handleEditComment}>编辑</MenuItem>}
-        {(commentIndex?.user_id == data.current_user_id || 
+        {(commentIndex?.user_id == data.current_user_id ||
           [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
-            user?.role || ModelUserRole.UserRoleUnknown
+            user?.role || ModelUserRole.UserRoleUnknown,
           )) && <MenuItem onClick={handleDelete}>删除</MenuItem>}
       </Menu>
       <EditCommentModal

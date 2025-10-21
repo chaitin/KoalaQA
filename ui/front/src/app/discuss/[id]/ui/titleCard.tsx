@@ -180,46 +180,48 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
             {data.title}
           </Typography>
         </Stack>
-        <Stack
-          direction='row'
-          alignItems='center'
-          gap={1}
-          sx={{
-            background: data.user_like ? 'rgba(32,108,255,0.1)' : '#F2F3F5',
-            borderRadius: 0.5,
-            px: 1,
-            py: '1px',
-            cursor: 'pointer',
-            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-            transform: 'scale(1)',
-            '&:hover': {
-              background: data.user_like ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
-              transform: 'scale(1.05)',
-            },
-            '&:active': {
-              transform: 'scale(0.95)',
-              transition: 'transform 0.1s ease-out',
-            },
-          }}
-          onClick={handleLike}
-        >
-          <ThumbUpAltOutlinedIcon
+        {data.type === ModelDiscussionType.DiscussionTypeFeedback && (
+          <Stack
+            direction='row'
+            alignItems='center'
+            gap={1}
             sx={{
-              color: data.user_like ? 'info.main' : 'rgba(0,0,0,0.5)',
-              fontSize: 14,
+              background: data.user_like ? 'rgba(32,108,255,0.1)' : '#F2F3F5',
+              borderRadius: 0.5,
+              px: 1,
+              py: '1px',
+              cursor: 'pointer',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              transform: 'scale(1)',
+              '&:hover': {
+                background: data.user_like ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
+                transform: 'scale(1.05)',
+              },
+              '&:active': {
+                transform: 'scale(0.95)',
+                transition: 'transform 0.1s ease-out',
+              },
             }}
-          />
-          <Typography
-            variant='body2'
-            sx={{
-              fontSize: 14,
-              color: data.user_like ? 'info.main' : 'rgba(0,0,0,0.5)',
-              lineHeight: '20px',
-            }}
+            onClick={handleLike}
           >
-            {formatNumber(data.like || 0)}
-          </Typography>
-        </Stack>
+            <ThumbUpAltOutlinedIcon
+              sx={{
+                color: data.user_like ? 'info.main' : 'rgba(0,0,0,0.5)',
+                fontSize: 14,
+              }}
+            />
+            <Typography
+              variant='body2'
+              sx={{
+                fontSize: 14,
+                color: data.user_like ? 'info.main' : 'rgba(0,0,0,0.5)',
+                lineHeight: '20px',
+              }}
+            >
+              {formatNumber(data.like || 0)}
+            </Typography>
+          </Stack>
+        )}
         {(data.user_id === user.uid ||
           [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
             user.role || ModelUserRole.UserRoleUnknown,

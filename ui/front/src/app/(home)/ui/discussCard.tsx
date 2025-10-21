@@ -1,4 +1,4 @@
-import { ModelDiscussionListItem } from '@/api/types'
+import { ModelDiscussionListItem, ModelDiscussionType } from '@/api/types'
 import { Card, MatchedString, Title } from '@/app/(banner)/s/ui/common'
 import { Icon, MarkDown } from '@/components'
 import { CommonContext } from '@/components/commonProvider'
@@ -214,32 +214,38 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
         <Stack
           direction='row'
           alignItems='center'
-          gap={2}
+          gap={1.5}
           sx={{
-            borderRadius: 1,
-            py: 0.5,
             fontSize: '12px',
           }}
         >
           {/* 投票数 */}
-          <Stack
+          {it.type === ModelDiscussionType.DiscussionTypeFeedback && <Stack
             direction='row'
             alignItems='center'
             gap={0.5}
             sx={{
-              color: '#4CAF50',
+              backgroundColor: '#206CFF15',
+              color: '#206CFF',
+              borderRadius: '4px',
+              px: 1,
+              py: 0.5,
             }}
           >
             <Icon type='icon-dianzan' />
             {formatNumber((it.like || 0) - (it.dislike || 0))}
-          </Stack>
+          </Stack>}
           {/* 评论数 */}
           <Stack
             direction='row'
             alignItems='center'
             gap={0.5}
             sx={{
+              backgroundColor: '#FFF3E0',
               color: '#FF8500',
+              borderRadius: '4px',
+              px: 1,
+              py: 0.5,
             }}
           >
             <Icon type='icon-xiaoxi' />
@@ -366,11 +372,8 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
         <Stack
           direction='row'
           alignItems='center'
-          gap={1.5}
+          gap={1}
           sx={{
-            borderRadius: 1,
-            px: 1.5,
-            py: 0.5,
             ml: 'auto!important',
             fontSize: '12px',
           }}
@@ -381,7 +384,11 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
             alignItems='center'
             gap={0.5}
             sx={{
-              color: '#4CAF50',
+              backgroundColor: '#206CFF15',
+              color: '#206CFF',
+              borderRadius: '4px',
+              px: 1,
+              py: 0.5,
             }}
           >
             <Icon type='icon-dianzan' />
@@ -393,7 +400,11 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
             alignItems='center'
             gap={0.5}
             sx={{
+              backgroundColor: '#FFF3E0',
               color: '#FF8500',
+              borderRadius: '4px',
+              px: 1,
+              py: 0.5,
             }}
           >
             <Icon type='icon-xiaoxi' />
