@@ -71,7 +71,25 @@ func (d *Comment) Handle(ctx context.Context, msg mq.Message) error {
 func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange) error {
 	logger := d.logger.WithContext(ctx).With("comment_id", data.CommID)
 	logger.Debug("handle insert comment")
-	go d.disc.IncrementComment(data.DiscUUID)
+
+	disc, err := d.disc.GetByID(ctx, data.DiscID)
+	if err != nil {
+		logger.WithErr(err).Warn("get discussion failed")
+		return nil
+	}
+
+	comment, err := d.disc.GetCommentByID(ctx, data.CommID)
+	if err != nil {
+		logger.WithErr(err).Warn("get comment failed")
+		return nil
+	}
+
+	go func() {
+		if disc.Type != model.DiscussionTypeQA || comment.ParentID == 0 {
+			d.disc.IncrementComment(disc.UUID)
+		}
+	}()
+
 	question, prompt, err := d.llm.GenerateChatPrompt(ctx, data.DiscID, data.CommID)
 	if err != nil {
 		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
@@ -89,11 +107,6 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 	}
 
 	// ai answer
-	comment, err := d.disc.GetCommentByID(ctx, data.CommID)
-	if err != nil {
-		logger.WithErr(err).Warn("get comment failed")
-		return nil
-	}
 	if comment.Bot {
 		logger.Debug("comment is bot, skip")
 		return nil
@@ -134,11 +147,6 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 	}
 	if !answered {
 		logger.Info("ai not know the answer, notify admin")
-		disc, err := d.disc.GetByID(ctx, data.DiscID)
-		if err != nil {
-			logger.WithErr(err).Warn("get discussion failed")
-			return nil
-		}
 		notifyMsg := topic.MsgMessageNotify{
 			DiscussID:      disc.ID,
 			DiscussionType: disc.Type,
