@@ -268,6 +268,15 @@ func (d *Discussion) RecalculateHot(uuid string) {
 	}, repo.QueryWithEqual("uuid", uuid))
 }
 
+func (d *Discussion) LikeDiscussion(uuid string) {
+	ctx := context.Background()
+	d.in.DiscRepo.Update(ctx, map[string]any{
+		"like":       gorm.Expr(`"like" + 1`),
+		"updated_at": gorm.Expr("updated_at"),
+	}, repo.QueryWithEqual("uuid", uuid))
+	go d.RecalculateHot(uuid)
+}
+
 type DiscussionSearchReq struct {
 	Keyword string `json:"keyword" form:"keyword"`
 }
