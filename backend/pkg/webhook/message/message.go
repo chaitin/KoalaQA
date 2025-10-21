@@ -7,6 +7,9 @@ type Type = int64
 const (
 	TypeDislikeBotComment Type = iota + 1
 	TypeBotUnknown
+	TypeNewQA
+	TypeNewFeedback
+	TypeNewBlog
 )
 
 type commonUserThird struct {

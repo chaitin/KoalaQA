@@ -9,11 +9,11 @@ import (
 	"github.com/chaitin/koalaqa/model"
 )
 
-var discussDingtalkTpl = template.New("webhook_discuss")
+var discussTpl = template.New("webhook_discuss")
 
 func init() {
 	var err error
-	discussDingtalkTpl, err = discussDingtalkTpl.Funcs(template.FuncMap{
+	discussTpl, err = discussTpl.Funcs(template.FuncMap{
 		"string_join": strings.Join,
 	}).Parse(`{{ .TitlePrefix }} {{ .MsgTitle }} {{ .TitleSuffix }}
 {{ .HeadingPrefix }}：{{ .Discussion.Title }}
@@ -28,7 +28,7 @@ func init() {
 	}
 }
 
-type disscussMsg struct {
+type discussMsg struct {
 	MsgType       Type
 	MsgTitle      string
 	HeadingPrefix string
@@ -37,23 +37,23 @@ type disscussMsg struct {
 }
 
 type SendMsg struct {
-	*disscussMsg
+	*discussMsg
 	webhookMsg
 }
 
-func (d *disscussMsg) Type() Type {
+func (d *discussMsg) Type() Type {
 	return d.MsgType
 }
 
-func (d *disscussMsg) Title() string {
+func (d *discussMsg) Title() string {
 	return d.MsgTitle
 }
 
-func (d *disscussMsg) Message(webhookType model.WebhookType) (string, error) {
+func (d *discussMsg) Message(webhookType model.WebhookType) (string, error) {
 	var buff bytes.Buffer
-	err := discussDingtalkTpl.Execute(&buff, SendMsg{
-		disscussMsg: d,
-		webhookMsg:  newWebhookMsg(webhookType),
+	err := discussTpl.Execute(&buff, SendMsg{
+		discussMsg: d,
+		webhookMsg: newWebhookMsg(webhookType),
 	})
 	if err != nil {
 		return "", err
@@ -62,7 +62,7 @@ func (d *disscussMsg) Message(webhookType model.WebhookType) (string, error) {
 	return buff.String(), nil
 }
 
-func (d *disscussMsg) Data() Data {
+func (d *discussMsg) Data() Data {
 	return Data{
 		Common:    d.Common,
 		Type:      d.MsgType,
@@ -72,7 +72,7 @@ func (d *disscussMsg) Data() Data {
 }
 
 func NewBotDislikeComment(body Common) Message {
-	return &disscussMsg{
+	return &discussMsg{
 		MsgType:       TypeDislikeBotComment,
 		MsgTitle:      "不喜欢智能机器人的回答",
 		HeadingPrefix: "问题",
@@ -81,10 +81,37 @@ func NewBotDislikeComment(body Common) Message {
 }
 
 func NewBotUnknown(body Common) Message {
-	return &disscussMsg{
+	return &discussMsg{
 		MsgType:       TypeBotUnknown,
 		MsgTitle:      "智能机器人无法解答问题",
 		HeadingPrefix: "问题",
+		Common:        body,
+	}
+}
+
+func NewCreateQA(body Common) Message {
+	return &discussMsg{
+		MsgType:       TypeNewQA,
+		MsgTitle:      "你有新的提问",
+		HeadingPrefix: "提问",
+		Common:        body,
+	}
+}
+
+func NewCreateFeedback(body Common) Message {
+	return &discussMsg{
+		MsgType:       TypeNewFeedback,
+		MsgTitle:      "你有新的反馈",
+		HeadingPrefix: "反馈",
+		Common:        body,
+	}
+}
+
+func NewCreateBlog(body Common) Message {
+	return &discussMsg{
+		MsgType:       TypeNewBlog,
+		MsgTitle:      "你有新的博客",
+		HeadingPrefix: "博客",
 		Common:        body,
 	}
 }

@@ -28,7 +28,7 @@ type Subscriber interface {
 
 type SubscriberWithHandler interface {
 	Subscribe(ctx context.Context, topic Topic, handler func(ctx context.Context, data Message) error) error
-	Close(topic Topic)
+	Close(id string)
 }
 
 type Publisher interface {

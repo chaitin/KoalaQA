@@ -115,14 +115,9 @@ func (u *userAuth) Notify(ctx *context.Context) {
 	t := topic.NewMessageNotifyUser(ctx.GetUser().UID)
 	logger := u.logger.WithContext(ctx).With("user_id", ctx.GetUser().UID)
 
-	defer func(c *websocket.Conn) {
-		u.in.Sub.Close(t)
-		_ = c.Close()
-	}(conn)
+	defer conn.Close()
 
 	go func() {
-		defer conn.Close()
-
 		listRes, e := u.in.SvcNotify.ListNotifyInfo(ctx, ctx.GetUser().UID)
 		if e != nil {
 			logger.WithErr(e).Warn("list user failed")

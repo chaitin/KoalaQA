@@ -140,12 +140,13 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 			return nil
 		}
 		notifyMsg := topic.MsgMessageNotify{
-			DiscussID:    disc.ID,
-			DiscussTitle: disc.Title,
-			DiscussUUID:  disc.UUID,
-			Type:         model.MsgNotifyTypeBotUnknown,
-			FromID:       comment.UserID,
-			ToID:         bot.UserID,
+			DiscussID:      disc.ID,
+			DiscussionType: disc.Type,
+			DiscussTitle:   disc.Title,
+			DiscussUUID:    disc.UUID,
+			Type:           model.MsgNotifyTypeBotUnknown,
+			FromID:         comment.UserID,
+			ToID:           bot.UserID,
 		}
 		d.pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	}
