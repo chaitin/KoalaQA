@@ -38,6 +38,11 @@ export enum PlatformPlatformType {
   PlatformDingtalk = 10,
 }
 
+export enum ModelWebhookType {
+  WebhookTypeDingtalk = 1,
+  WebhookTypeHTTP = 2,
+}
+
 export enum ModelUserRole {
   UserRoleUnknown = 0,
   UserRoleAdmin = 1,
@@ -103,6 +108,7 @@ export enum ModelCommentLikeState {
 }
 
 export interface AnydocListDoc {
+  file?: boolean;
   file_type?: string;
   id?: string;
   summary?: string;
@@ -207,6 +213,7 @@ export interface ModelDiscussionDetail {
   updated_at?: number;
   user_avatar?: string;
   user_id?: number;
+  user_like?: boolean;
   user_name?: string;
   uuid?: string;
   view?: number;
@@ -333,6 +340,7 @@ export interface ModelListRes {
 export interface ModelPlatformOpt {
   access_token?: string;
   app_id?: string;
+  phone?: string;
   secret?: string;
   url?: string;
 }
@@ -359,9 +367,9 @@ export interface ModelWebhook {
   sign?: string;
   /**
    * @min 1
-   * @max 1
+   * @max 2
    */
-  type: number;
+  type: ModelWebhookType;
   updated_at?: number;
   url: string;
 }
@@ -371,9 +379,9 @@ export interface ModelWebhookConfig {
   sign?: string;
   /**
    * @min 1
-   * @max 1
+   * @max 2
    */
-  type: number;
+  type: ModelWebhookType;
   url: string;
 }
 
@@ -518,6 +526,12 @@ export interface SvcKBUpdateReq {
   name: string;
 }
 
+export interface SvcListRemoteReq {
+  opt?: ModelPlatformOpt;
+  platform?: PlatformPlatformType;
+  remote_folder_id?: string;
+}
+
 export interface SvcListSpaceFolderItem {
   created_at?: number;
   doc_id?: string;
@@ -646,6 +660,10 @@ export interface SvcURLListReq {
   url: string;
 }
 
+export interface SvcUpdatePromptReq {
+  prompt?: string;
+}
+
 export interface SvcUpdateSpaceReq {
   opt?: ModelPlatformOpt;
   title?: string;
@@ -689,9 +707,9 @@ export interface SvcWebhookCreateReq {
   sign?: string;
   /**
    * @min 1
-   * @max 1
+   * @max 2
    */
-  type: number;
+  type: ModelWebhookType;
   url: string;
 }
 
@@ -701,9 +719,9 @@ export interface SvcWebhookUpdateReq {
   sign?: string;
   /**
    * @min 1
-   * @max 1
+   * @max 2
    */
-  type: number;
+  type: ModelWebhookType;
   url: string;
 }
 
@@ -719,6 +737,7 @@ export interface TopicTaskMeta {
   exportOpt?: ModelExportOpt;
   kbid?: number;
   parentID?: number;
+  phone?: string;
   platform?: PlatformPlatformType;
   platform_id?: string;
   secret?: string;
@@ -1096,6 +1115,16 @@ export interface PostDiscussionDiscIdCommentCommentIdRevokeLikeParams {
   discId: string;
   /** comment_id */
   commentId: number;
+}
+
+export interface PostDiscussionDiscIdLikeParams {
+  /** disc_id */
+  discId: string;
+}
+
+export interface PostDiscussionDiscIdRevokeLikeParams {
+  /** disc_id */
+  discId: string;
 }
 
 export interface PutUserPayload {

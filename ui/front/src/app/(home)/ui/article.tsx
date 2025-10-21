@@ -18,10 +18,16 @@ import DiscussCard, { DiscussCardMobile } from './discussCard'
 
 export type Status = 'hot' | 'new' | 'mine'
 
+const TYPE_LIST = [
+  { label: '问答', value: 'qa' },
+  { label: '反馈', value: 'feedback' },
+  { label: '文章', value: 'blog', disabled: true },
+]
 const Article = ({
   data,
   topics,
   groups: groupsData,
+  type,
 }: {
   data: ModelListRes & {
     items?: ModelDiscussion[]
@@ -32,6 +38,7 @@ const Article = ({
       items?: ModelGroupItemInfo[]
     })[]
   }
+  type?: string
 }) => {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -57,6 +64,25 @@ const Article = ({
   const [articleData, setArticleData] = useState(data)
   const [page, setPage] = useState(1)
 
+  // 根据type参数动态生成标签文本，默认为qa
+  const getStatusLabels = () => {
+    const currentType = type || 'qa' // 默认为qa
+    if (currentType === 'feedback') {
+      return [
+        { label: '热门反馈', value: 'hot' },
+        { label: '最新反馈', value: 'new' },
+        { label: '我参与的', value: 'mine', disabled: !user?.email },
+      ]
+    } else {
+      // 默认为问答类型
+      return [
+        { label: '热门问题', value: 'hot' },
+        { label: '最新问题', value: 'new' },
+        { label: '我参与的', value: 'mine', disabled: !user?.email },
+      ]
+    }
+  }
+
   const fetchMoreList = useCallback(() => {
     // 防止重复请求
     if (page * 10 >= (articleData.total || 0)) {
@@ -69,6 +95,7 @@ const Article = ({
       page: new_page,
       size: 10,
       filter: status as 'hot' | 'new' | 'mine',
+      type: type as 'qa' | 'feedback' | 'blog',
     }
 
     // 如果有搜索关键词，添加到参数中
@@ -109,6 +136,7 @@ const Article = ({
       page: 1,
       size: 10,
       filter: st as 'hot' | 'new' | 'mine',
+      type: type as 'qa' | 'feedback' | 'blog',
     }
 
     // 如果有搜索关键词，添加到参数中
@@ -366,6 +394,22 @@ const Article = ({
               },
             }}
           >
+            <CusTabs
+              sx={{
+                height: 40,
+                py: '7px',
+                '& button': {
+                  flex: 1,
+                },
+              }}
+              value={type || 'qa'}
+              onChange={(value: string) => {
+                // 只有在状态真正变化时才更新 URL
+                const query = createQueryString('type', value)
+                router.replace(`/?${query}`)
+              }}
+              list={TYPE_LIST}
+            />
             {!groupsData && groupsLoading ? (
               // 只有在客户端渲染且正在加载时显示骨架屏
               <>
@@ -511,11 +555,7 @@ const Article = ({
                   const query = createQueryString('sort', value)
                   router.replace(`/?${query}`)
                 }}
-                list={[
-                  { label: '热门问题', value: 'hot' },
-                  { label: '最新问题', value: 'new' },
-                  { label: '我参与的', value: 'mine', disabled: !user?.email },
-                ]}
+                list={getStatusLabels()}
               />
 
               <Button
@@ -534,7 +574,7 @@ const Article = ({
                 variant='contained'
                 onClick={handleAsk}
               >
-                发帖提问 👉
+                {type === 'feedback' ? '提交反馈 👉' : '发帖提问 👉'}
               </Button>
             </Stack>
             {searchParams?.get('search') && (!articleData.items || articleData.items.length === 0) && (
@@ -635,6 +675,7 @@ const Article = ({
             }}
             selectedTags={[]}
             initialTitle={searchParams?.get('search') || ''}
+            type={type as 'qa' | 'feedback' | 'blog'}
           />
         </Stack>
 
