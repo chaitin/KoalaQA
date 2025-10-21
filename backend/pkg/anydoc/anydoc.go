@@ -254,12 +254,14 @@ func (a *anydoc) List(ctx context.Context, plat platform.PlatformType, optFuncs 
 	}
 
 	var (
-		docRes anydocRes[*tree.Node[ListDoc]]
-		res    = ListRes{
+		docRes anydocRes[struct {
+			Docs *tree.Node[ListDoc] `json:"docs"`
+		}]
+		res = ListRes{
 			UUID: o.uuid,
 		}
 	)
-	err = json.NewDecoder(resp.Body).Decode(&res)
+	err = json.NewDecoder(resp.Body).Decode(&docRes)
 	if err != nil {
 		return nil, err
 	}
@@ -269,9 +271,19 @@ func (a *anydoc) List(ctx context.Context, plat platform.PlatformType, optFuncs 
 		return nil, err
 	}
 
-	docRes.Data.Range(func(value ListDoc) {
-		if !value.File {
+	docRes.Data.Docs.Range(func(value ListDoc) {
+		if value.ID == "" {
 			return
+		}
+		switch plat {
+		case platform.PlatformDingtalk, platform.PlatformFeishu, platform.PlatformPandawiki:
+			if o.spaceID != "" && !value.File {
+				return
+			}
+		default:
+			if !value.File {
+				return
+			}
 		}
 
 		res.Docs = append(res.Docs, value)
