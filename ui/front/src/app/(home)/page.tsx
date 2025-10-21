@@ -17,8 +17,9 @@ async function fetchDiscussions(searchParams: {
   sort?: string; 
   tps?: string;
   page?: string;
+  type?: string;
 }) {
-  const { search, sort, tps, page = "1" } = searchParams;
+  const { search, sort, tps, page = "1", type } = searchParams;
   const topics = tps ? tps.split(",").map(Number) : [];
 
   // 使用 ApiParamsBuilder 构建参数
@@ -27,6 +28,7 @@ async function fetchDiscussions(searchParams: {
     .add("size", "10")
     .add("filter", sort)
     .add("keyword", search)
+    .add("type", type || "qa")
     .build();
   
   // 添加多个 group_ids
@@ -54,10 +56,10 @@ async function fetchGroups() {
 }
 
 const Page = async (props: {
-  searchParams: Promise<{ search?: string; sort?: string; tps?: string; page?: string }>;
+  searchParams: Promise<{ search?: string; sort?: string; tps?: string; page?: string; type?: string }>;
 }) => {
   const searchParams = await props.searchParams;
-  const { tps } = searchParams;
+  const { tps, type } = searchParams;
   
   // 将 url 中的 tps 参数（逗号分隔的字符串）转换为数字数组
   const topics = tps ? tps.split(",").map(Number) : [];
@@ -76,7 +78,7 @@ const Page = async (props: {
       <Stack gap={3} sx={{ minHeight: "100vh" }}>
         <h1 style={{ display: "none" }}>问答</h1>
         <Suspense fallback={<div>加载中...</div>}>
-          <ArticleCard data={data} topics={topics} groups={groupsData} />
+          <ArticleCard data={data} topics={topics} groups={groupsData} type={type} />
         </Suspense>
       </Stack>
     </GroupsInitializer>

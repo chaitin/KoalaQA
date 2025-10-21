@@ -26,6 +26,8 @@ import {
   PostDiscussionDiscIdCommentCommentIdLikeParams,
   PostDiscussionDiscIdCommentCommentIdRevokeLikeParams,
   PostDiscussionDiscIdCommentParams,
+  PostDiscussionDiscIdLikeParams,
+  PostDiscussionDiscIdRevokeLikeParams,
   PostDiscussionUploadPayload,
   PutDiscussionDiscIdCommentCommentIdParams,
   PutDiscussionDiscIdParams,
@@ -438,6 +440,64 @@ export const postDiscussionDiscIdCommentCommentIdRevokeLike = (
 ) =>
   request<ContextResponse>({
     path: `/discussion/${discId}/comment/${commentId}/revoke_like`,
+    method: "POST",
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description like discussion
+ *
+ * @tags discussion
+ * @name PostDiscussionDiscIdLike
+ * @summary like discussion
+ * @request POST:/discussion/{disc_id}/like
+ * @response `200` `(ContextResponse & {
+    data?: unknown,
+
+})` OK
+ */
+
+export const postDiscussionDiscIdLike = (
+  { discId, ...query }: PostDiscussionDiscIdLikeParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: unknown;
+    }
+  >({
+    path: `/discussion/${discId}/like`,
+    method: "POST",
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description revoke like discussion
+ *
+ * @tags discussion
+ * @name PostDiscussionDiscIdRevokeLike
+ * @summary revoke like discussion
+ * @request POST:/discussion/{disc_id}/revoke_like
+ * @response `200` `(ContextResponse & {
+    data?: unknown,
+
+})` OK
+ */
+
+export const postDiscussionDiscIdRevokeLike = (
+  { discId, ...query }: PostDiscussionDiscIdRevokeLikeParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: unknown;
+    }
+  >({
+    path: `/discussion/${discId}/revoke_like`,
     method: "POST",
     type: ContentType.Json,
     format: "json",
