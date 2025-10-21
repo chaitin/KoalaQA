@@ -29,11 +29,47 @@ import {
   SvcCreateSpaceFolderReq,
   SvcCreateSpaceReq,
   SvcGetSpaceRes,
+  SvcListRemoteReq,
   SvcListSpaceFolderItem,
   SvcListSpaceItem,
   SvcListSpaceKBItem,
   SvcUpdateSpaceReq,
 } from "./types";
+
+/**
+ * No description
+ *
+ * @tags space
+ * @name PostAdminKbSpaceRemote
+ * @summary list remote doc
+ * @request POST:/admin/kb/space/remote
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (SvcListSpaceKBItem)[],
+
+}),
+
+})` OK
+ */
+
+export const postAdminKbSpaceRemote = (
+  req: SvcListRemoteReq,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: SvcListSpaceKBItem[];
+      };
+    }
+  >({
+    path: `/admin/kb/space/remote`,
+    method: "POST",
+    body: req,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
 
 /**
  * No description

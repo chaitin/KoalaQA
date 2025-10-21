@@ -9,7 +9,7 @@ import {
   putDiscussionDiscIdCommentCommentId,
 } from '@/api'
 import { generateCacheKey, clearCache } from '@/lib/api-cache'
-import { ModelCommentLikeState, ModelDiscussionComment, ModelDiscussionDetail, ModelDiscussionReply } from '@/api/types'
+import { ModelCommentLikeState, ModelDiscussionComment, ModelDiscussionDetail, ModelDiscussionReply, ModelDiscussionType, ModelUserRole } from '@/api/types'
 import { Card, MarkDown } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import { Avatar } from '@/components/discussion'
@@ -67,14 +67,19 @@ const BaseDiscussCard = (props: {
 }) => {
   const { data, onOpt, disData, isReply } = props
   const router = useRouter()
+  const { user } = useContext(AuthContext)
   const [repliesCollapsed, setRepliesCollapsed] = useState(false)
   // 检查是否有可用的菜单项
   const hasMenuItems =
     // 是当前用户的评论（可以编辑和删除）
-    data.user_id === disData.current_user_id
+    data.user_id === disData.current_user_id ||
+    // 管理员、客服运营可以编辑和删除任何评论
+    [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
+      user?.role || ModelUserRole.UserRoleUnknown
+    )
 
-  const revokeLike = () => {
-    postDiscussionDiscIdCommentCommentIdRevokeLike({
+  const revokeLike = async () => {
+    return postDiscussionDiscIdCommentCommentIdRevokeLike({
       discId: disData.uuid!,
       commentId: data.id!,
     })
@@ -216,8 +221,9 @@ const BaseDiscussCard = (props: {
               <Typography sx={{ fontSize: 12, fontWeight: 500 }}>已采纳</Typography>
             </Stack>
           )}
-          {/* 采纳按钮 - 只有问题作者且问题未被采纳，且不是回复时才显示 */}
+          {/* 采纳按钮 - 只有问答类型且问题作者且问题未被采纳，且不是回复时才显示 */}
           {!isReply &&
+            disData.type === 'qa' &&
             disData.user_id === disData.current_user_id &&
             !disData.comments?.[0]?.accepted &&
             !data?.accepted && (
@@ -302,46 +308,49 @@ const BaseDiscussCard = (props: {
                 {formatNumber(data.like || 0)}
               </Typography>
             </Stack>
-            <Stack
-              direction='row'
-              alignItems='center'
-              gap={1}
-              sx={{
-                background: isDisliked ? 'rgba(32,108,255,0.1)' : '#F2F3F5',
-                borderRadius: 0.5,
-                px: 1,
-                py: '1px',
-                cursor: 'pointer',
-                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                transform: 'scale(1)',
-                '&:hover': {
-                  background: isDisliked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
-                  transform: 'scale(1.05)',
-                },
-                '&:active': {
-                  transform: 'scale(0.95)',
-                  transition: 'transform 0.1s ease-out',
-                },
-              }}
-              onClick={() => handleDislike()}
-            >
-              <ThumbDownAltOutlinedIcon
+            {/* 在反馈类型的讨论中隐藏点踩按钮 */}
+            {disData.type !== ModelDiscussionType.DiscussionTypeFeedback && (
+              <Stack
+                direction='row'
+                alignItems='center'
+                gap={1}
                 sx={{
-                  color: isDisliked ? 'info.main' : 'rgba(0,0,0,0.5)',
-                  fontSize: 14,
+                  background: isDisliked ? 'rgba(32,108,255,0.1)' : '#F2F3F5',
+                  borderRadius: 0.5,
+                  px: 1,
+                  py: '1px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  transform: 'scale(1)',
+                  '&:hover': {
+                    background: isDisliked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
+                    transform: 'scale(1.05)',
+                  },
+                  '&:active': {
+                    transform: 'scale(0.95)',
+                    transition: 'transform 0.1s ease-out',
+                  },
                 }}
-              />
-              <Typography
-                variant='body2'
-                sx={{
-                  fontSize: 14,
-                  lineHeight: '20px',
-                  color: isDisliked ? 'info.main' : 'rgba(0,0,0,0.5)',
-                }}
+                onClick={() => handleDislike()}
               >
-                {formatNumber(data.dislike || 0)}
-              </Typography>
-            </Stack>
+                <ThumbDownAltOutlinedIcon
+                  sx={{
+                    color: isDisliked ? 'info.main' : 'rgba(0,0,0,0.5)',
+                    fontSize: 14,
+                  }}
+                />
+                <Typography
+                  variant='body2'
+                  sx={{
+                    fontSize: 14,
+                    lineHeight: '20px',
+                    color: isDisliked ? 'info.main' : 'rgba(0,0,0,0.5)',
+                  }}
+                >
+                  {formatNumber(data.dislike || 0)}
+                </Typography>
+              </Stack>
+            )}
             {/* 只在有可用菜单项时显示 MoreVertIcon */}
             {hasMenuItems && (
               <IconButton
@@ -526,6 +535,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const { data } = props
   const { id }: { id: string } = useParams() || { id: '' }
   const router = useRouter()
+  const { user } = useContext(AuthContext)
   const [commentIndex, setCommentIndex] = useState<ModelDiscussionComment | ModelDiscussionReply | null>(null)
   const [editCommentModalVisible, setEditCommentModalVisible] = useState(false)
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
@@ -581,8 +591,14 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   return (
     <Stack id='comment-card' gap={3} sx={{ width: { xs: '100%' } }}>
       <Menu id='basic-menu' anchorEl={anchorEl} open={open} onClose={handleClose}>
-        {commentIndex?.user_id == data.current_user_id && <MenuItem onClick={handleEditComment}>编辑</MenuItem>}
-        {commentIndex?.user_id == data.current_user_id && <MenuItem onClick={handleDelete}>删除</MenuItem>}
+        {(commentIndex?.user_id == data.current_user_id || 
+          [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
+            user?.role || ModelUserRole.UserRoleUnknown
+          )) && <MenuItem onClick={handleEditComment}>编辑</MenuItem>}
+        {(commentIndex?.user_id == data.current_user_id || 
+          [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
+            user?.role || ModelUserRole.UserRoleUnknown
+          )) && <MenuItem onClick={handleDelete}>删除</MenuItem>}
       </Menu>
       <EditCommentModal
         open={editCommentModalVisible}

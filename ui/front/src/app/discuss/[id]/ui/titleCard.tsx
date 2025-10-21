@@ -1,6 +1,11 @@
 'use client'
-import { deleteDiscussionDiscId, postDiscussionDiscIdComment } from '@/api'
-import { ModelDiscussionDetail, ModelUserRole } from '@/api/types'
+import {
+  deleteDiscussionDiscId,
+  postDiscussionDiscIdComment,
+  postDiscussionDiscIdLike,
+  postDiscussionDiscIdRevokeLike,
+} from '@/api'
+import { ModelDiscussionDetail, ModelUserRole, ModelDiscussionType } from '@/api/types'
 import { Card, MarkDown } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import { ReleaseModal, Tag } from '@/components/discussion'
@@ -9,6 +14,7 @@ import Modal from '@/components/modal'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
 import { Ellipsis } from '@ctzhian/ui'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
+import ThumbUpAltOutlinedIcon from '@mui/icons-material/ThumbUpAltOutlined'
 import { Box, Button, Divider, IconButton, Menu, MenuItem, Stack, Typography } from '@mui/material'
 import { useBoolean } from 'ahooks'
 import dayjs from 'dayjs'
@@ -16,6 +22,7 @@ import 'dayjs/locale/zh-cn'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { useParams, useRouter } from 'next/navigation'
 import { useContext, useRef, useState } from 'react'
+import { formatNumber } from '@/lib/utils'
 
 // 添加CSS动画样式
 const animationStyles = `
@@ -93,6 +100,24 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
     router.refresh()
   }
 
+  const handleLike = async () => {
+    return checkAuth(async () => {
+      try {
+        if (data.user_like) {
+          // 已点赞，取消点赞
+          await postDiscussionDiscIdRevokeLike({ discId: id })
+        } else {
+          // 未点赞，点赞
+          await postDiscussionDiscIdLike({ discId: id })
+        }
+        // 刷新页面数据
+        router.refresh()
+      } catch (error) {
+        console.error('点赞操作失败:', error)
+      }
+    })
+  }
+  console.log(data)
   return (
     <Card
       sx={{
@@ -155,6 +180,46 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
             {data.title}
           </Typography>
         </Stack>
+        <Stack
+          direction='row'
+          alignItems='center'
+          gap={1}
+          sx={{
+            background: data.user_like ? 'rgba(32,108,255,0.1)' : '#F2F3F5',
+            borderRadius: 0.5,
+            px: 1,
+            py: '1px',
+            cursor: 'pointer',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            transform: 'scale(1)',
+            '&:hover': {
+              background: data.user_like ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
+              transform: 'scale(1.05)',
+            },
+            '&:active': {
+              transform: 'scale(0.95)',
+              transition: 'transform 0.1s ease-out',
+            },
+          }}
+          onClick={handleLike}
+        >
+          <ThumbUpAltOutlinedIcon
+            sx={{
+              color: data.user_like ? 'info.main' : 'rgba(0,0,0,0.5)',
+              fontSize: 14,
+            }}
+          />
+          <Typography
+            variant='body2'
+            sx={{
+              fontSize: 14,
+              color: data.user_like ? 'info.main' : 'rgba(0,0,0,0.5)',
+              lineHeight: '20px',
+            }}
+          >
+            {formatNumber(data.like || 0)}
+          </Typography>
+        </Stack>
         {(data.user_id === user.uid ||
           [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
             user.role || ModelUserRole.UserRoleUnknown,
@@ -188,16 +253,14 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           color: 'rgba(0,0,0,0.5)',
         }}
       >
-        <time
-          dateTime={dayjs.unix(data.created_at!).format()}
-          title={dayjs.unix(data.created_at!).format('YYYY-MM-DD HH:mm:ss')}
-        >
-          {data.user_name} 发布于 {dayjs.unix(data.created_at!).fromNow()}
-        </time>
+        {data.user_name}
+        {data.updated_at && data.updated_at !== data.created_at
+          ? `更新于 ${dayjs.unix(data.updated_at).fromNow()}`
+          : `发布于 ${dayjs.unix(data.created_at!).fromNow()}`}
       </Typography>
       <Stack direction='row' alignItems='flex-end' gap={2} justifyContent='space-between' sx={{ my: 1 }}>
         <Stack direction='row' flexWrap='wrap' gap='8px 16px'>
-          {data.groups?.map((item, index) => {
+          {data.groups?.map((item) => {
             const label = `${item.name}`
             const color = '#206CFF'
             return (
@@ -215,7 +278,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
               />
             )
           })}
-          {data.tags?.map((item: string, index) => {
+          {data.tags?.map((item: string) => {
             return (
               <Tag
                 key={item}
@@ -243,7 +306,10 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
               dateTime={dayjs.unix(data.created_at!).format()}
               title={dayjs.unix(data.created_at!).format('YYYY-MM-DD HH:mm:ss')}
             >
-              {data.user_name} 发布于 {dayjs.unix(data.created_at!).fromNow()}
+              {data.user_name}{' '}
+              {data.updated_at && data.updated_at !== data.created_at
+                ? `更新于 ${dayjs.unix(data.updated_at).fromNow()}`
+                : `发布于 ${dayjs.unix(data.created_at!).fromNow()}`}
             </time>
           </Typography>
         </Stack>
@@ -278,7 +344,13 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
               },
             }}
           >
-            {user?.uid ? '回答问题' : '登录后回答问题'}
+            {user?.uid
+              ? data.type === ModelDiscussionType.DiscussionTypeFeedback
+                ? '回复'
+                : '回答问题'
+              : data.type === ModelDiscussionType.DiscussionTypeFeedback
+                ? '登录后回复'
+                : '登录后回答问题'}
           </Button>
         )}
         {mdEditShow && (
@@ -286,7 +358,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
             <EditorWrap
               detail={{
                 id: 'main-comment-editor',
-                name: '回答问题',
+                name: data.type === ModelDiscussionType.DiscussionTypeFeedback ? '回复' : '回答问题',
                 content: comment,
               }}
               onSave={async () => {
