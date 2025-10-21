@@ -33,7 +33,20 @@ func (d *Discussion) DetailByUUID(ctx context.Context, uid uint, uuid string) (*
 	if err := d.model(ctx).Where("uuid = ?", uuid).Select("id").First(&id).Error; err != nil {
 		return nil, err
 	}
-	return d.Detail(ctx, uid, id)
+	detail, err := d.Detail(ctx, uid, id)
+	if err != nil {
+		return nil, err
+	}
+	var userLike bool
+	err = d.db.WithContext(ctx).
+		Model(&model.DiscLike{}).
+		Where("discussion_id = ? AND user_id = ?", id, uid).
+		First(&userLike).Error
+	if err != nil {
+		return nil, err
+	}
+	detail.UserLike = userLike
+	return detail, nil
 }
 
 func (d *Discussion) Detail(ctx context.Context, uid uint, id uint) (*model.DiscussionDetail, error) {

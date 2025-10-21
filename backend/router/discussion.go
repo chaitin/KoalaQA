@@ -58,7 +58,7 @@ func (d *discussion) List(ctx *context.Context) {
 // @Success 200 {object} context.Response{data=model.DiscussionDetail}
 // @Router /discussion/{disc_id} [get]
 func (d *discussion) Detail(ctx *context.Context) {
-	res, err := d.disc.Detail(ctx.Request.Context(), ctx.GetUser().UID, ctx.Param("disc_id"))
+	res, err := d.disc.DetailByUUID(ctx.Request.Context(), ctx.GetUser().UID, ctx.Param("disc_id"))
 	if err != nil {
 		ctx.InternalError(err, "failed to detail discussion")
 		return

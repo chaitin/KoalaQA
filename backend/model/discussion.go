@@ -81,6 +81,7 @@ type DiscussionDetail struct {
 	UserAvatar    string              `json:"user_avatar"`
 	Groups        []DiscussionGroup   `json:"groups" gorm:"-"`
 	Comments      []DiscussionComment `json:"comments" gorm:"-"`
+	UserLike      bool                `json:"user_like"`
 }
 
 func init() {

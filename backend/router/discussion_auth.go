@@ -24,6 +24,8 @@ func (d *discussionAuth) Route(h server.Handler) {
 	g.PUT("/:disc_id", d.Update)
 	g.DELETE("/:disc_id", d.Delete)
 	g.POST("/upload", d.UploadFile)
+	g.POST("/:disc_id/like", d.LikeDiscussion)
+	g.POST("/:disc_id/revoke_like", d.RevokeLikeDiscussion)
 
 	{
 		comG := g.Group("/:disc_id/comment")
@@ -103,6 +105,42 @@ func (d *discussionAuth) Delete(ctx *context.Context) {
 	err := d.disc.Delete(ctx.Request.Context(), ctx.GetUser(), ctx.Param("disc_id"))
 	if err != nil {
 		ctx.InternalError(err, "failed to delete discussion")
+		return
+	}
+	ctx.Success(nil)
+}
+
+// LikeDiscussion
+// @Summary like discussion
+// @Description like discussion
+// @Tags discussion
+// @Accept json
+// @Produce json
+// @Param disc_id path string true "disc_id"
+// @Success 200 {object} context.Response{data=any}
+// @Router /discussion/{disc_id}/like [post]
+func (d *discussionAuth) LikeDiscussion(ctx *context.Context) {
+	err := d.disc.LikeDiscussion(ctx.Request.Context(), ctx.Param("disc_id"), ctx.GetUser().UID)
+	if err != nil {
+		ctx.InternalError(err, "failed to like discussion")
+		return
+	}
+	ctx.Success(nil)
+}
+
+// RevokeLikeDiscussion
+// @Summary revoke like discussion
+// @Description revoke like discussion
+// @Tags discussion
+// @Accept json
+// @Produce json
+// @Param disc_id path string true "disc_id"
+// @Success 200 {object} context.Response{data=any}
+// @Router /discussion/{disc_id}/revoke_like [post]
+func (d *discussionAuth) RevokeLikeDiscussion(ctx *context.Context) {
+	err := d.disc.RevokeLikeDiscussion(ctx.Request.Context(), ctx.Param("disc_id"), ctx.GetUser().UID)
+	if err != nil {
+		ctx.InternalError(err, "failed to revoke like discussion")
 		return
 	}
 	ctx.Success(nil)

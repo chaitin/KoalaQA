@@ -242,7 +242,7 @@ func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListRe
 	return &res, nil
 }
 
-func (d *Discussion) Detail(ctx context.Context, uid uint, uuid string) (*model.DiscussionDetail, error) {
+func (d *Discussion) DetailByUUID(ctx context.Context, uid uint, uuid string) (*model.DiscussionDetail, error) {
 	discussion, err := d.in.DiscRepo.DetailByUUID(ctx, uid, uuid)
 	if err != nil {
 		return nil, err
@@ -287,8 +287,20 @@ func (d *Discussion) RecalculateHot(uuid string) {
 	}, repo.QueryWithEqual("uuid", uuid))
 }
 
-func (d *Discussion) LikeDiscussion(uuid string) {
-	go d.RecalculateHot(uuid)
+func (d *Discussion) LikeDiscussion(ctx context.Context, discUUID string, uid uint) error {
+	if err := d.in.DiscRepo.LikeDiscussion(ctx, discUUID, uid); err != nil {
+		return err
+	}
+	go d.RecalculateHot(discUUID)
+	return nil
+}
+
+func (d *Discussion) RevokeLikeDiscussion(ctx context.Context, discUUID string, uid uint) error {
+	if err := d.in.DiscRepo.RevokeLikeDiscussion(ctx, discUUID, uid); err != nil {
+		return err
+	}
+	go d.RecalculateHot(discUUID)
+	return nil
 }
 
 type DiscussionSearchReq struct {
