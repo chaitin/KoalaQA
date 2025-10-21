@@ -67,6 +67,7 @@ func (m *Memory) createChan(key string) *memoryQueue {
 	c, ok := m.queue[key]
 	if !ok {
 		m.queue[key] = make(map[string]*memoryQueue)
+		c = m.queue[key]
 	}
 
 	c[queue.id] = queue
