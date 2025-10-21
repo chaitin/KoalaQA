@@ -107,12 +107,13 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 			return nil
 		}
 		notifyMsg := topic.MsgMessageNotify{
-			DiscussID:    disc.ID,
-			DiscussTitle: disc.Title,
-			DiscussUUID:  disc.UUID,
-			Type:         model.MsgNotifyTypeBotUnknown,
-			FromID:       disc.UserID,
-			ToID:         bot.UserID,
+			DiscussID:      disc.ID,
+			DiscussionType: disc.Type,
+			DiscussTitle:   disc.Title,
+			DiscussUUID:    disc.UUID,
+			Type:           model.MsgNotifyTypeBotUnknown,
+			FromID:         disc.UserID,
+			ToID:           bot.UserID,
 		}
 		d.pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	}

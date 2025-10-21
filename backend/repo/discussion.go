@@ -33,7 +33,20 @@ func (d *Discussion) DetailByUUID(ctx context.Context, uid uint, uuid string) (*
 	if err := d.model(ctx).Where("uuid = ?", uuid).Select("id").First(&id).Error; err != nil {
 		return nil, err
 	}
-	return d.Detail(ctx, uid, id)
+	detail, err := d.Detail(ctx, uid, id)
+	if err != nil {
+		return nil, err
+	}
+	var userLike int64
+	err = d.db.WithContext(ctx).
+		Model(&model.DiscLike{}).
+		Where("uuid = ? AND user_id = ?", uuid, uid).
+		Count(&userLike).Error
+	if err != nil {
+		return nil, err
+	}
+	detail.UserLike = userLike > 0
+	return detail, nil
 }
 
 func (d *Discussion) Detail(ctx context.Context, uid uint, id uint) (*model.DiscussionDetail, error) {
@@ -108,4 +121,51 @@ func (d *Discussion) List(ctx context.Context, res any, queryFuncs ...QueryOptFu
 		Select("discussions.*, users.name as user_name, users.avatar as user_avatar").
 		Scopes(o.Scopes()...).
 		Find(res).Error
+}
+
+func (d *Discussion) LikeDiscussion(ctx context.Context, discUUID string, uid uint) error {
+	return d.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		err := tx.Exec(`SELECT pg_advisory_xact_lock(?)`, uid).Error
+		if err != nil {
+			return err
+		}
+		err = tx.Model(&model.Discussion{}).
+			Where("uuid = ?", discUUID).
+			Updates(map[string]any{
+				"like":       gorm.Expr(`"like" + 1`),
+				"updated_at": gorm.Expr("updated_at"),
+			}).Error
+		if err != nil {
+			return err
+		}
+		err = tx.Create(&model.DiscLike{
+			UUID:   discUUID,
+			UserID: uid,
+		}).Error
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
+func (d *Discussion) RevokeLikeDiscussion(ctx context.Context, discUUID string, uid uint) error {
+	return d.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		err := tx.Exec(`SELECT pg_advisory_xact_lock(?)`, uid).Error
+		if err != nil {
+			return err
+		}
+		err = tx.Model(&model.DiscLike{}).Where("uuid = ? AND user_id = ?", discUUID, uid).Delete(nil).Error
+		if err != nil {
+			return err
+		}
+		err = tx.Model(&model.Discussion{}).Where("uuid = ?", discUUID).Updates(map[string]any{
+			"like":       gorm.Expr(`"like" - 1`),
+			"updated_at": gorm.Expr("updated_at"),
+		}).Error
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }

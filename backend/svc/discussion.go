@@ -15,6 +15,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/rag"
 	"github.com/chaitin/koalaqa/pkg/topic"
 	"github.com/chaitin/koalaqa/pkg/util"
+	"github.com/chaitin/koalaqa/pkg/webhook/message"
 	"github.com/chaitin/koalaqa/repo"
 	"go.uber.org/fx"
 	"gorm.io/gorm"
@@ -37,11 +38,20 @@ type discussionIn struct {
 type Discussion struct {
 	in discussionIn
 
-	logger *glog.Logger
+	logger      *glog.Logger
+	webhookType map[model.DiscussionType]message.Type
 }
 
 func newDiscussion(in discussionIn) *Discussion {
-	return &Discussion{in: in, logger: glog.Module("svc", "discussion")}
+	return &Discussion{
+		in:     in,
+		logger: glog.Module("svc", "discussion"),
+		webhookType: map[model.DiscussionType]message.Type{
+			model.DiscussionTypeQA:       message.TypeNewQA,
+			model.DiscussionTypeFeedback: message.TypeNewFeedback,
+			model.DiscussionTypeBlog:     message.TypeNewBlog,
+		},
+	}
 }
 
 func init() {
@@ -88,6 +98,15 @@ func (d *Discussion) Create(ctx context.Context, req DiscussionCreateReq) (strin
 		DiscUUID: disc.UUID,
 		Type:     string(disc.Type),
 	})
+
+	if webhookType, ok := d.webhookType[disc.Type]; ok {
+		d.in.Pub.Publish(ctx, topic.TopicDiscussWebhook, topic.MsgDiscussWebhook{
+			MsgType:   webhookType,
+			UserID:    req.UserID,
+			DiscussID: disc.ID,
+		})
+	}
+
 	return disc.UUID, nil
 }
 
@@ -195,7 +214,7 @@ func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListRe
 	var query []repo.QueryOptFunc
 	query = append(query, repo.QueryWithEqual("type", req.Type))
 	if req.Filter == DiscussionListFilterMine {
-		query = append(query, repo.QueryWithEqual("user_id", userID))
+		query = append(query, repo.QueryWithEqual("members", userID, repo.EqualOPEqAny))
 	}
 
 	if len(groupM) > 0 {
@@ -223,7 +242,7 @@ func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListRe
 	return &res, nil
 }
 
-func (d *Discussion) Detail(ctx context.Context, uid uint, uuid string) (*model.DiscussionDetail, error) {
+func (d *Discussion) DetailByUUID(ctx context.Context, uid uint, uuid string) (*model.DiscussionDetail, error) {
 	discussion, err := d.in.DiscRepo.DetailByUUID(ctx, uid, uuid)
 	if err != nil {
 		return nil, err
@@ -266,6 +285,36 @@ func (d *Discussion) RecalculateHot(uuid string) {
 		"hot":        gorm.Expr("view * 10 + comment * 5 + \"like\" * 2"),
 		"updated_at": gorm.Expr("updated_at"),
 	}, repo.QueryWithEqual("uuid", uuid))
+}
+
+func (d *Discussion) LikeDiscussion(ctx context.Context, discUUID string, user model.UserInfo) error {
+	if err := d.in.DiscRepo.LikeDiscussion(ctx, discUUID, user.UID); err != nil {
+		return err
+	}
+	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
+	if err != nil {
+		return err
+	}
+	notifyMsg := topic.MsgMessageNotify{
+		DiscussID:      disc.ID,
+		DiscussionType: disc.Type,
+		DiscussUUID:    disc.UUID,
+		DiscussTitle:   disc.Title,
+		Type:           model.MsgNotifyTypeLikeDiscussion,
+		FromID:         user.UID,
+		ToID:           disc.UserID,
+	}
+	_ = d.in.Pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
+	go d.RecalculateHot(discUUID)
+	return nil
+}
+
+func (d *Discussion) RevokeLikeDiscussion(ctx context.Context, discUUID string, uid uint) error {
+	if err := d.in.DiscRepo.RevokeLikeDiscussion(ctx, discUUID, uid); err != nil {
+		return err
+	}
+	go d.RecalculateHot(discUUID)
+	return nil
 }
 
 type DiscussionSearchReq struct {
@@ -334,6 +383,12 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 		return 0, err
 	}
 
+	if err = d.in.DiscRepo.Update(ctx, map[string]any{
+		"members": gorm.Expr("array_append(members, ?)", uid),
+	}, repo.QueryWithEqual("id", disc.ID)); err != nil {
+		return 0, err
+	}
+
 	if req.CommentID == 0 {
 		err = d.in.DiscRepo.Update(ctx, map[string]any{
 			"updated_at": time.Now(),
@@ -362,12 +417,13 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 		toID = parentComment.UserID
 	}
 	notifyMsg := topic.MsgMessageNotify{
-		DiscussID:    disc.ID,
-		DiscussTitle: disc.Title,
-		DiscussUUID:  disc.UUID,
-		Type:         typ,
-		FromID:       uid,
-		ToID:         toID,
+		DiscussID:      disc.ID,
+		DiscussionType: disc.Type,
+		DiscussTitle:   disc.Title,
+		DiscussUUID:    disc.UUID,
+		Type:           typ,
+		FromID:         uid,
+		ToID:           toID,
 	}
 	d.in.Pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	return comment.ID, nil
@@ -516,13 +572,14 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 		return err
 	}
 	notifyMsg := topic.MsgMessageNotify{
-		DiscussID:    disc.ID,
-		DiscussTitle: disc.Title,
-		DiscussUUID:  disc.UUID,
-		Type:         model.MsgNotifyTypeApplyComment,
-		CommentID:    commentID,
-		FromID:       user.UID,
-		ToID:         comment.UserID,
+		DiscussID:      disc.ID,
+		DiscussionType: disc.Type,
+		DiscussTitle:   disc.Title,
+		DiscussUUID:    disc.UUID,
+		Type:           model.MsgNotifyTypeApplyComment,
+		CommentID:      commentID,
+		FromID:         user.UID,
+		ToID:           comment.UserID,
 	}
 	d.in.Pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	return nil
@@ -548,12 +605,13 @@ func (d *Discussion) LikeComment(ctx context.Context, userInfo model.UserInfo, d
 	}
 
 	notifyMsg := topic.MsgMessageNotify{
-		DiscussID:    disc.ID,
-		DiscussUUID:  disc.UUID,
-		DiscussTitle: disc.Title,
-		Type:         model.MsgNotifyTypeLikeComment,
-		FromID:       userInfo.UID,
-		ToID:         comment.UserID,
+		DiscussID:      disc.ID,
+		DiscussionType: disc.Type,
+		DiscussUUID:    disc.UUID,
+		DiscussTitle:   disc.Title,
+		Type:           model.MsgNotifyTypeLikeComment,
+		FromID:         userInfo.UID,
+		ToID:           comment.UserID,
 	}
 	err = d.in.Pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	if err != nil {
@@ -583,12 +641,13 @@ func (d *Discussion) DislikeComment(ctx context.Context, userInfo model.UserInfo
 	}
 
 	notifyMsg := topic.MsgMessageNotify{
-		DiscussID:    disc.ID,
-		DiscussUUID:  disc.UUID,
-		DiscussTitle: disc.Title,
-		Type:         model.MsgNotifyTypeDislikeComment,
-		FromID:       userInfo.UID,
-		ToID:         comment.UserID,
+		DiscussID:      disc.ID,
+		DiscussionType: disc.Type,
+		DiscussUUID:    disc.UUID,
+		DiscussTitle:   disc.Title,
+		Type:           model.MsgNotifyTypeDislikeComment,
+		FromID:         userInfo.UID,
+		ToID:           comment.UserID,
 	}
 	err = d.in.Pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	if err != nil {
