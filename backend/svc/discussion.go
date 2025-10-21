@@ -87,6 +87,7 @@ func (d *Discussion) Create(ctx context.Context, req DiscussionCreateReq) (strin
 		UUID:     d.generateUUID(),
 		UserID:   req.UserID,
 		Type:     req.Type,
+		Members:  model.Int64Array{int64(req.UserID)},
 	}
 	err := d.in.DiscRepo.Create(ctx, &disc)
 	if err != nil {
