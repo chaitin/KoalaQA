@@ -32,6 +32,7 @@ type Discussion struct {
 	View       uint           `json:"view" gorm:"column:view;type:bigint;default:0"`
 	Comment    uint           `json:"comment" gorm:"column:comment;type:bigint;default:0"`
 	Type       DiscussionType `json:"type" gorm:"column:type;type:text;default:qa"`
+	Members    Int64Array     `json:"members" gorm:"column:members;type:bigint[]"`
 }
 
 func (d *Discussion) TitleContent() string {
@@ -81,6 +82,7 @@ type DiscussionDetail struct {
 	UserAvatar    string              `json:"user_avatar"`
 	Groups        []DiscussionGroup   `json:"groups" gorm:"-"`
 	Comments      []DiscussionComment `json:"comments" gorm:"-"`
+	UserLike      bool                `json:"user_like"`
 }
 
 func init() {
