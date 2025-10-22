@@ -1,5 +1,8 @@
 name: Update Docker Compose
 
+permissions:
+  contents: write
+
 on:
   workflow_run:
     workflows: ["Base Images", "App and API Images"]
