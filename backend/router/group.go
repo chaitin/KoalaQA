@@ -14,10 +14,17 @@ type group struct {
 // @Summary frontend list group
 // @Tags group_frontend
 // @Produce json
+// @Param forum_id query uint false "forum id"
 // @Success 200 {object} context.Response{data=model.ListRes{items=[]model.GroupWithItem{items=[]model.GroupItemInfo}}}
 // @Router /group [get]
 func (g *group) List(ctx *context.Context) {
-	res, err := g.svcG.ListWithItem(ctx)
+	forumID, err := ctx.QueryUint("forum_id")
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	res, err := g.svcG.ListWithItem(ctx, forumID)
 	if err != nil {
 		ctx.InternalError(err, "list group failed")
 		return

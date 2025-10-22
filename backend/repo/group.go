@@ -15,11 +15,29 @@ type Group struct {
 	base[*model.Group]
 }
 
-func (g *Group) ListWithItem(ctx context.Context, res any) error {
-	return g.model(ctx).Select([]string{
-		"groups.*",
-		"item.items",
-	}).Joins("LEFT JOIN (SELECT group_id, jsonb_agg(jsonb_build_object('id', id, 'name', name, 'index', index) ORDER BY index ASC) as items from group_items group by group_id) as item ON item.group_id = groups.id").
+func (g *Group) ListWithItem(ctx context.Context, forumID uint, res any) error {
+	var gids model.Int64Array
+	if forumID > 0 {
+		var forum *model.Forum
+		if err := g.db.Model(&model.Forum{}).Where("id = ?", forumID).First(&forum).Error; err != nil {
+			return err
+		}
+		gids = forum.GroupIDs
+	}
+	scope := func(d *gorm.DB) *gorm.DB {
+		if len(gids) > 0 {
+			return d.Where("groups.id = ANY(?)", gids)
+		}
+		return d
+	}
+
+	return g.model(ctx).
+		Scopes(scope).
+		Select([]string{
+			"groups.*",
+			"item.items",
+		}).
+		Joins("LEFT JOIN (SELECT group_id, jsonb_agg(jsonb_build_object('id', id, 'name', name, 'index', index) ORDER BY index ASC) as items from group_items group by group_id) as item ON item.group_id = groups.id").
 		Order("index ASC").
 		Find(res).Error
 }

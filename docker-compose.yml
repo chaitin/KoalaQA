@@ -15,7 +15,7 @@ services:
 
   api:
     container_name: koala-qa-api
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/api:v0.6.0
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/api:v0.7.0
     restart: always
     environment:
       - GLOG_GLOBAL_LEVEL=${GLOG_GLOBAL_LEVEL}
@@ -40,7 +40,7 @@ services:
 
   app:
     container_name: koala-qa-app
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/app:v0.6.0
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/app:v0.7.0
     restart: always
     networks:
       koala:
@@ -107,7 +107,7 @@ services:
 
   anydoc:
     container_name: koala-qa-anydoc
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/anydoc:v0.6.2
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/anydoc:v0.6.3
     restart: always
     environment:
       - MQ_NATS_URL=koala-qa-mq:4222

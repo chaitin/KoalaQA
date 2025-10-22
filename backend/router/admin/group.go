@@ -17,7 +17,7 @@ type group struct {
 // @Success 200 {object} context.Response{data=model.ListRes{items=[]model.GroupWithItem{items=[]model.GroupItemInfo}}}
 // @Router /admin/group [get]
 func (g *group) List(ctx *context.Context) {
-	res, err := g.svcG.ListWithItem(ctx)
+	res, err := g.svcG.ListWithItem(ctx, 0)
 	if err != nil {
 		ctx.InternalError(err, "list group failed")
 		return

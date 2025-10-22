@@ -108,6 +108,7 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 		}
 		notifyMsg := topic.MsgMessageNotify{
 			DiscussID:      disc.ID,
+			ForumID:        disc.ForumID,
 			DiscussionType: disc.Type,
 			DiscussTitle:   disc.Title,
 			DiscussUUID:    disc.UUID,

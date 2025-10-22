@@ -9,29 +9,28 @@ import (
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/rag"
 	"github.com/chaitin/koalaqa/pkg/topic"
-	"github.com/chaitin/koalaqa/repo"
 	"github.com/chaitin/koalaqa/svc"
 )
 
 type Comment struct {
-	logger  *glog.Logger
-	llm     *svc.LLM
-	bot     *svc.Bot
-	disc    *svc.Discussion
-	pub     mq.Publisher
-	rag     rag.Service
-	dataset *repo.Dataset
+	logger *glog.Logger
+	llm    *svc.LLM
+	bot    *svc.Bot
+	disc   *svc.Discussion
+	forum  *svc.Forum
+	pub    mq.Publisher
+	rag    rag.Service
 }
 
-func NewComment(disc *svc.Discussion, bot *svc.Bot, llm *svc.LLM, pub mq.Publisher, rag rag.Service, dataset *repo.Dataset) *Comment {
+func NewComment(disc *svc.Discussion, bot *svc.Bot, llm *svc.LLM, pub mq.Publisher, rag rag.Service, forum *svc.Forum) *Comment {
 	return &Comment{
-		llm:     llm,
-		logger:  glog.Module("sub.comment"),
-		disc:    disc,
-		bot:     bot,
-		pub:     pub,
-		rag:     rag,
-		dataset: dataset,
+		llm:    llm,
+		logger: glog.Module("sub.comment"),
+		disc:   disc,
+		bot:    bot,
+		pub:    pub,
+		rag:    rag,
+		forum:  forum,
 	}
 }
 
@@ -84,6 +83,12 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 		return nil
 	}
 
+	forum, err := d.forum.GetByID(ctx, disc.ForumID)
+	if err != nil {
+		logger.WithErr(err).Warn("get forum failed")
+		return nil
+	}
+
 	go func() {
 		if disc.Type != model.DiscussionTypeQA || comment.ParentID == 0 {
 			d.disc.IncrementComment(disc.UUID)
@@ -97,7 +102,7 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 	}
 
 	// record rag
-	ragID, err := d.rag.UpsertRecords(ctx, d.dataset.GetFrontendID(ctx), prompt, nil)
+	ragID, err := d.rag.UpsertRecords(ctx, forum.DatasetID, prompt, nil)
 	if err != nil {
 		return err
 	}
@@ -149,6 +154,7 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 		logger.Info("ai not know the answer, notify admin")
 		notifyMsg := topic.MsgMessageNotify{
 			DiscussID:      disc.ID,
+			ForumID:        forum.ID,
 			DiscussionType: disc.Type,
 			DiscussTitle:   disc.Title,
 			DiscussUUID:    disc.UUID,

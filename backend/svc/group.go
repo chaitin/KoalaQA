@@ -11,9 +11,9 @@ type Group struct {
 	repoG *repo.Group
 }
 
-func (g *Group) ListWithItem(ctx context.Context) (*model.ListRes[model.GroupWithItem], error) {
+func (g *Group) ListWithItem(ctx context.Context, forumID uint) (*model.ListRes[model.GroupWithItem], error) {
 	var res model.ListRes[model.GroupWithItem]
-	err := g.repoG.ListWithItem(ctx, &res.Items)
+	err := g.repoG.ListWithItem(ctx, forumID, &res.Items)
 	if err != nil {
 		return nil, err
 	}
