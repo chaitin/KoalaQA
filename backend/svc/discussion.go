@@ -195,12 +195,13 @@ type DiscussionListReq struct {
 	Filter   DiscussionListFilter `json:"filter" form:"filter,default=hot"`
 	Type     model.DiscussionType `json:"type" form:"type,default=qa"`
 	GroupIDs model.Int64Array     `json:"group_ids" form:"group_ids"`
+	ForumID  uint                 `json:"forum_id" form:"forum_id"`
 }
 
 func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListReq) (*model.ListRes[*model.DiscussionListItem], error) {
 	var res model.ListRes[*model.DiscussionListItem]
 	if req.Keyword != "" {
-		discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: req.Keyword})
+		discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: req.Keyword, ForumID: req.ForumID})
 		if err != nil {
 			return nil, err
 		}
@@ -224,6 +225,7 @@ func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListRe
 
 	var query []repo.QueryOptFunc
 	query = append(query, repo.QueryWithEqual("type", req.Type))
+	query = append(query, repo.QueryWithEqual("forum_id", req.ForumID))
 	if req.Filter == DiscussionListFilterMine {
 <<<<<<< HEAD
 		query = append(query, repo.QueryWithEqual("members", userID, repo.EqualOPValIn))
@@ -312,6 +314,7 @@ func (d *Discussion) LikeDiscussion(ctx context.Context, discUUID string, user m
 	}
 	notifyMsg := topic.MsgMessageNotify{
 		DiscussID:      disc.ID,
+		ForumID:        disc.ForumID,
 		DiscussionType: disc.Type,
 		DiscussUUID:    disc.UUID,
 		DiscussTitle:   disc.Title,
@@ -333,12 +336,18 @@ func (d *Discussion) RevokeLikeDiscussion(ctx context.Context, discUUID string, 
 }
 
 type DiscussionSearchReq struct {
-	Keyword string `json:"keyword" form:"keyword"`
+	Keyword string
+	ForumID uint
 }
 
 func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*model.DiscussionListItem, error) {
+	var forum model.Forum
+	err := d.in.ForumRepo.GetByID(ctx, &forum, req.ForumID)
+	if err != nil {
+		return nil, err
+	}
 	records, err := d.in.Rag.QueryRecords(ctx, rag.QueryRecordsReq{
-		DatasetIDs:          []string{d.in.Dataset.GetFrontendID(ctx)},
+		DatasetIDs:          []string{forum.DatasetID},
 		Query:               req.Keyword,
 		GroupIDs:            nil,
 		TopK:                10,
@@ -436,6 +445,7 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 	}
 	notifyMsg := topic.MsgMessageNotify{
 		DiscussID:      disc.ID,
+		ForumID:        disc.ForumID,
 		DiscussionType: disc.Type,
 		DiscussTitle:   disc.Title,
 		DiscussUUID:    disc.UUID,
@@ -591,6 +601,7 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 	}
 	notifyMsg := topic.MsgMessageNotify{
 		DiscussID:      disc.ID,
+		ForumID:        disc.ForumID,
 		DiscussionType: disc.Type,
 		DiscussTitle:   disc.Title,
 		DiscussUUID:    disc.UUID,
@@ -624,6 +635,7 @@ func (d *Discussion) LikeComment(ctx context.Context, userInfo model.UserInfo, d
 
 	notifyMsg := topic.MsgMessageNotify{
 		DiscussID:      disc.ID,
+		ForumID:        disc.ForumID,
 		DiscussionType: disc.Type,
 		DiscussUUID:    disc.UUID,
 		DiscussTitle:   disc.Title,
@@ -660,6 +672,7 @@ func (d *Discussion) DislikeComment(ctx context.Context, userInfo model.UserInfo
 
 	notifyMsg := topic.MsgMessageNotify{
 		DiscussID:      disc.ID,
+		ForumID:        disc.ForumID,
 		DiscussionType: disc.Type,
 		DiscussUUID:    disc.UUID,
 		DiscussTitle:   disc.Title,

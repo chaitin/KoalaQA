@@ -22,13 +22,23 @@ func (m *initForum) Migrate(tx *gorm.DB) error {
 	if count > 0 {
 		return nil
 	}
+	var gids []int64
+	if err := tx.Model(&model.Group{}).Pluck("id", &gids).Error; err != nil {
+		return err
+	}
+	var dataset model.Dataset
+	if err := tx.Model(&model.Dataset{}).Where("name = ?", model.DatasetFrontend).First(&dataset).Error; err != nil {
+		return err
+	}
 	forum := model.Forum{
-		Name: "默认板块",
+		Name:      "默认板块",
+		DatasetID: dataset.SetID,
+		GroupIDs:  gids,
 	}
 	if err := tx.Create(&forum).Error; err != nil {
 		return err
 	}
-	if err := tx.Model(&model.Group{}).Where("forum_id = 0").Update("forum_id", forum.ID).Error; err != nil {
+	if err := tx.Model(&model.Discussion{}).Where("forum_id = 0").Update("forum_id", forum.ID).Error; err != nil {
 		return err
 	}
 	return nil

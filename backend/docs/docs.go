@@ -86,6 +86,83 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/forum": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "summary": "list forum",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/model.ForumInfo"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "summary": "update forum",
+                "parameters": [
+                    {
+                        "description": "request params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.ForumUpdateReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/group": {
             "get": {
                 "produces": [
@@ -2910,6 +2987,11 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "integer",
+                        "name": "forum_id",
+                        "in": "query"
+                    },
+                    {
                         "type": "array",
                         "items": {
                             "type": "integer"
@@ -3023,55 +3105,6 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "type": "string"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
-        "/discussion/search": {
-            "post": {
-                "description": "search discussion",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "discussion"
-                ],
-                "summary": "search discussion",
-                "parameters": [
-                    {
-                        "description": "discussion",
-                        "name": "discussion",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/svc.DiscussionSearchReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/context.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/model.Discussion"
-                                            }
                                         }
                                     }
                                 }
@@ -3663,6 +3696,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/forum": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "summary": "list forums",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.ForumInfo"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/group": {
             "get": {
                 "produces": [
@@ -3672,6 +3739,14 @@ const docTemplate = `{
                     "group_frontend"
                 ],
                 "summary": "frontend list group",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "forum id",
+                        "name": "forum_id",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -4147,83 +4222,6 @@ const docTemplate = `{
                 "CommentLikeStateDislike"
             ]
         },
-        "model.Discussion": {
-            "type": "object",
-            "properties": {
-                "comment": {
-                    "type": "integer"
-                },
-                "content": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "integer"
-                },
-                "dislike": {
-                    "type": "integer"
-                },
-                "forum_id": {
-                    "type": "integer"
-                },
-                "group_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "hot": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "like": {
-                    "type": "integer"
-                },
-                "members": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "rag_id": {
-                    "type": "string"
-                },
-                "resolved": {
-                    "type": "boolean"
-                },
-                "resolved_at": {
-                    "type": "integer"
-                },
-                "summary": {
-                    "type": "string"
-                },
-                "tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "title": {
-                    "type": "string"
-                },
-                "type": {
-                    "$ref": "#/definitions/model.DiscussionType"
-                },
-                "updated_at": {
-                    "type": "integer"
-                },
-                "user_id": {
-                    "type": "integer"
-                },
-                "uuid": {
-                    "type": "string"
-                },
-                "view": {
-                    "type": "integer"
-                }
-            }
-        },
         "model.DiscussionComment": {
             "type": "object",
             "properties": {
@@ -4626,6 +4624,26 @@ const docTemplate = `{
                 "FileTypeFile",
                 "FileTypeMax"
             ]
+        },
+        "model.ForumInfo": {
+            "type": "object",
+            "properties": {
+                "group_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "index": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
         },
         "model.GroupItemInfo": {
             "type": "object",
@@ -5162,7 +5180,6 @@ const docTemplate = `{
         "svc.DiscussionCreateReq": {
             "type": "object",
             "required": [
-                "forum_id",
                 "title"
             ],
             "properties": {
@@ -5207,14 +5224,6 @@ const docTemplate = `{
                 "DiscussionListFilterNew",
                 "DiscussionListFilterMine"
             ]
-        },
-        "svc.DiscussionSearchReq": {
-            "type": "object",
-            "properties": {
-                "keyword": {
-                    "type": "string"
-                }
-            }
         },
         "svc.DiscussionUpdateReq": {
             "type": "object",
@@ -5332,6 +5341,17 @@ const docTemplate = `{
                 },
                 "uuid": {
                     "type": "string"
+                }
+            }
+        },
+        "svc.ForumUpdateReq": {
+            "type": "object",
+            "properties": {
+                "forums": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ForumInfo"
+                    }
                 }
             }
         },

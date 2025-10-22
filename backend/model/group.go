@@ -3,9 +3,8 @@ package model
 type Group struct {
 	Base
 
-	Index   uint   `gorm:"column:index"`
-	Name    string `gorm:"column:name;type:text"`
-	ForumID uint   `gorm:"column:forum_id;not null;default:0;index"`
+	Index uint   `gorm:"column:index"`
+	Name  string `gorm:"column:name;type:text"`
 }
 
 type GroupItemInfo struct {
