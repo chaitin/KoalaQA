@@ -131,9 +131,9 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
     setLoading(true);
     try {
       if (status === 'edit') {
-        await putDiscussionDiscId({ discId: id + '' }, params).then(onOk);
-        // 编辑成功后刷新当前页面
-        router.refresh();
+        await putDiscussionDiscId({ discId: id + '' }, params);
+        // 编辑成功后调用 onOk 回调，其中包含页面刷新逻辑
+        onOk();
       } else {
         const uid = await postDiscussion({ ...params, type: type as ModelDiscussionType });
         // 创建成功后跳转到首页
@@ -220,74 +220,73 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
           size='small'
           autoComplete='off'
         />
-        <FormControl error={!!errors.tags?.message}>
-          <Controller
-            name='tags'
-            control={control}
-            render={({ field }) => (
-              <Autocomplete
-                multiple
-                freeSolo
-                options={[]}
-                value={field.value || []}
-                onChange={(_, value) => {
-                  const normalized = Array.from(
-                    new Set(
-                      value
-                        .map((v) => (typeof v === 'string' ? v.trim() : v))
-                        .filter(Boolean)
-                    )
+        <Controller
+          name='tags'
+          control={control}
+          render={({ field }) => (
+            <Autocomplete
+              multiple
+              freeSolo
+              options={[]}
+              value={field.value || []}
+              onChange={(_, value) => {
+                const normalized = Array.from(
+                  new Set(
+                    value
+                      .map((v) => (typeof v === 'string' ? v.trim() : v))
+                      .filter(Boolean)
+                  )
+                );
+                field.onChange(normalized);
+              }}
+              filterSelectedOptions
+              size='small'
+              renderTags={(value: readonly string[], getTagProps) =>
+                value.map((option: string, index: number) => {
+                  const { key, ...tagProps } = getTagProps({ index });
+                  const label = (
+                    <Stack direction='row' alignItems='center' gap={0.5}>
+                      {`# ${option}`}
+                    </Stack>
                   );
-                  field.onChange(normalized);
-                }}
-                filterSelectedOptions
-                size='small'
-                renderTags={(value: readonly string[], getTagProps) =>
-                  value.map((option: string, index: number) => {
-                    const { key, ...tagProps } = getTagProps({ index });
-                    const label = (
-                      <Stack direction='row' alignItems='center' gap={0.5}>
-                        {`# ${option}`}
-                      </Stack>
-                    );
-                    return (
-                      <Tag
-                        key={key}
-                        label={label}
-                        size='small'
-                        sx={{
-                          backgroundColor: '#F2F3F5',
-                        }}
-                        {...tagProps}
-                      />
-                    );
-                  })
-                }
-                renderOption={(props, option) => {
-                  const { key, ...optionProps } = props;
                   return (
-                    <Box
+                    <Tag
                       key={key}
-                      component='li'
-                      {...optionProps}
-                      sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-                    >
-                      {option}
-                    </Box>
+                      label={label}
+                      size='small'
+                      sx={{
+                        backgroundColor: '#F2F3F5',
+                      }}
+                      {...tagProps}
+                    />
                   );
-                }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label='标签'
-                    placeholder='输入后按回车可添加自定义标签'
-                  />
-                )}
-              />
-            )}
-          />
-          <FormHelperText>{errors.tags?.message as string}</FormHelperText>
-        </FormControl>
+                })
+              }
+              renderOption={(props, option) => {
+                const { key, ...optionProps } = props;
+                return (
+                  <Box
+                    key={key}
+                    component='li'
+                    {...optionProps}
+                    sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                  >
+                    {option}
+                  </Box>
+                );
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label='标签'
+                  placeholder='输入后按回车可添加自定义标签'
+                  error={!!errors.tags?.message}
+                  helperText={errors.tags?.message as string}
+                />
+              )}
+            />
+          )}
+        />
         <Controller
             name='group_ids'
             control={control}
@@ -400,7 +399,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
               );
             }}
           />
-        <FormControl error={!!errors.content?.message}>
+        <Box>
           <Box
             sx={{
               border: '1px solid #e0e0e0',
@@ -427,10 +426,12 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
               />
             </Box>
           </Box>
-          <FormHelperText id='component-error-text'>
-            {errors.content?.message as string}
-          </FormHelperText>
-        </FormControl>
+          {errors.content?.message && (
+            <FormHelperText error id='component-error-text'>
+              {errors.content?.message as string}
+            </FormHelperText>
+          )}
+        </Box>
       </Stack>
     </Modal>
   );

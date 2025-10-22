@@ -51,6 +51,7 @@ export async function generateMetadata(
   const params = await props.params
   const { id } = params
   const data = await getDiscussionDiscId({ discId: id })
+  console.log(data, '------')
   return await formatMeta(
     {
       title: data.title,

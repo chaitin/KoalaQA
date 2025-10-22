@@ -2,13 +2,11 @@ import {
   deleteAdminKbKbIdDocumentDocId,
   getAdminKbKbIdDocument,
   getAdminKbKbIdDocumentDocId,
-  ModelDocStatus,
   ModelKBDocumentDetail,
   SvcDocListItem,
 } from '@/api';
 import Card from '@/components/card';
 import { fileType } from '@/components/ImportDoc/const';
-import MarkDown from '@/components/markDown';
 import StatusBadge from '@/components/StatusBadge';
 import { useListQueryParams } from '@/hooks/useListQueryParams';
 import { Ellipsis, message, Modal, Table } from '@ctzhian/ui';
@@ -19,6 +17,7 @@ import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 import DocImport from './docImport';
 import { useSearchParams } from 'react-router-dom';
+import EditorContent from '@/components/EditorContent';
 
 // 新增：用于请求 markdown 内容
 const fetchMarkdownContent = async (url: string): Promise<string> => {
@@ -26,13 +25,13 @@ const fetchMarkdownContent = async (url: string): Promise<string> => {
     const res = await fetch(url);
     if (!res.ok) throw new Error('请求 markdown 内容失败');
     return await res.text();
-  } catch (e) {
+  } catch {
     return '加载内容失败';
   }
 };
 
 const AdminDocument = () => {
-  const { query, setPage, setSize, page, size, setParams } = useListQueryParams();
+  const { query, page, size, setParams } = useListQueryParams();
   const [searchParams] = useSearchParams();
   const kb_id = +searchParams.get('id')!;
   const [title, setTitle] = useState(query.title);
@@ -46,7 +45,7 @@ const AdminDocument = () => {
   const [markdownContent, setMarkdownContent] = useState<string>('');
 
   const viewDetail = async (item: SvcDocListItem) => {
-    const docDetail = await getAdminKbKbIdDocumentDocId(kb_id, item.id!);
+    const docDetail = await getAdminKbKbIdDocumentDocId({ kbId: kb_id, docId: item.id! });
     setDetail(docDetail);
     // 如果 markdown 字段是 url，则请求内容
     if (docDetail?.markdown && /^https?:\/\//.test(docDetail.markdown)) {
@@ -74,7 +73,7 @@ const AdminDocument = () => {
         </>
       ),
       onOk: () => {
-        deleteAdminKbKbIdDocumentDocId(kb_id, item.id!).then(() => {
+        deleteAdminKbKbIdDocumentDocId({ kbId: kb_id, docId: item.id! }).then(() => {
           message.success('删除成功');
           fetchData({
             page: 1,
@@ -140,7 +139,7 @@ const AdminDocument = () => {
     const _query = { ...query };
     delete _query.name;
     fetchData(_query);
-  }, [query]);
+  }, [query, fetchData]);
 
   return (
     <Stack component={Card} sx={{ height: '100%', pt: 0 }}>
@@ -222,7 +221,7 @@ const AdminDocument = () => {
           </Typography>
 
           {detail ? (
-            <MarkDown content={markdownContent || '未查询到回答内容'} />
+            <EditorContent content={markdownContent || '未查询到回答内容'} />
           ) : (
             <Typography sx={{ color: 'text.secondary' }}>无可显示内容</Typography>
           )}

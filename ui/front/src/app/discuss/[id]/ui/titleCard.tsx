@@ -5,14 +5,16 @@ import {
   postDiscussionDiscIdLike,
   postDiscussionDiscIdRevokeLike,
 } from '@/api'
-import { ModelDiscussionDetail, ModelUserRole, ModelDiscussionType } from '@/api/types'
-import { Card, MarkDown } from '@/components'
+import { ModelDiscussionDetail, ModelDiscussionType, ModelUserRole } from '@/api/types'
+import { Card } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import { ReleaseModal, Tag } from '@/components/discussion'
 import EditorWrap from '@/components/editor/edit/Wrap'
+import EditorContent from '@/components/EditorContent'
 import Modal from '@/components/modal'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
-import { Ellipsis } from '@ctzhian/ui'
+import { formatNumber } from '@/lib/utils'
+import { generateCacheKey, clearCache } from '@/lib/api-cache'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import ThumbUpAltOutlinedIcon from '@mui/icons-material/ThumbUpAltOutlined'
 import { Box, Button, Divider, IconButton, Menu, MenuItem, Stack, Typography } from '@mui/material'
@@ -22,8 +24,6 @@ import 'dayjs/locale/zh-cn'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { useParams, useRouter } from 'next/navigation'
 import { useContext, useRef, useState } from 'react'
-import { formatNumber } from '@/lib/utils'
-import EditorContent from '@/components/EditorContent'
 
 // 添加CSS动画样式
 const animationStyles = `
@@ -111,14 +111,13 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           // 未点赞，点赞
           await postDiscussionDiscIdLike({ discId: id })
         }
-        // 刷新页面数据
         router.refresh()
       } catch (error) {
         console.error('点赞操作失败:', error)
       }
     })
   }
-  console.log(data)
+
   return (
     <Card
       sx={{

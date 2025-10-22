@@ -33,11 +33,10 @@ const fetchMarkdownContent = async (url: string): Promise<string> => {
 };
 
 const AdminDocument = () => {
-  const { query, setPage, setSize, page, size, setParams } = useListQueryParams();
+  const { query, page, size, setParams } = useListQueryParams();
   const [searchParams] = useSearchParams();
   const kb_id = +searchParams.get('id')!;
   const [title, setTitle] = useState(query.title);
-  const [file_type, setFile_type] = useState(query.file_type);
   const {
     data,
     loading,

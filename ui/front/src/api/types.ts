@@ -453,7 +453,7 @@ export interface SvcDiscussUploadFileReq {
 
 export interface SvcDiscussionCreateReq {
   content?: string;
-  forum_id: number;
+  forum_id?: number;
   group_ids?: number[];
   tags?: string[];
   title: string;

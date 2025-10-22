@@ -7,7 +7,7 @@ import { useRequest } from 'ahooks';
 import dayjs from 'dayjs';
 import React, { useEffect, useState } from 'react';
 import EditorWrap from '../editor/edit/Wrap';
-import MarkDown from '../markDown';
+import EditorContent from '../EditorContent';
 
 interface QaReviewModalProps {
   open: boolean;
@@ -76,7 +76,7 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
 
       // 如果有相似问答对ID，获取历史问答对详情
       if (qaItem.similar_id) {
-        getAdminKbKbIdQuestionQaId(kbId, qaItem.similar_id)
+        getAdminKbKbIdQuestionQaId({kbId, qaId: qaItem.similar_id})
           .then(res => {
             setHistoricalQaDetail(res);
           })
@@ -172,7 +172,7 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
               <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '120px' }}>
                 回答
               </Typography>
-              <MarkDown content={historicalQaDetail?.markdown} sx={{ p: 2, mt: 1 }} />
+              <EditorContent content={historicalQaDetail?.markdown} sx={{ p: 2, mt: 1 }} />
               {/* <TextField
                   label="回答"
                   value={historicalQaDetail?.markdown || ''}

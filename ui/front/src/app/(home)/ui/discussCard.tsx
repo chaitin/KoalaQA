@@ -12,6 +12,7 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 import { LazyImage } from '@/components/optimized'
 import { useContext, useMemo } from 'react'
 import Link from 'next/link'
+import EditorContent from '@/components/EditorContent'
 
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
@@ -159,7 +160,7 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
           </Typography>
         </Stack>
       </Stack>
-      <MarkDown
+      <EditorContent
         content={replaceImagesWithText(it.content || '')}
         truncateLength={100} // 设置截断长度为100个字符，根据需要调整
         sx={{
@@ -412,7 +413,7 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
           </Stack>
         </Stack>
       </Stack>
-      <MarkDown
+      <EditorContent
         content={replaceImagesWithText(it.content || '')}
         truncateLength={60} // 设置截断长度为100个字符，根据需要调整
         sx={{

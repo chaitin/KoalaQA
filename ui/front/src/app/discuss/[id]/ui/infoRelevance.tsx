@@ -6,6 +6,7 @@ import { ModelDiscussionDetail } from '@/api/types';
 import { useDebounceFn } from 'ahooks';
 
 import { MarkDown } from '@/components';
+import EditorContent from '@/components/EditorContent';
 
 interface MarkdownHeader {
   text: string;
@@ -175,7 +176,7 @@ const InfoRelevance = (props: { data: ModelDiscussionDetail }) => {
           AI 总结
         </Box>
         <Stack gap={2.5}>
-          <MarkDown content={data.summary} />
+          <EditorContent content={data.summary} />
         </Stack>
       </Box>
     </Stack>

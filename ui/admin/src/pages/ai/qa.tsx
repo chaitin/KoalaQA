@@ -20,7 +20,7 @@ import LoadingBtn from '@/components/LoadingButton';
 import { ColumnsType } from '@ctzhian/ui/dist/Table';
 
 const AdminDocument = () => {
-  const { query, setPage, setSize, page, size, setParams } = useListQueryParams();
+  const { query, page, size, setParams } = useListQueryParams();
   const [searchParams] = useSearchParams();
   const kb_id = +searchParams.get('id')!;
   console.log(kb_id);
