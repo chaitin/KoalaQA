@@ -5,6 +5,7 @@ import {
   getAdminKbKbIdSpaceSpaceId,
   getAdminKbKbIdSpaceSpaceIdFolder,
   getAdminKbKbIdSpaceSpaceIdRemote,
+  PlatformPlatformType,
   postAdminKbKbIdSpace,
   postAdminKbKbIdSpaceSpaceIdFolder,
   postAdminKbSpaceRemote,
@@ -13,26 +14,21 @@ import {
   putAdminKbKbIdSpaceSpaceIdRefresh,
   SvcCreateSpaceReq,
   SvcListRemoteReq,
+  SvcListSpaceFolderItem,
   SvcListSpaceItem,
   SvcListSpaceKBItem,
-  SvcListSpaceFolderItem,
   SvcUpdateSpaceReq,
-  PlatformPlatformType,
 } from '@/api';
+import dingtalk_screen_1 from '@/assets/images/dingtalk_1.png';
+import dingtalk_screen_2 from '@/assets/images/dingtalk_2.png';
 import LoadingButton from '@/components/LoadingButton';
 import StatusBadge from '@/components/StatusBadge';
 import { Card, Icon, message, Modal } from '@ctzhian/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import CloseIcon from '@mui/icons-material/Close';
-import DeleteIcon from '@mui/icons-material/Delete';
 import DescriptionIcon from '@mui/icons-material/Description';
-import EditIcon from '@mui/icons-material/Edit';
 import FolderIcon from '@mui/icons-material/Folder';
-import GetAppIcon from '@mui/icons-material/GetApp';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import dingtalk_screen_1 from '@/assets/images/dingtalk_1.png';
-import dingtalk_screen_2 from '@/assets/images/dingtalk_2.png';
 import {
   Box,
   Button,
@@ -51,13 +47,11 @@ import {
   ListItemText,
   Menu,
   MenuItem,
-  Radio,
-  RadioGroup,
   Stack,
   Tab,
   Tabs,
   TextField,
-  Typography,
+  Typography
 } from '@mui/material';
 import { useRequest } from 'ahooks';
 import dayjs from 'dayjs';
@@ -98,7 +92,7 @@ const KnowledgeBasePage = () => {
 
   // 获取知识库空间列表
   const { data: spacesData, refresh: refreshSpaces } = useRequest(
-    () => getAdminKbKbIdSpace(kb_id),
+    () => getAdminKbKbIdSpace({kbId: kb_id}),
     {
       onSuccess: data => {
         // 如果当前没有选中任何知识源，且有知识源数据，则默认选中第一个
@@ -122,7 +116,7 @@ const KnowledgeBasePage = () => {
   } = useRequest(
     () =>
       selectedSpaceId
-        ? getAdminKbKbIdSpaceSpaceIdFolder(kb_id, selectedSpaceId)
+        ? getAdminKbKbIdSpaceSpaceIdFolder({kbId: kb_id, spaceId: selectedSpaceId})
         : Promise.resolve(null),
     {
       refreshDeps: [selectedSpaceId],
@@ -160,7 +154,7 @@ const KnowledgeBasePage = () => {
 
   // 获取知识库详情（用于编辑时获取完整信息）
   const { run: fetchSpaceDetail } = useRequest(
-    (spaceId: number) => getAdminKbKbIdSpaceSpaceId(kb_id, spaceId),
+    (spaceId: number) => getAdminKbKbIdSpaceSpaceId({kbId: kb_id, spaceId: spaceId}),
     {
       manual: true,
       onSuccess: data => {
@@ -193,7 +187,6 @@ const KnowledgeBasePage = () => {
 
   const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>, space: SvcListSpaceItem) => {
     event.stopPropagation();
-    console.log(space);
     setAnchorEl(event.currentTarget);
     setCurrentSpace(space);
   };
@@ -275,7 +268,7 @@ const KnowledgeBasePage = () => {
         okButtonProps: { color: 'error' },
         onOk: async () => {
           try {
-            await deleteAdminKbKbIdSpaceSpaceId(kb_id, currentSpace.id || 0);
+            await deleteAdminKbKbIdSpaceSpaceId({kbId: kb_id, spaceId: currentSpace.id || 0});
             message.success('删除成功');
             refreshSpaces();
             if (selectedSpaceId === currentSpace.id) {
@@ -295,7 +288,11 @@ const KnowledgeBasePage = () => {
     handleMenuClose();
 
     try {
-      await putAdminKbKbIdSpaceSpaceIdFolderFolderId(kb_id, selectedSpaceId, currentFolder.id!);
+      await putAdminKbKbIdSpaceSpaceIdFolderFolderId({
+        kbId: kb_id,
+        spaceId: selectedSpaceId,
+        folderId: currentFolder.id!,
+      });
       message.success('更新成功');
       refreshFolders();
     } catch {
@@ -314,11 +311,11 @@ const KnowledgeBasePage = () => {
       okButtonProps: { color: 'error' },
       onOk: async () => {
         try {
-          await deleteAdminKbKbIdSpaceSpaceIdFolderFolderId(
-            kb_id,
-            selectedSpaceId,
-            currentFolder.id!
-          );
+          await deleteAdminKbKbIdSpaceSpaceIdFolderFolderId({
+            kbId: kb_id,
+            spaceId: selectedSpaceId,
+            folderId: currentFolder.id!,
+          });
           message.success('删除成功');
           refreshFolders();
         } catch {
@@ -330,7 +327,7 @@ const KnowledgeBasePage = () => {
 
   const handleRefreshSpace = () => {
     if (currentSpace) {
-      putAdminKbKbIdSpaceSpaceIdRefresh(kb_id, currentSpace.id || 0)
+      putAdminKbKbIdSpaceSpaceIdRefresh({ kbId: kb_id, spaceId: currentSpace.id || 0 })
         .then(() => {
           message.success('更新成功');
           refreshFolders();
@@ -369,7 +366,7 @@ const KnowledgeBasePage = () => {
         opt: platformOpt,
       };
 
-      const newSpaceId = await postAdminKbKbIdSpace(kb_id, spaceData);
+      const newSpaceId = await postAdminKbKbIdSpace({ kbId: kb_id }, spaceData);
 
       // 成功后执行 dingtalkGetSpaces 逻辑
       setCurrentSpace({ id: newSpaceId });
@@ -462,7 +459,7 @@ const KnowledgeBasePage = () => {
           title: data.title,
           opt: platformOpt,
         };
-        await putAdminKbKbIdSpaceSpaceId(kb_id, editSpace.id || 0, updateData);
+        await putAdminKbKbIdSpaceSpaceId({ kbId: kb_id, spaceId: editSpace.id || 0 }, updateData);
         message.success('修改成功');
       } else {
         const spaceData: SvcCreateSpaceReq = {
@@ -470,7 +467,7 @@ const KnowledgeBasePage = () => {
           platform: selectedPlatform,
           opt: platformOpt,
         };
-        const newSpaceId = await postAdminKbKbIdSpace(kb_id, spaceData);
+        const newSpaceId = await postAdminKbKbIdSpace({ kbId: kb_id }, spaceData);
         // 创建成功后：选中新建空间并打开获取知识库弹窗
         if (selectedPlatform === PlatformPlatformType.PlatformDingtalk) {
           console.log(newSpaceId);
@@ -523,10 +520,13 @@ const KnowledgeBasePage = () => {
       return;
     }
     try {
-      await postAdminKbKbIdSpaceSpaceIdFolder(kb_id, selectedSpaceId, {
-        docs: (remoteData?.items?.filter(i => i.doc_id && selectedFolders.includes(i.doc_id)) ||
-          []) as any,
-      });
+      await postAdminKbKbIdSpaceSpaceIdFolder(
+        { kbId: kb_id, spaceId: selectedSpaceId },
+        {
+          docs: (remoteData?.items?.filter(i => i.doc_id && selectedFolders.includes(i.doc_id)) ||
+            []) as any,
+        }
+      );
       // 刷新文件夹列表
       refreshFolders();
     } catch {
@@ -546,8 +546,8 @@ const KnowledgeBasePage = () => {
 
     try {
       const response = await getAdminKbKbIdSpaceSpaceIdRemote({
-        kbId: kb_id,
         spaceId: selectedSpaceId,
+        kbId: kb_id,
         remote_folder_id: spaceId,
       });
 
@@ -955,7 +955,9 @@ const KnowledgeBasePage = () => {
                   <Stack direction="row" spacing={2} alignItems="center">
                     <Tabs
                       value={identifierType}
-                      onChange={(_, value) => setValue('identifier_type', value as 'unionid' | 'phone')}
+                      onChange={(_, value) =>
+                        setValue('identifier_type', value as 'unionid' | 'phone')
+                      }
                       sx={{
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -1056,10 +1058,22 @@ const KnowledgeBasePage = () => {
                   配置订阅事件
                 </Typography>
 
-                <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' }, alignItems: 'flex-start' }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    gap: 3,
+                    flexDirection: { xs: 'column', md: 'row' },
+                    alignItems: 'flex-start',
+                  }}
+                >
                   {/* 步骤1 */}
                   <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Stack direction="row" alignItems="flex-start" gap={1.5} sx={{ mb: 2, minHeight: 48 }}>
+                    <Stack
+                      direction="row"
+                      alignItems="flex-start"
+                      gap={1.5}
+                      sx={{ mb: 2, minHeight: 48 }}
+                    >
                       <Box
                         sx={{
                           width: 24,
@@ -1078,7 +1092,15 @@ const KnowledgeBasePage = () => {
                         1
                       </Box>
                       <Typography variant="body2" sx={{ lineHeight: 1.6, flex: 1 }}>
-                        导航前往<Box component="span" sx={{ fontWeight: 600 }}>应用详情-开发配置-事件订阅</Box>，选择 <Box component="span" sx={{ fontWeight: 600 }}>Stream 模式推送</Box>，点击按钮进行验证。
+                        导航前往
+                        <Box component="span" sx={{ fontWeight: 600 }}>
+                          应用详情-开发配置-事件订阅
+                        </Box>
+                        ，选择{' '}
+                        <Box component="span" sx={{ fontWeight: 600 }}>
+                          Stream 模式推送
+                        </Box>
+                        ，点击按钮进行验证。
                       </Typography>
                     </Stack>
                     <img
@@ -1097,7 +1119,12 @@ const KnowledgeBasePage = () => {
 
                   {/* 步骤2 */}
                   <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <Stack direction="row" alignItems="flex-start" gap={1.5} sx={{ mb: 2, minHeight: 48 }}>
+                    <Stack
+                      direction="row"
+                      alignItems="flex-start"
+                      gap={1.5}
+                      sx={{ mb: 2, minHeight: 48 }}
+                    >
                       <Box
                         sx={{
                           width: 24,
@@ -1116,7 +1143,11 @@ const KnowledgeBasePage = () => {
                         2
                       </Box>
                       <Typography variant="body2" sx={{ lineHeight: 1.6, flex: 1 }}>
-                        验证通过后，下方事件订阅启用<Box component="span" sx={{ fontWeight: 600 }}>钉钉文档导出完成事件</Box>。
+                        验证通过后，下方事件订阅启用
+                        <Box component="span" sx={{ fontWeight: 600 }}>
+                          钉钉文档导出完成事件
+                        </Box>
+                        。
                       </Typography>
                     </Stack>
                     <img
@@ -1156,8 +1187,8 @@ const KnowledgeBasePage = () => {
                 selectedPlatform === 9
                   ? 'https://your-pandawiki.com'
                   : selectedPlatform === PlatformPlatformType.PlatformDingtalk
-                  ? 'https://your-dingtalk.com'
-                  : 'https://your-feishu.com'
+                    ? 'https://your-dingtalk.com'
+                    : 'https://your-feishu.com'
               }
               error={Boolean(formState.errors.url?.message)}
               helperText={formState.errors.url?.message}

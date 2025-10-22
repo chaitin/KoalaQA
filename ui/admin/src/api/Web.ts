@@ -13,8 +13,10 @@
 import request, { RequestParams } from "./httpClient";
 import {
   ContextResponse,
+  DeleteAdminKbKbIdWebDocIdParams,
   GetAdminKbKbIdWebParams,
   ModelListRes,
+  PutAdminKbKbIdWebDocIdParams,
   SvcListWebItem,
 } from "./types";
 
@@ -66,8 +68,7 @@ export const getAdminKbKbIdWeb = (
  */
 
 export const putAdminKbKbIdWebDocId = (
-  kbId: number,
-  docId: number,
+  { kbId, docId, ...query }: PutAdminKbKbIdWebDocIdParams,
   params: RequestParams = {},
 ) =>
   request<
@@ -92,8 +93,7 @@ export const putAdminKbKbIdWebDocId = (
  */
 
 export const deleteAdminKbKbIdWebDocId = (
-  kbId: number,
-  docId: number,
+  { kbId, docId, ...query }: DeleteAdminKbKbIdWebDocIdParams,
   params: RequestParams = {},
 ) =>
   request<ContextResponse>({

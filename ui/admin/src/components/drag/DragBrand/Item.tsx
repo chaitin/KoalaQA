@@ -14,7 +14,6 @@ import { CSS } from '@dnd-kit/utilities';
 import { Box, Button, IconButton, Stack, TextField } from '@mui/material';
 import { Icon } from '@ctzhian/ui';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import RemoveCircle from '@mui/icons-material/RemoveCircle';
 import { CSSProperties, forwardRef, HTMLAttributes, useCallback, useState } from 'react';
 import { Control, Controller, FieldErrors, useFieldArray } from 'react-hook-form';
 
@@ -48,7 +47,6 @@ const LinkItem = forwardRef<HTMLDivElement, LinkItemProps>(
       linkIndex,
       groupIndex,
       control,
-      errors,
       setIsEdit,
       onRemove,
       withOpacity,

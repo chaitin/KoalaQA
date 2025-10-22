@@ -14,6 +14,7 @@ import request, { ContentType, RequestParams } from "./httpClient";
 import {
   ContextResponse,
   ModelLLM,
+  PutAdminModelIdParams,
   SvcCheckModelRes,
   SvcMKCreateReq,
   SvcMKSupportedReq,
@@ -152,7 +153,7 @@ export const postAdminModelProviderSupported = (
  */
 
 export const putAdminModelId = (
-  id: string,
+  { id, ...query }: PutAdminModelIdParams,
   req: SvcMKUpdateReq,
   params: RequestParams = {},
 ) =>

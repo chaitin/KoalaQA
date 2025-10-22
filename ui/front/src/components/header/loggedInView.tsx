@@ -3,7 +3,7 @@ import { AuthContext } from '@/components/authProvider'
 import { Avatar } from '@/components/discussion'
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined'
 import { Badge, Box, Button, Stack, Tooltip, Typography } from '@mui/material'
-import { useRouter } from 'next/navigation'
+import { useRouterWithForum } from '@/hooks/useRouterWithForum'
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import ProfilePanel from './profilePanel'
 
@@ -200,7 +200,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
   const user = propUser || contextUser
   const [notifications, setNotifications] = useState<MessageNotifyInfo[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
-  const router = useRouter()
+  const router = useRouterWithForum()
   // 保存 ws 实例的 ref
   const wsRef = useRef<WebSocket | null>(null)
   // 保存 ping 定时器的 ref

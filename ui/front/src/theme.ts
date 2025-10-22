@@ -49,6 +49,9 @@ const theme = createTheme(
         main: '#fff',
         contrastText: 'rgba(0, 0, 0, 0.50)',
       },
+      info: {
+        main: '#206CFF',
+      },
       background: {
         default: '#F1F2F8',
         paper: '#FFFFFF',
