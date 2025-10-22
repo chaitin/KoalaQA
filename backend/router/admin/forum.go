@@ -28,7 +28,7 @@ func init() {
 // @Summary list forum
 // @Tags forum
 // @Produce json
-// @Success 200 {object} context.Response{data=model.ListRes{items=[]model.ForumInfo}}
+// @Success 200 {object} context.Response{data=[]model.ForumInfo}
 // @Router /admin/forum [get]
 func (f *forum) List(ctx *context.Context) {
 	res, err := f.svcForum.List(ctx)

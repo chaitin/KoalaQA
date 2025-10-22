@@ -4,17 +4,15 @@ import (
 	"context"
 
 	"github.com/chaitin/koalaqa/model"
-	"github.com/chaitin/koalaqa/pkg/rag"
 	"github.com/chaitin/koalaqa/repo"
 )
 
 type Forum struct {
 	repo *repo.Forum
-	rag  rag.Service
 }
 
-func newForum(forum *repo.Forum, rag rag.Service) *Forum {
-	return &Forum{repo: forum, rag: rag}
+func newForum(forum *repo.Forum) *Forum {
+	return &Forum{repo: forum}
 }
 
 func init() {
@@ -47,26 +45,5 @@ func (f *Forum) Update(ctx context.Context, req ForumUpdateReq) error {
 	if err := f.repo.UpdateWithGroup(ctx, req.Forums); err != nil {
 		return err
 	}
-
-	var forums []model.Forum
-	err := f.repo.List(ctx, &forums, repo.QueryWithEqual("dataset_id", ""))
-	if err != nil {
-		return err
-	}
-
-	for _, forum := range forums {
-		if forum.DatasetID == "" {
-			id, err := f.rag.CreateDataset(ctx)
-			if err != nil {
-				return err
-			}
-			if err := f.repo.Update(ctx,
-				map[string]any{"dataset_id": id},
-				repo.QueryWithEqual("id", forum.ID)); err != nil {
-				return err
-			}
-		}
-	}
-
 	return nil
 }

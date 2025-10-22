@@ -6,6 +6,7 @@ import (
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/database"
+	"github.com/chaitin/koalaqa/pkg/rag"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -13,10 +14,11 @@ import (
 type Forum struct {
 	base[*model.Forum]
 	lock sync.Mutex
+	rag  rag.Service
 }
 
-func newForum(db *database.DB) *Forum {
-	return &Forum{base: base[*model.Forum]{db: db, m: &model.Forum{}}, lock: sync.Mutex{}}
+func newForum(db *database.DB, rag rag.Service) *Forum {
+	return &Forum{base: base[*model.Forum]{db: db, m: &model.Forum{}}, lock: sync.Mutex{}, rag: rag}
 }
 
 func init() {
@@ -54,20 +56,47 @@ func (f *Forum) UpdateWithGroup(ctx context.Context, forums []model.ForumInfo) e
 		}
 
 		delIds := make([]uint, 0)
-		if err := tx.Model(f.m).Where("id != ALL(?)", ids).Pluck("id", &delIds).Error; err != nil {
+		if err := tx.Model(f.m).Scopes(func(d *gorm.DB) *gorm.DB {
+			if len(ids) == 0 {
+				return d.Where("true")
+			}
+			return d.Where("id != ALL(?)", ids)
+		}).Pluck("id", &delIds).Error; err != nil {
 			return err
 		}
 
-		if err := tx.Model(f.m).Where("id IN (?)", delIds).Delete(nil).Error; err != nil {
-			return err
-		}
-
-		if err := tx.Model(&model.Discussion{}).Where("forum_id IN (?)", delIds).Delete(nil).Error; err != nil {
-			return err
+		if len(delIds) > 0 {
+			var discussions []model.Discussion
+			if err := tx.Model(&model.Discussion{}).Where("forum_id IN (?)", delIds).Find(&discussions).Error; err != nil {
+				return err
+			}
+			if err := tx.Model(&model.Discussion{}).Where("forum_id IN (?)", delIds).Delete(nil).Error; err != nil {
+				return err
+			}
+			for _, delId := range delIds {
+				var forum model.Forum
+				if err := tx.Where("id = ?", delId).First(&forum).Error; err != nil {
+					return err
+				}
+				if err := f.rag.DeleteDataset(ctx, forum.DatasetID); err != nil {
+					return err
+				}
+			}
+			if err := tx.Model(f.m).Where("id IN (?)", delIds).Delete(nil).Error; err != nil {
+				return err
+			}
 		}
 
 		var data []model.Forum
 		for _, forum := range forums {
+			datasetID := existsMap[forum.ID].DatasetID
+			if datasetID == "" {
+				id, err := f.rag.CreateDataset(ctx)
+				if err != nil {
+					return err
+				}
+				datasetID = id
+			}
 			data = append(data, model.Forum{
 				Base: model.Base{
 					ID: forum.ID,
@@ -75,7 +104,7 @@ func (f *Forum) UpdateWithGroup(ctx context.Context, forums []model.ForumInfo) e
 				Name:      forum.Name,
 				Index:     forum.Index,
 				GroupIDs:  model.Int64Array(forum.GroupIDs),
-				DatasetID: existsMap[forum.ID].DatasetID,
+				DatasetID: datasetID,
 			})
 		}
 

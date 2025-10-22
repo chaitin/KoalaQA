@@ -87,7 +87,6 @@ func (d *Discussion) Create(ctx context.Context, req DiscussionCreateReq) (strin
 		}
 		req.ForumID = forumID
 	}
-
 	disc := model.Discussion{
 		Title:    req.Title,
 		Content:  req.Content,
