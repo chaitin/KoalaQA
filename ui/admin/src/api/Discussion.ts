@@ -13,16 +13,26 @@
 import request, { ContentType, RequestParams } from "./httpClient";
 import {
   ContextResponse,
+  DeleteDiscussionDiscIdCommentCommentIdParams,
+  DeleteDiscussionDiscIdParams,
+  GetDiscussionDiscIdParams,
   GetDiscussionParams,
-  ModelDiscussion,
   ModelDiscussionDetail,
   ModelDiscussionListItem,
   ModelListRes,
+  PostDiscussionDiscIdCommentCommentIdAcceptParams,
+  PostDiscussionDiscIdCommentCommentIdDislikeParams,
+  PostDiscussionDiscIdCommentCommentIdLikeParams,
+  PostDiscussionDiscIdCommentCommentIdRevokeLikeParams,
+  PostDiscussionDiscIdCommentParams,
+  PostDiscussionDiscIdLikeParams,
+  PostDiscussionDiscIdRevokeLikeParams,
   PostDiscussionUploadPayload,
+  PutDiscussionDiscIdCommentCommentIdParams,
+  PutDiscussionDiscIdParams,
   SvcCommentCreateReq,
   SvcCommentUpdateReq,
   SvcDiscussionCreateReq,
-  SvcDiscussionSearchReq,
   SvcDiscussionUpdateReq,
 } from "./types";
 
@@ -91,36 +101,6 @@ export const postDiscussion = (
   });
 
 /**
- * @description search discussion
- *
- * @tags discussion
- * @name PostDiscussionSearch
- * @summary search discussion
- * @request POST:/discussion/search
- * @response `200` `(ContextResponse & {
-    data?: (ModelDiscussion)[],
-
-})` OK
- */
-
-export const postDiscussionSearch = (
-  discussion: SvcDiscussionSearchReq,
-  params: RequestParams = {},
-) =>
-  request<
-    ContextResponse & {
-      data?: ModelDiscussion[];
-    }
-  >({
-    path: `/discussion/search`,
-    method: "POST",
-    body: discussion,
-    type: ContentType.Json,
-    format: "json",
-    ...params,
-  });
-
-/**
  * @description discussion upload file
  *
  * @tags discussion
@@ -157,7 +137,7 @@ export const postDiscussionUpload = (
  */
 
 export const getDiscussionDiscId = (
-  discId: string,
+  { discId, ...query }: GetDiscussionDiscIdParams,
   params: RequestParams = {},
 ) =>
   request<
@@ -186,7 +166,7 @@ export const getDiscussionDiscId = (
  */
 
 export const putDiscussionDiscId = (
-  discId: string,
+  { discId, ...query }: PutDiscussionDiscIdParams,
   discussion: SvcDiscussionUpdateReq,
   params: RequestParams = {},
 ) =>
@@ -217,7 +197,7 @@ export const putDiscussionDiscId = (
  */
 
 export const deleteDiscussionDiscId = (
-  discId: string,
+  { discId, ...query }: DeleteDiscussionDiscIdParams,
   params: RequestParams = {},
 ) =>
   request<
@@ -246,7 +226,7 @@ export const deleteDiscussionDiscId = (
  */
 
 export const postDiscussionDiscIdComment = (
-  discId: string,
+  { discId, ...query }: PostDiscussionDiscIdCommentParams,
   comment: SvcCommentCreateReq,
   params: RequestParams = {},
 ) =>
@@ -277,8 +257,7 @@ export const postDiscussionDiscIdComment = (
  */
 
 export const putDiscussionDiscIdCommentCommentId = (
-  discId: string,
-  commentId: number,
+  { discId, commentId, ...query }: PutDiscussionDiscIdCommentCommentIdParams,
   comment: SvcCommentUpdateReq,
   params: RequestParams = {},
 ) =>
@@ -309,8 +288,7 @@ export const putDiscussionDiscIdCommentCommentId = (
  */
 
 export const deleteDiscussionDiscIdCommentCommentId = (
-  discId: string,
-  commentId: number,
+  { discId, commentId, ...query }: DeleteDiscussionDiscIdCommentCommentIdParams,
   params: RequestParams = {},
 ) =>
   request<
@@ -339,8 +317,11 @@ export const deleteDiscussionDiscIdCommentCommentId = (
  */
 
 export const postDiscussionDiscIdCommentCommentIdAccept = (
-  discId: string,
-  commentId: number,
+  {
+    discId,
+    commentId,
+    ...query
+  }: PostDiscussionDiscIdCommentCommentIdAcceptParams,
   params: RequestParams = {},
 ) =>
   request<
@@ -366,8 +347,11 @@ export const postDiscussionDiscIdCommentCommentIdAccept = (
  */
 
 export const postDiscussionDiscIdCommentCommentIdDislike = (
-  discId: string,
-  commentId: number,
+  {
+    discId,
+    commentId,
+    ...query
+  }: PostDiscussionDiscIdCommentCommentIdDislikeParams,
   params: RequestParams = {},
 ) =>
   request<ContextResponse>({
@@ -389,8 +373,11 @@ export const postDiscussionDiscIdCommentCommentIdDislike = (
  */
 
 export const postDiscussionDiscIdCommentCommentIdLike = (
-  discId: string,
-  commentId: number,
+  {
+    discId,
+    commentId,
+    ...query
+  }: PostDiscussionDiscIdCommentCommentIdLikeParams,
   params: RequestParams = {},
 ) =>
   request<ContextResponse>({
@@ -412,12 +399,73 @@ export const postDiscussionDiscIdCommentCommentIdLike = (
  */
 
 export const postDiscussionDiscIdCommentCommentIdRevokeLike = (
-  discId: string,
-  commentId: number,
+  {
+    discId,
+    commentId,
+    ...query
+  }: PostDiscussionDiscIdCommentCommentIdRevokeLikeParams,
   params: RequestParams = {},
 ) =>
   request<ContextResponse>({
     path: `/discussion/${discId}/comment/${commentId}/revoke_like`,
+    method: "POST",
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description like discussion
+ *
+ * @tags discussion
+ * @name PostDiscussionDiscIdLike
+ * @summary like discussion
+ * @request POST:/discussion/{disc_id}/like
+ * @response `200` `(ContextResponse & {
+    data?: unknown,
+
+})` OK
+ */
+
+export const postDiscussionDiscIdLike = (
+  { discId, ...query }: PostDiscussionDiscIdLikeParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: unknown;
+    }
+  >({
+    path: `/discussion/${discId}/like`,
+    method: "POST",
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description revoke like discussion
+ *
+ * @tags discussion
+ * @name PostDiscussionDiscIdRevokeLike
+ * @summary revoke like discussion
+ * @request POST:/discussion/{disc_id}/revoke_like
+ * @response `200` `(ContextResponse & {
+    data?: unknown,
+
+})` OK
+ */
+
+export const postDiscussionDiscIdRevokeLike = (
+  { discId, ...query }: PostDiscussionDiscIdRevokeLikeParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: unknown;
+    }
+  >({
+    path: `/discussion/${discId}/revoke_like`,
     method: "POST",
     type: ContentType.Json,
     format: "json",

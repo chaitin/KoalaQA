@@ -34,18 +34,9 @@ const transRole: Record<ModelUserRole, string> = {
   [ModelUserRole.UserRoleMax]: '未知',
 };
 
-// 角色描述信息
-const roleDescriptions: Record<ModelUserRole, string> = {
-  [ModelUserRole.UserRoleUnknown]: '',
-  [ModelUserRole.UserRoleAdmin]: '平台管理员，主要负责平台相关的配置，所有功能所有权限',
-  [ModelUserRole.UserRoleOperator]:
-    '平台内容的运营，主要对平台内容质量和响应速度负责，前台所有权限',
-  [ModelUserRole.UserRoleUser]: '普通用户',
-  [ModelUserRole.UserRoleMax]: '',
-};
 
 const AdminDocument = () => {
-  const { query, setPage, setSize, page, size, setParams } = useListQueryParams();
+  const { query, page, size, setParams } = useListQueryParams();
   const { reset, register, handleSubmit, watch, control } = useForm({
     defaultValues: {
       name: '',
@@ -80,7 +71,7 @@ const AdminDocument = () => {
         </>
       ),
       onOk: () => {
-        deleteAdminUserUserId(item.id!).then(() => {
+        deleteAdminUserUserId({userId: item.id!}).then(() => {
           message.success('删除成功');
           fetchData({
             page: 1,
@@ -91,7 +82,7 @@ const AdminDocument = () => {
   };
   const putUser = handleSubmit(data => {
     if (editItem) {
-      putAdminUserUserId(editItem.id!, data).then(() => {
+      putAdminUserUserId({userId: editItem.id!}, data).then(() => {
         message.success('修改成功');
         fetchData({});
         cancelEdit();
@@ -252,14 +243,11 @@ const AdminDocument = () => {
               >
                 {Object.entries(transRole)
                   .slice(1, -1)
-                  .map(([key, value]) => {
-                    const roleKey = Number(key) as ModelUserRole;
-                    return (
-                      <MenuItem key={key} value={key}>
-                        {value}
-                      </MenuItem>
-                    );
-                  })}
+                  .map(([key, value]) => (
+                    <MenuItem key={key} value={key}>
+                      {value}
+                    </MenuItem>
+                  ))}
               </Select>
             )}
           />

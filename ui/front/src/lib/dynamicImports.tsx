@@ -27,13 +27,7 @@ export const createDynamicComponent = <P extends object>(
  */
 
 // Markdown 编辑器（体积大，不是首屏必需）
-export const LazyMarkdownEditor = dynamic(
-  () => import('@/components/mdEditor'),
-  {
-    loading: () => <div>编辑器加载中...</div>,
-    ssr: false, // 编辑器通常不需要SSR
-  }
-);
+
 
 // 代码编辑器（CodeMirror体积大）
 export const LazyCodeEditor = dynamic(

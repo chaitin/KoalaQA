@@ -2,15 +2,7 @@ import { getAdminKb, postAdminKb, putAdminKbKbId, SvcKBCreateReq, SvcKBListItem 
 import Card from '@/components/card';
 import { Icon, message, Modal } from '@ctzhian/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  alpha,
-  Box,
-  CircularProgress,
-  Grid,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { alpha, Box, CircularProgress, Grid, Stack, TextField, Typography } from '@mui/material';
 import { useRequest } from 'ahooks';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -46,7 +38,7 @@ const AdminDocument = () => {
   const isPut = !!editItem;
   const handleOk = (data: SvcKBCreateReq) => {
     const reqHandle = isPut
-      ? (query: SvcKBCreateReq) => putAdminKbKbId(editItem.id || 0, query)
+      ? (query: SvcKBCreateReq) => putAdminKbKbId({ kbId: editItem.id || 0 }, query)
       : postAdminKb;
     reqHandle(data).then(() => {
       handleCancel();

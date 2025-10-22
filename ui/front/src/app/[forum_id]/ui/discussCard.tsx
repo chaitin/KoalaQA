@@ -12,6 +12,8 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 import { LazyImage } from '@/components/optimized'
 import { useContext, useMemo } from 'react'
 import Link from 'next/link'
+import EditorContent from '@/components/EditorContent'
+import { useParams } from 'next/navigation'
 
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
@@ -32,6 +34,7 @@ const replaceImagesWithText = (content: string): string => {
 const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListItem; keywords?: string }) => {
   const it = data
   const { groups } = useContext(CommonContext)
+  const params = useParams()
 
   // 根据group_ids获取分组名称
   const groupNames = useMemo(() => {
@@ -46,7 +49,11 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
   }, [it.group_ids, groups.flat])
 
   const handleCardClick = () => {
-    window.open(`/discuss/${it.uuid}`, '_blank')
+    // 从路径参数中获取forum_id
+    const forumId = params?.forum_id as string
+    if (typeof window !== 'undefined' && forumId) {
+      window.open(`/${forumId}/discuss/${it.uuid}`, '_blank')
+    }
   }
 
   return (
@@ -159,7 +166,7 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
           </Typography>
         </Stack>
       </Stack>
-      <MarkDown
+      <EditorContent
         content={replaceImagesWithText(it.content || '')}
         truncateLength={100} // 设置截断长度为100个字符，根据需要调整
         sx={{
@@ -260,6 +267,7 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
 export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionListItem; keywords?: string }) => {
   const it = data
   const { groups } = useContext(CommonContext)
+  const params = useParams()
 
   // 根据group_ids获取分组名称
   const groupNames = useMemo(() => {
@@ -274,7 +282,11 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
   }, [it.group_ids, groups.flat])
 
   const handleCardClick = () => {
-    window.open(`/discuss/${it.uuid}`, '_blank')
+    // 从路径参数中获取forum_id
+    const forumId = params?.forum_id as string
+    if (typeof window !== 'undefined' && forumId) {
+      window.open(`/${forumId}/discuss/${it.uuid}`, '_blank')
+    }
   }
 
   return (
@@ -305,7 +317,7 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
           width: '100%',
         }}
       >
-        <Link href={`/discuss/${it.uuid}`} target='_blank' onClick={(e) => e.stopPropagation()}>
+        <Link href={`/${params?.forum_id}/discuss/${it.uuid}`} target='_blank' onClick={(e) => e.stopPropagation()}>
           <Title 
             className='title multiline-ellipsis' 
             sx={{ 
@@ -412,7 +424,7 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
           </Stack>
         </Stack>
       </Stack>
-      <MarkDown
+      <EditorContent
         content={replaceImagesWithText(it.content || '')}
         truncateLength={60} // 设置截断长度为100个字符，根据需要调整
         sx={{

@@ -26,7 +26,7 @@ import SearchRoundedIcon from '@mui/icons-material/SearchRounded'
 import ClearRoundedIcon from '@mui/icons-material/ClearRounded'
 import { useLocalStorageState } from 'ahooks'
 import { CommonContext } from './commonProvider'
-import { useRouter } from 'next/navigation'
+import { useRouterWithForum } from '@/hooks/useRouterWithForum'
 
 const innerTheme = createTheme({
   palette: {
@@ -135,7 +135,7 @@ SearchBase.displayName = 'SearchBase'
 export const DialogSearch = (props: { open: boolean; onClose(): void }) => {
   const { open, onClose } = props
   const { keywords, setKeywords } = useContext(CommonContext)
-  const router = useRouter()
+  const router = useRouterWithForum()
   const [recentSearch, setRecentSearch] = useLocalStorageState<string[]>('recent-search', {
     defaultValue: [],
   })

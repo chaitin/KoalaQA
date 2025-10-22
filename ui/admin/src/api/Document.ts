@@ -14,6 +14,8 @@ import request, { ContentType, RequestParams } from "./httpClient";
 import {
   AnydocListRes,
   ContextResponse,
+  DeleteAdminKbKbIdDocumentDocIdParams,
+  GetAdminKbKbIdDocumentDocIdParams,
   GetAdminKbKbIdDocumentParams,
   ModelKBDocumentDetail,
   ModelListRes,
@@ -286,8 +288,7 @@ export const getAdminKbKbIdDocument = (
  */
 
 export const getAdminKbKbIdDocumentDocId = (
-  kbId: number,
-  docId: number,
+  { kbId, docId, ...query }: GetAdminKbKbIdDocumentDocIdParams,
   params: RequestParams = {},
 ) =>
   request<
@@ -312,8 +313,7 @@ export const getAdminKbKbIdDocumentDocId = (
  */
 
 export const deleteAdminKbKbIdDocumentDocId = (
-  kbId: number,
-  docId: number,
+  { kbId, docId, ...query }: DeleteAdminKbKbIdDocumentDocIdParams,
   params: RequestParams = {},
 ) =>
   request<ContextResponse>({
