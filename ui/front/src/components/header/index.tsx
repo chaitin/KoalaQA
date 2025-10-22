@@ -73,6 +73,11 @@ const Header = ({ initialUser = null }: HeaderProps) => {
         setBrandConfig(response)
       } catch (error) {
         console.error('获取品牌配置失败:', error)
+        // 设置默认品牌配置，避免显示空白
+        setBrandConfig({
+          text: 'Koala QA',
+          logo: '/logo.png'
+        })
       } finally {
         setIsLoadingBrand(false)
       }

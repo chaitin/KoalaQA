@@ -36,73 +36,45 @@ const alimamashuheitiFont = localFont({
 
 // 动态生成 metadata
 export async function generateMetadata(): Promise<Metadata> {
+  let brandName = 'Koala QA'
+
   try {
     const brand = await getSystemBrand()
-    const brandName = brand?.text || 'Koala QA'
-    
-    return {
-      title: {
-        default: `${brandName} - 技术讨论社区`,
-        template: `%s | ${brandName}`
-      },
-      description: '一个专业的技术讨论和知识分享社区',
-      keywords: ['技术讨论', '问答', '知识分享', '开发者社区'],
-      authors: [{ name: `${brandName} Team` }],
-      creator: brandName,
-      metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
-      alternates: {
-        canonical: '/',
-      },
-      openGraph: {
-        type: 'website',
-        locale: 'zh_CN',
-        siteName: brandName,
-      },
-      robots: {
-        index: true,
-        follow: true,
-        googleBot: {
-          index: true,
-          follow: true,
-          'max-video-preview': -1,
-          'max-image-preview': 'large',
-          'max-snippet': -1,
-        },
-      },
-    }
+    brandName = brand?.text || 'Koala QA'
   } catch (error) {
-    // 如果获取品牌信息失败，使用默认值
-    console.error('Failed to fetch brand info:', error)
-    return {
-      title: {
-        default: 'Koala QA - 技术讨论社区',
-        template: '%s | Koala QA'
-      },
-      description: '一个专业的技术讨论和知识分享社区',
-      keywords: ['技术讨论', '问答', '知识分享', '开发者社区'],
-      authors: [{ name: 'Koala QA Team' }],
-      creator: 'Koala QA',
-      metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
-      alternates: {
-        canonical: '/',
-      },
-      openGraph: {
-        type: 'website',
-        locale: 'zh_CN',
-        siteName: 'Koala QA',
-      },
-      robots: {
+    // 构建时如果无法获取品牌信息，使用默认值
+    console.warn('Failed to fetch brand info during build:', error)
+  }
+  
+  return {
+    title: {
+      default: `${brandName} - 技术讨论社区`,
+      template: `%s | ${brandName}`
+    },
+    description: '一个专业的技术讨论和知识分享社区',
+    keywords: ['技术讨论', '问答', '知识分享', '开发者社区'],
+    authors: [{ name: `${brandName} Team` }],
+    creator: brandName,
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+    alternates: {
+      canonical: '/',
+    },
+    openGraph: {
+      type: 'website',
+      locale: 'zh_CN',
+      siteName: brandName,
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
         index: true,
         follow: true,
-        googleBot: {
-          index: true,
-          follow: true,
-          'max-video-preview': -1,
-          'max-image-preview': 'large',
-          'max-snippet': -1,
-        },
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
       },
-    }
+    },
   }
 }
 
@@ -138,7 +110,14 @@ async function getUserData() {
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
   const user = await getUserData()
-  const brand = await getSystemBrand()
+  
+  let brand = null
+  try {
+    brand = await getSystemBrand()
+  } catch (error) {
+    // 构建时如果无法获取品牌信息，使用默认值
+    console.warn('Failed to fetch brand info during build:', error)
+  }
 
   return (
     <html lang='zh-CN'>
@@ -149,7 +128,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
         <link rel='preconnect' href='//fonts.googleapis.com' crossOrigin='anonymous' />
         <link 
           rel="icon" 
-          href={brand.logo || '/logo.png'} 
+          href={brand?.logo || '/logo.png'} 
         />
       </head>
       <body className={`${monoFont.variable} ${alimamashuheitiFont.variable}`}>
