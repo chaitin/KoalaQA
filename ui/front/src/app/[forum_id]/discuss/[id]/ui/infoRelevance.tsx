@@ -98,11 +98,12 @@ const InfoRelevance = (props: { data: ModelDiscussionDetail }) => {
     <Stack
       gap={3}
       sx={{
-        boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
         width: 280,
         position: 'sticky',
         top: 80,
         display: { xs: 'none', sm: 'flex' },
+        flexDirection: 'column',
+        alignSelf: 'flex-start',
       }}
     >
       {markdownTitle.length > 0 && (

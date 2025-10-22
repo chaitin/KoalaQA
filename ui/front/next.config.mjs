@@ -57,6 +57,9 @@ const nextConfig = {
     // 设置图片格式支持
     formats: ['image/webp', 'image/avif'],
     
+    // 图片质量配置 - Next.js 16 必需
+    qualities: [25, 50, 75, 85, 100],
+    
     // 图片尺寸设备断点
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],

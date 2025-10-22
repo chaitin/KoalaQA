@@ -12,6 +12,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useParams } from 'next/navigation';
 
 export const CommonContext = createContext<{
   headerStyle: SxProps<Theme>;
@@ -51,6 +52,8 @@ export const CommonContext = createContext<{
 });
 
 const CommonProvider = ({ children }: { children: React.ReactNode }) => {
+  const params = useParams();
+  const forumId = params?.forum_id as string;
   const [showHeaderSearch, setShowHeaderSearch] = useState(false);
   const [headerStyle, setHeaderStyle] = useState<SxProps<Theme>>({});
   const [keywords, setKeywords] = useState('');
@@ -86,6 +89,12 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
 
   // 获取groups数据的函数（供客户端页面调用）
   const fetchGroup = useCallback(() => {
+    // 如果没有 forumId，不发起请求
+    if (!forumId) {
+      setGroupsLoading(false);
+      return;
+    }
+
     // 避免重复请求
     if (isFetchingRef.current || hasFetchedRef.current) {
       return;
@@ -94,7 +103,7 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
     isFetchingRef.current = true;
     setGroupsLoading(true);
 
-    getGroup()
+    getGroup({ forum_id: parseInt(forumId, 10) })
       .then((r) => {
         const newGroups = {
           origin: r.items ?? [],
@@ -117,7 +126,7 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
         setGroupsLoading(false);
         isFetchingRef.current = false;
       });
-  }, []);
+  }, [forumId]);
 
   useEffect(() => {
     // 只在客户端且未获取过数据时发起请求

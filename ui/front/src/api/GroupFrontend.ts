@@ -13,6 +13,7 @@
 import request, { RequestParams } from "./httpClient";
 import {
   ContextResponse,
+  GetGroupParams,
   ModelGroupItemInfo,
   ModelGroupWithItem,
   ModelListRes,
@@ -37,7 +38,7 @@ import {
 })` OK
  */
 
-export const getGroup = (params: RequestParams = {}) =>
+export const getGroup = (query: GetGroupParams, params: RequestParams = {}) =>
   request<
     ContextResponse & {
       data?: ModelListRes & {
@@ -49,6 +50,7 @@ export const getGroup = (params: RequestParams = {}) =>
   >({
     path: `/group`,
     method: "GET",
+    query: query,
     format: "json",
     ...params,
   });

@@ -3,34 +3,26 @@ import { Box, BoxProps } from '@mui/material'
 import { useEffect, useRef, useState } from 'react'
 
 interface ScrollAnimationProps extends BoxProps {
-  children: React.ReactNode
-  animation?: 'fadeInUp' | 'fadeInDown' | 'fadeInLeft' | 'fadeInRight' | 'scaleIn' | 'slideInUp'
+  animation?: 'fadeInUp' | 'fadeInDown' | 'fadeInLeft' | 'fadeInRight'
   delay?: number
   duration?: number
-  threshold?: number
-  immediate?: boolean // 新增：是否立即显示，不等待滚动
+  immediate?: boolean
+  children: React.ReactNode
 }
 
 const ScrollAnimation = ({
-  children,
   animation = 'fadeInUp',
   delay = 0,
   duration = 0.6,
-  threshold = 0.1,
   immediate = false,
+  children,
   ...props
 }: ScrollAnimationProps) => {
   const [isVisible, setIsVisible] = useState(immediate)
-  const ref = useRef<HTMLDivElement>(null)
+  const elementRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    // 如果是立即显示模式，直接设置可见
-    if (immediate) {
-      setTimeout(() => {
-        setIsVisible(true)
-      }, delay)
-      return
-    }
+    if (immediate) return
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -41,26 +33,27 @@ const ScrollAnimation = ({
         }
       },
       {
-        threshold,
-        rootMargin: '0px 0px 0px 0px',
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px',
       }
     )
 
-    if (ref.current) {
-      observer.observe(ref.current)
+    if (elementRef.current) {
+      observer.observe(elementRef.current)
     }
 
     return () => {
-      if (ref.current) {
-        observer.unobserve(ref.current)
+      if (elementRef.current) {
+        observer.unobserve(elementRef.current)
       }
     }
-  }, [delay, threshold, immediate])
+  }, [delay, immediate])
 
   const getAnimationStyles = () => {
     const baseStyles = {
-      transition: `all ${duration}s cubic-bezier(0.4, 0, 0.2, 1)`,
       opacity: isVisible ? 1 : 0,
+      transition: `all ${duration}s cubic-bezier(0.4, 0, 0.2, 1)`,
+      transitionDelay: `${delay}ms`,
     }
 
     switch (animation) {
@@ -84,23 +77,13 @@ const ScrollAnimation = ({
           ...baseStyles,
           transform: isVisible ? 'translateX(0)' : 'translateX(30px)',
         }
-      case 'scaleIn':
-        return {
-          ...baseStyles,
-          transform: isVisible ? 'scale(1)' : 'scale(0.9)',
-        }
-      case 'slideInUp':
-        return {
-          ...baseStyles,
-          transform: isVisible ? 'translateY(0)' : 'translateY(50px)',
-        }
       default:
         return baseStyles
     }
   }
 
   return (
-    <Box ref={ref} sx={getAnimationStyles()} {...props}>
+    <Box ref={elementRef} style={getAnimationStyles()} {...props}>
       {children}
     </Box>
   )

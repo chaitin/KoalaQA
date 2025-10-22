@@ -15,9 +15,8 @@ const fileToBase64 = (file: File): Promise<string> => {
     reader.readAsDataURL(file);
     reader.onload = () => {
       const result = reader.result as string;
-      // 移除 data:image/...;base64, 前缀，只保留 base64 数据
-      const base64 = result.split(',')[1];
-      resolve(base64);
+      // 保留完整的 data URL 格式，包含 MIME 类型信息
+      resolve(result);
     };
     reader.onerror = (error) => reject(error);
   });

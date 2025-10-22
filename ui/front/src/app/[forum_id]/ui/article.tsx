@@ -1,18 +1,25 @@
 'use client'
 import { getDiscussion } from '@/api'
-import { GetDiscussionParams, ModelDiscussion, ModelGroupItemInfo, ModelGroupWithItem, ModelListRes } from '@/api/types'
+import {
+  GetDiscussionParams,
+  ModelDiscussionListItem,
+  ModelForum,
+  ModelGroupItemInfo,
+  ModelGroupWithItem,
+  ModelListRes
+} from '@/api/types'
 import { Card, CusTabs } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import { CommonContext } from '@/components/commonProvider'
 import { ReleaseModal } from '@/components/discussion'
-import { useAuthCheck } from '@/hooks/useAuthCheck'
 import FloatingActionButton from '@/components/FloatingActionButton'
-import ParticleBackground from '@/components/ParticleBackground'
-import TypewriterText from '@/components/TypewriterText'
+import { useAuthCheck } from '@/hooks/useAuthCheck'
+import { useForumId } from '@/hooks/useForumId'
 import SearchIcon from '@mui/icons-material/Search'
 import { Box, Button, Divider, InputAdornment, OutlinedInput, Stack, Typography } from '@mui/material'
 import { useBoolean } from 'ahooks'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
+import { useRouterWithForum } from '@/hooks/useRouterWithForum'
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import DiscussCard, { DiscussCardMobile } from './discussCard'
 
@@ -28,9 +35,11 @@ const Article = ({
   topics,
   groups: groupsData,
   type,
+  forumId,
+  forumInfo,
 }: {
   data: ModelListRes & {
-    items?: ModelDiscussion[]
+    items?: ModelDiscussionListItem[]
   }
   topics: number[]
   groups?: ModelListRes & {
@@ -39,9 +48,11 @@ const Article = ({
     })[]
   }
   type?: string
+  forumId?: string
+  forumInfo?: ModelForum | null
 }) => {
   const searchParams = useSearchParams()
-  const router = useRouter()
+  const router = useRouterWithForum()
   const { user } = useContext(AuthContext)
   const { checkAuth } = useAuthCheck()
   const { groups: contextGroups, groupsLoading } = useContext(CommonContext)
@@ -130,36 +141,47 @@ const Article = ({
     return params.toString()
   }
 
-  const fetchList = useCallback((st: Status, se: string, tps: number[]) => {
-    setPage(1)
-    const params: GetDiscussionParams = {
-      page: 1,
-      size: 10,
-      filter: st as 'hot' | 'new' | 'mine',
-      type: type as 'qa' | 'feedback' | 'blog',
-    }
+  const hookForumId = useForumId()
+  const currentForumId = forumId || hookForumId
 
-    // 如果有搜索关键词，添加到参数中
-    if (se && se.trim()) {
-      params.keyword = se.trim()
-    }
+  const fetchList = useCallback(
+    (st: Status, se: string, tps: number[]) => {
+      setPage(1)
+      const params: GetDiscussionParams & { forum_id?: number } = {
+        page: 1,
+        size: 10,
+        filter: st as 'hot' | 'new' | 'mine',
+        type: type as 'qa' | 'feedback' | 'blog',
+      }
 
-    // 如果有选中的主题，添加到参数中
-    if (tps && tps.length > 0) {
-      params.group_ids = tps
-    }
+      // 如果有搜索关键词，添加到参数中
+      if (se && se.trim()) {
+        params.keyword = se.trim()
+      }
 
-    return getDiscussion(params)
-      .then((res) => {
-        if (res) {
-          setArticleData(res)
-        }
-      })
-      .catch((error) => {
-        console.error('Failed to fetch discussions:', error)
-        // 保持当前数据，不重置为空
-      })
-  }, [])
+      // 如果有选中的主题，添加到参数中
+      if (tps && tps.length > 0) {
+        params.group_ids = tps
+      }
+
+      // 添加当前选中的板块ID
+      if (currentForumId) {
+        params.forum_id = typeof currentForumId === 'string' ? parseInt(currentForumId, 10) : currentForumId
+      }
+
+      return getDiscussion(params)
+        .then((res) => {
+          if (res) {
+            setArticleData(res)
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to fetch discussions:', error)
+          // 保持当前数据，不重置为空
+        })
+    },
+    [currentForumId, type],
+  )
 
   const onInputSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -289,7 +311,7 @@ const Article = ({
               textShadow: '0 2px 4px rgba(0,0,0,0.5)',
             }}
           >
-            KoalaQA 社区
+            {forumInfo?.name || 'KoalaQA 社区'}
           </Typography>
         </Box>
 

@@ -1,4 +1,5 @@
 import { Box, Grid, Stack } from '@mui/material';
+import Forum from './component/Forum';
 import GroupTagManager from './component/Topic';
 import Access from './component/Access';
 import Webhook from './component/Webhook';
@@ -12,6 +13,7 @@ const Settings = () => {
         {/* 左侧：分组管理、人工坐席管理 */}
         <Grid size={{ xs: 12, md: 6 }}>
           <Stack spacing={2}>
+            <Forum />
             <GroupTagManager />
             <Logo />
             {/* TODO: 人工坐席管理组件，后续可插入 */}

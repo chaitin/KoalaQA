@@ -17,7 +17,6 @@ import {
   DeleteDiscussionDiscIdParams,
   GetDiscussionDiscIdParams,
   GetDiscussionParams,
-  ModelDiscussion,
   ModelDiscussionDetail,
   ModelDiscussionListItem,
   ModelListRes,
@@ -34,7 +33,6 @@ import {
   SvcCommentCreateReq,
   SvcCommentUpdateReq,
   SvcDiscussionCreateReq,
-  SvcDiscussionSearchReq,
   SvcDiscussionUpdateReq,
 } from "./types";
 
@@ -95,36 +93,6 @@ export const postDiscussion = (
     }
   >({
     path: `/discussion`,
-    method: "POST",
-    body: discussion,
-    type: ContentType.Json,
-    format: "json",
-    ...params,
-  });
-
-/**
- * @description search discussion
- *
- * @tags discussion
- * @name PostDiscussionSearch
- * @summary search discussion
- * @request POST:/discussion/search
- * @response `200` `(ContextResponse & {
-    data?: (ModelDiscussion)[],
-
-})` OK
- */
-
-export const postDiscussionSearch = (
-  discussion: SvcDiscussionSearchReq,
-  params: RequestParams = {},
-) =>
-  request<
-    ContextResponse & {
-      data?: ModelDiscussion[];
-    }
-  >({
-    path: `/discussion/search`,
     method: "POST",
     body: discussion,
     type: ContentType.Json,

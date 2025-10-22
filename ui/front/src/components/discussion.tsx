@@ -1,6 +1,7 @@
 'use client';
 import { ModelDiscussionDetail, ModelDiscussionType } from '@/api';
 import { postDiscussion, putDiscussionDiscId } from '@/api/Discussion';
+import { useForumId } from '@/hooks/useForumId';
 import { Icon } from '@/components';
 import UserAvatar from '@/components/UserAvatar';
 import EditorWrap from '@/components/editor/edit/Wrap';
@@ -17,7 +18,8 @@ import {
   TextField,
 } from '@mui/material';
 import Image from 'next/image';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
+import { useRouterWithForum } from '@/hooks/useRouterWithForum';
 import React, { useContext, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import z from 'zod';
@@ -117,7 +119,9 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [groupValidationError, setGroupValidationError] = useState<string>('');
   const { groups } = useContext(CommonContext);
-  const router = useRouter();
+  const router = useRouterWithForum();
+  const forumId = useForumId();
+  
   const onSubmit = handleSubmit(async (params) => {
     // 自定义验证：确保每个分类下至少选择一个子选项
     if (!validateGroupSelection(params.group_ids, groups.origin)) {
@@ -135,9 +139,14 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
         // 编辑成功后调用 onOk 回调，其中包含页面刷新逻辑
         onOk();
       } else {
-        const uid = await postDiscussion({ ...params, type: type as ModelDiscussionType });
-        // 创建成功后跳转到首页
-        router.push(`/discuss/${uid}`);
+        const discussionData: any = { ...params, type: type as ModelDiscussionType };
+        // 添加当前选中的板块ID
+        if (forumId) {
+          discussionData.forum_id = forumId;
+        }
+        const uid = await postDiscussion(discussionData);
+        // 创建成功后跳转到讨论详情页
+        router.push(`/${forumId}/discuss/${uid}`);
       }
     } finally {
       setLoading(false);

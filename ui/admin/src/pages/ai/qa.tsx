@@ -23,7 +23,6 @@ const AdminDocument = () => {
   const { query, page, size, setParams } = useListQueryParams();
   const [searchParams] = useSearchParams();
   const kb_id = +searchParams.get('id')!;
-  console.log(kb_id);
   const [title, setTitle] = useState(query.title);
   const [editItem, setEditItem] = useState<ModelKBDocumentDetail | null>(null);
 

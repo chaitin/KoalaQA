@@ -386,12 +386,21 @@ const BaseDiscussCard = (props: {
           </Stack>
         </Stack>
       </Stack>
-      <EditorContent
-        content={data.content}
-        sx={{
-          backgroundColor: isReply ? 'transparent !important' : 'inherit',
-        }}
-      />
+      {data.bot ? (
+        <MarkDown
+          content={data.content}
+          sx={{
+            backgroundColor: isReply ? 'transparent !important' : 'inherit',
+          }}
+        />
+      ) : (
+        <EditorContent
+          content={data.content}
+          sx={{
+            backgroundColor: isReply ? 'transparent !important' : 'inherit',
+          }}
+        />
+      )}
       {!isReply && !!(data as ModelDiscussionComment)?.replies?.length && (
         <>
           <Divider sx={{ my: 2 }} />
