@@ -6,6 +6,9 @@ import { Metadata } from 'next'
 import { Suspense } from 'react'
 import ArticleCard from './ui/article'
 
+// 强制动态渲染，因为 API 调用可能使用 cookies
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: '技术讨论',
   description: '浏览和参与技术讨论，分享知识和经验',
