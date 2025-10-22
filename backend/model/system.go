@@ -23,6 +23,7 @@ const (
 	SystemKeyPublicAddress = "public_address"
 	SystemKeyAuth          = "auth"
 	SystemKeyMachineID     = "machine_id"
+	SystemKeyBrand         = "brand"
 )
 
 type PublicAddress struct {
@@ -76,4 +77,9 @@ type AuthConfigOauth struct {
 	URL          string `json:"url,omitempty"`
 	ClientID     string `json:"client_id,omitempty"`
 	ClientSecret string `json:"client_secret,omitempty"`
+}
+
+type SystemBrand struct {
+	Logo string `json:"logo"`
+	Text string `json:"text"`
 }

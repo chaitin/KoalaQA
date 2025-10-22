@@ -17,14 +17,16 @@ type DiscRag struct {
 	dataset *repo.Dataset
 	logger  *glog.Logger
 	rag     rag.Service
+	forum   *svc.Forum
 }
 
-func NewDiscRag(disc *svc.Discussion, dataset *repo.Dataset, rag rag.Service) *DiscRag {
+func NewDiscRag(disc *svc.Discussion, dataset *repo.Dataset, rag rag.Service, forum *svc.Forum) *DiscRag {
 	return &DiscRag{
 		disc:    disc,
 		dataset: dataset,
 		rag:     rag,
 		logger:  glog.Module("sub.discussion.rag"),
+		forum:   forum,
 	}
 }
 
@@ -56,7 +58,7 @@ func (d *DiscRag) Handle(ctx context.Context, msg mq.Message) error {
 	case topic.OPUpdate:
 		return d.handleUpdate(ctx, data.DiscID, data.RagID)
 	case topic.OPDelete:
-		return d.handleDelete(ctx, data.RagID)
+		return d.handleDelete(ctx, data.DiscID, data.RagID)
 	}
 	return nil
 
@@ -70,7 +72,12 @@ func (d *DiscRag) handleInsert(ctx context.Context, discID uint) error {
 		logger.WithContext(ctx).WithErr(err).Error("get discussion failed")
 		return nil
 	}
-	ragID, err := d.rag.UpsertRecords(ctx, d.dataset.GetFrontendID(ctx), disc.TitleContent(), nil)
+	forum, err := d.forum.GetByID(ctx, disc.ForumID)
+	if err != nil {
+		logger.WithErr(err).Warn("get forum failed")
+		return nil
+	}
+	ragID, err := d.rag.UpsertRecords(ctx, forum.DatasetID, disc.TitleContent(), nil)
 	if err != nil {
 		return err
 	}
@@ -82,14 +89,34 @@ func (d *DiscRag) handleInsert(ctx context.Context, discID uint) error {
 }
 
 func (d *DiscRag) handleUpdate(ctx context.Context, discID uint, ragID string) error {
-	if err := d.rag.DeleteRecords(ctx, d.dataset.GetFrontendID(ctx), []string{ragID}); err != nil {
+	disc, err := d.disc.GetByID(ctx, discID)
+	if err != nil {
+		d.logger.WithContext(ctx).WithErr(err).Error("get discussion failed")
+		return nil
+	}
+	forum, err := d.forum.GetByID(ctx, disc.ForumID)
+	if err != nil {
+		d.logger.WithContext(ctx).WithErr(err).Error("get forum failed")
+		return nil
+	}
+	if err := d.rag.DeleteRecords(ctx, forum.DatasetID, []string{ragID}); err != nil {
 		return err
 	}
 	return d.handleInsert(ctx, discID)
 }
 
-func (d *DiscRag) handleDelete(ctx context.Context, ragID string) error {
-	if err := d.rag.DeleteRecords(ctx, d.dataset.GetFrontendID(ctx), []string{ragID}); err != nil {
+func (d *DiscRag) handleDelete(ctx context.Context, discID uint, ragID string) error {
+	disc, err := d.disc.GetByID(ctx, discID)
+	if err != nil {
+		d.logger.WithContext(ctx).WithErr(err).Error("get discussion failed")
+		return nil
+	}
+	forum, err := d.forum.GetByID(ctx, disc.ForumID)
+	if err != nil {
+		d.logger.WithContext(ctx).WithErr(err).Error("get forum failed")
+		return nil
+	}
+	if err := d.rag.DeleteRecords(ctx, forum.DatasetID, []string{ragID}); err != nil {
 		return err
 	}
 	return nil

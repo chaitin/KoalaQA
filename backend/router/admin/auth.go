@@ -27,7 +27,7 @@ func (l *auth) Get(ctx *context.Context) {
 	ctx.Success(cfg)
 }
 
-// Update
+// Put
 // @Summary update login_method config
 // @Tags login_method
 // @Accept json

@@ -9,6 +9,7 @@ type MsgMessageNotify struct {
 	DiscussUUID    string               `json:"discuss_uuid"`
 	DiscussTitle   string               `json:"doscuss_title"`
 	DiscussionType model.DiscussionType `json:"discussion_type"`
+	ForumID        uint                 `json:"forum_id"`
 	CommentID      uint                 `json:"comment_id"`
 	Type           model.MsgNotifyType  `json:"type"`
 	FromID         uint                 `json:"from"`
