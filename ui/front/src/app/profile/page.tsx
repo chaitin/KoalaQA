@@ -4,6 +4,9 @@ import ProfileContent from './ui/ProfileContent';
 import { Box } from '@mui/material';
 import { Metadata } from 'next';
 
+// 强制动态渲染，因为使用了 cookies
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: '个人中心',
   description: '管理您的个人信息和账户设置',
