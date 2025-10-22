@@ -33,6 +33,7 @@ type discussionIn struct {
 	Rag           rag.Service
 	Dataset       *repo.Dataset
 	OC            oss.Client
+	ForumRepo     *repo.Forum
 }
 
 type Discussion struct {
@@ -65,6 +66,7 @@ type DiscussionCreateReq struct {
 	Type     model.DiscussionType `json:"type"`
 	Tags     []string             `json:"tags"`
 	GroupIDs model.Int64Array     `json:"group_ids"`
+	ForumID  uint                 `json:"forum_id"`
 }
 
 func (d *Discussion) generateUUID() string {
@@ -78,6 +80,13 @@ func (d *Discussion) Create(ctx context.Context, req DiscussionCreateReq) (strin
 			return "", err
 		}
 	}
+	if req.ForumID == 0 {
+		forumID, err := d.in.ForumRepo.GetFirstID(ctx)
+		if err != nil {
+			return "", err
+		}
+		req.ForumID = forumID
+	}
 
 	disc := model.Discussion{
 		Title:    req.Title,
@@ -87,6 +96,7 @@ func (d *Discussion) Create(ctx context.Context, req DiscussionCreateReq) (strin
 		UUID:     d.generateUUID(),
 		UserID:   req.UserID,
 		Type:     req.Type,
+		ForumID:  req.ForumID,
 		Members:  model.Int64Array{int64(req.UserID)},
 	}
 	err := d.in.DiscRepo.Create(ctx, &disc)

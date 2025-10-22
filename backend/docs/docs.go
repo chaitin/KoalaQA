@@ -4162,6 +4162,9 @@ const docTemplate = `{
                 "dislike": {
                     "type": "integer"
                 },
+                "forum_id": {
+                    "type": "integer"
+                },
                 "group_ids": {
                     "type": "array",
                     "items": {
@@ -4176,6 +4179,12 @@ const docTemplate = `{
                 },
                 "like": {
                     "type": "integer"
+                },
+                "members": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "rag_id": {
                     "type": "string"
@@ -4283,6 +4292,9 @@ const docTemplate = `{
                 "dislike": {
                     "type": "integer"
                 },
+                "forum_id": {
+                    "type": "integer"
+                },
                 "group_ids": {
                     "type": "array",
                     "items": {
@@ -4303,6 +4315,12 @@ const docTemplate = `{
                 },
                 "like": {
                     "type": "integer"
+                },
+                "members": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "rag_id": {
                     "type": "string"
@@ -4377,6 +4395,9 @@ const docTemplate = `{
                 "dislike": {
                     "type": "integer"
                 },
+                "forum_id": {
+                    "type": "integer"
+                },
                 "group_ids": {
                     "type": "array",
                     "items": {
@@ -4391,6 +4412,12 @@ const docTemplate = `{
                 },
                 "like": {
                     "type": "integer"
+                },
+                "members": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "rag_id": {
                     "type": "string"
@@ -5135,11 +5162,15 @@ const docTemplate = `{
         "svc.DiscussionCreateReq": {
             "type": "object",
             "required": [
+                "forum_id",
                 "title"
             ],
             "properties": {
                 "content": {
                     "type": "string"
+                },
+                "forum_id": {
+                    "type": "integer"
                 },
                 "group_ids": {
                     "type": "array",
