@@ -1,7 +1,8 @@
-import { getUser } from '@/api'
+import { getSystemBrand, getUser } from '@/api'
 import '@/asset/styles/common.css'
 import '@/asset/styles/markdown.css'
 import { AuthProvider, CommonProvider } from '@/components'
+import { ForumProvider } from '@/contexts/ForumContext'
 import theme from '@/theme'
 import '@ctzhian/tiptap/dist/index.css'
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v14-appRouter'
@@ -33,36 +34,76 @@ const alimamashuheitiFont = localFont({
   preload: true,
 })
 
-// 优化 metadata
-export const metadata: Metadata = {
-  title: {
-    default: 'Koala QA - 技术讨论社区',
-    template: '%s | Koala QA'
-  },
-  description: '一个专业的技术讨论和知识分享社区',
-  keywords: ['技术讨论', '问答', '知识分享', '开发者社区'],
-  authors: [{ name: 'Koala QA Team' }],
-  creator: 'Koala QA',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
-  alternates: {
-    canonical: '/',
-  },
-  openGraph: {
-    type: 'website',
-    locale: 'zh_CN',
-    siteName: 'Koala QA',
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
-  },
+// 动态生成 metadata
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const brand = await getSystemBrand()
+    const brandName = brand?.text || 'Koala QA'
+    
+    return {
+      title: {
+        default: `${brandName} - 技术讨论社区`,
+        template: `%s | ${brandName}`
+      },
+      description: '一个专业的技术讨论和知识分享社区',
+      keywords: ['技术讨论', '问答', '知识分享', '开发者社区'],
+      authors: [{ name: `${brandName} Team` }],
+      creator: brandName,
+      metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+      alternates: {
+        canonical: '/',
+      },
+      openGraph: {
+        type: 'website',
+        locale: 'zh_CN',
+        siteName: brandName,
+      },
+      robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+          'max-video-preview': -1,
+          'max-image-preview': 'large',
+          'max-snippet': -1,
+        },
+      },
+    }
+  } catch (error) {
+    // 如果获取品牌信息失败，使用默认值
+    console.error('Failed to fetch brand info:', error)
+    return {
+      title: {
+        default: 'Koala QA - 技术讨论社区',
+        template: '%s | Koala QA'
+      },
+      description: '一个专业的技术讨论和知识分享社区',
+      keywords: ['技术讨论', '问答', '知识分享', '开发者社区'],
+      authors: [{ name: 'Koala QA Team' }],
+      creator: 'Koala QA',
+      metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+      alternates: {
+        canonical: '/',
+      },
+      openGraph: {
+        type: 'website',
+        locale: 'zh_CN',
+        siteName: 'Koala QA',
+      },
+      robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+          'max-video-preview': -1,
+          'max-image-preview': 'large',
+          'max-snippet': -1,
+        },
+      },
+    }
+  }
 }
 
 export const viewport: Viewport = {
@@ -97,6 +138,7 @@ async function getUserData() {
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
   const user = await getUserData()
+  const brand = await getSystemBrand()
 
   return (
     <html lang='zh-CN'>
@@ -105,6 +147,10 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
         {/* DNS 预解析优化 */}
         <link rel='dns-prefetch' href='//fonts.googleapis.com' />
         <link rel='preconnect' href='//fonts.googleapis.com' crossOrigin='anonymous' />
+        <link 
+          rel="icon" 
+          href={brand.logo || '/logo.png'} 
+        />
       </head>
       <body className={`${monoFont.variable} ${alimamashuheitiFont.variable}`}>
         {/* 图标字体预加载 - beforeInteractive 确保在交互前加载 */}
@@ -112,17 +158,19 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
 
         <CommonProvider>
           <AuthProvider initialUser={user}>
-            <AppRouterCacheProvider>
-              <ThemeProvider theme={theme}>
-                <CssBaseline />
-                <Header initialUser={user} />
-                <main id='main-content'>
-                  {props.children}
-                </main>
-                <Footer />
-                <Scroll />
-              </ThemeProvider>
-            </AppRouterCacheProvider>
+            <ForumProvider>
+              <AppRouterCacheProvider>
+                <ThemeProvider theme={theme}>
+                  <CssBaseline />
+                  <Header initialUser={user} />
+                  <main id='main-content'>
+                    {props.children}
+                  </main>
+                  <Footer />
+                  <Scroll />
+                </ThemeProvider>
+              </AppRouterCacheProvider>
+            </ForumProvider>
           </AuthProvider>
         </CommonProvider>
       </body>

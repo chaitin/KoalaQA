@@ -13,7 +13,9 @@
 import request, { ContentType, RequestParams } from "./httpClient";
 import {
   ContextResponse,
+  DeleteAdminKbKbIdParams,
   ModelListRes,
+  PutAdminKbKbIdParams,
   SvcKBCreateReq,
   SvcKBListItem,
   SvcKBUpdateReq,
@@ -87,7 +89,7 @@ export const postAdminKb = (req: SvcKBCreateReq, params: RequestParams = {}) =>
  */
 
 export const putAdminKbKbId = (
-  kbId: number,
+  { kbId, ...query }: PutAdminKbKbIdParams,
   req: SvcKBUpdateReq,
   params: RequestParams = {},
 ) =>
@@ -110,7 +112,10 @@ export const putAdminKbKbId = (
  * @response `200` `ContextResponse` OK
  */
 
-export const deleteAdminKbKbId = (kbId: number, params: RequestParams = {}) =>
+export const deleteAdminKbKbId = (
+  { kbId, ...query }: DeleteAdminKbKbIdParams,
+  params: RequestParams = {},
+) =>
   request<ContextResponse>({
     path: `/admin/kb/${kbId}`,
     method: "DELETE",

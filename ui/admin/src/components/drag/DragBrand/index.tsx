@@ -16,6 +16,7 @@ import { rectSortingStrategy, SortableContext } from '@dnd-kit/sortable';
 import { Box, Button, Stack, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
+import { eventManager, EVENTS } from '@/utils/eventManager';
 import Item from './Item';
 import SortableItem from './SortableItem';
 
@@ -27,8 +28,6 @@ const DragBrand = () => {
     control,
     handleSubmit,
     reset,
-    watch,
-    setValue,
     formState: { errors },
   } = useForm<{
     brand_groups: {
@@ -54,7 +53,7 @@ const DragBrand = () => {
   const handleDragStart = useCallback((event: DragStartEvent) => {
     setActiveId(event.active.id as string);
   }, []);
-  const fetchData = () => {
+  const fetchData = useCallback(() => {
     getAdminGroup().then(res => {
       reset({
         brand_groups: res.items?.map(item => ({
@@ -64,10 +63,11 @@ const DragBrand = () => {
         })),
       });
     });
-  };
+  }, [reset]);
+  
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event;
@@ -113,12 +113,17 @@ const DragBrand = () => {
       })),
     }).then(() => {
       setIsEdit(false);
+      // 触发分类更新事件，通知其他组件
+      eventManager.emit(EVENTS.CATEGORY_UPDATED, {
+        timestamp: Date.now(),
+        message: '分类信息已更新'
+      });
     });
   });
 
   return (
     <Card>
-      <Stack direction="row" justifyContent="space-between" alignItems="center">
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{mb: 2}}>
         <Typography
           variant="subtitle2"
           sx={{

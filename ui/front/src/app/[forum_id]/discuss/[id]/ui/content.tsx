@@ -36,6 +36,7 @@ import React, { useContext, useState } from 'react'
 import EditCommentModal from './editCommentModal'
 
 import { formatNumber } from '@/lib/utils'
+import EditorContent from '@/components/EditorContent'
 
 // 添加CSS动画样式
 const animationStyles = `
@@ -385,12 +386,21 @@ const BaseDiscussCard = (props: {
           </Stack>
         </Stack>
       </Stack>
-      <MarkDown
-        content={data.content}
-        sx={{
-          backgroundColor: isReply ? 'transparent !important' : 'inherit',
-        }}
-      />
+      {data.bot ? (
+        <MarkDown
+          content={data.content}
+          sx={{
+            backgroundColor: isReply ? 'transparent !important' : 'inherit',
+          }}
+        />
+      ) : (
+        <EditorContent
+          content={data.content}
+          sx={{
+            backgroundColor: isReply ? 'transparent !important' : 'inherit',
+          }}
+        />
+      )}
       {!isReply && !!(data as ModelDiscussionComment)?.replies?.length && (
         <>
           <Divider sx={{ my: 2 }} />

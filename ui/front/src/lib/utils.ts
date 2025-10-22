@@ -344,9 +344,46 @@ export async function formatMeta(
   const keywordsIsEmpty = !keywords || (Array.isArray(keywords) && !keywords.length);
   const { description: parentDescription, keywords: parentKeywords } = await parent;
   return {
-    title: title + ' | Koala QA',
+    title: title ,
     description: description || parentDescription,
     keywords: keywordsIsEmpty ? parentKeywords : keywords,
   };
+}
+
+/**
+ * 路由工具函数 - 自动补上 forum_id
+ */
+export function buildRouteWithForumId(path: string, forumId?: number | null): string {
+  // 如果路径已经包含 forum_id，直接返回
+  if (path.match(/^\/\d+\//) || path.match(/^\/\d+$/)) {
+    return path;
+  }
+  
+  // 如果提供了 forumId，则添加到路径前面
+  if (forumId) {
+    // 处理以 / 开头的路径
+    if (path.startsWith('/')) {
+      return `/${forumId}${path}`;
+    } else {
+      return `/${forumId}/${path}`;
+    }
+  }
+  
+  // 如果没有 forumId，尝试从当前路径获取
+  if (typeof window !== 'undefined') {
+    const currentPath = window.location.pathname;
+    const match = currentPath.match(/^\/(\d+)/);
+    if (match) {
+      const currentForumId = match[1];
+      if (path.startsWith('/')) {
+        return `/${currentForumId}${path}`;
+      } else {
+        return `/${currentForumId}/${path}`;
+      }
+    }
+  }
+  
+  // 如果无法获取 forumId，返回原路径
+  return path;
 }
 

@@ -154,28 +154,6 @@ export interface ModelAuthInfo {
   type?: number;
 }
 
-export interface ModelDiscussion {
-  comment?: number;
-  content?: string;
-  created_at?: number;
-  dislike?: number;
-  group_ids?: number[];
-  hot?: number;
-  id?: number;
-  like?: number;
-  rag_id?: string;
-  resolved?: boolean;
-  resolved_at?: number;
-  summary?: string;
-  tags?: string[];
-  title?: string;
-  type?: ModelDiscussionType;
-  updated_at?: number;
-  user_id?: number;
-  uuid?: string;
-  view?: number;
-}
-
 export interface ModelDiscussionComment {
   accepted?: boolean;
   bot?: boolean;
@@ -198,11 +176,13 @@ export interface ModelDiscussionDetail {
   created_at?: number;
   current_user_id?: number;
   dislike?: number;
+  forum_id?: number;
   group_ids?: number[];
   groups?: ModelDiscussionGroup[];
   hot?: number;
   id?: number;
   like?: number;
+  members?: number[];
   rag_id?: string;
   resolved?: boolean;
   resolved_at?: number;
@@ -229,10 +209,12 @@ export interface ModelDiscussionListItem {
   content?: string;
   created_at?: number;
   dislike?: number;
+  forum_id?: number;
   group_ids?: number[];
   hot?: number;
   id?: number;
   like?: number;
+  members?: number[];
   rag_id?: string;
   resolved?: boolean;
   resolved_at?: number;
@@ -265,6 +247,13 @@ export interface ModelDiscussionReply {
 export interface ModelExportOpt {
   file_type?: string;
   space_id?: string;
+}
+
+export interface ModelForumInfo {
+  group_ids?: number[];
+  id?: number;
+  index?: number;
+  name?: string;
 }
 
 export interface ModelGroupItemInfo {
@@ -347,6 +336,11 @@ export interface ModelPlatformOpt {
 
 export interface ModelPublicAddress {
   address: string;
+}
+
+export interface ModelSystemBrand {
+  logo?: string;
+  text?: string;
 }
 
 export interface ModelUserInfo {
@@ -442,15 +436,12 @@ export interface SvcDiscussUploadFileReq {
 
 export interface SvcDiscussionCreateReq {
   content?: string;
+  forum_id?: number;
   group_ids?: number[];
   tags?: string[];
   title: string;
   type?: ModelDiscussionType;
   user_id?: number;
-}
-
-export interface SvcDiscussionSearchReq {
-  keyword?: string;
 }
 
 export interface SvcDiscussionUpdateReq {
@@ -490,6 +481,10 @@ export interface SvcFileExportReq {
   kb_id: number;
   title: string;
   uuid: string;
+}
+
+export interface SvcForumUpdateReq {
+  forums?: ModelForumInfo[];
 }
 
 export interface SvcGetSpaceRes {
@@ -1037,6 +1032,7 @@ export interface DeleteAdminUserUserIdParams {
 
 export interface GetDiscussionParams {
   filter?: "hot" | "new" | "mine";
+  forum_id?: number;
   group_ids?: number[];
   keyword?: string;
   /** @min 1 */
@@ -1125,6 +1121,11 @@ export interface PostDiscussionDiscIdLikeParams {
 export interface PostDiscussionDiscIdRevokeLikeParams {
   /** disc_id */
   discId: string;
+}
+
+export interface GetGroupParams {
+  /** forum id */
+  forum_id?: number;
 }
 
 export interface PutUserPayload {

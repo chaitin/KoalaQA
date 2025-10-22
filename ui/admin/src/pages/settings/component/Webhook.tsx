@@ -112,7 +112,7 @@ const Notification = () => {
   const onSubmit = async (data: ModelWebhook) => {
     try {
       if (editItem) {
-        await putAdminSystemWebhookWebhookId(editItem.id!, data as SvcWebhookUpdateReq);
+        await putAdminSystemWebhookWebhookId({webhookId: editItem.id!}, data as SvcWebhookUpdateReq);
       } else {
         await postAdminSystemWebhook(data as SvcWebhookCreateReq);
       }
@@ -130,7 +130,7 @@ const Notification = () => {
       content: `确定要删除通知 "${item.name}" 吗？`,
       onOk: async () => {
         try {
-          await deleteAdminSystemWebhookWebhookId(item.id!);
+          await deleteAdminSystemWebhookWebhookId({ webhookId: item.id! });
           message.success('删除成功');
           fetchData();
         } catch {

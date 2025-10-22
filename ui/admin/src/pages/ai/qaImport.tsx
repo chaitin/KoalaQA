@@ -97,7 +97,7 @@ const QaImport = (props: {
   // 审核相关处理
   const handleReviewApprove = (qaItem: ModelKBDocumentDetail) => {
     // 通过审核，更新状态为应用中
-    putAdminKbKbIdQuestionQaId(kb_id, qaItem.id!, {
+    putAdminKbKbIdQuestionQaId({kbId: kb_id, qaId: qaItem.id!}, {
       title: qaItem.title || '',
       markdown: qaItem.markdown,
     }).then(() => {
@@ -109,7 +109,7 @@ const QaImport = (props: {
 
   const handleReviewReject = (qaItem: ModelKBDocumentDetail) => {
     // 拒绝审核，删除记录
-    deleteAdminKbKbIdQuestionQaId(kb_id, qaItem.id!).then(() => {
+    deleteAdminKbKbIdQuestionQaId({kbId: kb_id, qaId: qaItem.id!}).then(() => {
       message.success('已拒绝');
       setShowReview(false);
       refresh({});
@@ -119,12 +119,12 @@ const QaImport = (props: {
   const handleUpdateHistorical = (qaItem: ModelKBDocumentDetail) => {
     // 更新历史问答对
     if (qaItem.similar_id) {
-      putAdminKbKbIdQuestionQaId(kb_id, qaItem.similar_id, {
+      putAdminKbKbIdQuestionQaId({kbId: kb_id, qaId: qaItem.similar_id}, {
         title: qaItem.title || '',
         markdown: qaItem.markdown as any,
       }).then(() => {
         // 删除当前待审核记录
-        deleteAdminKbKbIdQuestionQaId(kb_id, qaItem.id!).then(() => {
+        deleteAdminKbKbIdQuestionQaId({kbId: kb_id, qaId: qaItem.id!}).then(() => {
           message.success('已更新历史问答');
           setShowReview(false);
           refresh({});
@@ -133,7 +133,7 @@ const QaImport = (props: {
     }
   };
   const handleEdit = async (data: z.infer<typeof schema>) => {
-    await putAdminKbKbIdQuestionQaId(kb_id, data.id!, {
+    await putAdminKbKbIdQuestionQaId({kbId: kb_id, qaId: data.id!}, {
       title: data.title || '',
       markdown: data.markdown,
     });
@@ -142,7 +142,7 @@ const QaImport = (props: {
   };
 
   const handleOk = (data: z.infer<typeof schema>) => {
-    postAdminKbKbIdQuestion(kb_id, data).then(() => {
+    postAdminKbKbIdQuestion({kbId: kb_id}, data).then(() => {
       handleCancel();
       message.success('保存成功');
       refresh({});

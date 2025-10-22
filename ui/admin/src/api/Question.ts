@@ -13,10 +13,16 @@
 import request, { ContentType, RequestParams } from "./httpClient";
 import {
   ContextResponse,
+  DeleteAdminKbKbIdQuestionQaIdParams,
   GetAdminKbKbIdQuestionParams,
+  GetAdminKbKbIdQuestionQaIdParams,
   ModelKBDocumentDetail,
   ModelListRes,
+  PostAdminKbKbIdQuestionFileParams,
   PostAdminKbKbIdQuestionFilePayload,
+  PostAdminKbKbIdQuestionParams,
+  PostAdminKbKbIdQuestionQaIdReviewParams,
+  PutAdminKbKbIdQuestionQaIdParams,
   SvcDocCreateQAReq,
   SvcDocListItem,
   SvcDocUpdateReq,
@@ -71,7 +77,7 @@ export const getAdminKbKbIdQuestion = (
  */
 
 export const postAdminKbKbIdQuestion = (
-  kbId: number,
+  { kbId, ...query }: PostAdminKbKbIdQuestionParams,
   req: SvcDocCreateQAReq,
   params: RequestParams = {},
 ) =>
@@ -99,7 +105,7 @@ export const postAdminKbKbIdQuestion = (
  */
 
 export const postAdminKbKbIdQuestionFile = (
-  kbId: number,
+  { kbId, ...query }: PostAdminKbKbIdQuestionFileParams,
   data: PostAdminKbKbIdQuestionFilePayload,
   params: RequestParams = {},
 ) =>
@@ -126,8 +132,7 @@ export const postAdminKbKbIdQuestionFile = (
  */
 
 export const getAdminKbKbIdQuestionQaId = (
-  kbId: number,
-  qaId: number,
+  { kbId, qaId, ...query }: GetAdminKbKbIdQuestionQaIdParams,
   params: RequestParams = {},
 ) =>
   request<
@@ -152,8 +157,7 @@ export const getAdminKbKbIdQuestionQaId = (
  */
 
 export const putAdminKbKbIdQuestionQaId = (
-  kbId: number,
-  qaId: number,
+  { kbId, qaId, ...query }: PutAdminKbKbIdQuestionQaIdParams,
   req: SvcDocUpdateReq,
   params: RequestParams = {},
 ) =>
@@ -177,8 +181,7 @@ export const putAdminKbKbIdQuestionQaId = (
  */
 
 export const deleteAdminKbKbIdQuestionQaId = (
-  kbId: number,
-  qaId: number,
+  { kbId, qaId, ...query }: DeleteAdminKbKbIdQuestionQaIdParams,
   params: RequestParams = {},
 ) =>
   request<ContextResponse>({
@@ -199,8 +202,7 @@ export const deleteAdminKbKbIdQuestionQaId = (
  */
 
 export const postAdminKbKbIdQuestionQaIdReview = (
-  kbId: number,
-  qaId: number,
+  { kbId, qaId, ...query }: PostAdminKbKbIdQuestionQaIdReviewParams,
   req: SvcReviewReq,
   params: RequestParams = {},
 ) =>

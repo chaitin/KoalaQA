@@ -34,11 +34,10 @@ const MarkDown: React.FC<MarkDownProps> = props => {
           [rehypeSanitize, { tagNames: [...(defaultSchema.tagNames as string[]), 'center'] }],
         ]}
         components={{
-          h1: ({ node, ...props }) => <h2 {...props} />,
-          img: props => {
+          h1: ({ ...props }) => <h2 {...props} />,
+          img: (props) => {
             const { style, src } = props;
             return src ? (
-              // eslint-disable-next-line @next/next/no-img-element
               <img
                 alt={props.alt || 'markdown-img'}
                 {...props}
@@ -58,7 +57,7 @@ const MarkDown: React.FC<MarkDownProps> = props => {
             ) : null;
           },
           code(props) {
-            const { children, className, node, ...rest } = props;
+            const { children, className, ...rest } = props;
             const match = /language-(\w+)/.exec(className || '');
             return match ? (
               <SyntaxHighlighter

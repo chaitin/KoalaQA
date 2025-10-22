@@ -33,7 +33,7 @@ const FileText = ({
           throw new Error(`文件大小超过限制 ${size} 字节`);
         }
         onChange(text);
-      } catch (error) {
+      } catch {
         onChange('');
       }
     },

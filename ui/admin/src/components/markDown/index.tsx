@@ -160,7 +160,6 @@ function preprocessMarkdown(mdContent: string) {
 }
 
 const MarkDown = ({
-  loading = false,
   content,
 }: {
   loading?: boolean;

@@ -2,7 +2,7 @@
 
 import { ModelUserRole } from '@/api'
 import { AppBar, Button, Stack, Typography } from '@mui/material'
-import { useRouter } from 'next/navigation'
+import { useRouterWithForum } from '@/hooks/useRouterWithForum'
 import { useEffect, useState } from 'react'
 import LoggedInView from './loggedInView'
 import Link from 'next/link'
@@ -11,6 +11,10 @@ import { useLocalStorageState } from 'ahooks'
 import Image from 'next/image'
 import SettingsIcon from '@mui/icons-material/Settings'
 import { useAuthConfig } from '@/hooks/useAuthConfig'
+import { getSystemBrand } from '@/api/Brand'
+import { ModelSystemBrand } from '@/api/types'
+import ForumSelector from '../ForumSelector'
+import { useForum } from '@/contexts/ForumContext'
 
 interface HeaderProps {
   initialUser?: any | null
@@ -19,12 +23,17 @@ interface HeaderProps {
 const Header = ({ initialUser = null }: HeaderProps) => {
   const [token] = useLocalStorageState<string>('auth_token')
   const [user, setUser] = useState(initialUser)
-  const router = useRouter()
+  const router = useRouterWithForum()
   const [backHref, setBackHref] = useState('/admin/ai')
-  
+  const [brandConfig, setBrandConfig] = useState<ModelSystemBrand | null>(null)
+  const [isLoadingBrand, setIsLoadingBrand] = useState(true)
+
   // 使用新的 useAuthConfig hook
   const { authConfig } = useAuthConfig()
   
+  // 使用板块选择器
+  const { selectedForumId } = useForum()
+
   // 从 authConfig 中获取配置
   const registrationEnabled = authConfig?.enable_register ?? true
 
@@ -54,6 +63,23 @@ const Header = ({ initialUser = null }: HeaderProps) => {
       setBackHref(`${window.location.protocol}//${window.location.hostname}:3400/admin/ai`)
     }
   }, [])
+
+  // 获取品牌配置
+  useEffect(() => {
+    const fetchBrandConfig = async () => {
+      try {
+        setIsLoadingBrand(true)
+        const response = await getSystemBrand()
+        setBrandConfig(response)
+      } catch (error) {
+        console.error('获取品牌配置失败:', error)
+      } finally {
+        setIsLoadingBrand(false)
+      }
+    }
+
+    fetchBrandConfig()
+  }, [])
   return (
     <AppBar
       position='fixed'
@@ -65,32 +91,6 @@ const Header = ({ initialUser = null }: HeaderProps) => {
       }}
     >
       <Stack
-        justifyContent='center'
-        sx={{
-          height: 64,
-          position: 'relative',
-          background: '#fff',
-          display: { xs: 'flex', sm: 'none' },
-        }}
-      >
-        <Typography
-          variant='h2'
-          sx={{
-            ml: 2,
-            cursor: 'pointer',
-            fontSize: 14,
-            fontWeight: 700,
-            color: '#000',
-          }}
-          onClick={() => {
-            router.push('/')
-          }}
-        >
-          Koala QA
-        </Typography>
-      </Stack>
-
-      <Stack
         direction='row'
         sx={{
           height: 64,
@@ -101,14 +101,57 @@ const Header = ({ initialUser = null }: HeaderProps) => {
         alignItems='center'
         justifyContent='space-between'
       >
-        <Image
-          src='/logo-text.png'
-          alt='Koala QA Logo'
-          width={120}
-          height={20}
-          style={{ cursor: 'pointer' }}
-          onClick={() => router.push('/')}
-        />
+        <Stack direction='row' alignItems='center' gap={3}>
+          {!isLoadingBrand &&
+            (brandConfig?.logo ? (
+              <Stack
+                direction='row'
+                alignItems='center'
+                gap={1}
+              sx={{ cursor: 'pointer' }}
+              onClick={() => router.push(selectedForumId ? `/${selectedForumId}` : '/')}
+              >
+                <Image
+                  src={brandConfig.logo}
+                  alt='Logo'
+                  width={24}
+                  height={24}
+                  unoptimized={brandConfig.logo.startsWith('data:')}
+                  style={{
+                    objectFit: 'contain',
+                    borderRadius: '4px',
+                  }}
+                />
+                {brandConfig.text && (
+                  <Typography
+                    variant='h6'
+                    sx={{
+                      fontSize: 16,
+                      fontWeight: 600,
+                      color: '#000',
+                    }}
+                  >
+                    {brandConfig.text}
+                  </Typography>
+                )}
+              </Stack>
+            ) : (
+              <Image
+                src='/logo-text.png'
+                alt='Koala QA Logo'
+                width={120}
+                height={20}
+              style={{ cursor: 'pointer' }}
+              onClick={() => router.push(selectedForumId ? `/${selectedForumId}` : '/')}
+              />
+            ))}
+          
+          {/* 板块选择器 */}
+          <ForumSelector
+            selectedForumId={selectedForumId || undefined}
+          />
+        </Stack>
+
         <Stack
           direction='row'
           alignItems={'center'}
