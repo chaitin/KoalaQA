@@ -37,7 +37,3 @@ func (d *Dataset) SetID(name string, id string) {
 func (d *Dataset) GetBackendID(ctx context.Context) string {
 	return d.backendID
 }
-
-func (d *Dataset) GetFrontendID(ctx context.Context) string {
-	return d.frontendID
-}
