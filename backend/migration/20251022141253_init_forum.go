@@ -38,7 +38,7 @@ func (m *initForum) Migrate(tx *gorm.DB) error {
 	if err := tx.Create(&forum).Error; err != nil {
 		return err
 	}
-	if err := tx.Model(&model.Discussion{}).Where("forum_id = 0").Update("forum_id", forum.ID).Error; err != nil {
+	if err := tx.Model(&model.Discussion{}).Where("forum_id = 0 or forum_id is null").Update("forum_id", forum.ID).Error; err != nil {
 		return err
 	}
 	return nil
