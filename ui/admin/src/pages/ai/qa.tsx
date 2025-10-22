@@ -23,6 +23,7 @@ const AdminDocument = () => {
   const { query, setPage, setSize, page, size, setParams } = useListQueryParams();
   const [searchParams] = useSearchParams();
   const kb_id = +searchParams.get('id')!;
+  console.log(kb_id);
   const [title, setTitle] = useState(query.title);
   const [editItem, setEditItem] = useState<ModelKBDocumentDetail | null>(null);
 
@@ -48,7 +49,7 @@ const AdminDocument = () => {
         </>
       ),
       onOk: () => {
-        deleteAdminKbKbIdQuestionQaId(kb_id, item.id!).then(() => {
+        deleteAdminKbKbIdQuestionQaId({ kbId: kb_id, qaId: item.id! }).then(() => {
           message.success('删除成功');
           fetchData({
             page: 1,
@@ -59,7 +60,7 @@ const AdminDocument = () => {
   };
 
   const { runAsync: fetchDetail } = useRequest(
-    (qa_id: number) => getAdminKbKbIdQuestionQaId(kb_id, qa_id),
+    (qaId: number) => getAdminKbKbIdQuestionQaId({ kbId: kb_id, qaId }),
     {
       manual: true,
       onSuccess: res => {
@@ -204,7 +205,7 @@ const AdminDocument = () => {
             setParams({
               page,
               size,
-            })
+            });
           },
         }}
       />

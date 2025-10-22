@@ -47,7 +47,7 @@ const AdminDocument = () => {
   const [markdownContent, setMarkdownContent] = useState<string>('');
 
   const viewDetail = async (item: SvcDocListItem) => {
-    const docDetail = await getAdminKbKbIdDocumentDocId(kb_id, item.id!);
+    const docDetail = await getAdminKbKbIdDocumentDocId({kbId: kb_id, docId: item.id!});
     setDetail(docDetail);
     // 如果 markdown 字段是 url，则请求内容
     if (docDetail?.markdown && /^https?:\/\//.test(docDetail.markdown)) {
@@ -59,7 +59,7 @@ const AdminDocument = () => {
     }
   };
   const updateDoc = (item: SvcDocListItem) => {
-    putAdminKbKbIdWebDocId(kb_id, item.id!).then(() => {
+    putAdminKbKbIdWebDocId({kbId: kb_id, docId: item.id!}).then(() => {
       message.success('更新成功');
       fetchData({
         page: 1,
@@ -83,7 +83,7 @@ const AdminDocument = () => {
         </>
       ),
       onOk: () => {
-        deleteAdminKbKbIdDocumentDocId(kb_id, item.id!).then(() => {
+        deleteAdminKbKbIdDocumentDocId({kbId: kb_id, docId: item.id!}).then(() => {
           message.success('删除成功');
           fetchData({
             page: 1,

@@ -1,5 +1,6 @@
 export * from './Article'
 export * from './Bot'
+export * from './Brand'
 export * from './Category'
 export * from './Csrf'
 export * from './Discussion'

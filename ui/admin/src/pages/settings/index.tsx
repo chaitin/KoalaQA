@@ -3,6 +3,7 @@ import GroupTagManager from './component/Topic';
 import Access from './component/Access';
 import Webhook from './component/Webhook';
 import LoginMethod from './component/LoginMethod';
+import Logo from './component/Logo';
 
 const Settings = () => {
   return (
@@ -12,6 +13,7 @@ const Settings = () => {
         <Grid size={{ xs: 12, md: 6 }}>
           <Stack spacing={2}>
             <GroupTagManager />
+            <Logo />
             {/* TODO: 人工坐席管理组件，后续可插入 */}
           </Stack>
         </Grid>

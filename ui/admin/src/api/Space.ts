@@ -13,9 +13,19 @@
 import request, { ContentType, RequestParams } from "./httpClient";
 import {
   ContextResponse,
+  DeleteAdminKbKbIdSpaceSpaceIdFolderFolderIdParams,
+  DeleteAdminKbKbIdSpaceSpaceIdParams,
+  GetAdminKbKbIdSpaceParams,
+  GetAdminKbKbIdSpaceSpaceIdFolderParams,
+  GetAdminKbKbIdSpaceSpaceIdParams,
   GetAdminKbKbIdSpaceSpaceIdRemoteParams,
   ModelListRes,
   ModelPlatformOpt,
+  PostAdminKbKbIdSpaceParams,
+  PostAdminKbKbIdSpaceSpaceIdFolderParams,
+  PutAdminKbKbIdSpaceSpaceIdFolderFolderIdParams,
+  PutAdminKbKbIdSpaceSpaceIdParams,
+  PutAdminKbKbIdSpaceSpaceIdRefreshParams,
   SvcCreateSpaceFolderReq,
   SvcCreateSpaceReq,
   SvcGetSpaceRes,
@@ -77,7 +87,10 @@ export const postAdminKbSpaceRemote = (
 })` OK
  */
 
-export const getAdminKbKbIdSpace = (kbId: number, params: RequestParams = {}) =>
+export const getAdminKbKbIdSpace = (
+  { kbId, ...query }: GetAdminKbKbIdSpaceParams,
+  params: RequestParams = {},
+) =>
   request<
     ContextResponse & {
       data?: ModelListRes & {
@@ -105,7 +118,7 @@ export const getAdminKbKbIdSpace = (kbId: number, params: RequestParams = {}) =>
  */
 
 export const postAdminKbKbIdSpace = (
-  kbId: number,
+  { kbId, ...query }: PostAdminKbKbIdSpaceParams,
   req: SvcCreateSpaceReq,
   params: RequestParams = {},
 ) =>
@@ -139,8 +152,7 @@ export const postAdminKbKbIdSpace = (
  */
 
 export const getAdminKbKbIdSpaceSpaceId = (
-  kbId: number,
-  spaceId: number,
+  { kbId, spaceId, ...query }: GetAdminKbKbIdSpaceSpaceIdParams,
   params: RequestParams = {},
 ) =>
   request<
@@ -167,8 +179,7 @@ export const getAdminKbKbIdSpaceSpaceId = (
  */
 
 export const putAdminKbKbIdSpaceSpaceId = (
-  kbId: number,
-  spaceId: number,
+  { kbId, spaceId, ...query }: PutAdminKbKbIdSpaceSpaceIdParams,
   req: SvcUpdateSpaceReq,
   params: RequestParams = {},
 ) =>
@@ -192,8 +203,7 @@ export const putAdminKbKbIdSpaceSpaceId = (
  */
 
 export const deleteAdminKbKbIdSpaceSpaceId = (
-  kbId: number,
-  spaceId: number,
+  { kbId, spaceId, ...query }: DeleteAdminKbKbIdSpaceSpaceIdParams,
   params: RequestParams = {},
 ) =>
   request<ContextResponse>({
@@ -220,8 +230,7 @@ export const deleteAdminKbKbIdSpaceSpaceId = (
  */
 
 export const getAdminKbKbIdSpaceSpaceIdFolder = (
-  kbId: number,
-  spaceId: number,
+  { kbId, spaceId, ...query }: GetAdminKbKbIdSpaceSpaceIdFolderParams,
   params: RequestParams = {},
 ) =>
   request<
@@ -248,8 +257,7 @@ export const getAdminKbKbIdSpaceSpaceIdFolder = (
  */
 
 export const postAdminKbKbIdSpaceSpaceIdFolder = (
-  kbId: number,
-  spaceId: number,
+  { kbId, spaceId, ...query }: PostAdminKbKbIdSpaceSpaceIdFolderParams,
   req: SvcCreateSpaceFolderReq,
   params: RequestParams = {},
 ) =>
@@ -273,9 +281,12 @@ export const postAdminKbKbIdSpaceSpaceIdFolder = (
  */
 
 export const putAdminKbKbIdSpaceSpaceIdFolderFolderId = (
-  kbId: number,
-  spaceId: number,
-  folderId: number,
+  {
+    kbId,
+    spaceId,
+    folderId,
+    ...query
+  }: PutAdminKbKbIdSpaceSpaceIdFolderFolderIdParams,
   params: RequestParams = {},
 ) =>
   request<ContextResponse>({
@@ -296,9 +307,12 @@ export const putAdminKbKbIdSpaceSpaceIdFolderFolderId = (
  */
 
 export const deleteAdminKbKbIdSpaceSpaceIdFolderFolderId = (
-  kbId: number,
-  spaceId: number,
-  folderId: number,
+  {
+    kbId,
+    spaceId,
+    folderId,
+    ...query
+  }: DeleteAdminKbKbIdSpaceSpaceIdFolderFolderIdParams,
   params: RequestParams = {},
 ) =>
   request<ContextResponse>({
@@ -319,8 +333,7 @@ export const deleteAdminKbKbIdSpaceSpaceIdFolderFolderId = (
  */
 
 export const putAdminKbKbIdSpaceSpaceIdRefresh = (
-  kbId: number,
-  spaceId: number,
+  { kbId, spaceId, ...query }: PutAdminKbKbIdSpaceSpaceIdRefreshParams,
   params: RequestParams = {},
 ) =>
   request<ContextResponse>({

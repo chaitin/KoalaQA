@@ -23,6 +23,7 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 import { useParams, useRouter } from 'next/navigation'
 import { useContext, useRef, useState } from 'react'
 import { formatNumber } from '@/lib/utils'
+import EditorContent from '@/components/EditorContent'
 
 // 添加CSS动画样式
 const animationStyles = `
@@ -317,7 +318,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         </Stack>
       </Stack>
       <Divider sx={{ mt: 2, mb: 1 }} />
-      <MarkDown content={data.content} />
+      <EditorContent content={data.content} />
 
       {/* 回答问题按钮 */}
       <Box sx={{ mt: 1, pt: 1 }}>

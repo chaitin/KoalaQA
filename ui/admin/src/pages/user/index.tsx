@@ -80,7 +80,7 @@ const AdminDocument = () => {
         </>
       ),
       onOk: () => {
-        deleteAdminUserUserId(item.id!).then(() => {
+        deleteAdminUserUserId({userId: item.id!}).then(() => {
           message.success('删除成功');
           fetchData({
             page: 1,
@@ -91,7 +91,7 @@ const AdminDocument = () => {
   };
   const putUser = handleSubmit(data => {
     if (editItem) {
-      putAdminUserUserId(editItem.id!, data).then(() => {
+      putAdminUserUserId({userId: editItem.id!}, data).then(() => {
         message.success('修改成功');
         fetchData({});
         cancelEdit();

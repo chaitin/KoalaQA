@@ -13,10 +13,13 @@
 import request, { ContentType, RequestParams } from "./httpClient";
 import {
   ContextResponse,
+  DeleteAdminUserUserIdParams,
   GetAdminUserParams,
+  GetAdminUserUserIdParams,
   GetUserLoginThirdParams,
   ModelListRes,
   ModelUserInfo,
+  PutAdminUserUserIdParams,
   PutUserPayload,
   SvcAuthFrontendGetRes,
   SvcUserListItem,
@@ -73,7 +76,7 @@ export const getAdminUser = (
  */
 
 export const getAdminUserUserId = (
-  userId: number,
+  { userId, ...query }: GetAdminUserUserIdParams,
   params: RequestParams = {},
 ) =>
   request<
@@ -98,7 +101,7 @@ export const getAdminUserUserId = (
  */
 
 export const putAdminUserUserId = (
-  userId: number,
+  { userId, ...query }: PutAdminUserUserIdParams,
   req: SvcUserUpdateReq,
   params: RequestParams = {},
 ) =>
@@ -122,7 +125,7 @@ export const putAdminUserUserId = (
  */
 
 export const deleteAdminUserUserId = (
-  userId: number,
+  { userId, ...query }: DeleteAdminUserUserIdParams,
   params: RequestParams = {},
 ) =>
   request<ContextResponse>({

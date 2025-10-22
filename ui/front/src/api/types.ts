@@ -159,10 +159,12 @@ export interface ModelDiscussion {
   content?: string;
   created_at?: number;
   dislike?: number;
+  forum_id?: number;
   group_ids?: number[];
   hot?: number;
   id?: number;
   like?: number;
+  members?: number[];
   rag_id?: string;
   resolved?: boolean;
   resolved_at?: number;
@@ -198,11 +200,13 @@ export interface ModelDiscussionDetail {
   created_at?: number;
   current_user_id?: number;
   dislike?: number;
+  forum_id?: number;
   group_ids?: number[];
   groups?: ModelDiscussionGroup[];
   hot?: number;
   id?: number;
   like?: number;
+  members?: number[];
   rag_id?: string;
   resolved?: boolean;
   resolved_at?: number;
@@ -229,10 +233,12 @@ export interface ModelDiscussionListItem {
   content?: string;
   created_at?: number;
   dislike?: number;
+  forum_id?: number;
   group_ids?: number[];
   hot?: number;
   id?: number;
   like?: number;
+  members?: number[];
   rag_id?: string;
   resolved?: boolean;
   resolved_at?: number;
@@ -349,6 +355,11 @@ export interface ModelPublicAddress {
   address: string;
 }
 
+export interface ModelSystemBrand {
+  logo?: string;
+  text?: string;
+}
+
 export interface ModelUserInfo {
   avatar?: string;
   builtin?: boolean;
@@ -442,6 +453,7 @@ export interface SvcDiscussUploadFileReq {
 
 export interface SvcDiscussionCreateReq {
   content?: string;
+  forum_id: number;
   group_ids?: number[];
   tags?: string[];
   title: string;

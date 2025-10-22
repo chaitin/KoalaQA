@@ -13,9 +13,12 @@
 import request, { ContentType, RequestParams } from "./httpClient";
 import {
   ContextResponse,
+  DeleteAdminSystemWebhookWebhookIdParams,
+  GetAdminSystemWebhookWebhookIdParams,
   ModelListRes,
   ModelWebhook,
   ModelWebhookConfig,
+  PutAdminSystemWebhookWebhookIdParams,
   SvcWebhookCreateReq,
   SvcWebhookUpdateReq,
 } from "./types";
@@ -94,7 +97,7 @@ export const postAdminSystemWebhook = (
  */
 
 export const getAdminSystemWebhookWebhookId = (
-  webhookId: number,
+  { webhookId, ...query }: GetAdminSystemWebhookWebhookIdParams,
   params: RequestParams = {},
 ) =>
   request<
@@ -119,7 +122,7 @@ export const getAdminSystemWebhookWebhookId = (
  */
 
 export const putAdminSystemWebhookWebhookId = (
-  webhookId: number,
+  { webhookId, ...query }: PutAdminSystemWebhookWebhookIdParams,
   req: SvcWebhookUpdateReq,
   params: RequestParams = {},
 ) =>
@@ -143,7 +146,7 @@ export const putAdminSystemWebhookWebhookId = (
  */
 
 export const deleteAdminSystemWebhookWebhookId = (
-  webhookId: number,
+  { webhookId, ...query }: DeleteAdminSystemWebhookWebhookIdParams,
   params: RequestParams = {},
 ) =>
   request<ContextResponse>({
