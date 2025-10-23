@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func TrimFistDir(path string) string {
+func TrimFirstDir(path string) string {
 	if path == "" {
 		return ""
 	}
