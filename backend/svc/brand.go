@@ -59,7 +59,7 @@ func (b *Brand) Update(ctx context.Context, req model.SystemBrand) error {
 
 		ext := ".png"
 		if len(exts) > 0 {
-			ext = exts[len(ext)-1]
+			ext = exts[len(exts)-1]
 		}
 
 		req.Logo, err = b.oc.Upload(ctx, "brand", bytes.NewReader(dataURL.Data),
