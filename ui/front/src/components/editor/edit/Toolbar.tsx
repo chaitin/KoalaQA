@@ -1,5 +1,4 @@
 import {
-  AiGenerate2Icon,
   EditorToolbar,
   UseTiptapReturn,
 } from '@ctzhian/tiptap';
@@ -10,7 +9,7 @@ interface ToolbarProps {
   handleAiGenerate?: () => void;
 }
 
-const Toolbar = ({ editorRef, handleAiGenerate }: ToolbarProps) => {
+const Toolbar = ({ editorRef, handleAiGenerate: _handleAiGenerate }: ToolbarProps) => {
   return (
     <Box
       sx={{

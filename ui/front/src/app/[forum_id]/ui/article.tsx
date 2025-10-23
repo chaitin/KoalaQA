@@ -69,7 +69,7 @@ const Article = ({
     : contextGroups
 
   const [releaseModalVisible, { setTrue: releaseModalOpen, setFalse: releaseModalClose }] = useBoolean(false)
-  const [status, setStatus] = useState<Status>((searchParams?.get('sort') as Status) || 'hot')
+  const [status, _setStatus] = useState<Status>((searchParams?.get('sort') as Status) || 'hot')
   const [search, setSearch] = useState(searchParams?.get('search') || '')
   const searchRef = useRef(search)
   const [articleData, setArticleData] = useState(data)
@@ -133,7 +133,7 @@ const Article = ({
         // 回退页码
         setPage(page)
       })
-  }, [page, articleData.total, status, search, topics])
+  }, [page, articleData.total, status, search, topics, type])
 
   const createQueryString = (name: string, value: string) => {
     const params = new URLSearchParams(searchParams?.toString())
@@ -471,12 +471,12 @@ const Article = ({
                   sx={{
                     p: 2, // 添加内边距
                     boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
-                    borderRadius: 2,
+                    borderRadius: 1,
                     overflow: 'hidden',
                   }}
                 >
                   <Stack gap={0}>
-                    {section.items?.map((item, index) => {
+                    {section.items?.map((item, _index) => {
                       const color = '#206CFF'
                       const icon = '#'
 
@@ -488,7 +488,6 @@ const Article = ({
                           sx={{
                             p: 1,
                             m: 0.5,
-                            borderRadius: 1,
                             cursor: 'pointer',
                             backgroundColor: topics.includes(item.id || -1) ? 'rgba(32,108,255,0.08)' : 'transparent',
                             transition: 'all 0.2s ease',

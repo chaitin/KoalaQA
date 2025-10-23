@@ -102,7 +102,7 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
 
     isFetchingRef.current = true;
     setGroupsLoading(true);
-
+    
     getGroup({ forum_id: parseInt(forumId, 10) })
       .then((r) => {
         const newGroups = {

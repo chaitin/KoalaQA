@@ -64,7 +64,7 @@ const CusTabs: FC<RadioButtonProps> = ({
         minHeight: 36,
         height: 36,
         backgroundColor: 'background.paper',
-        borderRadius: '4px',
+        borderRadius: '8px',
         '& button .MuiTabs-indicator': {
           zIndex: -1,
         },

@@ -6,7 +6,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { ComponentType, JSX, ReactNode } from 'react';
+import { ComponentType, JSX } from 'react';
 import { Box, CircularProgress } from '@mui/material';
 
 // 默认加载组件

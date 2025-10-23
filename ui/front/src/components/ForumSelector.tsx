@@ -1,10 +1,10 @@
 'use client'
 
 import { ModelForum } from '@/api/types'
-import { Box, Button, Chip, Stack, Typography } from '@mui/material'
+import { Button, Stack } from '@mui/material'
 import { useEffect, useState } from 'react'
 import { getForum } from '@/api/Forum'
-import LoadingSpinner from './LoadingSpinner'
+// import LoadingSpinner from './LoadingSpinner'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 interface ForumSelectorProps {

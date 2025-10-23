@@ -3,6 +3,7 @@
 import { ModelUserRole } from '@/api'
 import { AppBar, Button, Stack, Typography } from '@mui/material'
 import { useRouterWithForum } from '@/hooks/useRouterWithForum'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import LoggedInView from './loggedInView'
 import Link from 'next/link'
@@ -15,6 +16,7 @@ import { getSystemBrand } from '@/api/Brand'
 import { ModelSystemBrand } from '@/api/types'
 import ForumSelector from '../ForumSelector'
 import { useForum } from '@/contexts/ForumContext'
+import { usePathname } from 'next/navigation'
 
 interface HeaderProps {
   initialUser?: any | null
@@ -24,6 +26,8 @@ const Header = ({ initialUser = null }: HeaderProps) => {
   const [token] = useLocalStorageState<string>('auth_token')
   const [user, setUser] = useState(initialUser)
   const router = useRouterWithForum()
+  const plainRouter = useRouter()
+  const pathname = usePathname()
   const [backHref, setBackHref] = useState('/admin/ai')
   const [brandConfig, setBrandConfig] = useState<ModelSystemBrand | null>(null)
   const [isLoadingBrand, setIsLoadingBrand] = useState(true)
@@ -31,7 +35,8 @@ const Header = ({ initialUser = null }: HeaderProps) => {
   // 使用新的 useAuthConfig hook
   const { authConfig } = useAuthConfig()
   
-  // 使用板块选择器
+  // 使用板块选择器 - 只在非登录/注册页面使用
+  const isAuthPage = pathname === '/login' || pathname === '/register'
   const { selectedForumId } = useForum()
 
   // 从 authConfig 中获取配置
@@ -114,7 +119,13 @@ const Header = ({ initialUser = null }: HeaderProps) => {
                 alignItems='center'
                 gap={1}
               sx={{ cursor: 'pointer' }}
-              onClick={() => router.push(selectedForumId ? `/${selectedForumId}` : '/')}
+              onClick={() => {
+                if (isAuthPage) {
+                  plainRouter.push('/')
+                } else {
+                  router.push(selectedForumId ? `/${selectedForumId}` : '/')
+                }
+              }}
               >
                 <Image
                   src={brandConfig.logo}
@@ -147,14 +158,22 @@ const Header = ({ initialUser = null }: HeaderProps) => {
                 width={120}
                 height={20}
               style={{ cursor: 'pointer' }}
-              onClick={() => router.push(selectedForumId ? `/${selectedForumId}` : '/')}
+              onClick={() => {
+                if (isAuthPage) {
+                  plainRouter.push('/')
+                } else {
+                  router.push(selectedForumId ? `/${selectedForumId}` : '/')
+                }
+              }}
               />
             ))}
           
-          {/* 板块选择器 */}
-          <ForumSelector
-            selectedForumId={selectedForumId || undefined}
-          />
+          {/* 板块选择器 - 只在非登录/注册页面显示 */}
+          {!isAuthPage && (
+            <ForumSelector
+              selectedForumId={selectedForumId || undefined}
+            />
+          )}
         </Stack>
 
         <Stack
@@ -190,7 +209,7 @@ const Header = ({ initialUser = null }: HeaderProps) => {
                   variant='outlined'
                   sx={{ borderRadius: 1, height: 44, width: 122, fontSize: 14 }}
                   onClick={() => {
-                    router.push('/register')
+                    plainRouter.push('/register')
                   }}
                 >
                   立即注册
@@ -206,7 +225,7 @@ const Header = ({ initialUser = null }: HeaderProps) => {
                   boxShadow: 'none !important',
                 }}
                 onClick={() => {
-                  router.push('/login')
+                  plainRouter.push('/login')
                 }}
               >
                 登录
