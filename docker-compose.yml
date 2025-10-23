@@ -117,6 +117,7 @@ services:
       - http_proxy=${HTTP_PROXY}
       - no_proxy=koala-qa-oss,koala-qa-mq,${NO_PROXY}
       - GLOG_GLOBAL_LEVEL=${GLOG_GLOBAL_LEVEL}
+      - TASK_CONCURRENT=${ANYDOC_TASK_CONCURRENT}
       - OSS_MINIO_ACCESS_KEY=koala
       - OSS_MINIO_SECRET_KEY=${OSS_SECRET_KEY}
       - OSS_MINIO_ENDPOINT=koala-qa-oss:9000
