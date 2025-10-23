@@ -74,6 +74,9 @@ const nextConfig = {
       }
     ],
     
+    // 配置路径重写，将OSS路径映射到正确的代理路径
+    path: '/_next/image',
+    
     // 设置图片格式支持 - Next.js只支持webp和avif格式优化
     formats: ['image/webp', 'image/avif'],
     

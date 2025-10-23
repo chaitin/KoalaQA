@@ -136,6 +136,7 @@ const Header = ({ initialUser = null }: HeaderProps) => {
                     objectFit: 'contain',
                     borderRadius: '4px',
                   }}
+                  unoptimized={brandConfig.logo?.startsWith('/koala/')}
                 />
                 {brandConfig.text && (
                   <Typography
