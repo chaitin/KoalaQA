@@ -22,6 +22,7 @@ import { useSearchParams } from 'next/navigation'
 import { useRouterWithForum } from '@/hooks/useRouterWithForum'
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import DiscussCard, { DiscussCardMobile } from './discussCard'
+import SearchResultModal from '@/components/SearchResultModal'
 
 export type Status = 'hot' | 'new' | 'mine'
 
@@ -74,6 +75,13 @@ const Article = ({
   const searchRef = useRef(search)
   const [articleData, setArticleData] = useState(data)
   const [page, setPage] = useState(1)
+  
+  // 搜索弹窗相关状态
+  const [searchModalOpen, { setTrue: openSearchModal, setFalse: closeSearchModal }] = useBoolean(false)
+  const [searchResults, setSearchResults] = useState<ModelDiscussionListItem[]>([])
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [modalSearchQuery, setModalSearchQuery] = useState('')
+  const [selectedModalType, setSelectedModalType] = useState<'qa' | 'feedback' | 'blog'>('qa')
 
   // 根据type参数动态生成标签文本，默认为qa
   const getStatusLabels = () => {
@@ -183,35 +191,46 @@ const Article = ({
     [currentForumId, type],
   )
 
+  // 执行搜索的函数
+  const performSearch = useCallback(async (query: string) => {
+    if (!query.trim()) return
+    
+    setSearchLoading(true)
+    try {
+      const params: GetDiscussionParams = {
+        forum_id: currentForumId ? Number(currentForumId) : undefined,
+        keyword: query.trim(),
+      }
+      
+      const result = await getDiscussion(params)
+      setSearchResults(result.items || [])
+    } catch (error) {
+      console.error('搜索失败:', error)
+      setSearchResults([])
+    } finally {
+      setSearchLoading(false)
+    }
+  }, [currentForumId])
+
+  const handleSearch = useCallback(() => {
+    const trimmedSearch = search && search.trim() ? search.trim() : ''
+    
+    if (trimmedSearch) {
+      // 设置弹窗中的搜索查询
+      setModalSearchQuery(trimmedSearch)
+      // 打开搜索弹窗
+      openSearchModal()
+      // 执行搜索
+      performSearch(trimmedSearch)
+      
+    }
+  }, [search, openSearchModal, performSearch])
+
   const onInputSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       handleSearch()
     }
   }
-
-  const handleSearch = useCallback(() => {
-    const currentSearch = searchParams?.get('search') || ''
-    const trimmedSearch = search && search.trim() ? search.trim() : ''
-
-    // 只有在搜索内容真正变化时才更新 URL
-    if (currentSearch !== trimmedSearch) {
-      const params = new URLSearchParams(searchParams?.toString())
-
-      // 如果搜索内容为空，移除 search 参数，否则设置 search 参数
-      if (trimmedSearch) {
-        params.set('search', trimmedSearch)
-      } else {
-        params.delete('search')
-      }
-
-      // 如果没有指定排序方式，默认使用 hot
-      if (!params.get('sort')) {
-        params.set('sort', 'hot')
-      }
-
-      router.push(`/?${params.toString()}`)
-    }
-  }, [search, searchParams, router])
 
   useEffect(() => {
     setArticleData(data)
@@ -248,6 +267,17 @@ const Article = ({
   )
 
   const handleAsk = () => {
+    setSelectedModalType('qa')
+    checkAuth(() => releaseModalOpen())
+  }
+
+  const handleFeedback = () => {
+    setSelectedModalType('feedback')
+    checkAuth(() => releaseModalOpen())
+  }
+
+  const handleArticle = () => {
+    setSelectedModalType('blog')
     checkAuth(() => releaseModalOpen())
   }
 
@@ -342,7 +372,7 @@ const Article = ({
               flex: 1,
               height: 48,
               backgroundColor: '#fff',
-              borderRadius: 3,
+              borderRadius: 1,
               '.MuiOutlinedInput-notchedOutline': {
                 borderColor: 'transparent',
               },
@@ -529,7 +559,7 @@ const Article = ({
                               fontWeight: topics.includes(item.id || -1) ? 500 : 400,
                             }}
                           >
-                            <Typography sx={{ fontSize: 14, fontWeight: 'inherit', color: 'inherit' }}>
+                            <Typography sx={{ fontSize: 14, fontWeight: 'inherit', color: 'rgba(0, 0, 0, 1)' }}>
                               {item.name}
                             </Typography>
                           </Box>
@@ -593,27 +623,11 @@ const Article = ({
                   },
                 }}
                 variant='contained'
-                onClick={handleAsk}
+                onClick={type === 'feedback' ? handleFeedback : handleAsk}
               >
                 {type === 'feedback' ? '提交反馈 👉' : '发帖提问 👉'}
               </Button>
             </Stack>
-            {searchParams?.get('search') && (!articleData.items || articleData.items.length === 0) && (
-              <Card
-                sx={{
-                  p: 3,
-                  boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
-                  textAlign: 'center',
-                }}
-              >
-                <Stack gap={1.5} alignItems='center'>
-                  <Typography variant='h6'>没搜到想要的答案？发帖提问获取帮助</Typography>
-                  <Button variant='contained' onClick={handleAsk}>
-                    发帖提问
-                  </Button>
-                </Stack>
-              </Card>
-            )}
             {articleData.items?.map((it) => (
               <React.Fragment key={it.uuid}>
                 <DiscussCard data={it} keywords={searchRef.current} />
@@ -696,7 +710,24 @@ const Article = ({
             }}
             selectedTags={[]}
             initialTitle={searchParams?.get('search') || ''}
-            type={type as 'qa' | 'feedback' | 'blog'}
+            type={selectedModalType}
+          />
+          
+          {/* 搜索结果弹窗 */}
+          <SearchResultModal
+            open={searchModalOpen}
+            onClose={() => {
+              closeSearchModal()
+              setSearch('') // 清空搜索输入框内容
+            }}
+            searchQuery={modalSearchQuery}
+            searchResults={searchResults}
+            loading={searchLoading}
+            onSearchChange={setModalSearchQuery}
+            onSearch={performSearch}
+            onAsk={handleAsk}
+            onFeedback={handleFeedback}
+            onArticle={handleArticle}
           />
         </Stack>
 

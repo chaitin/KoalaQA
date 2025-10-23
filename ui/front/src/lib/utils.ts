@@ -354,8 +354,8 @@ export async function formatMeta(
  * 路由工具函数 - 自动补上 forum_id
  */
 export function buildRouteWithForumId(path: string, forumId?: number | null): string {
-  // 如果路径已经包含 forum_id，直接返回
-  if (path.match(/^\/\d+\//) || path.match(/^\/\d+$/)) {
+  // 如果路径已经包含 forum/forum_id，直接返回
+  if (path.match(/^\/forum\/\d+\//) || path.match(/^\/forum\/\d+$/)) {
     return path;
   }
   
@@ -363,22 +363,22 @@ export function buildRouteWithForumId(path: string, forumId?: number | null): st
   if (forumId) {
     // 处理以 / 开头的路径
     if (path.startsWith('/')) {
-      return `/${forumId}${path}`;
+      return `/forum/${forumId}${path}`;
     } else {
-      return `/${forumId}/${path}`;
+      return `/forum/${forumId}/${path}`;
     }
   }
   
   // 如果没有 forumId，尝试从当前路径获取
   if (typeof window !== 'undefined') {
     const currentPath = window.location.pathname;
-    const match = currentPath.match(/^\/(\d+)/);
+    const match = currentPath.match(/^\/forum\/(\d+)/);
     if (match) {
       const currentForumId = match[1];
       if (path.startsWith('/')) {
-        return `/${currentForumId}${path}`;
+        return `/forum/${currentForumId}${path}`;
       } else {
-        return `/${currentForumId}/${path}`;
+        return `/forum/${currentForumId}/${path}`;
       }
     }
   }

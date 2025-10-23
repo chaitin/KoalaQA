@@ -51,7 +51,7 @@ import {
   Tab,
   Tabs,
   TextField,
-  Typography
+  Typography,
 } from '@mui/material';
 import { useRequest } from 'ahooks';
 import dayjs from 'dayjs';
@@ -92,7 +92,7 @@ const KnowledgeBasePage = () => {
 
   // 获取知识库空间列表
   const { data: spacesData, refresh: refreshSpaces } = useRequest(
-    () => getAdminKbKbIdSpace({kbId: kb_id}),
+    () => getAdminKbKbIdSpace({ kbId: kb_id }),
     {
       onSuccess: data => {
         // 如果当前没有选中任何知识源，且有知识源数据，则默认选中第一个
@@ -116,7 +116,7 @@ const KnowledgeBasePage = () => {
   } = useRequest(
     () =>
       selectedSpaceId
-        ? getAdminKbKbIdSpaceSpaceIdFolder({kbId: kb_id, spaceId: selectedSpaceId})
+        ? getAdminKbKbIdSpaceSpaceIdFolder({ kbId: kb_id, spaceId: selectedSpaceId })
         : Promise.resolve(null),
     {
       refreshDeps: [selectedSpaceId],
@@ -154,7 +154,7 @@ const KnowledgeBasePage = () => {
 
   // 获取知识库详情（用于编辑时获取完整信息）
   const { run: fetchSpaceDetail } = useRequest(
-    (spaceId: number) => getAdminKbKbIdSpaceSpaceId({kbId: kb_id, spaceId: spaceId}),
+    (spaceId: number) => getAdminKbKbIdSpaceSpaceId({ kbId: kb_id, spaceId: spaceId }),
     {
       manual: true,
       onSuccess: data => {
@@ -268,7 +268,7 @@ const KnowledgeBasePage = () => {
         okButtonProps: { color: 'error' },
         onOk: async () => {
           try {
-            await deleteAdminKbKbIdSpaceSpaceId({kbId: kb_id, spaceId: currentSpace.id || 0});
+            await deleteAdminKbKbIdSpaceSpaceId({ kbId: kb_id, spaceId: currentSpace.id || 0 });
             message.success('删除成功');
             refreshSpaces();
             if (selectedSpaceId === currentSpace.id) {
@@ -382,10 +382,10 @@ const KnowledgeBasePage = () => {
       message.error('获取知识库失败，请检查配置是否正确');
     }
   };
-  const handleGetSpaces = () => {
+  const handleGetSpaces =  async() => {
     if (currentSpace?.id) {
       setSelectedSpaceId(currentSpace.id || null);
-      fetchRemoteSpaces(currentSpace.id, currentSpace.platform);
+      await fetchRemoteSpaces(currentSpace.id, currentSpace.platform);
       setShowImportModal(true);
       refreshSpaces();
     }
@@ -1282,9 +1282,9 @@ const KnowledgeBasePage = () => {
                           variant="outlined"
                           onClick={() => {
                             if (folder.doc_id && !docDetails[folder.doc_id]) {
-                              handleGetDocDetails(folder.doc_id);
+                              return handleGetDocDetails(folder.doc_id);
                             } else if (folder.doc_id) {
-                              setExpandedDocs(prev => {
+                              return setExpandedDocs(prev => {
                                 const newSet = new Set(prev);
                                 newSet.add(folder.doc_id!);
                                 return newSet;

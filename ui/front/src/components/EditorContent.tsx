@@ -39,8 +39,8 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
       editorRef.editor.commands.setContent(displayContent || '')
     }
   }, [content, displayContent, editorRef.editor])
-  return (
-    displayContent ? <Box
+  return displayContent ? (
+    <Box
       className='editor-container'
       sx={{
         '.tiptap.ProseMirror': {
@@ -50,11 +50,16 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
             overflowX: 'auto',
           },
         },
+        '& code': {
+          whiteSpace: 'pre-wrap',
+        },
         ...sx,
       }}
     >
       {editorRef.editor && <Editor editor={editorRef.editor} />}
-    </Box> : ''
+    </Box>
+  ) : (
+    ''
   )
 }
 
