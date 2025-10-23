@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ModelDiscussionDetail } from '@/api/types';
 import { useDebounceFn } from 'ahooks';
 
-import { MarkDown } from '@/components';
+// import { MarkDown } from '@/components';
 import EditorContent from '@/components/EditorContent';
 
 interface MarkdownHeader {

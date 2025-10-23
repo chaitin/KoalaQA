@@ -111,10 +111,10 @@ async function getUserData() {
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
   const user = await getUserData()
-  
   let brand = null
   try {
     brand = await getSystemBrand()
+    console.log('Current route URL:', typeof window !== 'undefined' ? window.location.href : (typeof location !== 'undefined' ? location.href : 'Non-browser environment'));
   } catch (error) {
     // 构建时如果无法获取品牌信息，使用默认值
     console.warn('Failed to fetch brand info during build:', error)

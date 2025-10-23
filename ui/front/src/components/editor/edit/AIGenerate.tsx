@@ -48,15 +48,15 @@ const AIGenerate = ({
         },
       );
     }
-  }, [selectText, sseClientRef.current, readEditor.editor]);
+  }, [selectText, readEditor.editor]);
 
   const onCancel = () => {
     sseClientRef.current?.unsubscribe();
     try {
-      if (defaultEditor.editor && (defaultEditor.editor as any).view) {
+      if (defaultEditor.editor && 'view' in defaultEditor.editor) {
         defaultEditor.editor.commands.setContent('');
       }
-      if (readEditor.editor && (readEditor.editor as any).view) {
+      if (readEditor.editor && 'view' in readEditor.editor) {
         readEditor.editor.commands.setContent('');
       }
     } catch (e) {
@@ -85,7 +85,7 @@ const AIGenerate = ({
     if (selectText) {
       setTimeout(() => {
         try {
-          if (defaultEditor.editor && (defaultEditor.editor as any).view) {
+          if (defaultEditor.editor && 'view' in defaultEditor.editor) {
             defaultEditor.editor.commands.setContent(selectText);
           }
           onGenerate();
@@ -94,7 +94,7 @@ const AIGenerate = ({
         }
       }, 60);
     }
-  }, [selectText, open]);
+  }, [selectText, open, defaultEditor.editor, onGenerate]);
 
   useEffect(() => {
     return () => {
@@ -102,7 +102,7 @@ const AIGenerate = ({
       readEditor.editor.destroy();
       sseClientRef.current?.unsubscribe();
     };
-  }, []);
+  }, [defaultEditor.editor, readEditor.editor]);
 
   return (
     <Modal

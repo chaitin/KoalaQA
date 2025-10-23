@@ -42,9 +42,7 @@ async function fetchDiscussions(
     topics.forEach((id) => params.append('group_ids', String(id)))
   }
   try {
-    const a = await getDiscussion(params)
-    console.log(a)
-    return a
+    return await getDiscussion(params)
   } catch (error) {
     console.error('Failed to fetch discussions:', error)
     return { items: [], total: 0 }
@@ -63,7 +61,7 @@ async function fetchGroups(forumId: string) {
 async function fetchForumInfo(forumId: string) {
   try {
     const forums = await getForum()
-    return forums?.find(forum => forum.id === parseInt(forumId, 10)) || null
+    return forums?.find((forum) => forum.id === parseInt(forumId, 10)) || null
   } catch (error) {
     console.error('Failed to fetch forum info:', error)
     return null
@@ -90,13 +88,20 @@ const Page = async (props: {
   const data = results.discussions || { items: [], total: 0 }
   const groupsData = results.groups || { items: [] }
   const forumInfo = results.forumInfo
-  
+
   return (
     <GroupsInitializer groupsData={groupsData}>
       <Stack gap={3} sx={{ minHeight: '100vh' }}>
         <h1 style={{ display: 'none' }}>问答</h1>
         <Suspense fallback={<div>加载中...</div>}>
-          <ArticleCard data={data} topics={topics} groups={groupsData} type={type} forumId={forum_id} forumInfo={forumInfo} />
+          <ArticleCard
+            data={data}
+            topics={topics}
+            groups={groupsData}
+            type={type}
+            forumId={forum_id}
+            forumInfo={forumInfo}
+          />
         </Suspense>
       </Stack>
     </GroupsInitializer>

@@ -22,7 +22,7 @@ const Account = ({ isChecked, passwordConfig }: { isChecked: boolean, passwordCo
   const [, setToken] = useLocalStorageState<string>('auth_token', {
     defaultValue: '',
   });
-  const { user } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext);
   const searchParams = useSearchParams();
   const redirectUrl = searchParams?.get('redirect');
 
@@ -35,15 +35,27 @@ const Account = ({ isChecked, passwordConfig }: { isChecked: boolean, passwordCo
   });
 
   useEffect(() => {
-    if (user.email && user.uid) {
+    console.log('[Login Account] useEffect triggered:', {
+      loading,
+      userEmail: user.email,
+      userUid: user.uid,
+      redirectUrl,
+      userObject: user
+    });
+    
+    // 只有在用户数据加载完成后才检查登录状态
+    if (!loading && user.email && user.uid && user.uid > 0) {
+      console.log('[Login Account] User is authenticated, redirecting to:', redirectUrl || '/');
       // 如果用户已登录，重定向到指定页面或首页
       const targetUrl = redirectUrl || '/';
       // 使用setTimeout避免在渲染过程中立即重定向
       setTimeout(() => {
         window.location.href = targetUrl;
       }, 100);
+    } else {
+      console.log('[Login Account] User is not authenticated or still loading');
     }
-  }, [user.email, user.uid, redirectUrl]);
+  }, [loading, user.email, user.uid, redirectUrl, user]);
   const onSubmit = (data: z.infer<typeof schema>) => {
     const { password, email } = data;
     const ciphertext = aesCbcEncrypt(password?.trim());

@@ -40,7 +40,7 @@ const LoadingSpinner = () => (
 const DiscussDetailPage = async (props: {
   params: Promise<{ forum_id: string; id: string }>
 }) => {
-  const { forum_id, id } = await props.params
+  const { id } = await props.params
   
   // 获取讨论详情
   const discussion = await fetchDiscussionDetail(id)

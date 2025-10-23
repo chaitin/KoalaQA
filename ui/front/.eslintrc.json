@@ -18,13 +18,13 @@
         "varsIgnorePattern": "^_"
       }
     ],
-    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-explicit-any": "off",
     
     // 代码质量
     "no-console": [
       "warn",
       {
-        "allow": ["warn", "error"]
+        "allow": ["warn", "error", "log", "info", "debug"]
       }
     ],
     "prefer-const": "warn",

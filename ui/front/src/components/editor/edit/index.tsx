@@ -24,34 +24,34 @@ const Edit = ({
   const [detail, setDetail] = useState<NodeDetail | null>(null);
   const [error, setError] = useState<string>('');
 
-  const getDetail = async () => {
-    if (!nodeId || !kbId || !onGetNodeDetail) return;
-
-    setLoading(true);
-    setError('');
-
-    try {
-      const res = await onGetNodeDetail(nodeId, kbId);
-      setDetail(res);
-      onNodeDetailChange?.(res);
-
-      // 滚动到顶部
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 0);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '获取文档详情失败');
-      console.error('Failed to get node detail:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const getDetail = async () => {
+      if (!nodeId || !kbId || !onGetNodeDetail) return;
+
+      setLoading(true);
+      setError('');
+
+      try {
+        const res = await onGetNodeDetail(nodeId, kbId);
+        setDetail(res);
+        onNodeDetailChange?.(res);
+
+        // 滚动到顶部
+        setTimeout(() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 0);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : '获取文档详情失败');
+        console.error('Failed to get node detail:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (nodeId && kbId) {
       getDetail();
     }
-  }, [nodeId, kbId]);
+  }, [nodeId, kbId, onGetNodeDetail, onNodeDetailChange]);
 
   if (error) {
     return (

@@ -53,8 +53,11 @@ const AuthProvider = ({
 
   // 使用 useCallback 优化函数引用
   const fetchUser = useCallback(async () => {
+    console.log('[AuthProvider] fetchUser called');
+    
     // 防止重复请求
     if (fetchingRef.current) {
+      console.log('[AuthProvider] Already fetching, skipping');
       return;
     }
 
@@ -62,13 +65,15 @@ const AuthProvider = ({
     setLoading(true);
     
     try {
+      console.log('[AuthProvider] Calling getUser API');
       // httpClient 现在内置了缓存和重试，直接调用即可
       const userData = await getUser();
+      console.log('[AuthProvider] Got user data:', userData);
       setUser(userData);
     } catch (error) {
       // 如果是401错误，说明需要登录，但不在这里处理重定向
       // 重定向逻辑已经在httpClient中处理了
-      console.error('Failed to fetch user:', error);
+      console.error('[AuthProvider] Failed to fetch user:', error);
       setUser(EMPTY_USER);
     } finally {
       setLoading(false);
@@ -77,21 +82,31 @@ const AuthProvider = ({
   }, []);
 
   useEffect(() => {
+    console.log('[AuthProvider] useEffect triggered:', { initialUser });
+    
     // 如果已经有 initialUser，不需要再次请求
     if (initialUser) {
+      console.log('[AuthProvider] Has initialUser, skipping fetch');
       return;
     }
 
     // 检查是否有 token，没有 token 则不请求
     const hasToken = safeClientExecute(() => {
-      return localStorage.getItem('auth_token') || document.cookie.includes('auth_token');
+      const localToken = localStorage.getItem('auth_token');
+      const cookieToken = document.cookie.includes('auth_token');
+      console.log('[AuthProvider] Token check:', { localToken, cookieToken });
+      return localToken || cookieToken;
     }) || false;
 
+    console.log('[AuthProvider] Has token:', hasToken);
+
     if (!hasToken) {
+      console.log('[AuthProvider] No token, setting loading to false');
       setLoading(false);
       return;
     }
 
+    console.log('[AuthProvider] Has token, fetching user');
     fetchUser();
   }, [initialUser, fetchUser]);
 

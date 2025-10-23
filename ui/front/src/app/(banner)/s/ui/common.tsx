@@ -1,6 +1,5 @@
 'use client';
 import { alpha, Box, BoxProps, styled } from '@mui/material';
-import Link from 'next/link';
 import React from 'react';
 
 export const Tag = styled('div')(({ theme }) => ({
