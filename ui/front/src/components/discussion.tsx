@@ -151,7 +151,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
         }
         const uid = await postDiscussion(discussionData)
         // 创建成功后跳转到讨论详情页
-        router.push(`/${forumId}/discuss/${uid}`)
+        router.push(`/forum/${forumId}/discuss/${uid}`)
       }
     } finally {
       setLoading(false)
@@ -301,9 +301,8 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                       }}
                     >
                       <Autocomplete
-                        multiple
                         options={options}
-                        value={valueForTopic}
+                        value={valueForTopic?.[0] || null}
                         isOptionEqualToValue={(option, value) => getId(option) === getId(value)}
                         getOptionLabel={(option) => getLabel(option)}
                         onChange={(_, newValue) => {
@@ -311,9 +310,9 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                           const otherIds = existing.filter(
                             (id) => !options.some((o: ModelGroupItemInfo) => getId(o) === id),
                           )
-                          const newIds = newValue.map((v: ModelGroupItemInfo) => getId(v))
+                          const newId = newValue ? getId(newValue) : null
                           // 合并来自各个 Autocomplete 的选择，去重后回传
-                          const merged = Array.from(new Set([...otherIds, ...newIds]))
+                          const merged = newId ? Array.from(new Set([...otherIds, newId])) : otherIds
                           field.onChange(merged)
                           // 清除验证错误
                           setGroupValidationError('')
@@ -334,25 +333,6 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                             </Box>
                           )
                         }}
-                        renderTags={(value: readonly ModelGroupItemInfo[], getTagProps) =>
-                          value.map((option: ModelGroupItemInfo, index: number) => {
-                            const { key, ...tagProps } = getTagProps({
-                              index,
-                            })
-                            return (
-                              <Tag
-                                key={key}
-                                label={
-                                  <Stack direction='row' alignItems='center' gap={0.5}>
-                                    <span>{getLabel(option)}</span>
-                                  </Stack>
-                                }
-                                size='small'
-                                {...tagProps}
-                              />
-                            )
-                          })
-                        }
                         renderInput={(params) => (
                           <TextField
                             {...params}

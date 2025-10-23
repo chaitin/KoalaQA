@@ -59,10 +59,22 @@ const nextConfig = {
         hostname: 'localhost',
         port: '',
         pathname: '/**'
+      },
+      {
+        protocol: 'http',
+        hostname: '**',
+        port: '',
+        pathname: '/**'
+      },
+      {
+        protocol: 'https',
+        hostname: '**',
+        port: '',
+        pathname: '/**'
       }
     ],
     
-    // 设置图片格式支持
+    // 设置图片格式支持 - Next.js只支持webp和avif格式优化
     formats: ['image/webp', 'image/avif'],
     
     // 图片质量配置 - Next.js 16 必需
@@ -98,7 +110,7 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: '/:all*(svg|jpg|png|webp|avif)',
+        source: '/:all*(svg|jpg|jpeg|png|webp|avif|gif|bmp|tiff|ico)',
         headers: [
           {
             key: 'Cache-Control',

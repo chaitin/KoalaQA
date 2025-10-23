@@ -35,8 +35,42 @@ export function LazyImage({
     setError(true);
   };
 
-  // 确保 src 不为空字符串，如果为空则使用 fallback
-  const imageSrc = error ? fallback : (src && typeof src === 'string' && src.trim() !== '' ? src : fallback);
+  // 处理图片源地址
+  const getImageSrc = () => {
+    if (error) return fallback;
+    
+    if (!src || typeof src !== 'string' || src.trim() === '') {
+      return fallback;
+    }
+
+    const trimmedSrc = src.trim();
+    
+    // 如果是完整URL，直接返回
+    if (trimmedSrc.startsWith('http://') || trimmedSrc.startsWith('https://')) {
+      return trimmedSrc;
+    }
+    
+    // 如果是相对路径（以/开头），需要构建完整的URL
+    if (trimmedSrc.startsWith('/')) {
+      // 优先使用环境变量，然后使用当前域名
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 
+        (typeof window !== 'undefined' 
+          ? `${window.location.protocol}//${window.location.host}`
+          : '');
+      
+      // 如果无法获取baseUrl，直接返回原始路径让Next.js处理
+      if (!baseUrl) {
+        return trimmedSrc;
+      }
+      
+      return `${baseUrl}${trimmedSrc}`;
+    }
+    
+    // 其他情况直接返回
+    return trimmedSrc;
+  };
+
+  const imageSrc = getImageSrc();
 
   return (
     <Box

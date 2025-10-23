@@ -339,7 +339,6 @@ img {
   object-fit: contain;
   object-position: center;
   max-width: 100%;
-  height: auto;
 }
 
 /* Next.js Image 组件样式 */

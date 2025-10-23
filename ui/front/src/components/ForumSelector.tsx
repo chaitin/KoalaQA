@@ -5,20 +5,22 @@ import { Button, Stack } from '@mui/material'
 import { useEffect, useState } from 'react'
 import { getForum } from '@/api/Forum'
 // import LoadingSpinner from './LoadingSpinner'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 
 interface ForumSelectorProps {
   selectedForumId?: number
+  autoRedirect?: boolean // 新增属性，控制是否自动重定向
 }
 
-const ForumSelector = ({ selectedForumId }: ForumSelectorProps) => {
+const ForumSelector = ({ selectedForumId, autoRedirect = false }: ForumSelectorProps) => {
   const [forums, setForums] = useState<ModelForum[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const searchParams = useSearchParams()
+  const pathname = usePathname()
 
   const handleForumChange = (forumId: number) => {
-    router.push(`/${forumId}`)
+    router.push(`/forum/${forumId}`)
   }
 
   useEffect(() => {
@@ -28,9 +30,10 @@ const ForumSelector = ({ selectedForumId }: ForumSelectorProps) => {
         const response = await getForum()
         if (response && response.length > 0) {
           setForums(response)
-          // 如果没有选中板块，默认选中第一个并跳转到对应路径
-          if (!selectedForumId) {
-            router.replace(`/${response[0].id}`)
+          // 只有在明确启用自动重定向且没有选中板块时才重定向
+          // 并且只在根路径或特定需要重定向的页面执行
+          if (autoRedirect && !selectedForumId && (pathname === '/' || pathname === '')) {
+            router.replace(`/forum/${response[0].id}`)
           }
         }
       } catch (error) {
@@ -41,7 +44,7 @@ const ForumSelector = ({ selectedForumId }: ForumSelectorProps) => {
     }
 
     fetchForums()
-  }, [selectedForumId, searchParams, router])
+  }, [selectedForumId, searchParams, router, autoRedirect, pathname])
 
   if (loading) {
     return
@@ -58,10 +61,11 @@ const ForumSelector = ({ selectedForumId }: ForumSelectorProps) => {
           key={forum.id}
           variant={'text'}
           color={selectedForumId == forum.id ? 'info' : 'primary'}
-
+          
           onClick={() => handleForumChange(forum.id!)}
           sx={{
             cursor: 'pointer',
+            textTransform: 'none',
           }}
         >
           {forum.name}
