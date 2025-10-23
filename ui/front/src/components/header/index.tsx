@@ -34,7 +34,7 @@ const Header = ({ initialUser = null }: HeaderProps) => {
 
   // 使用新的 useAuthConfig hook
   const { authConfig } = useAuthConfig()
-  
+
   // 使用板块选择器 - 只在非登录/注册页面使用
   const isAuthPage = pathname === '/login' || pathname === '/register'
   const { selectedForumId } = useForum()
@@ -81,7 +81,7 @@ const Header = ({ initialUser = null }: HeaderProps) => {
         // 设置默认品牌配置，避免显示空白
         setBrandConfig({
           text: 'Koala QA',
-          logo: '/logo.png'
+          logo: '/logo.png',
         })
       } finally {
         setIsLoadingBrand(false)
@@ -113,26 +113,25 @@ const Header = ({ initialUser = null }: HeaderProps) => {
       >
         <Stack direction='row' alignItems='center' gap={3}>
           {!isLoadingBrand &&
-            (brandConfig?.logo ? (
+            (brandConfig?.logo && brandConfig?.text ? (
               <Stack
                 direction='row'
                 alignItems='center'
                 gap={1}
-              sx={{ cursor: 'pointer' }}
-              onClick={() => {
-                if (isAuthPage) {
-                  plainRouter.push('/')
-                } else {
-                  router.push(selectedForumId ? `/forum/${selectedForumId}` : '/')
-                }
-              }}
+                sx={{ cursor: 'pointer' }}
+                onClick={() => {
+                  if (isAuthPage) {
+                    plainRouter.push('/')
+                  } else {
+                    router.push(selectedForumId ? `/forum/${selectedForumId}` : '/')
+                  }
+                }}
               >
                 <Image
                   src={brandConfig.logo}
                   alt='Logo'
                   width={24}
                   height={24}
-                  unoptimized={brandConfig.logo.startsWith('data:')}
                   style={{
                     objectFit: 'contain',
                     borderRadius: '4px',
@@ -157,17 +156,17 @@ const Header = ({ initialUser = null }: HeaderProps) => {
                 alt='Koala QA Logo'
                 width={120}
                 height={20}
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                if (isAuthPage) {
-                  plainRouter.push('/')
-                } else {
-                  router.push(selectedForumId ? `/forum/${selectedForumId}` : '/')
-                }
-              }}
+                style={{ cursor: 'pointer' }}
+                onClick={() => {
+                  if (isAuthPage) {
+                    plainRouter.push('/')
+                  } else {
+                    router.push(selectedForumId ? `/forum/${selectedForumId}` : '/')
+                  }
+                }}
               />
             ))}
-          
+
           {/* 板块选择器 - 只在非登录/注册页面显示 */}
           {!isAuthPage && (
             <ForumSelector
