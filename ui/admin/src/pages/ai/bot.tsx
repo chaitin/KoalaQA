@@ -11,7 +11,7 @@ import { message } from '@ctzhian/ui';
 const formSchema = z.object({
   avatar: z.union([z.string(), z.instanceof(File)]),
   name: z.string().min(1, '名称不能为空').max(50, '名称不能超过50个字符'),
-  unknown_prompt: z.string().min(1, '必填项').optional(),
+  unknown_prompt: z.string().optional(),
   id: z.string().optional(),
 });
 
