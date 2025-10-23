@@ -117,11 +117,7 @@ func (o *oidc) User(ctx context.Context, code string, optFuncs ...userOptFunc) (
 	}
 
 	if !claims.EmailVerified {
-		return nil, errors.New("email not verified")
-	}
-
-	if claims.Email == "" {
-		return nil, errors.New("oidc email not found")
+		claims.Email = ""
 	}
 
 	return &User{
