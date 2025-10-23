@@ -15,7 +15,7 @@ export interface MarkDownProps {
 
 const EditorContent: React.FC<MarkDownProps> = (props) => {
   const { content = '', sx, truncateLength = 0 } = props
-  const [loading, setLoading] = useState(true)
+  const [_loading, _setLoading] = useState(true)
   let displayContent = content
   if (truncateLength > 0) {
     const plainText = extractTextFromHTML(content)
@@ -26,10 +26,10 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
     editable: false,
     immediatelyRender: false,
     onBeforeCreate: () => {
-      setLoading(true)
+      _setLoading(true)
     },
-    onCreate: ({ editor }) => {
-      setLoading(false)
+    onCreate: ({ editor: _editor }) => {
+      _setLoading(false)
     },
   })
 
@@ -50,6 +50,7 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
             overflowX: 'auto',
           },
         },
+        ...sx,
       }}
     >
       {editorRef.editor && <Editor editor={editorRef.editor} />}

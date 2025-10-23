@@ -17,7 +17,7 @@ export const ForumProvider = ({ children }: ForumProviderProps) => {
   const params = useParams()
   const forumIdParam = params?.forum_id as string
   const selectedForumId = forumIdParam ? parseInt(forumIdParam, 10) : null
-
+  
   return (
     <ForumContext.Provider
       value={{

@@ -51,7 +51,7 @@ const DocEditor = ({
   const isWideScreen = useMediaQuery('(min-width:1400px)');
   const [nodeDetail, setNodeDetail] = useState<NodeDetail>({});
   const [catalogOpen, setCatalogOpen] = useState(true);
-  const [docWidth, setDocWidth] = useState<string>('full');
+  const [docWidth, _setDocWidth] = useState<string>('full');
   const [kbId, setKbId] = useState(initialKbId);
   const [kbList, setKbList] = useState<KnowledgeBase[]>(initialKbList);
 
@@ -79,7 +79,7 @@ const DocEditor = ({
     setKbList(initialKbList);
   }, [initialKbList]);
 
-  const contextValue: WrapContext = {
+  const _contextValue: WrapContext = {
     catalogOpen,
     setCatalogOpen,
     nodeDetail,

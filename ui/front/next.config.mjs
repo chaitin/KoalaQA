@@ -39,6 +39,14 @@ const nextConfig = {
     emotion: true,
   },
   
+  // ESLint 配置 - 减少构建时警告
+  eslint: {
+    // 构建时忽略 ESLint 错误，但保留警告
+    ignoreDuringBuilds: false,
+    // 可以在这里添加自定义规则
+    dirs: ['src'],
+  },
+  
   // 图片优化配置
   images: {
     // 开发环境可以 unoptimized，生产环境应该优化

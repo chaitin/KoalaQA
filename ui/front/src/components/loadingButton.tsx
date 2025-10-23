@@ -13,7 +13,7 @@ const LoadingBtn = (params: LoadingButtonProps & { onClick: any }) => {
           setLoading(false);
         });
       }
-    } catch (e) {
+    } catch {
       setLoading(false);
     }
   };

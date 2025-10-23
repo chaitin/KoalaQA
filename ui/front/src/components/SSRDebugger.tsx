@@ -92,7 +92,7 @@ export const SSRDebugger: React.FC<SSRDebuggerProps> = ({
 /**
  * Hook for SSR debugging
  */
-export const useSSRDebug = (componentName: string, data?: any) => {
+export const useSSRDebug = (componentName: string, data?: unknown) => {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {

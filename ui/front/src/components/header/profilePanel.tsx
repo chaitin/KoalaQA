@@ -8,7 +8,7 @@ import { AuthContext } from '../authProvider'
 import Icon from '../icon'
 import { clearAuthData } from '@/api/httpClient'
 import UserAvatar from '../UserAvatar'
-import { useSSRDebug } from '../SSRDebugger'
+// import { useSSRDebug } from '../SSRDebugger'
 // 简单的重定向函数
 const safeRedirect = (url: string) => {
   if (typeof window !== 'undefined') {

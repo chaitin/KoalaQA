@@ -24,6 +24,9 @@ const ScrollAnimation = ({
   useEffect(() => {
     if (immediate) return
 
+    const currentElement = elementRef.current
+    if (!currentElement) return
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -38,14 +41,10 @@ const ScrollAnimation = ({
       }
     )
 
-    if (elementRef.current) {
-      observer.observe(elementRef.current)
-    }
+    observer.observe(currentElement)
 
     return () => {
-      if (elementRef.current) {
-        observer.unobserve(elementRef.current)
-      }
+      observer.unobserve(currentElement)
     }
   }, [delay, immediate])
 
