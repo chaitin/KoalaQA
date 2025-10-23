@@ -71,7 +71,7 @@ func (b *Brand) Update(ctx context.Context, req model.SystemBrand) error {
 		}
 
 		if brand.Logo != "" {
-			err = b.oc.Delete(ctx, util.TrimFistDir(brand.Logo))
+			err = b.oc.Delete(ctx, util.TrimFirstDir(brand.Logo))
 			if err != nil {
 				b.logger.WithContext(ctx).WithErr(err).With("logo", brand.Logo).Warn("remove oss logo failed")
 			}
