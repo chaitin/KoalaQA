@@ -135,9 +135,7 @@ const Logo: React.FC = () => {
                   variant="square"
                   src={
                     typeof field.value === 'string'
-                      ? field.value.startsWith('data:') 
-                        ? field.value 
-                        : `data:image/png;base64,${field.value}`
+                      ? field.value
                       : field.value
                       ? URL.createObjectURL(field.value)
                       : ''
