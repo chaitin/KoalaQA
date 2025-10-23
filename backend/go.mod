@@ -22,6 +22,7 @@ require (
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.6
 	github.com/utrack/gin-csrf v0.0.0-20190424104817-40fb8d2c8fca
+	github.com/vincent-petithory/dataurl v1.0.0
 	go.uber.org/fx v1.24.0
 	golang.org/x/crypto v0.41.0
 	golang.org/x/oauth2 v0.30.0

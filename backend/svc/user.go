@@ -198,7 +198,7 @@ func (u *User) UpdateInfo(ctx context.Context, id uint, req UserUpdateInfoReq) e
 	}
 
 	if user.Avatar != "" {
-		err = u.oc.Delete(ctx, util.TrimFistDir(user.Avatar))
+		err = u.oc.Delete(ctx, util.TrimFirstDir(user.Avatar))
 		if err != nil {
 			u.logger.WithContext(ctx).WithErr(err).With("avatar", user.Avatar).Warn("remove user avatar failed")
 		}

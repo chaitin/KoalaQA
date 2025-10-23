@@ -51,7 +51,7 @@ func (b *Bot) Set(ctx context.Context, req BotSetReq) error {
 			return err
 		}
 		if res.Avatar != "" {
-			err = b.oc.Delete(ctx, util.TrimFistDir(res.Avatar))
+			err = b.oc.Delete(ctx, util.TrimFirstDir(res.Avatar))
 			if err != nil {
 				return err
 			}
