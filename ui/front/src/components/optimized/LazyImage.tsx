@@ -50,20 +50,19 @@ export function LazyImage({
       return trimmedSrc;
     }
     
-    // 如果是相对路径（以/开头），需要构建完整的URL
+    // 如果是相对路径（以/开头），优先使用环境变量构建完整URL
     if (trimmedSrc.startsWith('/')) {
-      // 优先使用环境变量，然后使用当前域名
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 
-        (typeof window !== 'undefined' 
-          ? `${window.location.protocol}//${window.location.host}`
-          : '');
+      // 优先使用环境变量，确保服务器端和客户端一致
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
       
-      // 如果无法获取baseUrl，直接返回原始路径让Next.js处理
-      if (!baseUrl) {
-        return trimmedSrc;
+      // 如果有环境变量，使用环境变量构建完整URL
+      if (baseUrl) {
+        return `${baseUrl}${trimmedSrc}`;
       }
       
-      return `${baseUrl}${trimmedSrc}`;
+      // 如果没有环境变量，直接返回相对路径让Next.js处理
+      // 这样可以避免服务器端和客户端的URL不一致
+      return trimmedSrc;
     }
     
     // 其他情况直接返回
