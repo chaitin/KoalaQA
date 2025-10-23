@@ -19,6 +19,7 @@ import Footer from '@/components/Footer'
 import Header from '../components/header'
 import Scroll from './scroll'
 
+export const dynamic = 'force-dynamic'
 // 字体优化 - 添加 display swap 提升首屏性能
 const monoFont = localFont({
   src: '../asset/font/Mono.ttf',
