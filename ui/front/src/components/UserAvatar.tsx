@@ -36,18 +36,40 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
       return fallbackSrc
     }
 
-    // 如果是相对路径，确保以/开头
-    if (user.avatar.startsWith('/')) {
-      return user.avatar
-    }
+    const avatar = user.avatar.trim()
 
     // 如果是完整URL，直接返回
-    if (user.avatar.startsWith('http')) {
-      return user.avatar
+    if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+      return avatar
     }
 
-    // 其他情况，添加/前缀
-    return `/${user.avatar}`
+    // 如果是相对路径（以/开头），构建完整URL
+    if (avatar.startsWith('/')) {
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 
+        (typeof window !== 'undefined' 
+          ? `${window.location.protocol}//${window.location.host}`
+          : '');
+      
+      // 如果无法获取baseUrl，直接返回原始路径
+      if (!baseUrl) {
+        return avatar;
+      }
+      
+      return `${baseUrl}${avatar}`
+    }
+
+    // 其他情况，添加/前缀并构建完整URL
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 
+      (typeof window !== 'undefined' 
+        ? `${window.location.protocol}//${window.location.host}`
+        : '');
+    
+    // 如果无法获取baseUrl，添加/前缀后返回
+    if (!baseUrl) {
+      return `/${avatar}`;
+    }
+    
+    return `${baseUrl}/${avatar}`
   }
 
   const avatarSrc = getAvatarSrc()

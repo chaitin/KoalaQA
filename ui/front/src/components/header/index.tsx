@@ -123,7 +123,7 @@ const Header = ({ initialUser = null }: HeaderProps) => {
                 if (isAuthPage) {
                   plainRouter.push('/')
                 } else {
-                  router.push(selectedForumId ? `/${selectedForumId}` : '/')
+                  router.push(selectedForumId ? `/forum/${selectedForumId}` : '/')
                 }
               }}
               >
@@ -162,7 +162,7 @@ const Header = ({ initialUser = null }: HeaderProps) => {
                 if (isAuthPage) {
                   plainRouter.push('/')
                 } else {
-                  router.push(selectedForumId ? `/${selectedForumId}` : '/')
+                  router.push(selectedForumId ? `/forum/${selectedForumId}` : '/')
                 }
               }}
               />
@@ -172,6 +172,7 @@ const Header = ({ initialUser = null }: HeaderProps) => {
           {!isAuthPage && (
             <ForumSelector
               selectedForumId={selectedForumId || undefined}
+              autoRedirect={false} // 在Header中不启用自动重定向
             />
           )}
         </Stack>

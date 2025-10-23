@@ -5,7 +5,7 @@ import { CommonContext } from '@/components/commonProvider'
 import { Avatar, Tag } from '@/components/discussion'
 import { formatNumber } from '@/lib/utils'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import { Box, Chip, Stack, Typography } from '@mui/material'
+import { Box, Chip, Stack, SxProps, Typography } from '@mui/material'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -14,6 +14,20 @@ import { useContext, useMemo } from 'react'
 import Link from 'next/link'
 import EditorContent from '@/components/EditorContent'
 import { useParams } from 'next/navigation'
+
+// 帖子类型映射函数
+const getTypeLabel = (type?: ModelDiscussionType): string => {
+  switch (type) {
+    case ModelDiscussionType.DiscussionTypeFeedback:
+      return '反馈'
+    case ModelDiscussionType.DiscussionTypeQA:
+      return '问答'
+    case ModelDiscussionType.DiscussionTypeBlog:
+      return '文章'
+    default:
+      return ''
+  }
+}
 
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
@@ -31,7 +45,7 @@ const replaceImagesWithText = (content: string): string => {
   return processedContent
 }
 
-const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListItem; keywords?: string }) => {
+const DiscussCard = ({ data, keywords: _keywords, showType = false, sx }: { data: ModelDiscussionListItem; keywords?: string; showType?: boolean; sx?: SxProps }) => {
   const it = data
   const { groups } = useContext(CommonContext)
   const params = useParams()
@@ -52,7 +66,7 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
     // 从路径参数中获取forum_id
     const forumId = params?.forum_id as string
     if (typeof window !== 'undefined' && forumId) {
-      window.open(`/${forumId}/discuss/${it.uuid}`, '_blank')
+      window.open(`/forum/${forumId}/discuss/${it.uuid}`, '_blank')
     }
   }
 
@@ -72,6 +86,7 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
           boxShadow: 'rgba(0, 28, 85, 0.06) 0px 6px 15px 0px',
           transform: 'translateY(-1px)',
         },
+        ...sx,
       }}
     >
       {/* 标题和状态 */}
@@ -107,7 +122,7 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
               },
             }}
           >
-            {it.title}
+            {showType && getTypeLabel(it.type) && `【${getTypeLabel(it.type)}】`}{it.title}
           </Title>
           {data?.resolved && (
             <Stack
@@ -170,10 +185,14 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
         content={replaceImagesWithText(it.content || '')}
         truncateLength={100} // 设置截断长度为100个字符，根据需要调整
         sx={{
-          fontSize: 12,
-          color: '#666',
           lineHeight: 1.4,
           mb: 1.5, // 减少描述和标签间距
+          '& *': {
+            fontSize: '12px!important',
+          },
+          '& .tiptap.ProseMirror': {
+            color: 'rgba(31, 35, 41, 0.50)',
+          },
         }}
       />
       {/* 底部标签和评论数 */}
@@ -227,21 +246,23 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
           }}
         >
           {/* 投票数 */}
-          {it.type === ModelDiscussionType.DiscussionTypeFeedback && <Stack
-            direction='row'
-            alignItems='center'
-            gap={0.5}
-            sx={{
-              backgroundColor: '#206CFF15',
-              color: '#206CFF',
-              borderRadius: '4px',
-              px: 1,
-              py: 0.5,
-            }}
-          >
-            <Icon type='icon-dianzan' />
-            {formatNumber((it.like || 0) - (it.dislike || 0))}
-          </Stack>}
+          {it.type === ModelDiscussionType.DiscussionTypeFeedback && (
+            <Stack
+              direction='row'
+              alignItems='center'
+              gap={0.5}
+              sx={{
+                backgroundColor: '#206CFF15',
+                color: '#206CFF',
+                borderRadius: '4px',
+                px: 1,
+                py: 0.5,
+              }}
+            >
+              <Icon type='icon-dianzan' />
+              {formatNumber((it.like || 0) - (it.dislike || 0))}
+            </Stack>
+          )}
           {/* 评论数 */}
           <Stack
             direction='row'
@@ -264,11 +285,11 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
   )
 }
 
-export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionListItem; keywords?: string }) => {
+export const DiscussCardMobile = ({ data, keywords, showType = false, sx }: { data: ModelDiscussionListItem; keywords?: string; showType?: boolean; sx?: SxProps }) => {
   const it = data
   const { groups } = useContext(CommonContext)
   const params = useParams()
-
+  const forumId = params?.forum_id as string
   // 根据group_ids获取分组名称
   const groupNames = useMemo(() => {
     if (!it.group_ids || !groups.flat.length) return []
@@ -285,7 +306,7 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
     // 从路径参数中获取forum_id
     const forumId = params?.forum_id as string
     if (typeof window !== 'undefined' && forumId) {
-      window.open(`/${forumId}/discuss/${it.uuid}`, '_blank')
+      window.open(`/forum/${forumId}/discuss/${it.uuid}`, '_blank')
     }
   }
 
@@ -307,6 +328,7 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
           boxShadow: 'rgba(0, 28, 85, 0.06) 0px 6px 15px 0px',
           transform: 'translateY(-1px)',
         },
+        ...sx,
       }}
     >
       <Stack
@@ -317,11 +339,11 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
           width: '100%',
         }}
       >
-        <Link href={`/${params?.forum_id}/discuss/${it.uuid}`} target='_blank' onClick={(e) => e.stopPropagation()}>
-          <Title 
-            className='title multiline-ellipsis' 
-            sx={{ 
-              width: '100%', 
+        <Link href={`/forum/${forumId}/discuss/${it.uuid}`} target='_blank' onClick={(e) => e.stopPropagation()}>
+          <Title
+            className='title multiline-ellipsis'
+            sx={{
+              width: '100%',
               whiteSpace: 'normal',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
@@ -332,7 +354,7 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
               maxHeight: '2.8em', // 2行 * 1.4行高
             }}
           >
-            <MatchedString keywords={keywords} str={it.title || ''}></MatchedString>
+            <MatchedString keywords={keywords} str={`${showType && getTypeLabel(it.type) ? `【${getTypeLabel(it.type)}】` : ''}${it.title || ''}`}></MatchedString>
           </Title>
         </Link>
       </Stack>
@@ -404,7 +426,7 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
             }}
           >
             <Icon type='icon-dianzan' />
-            {formatNumber((it.like || 0))}
+            {formatNumber(it.like || 0)}
           </Stack>
           {/* 评论数 */}
           <Stack
@@ -428,7 +450,9 @@ export const DiscussCardMobile = ({ data, keywords }: { data: ModelDiscussionLis
         content={replaceImagesWithText(it.content || '')}
         truncateLength={60} // 设置截断长度为100个字符，根据需要调整
         sx={{
-          fontSize: 12,
+          '& *': {
+            fontSize: '12px!important',
+          },
           color: '#666',
           lineHeight: 1.4,
           mb: 1.5, // 减少描述和标签间距
