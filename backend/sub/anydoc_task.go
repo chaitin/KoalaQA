@@ -183,5 +183,5 @@ func newAnydocTask(c cache.Cache[topic.TaskMeta], repoDoc *repo.KBDocument, pub 
 }
 
 func newCache() cache.Cache[topic.TaskMeta] {
-	return cache.New[topic.TaskMeta](time.Minute * 15)
+	return cache.New[topic.TaskMeta](time.Hour * 12)
 }
