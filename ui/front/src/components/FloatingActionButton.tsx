@@ -1,6 +1,6 @@
 'use client'
 import { Box, Fab, Tooltip } from '@mui/material'
-import { KeyboardArrowUp, Add } from '@mui/icons-material'
+import { KeyboardArrowUp } from '@mui/icons-material'
 import { useState, useEffect } from 'react'
 
 interface FloatingActionButtonProps {
@@ -11,7 +11,7 @@ interface FloatingActionButtonProps {
 
 const FloatingActionButton = ({
   onScrollToTop,
-  onAddClick,
+  onAddClick: _onAddClick,
   showScrollToTop = true,
 }: FloatingActionButtonProps) => {
   const [showScrollButton, setShowScrollButton] = useState(false)

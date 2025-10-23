@@ -77,7 +77,7 @@ const Modal: FC<ModalProps> = (props) => {
     setLoading(true)
     try {
       await onOk?.()
-    } catch (error) { }
+    } catch { }
 
     setLoading(false)
   }

@@ -6,7 +6,7 @@ import {
   InputBase,
   Button,
   createTheme,
-  ThemeProvider,
+  // ThemeProvider,
   Dialog,
   styled,
   InputBaseProps,
@@ -28,7 +28,7 @@ import { useLocalStorageState } from 'ahooks'
 import { CommonContext } from './commonProvider'
 import { useRouterWithForum } from '@/hooks/useRouterWithForum'
 
-const innerTheme = createTheme({
+const _innerTheme = createTheme({
   palette: {
     primary: {
       main: '#1A191C',
@@ -55,7 +55,7 @@ export const SearchBaseInput = styled(InputBase)(({ theme }) => ({
   },
 }))
 
-const SearchBaseWrapper = styled(Box)(({ theme }) => {
+const SearchBaseWrapper = styled(Box)(({ theme: _theme }) => {
   return {
     display: 'flex',
     alignItems: 'center',

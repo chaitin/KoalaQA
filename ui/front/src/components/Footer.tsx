@@ -1,6 +1,6 @@
 'use client'
 import { Stack } from '@mui/material'
-import { useEffect, useState } from 'react'
+// import { useEffect, useState } from 'react'
 
 const Footer = () => {
   // 作为页面普通内容展示（不固定、不显隐）

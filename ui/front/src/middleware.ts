@@ -87,7 +87,7 @@ export async function middleware(request: NextRequest) {
   // 处理认证路由（已登录用户重定向到首页）
   if (matchRoute(pathname, AUTH_ROUTES)) {
     if (process.env.NODE_ENV === 'development') {
-      console.log('[Middleware] Auth route detected:', pathname, 'isAuthenticated:', isAuthenticated);
+      console.log('[Middleware] Auth route detected:', pathname, 'isAuthenticated:', isAuthenticated, 'authToken:', authToken);
     }
     
     if (isAuthenticated) {
@@ -105,10 +105,13 @@ export async function middleware(request: NextRequest) {
           if (redirectUrlObj.origin === request.nextUrl.origin) {
             return NextResponse.redirect(redirectUrlObj);
           }
-        } catch (error) {
+        } catch {
           // 如果重定向URL无效，忽略重定向参数
           console.warn('Invalid redirect URL:', redirectUrl);
         }
+      }
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[Middleware] Redirecting to home page');
       }
       return NextResponse.redirect(new URL('/', request.url));
     }

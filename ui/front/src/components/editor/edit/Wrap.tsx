@@ -4,7 +4,7 @@ import { Box, Button, GlobalStyles } from '@mui/material';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { NodeDetail } from '..';
 import SaveIcon from '@mui/icons-material/Save';
-import { Editor, useTiptap } from '@ctzhian/tiptap';
+import { Editor, useTiptap, EditorProps } from '@ctzhian/tiptap';
 import Toolbar from './Toolbar';
 import { postDiscussionUpload } from '@/api';
 
@@ -58,7 +58,7 @@ const EditorWrap = ({
   }, []);
 
   const handleUpdate = useCallback(
-    ({ editor }: { editor: any }) => {
+    ({ editor }: { editor: EditorProps['editor'] }) => {
       const content = editor.getHTML();
       // 支持传统的onContentChange回调
       if (onContentChange) {
@@ -129,13 +129,13 @@ const EditorWrap = ({
 
   // 当value或detail.content变化时更新编辑器内容
   useEffect(() => {
-    if (editorRef.editor && (editorRef.editor as any).view) {
+    if (editorRef.editor && 'view' in editorRef.editor) {
       const newContent = value !== undefined ? value : detail?.content || '';
       const currentContent = editorRef.getHTML();
       if (currentContent !== newContent) {
         // 延迟到下一轮事件循环，确保所有插件与视图已完成挂载
         setTimeout(() => {
-          if (editorRef.editor && (editorRef.editor as any).view) {
+          if (editorRef.editor && 'view' in editorRef.editor) {
             try {
               editorRef.editor.commands.setContent(newContent);
             } catch (e) {
@@ -146,17 +146,17 @@ const EditorWrap = ({
       }
     }
     setOriginalContent(value !== undefined ? value : detail?.content || '');
-  }, [value, detail?.content, editorRef.editor]);
+  }, [value, detail?.content, editorRef]);
 
   // 聚焦编辑器的函数
   const focusEditor = useCallback(() => {
-    if (!editorRef.editor || !(editorRef.editor as any).view) return;
+    if (!editorRef.editor || !('view' in editorRef.editor)) return;
     
     editorRef.editor.commands.focus();
     // 将光标移到内容末尾
     const docSize = editorRef.editor.state.doc.content.size;
     editorRef.editor.commands.setTextSelection(docSize);
-  }, []);
+  }, [editorRef.editor]);
 
   // 编辑器加载后自动聚焦
   useEffect(() => {
@@ -199,7 +199,7 @@ const EditorWrap = ({
     return () => {
       observer.disconnect();
     };
-  }, [containerRef.current, editorRef.editor, focusEditor]);
+  }, [editorRef.editor, focusEditor]);
 
   // 在服务端渲染时返回漂亮的占位符
   if (!isMounted) {

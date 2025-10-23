@@ -2,9 +2,7 @@
 
 import { ModelUserInfo, ModelUserRole, putUser } from '@/api'
 import { AuthContext } from '@/components/authProvider'
-import { Avatar, Box, Button, Card, Container, Divider, Stack, TextField, Typography, IconButton } from '@mui/material'
-import SaveIcon from '@mui/icons-material/Save'
-import CancelIcon from '@mui/icons-material/Cancel'
+import { Box, Button, Card, Container, Divider, Stack, TextField, Typography, IconButton } from '@mui/material'
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera'
 import { useContext, useEffect, useState } from 'react'
 import dayjs from 'dayjs'

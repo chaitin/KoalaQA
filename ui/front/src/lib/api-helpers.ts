@@ -4,8 +4,8 @@
  */
 
 import { cache } from 'react';
-import httpClient from '@/api/httpClient';
-import type { FullRequestParams } from '@/api/httpClient';
+// import httpClient from '@/api/httpClient';
+// import type { FullRequestParams } from '@/api/httpClient';
 
 /**
  * 创建缓存的 API 调用
@@ -349,7 +349,7 @@ export function withCache<T>(
       if (Date.now() - timestamp < ttl) {
         return Promise.resolve(data);
       }
-    } catch (e) {
+    } catch {
       // 忽略解析错误
     }
   }
@@ -360,7 +360,7 @@ export function withCache<T>(
         key,
         JSON.stringify({ data, timestamp: Date.now() })
       );
-    } catch (e) {
+    } catch {
       // 忽略存储错误
     }
     return data;

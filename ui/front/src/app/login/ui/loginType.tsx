@@ -12,7 +12,6 @@ import { useAuthConfig } from '@/hooks/useAuthConfig';
 const LoginType = () => {
   // 使用新的 useAuthConfig hook
   const { authConfig, loading } = useAuthConfig();
-
   const handleOAuthLogin = async (type: number) => {
     try {
       // 调用getUserLoginThird接口获取跳转URL

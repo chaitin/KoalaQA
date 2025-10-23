@@ -10,7 +10,6 @@ import { getForum } from '@/api/Forum'
  */
 export default function RootRedirect() {
   const router = useRouter()
-
   useEffect(() => {
     const handleRedirect = async () => {
       try {

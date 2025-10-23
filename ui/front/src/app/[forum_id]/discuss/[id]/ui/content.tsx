@@ -19,7 +19,7 @@ import {
 } from '@/api/types'
 import { Card, MarkDown } from '@/components'
 import { AuthContext } from '@/components/authProvider'
-import { Avatar } from '@/components/discussion'
+// import { Avatar } from '@/components/discussion'
 import EditorWrap from '@/components/editor/edit/Wrap'
 import Modal from '@/components/modal'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
@@ -32,6 +32,7 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { useParams, useRouter } from 'next/navigation'
+import Image from 'next/image'
 import React, { useContext, useState } from 'react'
 import EditCommentModal from './editCommentModal'
 
@@ -159,7 +160,7 @@ const BaseDiscussCard = (props: {
         sx={{ mb: 2, borderBottom: isReply ? 'none' : '1px solid #eee', pb: '4px' }}
       >
         <Stack direction='row' gap={1} alignItems='center' sx={{ flex: 1 }}>
-          {data.user_avatar && <img src={data.user_avatar} width={28} height={28} style={{ borderRadius: '50%' }} />}
+          {data.user_avatar && <Image src={data.user_avatar} alt="用户头像" width={28} height={28} style={{ borderRadius: '50%' }} />}
 
           <Typography className='text-ellipsis' variant='subtitle2'>
             {data.user_name}

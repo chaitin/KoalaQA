@@ -1,6 +1,6 @@
 import { ModelDiscussionListItem, ModelDiscussionType } from '@/api/types'
 import { Card, MatchedString, Title } from '@/app/(banner)/s/ui/common'
-import { Icon, MarkDown } from '@/components'
+import { Icon } from '@/components'
 import { CommonContext } from '@/components/commonProvider'
 import { Avatar, Tag } from '@/components/discussion'
 import { formatNumber } from '@/lib/utils'
@@ -64,7 +64,7 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
         boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
         cursor: 'pointer',
         display: { xs: 'none', sm: 'block' },
-        borderRadius: 2,
+        borderRadius: 1,
         p: 2,
         mb: 0.5,
         transition: 'all 0.2s ease',
@@ -180,7 +180,7 @@ const DiscussCard = ({ data, keywords: _keywords }: { data: ModelDiscussionListI
       <Stack direction='row' justifyContent='space-between' alignItems='flex-start' sx={{ minHeight: 0 }}>
         <Stack direction='row' gap={1} flexWrap='wrap' alignItems='center' sx={{ flex: 1, minWidth: 0 }}>
           {/* 分组标签 */}
-          {groupNames.map((groupName, index) => {
+          {groupNames.map((groupName, _index) => {
             const color = '#206CFF'
             return (
               <Chip
