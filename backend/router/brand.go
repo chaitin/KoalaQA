@@ -36,5 +36,5 @@ func newBrand(b *svc.Brand) server.Router {
 }
 
 func init() {
-	registerApiNoAuthRouter(newBrand)
+	registerGlobalRouter(newBrand)
 }
