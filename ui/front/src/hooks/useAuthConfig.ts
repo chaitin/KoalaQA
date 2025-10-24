@@ -18,7 +18,7 @@ const CACHE_DURATION = 5 * 60 * 1000
  */
 export const useAuthConfig = () => {
   const [authConfig, setAuthConfig] = useState<SvcAuthFrontendGetRes | null>(globalAuthConfig)
-  const [loading, setLoading] = useState(!globalAuthConfig)
+  const [loading, setLoading] = useState(false) // 固定初始值为false，避免hydration不匹配
   const [error, setError] = useState<Error | null>(null)
 
   const fetchAuthConfig = useCallback(async (forceRefresh = false) => {

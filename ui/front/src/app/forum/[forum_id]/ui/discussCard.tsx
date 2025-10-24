@@ -86,6 +86,7 @@ const DiscussCard = ({ data, keywords: _keywords, showType = false, sx }: { data
           boxShadow: 'rgba(0, 28, 85, 0.06) 0px 6px 15px 0px',
           transform: 'translateY(-1px)',
         },
+        maxWidth: '100%',
         ...sx,
       }}
     >

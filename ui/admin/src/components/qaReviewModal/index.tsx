@@ -76,7 +76,7 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
 
       // 如果有相似问答对ID，获取历史问答对详情
       if (qaItem.similar_id) {
-        getAdminKbKbIdQuestionQaId({kbId, qaId: qaItem.similar_id})
+        getAdminKbKbIdQuestionQaId({ kbId, qaId: qaItem.similar_id })
           .then(res => {
             setHistoricalQaDetail(res);
           })
@@ -130,50 +130,49 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
         </Stack>
       }
     >
-      <Stack direction="row" spacing={3} sx={{ height: '500px' }}>
+      <Stack direction="row" spacing={3} sx={{ height: '500px', width: '100%' }}>
         {/* 历史问答对（仅查看） */}
         {hasHistoricalQa && (
-          <>
-            <Box sx={{ flex: 1, bgcolor: 'background.paper', p: 2, overflow: 'auto' }}>
-              <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between"
-                sx={{ mb: 2 }}
-              >
-                <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '60px' }}>
-                  历史版本
-                </Typography>
-                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                  {historicalQaDetail?.updated_at
-                    ? dayjs.unix(historicalQaDetail.updated_at).format('YYYY-MM-DD HH:mm:ss')
-                    : ''}
-                </Typography>
-              </Stack>
-              <Stack direction="row" alignItems="center" sx={{ mb: 2 }}>
-                <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '60px' }}>
-                  问题
-                </Typography>
-                <TextField
-                  value={historicalQaDetail?.title || ''}
-                  disabled
-                  size="small"
-                  sx={{
-                    flexGrow: 1,
-                    '& fieldset': {
-                      border: 'none',
-                    },
-                  }}
-                  slotProps={{
-                    inputLabel: { shrink: true },
-                  }}
-                />
-              </Stack>
-              <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '120px' }}>
-                回答
+          <Box sx={{ flex: 1, bgcolor: 'background.paper', p: 2, overflow: 'auto', width: '100%' }}>
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              sx={{ mb: 2 }}
+            >
+              <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '60px' }}>
+                历史版本
               </Typography>
-              <EditorContent content={historicalQaDetail?.markdown} sx={{ p: 2, mt: 1 }} />
-              {/* <TextField
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                {historicalQaDetail?.updated_at
+                  ? dayjs.unix(historicalQaDetail.updated_at).format('YYYY-MM-DD HH:mm:ss')
+                  : ''}
+              </Typography>
+            </Stack>
+            <Stack direction="row" alignItems="center" sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '60px' }}>
+                问题
+              </Typography>
+              <TextField
+                value={historicalQaDetail?.title || ''}
+                disabled
+                size="small"
+                sx={{
+                  flexGrow: 1,
+                  '& fieldset': {
+                    border: 'none',
+                  },
+                }}
+                slotProps={{
+                  inputLabel: { shrink: true },
+                }}
+              />
+            </Stack>
+            <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '120px' }}>
+              回答
+            </Typography>
+            <EditorContent content={historicalQaDetail?.markdown} sx={{ p: 2, mt: 1 }} />
+            {/* <TextField
                   label="回答"
                   value={historicalQaDetail?.markdown || ''}
                   fullWidth
@@ -184,8 +183,7 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
                     inputLabel: { shrink: true },
                   }}
                 /> */}
-            </Box>
-          </>
+          </Box>
         )}
 
         {/* 新问答对（可编辑） */}

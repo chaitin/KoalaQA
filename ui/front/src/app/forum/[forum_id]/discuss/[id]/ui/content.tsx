@@ -160,11 +160,11 @@ const BaseDiscussCard = (props: {
         sx={{ mb: 2, borderBottom: isReply ? 'none' : '1px solid #eee', pb: '4px' }}
       >
         <Stack direction='row' gap={1} alignItems='center' sx={{ flex: 1 }}>
-          <Image 
-            src={data.user_avatar || '/logo.png'} 
-            alt="用户头像" 
-            width={28} 
-            height={28} 
+          <Image
+            src={data.user_avatar || '/logo.png'}
+            alt='用户头像'
+            width={28}
+            height={28}
             style={{ borderRadius: '50%', objectFit: 'contain' }}
             unoptimized={true}
           />
@@ -283,89 +283,90 @@ const BaseDiscussCard = (props: {
           </Typography>
           <Stack direction='row' gap={2} alignItems='center' sx={{ display: { xs: 'none', sm: 'flex' } }}>
             {!isReply && (
-              <Stack
-                direction='row'
-                alignItems='center'
-                gap={1}
-                sx={{
-                  background: isLiked ? 'rgba(32,108,255,0.1)' : '#F2F3F5',
-                  borderRadius: 0.5,
-                  px: 1,
-                  py: '1px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  transform: 'scale(1)',
-                  '&:hover': {
-                    background: isLiked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
-                    transform: 'scale(1.05)',
-                  },
-                  '&:active': {
-                    transform: 'scale(0.95)',
-                    transition: 'transform 0.1s ease-out',
-                  },
-                }}
-                onClick={() => handleLike()}
-              >
-                <ThumbUpAltOutlinedIcon
+              <>
+                <Stack
+                  direction='row'
+                  alignItems='center'
+                  gap={1}
                   sx={{
-                    color: isLiked ? 'info.main' : 'rgba(0,0,0,0.5)',
-                    fontSize: 14,
+                    background: isLiked ? 'rgba(32,108,255,0.1)' : '#F2F3F5',
+                    borderRadius: 0.5,
+                    px: 1,
+                    py: '1px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transform: 'scale(1)',
+                    '&:hover': {
+                      background: isLiked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
+                      transform: 'scale(1.05)',
+                    },
+                    '&:active': {
+                      transform: 'scale(0.95)',
+                      transition: 'transform 0.1s ease-out',
+                    },
                   }}
-                />
-                <Typography
-                  variant='body2'
-                  sx={{
-                    fontSize: 14,
-                    color: isLiked ? 'info.main' : 'rgba(0,0,0,0.5)',
-                    lineHeight: '20px',
-                  }}
+                  onClick={() => handleLike()}
                 >
-                  {formatNumber(data.like || 0)}
-                </Typography>
-              </Stack>
-            )}
-            {/* 在反馈类型的讨论中隐藏点踩按钮 */}
-            {disData.type !== ModelDiscussionType.DiscussionTypeFeedback && (
-              <Stack
-                direction='row'
-                alignItems='center'
-                gap={1}
-                sx={{
-                  background: isDisliked ? 'rgba(32,108,255,0.1)' : '#F2F3F5',
-                  borderRadius: 0.5,
-                  px: 1,
-                  py: '1px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                  transform: 'scale(1)',
-                  '&:hover': {
-                    background: isDisliked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
-                    transform: 'scale(1.05)',
-                  },
-                  '&:active': {
-                    transform: 'scale(0.95)',
-                    transition: 'transform 0.1s ease-out',
-                  },
-                }}
-                onClick={() => handleDislike()}
-              >
-                <ThumbDownAltOutlinedIcon
-                  sx={{
-                    color: isDisliked ? 'info.main' : 'rgba(0,0,0,0.5)',
-                    fontSize: 14,
-                  }}
-                />
-                <Typography
-                  variant='body2'
-                  sx={{
-                    fontSize: 14,
-                    lineHeight: '20px',
-                    color: isDisliked ? 'info.main' : 'rgba(0,0,0,0.5)',
-                  }}
-                >
-                  {formatNumber(data.dislike || 0)}
-                </Typography>
-              </Stack>
+                  <ThumbUpAltOutlinedIcon
+                    sx={{
+                      color: isLiked ? 'info.main' : 'rgba(0,0,0,0.5)',
+                      fontSize: 14,
+                    }}
+                  />
+                  <Typography
+                    variant='body2'
+                    sx={{
+                      fontSize: 14,
+                      color: isLiked ? 'info.main' : 'rgba(0,0,0,0.5)',
+                      lineHeight: '20px',
+                    }}
+                  >
+                    {formatNumber(data.like || 0)}
+                  </Typography>
+                </Stack>
+                {disData.type !== ModelDiscussionType.DiscussionTypeFeedback && (
+                  <Stack
+                    direction='row'
+                    alignItems='center'
+                    gap={1}
+                    sx={{
+                      background: isDisliked ? 'rgba(32,108,255,0.1)' : '#F2F3F5',
+                      borderRadius: 0.5,
+                      px: 1,
+                      py: '1px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      transform: 'scale(1)',
+                      '&:hover': {
+                        background: isDisliked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
+                        transform: 'scale(1.05)',
+                      },
+                      '&:active': {
+                        transform: 'scale(0.95)',
+                        transition: 'transform 0.1s ease-out',
+                      },
+                    }}
+                    onClick={() => handleDislike()}
+                  >
+                    <ThumbDownAltOutlinedIcon
+                      sx={{
+                        color: isDisliked ? 'info.main' : 'rgba(0,0,0,0.5)',
+                        fontSize: 14,
+                      }}
+                    />
+                    <Typography
+                      variant='body2'
+                      sx={{
+                        fontSize: 14,
+                        lineHeight: '20px',
+                        color: isDisliked ? 'info.main' : 'rgba(0,0,0,0.5)',
+                      }}
+                    >
+                      {formatNumber(data.dislike || 0)}
+                    </Typography>
+                  </Stack>
+                )}
+              </>
             )}
             {/* 只在有可用菜单项时显示 MoreVertIcon */}
             {hasMenuItems && (

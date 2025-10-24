@@ -2,18 +2,21 @@
 
 import React, { createContext, useContext, ReactNode } from 'react'
 import { useParams } from 'next/navigation'
+import { ModelForum } from '@/api/types'
 
 interface ForumContextType {
   selectedForumId: number | null
+  forums: ModelForum[]
 }
 
 const ForumContext = createContext<ForumContextType | undefined>(undefined)
 
 interface ForumProviderProps {
   children: ReactNode
+  initialForums?: ModelForum[]
 }
 
-export const ForumProvider = ({ children }: ForumProviderProps) => {
+export const ForumProvider = ({ children, initialForums = [] }: ForumProviderProps) => {
   const params = useParams()
   const forumIdParam = params?.forum_id as string
   const selectedForumId = forumIdParam ? parseInt(forumIdParam, 10) : null
@@ -22,6 +25,7 @@ export const ForumProvider = ({ children }: ForumProviderProps) => {
     <ForumContext.Provider
       value={{
         selectedForumId,
+        forums: initialForums,
       }}
     >
       {children}
