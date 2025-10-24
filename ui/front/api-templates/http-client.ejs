@@ -20,7 +20,6 @@ import {
 import { API_CONSTANTS } from "@/lib/constants";
 import { clearAllAuthCookies } from "@/utils/cookie";
 import { getPublicAccessStatus, clearPublicAccessCache } from "@/utils/publicAccess";
-import { clearAuthConfigCache } from "@/hooks/useAuthConfig";
 
 export type QueryParamsType = Record<string | number, any>;
 
@@ -137,9 +136,6 @@ export const clearAuthData = () => {
     // 清除CSRF token缓存
     clearCsrfTokenCache();
     clearPublicAccessCache();
-    
-    // 清除认证配置缓存
-    clearAuthConfigCache();
     
     console.log("Authentication data cleared successfully");
   }
