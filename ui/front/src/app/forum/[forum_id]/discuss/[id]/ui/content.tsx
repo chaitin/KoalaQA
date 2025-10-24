@@ -637,8 +637,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
           // 已采纳的评论置顶
           if (a.accepted && !b.accepted) return -1
           if (!a.accepted && b.accepted) return 1
-          // 相同采纳状态下按更新时间排序
-          return (a.updated_at || 0) - (b.updated_at || 0)
+          return 0
         })
         ?.map((it, index) => (
           <DiscussCard data={it} index={index} key={it.id} disData={data} onOpt={handleClick} />
