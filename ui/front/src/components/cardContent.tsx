@@ -61,23 +61,23 @@ export const CardContent: React.FC<CardContentProps> = ({ data, ...other }) => {
             alt='logo'
           />
           <Stack justifyContent='center'>
-            <Typography
-              variant='h6'
-              component={Link}
-              href={data.href!}
-              className='vendor-name'
-              sx={{
-                width: 180,
-                fontSize: 14,
-                fontWeight: 600,
-                overflow: 'hidden',
-                whiteSpace: 'nowrap',
-                textOverflow: 'ellipsis',
-                color: '#000',
-              }}
-            >
-              {data.name}
-            </Typography>
+            <Link href={data.href!} style={{ textDecoration: 'none' }}>
+              <Typography
+                variant='h6'
+                className='vendor-name'
+                sx={{
+                  width: 180,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  overflow: 'hidden',
+                  whiteSpace: 'nowrap',
+                  textOverflow: 'ellipsis',
+                  color: '#000',
+                }}
+              >
+                {data.name}
+              </Typography>
+            </Link>
             <Typography variant='body2' sx={{ color: '#999', fontSize: 12 }}>
               {data.subTitle}
             </Typography>
@@ -243,24 +243,23 @@ export const CardContentVendor: React.FC<CardContentProps> = ({
             alt='logo'
           />
           <Stack justifyContent='center'>
-            <Typography
-              className='vendor-name'
-              href={data.href!}
-              target='_blank'
-              component={Link}
-              variant='h6'
-              sx={{
-                width: 180,
-                fontSize: 14,
-                fontWeight: 600,
-                overflow: 'hidden',
-                whiteSpace: 'nowrap',
-                textOverflow: 'ellipsis',
-                color: '#000',
-              }}
-            >
-              {data.name}
-            </Typography>
+            <Link href={data.href!} target='_blank' style={{ textDecoration: 'none' }}>
+              <Typography
+                className='vendor-name'
+                variant='h6'
+                sx={{
+                  width: 180,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  overflow: 'hidden',
+                  whiteSpace: 'nowrap',
+                  textOverflow: 'ellipsis',
+                  color: '#000',
+                }}
+              >
+                {data.name}
+              </Typography>
+            </Link>
             <Typography variant='body2' sx={{ color: '#999', fontSize: 12 }}>
               {data.subTitle}
             </Typography>

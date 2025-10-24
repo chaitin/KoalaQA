@@ -162,6 +162,7 @@ type MessageNotifyInfo = {
   to_name: string
   to_bot: boolean
   id: number
+  forum_id: number
 }
 
 // 导出内容类型配置管理器，供其他模块使用
@@ -280,7 +281,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
       // 更新UI
       setUnreadCount((c) => Math.max(0, c - 1))
       setNotifications((prev) => prev.filter((n) => n.id !== notification.id))
-      router.push(`/discuss/${notification.discuss_uuid}`)
+      router.push(`/forum/${notification.forum_id}/discuss/${notification.discuss_uuid}`)
     }
   }
 

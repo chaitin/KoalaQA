@@ -31,6 +31,7 @@ type MessageNotifyCommon struct {
 	DiscussUUID    string         `gorm:"column:discuss_uuid;type:text" json:"discuss_uuid"`
 	DiscussTitle   string         `gorm:"disucss_title" json:"discuss_title"`
 	DiscussionType DiscussionType `gorm:"column:discussion_type" json:"discussion_type"`
+	ForumID        uint           `gorm:"column:forum_id" json:"forum_id"`
 	Type           MsgNotifyType  `gorm:"column:type" json:"type"`
 	FromID         uint           `gorm:"column:from_id" json:"from_id"`
 	FromName       string         `gorm:"column:from_name;type:text" json:"from_name"`
