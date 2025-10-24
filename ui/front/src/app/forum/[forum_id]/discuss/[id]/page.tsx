@@ -37,14 +37,12 @@ const LoadingSpinner = () => (
   </Box>
 )
 
-const DiscussDetailPage = async (props: {
-  params: Promise<{ forum_id: string; id: string }>
-}) => {
+const DiscussDetailPage = async (props: { params: Promise<{ forum_id: string; id: string }> }) => {
   const { id } = await props.params
-  
+
   // 获取讨论详情
   const discussion = await fetchDiscussionDetail(id)
-  
+
   if (!discussion) {
     return (
       <Box
@@ -74,13 +72,14 @@ const DiscussDetailPage = async (props: {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'radial-gradient(circle at 20% 80%, rgba(32, 108, 255, 0.05) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(32, 108, 255, 0.05) 0%, transparent 50%)',
+          background:
+            'radial-gradient(circle at 20% 80%, rgba(32, 108, 255, 0.05) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(32, 108, 255, 0.05) 0%, transparent 50%)',
           zIndex: -1,
           pointerEvents: 'none',
         },
       }}
     >
-      <ScrollAnimation animation="fadeInDown" duration={0.8}>
+      <ScrollAnimation animation='fadeInDown' duration={0.8}>
         <Box
           sx={{
             mt: '64px',
@@ -131,7 +130,7 @@ const DiscussDetailPage = async (props: {
       >
         <h1 style={{ display: 'none' }}>讨论详情</h1>
         <Suspense fallback={<LoadingSpinner />}>
-          <ScrollAnimation animation="fadeInUp" delay={100} duration={0.6}>
+          <ScrollAnimation animation='fadeInUp' delay={100} duration={0.6}>
             <TitleCard data={discussion} />
           </ScrollAnimation>
           <Box
@@ -140,9 +139,9 @@ const DiscussDetailPage = async (props: {
               display: { xs: 'block', sm: 'none' },
             }}
           />
-          <ScrollAnimation animation="fadeInUp" delay={200} duration={0.6} immediate={true}>
-            <Stack direction='row' alignItems='flex-start' sx={{ mt: { xs: 0, sm: 3 } }} gap={3}>
-              <Box sx={{ flex: 1 }}>
+          <ScrollAnimation animation='fadeInUp' delay={200} duration={0.6} immediate={true}>
+            <Stack direction='row' alignItems='flex-start' sx={{ mt: { xs: 0, sm: 3 }, width: '100%' }} gap={3}>
+              <Box sx={{ flex: 1, width: '100%' }}>
                 <Content data={discussion} />
               </Box>
             </Stack>

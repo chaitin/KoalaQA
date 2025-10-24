@@ -607,7 +607,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
     setAnchorEl(null)
   }
   return (
-    <Stack id='comment-card' gap={3} sx={{ width: { xs: '100%' } }}>
+    <Stack id='comment-card' gap={3} sx={{ width: '100%' }}>
       <Menu id='basic-menu' anchorEl={anchorEl} open={open} onClose={handleClose}>
         {(commentIndex?.user_id == data.current_user_id ||
           [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
