@@ -27,20 +27,26 @@ const ProfilePanel = () => {
   const [, setToken] = useLocalStorageState<string>('auth_token')
   const { user } = useContext(AuthContext)
 
-  const handleLogout = () => {
-    postUserLogout()
-      .then(() => {
-        // 使用统一的清除认证信息函数
-        clearAuthData()
-        setToken('')
-        safeRedirect('/login')
-      })
-      .catch(() => {
-        // 即使登出API失败，也要清除本地认证信息
-        clearAuthData()
-        setToken('')
-        safeRedirect('/login')
-      })
+  const handleLogout = async () => {
+    try {
+      // 先调用后端登出API
+      await postUserLogout()
+    } catch (error) {
+      console.warn('Backend logout failed:', error)
+      // 即使后端登出失败，也要继续清理本地数据
+    }
+    
+    try {
+      // 使用统一的清除认证信息函数（包括服务端cookie清理）
+      await clearAuthData()
+      setToken('')
+      safeRedirect('/login')
+    } catch (error) {
+      console.error('Failed to clear auth data:', error)
+      // 即使清理失败，也要重定向到登录页
+      setToken('')
+      safeRedirect('/login')
+    }
   }
 
   return (
