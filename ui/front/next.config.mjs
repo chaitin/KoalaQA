@@ -49,8 +49,6 @@ const nextConfig = {
   
   // 图片优化配置
   images: {
-    // 开发环境可以 unoptimized，生产环境应该优化
-    unoptimized: process.env.NODE_ENV === 'development',
     
     // 配置远程图片域名白名单
     remotePatterns: [
