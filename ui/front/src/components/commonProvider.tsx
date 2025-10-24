@@ -57,7 +57,7 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
   const [showHeaderSearch, setShowHeaderSearch] = useState(false);
   const [headerStyle, setHeaderStyle] = useState<SxProps<Theme>>({});
   const [keywords, setKeywords] = useState('');
-  const [groupsLoading, setGroupsLoading] = useState(true);
+  const [groupsLoading, setGroupsLoading] = useState(false); // 固定初始值为false，避免hydration不匹配
   const [groups, setGroupsState] = useState<{
     origin: (ModelGroupWithItem & {
       items?: ModelGroupItemInfo[];

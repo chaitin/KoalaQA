@@ -28,7 +28,6 @@ import { rectSortingStrategy, SortableContext, useSortable } from '@dnd-kit/sort
 import { CSS } from '@dnd-kit/utilities';
 import { Icon, message } from '@ctzhian/ui';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import VisibilityIcon from '@mui/icons-material/Visibility';
 import Card from '@/components/card';
 import LoadingButton from '@/components/LoadingButton';
 import CategorySelector from '@/components/CategorySelector';
@@ -44,7 +43,6 @@ interface SortableBlockItemProps {
   index: number;
   control: any;
   onRemove: () => void;
-  isEdit: boolean;
   setIsEdit: (value: boolean) => void;
 }
 
@@ -52,7 +50,6 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
   index,
   control,
   onRemove,
-  isEdit,
   setIsEdit,
 }) => {
   const { isDragging, attributes, listeners, setNodeRef, transform, transition } = useSortable({
@@ -75,7 +72,6 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
         borderRadius: 2,
         p: 2,
         mb: 2,
-        backgroundColor: 'background.paper',
       }}
     >
       <Stack spacing={2}>
@@ -98,14 +94,30 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
           <Controller
             control={control}
             name={`blocks.${index}.name`}
-            rules={{ required: '请输入版块名称' }}
-            render={({ field }) => (
+            rules={{
+              required: '请输入版块名称',
+              minLength: {
+                value: 1,
+                message: '版块名称不能为空',
+              },
+              maxLength: {
+                value: 50,
+                message: '版块名称不能超过50个字符',
+              },
+              pattern: {
+                value: /^[^\s].*[^\s]$|^[^\s]$/,
+                message: '版块名称不能以空格开头或结尾',
+              },
+            }}
+            render={({ field, fieldState: { error } }) => (
               <TextField
                 {...field}
                 fullWidth
                 placeholder="输入版块名称"
                 label="版块名称"
                 size="small"
+                error={!!error}
+                helperText={error?.message}
                 onChange={e => {
                   field.onChange(e.target.value);
                   setIsEdit(true);
@@ -114,20 +126,26 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
             )}
           />
 
-          <IconButton size="small" onClick={onRemove} >
+          <IconButton size="small" onClick={onRemove}>
             <Icon type="icon-guanbi-fill" sx={{ color: 'text.tertiary' }} />
           </IconButton>
         </Stack>
 
         {/* 分组选择 */}
-        <Box>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            分类名称
-          </Typography>
-          <Controller
-            control={control}
-            name={`blocks.${index}.group_ids`}
-            render={({ field }) => (
+
+        <Controller
+          control={control}
+          name={`blocks.${index}.group_ids`}
+          rules={{
+            validate: value => {
+              if (!value || value.length === 0) {
+                return '请至少选择一个分类';
+              }
+              return true;
+            },
+          }}
+          render={({ field, fieldState: { error } }) => (
+            <Box>
               <CategorySelector
                 value={field.value || []}
                 onChange={groupIds => {
@@ -136,10 +154,16 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
                 }}
                 placeholder="请选择分类"
                 label="选择分类"
+                error={!!error}
               />
-            )}
-          />
-        </Box>
+              {error && (
+                <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
+                  {error.message}
+                </Typography>
+              )}
+            </Box>
+          )}
+        />
       </Stack>
     </Box>
   );
@@ -159,6 +183,7 @@ const Forum: React.FC = () => {
     defaultValues: {
       blocks: [],
     },
+    mode: 'onChange', // 实时验证
   });
 
   const {
@@ -252,12 +277,26 @@ const Forum: React.FC = () => {
   };
 
   const onSubmit = async (data: ForumFormData) => {
+    // 检查是否有版块
+    if (data.blocks.length === 0) {
+      message.error('请至少创建一个版块');
+      return;
+    }
+
+    // 检查版块名称是否重复
+    const names = data.blocks.map(block => block.name?.trim() || '');
+    const uniqueNames = new Set(names);
+    if (names.length !== uniqueNames.size) {
+      message.error('版块名称不能重复');
+      return;
+    }
+
     setIsLoading(true);
     try {
       // 将表单数据转换为 API 需要的格式
       const forums: ModelForumInfo[] = data.blocks.map((block, index) => ({
         id: block.id,
-        name: block.name,
+        name: block.name?.trim() || '',
         index: index + 1, // 设置排序索引
         group_ids: block.group_ids || [],
       }));
@@ -316,6 +355,7 @@ const Forum: React.FC = () => {
                 variant="contained"
                 loading={isLoading}
                 onClick={handleSubmit(onSubmit)}
+                disabled={blockFields.length === 0}
               >
                 保存
               </LoadingButton>
@@ -323,6 +363,7 @@ const Forum: React.FC = () => {
           )}
         </Stack>
         {blockFields.length >= 3 && <Alert severity="info">最多支持创建3个版块</Alert>}
+        {blockFields.length === 0 && <Alert severity="warning">请至少创建一个版块</Alert>}
 
         <DndContext
           sensors={sensors}
@@ -341,7 +382,6 @@ const Forum: React.FC = () => {
                 index={index}
                 control={control}
                 onRemove={() => handleRemoveBlock(index)}
-                isEdit={isEdit}
                 setIsEdit={setIsEdit}
               />
             ))}
@@ -397,7 +437,6 @@ const Forum: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
     </Card>
   );
 };
