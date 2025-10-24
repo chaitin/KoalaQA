@@ -1,8 +1,9 @@
-import { getSystemBrand, getUser, getForum } from '@/api'
+import { getSystemBrand, getUser, getForum, getUserLoginMethod } from '@/api'
 import '@/asset/styles/common.css'
 import '@/asset/styles/markdown.css'
 import { AuthProvider, CommonProvider } from '@/components'
 import { ForumProvider } from '@/contexts/ForumContext'
+import { AuthConfigProvider } from '@/contexts/AuthConfigContext'
 import theme from '@/theme'
 import '@ctzhian/tiptap/dist/index.css'
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v14-appRouter'
@@ -123,10 +124,25 @@ async function getForumData() {
   }
 }
 
+// 认证配置数据获取 - 使用服务端优化
+async function getAuthConfigData() {
+  try {
+    const authConfigData = await getUserLoginMethod()
+    return authConfigData || null
+  } catch (error) {
+    // 静默失败，不影响页面渲染
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Failed to fetch auth config data:', error)
+    }
+    return null
+  }
+}
+
 export default async function RootLayout(props: { children: React.ReactNode }) {
   const user = await getUserData()
   const brand = await getSystemBrand()
   const forums = await getForumData()
+  const authConfig = await getAuthConfigData()
 
   return (
     <html lang='zh-CN'>
@@ -145,21 +161,23 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
         <Script src='/font/iconfont.js' strategy='beforeInteractive' />
 
         <CommonProvider>
-          <AuthProvider initialUser={user}>
-            <ForumProvider initialForums={forums}>
-              <AppRouterCacheProvider>
-                <ThemeProvider theme={theme}>
-                  <CssBaseline />
-                  <Header initialUser={user} brandConfig={brand} initialForums={forums} />
-                  <main id='main-content'>
-                    {props.children}
-                  </main>
-                  <Footer />
-                  <Scroll />
-                </ThemeProvider>
-              </AppRouterCacheProvider>
-            </ForumProvider>
-          </AuthProvider>
+          <AuthConfigProvider initialAuthConfig={authConfig}>
+            <AuthProvider initialUser={user}>
+              <ForumProvider initialForums={forums}>
+                <AppRouterCacheProvider>
+                  <ThemeProvider theme={theme}>
+                    <CssBaseline />
+                    <Header initialUser={user} brandConfig={brand} initialForums={forums} />
+                    <main id='main-content'>
+                      {props.children}
+                    </main>
+                    <Footer />
+                    <Scroll />
+                  </ThemeProvider>
+                </AppRouterCacheProvider>
+              </ForumProvider>
+            </AuthProvider>
+          </AuthConfigProvider>
         </CommonProvider>
       </body>
     </html>

@@ -102,6 +102,7 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 		DiscussUUID:    data.DiscussUUID,
 		DiscussTitle:   data.DiscussTitle,
 		DiscussionType: data.DiscussionType,
+		ForumID:        data.ForumID,
 		Type:           data.Type,
 		FromID:         data.FromID,
 		FromName:       fromUser.Name,

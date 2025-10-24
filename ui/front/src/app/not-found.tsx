@@ -25,9 +25,11 @@ export default function NotFound() {
         alignItems='center'
       >
         <Image src={notFound} alt='404'></Image>
-        <Button component={Link} href='/' size='large'>
-          返回首页
-        </Button>
+        <Link href='/' style={{ textDecoration: 'none' }}>
+          <Button size='large'>
+            返回首页
+          </Button>
+        </Link>
       </Stack>
     </Box>
   );

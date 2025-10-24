@@ -104,9 +104,11 @@ export default function Error({
           <Button variant='contained' onClick={reset} size='large'>
             重试
           </Button>
-          <Button component={Link} href='/' size='large'>
-            返回首页
-          </Button>
+          <Link href='/' style={{ textDecoration: 'none' }}>
+            <Button size='large'>
+              返回首页
+            </Button>
+          </Link>
         </Stack>
       </Stack>
     </Box>

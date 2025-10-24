@@ -11,7 +11,6 @@
  */
 
 import alert from "@/components/alert";
-import { clearAuthConfigCache } from "@/hooks/useAuthConfig";
 import { clearCache, generateCacheKey, retryRequest } from "@/lib/api-cache";
 import { API_CONSTANTS } from "@/lib/constants";
 import { clearAllAuthCookies } from "@/utils/cookie";
@@ -144,7 +143,6 @@ export const clearAuthData = () => {
     clearPublicAccessCache();
 
     // 清除认证配置缓存
-    clearAuthConfigCache();
 
     console.log("Authentication data cleared successfully");
   }
