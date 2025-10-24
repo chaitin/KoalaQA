@@ -1,7 +1,7 @@
 import { getDiscussionDiscId } from '@/api'
 import { Metadata } from 'next'
 import { Suspense } from 'react'
-import { Box, Stack } from '@mui/material'
+import { Box, Stack, Alert, Typography } from '@mui/material'
 import TitleCard from './ui/titleCard'
 import Content from './ui/content'
 import ScrollAnimation from '@/components/ScrollAnimation'
@@ -15,10 +15,14 @@ export const metadata: Metadata = {
 async function fetchDiscussionDetail(discId: string) {
   try {
     const discussion = await getDiscussionDiscId({ discId })
-    return discussion
+    return { success: true, data: discussion, error: null }
   } catch (error) {
     console.error('Failed to fetch discussion detail:', error)
-    return null
+    return { 
+      success: false, 
+      data: null, 
+      error: error instanceof Error ? error.message : '获取讨论详情失败'
+    }
   }
 }
 
@@ -41,7 +45,38 @@ const DiscussDetailPage = async (props: { params: Promise<{ forum_id: string; id
   const { id } = await props.params
 
   // 获取讨论详情
-  const discussion = await fetchDiscussionDetail(id)
+  const result = await fetchDiscussionDetail(id)
+
+  // 处理错误情况
+  if (!result.success) {
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          px: 2,
+        }}
+      >
+        <Box sx={{ maxWidth: 600, width: '100%' }}>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            <Typography variant="h6" gutterBottom>
+              获取讨论详情失败
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {result.error}
+            </Typography>
+          </Alert>
+          <Typography variant="body2" color="text.disabled" textAlign="center">
+            请检查网络连接或稍后重试
+          </Typography>
+        </Box>
+      </Box>
+    )
+  }
+
+  const discussion = result.data
 
   if (!discussion) {
     return (

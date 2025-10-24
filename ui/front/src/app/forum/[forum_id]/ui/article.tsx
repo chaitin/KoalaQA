@@ -70,7 +70,7 @@ const Article = ({
     : contextGroups
 
   const [releaseModalVisible, { setTrue: releaseModalOpen, setFalse: releaseModalClose }] = useBoolean(false)
-  const [status, _setStatus] = useState<Status>((searchParams?.get('sort') as Status) || 'hot')
+  const status = searchParams?.get('sort')
   const [search, setSearch] = useState(searchParams?.get('search') || '')
   const searchRef = useRef(search)
   const [articleData, setArticleData] = useState(data)

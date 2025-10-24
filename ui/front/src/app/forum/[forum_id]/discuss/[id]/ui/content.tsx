@@ -170,7 +170,7 @@ const BaseDiscussCard = (props: {
           />
 
           <Typography className='text-ellipsis' variant='subtitle2'>
-            {data.user_name}
+            {data.user_id === 0 ? '未知用户' : data.user_name}
           </Typography>
           {data.bot && (
             <Box
