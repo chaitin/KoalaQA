@@ -14,7 +14,6 @@ import localFont from 'next/font/local'
 import { cookies } from 'next/headers'
 import Script from 'next/script'
 import * as React from 'react'
-import 'react-markdown-editor-lite/lib/index.css'
 
 import Footer from '@/components/Footer'
 import Header from '../components/header'
