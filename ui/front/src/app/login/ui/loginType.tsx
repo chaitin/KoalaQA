@@ -120,13 +120,13 @@ const LoginType = () => {
                   }}
                 >
                   还没有注册？
-                  <Box
-                    component={Link}
-                    href='/register'
-                    sx={{ color: '#40E0D0', ml: 0.5, textDecoration: 'none' }}
-                  >
-                    立即注册
-                  </Box>
+                  <Link href='/register' style={{ textDecoration: 'none' }}>
+                    <Box
+                      sx={{ color: '#40E0D0', ml: 0.5, textDecoration: 'none' }}
+                    >
+                      立即注册
+                    </Box>
+                  </Link>
                 </Box>
               )}
             </Stack>
@@ -181,13 +181,13 @@ const LoginType = () => {
                 }}
               >
                 还没有注册？
-                <Box
-                  component={Link}
-                  href='/register'
-                  sx={{ color: '#40E0D0', ml: 0.5, textDecoration: 'none' }}
-                >
-                  立即注册
-                </Box>
+                <Link href='/register' style={{ textDecoration: 'none' }}>
+                  <Box
+                    sx={{ color: '#40E0D0', ml: 0.5, textDecoration: 'none' }}
+                  >
+                    立即注册
+                  </Box>
+                </Link>
               </Box>
             )}
 

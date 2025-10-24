@@ -1,4 +1,4 @@
-import LoadingButton, { LoadingButtonProps } from '@mui/lab/LoadingButton';
+import { CustomLoadingButton as LoadingButton, CustomLoadingButtonProps as LoadingButtonProps } from './CustomLoadingButton';
 import { useState } from 'react';
 
 const LoadingBtn = (params: LoadingButtonProps & { onClick: any }) => {

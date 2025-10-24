@@ -61,17 +61,17 @@ export default function RegisterNotFoundPage() {
         如需账号，请联系管理员。
       </Typography>
       
-      <Button
-        component={Link}
-        href='/login'
-        variant='contained'
-        sx={{
-          textTransform: 'none',
-          fontWeight: 500,
-        }}
-      >
-        返回登录
-      </Button>
+      <Link href='/login' style={{ textDecoration: 'none' }}>
+        <Button
+          variant='contained'
+          sx={{
+            textTransform: 'none',
+            fontWeight: 500,
+          }}
+        >
+          返回登录
+        </Button>
+      </Link>
     </Card>
   );
 }

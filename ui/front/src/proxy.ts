@@ -1,11 +1,12 @@
 /**
- * Next.js 中间件
+ * Next.js 16 Proxy
  * 处理请求级别的逻辑：认证、重定向、headers 等
+ * 替代已弃用的middleware约定
  */
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getPublicAccessStatus } from '@/utils/publicAccess';
+import { getServerPublicAccessStatus } from '@/utils/serverAuthConfig';
 
 // 需要认证的路由
 const PROTECTED_ROUTES = [
@@ -18,7 +19,7 @@ const PROTECTED_ROUTES = [
 const AUTH_ROUTES = ['/login', '/register'];
 
 // 可能受public_access控制的路由（首页和discuss页面）
-const CONDITIONAL_PUBLIC_ROUTES = ['/', '/discuss'];
+const CONDITIONAL_PUBLIC_ROUTES = ['/', '/forum'];
 
 /**
  * 检查路由是否匹配
@@ -35,7 +36,7 @@ function matchRoute(pathname: string, routes: string[]): boolean {
 }
 
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   // 获取认证 token
   const authToken = request.cookies.get('auth_token')?.value;
@@ -127,7 +128,7 @@ export async function middleware(request: NextRequest) {
     // 如果用户未登录，检查public_access状态
     try {
       const baseURL = process.env.TARGET || '';
-      const publicAccess = await getPublicAccessStatus(baseURL, request);
+      const publicAccess = await getServerPublicAccessStatus(baseURL, request);
       
       if (process.env.NODE_ENV === 'development') {
         console.log('[Middleware] Public access status:', publicAccess, 'for path:', pathname);
