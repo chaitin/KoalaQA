@@ -155,16 +155,6 @@ const nextConfig = {
       );
     }
     return rewritesPath;
-  },
-
-  // 新的proxy配置替代middleware
-  async proxy() {
-    const { handleProxy, routeMatcher } = await import('./src/lib/proxy.js');
-    
-    return {
-      matcher: routeMatcher,
-      handler: handleProxy,
-    };
   }
 };
 
