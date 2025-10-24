@@ -43,33 +43,30 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
       return avatar
     }
 
-    // 如果是相对路径（以/开头），构建完整URL
+    // 如果是相对路径（以/开头），优先使用环境变量构建完整URL
     if (avatar.startsWith('/')) {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 
-        (typeof window !== 'undefined' 
-          ? `${window.location.protocol}//${window.location.host}`
-          : '');
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
       
-      // 如果无法获取baseUrl，直接返回原始路径
-      if (!baseUrl) {
-        return avatar;
+      // 如果有环境变量，使用环境变量构建完整URL
+      if (baseUrl) {
+        return `${baseUrl}${avatar}`;
       }
       
-      return `${baseUrl}${avatar}`
+      // 如果没有环境变量，直接返回相对路径让Next.js处理
+      // 这样可以避免服务器端和客户端的URL不一致
+      return avatar;
     }
 
     // 其他情况，添加/前缀并构建完整URL
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 
-      (typeof window !== 'undefined' 
-        ? `${window.location.protocol}//${window.location.host}`
-        : '');
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     
-    // 如果无法获取baseUrl，添加/前缀后返回
-    if (!baseUrl) {
-      return `/${avatar}`;
+    // 如果有环境变量，使用环境变量构建完整URL
+    if (baseUrl) {
+      return `${baseUrl}/${avatar}`;
     }
     
-    return `${baseUrl}/${avatar}`
+    // 如果没有环境变量，添加/前缀后返回
+    return `/${avatar}`;
   }
 
   const avatarSrc = getAvatarSrc()

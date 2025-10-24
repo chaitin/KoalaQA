@@ -21,6 +21,10 @@ func (u *User) GetByEmail(ctx context.Context, res any, email string) error {
 }
 
 func (u *User) CreateThird(ctx context.Context, user *third_auth.User) (*model.User, error) {
+	if user.ThirdID == "" {
+		return nil, errors.New("empty user third_id")
+	}
+
 	var dbUser model.User
 	err := u.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		txErr := tx.Exec(`SELECT pg_advisory_xact_lock(?)`, user.HashInt()).Error
@@ -50,12 +54,19 @@ func (u *User) CreateThird(ctx context.Context, user *third_auth.User) (*model.U
 			return nil
 		}
 
-		txErr = tx.Model(&model.User{}).Where("email = ?", user.Email).First(&dbUser).Error
-		if txErr != nil {
-			if !errors.Is(txErr, database.ErrRecordNotFound) {
-				return txErr
-			}
+		createUser := user.Email == ""
+		if !createUser {
+			txErr = tx.Model(&model.User{}).Where("email = ?", user.Email).First(&dbUser).Error
+			if txErr != nil {
+				if !errors.Is(txErr, database.ErrRecordNotFound) {
+					return txErr
+				}
 
+				createUser = true
+			}
+		}
+
+		if createUser {
 			dbUser = model.User{
 				Name:      user.Name,
 				Email:     user.Email,

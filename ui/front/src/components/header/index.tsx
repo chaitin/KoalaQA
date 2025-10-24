@@ -31,6 +31,7 @@ const Header = ({ initialUser = null }: HeaderProps) => {
   const [backHref, setBackHref] = useState('/admin/ai')
   const [brandConfig, setBrandConfig] = useState<ModelSystemBrand | null>(null)
   const [isLoadingBrand, setIsLoadingBrand] = useState(true)
+  const [isClient, setIsClient] = useState(false)
 
   // 使用新的 useAuthConfig hook
   const { authConfig } = useAuthConfig()
@@ -41,6 +42,11 @@ const Header = ({ initialUser = null }: HeaderProps) => {
 
   // 从 authConfig 中获取配置
   const registrationEnabled = authConfig?.enable_register ?? true
+
+  // 设置客户端状态，避免hydration不匹配
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   useEffect(() => {
     if (token) {
@@ -64,7 +70,7 @@ const Header = ({ initialUser = null }: HeaderProps) => {
   // 使用状态来避免 hydration 不匹配
 
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
       setBackHref(`${window.location.protocol}//${window.location.hostname}:3400/admin/ai`)
     }
   }, [])
@@ -112,8 +118,8 @@ const Header = ({ initialUser = null }: HeaderProps) => {
         justifyContent='space-between'
       >
         <Stack direction='row' alignItems='center' gap={3}>
-          {!isLoadingBrand &&
-            (brandConfig?.logo && brandConfig?.text ? (
+          {isClient && !isLoadingBrand ? (
+            brandConfig?.logo && brandConfig?.text ? (
               <Stack
                 direction='row'
                 alignItems='center'
@@ -166,7 +172,24 @@ const Header = ({ initialUser = null }: HeaderProps) => {
                   }
                 }}
               />
-            ))}
+            )
+          ) : (
+            // SSR时显示默认logo，避免hydration不匹配
+            <Image
+              src='/logo-text.png'
+              alt='Koala QA Logo'
+              width={120}
+              height={20}
+              style={{ cursor: 'pointer' }}
+              onClick={() => {
+                if (isAuthPage) {
+                  plainRouter.push('/')
+                } else {
+                  router.push(selectedForumId ? `/forum/${selectedForumId}` : '/')
+                }
+              }}
+            />
+          )}
 
           {/* 板块选择器 - 只在非登录/注册页面显示 */}
           {!isAuthPage && (
@@ -205,7 +228,7 @@ const Header = ({ initialUser = null }: HeaderProps) => {
           ) : (
             <>
               {/* 在公共访问模式下，仍然显示登录和注册按钮，但用户可以选择不登录直接使用 */}
-              {registrationEnabled && (
+              {isClient && registrationEnabled && (
                 <Button
                   variant='outlined'
                   sx={{ borderRadius: 1, height: 44, width: 122, fontSize: 14 }}

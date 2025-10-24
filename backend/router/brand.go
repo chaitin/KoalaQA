@@ -27,7 +27,7 @@ func (b *brand) Get(ctx *context.Context) {
 }
 
 func (b *brand) Route(h server.Handler) {
-	g := h.Group("/system/brand")
+	g := h.Group("/api/system/brand")
 	g.GET("", b.Get)
 }
 
@@ -36,5 +36,5 @@ func newBrand(b *svc.Brand) server.Router {
 }
 
 func init() {
-	registerApiNoAuthRouter(newBrand)
+	registerGlobalRouter(newBrand)
 }

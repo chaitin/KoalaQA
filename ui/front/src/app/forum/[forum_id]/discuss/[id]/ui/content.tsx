@@ -160,7 +160,14 @@ const BaseDiscussCard = (props: {
         sx={{ mb: 2, borderBottom: isReply ? 'none' : '1px solid #eee', pb: '4px' }}
       >
         <Stack direction='row' gap={1} alignItems='center' sx={{ flex: 1 }}>
-          {data.user_avatar && <Image src={data.user_avatar} alt="用户头像" width={28} height={28} style={{ borderRadius: '50%' }} />}
+          <Image 
+            src={data.user_avatar || '/logo.png'} 
+            alt="用户头像" 
+            width={28} 
+            height={28} 
+            style={{ borderRadius: '50%', objectFit: 'contain' }}
+            unoptimized={true}
+          />
 
           <Typography className='text-ellipsis' variant='subtitle2'>
             {data.user_name}
@@ -607,7 +614,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
     setAnchorEl(null)
   }
   return (
-    <Stack id='comment-card' gap={3} sx={{ width: { xs: '100%' } }}>
+    <Stack id='comment-card' gap={3} sx={{ width: '100%' }}>
       <Menu id='basic-menu' anchorEl={anchorEl} open={open} onClose={handleClose}>
         {(commentIndex?.user_id == data.current_user_id ||
           [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
