@@ -1,7 +1,7 @@
 import React, { useState, type FC } from 'react'
 
 import CloseIcon from '@mui/icons-material/Close'
-import { LoadingButton, type LoadingButtonProps } from '@mui/lab'
+import { CustomLoadingButton as LoadingButton, type CustomLoadingButtonProps as LoadingButtonProps } from '../CustomLoadingButton'
 import {
   Button,
   Dialog,
@@ -41,7 +41,7 @@ const DialogRoot = styled(Dialog)<DialogRootProps>(({ theme, ownerState }) => {
   return {
     '.MuiDialog-paper': {
       width: ownerState.width,
-      borderRadius: theme.shape.borderRadius * 3,
+      borderRadius: Number(theme.shape.borderRadius) * 3,
     },
   }
 })

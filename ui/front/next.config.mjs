@@ -22,10 +22,20 @@ const nextConfig = {
   // 启用实验性功能
   experimental: {
     // 优化包导入，减少 bundle 大小
-    optimizePackageImports: ['@mui/material', '@mui/icons-material', '@emotion/react', '@emotion/styled'],
+    optimizePackageImports: [
+      '@mui/material', 
+      '@mui/icons-material', 
+      '@emotion/react', 
+      '@emotion/styled',
+      '@ctzhian/tiptap',
+      '@ctzhian/ui'
+    ],
     
     // 启用 PPR (Partial Prerendering) - Next.js 15 新特性
     // ppr: 'incremental',
+    
+    // 启用bundle分析
+    // bundlePagesRouterDependencies: true, // 这个选项在Next.js 16中已移除
   },
   
   // 编译器优化
@@ -145,6 +155,16 @@ const nextConfig = {
       );
     }
     return rewritesPath;
+  },
+
+  // 新的proxy配置替代middleware
+  async proxy() {
+    const { handleProxy, routeMatcher } = await import('./src/lib/proxy.js');
+    
+    return {
+      matcher: routeMatcher,
+      handler: handleProxy,
+    };
   }
 };
 
