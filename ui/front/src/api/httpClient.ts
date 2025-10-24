@@ -126,7 +126,7 @@ export const clearCsrfTokenCache = () => {
 export const checkPublicAccess = getPublicAccessStatus;
 
 // 清除所有认证信息的函数
-export const clearAuthData = () => {
+export const clearAuthData = async () => {
   if (typeof window !== "undefined") {
     console.log("Clearing all authentication data...");
 
@@ -142,7 +142,17 @@ export const clearAuthData = () => {
     clearCsrfTokenCache();
     clearPublicAccessCache();
 
-    // 清除认证配置缓存
+    // 调用服务端 logout API 来清理服务端 cookie
+    try {
+      await fetch('/api/logout', {
+        method: 'POST',
+        credentials: 'include', // 确保发送 cookie
+      });
+      console.log("Server-side cookies cleared successfully");
+    } catch (error) {
+      console.warn("Failed to clear server-side cookies:", error);
+      // 即使服务端清理失败，客户端清理仍然有效
+    }
 
     console.log("Authentication data cleared successfully");
   }
@@ -206,22 +216,37 @@ export class HttpClient<SecurityDataType = unknown> {
               error.response,
             );
 
-            // 立即清除所有认证信息，包括cookie中的auth_token
-            clearAuthData();
+            // 异步清除所有认证信息，包括cookie中的auth_token
+            clearAuthData().then(() => {
+              const currentPath = window.location.pathname;
+              const isAuthPage =
+                currentPath.startsWith("/login") ||
+                currentPath.startsWith("/register");
 
-            const currentPath = window.location.pathname;
-            const isAuthPage =
-              currentPath.startsWith("/login") ||
-              currentPath.startsWith("/register");
+              // 如果不在认证页面，直接重定向到登录页
+              // middleware已经处理了public_access的检查，这里不需要重复检查
+              if (!isAuthPage) {
+                const fullPath =
+                  window.location.pathname + window.location.search;
+                const loginUrl = `/login?redirect=${encodeURIComponent(fullPath)}`;
+                window.location.href = loginUrl;
+              }
+            }).catch((clearError) => {
+              console.error("Failed to clear auth data on 401:", clearError);
+              // 即使清理失败，也要重定向到登录页
+              const currentPath = window.location.pathname;
+              const isAuthPage =
+                currentPath.startsWith("/login") ||
+                currentPath.startsWith("/register");
 
-            // 如果不在认证页面，直接重定向到登录页
-            // middleware已经处理了public_access的检查，这里不需要重复检查
-            if (!isAuthPage) {
-              const fullPath =
-                window.location.pathname + window.location.search;
-              const loginUrl = `/login?redirect=${encodeURIComponent(fullPath)}`;
-              window.location.href = loginUrl;
-            }
+              if (!isAuthPage) {
+                const fullPath =
+                  window.location.pathname + window.location.search;
+                const loginUrl = `/login?redirect=${encodeURIComponent(fullPath)}`;
+                window.location.href = loginUrl;
+              }
+            });
+            
             return Promise.reject(error.response);
           }
         }
