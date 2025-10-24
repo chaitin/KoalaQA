@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"path"
+	"strconv"
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/database"
@@ -32,12 +33,13 @@ func newCommonGetter(in commonGetterIn) *commonGetter {
 func (c *commonGetter) Message(ctx context.Context, dissID uint, userID uint) (*Common, error) {
 	var discuss struct {
 		CreatedAt model.Timestamp `gorm:"type:timestamp with time zone"`
+		ForumID   uint
 		UUID      string
 		Title     string
 		GroupIDs  model.Int64Array  `gorm:"type:bigint[]"`
 		Tags      model.StringArray `gorm:"type:text[]"`
 	}
-	err := c.in.RepoDiscuss.GetByID(ctx, &discuss, dissID, repo.QueryWithSelectColumn("created_at", "title", "group_ids", "uuid", "tags"))
+	err := c.in.RepoDiscuss.GetByID(ctx, &discuss, dissID, repo.QueryWithSelectColumn("created_at", "title", "forum_id", "group_ids", "uuid", "tags"))
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +78,7 @@ func (c *commonGetter) Message(ctx context.Context, dissID uint, userID uint) (*
 	if err != nil && !errors.Is(err, database.ErrRecordNotFound) {
 		return nil, err
 	} else if err == nil {
-		discussURL = publicAddress.FullURL(path.Join("discuss", discuss.UUID))
+		discussURL = publicAddress.FullURL(path.Join("forum", strconv.FormatUint(uint64(discuss.ForumID), 10), "discuss", discuss.UUID))
 	}
 
 	messageThirds := make([]commonUserThird, len(userThirds))
