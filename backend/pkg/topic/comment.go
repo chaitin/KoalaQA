@@ -5,9 +5,10 @@ var (
 )
 
 type MsgCommentChange struct {
-	OP       OP     `json:"op"`
-	DiscID   uint   `json:"disc_id"`
-	DiscUUID string `json:"disc_uuid"`
-	CommID   uint   `json:"comm_id"`
-	RagID    string `json:"rag_id"`
+	OP            OP     `json:"op"`
+	DiscID        uint   `json:"disc_id"`
+	DiscUUID      string `json:"disc_uuid"`
+	CommID        uint   `json:"comm_id"`
+	RagID         string `json:"rag_id"`
+	NotUpdateDisc bool   `json:"not_update_disc"`
 }

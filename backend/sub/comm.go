@@ -91,7 +91,7 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 
 	go func() {
 		if disc.Type != model.DiscussionTypeQA || comment.ParentID == 0 {
-			d.disc.IncrementComment(disc.UUID)
+			d.disc.IncrementComment(disc.UUID, !data.NotUpdateDisc)
 		}
 	}()
 

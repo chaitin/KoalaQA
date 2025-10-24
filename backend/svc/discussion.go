@@ -273,11 +273,17 @@ func (d *Discussion) IncrementView(uuid string) {
 	go d.RecalculateHot(uuid)
 }
 
-func (d *Discussion) IncrementComment(uuid string) {
+func (d *Discussion) IncrementComment(uuid string, updateTime bool) {
 	ctx := context.Background()
-	d.in.DiscRepo.Update(ctx, map[string]any{
+	m := map[string]any{
 		"comment": gorm.Expr("comment+1"),
-	}, repo.QueryWithEqual("uuid", uuid))
+	}
+
+	if !updateTime {
+		m["updated_at"] = gorm.Expr("updated_at")
+	}
+
+	d.in.DiscRepo.Update(ctx, m, repo.QueryWithEqual("uuid", uuid))
 
 	go d.RecalculateHot(uuid)
 }
