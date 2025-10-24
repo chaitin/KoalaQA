@@ -70,7 +70,7 @@ const Article = ({
     : contextGroups
 
   const [releaseModalVisible, { setTrue: releaseModalOpen, setFalse: releaseModalClose }] = useBoolean(false)
-  const status = searchParams?.get('sort')
+  const status = searchParams?.get('sort') || 'hot'
   const [search, setSearch] = useState(searchParams?.get('search') || '')
   const searchRef = useRef(search)
   const [articleData, setArticleData] = useState(data)
@@ -731,7 +731,7 @@ const Article = ({
             open={releaseModalVisible}
             onClose={releaseModalClose}
             onOk={() => {
-              fetchList(status, search, topics)
+              fetchList(status as Status, search, topics)
               router.refresh()
               releaseModalClose()
             }}
