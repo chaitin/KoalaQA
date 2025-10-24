@@ -215,7 +215,7 @@ const AdminDocument = () => {
           </Button>
         }
       >
-        <Box sx={{ maxHeight: 600, overflow: 'auto', pr: 1 }}>
+        <Box sx={{ maxHeight: 600, overflow: 'auto', pr: 1, width: '100%' }}>
           <Typography variant="subtitle1" sx={{ mb: 1 }}>
             {detail?.title || '-'}
           </Typography>

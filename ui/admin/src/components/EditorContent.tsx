@@ -36,6 +36,7 @@ const EditorContent: React.FC<MarkDownProps> = props => {
     <Box
       className="editor-container"
       sx={{
+        width: '100%',
         '.tiptap.ProseMirror': {
           '.tableWrapper': {
             transition: 'width 0.3s ease-in-out',

@@ -1,52 +1,43 @@
 'use client'
 
 import { ModelUserRole } from '@/api'
-import { AppBar, Button, Stack, Typography } from '@mui/material'
-import { useRouterWithForum } from '@/hooks/useRouterWithForum'
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import LoggedInView from './loggedInView'
-import Link from 'next/link'
-import Cookies from 'js-cookie'
-import { useLocalStorageState } from 'ahooks'
-import Image from 'next/image'
-import SettingsIcon from '@mui/icons-material/Settings'
+import { ModelForum, ModelSystemBrand } from '@/api/types'
 import { useAuthConfig } from '@/hooks/useAuthConfig'
-import { getSystemBrand } from '@/api/Brand'
-import { ModelSystemBrand } from '@/api/types'
+import { useRouterWithForum } from '@/hooks/useRouterWithForum'
+import SettingsIcon from '@mui/icons-material/Settings'
+import { AppBar, Button, Stack, Typography } from '@mui/material'
+import { useLocalStorageState } from 'ahooks'
+import Cookies from 'js-cookie'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useParams, usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import ForumSelector from '../ForumSelector'
-import { useForum } from '@/contexts/ForumContext'
-import { usePathname } from 'next/navigation'
+import LoggedInView from './loggedInView'
 
 interface HeaderProps {
   initialUser?: any | null
+  brandConfig: ModelSystemBrand
+  initialForums?: ModelForum[]
 }
 
-const Header = ({ initialUser = null }: HeaderProps) => {
-  const [token] = useLocalStorageState<string>('auth_token')
+const Header = ({ initialUser = null, brandConfig, initialForums = [] }: HeaderProps) => {
+  const [token] = useLocalStorageState<string>('auth_token', { defaultValue: '' })
   const [user, setUser] = useState(initialUser)
   const router = useRouterWithForum()
   const plainRouter = useRouter()
   const pathname = usePathname()
   const [backHref, setBackHref] = useState('/admin/ai')
-  const [brandConfig, setBrandConfig] = useState<ModelSystemBrand | null>(null)
-  const [isLoadingBrand, setIsLoadingBrand] = useState(true)
-  const [isClient, setIsClient] = useState(false)
 
   // 使用新的 useAuthConfig hook
   const { authConfig } = useAuthConfig()
 
   // 使用板块选择器 - 只在非登录/注册页面使用
-  const isAuthPage = pathname === '/login' || pathname === '/register'
-  const { selectedForumId } = useForum()
+  const isAuthPage = ['/login', '/register'].includes(pathname)
+  const { forum_id } = useParams()
 
   // 从 authConfig 中获取配置
   const registrationEnabled = authConfig?.enable_register ?? true
-
-  // 设置客户端状态，避免hydration不匹配
-  useEffect(() => {
-    setIsClient(true)
-  }, [])
 
   useEffect(() => {
     if (token) {
@@ -75,27 +66,6 @@ const Header = ({ initialUser = null }: HeaderProps) => {
     }
   }, [])
 
-  // 获取品牌配置
-  useEffect(() => {
-    const fetchBrandConfig = async () => {
-      try {
-        setIsLoadingBrand(true)
-        const response = await getSystemBrand()
-        setBrandConfig(response)
-      } catch (error) {
-        console.error('获取品牌配置失败:', error)
-        // 设置默认品牌配置，避免显示空白
-        setBrandConfig({
-          text: 'Koala QA',
-          logo: '/logo.png',
-        })
-      } finally {
-        setIsLoadingBrand(false)
-      }
-    }
-
-    fetchBrandConfig()
-  }, [])
   return (
     <AppBar
       position='fixed'
@@ -118,63 +88,45 @@ const Header = ({ initialUser = null }: HeaderProps) => {
         justifyContent='space-between'
       >
         <Stack direction='row' alignItems='center' gap={3}>
-          {isClient && !isLoadingBrand ? (
-            brandConfig?.logo && brandConfig?.text ? (
-              <Stack
-                direction='row'
-                alignItems='center'
-                gap={1}
-                sx={{ cursor: 'pointer' }}
-                onClick={() => {
-                  if (isAuthPage) {
-                    plainRouter.push('/')
-                  } else {
-                    router.push(selectedForumId ? `/forum/${selectedForumId}` : '/')
-                  }
-                }}
-              >
-                <Image
-                  src={brandConfig.logo}
-                  alt='Logo'
-                  width={24}
-                  height={24}
-                  style={{
-                    objectFit: 'contain',
-                    borderRadius: '4px',
-                  }}
-                  unoptimized={brandConfig.logo?.startsWith('/koala/')}
-                />
-                {brandConfig.text && (
-                  <Typography
-                    variant='h6'
-                    sx={{
-                      fontSize: 16,
-                      fontWeight: 600,
-                      color: '#000',
-                    }}
-                  >
-                    {brandConfig.text}
-                  </Typography>
-                )}
-              </Stack>
-            ) : (
+          {brandConfig?.logo && brandConfig?.text ? (
+            <Stack
+              direction='row'
+              alignItems='center'
+              gap={1}
+              sx={{ cursor: 'pointer' }}
+              onClick={() => {
+                if (isAuthPage) {
+                  plainRouter.push('/')
+                } else {
+                  router.push(forum_id ? `/forum/${forum_id}` : '/')
+                }
+              }}
+            >
               <Image
-                src='/logo-text.png'
-                alt='Koala QA Logo'
-                width={120}
-                height={20}
-                style={{ cursor: 'pointer' }}
-                onClick={() => {
-                  if (isAuthPage) {
-                    plainRouter.push('/')
-                  } else {
-                    router.push(selectedForumId ? `/forum/${selectedForumId}` : '/')
-                  }
+                src={brandConfig.logo}
+                alt='Logo'
+                width={24}
+                height={24}
+                style={{
+                  objectFit: 'contain',
+                  borderRadius: '4px',
                 }}
+                unoptimized={true}
               />
-            )
+              {brandConfig.text && (
+                <Typography
+                  variant='h6'
+                  sx={{
+                    fontSize: 16,
+                    fontWeight: 600,
+                    color: '#000',
+                  }}
+                >
+                  {brandConfig.text}
+                </Typography>
+              )}
+            </Stack>
           ) : (
-            // SSR时显示默认logo，避免hydration不匹配
             <Image
               src='/logo-text.png'
               alt='Koala QA Logo'
@@ -185,19 +137,12 @@ const Header = ({ initialUser = null }: HeaderProps) => {
                 if (isAuthPage) {
                   plainRouter.push('/')
                 } else {
-                  router.push(selectedForumId ? `/forum/${selectedForumId}` : '/')
+                  router.push(forum_id ? `/forum/${forum_id}` : '/')
                 }
               }}
             />
           )}
-
-          {/* 板块选择器 - 只在非登录/注册页面显示 */}
-          {!isAuthPage && (
-            <ForumSelector
-              selectedForumId={selectedForumId || undefined}
-              autoRedirect={false} // 在Header中不启用自动重定向
-            />
-          )}
+          <ForumSelector selectedForumId={forum_id ? parseInt(forum_id as string) : undefined} forums={initialForums} />
         </Stack>
 
         <Stack
@@ -228,7 +173,7 @@ const Header = ({ initialUser = null }: HeaderProps) => {
           ) : (
             <>
               {/* 在公共访问模式下，仍然显示登录和注册按钮，但用户可以选择不登录直接使用 */}
-              {isClient && registrationEnabled && (
+              {registrationEnabled && (
                 <Button
                   variant='outlined'
                   sx={{ borderRadius: 1, height: 44, width: 122, fontSize: 14 }}

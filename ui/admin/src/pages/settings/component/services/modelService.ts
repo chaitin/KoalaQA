@@ -72,7 +72,7 @@ export const modelService: IModelService = {
   },
 
   async updateModel(data: UIUpdateModelData) {
-    const res = await putAdminModelId(data.id + '', convertToKit(data));
+    const res = await putAdminModelId({ id: data.id + '' }, convertToKit(data));
     // 更新成功后返回模型数据
     const model: Model = res;
 

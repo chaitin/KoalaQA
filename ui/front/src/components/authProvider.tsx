@@ -48,7 +48,7 @@ const AuthProvider = ({
 }) => {
   // 使用 initialUser 避免客户端重复请求
   const [user, setUser] = useState<ModelUserInfo>(initialUser || EMPTY_USER);
-  const [loading, setLoading] = useState(!initialUser);
+  const [loading, setLoading] = useState(false); // 固定初始值为false，避免hydration不匹配
   const fetchingRef = useRef(false);
 
   // 使用 useCallback 优化函数引用

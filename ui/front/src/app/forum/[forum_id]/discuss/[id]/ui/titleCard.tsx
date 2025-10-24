@@ -123,6 +123,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
       sx={{
         boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
         cursor: 'auto',
+        maxWidth: '100%',
       }}
     >
       <ReleaseModal
