@@ -34,9 +34,30 @@ export function clearAllAuthCookies() {
     "csrf_token",
     "_vercel_jwt",
     "_pw_auth_session",
+    // 添加更多可能的认证相关cookie
+    "access_token",
+    "refresh_token",
+    "jwt_token",
+    "user_session",
+    "auth_session",
   ];
   
   cookiesToClear.forEach(clearCookie);
+  
+  // 额外清理：尝试清理所有可能的cookie变体
+  if (typeof window !== 'undefined') {
+    // 获取当前页面的所有cookie
+    const allCookies = document.cookie.split(';');
+    allCookies.forEach(cookie => {
+      const cookieName = cookie.split('=')[0].trim();
+      // 如果cookie名称包含认证相关的关键词，也尝试清理
+      if (cookieName.toLowerCase().includes('auth') || 
+          cookieName.toLowerCase().includes('token') || 
+          cookieName.toLowerCase().includes('session')) {
+        clearCookie(cookieName);
+      }
+    });
+  }
 }
 
 // 保持向后兼容的异步函数
