@@ -99,6 +99,7 @@ export function LazyImage({
         onError={handleError}
         loading="lazy"
         quality={85}
+        unoptimized={true}
         {...props}
         style={{
           ...props.style,
