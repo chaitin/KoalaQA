@@ -108,8 +108,8 @@ const theme = createTheme(
             },
             // 移除 webkit autofill 的 box-shadow 和 text-fill-color
             '& .MuiOutlinedInput-input:-webkit-autofill': {
-              '-webkit-box-shadow': 'none',
-              '-webkit-text-fill-color': 'unset',
+              WebkitBoxShadow: 'none',
+              WebkitTextFillColor: 'unset',
               boxShadow: 'none',
             },
           },

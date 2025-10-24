@@ -1,4 +1,4 @@
-import { getSystemBrand, getUser } from '@/api'
+import { getSystemBrand, getUser, getForum } from '@/api'
 import '@/asset/styles/common.css'
 import '@/asset/styles/markdown.css'
 import { AuthProvider, CommonProvider } from '@/components'
@@ -109,16 +109,24 @@ async function getUserData() {
   }
 }
 
+// Forum数据获取 - 使用服务端优化
+async function getForumData() {
+  try {
+    const forumData = await getForum()
+    return forumData || []
+  } catch (error) {
+    // 静默失败，不影响页面渲染
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Failed to fetch forum data:', error)
+    }
+    return []
+  }
+}
+
 export default async function RootLayout(props: { children: React.ReactNode }) {
   const user = await getUserData()
-  let brand = null
-  try {
-    brand = await getSystemBrand()
-    console.log('Current route URL:', typeof window !== 'undefined' ? window.location.href : (typeof location !== 'undefined' ? location.href : 'Non-browser environment'));
-  } catch (error) {
-    // 构建时如果无法获取品牌信息，使用默认值
-    console.warn('Failed to fetch brand info during build:', error)
-  }
+  const brand = await getSystemBrand()
+  const forums = await getForumData()
 
   return (
     <html lang='zh-CN'>
@@ -138,11 +146,11 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
 
         <CommonProvider>
           <AuthProvider initialUser={user}>
-            <ForumProvider>
+            <ForumProvider initialForums={forums}>
               <AppRouterCacheProvider>
                 <ThemeProvider theme={theme}>
                   <CssBaseline />
-                  <Header initialUser={user} />
+                  <Header initialUser={user} brandConfig={brand} initialForums={forums} />
                   <main id='main-content'>
                     {props.children}
                   </main>
