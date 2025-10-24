@@ -409,7 +409,8 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 	}
 
 	if err = d.in.DiscRepo.Update(ctx, map[string]any{
-		"members": gorm.Expr("array_append(members, ?)", uid),
+		"members":    gorm.Expr("array_append(members, ?)", uid),
+		"updated_at": gorm.Expr("updated_at"),
 	}, repo.QueryWithEqual("id", disc.ID)); err != nil {
 		return 0, err
 	}
@@ -522,8 +523,9 @@ func (d *Discussion) getParentID(ctx context.Context, id uint) uint {
 }
 
 func (d *Discussion) UpdateRagID(ctx context.Context, id uint, ragID string) error {
-	if err := d.in.DiscRepo.UpdateByModel(ctx, &model.Discussion{
-		RagID: ragID,
+	if err := d.in.DiscRepo.Update(ctx, map[string]any{
+		"rag_id":     ragID,
+		"updated_at": gorm.Expr("updated_at"),
 	}, repo.QueryWithEqual("id", id)); err != nil {
 		return err
 	}
