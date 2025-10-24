@@ -101,7 +101,7 @@ a {
   font-family: 'Monoid';
   font-display: swap;
   src:
-    url('//cdn.jsdelivr.net/npm/@typopro/web-monoid@3.7.5/TypoPRO-Monoid-Regular.woff')
+    url('//cdn.jsdelivr.net/npm/@typopro/web-monoid@3.7.5/TypoPRO-Monoid-Regular.woff2')
       format('woff2'),
     url('//cdn.jsdelivr.net/npm/@typopro/web-monoid@3.7.5/TypoPRO-Monoid-Regular.woff')
       format('woff');
@@ -111,7 +111,7 @@ a {
   font-family: 'Fantasque Sans Mono';
   font-display: swap;
   src:
-    url('//cdn.jsdelivr.net/npm/@typopro/web-fantasque-sans-mono@3.7.5/TypoPRO-FantasqueSansMono-Regular.woff')
+    url('//cdn.jsdelivr.net/npm/@typopro/web-fantasque-sans-mono@3.7.5/TypoPRO-FantasqueSansMono-Regular.woff2')
       format('woff2'),
     url('//cdn.jsdelivr.net/npm/@typopro/web-fantasque-sans-mono@3.7.5/TypoPRO-FantasqueSansMono-Regular.woff')
       format('woff');
@@ -144,7 +144,7 @@ a {
     url('//cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff2/JetBrainsMono-Regular.woff2')
       format('woff2'),
     url('//cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff/JetBrainsMono-Regular.woff')
-      format('woff2');
+      format('woff');
 }
 
 @font-face {

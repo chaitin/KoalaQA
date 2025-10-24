@@ -51,24 +51,65 @@ const EditorWrap = ({
   const [isMounted, setIsMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [originalContent, setOriginalContent] = useState(detail?.content || '');
+  
+  // 性能优化：缓存上次的内容和防抖定时器
+  const lastContentRef = useRef<string>('');
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isUpdatingRef = useRef<boolean>(false);
 
   // 确保只在客户端渲染编辑器
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
+  // 清理防抖定时器，避免内存泄漏
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
+  // 优化的内容更新处理函数，使用防抖和缓存机制
   const handleUpdate = useCallback(
     ({ editor }: { editor: EditorProps['editor'] }) => {
-      const content = editor.getHTML();
-      // 支持传统的onContentChange回调
-      if (onContentChange) {
-        onContentChange(content);
+      // 如果正在更新内容（避免循环更新），直接返回
+      if (isUpdatingRef.current) {
+        return;
       }
 
-      // 支持双向绑定的onChange回调
-      if (onChange) {
-        onChange(content);
+      // 清除之前的防抖定时器
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
       }
+
+      // 使用防抖机制，延迟300ms执行内容更新
+      debounceTimerRef.current = setTimeout(() => {
+        try {
+          const content = editor.getHTML();
+          
+          // 检查内容是否真的发生了变化
+          if (content === lastContentRef.current) {
+            return;
+          }
+          
+          // 更新缓存的内容
+          lastContentRef.current = content;
+          
+          // 支持传统的onContentChange回调
+          if (onContentChange) {
+            onContentChange(content);
+          }
+
+          // 支持双向绑定的onChange回调
+          if (onChange) {
+            onChange(content);
+          }
+        } catch (error) {
+          console.warn('编辑器内容更新时发生错误:', error);
+        }
+      }, 300); // 300ms防抖延迟
     },
     [onContentChange, onChange]
   );
@@ -118,7 +159,14 @@ const EditorWrap = ({
 
     setIsSaving(true);
     try {
+      // 清除防抖定时器，确保获取最新内容
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      
       const content = editorRef.getHTML();
+      // 更新缓存内容
+      lastContentRef.current = content;
       await onSave(content);
     } catch (error) {
       console.error('保存失败:', error);
@@ -132,14 +180,24 @@ const EditorWrap = ({
     if (editorRef.editor && 'view' in editorRef.editor) {
       const newContent = value !== undefined ? value : detail?.content || '';
       const currentContent = editorRef.getHTML();
+      
+      // 检查内容是否真的发生了变化
       if (currentContent !== newContent) {
+        // 设置更新标志，避免触发handleUpdate回调
+        isUpdatingRef.current = true;
+        
         // 延迟到下一轮事件循环，确保所有插件与视图已完成挂载
         setTimeout(() => {
           if (editorRef.editor && 'view' in editorRef.editor) {
             try {
               editorRef.editor.commands.setContent(newContent);
+              // 更新缓存的内容
+              lastContentRef.current = newContent;
             } catch (e) {
               console.warn('setContent 发生错误，已忽略本次更新:', e);
+            } finally {
+              // 重置更新标志
+              isUpdatingRef.current = false;
             }
           }
         }, 0);
