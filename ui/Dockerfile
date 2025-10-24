@@ -17,11 +17,11 @@ COPY front/package.json front/pnpm-lock.yaml ./front/
 
 WORKDIR /app/admin
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
-    pnpm install --verbose
+    pnpm install --frozen-lockfile --prefer-offline
 
 WORKDIR /app/front
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
-    pnpm install --verbose
+    pnpm install --frozen-lockfile --prefer-offline
 
 WORKDIR /app
 COPY admin/ ./admin/
