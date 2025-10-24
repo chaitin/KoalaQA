@@ -1,4 +1,4 @@
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
 
 ARG HTTPS_PROXY=${HTTPS_PROXY}
 ARG HTTP_PROXY=${HTTP_PROXY}
@@ -33,7 +33,7 @@ RUN pnpm build
 WORKDIR /app/front
 RUN pnpm build
 
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories
 
