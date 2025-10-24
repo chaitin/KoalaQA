@@ -31,7 +31,7 @@ export const createDynamicComponent = <P extends object>(
 
 // 代码编辑器（CodeMirror体积大）
 export const LazyCodeEditor = dynamic(
-  () => import('react-codemirror2').then((mod) => mod.Controlled),
+  () => import('@uiw/react-codemirror').then((mod) => mod.default),
   {
     loading: () => <div>代码编辑器加载中...</div>,
     ssr: false,
