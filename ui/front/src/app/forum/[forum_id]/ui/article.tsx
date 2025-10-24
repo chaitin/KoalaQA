@@ -16,7 +16,7 @@ import FloatingActionButton from '@/components/FloatingActionButton'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
 import { useForumId } from '@/hooks/useForumId'
 import SearchIcon from '@mui/icons-material/Search'
-import { Box, Button, Divider, InputAdornment, OutlinedInput, Stack, Typography } from '@mui/material'
+import { Box, Button, CircularProgress, Divider, InputAdornment, OutlinedInput, Stack, Typography } from '@mui/material'
 import { useBoolean } from 'ahooks'
 import { useSearchParams } from 'next/navigation'
 import { useRouterWithForum } from '@/hooks/useRouterWithForum'
@@ -75,6 +75,7 @@ const Article = ({
   const searchRef = useRef(search)
   const [articleData, setArticleData] = useState(data)
   const [page, setPage] = useState(1)
+  const [loadingMore, setLoadingMore] = useState(false)
   
   // 搜索弹窗相关状态
   const [searchModalOpen, { setTrue: openSearchModal, setFalse: closeSearchModal }] = useBoolean(false)
@@ -82,6 +83,9 @@ const Article = ({
   const [searchLoading, setSearchLoading] = useState(false)
   const [modalSearchQuery, setModalSearchQuery] = useState('')
   const [selectedModalType, setSelectedModalType] = useState<'qa' | 'feedback' | 'blog'>('qa')
+
+  const hookForumId = useForumId()
+  const currentForumId = forumId || hookForumId
 
   // 根据type参数动态生成标签文本，默认为qa
   const getStatusLabels = () => {
@@ -104,13 +108,14 @@ const Article = ({
 
   const fetchMoreList = useCallback(() => {
     // 防止重复请求
-    if (page * 10 >= (articleData.total || 0)) {
+    if (page * 10 >= (articleData.total || 0) || loadingMore) {
       return
     }
 
+    setLoadingMore(true)
     const new_page = page + 1
     setPage(new_page)
-    const params: GetDiscussionParams = {
+    const params: GetDiscussionParams & { forum_id?: number } = {
       page: new_page,
       size: 10,
       filter: status as 'hot' | 'new' | 'mine',
@@ -127,6 +132,11 @@ const Article = ({
       params.group_ids = topics
     }
 
+    // 添加当前选中的板块ID
+    if (currentForumId) {
+      params.forum_id = typeof currentForumId === 'string' ? parseInt(currentForumId, 10) : currentForumId
+    }
+
     getDiscussion(params)
       .then((res) => {
         if (res) {
@@ -141,16 +151,16 @@ const Article = ({
         // 回退页码
         setPage(page)
       })
-  }, [page, articleData.total, status, search, topics, type])
+      .finally(() => {
+        setLoadingMore(false)
+      })
+  }, [page, articleData.total, status, search, topics, type, currentForumId, loadingMore])
 
   const createQueryString = (name: string, value: string) => {
     const params = new URLSearchParams(searchParams?.toString())
     params.set(name, value)
     return params.toString()
   }
-
-  const hookForumId = useForumId()
-  const currentForumId = forumId || hookForumId
 
   const fetchList = useCallback(
     (st: Status, se: string, tps: number[]) => {
@@ -638,6 +648,7 @@ const Article = ({
               {page * 10 < (articleData.total || 0) ? (
                 <Button
                   onClick={fetchMoreList}
+                  disabled={loadingMore}
                   variant='outlined'
                   sx={{
                     background: '#fff !important',
@@ -669,10 +680,26 @@ const Article = ({
                     '&:active': {
                       transform: 'translateY(0) scale(0.98)',
                     },
+                    '&:disabled': {
+                      opacity: 0.6,
+                      cursor: 'not-allowed',
+                      transform: 'none',
+                      '&:hover': {
+                        transform: 'none',
+                        boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
+                      },
+                    },
                   }}
                   fullWidth
                 >
-                  查看更多
+                  {loadingMore ? (
+                    <Stack direction="row" alignItems="center" gap={1}>
+                      <CircularProgress size={16} sx={{ color: '#206CFF' }} />
+                      <Typography>加载中...</Typography>
+                    </Stack>
+                  ) : (
+                    '查看更多'
+                  )}
                 </Button>
               ) : (
                 <Divider
