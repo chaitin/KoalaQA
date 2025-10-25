@@ -2,6 +2,7 @@
 
 import { ModelUserRole } from '@/api'
 import { ModelForum, ModelSystemBrand } from '@/api/types'
+import { AuthContext } from '@/components/authProvider'
 import { useAuthConfig } from '@/hooks/useAuthConfig'
 import { useRouterWithForum } from '@/hooks/useRouterWithForum'
 import SettingsIcon from '@mui/icons-material/Settings'
@@ -11,18 +12,17 @@ import Cookies from 'js-cookie'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useParams, usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import ForumSelector from '../ForumSelector'
 import LoggedInView from './loggedInView'
 
 interface HeaderProps {
-  initialUser?: any | null
   brandConfig: ModelSystemBrand
   initialForums?: ModelForum[]
 }
 
-const Header = ({ initialUser = null, brandConfig, initialForums = [] }: HeaderProps) => {
-  const [user, setUser] = useState(initialUser)
+const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
+  const { user } = useContext(AuthContext)
   const router = useRouterWithForum()
   const plainRouter = useRouter()
   const pathname = usePathname()
@@ -37,14 +37,6 @@ const Header = ({ initialUser = null, brandConfig, initialForums = [] }: HeaderP
 
   // 从 authConfig 中获取配置
   const registrationEnabled = authConfig?.enable_register ?? true
-
-  useEffect(() => {
-    if (!initialUser) {
-      // 这里可以添加客户端获取用户信息的逻辑
-      // 或者触发页面刷新以重新获取服务端数据
-    }
-    setUser(initialUser)
-  }, [initialUser])
   // 使用状态来避免 hydration 不匹配
 
   useEffect(() => {
