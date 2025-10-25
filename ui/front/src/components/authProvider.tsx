@@ -53,11 +53,8 @@ const AuthProvider = ({
 
   // 使用 useCallback 优化函数引用
   const fetchUser = useCallback(async () => {
-    console.log('[AuthProvider] fetchUser called');
-    
     // 防止重复请求
     if (fetchingRef.current) {
-      console.log('[AuthProvider] Already fetching, skipping');
       return;
     }
 
@@ -65,15 +62,12 @@ const AuthProvider = ({
     setLoading(true);
     
     try {
-      console.log('[AuthProvider] Calling getUser API');
       // httpClient 现在内置了缓存和重试，直接调用即可
       const userData = await getUser();
-      console.log('[AuthProvider] Got user data:', userData);
       setUser(userData);
     } catch (error) {
       // 如果是401错误，说明需要登录，但不在这里处理重定向
       // 重定向逻辑已经在httpClient中处理了
-      console.error('[AuthProvider] Failed to fetch user:', error);
       setUser(EMPTY_USER);
     } finally {
       setLoading(false);
@@ -82,11 +76,8 @@ const AuthProvider = ({
   }, []);
 
   useEffect(() => {
-    console.log('[AuthProvider] useEffect triggered:', { initialUser });
-    
     // 如果已经有 initialUser，不需要再次请求
     if (initialUser) {
-      console.log('[AuthProvider] Has initialUser, skipping fetch');
       return;
     }
 
@@ -97,30 +88,23 @@ const AuthProvider = ({
       
       // 如果 token 存在但为空字符串、null 或 "null"，视为无效
       if (localToken === '' || localToken === '""' || localToken === 'null' || localToken === null) {
-        console.log('[AuthProvider] Local token is empty or null');
         return false;
       }
       
-      console.log('[AuthProvider] Token check:', { localToken, cookieToken });
       return (localToken && localToken !== '""') || cookieToken;
     }) || false;
 
-    console.log('[AuthProvider] Has valid token:', hasValidToken);
-
     if (!hasValidToken) {
-      console.log('[AuthProvider] No valid token, setting loading to false');
       setLoading(false);
       return;
     }
 
-    console.log('[AuthProvider] Has valid token, fetching user');
     fetchUser();
   }, [initialUser, fetchUser]);
 
   // 监听认证清除事件
   useEffect(() => {
     const handleAuthCleared = () => {
-      console.log('[AuthProvider] Auth cleared event received, resetting user state');
       setUser(EMPTY_USER);
       setLoading(false);
       fetchingRef.current = false;

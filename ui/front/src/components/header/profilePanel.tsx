@@ -1,20 +1,14 @@
 'use client'
 import { postUserLogout } from '@/api'
+import { clearAuthData } from '@/api/httpClient'
 import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Stack } from '@mui/material'
 import { useLocalStorageState } from 'ahooks'
-import React, { useContext } from 'react'
-import { IdCard, IdInfo, InfoCard } from './components'
+import { useRouter } from 'next/navigation'
+import { useContext } from 'react'
 import { AuthContext } from '../authProvider'
 import Icon from '../icon'
-import { clearAuthData } from '@/api/httpClient'
 import UserAvatar from '../UserAvatar'
-// import { useSSRDebug } from '../SSRDebugger'
-// 简单的重定向函数
-const safeRedirect = (url: string) => {
-  if (typeof window !== 'undefined') {
-    window.location.href = url
-  }
-}
+import { IdCard, IdInfo, InfoCard } from './components'
 
 export const OPT_LIST = [
   {
@@ -26,6 +20,7 @@ export const OPT_LIST = [
 const ProfilePanel = () => {
   const [, setToken] = useLocalStorageState<string>('auth_token')
   const { user } = useContext(AuthContext)
+  const router = useRouter()
 
   const handleLogout = async () => {
     try {
@@ -40,12 +35,12 @@ const ProfilePanel = () => {
       // 使用统一的清除认证信息函数（不调用服务端登出API，因为已经调用过了）
       await clearAuthData(false)
       setToken('')
-      safeRedirect('/login')
+      router.push('/login')
     } catch (error) {
       console.error('Failed to clear auth data:', error)
       // 即使清理失败，也要重定向到登录页
       setToken('')
-      safeRedirect('/login')
+      router.push('/login')
     }
   }
 
@@ -105,7 +100,7 @@ const ProfilePanel = () => {
                   },
                 }}
                 onClick={() => {
-                  safeRedirect(item.link)
+                  router.push(item.link)
                 }}
                 dense
               >
