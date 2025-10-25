@@ -6,7 +6,7 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getServerPublicAccessStatus } from '@/utils/serverAuthConfig';
+import { getServerPublicAccessStatus } from './src/utils/serverAuthConfig';
 
 // 需要认证的路由
 const PROTECTED_ROUTES = [
@@ -19,7 +19,7 @@ const PROTECTED_ROUTES = [
 const AUTH_ROUTES = ['/login', '/register'];
 
 // 可能受public_access控制的路由（首页和discuss页面）
-const CONDITIONAL_PUBLIC_ROUTES = ['/', '/forum'];
+const CONDITIONAL_PUBLIC_ROUTES = ['/', '/forum*'];
 
 /**
  * 检查路由是否匹配
@@ -186,4 +186,3 @@ export const config = {
     '/((?!api|_next/static|_next/image|favicon.ico|.*\\..*|font).*)',
   ],
 };
-

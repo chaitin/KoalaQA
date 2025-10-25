@@ -1,6 +1,7 @@
 'use client';
-import { getUserLoginMethod, postUserRegister } from '@/api';
+import { postUserRegister } from '@/api';
 import { Message } from '@/components';
+import { useAuthConfig } from '@/hooks/useAuthConfig';
 import { aesCbcEncrypt } from '@/utils/aes';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Box, Button, Stack, TextField, Typography, CircularProgress } from '@mui/material';
@@ -18,7 +19,7 @@ const schema = z.object({
 });
 
 const Register = () => {
-  const [loading, setLoading] = useState(true);
+  const { authConfig, loading: authConfigLoading } = useAuthConfig();
   const [registrationEnabled, setRegistrationEnabled] = useState(false);
   
   const {
@@ -30,31 +31,18 @@ const Register = () => {
   });
 
   useEffect(() => {
-    const checkRegistrationStatus = async () => {
-      try {
-        const response = await getUserLoginMethod();
-        const enabled = response?.enable_register ?? false;
-        setRegistrationEnabled(enabled);
-        
-        if (!enabled) {
-          // 如果注册被禁用，显示404页面
-          setTimeout(() => {
-            window.location.replace('/register/not-found');
-          }, 100);
-        }
-      } catch (error) {
-        console.error('Failed to check registration status:', error);
-        setRegistrationEnabled(false);
+    if (!authConfigLoading) {
+      const enabled = authConfig?.enable_register ?? false;
+      setRegistrationEnabled(enabled);
+      
+      if (!enabled) {
+        // 如果注册被禁用，显示404页面
         setTimeout(() => {
           window.location.replace('/register/not-found');
         }, 100);
-      } finally {
-        setLoading(false);
       }
-    };
-
-    checkRegistrationStatus();
-  }, []);
+    }
+  }, [authConfig, authConfigLoading]);
 
   const handleRegister = (data: z.infer<typeof schema>) => {
     if (data.password !== data.re_password) {
@@ -69,7 +57,7 @@ const Register = () => {
     });
   };
 
-  if (loading) {
+  if (authConfigLoading) {
     return (
       <Box
         sx={{

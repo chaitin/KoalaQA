@@ -246,6 +246,11 @@ const Article = ({
     setArticleData(data)
   }, [data])
 
+  // 当URL参数变化时重置页码
+  useEffect(() => {
+    setPage(1)
+  }, [status, type, topics])
+
   // 更新搜索引用
   useEffect(() => {
     searchRef.current = search
@@ -467,8 +472,10 @@ const Article = ({
               value={type || 'qa'}
               onChange={(value: string) => {
                 // 只有在状态真正变化时才更新 URL
-                const query = createQueryString('type', value)
-                router.replace(`/?${query}`)
+                if (value !== (type || 'qa')) {
+                  const query = createQueryString('type', value)
+                  router.replace(`/?${query}`)
+                }
               }}
               list={TYPE_LIST}
             />
@@ -613,8 +620,10 @@ const Article = ({
                 value={status}
                 onChange={(value: Status) => {
                   // 只有在状态真正变化时才更新 URL
-                  const query = createQueryString('sort', value)
-                  router.replace(`/?${query}`)
+                  if (value !== status) {
+                    const query = createQueryString('sort', value)
+                    router.replace(`/?${query}`)
+                  }
                 }}
                 list={getStatusLabels()}
               />

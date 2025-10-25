@@ -3,6 +3,7 @@ import { Card, MatchedString, Title } from '@/app/(banner)/s/ui/common'
 import { Icon } from '@/components'
 import { CommonContext } from '@/components/commonProvider'
 import { Avatar, Tag } from '@/components/discussion'
+import { TimeDisplay, TimeDisplayWithTag } from '@/components/TimeDisplay'
 import { formatNumber } from '@/lib/utils'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import { Box, Chip, Stack, SxProps, Typography } from '@mui/material'
@@ -178,7 +179,7 @@ const DiscussCard = ({ data, keywords: _keywords, showType = false, sx }: { data
             variant='body2'
             sx={{ fontSize: 12, color: 'rgba(0,0,0,0.5)', whiteSpace: 'nowrap', flexShrink: 0 }}
           >
-            {dayjs.unix(it.updated_at!).fromNow()}
+            <TimeDisplay timestamp={it.updated_at!} />
           </Typography>
         </Stack>
       </Stack>
@@ -364,12 +365,10 @@ export const DiscussCardMobile = ({ data, keywords, showType = false, sx }: { da
           variant='body2'
           sx={{ fontSize: 12, lineHeight: 1, color: 'rgba(0,0,0,0.5)', whiteSpace: 'nowrap', flexShrink: 0 }}
         >
-          <time
-            dateTime={dayjs.unix(it.updated_at!).format()}
+          <TimeDisplayWithTag 
+            timestamp={it.updated_at!} 
             title={dayjs.unix(it.updated_at!).format('YYYY-MM-DD HH:mm:ss')}
-          >
-            更新于 {dayjs.unix(it.updated_at!).fromNow()}
-          </time>
+          />
         </Typography>
         <Stack direction='row' alignItems='center' gap={1} sx={{ minWidth: 0, flex: 1 }}>
           {it.user_avatar ? (
