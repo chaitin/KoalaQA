@@ -123,8 +123,6 @@ export const clearCsrfTokenCache = () => {
 // 清除所有认证信息的函数
 export const clearAuthData = async (callLogoutAPI: boolean = true) => {
   if (typeof window !== "undefined") {
-    console.log("Clearing all authentication data...");
-
     // 清除本地存储的认证信息
     localStorage.removeItem("auth_token");
     localStorage.removeItem("user");
@@ -148,7 +146,6 @@ export const clearAuthData = async (callLogoutAPI: boolean = true) => {
           method: 'POST',
           credentials: 'include', // 确保发送 cookie
         });
-        console.log("Server-side cookies cleared successfully");
       } catch (error) {
         console.warn("Failed to clear server-side cookies:", error);
         // 即使服务端清理失败，客户端清理仍然有效
@@ -166,8 +163,6 @@ export const clearAuthData = async (callLogoutAPI: boolean = true) => {
       // 触发自定义事件，通知所有组件认证状态已清除
       window.dispatchEvent(new CustomEvent('auth:cleared'));
     }, 100);
-
-    console.log("Authentication data cleared successfully");
   }
 };
 

@@ -5,10 +5,9 @@ import { ModelForum, ModelSystemBrand } from '@/api/types'
 import { AuthContext } from '@/components/authProvider'
 import { useAuthConfig } from '@/hooks/useAuthConfig'
 import { useRouterWithForum } from '@/hooks/useRouterWithForum'
+import { useForum } from '@/contexts/ForumContext'
 import SettingsIcon from '@mui/icons-material/Settings'
 import { AppBar, Button, Stack, Typography } from '@mui/material'
-import { useLocalStorageState } from 'ahooks'
-import Cookies from 'js-cookie'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useParams, usePathname, useRouter } from 'next/navigation'
@@ -30,6 +29,9 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
 
   // 使用新的 useAuthConfig hook
   const { authConfig } = useAuthConfig()
+  
+  // 使用ForumProvider中的动态数据
+  const { forums } = useForum()
 
   // 使用板块选择器 - 只在非登录/注册页面使用
   const isAuthPage = ['/login', '/register'].includes(pathname)
@@ -37,6 +39,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
 
   // 从 authConfig 中获取配置
   const registrationEnabled = authConfig?.enable_register ?? true
+  const publicAccess = authConfig?.public_access ?? false
   // 使用状态来避免 hydration 不匹配
 
   useEffect(() => {
@@ -47,18 +50,21 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
 
   // 统一的 logo 点击处理函数
   const handleLogoClick = () => {
-    if (isAuthPage && initialForums.length > 0) {
-      // 如果在登录/注册页面，跳转到首页
-      router.push(`/forum/${initialForums[0].id}`)
-    } else if (initialForums && initialForums.length > 0) {
+    if (isAuthPage && forums.length > 0) {
+      // 如果在登录/注册页面，跳转到第一个论坛
+      router.push(`/forum/${forums[0].id}`)
+    } else if (forums && forums.length > 0) {
       // 如果有论坛数据，跳转到当前论坛或第一个论坛
       if (forum_id) {
         router.push(`/forum/${forum_id}`)
       } else {
-        router.push(`/forum/${initialForums[0].id}`)
+        router.push(`/forum/${forums[0].id}`)
       }
+    } else if (user?.uid) {
+      // 如果用户已登录但没有论坛数据，跳转到首页让fallback组件处理
+      plainRouter.push('/')
     } else {
-      // 如果没有论坛数据，跳转到登录页面
+      // 如果用户未登录且没有论坛数据，跳转到登录页面
       plainRouter.push('/login')
     }
   }
@@ -127,10 +133,10 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
               onClick={handleLogoClick}
             />
           )}
-          {Boolean(initialForums?.length) && (
+          {Boolean(forums?.length) && Boolean(publicAccess || user?.uid) && (
             <ForumSelector
               selectedForumId={forum_id ? parseInt(forum_id as string) : undefined}
-              forums={initialForums}
+              forums={forums}
             />
           )}
         </Stack>

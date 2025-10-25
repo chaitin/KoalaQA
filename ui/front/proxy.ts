@@ -44,9 +44,6 @@ export async function proxy(request: NextRequest) {
   // 简化的认证检查：只检查是否有有效的token
   const isAuthenticated = (() => {
     if (!authToken) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[Middleware] No auth token found');
-      }
       return false;
     }
     
@@ -58,10 +55,6 @@ export async function proxy(request: NextRequest) {
                    authToken !== '""' &&
                    authToken !== "''" &&
                    authToken.trim().length > 0;
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[Middleware] Token valid:', isValid, 'token length:', authToken.length);
-    }
     
     return isValid;
   })();
@@ -87,16 +80,9 @@ export async function proxy(request: NextRequest) {
 
   // 处理认证路由（已登录用户重定向到首页）
   if (matchRoute(pathname, AUTH_ROUTES)) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[Middleware] Auth route detected:', pathname, 'isAuthenticated:', isAuthenticated, 'authToken:', authToken);
-    }
-    
     if (isAuthenticated) {
       // 检查是否有重定向参数
       const redirectUrl = request.nextUrl.searchParams.get('redirect');
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[Middleware] Redirecting authenticated user, redirectUrl:', redirectUrl);
-      }
       
       if (redirectUrl && redirectUrl !== '/login' && redirectUrl !== '/register') {
         // 确保重定向URL是安全的，避免循环重定向
@@ -111,9 +97,16 @@ export async function proxy(request: NextRequest) {
           console.warn('Invalid redirect URL:', redirectUrl);
         }
       }
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[Middleware] Redirecting to home page');
+      
+      // 检查是否是刚登录的情况（通过检查 Referer）
+      const referer = request.headers.get('referer');
+      const isFromLogin = referer && referer.includes('/login');
+      
+      // 如果是刚登录，给客户端一些时间处理跳转，不要立即重定向
+      if (isFromLogin && pathname === '/login') {
+        return NextResponse.next();
       }
+      
       return NextResponse.redirect(new URL('/', request.url));
     }
   }
@@ -129,10 +122,6 @@ export async function proxy(request: NextRequest) {
     try {
       const baseURL = process.env.TARGET || '';
       const publicAccess = await getServerPublicAccessStatus(baseURL, request);
-      
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[Middleware] Public access status:', publicAccess, 'for path:', pathname);
-      }
 
       // 如果public_access为false，强制跳转到登录页面
       if (!publicAccess) {
