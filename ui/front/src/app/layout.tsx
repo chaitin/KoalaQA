@@ -146,6 +146,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
     getAuthConfigData(),
     getUserData()
   ])
+
   const brand = brandResponse || null
 
   return (
@@ -172,7 +173,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
                   <AppRouterCacheProvider>
                     <ThemeProvider theme={theme}>
                       <CssBaseline />
-                      <Header initialUser={user} brandConfig={brand} initialForums={forums} />
+                      <Header brandConfig={brand} initialForums={forums} />
                       <main id='main-content'>
                         {props.children}
                       </main>

@@ -22,7 +22,7 @@ const Account = ({ isChecked, passwordConfig }: { isChecked: boolean, passwordCo
   const [, setToken] = useLocalStorageState<string>('auth_token', {
     defaultValue: '',
   });
-  const { user, loading } = useContext(AuthContext);
+  const { user, loading, fetchUser } = useContext(AuthContext);
   const searchParams = useSearchParams();
   const router = useRouter();
   const redirectUrl = searchParams?.get('redirect');
@@ -85,7 +85,7 @@ const Account = ({ isChecked, passwordConfig }: { isChecked: boolean, passwordCo
           expires: 7, // 7 天
           sameSite: 'Lax',
         });
-
+        await fetchUser()
         // 登录成功后重定向
         const targetUrl = redirectUrl || '/';
         router.replace(targetUrl);
