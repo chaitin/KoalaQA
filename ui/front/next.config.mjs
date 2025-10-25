@@ -49,13 +49,8 @@ const nextConfig = {
     emotion: true,
   },
   
-  // ESLint 配置 - 减少构建时警告
-  eslint: {
-    // 构建时忽略 ESLint 错误，但保留警告
-    ignoreDuringBuilds: false,
-    // 可以在这里添加自定义规则
-    dirs: ['src'],
-  },
+  // ESLint 配置已移至 next.config.mjs 外部
+  // 使用 next lint 命令进行代码检查
   
   // 图片优化配置
   images: {
@@ -95,8 +90,12 @@ const nextConfig = {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     
-    // 图片缓存优化
-    minimumCacheTTL: 60,
+    // 图片缓存优化 - 增加缓存时间减少重复请求
+    minimumCacheTTL: 300, // 5分钟缓存
+    
+    // 图片加载优化
+    loader: 'default',
+    unoptimized: false,
     
     // SVG 安全配置
     dangerouslyAllowSVG: true,
@@ -149,6 +148,12 @@ const nextConfig = {
           {
             source: '/api/:path*',
             destination: 'http://10.9.35.17:8090/api/:path*',
+            basePath: false
+          },
+          // 添加图片代理重写，解决图片加载缓慢问题
+          {
+            source: '/koala/public/:path*',
+            destination: 'http://10.9.35.17:8090/koala/public/:path*',
             basePath: false
           }
         ]
