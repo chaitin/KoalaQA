@@ -24,7 +24,6 @@ async function getUserData() {
     const userData = await getUser();
     return userData || null;
   } catch (error) {
-    console.error('Failed to fetch user data:', error);
     return null;
   }
 }

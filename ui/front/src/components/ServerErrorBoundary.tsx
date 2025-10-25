@@ -1,17 +1,17 @@
 /**
- * 客户端错误边界组件
- * 用于捕获和处理客户端渲染错误
+ * 服务端错误边界组件
+ * 用于捕获和处理服务端渲染错误
  */
 
 'use client';
 
-import React, { Component, ReactNode } from 'react';
+import React from 'react';
 import { Box, Button, Typography, Container } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 
 interface Props {
-  children: ReactNode;
-  fallback?: ReactNode;
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
 }
 
 interface State {
@@ -19,7 +19,7 @@ interface State {
   error: Error | null;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
+export class ServerErrorBoundary extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -36,18 +36,12 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    console.error('ServerErrorBoundary caught an error:', error, errorInfo);
     
-    // 内置错误处理逻辑
-    // 可以在这里添加错误上报逻辑
-    if (typeof window !== 'undefined') {
-      // 客户端错误上报逻辑
-      try {
-        // 这里可以添加错误监控服务调用
-        // 例如：reportErrorToService(error, errorInfo);
-      } catch (reportError) {
-        console.error('Failed to report error:', reportError);
-      }
+    // 服务端错误处理逻辑
+    if (typeof window === 'undefined') {
+      // 服务端错误处理
+      console.error('Server-side error:', error.message);
     }
   }
 
@@ -85,10 +79,10 @@ export class ErrorBoundary extends Component<Props, State> {
               }}
             />
             <Typography variant="h5" gutterBottom>
-              出错了
+              服务端渲染出错
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              {this.state.error?.message || '页面加载失败，请稍后重试'}
+              {this.state.error?.message || '页面渲染失败，请稍后重试'}
             </Typography>
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
@@ -113,5 +107,4 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 }
 
-export default ErrorBoundary;
-
+export default ServerErrorBoundary;

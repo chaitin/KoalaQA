@@ -22,7 +22,6 @@ interface HeaderProps {
 }
 
 const Header = ({ initialUser = null, brandConfig, initialForums = [] }: HeaderProps) => {
-  const [token] = useLocalStorageState<string>('auth_token', { defaultValue: '' })
   const [user, setUser] = useState(initialUser)
   const router = useRouterWithForum()
   const plainRouter = useRouter()
@@ -40,24 +39,12 @@ const Header = ({ initialUser = null, brandConfig, initialForums = [] }: HeaderP
   const registrationEnabled = authConfig?.enable_register ?? true
 
   useEffect(() => {
-    if (token) {
-      Cookies.set('auth_token', token, {
-        path: '/',
-        expires: 7, // 7 天
-        secure: true, // 如果你是 https
-        sameSite: 'Lax',
-      })
-    }
-  }, [token])
-
-  // 如果初始用户为空但有token，可能需要重新获取用户信息
-  useEffect(() => {
-    if (!initialUser && token) {
+    if (!initialUser) {
       // 这里可以添加客户端获取用户信息的逻辑
       // 或者触发页面刷新以重新获取服务端数据
     }
     setUser(initialUser)
-  }, [initialUser, token])
+  }, [initialUser])
   // 使用状态来避免 hydration 不匹配
 
   useEffect(() => {

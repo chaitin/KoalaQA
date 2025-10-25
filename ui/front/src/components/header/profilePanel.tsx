@@ -37,8 +37,8 @@ const ProfilePanel = () => {
     }
     
     try {
-      // 使用统一的清除认证信息函数（包括服务端cookie清理）
-      await clearAuthData()
+      // 使用统一的清除认证信息函数（不调用服务端登出API，因为已经调用过了）
+      await clearAuthData(false)
       setToken('')
       safeRedirect('/login')
     } catch (error) {

@@ -20,6 +20,7 @@ import {
 import { Card, MarkDown } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 // import { Avatar } from '@/components/discussion'
+import { TimeDisplayWithTag } from '@/components/TimeDisplay'
 import EditorWrap from '@/components/editor/edit/Wrap'
 import Modal from '@/components/modal'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
@@ -274,12 +275,10 @@ const BaseDiscussCard = (props: {
               color: 'rgba(0,0,0,0.5)',
             }}
           >
-            <time
-              dateTime={dayjs.unix(data.updated_at!).format()}
+            <TimeDisplayWithTag 
+              timestamp={data.updated_at!} 
               title={dayjs.unix(data.updated_at!).format('YYYY-MM-DD HH:mm:ss')}
-            >
-              更新于 {dayjs.unix(data.updated_at!).fromNow()}
-            </time>
+            />
           </Typography>
           <Stack direction='row' gap={2} alignItems='center' sx={{ display: { xs: 'none', sm: 'flex' } }}>
             {!isReply && (

@@ -10,7 +10,7 @@ import { useLocalStorageState } from 'ahooks';
 import Cookies from 'js-cookie';
 import { useContext, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import z from 'zod';
 
 const schema = z.object({
@@ -24,6 +24,7 @@ const Account = ({ isChecked, passwordConfig }: { isChecked: boolean, passwordCo
   });
   const { user, loading } = useContext(AuthContext);
   const searchParams = useSearchParams();
+  const router = useRouter();
   const redirectUrl = searchParams?.get('redirect');
 
   const {
@@ -43,19 +44,36 @@ const Account = ({ isChecked, passwordConfig }: { isChecked: boolean, passwordCo
       userObject: user
     });
     
-    // 只有在用户数据加载完成后才检查登录状态
+    // 只有在用户数据加载完成且确实有用户信息时才检查登录状态
     if (!loading && user.email && user.uid && user.uid > 0) {
       console.log('[Login Account] User is authenticated, redirecting to:', redirectUrl || '/');
       // 如果用户已登录，重定向到指定页面或首页
       const targetUrl = redirectUrl || '/';
-      // 使用setTimeout避免在渲染过程中立即重定向
-      setTimeout(() => {
-        window.location.href = targetUrl;
-      }, 100);
+      // 使用 Next.js 路由进行客户端跳转
+      router.replace(targetUrl);
+    } else if (!loading && user.uid === 0) {
+      // 明确知道用户未登录，不需要进一步处理
+      console.log('[Login Account] User is not authenticated');
     } else {
-      console.log('[Login Account] User is not authenticated or still loading');
+      console.log('[Login Account] User state is still loading or indeterminate');
     }
-  }, [loading, user.email, user.uid, redirectUrl, user]);
+  }, [loading, user.email, user.uid, redirectUrl]);
+
+  // 监听认证清除事件，避免在登出后重复检查
+  useEffect(() => {
+    const handleAuthCleared = () => {
+      console.log('[Login Account] Auth cleared event received, user should be logged out');
+      // 认证清除后，确保用户状态为未登录
+      // 这里不需要额外处理，因为 AuthProvider 已经会重置用户状态
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('auth:cleared', handleAuthCleared);
+      return () => {
+        window.removeEventListener('auth:cleared', handleAuthCleared);
+      };
+    }
+  }, []);
   const onSubmit = (data: z.infer<typeof schema>) => {
     const { password, email } = data;
     const ciphertext = aesCbcEncrypt(password?.trim());
@@ -70,7 +88,7 @@ const Account = ({ isChecked, passwordConfig }: { isChecked: boolean, passwordCo
 
         // 登录成功后重定向
         const targetUrl = redirectUrl || '/';
-        window.location.href = targetUrl;
+        router.replace(targetUrl);
       })
       .catch((e) => {
         Message.error(e || '登录失败');

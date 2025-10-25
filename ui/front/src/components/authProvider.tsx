@@ -90,25 +90,49 @@ const AuthProvider = ({
       return;
     }
 
-    // 检查是否有 token，没有 token 则不请求
-    const hasToken = safeClientExecute(() => {
+    // 检查是否有有效的 token，没有有效 token 则不请求
+    const hasValidToken = safeClientExecute(() => {
       const localToken = localStorage.getItem('auth_token');
       const cookieToken = document.cookie.includes('auth_token');
+      
+      // 如果 token 存在但为空字符串、null 或 "null"，视为无效
+      if (localToken === '' || localToken === '""' || localToken === 'null' || localToken === null) {
+        console.log('[AuthProvider] Local token is empty or null');
+        return false;
+      }
+      
       console.log('[AuthProvider] Token check:', { localToken, cookieToken });
-      return localToken || cookieToken;
+      return (localToken && localToken !== '""') || cookieToken;
     }) || false;
 
-    console.log('[AuthProvider] Has token:', hasToken);
+    console.log('[AuthProvider] Has valid token:', hasValidToken);
 
-    if (!hasToken) {
-      console.log('[AuthProvider] No token, setting loading to false');
+    if (!hasValidToken) {
+      console.log('[AuthProvider] No valid token, setting loading to false');
       setLoading(false);
       return;
     }
 
-    console.log('[AuthProvider] Has token, fetching user');
+    console.log('[AuthProvider] Has valid token, fetching user');
     fetchUser();
   }, [initialUser, fetchUser]);
+
+  // 监听认证清除事件
+  useEffect(() => {
+    const handleAuthCleared = () => {
+      console.log('[AuthProvider] Auth cleared event received, resetting user state');
+      setUser(EMPTY_USER);
+      setLoading(false);
+      fetchingRef.current = false;
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('auth:cleared', handleAuthCleared);
+      return () => {
+        window.removeEventListener('auth:cleared', handleAuthCleared);
+      };
+    }
+  }, []);
 
   const isAuthenticated = (user?.uid ?? 0) > 0;
 
