@@ -45,6 +45,24 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
     }
   }, [])
 
+  // 统一的 logo 点击处理函数
+  const handleLogoClick = () => {
+    if (isAuthPage && initialForums.length > 0) {
+      // 如果在登录/注册页面，跳转到首页
+      router.push(`/forum/${initialForums[0].id}`)
+    } else if (initialForums && initialForums.length > 0) {
+      // 如果有论坛数据，跳转到当前论坛或第一个论坛
+      if (forum_id) {
+        router.push(`/forum/${forum_id}`)
+      } else {
+        router.push(`/forum/${initialForums[0].id}`)
+      }
+    } else {
+      // 如果没有论坛数据，跳转到登录页面
+      plainRouter.push('/login')
+    }
+  }
+
   return (
     <AppBar
       position='fixed'
@@ -73,13 +91,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
               alignItems='center'
               gap={1}
               sx={{ cursor: 'pointer' }}
-              onClick={() => {
-                if (isAuthPage) {
-                  plainRouter.push('/')
-                } else {
-                  router.push(forum_id ? `/forum/${forum_id}` : '/')
-                }
-              }}
+              onClick={handleLogoClick}
             >
               <Image
                 src={brandConfig.logo}
@@ -112,16 +124,15 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
               width={120}
               height={20}
               style={{ cursor: 'pointer' }}
-              onClick={() => {
-                if (isAuthPage) {
-                  plainRouter.push('/')
-                } else {
-                  router.push(forum_id ? `/forum/${forum_id}` : '/')
-                }
-              }}
+              onClick={handleLogoClick}
             />
           )}
-          <ForumSelector selectedForumId={forum_id ? parseInt(forum_id as string) : undefined} forums={initialForums} />
+          {Boolean(initialForums?.length) && (
+            <ForumSelector
+              selectedForumId={forum_id ? parseInt(forum_id as string) : undefined}
+              forums={initialForums}
+            />
+          )}
         </Stack>
 
         <Stack
