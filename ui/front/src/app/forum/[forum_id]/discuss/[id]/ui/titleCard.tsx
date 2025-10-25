@@ -9,6 +9,7 @@ import { ModelDiscussionDetail, ModelDiscussionType, ModelUserRole } from '@/api
 import { Card } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import { ReleaseModal, Tag } from '@/components/discussion'
+import { TimeDisplayWithTag } from '@/components/TimeDisplay'
 import EditorWrap from '@/components/editor/edit/Wrap'
 import EditorContent from '@/components/EditorContent'
 import Modal from '@/components/modal'
@@ -258,8 +259,22 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
       >
         {data.user_name}
         {data.updated_at && data.updated_at !== data.created_at
-          ? `更新于 ${dayjs.unix(data.updated_at).fromNow()}`
-          : `发布于 ${dayjs.unix(data.created_at!).fromNow()}`}
+          ? (
+              <>
+                更新于 <TimeDisplayWithTag 
+                  timestamp={data.updated_at} 
+                  title={dayjs.unix(data.updated_at).format('YYYY-MM-DD HH:mm:ss')}
+                />
+              </>
+            )
+          : (
+              <>
+                发布于 <TimeDisplayWithTag 
+                  timestamp={data.created_at!} 
+                  title={dayjs.unix(data.created_at!).format('YYYY-MM-DD HH:mm:ss')}
+                />
+              </>
+            )}
       </Typography>
       <Stack direction='row' alignItems='flex-end' gap={2} justifyContent='space-between' sx={{ my: 1 }}>
         <Stack direction='row' flexWrap='wrap' gap='8px 16px'>
@@ -311,8 +326,22 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
             >
               {data.user_name}{' '}
               {data.updated_at && data.updated_at !== data.created_at
-                ? `更新于 ${dayjs.unix(data.updated_at).fromNow()}`
-                : `发布于 ${dayjs.unix(data.created_at!).fromNow()}`}
+                ? (
+                    <>
+                      更新于 <TimeDisplayWithTag 
+                        timestamp={data.updated_at} 
+                        title={dayjs.unix(data.updated_at).format('YYYY-MM-DD HH:mm:ss')}
+                      />
+                    </>
+                  )
+                : (
+                    <>
+                      发布于 <TimeDisplayWithTag 
+                        timestamp={data.created_at!} 
+                        title={dayjs.unix(data.created_at!).format('YYYY-MM-DD HH:mm:ss')}
+                      />
+                    </>
+                  )}
             </time>
           </Typography>
         </Stack>

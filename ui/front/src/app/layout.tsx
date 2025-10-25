@@ -4,6 +4,7 @@ import '@/asset/styles/markdown.css'
 import { AuthProvider, CommonProvider } from '@/components'
 import { ForumProvider } from '@/contexts/ForumContext'
 import { AuthConfigProvider } from '@/contexts/AuthConfigContext'
+import ServerErrorBoundary from '@/components/ServerErrorBoundary'
 import theme from '@/theme'
 import '@ctzhian/tiptap/dist/index.css'
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v14-appRouter'
@@ -99,7 +100,7 @@ async function getUserData() {
 
     // 使用服务端优化的数据获取
     const userData = await getUser()
-    return userData || null
+    return userData
   } catch (error) {
     // 静默失败，不影响页面渲染
     if (process.env.NODE_ENV === 'development') {
@@ -127,7 +128,7 @@ async function getForumData() {
 async function getAuthConfigData() {
   try {
     const authConfigData = await getUserLoginMethod()
-    return authConfigData || null
+    return authConfigData
   } catch (error) {
     // 静默失败，不影响页面渲染
     if (process.env.NODE_ENV === 'development') {
@@ -138,10 +139,14 @@ async function getAuthConfigData() {
 }
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
-  const user = await getUserData()
-  const brand = await getSystemBrand()
-  const forums = await getForumData()
-  const authConfig = await getAuthConfigData()
+  // 并行获取所有数据，提高页面加载性能
+  const [brandResponse, forums, authConfig, user] = await Promise.all([
+    getSystemBrand(),
+    getForumData(),
+    getAuthConfigData(),
+    getUserData()
+  ])
+  const brand = brandResponse || null
 
   return (
     <html lang='zh-CN'>
@@ -159,25 +164,27 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
         {/* 图标字体预加载 - beforeInteractive 确保在交互前加载 */}
         <Script src='/font/iconfont.js' strategy='beforeInteractive' />
 
-        <CommonProvider>
-          <AuthConfigProvider initialAuthConfig={authConfig}>
-            <AuthProvider initialUser={user}>
-              <ForumProvider initialForums={forums}>
-                <AppRouterCacheProvider>
-                  <ThemeProvider theme={theme}>
-                    <CssBaseline />
-                    <Header initialUser={user} brandConfig={brand} initialForums={forums} />
-                    <main id='main-content'>
-                      {props.children}
-                    </main>
-                    <Footer />
-                    <Scroll />
-                  </ThemeProvider>
-                </AppRouterCacheProvider>
-              </ForumProvider>
-            </AuthProvider>
-          </AuthConfigProvider>
-        </CommonProvider>
+        <ServerErrorBoundary>
+          <CommonProvider>
+            <AuthConfigProvider initialAuthConfig={authConfig}>
+              <AuthProvider initialUser={user}>
+                <ForumProvider initialForums={forums}>
+                  <AppRouterCacheProvider>
+                    <ThemeProvider theme={theme}>
+                      <CssBaseline />
+                      <Header initialUser={user} brandConfig={brand} initialForums={forums} />
+                      <main id='main-content'>
+                        {props.children}
+                      </main>
+                      <Footer />
+                      <Scroll />
+                    </ThemeProvider>
+                  </AppRouterCacheProvider>
+                </ForumProvider>
+              </AuthProvider>
+            </AuthConfigProvider>
+          </CommonProvider>
+        </ServerErrorBoundary>
       </body>
     </html>
   )
