@@ -26,7 +26,31 @@ export const AuthConfigProvider = ({
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState<Error | null>(null)
 
+  // 清除缓存函数
+  const clearCache = React.useCallback(() => {
+    setAuthConfig(null)
+    setLoading(false)
+    setError(null)
+  }, [])
+
+  // 监听认证清除事件
+  React.useEffect(() => {
+    const handleAuthCleared = () => {
+      console.log('[AuthConfigProvider] Auth cleared event received, clearing cache');
+      clearCache();
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('auth:cleared', handleAuthCleared);
+      return () => {
+        window.removeEventListener('auth:cleared', handleAuthCleared);
+      };
+    }
+  }, [clearCache])
+
   // 刷新函数 - 客户端可以调用此函数重新获取配置
+  // 注意：这个函数主要用于特殊情况下需要刷新配置的场景
+  // 正常情况下，所有页面都应该使用 initialAuthConfig 中的数据
   const refresh = React.useCallback(async (): Promise<SvcAuthFrontendGetRes | null> => {
     setLoading(true)
     setError(null)
@@ -43,13 +67,6 @@ export const AuthConfigProvider = ({
       setLoading(false)
       return null
     }
-  }, [])
-
-  // 清除缓存函数
-  const clearCache = React.useCallback(() => {
-    setAuthConfig(null)
-    setLoading(false)
-    setError(null)
   }, [])
 
   return (
