@@ -5,6 +5,7 @@ import { AuthProvider, CommonProvider } from '@/components'
 import { ForumProvider } from '@/contexts/ForumContext'
 import { AuthConfigProvider } from '@/contexts/AuthConfigContext'
 import ServerErrorBoundary from '@/components/ServerErrorBoundary'
+import { safeApiCall, safeLogError } from '@/lib/error-utils'
 import theme from '@/theme'
 import '@ctzhian/tiptap/dist/index.css'
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v14-appRouter'
@@ -45,7 +46,7 @@ export async function generateMetadata(): Promise<Metadata> {
     brandName = brand?.text || 'Koala QA'
   } catch (error) {
     // 构建时如果无法获取品牌信息，使用默认值
-    console.warn('Failed to fetch brand info during build:', error)
+    safeLogError('Failed to fetch brand info during build', error)
   }
   
   return {
@@ -102,10 +103,8 @@ async function getUserData() {
     const userData = await getUser()
     return userData
   } catch (error) {
-    // 静默失败，不影响页面渲染
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Failed to fetch user data:', error)
-    }
+    // 使用安全的错误处理
+    safeLogError('Failed to fetch user data', error)
     return null
   }
 }
@@ -116,10 +115,8 @@ async function getForumData() {
     const forumData = await getForum()
     return forumData || []
   } catch (error) {
-    // 静默失败，不影响页面渲染
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Failed to fetch forum data:', error)
-    }
+    // 使用安全的错误处理
+    safeLogError('Failed to fetch forum data', error)
     return []
   }
 }
@@ -130,10 +127,8 @@ async function getAuthConfigData() {
     const authConfigData = await getUserLoginMethod()
     return authConfigData
   } catch (error) {
-    // 静默失败，不影响页面渲染
-    if (process.env.NODE_ENV === 'development') {
-      console.error('Failed to fetch auth config data:', error)
-    }
+    // 使用安全的错误处理
+    safeLogError('Failed to fetch auth config data', error)
     return null
   }
 }

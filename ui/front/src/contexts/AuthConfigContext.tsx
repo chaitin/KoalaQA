@@ -34,10 +34,14 @@ export const AuthConfigProvider = ({
   }, [])
 
   // 监听认证清除事件
+  // 注意：退出登录时不清空登录方法信息，只清空用户认证状态
+  // 登录方法信息应该保持，以便用户下次访问时仍能看到可用的登录方式
   React.useEffect(() => {
     const handleAuthCleared = () => {
-      console.log('[AuthConfigProvider] Auth cleared event received, clearing cache');
-      clearCache();
+      // 不清空 authConfig，保持登录方法信息
+      // 只重置 loading 和 error 状态
+      setLoading(false);
+      setError(null);
     };
 
     if (typeof window !== 'undefined') {
@@ -46,7 +50,7 @@ export const AuthConfigProvider = ({
         window.removeEventListener('auth:cleared', handleAuthCleared);
       };
     }
-  }, [clearCache])
+  }, [])
 
   // 刷新函数 - 客户端可以调用此函数重新获取配置
   // 注意：这个函数主要用于特殊情况下需要刷新配置的场景

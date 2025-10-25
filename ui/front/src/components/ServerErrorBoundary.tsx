@@ -29,19 +29,34 @@ export class ServerErrorBoundary extends React.Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
+    // 创建一个可序列化的错误对象，避免序列化问题
+    const serializableError = {
+      message: error.message || 'An unknown error occurred',
+      name: error.name || 'Error',
+      stack: error.stack || undefined,
+    } as Error;
+    
     return {
       hasError: true,
-      error,
+      error: serializableError,
     };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ServerErrorBoundary caught an error:', error, errorInfo);
+    // 安全地记录错误信息，避免序列化问题
+    const errorMessage = error?.message || 'Unknown error';
+    const errorName = error?.name || 'Error';
+    
+    console.error('ServerErrorBoundary caught an error:', {
+      message: errorMessage,
+      name: errorName,
+      componentStack: errorInfo?.componentStack || 'No component stack available'
+    });
     
     // 服务端错误处理逻辑
     if (typeof window === 'undefined') {
-      // 服务端错误处理
-      console.error('Server-side error:', error.message);
+      // 服务端错误处理 - 可以在这里添加错误上报逻辑
+      console.error('Server-side error occurred:', errorMessage);
     }
   }
 
