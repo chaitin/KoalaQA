@@ -11,7 +11,7 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { LazyImage } from '@/components/optimized'
-import { useContext, useMemo } from 'react'
+import { useContext, useMemo, useCallback, memo } from 'react'
 import Link from 'next/link'
 import EditorContent from '@/components/EditorContent'
 import { useParams } from 'next/navigation'
@@ -33,6 +33,102 @@ const getTypeLabel = (type?: ModelDiscussionType): string => {
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
 
+// 将样式对象移到组件外部，避免每次渲染都重新创建
+const TITLE_SX = {
+  fontSize: 16,
+  fontWeight: 500,
+  lineHeight: 1.4,
+  color: '#000',
+  textDecoration: 'none',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+  maxWidth: '100%',
+  '&:hover': {
+    color: 'primary.main',
+  },
+}
+
+const EDITOR_SX = {
+  lineHeight: 1.4,
+  mb: 1.5, // 减少描述和标签间距
+  '& *': {
+    fontSize: '12px!important',
+  },
+  '& .tiptap.ProseMirror': {
+    color: 'rgba(31, 35, 41, 0.50)',
+  },
+}
+
+// 将常用的样式对象移到组件外部，避免重复创建
+const RESOLVED_STATUS_SX = {
+  backgroundColor: '#E8F5E8',
+  color: '#2E7D32',
+  px: 1,
+  py: 0.5,
+  flexShrink: 0,
+  borderRadius: 1,
+  fontSize: 12,
+  fontWeight: 500,
+  ml: 1,
+}
+
+const USER_INFO_SX = {
+  color: '#666',
+  flexShrink: 0,
+  ml: 2,
+  minWidth: 0,
+}
+
+const USER_NAME_SX = {
+  fontSize: 12,
+  color: 'rgba(0,0,0,0.6)',
+  whiteSpace: 'nowrap',
+  maxWidth: '120px',
+}
+
+const TIME_SX = {
+  fontSize: 12,
+  color: 'rgba(0,0,0,0.5)',
+  whiteSpace: 'nowrap',
+  flexShrink: 0,
+}
+
+const GROUP_CHIP_SX = {
+  backgroundColor: '#206CFF15',
+  color: '#206CFF',
+  borderRadius: '4px',
+  fontSize: '12px',
+  height: '24px',
+  fontWeight: 500,
+  '& .MuiChip-label': {
+    px: 1,
+  },
+}
+
+const TAG_SX = {
+  backgroundColor: 'rgba(0,0,0,0.06)',
+  color: 'rgba(0,0,0,0.6)',
+  fontSize: '12px',
+  height: '24px',
+}
+
+const VOTE_SX = {
+  backgroundColor: '#206CFF15',
+  color: '#206CFF',
+  borderRadius: '4px',
+  px: 1,
+  py: 0.5,
+}
+
+const COMMENT_SX = {
+  backgroundColor: '#FFF3E0',
+  color: '#FF8500',
+  borderRadius: '4px',
+  px: 1,
+  py: 0.5,
+}
+
 // 将Markdown中的图片替换为[图片]文本
 const replaceImagesWithText = (content: string): string => {
   if (!content) return content
@@ -51,45 +147,52 @@ const DiscussCard = ({ data, keywords: _keywords, showType = false, sx }: { data
   const { groups } = useContext(CommonContext)
   const params = useParams()
 
-  // 根据group_ids获取分组名称
+  // 使用 useMemo 优化分组名称计算，避免重复查找
   const groupNames = useMemo(() => {
     if (!it.group_ids || !groups.flat.length) return []
-
+    
+    // 创建group映射表，避免重复查找
+    const groupMap = new Map(groups.flat.map(g => [g.id, g.name]))
+    
     return it.group_ids
-      .map((groupId) => {
-        const group = groups.flat.find((g) => g.id === groupId)
-        return group?.name
-      })
+      .slice(0, 2)
+      .map(groupId => groupMap.get(groupId))
       .filter(Boolean) as string[]
   }, [it.group_ids, groups.flat])
 
-  const handleCardClick = () => {
+  // 使用 useCallback 优化点击处理函数
+  const handleCardClick = useCallback(() => {
     // 从路径参数中获取forum_id
     const forumId = params?.forum_id as string
     if (typeof window !== 'undefined' && forumId) {
       window.open(`/forum/${forumId}/discuss/${it.uuid}`, '_blank')
     }
-  }
+  }, [params?.forum_id, it.uuid])
+
+  // 使用 useMemo 优化样式对象
+  const cardSx = useMemo(() => ({
+    boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
+    cursor: 'pointer',
+    display: { xs: 'none', sm: 'block' },
+    borderRadius: 1,
+    p: 2,
+    mb: 0.5,
+    transition: 'all 0.2s ease',
+    '&:hover': {
+      boxShadow: 'rgba(0, 28, 85, 0.06) 0px 6px 15px 0px',
+      transform: 'translateY(-1px)',
+    },
+    maxWidth: '100%',
+    ...sx,
+  }), [sx])
+
+  // 使用外部定义的样式常量，避免每次渲染都重新创建
 
   return (
     <Card
       key={it.id}
       onClick={handleCardClick}
-      sx={{
-        boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
-        cursor: 'pointer',
-        display: { xs: 'none', sm: 'block' },
-        borderRadius: 1,
-        p: 2,
-        mb: 0.5,
-        transition: 'all 0.2s ease',
-        '&:hover': {
-          boxShadow: 'rgba(0, 28, 85, 0.06) 0px 6px 15px 0px',
-          transform: 'translateY(-1px)',
-        },
-        maxWidth: '100%',
-        ...sx,
-      }}
+      sx={cardSx}
     >
       {/* 标题和状态 */}
       <Stack direction='row' justifyContent='space-between' alignItems='flex-start' sx={{ mb: 1.5 }}>
@@ -109,20 +212,7 @@ const DiscussCard = ({ data, keywords: _keywords, showType = false, sx }: { data
         >
           <Title
             className='title'
-            sx={{
-              fontSize: 16,
-              fontWeight: 500,
-              lineHeight: 1.4,
-              color: '#000',
-              textDecoration: 'none',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              maxWidth: '100%',
-              '&:hover': {
-                color: 'primary.main',
-              },
-            }}
+            sx={TITLE_SX}
           >
             {showType && getTypeLabel(it.type) && `【${getTypeLabel(it.type)}】`}{it.title}
           </Title>
@@ -131,17 +221,7 @@ const DiscussCard = ({ data, keywords: _keywords, showType = false, sx }: { data
               direction='row'
               alignItems='center'
               gap={0.5}
-              sx={{
-                backgroundColor: '#E8F5E8',
-                color: '#2E7D32',
-                px: 1,
-                py: 0.5,
-                flexShrink: 0,
-                borderRadius: 1,
-                fontSize: 12,
-                fontWeight: 500,
-                ml: 1,
-              }}
+              sx={RESOLVED_STATUS_SX}
             >
               <CheckCircleIcon sx={{ fontSize: 14 }} />
               <Typography sx={{ fontSize: 12, fontWeight: 500 }}>已解决</Typography>
@@ -150,7 +230,7 @@ const DiscussCard = ({ data, keywords: _keywords, showType = false, sx }: { data
         </Stack>
 
         {/* 用户信息和时间 */}
-        <Stack direction='row' alignItems='center' gap={1} sx={{ color: '#666', flexShrink: 0, ml: 2, minWidth: 0 }}>
+        <Stack direction='row' alignItems='center' gap={1} sx={USER_INFO_SX}>
           {it.user_avatar ? (
             <LazyImage
               src={it.user_avatar}
@@ -166,18 +246,13 @@ const DiscussCard = ({ data, keywords: _keywords, showType = false, sx }: { data
           )}
           <Typography
             variant='body2'
-            sx={{
-              fontSize: 12,
-              color: 'rgba(0,0,0,0.6)',
-              whiteSpace: 'nowrap',
-              maxWidth: '120px', // 限制用户名最大宽度
-            }}
+            sx={USER_NAME_SX}
           >
             {it.user_name}
           </Typography>
           <Typography
             variant='body2'
-            sx={{ fontSize: 12, color: 'rgba(0,0,0,0.5)', whiteSpace: 'nowrap', flexShrink: 0 }}
+            sx={TIME_SX}
           >
             <TimeDisplay timestamp={it.updated_at!} />
           </Typography>
@@ -186,42 +261,20 @@ const DiscussCard = ({ data, keywords: _keywords, showType = false, sx }: { data
       <EditorContent
         content={replaceImagesWithText(it.content || '')}
         truncateLength={100} // 设置截断长度为100个字符，根据需要调整
-        sx={{
-          lineHeight: 1.4,
-          mb: 1.5, // 减少描述和标签间距
-          '& *': {
-            fontSize: '12px!important',
-          },
-          '& .tiptap.ProseMirror': {
-            color: 'rgba(31, 35, 41, 0.50)',
-          },
-        }}
+        sx={EDITOR_SX}
       />
       {/* 底部标签和评论数 */}
       <Stack direction='row' justifyContent='space-between' alignItems='flex-start' sx={{ minHeight: 0 }}>
         <Stack direction='row' gap={1} flexWrap='wrap' alignItems='center' sx={{ flex: 1, minWidth: 0 }}>
           {/* 分组标签 */}
-          {groupNames.map((groupName, _index) => {
-            const color = '#206CFF'
-            return (
-              <Chip
-                key={groupName}
-                label={groupName}
-                size='small'
-                sx={{
-                  backgroundColor: `${color}15`,
-                  color: color,
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  height: '24px',
-                  fontWeight: 500,
-                  '& .MuiChip-label': {
-                    px: 1,
-                  },
-                }}
-              />
-            )
-          })}
+          {groupNames.map((groupName, _index) => (
+            <Chip
+              key={groupName}
+              label={groupName}
+              size='small'
+              sx={GROUP_CHIP_SX}
+            />
+          ))}
 
           {/* 其他标签 */}
           {it?.tags?.map((item) => (
@@ -229,12 +282,7 @@ const DiscussCard = ({ data, keywords: _keywords, showType = false, sx }: { data
               key={item}
               label={item}
               size='small'
-              sx={{
-                backgroundColor: 'rgba(0,0,0,0.06)',
-                color: 'rgba(0,0,0,0.6)',
-                fontSize: '12px',
-                height: '24px',
-              }}
+              sx={TAG_SX}
             />
           ))}
         </Stack>
@@ -253,13 +301,7 @@ const DiscussCard = ({ data, keywords: _keywords, showType = false, sx }: { data
               direction='row'
               alignItems='center'
               gap={0.5}
-              sx={{
-                backgroundColor: '#206CFF15',
-                color: '#206CFF',
-                borderRadius: '4px',
-                px: 1,
-                py: 0.5,
-              }}
+              sx={VOTE_SX}
             >
               <Icon type='icon-dianzan' />
               {formatNumber((it.like || 0) - (it.dislike || 0))}
@@ -270,13 +312,7 @@ const DiscussCard = ({ data, keywords: _keywords, showType = false, sx }: { data
             direction='row'
             alignItems='center'
             gap={0.5}
-            sx={{
-              backgroundColor: '#FFF3E0',
-              color: '#FF8500',
-              borderRadius: '4px',
-              px: 1,
-              py: 0.5,
-            }}
+            sx={COMMENT_SX}
           >
             <Icon type='icon-xiaoxi' />
             {formatNumber(it.comment || 0)}
@@ -287,51 +323,56 @@ const DiscussCard = ({ data, keywords: _keywords, showType = false, sx }: { data
   )
 }
 
-export const DiscussCardMobile = ({ data, keywords, showType = false, sx }: { data: ModelDiscussionListItem; keywords?: string; showType?: boolean; sx?: SxProps }) => {
+const DiscussCardMobileComponent = ({ data, keywords, showType = false, sx }: { data: ModelDiscussionListItem; keywords?: string; showType?: boolean; sx?: SxProps }) => {
   const it = data
   const { groups } = useContext(CommonContext)
   const params = useParams()
   const forumId = params?.forum_id as string
-  // 根据group_ids获取分组名称
+  
+  // 使用 useMemo 优化分组名称计算，避免重复查找
   const groupNames = useMemo(() => {
     if (!it.group_ids || !groups.flat.length) return []
-
+    
+    // 创建group映射表，避免重复查找
+    const groupMap = new Map(groups.flat.map(g => [g.id, g.name]))
+    
     return it.group_ids
-      .map((groupId) => {
-        const group = groups.flat.find((g) => g.id === groupId)
-        return group?.name
-      })
+      .map(groupId => groupMap.get(groupId))
       .filter(Boolean) as string[]
   }, [it.group_ids, groups.flat])
 
-  const handleCardClick = () => {
+  // 使用 useCallback 优化点击处理函数
+  const handleCardClick = useCallback(() => {
     // 从路径参数中获取forum_id
     const forumId = params?.forum_id as string
     if (typeof window !== 'undefined' && forumId) {
       window.open(`/forum/${forumId}/discuss/${it.uuid}`, '_blank')
     }
-  }
+  }, [params?.forum_id, it.uuid])
+
+  // 使用 useMemo 优化样式对象
+  const cardSx = useMemo(() => ({
+    p: 2,
+    display: { xs: 'flex', sm: 'none' },
+    flexDirection: 'column' as const,
+    gap: 1,
+    boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
+    cursor: 'pointer',
+    width: '100%',
+    mb: 0.5,
+    transition: 'all 0.2s ease',
+    '&:hover': {
+      boxShadow: 'rgba(0, 28, 85, 0.06) 0px 6px 15px 0px',
+      transform: 'translateY(-1px)',
+    },
+    ...sx,
+  }), [sx])
 
   return (
     <Card
       key={it.id}
       onClick={handleCardClick}
-      sx={{
-        p: 2,
-        display: { xs: 'flex', sm: 'none' },
-        flexDirection: 'column',
-        gap: 1,
-        boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
-        cursor: 'pointer',
-        width: '100%',
-        mb: 0.5,
-        transition: 'all 0.2s ease',
-        '&:hover': {
-          boxShadow: 'rgba(0, 28, 85, 0.06) 0px 6px 15px 0px',
-          transform: 'translateY(-1px)',
-        },
-        ...sx,
-      }}
+      sx={cardSx}
     >
       <Stack
         direction={'column'}
@@ -496,4 +537,34 @@ export const DiscussCardMobile = ({ data, keywords, showType = false, sx }: { da
   )
 }
 
-export default DiscussCard
+// 使用 React.memo 优化组件，避免不必要的重新渲染
+export default memo(DiscussCard, (prevProps, nextProps) => {
+  // 自定义比较函数，只在关键属性变化时才重新渲染
+  return (
+    prevProps.data.id === nextProps.data.id &&
+    prevProps.data.updated_at === nextProps.data.updated_at &&
+    prevProps.data.like === nextProps.data.like &&
+    prevProps.data.dislike === nextProps.data.dislike &&
+    prevProps.data.comment === nextProps.data.comment &&
+    prevProps.data.resolved === nextProps.data.resolved &&
+    prevProps.data.group_ids === nextProps.data.group_ids &&
+    prevProps.data.tags === nextProps.data.tags &&
+    prevProps.showType === nextProps.showType &&
+    prevProps.keywords === nextProps.keywords
+  )
+})
+export const DiscussCardMobile = memo(DiscussCardMobileComponent, (prevProps, nextProps) => {
+  // 自定义比较函数，只在关键属性变化时才重新渲染
+  return (
+    prevProps.data.id === nextProps.data.id &&
+    prevProps.data.updated_at === nextProps.data.updated_at &&
+    prevProps.data.like === nextProps.data.like &&
+    prevProps.data.dislike === nextProps.data.dislike &&
+    prevProps.data.comment === nextProps.data.comment &&
+    prevProps.data.resolved === nextProps.data.resolved &&
+    prevProps.data.group_ids === nextProps.data.group_ids &&
+    prevProps.data.tags === nextProps.data.tags &&
+    prevProps.showType === nextProps.showType &&
+    prevProps.keywords === nextProps.keywords
+  )
+})

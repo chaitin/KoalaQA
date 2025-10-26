@@ -7,6 +7,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import { Editor, useTiptap, EditorProps } from '@ctzhian/tiptap';
 import Toolbar from './Toolbar';
 import { postDiscussionUpload } from '@/api';
+import alert from "@/components/alert";
 
 // 添加全局动画样式
 const globalStyles = (
@@ -155,6 +156,9 @@ const EditorWrap = ({
   };
 
   const handleSave = async () => {
+    if( !editorRef.editor.getText().trim()){
+      return alert.error('内容不能为空');
+    }
     if (!onSave || !editorRef.editor) return;
 
     setIsSaving(true);
