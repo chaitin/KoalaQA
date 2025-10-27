@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getServerPublicAccessStatus } from './utils/serverAuthConfig';
 
-// 需要认证的路由
+// 需要认证的路由（当public_access为false时）
 const PROTECTED_ROUTES = [
   '/profile',
   '/settings',
@@ -18,8 +18,8 @@ const PROTECTED_ROUTES = [
 // 认证相关路由（已登录用户不应访问）
 const AUTH_ROUTES = ['/login', '/register'];
 
-// 可能受public_access控制的路由（首页和discuss页面）
-const CONDITIONAL_PUBLIC_ROUTES = ['/', '/forum*'];
+// 注意：现在使用 isProtectedPage() 函数来检查所有需要保护的页面
+// 除了登录和注册页面外的所有页面都会受到保护
 
 /**
  * 检查路由是否匹配
@@ -31,8 +31,38 @@ function matchRoute(pathname: string, routes: string[]): boolean {
       const prefix = route.slice(0, -1);
       return pathname.startsWith(prefix);
     }
+    // 处理动态路由模式，如 [route_name]*
+    if (route.includes('[') && route.includes(']') && route.endsWith('*')) {
+      // 对于动态路由，我们检查路径是否匹配模式
+      // 例如：/[route_name]* 应该匹配 /tech, /general 等
+      const pathSegments = pathname.split('/').filter(Boolean);
+      return pathSegments.length >= 1; // 至少有一个路径段
+    }
     return false;
   });
+}
+
+/**
+ * 检查是否为需要保护的页面（除了登录和注册页面外的所有页面）
+ */
+function isProtectedPage(pathname: string): boolean {
+  // 排除登录和注册页面
+  if (AUTH_ROUTES.includes(pathname)) {
+    return false;
+  }
+  
+  // 排除静态文件和API路由
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/static') ||
+    pathname.includes('.')
+  ) {
+    return false;
+  }
+  
+  // 其他所有页面都需要保护
+  return true;
 }
 
 
@@ -69,15 +99,6 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 处理需要认证的路由
-  if (matchRoute(pathname, PROTECTED_ROUTES)) {
-    if (!isAuthenticated) {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('redirect', pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-  }
-
   // 处理认证路由（已登录用户重定向到首页）
   if (matchRoute(pathname, AUTH_ROUTES)) {
     if (isAuthenticated) {
@@ -111,8 +132,9 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // 处理可能受public_access控制的路由（首页和discuss页面）
-  if (matchRoute(pathname, CONDITIONAL_PUBLIC_ROUTES)) {
+  // 处理需要根据public_access状态进行访问控制的页面
+  // 除了登录和注册页面外的所有页面都需要检查
+  if (isProtectedPage(pathname)) {
     // 如果用户已登录，直接允许访问
     if (isAuthenticated) {
       return NextResponse.next();
@@ -131,6 +153,15 @@ export async function proxy(request: NextRequest) {
     } catch (error) {
       console.error('[Middleware] Error checking public access:', error);
       // 出错时默认要求登录
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
+  // 处理需要认证的路由（当public_access为false时，这些路由总是需要登录）
+  if (matchRoute(pathname, PROTECTED_ROUTES)) {
+    if (!isAuthenticated) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);

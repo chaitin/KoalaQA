@@ -109,9 +109,17 @@ async function getUserData() {
   }
 }
 
-// Forum数据获取 - 使用服务端优化
-async function getForumData() {
+// Forum数据获取 - 智能访问控制
+async function getForumData(authConfig: any, user: any) {
   try {
+    // 检查是否允许公共访问或用户已登录
+    const canAccess = authConfig?.public_access || user?.uid
+    
+    if (!canAccess) {
+      // 如果不允许公共访问且用户未登录，返回空数组
+      return []
+    }
+    
     const forumData = await getForum()
     return forumData || []
   } catch (error) {
@@ -134,13 +142,15 @@ async function getAuthConfigData() {
 }
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
-  // 并行获取所有数据，提高页面加载性能
-  const [brandResponse, forums, authConfig, user] = await Promise.all([
+  // 首先获取认证配置和用户数据，因为论坛数据依赖这些信息
+  const [brandResponse, authConfig, user] = await Promise.all([
     getSystemBrand(),
-    getForumData(),
     getAuthConfigData(),
     getUserData()
   ])
+  
+  // 基于认证状态和公共访问配置获取论坛数据
+  const forums = await getForumData(authConfig, user)
 
   const brand = brandResponse || null
 
