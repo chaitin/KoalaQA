@@ -82,7 +82,8 @@ const Account = ({ isChecked, passwordConfig }: { isChecked: boolean; passwordCo
         
         if (!targetUrl) {
           if (refreshedForums && refreshedForums.length > 0) {
-            const forumUrl = `/forum/${refreshedForums[0].id}`
+            const firstForum = refreshedForums[0]
+            const forumUrl = firstForum.route_name ? `/${firstForum.route_name}` : `/${firstForum.id}`
             router.replace(forumUrl)
           } else {
             router.replace('/')

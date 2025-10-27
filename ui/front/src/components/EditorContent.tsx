@@ -1,5 +1,6 @@
 'use client'
 import { extractTextFromHTML, truncateText } from '@/utils/stringUtils'
+import { sanitizeHTML } from '@/lib/utils'
 import { Editor, useTiptap } from '@ctzhian/tiptap'
 import { Box } from '@mui/material'
 import { SxProps } from '@mui/material/styles'
@@ -16,11 +17,32 @@ export interface MarkDownProps {
 const EditorContent: React.FC<MarkDownProps> = (props) => {
   const { content = '', sx, truncateLength = 0 } = props
   const [_loading, _setLoading] = useState(true)
-  let displayContent = content
-  if (truncateLength > 0) {
-    const plainText = extractTextFromHTML(content)
-    displayContent = truncateText(plainText, truncateLength)
-  }
+  const [isMounted, setIsMounted] = useState(false)
+  const [sanitizedContent, setSanitizedContent] = useState<string>('')
+  const [displayContent, setDisplayContent] = useState<string>('')
+  
+  // 异步清理 HTML 内容以防止 XSS 攻击
+  useEffect(() => {
+    const sanitizeContent = async () => {
+      const sanitized = await sanitizeHTML(content)
+      setSanitizedContent(sanitized)
+      
+      let display = sanitized
+      if (truncateLength > 0) {
+        const plainText = extractTextFromHTML(sanitized)
+        display = truncateText(plainText, truncateLength)
+      }
+      setDisplayContent(display)
+    }
+    
+    sanitizeContent()
+  }, [content, truncateLength])
+
+  // 确保只在客户端渲染编辑器
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
   const editorRef = useTiptap({
     content: displayContent || '',
     editable: false,
@@ -28,7 +50,7 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
     onBeforeCreate: () => {
       _setLoading(true)
     },
-    onCreate: ({ editor: _editor }) => {
+    onCreate: ({ editor: _editor }: { editor: any }) => {
       _setLoading(false)
     },
   })
@@ -38,7 +60,28 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
     if (editorRef.editor && displayContent !== editorRef.editor.getHTML()) {
       editorRef.editor.commands.setContent(displayContent || '')
     }
-  }, [content, displayContent, editorRef.editor])
+  }, [displayContent, editorRef.editor])
+
+  // 在服务端渲染时返回内容预览
+  if (!isMounted) {
+    return displayContent ? (
+      <Box
+        className='editor-container'
+        sx={{
+          fontSize: '12px!important',
+          width: '100%',
+          '& code': {
+            whiteSpace: 'pre-wrap',
+          },
+          ...sx,
+        }}
+        dangerouslySetInnerHTML={{ __html: displayContent }}
+      />
+    ) : (
+      ''
+    )
+  }
+
   return displayContent ? (
     <Box
       className='editor-container'

@@ -3,7 +3,13 @@ package mq
 import (
 	"context"
 	"time"
+
+	"github.com/nats-io/nats.go"
 )
+
+type contextKey string
+
+var keyMessageMetadata = contextKey("message_metadata")
 
 type Message interface{}
 
@@ -33,4 +39,12 @@ type SubscriberWithHandler interface {
 
 type Publisher interface {
 	Publish(ctx context.Context, topic Topic, data Message) error
+}
+
+func MessageMetadata(ctx context.Context) *nats.MsgMetadata {
+	metadata, ok := ctx.Value(keyMessageMetadata).(*nats.MsgMetadata)
+	if !ok {
+		return &nats.MsgMetadata{}
+	}
+	return metadata
 }

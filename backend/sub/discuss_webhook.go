@@ -48,7 +48,7 @@ func (d *discussWebhook) Concurrent() uint {
 func (d *discussWebhook) Handle(ctx context.Context, msg mq.Message) error {
 	data := msg.(topic.MsgDiscussWebhook)
 	logger := d.logger.WithContext(ctx).With("msg", data)
-	logger.Debug("receive webhook msg")
+	logger.Debug("receive discuss webhook msg")
 
 	webhookMsg, err := d.in.Generator.Discuss(ctx, data.MsgType, data.DiscussID, data.UserID)
 	if err != nil {
@@ -58,7 +58,7 @@ func (d *discussWebhook) Handle(ctx context.Context, msg mq.Message) error {
 
 	err = d.in.SvcWebhook.Send(ctx, webhookMsg)
 	if err != nil {
-		logger.WithErr(err).Warn("send webhook msg failed")
+		logger.WithErr(err).Warn("send discuss webhook msg failed")
 	}
 
 	return nil

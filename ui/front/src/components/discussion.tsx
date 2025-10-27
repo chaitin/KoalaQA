@@ -1,12 +1,19 @@
 'use client'
-import { ModelDiscussionDetail, ModelDiscussionType, ModelGroupWithItem, ModelGroupItemInfo, SvcDiscussionCreateReq } from '@/api'
+import {
+  ModelDiscussionDetail,
+  ModelDiscussionType,
+  ModelGroupWithItem,
+  ModelGroupItemInfo,
+  SvcDiscussionCreateReq,
+} from '@/api'
 import { postDiscussion, putDiscussionDiscId } from '@/api/Discussion'
 // import { Icon } from '@/components'
 import UserAvatar from '@/components/UserAvatar'
 import EditorWrap from '@/components/editor/edit/Wrap'
 import Modal from '@/components/modal'
+import { useForum } from '@/contexts/ForumContext'
 import { useForumId } from '@/hooks/useForumId'
-import { useRouterWithForum } from '@/hooks/useRouterWithForum'
+import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Autocomplete, Box, Chip, FormHelperText, Stack, styled, TextField } from '@mui/material'
 import { useParams } from 'next/navigation'
@@ -110,7 +117,8 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
   const [loading, setLoading] = useState(false)
   const [groupValidationError, setGroupValidationError] = useState<string>('')
   const { groups } = useContext(CommonContext)
-  const router = useRouterWithForum()
+  const router = useRouterWithRouteName()
+  const routeName = useParams()?.route_name as string
   const forumId = useForumId()
 
   // 获取默认选中的分类ID（所有分类的第一个子项）
@@ -136,22 +144,17 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
 
     // 清除验证错误
     setGroupValidationError('')
-
+    const _params = { forum_id: forumId || undefined, ...params }
     setLoading(true)
     try {
       if (status === 'edit') {
-        await putDiscussionDiscId({ discId: id + '' }, params)
+        await putDiscussionDiscId({ discId: id + '' }, _params)
         // 编辑成功后调用 onOk 回调，其中包含页面刷新逻辑
         onOk()
       } else {
-        const discussionData: SvcDiscussionCreateReq = { ...params, type: type as ModelDiscussionType }
-        // 添加当前选中的板块ID
-        if (forumId) {
-          discussionData.forum_id = forumId
-        }
+        const discussionData: SvcDiscussionCreateReq = { ..._params, type: type as ModelDiscussionType }
         const uid = await postDiscussion(discussionData)
-        // 创建成功后跳转到讨论详情页
-        router.push(`/forum/${forumId}/discuss/${uid}`)
+        router.push(`/${routeName}/${uid}`)
       }
     } finally {
       setLoading(false)
@@ -284,7 +287,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
           render={({ field }) => {
             const list = typeof groups.origin !== 'undefined' ? groups.origin : []
 
-            const getId = (item: ModelGroupItemInfo) => (item?.id ) as number
+            const getId = (item: ModelGroupItemInfo) => item?.id as number
             const getLabel = (item: any) => item?.name ?? item?.title ?? item?.label ?? ''
 
             return (

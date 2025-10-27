@@ -30,7 +30,7 @@ func (g *Generator) Discuss(ctx context.Context, msgType Type, dissID uint, user
 	logger := g.logger.WithContext(ctx)
 	logger.Debug("get common webhook message")
 
-	commMsg, err := g.in.Common.Message(ctx, dissID, userID)
+	commMsg, err := g.in.Common.DiscussMessage(ctx, dissID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -48,6 +48,24 @@ func (g *Generator) Discuss(ctx context.Context, msgType Type, dissID uint, user
 		return NewCreateFeedback(*commMsg), nil
 	case TypeNewBlog:
 		return NewCreateBlog(*commMsg), nil
+	default:
+		return nil, fmt.Errorf("action %d not support", msgType)
+	}
+}
+
+func (g *Generator) Doc(ctx context.Context, msgType Type, kbID uint, docID uint) (Message, error) {
+	logger := g.logger.WithContext(ctx)
+	logger.Debug("get common doc webhook message")
+
+	commMsg, err := g.in.Common.DocMessage(ctx, kbID, docID)
+	if err != nil {
+		return nil, err
+	}
+	logger.With("doc_body", commMsg).Debug("generate doc message")
+
+	switch msgType {
+	case TypeQANeedReview:
+		return NewQANeedReview(*commMsg), nil
 	default:
 		return nil, fmt.Errorf("action %d not support", msgType)
 	}

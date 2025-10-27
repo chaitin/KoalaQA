@@ -7,8 +7,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getServerPublicAccessStatus } from './utils/serverAuthConfig';
+import { getForum } from './api';
 
-// 需要认证的路由
+// 需要认证的路由（当public_access为false时）
 const PROTECTED_ROUTES = [
   '/profile',
   '/settings',
@@ -18,8 +19,63 @@ const PROTECTED_ROUTES = [
 // 认证相关路由（已登录用户不应访问）
 const AUTH_ROUTES = ['/login', '/register'];
 
-// 可能受public_access控制的路由（首页和discuss页面）
-const CONDITIONAL_PUBLIC_ROUTES = ['/', '/forum*'];
+// 已知的非论坛路径，这些路径不应该被动态路由匹配逻辑处理
+const KNOWN_NON_FORUM_PATHS = [
+  '/login',
+  '/register', 
+  '/profile',
+  '/settings',
+  '/admin',
+  '/api',
+  '/_next',
+  '/static',
+  '/favicon.ico'
+];
+
+// 注意：现在使用 isProtectedPage() 函数来检查所有需要保护的页面
+// 除了登录和注册页面外的所有页面都会受到保护
+
+/**
+ * 检查路径是否为已知的非论坛路径
+ */
+function isKnownNonForumPath(pathname: string): boolean {
+  return KNOWN_NON_FORUM_PATHS.some(path => {
+    if (pathname === path) return true;
+    if (pathname.startsWith(path + '/')) return true;
+    return false;
+  });
+}
+
+/**
+ * 验证路径是否为有效的论坛路由
+ * 通过检查第一个路径段是否匹配某个论坛的 route_name
+ */
+async function isValidForumRoute(pathname: string): Promise<boolean> {
+  try {
+    // 获取路径段
+    const pathSegments = pathname.split('/').filter(Boolean);
+    if (pathSegments.length === 0) return false;
+    
+    const firstSegment = pathSegments[0];
+    
+    // 如果是已知的非论坛路径，直接返回 false
+    if (isKnownNonForumPath(`/${firstSegment}`)) {
+      return false;
+    }
+    
+    // 获取论坛数据
+    const forums = await getForum();
+    if (!forums || forums.length === 0) {
+      return false;
+    }
+    
+    // 检查第一个路径段是否匹配某个论坛的 route_name
+    return forums.some(forum => forum.route_name === firstSegment);
+  } catch (error) {
+    console.error('[Proxy] Error validating forum route:', error);
+    return false;
+  }
+}
 
 /**
  * 检查路由是否匹配
@@ -31,8 +87,83 @@ function matchRoute(pathname: string, routes: string[]): boolean {
       const prefix = route.slice(0, -1);
       return pathname.startsWith(prefix);
     }
+    // 处理动态路由模式，如 [route_name]*
+    if (route.includes('[') && route.includes(']') && route.endsWith('*')) {
+      // 对于动态路由，我们检查路径是否匹配模式
+      // 例如：/[route_name]* 应该匹配 /tech, /general 等
+      const pathSegments = pathname.split('/').filter(Boolean);
+      return pathSegments.length >= 1; // 至少有一个路径段
+    }
     return false;
   });
+}
+
+/**
+ * 检查是否为需要保护的页面（除了登录和注册页面外的所有页面）
+ */
+function isProtectedPage(pathname: string): boolean {
+  // 排除登录和注册页面
+  if (AUTH_ROUTES.includes(pathname)) {
+    return false;
+  }
+  
+  // 排除静态文件和API路由
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/static') ||
+    pathname.includes('.')
+  ) {
+    return false;
+  }
+  
+  // 排除已知的非论坛路径
+  if (isKnownNonForumPath(pathname)) {
+    return false;
+  }
+  
+  // 其他所有页面都需要保护
+  return true;
+}
+
+/**
+ * 检查是否为需要保护的页面（异步版本，用于验证论坛路由）
+ */
+async function isProtectedPageAsync(pathname: string): Promise<boolean> {
+  // 排除登录和注册页面
+  if (AUTH_ROUTES.includes(pathname)) {
+    return false;
+  }
+  
+  // 排除静态文件和API路由
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/static') ||
+    pathname.includes('.')
+  ) {
+    return false;
+  }
+  
+  // 排除已知的非论坛路径
+  if (isKnownNonForumPath(pathname)) {
+    return false;
+  }
+  
+  // 对于单段路径，验证是否为有效的论坛路由
+  // 注意：这里不再因为不是有效论坛路由就排除保护
+  // 因为当 public_access 为 false 时，所有非登录注册页面都应该被保护
+  const pathSegments = pathname.split('/').filter(Boolean);
+  if (pathSegments.length === 1) {
+    const isValidForum = await isValidForumRoute(pathname);
+    // 如果是有效的论坛路由，需要保护
+    // 如果不是有效的论坛路由，仍然需要保护（因为可能是其他需要认证的页面）
+    // 只有在 public_access 为 true 时，才会允许访问无效的论坛路由
+    return true;
+  }
+  
+  // 其他所有页面都需要保护
+  return true;
 }
 
 
@@ -69,15 +200,6 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 处理需要认证的路由
-  if (matchRoute(pathname, PROTECTED_ROUTES)) {
-    if (!isAuthenticated) {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('redirect', pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-  }
-
   // 处理认证路由（已登录用户重定向到首页）
   if (matchRoute(pathname, AUTH_ROUTES)) {
     if (isAuthenticated) {
@@ -111,8 +233,10 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // 处理可能受public_access控制的路由（首页和discuss页面）
-  if (matchRoute(pathname, CONDITIONAL_PUBLIC_ROUTES)) {
+  // 处理需要根据public_access状态进行访问控制的页面
+  // 除了登录和注册页面外的所有页面都需要检查
+  const shouldProtect = await isProtectedPageAsync(pathname);
+  if (shouldProtect) {
     // 如果用户已登录，直接允许访问
     if (isAuthenticated) {
       return NextResponse.next();
@@ -122,15 +246,36 @@ export async function proxy(request: NextRequest) {
     try {
       const baseURL = process.env.TARGET || '';
       const publicAccess = await getServerPublicAccessStatus(baseURL, request);
+      
       // 如果public_access为false，强制跳转到登录页面
       if (!publicAccess) {
         const loginUrl = new URL('/login', request.url);
         loginUrl.searchParams.set('redirect', pathname);
         return NextResponse.redirect(loginUrl);
       }
+      
+      // 如果public_access为true，对于单段路径需要验证是否为有效论坛路由
+      // 如果不是有效论坛路由，允许访问（让Next.js处理404）
+      const pathSegments = pathname.split('/').filter(Boolean);
+      if (pathSegments.length === 1) {
+        const isValidForum = await isValidForumRoute(pathname);
+        if (!isValidForum) {
+          // 允许访问，让Next.js处理404页面
+          return NextResponse.next();
+        }
+      }
     } catch (error) {
       console.error('[Middleware] Error checking public access:', error);
       // 出错时默认要求登录
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
+  // 处理需要认证的路由（当public_access为false时，这些路由总是需要登录）
+  if (matchRoute(pathname, PROTECTED_ROUTES)) {
+    if (!isAuthenticated) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);

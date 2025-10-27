@@ -23,7 +23,9 @@ export default function RootPageFallback() {
       // 如果有论坛数据，重定向到第一个论坛
       if (forums && forums.length > 0) {
         setHasRedirected(true)
-        router.replace(`/forum/${forums[0].id}`)
+        const firstForum = forums[0]
+        const routePath = firstForum.route_name ? `/${firstForum.route_name}` : `/${firstForum.id}`
+        router.replace(routePath)
         return
       }
 
@@ -33,7 +35,9 @@ export default function RootPageFallback() {
         const refreshedForums = await refreshForums()
         if (refreshedForums && refreshedForums.length > 0) {
           setHasRedirected(true)
-          router.replace(`/forum/${refreshedForums[0].id}`)
+          const firstForum = refreshedForums[0]
+          const routePath = firstForum.route_name ? `/${firstForum.route_name}` : `/${firstForum.id}`
+          router.replace(routePath)
           return
         }
       }

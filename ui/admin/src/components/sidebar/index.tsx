@@ -175,7 +175,7 @@ const Sidebar = () => {
         <SidebarButton
           variant="outlined"
           color="dark"
-          onClick={() => window.open('https://koalaqa.docs.baizhi.cloud/welcome', '_blank')}
+          onClick={() => window.open('https://koalaqa.docs.baizhi.cloud', '_blank')}
         >
           <Icon
             type="icon-wendang"
