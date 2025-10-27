@@ -97,6 +97,7 @@ func (d *Discussion) Create(ctx context.Context, req DiscussionCreateReq) (strin
 		Type:     req.Type,
 		ForumID:  req.ForumID,
 		Members:  model.Int64Array{int64(req.UserID)},
+		Hot:      2000,
 	}
 	err := d.in.DiscRepo.Create(ctx, &disc)
 	if err != nil {
@@ -299,8 +300,22 @@ func (d *Discussion) DecrementComment(uuid string) {
 
 func (d *Discussion) RecalculateHot(uuid string) {
 	ctx := context.Background()
+	// 算法特点：
+	// 1. 对数缩放防止大数值垄断热榜
+	// 2. 点赞权重最高(0.4)，浏览和评论各占0.3
+	// 3. 时间衰减机制，每小时衰减约1%
+	// 4. 乘以10000，避免小数精度问题
+	// 5. 已解决问题获得1.3倍加权，体现其参考价值
+	hotFormula := `(
+		0.3 * LN(GREATEST(view, 0) + 1) + 
+		0.4 * LN(GREATEST("like", 0) + 1) + 
+		0.3 * LN(GREATEST(comment, 0) + 1)
+	) * EXP(-0.01 * EXTRACT(EPOCH FROM (NOW() - updated_at))/3600)
+	  * 10000
+	  * CASE WHEN resolved = true THEN 1.3 ELSE 1.0 END`
+
 	d.in.DiscRepo.Update(ctx, map[string]any{
-		"hot":        gorm.Expr("view * 10 + comment * 5 + \"like\" * 2"),
+		"hot":        gorm.Expr(hotFormula),
 		"updated_at": gorm.Expr("updated_at"),
 	}, repo.QueryWithEqual("uuid", uuid))
 }
@@ -601,6 +616,9 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 		ToID:           comment.UserID,
 	}
 	d.in.Pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
+
+	go d.RecalculateHot(discUUID)
+
 	return nil
 }
 
