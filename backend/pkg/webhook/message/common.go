@@ -21,6 +21,7 @@ type commonGetterIn struct {
 	RepoGroupItems *repo.GroupItem
 	RepoUserThird  *repo.UserThird
 	RepoDoc        *repo.KBDocument
+	RepoForum      *repo.Forum
 }
 
 type commonGetter struct {
@@ -41,6 +42,12 @@ func (c *commonGetter) DiscussMessage(ctx context.Context, dissID uint, userID u
 		Tags      model.StringArray `gorm:"type:text[]"`
 	}
 	err := c.in.RepoDiscuss.GetByID(ctx, &discuss, dissID, repo.QueryWithSelectColumn("created_at", "title", "forum_id", "group_ids", "uuid", "tags"))
+	if err != nil {
+		return nil, err
+	}
+
+	var forum model.Forum
+	err = c.in.RepoForum.GetByID(ctx, &forum, discuss.ForumID)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +80,7 @@ func (c *commonGetter) DiscussMessage(ctx context.Context, dissID uint, userID u
 		return nil, err
 	}
 
-	discussURL, err := c.publicAddress(ctx, path.Join("forum", strconv.FormatUint(uint64(discuss.ForumID), 10), "discuss", discuss.UUID))
+	discussURL, err := c.publicAddress(ctx, path.Join(forum.RouteName, discuss.UUID))
 	if err != nil {
 		return nil, err
 	}
