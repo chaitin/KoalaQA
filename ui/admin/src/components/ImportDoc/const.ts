@@ -19,13 +19,13 @@ export const StepText = {
   },
 };
 
-export const fileType: Record<ModelFileType, string> = {
-  [ModelFileType.FileTypeUnknown]: '未知',
+export const fileType: Record<Exclude<ModelFileType, ModelFileType.FileTypeMax | ModelFileType.FileTypeUnknown>, string> = {
   [ModelFileType.FileTypeMarkdown]: 'Markdown',
   [ModelFileType.FileTypeHTML]: 'HTML',
   [ModelFileType.FileTypeJSON]: 'JSON',
   [ModelFileType.FileTypeURL]: 'URL',
   [ModelFileType.FileTypeDOCX]: 'DOCX',
+  [ModelFileType.FileTypeDOC]: 'DOC',
   [ModelFileType.FileTypePPTX]: 'PPTX',
   [ModelFileType.FileTypeXLSX]: 'XLSX',
   [ModelFileType.FileTypeXLS]: 'XLS',
@@ -35,5 +35,6 @@ export const fileType: Record<ModelFileType, string> = {
   [ModelFileType.FileTypeXML]: 'XML',
   [ModelFileType.FileTypeZIP]: 'ZIP',
   [ModelFileType.FileTypeEPub]: 'EPub',
-  [ModelFileType.FileTypeMax]: 'Max',
+  [ModelFileType.FileTypeFolder]: '文件夹',
+  [ModelFileType.FileTypeFile]: '文件',
 }
