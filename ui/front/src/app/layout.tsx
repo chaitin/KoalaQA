@@ -153,7 +153,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
         <link rel='preconnect' href='//fonts.googleapis.com' crossOrigin='anonymous' />
         <link 
           rel="icon" 
-          href={brand?.logo || '/logo.png'} 
+          href={brand?.logo || '/logo.svg'} 
         />
       </head>
       <body className={`${monoFont.variable} ${alimamashuheitiFont.variable}`}>
