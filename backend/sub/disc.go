@@ -100,15 +100,19 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 			return errors.New("ai not know the answer, retry later")
 		}
 	}
-	commentID, err := d.disc.CreateComment(ctx, bot.UserID, data.DiscUUID, svc.CommentCreateReq{
-		Content:   llmRes,
-		CommentID: 0,
-		Bot:       true,
-	})
-	if err != nil {
-		logger.WithErr(err).Error("create comment failed")
-		return err
+	if !answered || prompt != "" {
+		commentID, err := d.disc.CreateComment(ctx, bot.UserID, data.DiscUUID, svc.CommentCreateReq{
+			Content:   llmRes,
+			CommentID: 0,
+			Bot:       true,
+		})
+		if err != nil {
+			logger.WithErr(err).Error("create comment failed")
+			return err
+		}
+		logger.With("comment_id", commentID).With("content", llmRes).Info("comment created")
 	}
+
 	if !answered {
 		logger.Info("ai not know the answer, notify admin")
 		disc, err := d.disc.GetByID(ctx, data.DiscID)
@@ -128,7 +132,6 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 		}
 		d.pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	}
-	logger.With("comment_id", commentID).With("content", llmRes).Info("comment created")
 	return nil
 }
 

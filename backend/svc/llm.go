@@ -52,12 +52,18 @@ type GenerateReq struct {
 }
 
 func (l *LLM) Answer(ctx context.Context, req GenerateReq) (string, bool, error) {
+	defaultAnswer := req.DefaultAnswer
+
+	if defaultAnswer == "" {
+		defaultAnswer = "无法回答问题"
+	}
+
 	knowledgeDocuments, err := l.queryKnowledgeDocuments(ctx, req.Question)
 	if err != nil {
 		return "", false, err
 	}
 	res, err := l.Chat(ctx, llm.SystemChatPrompt, req.Prompt, map[string]any{
-		"DefaultAnswer":      req.DefaultAnswer,
+		"DefaultAnswer":      defaultAnswer,
 		"CurrentDate":        time.Now().Format("2006-01-02"),
 		"KnowledgeDocuments": knowledgeDocuments,
 		"AI_DEBUG":           l.cfg.RAG.DEBUG,
@@ -65,7 +71,7 @@ func (l *LLM) Answer(ctx context.Context, req GenerateReq) (string, bool, error)
 	if err != nil {
 		return "", false, err
 	}
-	if util.NormalizeString(res) == util.NormalizeString(req.DefaultAnswer) {
+	if util.NormalizeString(res) == util.NormalizeString(defaultAnswer) {
 		return req.DefaultAnswer, false, nil
 	}
 	return res, true, nil

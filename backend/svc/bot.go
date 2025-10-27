@@ -24,7 +24,7 @@ type Bot struct {
 type BotSetReq struct {
 	Avatar        *multipart.FileHeader `form:"avatar" swaggerignore:"true"`
 	Name          string                `form:"name" binding:"required"`
-	UnknownPrompt string                `form:"unknown_prompt" binding:"required"`
+	UnknownPrompt string                `form:"unknown_prompt"`
 }
 
 func (b *Bot) Set(ctx context.Context, req BotSetReq) error {
