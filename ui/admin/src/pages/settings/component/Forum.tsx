@@ -141,7 +141,7 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
                 message: '路由名称不能超过30个字符',
               },
               validate: (value, formValues) => {
-                if (!value) return true; // 必填验证由required处理
+                if (!value || !value.trim()) return true; // 必填验证由required处理
 
                 // 检查是否与其他版块的route_name重复
                 const currentBlocks = formValues.blocks || [];

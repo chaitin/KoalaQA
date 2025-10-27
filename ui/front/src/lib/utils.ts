@@ -370,15 +370,6 @@ export function buildRouteWithRouteName(path: string, forum?: { id: number; rout
     }
   }
   
-  // 如果没有 route_name，回退到使用 forum_id
-  if (forum?.id) {
-    if (path.startsWith('/')) {
-      return `/${forum.id}${path}`;
-    } else {
-      return `/${forum.id}/${path}`;
-    }
-  }
-  
   // 如果无法获取 forum 信息，返回原路径
   return path;
 }
@@ -395,5 +386,97 @@ export function findForumByRouteName(forums: Array<{ id: number; route_name?: st
  */
 export function findForumById(forums: Array<{ id: number; route_name?: string }>, forumId: number) {
   return forums.find(forum => forum.id === forumId);
+}
+
+/**
+ * 清理 HTML 内容，防止 XSS 攻击
+ * 使用 rehype-sanitize 来清理用户生成的 HTML 内容
+ */
+export async function sanitizeHTML(html: string): Promise<string> {
+  if (!html || typeof html !== 'string') {
+    return '';
+  }
+
+  // 在服务端环境中，我们需要使用 Node.js 的 rehype-sanitize
+  if (typeof window === 'undefined') {
+    // 服务端环境：使用 rehype-sanitize
+    try {
+      const { rehype } = await import('rehype');
+      const rehypeSanitize = await import('rehype-sanitize');
+      
+      const result = rehype()
+        .data('settings', { fragment: true })
+        .use(rehypeSanitize.default, {
+          tagNames: ['p', 'br', 'strong', 'em', 'u', 's', 'del', 'ins', 'mark', 'small', 'sub', 'sup', 'code', 'pre', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'span', 'center'],
+          attributes: {
+            'a': ['href', 'title', 'target', 'rel'],
+            'img': ['src', 'alt', 'title', 'width', 'height'],
+            'table': ['border', 'cellpadding', 'cellspacing'],
+            'th': ['colspan', 'rowspan'],
+            'td': ['colspan', 'rowspan'],
+            '*': ['class', 'id', 'style']
+          }
+        })
+        .processSync(html);
+      
+      return String(result);
+    } catch (error) {
+      console.warn('HTML sanitization failed:', error);
+      // 如果清理失败，返回转义的纯文本
+      if (typeof html === 'string') {
+        return html.replace(/[<>&"']/g, (match) => {
+          const escapeMap: { [key: string]: string } = {
+            '<': '&lt;',
+            '>': '&gt;',
+            '&': '&amp;',
+            '"': '&quot;',
+            "'": '&#x27;'
+          };
+          return escapeMap[match];
+        });
+      }
+      return '';
+    }
+  } else {
+    // 客户端环境：使用 DOMPurify 或简单的清理
+    try {
+      // 创建一个临时的 DOM 元素来清理 HTML
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+      
+      // 移除所有 script 标签和事件处理器
+      const scripts = tempDiv.querySelectorAll('script');
+      scripts.forEach(script => script.remove());
+      
+      // 移除所有事件处理器属性
+      const allElements = tempDiv.querySelectorAll('*');
+      allElements.forEach(element => {
+        const attributes = Array.from(element.attributes);
+        attributes.forEach(attr => {
+          if (attr.name.startsWith('on')) {
+            element.removeAttribute(attr.name);
+          }
+        });
+      });
+      
+      return tempDiv.innerHTML;
+    } catch (error) {
+      console.warn('Client-side HTML sanitization failed:', error);
+      // 如果清理失败，返回转义的纯文本
+      if (typeof html === 'string') {
+        return html.replace(/[<>&"']/g, (match) => {
+          const escapeMap: { [key: string]: string } = {
+            '<': '&lt;',
+            '>': '&gt;',
+            '&': '&amp;',
+            '"': '&quot;',
+            "'": '&#x27;'
+          };
+          return escapeMap[match];
+        });
+      }
+      return '';
+    }
+  }
 }
 

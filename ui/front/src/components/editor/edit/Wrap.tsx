@@ -163,7 +163,7 @@ const EditorWrap = ({
         clearTimeout(debounceTimerRef.current);
       }
       
-      const content = editorRef.getMarkdown();
+      const content = editorRef.getHTML();
       // 更新缓存内容
       lastContentRef.current = content;
       await onSave(content);

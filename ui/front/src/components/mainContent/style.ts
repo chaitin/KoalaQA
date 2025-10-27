@@ -27,7 +27,7 @@ export const Content = styled(Stack)(() => ({
       fontSize: '12px',
     },
     '& code': {
-      fontSize: '12px!important',
+      fontSize: '12px',
       lineHeight: '22px',
       fontFamily: 'Consolas',
       color: '#000000',

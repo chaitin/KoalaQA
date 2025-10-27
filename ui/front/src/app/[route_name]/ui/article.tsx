@@ -265,7 +265,6 @@ const Article = ({
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && !isPageVisible) {
         // 页面从隐藏变为可见，可能是用户后退回来了
-        console.log('页面变为可见，重新获取数据')
         fetchList(status as Status, search, topics)
       }
       setIsPageVisible(document.visibilityState === 'visible')
@@ -275,7 +274,6 @@ const Article = ({
     const handlePageShow = (event: PageTransitionEvent) => {
       // 如果页面是从缓存中恢复的（比如后退按钮），重新获取数据
       if (event.persisted) {
-        console.log('页面从缓存恢复，重新获取数据')
         fetchList(status as Status, search, topics)
       }
     }
@@ -283,7 +281,6 @@ const Article = ({
     // 监听页面焦点事件（作为备用方案）
     const handleFocus = () => {
       if (!isPageVisible) {
-        console.log('页面获得焦点，重新获取数据')
         fetchList(status as Status, search, topics)
       }
       setIsPageVisible(true)
@@ -307,7 +304,6 @@ const Article = ({
     
     // 如果当前路径是列表页，且之前记录的不是列表页，说明可能是从详情页返回的
     if (lastPathname && lastPathname !== currentPath && currentPath === `/${routeName}`) {
-      console.log('检测到从详情页返回，重新获取数据')
       fetchList(status as Status, search, topics)
     }
     

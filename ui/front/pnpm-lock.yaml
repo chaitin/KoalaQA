@@ -110,6 +110,9 @@ importers:
       react-virtuoso:
         specifier: ^4.14.1
         version: 4.14.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      rehype:
+        specifier: ^13.0.2
+        version: 13.0.2
       rehype-parse:
         specifier: ^9.0.1
         version: 9.0.1

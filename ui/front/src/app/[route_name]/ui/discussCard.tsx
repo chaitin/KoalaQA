@@ -52,10 +52,10 @@ const TITLE_SX = {
 const EDITOR_SX = {
   lineHeight: 1.4,
   mb: 1.5, // 减少描述和标签间距
-  fontSize: '12px!important',
+  fontSize: '12px',
   color: 'rgba(31, 35, 41, 0.50)',
   '& *': {
-    fontSize: '12px!important',
+    fontSize: '12px',
   },
   '& .tiptap.ProseMirror': {
     color: 'rgba(31, 35, 41, 0.50)',
@@ -494,7 +494,7 @@ const DiscussCardMobileComponent = ({ data, keywords, showType = false, sx }: { 
         truncateLength={60} // 设置截断长度为100个字符，根据需要调整
         sx={{
           '& *': {
-            fontSize: '12px!important',
+            fontSize: '12px',
           },
           color: '#666',
           lineHeight: 1.4,
