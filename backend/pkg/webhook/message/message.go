@@ -10,6 +10,7 @@ const (
 	TypeNewQA
 	TypeNewFeedback
 	TypeNewBlog
+	TypeQANeedReview
 )
 
 type commonUserThird struct {
@@ -41,6 +42,20 @@ type Data struct {
 	Timestamp int64  `json:"timestamp"`
 }
 
+type Header struct {
+	MsgType       Type
+	MsgTitle      string
+	HeadingPrefix string
+}
+
+func (h *Header) Type() Type {
+	return h.MsgType
+}
+
+func (h *Header) Title() string {
+	return h.MsgTitle
+}
+
 type Common struct {
 	User       commonUser       `json:"user"`
 	Discussion commonDiscussion `json:"discussion"`
@@ -53,18 +68,18 @@ type Message interface {
 	Data() Data
 }
 
-type webhookMsg struct {
+type platformMsg struct {
 	TitlePrefix string
 	TitleSuffix string
 }
 
-func newWebhookMsg(t model.WebhookType) webhookMsg {
+func newPlatformMsg(t model.WebhookType) platformMsg {
 	switch t {
 	case model.WebhookTypeDingtalk:
-		return webhookMsg{
+		return platformMsg{
 			TitlePrefix: "##",
 		}
 	}
 
-	return webhookMsg{}
+	return platformMsg{}
 }

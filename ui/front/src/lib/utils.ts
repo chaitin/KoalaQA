@@ -350,40 +350,133 @@ export async function formatMeta(
   };
 }
 
+
 /**
- * 路由工具函数 - 自动补上 forum_id
+ * 根据 forum 信息构建路由 - 使用 route_name (无 /forum 层级)
  */
-export function buildRouteWithForumId(path: string, forumId?: number | null): string {
-  // 如果路径已经包含 forum/forum_id，直接返回
-  if (path.match(/^\/forum\/\d+\//) || path.match(/^\/forum\/\d+$/)) {
+export function buildRouteWithRouteName(path: string, forum?: { id: number; route_name?: string } | null): string {
+  // 如果路径已经包含 route_name，直接返回
+  if (path.match(/^\/[^\/]+\//) || path.match(/^\/[^\/]+$/)) {
     return path;
   }
   
-  // 如果提供了 forumId，则添加到路径前面
-  if (forumId) {
+  // 如果提供了 forum 且有 route_name，则使用 route_name
+  if (forum?.route_name) {
     // 处理以 / 开头的路径
     if (path.startsWith('/')) {
-      return `/forum/${forumId}${path}`;
+      return `/${forum.route_name}${path}`;
     } else {
-      return `/forum/${forumId}/${path}`;
+      return `/${forum.route_name}/${path}`;
     }
   }
   
-  // 如果没有 forumId，尝试从当前路径获取
-  if (typeof window !== 'undefined') {
-    const currentPath = window.location.pathname;
-    const match = currentPath.match(/^\/forum\/(\d+)/);
-    if (match) {
-      const currentForumId = match[1];
-      if (path.startsWith('/')) {
-        return `/forum/${currentForumId}${path}`;
-      } else {
-        return `/forum/${currentForumId}/${path}`;
-      }
-    }
-  }
-  
-  // 如果无法获取 forumId，返回原路径
+  // 如果无法获取 forum 信息，返回原路径
   return path;
+}
+
+/**
+ * 根据 route_name 查找 forum 信息
+ */
+export function findForumByRouteName(forums: Array<{ id: number; route_name?: string }>, routeName: string) {
+  return forums.find(forum => forum.route_name === routeName);
+}
+
+/**
+ * 根据 forum_id 查找 forum 信息
+ */
+export function findForumById(forums: Array<{ id: number; route_name?: string }>, forumId: number) {
+  return forums.find(forum => forum.id === forumId);
+}
+
+/**
+ * 清理 HTML 内容，防止 XSS 攻击
+ * 使用 rehype-sanitize 来清理用户生成的 HTML 内容
+ */
+export async function sanitizeHTML(html: string): Promise<string> {
+  if (!html || typeof html !== 'string') {
+    return '';
+  }
+
+  // 在服务端环境中，我们需要使用 Node.js 的 rehype-sanitize
+  if (typeof window === 'undefined') {
+    // 服务端环境：使用 rehype-sanitize
+    try {
+      const { rehype } = await import('rehype');
+      const rehypeSanitize = await import('rehype-sanitize');
+      
+      const result = rehype()
+        .data('settings', { fragment: true })
+        .use(rehypeSanitize.default, {
+          tagNames: ['p', 'br', 'strong', 'em', 'u', 's', 'del', 'ins', 'mark', 'small', 'sub', 'sup', 'code', 'pre', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'span', 'center'],
+          attributes: {
+            'a': ['href', 'title', 'target', 'rel'],
+            'img': ['src', 'alt', 'title', 'width', 'height'],
+            'table': ['border', 'cellpadding', 'cellspacing'],
+            'th': ['colspan', 'rowspan'],
+            'td': ['colspan', 'rowspan'],
+            '*': ['class', 'id', 'style']
+          }
+        })
+        .processSync(html);
+      
+      return String(result);
+    } catch (error) {
+      console.warn('HTML sanitization failed:', error);
+      // 如果清理失败，返回转义的纯文本
+      if (typeof html === 'string') {
+        return html.replace(/[<>&"']/g, (match) => {
+          const escapeMap: { [key: string]: string } = {
+            '<': '&lt;',
+            '>': '&gt;',
+            '&': '&amp;',
+            '"': '&quot;',
+            "'": '&#x27;'
+          };
+          return escapeMap[match];
+        });
+      }
+      return '';
+    }
+  } else {
+    // 客户端环境：使用 DOMPurify 或简单的清理
+    try {
+      // 创建一个临时的 DOM 元素来清理 HTML
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+      
+      // 移除所有 script 标签和事件处理器
+      const scripts = tempDiv.querySelectorAll('script');
+      scripts.forEach(script => script.remove());
+      
+      // 移除所有事件处理器属性
+      const allElements = tempDiv.querySelectorAll('*');
+      allElements.forEach(element => {
+        const attributes = Array.from(element.attributes);
+        attributes.forEach(attr => {
+          if (attr.name.startsWith('on')) {
+            element.removeAttribute(attr.name);
+          }
+        });
+      });
+      
+      return tempDiv.innerHTML;
+    } catch (error) {
+      console.warn('Client-side HTML sanitization failed:', error);
+      // 如果清理失败，返回转义的纯文本
+      if (typeof html === 'string') {
+        return html.replace(/[<>&"']/g, (match) => {
+          const escapeMap: { [key: string]: string } = {
+            '<': '&lt;',
+            '>': '&gt;',
+            '&': '&amp;',
+            '"': '&quot;',
+            "'": '&#x27;'
+          };
+          return escapeMap[match];
+        });
+      }
+      return '';
+    }
+  }
 }
 

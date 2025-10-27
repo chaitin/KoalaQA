@@ -21,6 +21,7 @@ import type {
   ResponseType,
 } from "axios";
 import axios from "axios";
+import qs from "qs";
 
 export type QueryParamsType = Record<string | number, any>;
 
@@ -184,6 +185,15 @@ export class HttpClient<SecurityDataType = unknown> {
       withCredentials: true, // 确保客户端请求自动发送cookie
       ...axiosConfig,
       baseURL: axiosConfig.baseURL || "/api",
+      paramsSerializer: {
+        serialize: (params) => {
+          return qs.stringify(params, { 
+            arrayFormat: 'repeat', // 使用 'repeat' 格式，如 group_ids=1&group_ids=2
+            skipNulls: true,
+            encode: false
+          });
+        }
+      }
     });
     this.secure = secure;
     this.format = format;

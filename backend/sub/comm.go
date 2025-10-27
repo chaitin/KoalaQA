@@ -142,14 +142,19 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 	if err != nil {
 		return err
 	}
-	newID, err := d.disc.CreateComment(ctx, bot.UserID, data.DiscUUID, svc.CommentCreateReq{
-		Content:   llmRes,
-		Bot:       true,
-		CommentID: data.CommID,
-	})
-	if err != nil {
-		return err
+	if answered || bot.UnknownPrompt != "" {
+		newID, err := d.disc.CreateComment(ctx, bot.UserID, data.DiscUUID, svc.CommentCreateReq{
+			Content:   llmRes,
+			Bot:       true,
+			CommentID: data.CommID,
+		})
+		if err != nil {
+			return err
+		}
+
+		logger.WithContext(ctx).With("comment_id", newID).Debug("comment created")
 	}
+
 	if !answered {
 		logger.Info("ai not know the answer, notify admin")
 		notifyMsg := topic.MsgMessageNotify{
@@ -164,7 +169,6 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 		}
 		d.pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	}
-	logger.WithContext(ctx).With("comment_id", newID).Debug("comment created")
 	return nil
 }
 

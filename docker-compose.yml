@@ -28,6 +28,11 @@ services:
       - MQ_NATS_STREAMS=koala:koala.persistence.>
       - OSS_MINIO_SECRET_KEY=${OSS_SECRET_KEY}
       - DB_DSN=postgres://koala:${DB_PASSWORD}@koala-qa-db:5432/koala?sslmode=disable
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
     networks:
       koala:
         ipv4_address: "${SUBNET_PREFIX:-169.254.15}.11"
@@ -42,6 +47,11 @@ services:
     container_name: koala-qa-app
     image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/app:v0.8.6
     restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
     networks:
       koala:
         ipv4_address: "${SUBNET_PREFIX:-169.254.15}.12"

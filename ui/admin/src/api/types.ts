@@ -254,6 +254,7 @@ export interface ModelForumInfo {
   id?: number;
   index?: number;
   name?: string;
+  route_name?: string;
 }
 
 export interface ModelGroupItemInfo {

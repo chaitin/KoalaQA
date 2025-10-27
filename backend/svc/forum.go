@@ -38,7 +38,7 @@ func (f *Forum) GetByID(ctx context.Context, id uint) (*model.Forum, error) {
 }
 
 type ForumUpdateReq struct {
-	Forums []model.ForumInfo `json:"forums"`
+	Forums []model.ForumInfo `json:"forums" binding:"dive"`
 }
 
 func (f *Forum) Update(ctx context.Context, req ForumUpdateReq) error {
