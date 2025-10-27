@@ -125,9 +125,12 @@ func (c *commonGetter) DocMessage(ctx context.Context, kbID uint, docID uint) (*
 		return nil, err
 	}
 
-	docURL, err := c.publicAddress(ctx, "admin/ai/qa?id="+strconv.FormatUint(uint64(kbID), 10))
+	docURL, err := c.publicAddress(ctx, "admin/ai/qa")
 	if err != nil {
 		return nil, err
+	}
+	if docURL != "" {
+		docURL = docURL + "?id=" + strconv.FormatUint(uint64(kbID), 10)
 	}
 
 	return &commonDoc{
