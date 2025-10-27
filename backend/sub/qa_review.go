@@ -11,6 +11,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/rag"
 	"github.com/chaitin/koalaqa/pkg/topic"
+	"github.com/chaitin/koalaqa/pkg/webhook/message"
 	"github.com/chaitin/koalaqa/repo"
 	"github.com/chaitin/koalaqa/svc"
 )
@@ -29,9 +30,10 @@ type QAReview struct {
 	dataset *repo.Dataset
 	llm     *svc.LLM
 	disc    *svc.Discussion
+	pub     mq.Publisher
 }
 
-func NewQA(repo *repo.KBDocument, comm *repo.Comment, kb *repo.KnowledgeBase, rag rag.Service, dataset *repo.Dataset, llm *svc.LLM, disc *svc.Discussion) *QAReview {
+func NewQA(repo *repo.KBDocument, comm *repo.Comment, kb *repo.KnowledgeBase, rag rag.Service, dataset *repo.Dataset, llm *svc.LLM, disc *svc.Discussion, pub mq.Publisher) *QAReview {
 	return &QAReview{
 		repo:    repo,
 		comm:    comm,
@@ -40,6 +42,7 @@ func NewQA(repo *repo.KBDocument, comm *repo.Comment, kb *repo.KnowledgeBase, ra
 		dataset: dataset,
 		llm:     llm,
 		disc:    disc,
+		pub:     pub,
 		logger:  glog.Module("sub.qa_review"),
 	}
 }
@@ -122,7 +125,7 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 	}
 	if len(chunks) == 0 {
 		logger.With("question", newQA.Title).Info("create qa review for no rag records")
-		return q.repo.Create(ctx, newQA)
+		return q.CreateQA(ctx, newQA)
 	}
 	docIds := make([]string, 0)
 	for _, chunk := range chunks {
@@ -161,5 +164,20 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 		return nil
 	}
 	logger.With("question", newQA.Title).Info("create qa review for no qa similarity")
-	return q.repo.Create(ctx, newQA)
+	return q.CreateQA(ctx, newQA)
+}
+
+func (q *QAReview) CreateQA(ctx context.Context, qa *model.KBDocument) error {
+	err := q.repo.Create(ctx, qa)
+	if err != nil {
+		return err
+	}
+
+	q.pub.Publish(ctx, topic.TopicDocWebhook, topic.MsgDocWebhook{
+		MsgType: message.TypeQANeedReview,
+		KBID:    qa.KBID,
+		DocID:   qa.ID,
+	})
+
+	return nil
 }
