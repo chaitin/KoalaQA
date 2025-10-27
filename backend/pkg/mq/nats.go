@@ -90,8 +90,9 @@ func (ns *natsSubscriber) Subscribe(ctx context.Context) error {
 			case reflect.Ptr:
 				param = val.Interface()
 			}
+			metadata, _ := msg.Metadata()
+			ctx = context.WithValue(ctx, keyMessageMetadata, metadata)
 			if err := h.Handle(ctx, param); err != nil {
-				metadata, _ := msg.Metadata()
 				ns.logger.WithContext(ctx).WithErr(err).With("topic", msg.Subject).With("metadata", metadata).Error("handle msg failed, wait retry")
 				msg.NakWithDelay(time.Second * 10)
 				return

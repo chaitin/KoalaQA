@@ -2,6 +2,7 @@ package sub
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
@@ -75,12 +76,12 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 	logger.Info("handle insert discussion comment")
 	bot, err := d.bot.Get(ctx)
 	if err != nil {
-		logger.WithContext(ctx).WithErr(err).Error("get bot failed")
+		logger.WithErr(err).Error("get bot failed")
 		return nil
 	}
 	question, prompt, err := d.llm.GenerateChatPrompt(ctx, data.DiscID, 0)
 	if err != nil {
-		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
+		logger.WithErr(err).Error("generate prompt failed")
 		return nil
 	}
 	llmRes, answered, err := d.llm.Answer(ctx, svc.GenerateReq{
@@ -89,8 +90,15 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 		DefaultAnswer: bot.UnknownPrompt,
 	})
 	if err != nil {
-		logger.WithContext(ctx).WithErr(err).Error("answer failed")
+		logger.WithErr(err).Error("answer failed")
 		return err
+	}
+	if !answered {
+		metadata := mq.MessageMetadata(ctx)
+		// first delivery, retry later
+		if metadata.NumDelivered == 1 {
+			return errors.New("ai not know the answer, retry later")
+		}
 	}
 	commentID, err := d.disc.CreateComment(ctx, bot.UserID, data.DiscUUID, svc.CommentCreateReq{
 		Content:   llmRes,
@@ -98,14 +106,14 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 		Bot:       true,
 	})
 	if err != nil {
-		logger.WithContext(ctx).WithErr(err).Error("create comment failed")
+		logger.WithErr(err).Error("create comment failed")
 		return err
 	}
 	if !answered {
 		logger.Info("ai not know the answer, notify admin")
 		disc, err := d.disc.GetByID(ctx, data.DiscID)
 		if err != nil {
-			logger.WithErr(err).Warn("get discussion failed")
+			logger.WithErr(err).Error("get discussion failed")
 			return nil
 		}
 		notifyMsg := topic.MsgMessageNotify{
