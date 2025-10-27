@@ -1,14 +1,22 @@
 import { useParams } from 'next/navigation'
+import { useForum } from '@/contexts/ForumContext'
 
 /**
  * 获取当前选中的板块ID
- * 从路径参数中读取forum_id
+ * 从路径参数中读取route_name，然后通过论坛上下文查找对应的forum_id
  * 如果还没有选中板块，返回null
  */
 export const useForumId = () => {
   const params = useParams()
-  const forumIdParam = params?.forum_id as string
-  return forumIdParam ? parseInt(forumIdParam, 10) : null
+  const { forums } = useForum()
+  const routeName = params?.route_name as string
+  
+  if (!routeName || forums.length === 0) {
+    return null
+  }
+  
+  const forum = forums.find(f => f.route_name === routeName)
+  return forum?.id || null
 }
 
 /**

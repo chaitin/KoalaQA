@@ -1,22 +1,28 @@
 import { useRouter } from 'next/navigation'
 import { useForumId } from './useForumId'
-import { buildRouteWithForumId } from '@/lib/utils'
+import { useForum } from '@/contexts/ForumContext'
+import { buildRouteWithRouteName } from '@/lib/utils'
+
 
 /**
- * 带 forum_id 自动补全的路由 hook
- * 当路由跳转时，如果路径不包含 forum_id，会自动从当前路径或上下文获取并补上
+ * 带 route_name 自动补全的路由 hook
+ * 当路由跳转时，如果路径不包含 forum 信息，会自动从当前路径或上下文获取并补上
  */
-export const useRouterWithForum = () => {
+export const useRouterWithRouteName = () => {
   const router = useRouter()
+  const { forums } = useForum()
   const forumId = useForumId()
 
+  // 获取当前论坛信息
+  const currentForum = forums.find(forum => forum.id === forumId)
+
   const push = (path: string) => {
-    const routeWithForum = buildRouteWithForumId(path, forumId)
+    const routeWithForum = buildRouteWithRouteName(path, currentForum ? { id: currentForum.id!, route_name: currentForum.route_name } : null)
     router.push(routeWithForum)
   }
 
   const replace = (path: string) => {
-    const routeWithForum = buildRouteWithForumId(path, forumId)
+    const routeWithForum = buildRouteWithRouteName(path, currentForum ? { id: currentForum.id!, route_name: currentForum.route_name } : null)
     router.replace(routeWithForum)
   }
 

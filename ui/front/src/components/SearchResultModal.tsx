@@ -1,6 +1,6 @@
 'use client'
 import { ModelDiscussionListItem } from '@/api/types'
-import DiscussCard, { DiscussCardMobile } from '@/app/forum/[forum_id]/ui/discussCard'
+import DiscussCard, { DiscussCardMobile } from '@/app/[route_name]/ui/discussCard'
 import SearchIcon from '@mui/icons-material/Search'
 import {
   Box,

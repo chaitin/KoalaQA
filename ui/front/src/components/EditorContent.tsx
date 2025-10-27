@@ -16,15 +16,23 @@ export interface MarkDownProps {
 const EditorContent: React.FC<MarkDownProps> = (props) => {
   const { content = '', sx, truncateLength = 0 } = props
   const [_loading, _setLoading] = useState(true)
+  const [isMounted, setIsMounted] = useState(false)
+  
   let displayContent = content
   if (truncateLength > 0) {
     const plainText = extractTextFromHTML(content)
     displayContent = truncateText(plainText, truncateLength)
   }
+
+  // 确保只在客户端渲染编辑器
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
   const editorRef = useTiptap({
     content: displayContent || '',
     editable: false,
-    immediatelyRender: true,
+    immediatelyRender: false,
     onBeforeCreate: () => {
       _setLoading(true)
     },
@@ -39,6 +47,26 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
       editorRef.editor.commands.setContent(displayContent || '')
     }
   }, [content, displayContent, editorRef.editor])
+
+  // 在服务端渲染时返回内容预览
+  if (!isMounted) {
+    return displayContent ? (
+      <Box
+        className='editor-container'
+        sx={{
+          width: '100%',
+          '& code': {
+            whiteSpace: 'pre-wrap',
+          },
+          ...sx,
+        }}
+        dangerouslySetInnerHTML={{ __html: displayContent }}
+      />
+    ) : (
+      ''
+    )
+  }
+
   return displayContent ? (
     <Box
       className='editor-container'

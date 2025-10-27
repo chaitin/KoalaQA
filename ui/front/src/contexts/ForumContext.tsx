@@ -2,15 +2,15 @@
 
 import React, { createContext, useContext, ReactNode, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
-import { ModelForum } from '@/api/types'
+import { ModelForumInfo } from '@/api/types'
 import { usePublicAccess } from './AuthConfigContext'
 
 interface ForumContextType {
   selectedForumId: number | null
-  forums: ModelForum[]
+  forums: ModelForumInfo[]
   loading: boolean
   error: Error | null
-  refreshForums: () => Promise<ModelForum[] | null>
+  refreshForums: () => Promise<ModelForumInfo[] | null>
   clearCache: () => void
 }
 
@@ -18,16 +18,24 @@ const ForumContext = createContext<ForumContextType | undefined>(undefined)
 
 interface ForumProviderProps {
   children: ReactNode
-  initialForums?: ModelForum[]
+  initialForums?: ModelForumInfo[]
 }
 
 export const ForumProvider = ({ children, initialForums = [] }: ForumProviderProps) => {
   const params = useParams()
-  const forumIdParam = params?.forum_id as string
-  const selectedForumId = forumIdParam ? parseInt(forumIdParam, 10) : null
+  const routeName = params?.route_name as string
   const publicAccess = usePublicAccess()
   
-  const [forums, setForums] = useState<ModelForum[]>(initialForums)
+  // 通过 route_name 查找对应的 forum_id
+  const selectedForumId = (() => {
+    if (!routeName || initialForums.length === 0) {
+      return null
+    }
+    const forum = initialForums.find(f => f.route_name === routeName)
+    return forum?.id || null
+  })()
+  
+  const [forums, setForums] = useState<ModelForumInfo[]>(initialForums)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
 
@@ -39,7 +47,7 @@ export const ForumProvider = ({ children, initialForums = [] }: ForumProviderPro
   }, [])
 
   // 刷新论坛数据函数，带重试机制
-  const refreshForums = useCallback(async (retryCount = 0): Promise<ModelForum[] | null> => {
+  const refreshForums = useCallback(async (retryCount = 0): Promise<ModelForumInfo[] | null> => {
     const maxRetries = 3
     const retryDelay = 1000 * Math.pow(2, retryCount) // 指数退避：1s, 2s, 4s
     

@@ -18,8 +18,8 @@ import { useForumId } from '@/hooks/useForumId'
 import SearchIcon from '@mui/icons-material/Search'
 import { Box, Button, CircularProgress, Divider, InputAdornment, OutlinedInput, Stack, Typography } from '@mui/material'
 import { useBoolean } from 'ahooks'
-import { useSearchParams } from 'next/navigation'
-import { useRouterWithForum } from '@/hooks/useRouterWithForum'
+import { useSearchParams, useParams, useRouter } from 'next/navigation'
+import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import DiscussCard, { DiscussCardMobile } from './discussCard'
 import SearchResultModal from '@/components/SearchResultModal'
@@ -53,7 +53,10 @@ const Article = ({
   forumInfo?: ModelForumInfo | null
 }) => {
   const searchParams = useSearchParams()
-  const router = useRouterWithForum()
+  const params = useParams()
+  const routeName = params?.route_name as string
+  const router = useRouterWithRouteName()
+  const nextRouter = useRouter()
   const { user } = useContext(AuthContext)
   const { checkAuth } = useAuthCheck()
   const { groups: contextGroups, groupsLoading } = useContext(CommonContext)
@@ -83,6 +86,8 @@ const Article = ({
   const [searchLoading, setSearchLoading] = useState(false)
   const [modalSearchQuery, setModalSearchQuery] = useState('')
   const [selectedModalType, setSelectedModalType] = useState<'qa' | 'feedback' | 'blog'>('qa')
+  const [isPageVisible, setIsPageVisible] = useState(true)
+  const [lastPathname, setLastPathname] = useState('')
 
   const hookForumId = useForumId()
   const currentForumId = forumId || hookForumId
@@ -186,7 +191,6 @@ const Article = ({
       if (currentForumId) {
         params.forum_id = typeof currentForumId === 'string' ? parseInt(currentForumId, 10) : currentForumId
       }
-
       return getDiscussion(params)
         .then((res) => {
           if (res) {
@@ -256,6 +260,61 @@ const Article = ({
     searchRef.current = search
   }, [search])
 
+  // 监听页面可见性变化和后退事件，当页面从隐藏变为可见时重新获取数据
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && !isPageVisible) {
+        // 页面从隐藏变为可见，可能是用户后退回来了
+        console.log('页面变为可见，重新获取数据')
+        fetchList(status as Status, search, topics)
+      }
+      setIsPageVisible(document.visibilityState === 'visible')
+    }
+
+    // 监听页面显示事件（包括后退按钮返回）
+    const handlePageShow = (event: PageTransitionEvent) => {
+      // 如果页面是从缓存中恢复的（比如后退按钮），重新获取数据
+      if (event.persisted) {
+        console.log('页面从缓存恢复，重新获取数据')
+        fetchList(status as Status, search, topics)
+      }
+    }
+    
+    // 监听页面焦点事件（作为备用方案）
+    const handleFocus = () => {
+      if (!isPageVisible) {
+        console.log('页面获得焦点，重新获取数据')
+        fetchList(status as Status, search, topics)
+      }
+      setIsPageVisible(true)
+    }
+
+    // 添加事件监听器
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('pageshow', handlePageShow)
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('pageshow', handlePageShow)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [isPageVisible, status, search, topics, fetchList])
+
+  // 监听路由变化，检测是否从详情页返回
+  useEffect(() => {
+    const currentPath = window.location.pathname
+    
+    // 如果当前路径是列表页，且之前记录的不是列表页，说明可能是从详情页返回的
+    if (lastPathname && lastPathname !== currentPath && currentPath === `/${routeName}`) {
+      console.log('检测到从详情页返回，重新获取数据')
+      fetchList(status as Status, search, topics)
+    }
+    
+    // 更新记录的路径
+    setLastPathname(currentPath)
+  }, [routeName, lastPathname, status, search, topics, fetchList])
+
   const handleTopicClick = useCallback(
     (t: number) => {
       let newTopics: number[]
@@ -275,7 +334,7 @@ const Article = ({
         } else {
           params.delete('tps')
         }
-        router.replace(`/?${params.toString()}`)
+        router.replace(`/${routeName}?${params.toString()}`)
       }
     },
     [topics, searchParams, router],
@@ -474,7 +533,7 @@ const Article = ({
                 // 只有在状态真正变化时才更新 URL
                 if (value !== (type || 'qa')) {
                   const query = createQueryString('type', value)
-                  router.replace(`/?${query}`)
+                  router.replace(`/${routeName}?${query}`)
                 }
               }}
               list={TYPE_LIST}
@@ -622,7 +681,7 @@ const Article = ({
                   // 只有在状态真正变化时才更新 URL
                   if (value !== status) {
                     const query = createQueryString('sort', value)
-                    router.replace(`/?${query}`)
+                    router.replace(`/${routeName}?${query}`)
                   }
                 }}
                 list={getStatusLabels()}

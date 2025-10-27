@@ -18,7 +18,9 @@ export default async function RootPage() {
   
   if (forums && forums.length > 0) {
     // 有论坛数据，重定向到第一个论坛
-    redirect(`/forum/${forums[0].id}`)
+    const firstForum = forums[0]
+    const routePath = firstForum.route_name ? `/${firstForum.route_name}` : `/${firstForum.id}`
+    redirect(routePath)
   } else if (authToken) {
     // 用户已登录但没有论坛数据，使用客户端fallback组件
     return <RootPageFallback />

@@ -1,6 +1,7 @@
 import { getDiscussion, getGroup, getForum } from '@/api'
 import GroupsInitializer from '@/components/groupsInitializer'
 import { ApiParamsBuilder, batchApiCalls } from '@/lib/api-helpers'
+import { findForumIdByRouteName, findForumInfoByRouteName } from '@/lib/forum-server-utils'
 import { Stack } from '@mui/material'
 import { Metadata } from 'next'
 import { Suspense } from 'react'
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
   description: '浏览和参与技术讨论，分享知识和经验',
 }
 
-// 数据获取函数 - 使用新的工具
+// 数据获取函数
 async function fetchDiscussions(
   forumId: string,
   searchParams: {
@@ -28,18 +29,14 @@ async function fetchDiscussions(
   const { search, sort, tps, page = '1', type } = searchParams
   const topics = tps ? tps.split(',').map(Number) : []
   // 使用 ApiParamsBuilder 构建参数
-  const params = new ApiParamsBuilder()
-    .add('page', page)
-    .add('size', '10')
-    .add('filter', sort)
-    .add('keyword', search)
-    .add('type', type || 'qa')
-    .add('forum_id', forumId)
-    .build()
-
-  // 添加多个 group_ids
-  if (topics.length) {
-    topics.forEach((id) => params.append('group_ids', String(id)))
+  const params = {
+    page: parseInt(page, 10),
+    size: 10,
+    filter: sort as 'hot' | 'new' | 'mine' | undefined,
+    keyword: search,
+    type: type as 'qa' | 'feedback' | 'blog' | undefined,
+    forum_id: parseInt(forumId, 10),
+    group_ids: topics
   }
   try {
     return await getDiscussion(params)
@@ -58,36 +55,42 @@ async function fetchGroups(forumId: string) {
   }
 }
 
-async function fetchForumInfo(forumId: string) {
-  try {
-    const forums = await getForum()
-    return forums?.find((forum) => forum.id === parseInt(forumId, 10)) || null
-  } catch (error) {
-    console.error('Failed to fetch forum info:', error)
-    return null
-  }
-}
-
 const Page = async (props: {
-  params: Promise<{ forum_id: string }>
+  params: Promise<{ route_name: string }>
   searchParams: Promise<{ search?: string; sort?: string; tps?: string; page?: string; type?: string }>
 }) => {
-  const { forum_id } = await props.params
+  const { route_name } = await props.params
   const searchParams = await props.searchParams
   const { tps, type } = searchParams
+
   // 将 url 中的 tps 参数（逗号分隔的字符串）转换为数字数组
   const topics = tps ? tps.split(',').map(Number) : []
 
+  // 获取论坛数据（只获取一次）
+  const forums = await getForum()
+
+  // 根据 route_name 查找 forum_id 和论坛信息
+  const forumId = findForumIdByRouteName(route_name, forums || [])
+  const forumInfo = findForumInfoByRouteName(route_name, forums || [])
+
+  // 如果找不到对应的论坛，返回 404
+  if (!forumId) {
+    return (
+      <Stack gap={3} sx={{ minHeight: '100vh', alignItems: 'center', justifyContent: 'center' }}>
+        <h1>论坛不存在</h1>
+        <p>请检查 URL 是否正确</p>
+      </Stack>
+    )
+  }
+
   // 使用批量 API 调用工具
   const results = await batchApiCalls({
-    discussions: () => fetchDiscussions(forum_id, searchParams),
-    groups: () => fetchGroups(forum_id),
-    forumInfo: () => fetchForumInfo(forum_id),
+    discussions: () => fetchDiscussions(forumId.toString(), searchParams),
+    groups: () => fetchGroups(forumId.toString()),
   })
 
   const data = results.discussions || { items: [], total: 0 }
   const groupsData = results.groups || { items: [] }
-  const forumInfo = results.forumInfo
 
   return (
     <GroupsInitializer groupsData={groupsData}>
@@ -99,7 +102,7 @@ const Page = async (props: {
             topics={topics}
             groups={groupsData}
             type={type}
-            forumId={forum_id}
+            forumId={forumId.toString()}
             forumInfo={forumInfo}
           />
         </Suspense>

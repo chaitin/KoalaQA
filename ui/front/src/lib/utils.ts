@@ -350,40 +350,50 @@ export async function formatMeta(
   };
 }
 
+
 /**
- * 路由工具函数 - 自动补上 forum_id
+ * 根据 forum 信息构建路由 - 使用 route_name (无 /forum 层级)
  */
-export function buildRouteWithForumId(path: string, forumId?: number | null): string {
-  // 如果路径已经包含 forum/forum_id，直接返回
-  if (path.match(/^\/forum\/\d+\//) || path.match(/^\/forum\/\d+$/)) {
+export function buildRouteWithRouteName(path: string, forum?: { id: number; route_name?: string } | null): string {
+  // 如果路径已经包含 route_name，直接返回
+  if (path.match(/^\/[^\/]+\//) || path.match(/^\/[^\/]+$/)) {
     return path;
   }
   
-  // 如果提供了 forumId，则添加到路径前面
-  if (forumId) {
+  // 如果提供了 forum 且有 route_name，则使用 route_name
+  if (forum?.route_name) {
     // 处理以 / 开头的路径
     if (path.startsWith('/')) {
-      return `/forum/${forumId}${path}`;
+      return `/${forum.route_name}${path}`;
     } else {
-      return `/forum/${forumId}/${path}`;
+      return `/${forum.route_name}/${path}`;
     }
   }
   
-  // 如果没有 forumId，尝试从当前路径获取
-  if (typeof window !== 'undefined') {
-    const currentPath = window.location.pathname;
-    const match = currentPath.match(/^\/forum\/(\d+)/);
-    if (match) {
-      const currentForumId = match[1];
-      if (path.startsWith('/')) {
-        return `/forum/${currentForumId}${path}`;
-      } else {
-        return `/forum/${currentForumId}/${path}`;
-      }
+  // 如果没有 route_name，回退到使用 forum_id
+  if (forum?.id) {
+    if (path.startsWith('/')) {
+      return `/${forum.id}${path}`;
+    } else {
+      return `/${forum.id}/${path}`;
     }
   }
   
-  // 如果无法获取 forumId，返回原路径
+  // 如果无法获取 forum 信息，返回原路径
   return path;
+}
+
+/**
+ * 根据 route_name 查找 forum 信息
+ */
+export function findForumByRouteName(forums: Array<{ id: number; route_name?: string }>, routeName: string) {
+  return forums.find(forum => forum.route_name === routeName);
+}
+
+/**
+ * 根据 forum_id 查找 forum 信息
+ */
+export function findForumById(forums: Array<{ id: number; route_name?: string }>, forumId: number) {
+  return forums.find(forum => forum.id === forumId);
 }
 
