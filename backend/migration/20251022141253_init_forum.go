@@ -34,6 +34,7 @@ func (m *initForum) Migrate(tx *gorm.DB) error {
 		Name:      "默认板块",
 		DatasetID: dataset.SetID,
 		GroupIDs:  gids,
+		RouteName: "default",
 	}
 	if err := tx.Create(&forum).Error; err != nil {
 		return err
