@@ -4615,6 +4615,9 @@ const docTemplate = `{
         },
         "model.ForumInfo": {
             "type": "object",
+            "required": [
+                "name"
+            ],
             "properties": {
                 "group_ids": {
                     "type": "array",
@@ -4629,6 +4632,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "route_name": {
                     "type": "string"
                 }
             }

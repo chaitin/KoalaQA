@@ -102,6 +102,7 @@ func (f *Forum) UpdateWithGroup(ctx context.Context, forums []model.ForumInfo) e
 					ID: forum.ID,
 				},
 				Name:      forum.Name,
+				RouteName: forum.RouteName,
 				Index:     forum.Index,
 				GroupIDs:  model.Int64Array(forum.GroupIDs),
 				DatasetID: datasetID,
