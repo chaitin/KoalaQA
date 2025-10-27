@@ -249,14 +249,12 @@ export interface ModelExportOpt {
   space_id?: string;
 }
 
-export interface ModelForum {
-  created_at?: number;
-  dataset_id?: string;
+export interface ModelForumInfo {
   group_ids?: number[];
   id?: number;
   index?: number;
-  name?: string;
-  updated_at?: number;
+  name: string;
+  route_name?: string;
 }
 
 export interface ModelGroupItemInfo {
@@ -487,7 +485,7 @@ export interface SvcFileExportReq {
 }
 
 export interface SvcForumUpdateReq {
-  forums?: ModelForum[];
+  forums?: ModelForumInfo[];
 }
 
 export interface SvcGetSpaceRes {

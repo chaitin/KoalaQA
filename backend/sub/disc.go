@@ -2,6 +2,7 @@ package sub
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
@@ -53,7 +54,7 @@ func (d *Disc) Handle(ctx context.Context, msg mq.Message) error {
 	data := msg.(topic.MsgDiscChange)
 	if data.Type != string(model.DiscussionTypeQA) {
 		d.logger.WithContext(ctx).
-			With("disc_id", data.DiscID).
+			With("disc_uuid", data.DiscUUID).
 			With("type", data.Type).
 			Debug("discussion type is not qa, skip")
 		return nil
@@ -75,12 +76,12 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 	logger.Info("handle insert discussion comment")
 	bot, err := d.bot.Get(ctx)
 	if err != nil {
-		logger.WithContext(ctx).WithErr(err).Error("get bot failed")
+		logger.WithErr(err).Error("get bot failed")
 		return nil
 	}
 	question, prompt, err := d.llm.GenerateChatPrompt(ctx, data.DiscID, 0)
 	if err != nil {
-		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
+		logger.WithErr(err).Error("generate prompt failed")
 		return nil
 	}
 	llmRes, answered, err := d.llm.Answer(ctx, svc.GenerateReq{
@@ -89,21 +90,34 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 		DefaultAnswer: bot.UnknownPrompt,
 	})
 	if err != nil {
+		logger.WithErr(err).Error("answer failed")
 		return err
 	}
-	commentID, err := d.disc.CreateComment(ctx, bot.UserID, data.DiscUUID, svc.CommentCreateReq{
-		Content:   llmRes,
-		CommentID: 0,
-		Bot:       true,
-	})
-	if err != nil {
-		return err
+	if !answered {
+		metadata := mq.MessageMetadata(ctx)
+		// first delivery, retry later
+		if metadata.NumDelivered == 1 {
+			return errors.New("ai not know the answer, retry later")
+		}
 	}
+	if answered || bot.UnknownPrompt != "" {
+		commentID, err := d.disc.CreateComment(ctx, bot.UserID, data.DiscUUID, svc.CommentCreateReq{
+			Content:   llmRes,
+			CommentID: 0,
+			Bot:       true,
+		})
+		if err != nil {
+			logger.WithErr(err).Error("create comment failed")
+			return err
+		}
+		logger.With("comment_id", commentID).With("content", llmRes).Info("comment created")
+	}
+
 	if !answered {
 		logger.Info("ai not know the answer, notify admin")
 		disc, err := d.disc.GetByID(ctx, data.DiscID)
 		if err != nil {
-			logger.WithErr(err).Warn("get discussion failed")
+			logger.WithErr(err).Error("get discussion failed")
 			return nil
 		}
 		notifyMsg := topic.MsgMessageNotify{
@@ -118,7 +132,6 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 		}
 		d.pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	}
-	d.logger.WithContext(ctx).With("disc_id", data.DiscID).With("comment_id", commentID).Debug("comment created")
 	return nil
 }
 

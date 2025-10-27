@@ -1,9 +1,10 @@
 'use client'
 import { AuthContext } from '@/components/authProvider'
 import { Avatar } from '@/components/discussion'
+import { useForum } from '@/contexts/ForumContext'
 import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined'
 import { Badge, Box, Button, Stack, Tooltip, Typography } from '@mui/material'
-import { useRouterWithForum } from '@/hooks/useRouterWithForum'
+import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import ProfilePanel from './profilePanel'
 
@@ -198,10 +199,11 @@ export interface LoggedInProps {
 
 const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
   const { user: contextUser } = useContext(AuthContext)
+  const { forums } = useForum()
   const user = propUser || contextUser
   const [notifications, setNotifications] = useState<MessageNotifyInfo[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
-  const router = useRouterWithForum()
+  const router = useRouterWithRouteName()
   // 保存 ws 实例的 ref
   const wsRef = useRef<WebSocket | null>(null)
   // 保存 ping 定时器的 ref
@@ -281,7 +283,11 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
       // 更新UI
       setUnreadCount((c) => Math.max(0, c - 1))
       setNotifications((prev) => prev.filter((n) => n.id !== notification.id))
-      router.push(`/forum/${notification.forum_id}/discuss/${notification.discuss_uuid}`)
+      
+      // 根据 forum_id 查找对应的 route_name
+      const forum = forums.find(f => f.id === notification.forum_id)
+      const routePath = forum?.route_name ? `/${forum.route_name}/${notification.discuss_uuid}` : `/${notification.forum_id}/${notification.discuss_uuid}`
+      router.push(routePath)
     }
   }
 

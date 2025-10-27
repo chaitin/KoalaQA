@@ -52,6 +52,8 @@ const TITLE_SX = {
 const EDITOR_SX = {
   lineHeight: 1.4,
   mb: 1.5, // 减少描述和标签间距
+  fontSize: '12px!important',
+  color: 'rgba(31, 35, 41, 0.50)',
   '& *': {
     fontSize: '12px!important',
   },
@@ -162,12 +164,12 @@ const DiscussCard = ({ data, keywords: _keywords, showType = false, sx }: { data
 
   // 使用 useCallback 优化点击处理函数
   const handleCardClick = useCallback(() => {
-    // 从路径参数中获取forum_id
-    const forumId = params?.forum_id as string
-    if (typeof window !== 'undefined' && forumId) {
-      window.open(`/forum/${forumId}/discuss/${it.uuid}`, '_blank')
+    // 从路径参数中获取route_name
+    const routeName = params?.route_name as string
+    if (typeof window !== 'undefined' && routeName) {
+      window.open(`/${routeName}/${it.uuid}`, '_blank')
     }
-  }, [params?.forum_id, it.uuid])
+  }, [params?.route_name, it.uuid])
 
   // 使用 useMemo 优化样式对象
   const cardSx = useMemo(() => ({
@@ -327,7 +329,7 @@ const DiscussCardMobileComponent = ({ data, keywords, showType = false, sx }: { 
   const it = data
   const { groups } = useContext(CommonContext)
   const params = useParams()
-  const forumId = params?.forum_id as string
+  const routeName = params?.route_name as string
   
   // 使用 useMemo 优化分组名称计算，避免重复查找
   const groupNames = useMemo(() => {
@@ -343,12 +345,12 @@ const DiscussCardMobileComponent = ({ data, keywords, showType = false, sx }: { 
 
   // 使用 useCallback 优化点击处理函数
   const handleCardClick = useCallback(() => {
-    // 从路径参数中获取forum_id
-    const forumId = params?.forum_id as string
-    if (typeof window !== 'undefined' && forumId) {
-      window.open(`/forum/${forumId}/discuss/${it.uuid}`, '_blank')
+    // 从路径参数中获取route_name
+    const routeName = params?.route_name as string
+    if (typeof window !== 'undefined' && routeName) {
+      window.open(`/${routeName}/${it.uuid}`, '_blank')
     }
-  }, [params?.forum_id, it.uuid])
+  }, [params?.route_name, it.uuid])
 
   // 使用 useMemo 优化样式对象
   const cardSx = useMemo(() => ({
@@ -382,7 +384,7 @@ const DiscussCardMobileComponent = ({ data, keywords, showType = false, sx }: { 
           width: '100%',
         }}
       >
-        <Link href={`/forum/${forumId}/discuss/${it.uuid}`} target='_blank' onClick={(e) => e.stopPropagation()}>
+        <Link href={`/${routeName}/${it.uuid}`} target='_blank' onClick={(e) => e.stopPropagation()}>
           <Title
             className='title multiline-ellipsis'
             sx={{
@@ -490,14 +492,7 @@ const DiscussCardMobileComponent = ({ data, keywords, showType = false, sx }: { 
       <EditorContent
         content={replaceImagesWithText(it.content || '')}
         truncateLength={60} // 设置截断长度为100个字符，根据需要调整
-        sx={{
-          '& *': {
-            fontSize: '12px!important',
-          },
-          color: '#666',
-          lineHeight: 1.4,
-          mb: 1.5, // 减少描述和标签间距
-        }}
+        sx={EDITOR_SX}
       />
       <Stack direction='row' gap='8px 12px' flexWrap='wrap' sx={{ width: '100%', minHeight: 0 }}>
         {/* 分组标签 */}

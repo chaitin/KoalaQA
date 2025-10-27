@@ -20,6 +20,8 @@ type commonGetterIn struct {
 	RepoDiscuss    *repo.Discussion
 	RepoGroupItems *repo.GroupItem
 	RepoUserThird  *repo.UserThird
+	RepoDoc        *repo.KBDocument
+	RepoForum      *repo.Forum
 }
 
 type commonGetter struct {
@@ -30,7 +32,7 @@ func newCommonGetter(in commonGetterIn) *commonGetter {
 	return &commonGetter{in: in}
 }
 
-func (c *commonGetter) Message(ctx context.Context, dissID uint, userID uint) (*Common, error) {
+func (c *commonGetter) DiscussMessage(ctx context.Context, dissID uint, userID uint) (*Common, error) {
 	var discuss struct {
 		CreatedAt model.Timestamp `gorm:"type:timestamp with time zone"`
 		ForumID   uint
@@ -40,6 +42,12 @@ func (c *commonGetter) Message(ctx context.Context, dissID uint, userID uint) (*
 		Tags      model.StringArray `gorm:"type:text[]"`
 	}
 	err := c.in.RepoDiscuss.GetByID(ctx, &discuss, dissID, repo.QueryWithSelectColumn("created_at", "title", "forum_id", "group_ids", "uuid", "tags"))
+	if err != nil {
+		return nil, err
+	}
+
+	var forum model.Forum
+	err = c.in.RepoForum.GetByID(ctx, &forum, discuss.ForumID)
 	if err != nil {
 		return nil, err
 	}
@@ -72,13 +80,9 @@ func (c *commonGetter) Message(ctx context.Context, dissID uint, userID uint) (*
 		return nil, err
 	}
 
-	discussURL := ""
-	var publicAddress model.PublicAddress
-	err = c.in.RepoSystem.GetValueByKey(ctx, &publicAddress, model.SystemKeyPublicAddress)
-	if err != nil && !errors.Is(err, database.ErrRecordNotFound) {
+	discussURL, err := c.publicAddress(ctx, path.Join(forum.RouteName, discuss.UUID))
+	if err != nil {
 		return nil, err
-	} else if err == nil {
-		discussURL = publicAddress.FullURL(path.Join("forum", strconv.FormatUint(uint64(discuss.ForumID), 10), "discuss", discuss.UUID))
 	}
 
 	messageThirds := make([]commonUserThird, len(userThirds))
@@ -104,6 +108,42 @@ func (c *commonGetter) Message(ctx context.Context, dissID uint, userID uint) (*
 			Thirds: messageThirds,
 			Name:   user.Name,
 		},
+	}, nil
+}
+
+func (c *commonGetter) publicAddress(ctx context.Context, path string) (string, error) {
+	var publicAddress model.PublicAddress
+	err := c.in.RepoSystem.GetValueByKey(ctx, &publicAddress, model.SystemKeyPublicAddress)
+	if err != nil {
+		if !errors.Is(err, database.ErrRecordNotFound) {
+			return "", err
+		}
+
+		return "", nil
+	}
+
+	return publicAddress.FullURL(path), nil
+}
+
+func (c *commonGetter) DocMessage(ctx context.Context, kbID uint, docID uint) (*commonDoc, error) {
+	var doc model.KBDocument
+	err := c.in.RepoDoc.GetByID(ctx, &doc, kbID, docID)
+	if err != nil {
+		return nil, err
+	}
+
+	docURL, err := c.publicAddress(ctx, "admin/ai/qa")
+	if err != nil {
+		return nil, err
+	}
+	if docURL != "" {
+		docURL = docURL + "?id=" + strconv.FormatUint(uint64(kbID), 10)
+	}
+
+	return &commonDoc{
+		ID:    doc.ID,
+		Title: doc.Title,
+		URL:   docURL,
 	}, nil
 }
 

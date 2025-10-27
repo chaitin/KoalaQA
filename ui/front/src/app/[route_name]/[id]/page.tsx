@@ -41,7 +41,7 @@ const LoadingSpinner = () => (
   </Box>
 )
 
-const DiscussDetailPage = async (props: { params: Promise<{ forum_id: string; id: string }> }) => {
+const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; id: string }> }) => {
   const { id } = await props.params
 
   // 获取讨论详情
