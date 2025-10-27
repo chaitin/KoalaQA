@@ -68,6 +68,7 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
       <Box
         className='editor-container'
         sx={{
+          fontSize: '12px!important',
           width: '100%',
           '& code': {
             whiteSpace: 'pre-wrap',

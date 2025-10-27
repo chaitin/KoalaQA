@@ -52,10 +52,10 @@ const TITLE_SX = {
 const EDITOR_SX = {
   lineHeight: 1.4,
   mb: 1.5, // 减少描述和标签间距
-  fontSize: '12px',
+  fontSize: '12px!important',
   color: 'rgba(31, 35, 41, 0.50)',
   '& *': {
-    fontSize: '12px',
+    fontSize: '12px!important',
   },
   '& .tiptap.ProseMirror': {
     color: 'rgba(31, 35, 41, 0.50)',
@@ -492,14 +492,7 @@ const DiscussCardMobileComponent = ({ data, keywords, showType = false, sx }: { 
       <EditorContent
         content={replaceImagesWithText(it.content || '')}
         truncateLength={60} // 设置截断长度为100个字符，根据需要调整
-        sx={{
-          '& *': {
-            fontSize: '12px',
-          },
-          color: '#666',
-          lineHeight: 1.4,
-          mb: 1.5, // 减少描述和标签间距
-        }}
+        sx={EDITOR_SX}
       />
       <Stack direction='row' gap='8px 12px' flexWrap='wrap' sx={{ width: '100%', minHeight: 0 }}>
         {/* 分组标签 */}
