@@ -24,7 +24,7 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
   const editorRef = useTiptap({
     content: displayContent || '',
     editable: false,
-    immediatelyRender: false,
+    immediatelyRender: true,
     onBeforeCreate: () => {
       _setLoading(true)
     },

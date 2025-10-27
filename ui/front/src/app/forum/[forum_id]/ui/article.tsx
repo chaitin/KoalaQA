@@ -3,7 +3,7 @@ import { getDiscussion } from '@/api'
 import {
   GetDiscussionParams,
   ModelDiscussionListItem,
-  ModelForum,
+  ModelForumInfo,
   ModelGroupItemInfo,
   ModelGroupWithItem,
   ModelListRes
@@ -50,7 +50,7 @@ const Article = ({
   }
   type?: string
   forumId?: string
-  forumInfo?: ModelForum | null
+  forumInfo?: ModelForumInfo | null
 }) => {
   const searchParams = useSearchParams()
   const router = useRouterWithForum()

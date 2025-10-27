@@ -76,7 +76,7 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
     >
       <Stack spacing={2}>
         {/* 版块名称和操作按钮 */}
-        <Stack direction="row" alignItems="center" spacing={1}>
+        <Stack direction="row" alignItems='baseline' spacing={1}>
           <IconButton
             size="small"
             sx={{
@@ -126,6 +126,53 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
             )}
           />
 
+          {/* 路由名称输入框 */}
+          <Controller
+            control={control}
+            name={`blocks.${index}.route_name`}
+            rules={{
+              required: '请输入路由名称',
+              pattern: {
+                value: /^[a-zA-Z0-9_-]+$/,
+                message: '路由名称只能包含字母、数字、下划线和连字符',
+              },
+              maxLength: {
+                value: 30,
+                message: '路由名称不能超过30个字符',
+              },
+              validate: (value, formValues) => {
+                if (!value) return true; // 必填验证由required处理
+
+                // 检查是否与其他版块的route_name重复
+                const currentBlocks = formValues.blocks || [];
+                const duplicateIndex = currentBlocks.findIndex(
+                  (block: ModelForumInfo, blockIndex: number) =>
+                    blockIndex !== index && block.route_name?.trim() === value.trim()
+                );
+
+                if (duplicateIndex !== -1) {
+                  return '路由名称不能与其他版块重复';
+                }
+
+                return true;
+              },
+            }}
+            render={({ field, fieldState: { error } }) => (
+              <TextField
+                {...field}
+                fullWidth
+                placeholder="用于URL路径"
+                label="路由名称"
+                size="small"
+                error={!!error}
+                helperText={error?.message || '只能包含字母、数字、下划线和连字符'}
+                onChange={e => {
+                  field.onChange(e.target.value);
+                  setIsEdit(true);
+                }}
+              />
+            )}
+          />
           <IconButton size="small" onClick={onRemove}>
             <Icon type="icon-guanbi-fill" sx={{ color: 'text.tertiary' }} />
           </IconButton>
@@ -251,6 +298,7 @@ const Forum: React.FC = () => {
     }
     appendBlock({
       name: '',
+      route_name: '',
       index: blockFields.length + 1,
       group_ids: [],
     });
@@ -291,12 +339,21 @@ const Forum: React.FC = () => {
       return;
     }
 
+    // 检查路由名称是否重复
+    const routeNames = data.blocks.map(block => block.route_name?.trim() || '');
+    const uniqueRouteNames = new Set(routeNames);
+    if (routeNames.length !== uniqueRouteNames.size) {
+      message.error('路由名称不能重复');
+      return;
+    }
+
     setIsLoading(true);
     try {
       // 将表单数据转换为 API 需要的格式
       const forums: ModelForumInfo[] = data.blocks.map((block, index) => ({
         id: block.id,
         name: block.name?.trim() || '',
+        route_name: block.route_name?.trim() || '',
         index: index + 1, // 设置排序索引
         group_ids: block.group_ids || [],
       }));

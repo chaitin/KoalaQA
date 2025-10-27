@@ -25,11 +25,16 @@
     "@mui/material": "^7.3.4",
     "@mui/material-nextjs": "^7.3.3",
     "@mui/utils": "^7.3.3",
+    "@tiptap/core": "3.8.0",
+    "@tiptap/extension-list": "3.8.0",
+    "@tiptap/extensions": "3.8.0",
+    "@tiptap/pm": "3.8.0",
+    "@tiptap/react": "3.8.0",
     "@uiw/react-codemirror": "^4.25.2",
     "@uiw/react-md-editor": "^4.0.8",
     "ahooks": "^3.9.5",
     "axios": "^1.12.2",
-    "codemirror": "^5.65.20",
+    "codemirror": "^6.0.2",
     "crypto-js": "^4.2.0",
     "cvss": "^1.0.5",
     "dayjs": "^1.11.18",
@@ -76,7 +81,20 @@
   },
   "overrides": {
     "@types/react": "19.1.0",
-    "@types/react-dom": "19.1.1"
+    "@types/react-dom": "19.1.1",
+    "@tiptap/core": "3.8.0",
+    "@tiptap/pm": "3.8.0",
+    "@tiptap/extensions": "3.8.0",
+    "@tiptap/extension-list": "3.8.0",
+    "@tiptap/react": "3.8.0",
+    "happy-dom": "^20.0.0",
+    "@mui/material-nextjs": {
+      "next": "16.0.0"
+    },
+    "react-use-clipboard": {
+      "react": "19.1.0",
+      "react-dom": "19.1.0"
+    }
   },
   "pnpm": {
     "onlyBuiltDependencies": [
