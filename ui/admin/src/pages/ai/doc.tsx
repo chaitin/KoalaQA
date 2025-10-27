@@ -2,6 +2,7 @@ import {
   deleteAdminKbKbIdDocumentDocId,
   getAdminKbKbIdDocument,
   getAdminKbKbIdDocumentDocId,
+  ModelFileType,
   ModelKBDocumentDetail,
   SvcDocListItem,
 } from '@/api';
@@ -10,7 +11,7 @@ import { fileType } from '@/components/ImportDoc/const';
 import StatusBadge from '@/components/StatusBadge';
 import { useListQueryParams } from '@/hooks/useListQueryParams';
 import { Ellipsis, message, Modal, Table } from '@ctzhian/ui';
-import { Box, Button, Stack, TextField, Typography } from '@mui/material';
+import { Box, Button, FormControl, InputLabel, MenuItem, Select, Stack, TextField, Typography } from '@mui/material';
 import { useRequest } from 'ahooks';
 import { ColumnsType } from '@ctzhian/ui/dist/Table';
 import dayjs from 'dayjs';
@@ -31,11 +32,14 @@ const fetchMarkdownContent = async (url: string): Promise<string> => {
 };
 
 const AdminDocument = () => {
-  const { query, page, size, setParams } = useListQueryParams();
+  const { query, page, size, setParams, setSearch } = useListQueryParams();
   const [searchParams] = useSearchParams();
   const kb_id = +searchParams.get('id')!;
   const [title, setTitle] = useState(query.title);
-  const [file_type, setFile_type] = useState(query.file_type);
+  const [file_type, setFile_type] = useState<ModelFileType | ''>(() => {
+    if (query.file_type === undefined || query.file_type === '') return '';
+    return Number(query.file_type) as ModelFileType;
+  });
   const {
     data,
     loading,
@@ -106,9 +110,8 @@ const AdminDocument = () => {
       title: '类型',
       dataIndex: 'file_type',
       render: (_, record) => {
-        return record?.file_type !== undefined
-          ? fileType[record.file_type!] || record?.file_type
-          : '-';
+        if (record?.file_type === undefined) return '-';
+        return fileType[record.file_type as keyof typeof fileType] || record.file_type;
       },
     },
     {
@@ -159,25 +162,35 @@ const AdminDocument = () => {
             onChange={e => setTitle(e.target.value)}
             onKeyDown={e => {
               if (e.key === 'Enter') {
-                setParams({
+                setSearch({
                   title,
                 });
               }
             }}
           />
-          <TextField
-            label="类型"
-            value={file_type}
-            size="small"
-            onChange={e => setFile_type(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter') {
-                setParams({
-                  file_type,
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>类型</InputLabel>
+            <Select
+              value={file_type}
+              label="类型"
+              onChange={e => {
+                const value = e.target.value as ModelFileType | '';
+                setFile_type(value);
+                setSearch({
+                  file_type: value || undefined,
                 });
-              }
-            }}
-          />
+              }}
+            >
+              <MenuItem value="">
+                <em>全部</em>
+              </MenuItem>
+              {Object.entries(fileType).map(([key, label]) => (
+                <MenuItem key={key} value={Number(key)}>
+                  {label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Stack>
         <DocImport refresh={fetchData} allowedImportTypes={['OfflineFile']} />
       </Stack>

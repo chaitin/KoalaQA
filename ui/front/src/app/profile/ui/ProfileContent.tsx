@@ -66,7 +66,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export default function ProfileContent({ initialUser }: ProfileContentProps) {
-  const { user, setUser } = useContext(AuthContext)
+  const { user, setUser, fetchUser } = useContext(AuthContext)
   const tabValue = 0
   const [isEditingName, setIsEditingName] = useState(false)
   const [editName, setEditName] = useState(user?.username || '')
@@ -117,11 +117,8 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
     try {
       await putUser({ avatar: file })
 
-      // 创建本地预览URL
-      const previewUrl = URL.createObjectURL(file)
-      setUser({ ...user, avatar: previewUrl })
-
-      // TODO: 实际项目中应该从API响应中获取新的头像URL
+      // 头像上传成功后，重新获取用户信息以获取最新的头像URL
+      await fetchUser()
     } catch (error) {
       console.error('头像上传失败:', error)
       alert('头像上传失败，请重试')

@@ -20,7 +20,7 @@ import LoadingBtn from '@/components/LoadingButton';
 import { ColumnsType } from '@ctzhian/ui/dist/Table';
 
 const AdminDocument = () => {
-  const { query, page, size, setParams } = useListQueryParams();
+  const { query, page, size, setParams, setSearch } = useListQueryParams();
   const [searchParams] = useSearchParams();
   const kb_id = +searchParams.get('id')!;
   const [title, setTitle] = useState(query.title);
@@ -175,7 +175,7 @@ const AdminDocument = () => {
             onChange={e => setTitle(e.target.value)}
             onKeyDown={e => {
               if (e.key === 'Enter') {
-                setParams({
+                setSearch({
                   title,
                 });
               }
