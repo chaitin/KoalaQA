@@ -36,7 +36,7 @@ const transRole: Record<ModelUserRole, string> = {
 
 
 const AdminDocument = () => {
-  const { query, page, size, setParams } = useListQueryParams();
+  const { query, page, size, setParams, setSearch } = useListQueryParams();
   const { reset, register, handleSubmit, watch, control } = useForm({
     defaultValues: {
       name: '',
@@ -175,7 +175,7 @@ const AdminDocument = () => {
           onChange={e => setName(e.target.value)}
           onKeyDown={e => {
             if (e.key === 'Enter') {
-              setParams({
+              setSearch({
                 name,
               });
             }
