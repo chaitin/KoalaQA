@@ -6,7 +6,7 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getServerPublicAccessStatus } from './src/utils/serverAuthConfig';
+import { getServerPublicAccessStatus } from './utils/serverAuthConfig';
 
 // 需要认证的路由
 const PROTECTED_ROUTES = [
@@ -122,7 +122,6 @@ export async function proxy(request: NextRequest) {
     try {
       const baseURL = process.env.TARGET || '';
       const publicAccess = await getServerPublicAccessStatus(baseURL, request);
-
       // 如果public_access为false，强制跳转到登录页面
       if (!publicAccess) {
         const loginUrl = new URL('/login', request.url);
