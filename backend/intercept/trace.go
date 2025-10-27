@@ -1,6 +1,8 @@
 package intercept
 
 import (
+	"time"
+
 	"github.com/chaitin/koalaqa/pkg/context"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	koalaTrace "github.com/chaitin/koalaqa/pkg/trace"
@@ -22,11 +24,15 @@ func (t *trace) Intercept(ctx *context.Context) {
 	ctx.Context.Request = req.WithContext(koalaTrace.Context(req.Context()))
 
 	l := t.logger.WithContext(ctx).With("method", req.Method).With("path", req.URL.Path)
-	l.Debug("receive request")
+	start := time.Now()
+	defer func() {
+		duration := time.Since(start).Seconds()
+		if duration > 1 {
+			l.With("elapsed", duration).Warn("slow request")
+		}
+	}()
 
 	ctx.Next()
-
-	l.Debug("request finish")
 }
 
 func (t *trace) Priority() int {
