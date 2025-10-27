@@ -100,7 +100,7 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 			return errors.New("ai not know the answer, retry later")
 		}
 	}
-	if !answered || prompt != "" {
+	if answered || prompt != "" {
 		commentID, err := d.disc.CreateComment(ctx, bot.UserID, data.DiscUUID, svc.CommentCreateReq{
 			Content:   llmRes,
 			CommentID: 0,
