@@ -26,6 +26,10 @@ func (t *trace) Intercept(ctx *context.Context) {
 	l := t.logger.WithContext(ctx).With("method", req.Method).With("path", req.URL.Path)
 	start := time.Now()
 	defer func() {
+		// skip websocket request
+		if ctx.Context.IsWebsocket() {
+			return
+		}
 		duration := time.Since(start).Seconds()
 		if duration > 1 {
 			l.With("elapsed", duration).Warn("slow request")
