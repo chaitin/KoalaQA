@@ -53,7 +53,7 @@ func (d *Disc) Handle(ctx context.Context, msg mq.Message) error {
 	data := msg.(topic.MsgDiscChange)
 	if data.Type != string(model.DiscussionTypeQA) {
 		d.logger.WithContext(ctx).
-			With("disc_id", data.DiscID).
+			With("disc_uuid", data.DiscUUID).
 			With("type", data.Type).
 			Debug("discussion type is not qa, skip")
 		return nil
@@ -89,6 +89,7 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 		DefaultAnswer: bot.UnknownPrompt,
 	})
 	if err != nil {
+		logger.WithContext(ctx).WithErr(err).Error("answer failed")
 		return err
 	}
 	commentID, err := d.disc.CreateComment(ctx, bot.UserID, data.DiscUUID, svc.CommentCreateReq{
@@ -97,6 +98,7 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 		Bot:       true,
 	})
 	if err != nil {
+		logger.WithContext(ctx).WithErr(err).Error("create comment failed")
 		return err
 	}
 	if !answered {
@@ -118,7 +120,7 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 		}
 		d.pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	}
-	d.logger.WithContext(ctx).With("disc_id", data.DiscID).With("comment_id", commentID).Debug("comment created")
+	logger.With("comment_id", commentID).With("content", llmRes).Info("comment created")
 	return nil
 }
 

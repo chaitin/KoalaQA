@@ -66,6 +66,7 @@ func (q *QAReview) Concurrent() uint {
 
 func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 	logger := q.logger.WithContext(ctx)
+	logger.Info("handle qa review")
 	data := msg.(topic.MsgMessageNotify)
 	if data.Type != model.MsgNotifyTypeApplyComment {
 		return nil
@@ -120,7 +121,7 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 		return nil
 	}
 	if len(chunks) == 0 {
-		logger.With("question", newQA.Title).Info("no rag records found")
+		logger.With("question", newQA.Title).Info("create qa review for no rag records")
 		return q.repo.Create(ctx, newQA)
 	}
 	docIds := make([]string, 0)
@@ -159,5 +160,6 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 		logger.With("question", newQA.Title).Debug("qa similarity found")
 		return nil
 	}
+	logger.With("question", newQA.Title).Info("create qa review for no qa similarity")
 	return q.repo.Create(ctx, newQA)
 }
