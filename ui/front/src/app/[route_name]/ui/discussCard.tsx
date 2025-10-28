@@ -144,7 +144,17 @@ const replaceImagesWithText = (content: string): string => {
   return processedContent
 }
 
-const DiscussCard = ({ data, keywords: _keywords, showType = false, sx }: { data: ModelDiscussionListItem; keywords?: string; showType?: boolean; sx?: SxProps }) => {
+const DiscussCard = ({
+  data,
+  keywords: _keywords,
+  showType = false,
+  sx,
+}: {
+  data: ModelDiscussionListItem
+  keywords?: string
+  showType?: boolean
+  sx?: SxProps
+}) => {
   const it = data
   const { groups } = useContext(CommonContext)
   const params = useParams()
@@ -152,13 +162,13 @@ const DiscussCard = ({ data, keywords: _keywords, showType = false, sx }: { data
   // 使用 useMemo 优化分组名称计算，避免重复查找
   const groupNames = useMemo(() => {
     if (!it.group_ids || !groups.flat.length) return []
-    
+
     // 创建group映射表，避免重复查找
-    const groupMap = new Map(groups.flat.map(g => [g.id, g.name]))
-    
+    const groupMap = new Map(groups.flat.map((g) => [g.id, g.name]))
+
     return it.group_ids
       .slice(0, 2)
-      .map(groupId => groupMap.get(groupId))
+      .map((groupId) => groupMap.get(groupId))
       .filter(Boolean) as string[]
   }, [it.group_ids, groups.flat])
 
@@ -172,30 +182,29 @@ const DiscussCard = ({ data, keywords: _keywords, showType = false, sx }: { data
   }, [params?.route_name, it.uuid])
 
   // 使用 useMemo 优化样式对象
-  const cardSx = useMemo(() => ({
-    boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
-    cursor: 'pointer',
-    display: { xs: 'none', sm: 'block' },
-    borderRadius: 1,
-    p: 2,
-    mb: 0.5,
-    transition: 'all 0.2s ease',
-    '&:hover': {
-      boxShadow: 'rgba(0, 28, 85, 0.06) 0px 6px 15px 0px',
-      transform: 'translateY(-1px)',
-    },
-    maxWidth: '100%',
-    ...sx,
-  }), [sx])
+  const cardSx = useMemo(
+    () => ({
+      boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
+      cursor: 'pointer',
+      display: { xs: 'none', sm: 'block' },
+      borderRadius: 1,
+      p: 2,
+      mb: 0.5,
+      transition: 'all 0.2s ease',
+      '&:hover': {
+        boxShadow: 'rgba(0, 28, 85, 0.06) 0px 6px 15px 0px',
+        transform: 'translateY(-1px)',
+      },
+      maxWidth: '100%',
+      ...sx,
+    }),
+    [sx],
+  )
 
   // 使用外部定义的样式常量，避免每次渲染都重新创建
 
   return (
-    <Card
-      key={it.id}
-      onClick={handleCardClick}
-      sx={cardSx}
-    >
+    <Card key={it.id} onClick={handleCardClick} sx={cardSx}>
       {/* 标题和状态 */}
       <Stack direction='row' justifyContent='space-between' alignItems='flex-start' sx={{ mb: 1.5 }}>
         <Stack
@@ -212,19 +221,12 @@ const DiscussCard = ({ data, keywords: _keywords, showType = false, sx }: { data
             },
           }}
         >
-          <Title
-            className='title'
-            sx={TITLE_SX}
-          >
-            {showType && getTypeLabel(it.type) && `【${getTypeLabel(it.type)}】`}{it.title}
+          <Title className='title' sx={TITLE_SX}>
+            {showType && getTypeLabel(it.type) && `【${getTypeLabel(it.type)}】`}
+            {it.title}
           </Title>
           {data?.resolved && (
-            <Stack
-              direction='row'
-              alignItems='center'
-              gap={0.5}
-              sx={RESOLVED_STATUS_SX}
-            >
+            <Stack direction='row' alignItems='center' gap={0.5} sx={RESOLVED_STATUS_SX}>
               <CheckCircleIcon sx={{ fontSize: 14 }} />
               <Typography sx={{ fontSize: 12, fontWeight: 500 }}>已解决</Typography>
             </Stack>
@@ -246,16 +248,10 @@ const DiscussCard = ({ data, keywords: _keywords, showType = false, sx }: { data
               <Avatar size={20} />
             </Box>
           )}
-          <Typography
-            variant='body2'
-            sx={USER_NAME_SX}
-          >
+          <Typography variant='body2' sx={USER_NAME_SX}>
             {it.user_name}
           </Typography>
-          <Typography
-            variant='body2'
-            sx={TIME_SX}
-          >
+          <Typography variant='body2' sx={TIME_SX}>
             <TimeDisplay timestamp={it.updated_at!} />
           </Typography>
         </Stack>
@@ -270,22 +266,12 @@ const DiscussCard = ({ data, keywords: _keywords, showType = false, sx }: { data
         <Stack direction='row' gap={1} flexWrap='wrap' alignItems='center' sx={{ flex: 1, minWidth: 0 }}>
           {/* 分组标签 */}
           {groupNames.map((groupName, _index) => (
-            <Chip
-              key={groupName}
-              label={groupName}
-              size='small'
-              sx={GROUP_CHIP_SX}
-            />
+            <Chip key={groupName} label={groupName} size='small' sx={GROUP_CHIP_SX} />
           ))}
 
           {/* 其他标签 */}
           {it?.tags?.map((item) => (
-            <Tag
-              key={item}
-              label={item}
-              size='small'
-              sx={TAG_SX}
-            />
+            <Tag key={item} label={item} size='small' sx={TAG_SX} />
           ))}
         </Stack>
         {/* 评论数和投票数 */}
@@ -299,23 +285,13 @@ const DiscussCard = ({ data, keywords: _keywords, showType = false, sx }: { data
         >
           {/* 投票数 */}
           {it.type === ModelDiscussionType.DiscussionTypeFeedback && (
-            <Stack
-              direction='row'
-              alignItems='center'
-              gap={0.5}
-              sx={VOTE_SX}
-            >
+            <Stack direction='row' alignItems='center' gap={0.5} sx={VOTE_SX}>
               <Icon type='icon-dianzan' />
               {formatNumber((it.like || 0) - (it.dislike || 0))}
             </Stack>
           )}
           {/* 评论数 */}
-          <Stack
-            direction='row'
-            alignItems='center'
-            gap={0.5}
-            sx={COMMENT_SX}
-          >
+          <Stack direction='row' alignItems='center' gap={0.5} sx={COMMENT_SX}>
             <Icon type='icon-xiaoxi' />
             {formatNumber(it.comment || 0)}
           </Stack>
@@ -325,22 +301,30 @@ const DiscussCard = ({ data, keywords: _keywords, showType = false, sx }: { data
   )
 }
 
-const DiscussCardMobileComponent = ({ data, keywords, showType = false, sx }: { data: ModelDiscussionListItem; keywords?: string; showType?: boolean; sx?: SxProps }) => {
+const DiscussCardMobileComponent = ({
+  data,
+  keywords,
+  showType = false,
+  sx,
+}: {
+  data: ModelDiscussionListItem
+  keywords?: string
+  showType?: boolean
+  sx?: SxProps
+}) => {
   const it = data
   const { groups } = useContext(CommonContext)
   const params = useParams()
   const routeName = params?.route_name as string
-  
+
   // 使用 useMemo 优化分组名称计算，避免重复查找
   const groupNames = useMemo(() => {
     if (!it.group_ids || !groups.flat.length) return []
-    
+
     // 创建group映射表，避免重复查找
-    const groupMap = new Map(groups.flat.map(g => [g.id, g.name]))
-    
-    return it.group_ids
-      .map(groupId => groupMap.get(groupId))
-      .filter(Boolean) as string[]
+    const groupMap = new Map(groups.flat.map((g) => [g.id, g.name]))
+
+    return it.group_ids.map((groupId) => groupMap.get(groupId)).filter(Boolean) as string[]
   }, [it.group_ids, groups.flat])
 
   // 使用 useCallback 优化点击处理函数
@@ -353,29 +337,28 @@ const DiscussCardMobileComponent = ({ data, keywords, showType = false, sx }: { 
   }, [params?.route_name, it.uuid])
 
   // 使用 useMemo 优化样式对象
-  const cardSx = useMemo(() => ({
-    p: 2,
-    display: { xs: 'flex', sm: 'none' },
-    flexDirection: 'column' as const,
-    gap: 1,
-    boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
-    cursor: 'pointer',
-    width: '100%',
-    mb: 0.5,
-    transition: 'all 0.2s ease',
-    '&:hover': {
-      boxShadow: 'rgba(0, 28, 85, 0.06) 0px 6px 15px 0px',
-      transform: 'translateY(-1px)',
-    },
-    ...sx,
-  }), [sx])
+  const cardSx = useMemo(
+    () => ({
+      p: 2,
+      display: { xs: 'flex', sm: 'none' },
+      flexDirection: 'column' as const,
+      gap: 1,
+      boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
+      cursor: 'pointer',
+      width: '100%',
+      mb: 0.5,
+      transition: 'all 0.2s ease',
+      '&:hover': {
+        boxShadow: 'rgba(0, 28, 85, 0.06) 0px 6px 15px 0px',
+        transform: 'translateY(-1px)',
+      },
+      ...sx,
+    }),
+    [sx],
+  )
 
   return (
-    <Card
-      key={it.id}
-      onClick={handleCardClick}
-      sx={cardSx}
-    >
+    <Card key={it.id} onClick={handleCardClick} sx={cardSx}>
       <Stack
         direction={'column'}
         alignItems='flex-start'
@@ -399,17 +382,35 @@ const DiscussCardMobileComponent = ({ data, keywords, showType = false, sx }: { 
               maxHeight: '2.8em', // 2行 * 1.4行高
             }}
           >
-            <MatchedString keywords={keywords} str={`${showType && getTypeLabel(it.type) ? `【${getTypeLabel(it.type)}】` : ''}${it.title || ''}`}></MatchedString>
+            {it.title}
           </Title>
         </Link>
       </Stack>
-      <Stack direction='row' alignItems='center' gap={2} sx={{ color: '#666', flexShrink: 0, minWidth: 0 }}>
+      <Stack direction='row' alignItems='center'  sx={{ color: '#666', flexShrink: 0, minWidth: 0 }}>
+        <Typography
+          sx={{
+            mt: '2px',
+            fontSize: 12,
+            color: 'rgba(0,0,0,0.5)',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            mr: 2,
+            minWidth: 0,
+            '&:hover': {
+              cursor: 'pointer',
+              color: 'primary.main',
+            },
+          }}
+        >
+          {it.user_name}
+        </Typography>
         <Typography
           variant='body2'
           sx={{ fontSize: 12, lineHeight: 1, color: 'rgba(0,0,0,0.5)', whiteSpace: 'nowrap', flexShrink: 0 }}
         >
-          <TimeDisplayWithTag 
-            timestamp={it.updated_at!} 
+          <TimeDisplayWithTag
+            timestamp={it.updated_at!}
             title={dayjs.unix(it.updated_at!).format('YYYY-MM-DD HH:mm:ss')}
           />
         </Typography>
@@ -427,24 +428,6 @@ const DiscussCardMobileComponent = ({ data, keywords, showType = false, sx }: { 
               <Avatar size={16} />
             </Box>
           )}
-
-          <Typography
-            sx={{
-              mt: '2px',
-              fontSize: 12,
-              color: 'rgba(0,0,0,0.5)',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              maxWidth: '100px', // 移动版限制更小的宽度
-              '&:hover': {
-                cursor: 'pointer',
-                color: 'primary.main',
-              },
-            }}
-          >
-            {it.user_name}
-          </Typography>
         </Stack>
         <Stack
           direction='row'
@@ -455,22 +438,24 @@ const DiscussCardMobileComponent = ({ data, keywords, showType = false, sx }: { 
             fontSize: '12px',
           }}
         >
-          {/* 投票数 */}
-          <Stack
-            direction='row'
-            alignItems='center'
-            gap={0.5}
-            sx={{
-              backgroundColor: '#206CFF15',
-              color: '#206CFF',
-              borderRadius: '4px',
-              px: 1,
-              py: 0.5,
-            }}
-          >
-            <Icon type='icon-dianzan' />
-            {formatNumber(it.like || 0)}
-          </Stack>
+          {/* 投票数 - 仅反馈类型显示（与电脑端一致）；QA 不显示 */}
+          {it.type === ModelDiscussionType.DiscussionTypeFeedback && (
+            <Stack
+              direction='row'
+              alignItems='center'
+              gap={0.5}
+              sx={{
+                backgroundColor: '#206CFF15',
+                color: '#206CFF',
+                borderRadius: '4px',
+                px: 1,
+                py: 0.5,
+              }}
+            >
+              <Icon type='icon-dianzan' />
+              {formatNumber((it.like || 0) - (it.dislike || 0))}
+            </Stack>
+          )}
           {/* 评论数 */}
           <Stack
             direction='row'
@@ -497,35 +482,12 @@ const DiscussCardMobileComponent = ({ data, keywords, showType = false, sx }: { 
       <Stack direction='row' gap='8px 12px' flexWrap='wrap' sx={{ width: '100%', minHeight: 0 }}>
         {/* 分组标签 */}
         {groupNames.map((groupName) => (
-          <Chip
-            key={groupName}
-            label={groupName}
-            size='small'
-            sx={{
-              backgroundColor: 'rgba(76, 175, 80, 0.1)',
-              color: '#4CAF50',
-              borderRadius: '4px',
-              fontSize: '12px',
-              height: '24px',
-              '& .MuiChip-label': {
-                px: 1,
-              },
-            }}
-          />
+          <Chip key={groupName} label={groupName} size='small' sx={GROUP_CHIP_SX} />
         ))}
 
         {/* 标签 */}
         {it?.tags?.map((item) => (
-          <Tag
-            key={item}
-            label={item}
-            size='small'
-            sx={{
-              backgroundColor: 'rgba(32, 108, 255, 0.1)',
-              fontSize: '12px',
-              height: '24px',
-            }}
-          />
+          <Tag key={item} label={item} size='small' sx={TAG_SX} />
         ))}
       </Stack>
     </Card>

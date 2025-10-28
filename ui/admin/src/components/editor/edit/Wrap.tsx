@@ -95,13 +95,6 @@ const EditorWrap = ({
     exclude: ['invisibleCharacters', 'youtube', 'mention', 'aiWriting'],
     immediatelyRender: false,
     onUpload: handleUpload,
-    onFocus: () => {
-      console.log('编辑器获得焦点');
-    },
-    onBlur: () => {
-      console.log('编辑器失去焦点');
-    },
-    
   });
 
   // 这些函数需要在editorRef初始化后定义
@@ -137,59 +130,6 @@ const EditorWrap = ({
     }
     setOriginalContent(value !== undefined ? value : detail?.content || '');
   }, [value, detail?.content, editorRef.editor]);
-
-  // 聚焦编辑器的函数
-  const focusEditor = useCallback(() => {
-    if (editorRef.editor) {
-      editorRef.editor.commands.focus();
-      // 将光标移到内容末尾
-      const docSize = editorRef.editor.state.doc.content.size;
-      editorRef.editor.commands.setTextSelection(docSize);
-    }
-  }, []);
-
-  // 编辑器加载后自动聚焦
-  useEffect(() => {
-    if (editorRef.editor && isMounted) {
-      // 立即尝试聚焦
-      focusEditor();
-
-      // 延时再次尝试，确保聚焦成功
-      const timer1 = setTimeout(focusEditor, 100);
-      const timer2 = setTimeout(focusEditor, 300);
-
-      return () => {
-        clearTimeout(timer1);
-        clearTimeout(timer2);
-      };
-    }
-  }, [editorRef.editor, isMounted, focusEditor]);
-
-  // 监听组件可见性，当组件变为可见时聚焦编辑器
-  useEffect(() => {
-    if (!containerRef.current || !editorRef.editor) return;
-
-    const observer = new IntersectionObserver(
-      entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
-            // 当组件超过50%可见时，聚焦编辑器
-            setTimeout(focusEditor, 100);
-          }
-        });
-      },
-      {
-        threshold: [0.5], // 当50%可见时触发
-        rootMargin: '0px',
-      }
-    );
-
-    observer.observe(containerRef.current);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [containerRef.current, editorRef.editor, focusEditor]);
 
   // 在服务端渲染时返回漂亮的占位符
   if (!isMounted) {
@@ -387,6 +327,7 @@ const EditorWrap = ({
             transition: 'all 0.3s ease',
             position: 'relative',
             overflow: 'hidden',
+            wordBreak: 'break-all',
             cursor: 'text',
             '&::before': {
               content: '""',
@@ -398,7 +339,6 @@ const EditorWrap = ({
               transition: 'all 0.3s ease',
             },
           }}
-          onClick={focusEditor}
         >
           {editorRef.editor ? (
             <Editor editor={editorRef.editor} />

@@ -1,6 +1,18 @@
 <%
 const { apiConfig, generateResponses, config } = it;
 %>
+/* eslint-disable */
+/* tslint:disable */
+// @ts-nocheck
+/*
+ * ---------------------------------------------------------------
+ * ## THIS FILE WAS GENERATED VIA SWAGGER-TYPESCRIPT-API        ##
+ * ##                                                           ##
+ * ## AUTHOR: acacode                                           ##
+ * ## SOURCE: https://github.com/acacode/swagger-typescript-api ##
+ * ---------------------------------------------------------------
+ */
+
 import { message } from "@ctzhian/ui";
 import type {
   AxiosInstance,
@@ -94,8 +106,7 @@ export enum ContentType {
   Text = "text/plain",
 }
 
-type ExtractDataProp<T> = T extends { data?: infer U } ? U : T
-
+type ExtractDataProp<T> = T extends { data?: infer U } ? U : T;
 
 export class HttpClient<SecurityDataType = unknown> {
   public instance: AxiosInstance;
@@ -143,7 +154,7 @@ export class HttpClient<SecurityDataType = unknown> {
         return Promise.reject(error.response);
       },
     );
-    }
+  }
 
   public setSecurityData = (data: SecurityDataType | null) => {
     this.securityData = data;
