@@ -593,7 +593,7 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 		err = d.in.DiscRepo.Update(ctx, map[string]any{
 			"resolved":    false,
 			"resolved_at": gorm.Expr("null"),
-		})
+		}, repo.QueryWithEqual("id", disc.ID))
 		if err != nil {
 			return err
 		}
