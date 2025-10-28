@@ -33,7 +33,7 @@ import 'dayjs/locale/zh-cn'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
-import React, { useContext, useState } from 'react'
+import React, { useContext, useState, useEffect } from 'react'
 import EditCommentModal from './editCommentModal'
 
 import { formatNumber } from '@/lib/utils'
@@ -54,12 +54,7 @@ const animationStyles = `
   }
 `
 
-// 注入样式
-if (typeof document !== 'undefined') {
-  const styleSheet = document.createElement('style')
-  styleSheet.textContent = animationStyles
-  document.head.appendChild(styleSheet)
-}
+// 样式注入逻辑将在组件内部通过useEffect处理
 
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
@@ -79,6 +74,20 @@ const BaseDiscussCard = (props: {
   const router = useRouter()
   const { user } = useContext(AuthContext)
   const [repliesCollapsed, setRepliesCollapsed] = useState(false)
+
+  // 安全地注入样式，避免水合失败
+  useEffect(() => {
+    const styleSheet = document.createElement('style')
+    styleSheet.textContent = animationStyles
+    document.head.appendChild(styleSheet)
+    
+    // 清理函数，组件卸载时移除样式
+    return () => {
+      if (document.head.contains(styleSheet)) {
+        document.head.removeChild(styleSheet)
+      }
+    }
+  }, [])
   // 检查是否有可用的菜单项
   const hasMenuItems =
     // 是当前用户的评论（可以编辑和删除）

@@ -24,7 +24,7 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { useParams, useRouter } from 'next/navigation'
-import { useContext, useRef, useState } from 'react'
+import { useContext, useRef, useState, useEffect } from 'react'
 
 // 添加CSS动画样式
 const animationStyles = `
@@ -52,12 +52,7 @@ const animationStyles = `
   }
 `
 
-// 注入样式
-if (typeof document !== 'undefined') {
-  const styleSheet = document.createElement('style')
-  styleSheet.textContent = animationStyles
-  document.head.appendChild(styleSheet)
-}
+// 样式注入逻辑将在组件内部通过useEffect处理
 
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
@@ -67,6 +62,20 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const { user } = useContext(AuthContext)
   const [releaseVisible, { setFalse: releaseClose, setTrue: releaseOpen }] = useBoolean(false)
   const router = useRouter()
+
+  // 安全地注入样式，避免水合失败
+  useEffect(() => {
+    const styleSheet = document.createElement('style')
+    styleSheet.textContent = animationStyles
+    document.head.appendChild(styleSheet)
+    
+    // 清理函数，组件卸载时移除样式
+    return () => {
+      if (document.head.contains(styleSheet)) {
+        document.head.removeChild(styleSheet)
+      }
+    }
+  }, [])
   const { id }: { id: string } = useParams() || { id: '' }
   const { checkAuth } = useAuthCheck()
   const anchorElRef = useRef(null)

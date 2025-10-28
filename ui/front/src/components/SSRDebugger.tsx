@@ -19,11 +19,13 @@ export const SSRDebugger: React.FC<SSRDebuggerProps> = ({
   showInProduction = false,
 }) => {
   const [isMounted, setIsMounted] = useState(false);
+  const [timestamp, setTimestamp] = useState<string>('');
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
     setIsClient(true);
+    setTimestamp(new Date().toLocaleTimeString());
   }, []);
 
   // 只在开发环境或明确允许时显示
@@ -83,7 +85,7 @@ export const SSRDebugger: React.FC<SSRDebuggerProps> = ({
 
       <Box sx={{ mt: 1, fontSize: '10px', color: 'lightgray' }}>
         <div>Environment: {process.env.NODE_ENV}</div>
-        <div>Timestamp: {new Date().toLocaleTimeString()}</div>
+        <div>Timestamp: {timestamp || 'Loading...'}</div>
       </Box>
     </Paper>
   );

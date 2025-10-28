@@ -28,7 +28,7 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
   const { content = '', sx, truncateLength = 0 } = props
   const [isMounted, setIsMounted] = useState(false)
   const displayContent = truncateLength > 0 ? truncateText(extractTextFromHTML(content), truncateLength) : content
-  if (!displayContent || !content) return ''
+  if (!displayContent || !content) return null
   const editorRef = useTiptap({
     content: displayContent || '',
     editable: false,
