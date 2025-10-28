@@ -575,35 +575,57 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 	if disc.UserID != user.UID {
 		return errors.New("not allowed to accept comment")
 	}
-	if disc.Resolved {
-		return errors.New("discussion already resolved")
-	}
-	alreadyAccepted, err := d.in.CommRepo.Exist(ctx,
-		repo.QueryWithEqual("discussion_id", disc.ID),
-		repo.QueryWithEqual("accepted", true),
-	)
-	if err != nil {
-		return err
-	}
-	if alreadyAccepted {
-		return errors.New("comment already accepted")
-	}
+
 	comment, err := d.in.CommRepo.Detail(ctx, commentID)
 	if err != nil {
 		return err
 	}
+
+	if comment.Accepted {
+		err = d.in.CommRepo.Update(ctx, map[string]any{
+			"accepted":    false,
+			"accepted_at": gorm.Expr("null"),
+		}, repo.QueryWithEqual("id", commentID))
+		if err != nil {
+			return err
+		}
+
+		err = d.in.DiscRepo.Update(ctx, map[string]any{
+			"resolved":    false,
+			"resolved_at": gorm.Expr("null"),
+		})
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	err = d.in.CommRepo.Update(ctx, map[string]any{
+		"accepted":    false,
+		"accepted_at": gorm.Expr("null"),
+	}, repo.QueryWithEqual("discussion_id", disc.ID),
+		repo.QueryWithEqual("accepted", true))
+	if err != nil {
+		return err
+	}
+
 	if err := d.in.CommRepo.UpdateByModel(ctx, &model.Comment{
 		Accepted:   true,
 		AcceptedAt: model.Timestamp(time.Now().Unix()),
 	}, repo.QueryWithEqual("id", commentID)); err != nil {
 		return err
 	}
-	if err := d.in.DiscRepo.Update(ctx, map[string]any{
-		"resolved":    true,
-		"resolved_at": model.Timestamp(time.Now().Unix()),
-	}, repo.QueryWithEqual("id", disc.ID)); err != nil {
-		return err
+
+	if !disc.Resolved {
+		if err := d.in.DiscRepo.Update(ctx, map[string]any{
+			"resolved":    true,
+			"resolved_at": model.Timestamp(time.Now().Unix()),
+		}, repo.QueryWithEqual("id", disc.ID)); err != nil {
+			return err
+		}
 	}
+
 	notifyMsg := topic.MsgMessageNotify{
 		DiscussID:      disc.ID,
 		ForumID:        disc.ForumID,
