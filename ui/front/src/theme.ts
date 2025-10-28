@@ -1,12 +1,6 @@
 'use client'
-// import { Roboto } from 'next/font/google';
 import { createTheme } from '@mui/material/styles'
 import { zhCN } from '@mui/material/locale'
-// const roboto = Roboto({
-//   weight: ['300', '400', '500', '700'],
-//   subsets: ['latin'],
-//   display: 'swap',
-// });
 
 declare module '@mui/material/styles' {
   interface Palette {
@@ -33,9 +27,6 @@ declare module '@mui/material/Button' {
 const theme = createTheme(
   {
     cssVariables: true, // 启用 CSS 变量
-    shape: {
-      borderRadius: 8, // 设置默认边框圆角为 8px
-    },
     palette: {
       mode: 'light',
       primary: {
@@ -70,6 +61,16 @@ const theme = createTheme(
         disabled: 'rgba(33, 34, 45, 0.26)',
         disabledBackground: 'rgba(33, 34, 45, 0.12)',
       },
+      text: {
+        primary: '#21222D',
+        secondary: 'rgba(33,34,45, 0.7)',
+        // @ts-ignore
+        auxiliary: 'rgba(33,34,45, 0.5)',
+        disabled: 'rgba(33,34,45, 0.2)',
+      },
+    },
+    shape: {
+      borderRadius: 8, // 添加默认的圆角配置
     },
     // typography: {
     //   fontFamily: roboto.style.fontFamily,

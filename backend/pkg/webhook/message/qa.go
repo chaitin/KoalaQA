@@ -70,7 +70,7 @@ func NewQANeedReview(body commonDoc) Message {
 	return &docMsg{
 		Header: Header{
 			MsgType:       TypeQANeedReview,
-			MsgTitle:      "有新的问答对待审核",
+			MsgTitle:      "有新的问答等待审核",
 			HeadingPrefix: "问题",
 		},
 		Doc: body,

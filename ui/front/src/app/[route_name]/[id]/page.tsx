@@ -4,7 +4,6 @@ import { Suspense } from 'react'
 import { Box, Stack, Alert, Typography } from '@mui/material'
 import TitleCard from './ui/titleCard'
 import Content from './ui/content'
-import ScrollAnimation from '@/components/ScrollAnimation'
 
 export const metadata: Metadata = {
   title: '讨论详情',
@@ -114,50 +113,27 @@ const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; 
         },
       }}
     >
-      <ScrollAnimation animation='fadeInDown' duration={0.8}>
-        <Box
-          sx={{
-            mt: '64px',
-            width: '100%',
-            height: 200,
-            backgroundImage: 'url(/banner.png)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundBlendMode: 'overlay',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'linear-gradient(135deg, rgba(32, 108, 255, 0.1) 0%, rgba(0, 0, 0, 0.1) 100%)',
-              zIndex: 1,
-            },
-            '&::after': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'radial-gradient(circle at 50% 50%, rgba(32, 108, 255, 0.05) 0%, transparent 70%)',
-              zIndex: 2,
-            },
-          }}
-        />
-      </ScrollAnimation>
       <Box
         sx={{
-          zIndex: 1,
+          mt: '64px',
+          width: '100%',
+          height: 200,
+          backgroundImage: 'url(/banner.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundBlendMode: 'overlay',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+        }}
+      />
+      <Box
+        sx={{
           width: { xs: '100%', sm: 800 },
           mx: 'auto',
-          mt: '-180px',
-          pt: 11,
+          position: 'relative',
+          top: '-100px',
           pb: '100px',
           px: { xs: 2, sm: 0 },
           minHeight: '100vh',
@@ -165,22 +141,18 @@ const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; 
       >
         <h1 style={{ display: 'none' }}>讨论详情</h1>
         <Suspense fallback={<LoadingSpinner />}>
-          <ScrollAnimation animation='fadeInUp' delay={100} duration={0.6}>
-            <TitleCard data={discussion} />
-          </ScrollAnimation>
+          <TitleCard data={discussion} />
           <Box
             sx={{
               my: '20px',
               display: { xs: 'block', sm: 'none' },
             }}
           />
-          <ScrollAnimation animation='fadeInUp' delay={200} duration={0.6} immediate={true}>
-            <Stack direction='row' alignItems='flex-start' sx={{ mt: { xs: 0, sm: 3 }, width: '100%' }} gap={3}>
-              <Box sx={{ flex: 1, width: '100%' }}>
-                <Content data={discussion} />
-              </Box>
-            </Stack>
-          </ScrollAnimation>
+          <Stack direction='row' alignItems='flex-start' sx={{ mt: { xs: 0, sm: 3 }, width: '100%' }} gap={3}>
+            <Box sx={{ flex: 1, width: '100%' }}>
+              <Content data={discussion} />
+            </Box>
+          </Stack>
         </Suspense>
       </Box>
     </Box>
