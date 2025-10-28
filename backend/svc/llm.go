@@ -83,10 +83,13 @@ func (l *LLM) Chat(ctx context.Context, sMsg string, uMsg string, params map[str
 		return "", err
 	}
 	logger := l.logger.WithContext(ctx)
-	template := prompt.FromMessages(schema.GoTemplate,
+	templates := []schema.MessagesTemplate{
 		schema.SystemMessage(sMsg),
-		schema.UserMessage(uMsg),
-	)
+	}
+	if uMsg != "" {
+		templates = append(templates, schema.UserMessage(uMsg))
+	}
+	template := prompt.FromMessages(schema.GoTemplate, templates...)
 	msgs, err := template.Format(ctx, params)
 	if err != nil {
 		return "", err
