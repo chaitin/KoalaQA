@@ -1,58 +1,50 @@
-'use client';
+'use client'
 
-import { getUserLoginThird } from '@/api';
-import { Card } from '@/components';
-import { AuthType } from '@/types/auth';
-import { Box, Button, Stack, Typography } from '@mui/material';
-import Link from 'next/link';
-import { Suspense } from 'react';
-import Account from './account';
-import { useAuthConfig } from '@/hooks/useAuthConfig';
+import { getUserLoginThird } from '@/api'
+import { Card } from '@/components'
+import { AuthType } from '@/types/auth'
+import { Box, Button, Stack, Typography } from '@mui/material'
+import Link from 'next/link'
+import { Suspense } from 'react'
+import Account from './account'
+import { useAuthConfig } from '@/hooks/useAuthConfig'
 
 const LoginType = () => {
   // 使用新的 useAuthConfig hook
-  const { authConfig, loading } = useAuthConfig();
+  const { authConfig, loading } = useAuthConfig()
   const handleOAuthLogin = async (type: number) => {
     try {
       // 调用getUserLoginThird接口获取跳转URL
-      const response = await getUserLoginThird({ type });
+      const response = await getUserLoginThird({ type })
 
       // 使用类型断言处理API响应
-      const apiResponse = response as { data?: string } | string;
-      let oauthUrl = '';
-      
+      const apiResponse = response as { data?: string } | string
+      let oauthUrl = ''
+
       if (typeof apiResponse === 'object' && apiResponse.data) {
-        oauthUrl = apiResponse.data;
+        oauthUrl = apiResponse.data
       } else if (typeof apiResponse === 'string') {
-        oauthUrl = apiResponse;
+        oauthUrl = apiResponse
       } else {
-        console.error('Failed to get third party login URL');
-        return;
+        console.error('Failed to get third party login URL')
+        return
       }
 
       // 自动跳转到第三方登录页面
-      window.location.href = decodeURIComponent(oauthUrl);
+      window.location.href = decodeURIComponent(oauthUrl)
     } catch (error) {
-      console.error('Error getting third party login URL:', error);
+      console.error('Error getting third party login URL:', error)
     }
-  };
+  }
 
   // 判断是否支持不同的登录方式
-  const hasPasswordLogin =
-    authConfig?.auth_types?.some((auth) => auth.type === AuthType.PASSWORD) ||
-    false;
-  const hasOAuthLogin =
-    authConfig?.auth_types?.some((auth) => auth.type === AuthType.OAUTH) ||
-    false;
-  const passwordConfig = authConfig?.auth_types?.find(
-    (auth) => auth.type === AuthType.PASSWORD
-  );
-  const oauthConfig = authConfig?.auth_types?.find(
-    (auth) => auth.type === AuthType.OAUTH
-  );
+  const hasPasswordLogin = authConfig?.auth_types?.some((auth) => auth.type === AuthType.PASSWORD) || false
+  const hasOAuthLogin = authConfig?.auth_types?.some((auth) => auth.type === AuthType.OAUTH) || false
+  const passwordConfig = authConfig?.auth_types?.find((auth) => auth.type === AuthType.PASSWORD)
+  const oauthConfig = authConfig?.auth_types?.find((auth) => auth.type === AuthType.OAUTH)
 
   if (loading) {
-    return;
+    return
   }
 
   // 根据配置决定显示哪种登录界面
@@ -121,11 +113,7 @@ const LoginType = () => {
                 >
                   还没有注册？
                   <Link href='/register' style={{ textDecoration: 'none' }}>
-                    <Box
-                      sx={{ color: '#40E0D0', ml: 0.5, textDecoration: 'none' }}
-                    >
-                      立即注册
-                    </Box>
+                    <Box sx={{ color: '#40E0D0', ml: 0.5, textDecoration: 'none' }}>立即注册</Box>
                   </Link>
                 </Box>
               )}
@@ -133,7 +121,7 @@ const LoginType = () => {
           </Card>
         </Box>
       </Suspense>
-    );
+    )
   }
 
   // 情况2：有账号密码登录（可能同时有第三方登录），显示右侧样式（完整登录表单）
@@ -169,7 +157,7 @@ const LoginType = () => {
             </Typography>
 
             {/* 账号密码登录 */}
-            <Account isChecked={true} passwordConfig={passwordConfig}/>
+            <Account isChecked={true} passwordConfig={passwordConfig} />
 
             {/* 注册链接 */}
             {authConfig?.enable_register && (
@@ -182,9 +170,7 @@ const LoginType = () => {
               >
                 还没有注册？
                 <Link href='/register' style={{ textDecoration: 'none' }}>
-                  <Box
-                    sx={{ color: '#40E0D0', ml: 0.5, textDecoration: 'none' }}
-                  >
+                  <Box sx={{ display: 'inline-block', fontWeight: 500, color: 'primary.main', ml: 0.5, textDecoration: 'none' }}>
                     立即注册
                   </Box>
                 </Link>
@@ -224,7 +210,7 @@ const LoginType = () => {
         </Card>
       </Box>
     </Suspense>
-  );
-};
+  )
+}
 
-export default LoginType;
+export default LoginType

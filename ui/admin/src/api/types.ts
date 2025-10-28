@@ -253,7 +253,7 @@ export interface ModelForumInfo {
   group_ids?: number[];
   id?: number;
   index?: number;
-  name?: string;
+  name: string;
   route_name?: string;
 }
 

@@ -22,7 +22,6 @@ import { AuthContext } from '@/components/authProvider'
 // import { Avatar } from '@/components/discussion'
 import { TimeDisplayWithTag } from '@/components/TimeDisplay'
 import EditorWrap from '@/components/editor/edit/Wrap'
-import Modal from '@/components/modal'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
@@ -34,11 +33,12 @@ import 'dayjs/locale/zh-cn'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
-import React, { useContext, useState } from 'react'
+import React, { useContext, useState, useEffect } from 'react'
 import EditCommentModal from './editCommentModal'
 
 import { formatNumber } from '@/lib/utils'
 import EditorContent from '@/components/EditorContent'
+import Modal from '@/components/modal'
 
 // 添加CSS动画样式
 const animationStyles = `
@@ -54,12 +54,7 @@ const animationStyles = `
   }
 `
 
-// 注入样式
-if (typeof document !== 'undefined') {
-  const styleSheet = document.createElement('style')
-  styleSheet.textContent = animationStyles
-  document.head.appendChild(styleSheet)
-}
+// 样式注入逻辑将在组件内部通过useEffect处理
 
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
@@ -79,12 +74,30 @@ const BaseDiscussCard = (props: {
   const router = useRouter()
   const { user } = useContext(AuthContext)
   const [repliesCollapsed, setRepliesCollapsed] = useState(false)
+
+  // 安全地注入样式，避免水合失败
+  useEffect(() => {
+    const styleSheet = document.createElement('style')
+    styleSheet.textContent = animationStyles
+    document.head.appendChild(styleSheet)
+    
+    // 清理函数，组件卸载时移除样式
+    return () => {
+      if (document.head.contains(styleSheet)) {
+        document.head.removeChild(styleSheet)
+      }
+    }
+  }, [])
   // 检查是否有可用的菜单项
   const hasMenuItems =
     // 是当前用户的评论（可以编辑和删除）
     data.user_id === disData.current_user_id ||
     // 管理员、客服运营可以编辑和删除任何评论
-    [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(user?.role || ModelUserRole.UserRoleUnknown)
+    [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
+      user?.role || ModelUserRole.UserRoleUnknown,
+    ) ||
+    // 问答类型且问题作者可以采纳/取消采纳评论
+    (!isReply && disData.type === 'qa' && disData.user_id === disData.current_user_id)
 
   const revokeLike = async () => {
     return postDiscussionDiscIdCommentCommentIdRevokeLike({
@@ -240,7 +253,7 @@ const BaseDiscussCard = (props: {
           {!isReply &&
             disData.type === 'qa' &&
             disData.user_id === disData.current_user_id &&
-            !disData.comments?.[0]?.accepted &&
+            !disData.comments?.some((comment) => comment.accepted === true) &&
             !data?.accepted && (
               <Button
                 variant='outlined'
@@ -250,8 +263,9 @@ const BaseDiscussCard = (props: {
                   e.stopPropagation()
                   // 直接调用采纳逻辑
                   Modal.confirm({
-                    title: '确定采纳这个回答吗？',
-                    okButtonProps: { color: 'info' },
+                    title: '采纳',
+                    content: '确定要采纳该修改吗？',
+                    okText: '采纳',
                     onOk: async () => {
                       await postDiscussionDiscIdCommentCommentIdAccept({
                         discId: disData.uuid!,
@@ -275,8 +289,8 @@ const BaseDiscussCard = (props: {
               color: 'rgba(0,0,0,0.5)',
             }}
           >
-            <TimeDisplayWithTag 
-              timestamp={data.updated_at!} 
+            <TimeDisplayWithTag
+              timestamp={data.updated_at!}
               title={dayjs.unix(data.updated_at!).format('YYYY-MM-DD HH:mm:ss')}
             />
           </Typography>
@@ -613,6 +627,48 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
     setEditCommentModalVisible(true)
     setAnchorEl(null)
   }
+
+  const handleAcceptComment = () => {
+    setAnchorEl(null)
+    Modal.confirm({
+      title: '确定采纳这个回答吗？',
+      okButtonProps: { color: 'info' },
+      onOk: async () => {
+        if (!commentIndex) return
+        await postDiscussionDiscIdCommentCommentIdAccept({
+          discId: data.uuid!,
+          commentId: commentIndex.id!,
+        })
+        // 清除讨论详情的缓存
+        const cacheKey = generateCacheKey(`/discussion/${data.uuid}`, {})
+        clearCache(cacheKey)
+        router.refresh()
+      },
+    })
+  }
+
+  const handleUnacceptComment = () => {
+    setAnchorEl(null)
+    Modal.confirm({
+      title: '确定取消采纳这个回答吗？',
+      okButtonProps: { color: 'error' },
+      onOk: async () => {
+        if (!commentIndex) return
+        // 取消采纳就是再次调用采纳接口
+        await postDiscussionDiscIdCommentCommentIdAccept({
+          discId: data.uuid!,
+          commentId: commentIndex.id!,
+        })
+        // 清除讨论详情的缓存
+        const cacheKey = generateCacheKey(`/discussion/${data.uuid}`, {})
+        clearCache(cacheKey)
+        router.refresh()
+      },
+    })
+  }
+
+  // 判断帖子是否有被采纳的评论
+  const hasAcceptedComment = data.comments?.some((comment) => comment.accepted)
   return (
     <Stack id='comment-card' gap={3} sx={{ width: '100%' }}>
       <Menu id='basic-menu' anchorEl={anchorEl} open={open} onClose={handleClose}>
@@ -624,6 +680,17 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
           [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
             user?.role || ModelUserRole.UserRoleUnknown,
           )) && <MenuItem onClick={handleDelete}>删除</MenuItem>}
+        {/* 问答类型且问题作者可以采纳/取消采纳评论 */}
+        {data.type === 'qa' &&
+          data.user_id === data.current_user_id &&
+          commentIndex &&
+          !commentIndex.accepted &&
+          hasAcceptedComment && <MenuItem onClick={handleAcceptComment}>采纳</MenuItem>}
+        {data.type === 'qa' && data.user_id === data.current_user_id && commentIndex && commentIndex.accepted && (
+          <MenuItem onClick={handleUnacceptComment} sx={{ color: 'error.main' }}>
+            取消采纳
+          </MenuItem>
+        )}
       </Menu>
       <EditCommentModal
         open={editCommentModalVisible}

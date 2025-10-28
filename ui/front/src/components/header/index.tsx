@@ -29,26 +29,26 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
 
   // 使用新的 useAuthConfig hook
   const { authConfig } = useAuthConfig()
-  
+
   // 使用ForumProvider中的动态数据
   const { forums } = useForum()
 
   // 使用板块选择器 - 只在非登录/注册页面使用
   const isAuthPage = ['/login', '/register'].includes(pathname)
   const { forum_id, route_name } = useParams()
-  
+
   // 根据当前路由参数获取选中的版块ID
   const getSelectedForumId = () => {
     if (forum_id) {
       return parseInt(forum_id as string)
     }
     if (route_name && forums.length > 0) {
-      const forum = forums.find(f => f.route_name === route_name)
+      const forum = forums.find((f) => f.route_name === route_name)
       return forum?.id
     }
     return undefined
   }
-  
+
   const selectedForumId = getSelectedForumId()
 
   // 从 authConfig 中获取配置
@@ -73,7 +73,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
       // 如果有论坛数据，跳转到当前论坛或第一个论坛
       if (forum_id) {
         const forumId = Array.isArray(forum_id) ? forum_id[0] : forum_id
-        const currentForum = forums.find(f => f.id === parseInt(forumId))
+        const currentForum = forums.find((f) => f.id === parseInt(forumId))
         if (currentForum) {
           const routePath = currentForum.route_name ? `/${currentForum.route_name}` : `/${currentForum.id}`
           router.push(routePath)
@@ -119,13 +119,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
       >
         <Stack direction='row' alignItems='center' gap={3}>
           {brandConfig?.logo && brandConfig?.text ? (
-            <Stack
-              direction='row'
-              alignItems='center'
-              gap={1}
-              sx={{ cursor: 'pointer' }}
-              onClick={handleLogoClick}
-            >
+            <Stack direction='row' alignItems='center' gap={1} sx={{ cursor: 'pointer' }} onClick={handleLogoClick}>
               <Image
                 src={brandConfig.logo}
                 alt='Logo'
@@ -160,11 +154,8 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
               onClick={handleLogoClick}
             />
           )}
-          {Boolean(forums?.length) && Boolean(publicAccess || user?.uid) && (
-            <ForumSelector
-              selectedForumId={selectedForumId}
-              forums={forums}
-            />
+          {(forums?.length || 0) >= 1 && Boolean(publicAccess || user?.uid) && (
+            <ForumSelector selectedForumId={selectedForumId} forums={forums} />
           )}
         </Stack>
 
