@@ -1,7 +1,10 @@
 import React, { useState, type FC } from 'react'
 
 import CloseIcon from '@mui/icons-material/Close'
-import { CustomLoadingButton as LoadingButton, type CustomLoadingButtonProps as LoadingButtonProps } from '../CustomLoadingButton'
+import {
+  CustomLoadingButton as LoadingButton,
+  type CustomLoadingButtonProps as LoadingButtonProps,
+} from '../CustomLoadingButton'
 import {
   Button,
   Dialog,
@@ -10,9 +13,11 @@ import {
   DialogTitle,
   IconButton,
   styled,
+  ThemeProvider,
   type ButtonProps,
   type DialogProps,
 } from '@mui/material'
+import theme from '@/theme'
 
 export interface ModalProps extends Omit<DialogProps, 'title' | 'open'> {
   open?: boolean
@@ -37,14 +42,12 @@ interface DialogRootProps {
   ownerState: ModalProps
 }
 
-const DialogRoot = styled(Dialog)<DialogRootProps>(({ theme, ownerState }) => {
-  return {
-    '.MuiDialog-paper': {
-      width: ownerState.width,
-      borderRadius: Number(theme.shape.borderRadius) * 3,
-    },
-  }
-})
+const DialogRoot = styled(Dialog)<DialogRootProps>(({ theme, ownerState }) => ({
+  '.MuiDialog-paper': {
+    width: ownerState.width,
+    borderRadius: Number(theme.shape.borderRadius) * 3,
+  },
+}))
 
 const Modal: FC<ModalProps> = (props) => {
   const {
@@ -77,7 +80,7 @@ const Modal: FC<ModalProps> = (props) => {
     setLoading(true)
     try {
       await onOk?.()
-    } catch { }
+    } catch {}
 
     setLoading(false)
   }
@@ -90,93 +93,107 @@ const Modal: FC<ModalProps> = (props) => {
   }
 
   return (
-    <DialogRoot
-      open={open}
-      onClose={onClose}
-      PaperProps={{
-        elevation: 0,
-      }}
-      maxWidth='lg'
-      ownerState={ownerState}
-      {...other}
-    >
-      {(!!title || closable) && (
-        <DialogTitle
-          sx={{
-            color: 'text.primary',
-            pb: 0,
-            pt: 3,
-            fontWeight: 600,
-            fontSize: 16,
-          }}
-        >
-          {title}
-          {closable && (
-            <IconButton
-              sx={{
-                position: 'absolute',
-                right: 20,
-                top: 20,
-                color: 'text.auxiliary',
-              }}
-              onClick={onCancel}
-            >
-              <CloseIcon sx={{ fontSize: '16px' }} />
-            </IconButton>
-          )}
-        </DialogTitle>
-      )}
-      {children && <DialogContent sx={{ position: 'relative', pt: '20px !important' }}>{children}</DialogContent>}
-      {footer === null && null}
-      {(footer === void 0 || typeof footer === 'function') && (
-        <DialogActions
-          sx={{
-            px: 3,
-            pb: 3,
-          }}
-        >
-          {typeof footer === 'function' &&
-            footer({
-              OkBtn: (
+    <ThemeProvider theme={theme}>
+      <DialogRoot
+        open={open}
+        onClose={onClose}
+        PaperProps={{
+          elevation: 0,
+        }}
+        maxWidth='lg'
+        ownerState={ownerState}
+        {...other}
+      >
+        {(!!title || closable) && (
+          <DialogTitle
+            sx={{
+              color: 'text.primary',
+              pb: 0,
+              pt: 3,
+              fontWeight: 600,
+              fontSize: 16,
+            }}
+          >
+            {title}
+            {closable && (
+              <IconButton
+                sx={{
+                  position: 'absolute',
+                  right: 20,
+                  top: 20,
+                  color: 'text.auxiliary',
+                }}
+                onClick={onCancel}
+              >
+                <CloseIcon sx={{ fontSize: '16px' }} />
+              </IconButton>
+            )}
+          </DialogTitle>
+        )}
+        {children && <DialogContent sx={{ position: 'relative', pt: '20px !important' }}>{children}</DialogContent>}
+        {footer === null && null}
+        {(footer === void 0 || typeof footer === 'function') && (
+          <DialogActions
+            sx={{
+              px: 3,
+              pb: 3,
+            }}
+          >
+            {typeof footer === 'function' &&
+              footer({
+                OkBtn: (
+                  <LoadingButton
+                    loading={loading}
+                    variant='contained'
+                    color='primary'
+                    sx={{
+                      backgroundColor: 'primary.main',
+                      '&:hover': {
+                        backgroundColor: 'primary.dark',
+                      },
+                    }}
+                    onClick={onConfirm}
+                    {...okButtonProps}
+                  >
+                    {okText}
+                  </LoadingButton>
+                ),
+                CancelBtn: (
+                  <Button color='primary' onClick={onCancel} {...cancelButtonProps}>
+                    {cancelText}
+                  </Button>
+                ),
+              })}
+            {footer === void 0 && (
+              <>
+                {showCancel && (
+                  <Button color='primary' onClick={onCancel} {...cancelButtonProps}>
+                    {cancelText}
+                  </Button>
+                )}
+
                 <LoadingButton
                   loading={loading}
                   variant='contained'
                   color='primary'
+                  sx={{
+                    backgroundColor: 'primary.main',
+                    '&:hover': {
+                      backgroundColor: 'primary.dark',
+                    },
+                  }}
                   onClick={onConfirm}
                   {...okButtonProps}
                 >
                   {okText}
                 </LoadingButton>
-              ),
-              CancelBtn: (
-                <Button color='primary' onClick={onCancel} {...cancelButtonProps}>
-                  {cancelText}
-                </Button>
-              ),
-            })}
-          {footer === void 0 && (
-            <>
-              {showCancel && (
-                <Button color='primary' onClick={onCancel} {...cancelButtonProps}>
-                  {cancelText}
-                </Button>
-              )}
-
-              <LoadingButton
-                loading={loading}
-                variant='contained'
-                color='primary'
-                onClick={onConfirm}
-                {...okButtonProps}
-              >
-                {okText}
-              </LoadingButton>
-            </>
-          )}
-        </DialogActions>
-      )}
-      {footer !== null && footer !== void 0 && typeof footer !== 'function' && footer}
-    </DialogRoot>
+              </>
+            )}
+          </DialogActions>
+        )}
+        {footer !== null && footer !== void 0 && typeof footer !== 'function' && footer}
+      </DialogRoot>
+    </ThemeProvider>
   )
 }
 

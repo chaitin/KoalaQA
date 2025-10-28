@@ -1093,6 +1093,13 @@ export interface PostDiscussionDiscIdCommentCommentIdAcceptParams {
   commentId: number;
 }
 
+export interface PostDiscussionDiscIdCommentCommentIdUnacceptParams {
+  /** disc_id */
+  discId: string;
+  /** comment_id */
+  commentId: number;
+}
+
 export interface PostDiscussionDiscIdCommentCommentIdDislikeParams {
   /** disc_id */
   discId: string;
