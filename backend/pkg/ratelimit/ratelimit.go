@@ -18,7 +18,8 @@ type limiter struct {
 
 func newLimiter(period time.Duration, num int) *limiter {
 	return &limiter{
-		l: rate.NewLimiter(rate.Every(period), num),
+		l:       rate.NewLimiter(rate.Every(period), num),
+		lastUse: time.Now(),
 	}
 }
 
