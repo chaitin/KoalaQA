@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Narasimha1997/ratelimiter"
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/glog"
+	"github.com/chaitin/koalaqa/pkg/ratelimit"
 	"github.com/chaitin/koalaqa/pkg/webhook"
 	"github.com/chaitin/koalaqa/pkg/webhook/message"
 	"github.com/chaitin/koalaqa/repo"
@@ -19,7 +19,7 @@ type Webhook struct {
 	logger   *glog.Logger
 	lock     sync.Mutex
 	webhooks map[uint]webhook.Webhook
-	limiter  *ratelimiter.AttributeBasedLimiter
+	limiter  ratelimit.Limiter
 
 	repoWebhook *repo.Webhook
 }
@@ -125,7 +125,7 @@ func (w *Webhook) Delete(ctx context.Context, id uint) error {
 }
 
 func (w *Webhook) allow(id uint, discID string, msgType message.Type) bool {
-	return w.limiter.MustShouldAllow(fmt.Sprintf("webhook-%d-%s-%d", id, discID, msgType), 1, 1, time.Minute*5)
+	return w.limiter.Allow(fmt.Sprintf("webhook-%d-%s-%d", id, discID, msgType), time.Minute*5, 1)
 }
 
 func (w *Webhook) Send(ctx context.Context, msg message.Message) error {
@@ -143,12 +143,12 @@ func (w *Webhook) Send(ctx context.Context, msg message.Message) error {
 	return nil
 }
 
-func newWebhook(lc fx.Lifecycle, repoWebhook *repo.Webhook) *Webhook {
+func newWebhook(lc fx.Lifecycle, repoWebhook *repo.Webhook, limiter ratelimit.Limiter) *Webhook {
 	w := &Webhook{
 		logger:      glog.Module("svc", "webhook"),
 		repoWebhook: repoWebhook,
 		webhooks:    make(map[uint]webhook.Webhook),
-		limiter:     ratelimiter.NewAttributeBasedLimiter(false),
+		limiter:     limiter,
 	}
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
