@@ -154,7 +154,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
               onClick={handleLogoClick}
             />
           )}
-          {(forums?.length || 0) >= 1 && Boolean(publicAccess || user?.uid) && (
+          {(forums?.length || 0) > 1 && Boolean(publicAccess || user?.uid) && (
             <ForumSelector selectedForumId={selectedForumId} forums={forums} />
           )}
         </Stack>

@@ -15,7 +15,7 @@
     "icon": "node ./script/downLoadIcon.js"
   },
   "dependencies": {
-    "@ctzhian/tiptap": "^1.8.0",
+    "@ctzhian/tiptap": "^1.8.2",
     "@ctzhian/ui": "^7.0.5",
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
