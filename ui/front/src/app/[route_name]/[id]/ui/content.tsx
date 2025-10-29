@@ -264,7 +264,7 @@ const BaseDiscussCard = (props: {
                   // 直接调用采纳逻辑
                   Modal.confirm({
                     title: '采纳',
-                    content: '确定要采纳该修改吗？',
+                    content: '确定要采纳这个回答吗？',
                     okText: '采纳',
                     onOk: async () => {
                       await postDiscussionDiscIdCommentCommentIdAccept({
@@ -672,23 +672,27 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   return (
     <Stack id='comment-card' gap={3} sx={{ width: '100%' }}>
       <Menu id='basic-menu' anchorEl={anchorEl} open={open} onClose={handleClose}>
-        {(commentIndex?.user_id == data.current_user_id ||
-          [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
-            user?.role || ModelUserRole.UserRoleUnknown,
-          )) && <MenuItem onClick={handleEditComment}>编辑</MenuItem>}
-        {(commentIndex?.user_id == data.current_user_id ||
-          [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
-            user?.role || ModelUserRole.UserRoleUnknown,
-          )) && <MenuItem onClick={handleDelete}>删除</MenuItem>}
-        {/* 问答类型且问题作者可以采纳/取消采纳评论 */}
+        {/* 问答类型且问题作者可以采纳/取消采纳评论（置顶显示） */}
         {data.type === 'qa' &&
           data.user_id === data.current_user_id &&
           commentIndex &&
           !commentIndex.accepted &&
           hasAcceptedComment && <MenuItem onClick={handleAcceptComment}>采纳</MenuItem>}
         {data.type === 'qa' && data.user_id === data.current_user_id && commentIndex && commentIndex.accepted && (
-          <MenuItem onClick={handleUnacceptComment} sx={{ color: 'error.main' }}>
-            取消采纳
+          <MenuItem onClick={handleUnacceptComment}>取消采纳</MenuItem>
+        )}
+
+        {(commentIndex?.user_id == data.current_user_id ||
+          [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
+            user?.role || ModelUserRole.UserRoleUnknown,
+          )) && <MenuItem onClick={handleEditComment}>编辑</MenuItem>}
+
+        {(commentIndex?.user_id == data.current_user_id ||
+          [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
+            user?.role || ModelUserRole.UserRoleUnknown,
+          )) && (
+          <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
+            删除
           </MenuItem>
         )}
       </Menu>

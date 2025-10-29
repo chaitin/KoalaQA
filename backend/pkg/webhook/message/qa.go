@@ -2,6 +2,7 @@ package message
 
 import (
 	"bytes"
+	"strconv"
 	"text/template"
 	"time"
 
@@ -38,6 +39,10 @@ type sendQAMsg struct {
 	platformMsg
 }
 
+func (q *docMsg) ID() string {
+	return strconv.FormatUint(uint64(q.Doc.ID), 10)
+}
+
 func (q *docMsg) Message(webhookType model.WebhookType) (string, error) {
 	var buff bytes.Buffer
 	err := docTpl.Execute(&buff, sendQAMsg{
@@ -70,7 +75,7 @@ func NewQANeedReview(body commonDoc) Message {
 	return &docMsg{
 		Header: Header{
 			MsgType:       TypeQANeedReview,
-			MsgTitle:      "有新的问答等待审核",
+			MsgTitle:      "后台有新的回答等待审核",
 			HeadingPrefix: "问题",
 		},
 		Doc: body,
