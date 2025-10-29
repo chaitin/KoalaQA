@@ -171,10 +171,10 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
         <Script src='/font/iconfont.js' strategy='beforeInteractive' />
 
         <ServerErrorBoundary>
-          <CommonProvider>
-            <AuthConfigProvider initialAuthConfig={authConfig}>
-              <AuthProvider initialUser={user}>
-                <ForumProvider initialForums={forums}>
+          <AuthConfigProvider initialAuthConfig={authConfig}>
+            <AuthProvider initialUser={user}>
+              <ForumProvider initialForums={forums}>
+                <CommonProvider>
                   <AppRouterCacheProvider>
                     <ThemeProvider theme={theme}>
                       <CssBaseline />
@@ -186,10 +186,10 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
                       <Scroll />
                     </ThemeProvider>
                   </AppRouterCacheProvider>
-                </ForumProvider>
-              </AuthProvider>
-            </AuthConfigProvider>
-          </CommonProvider>
+                </CommonProvider>
+              </ForumProvider>
+            </AuthProvider>
+          </AuthConfigProvider>
         </ServerErrorBoundary>
       </body>
     </html>

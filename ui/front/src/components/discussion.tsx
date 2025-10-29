@@ -289,7 +289,6 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
 
             const getId = (item: ModelGroupItemInfo) => item?.id as number
             const getLabel = (item: any) => item?.name ?? item?.title ?? item?.label ?? ''
-
             return (
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                 {list.map((topic) => {
@@ -322,10 +321,12 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                         }}
                         size='small'
                         renderOption={(props, option) => {
+                          const { key, ...otherProps } = props
                           return (
                             <Box
+                              key={key}
                               component='li'
-                              {...props}
+                              {...otherProps}
                               sx={{
                                 display: 'flex',
                                 alignItems: 'center',

@@ -2,6 +2,7 @@ package message
 
 import (
 	"bytes"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -37,6 +38,10 @@ type discussMsg struct {
 type sendDiscussMsg struct {
 	*discussMsg
 	platformMsg
+}
+
+func (d *discussMsg) ID() string {
+	return strconv.FormatUint(uint64(d.Common.Discussion.ID), 10)
 }
 
 func (d *discussMsg) Message(webhookType model.WebhookType) (string, error) {
