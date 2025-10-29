@@ -319,7 +319,7 @@ func (d *Discussion) IncrementComment(uuid string, updateTime bool) {
 func (d *Discussion) DecrementComment(uuid string) {
 	ctx := context.Background()
 	d.in.DiscRepo.Update(ctx, map[string]any{
-		"comment": gorm.Expr("comment-1"),
+		"comment": gorm.Expr("CASE WHEN comment>0 THEN comment-1 END"),
 	}, repo.QueryWithEqual("uuid", uuid))
 
 	go d.RecalculateHot(uuid)
