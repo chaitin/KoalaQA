@@ -11,7 +11,7 @@
  */
 
 import alert from "@/components/alert";
-import { clearCache, generateCacheKey, retryRequest } from "@/lib/api-cache";
+import { clearCache, generateCacheKey } from "@/lib/api-cache";
 import { API_CONSTANTS } from "@/lib/constants";
 import { clearAllAuthCookies } from "@/utils/cookie";
 import type {
@@ -175,6 +175,15 @@ export class HttpClient<SecurityDataType = unknown> {
   private format?: ResponseType;
   private pendingRequests = new Map<string, Promise<any>>();
 
+  // 将服务端错误码/文案翻译为用户可读提示
+  private translateErrorMessage(message?: any): string {
+    const raw = typeof message === 'string' ? message : (message?.toString?.() || '');
+    if (raw && /rate\s*limit|ratelimit/i.test(raw)) {
+      return "操作过于频繁，请稍后再试";
+    }
+    return raw || "网络异常";
+  }
+
   constructor({
     securityWorker,
     secure,
@@ -209,13 +218,13 @@ export class HttpClient<SecurityDataType = unknown> {
           }
 
           if (alert.error && shouldShowError) {
-            alert.error(res.message || "网络异常");
+            alert.error(this.translateErrorMessage(res.err));
           }
           return Promise.reject(res);
         }
 
         if (alert.error && shouldShowError) {
-          alert.error(response.statusText);
+          alert.error(this.translateErrorMessage(response.statusText));
         }
         return Promise.reject(response);
       },
@@ -231,7 +240,7 @@ export class HttpClient<SecurityDataType = unknown> {
           if (typeof window !== "undefined") {
             console.log(
               "401 Unauthorized error detected, clearing auth data:",
-              error.response,
+              error.response.data.err
             );
 
             // 异步清除所有认证信息，包括cookie中的auth_token
@@ -265,18 +274,18 @@ export class HttpClient<SecurityDataType = unknown> {
               }
             });
             
-            return Promise.reject(error.response);
+            return Promise.reject(error.response.data.err);
           }
         }
 
         // 检查请求路径，如果是 api/user 则不展示报错信息
         const requestUrl = error.config?.url || "";
         const shouldShowError = requestUrl !== "/user";
-
         if (alert.error && shouldShowError) {
-          alert.error(error.message || "网络异常");
+          const msg = error?.response?.data?.err ?? error?.message;
+          alert.error(this.translateErrorMessage(msg));
         }
-        return Promise.reject(error.response);
+        return Promise.reject(error.response.data.err);
       },
     );
   }
@@ -506,18 +515,8 @@ export class HttpClient<SecurityDataType = unknown> {
       }
     }
 
-    // 创建请求 Promise 并添加到待处理请求中
-    const requestPromise = retryRequest(
-      () => this.instance.request(requestConfig),
-      {
-        maxRetries: API_CONSTANTS.RETRY_ATTEMPTS,
-        retryDelay: API_CONSTANTS.RETRY_DELAY,
-        shouldRetry: (error) => {
-          const status = error?.response?.status;
-          return !status || status >= 500;
-        },
-      },
-    )
+    // 创建请求 Promise 并添加到待处理请求中（移除重试机制）
+    const requestPromise = this.instance.request(requestConfig)
       .then((result) => {
         return result;
       })
