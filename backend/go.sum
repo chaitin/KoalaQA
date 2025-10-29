@@ -16,8 +16,6 @@ github.com/JohannesKaufmann/html-to-markdown/v2 v2.3.3 h1:r3fokGFRDk/8pHmwLwJ8zs
 github.com/JohannesKaufmann/html-to-markdown/v2 v2.3.3/go.mod h1:HtsP+1Fchp4dVvaiIsLHAl/yqL3H1YLwqLC9kNwqQEg=
 github.com/KyleBanks/depth v1.2.1 h1:5h8fQADFrWtarTdtDudMmGsC7GPbOAu6RVB3ffsVFHc=
 github.com/KyleBanks/depth v1.2.1/go.mod h1:jzSb9d0L43HxTQfT+oSA1EEp2q+ne2uh6XgeJcm8brE=
-github.com/Narasimha1997/ratelimiter v1.1.1 h1:ndkK0dHqUKdwSElE8Kghz+0gVcGEa9q6/CisEL/h6HU=
-github.com/Narasimha1997/ratelimiter v1.1.1/go.mod h1:TCsPmcx5vkQJu64sbTLRcr8xpNNmO22OTnvhfXEWoNw=
 github.com/airbrake/gobrake v3.6.1+incompatible/go.mod h1:wM4gu3Cn0W0K7GUuVWnlXZU11AGBXMILnrdOU8Kn00o=
 github.com/bahlo/generic-list-go v0.2.0 h1:5sz/EEAK+ls5wF+NeqDpk5+iNdMDXrh3z3nPnH1Wvgk=
 github.com/bahlo/generic-list-go v0.2.0/go.mod h1:2KvAjgMlE5NNynlg/5iLrrCCZ2+5xWbdbCW3pNTGyYg=

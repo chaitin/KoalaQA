@@ -3,7 +3,6 @@ module github.com/chaitin/koalaqa
 go 1.25.0
 
 require (
-	github.com/Narasimha1997/ratelimiter v1.1.1
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/chaitin/ModelKit v1.8.3
 	github.com/chaitin/pandawiki/sdk/rag v0.0.0-20250927130416-bcfc4bde3379
@@ -27,6 +26,7 @@ require (
 	go.uber.org/fx v1.24.0
 	golang.org/x/crypto v0.41.0
 	golang.org/x/oauth2 v0.30.0
+	golang.org/x/time v0.12.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.30.1
 )
@@ -135,7 +135,6 @@ require (
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
-	golang.org/x/time v0.12.0 // indirect
 	golang.org/x/tools v0.36.0 // indirect
 	google.golang.org/api v0.239.0 // indirect
 	google.golang.org/genai v1.13.0 // indirect
