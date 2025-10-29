@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Button, GlobalStyles } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { NodeDetail } from '..';
 import SaveIcon from '@mui/icons-material/Save';
@@ -8,26 +8,6 @@ import { Editor, useTiptap, EditorProps } from '@ctzhian/tiptap';
 import Toolbar from './Toolbar';
 import { postDiscussionUpload } from '@/api';
 import alert from "@/components/alert";
-
-// 添加全局动画样式
-const globalStyles = (
-  <GlobalStyles
-    styles={{
-      '@keyframes spin': {
-        '0%': { transform: 'rotate(0deg)' },
-        '100%': { transform: 'rotate(360deg)' },
-      },
-      '@keyframes pulse': {
-        '0%': { opacity: 0.6, transform: 'scale(0.95)' },
-        '100%': { opacity: 1, transform: 'scale(1)' },
-      },
-      '@keyframes fadeIn': {
-        '0%': { opacity: 0, transform: 'translateY(10px)' },
-        '100%': { opacity: 1, transform: 'translateY(0)' },
-      },
-    }}
-  />
-);
 
 interface WrapProps {
   detail: NodeDetail;
@@ -209,7 +189,6 @@ const EditorWrap = ({
   if (!isMounted) {
     return (
       <>
-        {globalStyles}
         <Box
           sx={{
             height: '100%',
@@ -317,7 +296,6 @@ const EditorWrap = ({
   // 客户端渲染的完整编辑器
   return (
     <>
-      {globalStyles}
       <Box
         ref={containerRef}
         sx={{

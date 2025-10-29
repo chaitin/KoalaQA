@@ -13,6 +13,7 @@ import {
   useState,
 } from 'react';
 import { useParams } from 'next/navigation';
+import { useForumId } from '@/hooks/useForumId';
 
 export const CommonContext = createContext<{
   headerStyle: SxProps<Theme>;
@@ -53,7 +54,7 @@ export const CommonContext = createContext<{
 
 const CommonProvider = ({ children }: { children: React.ReactNode }) => {
   const params = useParams();
-  const forumId = params?.forum_id as string;
+  const forumId = useForumId();
   const [showHeaderSearch, setShowHeaderSearch] = useState(false);
   const [headerStyle, setHeaderStyle] = useState<SxProps<Theme>>({});
   const [keywords, setKeywords] = useState('');
@@ -103,7 +104,7 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
     isFetchingRef.current = true;
     setGroupsLoading(true);
     
-    getGroup({ forum_id: parseInt(forumId, 10) })
+    getGroup({ forum_id: forumId })
       .then((r) => {
         const newGroups = {
           origin: r.items ?? [],
@@ -126,6 +127,12 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
         setGroupsLoading(false);
         isFetchingRef.current = false;
       });
+  }, [forumId]);
+
+  // forumId 变化时重置已获取标记与数据，确保切换板块后重新拉取
+  useEffect(() => {
+    hasFetchedRef.current = false;
+    setGroupsState({ origin: [], flat: [] });
   }, [forumId]);
 
   useEffect(() => {
