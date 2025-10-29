@@ -9,12 +9,12 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Narasimha1997/ratelimiter"
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/oss"
 	"github.com/chaitin/koalaqa/pkg/rag"
+	"github.com/chaitin/koalaqa/pkg/ratelimit"
 	"github.com/chaitin/koalaqa/pkg/topic"
 	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/pkg/webhook/message"
@@ -36,6 +36,7 @@ type discussionIn struct {
 	Dataset       *repo.Dataset
 	OC            oss.Client
 	ForumRepo     *repo.Forum
+	Limiter       ratelimit.Limiter
 }
 
 type Discussion struct {
@@ -43,7 +44,6 @@ type Discussion struct {
 
 	logger      *glog.Logger
 	webhookType map[model.DiscussionType]message.Type
-	limiter     *ratelimiter.AttributeBasedLimiter
 }
 
 func newDiscussion(in discussionIn) *Discussion {
@@ -55,7 +55,6 @@ func newDiscussion(in discussionIn) *Discussion {
 			model.DiscussionTypeFeedback: message.TypeNewFeedback,
 			model.DiscussionTypeBlog:     message.TypeNewBlog,
 		},
-		limiter: ratelimiter.NewAttributeBasedLimiter(false),
 	}
 }
 
@@ -91,7 +90,7 @@ func (d *Discussion) limitKey(args ...any) string {
 }
 
 func (d *Discussion) allow(args ...any) bool {
-	return d.limiter.MustShouldAllow(d.limitKey(args...), 1, 3, time.Minute)
+	return d.in.Limiter.Allow(d.limitKey(args...), time.Second*20, 3)
 }
 
 var errRatelimit = errors.New("ratelimit")

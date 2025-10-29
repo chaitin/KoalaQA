@@ -15,6 +15,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/oss"
 	"github.com/chaitin/koalaqa/pkg/rag"
+	"github.com/chaitin/koalaqa/pkg/ratelimit"
 	"github.com/chaitin/koalaqa/pkg/third_auth"
 	"github.com/chaitin/koalaqa/pkg/version"
 	"github.com/chaitin/koalaqa/pkg/webhook"
@@ -48,6 +49,7 @@ func main() {
 		third_auth.Module,
 		cron.Module(),
 		fx.Provide(version.NewInfo),
+		ratelimit.Module,
 	)
 	ctx := context.Background()
 	if err := app.Start(ctx); err != nil {
