@@ -12,8 +12,8 @@ importers:
         specifier: ^2.4.0
         version: 2.4.0(e2438b4fd1f144c2e84734636bc2002a)
       '@ctzhian/tiptap':
-        specifier: ^1.8.0
-        version: 1.8.0(5c7ce1c0f421677507321c0939085309)
+        specifier: ^1.8.2
+        version: 1.8.2(5c7ce1c0f421677507321c0939085309)
       '@ctzhian/ui':
         specifier: ^7.0.5
         version: 7.0.5(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@types/react@19.1.11)(react@19.1.1))(@mui/icons-material@6.5.0(@mui/material@7.3.4(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@types/react@19.1.11)(react@19.1.1))(@types/react@19.1.11)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@types/react@19.1.11)(react@19.1.1))(@mui/material@7.3.4(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@types/react@19.1.11)(react@19.1.1))(@types/react@19.1.11)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(@mui/utils@7.3.1(@types/react@19.1.11)(react@19.1.1))(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -307,8 +307,8 @@ packages:
       react: '>=16.9.0'
       react-dom: '>=16.9.0'
 
-  '@ctzhian/tiptap@1.8.0':
-    resolution: {integrity: sha512-93FrwHVi3TWcHePfG+oyCSRd8Kj3+JQnrUroolQRFv2py64Ned7my1Q4shFiVhfMVtgxHh0d1Gw3CYeKMICP5w==}
+  '@ctzhian/tiptap@1.8.2':
+    resolution: {integrity: sha512-L9LURFrgZiN/sjcZM9tQ+sJW2ZCx/jwvUkx5KHrpfvDJKwnHqk0zWOHPbV4qGrvXTAHopGsqNJD0w/7vFcjlCw==}
     peerDependencies:
       '@emotion/react': ^11
       '@emotion/styled': ^11
@@ -3751,7 +3751,7 @@ snapshots:
       - react-native
       - typescript
 
-  '@ctzhian/tiptap@1.8.0(5c7ce1c0f421677507321c0939085309)':
+  '@ctzhian/tiptap@1.8.2(5c7ce1c0f421677507321c0939085309)':
     dependencies:
       '@emotion/react': 11.14.0(@types/react@19.1.11)(react@19.1.1)
       '@emotion/styled': 11.14.1(@emotion/react@11.14.0(@types/react@19.1.11)(react@19.1.1))(@types/react@19.1.11)(react@19.1.1)
