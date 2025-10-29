@@ -62,6 +62,7 @@ type Common struct {
 }
 
 type Message interface {
+	ID() string
 	Type() Type
 	Title() string
 	Message(webhookType model.WebhookType) (string, error)

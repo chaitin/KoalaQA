@@ -39,6 +39,7 @@ export const ForumProvider = ({ children, initialForums = [] }: ForumProviderPro
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
 
+
   // 清除缓存函数
   const clearCache = useCallback(() => {
     setForums([])
@@ -81,7 +82,7 @@ export const ForumProvider = ({ children, initialForums = [] }: ForumProviderPro
     }
   }, [])
 
-  // 监听认证清除事件，根据公共访问配置决定是否清除论坛缓存
+  // 监听认证清除事件
   React.useEffect(() => {
     const handleAuthCleared = () => {
       if (!publicAccess) {

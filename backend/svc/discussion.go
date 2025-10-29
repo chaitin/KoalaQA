@@ -1,6 +1,7 @@
 package svc
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/Narasimha1997/ratelimiter"
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/mq"
@@ -41,6 +43,7 @@ type Discussion struct {
 
 	logger      *glog.Logger
 	webhookType map[model.DiscussionType]message.Type
+	limiter     *ratelimiter.AttributeBasedLimiter
 }
 
 func newDiscussion(in discussionIn) *Discussion {
@@ -52,6 +55,7 @@ func newDiscussion(in discussionIn) *Discussion {
 			model.DiscussionTypeFeedback: message.TypeNewFeedback,
 			model.DiscussionTypeBlog:     message.TypeNewBlog,
 		},
+		limiter: ratelimiter.NewAttributeBasedLimiter(false),
 	}
 }
 
@@ -73,7 +77,30 @@ func (d *Discussion) generateUUID() string {
 	return util.RandomString(16)
 }
 
+func (d *Discussion) limitKey(args ...any) string {
+	if len(args) == 0 {
+		return ""
+	}
+
+	buff := bytes.NewBufferString("%v")
+	for i := 1; i < len(args); i++ {
+		buff.WriteString("-%v")
+	}
+
+	return fmt.Sprintf(buff.String(), args...)
+}
+
+func (d *Discussion) allow(args ...any) bool {
+	return d.limiter.MustShouldAllow(d.limitKey(args...), 1, 3, time.Minute)
+}
+
+var errRatelimit = errors.New("ratelimit")
+
 func (d *Discussion) Create(ctx context.Context, req DiscussionCreateReq) (string, error) {
+	if !d.allow("discussion", req.UserID) {
+		return "", errRatelimit
+	}
+
 	if len(req.GroupIDs) > 0 {
 		err := d.in.GroupItemRepo.FilterIDs(ctx, &req.GroupIDs)
 		if err != nil {
@@ -292,7 +319,7 @@ func (d *Discussion) IncrementComment(uuid string, updateTime bool) {
 func (d *Discussion) DecrementComment(uuid string) {
 	ctx := context.Background()
 	d.in.DiscRepo.Update(ctx, map[string]any{
-		"comment": gorm.Expr("comment-1"),
+		"comment": gorm.Expr("CASE WHEN comment>0 THEN comment-1 END"),
 	}, repo.QueryWithEqual("uuid", uuid))
 
 	go d.RecalculateHot(uuid)
@@ -321,6 +348,10 @@ func (d *Discussion) RecalculateHot(uuid string) {
 }
 
 func (d *Discussion) LikeDiscussion(ctx context.Context, discUUID string, user model.UserInfo) error {
+	if !d.allow("like", discUUID, user.UID) {
+		return errRatelimit
+	}
+
 	if err := d.in.DiscRepo.LikeDiscussion(ctx, discUUID, user.UID); err != nil {
 		return err
 	}
@@ -344,6 +375,10 @@ func (d *Discussion) LikeDiscussion(ctx context.Context, discUUID string, user m
 }
 
 func (d *Discussion) RevokeLikeDiscussion(ctx context.Context, discUUID string, uid uint) error {
+	if !d.allow("like", discUUID, uid) {
+		return errRatelimit
+	}
+
 	if err := d.in.DiscRepo.RevokeLikeDiscussion(ctx, discUUID, uid); err != nil {
 		return err
 	}
@@ -406,6 +441,12 @@ type CommentCreateReq struct {
 }
 
 func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID string, req CommentCreateReq) (uint, error) {
+	if !req.Bot {
+		if !d.allow("comment", discUUID, uid) {
+			return 0, errRatelimit
+		}
+	}
+
 	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
 	if err != nil {
 		return 0, err
@@ -568,6 +609,10 @@ func (d *Discussion) UploadFile(ctx context.Context, req DiscussUploadFileReq) (
 }
 
 func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, discUUID string, commentID uint) error {
+	if !d.allow("accept", discUUID, user.UID) {
+		return errRatelimit
+	}
+
 	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
 	if err != nil {
 		return err
@@ -645,6 +690,10 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 }
 
 func (d *Discussion) LikeComment(ctx context.Context, userInfo model.UserInfo, discUUID string, commentID uint) error {
+	if !d.allow("like", discUUID, userInfo.UID) {
+		return errRatelimit
+	}
+
 	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
 	if err != nil {
 		return err
@@ -682,6 +731,10 @@ func (d *Discussion) LikeComment(ctx context.Context, userInfo model.UserInfo, d
 }
 
 func (d *Discussion) DislikeComment(ctx context.Context, userInfo model.UserInfo, discUUID string, commentID uint) error {
+	if !d.allow("like", discUUID, userInfo.UID) {
+		return errRatelimit
+	}
+
 	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
 	if err != nil {
 		return err
@@ -718,7 +771,11 @@ func (d *Discussion) DislikeComment(ctx context.Context, userInfo model.UserInfo
 	return nil
 }
 
-func (d *Discussion) RevokeLike(ctx context.Context, uid uint, commentID uint) error {
+func (d *Discussion) RevokeLike(ctx context.Context, uid uint, discUUID string, commentID uint) error {
+	if !d.allow("like", discUUID, uid) {
+		return errRatelimit
+	}
+
 	ok, err := d.in.CommRepo.ExistByID(ctx, commentID)
 	if err != nil {
 		return err

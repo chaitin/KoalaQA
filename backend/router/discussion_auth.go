@@ -293,7 +293,7 @@ func (d *discussionAuth) RevokeCommentLike(ctx *context.Context) {
 		return
 	}
 
-	err = d.disc.RevokeLike(ctx, ctx.GetUser().UID, commentID)
+	err = d.disc.RevokeLike(ctx, ctx.GetUser().UID, ctx.Param("disc_id"), commentID)
 	if err != nil {
 		ctx.InternalError(err, "dislike comment failed")
 		return

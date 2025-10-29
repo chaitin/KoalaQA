@@ -1,30 +1,13 @@
-import { Box, Button, GlobalStyles } from '@mui/material';
+'use client';
+
+import { Box, Button } from '@mui/material';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { NodeDetail } from '..';
 import SaveIcon from '@mui/icons-material/Save';
-import { Editor, useTiptap } from '@ctzhian/tiptap';
+import { Editor, useTiptap, EditorProps } from '@ctzhian/tiptap';
 import Toolbar from './Toolbar';
 import { postDiscussionUpload } from '@/api';
-
-// 添加全局动画样式
-const globalStyles = (
-  <GlobalStyles
-    styles={{
-      '@keyframes spin': {
-        '0%': { transform: 'rotate(0deg)' },
-        '100%': { transform: 'rotate(360deg)' },
-      },
-      '@keyframes pulse': {
-        '0%': { opacity: 0.6, transform: 'scale(0.95)' },
-        '100%': { opacity: 1, transform: 'scale(1)' },
-      },
-      '@keyframes fadeIn': {
-        '0%': { opacity: 0, transform: 'translateY(10px)' },
-        '100%': { opacity: 1, transform: 'translateY(0)' },
-      },
-    }}
-  />
-);
+import Message from '@ctzhian/ui/dist/Message';
 
 interface WrapProps {
   detail: NodeDetail;
@@ -46,28 +29,61 @@ const EditorWrap = ({
   onChange,
 }: WrapProps) => {
   const [isSaving, setIsSaving] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [originalContent, setOriginalContent] = useState(detail?.content || '');
-
-  // 确保只在客户端渲染编辑器
+  
+  // 性能优化：缓存上次的内容和防抖定时器
+  const lastContentRef = useRef<string>('');
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isUpdatingRef = useRef<boolean>(false);
+  // 清理防抖定时器，避免内存泄漏
   useEffect(() => {
-    setIsMounted(true);
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, []);
 
+  // 优化的内容更新处理函数，使用防抖和缓存机制
   const handleUpdate = useCallback(
     ({ editor }: { editor: any }) => {
-      const content = editor.getHTML();
-
-      // 支持传统的onContentChange回调
-      if (onContentChange) {
-        onContentChange(content);
+      // 如果正在更新内容（避免循环更新），直接返回
+      if (isUpdatingRef.current) {
+        return;
       }
 
-      // 支持双向绑定的onChange回调
-      if (onChange) {
-        onChange(content);
+      // 清除之前的防抖定时器
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
       }
+
+      // 使用防抖机制，延迟300ms执行内容更新
+      debounceTimerRef.current = setTimeout(() => {
+        try {
+          const content = editor.getMarkdown();
+          
+          // 检查内容是否真的发生了变化
+          if (content === lastContentRef.current) {
+            return;
+          }
+          
+          // 更新缓存的内容
+          lastContentRef.current = content;
+          
+          // 支持传统的onContentChange回调
+          if (onContentChange) {
+            onContentChange(content);
+          }
+
+          // 支持双向绑定的onChange回调
+          if (onChange) {
+            onChange(content);
+          }
+        } catch (error) {
+          console.warn('编辑器内容更新时发生错误:', error);
+        }
+      }, 300); // 300ms防抖延迟
     },
     [onContentChange, onChange]
   );
@@ -92,8 +108,10 @@ const EditorWrap = ({
     editable: true,
     content: value || detail?.content || '',
     onUpdate: handleUpdate,
+    contentType: 'markdown',
     exclude: ['invisibleCharacters', 'youtube', 'mention', 'aiWriting'],
-    immediatelyRender: false,
+    // SSR 环境需显式关闭立即渲染以避免水合不匹配
+    immediatelyRender: true, // 立即渲染
     onUpload: handleUpload,
   });
 
@@ -106,11 +124,22 @@ const EditorWrap = ({
   };
 
   const handleSave = async () => {
+    if( !editorRef.editor.getText().trim()){
+      return Message.error('内容不能为空');
+    }
     if (!onSave || !editorRef.editor) return;
 
     setIsSaving(true);
     try {
-      const content = editorRef.getHTML();
+      // 清除防抖定时器，确保获取最新内容
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      
+      const content = editorRef.getMarkdown()
+      console.log(content)
+      // 更新缓存内容
+      lastContentRef.current = content;
       await onSave(content);
     } catch (error) {
       console.error('保存失败:', error);
@@ -121,129 +150,39 @@ const EditorWrap = ({
 
   // 当value或detail.content变化时更新编辑器内容
   useEffect(() => {
-    if (editorRef.editor) {
+    if (editorRef.editor && 'view' in editorRef.editor) {
       const newContent = value !== undefined ? value : detail?.content || '';
-      const currentContent = editorRef.getHTML();
+      const currentContent = editorRef.getMarkdown()
+      
+      // 检查内容是否真的发生了变化
       if (currentContent !== newContent) {
-        editorRef.editor.commands.setContent(newContent);
+        // 设置更新标志，避免触发handleUpdate回调
+        isUpdatingRef.current = true;
+        
+        // 延迟到下一轮事件循环，确保所有插件与视图已完成挂载
+        setTimeout(() => {
+          if (editorRef.editor && 'view' in editorRef.editor) {
+            try {
+              editorRef.editor.commands.setContent(newContent);
+              // 更新缓存的内容
+              lastContentRef.current = newContent;
+            } catch (e) {
+              console.warn('setContent 发生错误，已忽略本次更新:', e);
+            } finally {
+              // 重置更新标志
+              isUpdatingRef.current = false;
+            }
+          }
+        }, 0);
       }
     }
     setOriginalContent(value !== undefined ? value : detail?.content || '');
-  }, [value, detail?.content, editorRef.editor]);
+  }, [value, detail?.content, editorRef]);
 
-  // 在服务端渲染时返回漂亮的占位符
-  if (!isMounted) {
-    return (
-      <>
-        {globalStyles}
-        <Box
-          sx={{
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-            borderRadius: 3,
-            overflow: 'hidden',
-          }}
-        >
-          {/* 工具栏占位符 */}
-          <Box
-            sx={{
-              height: 60,
-              background: 'rgba(255,255,255,0.9)',
-              backdropFilter: 'blur(10px)',
-              display: 'flex',
-              alignItems: 'center',
-              px: 3,
-            }}
-          >
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              {[1, 2, 3, 4, 5].map(i => (
-                <Box
-                  key={i}
-                  sx={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 1,
-                    background: 'linear-gradient(45deg, #f8f9fa, #e9ecef)',
-                    animation: `pulse 1.5s ease-in-out ${i * 0.1}s infinite alternate`,
-                  }}
-                />
-              ))}
-            </Box>
-          </Box>
-
-          {/* 编辑器占位符 */}
-          <Box
-            sx={{
-              flex: 1,
-              background: '#ffffff',
-              m: 2,
-              borderRadius: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexDirection: 'column',
-              gap: 2,
-            }}
-          >
-            <Box
-              sx={{
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
-                background: 'linear-gradient(45deg, #6c757d, #495057)',
-                animation: 'spin 2s linear infinite',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontSize: 20,
-              }}
-            >
-              ✨
-            </Box>
-            <Box
-              sx={{
-                color: 'text.secondary',
-                fontSize: 16,
-                fontWeight: 500,
-                textAlign: 'center',
-              }}
-            >
-              编辑器正在加载中...
-            </Box>
-          </Box>
-
-          {/* 保存按钮占位符 - 只在showActions为true时显示 */}
-          {showActions && (
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-              <Button
-                variant="contained"
-                startIcon={<SaveIcon />}
-                disabled
-                sx={{
-                  background: 'linear-gradient(45deg, #6c757d, #495057)',
-                  borderRadius: 2,
-                  px: 3,
-                  py: 1,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                }}
-              >
-                保存
-              </Button>
-            </Box>
-          )}
-        </Box>
-      </>
-    );
-  }
 
   // 客户端渲染的完整编辑器
   return (
     <>
-      {globalStyles}
       <Box
         ref={containerRef}
         sx={{
@@ -258,7 +197,7 @@ const EditorWrap = ({
             border: 'none',
             borderRadius: 2,
             padding: 1,
-            minHeight: 300,
+            minHeight: 200,
             fontSize: '15px',
             lineHeight: 1.7,
             color: '#212529',
@@ -326,8 +265,7 @@ const EditorWrap = ({
             borderRadius: 2,
             transition: 'all 0.3s ease',
             position: 'relative',
-            overflow: 'hidden',
-            wordBreak: 'break-all',
+            overflow: 'auto',
             cursor: 'text',
             '&::before': {
               content: '""',

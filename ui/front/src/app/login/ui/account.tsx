@@ -76,6 +76,11 @@ const Account = ({ isChecked, passwordConfig }: { isChecked: boolean; passwordCo
 
         // 直接调用refreshForums刷新论坛数据
         const refreshedForums = await refreshForums()
+
+        // 触发登录成功事件（在数据刷新后）
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('auth:success'))
+        }
         
         // 登录成功后重定向
         let targetUrl = redirectUrl

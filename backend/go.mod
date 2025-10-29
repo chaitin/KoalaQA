@@ -3,6 +3,7 @@ module github.com/chaitin/koalaqa
 go 1.25.0
 
 require (
+	github.com/Narasimha1997/ratelimiter v1.1.1
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/chaitin/ModelKit v1.8.3
 	github.com/chaitin/pandawiki/sdk/rag v0.0.0-20250927130416-bcfc4bde3379
