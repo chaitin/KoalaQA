@@ -124,13 +124,13 @@ func (w *Webhook) Delete(ctx context.Context, id uint) error {
 	return nil
 }
 
-func (w *Webhook) allow(id uint, msgType message.Type) bool {
-	return w.limiter.MustShouldAllow(fmt.Sprintf("webhook-%d-%d", id, msgType), 1, 1, time.Minute*5)
+func (w *Webhook) allow(id uint, discID string, msgType message.Type) bool {
+	return w.limiter.MustShouldAllow(fmt.Sprintf("webhook-%d-%s-%d", id, discID, msgType), 1, 1, time.Minute*5)
 }
 
 func (w *Webhook) Send(ctx context.Context, msg message.Message) error {
 	for id, hook := range w.webhooks {
-		if !w.allow(id, msg.Type()) {
+		if !w.allow(id, msg.ID(), msg.Type()) {
 			w.logger.WithContext(ctx).With("webhook_id", id).With("msg", msg).Debug("webhook ratelimit, skip send")
 			continue
 		}

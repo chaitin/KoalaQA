@@ -2,6 +2,7 @@ package message
 
 import (
 	"bytes"
+	"strconv"
 	"text/template"
 	"time"
 
@@ -36,6 +37,10 @@ type docMsg struct {
 type sendQAMsg struct {
 	*docMsg
 	platformMsg
+}
+
+func (q *docMsg) ID() string {
+	return strconv.FormatUint(uint64(q.Doc.ID), 10)
 }
 
 func (q *docMsg) Message(webhookType model.WebhookType) (string, error) {
