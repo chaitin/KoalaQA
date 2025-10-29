@@ -90,7 +90,7 @@ func (d *Discussion) limitKey(args ...any) string {
 }
 
 func (d *Discussion) allow(args ...any) bool {
-	return d.in.Limiter.Allow(d.limitKey(args...), time.Minute, 3)
+	return d.in.Limiter.Allow(d.limitKey(args...), time.Second*20, 3)
 }
 
 var errRatelimit = errors.New("ratelimit")
