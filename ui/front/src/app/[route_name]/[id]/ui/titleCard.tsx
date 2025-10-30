@@ -57,7 +57,7 @@ const animationStyles = `
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
 
-const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
+const TitleCard = ({ data }: { data: ModelDiscussionDetail}) => {
   const [menuVisible, { setFalse: menuClose, setTrue: menuOpen }] = useBoolean(false)
   const { user } = useContext(AuthContext)
   const [releaseVisible, { setFalse: releaseClose, setTrue: releaseOpen }] = useBoolean(false)
@@ -371,7 +371,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         </Stack>
       </Stack>
       <Divider sx={{ mt: 2, mb: 1 }} />
-      <EditorContent content={data.content} onTocUpdate={() => {}} />
+      <EditorContent content={data.content} onTocUpdate={()=>{}} />
 
       {/* 回答/回复/评论 按钮 */}
       <Box sx={{ mt: 1, pt: 1 }}>

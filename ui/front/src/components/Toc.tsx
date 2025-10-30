@@ -24,7 +24,7 @@ const HeadingSx = [
 
 const Toc = ({ headings }: TocProps) => {
   const levels = Array.from(new Set(headings.map((it) => it.level).sort((a, b) => a - b))).slice(0, 3)
-
+  console.log(headings)
   return (
     <>
       <Stack
