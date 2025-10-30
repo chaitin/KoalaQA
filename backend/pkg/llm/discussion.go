@@ -42,26 +42,13 @@ type KnowledgeDocument struct {
 
 // 帖子模版常量（包含帖子信息和评论楼层结构）
 const discussionPostTemplate = `
-## 当前帖子信息
-### 帖子ID：{{.Discussion.ID}}
-### 帖子标题：{{.Discussion.Title}}
-### 帖子内容：{{.Discussion.Content}}
-### 发帖人：{{.Discussion.UserName}}
-### 发帖时间：{{formatTime .Discussion.CreatedAt}}
+### ID：{{.Discussion.ID}}
+### 标题：{{.Discussion.Title}}
+### 内容：{{.Discussion.Content}}
+### 时间：{{formatTime .Discussion.CreatedAt}}
 {{- if .Discussion.Tags}}
-### 帖子标签：{{join .Discussion.Tags ", "}}
+### 标签：{{join .Discussion.Tags ", "}}
 {{- end}}
-### 解决状态：{{if .Discussion.Resolved}}已解决{{else}}待解决{{end}}
-
-## 评论楼层结构
-{{- if .CommentTree}}
-{{- range $i, $node := .CommentTree}}
-楼层{{add $i 1}} {{renderComment $node ""}}
-{{- end}}
-{{- else}}
-暂无评论
-{{- end}}
-
 `
 
 // 回复模版常量（针对新评论的回复）
@@ -137,20 +124,13 @@ func (t *DiscussionPromptTemplate) BuildPrompt() (string, error) {
 	return buf.String(), nil
 }
 
-// BuildPostPrompt 构建帖子提示词（用于回复帖子）
+// BuildPostPrompt 构建帖子提示词
 func (t *DiscussionPromptTemplate) BuildPostPrompt() (string, error) {
 	// 初始化帖子模版
 	if err := t.initPostTemplate(); err != nil {
 		return "", fmt.Errorf("初始化帖子模版失败: %w", err)
 	}
 
-	// 构建评论树
-	t.CommentTree = t.buildCommentTree()
-
-	// 提取BOT历史回复
-	t.ExtractBotReplies()
-
-	// 执行模版
 	var buf bytes.Buffer
 	if err := t.template.Execute(&buf, t); err != nil {
 		return "", fmt.Errorf("执行帖子模版失败: %w", err)

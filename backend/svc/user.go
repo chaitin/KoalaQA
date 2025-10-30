@@ -78,8 +78,8 @@ type UserCreateReq struct {
 	Password string `json:"password" binding:"required"`
 }
 
-func (u *User) Detail(ctx context.Context, id uint) (*UserListItem, error) {
-	var item UserListItem
+func (u *User) Detail(ctx context.Context, id uint) (*model.User, error) {
+	var item model.User
 	err := u.repoUser.GetByID(ctx, &item, id)
 	if err != nil {
 		return nil, err

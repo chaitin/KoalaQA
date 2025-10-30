@@ -72,8 +72,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "name": "unknown_prompt",
-                        "in": "formData",
-                        "required": true
+                        "in": "formData"
                     }
                 ],
                 "responses": {
@@ -2766,6 +2765,11 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "integer",
+                        "name": "org_id",
+                        "in": "query"
+                    },
+                    {
                         "minimum": 1,
                         "type": "integer",
                         "name": "page",
@@ -2845,7 +2849,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/svc.UserListItem"
+                                            "$ref": "#/definitions/model.User"
                                         }
                                     }
                                 }
@@ -4874,6 +4878,50 @@ const docTemplate = `{
                 }
             }
         },
+        "model.User": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "builtin": {
+                    "type": "boolean"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "invisible": {
+                    "type": "boolean"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "last_login": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "org_id": {
+                    "type": "integer"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "role": {
+                    "$ref": "#/definitions/model.UserRole"
+                },
+                "updated_at": {
+                    "type": "integer"
+                }
+            }
+        },
         "model.UserInfo": {
             "type": "object",
             "properties": {
@@ -5895,6 +5943,12 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "org_id": {
+                    "type": "integer"
+                },
+                "org_name": {
                     "type": "string"
                 },
                 "role": {

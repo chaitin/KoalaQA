@@ -16,5 +16,6 @@ var Module = fx.Options(
 	fx.Provide(mq.AsSubscriber(newDiscussWebhook)),
 	fx.Provide(mq.AsSubscriber(newDocWebhook)),
 	fx.Provide(mq.AsSubscriber(newKBSpace)),
+	fx.Provide(mq.AsSubscriber(NewBlog)),
 	fx.Provide(newCache),
 )

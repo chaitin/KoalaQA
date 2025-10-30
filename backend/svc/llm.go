@@ -149,6 +149,27 @@ func (l *LLM) GenerateChatPrompt(ctx context.Context, discID uint, commID uint) 
 	return template.Question(), prompt, nil
 }
 
+func (l *LLM) GeneratePostPrompt(ctx context.Context, discID uint) (string, string, error) {
+	logger := l.logger.WithContext(ctx).With("discussion_id", discID)
+	logger.Debug("start generate prompt")
+
+	// 1. 获取讨论详情
+	discussion, err := l.disc.Detail(ctx, 0, discID)
+	if err != nil {
+		return "", "", fmt.Errorf("get discussion detail failed: %w", err)
+	}
+
+	template := llm.NewDiscussionPromptTemplate(discussion, nil, nil)
+
+	prompt, err := template.BuildPostPrompt()
+	if err != nil {
+		return "", "", fmt.Errorf("generate prompt failed: %w", err)
+	}
+
+	logger.With("prompt", prompt).Debug("generate prompt success")
+	return template.Question(), prompt, nil
+}
+
 // queryKnowledgeDocuments 查询相关知识文档
 func (l *LLM) queryKnowledgeDocuments(ctx context.Context, query string) ([]llm.KnowledgeDocument, error) {
 	logger := l.logger.WithContext(ctx)
