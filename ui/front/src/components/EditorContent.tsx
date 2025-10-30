@@ -61,7 +61,6 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
     : content
 
   const displayContent = truncatedText
-  if (!displayContent || !content) return null
   const editorRef = useTiptap({
     content: displayContent || '',
     editable: false,
@@ -107,6 +106,8 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
       ''
     )
   }
+
+  if (!displayContent || !content) return null
 
   return (
     <Box
