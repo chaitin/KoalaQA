@@ -25,7 +25,7 @@ const ContentSkeleton: React.FC = () => {
 }
 
 const EditorContent: React.FC<MarkDownProps> = (props) => {
-  const { content = '', sx, truncateLength = 0, onTocUpdate, autoFocus = true } = props
+  const { content = '', sx, truncateLength = 0, onTocUpdate } = props
   const [isMounted, setIsMounted] = useState(false)
 
   const isHTML = /<[^>]+>/.test(content)
@@ -69,6 +69,7 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
     immediatelyRender: false,
     // 大纲更新回调：透传给父级，同时广播全局事件供兄弟侧栏使用
     onTocUpdate: (toc: any) => {
+      console.log(toc, onTocUpdate)
       const enabled = !!onTocUpdate
       if (!enabled) return
       try {
