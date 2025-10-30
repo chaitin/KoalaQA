@@ -10,7 +10,7 @@ import { Card } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import { ReleaseModal, Tag } from '@/components/discussion'
 import { TimeDisplayWithTag } from '@/components/TimeDisplay'
-import EditorWrap from '@/components/editor/edit/Wrap'
+import EditorWrap, { EditorWrapRef } from '@/components/editor/edit/Wrap'
 import EditorContent from '@/components/EditorContent'
 import Modal from '@/components/modal'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
@@ -68,7 +68,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
     const styleSheet = document.createElement('style')
     styleSheet.textContent = animationStyles
     document.head.appendChild(styleSheet)
-    
+
     // 清理函数，组件卸载时移除样式
     return () => {
       if (document.head.contains(styleSheet)) {
@@ -79,7 +79,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const { id }: { id: string } = useParams() || { id: '' }
   const { checkAuth } = useAuthCheck()
   const anchorElRef = useRef(null)
-  const [comment, setComment] = useState('')
+  const editorRef = useRef<EditorWrapRef>(null)
   const [mdEditShow, setMdEditShow] = useState(false)
 
   const handleDelete = () => {
@@ -100,13 +100,13 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   }
 
   const onCommentSubmit = async () => {
+    const content = editorRef.current?.getMarkdown() || ''
     await postDiscussionDiscIdComment(
       { discId: id },
       {
-        content: comment,
+        content,
       },
     )
-    setComment('')
     setMdEditShow(false)
     router.refresh()
   }
@@ -162,9 +162,21 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
             menuClose()
           }}
         >
-          编辑问题
+          编辑
+          {data.type === ModelDiscussionType.DiscussionTypeQA
+            ? '问题'
+            : data.type === ModelDiscussionType.DiscussionTypeFeedback
+              ? '反馈'
+              : '文章'}
         </MenuItem>
-        <MenuItem onClick={handleDelete}>删除问题</MenuItem>
+        <MenuItem onClick={handleDelete}>
+          删除
+          {data.type === ModelDiscussionType.DiscussionTypeQA
+            ? '问题'
+            : data.type === ModelDiscussionType.DiscussionTypeFeedback
+              ? '反馈'
+              : '文章'}
+        </MenuItem>
       </Menu>
       <Stack
         direction='row'
@@ -191,7 +203,10 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
             {data.title}
           </Typography>
         </Stack>
-        {data.type === ModelDiscussionType.DiscussionTypeFeedback && (
+        {[
+          ModelDiscussionType.DiscussionTypeFeedback,
+          ModelDiscussionType.DiscussionTypeBlog,
+        ].includes(data.type as any) && (
           <Stack
             direction='row'
             alignItems='center'
@@ -267,23 +282,23 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         }}
       >
         {data.user_name}
-        {data.updated_at && data.updated_at !== data.created_at
-          ? (
-              <>
-                更新于 <TimeDisplayWithTag 
-                  timestamp={data.updated_at} 
-                  title={dayjs.unix(data.updated_at).format('YYYY-MM-DD HH:mm:ss')}
-                />
-              </>
-            )
-          : (
-              <>
-                发布于 <TimeDisplayWithTag 
-                  timestamp={data.created_at!} 
-                  title={dayjs.unix(data.created_at!).format('YYYY-MM-DD HH:mm:ss')}
-                />
-              </>
-            )}
+        {data.updated_at && data.updated_at !== data.created_at ? (
+          <>
+            更新于{' '}
+            <TimeDisplayWithTag
+              timestamp={data.updated_at}
+              title={dayjs.unix(data.updated_at).format('YYYY-MM-DD HH:mm:ss')}
+            />
+          </>
+        ) : (
+          <>
+            发布于{' '}
+            <TimeDisplayWithTag
+              timestamp={data.created_at!}
+              title={dayjs.unix(data.created_at!).format('YYYY-MM-DD HH:mm:ss')}
+            />
+          </>
+        )}
       </Typography>
       <Stack direction='row' alignItems='flex-end' gap={2} justifyContent='space-between' sx={{ my: 1 }}>
         <Stack direction='row' flexWrap='wrap' gap='8px 16px'>
@@ -334,31 +349,31 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
               title={dayjs.unix(data.created_at!).format('YYYY-MM-DD HH:mm:ss')}
             >
               {data.user_name}{' '}
-              {data.updated_at && data.updated_at !== data.created_at
-                ? (
-                    <>
-                      更新于 <TimeDisplayWithTag 
-                        timestamp={data.updated_at} 
-                        title={dayjs.unix(data.updated_at).format('YYYY-MM-DD HH:mm:ss')}
-                      />
-                    </>
-                  )
-                : (
-                    <>
-                      发布于 <TimeDisplayWithTag 
-                        timestamp={data.created_at!} 
-                        title={dayjs.unix(data.created_at!).format('YYYY-MM-DD HH:mm:ss')}
-                      />
-                    </>
-                  )}
+              {data.updated_at && data.updated_at !== data.created_at ? (
+                <>
+                  更新于{' '}
+                  <TimeDisplayWithTag
+                    timestamp={data.updated_at}
+                    title={dayjs.unix(data.updated_at).format('YYYY-MM-DD HH:mm:ss')}
+                  />
+                </>
+              ) : (
+                <>
+                  发布于{' '}
+                  <TimeDisplayWithTag
+                    timestamp={data.created_at!}
+                    title={dayjs.unix(data.created_at!).format('YYYY-MM-DD HH:mm:ss')}
+                  />
+                </>
+              )}
             </time>
           </Typography>
         </Stack>
       </Stack>
       <Divider sx={{ mt: 2, mb: 1 }} />
-      <EditorContent content={data.content} />
+      <EditorContent content={data.content} onTocUpdate={() => {}} />
 
-      {/* 回答问题按钮 */}
+      {/* 回答/回复/评论 按钮 */}
       <Box sx={{ mt: 1, pt: 1 }}>
         {!mdEditShow && (
           <Button
@@ -388,25 +403,35 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
             {user?.uid
               ? data.type === ModelDiscussionType.DiscussionTypeFeedback
                 ? '回复'
-                : '回答问题'
+                : data.type === ModelDiscussionType.DiscussionTypeBlog
+                  ? '发表评论'
+                  : '回答问题'
               : data.type === ModelDiscussionType.DiscussionTypeFeedback
                 ? '登录后回复'
-                : '登录后回答问题'}
+                : data.type === ModelDiscussionType.DiscussionTypeBlog
+                  ? '登录后发表评论'
+                  : '登录后回答问题'}
           </Button>
         )}
         {mdEditShow && (
           <Box>
             <EditorWrap
+              ref={editorRef}
               detail={{
                 id: 'main-comment-editor',
-                name: data.type === ModelDiscussionType.DiscussionTypeFeedback ? '回复' : '回答问题',
-                content: comment,
+                name:
+                  data.type === ModelDiscussionType.DiscussionTypeFeedback
+                    ? '回复'
+                    : data.type === ModelDiscussionType.DiscussionTypeBlog
+                      ? '发表评论'
+                      : '回答问题',
+                content: '',
               }}
               onSave={async () => {
                 await onCommentSubmit()
               }}
+              // 不传递 onTocUpdate，保持默认 false
               onCancel={() => setMdEditShow(false)}
-              onContentChange={setComment}
             />
           </Box>
         )}

@@ -40,7 +40,7 @@ func (u *user) List(ctx *context.Context) {
 // @Tags user
 // @Param user_id path uint true "user id"
 // @Produce json
-// @Success 200 {object} context.Response{data=svc.UserListItem}
+// @Success 200 {object} context.Response{data=model.User}
 // @Router /admin/user/{user_id} [get]
 func (u *user) Detail(ctx *context.Context) {
 	userID, err := ctx.ParamUint("user_id")

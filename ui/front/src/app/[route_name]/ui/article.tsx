@@ -29,7 +29,7 @@ export type Status = 'hot' | 'new' | 'mine'
 const TYPE_LIST = [
   { label: '问答', value: 'qa' },
   { label: '反馈', value: 'feedback' },
-  { label: '文章', value: 'blog', disabled: true },
+  { label: '文章', value: 'blog' },
 ]
 const Article = ({
   data,
@@ -99,6 +99,12 @@ const Article = ({
       return [
         { label: '热门反馈', value: 'hot' },
         { label: '最新反馈', value: 'new' },
+        { label: '我参与的', value: 'mine', disabled: !user?.email },
+      ]
+    } else if (currentType === 'blog') {
+      return [
+        { label: '热门文章', value: 'hot' },
+        { label: '最新文章', value: 'new' },
         { label: '我参与的', value: 'mine', disabled: !user?.email },
       ]
     } else {
@@ -348,14 +354,14 @@ const Article = ({
 
   const handleArticle = () => {
     setSelectedModalType('blog')
-    checkAuth(() => releaseModalOpen())
+    checkAuth(() => {
+      const routeName = (params?.route_name as string) || ''
+      nextRouter.push(`/${routeName}/edit`)
+    })
   }
 
   return (
     <>
-      {/* 粒子背景 */}
-      {/* <ParticleBackground /> */}
-
       <Stack
         gap={0}
         sx={{
@@ -697,9 +703,11 @@ const Article = ({
                   },
                 }}
                 variant='contained'
-                onClick={type === 'feedback' ? handleFeedback : handleAsk}
+                onClick={
+                  type === 'feedback' ? handleFeedback : type === 'blog' ? handleArticle : handleAsk
+                }
               >
-                {type === 'feedback' ? '提交反馈 👉' : '发帖提问 👉'}
+                {type === 'feedback' ? '提交反馈 👉' : type === 'blog' ? '发布文章 👉' : '发帖提问 👉'}
               </Button>
             </Stack>
             {articleData.items?.map((it) => (
