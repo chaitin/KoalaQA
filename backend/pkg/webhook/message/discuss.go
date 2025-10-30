@@ -114,7 +114,7 @@ func NewCreateBlog(body Common) Message {
 	return &discussMsg{
 		Header: Header{
 			MsgType:       TypeNewBlog,
-			MsgTitle:      "你有新的纹章",
+			MsgTitle:      "你有新的文章",
 			HeadingPrefix: "标题",
 		},
 		Common: body,
