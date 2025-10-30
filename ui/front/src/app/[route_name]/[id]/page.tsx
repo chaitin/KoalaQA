@@ -1,9 +1,10 @@
-import { getDiscussionDiscId } from '@/api'
+import { getDiscussionDiscId, ModelDiscussionType } from '@/api'
 import { Metadata } from 'next'
 import { Suspense } from 'react'
 import { Box, Stack, Alert, Typography } from '@mui/material'
 import TitleCard from './ui/titleCard'
 import Content from './ui/content'
+import OutlineSidebar from './ui/OutlineSidebar'
 
 export const metadata: Metadata = {
   title: '讨论详情',
@@ -17,10 +18,10 @@ async function fetchDiscussionDetail(discId: string) {
     return { success: true, data: discussion, error: null }
   } catch (error) {
     console.error('Failed to fetch discussion detail:', error)
-    return { 
-      success: false, 
-      data: null, 
-      error: error instanceof Error ? error.message : '获取讨论详情失败'
+    return {
+      success: false,
+      data: null,
+      error: error instanceof Error ? error.message : '获取讨论详情失败',
     }
   }
 }
@@ -45,7 +46,7 @@ const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; 
 
   // 获取讨论详情
   const result = await fetchDiscussionDetail(id)
-
+  const isArticle = result.data?.type === ModelDiscussionType.DiscussionTypeBlog
   // 处理错误情况
   if (!result.success) {
     return (
@@ -59,15 +60,15 @@ const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; 
         }}
       >
         <Box sx={{ maxWidth: 600, width: '100%' }}>
-          <Alert severity="error" sx={{ mb: 2 }}>
-            <Typography variant="h6" gutterBottom>
+          <Alert severity='error' sx={{ mb: 2 }}>
+            <Typography variant='h6' gutterBottom>
               获取讨论详情失败
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant='body2' color='text.secondary'>
               {result.error}
             </Typography>
           </Alert>
-          <Typography variant="body2" color="text.disabled" textAlign="center">
+          <Typography variant='body2' color='text.disabled' textAlign='center'>
             请检查网络连接或稍后重试
           </Typography>
         </Box>
@@ -128,33 +129,37 @@ const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; 
           position: 'relative',
         }}
       />
-      <Box
+      <Stack
         sx={{
-          width: { xs: '100%', sm: 800 },
-          mx: 'auto',
           position: 'relative',
           top: '-100px',
-          pb: '100px',
-          px: { xs: 2, sm: 0 },
-          minHeight: '100vh',
+          px: 3,
         }}
+        direction={'row'}
+        justifyContent='center'
+        alignItems='flex-start'
+        gap={3}
       >
-        <h1 style={{ display: 'none' }}>讨论详情</h1>
-        <Suspense fallback={<LoadingSpinner />}>
-          <TitleCard data={discussion} />
-          <Box
-            sx={{
-              my: '20px',
-              display: { xs: 'block', sm: 'none' },
-            }}
-          />
-          <Stack direction='row' alignItems='flex-start' sx={{ mt: { xs: 0, sm: 3 }, width: '100%' }} gap={3}>
-            <Box sx={{ flex: 1, width: '100%' }}>
-              <Content data={discussion} />
-            </Box>
-          </Stack>
-        </Suspense>
-      </Box>
+        {isArticle && <Box sx={{ width: '290px', display: { md: 'none', lg: 'block' } }} />}
+        <Box sx={{ width: { xs: '100%', sm: 800 } }}>
+          <h1 style={{ display: 'none' }}>讨论详情</h1>
+          <Suspense fallback={<LoadingSpinner />}>
+            <TitleCard data={discussion} />
+            <Box
+              sx={{
+                my: '20px',
+                display: { xs: 'block', sm: 'none' },
+              }}
+            />
+            <Stack direction='row' alignItems='flex-start' sx={{ mt: { xs: 0, sm: 3 }, width: '100%' }} gap={3}>
+              <Box sx={{ flex: 1, width: '100%' }}>
+                <Content data={discussion} />
+              </Box>
+            </Stack>
+          </Suspense>
+        </Box>
+        {isArticle && <OutlineSidebar discussion={discussion} />}
+      </Stack>
     </Box>
   )
 }

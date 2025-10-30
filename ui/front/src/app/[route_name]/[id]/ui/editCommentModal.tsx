@@ -1,30 +1,21 @@
-import { ModelDiscussionComment } from '@/api/types';
-import EditorWrap from '@/components/editor/edit/Wrap';
-import Modal from '@/components/modal';
-import React, { useEffect, useState } from 'react';
+import { ModelDiscussionComment } from '@/api/types'
+import EditorWrap, { EditorWrapRef } from '@/components/editor/edit/Wrap'
+import Modal from '@/components/modal'
+import React, { useRef } from 'react'
 
 interface EditCommentModalProps {
-  data: ModelDiscussionComment;
-  open: boolean;
-  onOk: (val: string) => void;
-  onClose: () => void;
+  data: ModelDiscussionComment
+  open: boolean
+  onOk: (val: string) => void
+  onClose: () => void
 }
-const EditCommentModal: React.FC<EditCommentModalProps> = ({
-  data,
-  open,
-  onOk,
-  onClose,
-}) => {
-  const [value, setValue] = useState(data?.content || '');
-  useEffect(() => {
-    if (data) {
-      setValue(data.content || '');
-    }
-  }, [data]);
+const EditCommentModal: React.FC<EditCommentModalProps> = ({ data, open, onOk, onClose }) => {
+  const editorRef = useRef<EditorWrapRef>(null)
 
   const onSubmit = async () => {
-    onOk(value);
-  };
+    const content = editorRef.current?.getMarkdown() || data?.content || ''
+    onOk(content)
+  }
 
   return (
     <Modal
@@ -33,22 +24,14 @@ const EditCommentModal: React.FC<EditCommentModalProps> = ({
       onCancel={onClose}
       onOk={onSubmit}
       okButtonProps={{
-        disabled: !value.trim(),
+        disabled: !data?.content?.trim(),
         id: 'edit-comment-id',
       }}
       width={800}
     >
-      {/* <MdEditor value={value} onChange={setValue} /> */}
-      <EditorWrap
-        detail={{content: value}}
-        onCancel={() => {
-          // 在讨论编辑器中，取消操作不需要特殊处理
-        }}
-        onContentChange={setValue}
-        showActions={false}
-      />
+      <EditorWrap ref={editorRef} value={data?.content} showActions={false} />
     </Modal>
-  );
-};
+  )
+}
 
-export default EditCommentModal;
+export default EditCommentModal

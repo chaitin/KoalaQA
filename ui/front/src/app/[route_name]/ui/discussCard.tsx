@@ -56,6 +56,7 @@ const EDITOR_SX = {
   color: 'rgba(31, 35, 41, 0.50)',
   '& *': {
     fontSize: '12px!important',
+    my: '4px!important',
   },
   '& .tiptap.ProseMirror': {
     color: 'rgba(31, 35, 41, 0.50)',
@@ -257,8 +258,12 @@ const DiscussCard = ({
         </Stack>
       </Stack>
       <EditorContent
-        content={replaceImagesWithText(it.content || '')}
-        truncateLength={100} // 设置截断长度为100个字符，根据需要调整
+        content={
+          it.type === ModelDiscussionType.DiscussionTypeBlog
+            ? (it.summary || '')
+            : replaceImagesWithText(it.content || '')
+        }
+        truncateLength={100}
         sx={EDITOR_SX}
       />
       {/* 底部标签和评论数 */}
@@ -284,17 +289,21 @@ const DiscussCard = ({
           }}
         >
           {/* 投票数 */}
-          {it.type === ModelDiscussionType.DiscussionTypeFeedback && (
+          {[ModelDiscussionType.DiscussionTypeFeedback, ModelDiscussionType.DiscussionTypeBlog].includes(
+            it.type as any,
+          ) && (
             <Stack direction='row' alignItems='center' gap={0.5} sx={VOTE_SX}>
               <Icon type='icon-dianzan' />
               {formatNumber((it.like || 0) - (it.dislike || 0))}
             </Stack>
           )}
           {/* 评论数 */}
-          <Stack direction='row' alignItems='center' gap={0.5} sx={COMMENT_SX}>
-            <Icon type='icon-xiaoxi' />
-            {formatNumber(it.comment || 0)}
-          </Stack>
+          {it.type !== ModelDiscussionType.DiscussionTypeBlog && (
+            <Stack direction='row' alignItems='center' gap={0.5} sx={COMMENT_SX}>
+              <Icon type='icon-xiaoxi' />
+              {formatNumber(it.comment || 0)}
+            </Stack>
+          )}
         </Stack>
       </Stack>
     </Card>
@@ -386,7 +395,7 @@ const DiscussCardMobileComponent = ({
           </Title>
         </Link>
       </Stack>
-      <Stack direction='row' alignItems='center'  sx={{ color: '#666', flexShrink: 0, minWidth: 0 }}>
+      <Stack direction='row' alignItems='center' sx={{ color: '#666', flexShrink: 0, minWidth: 0 }}>
         <Typography
           sx={{
             mt: '2px',
@@ -475,8 +484,12 @@ const DiscussCardMobileComponent = ({
         </Stack>
       </Stack>
       <EditorContent
-        content={replaceImagesWithText(it.content || '')}
-        truncateLength={60} // 设置截断长度为100个字符，根据需要调整
+        content={
+          it.type === ModelDiscussionType.DiscussionTypeBlog
+            ? (it.summary || '')
+            : replaceImagesWithText(it.content || '')
+        }
+        truncateLength={60}
         sx={EDITOR_SX}
       />
       <Stack direction='row' gap='8px 12px' flexWrap='wrap' sx={{ width: '100%', minHeight: 0 }}>
