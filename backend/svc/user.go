@@ -31,12 +31,15 @@ type User struct {
 type UserListReq struct {
 	model.Pagination
 
-	Name *string `form:"name"`
+	OrgID *uint   `form:"org_id"`
+	Name  *string `form:"name"`
 }
 
 type UserListItem struct {
 	model.Base
 
+	OrgID     uint            `json:"org_id"`
+	OrgName   string          `json:"org_name"`
 	Name      string          `json:"name"`
 	Role      model.UserRole  `json:"role"`
 	Avatar    string          `json:"avatar"`
@@ -48,11 +51,12 @@ type UserListItem struct {
 
 func (u *User) List(ctx context.Context, req UserListReq) (*model.ListRes[UserListItem], error) {
 	var res model.ListRes[UserListItem]
-	err := u.repoUser.List(ctx, &res.Items,
+	err := u.repoUser.ListWithOrg(ctx, &res.Items,
 		repo.QueryWithPagination(&req.Pagination),
 		repo.QueryWithOrderBy("created_at DESC"),
 		repo.QueryWithILike("name", req.Name),
 		repo.QueryWithEqual("invisible", false),
+		repo.QueryWithEqual("org_id", req.OrgID),
 	)
 	if err != nil {
 		return nil, err
@@ -74,8 +78,8 @@ type UserCreateReq struct {
 	Password string `json:"password" binding:"required"`
 }
 
-func (u *User) Detail(ctx context.Context, id uint) (*UserListItem, error) {
-	var item UserListItem
+func (u *User) Detail(ctx context.Context, id uint) (*model.User, error) {
+	var item model.User
 	err := u.repoUser.GetByID(ctx, &item, id)
 	if err != nil {
 		return nil, err

@@ -126,7 +126,7 @@ const Register = () => {
       <Box sx={{ color: 'rgba(0,0,0,0.3)', fontSize: 14, mt: 6 }}>
         已有账号，
         <Link href='/login' style={{ textDecoration: 'none' }}>
-          <Box sx={{ color: 'primary.main' }}>
+          <Box sx={{ display: 'inline-block', color: 'primary.main' }}>
             去登录
           </Box>
         </Link>

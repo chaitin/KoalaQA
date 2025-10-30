@@ -9,7 +9,7 @@ import {
 import { postDiscussion, putDiscussionDiscId } from '@/api/Discussion'
 // import { Icon } from '@/components'
 import UserAvatar from '@/components/UserAvatar'
-import EditorWrap from '@/components/editor/edit/Wrap'
+import EditorWrap, { EditorWrapRef } from '@/components/editor/edit/Wrap'
 import Modal from '@/components/modal'
 import { useForum } from '@/contexts/ForumContext'
 import { useForumId } from '@/hooks/useForumId'
@@ -17,7 +17,7 @@ import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Autocomplete, Box, Chip, FormHelperText, Stack, styled, TextField } from '@mui/material'
 import { useParams } from 'next/navigation'
-import React, { useCallback, useContext, useEffect, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import z from 'zod'
 import { CommonContext } from './commonProvider'
@@ -62,6 +62,8 @@ interface ReleaseModalProps {
   onOk: () => void
   initialTitle?: string
   type?: 'qa' | 'feedback' | 'blog'
+  initialContent?: string
+  showContentEditor?: boolean
 }
 // 创建自定义验证函数，确保每个分类下至少选择一个子选项
 const validateGroupSelection = (
@@ -101,6 +103,8 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
   status = 'create',
   initialTitle,
   type = 'qa',
+  initialContent,
+  showContentEditor = true,
 }) => {
   const { id } = useParams() || { id: '' }
   const {
@@ -110,7 +114,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
     handleSubmit,
     register,
     watch: _watch,
-    setValue: _setValue,
+    setValue,
   } = useForm({
     resolver: zodResolver(schema),
   })
@@ -176,7 +180,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
       const defaultGroupIds = getDefaultGroupIds()
       reset({
         title: initialTitle,
-        content: '',
+        content: initialContent || '',
         group_ids: defaultGroupIds,
         tags: [],
       })
@@ -184,13 +188,13 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
       // 当打开创建模态框但没有初始标题时，清空所有字段
       const defaultGroupIds = getDefaultGroupIds()
       reset({
-        content: '',
+        content: initialContent || '',
         group_ids: defaultGroupIds,
         tags: [],
         title: '',
       })
     }
-  }, [open, initialTitle, status, reset, getDefaultGroupIds])
+  }, [open, initialTitle, initialContent, status, reset, getDefaultGroupIds])
 
   useEffect(() => {
     if (status === 'edit' && data && open) {
@@ -198,12 +202,22 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
     }
   }, [data, open, reset, status])
 
+  const editorRef = useRef<EditorWrapRef>(null)
+
   return (
     <Modal
-      title={`${status === 'create' ? (type === 'feedback' ? '提交反馈' : '发帖提问') : '编辑'}`}
+      title={`${
+        status === 'create' ? (type === 'feedback' ? '提交反馈' : type === 'blog' ? '发布文章' : '发帖提问') : '编辑'
+      }`}
       open={open}
       onCancel={onClose}
-      onOk={onSubmit}
+      onOk={() => {
+        if (showContentEditor) {
+          const content = editorRef.current?.getMarkdown() || ''
+          setValue('content', content, { shouldValidate: true, shouldDirty: true })
+        }
+        onSubmit()
+      }}
       okText='发布'
       width={800}
       okButtonProps={{
@@ -216,7 +230,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
           {...register('title')}
           required
           variant='outlined'
-          label={type === 'feedback' ? '反馈标题' : '你遇到了什么问题？'}
+          label={type === 'feedback' ? '反馈标题' : type === 'blog' ? '文章标题' : '你遇到了什么问题？'}
           fullWidth
           error={Boolean(errors.title)}
           helperText={errors.title?.message as string}
@@ -355,39 +369,39 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
             )
           }}
         />
-        <Box>
-          <Box
-            sx={{
-              border: '1px solid #e0e0e0',
-              borderRadius: 2,
-              overflow: 'hidden',
-              backgroundColor: '#fff',
-            }}
-          >
-            {/* 编辑器内容 */}
-            <Box sx={{ p: 0 }}>
-              <Controller
-                rules={{ required: '请输入内容' }}
-                name='content'
-                control={control}
-                render={({ field }) => (
-                  <EditorWrap
-                    detail={{ content: field.value || '' }}
-                    onContentChange={(content) => {
-                      field.onChange(content)
-                    }}
-                    showActions={false}
-                  />
-                )}
-              />
+        {showContentEditor && (
+          <Box>
+            <Box
+              sx={{
+                border: '1px solid #e0e0e0',
+                borderRadius: 2,
+                overflow: 'hidden',
+                backgroundColor: '#fff',
+              }}
+            >
+              {/* 编辑器内容 */}
+              <Box sx={{ p: 0 }}>
+                <Controller
+                  rules={{ required: '请输入内容' }}
+                  name='content'
+                  control={control}
+                  render={({ field }) => (
+                    <EditorWrap
+                      ref={editorRef}
+                      value={field.value || ''}
+                      showActions={false}
+                    />
+                  )}
+                />
+              </Box>
             </Box>
+            {errors.content?.message && (
+              <FormHelperText error id='component-error-text'>
+                {errors.content?.message as string}
+              </FormHelperText>
+            )}
           </Box>
-          {errors.content?.message && (
-            <FormHelperText error id='component-error-text'>
-              {errors.content?.message as string}
-            </FormHelperText>
-          )}
-        </Box>
+        )}
       </Stack>
     </Modal>
   )

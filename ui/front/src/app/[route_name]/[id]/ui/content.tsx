@@ -21,7 +21,7 @@ import { Card, MarkDown } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 // import { Avatar } from '@/components/discussion'
 import { TimeDisplayWithTag } from '@/components/TimeDisplay'
-import EditorWrap from '@/components/editor/edit/Wrap'
+import EditorWrap, { EditorWrapRef } from '@/components/editor/edit/Wrap'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
@@ -70,7 +70,7 @@ const BaseDiscussCard = (props: {
     index: ModelDiscussionComment | ModelDiscussionReply,
   ): void
 }) => {
-  const { data, onOpt, disData, isReply } = props
+  const { data, onOpt, disData, isReply, index } = props
   const router = useRouter()
   const { user } = useContext(AuthContext)
   const [repliesCollapsed, setRepliesCollapsed] = useState(false)
@@ -80,7 +80,7 @@ const BaseDiscussCard = (props: {
     const styleSheet = document.createElement('style')
     styleSheet.textContent = animationStyles
     document.head.appendChild(styleSheet)
-    
+
     // 清理函数，组件卸载时移除样式
     return () => {
       if (document.head.contains(styleSheet)) {
@@ -337,7 +337,7 @@ const BaseDiscussCard = (props: {
                     {formatNumber(data.like || 0)}
                   </Typography>
                 </Stack>
-                {disData.type !== ModelDiscussionType.DiscussionTypeFeedback && (
+                {disData.type === ModelDiscussionType.DiscussionTypeQA && (
                   <Stack
                     direction='row'
                     alignItems='center'
@@ -408,21 +408,12 @@ const BaseDiscussCard = (props: {
           </Stack>
         </Stack>
       </Stack>
-      {data.bot ? (
-        <MarkDown
-          content={data.content}
-          sx={{
-            backgroundColor: isReply ? 'transparent !important' : 'inherit',
-          }}
-        />
-      ) : (
-        <EditorContent
-          content={data.content}
-          sx={{
-            backgroundColor: isReply ? 'transparent !important' : 'inherit',
-          }}
-        />
-      )}
+      <EditorContent
+        content={data.content}
+        sx={{
+          backgroundColor: isReply ? 'transparent !important' : 'inherit',
+        }}
+      />
       {!isReply && !!(data as ModelDiscussionComment)?.replies?.length && (
         <>
           <Divider sx={{ my: 2 }} />
@@ -499,7 +490,7 @@ const DiscussCard = (props: {
   const { id }: { id: string } = useParams() || { id: '' }
   const { user } = useContext(AuthContext)
   const { checkAuth } = useAuthCheck()
-  const [comment, setComment] = useState('')
+  const editorRef = React.useRef<EditorWrapRef>(null)
   const router = useRouter()
   const [mdEditShow, setMdEditShow] = useState(false)
 
@@ -508,14 +499,14 @@ const DiscussCard = (props: {
     return checkAuth(() => setMdEditShow(true))
   }
   const onSubmit = async () => {
+    const content = editorRef.current?.getMarkdown() || ''
     await postDiscussionDiscIdComment(
       { discId: id },
       {
-        content: comment,
+        content,
         comment_id: props.data.id,
       },
     )
-    setComment('')
     setMdEditShow(false)
     router.refresh()
   }
@@ -536,16 +527,12 @@ const DiscussCard = (props: {
       >
         <Box sx={{ display: !mdEditShow ? 'none' : 'block', height: 400 }}>
           <EditorWrap
-            detail={{
-              id: 'reply-editor',
-              name: '评论',
-              content: comment,
-            }}
+            ref={editorRef}
+            value=''
             onSave={async () => {
-              await onSubmit()
+              return onSubmit()
             }}
             onCancel={() => setMdEditShow(false)}
-            onContentChange={setComment}
           />
         </Box>
         <OutlinedInput

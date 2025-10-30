@@ -12,7 +12,7 @@ import ProfilePanel from './profilePanel'
 enum ContentType {
   FEEDBACK = 'feedback',
   QA = 'qa', 
-  ARTICLE = 'article', // 新增文章类型
+  BLOG = 'blog', // 新增文章类型
 }
 
 // 消息通知类型枚举
@@ -66,7 +66,7 @@ const CONTENT_TYPE_CONFIGS: Record<ContentType, ContentTypeConfig> = {
     botUnknownAction: '提出了机器人无法回答的问题',
     likeFeedbackAction: '点赞了你的反馈',
   },
-  [ContentType.ARTICLE]: {
+  [ContentType.BLOG]: {
     replyAction: '评论了你的文章',
     commentAction: '回复了你的评论',
     applyAction: '采纳了你的评论',
@@ -74,7 +74,7 @@ const CONTENT_TYPE_CONFIGS: Record<ContentType, ContentTypeConfig> = {
     dislikeAction: '不喜欢你的评论',
     dislikeBotAction: '不喜欢机器人的评论',
     botUnknownAction: '提出了机器人无法回答的问题',
-    likeFeedbackAction: '点赞了你的反馈',
+    likeFeedbackAction: '点赞了你的文章',
   },
 }
 
@@ -83,7 +83,7 @@ const CONTENT_TYPE_CONFIGS: Record<ContentType, ContentTypeConfig> = {
  */
 class ContentTypeConfigManager {
   private static instance: ContentTypeConfigManager
-  private configs: Record<string, ContentTypeConfig> = { ...CONTENT_TYPE_CONFIGS }
+  private configs: Record<string, ContentTypeConfig> = CONTENT_TYPE_CONFIGS 
   
   private constructor() {}
   
@@ -129,7 +129,6 @@ class ContentTypeConfigManager {
 const getNotificationText = (info: MessageNotifyInfo): string => {
   const configManager = ContentTypeConfigManager.getInstance()
   const config = configManager.getConfig(info.discussion_type)
-  
   switch (info.type) {
     case MsgNotifyType.MsgNotifyTypeReplyDiscuss:
       return config.replyAction
