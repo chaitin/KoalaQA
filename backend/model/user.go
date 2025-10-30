@@ -13,6 +13,7 @@ const (
 type User struct {
 	Base
 
+	OrgID     uint      `gorm:"column:org_id;type:bigint;default:0" json:"org_id"`
 	Name      string    `gorm:"column:name;type:text" json:"name"`
 	Email     string    `gorm:"column:email;type:text;default:null;uniqueIndex" json:"email"`
 	Avatar    string    `gorm:"column:avatar;type:text" json:"avatar"`
