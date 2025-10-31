@@ -18,9 +18,20 @@ type User struct {
 
 func (u *User) ListWithOrg(ctx context.Context, res any, queryFuncs ...QueryOptFunc) error {
 	queryOpt := getQueryOpt(queryFuncs...)
-	return u.model(ctx).Select("users.*, orgs.name AS org_name").
-		Joins("LEFT JOIN orgs ON orgs.id = users.org_id").
+	return u.model(ctx).Select("users.*, (SELECT ARRAY_AGG(orgs.name) FROM orgs WHERE orgs.id =ANY(users.org_ids)) AS org_names").
 		Scopes(queryOpt.Scopes()...).Find(res).Error
+}
+
+func (u *User) HasForumPermission(ctx context.Context, userID, forumID uint) (bool, error) {
+	var exist bool
+	err := u.model(ctx).Raw("SELECT EXISTS (?)", u.model(ctx).Where("id = ?", userID).
+		Where("org_ids && (SELECT ARRAY_AGG(id) FROM orgs WHERE ? =ANY(forum_ids))", forumID)).
+		Scan(&exist).Error
+	if err != nil {
+		return false, err
+	}
+
+	return exist, nil
 }
 
 func (u *User) GetByEmail(ctx context.Context, res any, email string) error {

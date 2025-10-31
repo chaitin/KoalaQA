@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/database"
@@ -79,6 +80,12 @@ func (f *Forum) UpdateWithGroup(ctx context.Context, forums []model.ForumInfo) e
 					return err
 				}
 				if err := f.rag.DeleteDataset(ctx, forum.DatasetID); err != nil {
+					return err
+				}
+				if err := tx.Model(&model.Org{}).Where("? =ANY(forum_ids)", delId).Updates(map[string]any{
+					"forum_ids":  gorm.Expr("ARRAY_REMOVE(forum_ids, ?)", delId),
+					"updated_at": time.Now(),
+				}).Error; err != nil {
 					return err
 				}
 			}

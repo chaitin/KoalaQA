@@ -24,30 +24,7 @@ func newAuth(cfg config.Config, generator *jwt.Generator, user *svc.User) Interc
 }
 
 func (a *auth) Intercept(ctx *context.Context) {
-	if a.freeAuth {
-		user, err := a.user.Admin(ctx)
-		if err != nil {
-			ctx.Unauthorized("get adimn failed")
-			ctx.Abort()
-			return
-		}
-
-		ctx.SetUser(model.UserInfo{
-			UserCore: model.UserCore{
-				UID: user.ID,
-				Key: user.Key,
-			},
-			Username: user.Name,
-			Avatar:   user.Avatar,
-			Email:    user.Email,
-			Role:     user.Role,
-			Builtin:  user.Builtin,
-		})
-		ctx.Next()
-		return
-	}
-
-	userInfo, err := authUser(ctx, a.jwt, a.user)
+	userInfo, err := authUser(ctx, a.freeAuth, a.jwt, a.user)
 	if err != nil {
 		ctx.Unauthorized(err.Error())
 		ctx.Abort()
@@ -67,7 +44,7 @@ func init() {
 	registerAPIAuth(newAuth)
 }
 
-func authUser(ctx *context.Context, j *jwt.Generator, user *svc.User) (*model.UserInfo, error) {
+func authUser(ctx *context.Context, freeAuth bool, j *jwt.Generator, user *svc.User) (*model.UserInfo, error) {
 	var token = ""
 	if authToken := ctx.GetHeader("Authorization"); authToken != "" {
 		splitToken := strings.Split(authToken, " ")
@@ -78,25 +55,40 @@ func authUser(ctx *context.Context, j *jwt.Generator, user *svc.User) (*model.Us
 	if authToken, _ := ctx.Cookie("auth_token"); authToken != "" {
 		token = authToken
 	}
+
+	var item *model.User
 	if token == "" {
-		return nil, errors.New("auth token is empty")
-	}
-	userCore, err := j.Verify(token)
-	if err != nil {
-		return nil, err
-	}
+		if freeAuth {
+			var err error
+			item, err = user.Admin(ctx)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, errors.New("auth token is empty")
+		}
+	} else {
+		userCore, err := j.Verify(token)
+		if err != nil {
+			return nil, err
+		}
 
-	item, err := user.Detail(ctx, userCore.UID)
-	if err != nil {
-		return nil, err
-	}
+		item, err = user.Detail(ctx, userCore.UID)
+		if err != nil {
+			return nil, err
+		}
 
-	if item.Key != userCore.Key {
-		return nil, errors.New("invalid key")
+		if item.Key != userCore.Key {
+			return nil, errors.New("invalid key")
+		}
 	}
 
 	return &model.UserInfo{
-		UserCore: *userCore,
+		UserCore: model.UserCore{
+			UID: item.ID,
+			Key: item.Key,
+		},
+		OrgIDs:   item.OrgIDs,
 		Role:     item.Role,
 		Email:    item.Email,
 		Username: item.Name,
