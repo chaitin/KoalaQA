@@ -20,10 +20,14 @@ type OrgListItem struct {
 	Count      uint              `json:"count"`
 }
 
-func (o *Org) List(ctx context.Context) (*model.ListRes[OrgListItem], error) {
+type OrgListReq struct {
+	Name *string `form:"name"`
+}
+
+func (o *Org) List(ctx context.Context, req OrgListReq) (*model.ListRes[OrgListItem], error) {
 	var res model.ListRes[OrgListItem]
 
-	err := o.repoOrg.List(ctx, &res)
+	err := o.repoOrg.List(ctx, &res.Items, repo.QueryWithILike("name", req.Name))
 	if err != nil {
 		return nil, err
 	}

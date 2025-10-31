@@ -20,18 +20,19 @@ func init() {
 	registerSvc(newForum)
 }
 
-func (f *Forum) List(ctx context.Context, user model.UserInfo) ([]*model.ForumInfo, error) {
-	forumIDs, err := f.repoOrg.ListForumIDs(ctx, user.OrgIDs...)
-	if err != nil {
-		return nil, err
-	}
+func (f *Forum) List(ctx context.Context, user model.UserInfo, permissionCheck bool) ([]*model.ForumInfo, error) {
+	var forumIDs model.Int64Array
 
-	if len(forumIDs) == 0 {
-		return make([]*model.ForumInfo, 0), nil
+	if permissionCheck {
+		var err error
+		forumIDs, err = f.repoOrg.ListForumIDs(ctx, user.OrgIDs...)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var items []*model.ForumInfo
-	err = f.repo.List(ctx, &items,
+	err := f.repo.List(ctx, &items,
 		repo.QueryWithOrderBy("index ASC"),
 		repo.QueryWithEqual("id", forumIDs, repo.EqualOPEqAny),
 	)

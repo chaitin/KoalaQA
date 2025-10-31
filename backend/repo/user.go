@@ -18,8 +18,7 @@ type User struct {
 
 func (u *User) ListWithOrg(ctx context.Context, res any, queryFuncs ...QueryOptFunc) error {
 	queryOpt := getQueryOpt(queryFuncs...)
-	return u.model(ctx).Select("users.*, orgs.name AS org_name").
-		Joins("LEFT JOIN orgs ON orgs.id = users.org_id").
+	return u.model(ctx).Select("users.*, (SELECT ARRAY_AGG(orgs.name) FROM orgs WHERE orgs.id =ANY(users.org_ids)) AS org_names").
 		Scopes(queryOpt.Scopes()...).Find(res).Error
 }
 

@@ -115,26 +115,19 @@ func (u *user) Delete(ctx *context.Context) {
 // JoinOrg
 // @Summary user join org
 // @Tags user
-// @Param user_id path uint true "user id"
 // @Param req body svc.UserJoinOrgReq true "request params"
 // @Produce json
 // @Success 200 {object} context.Response
-// @Router /admin/user/{user_id}/org [post]
+// @Router /admin/user/join_org [post]
 func (u *user) JoinOrg(ctx *context.Context) {
-	userID, err := ctx.ParamUint("user_id")
-	if err != nil {
-		ctx.BadRequest(err)
-		return
-	}
-
 	var req svc.UserJoinOrgReq
-	err = ctx.ShouldBindJSON(&req)
+	err := ctx.ShouldBindJSON(&req)
 	if err != nil {
 		ctx.BadRequest(err)
 		return
 	}
 
-	err = u.svcUser.JoinOrg(ctx, userID, req)
+	err = u.svcUser.JoinOrg(ctx, req)
 	if err != nil {
 		ctx.InternalError(err, "user join org failed")
 		return
@@ -147,12 +140,12 @@ func (u *user) Route(h server.Handler) {
 	{
 		g := h.Group("/user")
 		g.GET("", u.List)
+		g.POST("/join_org", u.JoinOrg)
 		{
 			userG := g.Group("/:user_id")
 			userG.GET("", u.Detail)
 			userG.PUT("", u.Update)
 			userG.DELETE("", u.Delete)
-			userG.POST("/org", u.JoinOrg)
 		}
 	}
 }

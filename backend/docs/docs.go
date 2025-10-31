@@ -2379,6 +2379,13 @@ const docTemplate = `{
                     "org"
                 ],
                 "summary": "list org",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2938,6 +2945,36 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/user/join_org": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "user join org",
+                "parameters": [
+                    {
+                        "description": "request params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.UserJoinOrgReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/user/{user_id}": {
             "get": {
                 "produces": [
@@ -3027,43 +3064,6 @@ const docTemplate = `{
                         "name": "user_id",
                         "in": "path",
                         "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/context.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/user/{user_id}/org": {
-            "post": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user"
-                ],
-                "summary": "user join org",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "user id",
-                        "name": "user_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "request params",
-                        "name": "req",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/svc.UserJoinOrgReq"
-                        }
                     }
                 ],
                 "responses": {
@@ -6146,6 +6146,14 @@ const docTemplate = `{
             "properties": {
                 "org_ids": {
                     "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "user_ids": {
+                    "type": "array",
+                    "minItems": 1,
                     "items": {
                         "type": "integer"
                     }
@@ -6176,11 +6184,17 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "org_id": {
-                    "type": "integer"
+                "org_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
-                "org_name": {
-                    "type": "string"
+                "org_names": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "role": {
                     "$ref": "#/definitions/model.UserRole"
@@ -6229,6 +6243,12 @@ const docTemplate = `{
             "properties": {
                 "name": {
                     "type": "string"
+                },
+                "org_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "role": {
                     "maximum": 3,

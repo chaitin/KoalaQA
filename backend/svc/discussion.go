@@ -32,6 +32,7 @@ type discussionIn struct {
 	UserRepo      *repo.User
 	GroupItemRepo *repo.GroupItem
 	OrgRepo       *repo.Org
+	BotSvc        *Bot
 	Pub           mq.Publisher
 	Rag           rag.Service
 	Dataset       *repo.Dataset
@@ -518,24 +519,24 @@ type CommentCreateReq struct {
 }
 
 func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID string, req CommentCreateReq) (uint, error) {
-	if !req.Bot {
-		if !d.allow("comment", discUUID, uid) {
-			return 0, errRatelimit
-		}
-	}
-
 	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
 	if err != nil {
 		return 0, err
 	}
 
-	ok, err := d.in.UserRepo.HasForumPermission(ctx, uid, disc.ForumID)
-	if err != nil {
-		return 0, err
-	}
+	if !req.Bot {
+		if !d.allow("comment", discUUID, uid) {
+			return 0, errRatelimit
+		}
 
-	if !ok {
-		return 0, errPermission
+		ok, err := d.in.UserRepo.HasForumPermission(ctx, uid, disc.ForumID)
+		if err != nil {
+			return 0, err
+		}
+
+		if !ok {
+			return 0, errPermission
+		}
 	}
 
 	parentID := d.getParentID(ctx, req.CommentID)
@@ -595,6 +596,10 @@ type CommentUpdateReq struct {
 }
 
 func (d *Discussion) UpdateComment(ctx context.Context, user model.UserInfo, discUUID string, commentID uint, req CommentUpdateReq) error {
+	if !d.allow("comment", discUUID, user.UID) {
+		return errRatelimit
+	}
+
 	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
 	if err != nil {
 		return err

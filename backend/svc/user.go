@@ -40,15 +40,15 @@ type UserListReq struct {
 type UserListItem struct {
 	model.Base
 
-	OrgID     uint            `json:"org_id"`
-	OrgName   string          `json:"org_name"`
-	Name      string          `json:"name"`
-	Role      model.UserRole  `json:"role"`
-	Avatar    string          `json:"avatar"`
-	Builtin   bool            `json:"builtin"`
-	Email     string          `json:"email"`
-	LastLogin model.Timestamp `json:"last_login"`
-	Key       string          `json:"-"`
+	OrgIDs    model.Int64Array  `json:"org_ids" gorm:"type:bigint[]"`
+	OrgNames  model.StringArray `json:"org_names" gorm:"type:text[]"`
+	Name      string            `json:"name"`
+	Role      model.UserRole    `json:"role"`
+	Avatar    string            `json:"avatar"`
+	Builtin   bool              `json:"builtin"`
+	Email     string            `json:"email"`
+	LastLogin model.Timestamp   `json:"last_login"`
+	Key       string            `json:"-"`
 }
 
 func (u *User) List(ctx context.Context, req UserListReq) (*model.ListRes[UserListItem], error) {
@@ -58,8 +58,7 @@ func (u *User) List(ctx context.Context, req UserListReq) (*model.ListRes[UserLi
 		repo.QueryWithOrderBy("created_at DESC"),
 		repo.QueryWithILike("name", req.Name),
 		repo.QueryWithEqual("invisible", false),
-		repo.QueryWithEqual("org_id", req.OrgID),
-		repo.QueryWithILike("orgs.name", req.OrgName),
+		repo.QueryWithEqual("org_ids", req.OrgID, repo.EqualOPValIn),
 	)
 	if err != nil {
 		return nil, err
@@ -68,6 +67,7 @@ func (u *User) List(ctx context.Context, req UserListReq) (*model.ListRes[UserLi
 	err = u.repoUser.Count(ctx, &res.Total,
 		repo.QueryWithILike("name", req.Name),
 		repo.QueryWithEqual("invisible", false),
+		repo.QueryWithEqual("org_ids", req.OrgID, repo.EqualOPValIn),
 	)
 	if err != nil {
 		return nil, err
@@ -101,8 +101,9 @@ func (u *User) Admin(ctx context.Context) (*model.User, error) {
 }
 
 type UserUpdateReq struct {
-	Name string         `json:"name"`
-	Role model.UserRole `json:"role" binding:"min=1,max=3"`
+	Name   string           `json:"name"`
+	Role   model.UserRole   `json:"role" binding:"min=1,max=3"`
+	OrgIDs model.Int64Array `json:"org_ids"`
 }
 
 func (u *User) Update(ctx context.Context, id uint, req UserUpdateReq) error {
@@ -122,6 +123,17 @@ func (u *User) Update(ctx context.Context, id uint, req UserUpdateReq) error {
 
 	if !user.Builtin {
 		updateM["role"] = req.Role
+	}
+
+	if len(req.OrgIDs) > 0 {
+		err = u.repoOrg.FilterIDs(ctx, &req.OrgIDs)
+		if err != nil {
+			return err
+		}
+
+		if len(req.OrgIDs) > 0 {
+			updateM["org_ids"] = req.OrgIDs
+		}
 	}
 
 	if len(updateM) == 1 {
@@ -214,30 +226,12 @@ func (u *User) UpdateInfo(ctx context.Context, id uint, req UserUpdateInfoReq) e
 	return nil
 }
 
-func (u *User) Delete(ctx context.Context, id uint) error {
-	var user model.User
-	err := u.repoUser.GetByID(ctx, &user, id)
-	if err != nil {
-		return err
-	}
-
-	if user.Builtin {
-		return errors.New("内置用户无法删除")
-	}
-
-	err = u.repoUser.Delete(ctx, repo.QueryWithEqual("id", id))
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 type UserJoinOrgReq struct {
-	OrgIDs model.Int64Array `json:"org_ids"`
+	UserIDs model.Int64Array `json:"user_ids" binding:"min=1"`
+	OrgIDs  model.Int64Array `json:"org_ids" binding:"min=1"`
 }
 
-func (u *User) JoinOrg(ctx context.Context, userID uint, req UserJoinOrgReq) error {
+func (u *User) JoinOrg(ctx context.Context, req UserJoinOrgReq) error {
 	err := u.repoOrg.FilterIDs(ctx, &req.OrgIDs)
 	if err != nil {
 		return err
@@ -250,7 +244,26 @@ func (u *User) JoinOrg(ctx context.Context, userID uint, req UserJoinOrgReq) err
 	err = u.repoUser.Update(ctx, map[string]any{
 		"org_ids":    req.OrgIDs,
 		"updated_at": time.Now(),
-	}, repo.QueryWithEqual("id", userID))
+	}, repo.QueryWithEqual("id", req.UserIDs, repo.EqualOPEqAny))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u *User) Delete(ctx context.Context, id uint) error {
+	var user model.User
+	err := u.repoUser.GetByID(ctx, &user, id)
+	if err != nil {
+		return err
+	}
+
+	if user.Builtin {
+		return errors.New("内置用户无法删除")
+	}
+
+	err = u.repoUser.Delete(ctx, repo.QueryWithEqual("id", id))
 	if err != nil {
 		return err
 	}
@@ -321,6 +334,11 @@ func (u *User) Register(ctx context.Context, req UserRegisterReq) error {
 		return errors.New("email already registered")
 	}
 
+	org, err := u.repoOrg.GetBuiltin(ctx)
+	if err != nil {
+		return err
+	}
+
 	user := model.User{
 		Name:     req.Name,
 		Email:    req.Email,
@@ -328,6 +346,7 @@ func (u *User) Register(ctx context.Context, req UserRegisterReq) error {
 		Password: hashPass,
 		Role:     model.UserRoleUser,
 		Key:      uuid.NewString(),
+		OrgIDs:   model.Int64Array{int64(org.ID)},
 	}
 	err = u.repoUser.Create(ctx, &user)
 	if err != nil {

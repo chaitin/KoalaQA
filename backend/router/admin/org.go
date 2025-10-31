@@ -13,11 +13,19 @@ type org struct {
 // List
 // @Summary list org
 // @Tags org
+// @Param req query svc.OrgListReq true "request params"
 // @Produce json
 // @Success 200 {object} context.Response{data=model.ListRes{items=[]svc.OrgListItem}}
 // @Router /admin/org [get]
 func (o *org) List(ctx *context.Context) {
-	res, err := o.svcOrg.List(ctx)
+	var req svc.OrgListReq
+	err := ctx.ShouldBindQuery(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	res, err := o.svcOrg.List(ctx, req)
 	if err != nil {
 		ctx.InternalError(err, "list org failed")
 		return

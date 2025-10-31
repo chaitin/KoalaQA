@@ -1,7 +1,6 @@
 package intercept
 
 import (
-	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/config"
 	"github.com/chaitin/koalaqa/pkg/context"
 	"github.com/chaitin/koalaqa/pkg/jwt"
@@ -41,31 +40,9 @@ func (p *publicAccess) Intercept(ctx *context.Context) {
 		return
 	}
 
-	if p.freeAuth {
-		user, err := p.svcUser.Admin(ctx)
-		if err != nil {
-			ctx.Unauthorized("get adimn failed")
-			ctx.Abort()
-			return
-		}
-
-		ctx.SetUser(model.UserInfo{
-			UserCore: model.UserCore{
-				UID: user.ID,
-				Key: user.Key,
-			},
-			OrgIDs:   user.OrgIDs,
-			Username: user.Name,
-			Avatar:   user.Avatar,
-			Email:    user.Email,
-			Role:     user.Role,
-			Builtin:  user.Builtin,
-		})
-	} else {
-		userInfo, err := authUser(ctx, p.jwt, p.svcUser)
-		if err == nil {
-			ctx.SetUser(*userInfo)
-		}
+	userInfo, err := authUser(ctx, p.freeAuth, p.jwt, p.svcUser)
+	if err == nil {
+		ctx.SetUser(*userInfo)
 	}
 
 	ctx.Next()
