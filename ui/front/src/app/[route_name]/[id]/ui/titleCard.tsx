@@ -76,7 +76,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail}) => {
       }
     }
   }, [])
-  const { id }: { id: string } = useParams() || { id: '' }
+  const { id, route_name }: { id: string; route_name?: string } = (useParams() as any) || { id: '' }
   const { checkAuth } = useAuthCheck()
   const anchorElRef = useRef(null)
   const editorRef = useRef<EditorWrapRef>(null)
@@ -140,6 +140,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail}) => {
         status='edit'
         open={releaseVisible}
         data={data}
+        id={id}
         onClose={releaseClose}
         selectedTags={[]}
         onOk={() => {
@@ -158,7 +159,12 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail}) => {
       >
         <MenuItem
           onClick={() => {
-            releaseOpen()
+            if (data.type === ModelDiscussionType.DiscussionTypeBlog) {
+              const rn = route_name || ''
+              router.push(`/${rn}/edit?id=${data.uuid}`)
+            } else {
+              releaseOpen()
+            }
             menuClose()
           }}
         >

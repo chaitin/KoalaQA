@@ -9,15 +9,9 @@ import Toc from '@/components/Toc'
 import { Box, Button, Stack, TextField } from '@mui/material'
 import { useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
-// 数据获取函数
-async function fetchDiscussionDetail(discId: string) {
-  const res: any = await getDiscussionDiscId({ discId } as any)
-  return res?.data || { content: '' }
-}
 
 export default function EditPage() {
   const [headings, setHeadings] = useState<any[]>([])
-  const [localData, setLocalData] = useState<string>('')
   const params = useSearchParams()
   const queryId = useMemo(() => params.get('id') || params.get('discId') || undefined, [params]) as string | undefined
   const [data, setData] = useState<ModelDiscussionDetail>({
@@ -31,19 +25,13 @@ export default function EditPage() {
   const [modalContent, setModalContent] = useState('')
   const editorRef = useRef<EditorWrapRef>(null)
   useEffect(() => {
-    let ignore = false
     async function run() {
       if (!queryId) return
-      const detail = await fetchDiscussionDetail(queryId)
-      setLocalData(detail.content || '')
-      if (!ignore && detail) setData(detail)
+      const detail = await getDiscussionDiscId({ discId: queryId })
+      if (detail) setData(detail)
     }
     run()
-    return () => {
-      ignore = true
-    }
   }, [queryId])
-
   return (
     <Box
       sx={{
@@ -89,7 +77,7 @@ export default function EditPage() {
         alignItems='flex-start'
         gap={3}
       >
-        <Box sx={{ width: '290px', display: { md: 'none', lg: 'block' } }} />
+        <Box sx={{ width: '290px', display: { xs: 'none', lg: 'block' } }} />
         <Box sx={{ width: { xs: '100%', sm: 800 } }}>
           <h1 style={{ display: 'none' }}>讨论详情</h1>
           <Card
@@ -99,7 +87,7 @@ export default function EditPage() {
               maxWidth: '100%',
               minHeight: '90vh',
               '& .tiptap:focus': {
-                background: '#fff',
+                background: '#fff!important',
               }
             }}
           >
@@ -131,7 +119,13 @@ export default function EditPage() {
                 发布
               </Button>
             </Stack>
-            <EditorWrap ref={editorRef} value={localData} onTocUpdate={setHeadings} showActions={false} />
+            <EditorWrap
+              ref={editorRef}
+              value={data.content}
+              onTocUpdate={setHeadings}
+              showActions={false}
+              key={`editor-${queryId || 'new'}-${data.content ? 1 : 0}`}
+            />
           </Card>
         </Box>
         <ReleaseModal
@@ -139,8 +133,10 @@ export default function EditPage() {
           onClose={() => setReleaseOpen(false)}
           onOk={() => setReleaseOpen(false)}
           selectedTags={[]}
-          status={'create'}
-          initialTitle={data.title}
+          status={queryId ? 'edit' : 'create'}
+          initialTitle={data.content}
+          data={data}
+          id={queryId}
           initialContent={modalContent}
           type={'blog'}
           showContentEditor={false}
@@ -153,7 +149,7 @@ export default function EditPage() {
             overflowY: 'auto',
             flexShrink: 0,
             width: '242px',
-            display: { md: 'none', lg: 'block' } 
+            display: { xs: 'none', lg: 'block' } 
           }}
         >
           <Toc headings={headings} />

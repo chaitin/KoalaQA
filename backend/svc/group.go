@@ -8,10 +8,22 @@ import (
 )
 
 type Group struct {
-	repoG *repo.Group
+	repoG    *repo.Group
+	repoUser *repo.User
 }
 
-func (g *Group) ListWithItem(ctx context.Context, forumID uint) (*model.ListRes[model.GroupWithItem], error) {
+func (g *Group) ListWithItem(ctx context.Context, uid uint, forumID uint) (*model.ListRes[model.GroupWithItem], error) {
+	if forumID > 0 {
+		ok, err := g.repoUser.HasForumPermission(ctx, uid, forumID)
+		if err != nil {
+			return nil, err
+		}
+
+		if !ok {
+			return nil, errPermission
+		}
+	}
+
 	var res model.ListRes[model.GroupWithItem]
 	err := g.repoG.ListWithItem(ctx, forumID, &res.Items)
 	if err != nil {
@@ -29,9 +41,10 @@ func (g *Group) Update(ctx context.Context, req GroupUpdateReq) error {
 	return g.repoG.UpdateWithItem(ctx, req.Groups)
 }
 
-func newGroup(repoG *repo.Group) *Group {
+func newGroup(repoG *repo.Group, user *repo.User) *Group {
 	return &Group{
-		repoG: repoG,
+		repoG:    repoG,
+		repoUser: user,
 	}
 }
 

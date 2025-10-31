@@ -18,10 +18,12 @@ import {
   GetAdminUserUserIdParams,
   GetUserLoginThirdParams,
   ModelListRes,
+  ModelUser,
   ModelUserInfo,
   PutAdminUserUserIdParams,
   PutUserPayload,
   SvcAuthFrontendGetRes,
+  SvcUserJoinOrgReq,
   SvcUserListItem,
   SvcUserLoginReq,
   SvcUserRegisterReq,
@@ -66,11 +68,34 @@ export const getAdminUser = (
  * No description
  *
  * @tags user
+ * @name PostAdminUserJoinOrg
+ * @summary user join org
+ * @request POST:/admin/user/join_org
+ * @response `200` `ContextResponse` OK
+ */
+
+export const postAdminUserJoinOrg = (
+  req: SvcUserJoinOrgReq,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/admin/user/join_org`,
+    method: "POST",
+    body: req,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
  * @name GetAdminUserUserId
  * @summary user detail
  * @request GET:/admin/user/{user_id}
  * @response `200` `(ContextResponse & {
-    data?: SvcUserListItem,
+    data?: ModelUser,
 
 })` OK
  */
@@ -81,7 +106,7 @@ export const getAdminUserUserId = (
 ) =>
   request<
     ContextResponse & {
-      data?: SvcUserListItem;
+      data?: ModelUser;
     }
   >({
     path: `/admin/user/${userId}`,

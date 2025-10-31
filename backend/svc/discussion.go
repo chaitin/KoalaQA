@@ -31,6 +31,8 @@ type discussionIn struct {
 	CommLikeRepo  *repo.CommentLike
 	UserRepo      *repo.User
 	GroupItemRepo *repo.GroupItem
+	OrgRepo       *repo.Org
+	BotSvc        *Bot
 	Pub           mq.Publisher
 	Rag           rag.Service
 	Dataset       *repo.Dataset
@@ -93,11 +95,23 @@ func (d *Discussion) allow(args ...any) bool {
 	return d.in.Limiter.Allow(d.limitKey(args...), time.Second*20, 3)
 }
 
-var errRatelimit = errors.New("ratelimit")
+var (
+	errRatelimit  = errors.New("ratelimit")
+	errPermission = errors.New("permission denied")
+)
 
 func (d *Discussion) Create(ctx context.Context, req DiscussionCreateReq) (string, error) {
 	if !d.allow("discussion", req.UserID) {
 		return "", errRatelimit
+	}
+
+	ok, err := d.in.UserRepo.HasForumPermission(ctx, req.UserID, req.ForumID)
+	if err != nil {
+		return "", err
+	}
+
+	if !ok {
+		return "", errPermission
 	}
 
 	if len(req.GroupIDs) > 0 {
@@ -113,6 +127,7 @@ func (d *Discussion) Create(ctx context.Context, req DiscussionCreateReq) (strin
 		}
 		req.ForumID = forumID
 	}
+
 	disc := model.Discussion{
 		Title:    req.Title,
 		Content:  req.Content,
@@ -125,7 +140,7 @@ func (d *Discussion) Create(ctx context.Context, req DiscussionCreateReq) (strin
 		Members:  model.Int64Array{int64(req.UserID)},
 		Hot:      2000,
 	}
-	err := d.in.DiscRepo.Create(ctx, &disc)
+	err = d.in.DiscRepo.Create(ctx, &disc)
 	if err != nil {
 		return "", err
 	}
@@ -162,6 +177,16 @@ func (d *Discussion) Update(ctx context.Context, user model.UserInfo, uuid strin
 	if !user.CanOperator(disc.UserID) {
 		return errors.New("not allowed to update discussion")
 	}
+
+	ok, err := d.in.UserRepo.HasForumPermission(ctx, user.UID, disc.ForumID)
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		return errPermission
+	}
+
 	if err := d.in.DiscRepo.Update(ctx, map[string]any{
 		"title":     req.Title,
 		"content":   req.Content,
@@ -191,6 +216,16 @@ func (d *Discussion) Delete(ctx context.Context, user model.UserInfo, uuid strin
 	if !user.CanOperator(disc.UserID) {
 		return errors.New("not allowed to delete discussion")
 	}
+
+	ok, err := d.in.UserRepo.HasForumPermission(ctx, user.UID, disc.ForumID)
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		return errPermission
+	}
+
 	if err := d.in.DiscRepo.Delete(ctx, repo.QueryWithEqual("uuid", uuid)); err != nil {
 		return err
 	}
@@ -225,6 +260,15 @@ type DiscussionListReq struct {
 }
 
 func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListReq) (*model.ListRes[*model.DiscussionListItem], error) {
+	ok, err := d.in.UserRepo.HasForumPermission(ctx, userID, req.ForumID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !ok {
+		return nil, errPermission
+	}
+
 	var res model.ListRes[*model.DiscussionListItem]
 	if req.Keyword != "" {
 		discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: req.Keyword, ForumID: req.ForumID})
@@ -271,7 +315,7 @@ func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListRe
 	case DiscussionListFilterMine:
 		pageFuncs = append(pageFuncs, repo.QueryWithOrderBy("created_at DESC"))
 	}
-	err := d.in.DiscRepo.List(ctx, &res.Items, append(query, pageFuncs...)...)
+	err = d.in.DiscRepo.List(ctx, &res.Items, append(query, pageFuncs...)...)
 	if err != nil {
 		return nil, err
 	}
@@ -286,6 +330,16 @@ func (d *Discussion) DetailByUUID(ctx context.Context, uid uint, uuid string) (*
 	if err != nil {
 		return nil, err
 	}
+
+	ok, err := d.in.UserRepo.HasForumPermission(ctx, uid, discussion.ForumID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !ok {
+		return nil, errPermission
+	}
+
 	go d.IncrementView(uuid)
 	return discussion, nil
 }
@@ -351,13 +405,24 @@ func (d *Discussion) LikeDiscussion(ctx context.Context, discUUID string, user m
 		return errRatelimit
 	}
 
-	if err := d.in.DiscRepo.LikeDiscussion(ctx, discUUID, user.UID); err != nil {
-		return err
-	}
 	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
 	if err != nil {
 		return err
 	}
+
+	ok, err := d.in.UserRepo.HasForumPermission(ctx, user.UID, disc.ForumID)
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		return errPermission
+	}
+
+	if err := d.in.DiscRepo.LikeDiscussion(ctx, discUUID, user.UID); err != nil {
+		return err
+	}
+
 	notifyMsg := topic.MsgMessageNotify{
 		DiscussID:      disc.ID,
 		ForumID:        disc.ForumID,
@@ -376,6 +441,20 @@ func (d *Discussion) LikeDiscussion(ctx context.Context, discUUID string, user m
 func (d *Discussion) RevokeLikeDiscussion(ctx context.Context, discUUID string, uid uint) error {
 	if !d.allow("like", discUUID, uid) {
 		return errRatelimit
+	}
+
+	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
+	if err != nil {
+		return err
+	}
+
+	ok, err := d.in.UserRepo.HasForumPermission(ctx, uid, disc.ForumID)
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		return errPermission
 	}
 
 	if err := d.in.DiscRepo.RevokeLikeDiscussion(ctx, discUUID, uid); err != nil {
@@ -440,16 +519,26 @@ type CommentCreateReq struct {
 }
 
 func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID string, req CommentCreateReq) (uint, error) {
-	if !req.Bot {
-		if !d.allow("comment", discUUID, uid) {
-			return 0, errRatelimit
-		}
-	}
-
 	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
 	if err != nil {
 		return 0, err
 	}
+
+	if !req.Bot {
+		if !d.allow("comment", discUUID, uid) {
+			return 0, errRatelimit
+		}
+
+		ok, err := d.in.UserRepo.HasForumPermission(ctx, uid, disc.ForumID)
+		if err != nil {
+			return 0, err
+		}
+
+		if !ok {
+			return 0, errPermission
+		}
+	}
+
 	parentID := d.getParentID(ctx, req.CommentID)
 	comment := model.Comment{
 		DiscussionID: disc.ID,
@@ -507,10 +596,24 @@ type CommentUpdateReq struct {
 }
 
 func (d *Discussion) UpdateComment(ctx context.Context, user model.UserInfo, discUUID string, commentID uint, req CommentUpdateReq) error {
+	if !d.allow("comment", discUUID, user.UID) {
+		return errRatelimit
+	}
+
 	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
 	if err != nil {
 		return err
 	}
+
+	ok, err := d.in.UserRepo.HasForumPermission(ctx, user.UID, disc.ForumID)
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		return errPermission
+	}
+
 	comment, err := d.GetCommentByID(ctx, commentID)
 	if err != nil {
 		return err
@@ -533,14 +636,21 @@ func (d *Discussion) UpdateComment(ctx context.Context, user model.UserInfo, dis
 	return nil
 }
 
-type CommentDeleteReq struct {
-}
-
 func (d *Discussion) DeleteComment(ctx context.Context, user model.UserInfo, discUUID string, commentID uint) error {
 	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
 	if err != nil {
 		return err
 	}
+
+	ok, err := d.in.UserRepo.HasForumPermission(ctx, user.UID, disc.ForumID)
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		return errPermission
+	}
+
 	var comment model.Comment
 	if err := d.in.CommRepo.GetByID(ctx, &comment, commentID); err != nil {
 		return err
@@ -620,6 +730,15 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 		return errors.New("not allowed to accept comment")
 	}
 
+	ok, err := d.in.UserRepo.HasForumPermission(ctx, user.UID, disc.ForumID)
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		return errPermission
+	}
+
 	comment, err := d.in.CommRepo.Detail(ctx, commentID)
 	if err != nil {
 		return err
@@ -697,6 +816,16 @@ func (d *Discussion) LikeComment(ctx context.Context, userInfo model.UserInfo, d
 	if err != nil {
 		return err
 	}
+
+	ok, err := d.in.UserRepo.HasForumPermission(ctx, userInfo.UID, disc.ForumID)
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		return errPermission
+	}
+
 	var comment model.Comment
 	err = d.in.CommRepo.GetByID(ctx, &comment, commentID)
 	if err != nil {
@@ -738,6 +867,16 @@ func (d *Discussion) DislikeComment(ctx context.Context, userInfo model.UserInfo
 	if err != nil {
 		return err
 	}
+
+	ok, err := d.in.UserRepo.HasForumPermission(ctx, userInfo.UID, disc.ForumID)
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		return errPermission
+	}
+
 	var comment model.Comment
 	err = d.in.CommRepo.GetByID(ctx, &comment, commentID)
 	if err != nil {
@@ -775,7 +914,21 @@ func (d *Discussion) RevokeLike(ctx context.Context, uid uint, discUUID string, 
 		return errRatelimit
 	}
 
-	ok, err := d.in.CommRepo.ExistByID(ctx, commentID)
+	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
+	if err != nil {
+		return err
+	}
+
+	ok, err := d.in.UserRepo.HasForumPermission(ctx, uid, disc.ForumID)
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		return errPermission
+	}
+
+	ok, err = d.in.CommRepo.ExistByID(ctx, commentID)
 	if err != nil {
 		return err
 	}

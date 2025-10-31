@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react'
 
 const OutlineSidebar = ({ discussion }: { discussion: ModelDiscussionDetail }) => {
   const [headings, setHeadings] = useState<any[]>([])
-  console.log(discussion)
+
   useEffect(() => {
     const handler = (e: any) => {
       const toc = e?.detail
@@ -45,15 +45,15 @@ const OutlineSidebar = ({ discussion }: { discussion: ModelDiscussionDetail }) =
   }, [])
 
   return (
-    <Stack spacing={3} sx={{ display: { xs: 'none', lg: 'block' } }}>
+    <Stack spacing={3} sx={{ display: { xs: 'none', sm: 'none', md: 'none', lg: 'block' } }}>
       <Card
         sx={{
           overflowY: 'auto',
           width: '242px',
           flexShrink: 0,
-          '& .editor-container p':{
-            fontSize: '13px'
-          }
+          '& .editor-container p': {
+            fontSize: '13px',
+          },
         }}
       >
         <Typography variant='subtitle2' sx={{ mb: 2 }}>
