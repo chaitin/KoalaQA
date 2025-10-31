@@ -295,7 +295,7 @@ const BaseDiscussCard = (props: {
             />
           </Typography>
           <Stack direction='row' gap={2} alignItems='center' sx={{ display: { xs: 'none', sm: 'flex' } }}>
-            {!isReply && (
+            {!isReply && disData.type !== ModelDiscussionType.DiscussionTypeBlog && (
               <>
                 <Stack
                   direction='row'

@@ -25,28 +25,30 @@ type User struct {
 	authMgmt *third_auth.Manager
 	svcAuth  *Auth
 	oc       oss.Client
+	repoOrg  *repo.Org
 	logger   *glog.Logger
 }
 
 type UserListReq struct {
 	model.Pagination
 
-	OrgID *uint   `form:"org_id"`
-	Name  *string `form:"name"`
+	OrgID   *uint   `form:"org_id"`
+	OrgName *string `form:"org_name"`
+	Name    *string `form:"name"`
 }
 
 type UserListItem struct {
 	model.Base
 
-	OrgID     uint            `json:"org_id"`
-	OrgName   string          `json:"org_name"`
-	Name      string          `json:"name"`
-	Role      model.UserRole  `json:"role"`
-	Avatar    string          `json:"avatar"`
-	Builtin   bool            `json:"builtin"`
-	Email     string          `json:"email"`
-	LastLogin model.Timestamp `json:"last_login"`
-	Key       string          `json:"-"`
+	OrgIDs    model.Int64Array  `json:"org_ids" gorm:"type:bigint[]"`
+	OrgNames  model.StringArray `json:"org_names" gorm:"type:text[]"`
+	Name      string            `json:"name"`
+	Role      model.UserRole    `json:"role"`
+	Avatar    string            `json:"avatar"`
+	Builtin   bool              `json:"builtin"`
+	Email     string            `json:"email"`
+	LastLogin model.Timestamp   `json:"last_login"`
+	Key       string            `json:"-"`
 }
 
 func (u *User) List(ctx context.Context, req UserListReq) (*model.ListRes[UserListItem], error) {
@@ -56,7 +58,7 @@ func (u *User) List(ctx context.Context, req UserListReq) (*model.ListRes[UserLi
 		repo.QueryWithOrderBy("created_at DESC"),
 		repo.QueryWithILike("name", req.Name),
 		repo.QueryWithEqual("invisible", false),
-		repo.QueryWithEqual("org_id", req.OrgID),
+		repo.QueryWithEqual("org_ids", req.OrgID, repo.EqualOPValIn),
 	)
 	if err != nil {
 		return nil, err
@@ -65,6 +67,7 @@ func (u *User) List(ctx context.Context, req UserListReq) (*model.ListRes[UserLi
 	err = u.repoUser.Count(ctx, &res.Total,
 		repo.QueryWithILike("name", req.Name),
 		repo.QueryWithEqual("invisible", false),
+		repo.QueryWithEqual("org_ids", req.OrgID, repo.EqualOPValIn),
 	)
 	if err != nil {
 		return nil, err
@@ -98,8 +101,9 @@ func (u *User) Admin(ctx context.Context) (*model.User, error) {
 }
 
 type UserUpdateReq struct {
-	Name string         `json:"name"`
-	Role model.UserRole `json:"role" binding:"min=1,max=3"`
+	Name   string           `json:"name"`
+	Role   model.UserRole   `json:"role" binding:"min=1,max=3"`
+	OrgIDs model.Int64Array `json:"org_ids"`
 }
 
 func (u *User) Update(ctx context.Context, id uint, req UserUpdateReq) error {
@@ -119,6 +123,17 @@ func (u *User) Update(ctx context.Context, id uint, req UserUpdateReq) error {
 
 	if !user.Builtin {
 		updateM["role"] = req.Role
+	}
+
+	if len(req.OrgIDs) > 0 {
+		err = u.repoOrg.FilterIDs(ctx, &req.OrgIDs)
+		if err != nil {
+			return err
+		}
+
+		if len(req.OrgIDs) > 0 {
+			updateM["org_ids"] = req.OrgIDs
+		}
 	}
 
 	if len(updateM) == 1 {
@@ -211,6 +226,32 @@ func (u *User) UpdateInfo(ctx context.Context, id uint, req UserUpdateInfoReq) e
 	return nil
 }
 
+type UserJoinOrgReq struct {
+	UserIDs model.Int64Array `json:"user_ids" binding:"min=1"`
+	OrgIDs  model.Int64Array `json:"org_ids" binding:"min=1"`
+}
+
+func (u *User) JoinOrg(ctx context.Context, req UserJoinOrgReq) error {
+	err := u.repoOrg.FilterIDs(ctx, &req.OrgIDs)
+	if err != nil {
+		return err
+	}
+
+	if len(req.OrgIDs) == 0 {
+		return errors.New("must choose 1 org")
+	}
+
+	err = u.repoUser.Update(ctx, map[string]any{
+		"org_ids":    req.OrgIDs,
+		"updated_at": time.Now(),
+	}, repo.QueryWithEqual("id", req.UserIDs, repo.EqualOPEqAny))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (u *User) Delete(ctx context.Context, id uint) error {
 	var user model.User
 	err := u.repoUser.GetByID(ctx, &user, id)
@@ -293,6 +334,11 @@ func (u *User) Register(ctx context.Context, req UserRegisterReq) error {
 		return errors.New("email already registered")
 	}
 
+	org, err := u.repoOrg.GetBuiltin(ctx)
+	if err != nil {
+		return err
+	}
+
 	user := model.User{
 		Name:     req.Name,
 		Email:    req.Email,
@@ -300,6 +346,7 @@ func (u *User) Register(ctx context.Context, req UserRegisterReq) error {
 		Password: hashPass,
 		Role:     model.UserRoleUser,
 		Key:      uuid.NewString(),
+		OrgIDs:   model.Int64Array{int64(org.ID)},
 	}
 	err = u.repoUser.Create(ctx, &user)
 	if err != nil {
@@ -422,13 +469,14 @@ func (u *User) LoginOIDCCallback(ctx context.Context, req LoginOIDCCallbackReq) 
 	})
 }
 
-func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth, authMgmt *third_auth.Manager, oc oss.Client) *User {
+func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth, authMgmt *third_auth.Manager, oc oss.Client, org *repo.Org) *User {
 	return &User{
 		jwt:      genrator,
 		repoUser: repoUser,
 		svcAuth:  auth,
 		authMgmt: authMgmt,
 		oc:       oc,
+		repoOrg:  org,
 		logger:   glog.Module("svc", "user"),
 	}
 }

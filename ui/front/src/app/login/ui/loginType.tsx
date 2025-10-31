@@ -170,7 +170,15 @@ const LoginType = () => {
               >
                 还没有注册？
                 <Link href='/register' style={{ textDecoration: 'none' }}>
-                  <Box sx={{ display: 'inline-block', fontWeight: 500, color: 'primary.main', ml: 0.5, textDecoration: 'none' }}>
+                  <Box
+                    sx={{
+                      display: 'inline-block',
+                      fontWeight: 500,
+                      color: 'primary.main',
+                      ml: 0.5,
+                      textDecoration: 'none',
+                    }}
+                  >
                     立即注册
                   </Box>
                 </Link>
@@ -195,14 +203,12 @@ const LoginType = () => {
                   variant='outlined'
                   fullWidth
                   sx={{
-                    height: 48,
-                    color: '#40E0D0',
                     backgroundColor: 'transparent',
                     fontSize: '14px',
                   }}
-                  onClick={() => handleOAuthLogin(oauthConfig.type!)}
+                  onClick={() => handleOAuthLogin(oauthConfig?.type!)}
                 >
-                  {oauthConfig.button_desc || 'Auth 登录'}
+                  {oauthConfig?.button_desc || 'Auth 登录'}
                 </Button>
               </>
             )}

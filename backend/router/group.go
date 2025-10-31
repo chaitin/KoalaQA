@@ -24,7 +24,7 @@ func (g *group) List(ctx *context.Context) {
 		return
 	}
 
-	res, err := g.svcG.ListWithItem(ctx, forumID)
+	res, err := g.svcG.ListWithItem(ctx, ctx.GetUser().UID, forumID)
 	if err != nil {
 		ctx.InternalError(err, "list group failed")
 		return

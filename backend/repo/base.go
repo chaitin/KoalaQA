@@ -73,3 +73,15 @@ func (b *base[T]) Delete(ctx context.Context, queryFuncs ...QueryOptFunc) error 
 func (b *base[T]) DeleteByID(ctx context.Context, id uint) error {
 	return b.model(ctx).Where("id = ?", id).Delete(nil).Error
 }
+
+func (b *base[T]) FilterIDs(ctx context.Context, ids *model.Int64Array) error {
+	var filterIDs []int64
+	err := b.model(ctx).Select("id").Where("id =ANY(?)", ids).Scan(&filterIDs).Error
+	if err != nil {
+		return err
+	}
+
+	*ids = filterIDs
+
+	return nil
+}

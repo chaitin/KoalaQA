@@ -64,6 +64,7 @@ interface ReleaseModalProps {
   type?: 'qa' | 'feedback' | 'blog'
   initialContent?: string
   showContentEditor?: boolean
+  id?: string
 }
 // 创建自定义验证函数，确保每个分类下至少选择一个子选项
 const validateGroupSelection = (
@@ -104,9 +105,9 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
   initialTitle,
   type = 'qa',
   initialContent,
+  id,
   showContentEditor = true,
 }) => {
-  const { id } = useParams() || { id: '' }
   const {
     control,
     formState: { errors },
