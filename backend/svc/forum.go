@@ -33,7 +33,7 @@ func (f *Forum) List(ctx context.Context, user model.UserInfo) ([]*model.ForumIn
 	var items []*model.ForumInfo
 	err = f.repo.List(ctx, &items,
 		repo.QueryWithOrderBy("index ASC"),
-		repo.QueryWithEqual("id", forumIDs),
+		repo.QueryWithEqual("id", forumIDs, repo.EqualOPEqAny),
 	)
 	if err != nil {
 		return nil, err
