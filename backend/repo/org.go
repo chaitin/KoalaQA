@@ -19,9 +19,9 @@ func (o *Org) List(ctx context.Context, res any, queryFuncs ...QueryOptFunc) err
 
 	return o.model(ctx).
 		Select([]string{
-			"org.*",
+			"orgs.*",
 			"org_user.count",
-			"(SELECT ARRAY_AGG(forums.name) FROM forums WHERE forums.id = ANY(org.forum_ids)) AS forum_names",
+			"(SELECT ARRAY_AGG(forums.name) FROM forums WHERE forums.id = ANY(orgs.forum_ids)) AS forum_names",
 		}).
 		Joins("LEFT JOIN (SELECT org_id, COUNT(*) AS count FROM users GROUP BY org_id) AS org_user ON org_user.org_id = orgs.id").
 		Scopes(quertOpt.Scopes()...).
