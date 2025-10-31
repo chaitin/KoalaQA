@@ -20,11 +20,11 @@ func (u *User) ListWithOrg(ctx context.Context, res any, queryFuncs ...QueryOptF
 	queryOpt := getQueryOpt(queryFuncs...)
 	return u.model(ctx).Select("users.*, orgs.name AS org_name").
 		Joins("LEFT JOIN orgs ON orgs.id = users.org_id").
-		Scopes(queryOpt.Scopes()...).Find(&res).Error
+		Scopes(queryOpt.Scopes()...).Find(res).Error
 }
 
 func (u *User) GetByEmail(ctx context.Context, res any, email string) error {
-	return u.model(ctx).Where("email = ?", email).First(&res).Error
+	return u.model(ctx).Where("email = ?", email).First(res).Error
 }
 
 func (u *User) CreateThird(ctx context.Context, user *third_auth.User) (*model.User, error) {
