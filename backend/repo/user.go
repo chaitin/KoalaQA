@@ -23,6 +23,18 @@ func (u *User) ListWithOrg(ctx context.Context, res any, queryFuncs ...QueryOptF
 		Scopes(queryOpt.Scopes()...).Find(res).Error
 }
 
+func (u *User) HasForumPermission(ctx context.Context, userID, forumID uint) (bool, error) {
+	var exist bool
+	err := u.model(ctx).Raw("SELECT EXISTS (?)", u.model(ctx).Where("id = ?", userID).
+		Where("org_ids && (SELECT ARRAY_AGG(id) FROM orgs WHERE ? =ANY(forum_ids))", forumID)).
+		Scan(&exist).Error
+	if err != nil {
+		return false, err
+	}
+
+	return exist, nil
+}
+
 func (u *User) GetByEmail(ctx context.Context, res any, email string) error {
 	return u.model(ctx).Where("email = ?", email).First(res).Error
 }
