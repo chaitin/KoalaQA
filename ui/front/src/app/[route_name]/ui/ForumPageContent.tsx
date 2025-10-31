@@ -3,9 +3,10 @@
 import GroupsInitializer from '@/components/groupsInitializer'
 import { useForum } from '@/contexts/ForumContext'
 import { ModelDiscussionListItem, ModelGroupWithItem, ModelGroupItemInfo, ModelForumInfo } from '@/api/types'
-import { Stack } from '@mui/material'
+import { Button, Stack } from '@mui/material'
 import { Suspense } from 'react'
 import ArticleCard from './article'
+import Link from 'next/link'
 
 interface ForumPageContentProps {
   route_name: string
@@ -31,13 +32,15 @@ const ForumPageContent = ({ route_name, searchParams, initialData }: ForumPageCo
   // 将 url 中的 tps 参数（逗号分隔的字符串）转换为数字数组
   const topics = tps ? tps.split(',').map(Number) : []
 
-
   // 如果找不到对应的论坛，返回 404
   if (!forumId) {
     return (
       <Stack gap={3} sx={{ minHeight: '100vh', alignItems: 'center', justifyContent: 'center' }}>
         <h1>论坛不存在</h1>
         <p>请检查 URL 是否正确</p>
+        <Link href='/' style={{ textDecoration: 'none' }}>
+          <Button size='large' variant='contained'>返回首页</Button>
+        </Link>
       </Stack>
     )
   }

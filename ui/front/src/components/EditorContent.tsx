@@ -67,24 +67,23 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
     contentType: needTruncate ? 'markdown' : isHTML ? 'html' : 'markdown',
     immediatelyRender: false,
     // 大纲更新回调：透传给父级，同时广播全局事件供兄弟侧栏使用
-    onTocUpdate: (toc: any) => {
-      console.log(toc, onTocUpdate)
-      const enabled = !!onTocUpdate
-      if (!enabled) return
-      try {
-        if (typeof onTocUpdate === 'function') {
-          onTocUpdate(toc)
+    onTocUpdate: !!onTocUpdate
+      ? (toc: any) => {
+          try {
+            if (typeof onTocUpdate === 'function') {
+              onTocUpdate(toc)
+            }
+          } catch {}
+          try {
+            if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
+              if (Array.isArray(toc) && toc.length > 0) {
+                ;(window as any).__lastToc = toc
+              }
+              window.dispatchEvent(new CustomEvent('toc-update', { detail: toc } as any))
+            }
+          } catch {}
         }
-      } catch {}
-      try {
-        if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
-          if (Array.isArray(toc) && toc.length > 0) {
-            ;(window as any).__lastToc = toc
-          }
-          window.dispatchEvent(new CustomEvent('toc-update', { detail: toc } as any))
-        }
-      } catch {}
-    },
+      : undefined,
   })
   useEffect(() => {
     if (editorRef.editor)

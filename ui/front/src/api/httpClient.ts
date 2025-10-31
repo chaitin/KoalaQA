@@ -278,6 +278,15 @@ export class HttpClient<SecurityDataType = unknown> {
           }
         }
 
+        // 处理502 Bad Gateway错误 - 网关或代理服务器错误
+        if (error.response?.status === 502) {
+          const requestUrl = error.config?.url || "";
+          if (alert.error) {
+            alert.error("服务暂时不可用，请稍后再试");
+          }
+          return Promise.reject(new Error("502 Bad Gateway: 服务暂时不可用"));
+        }
+        
         // 检查请求路径，如果是 api/user 则不展示报错信息
         const requestUrl = error.config?.url || "";
         const shouldShowError = requestUrl !== "/user";
@@ -285,7 +294,7 @@ export class HttpClient<SecurityDataType = unknown> {
           const msg = error?.response?.data?.err ?? error?.message;
           alert.error(this.translateErrorMessage(msg));
         }
-        return Promise.reject(error.response.data.err);
+        return Promise.reject(error.response?.data?.err ?? error);
       },
     );
   }
