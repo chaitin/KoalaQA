@@ -2423,13 +2423,16 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "org"
                 ],
-                "summary": "upsert org",
+                "summary": "create org",
                 "parameters": [
                     {
                         "description": "request params",
@@ -2464,6 +2467,44 @@ const docTemplate = `{
             }
         },
         "/admin/org/{org_id}": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "org"
+                ],
+                "summary": "update org",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "org id",
+                        "name": "org_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "request params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.OrgUpsertReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "produces": [
                     "application/json"
@@ -6002,9 +6043,6 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
-                },
-                "id": {
-                    "type": "integer"
                 },
                 "name": {
                     "type": "string"

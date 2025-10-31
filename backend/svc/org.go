@@ -3,6 +3,7 @@ package svc
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/repo"
@@ -36,31 +37,17 @@ func (o *Org) List(ctx context.Context, req OrgListReq) (*model.ListRes[OrgListI
 }
 
 type OrgUpsertReq struct {
-	ID       uint             `json:"id"`
 	Name     string           `json:"name" binding:"required"`
 	ForumIDs model.Int64Array `json:"forum_ids"`
 }
 
-func (o *Org) Upsert(ctx context.Context, req OrgUpsertReq) (uint, error) {
-	if req.ID > 0 {
-		var org model.Org
-		err := o.repoOrg.GetByID(ctx, &org, req.ID)
-		if err != nil {
-			return 0, err
-		}
-
-		if org.Builtin && req.Name != org.Name {
-			return 0, errors.New("builtin org can not update name")
-		}
-	}
-
+func (o *Org) Create(ctx context.Context, req OrgUpsertReq) (uint, error) {
 	err := o.repoForum.FilterIDs(ctx, &req.ForumIDs)
 	if err != nil {
 		return 0, err
 	}
 
 	org := model.Org{
-		Base:     model.Base{ID: req.ID},
 		Name:     req.Name,
 		ForumIDs: req.ForumIDs,
 	}
@@ -70,6 +57,34 @@ func (o *Org) Upsert(ctx context.Context, req OrgUpsertReq) (uint, error) {
 	}
 
 	return org.ID, nil
+}
+
+func (o *Org) Update(ctx context.Context, orgID uint, req OrgUpsertReq) error {
+	var org model.Org
+	err := o.repoOrg.GetByID(ctx, &org, orgID)
+	if err != nil {
+		return err
+	}
+
+	if org.Builtin && req.Name != org.Name {
+		return errors.New("builtin org can not update name")
+	}
+
+	err = o.repoForum.FilterIDs(ctx, &req.ForumIDs)
+	if err != nil {
+		return err
+	}
+
+	err = o.repoOrg.Update(ctx, map[string]any{
+		"name":       req.Name,
+		"forum_ids":  req.ForumIDs,
+		"updated_at": time.Now(),
+	}, repo.QueryWithEqual("id", orgID))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (o *Org) Delete(ctx context.Context, orgID uint) error {

@@ -34,14 +34,15 @@ func (o *org) List(ctx *context.Context) {
 	ctx.Success(res)
 }
 
-// Upsert
-// @Summary upsert org
+// Create
+// @Summary create org
 // @Tags org
+// @Accept json
 // @Param req body svc.OrgUpsertReq true "request params"
 // @Produce json
 // @Success 200 {object} context.Response{data=uint}
 // @Router /admin/org [post]
-func (o *org) Upsert(ctx *context.Context) {
+func (o *org) Create(ctx *context.Context) {
 	var req svc.OrgUpsertReq
 	err := ctx.ShouldBindJSON(&req)
 	if err != nil {
@@ -49,13 +50,45 @@ func (o *org) Upsert(ctx *context.Context) {
 		return
 	}
 
-	res, err := o.svcOrg.Upsert(ctx, req)
+	res, err := o.svcOrg.Create(ctx, req)
 	if err != nil {
-		ctx.InternalError(err, "upsert org failed")
+		ctx.InternalError(err, "create org failed")
 		return
 	}
 
 	ctx.Success(res)
+}
+
+// Update
+// @Summary update org
+// @Tags org
+// @Param org_id path uint true "org id"
+// @Accept json
+// @Param req body svc.OrgUpsertReq true "request params"
+// @Produce json
+// @Success 200 {object} context.Response
+// @Router /admin/org/{org_id} [put]
+func (o *org) Update(ctx *context.Context) {
+	orgID, err := ctx.ParamUint("org_id")
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	var req svc.OrgUpsertReq
+	err = ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	err = o.svcOrg.Update(ctx, orgID, req)
+	if err != nil {
+		ctx.InternalError(err, "update org failed")
+		return
+	}
+
+	ctx.Success(nil)
 }
 
 // Delete
@@ -84,9 +117,10 @@ func (o *org) Delete(ctx *context.Context) {
 func (o *org) Route(h server.Handler) {
 	g := h.Group("/org")
 	g.GET("", o.List)
-	g.POST("", o.Upsert)
+	g.POST("", o.Create)
 	{
 		detailG := g.Group("/:org_id")
+		detailG.PUT("", o.Update)
 		detailG.DELETE("", o.Delete)
 	}
 }

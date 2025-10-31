@@ -7,7 +7,6 @@ import (
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/database"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type Org struct {
@@ -55,13 +54,6 @@ func (o *Org) ListForumIDs(ctx context.Context, orgIDs ...int64) (model.Int64Arr
 	}
 
 	return model.Int64Array(forumIDs), nil
-}
-
-func (o *Org) Create(ctx context.Context, org *model.Org) error {
-	return o.model(ctx).Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "id"}},
-		DoUpdates: clause.AssignmentColumns([]string{"name", "forum_ids"}),
-	}).Create(org).Error
 }
 
 func (o *Org) Delete(ctx context.Context, orgID uint) error {
