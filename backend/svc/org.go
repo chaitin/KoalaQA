@@ -28,7 +28,10 @@ type OrgListReq struct {
 func (o *Org) List(ctx context.Context, req OrgListReq) (*model.ListRes[OrgListItem], error) {
 	var res model.ListRes[OrgListItem]
 
-	err := o.repoOrg.List(ctx, &res.Items, repo.QueryWithILike("name", req.Name))
+	err := o.repoOrg.List(ctx, &res.Items,
+		repo.QueryWithILike("name", req.Name),
+		repo.QueryWithOrderBy("created_at ASC"),
+	)
 	if err != nil {
 		return nil, err
 	}
