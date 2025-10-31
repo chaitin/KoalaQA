@@ -30,7 +30,7 @@ func (f *forum) Route(h server.Handler) {
 // @Success 200 {object} context.Response{data=[]model.ForumInfo}
 // @Router /forum [get]
 func (f *forum) List(ctx *context.Context) {
-	res, err := f.svc.List(ctx)
+	res, err := f.svc.List(ctx, ctx.GetUser())
 	if err != nil {
 		ctx.InternalError(err, "failed to list forums")
 		return

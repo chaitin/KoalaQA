@@ -54,6 +54,7 @@ func (p *publicAccess) Intercept(ctx *context.Context) {
 				UID: user.ID,
 				Key: user.Key,
 			},
+			OrgIDs:   user.OrgIDs,
 			Username: user.Name,
 			Avatar:   user.Avatar,
 			Email:    user.Email,

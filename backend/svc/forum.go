@@ -8,20 +8,33 @@ import (
 )
 
 type Forum struct {
-	repo *repo.Forum
+	repo    *repo.Forum
+	repoOrg *repo.Org
 }
 
-func newForum(forum *repo.Forum) *Forum {
-	return &Forum{repo: forum}
+func newForum(forum *repo.Forum, org *repo.Org) *Forum {
+	return &Forum{repo: forum, repoOrg: org}
 }
 
 func init() {
 	registerSvc(newForum)
 }
 
-func (f *Forum) List(ctx context.Context) ([]*model.ForumInfo, error) {
+func (f *Forum) List(ctx context.Context, user model.UserInfo) ([]*model.ForumInfo, error) {
+	forumIDs, err := f.repoOrg.ListForumIDs(ctx, user.OrgIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(forumIDs) == 0 {
+		return make([]*model.ForumInfo, 0), nil
+	}
+
 	var items []*model.ForumInfo
-	err := f.repo.List(ctx, &items, repo.QueryWithOrderBy("index ASC"))
+	err = f.repo.List(ctx, &items,
+		repo.QueryWithOrderBy("index ASC"),
+		repo.QueryWithEqual("id", forumIDs),
+	)
 	if err != nil {
 		return nil, err
 	}

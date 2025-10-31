@@ -10,6 +10,12 @@ type org struct {
 	svcOrg *svc.Org
 }
 
+// List
+// @Summary list org
+// @Tags org
+// @Produce json
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]svc.OrgListItem}}
+// @Router /admin/org [get]
 func (o *org) List(ctx *context.Context) {
 	res, err := o.svcOrg.List(ctx)
 	if err != nil {
@@ -20,6 +26,13 @@ func (o *org) List(ctx *context.Context) {
 	ctx.Success(res)
 }
 
+// Upsert
+// @Summary upsert org
+// @Tags org
+// @Param req body svc.OrgUpsertReq true "request params"
+// @Produce json
+// @Success 200 {object} context.Response{data=uint}
+// @Router /admin/org [post]
 func (o *org) Upsert(ctx *context.Context) {
 	var req svc.OrgUpsertReq
 	err := ctx.ShouldBindJSON(&req)
@@ -37,6 +50,13 @@ func (o *org) Upsert(ctx *context.Context) {
 	ctx.Success(res)
 }
 
+// Delete
+// @Summary delete org
+// @Tags org
+// @Param org_id path uint true "org id"
+// @Produce json
+// @Success 200 {object} context.Response
+// @Router /admin/org/{org_id} [delete]
 func (o *org) Delete(ctx *context.Context) {
 	orgID, err := ctx.ParamUint("org_id")
 	if err != nil {

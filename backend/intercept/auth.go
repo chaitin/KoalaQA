@@ -37,6 +37,7 @@ func (a *auth) Intercept(ctx *context.Context) {
 				UID: user.ID,
 				Key: user.Key,
 			},
+			OrgIDs:   user.OrgIDs,
 			Username: user.Name,
 			Avatar:   user.Avatar,
 			Email:    user.Email,
@@ -97,6 +98,7 @@ func authUser(ctx *context.Context, j *jwt.Generator, user *svc.User) (*model.Us
 
 	return &model.UserInfo{
 		UserCore: *userCore,
+		OrgIDs:   item.OrgIDs,
 		Role:     item.Role,
 		Email:    item.Email,
 		Username: item.Name,

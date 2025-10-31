@@ -25,14 +25,16 @@ type User struct {
 	authMgmt *third_auth.Manager
 	svcAuth  *Auth
 	oc       oss.Client
+	repoOrg  *repo.Org
 	logger   *glog.Logger
 }
 
 type UserListReq struct {
 	model.Pagination
 
-	OrgID *uint   `form:"org_id"`
-	Name  *string `form:"name"`
+	OrgID   *uint   `form:"org_id"`
+	OrgName *string `form:"org_name"`
+	Name    *string `form:"name"`
 }
 
 type UserListItem struct {
@@ -57,6 +59,7 @@ func (u *User) List(ctx context.Context, req UserListReq) (*model.ListRes[UserLi
 		repo.QueryWithILike("name", req.Name),
 		repo.QueryWithEqual("invisible", false),
 		repo.QueryWithEqual("org_id", req.OrgID),
+		repo.QueryWithILike("orgs.name", req.OrgName),
 	)
 	if err != nil {
 		return nil, err
@@ -223,6 +226,31 @@ func (u *User) Delete(ctx context.Context, id uint) error {
 	}
 
 	err = u.repoUser.Delete(ctx, repo.QueryWithEqual("id", id))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type UserJoinOrgReq struct {
+	OrgIDs model.Int64Array `json:"org_ids"`
+}
+
+func (u *User) JoinOrg(ctx context.Context, userID uint, req UserJoinOrgReq) error {
+	err := u.repoOrg.FilterIDs(ctx, &req.OrgIDs)
+	if err != nil {
+		return err
+	}
+
+	if len(req.OrgIDs) == 0 {
+		return errors.New("must choose 1 org")
+	}
+
+	err = u.repoUser.Update(ctx, map[string]any{
+		"org_ids":    req.OrgIDs,
+		"updated_at": time.Now(),
+	}, repo.QueryWithEqual("id", userID))
 	if err != nil {
 		return err
 	}
@@ -422,13 +450,14 @@ func (u *User) LoginOIDCCallback(ctx context.Context, req LoginOIDCCallbackReq) 
 	})
 }
 
-func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth, authMgmt *third_auth.Manager, oc oss.Client) *User {
+func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth, authMgmt *third_auth.Manager, oc oss.Client, org *repo.Org) *User {
 	return &User{
 		jwt:      genrator,
 		repoUser: repoUser,
 		svcAuth:  auth,
 		authMgmt: authMgmt,
 		oc:       oc,
+		repoOrg:  org,
 		logger:   glog.Module("svc", "user"),
 	}
 }

@@ -31,7 +31,7 @@ func init() {
 // @Success 200 {object} context.Response{data=[]model.ForumInfo}
 // @Router /admin/forum [get]
 func (f *forum) List(ctx *context.Context) {
-	res, err := f.svcForum.List(ctx)
+	res, err := f.svcForum.List(ctx, ctx.GetUser())
 	if err != nil {
 		ctx.InternalError(err, "list forum failed")
 		return
