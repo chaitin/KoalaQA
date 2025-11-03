@@ -3,7 +3,6 @@ package third_auth
 import (
 	"context"
 	"errors"
-	"net/url"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
@@ -54,23 +53,11 @@ func (o *oidc) Check(ctx context.Context) error {
 	return nil
 }
 
-func (o *oidc) AuthURL(ctx context.Context, state string, redirect string) (string, error) {
+func (o *oidc) AuthURL(ctx context.Context, state string) (string, error) {
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, util.HTTPClient)
 
 	if o.callbackURL == "" {
 		return "", errors.New("empty callback addr")
-	}
-
-	u, err := util.ParseHTTP(o.callbackURL)
-	if err != nil {
-		o.logger.WithContext(ctx).WithErr(err).With("callback_url", o.callbackURL).Warn("parse url failed")
-		return "", err
-	}
-
-	if redirect != "" {
-		q := make(url.Values)
-		q.Set("redirect", redirect)
-		u.RawQuery = q.Encode()
 	}
 
 	provider, err := oidcAuth.NewProvider(ctx, o.cfg.URL)
@@ -82,7 +69,7 @@ func (o *oidc) AuthURL(ctx context.Context, state string, redirect string) (stri
 		ClientID:     o.cfg.ClientID,
 		ClientSecret: o.cfg.ClientSecret,
 		Endpoint:     provider.Endpoint(),
-		RedirectURL:  u.String(),
+		RedirectURL:  o.callbackURL,
 		Scopes:       []string{oidcAuth.ScopeOpenID, "profile", "email"},
 	}).AuthCodeURL(state), nil
 }

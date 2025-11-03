@@ -47,13 +47,13 @@ func (m *Manager) Update(t model.AuthType, cfg Config, checkCfg bool) error {
 	return nil
 }
 
-func (m *Manager) AuthURL(ctx context.Context, t model.AuthType, state string, redirect string) (string, error) {
+func (m *Manager) AuthURL(ctx context.Context, t model.AuthType, state string) (string, error) {
 	author, ok := m.author(t)
 	if !ok {
 		return "", errors.ErrUnsupported
 	}
 
-	return author.AuthURL(ctx, state, redirect)
+	return author.AuthURL(ctx, state)
 }
 
 func (o *Manager) User(ctx context.Context, t model.AuthType, code string, optFuncs ...userOptFunc) (*User, error) {

@@ -5293,6 +5293,9 @@ const docTemplate = `{
                 "key": {
                     "type": "string"
                 },
+                "no_password": {
+                    "type": "boolean"
+                },
                 "org_ids": {
                     "type": "array",
                     "items": {
@@ -6454,6 +6457,9 @@ const docTemplate = `{
         "svc.UserUpdateReq": {
             "type": "object",
             "properties": {
+                "email": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },

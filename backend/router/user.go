@@ -1,6 +1,7 @@
 package router
 
 import (
+	"encoding/gob"
 	"errors"
 	"net/http"
 
@@ -85,6 +86,15 @@ func (u *user) Login(ctx *context.Context) {
 
 const stateKey = "third_login_state"
 
+type stateCache struct {
+	Value    string
+	Redirect string
+}
+
+func init() {
+	gob.Register(stateCache{})
+}
+
 // LoginThirdURL
 // @Summary get user third login url
 // @Tags user
@@ -108,7 +118,10 @@ func (u *user) LoginThirdURL(ctx *context.Context) {
 	}
 
 	session := sessions.Default(ctx.Context)
-	session.Set(stateKey, state)
+	session.Set(stateKey, stateCache{
+		Value:    state,
+		Redirect: req.Redirect,
+	})
 	session.Save()
 
 	ctx.Success(authURL)
@@ -123,9 +136,9 @@ func (u *user) LoginOIDCCallback(ctx *context.Context) {
 	}
 
 	session := sessions.Default(ctx.Context)
-	state := session.Get(stateKey)
-	stateStr, ok := state.(string)
-	if !ok || stateStr != req.State {
+	stateI := session.Get(stateKey)
+	state, ok := stateI.(stateCache)
+	if !ok || state.Value != req.State {
 		ctx.BadRequest(errors.New("invalid state"))
 		return
 	}
@@ -137,13 +150,12 @@ func (u *user) LoginOIDCCallback(ctx *context.Context) {
 		return
 	}
 
-	redirect := ctx.Query("redirect")
-	if redirect == "" {
-		redirect = "/"
+	if state.Redirect == "" {
+		state.Redirect = "/"
 	}
 
 	ctx.SetCookie("auth_token", token, u.expire, "/", "", false, true)
-	ctx.Redirect(http.StatusFound, redirect)
+	ctx.Redirect(http.StatusFound, state.Redirect)
 }
 
 func (u *user) Route(h server.Handler) {

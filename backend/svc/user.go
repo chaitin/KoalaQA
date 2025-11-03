@@ -102,6 +102,7 @@ func (u *User) Admin(ctx context.Context) (*model.User, error) {
 
 type UserUpdateReq struct {
 	Name     string           `json:"name"`
+	Email    string           `json:"email" binding:"omitempty,email"`
 	Password string           `json:"password"`
 	Role     model.UserRole   `json:"role" binding:"min=1,max=3"`
 	OrgIDs   model.Int64Array `json:"org_ids"`
@@ -129,6 +130,18 @@ func (u *User) Update(ctx context.Context, id uint, req UserUpdateReq) error {
 		}
 
 		updateM["password"] = hashPass
+	}
+	if req.Email != "" && req.Email != user.Email {
+		ok, err := u.repoUser.Exist(ctx, repo.QueryWithEqual("email", req.Email))
+		if err != nil {
+			return err
+		}
+
+		if ok {
+			return errors.New("email already used")
+		}
+
+		updateM["email"] = req.Email
 	}
 
 	if !user.Builtin {
@@ -466,7 +479,7 @@ func (u *User) LoginThirdURL(ctx context.Context, state string, req LoginThirdUR
 		return "", errors.New("third login disabled")
 	}
 
-	return u.authMgmt.AuthURL(ctx, req.Type, state, req.Redirect)
+	return u.authMgmt.AuthURL(ctx, req.Type, state)
 }
 
 type LoginOIDCCallbackReq struct {
