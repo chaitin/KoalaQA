@@ -967,7 +967,11 @@ func (d *Discussion) Complete(ctx context.Context, req DiscussionCompeletReq) (s
 	})
 }
 
-func (d *Discussion) CloseFeedback(ctx context.Context, user model.UserInfo, discUUID string) error {
+type ResolveFeedbackReq struct {
+	Resolve bool `json:"resolve"`
+}
+
+func (d *Discussion) ResolveFeedback(ctx context.Context, user model.UserInfo, discUUID string, req ResolveFeedbackReq) error {
 	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
 	if err != nil {
 		return err
@@ -978,7 +982,7 @@ func (d *Discussion) CloseFeedback(ctx context.Context, user model.UserInfo, dis
 	}
 
 	err = d.in.DiscRepo.Update(ctx, map[string]any{
-		"resolved":    true,
+		"resolved":    req.Resolve,
 		"resolved_at": model.Timestamp(time.Now().Unix()),
 	}, repo.QueryWithEqual("id", disc.ID))
 	if err != nil {

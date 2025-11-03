@@ -3557,38 +3557,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/discussion/{disc_id}/close": {
-            "post": {
-                "description": "close feedback",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "discussion"
-                ],
-                "summary": "close feedback",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "disc_id",
-                        "name": "disc_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/context.Response"
-                        }
-                    }
-                }
-            }
-        },
         "/discussion/{disc_id}/comment": {
             "post": {
                 "description": "create comment",
@@ -3950,6 +3918,38 @@ const docTemplate = `{
                                     }
                                 }
                             ]
+                        }
+                    }
+                }
+            }
+        },
+        "/discussion/{disc_id}/resolve": {
+            "post": {
+                "description": "resolve feedback",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "resolve feedback",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "disc_id",
+                        "name": "disc_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
                         }
                     }
                 }
