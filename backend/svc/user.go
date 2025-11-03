@@ -101,11 +101,10 @@ func (u *User) Admin(ctx context.Context) (*model.User, error) {
 }
 
 type UserUpdateReq struct {
-	Name        string           `json:"name"`
-	OldPassword string           `json:"old_password"`
-	Password    string           `json:"password"`
-	Role        model.UserRole   `json:"role" binding:"min=1,max=3"`
-	OrgIDs      model.Int64Array `json:"org_ids"`
+	Name     string           `json:"name"`
+	Password string           `json:"password"`
+	Role     model.UserRole   `json:"role" binding:"min=1,max=3"`
+	OrgIDs   model.Int64Array `json:"org_ids"`
 }
 
 func (u *User) Update(ctx context.Context, id uint, req UserUpdateReq) error {
@@ -123,12 +122,7 @@ func (u *User) Update(ctx context.Context, id uint, req UserUpdateReq) error {
 		updateM["name"] = req.Name
 	}
 
-	if req.OldPassword != "" && req.Password != "" {
-		err = u.checkPassword(req.OldPassword, user.Password)
-		if err != nil {
-			return err
-		}
-
+	if req.Password != "" {
 		hashPass, err := u.convertPassword(req.Password)
 		if err != nil {
 			return err

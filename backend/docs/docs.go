@@ -4317,6 +4317,11 @@ const docTemplate = `{
                 "summary": "get user third login url",
                 "parameters": [
                     {
+                        "type": "string",
+                        "name": "redirect",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "name": "type",
                         "in": "query",
@@ -6450,9 +6455,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "name": {
-                    "type": "string"
-                },
-                "old_password": {
                     "type": "string"
                 },
                 "org_ids": {
