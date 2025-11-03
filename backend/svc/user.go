@@ -217,10 +217,16 @@ func (u *User) UpdateInfo(ctx context.Context, id uint, req UserUpdateInfoReq) e
 	}
 
 	// 内置用户不能修改密码，现在能登录的内置用户只有 admin
-	if !user.Builtin && req.Password != "" && req.OldPassword != "" {
-		err = u.checkPassword(req.OldPassword, user.Password)
-		if err != nil {
-			return err
+	if !user.Builtin && req.Password != "" {
+		if user.Password != "" {
+			if req.OldPassword == "" {
+				return errors.New("empty old password")
+			}
+
+			err = u.checkPassword(req.OldPassword, user.Password)
+			if err != nil {
+				return err
+			}
 		}
 
 		hashPass, err := u.convertPassword(req.Password)
