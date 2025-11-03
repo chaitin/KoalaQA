@@ -130,6 +130,21 @@ func (d *Discussion) Create(ctx context.Context, req DiscussionCreateReq) (strin
 		req.ForumID = forumID
 	}
 
+	var forum model.Forum
+	err = d.in.ForumRepo.GetByID(ctx, &forum, req.ForumID)
+	if err != nil {
+		return "", err
+	}
+
+	for _, group := range forum.Groups.Inner() {
+		if group.Type != req.Type {
+			continue
+		}
+
+		req.GroupIDs = util.Intersect(group.GroupIDs, req.GroupIDs)
+		break
+	}
+
 	disc := model.Discussion{
 		Title:    req.Title,
 		Content:  req.Content,

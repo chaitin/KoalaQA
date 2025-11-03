@@ -14,7 +14,7 @@ type Forum struct {
 
 type ForumGroups struct {
 	Type     DiscussionType `json:"type"`
-	GroupIDs []uint         `json:"group_ids"`
+	GroupIDs Int64Array     `json:"group_ids"`
 }
 
 type ForumInfo struct {

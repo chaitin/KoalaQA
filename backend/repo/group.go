@@ -23,7 +23,7 @@ func (g *Group) ListWithItem(ctx context.Context, forumID uint, res any) error {
 			return err
 		}
 
-		e := make(map[uint]bool)
+		e := make(map[int64]bool)
 		for _, group := range forum.Groups.Inner() {
 			for _, groupID := range group.GroupIDs {
 				if e[groupID] {
