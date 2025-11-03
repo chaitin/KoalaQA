@@ -11,6 +11,7 @@ import (
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/glog"
+	"github.com/chaitin/koalaqa/pkg/llm"
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/oss"
 	"github.com/chaitin/koalaqa/pkg/rag"
@@ -39,6 +40,7 @@ type discussionIn struct {
 	OC            oss.Client
 	ForumRepo     *repo.Forum
 	Limiter       ratelimit.Limiter
+	LLM           *LLM
 }
 
 type Discussion struct {
@@ -947,4 +949,41 @@ func (d *Discussion) GetCommentByID(ctx context.Context, id uint) (*model.Commen
 		return nil, err
 	}
 	return &comment, nil
+}
+
+type DiscussionCompeletReq struct {
+	Prefix string `json:"prefix"`
+	Suffix string `json:"suffix"`
+}
+
+func (d *Discussion) Complete(ctx context.Context, req DiscussionCompeletReq) (string, error) {
+	if req.Prefix == "" && req.Suffix == "" {
+		return "", nil
+	}
+
+	return d.in.LLM.Chat(ctx, llm.SystemCompletePrompt, llm.UserCompleteTemplate, map[string]any{
+		"Prefix": req.Prefix,
+		"Suffix": req.Suffix,
+	})
+}
+
+func (d *Discussion) CloseFeedback(ctx context.Context, user model.UserInfo, discUUID string) error {
+	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
+	if err != nil {
+		return err
+	}
+
+	if !user.CanOperator(disc.UserID) || disc.Type != model.DiscussionTypeFeedback {
+		return errors.New("not allowed to close feedback")
+	}
+
+	err = d.in.DiscRepo.Update(ctx, map[string]any{
+		"resolved":    true,
+		"resolved_at": model.Timestamp(time.Now().Unix()),
+	}, repo.QueryWithEqual("id", disc.ID))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

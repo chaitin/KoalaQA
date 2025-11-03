@@ -22,7 +22,18 @@ func (g *Group) ListWithItem(ctx context.Context, forumID uint, res any) error {
 		if err := g.db.Model(&model.Forum{}).Where("id = ?", forumID).First(&forum).Error; err != nil {
 			return err
 		}
-		gids = forum.GroupIDs
+
+		e := make(map[uint]bool)
+		for _, group := range forum.Groups.Inner() {
+			for _, groupID := range group.GroupIDs {
+				if e[groupID] {
+					continue
+				}
+
+				gids = append(gids, int64(groupID))
+				e[groupID] = true
+			}
+		}
 	}
 	scope := func(d *gorm.DB) *gorm.DB {
 		if len(gids) > 0 {

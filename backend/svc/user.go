@@ -101,9 +101,11 @@ func (u *User) Admin(ctx context.Context) (*model.User, error) {
 }
 
 type UserUpdateReq struct {
-	Name   string           `json:"name"`
-	Role   model.UserRole   `json:"role" binding:"min=1,max=3"`
-	OrgIDs model.Int64Array `json:"org_ids"`
+	Name        string           `json:"name"`
+	OldPassword string           `json:"old_password"`
+	Password    string           `json:"password"`
+	Role        model.UserRole   `json:"role" binding:"min=1,max=3"`
+	OrgIDs      model.Int64Array `json:"org_ids"`
 }
 
 func (u *User) Update(ctx context.Context, id uint, req UserUpdateReq) error {
@@ -119,6 +121,20 @@ func (u *User) Update(ctx context.Context, id uint, req UserUpdateReq) error {
 
 	if user.Name != "" {
 		updateM["name"] = req.Name
+	}
+
+	if req.OldPassword != "" && req.Password != "" {
+		err = u.checkPassword(req.OldPassword, user.Password)
+		if err != nil {
+			return err
+		}
+
+		hashPass, err := u.convertPassword(req.Password)
+		if err != nil {
+			return err
+		}
+
+		updateM["password"] = hashPass
 	}
 
 	if !user.Builtin {
@@ -149,6 +165,7 @@ func (u *User) Update(ctx context.Context, id uint, req UserUpdateReq) error {
 
 type UserUpdateInfoReq struct {
 	Name        string                `form:"name"`
+	Email       string                `form:"email" binding:"omitempty,email"`
 	OldPassword string                `form:"old_password"`
 	Password    string                `form:"password"`
 	Avatar      *multipart.FileHeader `form:"avatar" swaggerignore:"true"`
@@ -182,6 +199,19 @@ func (u *User) UpdateInfo(ctx context.Context, id uint, req UserUpdateInfoReq) e
 
 	updateM := map[string]any{
 		"updated_at": time.Now(),
+	}
+
+	if user.Email == "" && req.Email != "" {
+		exist, err := u.repoUser.Exist(ctx, repo.QueryWithEqual("email", req.Email))
+		if err != nil {
+			return err
+		}
+
+		if exist {
+			return errors.New("email already used")
+		}
+
+		updateM["email"] = req.Email
 	}
 
 	if avatarPath != "" {
