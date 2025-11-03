@@ -6,7 +6,7 @@ import {
   ModelForumInfo,
   ModelGroupItemInfo,
   ModelGroupWithItem,
-  ModelListRes
+  ModelListRes,
 } from '@/api/types'
 import { Card, CusTabs } from '@/components'
 import { AuthContext } from '@/components/authProvider'
@@ -61,16 +61,113 @@ const Article = ({
   const { checkAuth } = useAuthCheck()
   const { groups: contextGroups, groupsLoading } = useContext(CommonContext)
 
-  // 优先使用SSR传入的groups数据，否则使用Context中的数据
-  const groups = groupsData
-    ? {
-        origin: groupsData.items ?? [],
-        flat: (groupsData.items?.filter((i) => !!i.items) || []).reduce((acc, item) => {
-          acc.push(...(item.items || []))
-          return acc
-        }, [] as ModelGroupItemInfo[]),
+  // 根据当前类型从 forumInfo.groups 中筛选对应的分类
+  const currentType = (type || 'qa') as 'qa' | 'feedback' | 'blog'
+  
+  // 使用 useState 存储计算后的 groups，避免每次渲染都重新计算
+  const [groups, setGroups] = useState<{
+    origin: (ModelGroupWithItem & {
+      items?: ModelGroupItemInfo[]
+    })[]
+    flat: ModelGroupItemInfo[]
+  }>(() => {
+    // 初始值计算
+    const rawGroups = groupsData
+      ? {
+          origin: groupsData.items ?? [],
+          flat: (groupsData.items?.filter((i) => !!i.items) || []).reduce((acc, item) => {
+            acc.push(...(item.items || []))
+            return acc
+          }, [] as ModelGroupItemInfo[]),
+        }
+      : contextGroups
+
+    let forumGroupIds: number[] = []
+    if (forumInfo?.groups) {
+      const matchedGroup = Array.isArray(forumInfo.groups)
+        ? forumInfo.groups.find((g: any) => g?.type === currentType)
+        : Object.values(forumInfo.groups).find((g: any) => g?.type === currentType)
+      forumGroupIds = matchedGroup?.group_ids || []
+    }
+
+    if (forumGroupIds.length === 0) {
+      return rawGroups
+    }
+
+    const filteredOrigin = rawGroups.origin.filter((group) => {
+      return forumGroupIds.includes(group.id || -1)
+    })
+
+    const filteredFlat = filteredOrigin.reduce((acc, group) => {
+      if (group.items && group.items.length > 0) {
+        acc.push(...group.items)
       }
-    : contextGroups
+      return acc
+    }, [] as ModelGroupItemInfo[])
+
+    return {
+      origin: filteredOrigin,
+      flat: filteredFlat,
+    }
+  })
+
+  // 使用 useRef 存储上一次的字符串表示，用于比较
+  const prevDepsRef = useRef<string>('')
+  
+  // 使用 useEffect 在依赖项真正变化时更新 groups
+  useEffect(() => {
+    const rawGroups = groupsData
+      ? {
+          origin: groupsData.items ?? [],
+          flat: (groupsData.items?.filter((i) => !!i.items) || []).reduce((acc, item) => {
+            acc.push(...(item.items || []))
+            return acc
+          }, [] as ModelGroupItemInfo[]),
+        }
+      : contextGroups
+
+    let forumGroupIds: number[] = []
+    if (forumInfo?.groups) {
+      const matchedGroup = Array.isArray(forumInfo.groups)
+        ? forumInfo.groups.find((g: any) => g?.type === currentType)
+        : Object.values(forumInfo.groups).find((g: any) => g?.type === currentType)
+      forumGroupIds = matchedGroup?.group_ids || []
+    }
+
+    // 创建依赖项的字符串表示
+    const depsStr = JSON.stringify({
+      groupsDataItems: groupsData?.items,
+      contextGroups: contextGroups,
+      forumGroups: forumInfo?.groups,
+      currentType,
+    })
+
+    // 只在依赖项真正变化时更新
+    if (depsStr !== prevDepsRef.current) {
+      prevDepsRef.current = depsStr
+
+      if (forumGroupIds.length === 0) {
+        setGroups(rawGroups)
+        return
+      }
+
+      const filteredOrigin = rawGroups.origin.filter((group) => {
+        return forumGroupIds.includes(group.id || -1)
+      })
+
+      const filteredFlat = filteredOrigin.reduce((acc, group) => {
+        if (group.items && group.items.length > 0) {
+          acc.push(...group.items)
+        }
+        return acc
+      }, [] as ModelGroupItemInfo[])
+
+      setGroups({
+        origin: filteredOrigin,
+        flat: filteredFlat,
+      })
+    }
+  }, [groupsData, contextGroups, forumInfo?.groups, currentType])
 
   const [releaseModalVisible, { setTrue: releaseModalOpen, setFalse: releaseModalClose }] = useBoolean(false)
   const status = searchParams?.get('sort') || 'hot'
@@ -79,18 +176,20 @@ const Article = ({
   const [articleData, setArticleData] = useState(data)
   const [page, setPage] = useState(1)
   const [loadingMore, setLoadingMore] = useState(false)
-  
+
   // 搜索弹窗相关状态
   const [searchModalOpen, { setTrue: openSearchModal, setFalse: closeSearchModal }] = useBoolean(false)
-  const [searchResults, setSearchResults] = useState<ModelDiscussionListItem[]>([])
-  const [searchLoading, setSearchLoading] = useState(false)
-  const [modalSearchQuery, setModalSearchQuery] = useState('')
   const [selectedModalType, setSelectedModalType] = useState<'qa' | 'feedback' | 'blog'>('qa')
   const [isPageVisible, setIsPageVisible] = useState(true)
   const [lastPathname, setLastPathname] = useState('')
 
   const hookForumId = useForumId()
-  const currentForumId = forumId || hookForumId
+  const getCurrentForumId = (): number | undefined => {
+    const id = forumId || hookForumId
+    if (!id) return undefined
+    return typeof id === 'string' ? parseInt(id, 10) : id
+  }
+  const currentForumId = getCurrentForumId()
 
   // 根据type参数动态生成标签文本，默认为qa
   const getStatusLabels = () => {
@@ -145,7 +244,7 @@ const Article = ({
 
     // 添加当前选中的板块ID
     if (currentForumId) {
-      params.forum_id = typeof currentForumId === 'string' ? parseInt(currentForumId, 10) : currentForumId
+      params.forum_id = currentForumId
     }
 
     getDiscussion(params)
@@ -195,7 +294,7 @@ const Article = ({
 
       // 添加当前选中的板块ID
       if (currentForumId) {
-        params.forum_id = typeof currentForumId === 'string' ? parseInt(currentForumId, 10) : currentForumId
+        params.forum_id = currentForumId
       }
       return getDiscussion(params)
         .then((res) => {
@@ -211,40 +310,14 @@ const Article = ({
     [currentForumId, type],
   )
 
-  // 执行搜索的函数
-  const performSearch = useCallback(async (query: string) => {
-    if (!query.trim()) return
-    
-    setSearchLoading(true)
-    try {
-      const params: GetDiscussionParams = {
-        forum_id: currentForumId ? Number(currentForumId) : undefined,
-        keyword: query.trim(),
-      }
-      
-      const result = await getDiscussion(params)
-      setSearchResults(result.items || [])
-    } catch (error) {
-      console.error('搜索失败:', error)
-      setSearchResults([])
-    } finally {
-      setSearchLoading(false)
-    }
-  }, [currentForumId])
-
   const handleSearch = useCallback(() => {
     const trimmedSearch = search && search.trim() ? search.trim() : ''
-    
+
     if (trimmedSearch) {
-      // 设置弹窗中的搜索查询
-      setModalSearchQuery(trimmedSearch)
-      // 打开搜索弹窗
+      // 打开搜索弹窗，SearchResultModal 会自动执行搜索
       openSearchModal()
-      // 执行搜索
-      performSearch(trimmedSearch)
-      
     }
-  }, [search, openSearchModal, performSearch])
+  }, [search, openSearchModal])
 
   const onInputSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -283,7 +356,7 @@ const Article = ({
         fetchList(status as Status, search, topics)
       }
     }
-    
+
     // 监听页面焦点事件（作为备用方案）
     const handleFocus = () => {
       if (!isPageVisible) {
@@ -307,12 +380,12 @@ const Article = ({
   // 监听路由变化，检测是否从详情页返回
   useEffect(() => {
     const currentPath = window.location.pathname
-    
+
     // 如果当前路径是列表页，且之前记录的不是列表页，说明可能是从详情页返回的
     if (lastPathname && lastPathname !== currentPath && currentPath === `/${routeName}`) {
       fetchList(status as Status, search, topics)
     }
-    
+
     // 更新记录的路径
     setLastPathname(currentPath)
   }, [routeName, lastPathname, status, search, topics, fetchList])
@@ -423,6 +496,7 @@ const Article = ({
 
         {/* 搜索栏 */}
         <Box
+          id='article-search-box'
           sx={{
             width: { xs: '90%', sm: 600 },
             mx: 'auto',
@@ -703,9 +777,7 @@ const Article = ({
                   },
                 }}
                 variant='contained'
-                onClick={
-                  type === 'feedback' ? handleFeedback : type === 'blog' ? handleArticle : handleAsk
-                }
+                onClick={type === 'feedback' ? handleFeedback : type === 'blog' ? handleArticle : handleAsk}
               >
                 {type === 'feedback' ? '提交反馈 👉' : type === 'blog' ? '发布文章 👉' : '发帖提问 👉'}
               </Button>
@@ -765,7 +837,7 @@ const Article = ({
                   fullWidth
                 >
                   {loadingMore ? (
-                    <Stack direction="row" alignItems="center" gap={1}>
+                    <Stack direction='row' alignItems='center' gap={1}>
                       <CircularProgress size={16} sx={{ color: '#206CFF' }} />
                       <Typography>加载中...</Typography>
                     </Stack>
@@ -810,8 +882,9 @@ const Article = ({
             selectedTags={[]}
             initialTitle={searchParams?.get('search') || ''}
             type={selectedModalType}
+            forumInfo={forumInfo}
           />
-          
+
           {/* 搜索结果弹窗 */}
           <SearchResultModal
             open={searchModalOpen}
@@ -819,11 +892,8 @@ const Article = ({
               closeSearchModal()
               setSearch('') // 清空搜索输入框内容
             }}
-            searchQuery={modalSearchQuery}
-            searchResults={searchResults}
-            loading={searchLoading}
-            onSearchChange={setModalSearchQuery}
-            onSearch={performSearch}
+            forumId={currentForumId}
+            initialQuery={search}
             onAsk={handleAsk}
             onFeedback={handleFeedback}
             onArticle={handleArticle}

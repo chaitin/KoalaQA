@@ -6,10 +6,11 @@ import { NodeDetail } from '..';
 import SaveIcon from '@mui/icons-material/Save';
 import { Editor, useTiptap, EditorProps } from '@ctzhian/tiptap';
 import Toolbar from './Toolbar';
-import { postDiscussionUpload } from '@/api';
+import { postDiscussionComplete, postDiscussionUpload } from '@/api';
 import alert from "@/components/alert";
 
 interface WrapProps {
+  aiWriting?: boolean;
   detail?: NodeDetail;
   onCancel?: () => void;
   onSave?: (content: string) => void;
@@ -31,6 +32,7 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(({
   showActions = true,
   value,
   onChange,
+  aiWriting,
   onTocUpdate,
 }: WrapProps, ref) => {
   const [isSaving, setIsSaving] = useState(false);
@@ -72,11 +74,14 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(({
     );
     return Promise.resolve(key as string);
   };
+  const onAiWritingGetSuggestion = aiWriting ? async ({ prefix, suffix }: { prefix: string, suffix: string }) => {
+    return postDiscussionComplete({ prefix, suffix });
+  } : undefined;
   const editorRef = useTiptap({
     editable: true,
     content: value || detail?.content || '',
     contentType: 'markdown',
-    exclude: ['invisibleCharacters', 'youtube', 'mention', 'aiWriting'],
+    exclude: ['invisibleCharacters', 'youtube', 'mention', ...(aiWriting ? [] : ['aiWriting'])],
     // SSR 环境需显式关闭立即渲染以避免水合不匹配
     immediatelyRender: false,
     onUpload: handleUpload,
@@ -89,6 +94,7 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(({
         }
       } catch {}
     },
+    onAiWritingGetSuggestion: onAiWritingGetSuggestion,
     onValidateUrl: async (url: string, type: 'image' | 'video' | 'audio' | 'iframe') => {
       // 拦截 base64 链接
       if (url.startsWith('data:')) {

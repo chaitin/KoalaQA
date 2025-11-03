@@ -8,6 +8,7 @@ import { useContext, useEffect, useState } from 'react'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import ChangePasswordModal from './ChangePasswordModal'
+import BindEmailModal from './BindEmailModal'
 import UserAvatar from '@/components/UserAvatar'
 
 dayjs.locale('zh-cn')
@@ -72,7 +73,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
   const [editName, setEditName] = useState(user?.username || '')
   const [isUploading, setIsUploading] = useState(false)
   const [changePasswordModalOpen, setChangePasswordModalOpen] = useState(false)
-
+  const [bindEmailModalOpen, setBindEmailModalOpen] = useState(false)
   useEffect(() => {
     if (initialUser) {
       setUser(initialUser)
@@ -125,6 +126,17 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
     } finally {
       setIsUploading(false)
     }
+  }
+
+  const handleChangePasswordClick = () => {
+    // 如果用户没有绑定邮箱，提示先绑定邮箱
+    if (!user?.email) {
+      alert('请先绑定邮箱后再修改密码')
+      setBindEmailModalOpen(true)
+      return
+    }
+    // 如果已绑定邮箱，打开修改密码模态框
+    setChangePasswordModalOpen(true)
   }
 
   return (
@@ -229,9 +241,23 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
               <Stack direction='row' spacing={2} alignItems='center'>
                 <Typography sx={{ width: 100, color: '#666' }}>邮箱</Typography>
                 <Typography sx={{ flex: 1 }}>{user?.email || '未绑定'}</Typography>
-                {/* <Button size='small' disabled sx={{ minWidth: 60 }}>
-                  {user?.email ? '修改' : '绑定'}
-                </Button> */}
+                {!user?.email ? (
+                  <Button size='small' sx={{ minWidth: 60 }} onClick={() => setBindEmailModalOpen(true)}>
+                    绑定
+                  </Button>
+                ) : (
+                  <Button
+                    size='small'
+                    disabled
+                    sx={{
+                      minWidth: 60,
+                      color: '#999',
+                    }}
+                    title='不支持修改已绑定的邮箱'
+                  >
+                    修改
+                  </Button>
+                )}
               </Stack>
               <Divider sx={{ mt: 2 }} />
             </Box>
@@ -267,7 +293,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
                 修改
               </Button>
             ) : (
-              <Button onClick={() => setChangePasswordModalOpen(true)} size='small' sx={{ minWidth: 80 }}>
+              <Button onClick={handleChangePasswordClick} size='small' sx={{ minWidth: 80 }}>
                 修改
               </Button>
             )}
@@ -281,6 +307,17 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
         onClose={() => setChangePasswordModalOpen(false)}
         onSuccess={() => {
           // 密码修改成功
+        }}
+        user={user}
+      />
+
+      {/* 绑定邮箱模态框 */}
+      <BindEmailModal
+        open={bindEmailModalOpen}
+        onClose={() => setBindEmailModalOpen(false)}
+        onSuccess={async () => {
+          // 绑定邮箱成功后，重新获取用户信息
+          await fetchUser()
         }}
       />
     </Container>

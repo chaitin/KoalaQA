@@ -121,6 +121,7 @@ export default function EditPage() {
             </Stack>
             <EditorWrap
               ref={editorRef}
+              aiWriting
               value={data.content}
               onTocUpdate={setHeadings}
               showActions={false}

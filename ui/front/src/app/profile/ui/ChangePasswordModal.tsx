@@ -14,19 +14,25 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useState } from 'react';
-import { putUser } from '@/api';
+import { useRouter } from 'next/navigation';
+import { putUser, ModelUserInfo, postUserLogout } from '@/api';
+import { aesCbcEncrypt } from '@/utils/aes';
+import { clearAuthData } from '@/api/httpClient';
 
 interface ChangePasswordModalProps {
   open: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  user?: ModelUserInfo;
 }
 
 export default function ChangePasswordModal({
   open,
   onClose,
   onSuccess,
+  user,
 }: ChangePasswordModalProps) {
+  const router = useRouter();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -35,7 +41,7 @@ export default function ChangePasswordModal({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
+  
   const handleClose = () => {
     if (loading) return;
     setCurrentPassword('');
@@ -44,12 +50,33 @@ export default function ChangePasswordModal({
     setError('');
     onClose();
   };
-
+  const handleLogout = async () => {
+    try {
+      // 先调用后端登出API
+      await postUserLogout()
+    } catch (error) {
+      console.warn('Backend logout failed:', error)
+      // 即使后端登出失败，也要继续清理本地数据
+    }
+    
+    try {
+      // 使用统一的清除认证信息函数（不调用服务端登出API，因为已经调用过了）
+      await clearAuthData(false)
+      router.push('/login')
+    } catch (error) {
+      console.error('Failed to clear auth data:', error)
+      // 即使清理失败，也要重定向到登录页
+      router.push('/login')
+    }
+  }
   const handleSubmit = async () => {
     setError('');
 
+    // 如果用户没有设置密码，则不需要验证旧密码
+    const noPassword = (user as any)?.no_password === true;
+
     // 验证输入
-    if (!currentPassword.trim()) {
+    if (!noPassword && !currentPassword.trim()) {
       setError('请输入当前密码');
       return;
     }
@@ -69,16 +96,23 @@ export default function ChangePasswordModal({
       return;
     }
 
-    if (currentPassword === newPassword) {
+    if (!noPassword && currentPassword === newPassword) {
       setError('新密码不能与当前密码相同');
       return;
     }
 
     setLoading(true);
     try {
-      await putUser({
-        password: newPassword,
-      });
+      const updateData: any = {
+        password: aesCbcEncrypt(newPassword?.trim()),
+      };
+      
+      // 只有在用户已设置密码的情况下才需要发送旧密码
+      if (!noPassword) {
+        updateData.old_password = aesCbcEncrypt(currentPassword?.trim());
+      }
+
+      await putUser(updateData);
 
       onSuccess?.();
       handleClose();
@@ -116,28 +150,30 @@ export default function ChangePasswordModal({
             </Alert>
           )}
 
-          <TextField
-            label="当前密码"
-            type={showCurrentPassword ? 'text' : 'password'}
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
-            fullWidth
-            required
-            disabled={loading}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                    edge="end"
-                    size="small"
-                  >
-                    {showCurrentPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
+          {!(user as any)?.no_password && (
+            <TextField
+              label="当前密码"
+              type={showCurrentPassword ? 'text' : 'password'}
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              fullWidth
+              required
+              disabled={loading}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      edge="end"
+                      size="small"
+                    >
+                      {showCurrentPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+          )}
 
           <TextField
             label="新密码"

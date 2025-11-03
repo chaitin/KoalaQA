@@ -9,6 +9,9 @@ import {
 } from '@/api';
 import { useListQueryParams } from '@/hooks/useListQueryParams';
 import { message, Modal, Table } from '@ctzhian/ui';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import Visibility from '@mui/icons-material/Visibility';
+import Shuffle from '@mui/icons-material/Shuffle';
 import {
   Box,
   Button,
@@ -16,6 +19,8 @@ import {
   Chip,
   FormControl,
   FormHelperText,
+  IconButton,
+  InputAdornment,
   InputLabel,
   Link,
   MenuItem,
@@ -29,6 +34,7 @@ import { ColumnsType } from '@ctzhian/ui/dist/Table';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { aesCbcEncrypt } from '@/utils/aes';
 
 const transRole: Record<ModelUserRole, string> = {
   [ModelUserRole.UserRoleUnknown]: '未知',
@@ -57,6 +63,8 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
     defaultValues: {
       name: '',
       role: 1,
+      password: '',
+      email: '',
       org_ids: [] as number[],
     },
   });
@@ -68,7 +76,7 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [joinOrgModalOpen, setJoinOrgModalOpen] = useState(false);
   const [joinOrgSelectedOrgs, setJoinOrgSelectedOrgs] = useState<number[]>([]);
-
+  const [showPassword, setShowPassword] = useState(false);
   const cancelEdit = () => {
     setEditItem(null);
     reset();
@@ -147,6 +155,8 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
       const updateData = {
         name: data.name,
         role: data.role,
+        ...(data.password ? { password: aesCbcEncrypt(data.password) } : {}),
+        ...(data.email ? { email: data.email } : {}),
       };
 
       // 更新用户基本信息
@@ -156,12 +166,12 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
           const originalOrgIds = editItem.org_ids || (editItem.org_id ? [editItem.org_id] : []);
           const newOrgIds = orgIds.sort((a, b) => a - b);
           const sortedOriginalOrgIds = [...originalOrgIds].sort((a, b) => a - b);
-          
+
           // 检查组织列表是否发生变化
-          const orgIdsChanged = 
+          const orgIdsChanged =
             newOrgIds.length !== sortedOriginalOrgIds.length ||
             !newOrgIds.every((id, idx) => id === sortedOriginalOrgIds[idx]);
-          
+
           if (orgIdsChanged && orgIds.length > 0) {
             // 更新用户与组织的关系
             return postAdminUserJoinOrg({
@@ -284,10 +294,10 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
     },
     {
       title: (
-        <Stack direction="row" alignItems="center" sx={{ width: '100%', pl:2 }}>
+        <Stack direction="row" alignItems="center" sx={{ width: '100%', pl: 2 }}>
           {selectedRowKeys.length > 0 && (
             <Button variant="contained" size="small" onClick={() => setJoinOrgModalOpen(true)}>
-              加入组织 ({selectedRowKeys.length})
+              编辑组织 ({selectedRowKeys.length})
             </Button>
           )}
         </Stack>
@@ -305,8 +315,7 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
                 setEditItem(userRecord);
                 const orgIds = userRecord.org_ids || (userRecord.org_id ? [userRecord.org_id] : []);
                 reset({
-                  name: userRecord.name || '',
-                  role: userRecord.role || 1,
+                  ...userRecord,
                   org_ids: orgIds,
                 });
               }}
@@ -417,6 +426,70 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
             slotProps={{
               inputLabel: {
                 shrink: !watch('name') || undefined,
+              },
+            }}
+          />
+        </FormControl>
+        <FormControl fullWidth sx={{ my: 2 }}>
+          <TextField
+            {...register('email')}
+            label="邮箱"
+            required
+            slotProps={{
+              inputLabel: {
+                shrink: !watch('email') || undefined,
+              },
+            }}
+          />
+        </FormControl>
+        <FormControl fullWidth sx={{ my: 2 }}>
+          <TextField
+            {...register('password')}
+            label="密码"
+            type={showPassword ? 'text' : 'password'}
+            slotProps={{
+              inputLabel: {
+                shrink: !!watch('password') || undefined,
+              },
+              input: {
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <Stack direction="row" spacing={0.5} alignItems="center">
+                      <IconButton
+                        size="small"
+                        aria-label="生成随机密码"
+                        onClick={async () => {
+                          const chars =
+                            'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                          let password = '';
+                          for (let i = 0; i < 6; i++) {
+                            password += chars.charAt(Math.floor(Math.random() * chars.length));
+                          }
+                          setValue('password', password);
+                          try {
+                            await navigator.clipboard.writeText(password);
+                            message.success('已生成随机密码并复制到剪贴板');
+                          } catch (err) {
+                            // 如果复制失败，仍然显示成功消息（至少密码已经生成）
+                            console.error('复制到剪贴板失败:', err);
+                            message.success('已生成随机密码');
+                          }
+                        }}
+                      >
+                        <Shuffle fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        aria-label="切换密码可见性"
+                        onClick={() => setShowPassword(!showPassword)}
+                        onMouseDown={event => event.preventDefault()}
+                        edge="end"
+                        size="small"
+                      >
+                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                      </IconButton>
+                    </Stack>
+                  </InputAdornment>
+                ),
               },
             }}
           />

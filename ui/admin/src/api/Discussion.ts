@@ -26,14 +26,17 @@ import {
   PostDiscussionDiscIdCommentCommentIdRevokeLikeParams,
   PostDiscussionDiscIdCommentParams,
   PostDiscussionDiscIdLikeParams,
+  PostDiscussionDiscIdResolveParams,
   PostDiscussionDiscIdRevokeLikeParams,
   PostDiscussionUploadPayload,
   PutDiscussionDiscIdCommentCommentIdParams,
   PutDiscussionDiscIdParams,
   SvcCommentCreateReq,
   SvcCommentUpdateReq,
+  SvcDiscussionCompeletReq,
   SvcDiscussionCreateReq,
   SvcDiscussionUpdateReq,
+  SvcResolveFeedbackReq,
 } from "./types";
 
 /**
@@ -95,6 +98,36 @@ export const postDiscussion = (
     path: `/discussion`,
     method: "POST",
     body: discussion,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description tab complete
+ *
+ * @tags discussion
+ * @name PostDiscussionComplete
+ * @summary tab complete
+ * @request POST:/discussion/complete
+ * @response `200` `(ContextResponse & {
+    data?: string,
+
+})` OK
+ */
+
+export const postDiscussionComplete = (
+  req: SvcDiscussionCompeletReq,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: string;
+    }
+  >({
+    path: `/discussion/complete`,
+    method: "POST",
+    body: req,
     type: ContentType.Json,
     format: "json",
     ...params,
@@ -438,6 +471,30 @@ export const postDiscussionDiscIdLike = (
   >({
     path: `/discussion/${discId}/like`,
     method: "POST",
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description resolve feedback
+ *
+ * @tags discussion
+ * @name PostDiscussionDiscIdResolve
+ * @summary resolve feedback
+ * @request POST:/discussion/{disc_id}/resolve
+ * @response `200` `ContextResponse` OK
+ */
+
+export const postDiscussionDiscIdResolve = (
+  { discId, ...query }: PostDiscussionDiscIdResolveParams,
+  req: SvcResolveFeedbackReq,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/discussion/${discId}/resolve`,
+    method: "POST",
+    body: req,
     type: ContentType.Json,
     format: "json",
     ...params,

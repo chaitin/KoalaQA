@@ -1,6 +1,7 @@
 'use client'
 import {
   deleteDiscussionDiscId,
+  postDiscussionDiscIdResolve,
   postDiscussionDiscIdComment,
   postDiscussionDiscIdLike,
   postDiscussionDiscIdRevokeLike,
@@ -25,6 +26,7 @@ import 'dayjs/locale/zh-cn'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { useParams, useRouter } from 'next/navigation'
 import { useContext, useRef, useState, useEffect } from 'react'
+import { CheckCircleIcon } from '@/utils/mui-imports'
 
 // 添加CSS动画样式
 const animationStyles = `
@@ -57,7 +59,7 @@ const animationStyles = `
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
 
-const TitleCard = ({ data }: { data: ModelDiscussionDetail}) => {
+const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const [menuVisible, { setFalse: menuClose, setTrue: menuOpen }] = useBoolean(false)
   const { user } = useContext(AuthContext)
   const [releaseVisible, { setFalse: releaseClose, setTrue: releaseOpen }] = useBoolean(false)
@@ -95,6 +97,24 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail}) => {
     })
   }
 
+  const handleToggleFeedback = () => {
+    menuClose()
+    Modal.confirm({
+      title: `确定${data.resolved ? '开启' : '关闭'}反馈吗？`,
+      content: '',
+      onOk: async () => {
+        await postDiscussionDiscIdResolve(
+          { discId: data.uuid + '' },
+          {
+            resolve: !data.resolved,
+          },
+        ).then(() => {
+          router.refresh()
+        })
+      },
+    })
+  }
+
   const checkLoginAndFocusMain = () => {
     return checkAuth(() => setMdEditShow(true))
   }
@@ -127,7 +147,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail}) => {
       }
     })
   }
-
+  console.log(data)
   return (
     <Card
       sx={{
@@ -183,6 +203,10 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail}) => {
               ? '反馈'
               : '文章'}
         </MenuItem>
+        {data.type === ModelDiscussionType.DiscussionTypeFeedback &&
+          [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
+            user.role || ModelUserRole.UserRoleUnknown,
+          ) && <MenuItem onClick={handleToggleFeedback}>{data.resolved ? '开启反馈' : '关闭反馈'}</MenuItem>}
       </Menu>
       <Stack
         direction='row'
@@ -209,10 +233,9 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail}) => {
             {data.title}
           </Typography>
         </Stack>
-        {[
-          ModelDiscussionType.DiscussionTypeFeedback,
-          ModelDiscussionType.DiscussionTypeBlog,
-        ].includes(data.type as any) && (
+        {[ModelDiscussionType.DiscussionTypeFeedback, ModelDiscussionType.DiscussionTypeBlog].includes(
+          data.type as any,
+        ) && (
           <Stack
             direction='row'
             alignItems='center'
@@ -308,6 +331,25 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail}) => {
       </Typography>
       <Stack direction='row' alignItems='flex-end' gap={2} justifyContent='space-between' sx={{ my: 1 }}>
         <Stack direction='row' flexWrap='wrap' gap='8px 16px'>
+          {data?.resolved && data.type === ModelDiscussionType.DiscussionTypeFeedback && (
+            <Stack
+              direction='row'
+              alignItems='center'
+              gap={0.5}
+              sx={{
+                backgroundColor: '#E8F5E8',
+                color: '#2E7D32',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                fontSize: 12,
+                fontWeight: 500,
+              }}
+            >
+              <CheckCircleIcon sx={{ fontSize: 14 }} />
+              <Typography sx={{ fontSize: 12, fontWeight: 500 }}>已关闭</Typography>
+            </Stack>
+          )}
           {data.groups?.map((item) => {
             const label = `${item.name}`
             const color = '#206CFF'
@@ -377,7 +419,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail}) => {
         </Stack>
       </Stack>
       <Divider sx={{ mt: 2, mb: 1 }} />
-      <EditorContent content={data.content} onTocUpdate={()=>{}} />
+      <EditorContent content={data.content} onTocUpdate={() => {}} />
 
       {/* 回答/回复/评论 按钮 */}
       <Box sx={{ mt: 1, pt: 1 }}>

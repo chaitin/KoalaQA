@@ -17,7 +17,7 @@ import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Autocomplete, Box, Chip, FormHelperText, Stack, styled, TextField } from '@mui/material'
 import { useParams } from 'next/navigation'
-import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useRef, useState, useMemo } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import z from 'zod'
 import { CommonContext } from './commonProvider'
@@ -63,6 +63,7 @@ interface ReleaseModalProps {
   initialTitle?: string
   type?: 'qa' | 'feedback' | 'blog'
   initialContent?: string
+  forumInfo?: any // ModelForumInfo
   showContentEditor?: boolean
   id?: string
 }
@@ -107,6 +108,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
   initialContent,
   id,
   showContentEditor = true,
+  forumInfo,
 }) => {
   const {
     control,
@@ -121,13 +123,72 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
   })
   const [loading, setLoading] = useState(false)
   const [groupValidationError, setGroupValidationError] = useState<string>('')
-  const { groups } = useContext(CommonContext)
+  const { groups: contextGroups } = useContext(CommonContext)
+
+  // 根据当前类型从 forumInfo.groups 中筛选对应的分类
+  const currentType = type as 'qa' | 'feedback' | 'blog'
+  
+  // 稳定化 forumInfo.groups 的字符串表示
+  const forumGroupsStr = useMemo(() => {
+    return forumInfo?.groups ? JSON.stringify(forumInfo.groups) : ''
+  }, [forumInfo?.groups])
+  
+  // 稳定化 contextGroups 的字符串表示
+  const contextGroupsStr = useMemo(() => {
+    return JSON.stringify({
+      origin: contextGroups.origin,
+      flat: contextGroups.flat,
+    })
+  }, [contextGroups.origin.length, contextGroups.flat.length])
+  
+  // 使用 useMemo 缓存 groups，避免每次渲染都创建新对象
+  const groups = React.useMemo(() => {
+    let forumGroupIds: number[] = []
+    if (forumInfo?.groups) {
+      if (Array.isArray(forumInfo.groups)) {
+        const matchedGroup = forumInfo.groups.find((g: any) => g.type === currentType)
+        forumGroupIds = matchedGroup?.group_ids || []
+      } else if (typeof forumInfo.groups === 'object') {
+        const groupsArray = Object.values(forumInfo.groups) as any[]
+        const matchedGroup = groupsArray.find((g: any) => g?.type === currentType)
+        forumGroupIds = matchedGroup?.group_ids || []
+      }
+    }
+
+    // 如果 forumInfo.groups 存在且不为空，则根据 group_ids 过滤分类组
+    // forumGroupIds 是分类组的 id（groups.origin 中每个 group 的 id），不是单个分类项的 id
+    if (forumGroupIds.length > 0) {
+      const filteredOrigin = contextGroups.origin.filter((group) => {
+        // 只保留 group.id 在 forumGroupIds 中的分类组
+        return forumGroupIds.includes(group.id || -1)
+      })
+      
+      // flat 需要根据筛选后的 origin 重新计算，包含这些分类组下的所有分类项
+      const filteredFlat = filteredOrigin.reduce((acc, group) => {
+        if (group.items && group.items.length > 0) {
+          acc.push(...group.items)
+        }
+        return acc
+      }, [] as ModelGroupItemInfo[])
+      
+      return {
+        origin: filteredOrigin,
+        flat: filteredFlat,
+      }
+    }
+    
+    return contextGroups
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [forumGroupsStr, currentType, contextGroupsStr])
+  
   const router = useRouterWithRouteName()
   const routeName = useParams()?.route_name as string
   const forumId = useForumId()
 
   // 获取默认选中的分类ID（所有分类的第一个子项）
-  const getDefaultGroupIds = useCallback(() => {
+  // 使用 useMemo 直接计算默认值，避免作为回调函数
+  // 使用 groups.origin.length 和 groups.origin.map 来稳定依赖项
+  const defaultGroupIds = useMemo(() => {
     if (!groups.origin || groups.origin.length === 0) return []
     const defaultIds: number[] = []
 
@@ -138,7 +199,11 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
     })
 
     return defaultIds
-  }, [groups.origin])
+  }, [
+    groups.origin.length,
+    // 使用 map 生成稳定的字符串来比较
+    groups.origin.map(g => `${g.id}-${g.items?.[0]?.id || ''}`).join(','),
+  ])
 
   const onSubmit = handleSubmit(async (params) => {
     // 自定义验证：确保每个分类下至少选择一个子选项
@@ -166,7 +231,16 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
     }
   })
 
+  // 使用 useRef 存储上一次的 open 状态，避免重复调用 reset
+  const prevOpenRef = useRef(open)
+  
   useEffect(() => {
+    // 只在 open 状态真正变化时才执行
+    if (prevOpenRef.current === open) {
+      return
+    }
+    prevOpenRef.current = open
+    
     if (!open) {
       // 关闭弹窗时清空所有表单数据和验证错误
       reset({
@@ -178,7 +252,6 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
       setGroupValidationError('')
     } else if (status === 'create' && initialTitle) {
       // 当打开创建模态框且有初始标题时，设置标题并清空其他字段
-      const defaultGroupIds = getDefaultGroupIds()
       reset({
         title: initialTitle,
         content: initialContent || '',
@@ -187,7 +260,6 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
       })
     } else if (status === 'create') {
       // 当打开创建模态框但没有初始标题时，清空所有字段
-      const defaultGroupIds = getDefaultGroupIds()
       reset({
         content: initialContent || '',
         group_ids: defaultGroupIds,
@@ -195,7 +267,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
         title: '',
       })
     }
-  }, [open, initialTitle, initialContent, status, reset, getDefaultGroupIds])
+  }, [open, initialTitle, initialContent, status, reset, defaultGroupIds])
 
   useEffect(() => {
     if (status === 'edit' && data && open) {

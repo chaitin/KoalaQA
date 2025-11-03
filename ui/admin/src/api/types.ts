@@ -249,8 +249,13 @@ export interface ModelExportOpt {
   space_id?: string;
 }
 
-export interface ModelForumInfo {
+export interface ModelForumGroups {
   group_ids?: number[];
+  type?: ModelDiscussionType;
+}
+
+export interface ModelForumInfo {
+  groups?: ModelJSONBArrayModelForumGroups;
   id?: number;
   index?: number;
   name: string;
@@ -268,6 +273,8 @@ export interface ModelGroupWithItem {
   index?: number;
   name?: string;
 }
+
+export type ModelJSONBArrayModelForumGroups = Record<string, any>;
 
 export type ModelJSONBModelExportOpt = Record<string, any>;
 
@@ -365,6 +372,7 @@ export interface ModelUserInfo {
   builtin?: boolean;
   email?: string;
   key?: string;
+  no_password?: boolean;
   org_ids?: number[];
   role?: ModelUserRole;
   uid?: number;
@@ -450,6 +458,11 @@ export interface SvcCreateSpaceReq {
 
 export interface SvcDiscussUploadFileReq {
   uuid?: string;
+}
+
+export interface SvcDiscussionCompeletReq {
+  prefix?: string;
+  suffix?: string;
 }
 
 export interface SvcDiscussionCreateReq {
@@ -656,6 +669,10 @@ export interface SvcPolishReq {
   text?: string;
 }
 
+export interface SvcResolveFeedbackReq {
+  resolve?: boolean;
+}
+
 export interface SvcReviewReq {
   add_new: boolean;
   content: string;
@@ -731,8 +748,10 @@ export interface SvcUserRegisterReq {
 }
 
 export interface SvcUserUpdateReq {
+  email?: string;
   name?: string;
   org_ids?: number[];
+  password?: string;
   /**
    * @min 1
    * @max 3
@@ -795,6 +814,13 @@ export interface PutAdminBotPayload {
   name: string;
   unknown_prompt?: string;
 }
+
+/** request params */
+export type PutAdminForumPayload = SvcForumUpdateReq & {
+  forums?: (ModelForumInfo & {
+    groups?: ModelForumGroups[];
+  })[];
+};
 
 export interface PostAdminKbDocumentFileListPayload {
   /**
@@ -1178,6 +1204,11 @@ export interface PostDiscussionDiscIdLikeParams {
   discId: string;
 }
 
+export interface PostDiscussionDiscIdResolveParams {
+  /** disc_id */
+  discId: string;
+}
+
 export interface PostDiscussionDiscIdRevokeLikeParams {
   /** disc_id */
   discId: string;
@@ -1194,11 +1225,13 @@ export interface PutUserPayload {
    * @format binary
    */
   avatar?: File;
+  email?: string;
   name?: string;
   old_password?: string;
   password?: string;
 }
 
 export interface GetUserLoginThirdParams {
+  redirect?: string;
   type: number;
 }
