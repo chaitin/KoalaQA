@@ -1,12 +1,11 @@
 'use client'
 
+import { ModelDiscussionListItem, ModelForumInfo, ModelGroupItemInfo, ModelGroupWithItem } from '@/api/types'
 import GroupsInitializer from '@/components/groupsInitializer'
-import { useForum } from '@/contexts/ForumContext'
-import { ModelDiscussionListItem, ModelGroupWithItem, ModelGroupItemInfo, ModelForumInfo } from '@/api/types'
 import { Button, Stack } from '@mui/material'
+import Link from 'next/link'
 import { Suspense } from 'react'
 import ArticleCard from './article'
-import Link from 'next/link'
 
 interface ForumPageContentProps {
   route_name: string

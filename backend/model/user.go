@@ -32,12 +32,13 @@ type UserCore struct {
 
 type UserInfo struct {
 	UserCore
-	OrgIDs   Int64Array `json:"org_ids"`
-	Role     UserRole   `json:"role"`
-	Email    string     `json:"email"`
-	Username string     `json:"username"`
-	Avatar   string     `json:"avatar"`
-	Builtin  bool       `json:"builtin"`
+	OrgIDs     Int64Array `json:"org_ids"`
+	Role       UserRole   `json:"role"`
+	Email      string     `json:"email"`
+	Username   string     `json:"username"`
+	Avatar     string     `json:"avatar"`
+	Builtin    bool       `json:"builtin"`
+	NoPassword bool       `json:"no_password"`
 }
 
 func (ui *UserInfo) IsAdmin() bool {
