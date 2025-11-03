@@ -11,6 +11,7 @@ import (
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/glog"
+	"github.com/chaitin/koalaqa/pkg/llm"
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/oss"
 	"github.com/chaitin/koalaqa/pkg/rag"
@@ -39,6 +40,7 @@ type discussionIn struct {
 	OC            oss.Client
 	ForumRepo     *repo.Forum
 	Limiter       ratelimit.Limiter
+	LLM           *LLM
 }
 
 type Discussion struct {
@@ -126,6 +128,21 @@ func (d *Discussion) Create(ctx context.Context, req DiscussionCreateReq) (strin
 			return "", err
 		}
 		req.ForumID = forumID
+	}
+
+	var forum model.Forum
+	err = d.in.ForumRepo.GetByID(ctx, &forum, req.ForumID)
+	if err != nil {
+		return "", err
+	}
+
+	for _, group := range forum.Groups.Inner() {
+		if group.Type != req.Type {
+			continue
+		}
+
+		req.GroupIDs = util.Intersect(group.GroupIDs, req.GroupIDs)
+		break
 	}
 
 	disc := model.Discussion{
@@ -947,4 +964,45 @@ func (d *Discussion) GetCommentByID(ctx context.Context, id uint) (*model.Commen
 		return nil, err
 	}
 	return &comment, nil
+}
+
+type DiscussionCompeletReq struct {
+	Prefix string `json:"prefix"`
+	Suffix string `json:"suffix"`
+}
+
+func (d *Discussion) Complete(ctx context.Context, req DiscussionCompeletReq) (string, error) {
+	if req.Prefix == "" && req.Suffix == "" {
+		return "", nil
+	}
+
+	return d.in.LLM.Chat(ctx, llm.SystemCompletePrompt, llm.UserCompleteTemplate, map[string]any{
+		"Prefix": req.Prefix,
+		"Suffix": req.Suffix,
+	})
+}
+
+type ResolveFeedbackReq struct {
+	Resolve bool `json:"resolve"`
+}
+
+func (d *Discussion) ResolveFeedback(ctx context.Context, user model.UserInfo, discUUID string, req ResolveFeedbackReq) error {
+	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
+	if err != nil {
+		return err
+	}
+
+	if !user.CanOperator(disc.UserID) || disc.Type != model.DiscussionTypeFeedback {
+		return errors.New("not allowed to close feedback")
+	}
+
+	err = d.in.DiscRepo.Update(ctx, map[string]any{
+		"resolved":    req.Resolve,
+		"resolved_at": model.Timestamp(time.Now().Unix()),
+	}, repo.QueryWithEqual("id", disc.ID))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

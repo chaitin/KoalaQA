@@ -12,6 +12,7 @@ import {
   DialogContent,
   DialogActions,
   Alert,
+  Grid,
 } from '@mui/material';
 import {
   closestCenter,
@@ -32,10 +33,14 @@ import Card from '@/components/card';
 import LoadingButton from '@/components/LoadingButton';
 import CategorySelector from '@/components/CategorySelector';
 import { getAdminForum, putAdminForum } from '@/api/Forum';
-import { ModelForumInfo } from '@/api/types';
+import { ModelForumInfo, ModelForumGroups, ModelDiscussionType } from '@/api/types';
 
 interface ForumFormData {
-  blocks: ModelForumInfo[];
+  blocks: (ModelForumInfo & {
+    qa_group_ids?: number[];
+    feedback_group_ids?: number[];
+    blog_group_ids?: number[];
+  })[];
 }
 
 // 可拖拽的版块项组件
@@ -178,39 +183,89 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
           </IconButton>
         </Stack>
 
-        {/* 分组选择 */}
-
-        <Controller
-          control={control}
-          name={`blocks.${index}.group_ids`}
-          rules={{
-            validate: value => {
-              if (!value || value.length === 0) {
-                return '请至少选择一个分类';
-              }
-              return true;
-            },
-          }}
-          render={({ field, fieldState: { error } }) => (
-            <Box>
-              <CategorySelector
-                value={field.value || []}
-                onChange={groupIds => {
-                  field.onChange(groupIds);
-                  setIsEdit(true);
-                }}
-                placeholder="请选择分类"
-                label="选择分类"
-                error={!!error}
-              />
-              {error && (
-                <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
-                  {error.message}
-                </Typography>
+        {/* 分类选择 - 每行两个 */}
+        <Grid container spacing={2}>
+          {/* 分类选择 - 问答 */}
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Controller
+              control={control}
+              name={`blocks.${index}.qa_group_ids`}
+              render={({ field, fieldState: { error } }) => (
+                <Box>
+                  <CategorySelector
+                    value={field.value || []}
+                    onChange={groupIds => {
+                      field.onChange(groupIds);
+                      setIsEdit(true);
+                    }}
+                    placeholder="请选择问答分类"
+                    label="问答分类"
+                    error={!!error}
+                  />
+                  {error && (
+                    <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
+                      {error.message}
+                    </Typography>
+                  )}
+                </Box>
               )}
-            </Box>
-          )}
-        />
+            />
+          </Grid>
+
+          {/* 分类选择 - 反馈 */}
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Controller
+              control={control}
+              name={`blocks.${index}.feedback_group_ids`}
+              render={({ field, fieldState: { error } }) => (
+                <Box>
+                  <CategorySelector
+                    value={field.value || []}
+                    onChange={groupIds => {
+                      field.onChange(groupIds);
+                      setIsEdit(true);
+                    }}
+                    placeholder="请选择反馈分类"
+                    label="反馈分类"
+                    error={!!error}
+                  />
+                  {error && (
+                    <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
+                      {error.message}
+                    </Typography>
+                  )}
+                </Box>
+              )}
+            />
+          </Grid>
+
+          {/* 分类选择 - 文章 */}
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Controller
+              control={control}
+              name={`blocks.${index}.blog_group_ids`}
+              render={({ field, fieldState: { error } }) => (
+                <Box>
+                  <CategorySelector
+                    value={field.value || []}
+                    onChange={groupIds => {
+                      field.onChange(groupIds);
+                      setIsEdit(true);
+                    }}
+                    placeholder="请选择文章分类"
+                    label="文章分类"
+                    error={!!error}
+                  />
+                  {error && (
+                    <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
+                      {error.message}
+                    </Typography>
+                  )}
+                </Box>
+              )}
+            />
+          </Grid>
+        </Grid>
       </Stack>
     </Box>
   );
@@ -253,7 +308,23 @@ const Forum: React.FC = () => {
       }
 
       const response = await getAdminForum();
-      reset({ blocks: response });
+      // 将 groups 按类型转换为对应的 group_ids 以适配表单
+      const blocks = response.map(block => {
+        // 确保 groups 是数组
+        const groupsArray = Array.isArray(block.groups) ? block.groups : [];
+        
+        const qaGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeQA);
+        const feedbackGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeFeedback);
+        const blogGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeBlog);
+        
+        return {
+          ...block,
+          qa_group_ids: qaGroups?.group_ids || [],
+          feedback_group_ids: feedbackGroups?.group_ids || [],
+          blog_group_ids: blogGroups?.group_ids || [],
+        };
+      });
+      reset({ blocks });
     } catch (error) {
       console.error('获取版块数据失败:', error);
       reset({ blocks: [] });
@@ -300,7 +371,9 @@ const Forum: React.FC = () => {
       name: '',
       route_name: '',
       index: blockFields.length + 1,
-      group_ids: [],
+      qa_group_ids: [],
+      feedback_group_ids: [],
+      blog_group_ids: [],
     });
     setIsEdit(true);
   };
@@ -350,13 +423,37 @@ const Forum: React.FC = () => {
     setIsLoading(true);
     try {
       // 将表单数据转换为 API 需要的格式
-      const forums: ModelForumInfo[] = data.blocks.map((block, index) => ({
-        id: block.id,
-        name: block.name?.trim() || '',
-        route_name: block.route_name?.trim() || '',
-        index: index + 1, // 设置排序索引
-        group_ids: block.group_ids || [],
-      }));
+      const forums = data.blocks.map((block, index) => {
+        const groups: ModelForumGroups[] = [];
+        
+        // 为每种类型添加对应的分类
+        if (block.qa_group_ids && block.qa_group_ids.length > 0) {
+          groups.push({
+            type: ModelDiscussionType.DiscussionTypeQA,
+            group_ids: block.qa_group_ids,
+          });
+        }
+        if (block.feedback_group_ids && block.feedback_group_ids.length > 0) {
+          groups.push({
+            type: ModelDiscussionType.DiscussionTypeFeedback,
+            group_ids: block.feedback_group_ids,
+          });
+        }
+        if (block.blog_group_ids && block.blog_group_ids.length > 0) {
+          groups.push({
+            type: ModelDiscussionType.DiscussionTypeBlog,
+            group_ids: block.blog_group_ids,
+          });
+        }
+        
+        return {
+          id: block.id,
+          name: block.name?.trim() || '',
+          route_name: block.route_name?.trim() || '',
+          index: index + 1, // 设置排序索引
+          groups: groups.length > 0 ? groups : undefined,
+        };
+      });
 
       await putAdminForum({ forums });
       setIsEdit(false);

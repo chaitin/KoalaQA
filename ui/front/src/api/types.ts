@@ -249,8 +249,13 @@ export interface ModelExportOpt {
   space_id?: string;
 }
 
-export interface ModelForumInfo {
+export interface ModelForumGroups {
   group_ids?: number[];
+  type?: ModelDiscussionType;
+}
+
+export interface ModelForumInfo {
+  groups?: ModelJSONBArrayModelForumGroups;
   id?: number;
   index?: number;
   name: string;
@@ -268,6 +273,8 @@ export interface ModelGroupWithItem {
   index?: number;
   name?: string;
 }
+
+export type ModelJSONBArrayModelForumGroups = Record<string, any>;
 
 export type ModelJSONBModelExportOpt = Record<string, any>;
 
@@ -344,11 +351,28 @@ export interface ModelSystemBrand {
   text?: string;
 }
 
+export interface ModelUser {
+  avatar?: string;
+  builtin?: boolean;
+  created_at?: number;
+  email?: string;
+  id?: number;
+  invisible?: boolean;
+  key?: string;
+  last_login?: number;
+  name?: string;
+  org_ids?: number[];
+  password?: string;
+  role?: ModelUserRole;
+  updated_at?: number;
+}
+
 export interface ModelUserInfo {
   avatar?: string;
   builtin?: boolean;
   email?: string;
   key?: string;
+  org_ids?: number[];
   role?: ModelUserRole;
   uid?: number;
   username?: string;
@@ -433,6 +457,11 @@ export interface SvcCreateSpaceReq {
 
 export interface SvcDiscussUploadFileReq {
   uuid?: string;
+}
+
+export interface SvcDiscussionCompeletReq {
+  prefix?: string;
+  suffix?: string;
 }
 
 export interface SvcDiscussionCreateReq {
@@ -619,8 +648,28 @@ export interface SvcModelKitCheckReq {
   type: "chat" | "embedding" | "rerank";
 }
 
+export interface SvcOrgListItem {
+  builtin?: boolean;
+  count?: number;
+  created_at?: number;
+  forum_ids?: number[];
+  forum_names?: string[];
+  id?: number;
+  name?: string;
+  updated_at?: number;
+}
+
+export interface SvcOrgUpsertReq {
+  forum_ids?: number[];
+  name: string;
+}
+
 export interface SvcPolishReq {
   text?: string;
+}
+
+export interface SvcResolveFeedbackReq {
+  resolve?: boolean;
 }
 
 export interface SvcReviewReq {
@@ -665,6 +714,13 @@ export interface SvcUpdateSpaceReq {
   title?: string;
 }
 
+export interface SvcUserJoinOrgReq {
+  /** @minItems 1 */
+  org_ids?: number[];
+  /** @minItems 1 */
+  user_ids?: number[];
+}
+
 export interface SvcUserListItem {
   avatar?: string;
   builtin?: boolean;
@@ -673,6 +729,8 @@ export interface SvcUserListItem {
   id?: number;
   last_login?: number;
   name?: string;
+  org_ids?: number[];
+  org_names?: string[];
   role?: ModelUserRole;
   updated_at?: number;
 }
@@ -690,6 +748,8 @@ export interface SvcUserRegisterReq {
 
 export interface SvcUserUpdateReq {
   name?: string;
+  org_ids?: number[];
+  password?: string;
   /**
    * @min 1
    * @max 3
@@ -750,8 +810,15 @@ export interface PutAdminBotPayload {
    */
   avatar?: File;
   name: string;
-  unknown_prompt: string;
+  unknown_prompt?: string;
 }
+
+/** request params */
+export type PutAdminForumPayload = SvcForumUpdateReq & {
+  forums?: (ModelForumInfo & {
+    groups?: ModelForumGroups[];
+  })[];
+};
 
 export interface PostAdminKbDocumentFileListPayload {
   /**
@@ -993,6 +1060,20 @@ export interface PutAdminModelIdParams {
   id: string;
 }
 
+export interface GetAdminOrgParams {
+  name?: string;
+}
+
+export interface PutAdminOrgOrgIdParams {
+  /** org id */
+  orgId: number;
+}
+
+export interface DeleteAdminOrgOrgIdParams {
+  /** org id */
+  orgId: number;
+}
+
 export interface GetAdminSystemWebhookWebhookIdParams {
   /** wenhook id */
   webhookId: number;
@@ -1010,6 +1091,8 @@ export interface DeleteAdminSystemWebhookWebhookIdParams {
 
 export interface GetAdminUserParams {
   name?: string;
+  org_id?: number;
+  org_name?: string;
   /** @min 1 */
   page?: number;
   /** @min 1 */
@@ -1119,6 +1202,11 @@ export interface PostDiscussionDiscIdLikeParams {
   discId: string;
 }
 
+export interface PostDiscussionDiscIdResolveParams {
+  /** disc_id */
+  discId: string;
+}
+
 export interface PostDiscussionDiscIdRevokeLikeParams {
   /** disc_id */
   discId: string;
@@ -1135,11 +1223,13 @@ export interface PutUserPayload {
    * @format binary
    */
   avatar?: File;
+  email?: string;
   name?: string;
   old_password?: string;
   password?: string;
 }
 
 export interface GetUserLoginThirdParams {
+  redirect?: string;
   type: number;
 }

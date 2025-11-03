@@ -108,7 +108,22 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/model.ForumInfo"
+                                                "allOf": [
+                                                    {
+                                                        "$ref": "#/definitions/model.ForumInfo"
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "groups": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "$ref": "#/definitions/model.ForumGroups"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                ]
                                             }
                                         }
                                     }
@@ -136,7 +151,37 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/svc.ForumUpdateReq"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/svc.ForumUpdateReq"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "forums": {
+                                            "type": "array",
+                                            "items": {
+                                                "allOf": [
+                                                    {
+                                                        "$ref": "#/definitions/model.ForumInfo"
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "groups": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "$ref": "#/definitions/model.ForumGroups"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 ],
@@ -3303,6 +3348,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/discussion/complete": {
+            "post": {
+                "description": "tab complete",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "tab complete",
+                "parameters": [
+                    {
+                        "description": "req params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.DiscussionCompeletReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/discussion/upload": {
             "post": {
                 "description": "discussion upload file",
@@ -3843,6 +3934,47 @@ const docTemplate = `{
                 }
             }
         },
+        "/discussion/{disc_id}/resolve": {
+            "post": {
+                "description": "resolve feedback",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "resolve feedback",
+                "parameters": [
+                    {
+                        "description": "req params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.ResolveFeedbackReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "disc_id",
+                        "name": "disc_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/discussion/{disc_id}/revoke_like": {
             "post": {
                 "description": "revoke like discussion",
@@ -4100,6 +4232,11 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "name": "email",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
                         "name": "name",
                         "in": "formData"
                     },
@@ -4179,6 +4316,11 @@ const docTemplate = `{
                 ],
                 "summary": "get user third login url",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "name": "redirect",
+                        "in": "query"
+                    },
                     {
                         "type": "integer",
                         "name": "type",
@@ -4814,17 +4956,28 @@ const docTemplate = `{
                 "FileTypeMax"
             ]
         },
-        "model.ForumInfo": {
+        "model.ForumGroups": {
             "type": "object",
-            "required": [
-                "name"
-            ],
             "properties": {
                 "group_ids": {
                     "type": "array",
                     "items": {
                         "type": "integer"
                     }
+                },
+                "type": {
+                    "$ref": "#/definitions/model.DiscussionType"
+                }
+            }
+        },
+        "model.ForumInfo": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "groups": {
+                    "$ref": "#/definitions/model.JSONB-array_model_ForumGroups"
                 },
                 "id": {
                     "type": "integer"
@@ -4867,6 +5020,9 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "model.JSONB-array_model_ForumGroups": {
+            "type": "object"
         },
         "model.JSONB-model_ExportOpt": {
             "type": "object"
@@ -5136,6 +5292,9 @@ const docTemplate = `{
                 },
                 "key": {
                     "type": "string"
+                },
+                "no_password": {
+                    "type": "boolean"
                 },
                 "org_ids": {
                     "type": "array",
@@ -5421,6 +5580,17 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "svc.DiscussionCompeletReq": {
+            "type": "object",
+            "properties": {
+                "prefix": {
+                    "type": "string"
+                },
+                "suffix": {
                     "type": "string"
                 }
             }
@@ -6057,6 +6227,14 @@ const docTemplate = `{
                 }
             }
         },
+        "svc.ResolveFeedbackReq": {
+            "type": "object",
+            "properties": {
+                "resolve": {
+                    "type": "boolean"
+                }
+            }
+        },
         "svc.ReviewReq": {
             "type": "object",
             "required": [
@@ -6279,6 +6457,9 @@ const docTemplate = `{
         "svc.UserUpdateReq": {
             "type": "object",
             "properties": {
+                "email": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -6287,6 +6468,9 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
+                },
+                "password": {
+                    "type": "string"
                 },
                 "role": {
                     "maximum": 3,

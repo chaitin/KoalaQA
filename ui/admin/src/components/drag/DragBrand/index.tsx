@@ -1,4 +1,4 @@
-import { getAdminGroup, putAdminGroup } from '@/api';
+import { putAdminGroup } from '@/api';
 import Card from '@/components/card';
 import LoadingButton from '@/components/LoadingButton';
 import {
@@ -17,10 +17,12 @@ import { Box, Button, Stack, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { eventManager, EVENTS } from '@/utils/eventManager';
+import { useGroupData } from '@/context/GroupDataContext';
 import Item from './Item';
 import SortableItem from './SortableItem';
 
 const DragBrand = () => {
+  const { groups, refresh } = useGroupData();
   const [isEdit, setIsEdit] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(MouseSensor), useSensor(TouchSensor));
@@ -53,21 +55,17 @@ const DragBrand = () => {
   const handleDragStart = useCallback((event: DragStartEvent) => {
     setActiveId(event.active.id as string);
   }, []);
-  const fetchData = useCallback(() => {
-    getAdminGroup().then(res => {
-      reset({
-        brand_groups: res.items?.map(item => ({
-          name: item.name,
-          id: item.id,
-          links: item.items,
-        })),
-      });
-    });
-  }, [reset]);
-  
+
+  // 当 groups 数据更新时，同步到表单
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    reset({
+      brand_groups: groups.map(item => ({
+        name: item.name || '',
+        id: item.id || 0,
+        links: item.items || [],
+      })),
+    });
+  }, [groups, reset]);
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event;
@@ -103,27 +101,28 @@ const DragBrand = () => {
     setIsEdit(true);
   };
 
-  const onSubmit = handleSubmit(data => {
-    putAdminGroup({
+  const onSubmit = handleSubmit(async data => {
+    await putAdminGroup({
       groups: data.brand_groups.map((item, index) => ({
         name: item.name,
         id: item.id,
         index,
         items: item.links.map((link, i) => ({ ...link, index: i })),
       })),
-    }).then(() => {
-      setIsEdit(false);
-      // 触发分类更新事件，通知其他组件
-      eventManager.emit(EVENTS.CATEGORY_UPDATED, {
-        timestamp: Date.now(),
-        message: '分类信息已更新'
-      });
+    });
+    setIsEdit(false);
+    // 刷新分组数据
+    await refresh();
+    // 触发分类更新事件，通知其他组件
+    eventManager.emit(EVENTS.CATEGORY_UPDATED, {
+      timestamp: Date.now(),
+      message: '分类信息已更新',
     });
   });
 
   return (
     <Card>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{mb: 2}}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
         <Typography
           variant="subtitle2"
           sx={{

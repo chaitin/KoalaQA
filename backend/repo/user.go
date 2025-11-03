@@ -23,6 +23,9 @@ func (u *User) ListWithOrg(ctx context.Context, res any, queryFuncs ...QueryOptF
 }
 
 func (u *User) HasForumPermission(ctx context.Context, userID, forumID uint) (bool, error) {
+	if userID == 0 {
+		return true, nil
+	}
 	var exist bool
 	err := u.model(ctx).Raw("SELECT EXISTS (?)", u.model(ctx).Where("id = ?", userID).
 		Where("org_ids && (SELECT ARRAY_AGG(id) FROM orgs WHERE ? =ANY(forum_ids))", forumID)).
@@ -38,9 +41,28 @@ func (u *User) GetByEmail(ctx context.Context, res any, email string) error {
 	return u.model(ctx).Where("email = ?", email).First(res).Error
 }
 
-func (u *User) CreateThird(ctx context.Context, user *third_auth.User) (*model.User, error) {
+func (u *User) DeleteByID(ctx context.Context, userID uint) error {
+	return u.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		err := tx.Model(&model.User{}).Where("id = ?", userID).Delete(nil).Error
+		if err != nil {
+			return err
+		}
+
+		err = tx.Model(&model.UserThird{}).Where("user_id = ?", userID).Delete(nil).Error
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
+func (u *User) CreateThird(ctx context.Context, orgID uint, user *third_auth.User) (*model.User, error) {
 	if user.ThirdID == "" {
 		return nil, errors.New("empty user third_id")
+	}
+	if orgID == 0 {
+		return nil, errors.New("invalid org_id")
 	}
 
 	var dbUser model.User
@@ -66,10 +88,17 @@ func (u *User) CreateThird(ctx context.Context, user *third_auth.User) (*model.U
 
 			txErr = tx.Model(u.m).Where("id = ?", userThird.UserID).First(&dbUser).Error
 			if txErr != nil {
+				if !errors.Is(txErr, database.ErrRecordNotFound) {
+					return txErr
+				}
+
+				txErr = tx.Model(&model.UserThird{}).Where("id = ?", userThird.ID).Delete(nil).Error
+				if txErr != nil {
+					return txErr
+				}
+			} else {
 				return nil
 			}
-
-			return nil
 		}
 
 		createUser := user.Email == ""
@@ -93,6 +122,7 @@ func (u *User) CreateThird(ctx context.Context, user *third_auth.User) (*model.U
 				Invisible: false,
 				LastLogin: model.Timestamp(time.Now().Unix()),
 				Key:       uuid.NewString(),
+				OrgIDs:    model.Int64Array{int64(orgID)},
 			}
 			txErr = tx.Model(&model.User{}).Create(&dbUser).Error
 			if txErr != nil {

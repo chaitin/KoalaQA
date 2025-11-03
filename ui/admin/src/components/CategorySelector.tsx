@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Autocomplete, TextField, Box, Typography, CircularProgress } from '@mui/material';
-import { getAdminGroup } from '@/api';
-import { useRequest } from 'ahooks';
+import { useGroupData } from '@/context/GroupDataContext';
 import { eventManager, EVENTS } from '@/utils/eventManager';
 
 interface CategorySelectorProps {
@@ -29,49 +28,27 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
   error = false,
   helperText,
 }) => {
+  const { groups, loading, refresh } = useGroupData();
   const [options, setOptions] = useState<CategoryOption[]>([]);
-  const [loading, setLoading] = useState(false);
 
-  // 获取分类数据
-  const { run: fetchCategories } = useRequest(
-    async () => {
-      setLoading(true);
-      try {
-        const response = await getAdminGroup();
-        const groups = response?.items || [];
-
-        // 将分组和分组项展平为选项列表
-        const categoryOptions: CategoryOption[] = [];
-        groups.forEach(group => {
-          categoryOptions.push({
-            id: group.id || 0,
-            name: group.name || '',
-            groupName: group.name || '',
-          });
-        });
-
-        setOptions(categoryOptions);
-      } catch (error) {
-        console.error('获取分类列表失败:', error);
-        setOptions([]);
-      } finally {
-        setLoading(false);
-      }
-    },
-    {
-      manual: true,
-    }
-  );
-
+  // 将 groups 数据转换为选项列表
   useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+    const categoryOptions: CategoryOption[] = [];
+    groups.forEach(group => {
+      categoryOptions.push({
+        id: group.id || 0,
+        name: group.name || '',
+        groupName: group.name || '',
+      });
+    });
+    setOptions(categoryOptions);
+  }, [groups]);
 
   // 创建事件处理函数
   const handleCategoryUpdate = useCallback(() => {
-    // 当分类更新时，重新获取分类数据
-    fetchCategories();
-  }, [fetchCategories]);
+    // 当分类更新时，刷新数据
+    refresh();
+  }, [refresh]);
 
   // 监听分类更新事件
   useEffect(() => {
@@ -85,6 +62,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
   }, [handleCategoryUpdate]);
 
   // 根据value找到对应的选项
+  console.log(value)
   const selectedOptions = options.filter(option => (value || []).includes(option.id));
 
   const handleChange = (event: any, newValue: CategoryOption[] | null) => {

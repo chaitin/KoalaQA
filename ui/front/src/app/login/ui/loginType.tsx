@@ -6,17 +6,20 @@ import { AuthType } from '@/types/auth'
 import { Box, Button, Stack, Typography } from '@mui/material'
 import Link from 'next/link'
 import { Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Account from './account'
 import { useAuthConfig } from '@/hooks/useAuthConfig'
 
 const LoginType = () => {
   // 使用新的 useAuthConfig hook
   const { authConfig, loading } = useAuthConfig()
+  const searchParams = useSearchParams()
+  const redirect = searchParams?.get('redirect') || undefined
+  
   const handleOAuthLogin = async (type: number) => {
     try {
       // 调用getUserLoginThird接口获取跳转URL
-      const response = await getUserLoginThird({ type })
-
+      const response = await getUserLoginThird({ type, redirect })
       // 使用类型断言处理API响应
       const apiResponse = response as { data?: string } | string
       let oauthUrl = ''
@@ -31,7 +34,7 @@ const LoginType = () => {
       }
 
       // 自动跳转到第三方登录页面
-      window.location.href = decodeURIComponent(oauthUrl)
+      window.location.href = oauthUrl
     } catch (error) {
       console.error('Error getting third party login URL:', error)
     }

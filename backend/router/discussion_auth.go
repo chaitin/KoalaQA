@@ -21,11 +21,13 @@ func init() {
 func (d *discussionAuth) Route(h server.Handler) {
 	g := h.Group("/discussion")
 	g.POST("", d.Create)
+	g.POST("/complete", d.Complete)
 	g.PUT("/:disc_id", d.Update)
 	g.DELETE("/:disc_id", d.Delete)
 	g.POST("/upload", d.UploadFile)
 	g.POST("/:disc_id/like", d.LikeDiscussion)
 	g.POST("/:disc_id/revoke_like", d.RevokeLikeDiscussion)
+	g.POST(":disc_id/resolve", d.ResolveFeedback)
 
 	{
 		comG := g.Group("/:disc_id/comment")
@@ -296,6 +298,59 @@ func (d *discussionAuth) RevokeCommentLike(ctx *context.Context) {
 	err = d.disc.RevokeLike(ctx, ctx.GetUser().UID, ctx.Param("disc_id"), commentID)
 	if err != nil {
 		ctx.InternalError(err, "dislike comment failed")
+		return
+	}
+
+	ctx.Success(nil)
+}
+
+// Complete
+// @Summary tab complete
+// @Description tab complete
+// @Tags discussion
+// @Accept json
+// @Param req body svc.DiscussionCompeletReq true "req params"
+// @Produce json
+// @Success 200 {object} context.Response{data=string}
+// @Router /discussion/complete [post]
+func (d *discussionAuth) Complete(ctx *context.Context) {
+	var req svc.DiscussionCompeletReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	res, err := d.disc.Complete(ctx, req)
+	if err != nil {
+		ctx.InternalError(err, "tab complete failed")
+		return
+	}
+
+	ctx.Success(res)
+}
+
+// ResolveFeedback
+// @Summary resolve feedback
+// @Description resolve feedback
+// @Tags discussion
+// @Accept json
+// @Param req body svc.ResolveFeedbackReq true "req params"
+// @Produce json
+// @Param disc_id path string true "disc_id"
+// @Success 200 {object} context.Response
+// @Router /discussion/{disc_id}/resolve [post]
+func (d *discussionAuth) ResolveFeedback(ctx *context.Context) {
+	var req svc.ResolveFeedbackReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	err = d.disc.ResolveFeedback(ctx, ctx.GetUser(), ctx.Param("disc_id"), req)
+	if err != nil {
+		ctx.InternalError(err, "close feedback failed")
 		return
 	}
 

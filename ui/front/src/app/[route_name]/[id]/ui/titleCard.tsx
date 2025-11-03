@@ -1,6 +1,7 @@
 'use client'
 import {
   deleteDiscussionDiscId,
+  postDiscussionDiscIdResolve,
   postDiscussionDiscIdComment,
   postDiscussionDiscIdLike,
   postDiscussionDiscIdRevokeLike,
@@ -16,6 +17,7 @@ import Modal from '@/components/modal'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
 import { formatNumber } from '@/lib/utils'
 // import { generateCacheKey, clearCache } from '@/lib/api-cache'
+import { useForum } from '@/contexts/ForumContext'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import ThumbUpAltOutlinedIcon from '@mui/icons-material/ThumbUpAltOutlined'
 import { Box, Button, Divider, IconButton, Menu, MenuItem, Stack, Typography } from '@mui/material'
@@ -24,7 +26,8 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { useParams, useRouter } from 'next/navigation'
-import { useContext, useRef, useState, useEffect } from 'react'
+import { useContext, useRef, useState, useEffect, useMemo } from 'react'
+import { CheckCircleIcon } from '@/utils/mui-imports'
 
 // 添加CSS动画样式
 const animationStyles = `
@@ -57,11 +60,26 @@ const animationStyles = `
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
 
-const TitleCard = ({ data }: { data: ModelDiscussionDetail}) => {
+const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const [menuVisible, { setFalse: menuClose, setTrue: menuOpen }] = useBoolean(false)
   const { user } = useContext(AuthContext)
   const [releaseVisible, { setFalse: releaseClose, setTrue: releaseOpen }] = useBoolean(false)
   const router = useRouter()
+  const { forums } = useForum()
+  const { id, route_name }: { id: string; route_name?: string } = (useParams() as any) || { id: '' }
+
+  // 根据 route_name 获取对应的 forumInfo
+  const forumInfo = useMemo(() => {
+    if (!route_name || !forums || forums.length === 0) return null
+    return forums.find(f => f.route_name === route_name) || null
+  }, [route_name, forums])
+
+  // 根据 data.type 转换为 ReleaseModal 需要的 type
+  const modalType = useMemo(() => {
+    if (data.type === ModelDiscussionType.DiscussionTypeQA) return 'qa'
+    if (data.type === ModelDiscussionType.DiscussionTypeFeedback) return 'feedback'
+    return 'blog'
+  }, [data.type])
 
   // 安全地注入样式，避免水合失败
   useEffect(() => {
@@ -76,7 +94,6 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail}) => {
       }
     }
   }, [])
-  const { id, route_name }: { id: string; route_name?: string } = (useParams() as any) || { id: '' }
   const { checkAuth } = useAuthCheck()
   const anchorElRef = useRef(null)
   const editorRef = useRef<EditorWrapRef>(null)
@@ -90,6 +107,24 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail}) => {
       onOk: async () => {
         await deleteDiscussionDiscId({ discId: data.uuid + '' }).then(() => {
           router.push('/')
+        })
+      },
+    })
+  }
+
+  const handleToggleFeedback = () => {
+    menuClose()
+    Modal.confirm({
+      title: `确定${data.resolved ? '开启' : '关闭'}反馈吗？`,
+      content: '',
+      onOk: async () => {
+        await postDiscussionDiscIdResolve(
+          { discId: data.uuid + '' },
+          {
+            resolve: !data.resolved,
+          },
+        ).then(() => {
+          router.refresh()
         })
       },
     })
@@ -127,7 +162,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail}) => {
       }
     })
   }
-
+  console.log(data)
   return (
     <Card
       sx={{
@@ -143,6 +178,8 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail}) => {
         id={id}
         onClose={releaseClose}
         selectedTags={[]}
+        type={modalType}
+        forumInfo={forumInfo}
         onOk={() => {
           releaseClose()
           router.refresh()
@@ -157,6 +194,10 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail}) => {
           'aria-labelledby': 'basic-button',
         }}
       >
+        {data.type === ModelDiscussionType.DiscussionTypeFeedback &&
+          [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
+            user.role || ModelUserRole.UserRoleUnknown,
+          ) && <MenuItem onClick={handleToggleFeedback}>{data.resolved ? '开启反馈' : '关闭反馈'}</MenuItem>}
         <MenuItem
           onClick={() => {
             if (data.type === ModelDiscussionType.DiscussionTypeBlog) {
@@ -175,7 +216,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail}) => {
               ? '反馈'
               : '文章'}
         </MenuItem>
-        <MenuItem onClick={handleDelete}>
+        <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
           删除
           {data.type === ModelDiscussionType.DiscussionTypeQA
             ? '问题'
@@ -209,10 +250,9 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail}) => {
             {data.title}
           </Typography>
         </Stack>
-        {[
-          ModelDiscussionType.DiscussionTypeFeedback,
-          ModelDiscussionType.DiscussionTypeBlog,
-        ].includes(data.type as any) && (
+        {[ModelDiscussionType.DiscussionTypeFeedback, ModelDiscussionType.DiscussionTypeBlog].includes(
+          data.type as any,
+        ) && (
           <Stack
             direction='row'
             alignItems='center'
@@ -308,6 +348,25 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail}) => {
       </Typography>
       <Stack direction='row' alignItems='flex-end' gap={2} justifyContent='space-between' sx={{ my: 1 }}>
         <Stack direction='row' flexWrap='wrap' gap='8px 16px'>
+          {data?.resolved && data.type === ModelDiscussionType.DiscussionTypeFeedback && (
+            <Stack
+              direction='row'
+              alignItems='center'
+              gap={0.5}
+              sx={{
+                backgroundColor: '#E8F5E8',
+                color: '#2E7D32',
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                fontSize: 12,
+                fontWeight: 500,
+              }}
+            >
+              <CheckCircleIcon sx={{ fontSize: 14 }} />
+              <Typography sx={{ fontSize: 12, fontWeight: 500 }}>已关闭</Typography>
+            </Stack>
+          )}
           {data.groups?.map((item) => {
             const label = `${item.name}`
             const color = '#206CFF'
@@ -377,7 +436,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail}) => {
         </Stack>
       </Stack>
       <Divider sx={{ mt: 2, mb: 1 }} />
-      <EditorContent content={data.content} onTocUpdate={()=>{}} />
+      <EditorContent content={data.content} onTocUpdate={() => {}} />
 
       {/* 回答/回复/评论 按钮 */}
       <Box sx={{ mt: 1, pt: 1 }}>

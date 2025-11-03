@@ -101,9 +101,11 @@ func (u *User) Admin(ctx context.Context) (*model.User, error) {
 }
 
 type UserUpdateReq struct {
-	Name   string           `json:"name"`
-	Role   model.UserRole   `json:"role" binding:"min=1,max=3"`
-	OrgIDs model.Int64Array `json:"org_ids"`
+	Name     string           `json:"name"`
+	Email    string           `json:"email" binding:"omitempty,email"`
+	Password string           `json:"password"`
+	Role     model.UserRole   `json:"role" binding:"min=1,max=3"`
+	OrgIDs   model.Int64Array `json:"org_ids"`
 }
 
 func (u *User) Update(ctx context.Context, id uint, req UserUpdateReq) error {
@@ -119,6 +121,27 @@ func (u *User) Update(ctx context.Context, id uint, req UserUpdateReq) error {
 
 	if user.Name != "" {
 		updateM["name"] = req.Name
+	}
+
+	if req.Password != "" {
+		hashPass, err := u.convertPassword(req.Password)
+		if err != nil {
+			return err
+		}
+
+		updateM["password"] = hashPass
+	}
+	if req.Email != "" && req.Email != user.Email {
+		ok, err := u.repoUser.Exist(ctx, repo.QueryWithEqual("email", req.Email))
+		if err != nil {
+			return err
+		}
+
+		if ok {
+			return errors.New("email already used")
+		}
+
+		updateM["email"] = req.Email
 	}
 
 	if !user.Builtin {
@@ -149,6 +172,7 @@ func (u *User) Update(ctx context.Context, id uint, req UserUpdateReq) error {
 
 type UserUpdateInfoReq struct {
 	Name        string                `form:"name"`
+	Email       string                `form:"email" binding:"omitempty,email"`
 	OldPassword string                `form:"old_password"`
 	Password    string                `form:"password"`
 	Avatar      *multipart.FileHeader `form:"avatar" swaggerignore:"true"`
@@ -184,6 +208,19 @@ func (u *User) UpdateInfo(ctx context.Context, id uint, req UserUpdateInfoReq) e
 		"updated_at": time.Now(),
 	}
 
+	if user.Email == "" && req.Email != "" {
+		exist, err := u.repoUser.Exist(ctx, repo.QueryWithEqual("email", req.Email))
+		if err != nil {
+			return err
+		}
+
+		if exist {
+			return errors.New("email already used")
+		}
+
+		updateM["email"] = req.Email
+	}
+
 	if avatarPath != "" {
 		updateM["avatar"] = avatarPath
 	}
@@ -193,10 +230,16 @@ func (u *User) UpdateInfo(ctx context.Context, id uint, req UserUpdateInfoReq) e
 	}
 
 	// 内置用户不能修改密码，现在能登录的内置用户只有 admin
-	if !user.Builtin && req.Password != "" && req.OldPassword != "" {
-		err = u.checkPassword(req.OldPassword, user.Password)
-		if err != nil {
-			return err
+	if !user.Builtin && req.Password != "" {
+		if user.Password != "" {
+			if req.OldPassword == "" {
+				return errors.New("empty old password")
+			}
+
+			err = u.checkPassword(req.OldPassword, user.Password)
+			if err != nil {
+				return err
+			}
 		}
 
 		hashPass, err := u.convertPassword(req.Password)
@@ -263,7 +306,7 @@ func (u *User) Delete(ctx context.Context, id uint) error {
 		return errors.New("内置用户无法删除")
 	}
 
-	err = u.repoUser.Delete(ctx, repo.QueryWithEqual("id", id))
+	err = u.repoUser.DeleteByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -422,7 +465,8 @@ func (u *User) Logout(ctx context.Context, uid uint) error {
 }
 
 type LoginThirdURLReq struct {
-	Type model.AuthType `form:"type" binding:"required"`
+	Type     model.AuthType `form:"type" binding:"required"`
+	Redirect string         `form:"redirect"`
 }
 
 func (u *User) LoginThirdURL(ctx context.Context, state string, req LoginThirdURLReq) (string, error) {
@@ -453,12 +497,17 @@ func (u *User) LoginOIDCCallback(ctx context.Context, req LoginOIDCCallbackReq) 
 		return "", errors.New("oidc login disabled")
 	}
 
+	org, err := u.repoOrg.GetBuiltin(ctx)
+	if err != nil {
+		return "", err
+	}
+
 	user, err := u.authMgmt.User(ctx, model.AuthTypeOIDC, req.Code)
 	if err != nil {
 		return "", err
 	}
 
-	dbUser, err := u.repoUser.CreateThird(ctx, user)
+	dbUser, err := u.repoUser.CreateThird(ctx, org.ID, user)
 	if err != nil {
 		return "", err
 	}
