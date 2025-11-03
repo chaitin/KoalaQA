@@ -309,6 +309,7 @@ func (d *discussionAuth) RevokeCommentLike(ctx *context.Context) {
 // @Description tab complete
 // @Tags discussion
 // @Accept json
+// @Param req body svc.DiscussionCompeletReq true "req params"
 // @Produce json
 // @Success 200 {object} context.Response{data=string}
 // @Router /discussion/complete [post]
@@ -334,6 +335,7 @@ func (d *discussionAuth) Complete(ctx *context.Context) {
 // @Description resolve feedback
 // @Tags discussion
 // @Accept json
+// @Param req body svc.ResolveFeedbackReq true "req params"
 // @Produce json
 // @Param disc_id path string true "disc_id"
 // @Success 200 {object} context.Response

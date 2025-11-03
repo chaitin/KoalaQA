@@ -3361,6 +3361,17 @@ const docTemplate = `{
                     "discussion"
                 ],
                 "summary": "tab complete",
+                "parameters": [
+                    {
+                        "description": "req params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.DiscussionCompeletReq"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -3937,6 +3948,15 @@ const docTemplate = `{
                 ],
                 "summary": "resolve feedback",
                 "parameters": [
+                    {
+                        "description": "req params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.ResolveFeedbackReq"
+                        }
+                    },
                     {
                         "type": "string",
                         "description": "disc_id",
@@ -5556,6 +5576,17 @@ const docTemplate = `{
                 }
             }
         },
+        "svc.DiscussionCompeletReq": {
+            "type": "object",
+            "properties": {
+                "prefix": {
+                    "type": "string"
+                },
+                "suffix": {
+                    "type": "string"
+                }
+            }
+        },
         "svc.DiscussionCreateReq": {
             "type": "object",
             "required": [
@@ -6185,6 +6216,14 @@ const docTemplate = `{
             "properties": {
                 "text": {
                     "type": "string"
+                }
+            }
+        },
+        "svc.ResolveFeedbackReq": {
+            "type": "object",
+            "properties": {
+                "resolve": {
+                    "type": "boolean"
                 }
             }
         },
