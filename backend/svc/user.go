@@ -452,7 +452,8 @@ func (u *User) Logout(ctx context.Context, uid uint) error {
 }
 
 type LoginThirdURLReq struct {
-	Type model.AuthType `form:"type" binding:"required"`
+	Type     model.AuthType `form:"type" binding:"required"`
+	Redirect string         `form:"redirect"`
 }
 
 func (u *User) LoginThirdURL(ctx context.Context, state string, req LoginThirdURLReq) (string, error) {
@@ -465,7 +466,7 @@ func (u *User) LoginThirdURL(ctx context.Context, state string, req LoginThirdUR
 		return "", errors.New("third login disabled")
 	}
 
-	return u.authMgmt.AuthURL(ctx, req.Type, state)
+	return u.authMgmt.AuthURL(ctx, req.Type, state, req.Redirect)
 }
 
 type LoginOIDCCallbackReq struct {
@@ -483,12 +484,17 @@ func (u *User) LoginOIDCCallback(ctx context.Context, req LoginOIDCCallbackReq) 
 		return "", errors.New("oidc login disabled")
 	}
 
+	org, err := u.repoOrg.GetBuiltin(ctx)
+	if err != nil {
+		return "", err
+	}
+
 	user, err := u.authMgmt.User(ctx, model.AuthTypeOIDC, req.Code)
 	if err != nil {
 		return "", err
 	}
 
-	dbUser, err := u.repoUser.CreateThird(ctx, user)
+	dbUser, err := u.repoUser.CreateThird(ctx, org.ID, user)
 	if err != nil {
 		return "", err
 	}

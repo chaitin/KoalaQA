@@ -38,9 +38,12 @@ func (u *User) GetByEmail(ctx context.Context, res any, email string) error {
 	return u.model(ctx).Where("email = ?", email).First(res).Error
 }
 
-func (u *User) CreateThird(ctx context.Context, user *third_auth.User) (*model.User, error) {
+func (u *User) CreateThird(ctx context.Context, orgID uint, user *third_auth.User) (*model.User, error) {
 	if user.ThirdID == "" {
 		return nil, errors.New("empty user third_id")
+	}
+	if orgID == 0 {
+		return nil, errors.New("invalid org_id")
 	}
 
 	var dbUser model.User
@@ -93,6 +96,7 @@ func (u *User) CreateThird(ctx context.Context, user *third_auth.User) (*model.U
 				Invisible: false,
 				LastLogin: model.Timestamp(time.Now().Unix()),
 				Key:       uuid.NewString(),
+				OrgIDs:    model.Int64Array{int64(orgID)},
 			}
 			txErr = tx.Model(&model.User{}).Create(&dbUser).Error
 			if txErr != nil {

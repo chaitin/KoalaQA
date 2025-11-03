@@ -137,8 +137,13 @@ func (u *user) LoginOIDCCallback(ctx *context.Context) {
 		return
 	}
 
+	redirect := ctx.Query("redirect")
+	if redirect == "" {
+		redirect = "/"
+	}
+
 	ctx.SetCookie("auth_token", token, u.expire, "/", "", false, true)
-	ctx.Redirect(http.StatusFound, "/")
+	ctx.Redirect(http.StatusFound, redirect)
 }
 
 func (u *user) Route(h server.Handler) {
