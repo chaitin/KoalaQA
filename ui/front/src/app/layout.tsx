@@ -4,6 +4,7 @@ import '@/asset/styles/markdown.css'
 import { AuthProvider, CommonProvider } from '@/components'
 import { ForumProvider } from '@/contexts/ForumContext'
 import { AuthConfigProvider } from '@/contexts/AuthConfigContext'
+import { GroupDataProvider } from '@/contexts/GroupDataContext'
 import ServerErrorBoundary from '@/components/ServerErrorBoundary'
 import { safeApiCall, safeLogError } from '@/lib/error-utils'
 import theme from '@/theme'
@@ -175,17 +176,19 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
             <AuthProvider initialUser={user}>
               <ForumProvider initialForums={forums}>
                 <CommonProvider>
-                  <AppRouterCacheProvider>
-                    <ThemeProvider theme={theme}>
-                      <CssBaseline />
-                      <Header brandConfig={brand} initialForums={forums} />
-                      <main id='main-content'>
-                        {props.children}
-                      </main>
-                      <Footer />
-                      <Scroll />
-                    </ThemeProvider>
-                  </AppRouterCacheProvider>
+                  <GroupDataProvider>
+                    <AppRouterCacheProvider>
+                      <ThemeProvider theme={theme}>
+                        <CssBaseline />
+                        <Header brandConfig={brand} initialForums={forums} />
+                        <main id='main-content'>
+                          {props.children}
+                        </main>
+                        <Footer />
+                        <Scroll />
+                      </ThemeProvider>
+                    </AppRouterCacheProvider>
+                  </GroupDataProvider>
                 </CommonProvider>
               </ForumProvider>
             </AuthProvider>

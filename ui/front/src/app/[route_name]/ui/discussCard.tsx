@@ -13,7 +13,7 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 import { LazyImage } from '@/components/optimized'
 import { useContext, useMemo, useCallback, memo } from 'react'
 import Link from 'next/link'
-import EditorContent from '@/components/EditorContent'
+import { MarkDown } from '@/components'
 import { useParams } from 'next/navigation'
 
 // 帖子类型映射函数
@@ -132,18 +132,6 @@ const COMMENT_SX = {
   py: 0.5,
 }
 
-// 将Markdown中的图片替换为[图片]文本
-const replaceImagesWithText = (content: string): string => {
-  if (!content) return content
-
-  // 替换Markdown图片语法: ![alt](url)
-  let processedContent = content.replace(/!\[([^\]]*)\]\([^\)]+\)/g, '[图片]')
-
-  // 替换HTML img标签
-  processedContent = processedContent.replace(/<img[^>]*>/gi, '[图片]')
-
-  return processedContent
-}
 
 const DiscussCard = ({
   data,
@@ -229,7 +217,7 @@ const DiscussCard = ({
           {data?.resolved && (
             <Stack direction='row' alignItems='center' gap={0.5} sx={RESOLVED_STATUS_SX}>
               <CheckCircleIcon sx={{ fontSize: 14 }} />
-              <Typography sx={{ fontSize: 12, fontWeight: 500 }}>已解决</Typography>
+              <Typography sx={{ fontSize: 12, fontWeight: 500 }}>{it.type === ModelDiscussionType.DiscussionTypeFeedback ? '已关闭' : '已解决'}</Typography>
             </Stack>
           )}
         </Stack>
@@ -257,11 +245,11 @@ const DiscussCard = ({
           </Typography>
         </Stack>
       </Stack>
-      <EditorContent
+      <MarkDown
         content={
           it.type === ModelDiscussionType.DiscussionTypeBlog
             ? (it.summary || '')
-            : replaceImagesWithText(it.content || '')
+            : (it.content || '')
         }
         truncateLength={100}
         sx={EDITOR_SX}
@@ -483,11 +471,11 @@ const DiscussCardMobileComponent = ({
           </Stack>
         </Stack>
       </Stack>
-      <EditorContent
+      <MarkDown
         content={
           it.type === ModelDiscussionType.DiscussionTypeBlog
             ? (it.summary || '')
-            : replaceImagesWithText(it.content || '')
+            : (it.content || '')
         }
         truncateLength={60}
         sx={EDITOR_SX}

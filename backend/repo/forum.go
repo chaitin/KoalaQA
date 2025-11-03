@@ -111,14 +111,14 @@ func (f *Forum) UpdateWithGroup(ctx context.Context, forums []model.ForumInfo) e
 				Name:      forum.Name,
 				RouteName: forum.RouteName,
 				Index:     forum.Index,
-				GroupIDs:  model.Int64Array(forum.GroupIDs),
+				Groups:    forum.Groups,
 				DatasetID: datasetID,
 			})
 		}
 
 		err := tx.Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "id"}},
-			DoUpdates: clause.AssignmentColumns([]string{"name", "route_name", "index", "group_ids", "dataset_id"}),
+			DoUpdates: clause.AssignmentColumns([]string{"name", "route_name", "index", "groups", "dataset_id"}),
 		}).CreateInBatches(data, 1000).Error
 		if err != nil {
 			return err

@@ -17,10 +17,11 @@ import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Autocomplete, Box, Chip, FormHelperText, Stack, styled, TextField } from '@mui/material'
 import { useParams } from 'next/navigation'
-import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useRef, useState, useMemo } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import z from 'zod'
 import { CommonContext } from './commonProvider'
+import { useGroupData } from '@/contexts/GroupDataContext'
 
 export const Tag = styled(Chip)({
   borderRadius: '3px',
@@ -63,6 +64,7 @@ interface ReleaseModalProps {
   initialTitle?: string
   type?: 'qa' | 'feedback' | 'blog'
   initialContent?: string
+  forumInfo?: any // ModelForumInfo
   showContentEditor?: boolean
   id?: string
 }
@@ -107,6 +109,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
   initialContent,
   id,
   showContentEditor = true,
+  forumInfo,
 }) => {
   const {
     control,
@@ -121,13 +124,24 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
   })
   const [loading, setLoading] = useState(false)
   const [groupValidationError, setGroupValidationError] = useState<string>('')
-  const { groups } = useContext(CommonContext)
+  const { getFilteredGroups } = useGroupData()
+
+  // 根据当前类型从 forumInfo.groups 中筛选对应的分类
+  const currentType = type as 'qa' | 'feedback' | 'blog'
+  
+  // 使用 useMemo 缓存过滤后的分组数据
+  const groups = useMemo(() => {
+    return getFilteredGroups(undefined, forumInfo, currentType)
+  }, [forumInfo, currentType, getFilteredGroups])
+  
   const router = useRouterWithRouteName()
   const routeName = useParams()?.route_name as string
   const forumId = useForumId()
 
   // 获取默认选中的分类ID（所有分类的第一个子项）
-  const getDefaultGroupIds = useCallback(() => {
+  // 使用 useMemo 直接计算默认值，避免作为回调函数
+  // 使用 groups.origin.length 和 groups.origin.map 来稳定依赖项
+  const defaultGroupIds = useMemo(() => {
     if (!groups.origin || groups.origin.length === 0) return []
     const defaultIds: number[] = []
 
@@ -138,7 +152,11 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
     })
 
     return defaultIds
-  }, [groups.origin])
+  }, [
+    groups.origin.length,
+    // 使用 map 生成稳定的字符串来比较
+    groups.origin.map(g => `${g.id}-${g.items?.[0]?.id || ''}`).join(','),
+  ])
 
   const onSubmit = handleSubmit(async (params) => {
     // 自定义验证：确保每个分类下至少选择一个子选项
@@ -166,7 +184,16 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
     }
   })
 
+  // 使用 useRef 存储上一次的 open 状态，避免重复调用 reset
+  const prevOpenRef = useRef(open)
+  
   useEffect(() => {
+    // 只在 open 状态真正变化时才执行
+    if (prevOpenRef.current === open) {
+      return
+    }
+    prevOpenRef.current = open
+    
     if (!open) {
       // 关闭弹窗时清空所有表单数据和验证错误
       reset({
@@ -178,7 +205,6 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
       setGroupValidationError('')
     } else if (status === 'create' && initialTitle) {
       // 当打开创建模态框且有初始标题时，设置标题并清空其他字段
-      const defaultGroupIds = getDefaultGroupIds()
       reset({
         title: initialTitle,
         content: initialContent || '',
@@ -187,7 +213,6 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
       })
     } else if (status === 'create') {
       // 当打开创建模态框但没有初始标题时，清空所有字段
-      const defaultGroupIds = getDefaultGroupIds()
       reset({
         content: initialContent || '',
         group_ids: defaultGroupIds,
@@ -195,7 +220,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
         title: '',
       })
     }
-  }, [open, initialTitle, initialContent, status, reset, getDefaultGroupIds])
+  }, [open, initialTitle, initialContent, status, reset, defaultGroupIds])
 
   useEffect(() => {
     if (status === 'edit' && data && open) {

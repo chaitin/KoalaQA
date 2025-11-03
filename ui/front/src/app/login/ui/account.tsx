@@ -97,9 +97,6 @@ const Account = ({ isChecked, passwordConfig }: { isChecked: boolean; passwordCo
           router.replace(targetUrl)
         }
       })
-      .catch((e) => {
-        Message.error(e || '登录失败')
-      })
   }
 
   return (

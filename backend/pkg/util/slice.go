@@ -14,3 +14,21 @@ func RemoveDuplicate[T comparable](s []T) []T {
 	}
 	return newS
 }
+
+func Intersect[T comparable](a, b []T) []T {
+	m := make(map[T]bool)
+	for _, v := range a {
+		m[v] = true
+	}
+
+	res := make([]T, 0)
+	for _, v := range b {
+		if !m[v] {
+			continue
+		}
+
+		res = append(res, v)
+	}
+
+	return res
+}

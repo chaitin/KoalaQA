@@ -1,5 +1,6 @@
 'use client'
-import { ModelDiscussionListItem } from '@/api/types'
+import { getDiscussion } from '@/api'
+import { ModelDiscussionListItem, GetDiscussionParams } from '@/api/types'
 import DiscussCard, { DiscussCardMobile } from '@/app/[route_name]/ui/discussCard'
 import SearchIcon from '@mui/icons-material/Search'
 import {
@@ -17,16 +18,13 @@ import {
   useTheme,
 } from '@mui/material'
 import Image from 'next/image'
-import { Fragment, useEffect, useRef } from 'react'
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 
 interface SearchResultModalProps {
   open: boolean
   onClose: () => void
-  searchQuery: string
-  searchResults: ModelDiscussionListItem[]
-  loading?: boolean
-  onSearchChange?: (query: string) => void
-  onSearch?: (query: string) => void
+  forumId?: number
+  initialQuery?: string
   onAsk?: () => void
   onFeedback?: () => void
   onArticle?: () => void
@@ -35,11 +33,8 @@ interface SearchResultModalProps {
 export const SearchResultModal = ({
   open,
   onClose,
-  searchQuery,
-  searchResults,
-  loading = false,
-  onSearchChange,
-  onSearch,
+  forumId,
+  initialQuery = '',
   onAsk,
   onFeedback,
   onArticle,
@@ -47,21 +42,59 @@ export const SearchResultModal = ({
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const searchInputRef = useRef<HTMLInputElement>(null)
+  
+  // 内部状态管理
+  const [searchQuery, setSearchQuery] = useState(initialQuery)
+  const [searchResults, setSearchResults] = useState<ModelDiscussionListItem[]>([])
+  const [loading, setLoading] = useState(false)
 
-  // 当弹窗打开时，聚焦到搜索框
+  // 当弹窗打开时，聚焦到搜索框并初始化查询
   useEffect(() => {
-    if (open && searchInputRef.current) {
-      setTimeout(() => {
-        searchInputRef.current?.focus()
-      }, 100)
+    if (open) {
+      setSearchQuery(initialQuery)
+      if (searchInputRef.current) {
+        setTimeout(() => {
+          searchInputRef.current?.focus()
+        }, 100)
+      }
+      // 如果有初始查询，自动执行搜索
+      if (initialQuery.trim()) {
+        performSearch(initialQuery.trim())
+      }
+    } else {
+      // 关闭时清空状态
+      setSearchQuery('')
+      setSearchResults([])
     }
-  }, [open])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialQuery])
+
+  // 执行搜索的函数
+  const performSearch = useCallback(async (query: string) => {
+    if (!query.trim()) return
+    
+    setLoading(true)
+    try {
+      const params: GetDiscussionParams = {
+        forum_id: forumId,
+        keyword: query.trim(),
+      }
+      
+      const result = await getDiscussion(params)
+      setSearchResults(result.items || [])
+    } catch (error) {
+      console.error('搜索失败:', error)
+      setSearchResults([])
+    } finally {
+      setLoading(false)
+    }
+  }, [forumId])
 
   // 处理键盘事件
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault()
-      onSearch?.(searchQuery)
+      performSearch(searchQuery)
     } else if (e.key === 'Escape') {
       onClose()
     }
@@ -88,7 +121,7 @@ export const SearchResultModal = ({
           <OutlinedInput
             ref={searchInputRef}
             value={searchQuery}
-            onChange={(e) => onSearchChange?.(e.target.value)}
+            onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder='输入任意内容，使用 AI 搜索'
             startAdornment={
@@ -216,14 +249,12 @@ export const SearchResultModal = ({
                     label: '👉发布文章',
                     onClick: onArticle,
                     variant: 'outlined' as const,
-                    disabled: true,
                   },
                 ].map((button, index) => (
                   <Button
                     key={index}
                     variant={'outlined'}
                     onClick={button.onClick}
-                    disabled={button.disabled}
                     sx={{
                       color: 'rgba(0,0,0,0.6)',
                       borderRadius: 2,

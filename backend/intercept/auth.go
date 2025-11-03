@@ -88,11 +88,12 @@ func authUser(ctx *context.Context, freeAuth bool, j *jwt.Generator, user *svc.U
 			UID: item.ID,
 			Key: item.Key,
 		},
-		OrgIDs:   item.OrgIDs,
-		Role:     item.Role,
-		Email:    item.Email,
-		Username: item.Name,
-		Avatar:   item.Avatar,
-		Builtin:  item.Builtin,
+		OrgIDs:     item.OrgIDs,
+		Role:       item.Role,
+		Email:      item.Email,
+		Username:   item.Name,
+		Avatar:     item.Avatar,
+		Builtin:    item.Builtin,
+		NoPassword: item.Password == "",
 	}, nil
 }

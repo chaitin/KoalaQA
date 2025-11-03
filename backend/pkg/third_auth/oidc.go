@@ -56,6 +56,10 @@ func (o *oidc) Check(ctx context.Context) error {
 func (o *oidc) AuthURL(ctx context.Context, state string) (string, error) {
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, util.HTTPClient)
 
+	if o.callbackURL == "" {
+		return "", errors.New("empty callback addr")
+	}
+
 	provider, err := oidcAuth.NewProvider(ctx, o.cfg.URL)
 	if err != nil {
 		return "", err
