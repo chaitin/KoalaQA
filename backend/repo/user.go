@@ -23,6 +23,9 @@ func (u *User) ListWithOrg(ctx context.Context, res any, queryFuncs ...QueryOptF
 }
 
 func (u *User) HasForumPermission(ctx context.Context, userID, forumID uint) (bool, error) {
+	if userID == 0 {
+		return true, nil
+	}
 	var exist bool
 	err := u.model(ctx).Raw("SELECT EXISTS (?)", u.model(ctx).Where("id = ?", userID).
 		Where("org_ids && (SELECT ARRAY_AGG(id) FROM orgs WHERE ? =ANY(forum_ids))", forumID)).
