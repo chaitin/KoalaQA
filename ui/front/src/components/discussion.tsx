@@ -21,6 +21,7 @@ import React, { useCallback, useContext, useEffect, useRef, useState, useMemo } 
 import { Controller, useForm } from 'react-hook-form'
 import z from 'zod'
 import { CommonContext } from './commonProvider'
+import { useGroupData } from '@/contexts/GroupDataContext'
 
 export const Tag = styled(Chip)({
   borderRadius: '3px',
@@ -123,63 +124,15 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
   })
   const [loading, setLoading] = useState(false)
   const [groupValidationError, setGroupValidationError] = useState<string>('')
-  const { groups: contextGroups } = useContext(CommonContext)
+  const { getFilteredGroups } = useGroupData()
 
   // 根据当前类型从 forumInfo.groups 中筛选对应的分类
   const currentType = type as 'qa' | 'feedback' | 'blog'
   
-  // 稳定化 forumInfo.groups 的字符串表示
-  const forumGroupsStr = useMemo(() => {
-    return forumInfo?.groups ? JSON.stringify(forumInfo.groups) : ''
-  }, [forumInfo?.groups])
-  
-  // 稳定化 contextGroups 的字符串表示
-  const contextGroupsStr = useMemo(() => {
-    return JSON.stringify({
-      origin: contextGroups.origin,
-      flat: contextGroups.flat,
-    })
-  }, [contextGroups.origin.length, contextGroups.flat.length])
-  
-  // 使用 useMemo 缓存 groups，避免每次渲染都创建新对象
-  const groups = React.useMemo(() => {
-    let forumGroupIds: number[] = []
-    if (forumInfo?.groups) {
-      if (Array.isArray(forumInfo.groups)) {
-        const matchedGroup = forumInfo.groups.find((g: any) => g.type === currentType)
-        forumGroupIds = matchedGroup?.group_ids || []
-      } else if (typeof forumInfo.groups === 'object') {
-        const groupsArray = Object.values(forumInfo.groups) as any[]
-        const matchedGroup = groupsArray.find((g: any) => g?.type === currentType)
-        forumGroupIds = matchedGroup?.group_ids || []
-      }
-    }
-
-    // 如果 forumInfo.groups 存在且不为空，则根据 group_ids 过滤分类组
-    // forumGroupIds 是分类组的 id（groups.origin 中每个 group 的 id），不是单个分类项的 id
-    if (forumGroupIds.length > 0) {
-      const filteredOrigin = contextGroups.origin.filter((group) => {
-        // 只保留 group.id 在 forumGroupIds 中的分类组
-        return forumGroupIds.includes(group.id || -1)
-      })
-      
-      // flat 需要根据筛选后的 origin 重新计算，包含这些分类组下的所有分类项
-      const filteredFlat = filteredOrigin.reduce((acc, group) => {
-        if (group.items && group.items.length > 0) {
-          acc.push(...group.items)
-        }
-        return acc
-      }, [] as ModelGroupItemInfo[])
-      
-      return {
-        origin: filteredOrigin,
-        flat: filteredFlat,
-      }
-    }
-    
-    return contextGroups
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [forumGroupsStr, currentType, contextGroupsStr])
+  // 使用 useMemo 缓存过滤后的分组数据
+  const groups = useMemo(() => {
+    return getFilteredGroups(undefined, forumInfo, currentType)
+  }, [forumInfo, currentType, getFilteredGroups])
   
   const router = useRouterWithRouteName()
   const routeName = useParams()?.route_name as string

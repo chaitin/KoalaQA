@@ -17,6 +17,7 @@ import Modal from '@/components/modal'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
 import { formatNumber } from '@/lib/utils'
 // import { generateCacheKey, clearCache } from '@/lib/api-cache'
+import { useForum } from '@/contexts/ForumContext'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import ThumbUpAltOutlinedIcon from '@mui/icons-material/ThumbUpAltOutlined'
 import { Box, Button, Divider, IconButton, Menu, MenuItem, Stack, Typography } from '@mui/material'
@@ -25,7 +26,7 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { useParams, useRouter } from 'next/navigation'
-import { useContext, useRef, useState, useEffect } from 'react'
+import { useContext, useRef, useState, useEffect, useMemo } from 'react'
 import { CheckCircleIcon } from '@/utils/mui-imports'
 
 // 添加CSS动画样式
@@ -64,6 +65,21 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const { user } = useContext(AuthContext)
   const [releaseVisible, { setFalse: releaseClose, setTrue: releaseOpen }] = useBoolean(false)
   const router = useRouter()
+  const { forums } = useForum()
+  const { id, route_name }: { id: string; route_name?: string } = (useParams() as any) || { id: '' }
+
+  // 根据 route_name 获取对应的 forumInfo
+  const forumInfo = useMemo(() => {
+    if (!route_name || !forums || forums.length === 0) return null
+    return forums.find(f => f.route_name === route_name) || null
+  }, [route_name, forums])
+
+  // 根据 data.type 转换为 ReleaseModal 需要的 type
+  const modalType = useMemo(() => {
+    if (data.type === ModelDiscussionType.DiscussionTypeQA) return 'qa'
+    if (data.type === ModelDiscussionType.DiscussionTypeFeedback) return 'feedback'
+    return 'blog'
+  }, [data.type])
 
   // 安全地注入样式，避免水合失败
   useEffect(() => {
@@ -78,7 +94,6 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
       }
     }
   }, [])
-  const { id, route_name }: { id: string; route_name?: string } = (useParams() as any) || { id: '' }
   const { checkAuth } = useAuthCheck()
   const anchorElRef = useRef(null)
   const editorRef = useRef<EditorWrapRef>(null)
@@ -163,6 +178,8 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         id={id}
         onClose={releaseClose}
         selectedTags={[]}
+        type={modalType}
+        forumInfo={forumInfo}
         onOk={() => {
           releaseClose()
           router.refresh()
@@ -177,6 +194,10 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           'aria-labelledby': 'basic-button',
         }}
       >
+        {data.type === ModelDiscussionType.DiscussionTypeFeedback &&
+          [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
+            user.role || ModelUserRole.UserRoleUnknown,
+          ) && <MenuItem onClick={handleToggleFeedback}>{data.resolved ? '开启反馈' : '关闭反馈'}</MenuItem>}
         <MenuItem
           onClick={() => {
             if (data.type === ModelDiscussionType.DiscussionTypeBlog) {
@@ -195,7 +216,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
               ? '反馈'
               : '文章'}
         </MenuItem>
-        <MenuItem onClick={handleDelete}>
+        <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
           删除
           {data.type === ModelDiscussionType.DiscussionTypeQA
             ? '问题'
@@ -203,10 +224,6 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
               ? '反馈'
               : '文章'}
         </MenuItem>
-        {data.type === ModelDiscussionType.DiscussionTypeFeedback &&
-          [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
-            user.role || ModelUserRole.UserRoleUnknown,
-          ) && <MenuItem onClick={handleToggleFeedback}>{data.resolved ? '开启反馈' : '关闭反馈'}</MenuItem>}
       </Menu>
       <Stack
         direction='row'

@@ -32,6 +32,12 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
   const [backHref, setBackHref] = useState('/admin/ai')
   const [searchModalOpen, { setTrue: openSearchModal, setFalse: closeSearchModal }] = useBoolean(false)
   const [searchInputValue, setSearchInputValue] = useState('')
+
+  // 关闭搜索弹窗时清空输入框
+  const handleCloseSearchModal = useCallback(() => {
+    closeSearchModal()
+    setSearchInputValue('')
+  }, [closeSearchModal])
   const [showHeaderSearch, setShowHeaderSearch] = useState(false)
 
   // 使用新的 useAuthConfig hook
@@ -206,9 +212,25 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
     setSearchInputValue('')
   }
 
+  // 处理搜索 - 当输入内容后按回车时
+  const handleSearch = useCallback(() => {
+    const trimmedSearch = searchInputValue && searchInputValue.trim() ? searchInputValue.trim() : ''
+    if (trimmedSearch) {
+      // 打开搜索弹窗，SearchResultModal 会自动执行搜索
+      openSearchModal()
+    }
+  }, [searchInputValue, openSearchModal])
+
+  // 处理键盘事件 - 回车时触发搜索
+  const onInputSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch()
+    }
+  }
+
   // 处理提问、反馈、文章操作
   const handleAsk = useCallback(() => {
-    closeSearchModal()
+    handleCloseSearchModal()
     if (route_name) {
       router.push(`/${route_name}?type=qa`)
     } else if (forums.length > 0) {
@@ -216,10 +238,10 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
       const routePath = firstForum.route_name ? `/${firstForum.route_name}?type=qa` : `/${firstForum.id}?type=qa`
       router.push(routePath)
     }
-  }, [closeSearchModal, route_name, forums, router])
+  }, [handleCloseSearchModal, route_name, forums, router])
 
   const handleFeedback = useCallback(() => {
-    closeSearchModal()
+    handleCloseSearchModal()
     if (route_name) {
       router.push(`/${route_name}?type=feedback`)
     } else if (forums.length > 0) {
@@ -229,10 +251,10 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
         : `/${firstForum.id}?type=feedback`
       router.push(routePath)
     }
-  }, [closeSearchModal, route_name, forums, router])
+  }, [handleCloseSearchModal, route_name, forums, router])
 
   const handleArticle = useCallback(() => {
-    closeSearchModal()
+    handleCloseSearchModal()
     if (route_name) {
       router.push(`/${route_name}/edit`)
     } else if (forums.length > 0) {
@@ -240,7 +262,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
       const routePath = firstForum.route_name ? `/${firstForum.route_name}/edit` : `/${firstForum.id}/edit`
       router.push(routePath)
     }
-  }, [closeSearchModal, route_name, forums, router])
+  }, [handleCloseSearchModal, route_name, forums, router])
 
   return (
     <AppBar
@@ -340,14 +362,10 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                 },
               },
             }}
-            readOnly
-            value=''
-            onFocus={(e) => {
-              e.target.blur()
-              handleSearchClick()
-            }}
-            onClick={handleSearchClick}
-            placeholder='搜索...'
+            value={searchInputValue}
+            onChange={(e) => setSearchInputValue(e.target.value)}
+            onKeyDown={onInputSearch}
+            placeholder='输入任意内容，使用 AI 搜索'
             startAdornment={
               <InputAdornment position='start'>
                 <SearchIcon sx={{ color: 'rgba(0,0,0,0.4)', fontSize: 20 }} />
@@ -412,7 +430,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
       {/* 搜索结果弹窗 */}
       <SearchResultModal
         open={searchModalOpen}
-        onClose={closeSearchModal}
+        onClose={handleCloseSearchModal}
         forumId={currentForumId}
         initialQuery={searchInputValue}
         onAsk={handleAsk}

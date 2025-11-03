@@ -20,9 +20,10 @@ import { Box, Button, CircularProgress, Divider, InputAdornment, OutlinedInput, 
 import { useBoolean } from 'ahooks'
 import { useSearchParams, useParams, useRouter } from 'next/navigation'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
-import React, { useCallback, useContext, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useRef, useState, useMemo } from 'react'
 import DiscussCard, { DiscussCardMobile } from './discussCard'
 import SearchResultModal from '@/components/SearchResultModal'
+import { useGroupData } from '@/contexts/GroupDataContext'
 
 export type Status = 'hot' | 'new' | 'mine'
 
@@ -59,115 +60,16 @@ const Article = ({
   const nextRouter = useRouter()
   const { user } = useContext(AuthContext)
   const { checkAuth } = useAuthCheck()
-  const { groups: contextGroups, groupsLoading } = useContext(CommonContext)
+  const { groupsLoading } = useContext(CommonContext)
+  const { getFilteredGroups } = useGroupData()
 
   // 根据当前类型从 forumInfo.groups 中筛选对应的分类
   const currentType = (type || 'qa') as 'qa' | 'feedback' | 'blog'
   
-  // 使用 useState 存储计算后的 groups，避免每次渲染都重新计算
-  const [groups, setGroups] = useState<{
-    origin: (ModelGroupWithItem & {
-      items?: ModelGroupItemInfo[]
-    })[]
-    flat: ModelGroupItemInfo[]
-  }>(() => {
-    // 初始值计算
-    const rawGroups = groupsData
-      ? {
-          origin: groupsData.items ?? [],
-          flat: (groupsData.items?.filter((i) => !!i.items) || []).reduce((acc, item) => {
-            acc.push(...(item.items || []))
-            return acc
-          }, [] as ModelGroupItemInfo[]),
-        }
-      : contextGroups
-
-    let forumGroupIds: number[] = []
-    if (forumInfo?.groups) {
-      const matchedGroup = Array.isArray(forumInfo.groups)
-        ? forumInfo.groups.find((g: any) => g?.type === currentType)
-        : Object.values(forumInfo.groups).find((g: any) => g?.type === currentType)
-      forumGroupIds = matchedGroup?.group_ids || []
-    }
-
-    if (forumGroupIds.length === 0) {
-      return rawGroups
-    }
-
-    const filteredOrigin = rawGroups.origin.filter((group) => {
-      return forumGroupIds.includes(group.id || -1)
-    })
-
-    const filteredFlat = filteredOrigin.reduce((acc, group) => {
-      if (group.items && group.items.length > 0) {
-        acc.push(...group.items)
-      }
-      return acc
-    }, [] as ModelGroupItemInfo[])
-
-    return {
-      origin: filteredOrigin,
-      flat: filteredFlat,
-    }
-  })
-
-  // 使用 useRef 存储上一次的字符串表示，用于比较
-  const prevDepsRef = useRef<string>('')
-  
-  // 使用 useEffect 在依赖项真正变化时更新 groups
-  useEffect(() => {
-    const rawGroups = groupsData
-      ? {
-          origin: groupsData.items ?? [],
-          flat: (groupsData.items?.filter((i) => !!i.items) || []).reduce((acc, item) => {
-            acc.push(...(item.items || []))
-            return acc
-          }, [] as ModelGroupItemInfo[]),
-        }
-      : contextGroups
-
-    let forumGroupIds: number[] = []
-    if (forumInfo?.groups) {
-      const matchedGroup = Array.isArray(forumInfo.groups)
-        ? forumInfo.groups.find((g: any) => g?.type === currentType)
-        : Object.values(forumInfo.groups).find((g: any) => g?.type === currentType)
-      forumGroupIds = matchedGroup?.group_ids || []
-    }
-
-    // 创建依赖项的字符串表示
-    const depsStr = JSON.stringify({
-      groupsDataItems: groupsData?.items,
-      contextGroups: contextGroups,
-      forumGroups: forumInfo?.groups,
-      currentType,
-    })
-
-    // 只在依赖项真正变化时更新
-    if (depsStr !== prevDepsRef.current) {
-      prevDepsRef.current = depsStr
-
-      if (forumGroupIds.length === 0) {
-        setGroups(rawGroups)
-        return
-      }
-
-      const filteredOrigin = rawGroups.origin.filter((group) => {
-        return forumGroupIds.includes(group.id || -1)
-      })
-
-      const filteredFlat = filteredOrigin.reduce((acc, group) => {
-        if (group.items && group.items.length > 0) {
-          acc.push(...group.items)
-        }
-        return acc
-      }, [] as ModelGroupItemInfo[])
-
-      setGroups({
-        origin: filteredOrigin,
-        flat: filteredFlat,
-      })
-    }
-  }, [groupsData, contextGroups, forumInfo?.groups, currentType])
+  // 使用 useMemo 缓存过滤后的分组数据
+  const groups = useMemo(() => {
+    return getFilteredGroups(groupsData, forumInfo, currentType)
+  }, [groupsData, forumInfo, currentType, getFilteredGroups])
 
   const [releaseModalVisible, { setTrue: releaseModalOpen, setFalse: releaseModalClose }] = useBoolean(false)
   const status = searchParams?.get('sort') || 'hot'

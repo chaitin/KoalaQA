@@ -212,7 +212,7 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
       org_ids: joinOrgSelectedOrgs,
     })
       .then(() => {
-        message.success('批量加入组织成功');
+        message.success('批量编辑组织成功');
         setJoinOrgModalOpen(false);
         setJoinOrgSelectedOrgs([]);
         setSelectedRowKeys([]);
@@ -223,8 +223,8 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
         });
       })
       .catch(err => {
-        console.error('批量加入组织失败:', err);
-        message.error('批量加入组织失败');
+        console.error('批量编辑组织失败:', err);
+        message.error('批量编辑组织失败');
       });
   };
 
@@ -603,14 +603,14 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
         </FormControl>
       </Modal>
 
-      {/* 批量加入组织弹窗 */}
+      {/* 批量编辑组织弹窗 */}
       <Modal
         open={joinOrgModalOpen}
         onCancel={() => {
           setJoinOrgModalOpen(false);
           setJoinOrgSelectedOrgs([]);
         }}
-        title="加入组织"
+        title="编辑组织"
         onOk={handleBatchJoinOrg}
         sx={{
           py: 2,

@@ -10,6 +10,7 @@ import 'dayjs/locale/zh-cn'
 import ChangePasswordModal from './ChangePasswordModal'
 import BindEmailModal from './BindEmailModal'
 import UserAvatar from '@/components/UserAvatar'
+import { Message } from '@/components'
 
 dayjs.locale('zh-cn')
 
@@ -90,7 +91,6 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
       setIsEditingName(false)
     } catch (error) {
       console.error('更新用户名失败:', error)
-      alert('更新用户名失败，请重试')
     }
   }
 
@@ -122,7 +122,6 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
       await fetchUser()
     } catch (error) {
       console.error('头像上传失败:', error)
-      alert('头像上传失败，请重试')
     } finally {
       setIsUploading(false)
     }
@@ -131,7 +130,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
   const handleChangePasswordClick = () => {
     // 如果用户没有绑定邮箱，提示先绑定邮箱
     if (!user?.email) {
-      alert('请先绑定邮箱后再修改密码')
+      Message.warning('请先绑定邮箱后再修改密码')
       setBindEmailModalOpen(true)
       return
     }

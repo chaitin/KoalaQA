@@ -6,13 +6,17 @@ import { Card } from '@/components'
 import { ReleaseModal } from '@/components/discussion'
 import EditorWrap, { EditorWrapRef } from '@/components/editor/edit/Wrap'
 import Toc from '@/components/Toc'
+import { useForum } from '@/contexts/ForumContext'
 import { Box, Button, Stack, TextField } from '@mui/material'
-import { useSearchParams } from 'next/navigation'
+import { useParams, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
 export default function EditPage() {
   const [headings, setHeadings] = useState<any[]>([])
   const params = useSearchParams()
+  const routeParams = useParams()
+  const routeName = routeParams?.route_name as string
+  const { forums } = useForum()
   const queryId = useMemo(() => params.get('id') || params.get('discId') || undefined, [params]) as string | undefined
   const [data, setData] = useState<ModelDiscussionDetail>({
     title: '',
@@ -24,6 +28,20 @@ export default function EditPage() {
   const [titleTouched, setTitleTouched] = useState(false)
   const [modalContent, setModalContent] = useState('')
   const editorRef = useRef<EditorWrapRef>(null)
+
+  // 根据 route_name 获取对应的 forumInfo
+  const forumInfo = useMemo(() => {
+    if (!routeName || !forums || forums.length === 0) return null
+    return forums.find(f => f.route_name === routeName) || null
+  }, [routeName, forums])
+
+  // 根据 data.type 转换为 ReleaseModal 需要的 type
+  const modalType = useMemo(() => {
+    if (data.type === ModelDiscussionType.DiscussionTypeQA) return 'qa'
+    if (data.type === ModelDiscussionType.DiscussionTypeFeedback) return 'feedback'
+    return 'blog'
+  }, [data.type])
+
   useEffect(() => {
     async function run() {
       if (!queryId) return
@@ -139,7 +157,8 @@ export default function EditPage() {
           data={data}
           id={queryId}
           initialContent={modalContent}
-          type={'blog'}
+          type={modalType}
+          forumInfo={forumInfo}
           showContentEditor={false}
         />
         <Card
