@@ -20,7 +20,7 @@ func (m *fixUserOrg) Migrate(tx *gorm.DB) error {
 		return err
 	}
 
-	return tx.Model(&model.User{}).Where("array_length(org_ids) = ?", 0).Update("org_ids", model.Int64Array{int64(org.ID)}).Error
+	return tx.Model(&model.User{}).Where("array_length(org_ids, 1) = ?", 0).Update("org_ids", model.Int64Array{int64(org.ID)}).Error
 }
 
 func newFixUserOrg() migrator.Migrator {
