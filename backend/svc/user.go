@@ -293,7 +293,7 @@ func (u *User) Delete(ctx context.Context, id uint) error {
 		return errors.New("内置用户无法删除")
 	}
 
-	err = u.repoUser.Delete(ctx, repo.QueryWithEqual("id", id))
+	err = u.repoUser.DeleteByID(ctx, id)
 	if err != nil {
 		return err
 	}

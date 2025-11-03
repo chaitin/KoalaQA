@@ -41,6 +41,22 @@ func (u *User) GetByEmail(ctx context.Context, res any, email string) error {
 	return u.model(ctx).Where("email = ?", email).First(res).Error
 }
 
+func (u *User) DeleteByID(ctx context.Context, userID uint) error {
+	return u.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		err := tx.Model(&model.User{}).Where("id = ?", userID).Delete(nil).Error
+		if err != nil {
+			return err
+		}
+
+		err = tx.Model(&model.UserThird{}).Where("user_id = ?", userID).Delete(nil).Error
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
 func (u *User) CreateThird(ctx context.Context, orgID uint, user *third_auth.User) (*model.User, error) {
 	if user.ThirdID == "" {
 		return nil, errors.New("empty user third_id")
@@ -72,10 +88,17 @@ func (u *User) CreateThird(ctx context.Context, orgID uint, user *third_auth.Use
 
 			txErr = tx.Model(u.m).Where("id = ?", userThird.UserID).First(&dbUser).Error
 			if txErr != nil {
+				if !errors.Is(txErr, database.ErrRecordNotFound) {
+					return txErr
+				}
+
+				txErr = tx.Model(&model.UserThird{}).Where("id = ?", userThird.ID).Delete(nil).Error
+				if txErr != nil {
+					return txErr
+				}
+			} else {
 				return nil
 			}
-
-			return nil
 		}
 
 		createUser := user.Email == ""
