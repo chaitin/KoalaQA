@@ -121,7 +121,7 @@ func (u *userAuth) Notify(ctx *context.Context) {
 	go func() {
 		listRes, e := u.in.SvcNotify.ListNotifyInfo(ctx, ctx.GetUser().UID, svc.ListNotifyInfoReq{
 			Read: &read,
-		})
+		}, "created_at ASC")
 		if e != nil {
 			logger.WithErr(e).Warn("list user failed")
 			return
@@ -240,9 +240,25 @@ func (u *userAuth) ListNotify(ctx *context.Context) {
 		return
 	}
 
-	res, err := u.in.SvcNotify.ListNotifyInfo(ctx, ctx.GetUser().UID, req)
+	res, err := u.in.SvcNotify.ListNotifyInfo(ctx, ctx.GetUser().UID, req, "created_at DESC")
 	if err != nil {
 		ctx.InternalError(err, "list notify failed")
+		return
+	}
+
+	ctx.Success(res)
+}
+
+// GetUnread
+// @Summary get notify message unread num
+// @Tags user
+// @Produce json
+// @Success 200 {object} context.Response{data=int}
+// @Router /user/notify/unread [get]
+func (u *userAuth) GetUnread(ctx *context.Context) {
+	res, err := u.in.SvcNotify.UnreadTotal(ctx, ctx.GetUser().UID)
+	if err != nil {
+		ctx.InternalError(err, "get unread num failed")
 		return
 	}
 
@@ -283,6 +299,7 @@ func (u *userAuth) Route(h server.Handler) {
 	{
 		notifyG := g.Group("/notify")
 		notifyG.GET("", u.Notify)
+		notifyG.GET("/unread", u.GetUnread)
 		notifyG.POST("/read", u.NotifyRead)
 		notifyG.GET("/list", u.ListNotify)
 	}
