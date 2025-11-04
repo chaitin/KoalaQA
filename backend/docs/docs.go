@@ -4460,7 +4460,7 @@ const docTemplate = `{
                                                         "items": {
                                                             "type": "array",
                                                             "items": {
-                                                                "$ref": "#/definitions/model.MessageNotifyInfo"
+                                                                "$ref": "#/definitions/model.MessageNotify"
                                                             }
                                                         }
                                                     }
@@ -5331,9 +5331,12 @@ const docTemplate = `{
                 }
             }
         },
-        "model.MessageNotifyInfo": {
+        "model.MessageNotify": {
             "type": "object",
             "properties": {
+                "created_at": {
+                    "type": "integer"
+                },
                 "discuss_id": {
                     "type": "integer"
                 },
@@ -5361,6 +5364,9 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "read": {
+                    "type": "boolean"
+                },
                 "to_bot": {
                     "type": "boolean"
                 },
@@ -5372,6 +5378,13 @@ const docTemplate = `{
                 },
                 "type": {
                     "$ref": "#/definitions/model.MsgNotifyType"
+                },
+                "updated_at": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "description": "通知到谁，除了发给机器人的信息，user_id 与 to_id 相同",
+                    "type": "integer"
                 }
             }
         },

@@ -24,8 +24,8 @@ type ListNotifyInfoReq struct {
 	Read *bool `form:"read"`
 }
 
-func (mn *MessageNotify) ListNotifyInfo(ctx context.Context, userID uint, req ListNotifyInfoReq, orderBy string) (*model.ListRes[model.MessageNotifyInfo], error) {
-	var res model.ListRes[model.MessageNotifyInfo]
+func (mn *MessageNotify) ListNotifyInfo(ctx context.Context, userID uint, req ListNotifyInfoReq, orderBy string) (*model.ListRes[model.MessageNotify], error) {
+	var res model.ListRes[model.MessageNotify]
 	err := mn.repoMN.List(ctx, &res.Items,
 		repo.QueryWithEqual("user_id", userID),
 		repo.QueryWithEqual("read", req.Read),

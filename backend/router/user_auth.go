@@ -230,7 +230,7 @@ func (u *userAuth) Notify(ctx *context.Context) {
 // @Tags user
 // @Produce json
 // @Param req query svc.ListNotifyInfoReq true "req params"
-// @Success 200 {object} context.Response{data=model.ListRes{items=[]model.MessageNotifyInfo}}
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]model.MessageNotify}}
 // @Router /user/notify/list [get]
 func (u *userAuth) ListNotify(ctx *context.Context) {
 	var req svc.ListNotifyInfoReq
