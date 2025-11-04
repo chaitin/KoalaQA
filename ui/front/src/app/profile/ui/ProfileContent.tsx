@@ -1,18 +1,33 @@
 'use client'
 
-import { ModelUserInfo, ModelUserRole, putUser } from '@/api'
+import {
+  ModelUserInfo,
+  ModelUserRole,
+  putUser,
+} from '@/api'
 import { AuthContext } from '@/components/authProvider'
-import { Box, Button, Card, Container, Divider, Stack, TextField, Typography, IconButton } from '@mui/material'
+import {
+  Box,
+  Button,
+  Card,
+  Container,
+  Divider,
+  Stack,
+  TextField,
+  Typography,
+  IconButton,
+  Tabs,
+  Tab,
+} from '@mui/material'
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera'
 import { useContext, useEffect, useState } from 'react'
-import dayjs from 'dayjs'
-import 'dayjs/locale/zh-cn'
 import ChangePasswordModal from './ChangePasswordModal'
 import BindEmailModal from './BindEmailModal'
 import UserAvatar from '@/components/UserAvatar'
 import { Message } from '@/components'
-
-dayjs.locale('zh-cn')
+import { useSearchParams, usePathname } from 'next/navigation'
+import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
+import NotificationCenter from './NotificationCenter'
 
 const roleConfig = {
   [ModelUserRole.UserRoleUnknown]: {
@@ -69,18 +84,47 @@ function TabPanel(props: TabPanelProps) {
 
 export default function ProfileContent({ initialUser }: ProfileContentProps) {
   const { user, setUser, fetchUser } = useContext(AuthContext)
-  const tabValue = 0
+  const routerWithRouteName = useRouterWithRouteName()
+  const router = routerWithRouteName.router
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
+
+  // 从 URL 参数读取 tab 值，默认为 0
+  const initialTabValue = searchParams?.get('tab') ? parseInt(searchParams.get('tab')!, 10) : 0
+  const [tabValue, setTabValue] = useState(initialTabValue)
   const [isEditingName, setIsEditingName] = useState(false)
   const [editName, setEditName] = useState(user?.username || '')
   const [isUploading, setIsUploading] = useState(false)
   const [changePasswordModalOpen, setChangePasswordModalOpen] = useState(false)
   const [bindEmailModalOpen, setBindEmailModalOpen] = useState(false)
+
   useEffect(() => {
     if (initialUser) {
       setUser(initialUser)
       setEditName(initialUser.username || '')
     }
   }, [initialUser, setUser])
+
+  // 监听 URL 参数变化，同步 tab 值
+  useEffect(() => {
+    const tabFromUrl = searchParams?.get('tab') ? parseInt(searchParams.get('tab')!, 10) : 0
+    setTabValue(tabFromUrl)
+  }, [searchParams])
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue)
+    // 更新 URL 参数
+    const params = new URLSearchParams(searchParams?.toString() || '')
+    if (newValue === 0) {
+      // 如果回到默认 tab，移除参数
+      params.delete('tab')
+    } else {
+      params.set('tab', newValue.toString())
+    }
+    const queryString = params.toString()
+    const newUrl = queryString ? `${pathname}?${queryString}` : pathname
+    router.replace(newUrl)
+  }
 
   const handleSaveName = async () => {
     if (!editName.trim()) return
@@ -197,12 +241,13 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
 
       {/* 标签页 */}
       <Card sx={{ borderRadius: 2, boxShadow: 'none' }}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+          <Tabs value={tabValue} onChange={handleTabChange} aria-label='个人中心标签页'>
+            <Tab label='基本信息' />
+            <Tab label='通知中心' />
+          </Tabs>
+        </Box>
         <TabPanel value={tabValue} index={0}>
-          {/* 基本信息 */}
-          <Typography variant='h6' sx={{ mb: 3, fontWeight: 600 }}>
-            基本信息
-          </Typography>
-          <Divider sx={{ mb: 2 }} />
           <Stack spacing={3}>
             {/* 昵称 */}
             <Box>
@@ -271,6 +316,9 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
               </Stack>
             </Box>
           </Stack>
+        </TabPanel>
+        <TabPanel value={tabValue} index={1}>
+          <NotificationCenter />
         </TabPanel>
       </Card>
       <Card sx={{ borderRadius: 2, mt: 3, boxShadow: 'none' }}>

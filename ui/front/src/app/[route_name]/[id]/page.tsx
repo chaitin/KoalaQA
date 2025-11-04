@@ -21,7 +21,7 @@ async function fetchDiscussionDetail(discId: string) {
     return {
       success: false,
       data: null,
-      error: error instanceof Error ? error.message : '获取讨论详情失败',
+      error: error instanceof Error ? error.message : String(error || '获取讨论详情失败'),
     }
   }
 }
@@ -61,16 +61,10 @@ const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; 
       >
         <Box sx={{ maxWidth: 600, width: '100%' }}>
           <Alert severity='error' sx={{ mb: 2 }}>
-            <Typography variant='h6' gutterBottom>
-              获取讨论详情失败
-            </Typography>
-            <Typography variant='body2' color='text.secondary'>
-              {result.error}
+            <Typography variant='body2' gutterBottom>
+              {result?.error === 'record not found' ? '未找到帖子，帖子或已被删除' : result?.error || '未知错误'}
             </Typography>
           </Alert>
-          <Typography variant='body2' color='text.disabled' textAlign='center'>
-            请检查网络连接或稍后重试
-          </Typography>
         </Box>
       </Box>
     )

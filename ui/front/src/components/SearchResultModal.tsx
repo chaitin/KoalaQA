@@ -241,10 +241,10 @@ export const SearchResultModal = ({
                     label: '👉发帖提问',
                     onClick: onAsk,
                   },
-                  {
-                    label: '👉提交反馈',
-                    onClick: onFeedback,
-                  },
+                  // {
+                  //   label: '👉提交反馈',
+                  //   onClick: onFeedback,
+                  // },
                   {
                     label: '👉发布文章',
                     onClick: onArticle,

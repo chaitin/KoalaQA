@@ -36,7 +36,14 @@ export interface FullRequestParams
   /** request body */
   body?: unknown;
 }
-
+const translateErrorMessage = (error: any) => {
+  switch (error.response?.data.err) {
+    case 'email already used':
+      return '该邮箱已被其他账号绑定'
+    default:
+      return error.response?.data.err
+  }
+}
 export type RequestParams = Omit<
   FullRequestParams,
   "body" | "method" | "query" | "path"
@@ -147,7 +154,8 @@ export class HttpClient<SecurityDataType = unknown> {
         if (error.response?.status === 401) {
           window.location.href = "/login";
         }
-        message.error(error.response?.statusText || "网络异常");
+        
+        message.error(translateErrorMessage(error));
         return Promise.reject(error.response);
       },
     );

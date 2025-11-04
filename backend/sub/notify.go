@@ -87,7 +87,7 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 	}
 
 	var toUser model.User
-	err = mn.user.GetByID(ctx, &toUser, data.FromID)
+	err = mn.user.GetByID(ctx, &toUser, data.ToID)
 	if err != nil {
 		return err
 	}

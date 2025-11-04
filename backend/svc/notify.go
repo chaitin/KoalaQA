@@ -18,14 +18,33 @@ func newMessageNotify(mn *repo.MessageNotify) *MessageNotify {
 	}
 }
 
-func (mn *MessageNotify) ListNotifyInfo(ctx context.Context, userID uint) ([]model.MessageNotifyInfo, error) {
-	var res []model.MessageNotifyInfo
-	err := mn.repoMN.List(ctx, &res, repo.QueryWithEqual("user_id", userID), repo.QueryWithEqual("read", false))
+type ListNotifyInfoReq struct {
+	*model.Pagination
+
+	Read *bool `form:"read"`
+}
+
+func (mn *MessageNotify) ListNotifyInfo(ctx context.Context, userID uint, req ListNotifyInfoReq, orderBy string) (*model.ListRes[model.MessageNotify], error) {
+	var res model.ListRes[model.MessageNotify]
+	err := mn.repoMN.List(ctx, &res.Items,
+		repo.QueryWithEqual("user_id", userID),
+		repo.QueryWithEqual("read", req.Read),
+		repo.QueryWithPagination(req.Pagination),
+		repo.QueryWithOrderBy(orderBy),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	return res, nil
+	err = mn.repoMN.Count(ctx, &res.Total,
+		repo.QueryWithEqual("user_id", userID),
+		repo.QueryWithEqual("read", req.Read),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
 }
 
 func (mn *MessageNotify) UnreadTotal(ctx context.Context, userID uint) (int64, error) {
@@ -38,11 +57,23 @@ func (mn *MessageNotify) UnreadTotal(ctx context.Context, userID uint) (int64, e
 	return unread, nil
 }
 
-func (mn *MessageNotify) Read(ctx context.Context, userID uint, id uint) error {
+type NotifyReadReq struct {
+	ID uint
+}
+
+func (mn *MessageNotify) Read(ctx context.Context, userID uint, req NotifyReadReq) error {
+	queryFuncs := []repo.QueryOptFunc{
+		repo.QueryWithEqual("user_id", userID),
+	}
+
+	if req.ID > 0 {
+		queryFuncs = append(queryFuncs, repo.QueryWithEqual("id", req.ID))
+	}
+
 	return mn.repoMN.Update(ctx, map[string]any{
 		"read":       true,
 		"updated_at": time.Now(),
-	}, repo.QueryWithEqual("id", id), repo.QueryWithEqual("user_id", userID))
+	}, queryFuncs...)
 }
 
 func init() {

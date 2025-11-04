@@ -146,7 +146,6 @@ const nextConfig = {
     if (process.env.NODE_ENV === 'development') {
       const target = process.env.TARGET
       const imageTarget = process.env.TARGET
-
       rewritesPath.push(
         ...[
           {

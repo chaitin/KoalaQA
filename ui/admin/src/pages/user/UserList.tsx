@@ -69,6 +69,7 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
     },
   });
   const [name, setName] = useState(query.name);
+  const [email, setEmail] = useState(query.email);
   const [orgIdFilter, setOrgIdFilter] = useState<number | undefined>(
     query.org_id ? Number(query.org_id) : undefined
   );
@@ -106,7 +107,11 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
     if (newName !== name) {
       setName(newName);
     }
-  }, [query.org_id, query.name]); // eslint-disable-line react-hooks/exhaustive-deps
+    const newEmail = query.email || '';
+    if (newEmail !== email) {
+      setEmail(newEmail);
+    }
+  }, [query.org_id, query.name, query.email]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchData({
@@ -192,7 +197,6 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
         })
         .catch(err => {
           console.error('更新用户失败:', err);
-          message.error('更新用户失败');
         });
     }
   });
@@ -352,6 +356,22 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
             if (e.key === 'Enter') {
               setSearch({
                 name,
+                email,
+                org_id: orgIdFilter,
+              });
+            }
+          }}
+        />
+        <TextField
+          label="邮箱"
+          value={email}
+          size="small"
+          onChange={e => setEmail(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              setSearch({
+                name,
+                email,
                 org_id: orgIdFilter,
               });
             }
@@ -368,6 +388,7 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
               setOrgIdFilter(value);
               setSearch({
                 name,
+                email,
                 org_id: value,
               });
             }}
@@ -580,7 +601,7 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
                     ))
                   )}
                 </Select>
-                {fieldState.error && <FormHelperText>{fieldState.error.message}</FormHelperText>}
+                {fieldState.error && <FormHelperText sx={{ color: 'error.main' }}>{fieldState.error.message}</FormHelperText>}
                 {orgOptions.length === 0 && (
                   <FormHelperText>
                     暂无组织，

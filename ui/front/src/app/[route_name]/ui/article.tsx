@@ -29,7 +29,7 @@ export type Status = 'hot' | 'new' | 'mine'
 
 const TYPE_LIST = [
   { label: '问答', value: 'qa' },
-  { label: '反馈', value: 'feedback' },
+  // { label: '反馈', value: 'feedback' },
   { label: '文章', value: 'blog' },
 ]
 const Article = ({
@@ -82,7 +82,6 @@ const Article = ({
   // 搜索弹窗相关状态
   const [searchModalOpen, { setTrue: openSearchModal, setFalse: closeSearchModal }] = useBoolean(false)
   const [selectedModalType, setSelectedModalType] = useState<'qa' | 'feedback' | 'blog'>('qa')
-  const [isPageVisible, setIsPageVisible] = useState(true)
   const [lastPathname, setLastPathname] = useState('')
 
   const hookForumId = useForumId()
@@ -100,20 +99,20 @@ const Article = ({
       return [
         { label: '热门反馈', value: 'hot' },
         { label: '最新反馈', value: 'new' },
-        { label: '我参与的', value: 'mine', disabled: !user?.email },
+        { label: '我参与的', value: 'mine', disabled: !user?.uid },
       ]
     } else if (currentType === 'blog') {
       return [
         { label: '热门文章', value: 'hot' },
         { label: '最新文章', value: 'new' },
-        { label: '我参与的', value: 'mine', disabled: !user?.email },
+        { label: '我参与的', value: 'mine', disabled: !user?.uid },
       ]
     } else {
       // 默认为问答类型
       return [
         { label: '热门问题', value: 'hot' },
         { label: '最新问题', value: 'new' },
-        { label: '我参与的', value: 'mine', disabled: !user?.email },
+        { label: '我参与的', value: 'mine', disabled: !user?.uid },
       ]
     }
   }
@@ -241,43 +240,6 @@ const Article = ({
     searchRef.current = search
   }, [search])
 
-  // 监听页面可见性变化和后退事件，当页面从隐藏变为可见时重新获取数据
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && !isPageVisible) {
-        // 页面从隐藏变为可见，可能是用户后退回来了
-        fetchList(status as Status, search, topics)
-      }
-      setIsPageVisible(document.visibilityState === 'visible')
-    }
-
-    // 监听页面显示事件（包括后退按钮返回）
-    const handlePageShow = (event: PageTransitionEvent) => {
-      // 如果页面是从缓存中恢复的（比如后退按钮），重新获取数据
-      if (event.persisted) {
-        fetchList(status as Status, search, topics)
-      }
-    }
-
-    // 监听页面焦点事件（作为备用方案）
-    const handleFocus = () => {
-      if (!isPageVisible) {
-        fetchList(status as Status, search, topics)
-      }
-      setIsPageVisible(true)
-    }
-
-    // 添加事件监听器
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    window.addEventListener('pageshow', handlePageShow)
-    window.addEventListener('focus', handleFocus)
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-      window.removeEventListener('pageshow', handlePageShow)
-      window.removeEventListener('focus', handleFocus)
-    }
-  }, [isPageVisible, status, search, topics, fetchList])
 
   // 监听路由变化，检测是否从详情页返回
   useEffect(() => {

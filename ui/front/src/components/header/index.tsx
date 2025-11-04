@@ -32,6 +32,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
   const [backHref, setBackHref] = useState('/admin/ai')
   const [searchModalOpen, { setTrue: openSearchModal, setFalse: closeSearchModal }] = useBoolean(false)
   const [searchInputValue, setSearchInputValue] = useState('')
+  const [isMounted, setIsMounted] = useState(false)
 
   // 关闭搜索弹窗时清空输入框
   const handleCloseSearchModal = useCallback(() => {
@@ -90,14 +91,23 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
   const publicAccess = authConfig?.public_access ?? false
   // 使用状态来避免 hydration 不匹配
 
+  // 确保只在客户端 mounted 后才执行可能影响渲染的逻辑
   useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!isMounted) return
     if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
       setBackHref(`${window.location.protocol}//${window.location.hostname}:3400/admin/ai`)
     }
-  }, [])
+  }, [isMounted])
 
   // 监听 article 组件中的搜索框可见性
   useEffect(() => {
+    // 确保只在客户端 mounted 后才执行，避免 hydration 不匹配
+    if (!isMounted) return
+    
     // 只在帖子列表页面时监听（详情页直接显示搜索框）
     if (!isPostListPage || typeof window === 'undefined') {
       setShowHeaderSearch(false)
@@ -138,29 +148,35 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
       observer.observe(articleSearchBox)
 
       // 初始检查 - 添加错误处理
-      try {
-        const rect = articleSearchBox.getBoundingClientRect()
-        const isVisible = rect.top >= 64 && rect.bottom <= (window.innerHeight || document.documentElement.clientHeight)
-        requestAnimationFrame(() => {
-          try {
-            setShowHeaderSearch(!isVisible)
-          } catch (error) {
-            console.warn('初始搜索框状态设置失败:', error)
-          }
-        })
-      } catch (error) {
-        console.warn('获取搜索框位置失败:', error)
-      }
+      // 使用 setTimeout 确保在水合完成后再更新状态
+      setTimeout(() => {
+        try {
+          const rect = articleSearchBox.getBoundingClientRect()
+          const isVisible = rect.top >= 64 && rect.bottom <= (window.innerHeight || document.documentElement.clientHeight)
+          requestAnimationFrame(() => {
+            try {
+              setShowHeaderSearch(!isVisible)
+            } catch (error) {
+              console.warn('初始搜索框状态设置失败:', error)
+            }
+          })
+        } catch (error) {
+          console.warn('获取搜索框位置失败:', error)
+        }
+      }, 0)
 
       return true
     }
 
-    // 立即尝试一次，如果失败则延迟重试
-    if (!setupObserver()) {
-      timer = setTimeout(() => {
-        setupObserver()
-      }, 100)
-    }
+    // 延迟执行，确保水合完成后再设置 observer
+    timer = setTimeout(() => {
+      if (!setupObserver()) {
+        // 如果第一次尝试失败，再延迟重试
+        setTimeout(() => {
+          setupObserver()
+        }, 100)
+      }
+    }, 0)
 
     return () => {
       if (timer) {
@@ -170,7 +186,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
         observer.disconnect()
       }
     }
-  }, [isPostListPage, pathname, route_name])
+  }, [isMounted, isPostListPage, pathname, route_name])
 
   // 统一的 logo 点击处理函数
   const handleLogoClick = () => {

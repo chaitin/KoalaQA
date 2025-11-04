@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -16,6 +17,9 @@ import (
 var (
 	HTTPClient = &http.Client{
 		Transport: &http.Transport{
+			DialContext: (&net.Dialer{
+				Timeout: time.Second * 5,
+			}).DialContext,
 			MaxIdleConns:    10,
 			MaxConnsPerHost: 10,
 			IdleConnTimeout: 30 * time.Second,
