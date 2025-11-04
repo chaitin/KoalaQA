@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/config"
 	"github.com/chaitin/koalaqa/pkg/context"
 	"github.com/chaitin/koalaqa/server"
@@ -127,8 +128,8 @@ func (u *user) LoginThirdURL(ctx *context.Context) {
 	ctx.Success(authURL)
 }
 
-func (u *user) LoginOIDCCallback(ctx *context.Context) {
-	var req svc.LoginOIDCCallbackReq
+func (u *user) loginThirdCallback(ctx *context.Context, typ model.AuthType) {
+	var req svc.LoginThirdCallbackReq
 	err := ctx.ShouldBindQuery(&req)
 	if err != nil {
 		ctx.BadRequest(err)
@@ -144,9 +145,9 @@ func (u *user) LoginOIDCCallback(ctx *context.Context) {
 	}
 	session.Delete(stateKey)
 
-	token, err := u.svcU.LoginOIDCCallback(ctx, req)
+	token, err := u.svcU.LoginThirdCallback(ctx, typ, req)
 	if err != nil {
-		ctx.InternalError(err, "oidc callback failed")
+		ctx.InternalError(err, "callback failed")
 		return
 	}
 
@@ -158,6 +159,14 @@ func (u *user) LoginOIDCCallback(ctx *context.Context) {
 	ctx.Redirect(http.StatusFound, state.Redirect)
 }
 
+func (u *user) LoginOIDCCallback(ctx *context.Context) {
+	u.loginThirdCallback(ctx, model.AuthTypeOIDC)
+}
+
+func (u *user) LoginWeComCallback(ctx *context.Context) {
+	u.loginThirdCallback(ctx, model.AuthTypeWeCom)
+}
+
 func (u *user) Route(h server.Handler) {
 	g := h.Group("/api/user")
 	g.POST("/register", u.Register)
@@ -165,6 +174,7 @@ func (u *user) Route(h server.Handler) {
 	g.GET("/login_method", u.LoginMethod)
 	g.GET("/login/third", u.LoginThirdURL)
 	g.GET("/login/third/callback/oidc", u.LoginOIDCCallback)
+	g.GET("/login/third/callback/we_com", u.LoginWeComCallback)
 }
 
 func newUser(cfg config.Config, u *svc.User) server.Router {

@@ -20,12 +20,7 @@ type weCom struct {
 }
 
 func (w *weCom) Check(ctx context.Context) error {
-	_, err := util.ParseHTTP(w.cfg.URL)
-	if err != nil {
-		return err
-	}
-
-	_, err = util.ParseHTTP(w.callbackURL)
+	_, err := util.ParseHTTP(w.callbackURL)
 	if err != nil {
 		return err
 	}
@@ -56,14 +51,14 @@ func (w *weCom) AuthURL(ctx context.Context, state string, optFuncs ...authURLOp
 
 	var rawURL string
 	if opt.APP {
-		rawURL = "https://login.work.weixin.qq.com/wwlogin/sso/login"
-		query.Set("login_type", "CorpApp")
-	} else {
 		rawURL = "https://open.weixin.qq.com/connect/oauth2/authorize"
 		fragment = "wechat_redirect"
 
 		query.Set("scope", "snsapi_privateinfo")
 		query.Set("response_type", "code")
+	} else {
+		rawURL = "https://login.work.weixin.qq.com/wwlogin/sso/login"
+		query.Set("login_type", "CorpApp")
 	}
 
 	u, err := url.Parse(rawURL)

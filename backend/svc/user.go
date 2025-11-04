@@ -485,19 +485,19 @@ func (u *User) LoginThirdURL(ctx context.Context, state string, req LoginThirdUR
 	return u.authMgmt.AuthURL(ctx, req.Type, state, third_auth.AuthURLInAPP(req.APP))
 }
 
-type LoginOIDCCallbackReq struct {
+type LoginThirdCallbackReq struct {
 	State string `form:"state" binding:"required"`
 	Code  string `form:"code" binding:"required"`
 }
 
-func (u *User) LoginOIDCCallback(ctx context.Context, req LoginOIDCCallbackReq) (string, error) {
-	ok, err := u.canAuth(ctx, model.AuthTypeOIDC)
+func (u *User) LoginThirdCallback(ctx context.Context, typ model.AuthType, req LoginThirdCallbackReq) (string, error) {
+	ok, err := u.canAuth(ctx, typ)
 	if err != nil {
 		return "", err
 	}
 
 	if !ok {
-		return "", errors.New("oidc login disabled")
+		return "", errors.New("third login disabled")
 	}
 
 	org, err := u.repoOrg.GetBuiltin(ctx)
@@ -505,7 +505,7 @@ func (u *User) LoginOIDCCallback(ctx context.Context, req LoginOIDCCallbackReq) 
 		return "", err
 	}
 
-	user, err := u.authMgmt.User(ctx, model.AuthTypeOIDC, req.Code)
+	user, err := u.authMgmt.User(ctx, typ, req.Code)
 	if err != nil {
 		return "", err
 	}
