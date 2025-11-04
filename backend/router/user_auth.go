@@ -117,14 +117,17 @@ func (u *userAuth) Notify(ctx *context.Context) {
 
 	defer conn.Close()
 
+	read := false
 	go func() {
-		listRes, e := u.in.SvcNotify.ListNotifyInfo(ctx, ctx.GetUser().UID)
+		listRes, e := u.in.SvcNotify.ListNotifyInfo(ctx, ctx.GetUser().UID, svc.ListNotifyInfoReq{
+			Read: &read,
+		})
 		if e != nil {
 			logger.WithErr(e).Warn("list user failed")
 			return
 		}
 
-		for _, item := range listRes {
+		for _, item := range listRes.Items {
 			err = conn.WriteJSON(notifyRes{
 				Type: notifyTypeInfo,
 				Data: item,
@@ -202,7 +205,9 @@ func (u *userAuth) Notify(ctx *context.Context) {
 					continue
 				}
 			case notifyTypeRead:
-				err = u.in.SvcNotify.Read(ctx, ctx.GetUser().UID, req.ID)
+				err = u.in.SvcNotify.Read(ctx, ctx.GetUser().UID, svc.NotifyReadReq{
+					ID: req.ID,
+				})
 				if err != nil {
 					logger.WithErr(err).With("id", req.ID).Warn("set notify read failed")
 					continue
@@ -220,12 +225,67 @@ func (u *userAuth) Notify(ctx *context.Context) {
 	}
 }
 
+// ListNotify
+// @Summary list notify message
+// @Tags user
+// @Produce json
+// @Param req query svc.ListNotifyInfoReq true "req params"
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]model.MessageNotifyInfo}}
+// @Router /notify/list [get]
+func (u *userAuth) ListNotify(ctx *context.Context) {
+	var req svc.ListNotifyInfoReq
+	err := ctx.ShouldBindQuery(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	res, err := u.in.SvcNotify.ListNotifyInfo(ctx, ctx.GetUser().UID, req)
+	if err != nil {
+		ctx.InternalError(err, "list notify failed")
+		return
+	}
+
+	ctx.Success(res)
+}
+
+// NotifyRead
+// @Summary read notify message
+// @Tags user
+// @Produce json
+// @Accept json
+// @Param req body svc.NotifyReadReq true "req params"
+// @Success 200 {object} context.Response
+// @Router /notify/read [post]
+func (u *userAuth) NotifyRead(ctx *context.Context) {
+	var req svc.NotifyReadReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	err = u.in.SvcNotify.Read(ctx, ctx.GetUser().UID, req)
+	if err != nil {
+		ctx.InternalError(err, "failed to read notify")
+		return
+	}
+
+	ctx.Success(nil)
+}
+
 func (u *userAuth) Route(h server.Handler) {
 	g := h.Group("/user")
 	g.POST("/logout", u.Logout)
 	g.GET("", u.Detail)
-	g.GET("/notify", u.Notify)
 	g.PUT("", u.Update)
+
+	{
+		notifyG := g.Group("/notify")
+		notifyG.GET("", u.Notify)
+		notifyG.POST("/read", u.NotifyRead)
+		notifyG.GET("/list", u.ListNotify)
+	}
 }
 
 type userAuthIn struct {

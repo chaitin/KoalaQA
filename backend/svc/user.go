@@ -35,6 +35,7 @@ type UserListReq struct {
 	OrgID   *uint   `form:"org_id"`
 	OrgName *string `form:"org_name"`
 	Name    *string `form:"name"`
+	Email   *string `form:"email"`
 }
 
 type UserListItem struct {
@@ -59,6 +60,7 @@ func (u *User) List(ctx context.Context, req UserListReq) (*model.ListRes[UserLi
 		repo.QueryWithILike("name", req.Name),
 		repo.QueryWithEqual("invisible", false),
 		repo.QueryWithEqual("org_ids", req.OrgID, repo.EqualOPValIn),
+		repo.QueryWithEqual("email", req.Email),
 	)
 	if err != nil {
 		return nil, err
