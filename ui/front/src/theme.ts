@@ -44,7 +44,7 @@ const theme = createTheme(
         contrastText: 'rgba(0, 0, 0, 0.50)',
       },
       info: {
-        main: '#206CFF',
+        main: '#0073e6',
       },
       background: {
         default: '#F1F2F8',

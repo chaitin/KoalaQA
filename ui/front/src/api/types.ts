@@ -51,6 +51,17 @@ export enum ModelUserRole {
   UserRoleMax = 4,
 }
 
+export enum ModelMsgNotifyType {
+  MsgNotifyTypeUnknown = 0,
+  MsgNotifyTypeReplyDiscuss = 1,
+  MsgNotifyTypeReplyComment = 2,
+  MsgNotifyTypeApplyComment = 3,
+  MsgNotifyTypeLikeComment = 4,
+  MsgNotifyTypeDislikeComment = 5,
+  MsgNotifyTypeBotUnknown = 6,
+  MsgNotifyTypeLikeDiscussion = 7,
+}
+
 export enum ModelLLMType {
   LLMTypeChat = "chat",
   LLMTypeEmbedding = "embedding",
@@ -141,6 +152,7 @@ export interface ModelAuthConfig {
 export interface ModelAuthConfigOauth {
   client_id?: string;
   client_secret?: string;
+  corp_id?: string;
   url?: string;
 }
 
@@ -149,7 +161,7 @@ export interface ModelAuthInfo {
   config?: ModelAuthConfig;
   /**
    * @min 1
-   * @max 2
+   * @max 3
    */
   type?: number;
 }
@@ -334,6 +346,27 @@ export interface ModelListRes {
   total?: number;
 }
 
+export interface ModelMessageNotify {
+  created_at?: number;
+  discuss_id?: number;
+  discuss_title?: string;
+  discuss_uuid?: string;
+  discussion_type?: ModelDiscussionType;
+  forum_id?: number;
+  from_bot?: boolean;
+  from_id?: number;
+  from_name?: string;
+  id?: number;
+  read?: boolean;
+  to_bot?: boolean;
+  to_id?: number;
+  to_name?: string;
+  type?: ModelMsgNotifyType;
+  updated_at?: number;
+  /** 通知到谁，除了发给机器人的信息，user_id 与 to_id 相同 */
+  user_id?: number;
+}
+
 export interface ModelPlatformOpt {
   access_token?: string;
   app_id?: string;
@@ -372,6 +405,7 @@ export interface ModelUserInfo {
   builtin?: boolean;
   email?: string;
   key?: string;
+  no_password?: boolean;
   org_ids?: number[];
   role?: ModelUserRole;
   uid?: number;
@@ -648,6 +682,10 @@ export interface SvcModelKitCheckReq {
   type: "chat" | "embedding" | "rerank";
 }
 
+export interface SvcNotifyReadReq {
+  id?: number;
+}
+
 export interface SvcOrgListItem {
   builtin?: boolean;
   count?: number;
@@ -747,6 +785,7 @@ export interface SvcUserRegisterReq {
 }
 
 export interface SvcUserUpdateReq {
+  email?: string;
   name?: string;
   org_ids?: number[];
   password?: string;
@@ -1090,6 +1129,7 @@ export interface DeleteAdminSystemWebhookWebhookIdParams {
 }
 
 export interface GetAdminUserParams {
+  email?: string;
   name?: string;
   org_id?: number;
   org_name?: string;
@@ -1230,6 +1270,15 @@ export interface PutUserPayload {
 }
 
 export interface GetUserLoginThirdParams {
+  app?: boolean;
   redirect?: string;
   type: number;
+}
+
+export interface GetUserNotifyListParams {
+  /** @min 1 */
+  page?: number;
+  read?: boolean;
+  /** @min 1 */
+  size?: number;
 }

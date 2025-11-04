@@ -171,6 +171,32 @@ export const getContentTypeConfigManager = () => ContentTypeConfigManager.getIns
 // 导出内容类型枚举，供其他模块使用
 export { ContentType, MsgNotifyType, type ContentTypeConfig }
 
+// 导出通知文本获取函数，供其他模块使用
+// 支持 MessageNotifyInfo 和 ModelMessageNotify 两种类型
+export const getNotificationTextForExport = (info: MessageNotifyInfo | {
+  discussion_type?: string | 'qa' | 'feedback' | 'blog'
+  type?: number
+  to_bot?: boolean
+}): string => {
+  // 类型适配：将 ModelMessageNotify 转换为 MessageNotifyInfo 格式
+  const adaptedInfo: MessageNotifyInfo = {
+    discuss_id: (info as any).discuss_id || 0,
+    discuss_title: (info as any).discuss_title || '',
+    discuss_uuid: (info as any).discuss_uuid || '',
+    discussion_type: (info.discussion_type as ContentType) || ContentType.QA,
+    type: (info.type as MsgNotifyType) || MsgNotifyType.MsgNotifyTypeUnknown,
+    from_id: (info as any).from_id || 0,
+    from_name: (info as any).from_name || '',
+    from_bot: (info as any).from_bot || false,
+    to_id: (info as any).to_id || 0,
+    to_name: (info as any).to_name || '',
+    to_bot: info.to_bot || false,
+    id: (info as any).id || 0,
+    forum_id: (info as any).forum_id || 0,
+  }
+  return getNotificationText(adaptedInfo)
+}
+
 /**
  * 使用示例：
  * 
@@ -301,6 +327,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
               boxShadow: '0px 20px 40px 0px rgba(0,28,85,0.06)',
               minWidth: '300px',
               padding: '20px',
+              pb: 1,
               borderRadius: '8px',
               color: 'primary.main',
             },
@@ -313,56 +340,57 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
           },
         }}
         title={
-          <Stack spacing={1} sx={{ maxHeight: 400, overflowY: 'auto' }}>
-            {notifications.length === 0 ? (
-              <Box sx={{ p: 2, textAlign: 'center', color: 'text.secondary' }}>暂无通知</Box>
-            ) : (
-              notifications.map((notification, index) => (
-                <Stack
-                  key={index}
-                  sx={{
-                    py: 1,
-                    px: 2,
-                    cursor: 'pointer',
-                    '&:hover': {
-                      bgcolor: 'action.hover',
-                    },
-                    borderRadius: 1,
-                  }}
-                  direction='row'
-                  alignItems='center'
-                >
-                  <Box onClick={() => handleNotificationClick(notification)}>
-                    <Typography variant='body1' sx={{ display: 'inline', pr: 1 }}>
-                      {notification.from_name}
-                    </Typography>
-                    <Typography sx={{ display: 'inline' }} variant='caption'>
-                      {getNotificationText(notification)}
-                    </Typography>
-                  </Box>
-
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-                        wsRef.current.send(JSON.stringify({ type: 2, id: notification.id }))
-                      }
-                      setUnreadCount((c) => Math.max(0, c - 1))
-                      setNotifications((prev) => prev.filter((n) => n.id !== notification.id))
-                    }}
+          <Stack spacing={1}>
+            <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
+              {notifications.length === 0 ? (
+                <Box sx={{ p: 2, textAlign: 'center', color: 'text.secondary',fontSize: '14px' }}>暂无通知</Box>
+              ) : (
+                notifications.map((notification, index) => (
+                  <Stack
+                    key={index}
                     sx={{
-                      ml: 1,
-                      flexShrink: 0,
+                      py: 1,
+                      px: 2,
+                      cursor: 'pointer',
+                      '&:hover': {
+                        bgcolor: 'action.hover',
+                      },
                       borderRadius: 1,
-                      fontSize: '12px',
                     }}
-                    size='small'
+                    direction='row'
+                    alignItems='center'
                   >
-                    忽略
-                  </Button>
-                </Stack>
-              ))
-            )}
+                    <Box onClick={() => handleNotificationClick(notification)}>
+                      <Typography variant='body1' sx={{ display: 'inline', pr: 1 }}>
+                        {notification.from_name}
+                      </Typography>
+                      <Typography sx={{ display: 'inline' }} variant='caption'>
+                        {getNotificationText(notification)}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                ))
+              )}
+            </Box>
+            <Box
+              sx={{
+                pt: 1,
+                borderTop: '1px solid',
+                borderColor: 'divider',
+                display: 'flex',
+                justifyContent: 'flex-end',
+              }}
+            >
+              <Button
+                size='small'
+                color='info'
+                onClick={() => {
+                  router.push('/profile?tab=1')
+                }}
+              >
+                查看全部通知
+              </Button>
+            </Box>
           </Stack>
         }
       >
