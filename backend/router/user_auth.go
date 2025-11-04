@@ -231,7 +231,7 @@ func (u *userAuth) Notify(ctx *context.Context) {
 // @Produce json
 // @Param req query svc.ListNotifyInfoReq true "req params"
 // @Success 200 {object} context.Response{data=model.ListRes{items=[]model.MessageNotifyInfo}}
-// @Router /notify/list [get]
+// @Router /user/notify/list [get]
 func (u *userAuth) ListNotify(ctx *context.Context) {
 	var req svc.ListNotifyInfoReq
 	err := ctx.ShouldBindQuery(&req)
@@ -256,7 +256,7 @@ func (u *userAuth) ListNotify(ctx *context.Context) {
 // @Accept json
 // @Param req body svc.NotifyReadReq true "req params"
 // @Success 200 {object} context.Response
-// @Router /notify/read [post]
+// @Router /user/notify/read [post]
 func (u *userAuth) NotifyRead(ctx *context.Context) {
 	var req svc.NotifyReadReq
 	err := ctx.ShouldBindJSON(&req)
