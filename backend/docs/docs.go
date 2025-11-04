@@ -4420,6 +4420,11 @@ const docTemplate = `{
                 "summary": "get user third login url",
                 "parameters": [
                     {
+                        "type": "boolean",
+                        "name": "app",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "name": "redirect",
                         "in": "query"
@@ -4622,6 +4627,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "client_secret": {
+                    "type": "string"
+                },
+                "corp_id": {
                     "type": "string"
                 },
                 "url": {

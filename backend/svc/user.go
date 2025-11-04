@@ -467,6 +467,7 @@ func (u *User) Logout(ctx context.Context, uid uint) error {
 }
 
 type LoginThirdURLReq struct {
+	APP      bool           `form:"app"`
 	Type     model.AuthType `form:"type" binding:"required"`
 	Redirect string         `form:"redirect"`
 }
@@ -481,7 +482,7 @@ func (u *User) LoginThirdURL(ctx context.Context, state string, req LoginThirdUR
 		return "", errors.New("third login disabled")
 	}
 
-	return u.authMgmt.AuthURL(ctx, req.Type, state)
+	return u.authMgmt.AuthURL(ctx, req.Type, state, third_auth.AuthURLInAPP(req.APP))
 }
 
 type LoginOIDCCallbackReq struct {

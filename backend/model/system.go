@@ -45,6 +45,7 @@ type AuthType uint
 const (
 	AuthTypePassword = iota + 1
 	AuthTypeOIDC
+	AuthTypeWeCom
 )
 
 type AuthInfo struct {
@@ -77,6 +78,7 @@ type AuthConfigOauth struct {
 	URL          string `json:"url,omitempty"`
 	ClientID     string `json:"client_id,omitempty"`
 	ClientSecret string `json:"client_secret,omitempty"`
+	CorpID       string `json:"corp_id,omitempty"`
 }
 
 type SystemBrand struct {
