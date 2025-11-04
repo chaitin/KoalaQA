@@ -16,10 +16,43 @@ const LoginType = () => {
   const searchParams = useSearchParams()
   const redirect = searchParams?.get('redirect') || undefined
   
+  // 检测是否在企业微信 app 内打开
+  // 使用多种方法组合检测，提高准确性：
+  // 1. 检查 window.wxwork 对象（企业微信 JS-SDK 注入）
+  // 2. 检查 User-Agent（包含 wxwork 或 wecom）
+  const isInWeComApp = (): boolean => {
+    if (typeof window === 'undefined') return false
+    
+    // 方法1: 检查企业微信 JS-SDK 注入的全局对象（最可靠）
+    // 企业微信会在 window 上注入 wxwork 对象
+    // 注意：需要引入企业微信 JS-SDK 后才会存在，如果未引入则使用 User-Agent 判断
+    if ((window as any).wxwork) {
+      return true
+    }
+    
+    // 方法2: 检查 User-Agent（辅助判断）
+    const ua = navigator.userAgent.toLowerCase()
+    // 企业微信的 User-Agent 通常包含 wxwork
+    // 注意：某些浏览器可能伪装 User-Agent，所以仅作为辅助判断
+    if (ua.includes('wxwork')) {
+      return true
+    }
+    
+    // 方法3: 检查是否包含 wecom（部分版本可能使用）
+    if (ua.includes('wecom')) {
+      return true
+    }
+    
+    return false
+  }
+  
   const handleOAuthLogin = async (type: number) => {
     try {
+      // app 字段专为企业微信设计：如果 type 是企业微信并且是在企业微信 app 内打开，则为 true
+      const app = type === AuthType.WECOM && isInWeComApp()
+      
       // 调用getUserLoginThird接口获取跳转URL
-      const response = await getUserLoginThird({ type, redirect })
+      const response = await getUserLoginThird({ type, redirect, app })
       // 使用类型断言处理API响应
       const apiResponse = response as { data?: string } | string
       let oauthUrl = ''
@@ -43,15 +76,19 @@ const LoginType = () => {
   // 判断是否支持不同的登录方式
   const hasPasswordLogin = authConfig?.auth_types?.some((auth) => auth.type === AuthType.PASSWORD) || false
   const hasOAuthLogin = authConfig?.auth_types?.some((auth) => auth.type === AuthType.OAUTH) || false
+  const hasWeComLogin = authConfig?.auth_types?.some((auth) => auth.type === AuthType.WECOM) || false
+  const hasThirdPartyLogin = hasOAuthLogin || hasWeComLogin
+  
   const passwordConfig = authConfig?.auth_types?.find((auth) => auth.type === AuthType.PASSWORD)
   const oauthConfig = authConfig?.auth_types?.find((auth) => auth.type === AuthType.OAUTH)
+  const wecomConfig = authConfig?.auth_types?.find((auth) => auth.type === AuthType.WECOM)
 
   if (loading) {
     return
   }
 
   // 根据配置决定显示哪种登录界面
-  if (!hasPasswordLogin && hasOAuthLogin) {
+  if (!hasPasswordLogin && hasThirdPartyLogin) {
     // 情况1：只有第三方登录，显示左侧样式（简单登录）
     return (
       <Suspense>
@@ -89,21 +126,38 @@ const LoginType = () => {
               </Typography>
 
               {/* 第三方登录按钮 */}
-              {oauthConfig && (
-                <Button
-                  variant='outlined'
-                  fullWidth
-                  sx={{
-                    height: 48,
-                    color: '#40E0D0',
-                    backgroundColor: 'transparent',
-                    fontSize: '14px',
-                  }}
-                  onClick={() => handleOAuthLogin(oauthConfig.type!)}
-                >
-                  {oauthConfig.button_desc || 'Auth 登录'}
-                </Button>
-              )}
+              <Stack spacing={2} sx={{ width: '100%' }}>
+                {oauthConfig && (
+                  <Button
+                    variant='outlined'
+                    fullWidth
+                    sx={{
+                      height: 48,
+                      color: '#40E0D0',
+                      backgroundColor: 'transparent',
+                      fontSize: '14px',
+                    }}
+                    onClick={() => handleOAuthLogin(oauthConfig.type!)}
+                  >
+                    {oauthConfig.button_desc || 'OAuth 登录'}
+                  </Button>
+                )}
+                {wecomConfig && (
+                  <Button
+                    variant='outlined'
+                    fullWidth
+                    sx={{
+                      height: 48,
+                      color: '#40E0D0',
+                      backgroundColor: 'transparent',
+                      fontSize: '14px',
+                    }}
+                    onClick={() => handleOAuthLogin(wecomConfig.type!)}
+                  >
+                    {wecomConfig.button_desc || '企业微信登录'}
+                  </Button>
+                )}
+              </Stack>
 
               {/* 注册链接 */}
               {authConfig?.enable_register && (
@@ -189,7 +243,7 @@ const LoginType = () => {
             )}
 
             {/* 如果有第三方登录，显示分割线和第三方登录按钮 */}
-            {hasOAuthLogin && oauthConfig && (
+            {hasThirdPartyLogin && (
               <>
                 <Box
                   sx={{
@@ -202,17 +256,34 @@ const LoginType = () => {
                   使用其他登录方式
                 </Box>
 
-                <Button
-                  variant='outlined'
-                  fullWidth
-                  sx={{
-                    backgroundColor: 'transparent',
-                    fontSize: '14px',
-                  }}
-                  onClick={() => handleOAuthLogin(oauthConfig?.type!)}
-                >
-                  {oauthConfig?.button_desc || 'Auth 登录'}
-                </Button>
+                <Stack spacing={2}>
+                  {oauthConfig && (
+                    <Button
+                      variant='outlined'
+                      fullWidth
+                      sx={{
+                        backgroundColor: 'transparent',
+                        fontSize: '14px',
+                      }}
+                      onClick={() => handleOAuthLogin(oauthConfig.type!)}
+                    >
+                      {oauthConfig.button_desc || 'OAuth 登录'}
+                    </Button>
+                  )}
+                  {wecomConfig && (
+                    <Button
+                      variant='outlined'
+                      fullWidth
+                      sx={{
+                        backgroundColor: 'transparent',
+                        fontSize: '14px',
+                      }}
+                      onClick={() => handleOAuthLogin(wecomConfig.type!)}
+                    >
+                      {wecomConfig.button_desc || '企业微信登录'}
+                    </Button>
+                  )}
+                </Stack>
               </>
             )}
           </Stack>

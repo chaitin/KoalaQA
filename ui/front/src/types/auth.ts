@@ -4,5 +4,6 @@
 // 认证类型枚举
 export enum AuthType {
   PASSWORD = 1, // 账号密码登录
-  OAUTH = 2,    // 第三方OAuth登录
+  OAUTH = 2,    // 第三方OAuth登录 (OIDC)
+  WECOM = 3,    // 企业微信登录
 }

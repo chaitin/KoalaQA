@@ -106,7 +106,20 @@ const OfflineFileImport = ({
     return postAdminKbDocumentFileList(
       { file },
       {
-        onUploadProgress: (event) => onProgress(event.progress || 100),
+        onUploadProgress: (event) => {
+          // 如果事件对象有 progress 属性且是 0-1 之间的值，需要乘以 100
+          // 如果已经有 progress 属性且是 0-100 的值，直接使用
+          // 否则使用 loaded 和 total 计算
+          let progress = 0;
+          if (event.progress !== undefined) {
+            progress = event.progress < 1 ? event.progress * 100 : event.progress;
+          } else if (event.loaded && event.total) {
+            progress = (event.loaded / event.total) * 100;
+          } else {
+            progress = 0;
+          }
+          onProgress(Math.min(progress, 100));
+        },
       }
     );
   };

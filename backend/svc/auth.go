@@ -77,6 +77,8 @@ func (l *Auth) updateAuthMgmt(ctx context.Context, auth model.Auth, checkCfg boo
 		switch authInfo.Type {
 		case model.AuthTypeOIDC:
 			callbackAddress = publicAddress.FullURL("/api/user/login/third/callback/oidc")
+		case model.AuthTypeWeCom:
+			callbackAddress = publicAddress.FullURL("/api/user/login/third/callback/we_com")
 		default:
 			continue
 		}

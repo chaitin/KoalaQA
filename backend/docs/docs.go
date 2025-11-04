@@ -2968,6 +2968,11 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "name": "email",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "name": "name",
                         "in": "query"
                     },
@@ -4317,6 +4322,11 @@ const docTemplate = `{
                 "summary": "get user third login url",
                 "parameters": [
                     {
+                        "type": "boolean",
+                        "name": "app",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "name": "redirect",
                         "in": "query"
@@ -4395,6 +4405,135 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/notify/list": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "list notify message",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "name": "read",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/model.MessageNotify"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/user/notify/read": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "read notify message",
+                "parameters": [
+                    {
+                        "description": "req params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.NotifyReadReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/notify/unread": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "get notify message unread num",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -4521,6 +4660,9 @@ const docTemplate = `{
                 "client_secret": {
                     "type": "string"
                 },
+                "corp_id": {
+                    "type": "string"
+                },
                 "url": {
                     "type": "string"
                 }
@@ -4537,7 +4679,7 @@ const docTemplate = `{
                 },
                 "type": {
                     "type": "integer",
-                    "maximum": 2,
+                    "maximum": 3,
                     "minimum": 1
                 }
             }
@@ -5188,6 +5330,86 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
+        },
+        "model.MessageNotify": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "integer"
+                },
+                "discuss_id": {
+                    "type": "integer"
+                },
+                "discuss_title": {
+                    "type": "string"
+                },
+                "discuss_uuid": {
+                    "type": "string"
+                },
+                "discussion_type": {
+                    "$ref": "#/definitions/model.DiscussionType"
+                },
+                "forum_id": {
+                    "type": "integer"
+                },
+                "from_bot": {
+                    "type": "boolean"
+                },
+                "from_id": {
+                    "type": "integer"
+                },
+                "from_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "read": {
+                    "type": "boolean"
+                },
+                "to_bot": {
+                    "type": "boolean"
+                },
+                "to_id": {
+                    "type": "integer"
+                },
+                "to_name": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.MsgNotifyType"
+                },
+                "updated_at": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "description": "通知到谁，除了发给机器人的信息，user_id 与 to_id 相同",
+                    "type": "integer"
+                }
+            }
+        },
+        "model.MsgNotifyType": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7
+            ],
+            "x-enum-varnames": [
+                "MsgNotifyTypeUnknown",
+                "MsgNotifyTypeReplyDiscuss",
+                "MsgNotifyTypeReplyComment",
+                "MsgNotifyTypeApplyComment",
+                "MsgNotifyTypeLikeComment",
+                "MsgNotifyTypeDislikeComment",
+                "MsgNotifyTypeBotUnknown",
+                "MsgNotifyTypeLikeDiscussion"
+            ]
         },
         "model.PlatformOpt": {
             "type": "object",
@@ -6164,6 +6386,14 @@ const docTemplate = `{
                             "$ref": "#/definitions/model.LLMType"
                         }
                     ]
+                }
+            }
+        },
+        "svc.NotifyReadReq": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
                 }
             }
         },

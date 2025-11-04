@@ -27,7 +27,7 @@ const lightTheme = createTheme(
         main: '#FFA500',
       },
       info: {
-        main: '#0073e6',
+        main: '#3248F2',
       },
       risk: {
         severe: '#FF6262',

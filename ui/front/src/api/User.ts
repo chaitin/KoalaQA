@@ -17,12 +17,15 @@ import {
   GetAdminUserParams,
   GetAdminUserUserIdParams,
   GetUserLoginThirdParams,
+  GetUserNotifyListParams,
   ModelListRes,
+  ModelMessageNotify,
   ModelUser,
   ModelUserInfo,
   PutAdminUserUserIdParams,
   PutUserPayload,
   SvcAuthFrontendGetRes,
+  SvcNotifyReadReq,
   SvcUserJoinOrgReq,
   SvcUserListItem,
   SvcUserLoginReq,
@@ -303,6 +306,88 @@ export const postUserLogout = (params: RequestParams = {}) =>
   request<ContextResponse>({
     path: `/user/logout`,
     method: "POST",
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name GetUserNotifyList
+ * @summary list notify message
+ * @request GET:/user/notify/list
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (ModelMessageNotify)[],
+
+}),
+
+})` OK
+ */
+
+export const getUserNotifyList = (
+  query: GetUserNotifyListParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: ModelMessageNotify[];
+      };
+    }
+  >({
+    path: `/user/notify/list`,
+    method: "GET",
+    query: query,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name PostUserNotifyRead
+ * @summary read notify message
+ * @request POST:/user/notify/read
+ * @response `200` `ContextResponse` OK
+ */
+
+export const postUserNotifyRead = (
+  req: SvcNotifyReadReq,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/user/notify/read`,
+    method: "POST",
+    body: req,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name GetUserNotifyUnread
+ * @summary get notify message unread num
+ * @request GET:/user/notify/unread
+ * @response `200` `(ContextResponse & {
+    data?: number,
+
+})` OK
+ */
+
+export const getUserNotifyUnread = (params: RequestParams = {}) =>
+  request<
+    ContextResponse & {
+      data?: number;
+    }
+  >({
+    path: `/user/notify/unread`,
+    method: "GET",
     format: "json",
     ...params,
   });

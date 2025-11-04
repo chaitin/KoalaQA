@@ -213,7 +213,7 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
           </Grid>
 
           {/* 分类选择 - 反馈 */}
-          <Grid size={{ xs: 12, sm: 6 }}>
+          {/* <Grid size={{ xs: 12, sm: 6 }}>
             <Controller
               control={control}
               name={`blocks.${index}.feedback_group_ids`}
@@ -237,7 +237,7 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
                 </Box>
               )}
             />
-          </Grid>
+          </Grid> */}
 
           {/* 分类选择 - 文章 */}
           <Grid size={{ xs: 12, sm: 6 }}>
@@ -564,7 +564,7 @@ const Forum: React.FC = () => {
         {blockFields.length < 3 && (
           <Button
             variant="text"
-            color="primary"
+            color="info"
             onClick={handleAddBlock}
             sx={{ alignSelf: 'flex-start' }}
           >

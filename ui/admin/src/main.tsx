@@ -1,8 +1,8 @@
 import '@/assets/fonts/font.css';
 import '@/assets/fonts/iconfont';
 import '@/assets/styles/markdown.css';
-import { ThemeProvider } from '@ctzhian/ui';
 import '@ctzhian/tiptap/dist/index.css';
+import { ThemeProvider } from '@ctzhian/ui';
 import 'dayjs/locale/zh-cn';
 import { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
@@ -17,10 +17,10 @@ import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker';
 import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker';
 import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
 import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
+import { getAdminModelList, getUser, ModelLLM, ModelUserInfo } from './api';
 import { AuthContext, CommonContext } from './context';
 import router from './router';
 import { lightTheme } from './theme';
-import { getAdminModelList, getAdminUser, getUser, ModelLLM, ModelUserInfo } from './api';
 
 window.MonacoEnvironment = {
   getWorker: function (workerId: string, label: string) {

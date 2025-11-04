@@ -16,13 +16,16 @@ import {
   DeleteAdminUserUserIdParams,
   GetAdminUserParams,
   GetAdminUserUserIdParams,
+  GetNotifyListParams,
   GetUserLoginThirdParams,
   ModelListRes,
+  ModelMessageNotifyInfo,
   ModelUser,
   ModelUserInfo,
   PutAdminUserUserIdParams,
   PutUserPayload,
   SvcAuthFrontendGetRes,
+  SvcNotifyReadReq,
   SvcUserJoinOrgReq,
   SvcUserListItem,
   SvcUserLoginReq,
@@ -156,6 +159,63 @@ export const deleteAdminUserUserId = (
   request<ContextResponse>({
     path: `/admin/user/${userId}`,
     method: "DELETE",
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name GetNotifyList
+ * @summary list notify message
+ * @request GET:/notify/list
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (ModelMessageNotifyInfo)[],
+
+}),
+
+})` OK
+ */
+
+export const getNotifyList = (
+  query: GetNotifyListParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: ModelMessageNotifyInfo[];
+      };
+    }
+  >({
+    path: `/notify/list`,
+    method: "GET",
+    query: query,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name PostNotifyRead
+ * @summary read notify message
+ * @request POST:/notify/read
+ * @response `200` `ContextResponse` OK
+ */
+
+export const postNotifyRead = (
+  req: SvcNotifyReadReq,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/notify/read`,
+    method: "POST",
+    body: req,
+    type: ContentType.Json,
     format: "json",
     ...params,
   });
