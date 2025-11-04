@@ -1,6 +1,7 @@
 'use client'
 import { createTheme } from '@mui/material/styles'
 import { zhCN } from '@mui/material/locale'
+import { zhCN as CuiZhCN } from '@ctzhian/ui/dist/local'
 
 declare module '@mui/material/styles' {
   interface Palette {
@@ -44,7 +45,7 @@ const theme = createTheme(
         contrastText: 'rgba(0, 0, 0, 0.50)',
       },
       info: {
-        main: '#0073e6',
+        main: '#3248F2',
       },
       background: {
         default: '#F1F2F8',
@@ -135,6 +136,7 @@ const theme = createTheme(
     },
   },
   zhCN,
+  CuiZhCN,
 )
 
 export default theme

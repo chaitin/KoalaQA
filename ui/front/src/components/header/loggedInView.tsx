@@ -11,7 +11,7 @@ import ProfilePanel from './profilePanel'
 // 内容类型枚举
 enum ContentType {
   FEEDBACK = 'feedback',
-  QA = 'qa', 
+  QA = 'qa',
   BLOG = 'blog', // 新增文章类型
 }
 
@@ -83,17 +83,17 @@ const CONTENT_TYPE_CONFIGS: Record<ContentType, ContentTypeConfig> = {
  */
 class ContentTypeConfigManager {
   private static instance: ContentTypeConfigManager
-  private configs: Record<string, ContentTypeConfig> = CONTENT_TYPE_CONFIGS 
-  
+  private configs: Record<string, ContentTypeConfig> = CONTENT_TYPE_CONFIGS
+
   private constructor() {}
-  
+
   static getInstance(): ContentTypeConfigManager {
     if (!ContentTypeConfigManager.instance) {
       ContentTypeConfigManager.instance = new ContentTypeConfigManager()
     }
     return ContentTypeConfigManager.instance
   }
-  
+
   /**
    * 获取内容类型配置
    * @param contentType 内容类型
@@ -102,7 +102,7 @@ class ContentTypeConfigManager {
   getConfig(contentType: string): ContentTypeConfig {
     return this.configs[contentType] || this.configs[ContentType.QA]
   }
-  
+
   /**
    * 注册新的内容类型配置
    * @param contentType 内容类型
@@ -111,7 +111,7 @@ class ContentTypeConfigManager {
   registerConfig(contentType: string, config: ContentTypeConfig): void {
     this.configs[contentType] = config
   }
-  
+
   /**
    * 获取所有支持的内容类型
    * @returns 内容类型数组
@@ -149,6 +149,27 @@ const getNotificationText = (info: MessageNotifyInfo): string => {
   }
 }
 
+/**
+ * 拆分通知文本为动作词和内容部分
+ * @param text 通知文本
+ * @returns 包含动作词和内容的对象
+ */
+export const splitNotificationText = (text: string): { action: string; content: string } => {
+  // 匹配"了"字来拆分文本，格式通常是"动作词了内容"
+  const match = text.match(/^(.+了)(.+)$/)
+  if (match) {
+    return {
+      action: match[1],
+      content: match[2],
+    }
+  }
+  // 如果没有匹配到，返回原文本作为内容
+  return {
+    action: '',
+    content: text,
+  }
+}
+
 type MessageNotifyInfo = {
   discuss_id: number
   discuss_title: string
@@ -173,11 +194,15 @@ export { ContentType, MsgNotifyType, type ContentTypeConfig }
 
 // 导出通知文本获取函数，供其他模块使用
 // 支持 MessageNotifyInfo 和 ModelMessageNotify 两种类型
-export const getNotificationTextForExport = (info: MessageNotifyInfo | {
-  discussion_type?: string | 'qa' | 'feedback' | 'blog'
-  type?: number
-  to_bot?: boolean
-}): string => {
+export const getNotificationTextForExport = (
+  info:
+    | MessageNotifyInfo
+    | {
+        discussion_type?: string | 'qa' | 'feedback' | 'blog'
+        type?: number
+        to_bot?: boolean
+      },
+): string => {
   // 类型适配：将 ModelMessageNotify 转换为 MessageNotifyInfo 格式
   const adaptedInfo: MessageNotifyInfo = {
     discuss_id: (info as any).discuss_id || 0,
@@ -199,7 +224,7 @@ export const getNotificationTextForExport = (info: MessageNotifyInfo | {
 
 /**
  * 使用示例：
- * 
+ *
  * // 在其他模块中注册新的内容类型
  * const configManager = getContentTypeConfigManager()
  * configManager.registerConfig('video', {
@@ -212,7 +237,7 @@ export const getNotificationTextForExport = (info: MessageNotifyInfo | {
  *   botUnknownAction: '提出了机器人无法回答的问题',
  *   likeFeedbackAction: '点赞了你的反馈',
  * })
- * 
+ *
  * // 获取支持的内容类型
  * const supportedTypes = configManager.getSupportedTypes()
  * console.log('支持的内容类型:', supportedTypes)
@@ -308,10 +333,12 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
       // 更新UI
       setUnreadCount((c) => Math.max(0, c - 1))
       setNotifications((prev) => prev.filter((n) => n.id !== notification.id))
-      
+
       // 根据 forum_id 查找对应的 route_name
-      const forum = forums.find(f => f.id === notification.forum_id)
-      const routePath = forum?.route_name ? `/${forum.route_name}/${notification.discuss_uuid}` : `/${notification.forum_id}/${notification.discuss_uuid}`
+      const forum = forums.find((f) => f.id === notification.forum_id)
+      const routePath = forum?.route_name
+        ? `/${forum.route_name}/${notification.discuss_uuid}`
+        : `/${notification.forum_id}/${notification.discuss_uuid}`
       router.push(routePath)
     }
   }
@@ -343,7 +370,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
           <Stack spacing={1}>
             <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
               {notifications.length === 0 ? (
-                <Box sx={{ p: 2, textAlign: 'center', color: 'text.secondary',fontSize: '14px' }}>暂无通知</Box>
+                <Box sx={{ p: 2, textAlign: 'center', color: 'text.secondary', fontSize: '14px' }}>暂无通知</Box>
               ) : (
                 notifications.map((notification, index) => (
                   <Stack
@@ -357,15 +384,57 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
                       },
                       borderRadius: 1,
                     }}
-                    direction='row'
-                    alignItems='center'
                   >
                     <Box onClick={() => handleNotificationClick(notification)}>
-                      <Typography variant='body1' sx={{ display: 'inline', pr: 1 }}>
-                        {notification.from_name}
-                      </Typography>
-                      <Typography sx={{ display: 'inline' }} variant='caption'>
-                        {getNotificationText(notification)}
+                      <Stack direction='row' spacing={1} alignItems='center' sx={{ mb: 0.5 }}>
+                        <Typography
+                          variant='body2'
+                          sx={{
+                            fontWeight: 500,
+                            color: '#333',
+                            fontSize: '14px',
+                          }}
+                        >
+                          {notification.from_name || '未知用户'}
+                        </Typography>
+                        {(() => {
+                          const notificationText = getNotificationText(notification)
+                          const { action, content } = splitNotificationText(notificationText)
+                          return (
+                            <>
+                              {action && (
+                                <Typography
+                                  variant='body2'
+                                  sx={{
+                                    color: '#666',
+                                    fontSize: '13px',
+                                  }}
+                                >
+                                  {action}
+                                </Typography>
+                              )}
+                              <Typography
+                                variant='body2'
+                                sx={{
+                                  fontSize: '13px',
+                                }}
+                              >
+                                {content}
+                              </Typography>
+                            </>
+                          )
+                        })()}
+                      </Stack>
+                      <Typography
+                        variant='caption'
+                        sx={{
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          color: 'text.auxiliary',
+                        }}
+                      >
+                        {notification.discuss_title || '无标题'}
                       </Typography>
                     </Box>
                   </Stack>

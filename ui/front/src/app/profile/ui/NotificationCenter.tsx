@@ -11,7 +11,7 @@ import { Message } from '@/components'
 import Modal from '@/components/modal'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import { useForum } from '@/contexts/ForumContext'
-import { getNotificationTextForExport } from '@/components/header/loggedInView'
+import { getNotificationTextForExport, splitNotificationText } from '@/components/header/loggedInView'
 
 dayjs.locale('zh-cn')
 
@@ -59,29 +59,24 @@ export default function NotificationCenter() {
     }
   }, [])
 
-  // 加载通知列表
+  // 加载通知列表和未读数量
   useEffect(() => {
     fetchNotifications({
       page: notifyPage,
       size: notifyPageSize,
     })
     loadUnreadCount()
-  }, [notifyPage, notifyPageSize, fetchNotifications, loadUnreadCount])
+    // 注意：这里故意不包含 fetchNotifications 和 loadUnreadCount 作为依赖
+    // 因为它们应该是稳定的，避免重复调用
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifyPage, notifyPageSize])
 
   const handleNotificationClick = async (notification: ModelMessageNotify) => {
     // 标记为已读
     if (notification.id) {
       try {
-        await postUserNotifyRead({ id: notification.id })
-        // 更新本地未读数量
-        setUnreadCount((prev) => Math.max(0, prev - 1))
-        // 刷新通知列表以更新已读状态
-        fetchNotifications({
-          page: notifyPage,
-          size: notifyPageSize,
-        })
+        postUserNotifyRead({ id: notification.id })
       } catch (error) {
-        console.error('标记通知已读失败:', error)
         Message.error('标记已读失败')
         return // 如果标记失败，不跳转
       }
@@ -89,12 +84,7 @@ export default function NotificationCenter() {
 
     // 跳转到对应的讨论
     if (notification.discuss_uuid && notification.forum_id) {
-      // 统一使用 route_name，与 loggedInView 保持一致
-      const forum = forums.find((f) => f.id === notification.forum_id)
-      const routePath = forum?.route_name
-        ? `/${forum.route_name}/${notification.discuss_uuid}`
-        : `/${notification.forum_id}/${notification.discuss_uuid}`
-      routerWithRouteName.push(routePath)
+      routerWithRouteName.push(`/${notification.forum_id}/${notification.discuss_uuid}`)
     }
   }
 
@@ -130,32 +120,6 @@ export default function NotificationCenter() {
   const columns = [
     {
       title: '',
-      dataIndex: 'avatar',
-      key: 'avatar',
-      width: 60,
-      render: (_: any, record: ModelMessageNotify) => (
-        <Box
-          onClick={() => handleNotificationClick(record)}
-          sx={{
-            width: 40,
-            height: 40,
-            borderRadius: '50%',
-            backgroundColor: '#1976d2',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontSize: '16px',
-            fontWeight: 500,
-            cursor: 'pointer',
-          }}
-        >
-          {record.from_name?.[0] || '用'}
-        </Box>
-      ),
-    },
-    {
-      title: '',
       dataIndex: 'content',
       key: 'content',
       render: (_: any, record: ModelMessageNotify) => {
@@ -172,15 +136,33 @@ export default function NotificationCenter() {
               >
                 {record.from_name || '未知用户'}
               </Typography>
-              <Typography
-                variant='body2'
-                sx={{
-                  color: '#666',
-                  fontSize: '13px',
-                }}
-              >
-                {formatNotificationText(record)}
-              </Typography>
+              {(() => {
+                const notificationText = formatNotificationText(record)
+                const { action, content } = splitNotificationText(notificationText)
+                return (
+                  <>
+                    {action && (
+                      <Typography
+                        variant='body2'
+                        sx={{
+                          color: '#666',
+                          fontSize: '13px',
+                        }}
+                      >
+                        {action}
+                      </Typography>
+                    )}
+                    <Typography
+                      variant='body2'
+                      sx={{
+                        fontSize: '13px',
+                      }}
+                    >
+                      {content}
+                    </Typography>
+                  </>
+                )
+              })()}
               {!record.read && (
                 <Box
                   sx={{
@@ -244,28 +226,9 @@ export default function NotificationCenter() {
         sx={{ pb: 2, borderBottom: '1px solid #e0e0e0' }}
       >
         <Stack direction='row' spacing={2} alignItems='center'>
-          <Chip
-            label={`${unreadCount}条未读`}
-            variant='outlined'
-            color='info'
-            sx={{
-              fontWeight: 500,
-              borderRadius: '12px',
-              height: '24px',
-            }}
-          />
+          <Typography variant='caption' sx={{fontSize: '14px'}}>{`${unreadCount}条未读`}</Typography>
         </Stack>
-        <Button
-          onClick={handleMarkAllRead}
-          sx={{
-            color: '#1976d2',
-            textTransform: 'none',
-            fontWeight: 500,
-            '&:hover': {
-              backgroundColor: 'rgba(25, 118, 210, 0.04)',
-            },
-          }}
-        >
+        <Button onClick={handleMarkAllRead} color='info'>
           全部已读
         </Button>
       </Stack>

@@ -197,7 +197,6 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
         })
         .catch(err => {
           console.error('更新用户失败:', err);
-          message.error('更新用户失败');
         });
     }
   });

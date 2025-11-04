@@ -564,7 +564,7 @@ const Forum: React.FC = () => {
         {blockFields.length < 3 && (
           <Button
             variant="text"
-            color="primary"
+            color="info"
             onClick={handleAddBlock}
             sx={{ alignSelf: 'flex-start' }}
           >

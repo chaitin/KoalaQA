@@ -32,7 +32,7 @@ export default function EditPage() {
   // 根据 route_name 获取对应的 forumInfo
   const forumInfo = useMemo(() => {
     if (!routeName || !forums || forums.length === 0) return null
-    return forums.find(f => f.route_name === routeName) || null
+    return forums.find((f) => f.route_name === routeName) || null
   }, [routeName, forums])
 
   // 根据 data.type 转换为 ReleaseModal 需要的 type
@@ -106,7 +106,7 @@ export default function EditPage() {
               minHeight: '90vh',
               '& .tiptap:focus': {
                 background: '#fff!important',
-              }
+              },
             }}
           >
             <Stack direction={'row'} alignItems={'baseline'} gap={3}>
@@ -153,7 +153,7 @@ export default function EditPage() {
           onOk={() => setReleaseOpen(false)}
           selectedTags={[]}
           status={queryId ? 'edit' : 'create'}
-          initialTitle={data.content}
+          initialTitle={data.title}
           data={data}
           id={queryId}
           initialContent={modalContent}
@@ -169,7 +169,7 @@ export default function EditPage() {
             overflowY: 'auto',
             flexShrink: 0,
             width: '242px',
-            display: { xs: 'none', lg: 'block' } 
+            display: { xs: 'none', lg: 'block' },
           }}
         >
           <Toc headings={headings} />
