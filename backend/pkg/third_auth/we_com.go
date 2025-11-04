@@ -39,7 +39,7 @@ func (w *weCom) Check(ctx context.Context) error {
 }
 
 func (w *weCom) AuthURL(ctx context.Context, state string, optFuncs ...authURLOptFunc) (string, error) {
-	opt := getAuthURLOpt()
+	opt := getAuthURLOpt(optFuncs...)
 
 	query := make(url.Values)
 	query.Set("appid", w.cfg.CorpID)
