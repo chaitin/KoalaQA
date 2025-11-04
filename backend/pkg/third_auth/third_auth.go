@@ -26,12 +26,20 @@ func (u *User) HashInt() int {
 	return int(binary.BigEndian.Uint64(util.MD5(fmt.Sprintf("%s|%d", u.ThirdID, u.Type))))
 }
 
-type userOpt struct{}
+type authURLOpt struct {
+	APP bool
+}
 
-type userOptFunc func(o *userOpt)
+type authURLOptFunc func(o *authURLOpt)
 
-func getUserOpt(funcs ...userOptFunc) userOpt {
-	var o userOpt
+func AuthURLInAPP(app bool) authURLOptFunc {
+	return func(o *authURLOpt) {
+		o.APP = app
+	}
+}
+
+func getAuthURLOpt(funcs ...authURLOptFunc) authURLOpt {
+	var o authURLOpt
 
 	for _, f := range funcs {
 		f(&o)
@@ -41,6 +49,6 @@ func getUserOpt(funcs ...userOptFunc) userOpt {
 
 type Author interface {
 	Check(ctx context.Context) error
-	AuthURL(ctx context.Context, state string) (string, error)
-	User(ctx context.Context, code string, optFuncs ...userOptFunc) (*User, error)
+	AuthURL(ctx context.Context, state string, optFuncs ...authURLOptFunc) (string, error)
+	User(ctx context.Context, code string) (*User, error)
 }

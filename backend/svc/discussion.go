@@ -116,12 +116,6 @@ func (d *Discussion) Create(ctx context.Context, req DiscussionCreateReq) (strin
 		return "", errPermission
 	}
 
-	if len(req.GroupIDs) > 0 {
-		err := d.in.GroupItemRepo.FilterIDs(ctx, &req.GroupIDs)
-		if err != nil {
-			return "", err
-		}
-	}
 	if req.ForumID == 0 {
 		forumID, err := d.in.ForumRepo.GetFirstID(ctx)
 		if err != nil {
@@ -141,7 +135,10 @@ func (d *Discussion) Create(ctx context.Context, req DiscussionCreateReq) (strin
 			continue
 		}
 
-		req.GroupIDs = util.Intersect(group.GroupIDs, req.GroupIDs)
+		err = d.in.GroupItemRepo.FilterIDs(ctx, &req.GroupIDs, repo.QueryWithEqual("group_id", group.GroupIDs, repo.EqualOPEqAny))
+		if err != nil {
+			return "", err
+		}
 		break
 	}
 

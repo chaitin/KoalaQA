@@ -74,9 +74,14 @@ func (b *base[T]) DeleteByID(ctx context.Context, id uint) error {
 	return b.model(ctx).Where("id = ?", id).Delete(nil).Error
 }
 
-func (b *base[T]) FilterIDs(ctx context.Context, ids *model.Int64Array) error {
+func (b *base[T]) FilterIDs(ctx context.Context, ids *model.Int64Array, queryFuns ...QueryOptFunc) error {
+	if len(*ids) == 0 {
+		return nil
+	}
+
+	opt := getQueryOpt(queryFuns...)
 	var filterIDs []int64
-	err := b.model(ctx).Select("id").Where("id =ANY(?)", ids).Scan(&filterIDs).Error
+	err := b.model(ctx).Select("id").Where("id =ANY(?)", ids).Scopes(opt.Scopes()...).Scan(&filterIDs).Error
 	if err != nil {
 		return err
 	}

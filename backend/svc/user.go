@@ -35,6 +35,7 @@ type UserListReq struct {
 	OrgID   *uint   `form:"org_id"`
 	OrgName *string `form:"org_name"`
 	Name    *string `form:"name"`
+	Email   *string `form:"email"`
 }
 
 type UserListItem struct {
@@ -59,6 +60,7 @@ func (u *User) List(ctx context.Context, req UserListReq) (*model.ListRes[UserLi
 		repo.QueryWithILike("name", req.Name),
 		repo.QueryWithEqual("invisible", false),
 		repo.QueryWithEqual("org_ids", req.OrgID, repo.EqualOPValIn),
+		repo.QueryWithILike("email", req.Email),
 	)
 	if err != nil {
 		return nil, err
@@ -465,6 +467,7 @@ func (u *User) Logout(ctx context.Context, uid uint) error {
 }
 
 type LoginThirdURLReq struct {
+	APP      bool           `form:"app"`
 	Type     model.AuthType `form:"type" binding:"required"`
 	Redirect string         `form:"redirect"`
 }
@@ -479,22 +482,22 @@ func (u *User) LoginThirdURL(ctx context.Context, state string, req LoginThirdUR
 		return "", errors.New("third login disabled")
 	}
 
-	return u.authMgmt.AuthURL(ctx, req.Type, state)
+	return u.authMgmt.AuthURL(ctx, req.Type, state, third_auth.AuthURLInAPP(req.APP))
 }
 
-type LoginOIDCCallbackReq struct {
+type LoginThirdCallbackReq struct {
 	State string `form:"state" binding:"required"`
 	Code  string `form:"code" binding:"required"`
 }
 
-func (u *User) LoginOIDCCallback(ctx context.Context, req LoginOIDCCallbackReq) (string, error) {
-	ok, err := u.canAuth(ctx, model.AuthTypeOIDC)
+func (u *User) LoginThirdCallback(ctx context.Context, typ model.AuthType, req LoginThirdCallbackReq) (string, error) {
+	ok, err := u.canAuth(ctx, typ)
 	if err != nil {
 		return "", err
 	}
 
 	if !ok {
-		return "", errors.New("oidc login disabled")
+		return "", errors.New("third login disabled")
 	}
 
 	org, err := u.repoOrg.GetBuiltin(ctx)
@@ -502,7 +505,7 @@ func (u *User) LoginOIDCCallback(ctx context.Context, req LoginOIDCCallbackReq) 
 		return "", err
 	}
 
-	user, err := u.authMgmt.User(ctx, model.AuthTypeOIDC, req.Code)
+	user, err := u.authMgmt.User(ctx, typ, req.Code)
 	if err != nil {
 		return "", err
 	}

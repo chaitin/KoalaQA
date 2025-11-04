@@ -33,12 +33,14 @@ import { z } from 'zod';
 enum AuthType {
   PASSWORD = 1, // 密码认证
   OIDC = 2, // OIDC认证
+  WECOM = 3, //企业微信认证
 }
 
 // 登录方式选项
 const AUTH_TYPE_OPTIONS = [
   { label: '密码认证', value: AuthType.PASSWORD },
-  { label: 'OIDC', value: AuthType.OIDC },
+  { label: 'OIDC 认证', value: AuthType.OIDC },
+  { label: '企业微信认证', value: AuthType.WECOM },
 ];
 
 // Zod 验证模式
@@ -62,12 +64,21 @@ const loginMethodSchema = z.object({
       button_desc: z.string().optional(),
     })
     .optional(),
+  wecom_config: z
+    .object({
+      corp_id: z.string().optional(),
+      client_id: z.string().optional(),
+      secret: z.string().optional(),
+      button_desc: z.string().optional(),
+    })
+    .optional(),
 });
 
 type LoginMethodFormData = z.infer<typeof loginMethodSchema>;
 
 const LoginMethod: React.FC = () => {
   const [showClientSecret, setShowClientSecret] = useState(false);
+  const [showWecomSecret, setShowWecomSecret] = useState(false);
 
   const {
     control,
@@ -91,12 +102,19 @@ const LoginMethod: React.FC = () => {
         client_secret: '',
         button_desc: 'OIDC 登录',
       },
+      wecom_config: {
+        corp_id: '',
+        client_id: '',
+        secret: '',
+        button_desc: '企业微信登陆',
+      },
     },
   });
 
   const watchedAuthTypes = watch('auth_types');
   const isPasswordSelected = watchedAuthTypes?.includes(AuthType.PASSWORD) ?? false;
   const isOidcSelected = watchedAuthTypes?.includes(AuthType.OIDC) ?? false;
+  const isWecomSelected = watchedAuthTypes?.includes(AuthType.WECOM) ?? false;
 
   // 获取当前配置
   const { loading } = useRequest(getAdminSystemLoginMethod, {
@@ -126,12 +144,22 @@ const LoginMethod: React.FC = () => {
           button_desc: oidcInfo?.button_desc ?? 'OIDC 登录',
         };
 
+        // 获取企业微信配置
+        const wecomInfo = auth_infos?.find((info: ModelAuthInfo) => info.type === AuthType.WECOM);
+        const wecomConfig = {
+          corp_id: wecomInfo?.config?.oauth?.corp_id ?? '',
+          client_id: wecomInfo?.config?.oauth?.client_id ?? '',
+          secret: wecomInfo?.config?.oauth?.client_secret ?? '',
+          button_desc: wecomInfo?.button_desc ?? '企业微信登陆',
+        };
+
         reset({
           enable_register: enable_register ?? true,
           public_access: public_access ?? true,
           auth_types: authTypes as number[],
           password_config: passwordConfig,
           oidc_config: oidcConfig,
+          wecom_config: wecomConfig,
         });
       }
     },
@@ -154,6 +182,18 @@ const LoginMethod: React.FC = () => {
         }
       }
 
+      // 验证企业微信配置
+      if (formData.auth_types.includes(AuthType.WECOM)) {
+        if (
+          !formData.wecom_config?.corp_id ||
+          !formData.wecom_config?.client_id ||
+          !formData.wecom_config?.secret
+        ) {
+          message.error('请完善企业微信配置信息');
+          return;
+        }
+      }
+
       // 构建认证信息
       const authInfos: ModelAuthInfo[] = formData.auth_types.map(type => {
         const authInfo: ModelAuthInfo = { type };
@@ -167,6 +207,16 @@ const LoginMethod: React.FC = () => {
               url: formData.oidc_config.url || '',
               client_id: formData.oidc_config.client_id || '',
               client_secret: formData.oidc_config.client_secret || '',
+            },
+          };
+          authInfo.config = config;
+        } else if (type === AuthType.WECOM && formData.wecom_config) {
+          authInfo.button_desc = formData.wecom_config.button_desc || '企业微信登陆';
+          const config: ModelAuthConfig = {
+            oauth: {
+              corp_id: formData.wecom_config.corp_id || '',
+              client_id: formData.wecom_config.client_id || '',
+              client_secret: formData.wecom_config.secret || '',
             },
           };
           authInfo.config = config;
@@ -600,6 +650,206 @@ const LoginMethod: React.FC = () => {
                   <Box sx={{ flex: 1 }}>
                     <Controller
                       name="oidc_config.button_desc"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          placeholder="请输入"
+                          fullWidth
+                          size="small"
+                          InputLabelProps={{
+                            shrink: false,
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              backgroundColor: '#F8F9FA',
+                              borderRadius: '10px',
+                            },
+                            '& .MuiInputBase-input': {
+                              fontSize: 14,
+                            },
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+                </Stack>
+              </Stack>
+            </>
+          )}
+
+          {/* 企业微信配置 */}
+          {isWecomSelected && (
+            <>
+              <Box
+                sx={{
+                  borderTop: '1px dashed #e0e0e0',
+                }}
+              />
+              <Box
+                sx={{
+                  borderRadius: 1,
+                  backgroundColor: 'white',
+                  py: 3,
+                  minHeight: 64,
+                }}
+              >
+                <Box
+                  sx={{
+                    left: 16,
+                    backgroundColor: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    py: 0,
+                    fontSize: 14,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 4,
+                      height: 12,
+                      borderRadius: 1,
+                      background: 'linear-gradient(180deg, #2458E5 0%, #5B8FFC 100%)',
+                      mr: 1,
+                      display: 'inline-block',
+                    }}
+                  />
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 500,
+                      color: '#21222D',
+                      fontSize: 14,
+                    }}
+                  >
+                    企业微信配置
+                  </Typography>
+                </Box>
+              </Box>
+
+              <Stack spacing={1.5}>
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                    企业 ID<span style={{ color: 'red' }}>*</span>
+                  </Typography>
+                  <Box sx={{ flex: 1 }}>
+                    <Controller
+                      name="wecom_config.corp_id"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          placeholder="请输入"
+                          required
+                          fullWidth
+                          size="small"
+                          InputLabelProps={{
+                            shrink: false,
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              backgroundColor: '#F8F9FA',
+                              borderRadius: '10px',
+                            },
+                            '& .MuiInputBase-input': {
+                              fontSize: 14,
+                            },
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+                </Stack>
+
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                    Agent ID<span style={{ color: 'red' }}>*</span>
+                  </Typography>
+                  <Box sx={{ flex: 1 }}>
+                    <Controller
+                      name="wecom_config.client_id"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          placeholder="请输入"
+                          required
+                          fullWidth
+                          size="small"
+                          InputLabelProps={{
+                            shrink: false,
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              backgroundColor: '#F8F9FA',
+                              borderRadius: '10px',
+                            },
+                            '& .MuiInputBase-input': {
+                              fontSize: 14,
+                            },
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+                </Stack>
+
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                    Secret<span style={{ color: 'red' }}>*</span>
+                  </Typography>
+                  <Box sx={{ flex: 1 }}>
+                    <Controller
+                      name="wecom_config.secret"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          placeholder="请输入"
+                          required
+                          fullWidth
+                          type={showWecomSecret ? 'text' : 'password'}
+                          size="small"
+                          InputProps={{
+                            endAdornment: (
+                              <InputAdornment position="end">
+                                <IconButton
+                                  aria-label="toggle wecom secret visibility"
+                                  onClick={() => setShowWecomSecret(!showWecomSecret)}
+                                  onMouseDown={event => event.preventDefault()}
+                                  edge="end"
+                                  size="small"
+                                >
+                                  {showWecomSecret ? <VisibilityOff /> : <Visibility />}
+                                </IconButton>
+                              </InputAdornment>
+                            ),
+                          }}
+                          InputLabelProps={{
+                            shrink: false,
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              backgroundColor: '#F8F9FA',
+                              borderRadius: '10px',
+                            },
+                            '& .MuiInputBase-input': {
+                              fontSize: 14,
+                            },
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+                </Stack>
+
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                    按钮文案
+                  </Typography>
+                  <Box sx={{ flex: 1 }}>
+                    <Controller
+                      name="wecom_config.button_desc"
                       control={control}
                       render={({ field }) => (
                         <TextField
