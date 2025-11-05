@@ -1,12 +1,12 @@
 'use client'
 import { AuthContext } from '@/components/authProvider'
-import { Avatar } from '@/components/discussion'
 import { useForum } from '@/contexts/ForumContext'
-import NotificationsNoneOutlinedIcon from '@mui/icons-material/NotificationsNoneOutlined'
-import { Badge, Box, Button, Stack, Tooltip, Typography } from '@mui/material'
+import { Badge, Box, Button, IconButton, Stack, Tooltip, Typography } from '@mui/material'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import ProfilePanel from './profilePanel'
+import NotificationsIcon from '@mui/icons-material/Notifications'
+import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 
 // 内容类型枚举
 enum ContentType {
@@ -347,6 +347,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
     <>
       <Tooltip
         placement='bottom-end'
+        sx={{mx: 2,}}
         slotProps={{
           tooltip: {
             sx: {
@@ -463,43 +464,23 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
           </Stack>
         }
       >
-        <Badge
-          badgeContent={unreadCount}
-          overlap='circular'
+        <IconButton
+          disableRipple
           sx={{
-            '& .MuiBadge-badge': {
-              backgroundColor: '#FF3B30',
-              display: !!unreadCount ? 'block' : 'none',
-              minWidth: 18,
-              height: 18,
-              borderRadius: 10,
-              fontSize: 12,
-              fontWeight: 600,
-              boxShadow: '0 4px 12px rgba(11,92,255,0.12)',
-              transform: 'translate(10%, -20%)',
+            color: '#6b7280',
+            transition: 'all 0.15s ease-in-out',
+            '&:hover': {
+              color: '#111827',
+              bgcolor: '#f3f4f6',
+              transform: 'scale(1.05)',
             },
+            '&:active': { transform: 'scale(0.95)' },
           }}
         >
-          <Box
-            sx={{
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: '#fff',
-              transition: 'background .18s, transform .08s',
-              cursor: 'pointer',
-              '&:hover': {
-                backgroundColor: '#F3F6FE',
-              },
-              '&:active': { transform: 'translateY(0)' },
-            }}
-          >
-            <NotificationsNoneOutlinedIcon sx={{ color: '#000', fontSize: 20 }} />
-          </Box>
-        </Badge>
+          <Badge badgeContent={unreadCount} color='error'>
+            <NotificationsIcon sx={{ fontSize: 24 }} />
+          </Badge>
+        </IconButton>
       </Tooltip>
       <Tooltip
         placement='bottom-end'
@@ -522,26 +503,21 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
         }}
         title={<ProfilePanel />}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {/* 头像 */}
-          <Box
-            sx={{
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              backgroundColor: '#fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'background .18s, transform .08s',
-              '&:hover': {
-                backgroundColor: '#F3F6FE',
-              },
-            }}
-          >
-            <Avatar size={36} src={user?.avatar} />
-          </Box>
-        </Box>
+        <IconButton
+          disableRipple
+          sx={{
+            color: '#6b7280',
+            transition: 'all 0.15s ease-in-out',
+            '&:hover': {
+              color: '#111827',
+              bgcolor: '#f3f4f6',
+              transform: 'scale(1.05)',
+            },
+            '&:active': { transform: 'scale(0.95)' },
+          }}
+        >
+          <AccountCircleIcon sx={{ fontSize: 24 }} />
+        </IconButton>
       </Tooltip>
     </>
   )

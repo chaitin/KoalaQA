@@ -706,6 +706,13 @@ export interface SvcPolishReq {
   text?: string;
 }
 
+export interface SvcRankContributeItem {
+  avatar?: string;
+  id?: number;
+  name?: string;
+  score?: number;
+}
+
 export interface SvcResolveFeedbackReq {
   resolve?: boolean;
 }
@@ -1248,6 +1255,11 @@ export interface PostDiscussionDiscIdResolveParams {
 }
 
 export interface PostDiscussionDiscIdRevokeLikeParams {
+  /** disc_id */
+  discId: string;
+}
+
+export interface GetDiscussionDiscIdSimilarityParams {
   /** disc_id */
   discId: string;
 }

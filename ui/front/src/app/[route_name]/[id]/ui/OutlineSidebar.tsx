@@ -3,7 +3,7 @@ import { ModelDiscussionDetail } from '@/api'
 import { Card } from '@/components'
 import EditorContent from '@/components/EditorContent'
 import Toc from '@/components/Toc'
-import { Box, Stack, Typography } from '@mui/material'
+import { Stack, Typography } from '@mui/material'
 import { useEffect, useState } from 'react'
 
 const OutlineSidebar = ({ discussion }: { discussion: ModelDiscussionDetail }) => {
@@ -49,7 +49,6 @@ const OutlineSidebar = ({ discussion }: { discussion: ModelDiscussionDetail }) =
       <Card
         sx={{
           overflowY: 'auto',
-          width: '242px',
           flexShrink: 0,
           '& .editor-container p': {
             fontSize: '13px',
@@ -79,10 +78,9 @@ const OutlineSidebar = ({ discussion }: { discussion: ModelDiscussionDetail }) =
       <Card
         sx={{
           position: 'sticky',
-          top: 90,
+          top: 110,
           maxHeight: '70vh',
           overflowY: 'auto',
-          width: '242px',
           flexShrink: 0,
         }}
       >
