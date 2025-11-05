@@ -4124,6 +4124,14 @@ const docTemplate = `{
                     "group_frontend"
                 ],
                 "summary": "frontend list group",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "forum id",
+                        "name": "forum_id",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
