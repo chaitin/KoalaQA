@@ -28,7 +28,7 @@ func (r *rank) Contribute(ctx *context.Context) {
 
 func (r *rank) Route(h server.Handler) {
 	g := h.Group("/rank")
-	g.GET("/contribute")
+	g.GET("/contribute", r.Contribute)
 }
 
 func newRank(r *svc.Rank) server.Router {
