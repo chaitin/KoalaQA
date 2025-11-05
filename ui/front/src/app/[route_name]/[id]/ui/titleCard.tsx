@@ -35,9 +35,7 @@ import {
 } from '@mui/material'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import { useBoolean } from 'ahooks'
-import dayjs from 'dayjs'
-import 'dayjs/locale/zh-cn'
-import relativeTime from 'dayjs/plugin/relativeTime'
+import dayjs from '@/lib/dayjs'
 import { useParams, useRouter } from 'next/navigation'
 import { useContext, useRef, useState, useEffect, useMemo } from 'react'
 import { CheckCircleIcon } from '@/utils/mui-imports'
@@ -69,9 +67,6 @@ const animationStyles = `
 `
 
 // 样式注入逻辑将在组件内部通过useEffect处理
-
-dayjs.extend(relativeTime)
-dayjs.locale('zh-cn')
 
 const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const [menuVisible, { setFalse: menuClose, setTrue: menuOpen }] = useBoolean(false)
@@ -199,29 +194,6 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const isCategoryTag = (tag: string) => {
     return data.groups?.some((group) => group.name === tag) || false
   }
-
-  // 在客户端组件中注入帖子类型信息，供 filter-panel 读取
-  useEffect(() => {
-    if (typeof window !== 'undefined' && data.type) {
-      const typeMap: Record<string, string> = {
-        [ModelDiscussionType.DiscussionTypeQA]: 'qa',
-        [ModelDiscussionType.DiscussionTypeBlog]: 'blog',
-        [ModelDiscussionType.DiscussionTypeFeedback]: 'feedback',
-      }
-      const postType = typeMap[data.type] || 'qa'
-      ;(window as any).__POST_DETAIL_TYPE__ = postType
-      
-      // 触发自定义事件通知 filter-panel
-      window.dispatchEvent(new CustomEvent('postDetailTypeChanged', { detail: postType }))
-    }
-    // 组件卸载时清理
-    return () => {
-      if (typeof window !== 'undefined') {
-        delete (window as any).__POST_DETAIL_TYPE__
-        window.dispatchEvent(new CustomEvent('postDetailTypeChanged', { detail: null }))
-      }
-    }
-  }, [data.type])
 
   return (
     <>

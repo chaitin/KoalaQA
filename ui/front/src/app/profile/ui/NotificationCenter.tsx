@@ -5,15 +5,12 @@ import { Box, Button, Stack, Typography, Chip } from '@mui/material'
 import { Table } from '@ctzhian/ui'
 import { useEffect, useState, useCallback } from 'react'
 import { useRequest } from 'ahooks'
-import dayjs from 'dayjs'
-import 'dayjs/locale/zh-cn'
+import dayjs from '@/lib/dayjs'
 import { Message } from '@/components'
 import Modal from '@/components/modal'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import { useForum } from '@/contexts/ForumContext'
 import { getNotificationTextForExport, splitNotificationText } from '@/components/header/loggedInView'
-
-dayjs.locale('zh-cn')
 
 export default function NotificationCenter() {
   const { forums } = useForum()

@@ -1,11 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import dayjs from 'dayjs'
-import 'dayjs/locale/zh-cn'
-import relativeTime from 'dayjs/plugin/relativeTime'
-
-dayjs.extend(relativeTime)
-dayjs.locale('zh-cn')
+import dayjs from '@/lib/dayjs'
 
 interface TimeDisplayProps {
   timestamp: number
