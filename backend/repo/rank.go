@@ -14,7 +14,7 @@ type Rank struct {
 }
 
 func (r *Rank) ListContribute(ctx context.Context, res any) error {
-	return r.model(ctx).Select("ranks.score_id AS id, users.name, users.avatar").
+	return r.model(ctx).Select("ranks.score_id AS id, ranks.score, users.name, users.avatar").
 		Joins("LEFT JOIN users ON users.id = ranks.score_id").
 		Where("type = ?", model.RankTypeContribute).
 		Order("score DESC").

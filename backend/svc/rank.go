@@ -12,9 +12,10 @@ type Rank struct {
 }
 
 type RankContributeItem struct {
-	ID     uint   `json:"id"`
-	Name   string `json:"name"`
-	Avatar string `json:"avatar"`
+	ID     uint    `json:"id"`
+	Name   string  `json:"name"`
+	Avatar string  `json:"avatar"`
+	Score  float64 `json:"score"`
 }
 
 func (r *Rank) Contribute(ctx context.Context) (*model.ListRes[RankContributeItem], error) {

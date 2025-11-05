@@ -6573,6 +6573,9 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "score": {
+                    "type": "number"
                 }
             }
         },
