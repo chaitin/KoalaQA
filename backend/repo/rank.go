@@ -15,7 +15,7 @@ type Rank struct {
 
 func (r *Rank) ListContribute(ctx context.Context, res any) error {
 	return r.model(ctx).Select("ranks.score_id AS id, users.name, users.avatar").
-		Joins("LEFT JOIN users ON users.id = rannks.score_id").
+		Joins("LEFT JOIN users ON users.id = ranks.score_id").
 		Where("type = ?", model.RankTypeContribute).
 		Order("score DESC").
 		Limit(5).Find(res).Error
@@ -26,8 +26,8 @@ func (r *Rank) UserContribute(ctx context.Context) ([]model.Rank, error) {
 	var res []model.Rank
 	err := r.db.WithContext(ctx).Model(&model.User{}).
 		Select("? AS type,users.id AS score_id, user_comment.answer_disc_count*0.2+user_comment.accpted_count*0.4+user_disc.blog_count*0.25+user_disc.qa_count*0.15 AS score", model.RankTypeContribute).
-		Joins("LEFT JOIN (SELECT user_id, COUNT(1) FILTER (WHERE type = 'qa') AS qa_count, COUNT(1) FILTER (WHERE type = 'blog') AS blog_count FROM discussions WHERE created_at >= ? GROUP BY user_id) AS user_disc ON user_disc.user_id = users.id", t).
-		Joins("LEFT JOIN (SELECT user_id, COUNT(1) FILTER (WHERE accepted) AS accpted_count, COUNT(DISTINCT discussion_id) AS answer_disc_count FROM comments WHERE created_at >= ? GROUP BY user_id) AS user_comment ON user_comment.user_id = users.id", t).
+		Joins("JOIN (SELECT user_id, COUNT(1) FILTER (WHERE type = 'qa') AS qa_count, COUNT(1) FILTER (WHERE type = 'blog') AS blog_count FROM discussions WHERE created_at >= ? GROUP BY user_id) AS user_disc ON user_disc.user_id = users.id", t).
+		Joins("JOIN (SELECT user_id, COUNT(1) FILTER (WHERE accepted) AS accpted_count, COUNT(DISTINCT discussion_id) AS answer_disc_count FROM comments WHERE created_at >= ? GROUP BY user_id) AS user_comment ON user_comment.user_id = users.id", t).
 		Order("score DESC").
 		Limit(5).
 		Find(&res).Error
