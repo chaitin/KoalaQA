@@ -9,6 +9,8 @@ import ServerErrorBoundary from '@/components/ServerErrorBoundary'
 import { safeApiCall, safeLogError } from '@/lib/error-utils'
 import theme from '@/theme'
 import '@ctzhian/tiptap/dist/index.css'
+// 初始化 dayjs 中文配置
+import '@/lib/dayjs'
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v14-appRouter'
 import CssBaseline from '@mui/material/CssBaseline'
 import { ThemeProvider } from '@mui/material/styles'
@@ -184,7 +186,6 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
                         <main id='main-content'>
                           {props.children}
                         </main>
-                        <Footer />
                         <Scroll />
                       </ThemeProvider>
                     </AppRouterCacheProvider>
