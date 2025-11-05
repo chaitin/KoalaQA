@@ -18,7 +18,7 @@ import {
   Typography,
 } from '@mui/material'
 import { useParams, usePathname, useSearchParams } from 'next/navigation'
-import { useContext, useMemo, useState, useEffect } from 'react'
+import { useContext, useMemo, useState } from 'react'
 import { CommonContext } from './commonProvider'
 
 const postTypes = [
@@ -55,54 +55,16 @@ export default function FilterPanel() {
     return detailPattern.test(pathname) && !pathname.endsWith('/edit')
   }, [pathname, routeName])
 
-  // 从 window 对象读取帖子类型（详情页注入的）
-  const [postDetailType, setPostDetailType] = useState<string | null>(null)
-
-  // 监听 window.__POST_DETAIL_TYPE__ 的变化
-  useEffect(() => {
-    if (!isDetailPage || typeof window === 'undefined') {
-      setPostDetailType(null)
-      return
-    }
-
-    // 立即读取一次
-    const postType = (window as any).__POST_DETAIL_TYPE__
-    if (postType && (postType === 'qa' || postType === 'blog' || postType === 'feedback')) {
-      setPostDetailType(postType)
-    }
-
-    // 监听自定义事件
-    const handleTypeChange = (event: Event) => {
-      const customEvent = event as CustomEvent<string | null>
-      const newType = customEvent.detail
-      if (newType && (newType === 'qa' || newType === 'blog' || newType === 'feedback')) {
-        setPostDetailType(newType)
-      } else {
-        setPostDetailType(null)
-      }
-    }
-
-    window.addEventListener('postDetailTypeChanged', handleTypeChange as EventListener)
-
-    return () => {
-      window.removeEventListener('postDetailTypeChanged', handleTypeChange as EventListener)
-    }
-  }, [isDetailPage])
-
   // 从 URL 参数读取选中的分类和类型
-  // 在详情页时，如果没有 URL 参数，使用从 window 读取的帖子类型；否则使用 URL 参数；默认问答
+  // 在详情页时，不使用 URL 参数，也不高亮类型；默认问答
   const urlType = useMemo(() => {
     const urlTypeParam = searchParams?.get('type')
     if (urlTypeParam) {
       return urlTypeParam
     }
-    // 在详情页且没有 URL 参数时，使用从 window 读取的帖子类型
-    if (isDetailPage && postDetailType) {
-      return postDetailType
-    }
     // 默认问答
     return 'qa'
-  }, [searchParams, isDetailPage, postDetailType])
+  }, [searchParams])
   const urlTopics = useMemo(() => {
     const tps = searchParams?.get('tps')
     if (!tps) return []
@@ -211,7 +173,8 @@ export default function FilterPanel() {
         pt: 3,
         pb: 3,
         px: 2,
-        height: 'calc(100vh - 180px)',
+        height: 'calc(100vh - 136px)',
+        borderRadius: '6px',
         overflowY: 'auto',
         scrollbarGutter: 'stable',
         position: 'sticky',
@@ -236,7 +199,8 @@ export default function FilterPanel() {
       <Box sx={{ mb: 2 }}>
         <List disablePadding>
           {postTypes.map((type) => {
-            const isSelected = urlType === type.id
+            // 在详情页时不高亮任何类型
+            const isSelected = isDetailPage ? false : urlType === type.id
             return (
               <ListItem key={type.id} disablePadding>
                 <ListItemButton
