@@ -273,6 +273,26 @@ type DiscussionListReq struct {
 	ForumID  uint                 `json:"forum_id" form:"forum_id"`
 }
 
+func (d *Discussion) ListSimilarity(ctx context.Context, discUUID string) (*model.ListRes[*model.DiscussionListItem], error) {
+	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	var res model.ListRes[*model.DiscussionListItem]
+	discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: disc.Title, ForumID: disc.ForumID})
+	if err != nil {
+		return nil, err
+	}
+	if len(discs) > 5 {
+		discs = discs[:5]
+	}
+
+	res.Items = discs
+	res.Total = int64(len(discs))
+	return &res, nil
+}
+
 func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListReq) (*model.ListRes[*model.DiscussionListItem], error) {
 	ok, err := d.in.UserRepo.HasForumPermission(ctx, userID, req.ForumID)
 	if err != nil {

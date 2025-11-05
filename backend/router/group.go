@@ -14,7 +14,6 @@ type group struct {
 // @Summary frontend list group
 // @Tags group_frontend
 // @Produce json
-// @Param forum_id query uint false "forum id"
 // @Success 200 {object} context.Response{data=model.ListRes{items=[]model.GroupWithItem{items=[]model.GroupItemInfo}}}
 // @Router /group [get]
 func (g *group) List(ctx *context.Context) {
