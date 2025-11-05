@@ -16,6 +16,7 @@ import {
   DeleteDiscussionDiscIdCommentCommentIdParams,
   DeleteDiscussionDiscIdParams,
   GetDiscussionDiscIdParams,
+  GetDiscussionDiscIdSimilarityParams,
   GetDiscussionParams,
   ModelDiscussionDetail,
   ModelDiscussionListItem,
@@ -524,6 +525,40 @@ export const postDiscussionDiscIdRevokeLike = (
   >({
     path: `/discussion/${discId}/revoke_like`,
     method: "POST",
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description list similarity discussion
+ *
+ * @tags discussion
+ * @name GetDiscussionDiscIdSimilarity
+ * @summary list similarity discussion
+ * @request GET:/discussion/{disc_id}/similarity
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (ModelDiscussionListItem)[],
+
+}),
+
+})` OK
+ */
+
+export const getDiscussionDiscIdSimilarity = (
+  { discId, ...query }: GetDiscussionDiscIdSimilarityParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: ModelDiscussionListItem[];
+      };
+    }
+  >({
+    path: `/discussion/${discId}/similarity`,
+    method: "GET",
     type: ContentType.Json,
     format: "json",
     ...params,

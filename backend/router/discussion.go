@@ -22,6 +22,7 @@ func (d *discussion) Route(h server.Handler) {
 	g := h.Group("/discussion")
 	g.GET("", d.List)
 	g.GET("/:disc_id", d.Detail)
+	g.GET("/:disc_id/similarity", d.ListSimilarity)
 }
 
 // List
@@ -39,11 +40,30 @@ func (d *discussion) List(ctx *context.Context) {
 		ctx.BadRequest(err)
 		return
 	}
-	res, err := d.disc.List(ctx.Request.Context(), ctx.GetUser().UID, req)
+	res, err := d.disc.List(ctx, ctx.GetUser().UID, req)
 	if err != nil {
 		ctx.InternalError(err, "failed to list discussions")
 		return
 	}
+	ctx.Success(res)
+}
+
+// ListSimilarity
+// @Summary list similarity discussion
+// @Description list similarity discussion
+// @Tags discussion
+// @Accept json
+// @Produce json
+// @Param disc_id path string true "disc_id"
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]model.DiscussionListItem}}
+// @Router /discussion/{disc_id}/similarity [get]
+func (d *discussion) ListSimilarity(ctx *context.Context) {
+	res, err := d.disc.ListSimilarity(ctx, ctx.Param("disc_id"))
+	if err != nil {
+		ctx.InternalError(err, "list similarity failed")
+		return
+	}
+
 	ctx.Success(res)
 }
 
@@ -57,7 +77,7 @@ func (d *discussion) List(ctx *context.Context) {
 // @Success 200 {object} context.Response{data=model.DiscussionDetail}
 // @Router /discussion/{disc_id} [get]
 func (d *discussion) Detail(ctx *context.Context) {
-	res, err := d.disc.DetailByUUID(ctx.Request.Context(), ctx.GetUser().UID, ctx.Param("disc_id"))
+	res, err := d.disc.DetailByUUID(ctx, ctx.GetUser().UID, ctx.Param("disc_id"))
 	if err != nil {
 		ctx.InternalError(err, "failed to detail discussion")
 		return

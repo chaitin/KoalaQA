@@ -1,5 +1,5 @@
 'use client'
-import { getDiscussion } from '@/api'
+import { getDiscussion, getRankContribute } from '@/api'
 import {
   GetDiscussionParams,
   ModelDiscussionListItem,
@@ -7,23 +7,38 @@ import {
   ModelGroupItemInfo,
   ModelGroupWithItem,
   ModelListRes,
+  SvcRankContributeItem,
 } from '@/api/types'
-import { Card, CusTabs } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import { CommonContext } from '@/components/commonProvider'
 import { ReleaseModal } from '@/components/discussion'
-import FloatingActionButton from '@/components/FloatingActionButton'
-import { useAuthCheck } from '@/hooks/useAuthCheck'
-import { useForumId } from '@/hooks/useForumId'
-import SearchIcon from '@mui/icons-material/Search'
-import { Box, Button, CircularProgress, Divider, InputAdornment, OutlinedInput, Stack, Typography } from '@mui/material'
-import { useBoolean } from 'ahooks'
-import { useSearchParams, useParams, useRouter } from 'next/navigation'
-import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
-import React, { useCallback, useContext, useEffect, useRef, useState, useMemo } from 'react'
-import DiscussCard, { DiscussCardMobile } from './discussCard'
 import SearchResultModal from '@/components/SearchResultModal'
 import { useGroupData } from '@/contexts/GroupDataContext'
+import { useAuthCheck } from '@/hooks/useAuthCheck'
+import { useForumId } from '@/hooks/useForumId'
+import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
+import { Person as PersonIcon, Schedule as ScheduleIcon, TrendingUp as TrendingUpIcon } from '@mui/icons-material'
+import AddIcon from '@mui/icons-material/Add'
+import SearchIcon from '@mui/icons-material/Search'
+import {
+  Avatar,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Divider,
+  InputAdornment,
+  Paper,
+  Stack,
+  TextField,
+  Typography,
+  ToggleButtonGroup,
+  ToggleButton,
+} from '@mui/material'
+import { useBoolean } from 'ahooks'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import DiscussCard from './discussCard'
 
 export type Status = 'hot' | 'new' | 'mine'
 
@@ -65,7 +80,7 @@ const Article = ({
 
   // 根据当前类型从 forumInfo.groups 中筛选对应的分类
   const currentType = (type || 'qa') as 'qa' | 'feedback' | 'blog'
-  
+
   // 使用 useMemo 缓存过滤后的分组数据
   const groups = useMemo(() => {
     return getFilteredGroups(groupsData, forumInfo, currentType)
@@ -78,6 +93,8 @@ const Article = ({
   const [articleData, setArticleData] = useState(data)
   const [page, setPage] = useState(1)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [contributors, setContributors] = useState<SvcRankContributeItem[]>([])
+  const [contributorsLoading, setContributorsLoading] = useState(false)
 
   // 搜索弹窗相关状态
   const [searchModalOpen, { setTrue: openSearchModal, setFalse: closeSearchModal }] = useBoolean(false)
@@ -92,30 +109,21 @@ const Article = ({
   }
   const currentForumId = getCurrentForumId()
 
-  // 根据type参数动态生成标签文本，默认为qa
-  const getStatusLabels = () => {
-    const currentType = type || 'qa' // 默认为qa
-    if (currentType === 'feedback') {
-      return [
-        { label: '热门反馈', value: 'hot' },
-        { label: '最新反馈', value: 'new' },
-        { label: '我参与的', value: 'mine', disabled: !user?.uid },
-      ]
-    } else if (currentType === 'blog') {
-      return [
-        { label: '热门文章', value: 'hot' },
-        { label: '最新文章', value: 'new' },
-        { label: '我参与的', value: 'mine', disabled: !user?.uid },
-      ]
-    } else {
-      // 默认为问答类型
-      return [
-        { label: '热门问题', value: 'hot' },
-        { label: '最新问题', value: 'new' },
-        { label: '我参与的', value: 'mine', disabled: !user?.uid },
-      ]
+  // 获取贡献达人榜单
+  useEffect(() => {
+    const fetchContributors = async () => {
+      try {
+        setContributorsLoading(true)
+        const response = await getRankContribute()
+        setContributors(response?.items || [])
+      } catch (error) {
+        console.error('Failed to fetch contributors:', error)
+      } finally {
+        setContributorsLoading(false)
+      }
     }
-  }
+    fetchContributors()
+  }, [])
 
   const fetchMoreList = useCallback(() => {
     // 防止重复请求
@@ -240,7 +248,6 @@ const Article = ({
     searchRef.current = search
   }, [search])
 
-
   // 监听路由变化，检测是否从详情页返回
   useEffect(() => {
     const currentPath = window.location.pathname
@@ -297,476 +304,479 @@ const Article = ({
     })
   }
 
+  // 根据类型获取排序选项
+  const getSortOptions = (postType: string) => {
+    if (postType === 'blog') {
+      return [
+        { value: 'new', label: '最新内容' },
+        { value: 'hot', label: '热门内容' },
+        { value: 'mine', label: '我参与的', disabled: !user?.uid },
+      ]
+    }
+    // Default for qa/feedback
+    return [
+      { value: 'new', label: '最新内容' },
+      { value: 'hot', label: '热门内容' },
+      { value: 'mine', label: '我参与的', disabled: !user?.uid },
+    ]
+  }
+
+  const currentSortOptions = getSortOptions(currentType)
+
   return (
     <>
-      <Stack
-        gap={0}
+      {/* 中间和右侧内容容器 - 在lg及以上时居中 */}
+      <Box
         sx={{
-          zIndex: 1,
-          width: '100%',
-          minHeight: '100vh',
-          // backgroundColor: '#fff',
+          flex: 1,
+          minWidth: 0,
+          display: { xs: 'block', lg: 'flex' },
+          gap: { xs: 0, lg: 3 },
+          justifyContent: { lg: 'center' },
+          alignItems: { lg: 'flex-start' },
         }}
       >
-        {/* 横幅区域 */}
+        {/* 主内容区域 */}
         <Box
           sx={{
-            mt: '64px',
-            width: '100%',
-            height: 200,
-            backgroundImage: 'url(/banner.png)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundBlendMode: 'overlay',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative',
-            overflow: 'hidden',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 0,
-            },
-            '&::after': {
-              content: '""',
-              position: 'absolute',
-              top: '-50%',
-              left: '-50%',
-              width: '200%',
-              height: '200%',
-              zIndex: 0,
-            },
+            flex: 1,
+            minWidth: 0,
+            maxWidth: { lg: 720 },
+            width: { xs: '100%', lg: 'auto' },
+            pt: 0,
+            px: 3,
           }}
         >
-          <Typography
-            variant='h2'
-            sx={{
-              color: '#fff',
-              fontSize: { xs: 32, sm: 48 },
-              fontWeight: 700,
-              textAlign: 'center',
-              zIndex: 1,
-              textShadow: '0 2px 4px rgba(0,0,0,0.5)',
-            }}
-          >
-            {forumInfo?.name || 'KoalaQA 社区'}
-          </Typography>
-        </Box>
-
-        {/* 搜索栏 */}
-        <Box
-          id='article-search-box'
-          sx={{
-            width: { xs: '90%', sm: 600 },
-            mx: 'auto',
-            mt: '-30px',
-            mb: 3,
-            display: 'flex',
-            gap: 1,
-            animation: 'slideInUp 0.8s ease-out',
-            '@keyframes slideInUp': {
-              '0%': {
-                opacity: 0,
-                transform: 'translateY(30px)',
-              },
-              '100%': {
-                opacity: 1,
-                transform: 'translateY(0)',
-              },
-            },
-          }}
-        >
-          <OutlinedInput
-            sx={{
-              flex: 1,
-              height: 48,
-              backgroundColor: '#fff',
-              borderRadius: 1,
-              '.MuiOutlinedInput-notchedOutline': {
-                borderColor: 'transparent',
-              },
-              fontSize: 16,
-              boxShadow: '0px 2px 6px 0px rgba(0,0,0,0.1), 0px 2px 6px 0px rgba(218,220,224,0.5)',
-              px: 2,
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              '&:hover': {
-                boxShadow: '0px 4px 12px 0px rgba(0,0,0,0.15), 0px 4px 12px 0px rgba(218,220,224,0.6)',
-                transform: 'translateY(-2px)',
-              },
-              '&.Mui-focused': {
-                boxShadow: '0px 6px 20px 0px rgba(32,108,255,0.2), 0px 6px 20px 0px rgba(32,108,255,0.1)',
-                transform: 'translateY(-2px) scale(1.02)',
-                '.MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#206CFF',
-                  borderWidth: 2,
-                },
-              },
-              '& .MuiInputAdornment-root': {
-                transition: 'all 0.3s ease',
-              },
-              '&.Mui-focused .MuiInputAdornment-root': {
-                transform: 'scale(1.1)',
-                '& .MuiSvgIcon-root': {
-                  color: '#206CFF',
-                },
-              },
-            }}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={onInputSearch}
-            placeholder='输入任意内容，使用 AI 搜索'
-            startAdornment={
-              <InputAdornment position='start'>
-                <SearchIcon sx={{ color: 'rgba(0,0,0,0.4)', mr: 1 }} />
-              </InputAdornment>
-            }
-          />
-        </Box>
-
-        {/* 主要内容区域 */}
-        <Stack
-          gap={3}
-          direction='row'
-          alignItems='flex-start'
-          sx={{
-            width: { xs: '100%', sm: 1200 },
-            px: { xs: 2, sm: 0 },
-            mx: 'auto',
-            mb: { xs: 3, sm: '100px' },
-          }}
-        >
-          <Stack
-            gap={2}
-            sx={{
-              width: 280,
-              position: 'sticky',
-              top: 70,
-              display: { xs: 'none', sm: 'flex' },
-              animation: 'slideInLeft 0.8s ease-out 0.2s both',
-              '@keyframes slideInLeft': {
-                '0%': {
-                  opacity: 0,
-                  transform: 'translateX(-50px)',
-                },
-                '100%': {
-                  opacity: 1,
-                  transform: 'translateX(0)',
-                },
-              },
-            }}
-          >
-            <CusTabs
+          {/* 搜索和发帖按钮 */}
+          <Box id='article-search-box' sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center' }}>
+            <TextField
+              fullWidth
+              placeholder='搜索板块内容...'
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={onInputSearch}
+              size='small'
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position='start'>
+                    <SearchIcon sx={{ color: '#9ca3af', fontSize: 20 }} />
+                  </InputAdornment>
+                ),
+              }}
               sx={{
-                height: 40,
-                py: '7px',
-                '& button': {
-                  flex: 1,
+                '& .MuiOutlinedInput-root': {
+                  bgcolor: '#ffffff',
+                  borderRadius: '6px',
+                  fontSize: '0.875rem',
+                  height: '40px',
+                  '& fieldset': {
+                    borderColor: '#e5e7eb',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: '#d1d5db',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#000000',
+                    borderWidth: 2,
+                  },
                 },
               }}
-              value={type || 'qa'}
-              onChange={(value: string) => {
-                // 只有在状态真正变化时才更新 URL
-                if (value !== (type || 'qa')) {
-                  const query = createQueryString('type', value)
+            />
+            <Button
+              variant='contained'
+              onClick={type === 'feedback' ? handleFeedback : type === 'blog' ? handleArticle : handleAsk}
+              sx={{
+                background: '#000000',
+                color: '#ffffff',
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 3,
+                py: 0.75,
+                borderRadius: '6px',
+                fontSize: '0.875rem',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                whiteSpace: 'nowrap',
+                height: '40px',
+                '&:hover': {
+                  background: '#111827',
+                  boxShadow: '0 6px 16px rgba(0, 0, 0, 0.3)',
+                },
+              }}
+            >
+              {type === 'blog' ? '发布文章' : '提个问题'}
+            </Button>
+          </Box>
+
+          {/* 排序选项 */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <ToggleButtonGroup
+              value={status}
+              exclusive
+              onChange={(e, newValue) => {
+                if (newValue !== null && newValue !== status) {
+                  const query = createQueryString('sort', newValue)
                   router.replace(`/${routeName}?${query}`)
                 }
               }}
-              list={TYPE_LIST}
-            />
-            {!groupsData && groupsLoading ? (
-              // 只有在客户端渲染且正在加载时显示骨架屏
-              <>
-                {[1, 2, 3].map((index) => (
-                  <Card
-                    key={index}
+              sx={{
+                bgcolor: '#ffffff',
+                borderRadius: '6px',
+                border: '1px solid #e5e7eb',
+                px: 0.5,
+                py: 0.5,
+                '& .MuiToggleButtonGroup-grouped': {
+                  border: 0,
+                  borderRadius: '6px !important',
+                  mx: 0.5,
+                  my: 0.5,
+                  '&:not(:first-of-type)': { borderLeft: 0 },
+                },
+              }}
+            >
+              {currentSortOptions
+                .filter((opt) => !opt.disabled)
+                .map((option) => (
+                  <ToggleButton
+                    key={option.value}
+                    value={option.value}
                     sx={{
-                      p: 2,
-                      boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
+                      height: 30,
+                      px: 1.5,
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      fontSize: '0.75rem',
+                      color: '#6b7280',
+                      border: 'none',
+                      '&.Mui-selected': {
+                        bgcolor: '#000000',
+                        color: '#ffffff',
+                        '&:hover': { bgcolor: '#111827', color: '#ffffff' },
+                        '&.Mui-focusVisible': {
+                          bgcolor: '#000000',
+                          color: '#ffffff',
+                          outline: '2px solid #000000',
+                          outlineOffset: '2px',
+                        },
+                      },
+                      '&:hover': { bgcolor: '#f3f4f6', color: '#000000' },
                     }}
                   >
-                    <Stack gap={1}>
-                      {[1, 2, 3, 4].map((itemIndex) => (
-                        <Box
-                          key={itemIndex}
-                          sx={{
-                            height: 32,
-                            backgroundColor: 'rgba(0, 0, 0, 0.06)',
-                            borderRadius: 1,
-                            animation: 'pulse 1.5s ease-in-out infinite',
-                            '@keyframes pulse': {
-                              '0%': { opacity: 1 },
-                              '50%': { opacity: 0.4 },
-                              '100%': { opacity: 1 },
-                            },
-                          }}
-                        />
-                      ))}
-                    </Stack>
-                  </Card>
+                    {option.label}
+                  </ToggleButton>
                 ))}
-              </>
-            ) : (
-              groups.origin.map((section) => (
-                <Card
-                  key={section.id}
-                  sx={{
-                    p: 2, // 添加内边距
-                    boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
-                    borderRadius: 1,
-                    overflow: 'hidden',
-                  }}
-                >
-                  <Stack gap={0}>
-                    {section.items?.map((item, _index) => {
-                      const color = '#206CFF'
-                      const icon = '#'
+            </ToggleButtonGroup>
 
-                      return (
-                        <Stack
-                          direction='row'
-                          key={item.id}
-                          alignItems='center'
-                          sx={{
-                            p: 1,
-                            m: 0.5,
-                            cursor: 'pointer',
-                            backgroundColor: topics.includes(item.id || -1) ? 'rgba(32,108,255,0.08)' : 'transparent',
-                            transition: 'all 0.2s ease',
-                            '&:hover': {
-                              backgroundColor: 'rgba(32,108,255,0.05)',
-                            },
-                            '&:active': {
-                              backgroundColor: 'rgba(32,108,255,0.1)',
-                            },
-                          }}
-                          onClick={() => handleTopicClick(item.id!)}
-                        >
-                          <Box
-                            sx={{
-                              width: 24,
-                              height: 24,
-                              backgroundColor: 'rgba(32,108,255,0.1)',
-                              borderRadius: 1,
-                              border: `1px solid ${color}`,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              color: color,
-                              fontSize: 12,
-                              fontWeight: 'bold',
-                              mr: 2,
-                            }}
-                          >
-                            {icon}
-                          </Box>
-                          <Box
-                            sx={{
-                              flex: 1,
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              fontSize: 14,
-                              color: topics.includes(item.id || -1) ? '#206CFF' : '#000', // 选中时使用主题蓝色
-                              fontWeight: topics.includes(item.id || -1) ? 500 : 400,
-                            }}
-                          >
-                            <Typography sx={{ fontSize: 14, fontWeight: 'inherit', color: 'rgba(0, 0, 0, 1)' }}>
-                              {item.name}
-                            </Typography>
-                          </Box>
-                        </Stack>
-                      )
-                    })}
-                  </Stack>
-                </Card>
-              ))
-            )}
-          </Stack>
-          <Stack
-            gap={2}
-            sx={{
-              width: { xs: '100%', sm: 900 },
-              animation: 'slideInRight 0.8s ease-out 0.4s both',
-              '@keyframes slideInRight': {
-                '0%': {
-                  opacity: 0,
-                  transform: 'translateX(50px)',
-                },
-                '100%': {
-                  opacity: 1,
-                  transform: 'translateX(0)',
-                },
-              },
-            }}
-          >
-            <Stack
-              direction='row'
-              gap={3}
-              justifyContent='space-between'
-              alignItems='center'
-              sx={{ display: { xs: 'none', sm: 'flex' } }}
+            <Typography
+              variant='body2'
+              sx={{
+                color: '#9ca3af',
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                position: 'relative',
+                top: '2px',
+              }}
             >
-              <CusTabs
-                sx={{
-                  height: 40,
-                  py: '7px',
-                }}
-                value={status}
-                onChange={(value: Status) => {
-                  // 只有在状态真正变化时才更新 URL
-                  if (value !== status) {
-                    const query = createQueryString('sort', value)
-                    router.replace(`/${routeName}?${query}`)
-                  }
-                }}
-                list={getStatusLabels()}
-              />
+              共 {articleData.total || 0} 个帖子
+            </Typography>
+          </Box>
 
-              <Button
+          {/* 帖子列表 */}
+          <Box sx={{ bgcolor: '#ffffff', borderRadius: '6px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+            {articleData.items?.map((it, index) => (
+              <DiscussCard
+                key={it.uuid}
+                data={it}
+                keywords={searchRef.current}
                 sx={{
-                  height: 40,
-                  backgroundColor: '#333',
-                  color: '#fff',
-                  transition: 'all 0.2s ease',
+                  borderBottom: index < (articleData.items?.length || 0) - 1 ? '1px solid #f3f4f6' : 'none',
+                }}
+              />
+            ))}
+          </Box>
+
+          {/* 加载更多 */}
+          <Box sx={{ width: '100%', textAlign: 'center', mt: 3 }}>
+            {page * 10 < (articleData.total || 0) ? (
+              <Button
+                onClick={fetchMoreList}
+                disabled={loadingMore}
+                variant='outlined'
+                sx={{
+                  background: '#fff !important',
+                  borderColor: '#fff !important',
+                  boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
+                  fontWeight: 400,
+                  position: 'relative',
+                  overflow: 'hidden',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   '&:hover': {
-                    backgroundColor: '#444',
+                    fontWeight: 500,
+                    border: '1px solid #206CFF !important',
+                    transform: 'translateY(-2px)',
+                    boxShadow: 'rgba(32, 108, 255, 0.15) 0px 8px 20px 0px',
                   },
                   '&:active': {
-                    backgroundColor: '#555',
+                    transform: 'translateY(0) scale(0.98)',
+                  },
+                  '&:disabled': {
+                    opacity: 0.6,
+                    cursor: 'not-allowed',
+                    transform: 'none',
                   },
                 }}
-                variant='contained'
-                onClick={type === 'feedback' ? handleFeedback : type === 'blog' ? handleArticle : handleAsk}
+                fullWidth
               >
-                {type === 'feedback' ? '提交反馈 👉' : type === 'blog' ? '发布文章 👉' : '发帖提问 👉'}
+                {loadingMore ? (
+                  <Stack direction='row' alignItems='center' gap={1}>
+                    <CircularProgress size={16} sx={{ color: '#206CFF' }} />
+                    <Typography>加载中...</Typography>
+                  </Stack>
+                ) : (
+                  '查看更多'
+                )}
               </Button>
-            </Stack>
-            {articleData.items?.map((it) => (
-              <React.Fragment key={it.uuid}>
-                <DiscussCard data={it} keywords={searchRef.current} />
-                <DiscussCardMobile data={it} keywords={searchRef.current} />
-              </React.Fragment>
-            ))}
-            <Box sx={{ width: '100%', textAlign: 'center' }}>
-              {page * 10 < (articleData.total || 0) ? (
-                <Button
-                  onClick={fetchMoreList}
-                  disabled={loadingMore}
-                  variant='outlined'
+            ) : (
+              <Divider>
+                <Typography variant='body2' sx={{ color: '#666' }}>
+                  到底啦
+                </Typography>
+              </Divider>
+            )}
+          </Box>
+        </Box>
+
+        {/* 右侧边栏 */}
+        <Box
+          sx={{
+            width: 300,
+            flexShrink: 0,
+            display: { xs: 'none', lg: 'block' },
+            pt: 0,
+            pb: 3,
+            pr: 3,
+            scrollbarGutter: 'stable',
+            position: 'sticky',
+            top: 100,
+          }}
+        >
+          {/* 公告 */}
+          {/* <Paper
+            elevation={0}
+            sx={{
+              bgcolor: '#ffffff',
+              borderRadius: '6px',
+              border: '1px solid #e5e7eb',
+              p: 2,
+              mb: 2,
+            }}
+          >
+            <Typography variant='subtitle2' sx={{ fontWeight: 700, color: '#111827', fontSize: '0.9375rem', mb: 2 }}>
+              公告
+            </Typography>
+            {articleData.items?.find((item) => item.type === 'blog') ? (
+              <Box
+                sx={{
+                  p: 1.5,
+                  borderRadius: '6px',
+                  bgcolor: '#f9fafb',
+                  border: '1px solid #e5e7eb',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    bgcolor: '#f3f4f6',
+                    borderColor: '#d1d5db',
+                  },
+                }}
+                onClick={() => {
+                  const article = articleData.items?.find((item) => item.type === 'blog')
+                  if (article?.uuid) {
+                    router.push(`/${routeName}/${article.uuid}`)
+                  }
+                }}
+              >
+                <Typography
+                  variant='body2'
+                  sx={{ fontWeight: 600, color: '#111827', fontSize: '0.8125rem', mb: 0.75, lineHeight: 1.4 }}
+                >
+                  {articleData.items?.find((item) => item.type === 'blog')?.title || '暂无公告'}
+                </Typography>
+                <Typography
+                  variant='caption'
                   sx={{
-                    background: '#fff !important',
-                    borderColor: '#fff !important',
-                    boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
-                    fontWeight: 400,
-                    position: 'relative',
+                    color: '#6b7280',
+                    fontSize: '0.7rem',
+                    lineHeight: 1.5,
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
                     overflow: 'hidden',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      top: 0,
-                      left: '-100%',
-                      width: '100%',
-                      height: '100%',
-                      background: 'linear-gradient(90deg, transparent, rgba(32,108,255,0.1), transparent)',
-                      transition: 'left 0.5s ease',
-                    },
-                    '&:hover': {
-                      fontWeight: 500,
-                      border: '1px solid #206CFF !important',
-                      transform: 'translateY(-2px)',
-                      boxShadow: 'rgba(32, 108, 255, 0.15) 0px 8px 20px 0px',
-                      '&::before': {
-                        left: '100%',
-                      },
-                    },
-                    '&:active': {
-                      transform: 'translateY(0) scale(0.98)',
-                    },
-                    '&:disabled': {
-                      opacity: 0.6,
-                      cursor: 'not-allowed',
-                      transform: 'none',
-                      '&:hover': {
-                        transform: 'none',
-                        boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
-                      },
-                    },
                   }}
-                  fullWidth
                 >
-                  {loadingMore ? (
-                    <Stack direction='row' alignItems='center' gap={1}>
-                      <CircularProgress size={16} sx={{ color: '#206CFF' }} />
-                      <Typography>加载中...</Typography>
-                    </Stack>
-                  ) : (
-                    '查看更多'
-                  )}
-                </Button>
-              ) : (
-                <Divider
+                  {articleData.items?.find((item) => item.type === 'blog')?.summary || '暂无公告内容'}
+                </Typography>
+              </Box>
+            ) : (
+              <Box
+                sx={{
+                  p: 1.5,
+                  borderRadius: '6px',
+                  bgcolor: '#f9fafb',
+                  border: '1px solid #e5e7eb',
+                }}
+              >
+                <Typography
+                  variant='caption'
                   sx={{
-                    animation: 'fadeIn 1s ease-out',
-                    '@keyframes fadeIn': {
-                      '0%': {
-                        opacity: 0,
-                      },
-                      '100%': {
-                        opacity: 1,
-                      },
-                    },
+                    color: '#6b7280',
+                    fontSize: '0.7rem',
+                    lineHeight: 1.5,
                   }}
                 >
-                  <Typography
-                    variant='body2'
+                  暂无公告
+                </Typography>
+              </Box>
+            )}
+          </Paper> */}
+
+          {/* 贡献达人 */}
+          <Paper
+            elevation={0}
+            sx={{
+              bgcolor: '#ffffff',
+              borderRadius: '6px',
+              border: '1px solid #e5e7eb',
+              p: 2,
+              mb: 2,
+            }}
+          >
+            <Typography variant='subtitle2' sx={{ fontWeight: 700, color: '#111827', fontSize: '0.9375rem', mb: 2 }}>
+              贡献达人
+            </Typography>
+
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+              {contributorsLoading ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                  <CircularProgress size={16} />
+                </Box>
+              ) : contributors.length === 0 ? (
+                <Typography
+                  variant='caption'
+                  sx={{
+                    color: '#6b7280',
+                    fontSize: '0.7rem',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  暂无数据
+                </Typography>
+              ) : (
+                contributors.map((contributor, index) => (
+                  <Box
+                    key={contributor.id || index}
                     sx={{
-                      color: '#666',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      p: 0.75,
+                      borderRadius: '4px',
+                      bgcolor: 'transparent',
+                      border: 'none',
                     }}
                   >
-                    到底啦
-                  </Typography>
-                </Divider>
+                    <Box
+                      sx={{
+                        width: 20,
+                        height: 20,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '3px',
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        flexShrink: 0,
+                        color: '#9ca3af',
+                      }}
+                    >
+                      {index + 1}
+                    </Box>
+                    <Avatar
+                      sx={{
+                        bgcolor: '#000000',
+                        width: 20,
+                        height: 20,
+                        fontSize: '0.65rem',
+                        fontWeight: 600,
+                        flexShrink: 0,
+                      }}
+                      src={contributor.avatar}
+                    >
+                      {contributor.name?.[0] || 'U'}
+                    </Avatar>
+                    <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' }}>
+                      <Typography
+                        variant='body2'
+                        sx={{
+                          fontWeight: 600,
+                          color: '#111827',
+                          fontSize: '0.75rem',
+                          lineHeight: 1.3,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {contributor.name || '未知用户'}
+                      </Typography>
+                    </Box>
+                    {contributor.score !== undefined && (
+                      <Box sx={{ display: 'flex', gap: 0.75, flexShrink: 0 }}>
+                        <Typography
+                          variant='caption'
+                          sx={{
+                            color: '#6b7280',
+                            fontWeight: 600,
+                            fontSize: '0.7rem',
+                          }}
+                        >
+                          {Math.round(contributor.score)}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                ))
               )}
             </Box>
-          </Stack>
-          <ReleaseModal
-            open={releaseModalVisible}
-            onClose={releaseModalClose}
-            onOk={() => {
-              fetchList(status as Status, search, topics)
-              router.refresh()
-              releaseModalClose()
-            }}
-            selectedTags={[]}
-            initialTitle={searchParams?.get('search') || ''}
-            type={selectedModalType}
-            forumInfo={forumInfo}
-          />
+          </Paper>
+        </Box>
+      </Box>
 
-          {/* 搜索结果弹窗 */}
-          <SearchResultModal
-            open={searchModalOpen}
-            onClose={() => {
-              closeSearchModal()
-              setSearch('') // 清空搜索输入框内容
-            }}
-            forumId={currentForumId}
-            initialQuery={search}
-            onAsk={handleAsk}
-            onFeedback={handleFeedback}
-            onArticle={handleArticle}
-          />
-        </Stack>
+      <ReleaseModal
+        open={releaseModalVisible}
+        onClose={releaseModalClose}
+        onOk={() => {
+          fetchList(status as Status, search, topics)
+          router.refresh()
+          releaseModalClose()
+        }}
+        selectedTags={[]}
+        initialTitle={searchParams?.get('search') || ''}
+        type={selectedModalType}
+        forumInfo={forumInfo}
+      />
 
-        {/* 浮动操作按钮 */}
-        <FloatingActionButton onAddClick={handleAsk} showScrollToTop={true} />
-      </Stack>
+      {/* 搜索结果弹窗 */}
+      <SearchResultModal
+        open={searchModalOpen}
+        onClose={() => {
+          closeSearchModal()
+          setSearch('')
+        }}
+        forumId={currentForumId}
+        initialQuery={search}
+        onAsk={handleAsk}
+        onFeedback={handleFeedback}
+        onArticle={handleArticle}
+      />
     </>
   )
 }

@@ -56,7 +56,7 @@ func (u *User) List(ctx context.Context, req UserListReq) (*model.ListRes[UserLi
 	var res model.ListRes[UserListItem]
 	err := u.repoUser.ListWithOrg(ctx, &res.Items,
 		repo.QueryWithPagination(&req.Pagination),
-		repo.QueryWithOrderBy("created_at DESC"),
+		repo.QueryWithOrderBy("created_at DESC,id DESC"),
 		repo.QueryWithILike("name", req.Name),
 		repo.QueryWithEqual("invisible", false),
 		repo.QueryWithEqual("org_ids", req.OrgID, repo.EqualOPValIn),
