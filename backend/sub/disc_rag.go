@@ -77,7 +77,7 @@ func (d *DiscRag) handleInsert(ctx context.Context, discID uint) error {
 		logger.WithErr(err).Warn("get forum failed")
 		return nil
 	}
-	ragID, err := d.rag.UpsertRecords(ctx, forum.DatasetID, disc.TitleContent(), nil)
+	ragID, err := d.rag.UpsertRecords(ctx, forum.DatasetID, disc.RagID, disc.TitleContent(), nil)
 	if err != nil {
 		return err
 	}

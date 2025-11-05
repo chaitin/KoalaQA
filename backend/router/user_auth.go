@@ -114,27 +114,44 @@ func (u *userAuth) Notify(ctx *context.Context) {
 
 	t := topic.NewMessageNotifyUser(ctx.GetUser().UID)
 	logger := u.logger.WithContext(ctx).With("user_id", ctx.GetUser().UID)
+	writeC := make(chan notifyRes, 100)
+	connClosed := false
 
-	defer conn.Close()
+	defer func() {
+		connClosed = true
+		conn.Close()
+	}()
 
-	read := false
 	go func() {
+		for data := range writeC {
+			if connClosed {
+				continue
+			}
+
+			err := conn.WriteJSON(data)
+			if err != nil {
+				logger.WithErr(err).With("notify_data", data).Warn("send notify data failed")
+			}
+		}
+	}()
+
+	go func() {
+		read := false
 		listRes, e := u.in.SvcNotify.ListNotifyInfo(ctx, ctx.GetUser().UID, svc.ListNotifyInfoReq{
 			Read: &read,
 		}, "created_at ASC")
 		if e != nil {
 			logger.WithErr(e).Warn("list user failed")
-			return
-		}
+		} else {
+			for _, item := range listRes.Items {
+				select {
+				case <-ctx.Done():
+				case writeC <- notifyRes{
+					Type: notifyTypeInfo,
+					Data: item,
+				}:
+				}
 
-		for _, item := range listRes.Items {
-			err = conn.WriteJSON(notifyRes{
-				Type: notifyTypeInfo,
-				Data: item,
-			})
-			if err != nil {
-				logger.WithErr(e).Warn("list message failed")
-				return
 			}
 		}
 
@@ -145,13 +162,12 @@ func (u *userAuth) Notify(ctx *context.Context) {
 				return nil
 			}
 
-			subErr := conn.WriteJSON(notifyRes{
+			select {
+			case <-ctx.Done():
+			case writeC <- notifyRes{
 				Type: notifyTypeInfo,
 				Data: notifyData,
-			})
-			if subErr != nil {
-				logger.WithErr(subErr).With("notify_data", notifyData).Warn("send notify data failed")
-				return nil
+			}:
 			}
 
 			return nil
@@ -159,6 +175,8 @@ func (u *userAuth) Notify(ctx *context.Context) {
 		if e != nil {
 			logger.WithErr(e).Warn("subscribe failed")
 		}
+
+		close(writeC)
 	}()
 
 	for {
@@ -183,12 +201,12 @@ func (u *userAuth) Notify(ctx *context.Context) {
 
 			switch req.Type {
 			case notifyTypePing:
-				err = conn.WriteJSON(notifyRes{
+				select {
+				case <-ctx.Done():
+				case writeC <- notifyRes{
 					Type: notifyTypePong,
 					Data: struct{}{},
-				})
-				if err != nil {
-					logger.WithErr(err).Warn("send pong failed")
+				}:
 				}
 			case notifyTypeUnread:
 				num, err := u.in.SvcNotify.UnreadTotal(ctx, ctx.GetUser().UID)
@@ -196,13 +214,13 @@ func (u *userAuth) Notify(ctx *context.Context) {
 					logger.WithErr(err).Warn("unread total failed")
 					continue
 				}
-				err = conn.WriteJSON(notifyRes{
+
+				select {
+				case <-ctx.Done():
+				case writeC <- notifyRes{
 					Type: notifyTypeUnread,
 					Data: num,
-				})
-				if err != nil {
-					logger.WithErr(err).Warn("send unread failse")
-					continue
+				}:
 				}
 			case notifyTypeRead:
 				err = u.in.SvcNotify.Read(ctx, ctx.GetUser().UID, svc.NotifyReadReq{
@@ -212,11 +230,6 @@ func (u *userAuth) Notify(ctx *context.Context) {
 					logger.WithErr(err).With("id", req.ID).Warn("set notify read failed")
 					continue
 				}
-			}
-		case websocket.PingMessage:
-			err = conn.WriteMessage(websocket.PongMessage, []byte("pong"))
-			if err != nil {
-				logger.WithErr(err).Error("write pong failed")
 			}
 		case websocket.CloseMessage:
 			logger.Info("receive close message")
