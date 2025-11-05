@@ -50,93 +50,68 @@ export default function EditPage() {
     }
     run()
   }, [queryId])
+
   return (
     <Box
       sx={{
-        minHeight: '100vh',
-        position: 'relative',
-        '&::before': {
-          content: '""',
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background:
-            'radial-gradient(circle at 20% 80%, rgba(32, 108, 255, 0.05) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(32, 108, 255, 0.05) 0%, transparent 50%)',
-          zIndex: -1,
-          pointerEvents: 'none',
-        },
+        display: 'flex',
+        gap: { xs: 0, lg: 3 },
+        justifyContent: { lg: 'center' },
+        alignItems: { lg: 'flex-start' },
       }}
     >
-      <Box
-        sx={{
-          mt: '64px',
-          width: '100%',
-          height: 200,
-          backgroundImage: 'url(/banner.png)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundBlendMode: 'overlay',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          position: 'relative',
+      {/* 主内容区域 */}
+      <Card
+        sx={{ 
+          flex: 1, 
+          minWidth: 0, 
+          maxWidth: { xs: '100%', lg: 720 }, 
+          width: { xs: '100%', lg: 'auto' }, 
+          px: { xs: 0, md: 3 } 
         }}
-      />
-      <Stack
-        sx={{
-          position: 'relative',
-          top: '-100px',
-          px: 3,
-        }}
-        direction={'row'}
-        justifyContent='center'
-        alignItems='flex-start'
-        gap={3}
       >
-        <Box sx={{ width: '290px', display: { xs: 'none', lg: 'block' } }} />
-        <Box sx={{ width: { xs: '100%', sm: 800 } }}>
-          <h1 style={{ display: 'none' }}>讨论详情</h1>
-          <Card
+        <h1 style={{ display: 'none' }}>编辑讨论</h1>
+        <Stack spacing={2} sx={{ py: 2 }}>
+          <Stack direction={'row'} alignItems={'baseline'} gap={2}>
+            <TextField
+              size={'small'}
+              label={'标题'}
+              variant={'outlined'}
+              placeholder={'请输入标题'}
+              fullWidth
+              value={data.title || ''}
+              onChange={(e) => setData({ ...data, title: e.target.value })}
+              onBlur={() => setTitleTouched(true)}
+              required
+              error={titleTouched && (data.title || '').trim() === ''}
+              helperText={titleTouched && (data.title || '').trim() === '' ? '标题不能为空' : ' '}
+              sx={{ m: 0 }}
+            />
+            <Button
+              variant={'contained'}
+              color={'primary'}
+              onClick={() => {
+                const content = editorRef.current?.getMarkdown() || ''
+                setModalContent(content)
+                setReleaseOpen(true)
+              }}
+              disabled={(data.title || '').trim() === ''}
+              sx={{ flexShrink: 0 }}
+            >
+              发布
+            </Button>
+          </Stack>
+          <Box
             sx={{
-              boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
-              cursor: 'auto',
-              maxWidth: '100%',
-              minHeight: '90vh',
+              minHeight: '600px',
+              '& .tiptap': {
+                minHeight: '600px',
+              },
               '& .tiptap:focus': {
                 background: '#fff!important',
               },
             }}
           >
-            <Stack direction={'row'} alignItems={'baseline'} gap={3}>
-              <TextField
-                size={'small'}
-                label={'标题'}
-                variant={'outlined'}
-                placeholder={'请输入标题'}
-                fullWidth
-                value={data.title || ''}
-                onChange={(e) => setData({ ...data, title: e.target.value })}
-                onBlur={() => setTitleTouched(true)}
-                required
-                error={titleTouched && (data.title || '').trim() === ''}
-                helperText={titleTouched && (data.title || '').trim() === '' ? '标题不能为空' : ' '}
-                sx={{ my: 1 }}
-              />
-              <Button
-                variant={'contained'}
-                color={'primary'}
-                onClick={() => {
-                  const content = editorRef.current?.getMarkdown() || ''
-                  setModalContent(content)
-                  setReleaseOpen(true)
-                }}
-                disabled={(data.title || '').trim() === ''}
-              >
-                发布
-              </Button>
-            </Stack>
             <EditorWrap
               ref={editorRef}
               aiWriting
@@ -145,36 +120,51 @@ export default function EditPage() {
               showActions={false}
               key={`editor-${queryId || 'new'}-${data.content ? 1 : 0}`}
             />
+          </Box>
+        </Stack>
+      </Card>
+
+      {/* 右侧边栏 - 仅在桌面端显示 */}
+      <Box
+        sx={{
+          width: 300,
+          flexShrink: 0,
+          display: { xs: 'none', lg: 'block' },
+          pb: 3,
+          pr: 3,
+          position: 'sticky',
+          top: 63,
+          height: 'calc(100vh - 73px)',
+        }}
+      >
+        <Stack spacing={3}>
+          <Card
+            sx={{
+              position: 'sticky',
+              top: 63,
+              maxHeight: 'calc(100vh - 100px)',
+              overflowY: 'auto',
+            }}
+          >
+            <Toc headings={headings} />
           </Card>
-        </Box>
-        <ReleaseModal
-          open={releaseOpen}
-          onClose={() => setReleaseOpen(false)}
-          onOk={() => setReleaseOpen(false)}
-          selectedTags={[]}
-          status={queryId ? 'edit' : 'create'}
-          initialTitle={data.title}
-          data={data}
-          id={queryId}
-          initialContent={modalContent}
-          type={modalType}
-          forumInfo={forumInfo}
-          showContentEditor={false}
-        />
-        <Card
-          sx={{
-            position: 'sticky',
-            top: 90,
-            maxHeight: '70vh',
-            overflowY: 'auto',
-            flexShrink: 0,
-            width: '242px',
-            display: { xs: 'none', lg: 'block' },
-          }}
-        >
-          <Toc headings={headings} />
-        </Card>
-      </Stack>
+        </Stack>
+      </Box>
+
+      <ReleaseModal
+        open={releaseOpen}
+        onClose={() => setReleaseOpen(false)}
+        onOk={() => setReleaseOpen(false)}
+        selectedTags={[]}
+        status={queryId ? 'edit' : 'create'}
+        initialTitle={data.title}
+        data={data}
+        id={queryId}
+        initialContent={modalContent}
+        type={modalType}
+        forumInfo={forumInfo}
+        showContentEditor={false}
+      />
     </Box>
   )
 }

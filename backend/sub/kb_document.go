@@ -95,7 +95,7 @@ func (k *KBDoc) handleInsert(ctx context.Context, kbID uint, docID uint) error {
 		logger.With("doc_type", doc.DocType).Error("doc type not support")
 		return nil
 	}
-	ragID, err := k.rag.UpsertRecords(ctx, k.dataset.GetBackendID(ctx), content, nil)
+	ragID, err := k.rag.UpsertRecords(ctx, k.dataset.GetBackendID(ctx), doc.RagID, content, nil)
 	if err != nil {
 		return err
 	}

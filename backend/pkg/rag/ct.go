@@ -54,7 +54,15 @@ func (c *CTRag) UpdateDataset(ctx context.Context, datasetID string, req UpdateD
 	return nil
 }
 
-func (c *CTRag) UpsertRecords(ctx context.Context, datasetID string, content string, groupIDs []int) (string, error) {
+func (c *CTRag) UpsertRecords(ctx context.Context, datasetID string, ragID string, content string, groupIDs []int) (string, error) {
+	logger := c.logger.WithContext(ctx).With("dataset_id", datasetID).With("group_ids", groupIDs).With("rag_id", ragID)
+	if ragID != "" {
+		err := c.DeleteRecords(ctx, datasetID, []string{ragID})
+		if err != nil {
+			logger.WithErr(err).Warn("delete records failed")
+		}
+	}
+
 	tempFile, err := os.CreateTemp("", "*.md")
 	if err != nil {
 		return "", fmt.Errorf("create temp file failed: %w", err)
@@ -65,7 +73,7 @@ func (c *CTRag) UpsertRecords(ctx context.Context, datasetID string, content str
 		return "", fmt.Errorf("write temp file failed: %w", err)
 	}
 	defer tempFile.Close()
-	c.logger.WithContext(ctx).With("dataset_id", datasetID).With("group_ids", groupIDs).Debug("upload document text")
+	logger.Debug("upload document text")
 	docs, err := c.client.UploadDocumentsAndParse(ctx, datasetID, []string{tempFile.Name()}, groupIDs, nil)
 	if err != nil {
 		return "", fmt.Errorf("upload document text failed: %w", err)
@@ -73,7 +81,7 @@ func (c *CTRag) UpsertRecords(ctx context.Context, datasetID string, content str
 	if len(docs) == 0 {
 		return "", fmt.Errorf("no docs found")
 	}
-	c.logger.WithContext(ctx).With("dataset_id", datasetID).With("group_ids", groupIDs).With("doc_id", docs[0].ID).Debug("upload document success")
+	logger.With("doc_id", docs[0].ID).Debug("upload document success")
 	return docs[0].ID, nil
 }
 

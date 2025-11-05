@@ -24,7 +24,7 @@ type ParserConfig struct {
 type Service interface {
 	CreateDataset(ctx context.Context) (string, error)
 	UpdateDataset(ctx context.Context, datasetID string, req UpdateDatasetReq) error
-	UpsertRecords(ctx context.Context, datasetID string, content string, groupIDs []int) (string, error)
+	UpsertRecords(ctx context.Context, datasetID string, ragID string, content string, groupIDs []int) (string, error)
 	QueryRecords(ctx context.Context, req QueryRecordsReq) ([]*model.NodeContentChunk, error)
 	DeleteRecords(ctx context.Context, datasetID string, docIDs []string) error
 	DeleteDataset(ctx context.Context, datasetID string) error

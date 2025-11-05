@@ -372,8 +372,7 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(({
         <Box
           sx={{
             flex: 1,
-            m: 2,
-            borderRadius: 2,
+            mt: 1,
             transition: 'all 0.3s ease',
             position: 'relative',
             overflow: 'auto',

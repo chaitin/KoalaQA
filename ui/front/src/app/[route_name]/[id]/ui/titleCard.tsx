@@ -20,7 +20,20 @@ import { formatNumber } from '@/lib/utils'
 import { useForum } from '@/contexts/ForumContext'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import ThumbUpAltOutlinedIcon from '@mui/icons-material/ThumbUpAltOutlined'
-import { Box, Button, Divider, IconButton, Menu, MenuItem, Stack, Typography } from '@mui/material'
+import {
+  Box,
+  Button,
+  Chip,
+  Divider,
+  IconButton,
+  Menu,
+  MenuItem,
+  Paper,
+  Stack,
+  Typography,
+  Avatar,
+} from '@mui/material'
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import { useBoolean } from 'ahooks'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
@@ -162,15 +175,56 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
       }
     })
   }
-  console.log(data)
+  const getStatusColor = (status: string) => {
+    if (status === 'answered' || status === 'closed') return '#10b981'
+    if (status === 'in-progress') return '#3b82f6'
+    if (status === 'planned') return '#f59e0b'
+    return '#6b7280'
+  }
+
+  const getStatusLabel = (status: string) => {
+    if (status === 'answered') return '已解决'
+    if (status === 'in-progress') return '进行中'
+    if (status === 'planned') return '已计划'
+    if (status === 'open') return '待解决'
+    if (status === 'closed') return '已关闭'
+    if (status === 'published') return '已发布'
+    return ''
+  }
+
+  const isArticlePost = data.type === ModelDiscussionType.DiscussionTypeBlog
+  const isFeedbackPost = data.type === ModelDiscussionType.DiscussionTypeFeedback
+  const status = data.resolved ? 'closed' : 'open'
+
+  const isCategoryTag = (tag: string) => {
+    return data.groups?.some((group) => group.name === tag) || false
+  }
+
+  // 在客户端组件中注入帖子类型信息，供 filter-panel 读取
+  useEffect(() => {
+    if (typeof window !== 'undefined' && data.type) {
+      const typeMap: Record<string, string> = {
+        [ModelDiscussionType.DiscussionTypeQA]: 'qa',
+        [ModelDiscussionType.DiscussionTypeBlog]: 'blog',
+        [ModelDiscussionType.DiscussionTypeFeedback]: 'feedback',
+      }
+      const postType = typeMap[data.type] || 'qa'
+      ;(window as any).__POST_DETAIL_TYPE__ = postType
+      
+      // 触发自定义事件通知 filter-panel
+      window.dispatchEvent(new CustomEvent('postDetailTypeChanged', { detail: postType }))
+    }
+    // 组件卸载时清理
+    return () => {
+      if (typeof window !== 'undefined') {
+        delete (window as any).__POST_DETAIL_TYPE__
+        window.dispatchEvent(new CustomEvent('postDetailTypeChanged', { detail: null }))
+      }
+    }
+  }, [data.type])
+
   return (
-    <Card
-      sx={{
-        boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
-        cursor: 'auto',
-        maxWidth: '100%',
-      }}
-    >
+    <>
       <ReleaseModal
         status='edit'
         open={releaseVisible}
@@ -225,283 +279,171 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
               : '文章'}
         </MenuItem>
       </Menu>
-      <Stack
-        direction='row'
-        justifyContent='space-between'
-        alignItems='center'
-        gap={2}
-        sx={{ mb: { xs: '12px', sm: 0 }, width: '100%' }}
+
+      {/* Post header */}
+      <Paper
+        elevation={0}
+        sx={{
+          bgcolor: '#ffffff',
+          borderRadius: '6px',
+          border: '1px solid #e5e7eb',
+          p: 3,
+          mb: 3,
+        }}
       >
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          alignItems={{ xs: 'flex-start', sm: 'center' }}
-          gap={2}
-          sx={{ width: { xs: '100%', sm: 'calc(100% - 80px)' } }}
-        >
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
           <Typography
+            variant="h5"
             sx={{
-              fontSize: 20,
-              fontWeight: 600,
-              whiteSpace: 'normal',
-              wordBreak: 'break-word',
-              width: '100%',
+              fontWeight: 700,
+              color: '#111827',
+              lineHeight: 1.3,
+              flex: 1,
+              mr: 2,
             }}
           >
             {data.title}
           </Typography>
-        </Stack>
-        {[ModelDiscussionType.DiscussionTypeFeedback, ModelDiscussionType.DiscussionTypeBlog].includes(
-          data.type as any,
-        ) && (
-          <Stack
-            direction='row'
-            alignItems='center'
-            gap={1}
-            sx={{
-              background: data.user_like ? 'rgba(32,108,255,0.1)' : '#F2F3F5',
-              borderRadius: 0.5,
-              px: 1,
-              py: '1px',
-              cursor: 'pointer',
-              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-              transform: 'scale(1)',
-              '&:hover': {
-                background: data.user_like ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
-                transform: 'scale(1.05)',
-              },
-              '&:active': {
-                transform: 'scale(0.95)',
-                transition: 'transform 0.1s ease-out',
-              },
-            }}
-            onClick={handleLike}
-          >
-            <ThumbUpAltOutlinedIcon
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+            <Avatar
               sx={{
-                color: data.user_like ? 'info.main' : 'rgba(0,0,0,0.5)',
-                fontSize: 14,
-              }}
-            />
-            <Typography
-              variant='body2'
-              sx={{
-                fontSize: 14,
-                color: data.user_like ? 'info.main' : 'rgba(0,0,0,0.5)',
-                lineHeight: '20px',
+                bgcolor: '#000000',
+                width: 20,
+                height: 20,
+                fontSize: '0.65rem',
+                fontWeight: 600,
               }}
             >
-              {formatNumber(data.like || 0)}
+              {data.user_name?.[0] || 'U'}
+            </Avatar>
+            <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500, fontSize: '0.75rem' }}>
+              {data.user_name || '未知用户'}
             </Typography>
-          </Stack>
-        )}
-        {(data.user_id === user.uid ||
-          [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
-            user.role || ModelUserRole.UserRoleUnknown,
-          )) && (
-          <IconButton
-            size='small'
-            ref={anchorElRef}
-            onClick={menuOpen}
-            sx={{
-              display: { xs: 'none', sm: 'flex' },
-              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-              transform: 'scale(1)',
-              '&:hover': {
-                backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                transform: 'scale(1.1)',
-              },
-              '&:active': {
-                transform: 'scale(0.95)',
-                transition: 'transform 0.1s ease-out',
-              },
-            }}
-          >
-            <MoreVertIcon />
-          </IconButton>
-        )}
-      </Stack>
-      <Typography
-        sx={{
-          display: { sm: 'none', xs: 'block' },
-          fontSize: 12,
-          color: 'rgba(0,0,0,0.5)',
-        }}
-      >
-        {data.user_name}
-        {data.updated_at && data.updated_at !== data.created_at ? (
-          <>
-            更新于{' '}
-            <TimeDisplayWithTag
-              timestamp={data.updated_at}
-              title={dayjs.unix(data.updated_at).format('YYYY-MM-DD HH:mm:ss')}
-            />
-          </>
-        ) : (
-          <>
-            发布于{' '}
-            <TimeDisplayWithTag
-              timestamp={data.created_at!}
-              title={dayjs.unix(data.created_at!).format('YYYY-MM-DD HH:mm:ss')}
-            />
-          </>
-        )}
-      </Typography>
-      <Stack direction='row' alignItems='flex-end' gap={2} justifyContent='space-between' sx={{ my: 1 }}>
-        <Stack direction='row' flexWrap='wrap' gap='8px 16px'>
-          {data?.resolved && data.type === ModelDiscussionType.DiscussionTypeFeedback && (
-            <Stack
-              direction='row'
-              alignItems='center'
-              gap={0.5}
-              sx={{
-                backgroundColor: '#E8F5E8',
-                color: '#2E7D32',
-                px: 1,
-                py: 0.5,
-                borderRadius: 1,
-                fontSize: 12,
-                fontWeight: 500,
-              }}
-            >
-              <CheckCircleIcon sx={{ fontSize: 14 }} />
-              <Typography sx={{ fontSize: 12, fontWeight: 500 }}>已关闭</Typography>
-            </Stack>
-          )}
-          {data.groups?.map((item) => {
-            const label = `${item.name}`
-            const color = '#206CFF'
-            return (
-              <Tag
-                key={item.id}
-                label={label}
+            {(data.user_id === user.uid ||
+              [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
+                user.role || ModelUserRole.UserRoleUnknown,
+              )) && (
+              <IconButton
+                disableRipple
+                size="small"
+                ref={anchorElRef}
+                onClick={menuOpen}
                 sx={{
-                  backgroundColor: `${color}15`,
-                  color: color,
-                  fontSize: '12px',
-                  height: '24px',
-                  fontWeight: 500,
+                  color: '#6b7280',
+                  ml: 1,
+                  transition: 'all 0.15s ease-in-out',
+                  '&:hover': { color: '#000000', bgcolor: '#f3f4f6', transform: 'rotate(90deg)' },
+                  '&:active': { transform: 'rotate(90deg) scale(0.9)' },
                 }}
-                size='small'
-              />
-            )
-          })}
-          {data.tags?.map((item: string) => {
-            return (
-              <Tag
-                key={item}
-                label={item}
-                size='small'
+              >
+                <MoreVertIcon />
+              </IconButton>
+            )}
+          </Box>
+        </Box>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            {status === 'closed' && !isArticlePost && (
+              <Chip
+                icon={<CheckCircleOutlineIcon sx={{ fontSize: 10, color: '#10b981 !important' }} />}
+                label={getStatusLabel(status)}
+                size="small"
                 sx={{
-                  backgroundColor: 'rgba(0,0,0,0.06)',
-                  color: 'rgba(0,0,0,0.6)',
-                  fontSize: '12px',
-                  height: '24px',
+                  bgcolor: `${getStatusColor(status)}15`,
+                  color: getStatusColor(status),
+                  height: 22,
+                  fontWeight: 600,
+                  fontSize: '0.7rem',
+                  borderRadius: '3px',
+                  border: `1px solid ${getStatusColor(status)}30`,
                 }}
               />
-            )
-          })}
-        </Stack>
-        <Stack
-          direction='row'
-          justifyContent='flex-end'
-          alignItems='center'
-          gap={1}
-          sx={{ maxWidth: 200, display: { xs: 'none', sm: 'flex' } }}
-        >
-          <Typography variant='body2' sx={{ fontSize: 12, color: 'rgba(0,0,0,0.5)' }}>
-            <time
-              dateTime={dayjs.unix(data.created_at!).format()}
-              title={dayjs.unix(data.created_at!).format('YYYY-MM-DD HH:mm:ss')}
-            >
-              {data.user_name}{' '}
-              {data.updated_at && data.updated_at !== data.created_at ? (
-                <>
+            )}
+            {status === 'open' && !isArticlePost && (
+              <Chip
+                label={getStatusLabel(status)}
+                size="small"
+                sx={{
+                  bgcolor: `${getStatusColor(status)}15`,
+                  color: getStatusColor(status),
+                  height: 22,
+                  fontWeight: 600,
+                  fontSize: '0.7rem',
+                  borderRadius: '3px',
+                  border: `1px solid ${getStatusColor(status)}30`,
+                }}
+              />
+            )}
+            {data.groups?.map((item) => {
+              const isCategory = true
+              return (
+                <Chip
+                  key={item.id}
+                  label={item.name}
+                  size="small"
+                  sx={{
+                    bgcolor: isCategory ? '#eff6ff' : '#f9fafb',
+                    color: isCategory ? '#3b82f6' : '#6b7280',
+                    height: 22,
+                    fontSize: '0.7rem',
+                    fontWeight: isCategory ? 600 : 500,
+                    borderRadius: '3px',
+                    border: isCategory ? '1px solid #bfdbfe' : '1px solid #e5e7eb',
+                  }}
+                />
+              )
+            })}
+            {data.tags?.map((tag: string) => {
+              const isCategory = isCategoryTag(tag)
+              return (
+                <Chip
+                  key={tag}
+                  label={tag}
+                  size="small"
+                  sx={{
+                    bgcolor: isCategory ? '#eff6ff' : '#f9fafb',
+                    color: isCategory ? '#3b82f6' : '#6b7280',
+                    height: 22,
+                    fontSize: '0.7rem',
+                    fontWeight: isCategory ? 600 : 500,
+                    borderRadius: '3px',
+                    border: isCategory ? '1px solid #bfdbfe' : '1px solid #e5e7eb',
+                  }}
+                />
+              )
+            })}
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+            <Typography variant="body2" sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
+              发布于{' '}
+              <TimeDisplayWithTag
+                timestamp={data.created_at!}
+                title={dayjs.unix(data.created_at!).format('YYYY-MM-DD HH:mm:ss')}
+              />
+            </Typography>
+            {data.updated_at && data.updated_at !== 0 && data.updated_at !== data.created_at && (
+              <>
+                <Typography variant="body2" sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
+                  •
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
                   更新于{' '}
                   <TimeDisplayWithTag
                     timestamp={data.updated_at}
                     title={dayjs.unix(data.updated_at).format('YYYY-MM-DD HH:mm:ss')}
                   />
-                </>
-              ) : (
-                <>
-                  发布于{' '}
-                  <TimeDisplayWithTag
-                    timestamp={data.created_at!}
-                    title={dayjs.unix(data.created_at!).format('YYYY-MM-DD HH:mm:ss')}
-                  />
-                </>
-              )}
-            </time>
-          </Typography>
-        </Stack>
-      </Stack>
-      <Divider sx={{ mt: 2, mb: 1 }} />
-      <EditorContent content={data.content} onTocUpdate={() => {}} />
-
-      {/* 回答/回复/评论 按钮 */}
-      <Box sx={{ mt: 1, pt: 1 }}>
-        {!mdEditShow && (
-          <Button
-            variant='contained'
-            onClick={checkLoginAndFocusMain}
-            sx={{
-              textTransform: 'none',
-              fontSize: 14,
-              fontWeight: 500,
-              py: 0.75,
-              px: 2,
-              borderRadius: '6px',
-              width: 'fit-content',
-              transition: 'all 0.2s ease',
-              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-              '&:hover': {
-                backgroundColor: 'primary.dark',
-                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)',
-                transform: 'translateY(-1px)',
-              },
-              '&:active': {
-                transform: 'translateY(0)',
-                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
-              },
-            }}
-          >
-            {user?.uid
-              ? data.type === ModelDiscussionType.DiscussionTypeFeedback
-                ? '回复'
-                : data.type === ModelDiscussionType.DiscussionTypeBlog
-                  ? '发表评论'
-                  : '回答问题'
-              : data.type === ModelDiscussionType.DiscussionTypeFeedback
-                ? '登录后回复'
-                : data.type === ModelDiscussionType.DiscussionTypeBlog
-                  ? '登录后发表评论'
-                  : '登录后回答问题'}
-          </Button>
-        )}
-        {mdEditShow && (
-          <Box>
-            <EditorWrap
-              ref={editorRef}
-              detail={{
-                id: 'main-comment-editor',
-                name:
-                  data.type === ModelDiscussionType.DiscussionTypeFeedback
-                    ? '回复'
-                    : data.type === ModelDiscussionType.DiscussionTypeBlog
-                      ? '发表评论'
-                      : '回答问题',
-                content: '',
-              }}
-              onSave={async () => {
-                await onCommentSubmit()
-              }}
-              // 不传递 onTocUpdate，保持默认 false
-              onCancel={() => setMdEditShow(false)}
-            />
+                </Typography>
+              </>
+            )}
           </Box>
-        )}
-      </Box>
-    </Card>
+        </Box>
+
+        <Divider sx={{ my: 2 }} />
+
+        <EditorContent content={data.content} onTocUpdate={() => {}} />
+      </Paper>
+    </>
   )
 }
 

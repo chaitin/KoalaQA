@@ -95,7 +95,6 @@ const validateGroupSelection = (
 const schema = z.object({
   content: z.string().default(''),
   group_ids: z.array(z.number()).min(1, '请选择至少一个分类').default([]),
-  tags: z.array(z.string()).default([]).optional(),
   title: z.string().min(1, '请输入讨论主题').default(''),
 })
 export const ReleaseModal: React.FC<ReleaseModalProps> = ({
@@ -199,7 +198,6 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
       reset({
         content: '',
         group_ids: [],
-        tags: [],
         title: '',
       })
       setGroupValidationError('')
@@ -209,14 +207,12 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
         title: initialTitle,
         content: initialContent || '',
         group_ids: defaultGroupIds,
-        tags: [],
       })
     } else if (status === 'create') {
       // 当打开创建模态框但没有初始标题时，清空所有字段
       reset({
         content: initialContent || '',
         group_ids: defaultGroupIds,
-        tags: [],
         title: '',
       })
     }
@@ -262,64 +258,6 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
           helperText={errors.title?.message as string}
           size='small'
           autoComplete='off'
-        />
-        <Controller
-          name='tags'
-          control={control}
-          render={({ field }) => (
-            <Autocomplete
-              multiple
-              freeSolo
-              options={[]}
-              value={field.value || []}
-              onChange={(_, value) => {
-                const normalized = Array.from(
-                  new Set(value.map((v) => (typeof v === 'string' ? v.trim() : v)).filter(Boolean)),
-                )
-                field.onChange(normalized)
-              }}
-              filterSelectedOptions
-              size='small'
-              renderTags={(value: readonly string[], getTagProps) =>
-                value.map((option: string, index: number) => {
-                  const { key, ...tagProps } = getTagProps({ index })
-                  const label = (
-                    <Stack direction='row' alignItems='center' gap={0.5}>
-                      {`# ${option}`}
-                    </Stack>
-                  )
-                  return (
-                    <Tag
-                      key={key}
-                      label={label}
-                      size='small'
-                      sx={{
-                        backgroundColor: '#F2F3F5',
-                      }}
-                      {...tagProps}
-                    />
-                  )
-                })
-              }
-              renderOption={(props, option) => {
-                const { key, ...optionProps } = props
-                return (
-                  <Box key={key} component='li' {...optionProps} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {option}
-                  </Box>
-                )
-              }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label='标签'
-                  placeholder='输入后按回车可添加自定义标签'
-                  error={!!errors.tags?.message}
-                  helperText={errors.tags?.message as string}
-                />
-              )}
-            />
-          )}
         />
         <Controller
           name='group_ids'

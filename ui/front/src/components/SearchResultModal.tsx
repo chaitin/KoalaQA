@@ -1,7 +1,7 @@
 'use client'
 import { getDiscussion } from '@/api'
 import { ModelDiscussionListItem, GetDiscussionParams } from '@/api/types'
-import DiscussCard, { DiscussCardMobile } from '@/app/[route_name]/ui/discussCard'
+import DiscussCard from '@/app/[route_name]/ui/discussCard'
 import SearchIcon from '@mui/icons-material/Search'
 import {
   Box,
@@ -275,23 +275,13 @@ export const SearchResultModal = ({
           ) : (
             <Stack spacing={1}>
               {searchResults.map((item, index) => (
-                <Fragment key={item.id || index}>
-                  {isMobile ? (
-                    <DiscussCardMobile
-                      sx={{ border: '1px solid ', borderColor: 'divider', borderRadius: 1 }}
-                      data={item}
-                      keywords={searchQuery}
-                      showType={true}
-                    />
-                  ) : (
-                    <DiscussCard
-                      sx={{ border: '1px solid ', borderColor: 'divider', borderRadius: 1 }}
-                      data={item}
-                      keywords={searchQuery}
-                      showType={true}
-                    />
-                  )}
-                </Fragment>
+                <DiscussCard
+                  key={item.id || index}
+                  sx={{ border: '1px solid ', borderColor: 'divider', borderRadius: 1 }}
+                  data={item}
+                  keywords={searchQuery}
+                  showType={true}
+                />
               ))}
             </Stack>
           )}
