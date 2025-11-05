@@ -284,12 +284,18 @@ func (d *Discussion) ListSimilarity(ctx context.Context, discUUID string) (*mode
 	if err != nil {
 		return nil, err
 	}
-	if len(discs) > 5 {
-		discs = discs[:5]
-	}
 
-	res.Items = discs
-	res.Total = int64(len(discs))
+	for _, searchDisc := range discs {
+		if searchDisc.ID == disc.ID {
+			continue
+		}
+
+		res.Items = append(res.Items, searchDisc)
+		if len(res.Items) == 5 {
+			break
+		}
+	}
+	res.Total = int64(len(res.Items))
 	return &res, nil
 }
 
