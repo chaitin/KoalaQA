@@ -49,9 +49,7 @@ import {
   Typography,
   Avatar,
 } from '@mui/material'
-import dayjs from 'dayjs'
-import 'dayjs/locale/zh-cn'
-import relativeTime from 'dayjs/plugin/relativeTime'
+import dayjs from '@/lib/dayjs'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import React, { useContext, useState, useEffect } from 'react'
@@ -76,9 +74,6 @@ const animationStyles = `
 `
 
 // 样式注入逻辑将在组件内部通过useEffect处理
-
-dayjs.extend(relativeTime)
-dayjs.locale('zh-cn')
 
 const BaseDiscussCard = (props: {
   isReply?: boolean
@@ -843,7 +838,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
             <TextField
               fullWidth
               size='small'
-              placeholder={isArticlePost ? '分享你的见解和经验，帮助提问者解决问题...' : '分享你的见解和经验，帮助提问者解决问题...'}
+              placeholder={isArticlePost ? '善语结善缘，恶言伤人心' : '分享你的见解和经验，帮助提问者解决问题...'}
               onClick={() => setShowAnswerEditor(true)}
               sx={{
                 '& .MuiOutlinedInput-root': {
@@ -929,7 +924,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
               fontSize: '1.125rem',
             }}
           >
-            {sortedComments.length} 个回答
+            {sortedComments.length} 个{isArticlePost ? '评论' : '回答'}
           </Typography>
 
           {sortedComments.map((answer) => {
@@ -1148,7 +1143,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                         '&:active': { transform: 'scale(0.98)' },
                       }}
                     >
-                      {answer.replies?.length || 0} 条评论
+                      {answer.replies?.length || 0} 条{isArticlePost ? '回复' : '评论'}
                     </Button>
                   </Box>
 
@@ -1220,7 +1215,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                           <TextField
                             fullWidth
                             size='small'
-                            placeholder='添加评论...'
+                            placeholder={isArticlePost ? '回复评论...' : '添加评论...'}
                             onClick={() => {
                               setShowCommentEditors({ ...showCommentEditors, [answer.id!]: true })
                             }}

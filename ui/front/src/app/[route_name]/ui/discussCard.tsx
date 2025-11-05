@@ -18,9 +18,7 @@ import {
   CheckCircleOutline as CheckCircleOutlineIcon,
   HowToVote as HowToVoteIcon,
 } from '@mui/icons-material'
-import dayjs from 'dayjs'
-import 'dayjs/locale/zh-cn'
-import relativeTime from 'dayjs/plugin/relativeTime'
+import dayjs from '@/lib/dayjs'
 import { LazyImage } from '@/components/optimized'
 import { useContext, useMemo, useCallback, memo } from 'react'
 import { MarkDown } from '@/components'
@@ -39,9 +37,6 @@ const getTypeLabel = (type?: ModelDiscussionType): string => {
       return ''
   }
 }
-
-dayjs.extend(relativeTime)
-dayjs.locale('zh-cn')
 
 // 状态相关辅助函数
 const getStatusColor = (status: string) => {
