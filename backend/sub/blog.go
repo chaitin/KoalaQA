@@ -66,9 +66,19 @@ func (a *Blog) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 	logger.Info("handle insert blog")
 
 	if data.OP == topic.OPInsert {
-		err := a.trend.CreateByDiscID(ctx, 0, model.TrendTypeCreateDiscuss, data.DiscID)
+		var disc model.Discussion
+		err := a.disc.GetByID(ctx, &disc, data.DiscID)
 		if err != nil {
-			logger.WithErr(err).Warn("create trend failed")
+			logger.WithErr(err).Warn("get disc failed")
+		} else {
+			err = a.trend.Create(ctx, &model.Trend{
+				UserID:        disc.UserID,
+				Type:          model.TrendTypeCreateDiscuss,
+				DiscussHeader: disc.Header(),
+			})
+			if err != nil {
+				logger.WithErr(err).Warn("create trend failed")
+			}
 		}
 	}
 

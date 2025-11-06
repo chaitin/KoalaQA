@@ -2,7 +2,6 @@ package svc
 
 import (
 	"context"
-	"errors"
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/repo"
@@ -10,7 +9,6 @@ import (
 
 type Trend struct {
 	svcUser   *User
-	svcDisc   *Discussion
 	repoTrend *repo.Trend
 }
 
@@ -53,27 +51,6 @@ func (t *Trend) List(ctx context.Context, curUserID uint, req TrendListReq) (*mo
 
 func (t *Trend) Create(ctx context.Context, trend *model.Trend) error {
 	return t.repoTrend.Create(ctx, trend)
-}
-
-func (t *Trend) CreateByDiscID(ctx context.Context, userID uint, trendType model.TrendType, discID uint) error {
-	disc, err := t.svcDisc.GetByID(ctx, discID)
-	if err != nil {
-		return err
-	}
-
-	if userID == 0 {
-		if trendType != model.TrendTypeCreateDiscuss {
-			return errors.New("empty trend user id")
-		}
-
-		userID = disc.UserID
-	}
-
-	return t.Create(ctx, &model.Trend{
-		UserID:        userID,
-		Type:          trendType,
-		DiscussHeader: disc.Header(),
-	})
 }
 
 func newTrend(t *repo.Trend, u *User) *Trend {
