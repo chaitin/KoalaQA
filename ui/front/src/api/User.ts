@@ -18,18 +18,23 @@ import {
   GetAdminUserUserIdParams,
   GetUserLoginThirdParams,
   GetUserNotifyListParams,
+  GetUserTrendParams,
+  GetUserUserIdParams,
   ModelListRes,
   ModelMessageNotify,
+  ModelTrend,
   ModelUser,
   ModelUserInfo,
   PutAdminUserUserIdParams,
   PutUserPayload,
   SvcAuthFrontendGetRes,
   SvcNotifyReadReq,
+  SvcUpdateWebNotifyReq,
   SvcUserJoinOrgReq,
   SvcUserListItem,
   SvcUserLoginReq,
   SvcUserRegisterReq,
+  SvcUserStatisticsRes,
   SvcUserUpdateReq,
 } from "./types";
 
@@ -396,6 +401,29 @@ export const getUserNotifyUnread = (params: RequestParams = {}) =>
  * No description
  *
  * @tags user
+ * @name PostUserNotifyWeb
+ * @summary update notify web switch
+ * @request POST:/user/notify/web
+ * @response `200` `ContextResponse` OK
+ */
+
+export const postUserNotifyWeb = (
+  req: SvcUpdateWebNotifyReq,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/user/notify/web`,
+    method: "POST",
+    body: req,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
  * @name PostUserRegister
  * @summary register user
  * @request POST:/user/register
@@ -411,6 +439,68 @@ export const postUserRegister = (
     method: "POST",
     body: req,
     type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name GetUserTrend
+ * @summary list user trend
+ * @request GET:/user/trend
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (ModelTrend)[],
+
+}),
+
+})` OK
+ */
+
+export const getUserTrend = (
+  query: GetUserTrendParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: ModelTrend[];
+      };
+    }
+  >({
+    path: `/user/trend`,
+    method: "GET",
+    query: query,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name GetUserUserId
+ * @summary stat user info
+ * @request GET:/user/{user_id}
+ * @response `200` `(ContextResponse & {
+    data?: SvcUserStatisticsRes,
+
+})` OK
+ */
+
+export const getUserUserId = (
+  { userId, ...query }: GetUserUserIdParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: SvcUserStatisticsRes;
+    }
+  >({
+    path: `/user/${userId}`,
+    method: "GET",
     format: "json",
     ...params,
   });

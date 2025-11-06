@@ -57,6 +57,7 @@ type AuthInfo struct {
 type Auth struct {
 	EnableRegister bool       `json:"enable_register"`
 	PublicAccess   bool       `json:"public_access"`
+	PublicForumIDs []uint     `json:"public_forum_ids"`
 	AuthInfos      []AuthInfo `json:"auth_infos" binding:"omitempty,dive"`
 }
 

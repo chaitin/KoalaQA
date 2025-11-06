@@ -414,6 +414,46 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         <Divider sx={{ my: 2 }} />
 
         <EditorContent content={data.content} onTocUpdate={() => {}} />
+
+        {/* 文章点赞按钮 */}
+        {isArticlePost && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 3, pt: 2, borderTop: '1px solid #f3f4f6' }}>
+            <Button
+              disableRipple
+              size='small'
+              variant='outlined'
+              startIcon={
+                data.user_like ? (
+                  <ThumbUpAltOutlinedIcon sx={{ fontSize: 16, color: '#3b82f6' }} />
+                ) : (
+                  <ThumbUpAltOutlinedIcon sx={{ fontSize: 16 }} />
+                )
+              }
+              onClick={handleLike}
+              sx={{
+                textTransform: 'none',
+                color: data.user_like ? '#3b82f6' : '#6b7280',
+                borderColor: data.user_like ? '#3b82f6' : '#d1d5db',
+                bgcolor: data.user_like ? '#eff6ff' : '#ffffff',
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                px: 2,
+                py: 0.75,
+                borderRadius: '6px',
+                transition: 'all 0.15s ease-in-out',
+                '&:hover': {
+                  bgcolor: data.user_like ? '#dbeafe' : '#f9fafb',
+                  borderColor: data.user_like ? '#3b82f6' : '#9ca3af',
+                  color: data.user_like ? '#3b82f6' : '#111827',
+                  transform: 'translateY(-1px)',
+                },
+                '&:active': { transform: 'translateY(0) scale(0.98)' },
+              }}
+            >
+              {formatNumber(data.like || 0)}
+            </Button>
+          </Box>
+        )}
       </Paper>
     </>
   )

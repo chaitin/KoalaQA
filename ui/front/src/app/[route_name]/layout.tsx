@@ -11,7 +11,7 @@ export default function RouteLayout({ children }: { children: React.ReactNode })
   const [showFilters, setShowFilters] = useState(!isMobile)
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: 'background.paper' }}>
       <Box
         sx={{
           display: 'flex',
@@ -23,7 +23,7 @@ export default function RouteLayout({ children }: { children: React.ReactNode })
         {showFilters && (
           <Box
             sx={{
-              width: isMobile ? '100%' : 280,
+              width: isMobile ? '100%' : 240,
               flexShrink: 0,
               display: isMobile && !showFilters ? 'none' : 'block',
               pl: { xs: 2, lg: 3 },

@@ -8,22 +8,25 @@ import {
   Chip,
   Divider,
   FormControl,
+  InputLabel,
   List,
   ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
   MenuItem,
+  OutlinedInput,
   Select,
   Typography,
 } from '@mui/material'
 import { useParams, usePathname, useSearchParams } from 'next/navigation'
-import { useContext, useMemo, useState } from 'react'
+import { useContext, useMemo, useRef, useState } from 'react'
 import { CommonContext } from './commonProvider'
+import Image from 'next/image'
 
 const postTypes = [
-  { id: 'qa', name: '问答', icon: <QuestionAnswerIcon /> },
-  { id: 'blog', name: '文章', icon: <ArticleIcon /> },
+  { id: 'qa', name: '问题', icon: <Image width={20} height={20} src='/qa.svg' alt='问题' /> },
+  { id: 'blog', name: '文章', icon: <Image width={20} height={20} src='/blog.svg' alt='文章' /> },
 ]
 
 const popularTags = [
@@ -168,13 +171,13 @@ export default function FilterPanel() {
   return (
     <Box
       sx={{
-        bgcolor: '#ffffff',
-        borderRight: '1px solid #e5e7eb',
+        bgcolor: 'rgba(0,99,151,0.03)',
+        borderRadius: '8px',
+        border: '1px solid rgba(0,99,151,0.1)',
         pt: 3,
         pb: 3,
         px: 2,
         height: 'calc(100vh - 136px)',
-        borderRadius: '6px',
         overflowY: 'auto',
         scrollbarGutter: 'stable',
         position: 'sticky',
@@ -214,21 +217,9 @@ export default function FilterPanel() {
                     mb: 0.5,
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     '&.Mui-selected': {
-                      bgcolor: '#f9fafb',
-                      color: '#111827',
-                      borderLeft: '3px solid #000000',
-                      '& .MuiListItemIcon-root': { color: '#111827' },
-                      '&:hover': { bgcolor: '#f3f4f6' },
-                      '&:focus': {
-                        bgcolor: '#f9fafb',
-                        color: '#111827',
-                      },
-                      '&.Mui-focusVisible': {
-                        bgcolor: '#f9fafb',
-                        color: '#111827',
-                        outline: '2px solid #000000',
-                        outlineOffset: '2px',
-                      },
+                      background: 'rgba(0,99,151,0.06)',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(0,99,151,0.1)',
                     },
                     '&:hover': { bgcolor: '#f3f4f6', color: '#000000' },
                   }}
@@ -262,18 +253,19 @@ export default function FilterPanel() {
           const selectedValues = selectedCategories[group.id] || []
           return (
             <FormControl key={group.id} fullWidth sx={{ mb: 1.5 }}>
-              <Typography
-                variant='body2'
+              <InputLabel
                 sx={{
+                  fontSize: '0.875rem',
                   fontWeight: 600,
                   color: '#111827',
-                  fontSize: '0.875rem',
-                  mb: 0.75,
-                  px: 0.5,
+                  lineHeight: '1.4375em',
+                  '&.Mui-focused': {
+                    color: '#3b82f6',
+                  },
                 }}
               >
                 {group.name}
-              </Typography>
+              </InputLabel>
               <Select
                 multiple
                 value={selectedValues}
@@ -281,12 +273,19 @@ export default function FilterPanel() {
                   const value = e.target.value
                   handleCategoryChange(group.id, typeof value === 'string' ? value.split(',') : value)
                 }}
-                displayEmpty
-                disableUnderline
-                variant='standard'
+                onClose={() => {
+                  // 关闭菜单时移除焦点，移除边框高亮
+                  setTimeout(() => {
+                    const activeElement = document.activeElement as HTMLElement
+                    if (activeElement && activeElement.blur) {
+                      activeElement.blur()
+                    }
+                  }, 0)
+                }}
+                input={<OutlinedInput label={group.name} />}
                 renderValue={(selected) => {
                   if ((selected as string[]).length === 0) {
-                    return <Typography sx={{ color: '#9ca3af', fontSize: '0.8125rem' }}>全部</Typography>
+                    return <Typography sx={{ color: 'rgba(0,0,0,0.3)', fontSize: '0.8125rem' }}>全部</Typography>
                   }
                   const selectedNames = (selected as string[])
                     .map((id) => {
@@ -303,9 +302,10 @@ export default function FilterPanel() {
                           size='small'
                           sx={{
                             height: 20,
+                            borderRadius: '4px',
                             fontSize: '0.7rem',
-                            bgcolor: '#000000',
-                            color: '#ffffff',
+                            bgcolor: '#E9ECEF',
+                            color: 'text.main',
                             '& .MuiChip-label': {
                               px: 1,
                             },
@@ -316,25 +316,24 @@ export default function FilterPanel() {
                   )
                 }}
                 sx={{
-                  bgcolor: '#f9fafb',
-                  borderRadius: '6px',
-                  px: 1.5,
-                  py: 0.75,
-                  fontSize: '0.8125rem',
-                  border: '1px solid #e5e7eb',
-                  transition: 'all 0.15s ease-in-out',
-                  minHeight: '40px',
-                  '&:hover': {
-                    bgcolor: '#f3f4f6',
+                  bgcolor: 'common.white',
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: 'common.white',
+                  },
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: '#e5e7eb',
+                  },
+                  '&:hover .MuiOutlinedInput-notchedOutline': {
                     borderColor: '#d1d5db',
                   },
-                  '&.Mui-focused': {
-                    bgcolor: '#ffffff',
-                    borderColor: '#3b82f6',
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                    borderColor: 'rgba(0,99,151,0.5)',
+                    borderWidth: '1px',
                   },
                   '& .MuiSelect-select': {
-                    py: 0,
                     pr: '32px !important',
+                    py: 1.7,
+                    minHeight: 'unset!important',
                   },
                   '& .MuiSelect-icon': {
                     color: '#6b7280',

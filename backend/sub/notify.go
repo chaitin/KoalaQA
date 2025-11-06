@@ -98,18 +98,20 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 	)
 
 	common := model.MessageNotifyCommon{
-		DiscussID:      data.DiscussID,
-		DiscussUUID:    data.DiscussUUID,
-		DiscussTitle:   data.DiscussTitle,
-		DiscussionType: data.DiscussionType,
-		ForumID:        data.ForumID,
-		Type:           data.Type,
-		FromID:         data.FromID,
-		FromName:       fromUser.Name,
-		FromBot:        data.FromID == botUserID,
-		ToID:           data.ToID,
-		ToName:         toUser.Name,
-		ToBot:          data.ToID == botUserID,
+		DiscussHeader: model.DiscussHeader{
+			DiscussID:      data.DiscussID,
+			DiscussUUID:    data.DiscussUUID,
+			DiscussTitle:   data.DiscussTitle,
+			DiscussionType: data.DiscussionType,
+			ForumID:        data.ForumID,
+		},
+		Type:     data.Type,
+		FromID:   data.FromID,
+		FromName: fromUser.Name,
+		FromBot:  data.FromID == botUserID,
+		ToID:     data.ToID,
+		ToName:   toUser.Name,
+		ToBot:    data.ToID == botUserID,
 	}
 
 	if data.ToID == botUserID {

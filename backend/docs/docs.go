@@ -4644,6 +4644,39 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/notify/web": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "update notify web switch",
+                "parameters": [
+                    {
+                        "description": "req params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.UpdateWebNotifyReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/user/register": {
             "post": {
                 "consumes": [
@@ -4672,6 +4705,112 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/trend": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "list user trend",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "user_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/model.Trend"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{user_id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "stat user info",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "user id",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/svc.UserStatisticsRes"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -4745,6 +4884,12 @@ const docTemplate = `{
                 },
                 "public_access": {
                     "type": "boolean"
+                },
+                "public_forum_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 }
             }
         },
@@ -5558,6 +5703,42 @@ const docTemplate = `{
                 }
             }
         },
+        "model.Trend": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "integer"
+                },
+                "discuss_id": {
+                    "type": "integer"
+                },
+                "discuss_title": {
+                    "type": "string"
+                },
+                "discuss_uuid": {
+                    "type": "string"
+                },
+                "discussion_type": {
+                    "$ref": "#/definitions/model.DiscussionType"
+                },
+                "forum_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "trend_type": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "description": "谁的行为",
+                    "type": "integer"
+                }
+            }
+        },
         "model.User": {
             "type": "object",
             "properties": {
@@ -5602,6 +5783,9 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "integer"
+                },
+                "web_notify": {
+                    "type": "boolean"
                 }
             }
         },
@@ -5637,6 +5821,9 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                },
+                "web_notify": {
+                    "type": "boolean"
                 }
             }
         },
@@ -6709,6 +6896,14 @@ const docTemplate = `{
                 }
             }
         },
+        "svc.UpdateWebNotifyReq": {
+            "type": "object",
+            "properties": {
+                "enable": {
+                    "type": "boolean"
+                }
+            }
+        },
         "svc.UserJoinOrgReq": {
             "type": "object",
             "properties": {
@@ -6803,6 +6998,26 @@ const docTemplate = `{
                 },
                 "password": {
                     "type": "string"
+                }
+            }
+        },
+        "svc.UserStatisticsRes": {
+            "type": "object",
+            "properties": {
+                "answer_count": {
+                    "type": "integer"
+                },
+                "avatar": {
+                    "type": "string"
+                },
+                "blog_count": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "qa_count": {
+                    "type": "integer"
                 }
             }
         },

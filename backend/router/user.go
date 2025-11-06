@@ -15,8 +15,9 @@ import (
 )
 
 type user struct {
-	expire int
-	svcU   *svc.User
+	expire   int
+	svcU     *svc.User
+	svcTrend *svc.Trend
 }
 
 // Register
@@ -167,20 +168,77 @@ func (u *user) LoginWeComCallback(ctx *context.Context) {
 	u.loginThirdCallback(ctx, model.AuthTypeWeCom)
 }
 
+// Statistics
+// @Summary stat user info
+// @Tags user
+// @Param user_id path uint true "user id"
+// @Produce json
+// @Success 200 {object} context.Response{data=svc.UserStatisticsRes}
+// @Router /user/{user_id} [get]
+func (u *user) Statistics(ctx *context.Context) {
+	userID, err := ctx.ParamUint("user_id")
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	res, err := u.svcU.Statistics(ctx, userID)
+	if err != nil {
+		ctx.InternalError(err, "stat user failed")
+		return
+	}
+
+	ctx.Success(res)
+}
+
+// TrendList
+// @Summary list user trend
+// @Tags user
+// @Param req query svc.TrendListReq true "req params"
+// @Produce json
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]model.Trend}}
+// @Router /user/trend [get]
+func (u *user) TrendList(ctx *context.Context) {
+	var req svc.TrendListReq
+	err := ctx.ShouldBindQuery(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	res, err := u.svcTrend.List(ctx, ctx.GetUser().UID, req)
+	if err != nil {
+		ctx.InternalError(err, "list trend failed")
+		return
+	}
+
+	ctx.Success(res)
+}
+
 func (u *user) Route(h server.Handler) {
 	g := h.Group("/api/user")
 	g.POST("/register", u.Register)
 	g.POST("/login", u.Login)
 	g.GET("/login_method", u.LoginMethod)
-	g.GET("/login/third", u.LoginThirdURL)
-	g.GET("/login/third/callback/oidc", u.LoginOIDCCallback)
-	g.GET("/login/third/callback/we_com", u.LoginWeComCallback)
+	{
+		thirdG := g.Group("/login/third")
+		thirdG.GET("", u.LoginThirdURL)
+		{
+			thirdCallbackG := thirdG.Group("/callback")
+			thirdCallbackG.GET("/oidc", u.LoginOIDCCallback)
+			thirdCallbackG.GET("/we_com", u.LoginWeComCallback)
+		}
+
+	}
+	g.GET("/:user_id", u.Statistics)
+	g.GET("/trend", u.TrendList)
 }
 
-func newUser(cfg config.Config, u *svc.User) server.Router {
+func newUser(cfg config.Config, u *svc.User, trend *svc.Trend) server.Router {
 	return &user{
-		expire: int(cfg.JWT.Expire),
-		svcU:   u,
+		expire:   int(cfg.JWT.Expire),
+		svcU:     u,
+		svcTrend: trend,
 	}
 }
 
