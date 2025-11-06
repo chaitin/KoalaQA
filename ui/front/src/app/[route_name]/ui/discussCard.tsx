@@ -1,28 +1,19 @@
-"use client"
+'use client'
 
 import { ModelDiscussionListItem, ModelDiscussionType } from '@/api/types'
+import { MarkDown } from '@/components'
 import { CommonContext } from '@/components/commonProvider'
-import { Avatar } from '@/components/discussion'
+import { LazyImage } from '@/components/optimized'
 import { TimeDisplay } from '@/components/TimeDisplay'
-import { formatNumber } from '@/lib/utils'
 import {
-  Box,
-  Chip,
-  SxProps,
-  Typography,
-  Avatar as MuiAvatar,
-} from '@mui/material'
-import {
-  QuestionAnswer as QuestionAnswerIcon,
-  ThumbUp as ThumbUpIcon,
   CheckCircleOutline as CheckCircleOutlineIcon,
   HowToVote as HowToVoteIcon,
+  QuestionAnswer as QuestionAnswerIcon,
+  ThumbUp as ThumbUpIcon,
 } from '@mui/icons-material'
-import dayjs from '@/lib/dayjs'
-import { LazyImage } from '@/components/optimized'
-import { useContext, useMemo, useCallback, memo } from 'react'
-import { MarkDown } from '@/components'
+import { Box, Chip, Avatar as MuiAvatar, Stack, SxProps, Typography } from '@mui/material'
 import { useParams } from 'next/navigation'
+import { memo, useCallback, useContext, useMemo } from 'react'
 
 // 帖子类型映射函数
 const getTypeLabel = (type?: ModelDiscussionType): string => {
@@ -40,7 +31,7 @@ const getTypeLabel = (type?: ModelDiscussionType): string => {
 
 // 状态相关辅助函数
 const getStatusColor = (status: string) => {
-  if (status === 'answered' || status === 'closed') return '#10b981'
+  if (status === 'answered' || status === 'closed') return '#198754'
   if (status === 'in-progress') return '#3b82f6'
   if (status === 'planned') return '#f59e0b'
   return '#6b7280'
@@ -86,7 +77,6 @@ const getAvatarLetter = (name?: string): string => {
   return name.charAt(0).toUpperCase()
 }
 
-
 const DiscussCard = ({
   data,
   keywords: _keywords,
@@ -110,7 +100,6 @@ const DiscussCard = ({
     const groupMap = new Map(groups.flat.map((g) => [g.id, g.name]))
 
     return it.group_ids
-      .slice(0, 2)
       .map((groupId) => groupMap.get(groupId))
       .filter(Boolean) as string[]
   }, [it.group_ids, groups.flat])
@@ -133,108 +122,102 @@ const DiscussCard = ({
     <Box
       key={it.id}
       sx={{
-        borderBottom: "1px solid #f3f4f6",
-        transition: "all 0.2s",
-        cursor: "pointer",
-        "&:hover": {
-          bgcolor: "#fafbfc",
-        },
+        borderBottom: '1px solid #f3f4f6',
+        transition: 'all 0.2s',
+        cursor: 'pointer',
         ...sx,
       }}
       onClick={handleCardClick}
     >
       <Box sx={{ p: 2 }}>
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1, gap: 2 }}>
+        <Stack direction='row' alignItems='center' spacing={1}>
+          {it.user_avatar ? (
+            <LazyImage
+              src={it.user_avatar}
+              width={20}
+              height={20}
+              alt='头像'
+              style={{ borderRadius: '50%', flexShrink: 0, width: '20px' }}
+            />
+          ) : (
+            <MuiAvatar
+              sx={{
+                bgcolor: '#000000',
+                width: 20,
+                height: 20,
+                fontSize: '0.65rem',
+                fontWeight: 600,
+              }}
+            >
+              {getAvatarLetter(it.user_name)}
+            </MuiAvatar>
+          )}
           <Typography
-            variant="h6"
+            variant='caption'
+            sx={{ color: '#6b7280', fontWeight: 500, fontSize: '0.7rem', whiteSpace: 'nowrap' }}
+          >
+            {it.user_name || ''} · <TimeDisplay timestamp={it.updated_at!} />
+          </Typography>
+        </Stack>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, gap: 2 }}>
+          <Typography
+            variant='h6'
             sx={{
               fontWeight: 700,
-              color: "#111827",
-              fontSize: "1rem",
+              color: '#111827',
+              fontSize: '1rem',
               lineHeight: 1.4,
-              letterSpacing: "-0.01em",
-              "&:hover": { color: "#000000" },
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
+              letterSpacing: '-0.01em',
+              '&:hover': { color: '#000000' },
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
               flex: 1,
             }}
           >
             {showType && getTypeLabel(it.type) && `【${getTypeLabel(it.type)}】`}
             {it.title}
           </Typography>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
-            {it.user_avatar ? (
-              <LazyImage
-                src={it.user_avatar}
-                width={20}
-                height={20}
-                alt='头像'
-                style={{ borderRadius: '50%', flexShrink: 0 }}
-              />
-            ) : (
-              <MuiAvatar
-                sx={{
-                  bgcolor: "#000000",
-                  width: 20,
-                  height: 20,
-                  fontSize: "0.65rem",
-                  fontWeight: 600,
-                }}
-              >
-                {getAvatarLetter(it.user_name)}
-              </MuiAvatar>
-            )}
-            <Typography
-              variant="caption"
-              sx={{ color: "#6b7280", fontWeight: 500, fontSize: "0.7rem", whiteSpace: "nowrap" }}
-            >
-              {it.user_name || ''} · <TimeDisplay timestamp={it.updated_at!} />
-            </Typography>
-          </Box>
         </Box>
 
         <MarkDown
-          content={
-            it.type === ModelDiscussionType.DiscussionTypeBlog ? (it.summary || '') : (it.content || '')
-          }
+          content={it.type === ModelDiscussionType.DiscussionTypeBlog ? it.summary || '' : it.content || ''}
           truncateLength={100}
           sx={{
-            color: "#6b7280",
             mb: 1.25,
             lineHeight: 1.5,
-            fontSize: "0.8125rem",
+            fontSize: '0.8125rem',
             '& *': {
-              fontSize: "0.8125rem !important",
-              color: "#6b7280 !important",
+              fontSize: '0.8125rem !important',
+              color: '#6b7280 !important',
             },
           }}
         />
 
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
             {shouldShowStatus(it) && (
               <Chip
                 icon={
-                  postStatus === "answered" || postStatus === "closed" ? (
+                  postStatus === 'answered' || postStatus === 'closed' ? (
                     <CheckCircleOutlineIcon
                       sx={{
                         width: 15,
                         height: 15,
-                        color: "#10b981 !important",
+                        color: '#10b981 !important',
                       }}
                     />
                   ) : undefined
                 }
                 label={getStatusLabel(postStatus)}
-                size="small"
+                size='small'
                 sx={{
                   bgcolor: `${getStatusColor(postStatus)}15`,
                   color: getStatusColor(postStatus),
                   height: 22,
                   fontWeight: 600,
-                  fontSize: "0.7rem",
-                  borderRadius: "3px",
+                  fontSize: '0.7rem',
+                  borderRadius: '3px',
                   border: `1px solid ${getStatusColor(postStatus)}30`,
                 }}
               />
@@ -245,65 +228,65 @@ const DiscussCard = ({
                 <Chip
                   key={tag}
                   label={tag}
-                  size="small"
+                  size='small'
                   sx={{
-                    bgcolor: isCategory ? "#eff6ff" : "#f9fafb",
-                    color: isCategory ? "#3b82f6" : "#6b7280",
+                    bgcolor: isCategory ? '#eff6ff' : '#f9fafb',
+                    color: isCategory ? '#3b82f6' : '#6b7280',
                     height: 22,
-                    fontSize: "0.7rem",
+                    fontSize: '0.7rem',
                     fontWeight: isCategory ? 600 : 500,
-                    borderRadius: "3px",
-                    border: isCategory ? "1px solid #bfdbfe" : "1px solid #e5e7eb",
-                    cursor: "default",
-                    pointerEvents: "none",
+                    borderRadius: '3px',
+                    border: isCategory ? '1px solid #bfdbfe' : '1px solid #e5e7eb',
+                    cursor: 'default',
+                    pointerEvents: 'none',
                   }}
                 />
               )
             })}
           </Box>
 
-          <Box sx={{ display: "flex", gap: 2.5, alignItems: "center" }}>
-            {postType === "question" && (
+          <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'center' }}>
+            {postType === 'question' && (
               <Box
                 sx={{
-                  display: "flex",
-                  alignItems: "center",
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: 0.5,
-                  "&:hover": { color: "#000000" },
+                  '&:hover': { color: '#000000' },
                 }}
               >
-                <QuestionAnswerIcon sx={{ fontSize: 14, color: "#9ca3af" }} />
-                <Typography variant="caption" sx={{ color: "#6b7280", fontWeight: 600, fontSize: "0.7rem" }}>
+                <QuestionAnswerIcon sx={{ fontSize: 14, color: '#9ca3af' }} />
+                <Typography variant='caption' sx={{ color: '#6b7280', fontWeight: 600, fontSize: '0.7rem' }}>
                   {it.comment || 0}
                 </Typography>
               </Box>
             )}
-            {postType === "feedback" && (
+            {postType === 'feedback' && (
               <Box
                 sx={{
-                  display: "flex",
-                  alignItems: "center",
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: 0.5,
-                  "&:hover": { color: "#000000" },
+                  '&:hover': { color: '#000000' },
                 }}
               >
-                <HowToVoteIcon sx={{ fontSize: 14, color: "#9ca3af" }} />
-                <Typography variant="caption" sx={{ color: "#6b7280", fontWeight: 600, fontSize: "0.7rem" }}>
+                <HowToVoteIcon sx={{ fontSize: 14, color: '#9ca3af' }} />
+                <Typography variant='caption' sx={{ color: '#6b7280', fontWeight: 600, fontSize: '0.7rem' }}>
                   {(it.like || 0) - (it.dislike || 0)}
                 </Typography>
               </Box>
             )}
-            {postType === "article" && (
+            {postType === 'article' && (
               <Box
                 sx={{
-                  display: "flex",
-                  alignItems: "center",
+                  display: 'flex',
+                  alignItems: 'center',
                   gap: 0.5,
-                  "&:hover": { color: "#000000" },
+                  '&:hover': { color: '#000000' },
                 }}
               >
-                <ThumbUpIcon sx={{ fontSize: 14, color: "#9ca3af" }} />
-                <Typography variant="caption" sx={{ color: "#6b7280", fontWeight: 600, fontSize: "0.7rem" }}>
+                <ThumbUpIcon sx={{ fontSize: 14, color: '#9ca3af' }} />
+                <Typography variant='caption' sx={{ color: '#6b7280', fontWeight: 600, fontSize: '0.7rem' }}>
                   {(it.like || 0) - (it.dislike || 0)}
                 </Typography>
               </Box>

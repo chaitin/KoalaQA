@@ -20,7 +20,7 @@ const ForumSelector = ({ selectedForumId, forums = [] }: ForumSelectorProps) => 
   }
 
   return (
-    <Box sx={{ display: 'flex', gap: 0.5, ml: 2 }}>
+    <Box sx={{ display: 'flex', gap: 0.5, ml: 2, height: '64px' }}>
       {forums.map((forum) => (
         <Button
           key={forum.id}
@@ -32,14 +32,18 @@ const ForumSelector = ({ selectedForumId, forums = [] }: ForumSelectorProps) => 
             px: 2.5,
             py: 1,
             borderRadius: '0',
-            color: selectedForumId === forum.id ? '#111827' : '#9ca3af',
-            bgcolor: 'transparent',
+            height: '100%',
+            color: 'common.white',
+            bgcolor: selectedForumId === forum.id ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
             position: 'relative',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            borderBottom: selectedForumId === forum.id ? '2px solid #000000' : '2px solid transparent',
+            borderBottom: selectedForumId === forum.id ? '2px solid' : '2px solid transparent',
+            ...(selectedForumId === forum.id && { borderBottomColor: 'common.white' }),
+            opacity: selectedForumId === forum.id ? 1 : 0.8,
             '&:hover': {
-              bgcolor: 'transparent',
-              color: '#111827',
+              bgcolor: selectedForumId === forum.id ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.1)',
+              color: 'common.white',
+              opacity: 1,
             },
           }}
         >

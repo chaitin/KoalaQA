@@ -20,6 +20,7 @@ import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import { Person as PersonIcon, Schedule as ScheduleIcon, TrendingUp as TrendingUpIcon } from '@mui/icons-material'
 import AddIcon from '@mui/icons-material/Add'
 import SearchIcon from '@mui/icons-material/Search'
+import Image from 'next/image'
 import {
   Avatar,
   Box,
@@ -43,7 +44,7 @@ import DiscussCard from './discussCard'
 export type Status = 'hot' | 'new' | 'mine'
 
 const TYPE_LIST = [
-  { label: '问答', value: 'qa' },
+  { label: '问题', value: 'qa' },
   // { label: '反馈', value: 'feedback' },
   { label: '文章', value: 'blog' },
 ]
@@ -348,10 +349,10 @@ const Article = ({
           }}
         >
           {/* 搜索和发帖按钮 */}
-          <Box id='article-search-box' sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center' }}>
+          <Box id='article-search-box' sx={{ display: 'flex', gap: 3, mb: 2, alignItems: 'center' }}>
             <TextField
               fullWidth
-              placeholder='搜索板块内容...'
+              placeholder='输入任意内容，使用 AI 搜索'
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={onInputSearch}
@@ -359,7 +360,7 @@ const Article = ({
               InputProps={{
                 startAdornment: (
                   <InputAdornment position='start'>
-                    <SearchIcon sx={{ color: '#9ca3af', fontSize: 20 }} />
+                    <SearchIcon sx={{ color: '#000000', fontSize: 20 }} />
                   </InputAdornment>
                 ),
               }}
@@ -370,7 +371,7 @@ const Article = ({
                   fontSize: '0.875rem',
                   height: '40px',
                   '& fieldset': {
-                    borderColor: '#e5e7eb',
+                    borderColor: '#21222D',
                   },
                   '&:hover fieldset': {
                     borderColor: '#d1d5db',
@@ -386,8 +387,6 @@ const Article = ({
               variant='contained'
               onClick={type === 'feedback' ? handleFeedback : type === 'blog' ? handleArticle : handleAsk}
               sx={{
-                background: '#000000',
-                color: '#ffffff',
                 textTransform: 'none',
                 fontWeight: 600,
                 px: 3,
@@ -403,7 +402,7 @@ const Article = ({
                 },
               }}
             >
-              {type === 'blog' ? '发布文章' : '提个问题'}
+              👉 {type === 'blog' ? '发布文章' : '发布内容'}
             </Button>
           </Box>
 
@@ -419,17 +418,11 @@ const Article = ({
                 }
               }}
               sx={{
-                bgcolor: '#ffffff',
-                borderRadius: '6px',
-                border: '1px solid #e5e7eb',
-                px: 0.5,
-                py: 0.5,
                 '& .MuiToggleButtonGroup-grouped': {
                   border: 0,
                   borderRadius: '6px !important',
-                  mx: 0.5,
+                  mr: 1,
                   my: 0.5,
-                  '&:not(:first-of-type)': { borderLeft: 0 },
                 },
               }}
             >
@@ -441,16 +434,13 @@ const Article = ({
                     value={option.value}
                     sx={{
                       height: 30,
-                      px: 1.5,
-                      textTransform: 'none',
-                      fontWeight: 600,
-                      fontSize: '0.75rem',
-                      color: '#6b7280',
-                      border: 'none',
+                      fontWeight: 500,
+                      fontSize: '14px',
+                      color: '#21222D',
                       '&.Mui-selected': {
-                        bgcolor: '#000000',
-                        color: '#ffffff',
-                        '&:hover': { bgcolor: '#111827', color: '#ffffff' },
+                        bgcolor: 'rgba(0,99,151,0.06)',
+                        border: '1px solid rgba(0,99,151,0.1)',
+                        color: 'primary.main',
                         '&.Mui-focusVisible': {
                           bgcolor: '#000000',
                           color: '#ffffff',
@@ -468,6 +458,7 @@ const Article = ({
 
             <Typography
               variant='body2'
+              component='span'
               sx={{
                 color: '#9ca3af',
                 fontSize: '0.75rem',
@@ -476,12 +467,19 @@ const Article = ({
                 top: '2px',
               }}
             >
-              共 {articleData.total || 0} 个帖子
+              共{' '}
+              <Box
+                component='span'
+                sx={{ display: 'inline-block', color: '#000000', fontSize: '0.75rem', fontWeight: 500 }}
+              >
+                {articleData.total || 0}
+              </Box>{' '}
+              个帖子
             </Typography>
           </Box>
-
+          <Divider />
           {/* 帖子列表 */}
-          <Box sx={{ bgcolor: '#ffffff', borderRadius: '6px', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
+          <Box sx={{ bgcolor: '#ffffff', borderRadius: '6px', overflow: 'hidden' }}>
             {articleData.items?.map((it, index) => (
               <DiscussCard
                 key={it.uuid}
@@ -643,15 +641,19 @@ const Article = ({
             elevation={0}
             sx={{
               bgcolor: '#ffffff',
-              borderRadius: '6px',
-              border: '1px solid #e5e7eb',
+              borderRadius: 1,
+
+              border: '1px solid #D9DEE2',
               p: 2,
               mb: 2,
             }}
           >
-            <Typography variant='subtitle2' sx={{ fontWeight: 700, color: '#111827', fontSize: '0.9375rem', mb: 2 }}>
-              贡献达人
-            </Typography>
+            <Stack direction='row' alignItems='center' gap={1} sx={{ mb: 2 }}>
+              <Image alt='crown' width={20} height={20} src='/crown.svg' />
+              <Typography variant='subtitle2' sx={{ fontWeight: 700, color: '#111827', fontSize: '0.9375rem' }}>
+                贡献达人
+              </Typography>
+            </Stack>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
               {contributorsLoading ? (
@@ -678,6 +680,7 @@ const Article = ({
                       alignItems: 'center',
                       gap: 1,
                       p: 0.75,
+                      pl: 0,
                       borderRadius: '4px',
                       bgcolor: 'transparent',
                       border: 'none',
@@ -691,10 +694,25 @@ const Article = ({
                         alignItems: 'center',
                         justifyContent: 'center',
                         borderRadius: '3px',
-                        fontSize: '0.7rem',
-                        fontWeight: 700,
+                        fontSize: '0.8rem',
+                        fontWeight: 800,
                         flexShrink: 0,
-                        color: '#9ca3af',
+                        fontFamily: 'Gilroy',
+                        fontStyle: 'italic',
+                        letterSpacing: '-0.02em',
+                        textRendering: 'optimizeLegibility',
+                        WebkitFontSmoothing: 'antialiased',
+                        background:
+                          index === 0
+                            ? 'linear-gradient(to bottom, #F64E54, #FB868D)'
+                            : index === 1
+                              ? 'linear-gradient(to bottom, #FC8664, #FBAD86)'
+                              : index === 2
+                                ? 'linear-gradient(to bottom, #FBC437, #FFE0A9)'
+                                : 'linear-gradient(to bottom, #BCBCBC, #E1E1E1)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        backgroundClip: 'text',
                       }}
                     >
                       {index + 1}
@@ -702,8 +720,8 @@ const Article = ({
                     <Avatar
                       sx={{
                         bgcolor: '#000000',
-                        width: 20,
-                        height: 20,
+                        width: 24,
+                        height: 24,
                         fontSize: '0.65rem',
                         fontWeight: 600,
                         flexShrink: 0,
@@ -718,7 +736,7 @@ const Article = ({
                         sx={{
                           fontWeight: 600,
                           color: '#111827',
-                          fontSize: '0.75rem',
+                          fontSize: '0.875rem',
                           lineHeight: 1.3,
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -733,9 +751,13 @@ const Article = ({
                         <Typography
                           variant='caption'
                           sx={{
-                            color: '#6b7280',
-                            fontWeight: 600,
-                            fontSize: '0.7rem',
+                            fontFamily: 'Gilroy, Gilroy',
+                            fontWeight: 500,
+                            fontSize: '14px',
+                            color: '#21222D',
+                            lineHeight: '24px',
+                            textAlign: 'right',
+                            fontStyle: 'normal',
                           }}
                         >
                           {Math.round(contributor.score)}
