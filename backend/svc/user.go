@@ -97,7 +97,18 @@ func (u *User) Detail(ctx context.Context, id uint) (*model.User, error) {
 
 func (u *User) ForumIDs(ctx context.Context, id uint) (model.Int64Array, error) {
 	if id == 0 {
-		return make(model.Int64Array, 0), nil
+		auth, err := u.svcAuth.Get(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		res := make(model.Int64Array, len(auth.PublicForumIDs))
+
+		for i, v := range auth.PublicForumIDs {
+			res[i] = int64(v)
+		}
+
+		return res, nil
 	}
 
 	user, err := u.Detail(ctx, id)

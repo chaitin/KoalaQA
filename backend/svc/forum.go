@@ -10,10 +10,11 @@ import (
 type Forum struct {
 	repo    *repo.Forum
 	repoOrg *repo.Org
+	svcAuth *Auth
 }
 
-func newForum(forum *repo.Forum, org *repo.Org) *Forum {
-	return &Forum{repo: forum, repoOrg: org}
+func newForum(forum *repo.Forum, org *repo.Org, auth *Auth) *Forum {
+	return &Forum{repo: forum, repoOrg: org, svcAuth: auth}
 }
 
 func init() {
@@ -25,10 +26,22 @@ func (f *Forum) List(ctx context.Context, user model.UserInfo, permissionCheck b
 
 	if permissionCheck {
 		var err error
-		forumIDs, err = f.repoOrg.ListForumIDs(ctx, user.OrgIDs...)
-		if err != nil {
-			return nil, err
+		if user.UID == 0 {
+			auth, err := f.svcAuth.Get(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			for _, v := range auth.PublicForumIDs {
+				forumIDs = append(forumIDs, int64(v))
+			}
+		} else {
+			forumIDs, err = f.repoOrg.ListForumIDs(ctx, user.OrgIDs...)
+			if err != nil {
+				return nil, err
+			}
 		}
+
 	}
 
 	var items []*model.ForumInfo

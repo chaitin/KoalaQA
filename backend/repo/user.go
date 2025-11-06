@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"errors"
+	"slices"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
@@ -14,6 +15,8 @@ import (
 
 type User struct {
 	base[*model.User]
+
+	system *System
 }
 
 func (u *User) ListWithOrg(ctx context.Context, res any, queryFuncs ...QueryOptFunc) error {
@@ -24,7 +27,13 @@ func (u *User) ListWithOrg(ctx context.Context, res any, queryFuncs ...QueryOptF
 
 func (u *User) HasForumPermission(ctx context.Context, userID, forumID uint) (bool, error) {
 	if userID == 0 {
-		return true, nil
+		var auth model.Auth
+		err := u.system.GetValueByKey(ctx, &auth, model.SystemKeyAuth)
+		if err != nil {
+			return false, err
+		}
+
+		return slices.Contains(auth.PublicForumIDs, forumID), nil
 	}
 	var exist bool
 	err := u.model(ctx).Raw("SELECT EXISTS (?)", u.model(ctx).Where("id = ?", userID).
@@ -150,11 +159,12 @@ func (u *User) CreateThird(ctx context.Context, orgID uint, user *third_auth.Use
 	return &dbUser, nil
 }
 
-func newUser(db *database.DB) *User {
+func newUser(db *database.DB, system *System) *User {
 	return &User{
 		base: base[*model.User]{
 			db: db, m: &model.User{},
 		},
+		system: system,
 	}
 }
 

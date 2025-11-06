@@ -15,6 +15,8 @@ type Auth struct {
 	svcPublicAddr *PublicAddress
 	authMgmt      *third_auth.Manager
 	logger        *glog.Logger
+
+	cacheAuth *model.Auth
 }
 
 type AuthInfo struct {
@@ -23,11 +25,17 @@ type AuthInfo struct {
 }
 
 func (l *Auth) Get(ctx context.Context) (*model.Auth, error) {
+	if l.cacheAuth != nil {
+		return l.cacheAuth, nil
+	}
+
 	var data model.Auth
 	err := l.repoSys.GetValueByKey(ctx, &data, model.SystemKeyAuth)
 	if err != nil {
 		return nil, err
 	}
+
+	l.cacheAuth = &data
 
 	return &data, nil
 }
@@ -109,6 +117,8 @@ func (l *Auth) Update(ctx context.Context, req model.Auth) error {
 	if err != nil {
 		return err
 	}
+
+	l.cacheAuth = &req
 	return nil
 }
 
@@ -121,13 +131,12 @@ func newAuth(lc fx.Lifecycle, sys *repo.System, authMgmt *third_auth.Manager, pu
 	}
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			var dbAuth model.Auth
-			err := auth.repoSys.GetValueByKey(ctx, &dbAuth, model.SystemKeyAuth)
+			dbAuth, err := auth.Get(ctx)
 			if err != nil {
 				return err
 			}
 
-			return auth.updateAuthMgmt(ctx, dbAuth, false)
+			return auth.updateAuthMgmt(ctx, *dbAuth, false)
 		},
 	})
 	return auth
