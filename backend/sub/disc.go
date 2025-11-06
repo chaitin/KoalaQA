@@ -79,8 +79,10 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 
 	disc, err := d.disc.GetByID(ctx, data.DiscID)
 	if err != nil {
-		return err
+		logger.WithErr(err).Warn("get disc failed")
+		return nil
 	}
+
 	err = d.trend.Create(ctx, &model.Trend{
 		UserID:        disc.UserID,
 		Type:          model.TrendTypeCreateDiscuss,
