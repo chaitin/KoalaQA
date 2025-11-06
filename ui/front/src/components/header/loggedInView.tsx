@@ -7,7 +7,6 @@ import React, { useContext, useEffect, useRef, useState } from 'react'
 import ProfilePanel from './profilePanel'
 import NotificationsIcon from '@mui/icons-material/Notifications'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
-import { getUserNotifyWeb } from '@/api'
 import {
   isNotificationSupported,
   requestNotificationPermission,
@@ -322,7 +321,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
           if (user.web_notify) {
             const notificationText = getNotificationText(newNotification)
             const { title, options } = formatNotificationData(newNotification, notificationText)
-            
+
             const browserNotification = showNotification(title, options)
 
             // 点击通知时跳转到对应页面
