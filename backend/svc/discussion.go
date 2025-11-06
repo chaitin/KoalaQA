@@ -34,6 +34,7 @@ type discussionIn struct {
 	GroupItemRepo *repo.GroupItem
 	OrgRepo       *repo.Org
 	BotSvc        *Bot
+	TrendSvc      *Trend
 	Pub           mq.Publisher
 	Rag           rag.Service
 	Dataset       *repo.Dataset
@@ -827,6 +828,15 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 		}, repo.QueryWithEqual("id", disc.ID)); err != nil {
 			return err
 		}
+	}
+
+	err = d.in.TrendSvc.Create(ctx, &model.Trend{
+		UserID:        comment.UserID,
+		Type:          model.TrendTypeAnswerAccepted,
+		DiscussHeader: disc.Header(),
+	})
+	if err != nil {
+		d.logger.WithContext(ctx).WithErr(err).With("comment_id", commentID).Warn("create accept comment trend failed")
 	}
 
 	notifyMsg := topic.MsgMessageNotify{

@@ -14,15 +14,17 @@ import (
 
 type Disc struct {
 	disc   *svc.Discussion
+	trend  *svc.Trend
 	logger *glog.Logger
 	llm    *svc.LLM
 	bot    *svc.Bot
 	pub    mq.Publisher
 }
 
-func NewDisc(disc *svc.Discussion, llm *svc.LLM, bot *svc.Bot, pub mq.Publisher) *Disc {
+func NewDisc(disc *svc.Discussion, llm *svc.LLM, bot *svc.Bot, pub mq.Publisher, trend *svc.Trend) *Disc {
 	return &Disc{
 		disc:   disc,
+		trend:  trend,
 		llm:    llm,
 		bot:    bot,
 		pub:    pub,
@@ -74,6 +76,12 @@ func (d *Disc) Handle(ctx context.Context, msg mq.Message) error {
 func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error {
 	logger := d.logger.WithContext(ctx).With("disc_id", data.DiscID)
 	logger.Info("handle insert discussion comment")
+
+	err := d.trend.CreateByDiscID(ctx, 0, model.TrendTypeCreateDiscuss, data.DiscID)
+	if err != nil {
+		logger.WithErr(err).Warn("create trend failed")
+	}
+
 	bot, err := d.bot.Get(ctx)
 	if err != nil {
 		logger.WithErr(err).Error("get bot failed")
