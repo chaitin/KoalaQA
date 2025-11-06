@@ -40,6 +40,7 @@ type UserInfo struct {
 	Avatar     string     `json:"avatar"`
 	Builtin    bool       `json:"builtin"`
 	NoPassword bool       `json:"no_password"`
+	WebNotify  bool       `json:"web_notify"`
 }
 
 func (ui *UserInfo) IsAdmin() bool {

@@ -4645,35 +4645,6 @@ const docTemplate = `{
             }
         },
         "/user/notify/web": {
-            "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user"
-                ],
-                "summary": "get notify web switch",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/context.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "boolean"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            },
             "post": {
                 "consumes": [
                     "application/json"
@@ -5850,6 +5821,9 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                },
+                "web_notify": {
+                    "type": "boolean"
                 }
             }
         },

@@ -303,22 +303,6 @@ func (u *userAuth) NotifyRead(ctx *context.Context) {
 	ctx.Success(nil)
 }
 
-// GetWeb
-// @Summary get notify web switch
-// @Tags user
-// @Produce json
-// @Success 200 {object} context.Response{data=bool}
-// @Router /user/notify/web [get]
-func (u *userAuth) GetWeb(ctx *context.Context) {
-	user, err := u.in.SvcU.Detail(ctx, ctx.GetUser().UID)
-	if err != nil {
-		ctx.InternalError(err, "get notify web failed")
-		return
-	}
-
-	ctx.Success(user.WebNotify)
-}
-
 // UpdateWeb
 // @Summary update notify web switch
 // @Tags user
@@ -356,7 +340,6 @@ func (u *userAuth) Route(h server.Handler) {
 		notifyG.GET("/unread", u.GetUnread)
 		notifyG.POST("/read", u.NotifyRead)
 		notifyG.GET("/list", u.ListNotify)
-		notifyG.GET("/web", u.GetWeb)
 		notifyG.POST("/web", u.UpdateWeb)
 	}
 }
