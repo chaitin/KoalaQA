@@ -303,6 +303,31 @@ func (u *userAuth) NotifyRead(ctx *context.Context) {
 	ctx.Success(nil)
 }
 
+// UpdateWeb
+// @Summary update notify web switch
+// @Tags user
+// @Produce json
+// @Accept json
+// @Param req body svc.UpdateWebNotifyReq true "req params"
+// @Success 200 {object} context.Response
+// @Router /user/notify/web [post]
+func (u *userAuth) UpdateWeb(ctx *context.Context) {
+	var req svc.UpdateWebNotifyReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	err = u.in.SvcU.UpdateWebNotify(ctx, ctx.GetUser().UID, req)
+	if err != nil {
+		ctx.InternalError(err, "update notify web failed")
+		return
+	}
+
+	ctx.Success(nil)
+}
+
 func (u *userAuth) Route(h server.Handler) {
 	g := h.Group("/user")
 	g.POST("/logout", u.Logout)
@@ -315,6 +340,7 @@ func (u *userAuth) Route(h server.Handler) {
 		notifyG.GET("/unread", u.GetUnread)
 		notifyG.POST("/read", u.NotifyRead)
 		notifyG.GET("/list", u.ListNotify)
+		notifyG.POST("/web", u.UpdateWeb)
 	}
 }
 

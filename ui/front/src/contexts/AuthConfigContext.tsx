@@ -98,8 +98,12 @@ export const useAuthConfig = () => {
 
 // 便捷函数：检查是否允许公共访问
 export const usePublicAccess = () => {
-  const { authConfig } = useAuthConfig()
-  return authConfig?.public_access ?? false
+  const context = useContext(AuthConfigContext)
+  // 如果 AuthConfigProvider 未就绪，返回默认值 false
+  if (context === undefined) {
+    return false
+  }
+  return context.authConfig?.public_access ?? false
 }
 
 // 便捷函数：检查是否启用注册

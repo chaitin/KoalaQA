@@ -238,6 +238,19 @@ a {
       format('woff2');
 }
 
+/* Gilroy 字体 - ExtraBold (免费版本) */
+/* 优先使用本地字体文件，如果不存在则使用 CDN */
+@font-face {
+  font-family: 'Gilroy';
+  font-display: swap;
+  font-weight: 800;
+  font-style: normal;
+  src:
+    local('Gilroy ExtraBold'),
+    local('Gilroy-ExtraBold'),
+    url('../font/Gilroy-ExtraBold.woff2') format('woff2'),
+}
+
 .rmel-icon-keyboard:before {
   font-size: 12px;
   content: '切换为编辑模式' !important;

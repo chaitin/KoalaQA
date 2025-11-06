@@ -245,8 +245,8 @@ const BaseDiscussCard = (props: {
           )}
         </Stack>
         <Stack direction='row' gap={2} alignItems='center' sx={{ mt: { xs: '12px', sm: 0 } }}>
-          {/* 已采纳标签 */}
-          {data?.accepted && (
+          {/* 已采纳标签 - 文章类型不显示 */}
+          {data?.accepted && disData.type !== ModelDiscussionType.DiscussionTypeBlog && (
             <Stack
               direction='row'
               alignItems='center'
@@ -265,8 +265,9 @@ const BaseDiscussCard = (props: {
               <Typography sx={{ fontSize: 12, fontWeight: 500 }}>已采纳</Typography>
             </Stack>
           )}
-          {/* 采纳按钮 - 只有问答类型且问题作者且问题未被采纳，且不是回复时才显示 */}
+          {/* 采纳按钮 - 只有问答类型且问题作者且问题未被采纳，且不是回复时才显示，文章类型不显示 */}
           {!isReply &&
+            disData.type !== ModelDiscussionType.DiscussionTypeBlog &&
             disData.type === 'qa' &&
             disData.user_id === disData.current_user_id &&
             !disData.comments?.some((comment) => comment.accepted === true) &&
@@ -779,12 +780,14 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   return (
     <>
       <Menu id='basic-menu' anchorEl={anchorEl} open={open} onClose={handleClose}>
-        {data.type === ModelDiscussionType.DiscussionTypeQA &&
+        {!isArticlePost &&
+          data.type === ModelDiscussionType.DiscussionTypeQA &&
           data.user_id === (user?.uid || 0) &&
           commentIndex &&
           !commentIndex.accepted &&
           hasAcceptedComment && <MenuItem onClick={handleAcceptComment}>采纳</MenuItem>}
-        {data.type === ModelDiscussionType.DiscussionTypeQA &&
+        {!isArticlePost &&
+          data.type === ModelDiscussionType.DiscussionTypeQA &&
           data.user_id === (user?.uid || 0) &&
           commentIndex &&
           commentIndex.accepted && <MenuItem onClick={handleUnacceptComment}>取消采纳</MenuItem>}
@@ -838,7 +841,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
             <TextField
               fullWidth
               size='small'
-              placeholder={isArticlePost ? '善语结善缘，恶言伤人心' : '分享你的见解和经验，帮助提问者解决问题...'}
+              placeholder={isArticlePost ? '善语结善缘，恶言伤人心' : '分享你的见解和经验'}
               onClick={() => setShowAnswerEditor(true)}
               sx={{
                 '& .MuiOutlinedInput-root': {
@@ -954,7 +957,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                         fontWeight: 600,
                       }}
                     >
-                      {answer.user_name?.[0] || 'U'}
+                      {answer.user_avatar || answer.user_name?.[0]}
                     </Avatar>
                     <Typography variant='body2' sx={{ fontWeight: 600, color: '#111827', fontSize: '0.875rem' }}>
                       {answer.user_name || '未知用户'}
@@ -962,121 +965,129 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                   </Box>
 
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {answer.accepted ? (
-                      <Chip
-                        icon={<CheckCircleOutlineIcon sx={{ fontSize: 10, color: '#10b981 !important' }} />}
-                        label='已采纳'
-                        size='small'
-                        sx={{
-                          bgcolor: '#f0fdf4',
-                          color: '#10b981',
-                          height: 24,
-                          width: 90,
-                          fontWeight: 600,
-                          fontSize: '0.7rem',
-                          borderRadius: '4px',
-                          border: '1px solid #86efac',
-                        }}
-                      />
-                    ) : (
-                      isAuthor && (
+                    {!isArticlePost && (
+                      <>
+                        {answer.accepted ? (
+                          <Chip
+                            icon={<CheckCircleOutlineIcon sx={{ fontSize: 10, color: '#10b981 !important' }} />}
+                            label='已采纳'
+                            size='small'
+                            sx={{
+                              bgcolor: '#f0fdf4',
+                              color: '#10b981',
+                              height: 24,
+                              width: 90,
+                              fontWeight: 600,
+                              fontSize: '0.7rem',
+                              borderRadius: '4px',
+                              border: '1px solid #86efac',
+                            }}
+                          />
+                        ) : (
+                          isAuthor && (
+                            <Button
+                              disableRipple
+                              size='small'
+                              variant='outlined'
+                              startIcon={<CheckCircleOutlineIcon sx={{ fontSize: 12 }} />}
+                              onClick={() => handleAcceptAnswer(answer.id!)}
+                              sx={{
+                                textTransform: 'none',
+                                color: '#6b7280',
+                                borderColor: '#d1d5db',
+                                bgcolor: '#ffffff',
+                                fontWeight: 600,
+                                fontSize: '0.7rem',
+                                px: 1,
+                                py: 0.25,
+                                borderRadius: '4px',
+                                minWidth: 'auto',
+                                width: 70,
+                                height: 24,
+                                transition: 'all 0.15s ease-in-out',
+                                '&:hover': {
+                                  bgcolor: '#f9fafb',
+                                  borderColor: '#9ca3af',
+                                  color: '#111827',
+                                  transform: 'scale(1.02)',
+                                },
+                                '&:active': { transform: 'scale(0.98)' },
+                              }}
+                            >
+                              采纳
+                            </Button>
+                          )
+                        )}
+                      </>
+                    )}
+
+                    {!isArticlePost && (
+                      <>
                         <Button
                           disableRipple
                           size='small'
                           variant='outlined'
-                          startIcon={<CheckCircleOutlineIcon sx={{ fontSize: 12 }} />}
-                          onClick={() => handleAcceptAnswer(answer.id!)}
+                          startIcon={<ThumbUpIcon sx={{ fontSize: 12 }} />}
+                          onClick={() => handleVote(answer.id!, 'up')}
                           sx={{
                             textTransform: 'none',
-                            color: '#6b7280',
-                            borderColor: '#d1d5db',
-                            bgcolor: '#ffffff',
+                            color: isLiked ? '#3b82f6' : '#6b7280',
+                            borderColor: isLiked ? '#3b82f6' : '#d1d5db',
+                            bgcolor: isLiked ? '#eff6ff' : '#ffffff',
                             fontWeight: 600,
-                            fontSize: '0.7rem',
+                            fontSize: '0.75rem',
                             px: 1,
-                            py: 0.25,
+                            py: 0.5,
                             borderRadius: '4px',
                             minWidth: 'auto',
-                            width: 70,
+                            width: 60,
                             height: 24,
                             transition: 'all 0.15s ease-in-out',
                             '&:hover': {
-                              bgcolor: '#f9fafb',
-                              borderColor: '#9ca3af',
-                              color: '#111827',
+                              bgcolor: isLiked ? '#dbeafe' : '#f9fafb',
+                              borderColor: isLiked ? '#3b82f6' : '#9ca3af',
+                              color: isLiked ? '#3b82f6' : '#111827',
                               transform: 'scale(1.02)',
                             },
                             '&:active': { transform: 'scale(0.98)' },
                           }}
                         >
-                          采纳
+                          {formatNumber(answer.like || 0)}
                         </Button>
-                      )
+
+                        <Button
+                          disableRipple
+                          size='small'
+                          variant='outlined'
+                          startIcon={<ThumbDownIcon sx={{ fontSize: 12 }} />}
+                          onClick={() => handleVote(answer.id!, 'down')}
+                          sx={{
+                            textTransform: 'none',
+                            color: isDisliked ? '#ef4444' : '#6b7280',
+                            borderColor: isDisliked ? '#ef4444' : '#d1d5db',
+                            bgcolor: isDisliked ? '#fef2f2' : '#ffffff',
+                            fontWeight: 600,
+                            fontSize: '0.75rem',
+                            px: 1,
+                            py: 0.5,
+                            borderRadius: '4px',
+                            minWidth: 'auto',
+                            width: 60,
+                            height: 24,
+                            transition: 'all 0.15s ease-in-out',
+                            '&:hover': {
+                              bgcolor: isDisliked ? '#fee2e2' : '#f9fafb',
+                              borderColor: isDisliked ? '#ef4444' : '#9ca3af',
+                              color: isDisliked ? '#ef4444' : '#111827',
+                              transform: 'scale(1.02)',
+                            },
+                            '&:active': { transform: 'scale(0.98)' },
+                          }}
+                        >
+                          {formatNumber(answer.dislike || 0)}
+                        </Button>
+                      </>
                     )}
-
-                    <Button
-                      disableRipple
-                      size='small'
-                      variant='outlined'
-                      startIcon={<ThumbUpIcon sx={{ fontSize: 12 }} />}
-                      onClick={() => handleVote(answer.id!, 'up')}
-                      sx={{
-                        textTransform: 'none',
-                        color: isLiked ? '#3b82f6' : '#6b7280',
-                        borderColor: isLiked ? '#3b82f6' : '#d1d5db',
-                        bgcolor: isLiked ? '#eff6ff' : '#ffffff',
-                        fontWeight: 600,
-                        fontSize: '0.75rem',
-                        px: 1,
-                        py: 0.5,
-                        borderRadius: '4px',
-                        minWidth: 'auto',
-                        width: 60,
-                        height: 24,
-                        transition: 'all 0.15s ease-in-out',
-                        '&:hover': {
-                          bgcolor: isLiked ? '#dbeafe' : '#f9fafb',
-                          borderColor: isLiked ? '#3b82f6' : '#9ca3af',
-                          color: isLiked ? '#3b82f6' : '#111827',
-                          transform: 'scale(1.02)',
-                        },
-                        '&:active': { transform: 'scale(0.98)' },
-                      }}
-                    >
-                      {formatNumber(answer.like || 0)}
-                    </Button>
-
-                    <Button
-                      disableRipple
-                      size='small'
-                      variant='outlined'
-                      startIcon={<ThumbDownIcon sx={{ fontSize: 12 }} />}
-                      onClick={() => handleVote(answer.id!, 'down')}
-                      sx={{
-                        textTransform: 'none',
-                        color: isDisliked ? '#ef4444' : '#6b7280',
-                        borderColor: isDisliked ? '#ef4444' : '#d1d5db',
-                        bgcolor: isDisliked ? '#fef2f2' : '#ffffff',
-                        fontWeight: 600,
-                        fontSize: '0.75rem',
-                        px: 1,
-                        py: 0.5,
-                        borderRadius: '4px',
-                        minWidth: 'auto',
-                        width: 60,
-                        height: 24,
-                        transition: 'all 0.15s ease-in-out',
-                        '&:hover': {
-                          bgcolor: isDisliked ? '#fee2e2' : '#f9fafb',
-                          borderColor: isDisliked ? '#ef4444' : '#9ca3af',
-                          color: isDisliked ? '#ef4444' : '#111827',
-                          transform: 'scale(1.02)',
-                        },
-                        '&:active': { transform: 'scale(0.98)' },
-                      }}
-                    >
-                      {formatNumber(answer.dislike || 0)}
-                    </Button>
 
                     <IconButton
                       disableRipple
@@ -1168,7 +1179,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                 fontSize: '0.625rem',
                               }}
                             >
-                              {reply.user_name?.[0] || 'U'}
+                              {reply.user_avatar || reply.user_name?.[0]}
                             </Avatar>
                             <Typography
                               variant='body2'

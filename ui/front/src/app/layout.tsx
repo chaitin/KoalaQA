@@ -172,6 +172,14 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
       <body className={`${monoFont.variable} ${alimamashuheitiFont.variable}`}>
         {/* 图标字体预加载 - beforeInteractive 确保在交互前加载 */}
         <Script src='/font/iconfont.js' strategy='beforeInteractive' />
+        
+        {/* 埋点图片 - 用于采集用户使用记录 */}
+        <img 
+          src="https://release.baizhi.cloud/koala-qa/icon.png" 
+          alt="" 
+          style={{ display: 'none', position: 'absolute', width: 0, height: 0 }}
+          aria-hidden="true"
+        />
 
         <ServerErrorBoundary>
           <AuthConfigProvider initialAuthConfig={authConfig}>

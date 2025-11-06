@@ -9,12 +9,14 @@ import (
 )
 
 type MessageNotify struct {
-	repoMN *repo.MessageNotify
+	repoMN  *repo.MessageNotify
+	repoSys *repo.System
 }
 
-func newMessageNotify(mn *repo.MessageNotify) *MessageNotify {
+func newMessageNotify(mn *repo.MessageNotify, sys *repo.System) *MessageNotify {
 	return &MessageNotify{
-		repoMN: mn,
+		repoMN:  mn,
+		repoSys: sys,
 	}
 }
 

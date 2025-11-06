@@ -15,13 +15,15 @@ import (
 
 type Blog struct {
 	disc   *repo.Discussion
+	trend  *svc.Trend
 	logger *glog.Logger
 	llm    *svc.LLM
 }
 
-func NewBlog(disc *repo.Discussion, llm *svc.LLM) *Blog {
+func NewBlog(disc *repo.Discussion, llm *svc.LLM, trend *svc.Trend) *Blog {
 	return &Blog{
 		disc:   disc,
+		trend:  trend,
 		llm:    llm,
 		logger: glog.Module("sub", "blog"),
 	}
@@ -62,6 +64,25 @@ func (a *Blog) Handle(ctx context.Context, msg mq.Message) error {
 func (a *Blog) handleInsert(ctx context.Context, data topic.MsgDiscChange) error {
 	logger := a.logger.WithContext(ctx).With("disc_uuid", data.DiscUUID).With("type", data.Type)
 	logger.Info("handle insert blog")
+
+	if data.OP == topic.OPInsert {
+		var disc model.Discussion
+		err := a.disc.GetByID(ctx, &disc, data.DiscID)
+		if err != nil {
+			logger.WithErr(err).Warn("get disc failed")
+			return nil
+		}
+
+		err = a.trend.Create(ctx, &model.Trend{
+			UserID:        disc.UserID,
+			Type:          model.TrendTypeCreateDiscuss,
+			DiscussHeader: disc.Header(),
+		})
+		if err != nil {
+			logger.WithErr(err).Warn("create trend failed")
+		}
+	}
+
 	_, prompt, err := a.llm.GeneratePostPrompt(ctx, data.DiscID)
 	if err != nil {
 		logger.WithErr(err).Error("generate post prompt failed")

@@ -16,18 +16,20 @@ type Comment struct {
 	logger *glog.Logger
 	llm    *svc.LLM
 	bot    *svc.Bot
+	trend  *svc.Trend
 	disc   *svc.Discussion
 	forum  *svc.Forum
 	pub    mq.Publisher
 	rag    rag.Service
 }
 
-func NewComment(disc *svc.Discussion, bot *svc.Bot, llm *svc.LLM, pub mq.Publisher, rag rag.Service, forum *svc.Forum) *Comment {
+func NewComment(disc *svc.Discussion, bot *svc.Bot, llm *svc.LLM, pub mq.Publisher, rag rag.Service, forum *svc.Forum, trend *svc.Trend) *Comment {
 	return &Comment{
 		llm:    llm,
 		logger: glog.Module("sub.comment"),
 		disc:   disc,
 		bot:    bot,
+		trend:  trend,
 		pub:    pub,
 		rag:    rag,
 		forum:  forum,
@@ -87,6 +89,18 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 	if err != nil {
 		logger.WithErr(err).Warn("get forum failed")
 		return nil
+	}
+
+	// 回答问题更新 trend
+	if comment.ParentID == 0 && !comment.Bot {
+		err = d.trend.Create(ctx, &model.Trend{
+			UserID:        comment.UserID,
+			Type:          model.TrendTypeAnswer,
+			DiscussHeader: disc.Header(),
+		})
+		if err != nil {
+			logger.WithErr(err).Warn("create trend failed")
+		}
 	}
 
 	go func() {

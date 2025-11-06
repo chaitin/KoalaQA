@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
+	"github.com/chaitin/koalaqa/pkg/database"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/jwt"
 	"github.com/chaitin/koalaqa/pkg/oss"
@@ -20,13 +21,15 @@ import (
 )
 
 type User struct {
-	jwt      *jwt.Generator
-	repoUser *repo.User
-	authMgmt *third_auth.Manager
-	svcAuth  *Auth
-	oc       oss.Client
-	repoOrg  *repo.Org
-	logger   *glog.Logger
+	jwt         *jwt.Generator
+	repoUser    *repo.User
+	repoDisc    *repo.Discussion
+	repoComment *repo.Comment
+	authMgmt    *third_auth.Manager
+	svcAuth     *Auth
+	oc          oss.Client
+	repoOrg     *repo.Org
+	logger      *glog.Logger
 }
 
 type UserListReq struct {
@@ -90,6 +93,30 @@ func (u *User) Detail(ctx context.Context, id uint) (*model.User, error) {
 		return nil, err
 	}
 	return &item, nil
+}
+
+func (u *User) ForumIDs(ctx context.Context, id uint) (model.Int64Array, error) {
+	if id == 0 {
+		auth, err := u.svcAuth.Get(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		res := make(model.Int64Array, len(auth.PublicForumIDs))
+
+		for i, v := range auth.PublicForumIDs {
+			res[i] = int64(v)
+		}
+
+		return res, nil
+	}
+
+	user, err := u.Detail(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return u.repoOrg.ListForumIDs(ctx, user.OrgIDs...)
 }
 
 func (u *User) Admin(ctx context.Context) (*model.User, error) {
@@ -170,6 +197,16 @@ func (u *User) Update(ctx context.Context, id uint, req UserUpdateReq) error {
 		return err
 	}
 	return nil
+}
+
+type UpdateWebNotifyReq struct {
+	Emable bool `json:"enable"`
+}
+
+func (u *User) UpdateWebNotify(ctx context.Context, id uint, req UpdateWebNotifyReq) error {
+	return u.repoUser.Update(ctx, map[string]any{
+		"web_notify": req.Emable,
+	}, repo.QueryWithEqual("id", id))
 }
 
 type UserUpdateInfoReq struct {
@@ -521,15 +558,56 @@ func (u *User) LoginThirdCallback(ctx context.Context, typ model.AuthType, req L
 	})
 }
 
-func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth, authMgmt *third_auth.Manager, oc oss.Client, org *repo.Org) *User {
+type UserStatisticsRes struct {
+	Avatar      string `json:"avatar"`
+	Name        string `json:"name"`
+	QACount     int64  `json:"qa_count"`
+	BlogCount   int64  `json:"blog_count"`
+	AnswerCount int64  `json:"answer_count"`
+}
+
+func (u *User) Statistics(ctx context.Context, userID uint) (*UserStatisticsRes, error) {
+	user, err := u.Detail(ctx, userID)
+	if err != nil {
+		if errors.Is(err, database.ErrRecordNotFound) {
+			return &UserStatisticsRes{}, nil
+		}
+
+		return nil, err
+	}
+
+	res := &UserStatisticsRes{
+		Avatar: user.Avatar,
+		Name:   user.Name,
+	}
+
+	err = u.repoDisc.Count(ctx, &res.QACount, repo.QueryWithEqual("type", model.DiscussionTypeQA), repo.QueryWithEqual("user_id", user))
+	if err != nil {
+		return nil, err
+	}
+	err = u.repoDisc.Count(ctx, &res.BlogCount, repo.QueryWithEqual("type", model.DiscussionTypeBlog), repo.QueryWithEqual("user_id", user))
+	if err != nil {
+		return nil, err
+	}
+	err = u.repoComment.Count(ctx, &res.AnswerCount, repo.QueryWithEqual("parent_id", 0), repo.QueryWithEqual("user_id", userID))
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth, authMgmt *third_auth.Manager, oc oss.Client, org *repo.Org, disc *repo.Discussion, comm *repo.Comment) *User {
 	return &User{
-		jwt:      genrator,
-		repoUser: repoUser,
-		svcAuth:  auth,
-		authMgmt: authMgmt,
-		oc:       oc,
-		repoOrg:  org,
-		logger:   glog.Module("svc", "user"),
+		jwt:         genrator,
+		repoUser:    repoUser,
+		svcAuth:     auth,
+		authMgmt:    authMgmt,
+		oc:          oc,
+		repoOrg:     org,
+		repoDisc:    disc,
+		repoComment: comm,
+		logger:      glog.Module("svc", "user"),
 	}
 }
 

@@ -92,15 +92,15 @@ const ProfilePanel = () => {
                   background: 'rgba(32,108,255,0.1)',
                 },
               }}
+              onClick={() => {
+                router.push(item.link)
+              }}
             >
               <ListItemButton
                 sx={{
                   '&:hover': {
                     background: 'transparent',
                   },
-                }}
-                onClick={() => {
-                  router.push(item.link)
                 }}
                 dense
               >

@@ -40,6 +40,16 @@ func (d *Discussion) TitleContent() string {
 	return fmt.Sprintf("### 帖子标题：%s\n### 帖子内容：%s", d.Title, d.Content)
 }
 
+func (d *Discussion) Header() DiscussHeader {
+	return DiscussHeader{
+		ForumID:        d.ForumID,
+		DiscussID:      d.ID,
+		DiscussUUID:    d.UUID,
+		DiscussTitle:   d.Title,
+		DiscussionType: d.Type,
+	}
+}
+
 type DiscussionUser struct {
 	ID     uint   `json:"id"`
 	Name   string `json:"name"`
@@ -84,6 +94,14 @@ type DiscussionDetail struct {
 	Groups        []DiscussionGroup   `json:"groups" gorm:"-"`
 	Comments      []DiscussionComment `json:"comments" gorm:"-"`
 	UserLike      bool                `json:"user_like"`
+}
+
+type DiscussHeader struct {
+	ForumID        uint           `gorm:"column:forum_id" json:"forum_id"`
+	DiscussID      uint           `gorm:"column:discussion_id" json:"discuss_id"`
+	DiscussUUID    string         `gorm:"column:discuss_uuid;type:text" json:"discuss_uuid"`
+	DiscussTitle   string         `gorm:"disucss_title" json:"discuss_title"`
+	DiscussionType DiscussionType `gorm:"column:discussion_type" json:"discussion_type"`
 }
 
 func init() {

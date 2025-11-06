@@ -47,7 +47,7 @@ const ForumPageContent = ({ route_name, searchParams, initialData }: ForumPageCo
   return (
     <GroupsInitializer groupsData={groups}>
       <Stack gap={3} sx={{ minHeight: '100vh' }}>
-        <h1 style={{ display: 'none' }}>问答</h1>
+        <h1 style={{ display: 'none' }}>问题</h1>
         <Suspense fallback={<div>加载中...</div>}>
           <ArticleCard
             data={discussions}
