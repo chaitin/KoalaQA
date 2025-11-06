@@ -24,6 +24,7 @@ const (
 	SystemKeyAuth          = "auth"
 	SystemKeyMachineID     = "machine_id"
 	SystemKeyBrand         = "brand"
+	SystemKeyNotifyWeb     = "notify_web"
 )
 
 type PublicAddress struct {
