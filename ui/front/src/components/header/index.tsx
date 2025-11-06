@@ -105,11 +105,17 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
       setShowSearchInAppBar(window.scrollY > 100)
     }
 
-    // 初始检查滚动位置
-    handleScroll()
+    // 使用 requestAnimationFrame 延迟初始检查，确保在 hydration 完成后再检查
+    // 这样可以避免 hydration 不匹配
+    const rafId = requestAnimationFrame(() => {
+      handleScroll()
+    })
 
     window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
+    return () => {
+      cancelAnimationFrame(rafId)
+      window.removeEventListener('scroll', handleScroll)
+    }
   }, [isMounted, isPostListPage, pathname, route_name])
 
   // 统一的 logo 点击处理函数
@@ -203,28 +209,31 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
       position='sticky'
       elevation={0}
       sx={{
-        bgcolor: '#ffffff',
-        borderBottom: '1px solid #e5e7eb',
+        bgcolor: 'primary.main',
+        color: 'common.white',
         backdropFilter: 'blur(12px)',
         zIndex: 100,
       }}
     >
-      <Toolbar sx={{ py: 1, display: { xs: 'none', sm: 'flex' } }}>
+      <Toolbar sx={{ py: 0, display: { xs: 'none', sm: 'flex' }, color: 'common.white' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1 }}>
           {brandConfig?.logo && brandConfig?.text ? (
-            <Stack direction='row' alignItems='center' gap={1.5} sx={{ cursor: 'pointer' }} onClick={handleLogoClick}>
+            <Stack
+              direction='row'
+              alignItems='center'
+              gap={1.5}
+              sx={{ cursor: 'pointer', color: 'common.white' }}
+              onClick={handleLogoClick}
+            >
               <Box
                 sx={{
                   width: 36,
-                  height: 36,
-                  borderRadius: 2,
-                  bgcolor: '#3b82f6',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontWeight: 700,
                   fontSize: '1.25rem',
-                  color: '#ffffff',
+                  color: 'common.white',
                 }}
               >
                 <Image
@@ -244,7 +253,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                   component='div'
                   sx={{
                     fontWeight: 700,
-                    color: '#111827',
+                    color: 'common.white',
                     fontSize: { xs: '1rem', md: '1.25rem' },
                     letterSpacing: '-0.02em',
                   }}
@@ -265,7 +274,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                 justifyContent: 'center',
                 fontWeight: 700,
                 fontSize: '1.25rem',
-                color: '#ffffff',
+                color: 'common.white',
                 cursor: 'pointer',
               }}
               onClick={handleLogoClick}
@@ -274,33 +283,44 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
             </Box>
           )}
           {/* Forum切换tab */}
-          {forums && forums.length > 0 && <ForumSelector forums={forums} selectedForumId={currentForumId} />}
+          {forums && forums.length > 1 && <ForumSelector forums={forums} selectedForumId={currentForumId} />}
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           {/* 搜索框 - 列表页根据滚动显示，详情页和编辑页直接显示 */}
-          {((isPostListPage && showSearchInAppBar) || isPostDetailPage || isEditPage) && (
+          {/* 使用 isMounted 确保服务器端和客户端首次渲染一致 */}
+          {((isPostListPage && isMounted && showSearchInAppBar) || isPostDetailPage || isEditPage) && (
             <OutlinedInput
               size='small'
-              placeholder='搜索板块内容...'
+              placeholder='输入任意内容，使用 AI 搜索'
               value={searchInputValue}
               onChange={(e) => setSearchInputValue(e.target.value)}
               onKeyDown={onInputSearch}
               sx={{
                 width: 300,
+                color: 'common.white',
+                '& fieldset': { borderColor: 'rgba(255, 255, 255,0.3)!important' },
                 '& .MuiOutlinedInput-root': {
-                  bgcolor: '#f9fafb',
+                  bgcolor: 'rgba(255, 255, 255, 0.1)',
                   borderRadius: '6px',
                   fontSize: '0.875rem',
                   height: '36px',
-                  '& fieldset': { borderColor: '#e5e7eb' },
-                  '&:hover fieldset': { borderColor: '#d1d5db' },
-                  '&.Mui-focused fieldset': { borderColor: '#000000', borderWidth: 2 },
+                  color: 'common.white',
+                  '&.Mui-focused fieldset': { borderColor: '#fff', borderWidth: 2 },
+                  '& input': {
+                    color: 'common.white',
+                    fontSize: '0.875rem',
+                  },
+                },
+                '& input::placeholder': {
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  opacity: 1,
+                  fontSize: '13px!important',
                 },
               }}
               startAdornment={
                 <InputAdornment position='start'>
-                  <SearchIcon sx={{ color: '#9ca3af', fontSize: 18 }} />
+                  <SearchIcon sx={{ color: 'common.white', fontSize: 18 }} />
                 </InputAdornment>
               }
             />
@@ -319,8 +339,14 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                       ml: 2,
                       fontSize: 14,
                       boxShadow: 'none !important',
+                      color: 'common.white',
+                      borderColor: 'rgba(255, 255, 255, 0.3)',
+                      '&:hover': {
+                        borderColor: 'rgba(255, 255, 255, 0.5)',
+                        bgcolor: 'rgba(255, 255, 255, 0.1)',
+                      },
                     }}
-                    startIcon={<SettingsIcon />}
+                    startIcon={<SettingsIcon sx={{ color: 'common.white' }} />}
                   >
                     后台管理
                   </Button>
@@ -339,11 +365,11 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                     px: 2,
                     fontSize: 14,
                     textTransform: 'none',
-                    borderColor: '#e5e7eb',
-                    color: '#374151',
+                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                    color: 'common.white',
                     '&:hover': {
-                      borderColor: '#d1d5db',
-                      bgcolor: '#f9fafb',
+                      borderColor: 'rgba(255, 255, 255, 0.5)',
+                      bgcolor: 'rgba(255, 255, 255, 0.1)',
                     },
                   }}
                   onClick={() => {
@@ -362,7 +388,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                   fontSize: 14,
                   textTransform: 'none',
                   bgcolor: '#000000',
-                  color: '#ffffff',
+                  color: 'common.white',
                   boxShadow: 'none',
                   '&:hover': {
                     bgcolor: '#111827',

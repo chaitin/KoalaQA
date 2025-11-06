@@ -31,7 +31,7 @@ const theme = createTheme(
     palette: {
       mode: 'light',
       primary: {
-        main: '#21222D',
+        main: '#006397',
       },
       error: {
         main: '#F64E54',
@@ -45,7 +45,7 @@ const theme = createTheme(
         contrastText: 'rgba(0, 0, 0, 0.50)',
       },
       info: {
-        main: '#3248F2',
+        main: '#006397',
       },
       background: {
         default: '#f1f2f8',
@@ -54,7 +54,7 @@ const theme = createTheme(
         paper3: '#F8F9FA',
         footer: '#14141B',
       },
-      divider: '#ECEEF1',
+      divider: '#D9DEE2',
       action: {
         active: 'rgba(33, 34, 45, 0.54)',
         hover: 'rgba(33, 34, 45, 0.04)',
@@ -73,9 +73,18 @@ const theme = createTheme(
     shape: {
       borderRadius: 8, // 添加默认的圆角配置
     },
-    // typography: {
-    //   fontFamily: roboto.style.fontFamily,
-    // },
+    typography: {
+      fontFamily: [
+        'Gilroy',
+        '-apple-system',
+        'BlinkMacSystemFont',
+        '"Segoe UI"',
+        'Roboto',
+        '"Helvetica Neue"',
+        'Arial',
+        'sans-serif',
+      ].join(','),
+    },
 
     components: {
       MuiAlert: {

@@ -7,6 +7,13 @@ import React, { useContext, useEffect, useRef, useState } from 'react'
 import ProfilePanel from './profilePanel'
 import NotificationsIcon from '@mui/icons-material/Notifications'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
+import { getUserNotifyWeb } from '@/api'
+import {
+  isNotificationSupported,
+  requestNotificationPermission,
+  showNotification,
+  formatNotificationData,
+} from '@/utils/browserNotification'
 
 // 内容类型枚举
 enum ContentType {
@@ -253,11 +260,38 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
   const user = propUser || contextUser
   const [notifications, setNotifications] = useState<MessageNotifyInfo[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
+  const [webNotifyEnabled, setWebNotifyEnabled] = useState(false)
   const router = useRouterWithRouteName()
   // 保存 ws 实例的 ref
   const wsRef = useRef<WebSocket | null>(null)
   // 保存 ping 定时器的 ref
   const pingIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  // 保存网页通知启用状态的 ref，用于在 WebSocket 回调中访问最新值
+
+  // 加载网页通知状态
+  useEffect(() => {
+    if (!user.web_notify) return
+    const loadWebNotifyStatus = async () => {
+      try {
+        const enabled = user.notify_web
+        console.log('加载网页通知状态:', enabled)
+        if (typeof enabled === 'boolean') {
+          setWebNotifyEnabled(enabled)
+          // 如果启用了网页通知，请求浏览器通知权限
+          if (enabled && isNotificationSupported()) {
+            console.log('请求浏览器通知权限')
+            const hasPermission = await requestNotificationPermission()
+            console.log('浏览器通知权限请求结果:', hasPermission, '当前权限:', Notification.permission)
+          } else {
+            console.log('网页通知未启用或浏览器不支持通知')
+          }
+        }
+      } catch (error) {
+        console.error('加载网页通知状态失败:', error)
+      }
+    }
+    loadWebNotifyStatus()
+  }, [user.web_notify])
 
   useEffect(() => {
     // 确保在客户端环境中执行
@@ -284,6 +318,30 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
           const newNotification = message.data as MessageNotifyInfo
           setNotifications((prev) => [newNotification, ...prev])
           ws.send(JSON.stringify({ type: 1 }))
+
+          if (user.web_notify) {
+            const notificationText = getNotificationText(newNotification)
+            const { title, options } = formatNotificationData(newNotification, notificationText)
+            
+            const browserNotification = showNotification(title, options)
+
+            // 点击通知时跳转到对应页面
+            if (browserNotification) {
+              browserNotification.onclick = () => {
+                window.focus()
+                const forum = forums.find((f) => f.id === newNotification.forum_id)
+                const routePath = forum?.route_name
+                  ? `/${forum.route_name}/${newNotification.discuss_uuid}`
+                  : `/${newNotification.forum_id}/${newNotification.discuss_uuid}`
+                router.push(routePath)
+                browserNotification.close()
+              }
+            } else {
+              console.warn('浏览器通知创建失败，可能原因：权限未授予或浏览器不支持')
+            }
+          } else {
+            console.log('网页通知未启用，跳过浏览器通知')
+          }
           break
       }
     }
@@ -347,7 +405,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
     <>
       <Tooltip
         placement='bottom-end'
-        sx={{mx: 2,}}
+        sx={{ mx: 2 }}
         slotProps={{
           tooltip: {
             sx: {
@@ -450,13 +508,13 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
                 display: 'flex',
                 justifyContent: 'flex-end',
               }}
+              onClick={() => {
+                router.push('/profile?tab=1')
+              }}
             >
               <Button
                 size='small'
                 color='info'
-                onClick={() => {
-                  router.push('/profile?tab=1')
-                }}
               >
                 查看全部通知
               </Button>
@@ -467,11 +525,11 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
         <IconButton
           disableRipple
           sx={{
-            color: '#6b7280',
+            color: 'common.white',
             transition: 'all 0.15s ease-in-out',
             '&:hover': {
-              color: '#111827',
-              bgcolor: '#f3f4f6',
+              color: 'common.white',
+              bgcolor: 'rgba(255, 255, 255, 0.1)',
               transform: 'scale(1.05)',
             },
             '&:active': { transform: 'scale(0.95)' },
@@ -506,11 +564,11 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
         <IconButton
           disableRipple
           sx={{
-            color: '#6b7280',
+            color: 'common.white',
             transition: 'all 0.15s ease-in-out',
             '&:hover': {
-              color: '#111827',
-              bgcolor: '#f3f4f6',
+              color: 'common.white',
+              bgcolor: 'rgba(255, 255, 255, 0.1)',
               transform: 'scale(1.05)',
             },
             '&:active': { transform: 'scale(0.95)' },

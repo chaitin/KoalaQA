@@ -75,7 +75,6 @@ export function LazyImage({
     <Box
       sx={{
         position: 'relative',
-        width: '100%',
         aspectRatio: aspectRatio || 'auto',
         overflow: 'hidden',
       }}

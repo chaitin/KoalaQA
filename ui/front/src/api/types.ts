@@ -143,6 +143,7 @@ export interface ModelAuth {
   auth_infos?: ModelAuthInfo[];
   enable_register?: boolean;
   public_access?: boolean;
+  public_forum_ids?: number[];
 }
 
 export interface ModelAuthConfig {
@@ -384,6 +385,20 @@ export interface ModelSystemBrand {
   text?: string;
 }
 
+export interface ModelTrend {
+  created_at?: number;
+  discuss_id?: number;
+  discuss_title?: string;
+  discuss_uuid?: string;
+  discussion_type?: ModelDiscussionType;
+  forum_id?: number;
+  id?: number;
+  trend_type?: number;
+  updated_at?: number;
+  /** 谁的行为 */
+  user_id?: number;
+}
+
 export interface ModelUser {
   avatar?: string;
   builtin?: boolean;
@@ -398,6 +413,7 @@ export interface ModelUser {
   password?: string;
   role?: ModelUserRole;
   updated_at?: number;
+  web_notify?: boolean;
 }
 
 export interface ModelUserInfo {
@@ -410,6 +426,7 @@ export interface ModelUserInfo {
   role?: ModelUserRole;
   uid?: number;
   username?: string;
+  web_notify?: boolean;
 }
 
 export interface ModelWebhook {
@@ -759,6 +776,10 @@ export interface SvcUpdateSpaceReq {
   title?: string;
 }
 
+export interface SvcUpdateWebNotifyReq {
+  enable?: boolean;
+}
+
 export interface SvcUserJoinOrgReq {
   /** @minItems 1 */
   org_ids?: number[];
@@ -789,6 +810,14 @@ export interface SvcUserRegisterReq {
   email: string;
   name: string;
   password: string;
+}
+
+export interface SvcUserStatisticsRes {
+  answer_count?: number;
+  avatar?: string;
+  blog_count?: number;
+  name?: string;
+  qa_count?: number;
 }
 
 export interface SvcUserUpdateReq {
@@ -1293,4 +1322,17 @@ export interface GetUserNotifyListParams {
   read?: boolean;
   /** @min 1 */
   size?: number;
+}
+
+export interface GetUserTrendParams {
+  /** @min 1 */
+  page?: number;
+  /** @min 1 */
+  size?: number;
+  user_id: number;
+}
+
+export interface GetUserUserIdParams {
+  /** user id */
+  userId: number;
 }
