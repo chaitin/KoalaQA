@@ -4692,7 +4692,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/svc.NotifyUpdateWebReq"
+                            "$ref": "#/definitions/svc.UpdateWebNotifyReq"
                         }
                     }
                 ],
@@ -4913,6 +4913,12 @@ const docTemplate = `{
                 },
                 "public_access": {
                     "type": "boolean"
+                },
+                "public_forum_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 }
             }
         },
@@ -5806,6 +5812,9 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "integer"
+                },
+                "web_notify": {
+                    "type": "boolean"
                 }
             }
         },
@@ -6706,14 +6715,6 @@ const docTemplate = `{
                 }
             }
         },
-        "svc.NotifyUpdateWebReq": {
-            "type": "object",
-            "properties": {
-                "enable": {
-                    "type": "boolean"
-                }
-            }
-        },
         "svc.OrgListItem": {
             "type": "object",
             "properties": {
@@ -6918,6 +6919,14 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string"
+                }
+            }
+        },
+        "svc.UpdateWebNotifyReq": {
+            "type": "object",
+            "properties": {
+                "enable": {
+                    "type": "boolean"
                 }
             }
         },

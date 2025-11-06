@@ -310,13 +310,13 @@ func (u *userAuth) NotifyRead(ctx *context.Context) {
 // @Success 200 {object} context.Response{data=bool}
 // @Router /user/notify/web [get]
 func (u *userAuth) GetWeb(ctx *context.Context) {
-	enable, err := u.in.SvcNotify.GetWeb(ctx)
+	user, err := u.in.SvcU.Detail(ctx, ctx.GetUser().UID)
 	if err != nil {
 		ctx.InternalError(err, "get notify web failed")
 		return
 	}
 
-	ctx.Success(enable)
+	ctx.Success(user.WebNotify)
 }
 
 // UpdateWeb
@@ -324,18 +324,18 @@ func (u *userAuth) GetWeb(ctx *context.Context) {
 // @Tags user
 // @Produce json
 // @Accept json
-// @Param req body svc.NotifyUpdateWebReq true "req params"
+// @Param req body svc.UpdateWebNotifyReq true "req params"
 // @Success 200 {object} context.Response
 // @Router /user/notify/web [post]
 func (u *userAuth) UpdateWeb(ctx *context.Context) {
-	var req svc.NotifyUpdateWebReq
+	var req svc.UpdateWebNotifyReq
 	err := ctx.ShouldBindJSON(&req)
 	if err != nil {
 		ctx.BadRequest(err)
 		return
 	}
 
-	err = u.in.SvcNotify.UpdateWeb(ctx, req)
+	err = u.in.SvcU.UpdateWebNotify(ctx, ctx.GetUser().UID, req)
 	if err != nil {
 		ctx.InternalError(err, "update notify web failed")
 		return

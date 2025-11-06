@@ -23,6 +23,7 @@ type User struct {
 	LastLogin Timestamp  `gorm:"column:last_login;type:timestamp with time zone" json:"last_login"`
 	Invisible bool       `gorm:"column:invisible"`
 	Key       string     `gorm:"column:key;type:text;uniqueIndex"`
+	WebNotify bool       `gorm:"column:web_notify" json:"web_notify"`
 }
 
 type UserCore struct {

@@ -199,6 +199,16 @@ func (u *User) Update(ctx context.Context, id uint, req UserUpdateReq) error {
 	return nil
 }
 
+type UpdateWebNotifyReq struct {
+	Emable bool `json:"enable"`
+}
+
+func (u *User) UpdateWebNotify(ctx context.Context, id uint, req UpdateWebNotifyReq) error {
+	return u.repoUser.Update(ctx, map[string]any{
+		"web_notify": req.Emable,
+	}, repo.QueryWithEqual("id", id))
+}
+
 type UserUpdateInfoReq struct {
 	Name        string                `form:"name"`
 	Email       string                `form:"email" binding:"omitempty,email"`

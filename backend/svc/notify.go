@@ -2,11 +2,9 @@ package svc
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
-	"github.com/chaitin/koalaqa/pkg/database"
 	"github.com/chaitin/koalaqa/repo"
 )
 
@@ -78,31 +76,6 @@ func (mn *MessageNotify) Read(ctx context.Context, userID uint, req NotifyReadRe
 		"read":       true,
 		"updated_at": time.Now(),
 	}, queryFuncs...)
-}
-
-func (mn *MessageNotify) GetWeb(ctx context.Context) (bool, error) {
-	var enable bool
-	err := mn.repoSys.GetValueByKey(ctx, &enable, model.SystemKeyNotifyWeb)
-	if err != nil {
-		if errors.Is(err, database.ErrRecordNotFound) {
-			return false, nil
-		}
-
-		return false, err
-	}
-
-	return enable, nil
-}
-
-type NotifyUpdateWebReq struct {
-	Enable bool `json:"enable"`
-}
-
-func (mn *MessageNotify) UpdateWeb(ctx context.Context, req NotifyUpdateWebReq) error {
-	return mn.repoSys.Create(ctx, &model.System[any]{
-		Key:   model.SystemKeyNotifyWeb,
-		Value: model.NewJSONBAny(req.Enable),
-	})
 }
 
 func init() {
