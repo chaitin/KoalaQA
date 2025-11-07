@@ -1,11 +1,10 @@
 import { getDiscussionDiscId, ModelDiscussionType } from '@/api'
-import { Alert, Box, Stack, Typography } from '@mui/material'
+import { Alert, Box, Typography } from '@mui/material'
 import { Metadata } from 'next'
 import { Suspense } from 'react'
 import Content from './ui/content'
-import OutlineSidebar from './ui/OutlineSidebar'
-import RelatedContent from './ui/RelatedContent'
 import TitleCard from './ui/titleCard'
+import DetailSidebarWrapper from './ui/DetailSidebarWrapper'
 
 export const metadata: Metadata = {
   title: '讨论详情',
@@ -103,24 +102,11 @@ const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; 
       </Box>
 
       {/* 右侧边栏 - 仅在桌面端显示 */}
-      <Box
-        sx={{
-          width: 300,
-          flexShrink: 0,
-          display: { xs: 'none', lg: 'block' },
-          pb: 3,
-          pr: 3,
-          position: 'sticky',
-          top: 100,
-          height: 'calc(100vh - 73px)',
-          overflowY: 'auto',
-        }}
-      >
-        <Stack spacing={3}>
-          {isArticle && <OutlineSidebar discussion={discussion} />}
-          <RelatedContent discId={discussion.uuid || id} />
-        </Stack>
-      </Box>
+      <DetailSidebarWrapper
+        isArticle={isArticle}
+        discussion={discussion}
+        discId={discussion.uuid || id}
+      />
       
     </Box>
   )

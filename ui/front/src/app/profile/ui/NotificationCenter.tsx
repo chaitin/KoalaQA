@@ -1,7 +1,14 @@
 'use client'
 
-import { getUserNotifyList, postUserNotifyRead, getUserNotifyUnread, postUserNotifyWeb, ModelMessageNotify } from '@/api'
-import { Box, Button, Stack, Typography, Chip, Checkbox, FormControlLabel } from '@mui/material'
+import {
+  getUserNotifyList,
+  postUserNotifyRead,
+  getUserNotifyUnread,
+  postUserNotifyWeb,
+  ModelMessageNotify,
+} from '@/api'
+import { Box, Button, Stack, Typography, Chip, Checkbox, FormControlLabel, Tooltip, IconButton } from '@mui/material'
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 import { Table } from '@ctzhian/ui'
 import { useEffect, useState, useCallback, useContext } from 'react'
 import { useRequest } from 'ahooks'
@@ -20,11 +27,14 @@ export default function NotificationCenter() {
   const [notifyPageSize, setNotifyPageSize] = useState(10)
   const [unreadCount, setUnreadCount] = useState(0)
   const { user, fetchUser } = useContext(AuthContext)
-  
+
   // 检查是否支持浏览器通知（需要 HTTPS 或 localhost）
-  const isNotificationSupported = typeof window !== 'undefined' && 
-    ('Notification' in window) && 
-    (window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  const isNotificationSupported =
+    typeof window !== 'undefined' &&
+    'Notification' in window &&
+    (window.location.protocol === 'https:' ||
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1')
   // 使用 useRequest 加载通知列表
   const {
     data: notifyData,
@@ -62,14 +72,13 @@ export default function NotificationCenter() {
     }
   }, [])
 
-
   // 处理网页通知开关变化
   const handleWebNotifyChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const checked = event.target.checked
     try {
       await postUserNotifyWeb({ enable: checked })
       await fetchUser()
-      
+
       // 如果启用了网页通知，请求浏览器通知权限
       if (checked && typeof window !== 'undefined' && 'Notification' in window) {
         if (Notification.permission === 'default') {
@@ -254,19 +263,17 @@ export default function NotificationCenter() {
   return (
     <Box sx={{ p: 0 }}>
       {/* 头部：标题、未读数、全部已读按钮 */}
-      <Stack
-        direction='row'
-        alignItems='center'
-        sx={{ pb: 2, borderBottom: '1px solid #e0e0e0' }}
-      >
+      <Stack direction='row' alignItems='center' sx={{ pb: 2, borderBottom: '1px solid #e0e0e0' }}>
         <Stack direction='row' spacing={2} alignItems='center'>
-          <Typography variant='caption' sx={{fontSize: '14px'}}>{`${unreadCount}条未读`}</Typography>
+          <Typography variant='caption' sx={{ fontSize: '14px' }}>{`${unreadCount}条未读`}</Typography>
         </Stack>
-        <Button onClick={handleMarkAllRead} sx={{color: '#006397'}}>
+        <Button onClick={handleMarkAllRead} sx={{ color: '#006397' }}>
           全部已读
         </Button>
-        {isNotificationSupported && (
+
+        <Stack direction='row' alignItems='center' spacing={0.5} sx={{ ml: 'auto' }}>
           <FormControlLabel
+            disabled={!isNotificationSupported}
             control={
               <Checkbox
                 checked={user.web_notify ?? false}
@@ -279,16 +286,34 @@ export default function NotificationCenter() {
                 }}
               />
             }
-            label="启用网页通知"
+            label='启用网页通知'
             sx={{
-              ml: 'auto',
               '& .MuiFormControlLabel-label': {
                 fontSize: '14px',
                 color: '#333',
               },
             }}
           />
-        )}
+          <Tooltip
+            title='网页的 Notification 功能通常要求网站通过 HTTPS 协议提供服务。这是现代浏览器出于安全考虑而强制执行的一项重要安全措施。'
+            arrow
+            placement='top'
+          >
+            <IconButton
+              size='small'
+              sx={{
+                padding: '4px',
+                color: '#999',
+                '&:hover': {
+                  color: '#666',
+                },
+              }}
+            >
+              <HelpOutlineIcon sx={{ fontSize: '16px' }} />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+        
       </Stack>
 
       {/* 通知列表 */}

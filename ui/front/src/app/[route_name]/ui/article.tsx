@@ -13,6 +13,9 @@ import { AuthContext } from '@/components/authProvider'
 import { CommonContext } from '@/components/commonProvider'
 import { ReleaseModal } from '@/components/discussion'
 import SearchResultModal from '@/components/SearchResultModal'
+import BrandAttribution from '@/components/BrandAttribution'
+import CommonAvatar from '@/components/CommonAvatar'
+import Icon from '@/components/icon'
 import { useGroupData } from '@/contexts/GroupDataContext'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
 import { useForumId } from '@/hooks/useForumId'
@@ -20,14 +23,16 @@ import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import { Person as PersonIcon, Schedule as ScheduleIcon, TrendingUp as TrendingUpIcon } from '@mui/icons-material'
 import AddIcon from '@mui/icons-material/Add'
 import SearchIcon from '@mui/icons-material/Search'
+import FilterListIcon from '@mui/icons-material/FilterList'
 import Image from 'next/image'
+import Link from 'next/link'
 import {
-  Avatar,
   Box,
   Button,
   Chip,
   CircularProgress,
   Divider,
+  IconButton,
   InputAdornment,
   Paper,
   Stack,
@@ -35,13 +40,15 @@ import {
   Typography,
   ToggleButtonGroup,
   ToggleButton,
+  Menu,
+  MenuItem,
 } from '@mui/material'
 import { useBoolean } from 'ahooks'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import DiscussCard from './discussCard'
 
-export type Status = 'hot' | 'new' | 'mine'
+export type Status = 'hot' | 'new' | 'publish'
 
 const TYPE_LIST = [
   { label: '问题', value: 'qa' },
@@ -88,7 +95,7 @@ const Article = ({
   }, [groupsData, forumInfo, currentType, getFilteredGroups])
 
   const [releaseModalVisible, { setTrue: releaseModalOpen, setFalse: releaseModalClose }] = useBoolean(false)
-  const status = searchParams?.get('sort') || 'hot'
+  const status = searchParams?.get('sort') || 'publish'
   const [search, setSearch] = useState(searchParams?.get('search') || '')
   const searchRef = useRef(search)
   const [articleData, setArticleData] = useState(data)
@@ -96,6 +103,13 @@ const Article = ({
   const [loadingMore, setLoadingMore] = useState(false)
   const [contributors, setContributors] = useState<SvcRankContributeItem[]>([])
   const [contributorsLoading, setContributorsLoading] = useState(false)
+  const sidebarRef = useRef<HTMLDivElement>(null)
+
+  // 下拉筛选相关状态
+  const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null)
+  const filterMenuOpen = Boolean(filterAnchorEl)
+  const onlyMine = searchParams?.get('only_mine') === 'true'
+  const resolved = searchParams?.get('resolved')
 
   // 搜索弹窗相关状态
   const [searchModalOpen, { setTrue: openSearchModal, setFalse: closeSearchModal }] = useBoolean(false)
@@ -110,21 +124,22 @@ const Article = ({
   }
   const currentForumId = getCurrentForumId()
 
+  const fetchContributors = useCallback(async () => {
+    try {
+      setContributorsLoading(true)
+      const response = await getRankContribute()
+      setContributors(response?.items || [])
+    } catch (error) {
+      console.error('Failed to fetch contributors:', error)
+    } finally {
+      setContributorsLoading(false)
+    }
+  }, [])
+
   // 获取贡献达人榜单
   useEffect(() => {
-    const fetchContributors = async () => {
-      try {
-        setContributorsLoading(true)
-        const response = await getRankContribute()
-        setContributors(response?.items || [])
-      } catch (error) {
-        console.error('Failed to fetch contributors:', error)
-      } finally {
-        setContributorsLoading(false)
-      }
-    }
     fetchContributors()
-  }, [])
+  }, [fetchContributors])
 
   const fetchMoreList = useCallback(() => {
     // 防止重复请求
@@ -138,9 +153,11 @@ const Article = ({
     const params: GetDiscussionParams & { forum_id?: number } = {
       page: new_page,
       size: 10,
-      filter: status as 'hot' | 'new' | 'mine',
       type: type as 'qa' | 'feedback' | 'blog',
     }
+
+    // 设置 filter
+    params.filter = status as 'hot' | 'new' | 'publish'
 
     // 如果有搜索关键词，添加到参数中
     if (search && search.trim()) {
@@ -155,6 +172,14 @@ const Article = ({
     // 添加当前选中的板块ID
     if (currentForumId) {
       params.forum_id = currentForumId
+    }
+
+    // 添加筛选参数
+    if (onlyMine) {
+      params.only_mine = true
+    }
+    if (resolved !== null && resolved !== undefined) {
+      params.resolved = resolved === 'true'
     }
 
     getDiscussion(params)
@@ -174,7 +199,7 @@ const Article = ({
       .finally(() => {
         setLoadingMore(false)
       })
-  }, [page, articleData.total, status, search, topics, type, currentForumId, loadingMore])
+  }, [page, articleData.total, status, search, topics, type, currentForumId, loadingMore, onlyMine, resolved])
 
   const createQueryString = (name: string, value: string) => {
     const params = new URLSearchParams(searchParams?.toString())
@@ -183,14 +208,16 @@ const Article = ({
   }
 
   const fetchList = useCallback(
-    (st: Status, se: string, tps: number[]) => {
+    (st: Status, se: string, tps: number[], onlyMineParam?: boolean, resolvedParam?: boolean | null) => {
       setPage(1)
       const params: GetDiscussionParams & { forum_id?: number } = {
         page: 1,
         size: 10,
-        filter: st as 'hot' | 'new' | 'mine',
         type: type as 'qa' | 'feedback' | 'blog',
       }
+
+      // 设置 filter
+      params.filter = st as 'hot' | 'new' | 'publish'
 
       // 如果有搜索关键词，添加到参数中
       if (se && se.trim()) {
@@ -206,6 +233,15 @@ const Article = ({
       if (currentForumId) {
         params.forum_id = currentForumId
       }
+
+      // 添加筛选参数
+      if (onlyMineParam !== undefined) {
+        params.only_mine = onlyMineParam
+      }
+      if (resolvedParam !== null && resolvedParam !== undefined) {
+        params.resolved = resolvedParam
+      }
+
       return getDiscussion(params)
         .then((res) => {
           if (res) {
@@ -252,15 +288,18 @@ const Article = ({
   // 监听路由变化，检测是否从详情页返回
   useEffect(() => {
     const currentPath = window.location.pathname
+    const currentOnlyMine = searchParams?.get('only_mine') === 'true'
+    const currentResolved = searchParams?.get('resolved')
+    const resolvedBool = currentResolved === null || currentResolved === undefined ? null : currentResolved === 'true'
 
     // 如果当前路径是列表页，且之前记录的不是列表页，说明可能是从详情页返回的
     if (lastPathname && lastPathname !== currentPath && currentPath === `/${routeName}`) {
-      fetchList(status as Status, search, topics)
+      fetchList(status as Status, search, topics, currentOnlyMine, resolvedBool)
     }
 
     // 更新记录的路径
     setLastPathname(currentPath)
-  }, [routeName, lastPathname, status, search, topics, fetchList])
+  }, [routeName, lastPathname, status, search, topics, searchParams, fetchList])
 
   const handleTopicClick = useCallback(
     (t: number) => {
@@ -309,20 +348,64 @@ const Article = ({
   const getSortOptions = (postType: string) => {
     if (postType === 'blog') {
       return [
-        { value: 'new', label: '最新内容' },
+        { value: 'publish', label: '最新发布' },
+        { value: 'new', label: '最近活跃' },
         { value: 'hot', label: '热门内容' },
-        { value: 'mine', label: '我参与的', disabled: !user?.uid },
       ]
     }
     // Default for qa/feedback
     return [
-      { value: 'new', label: '最新内容' },
+      { value: 'publish', label: '最新发布' },
+      { value: 'new', label: '最近活跃' },
       { value: 'hot', label: '热门内容' },
-      { value: 'mine', label: '我参与的', disabled: !user?.uid },
     ]
   }
 
   const currentSortOptions = getSortOptions(currentType)
+
+  // 处理下拉筛选菜单
+  const handleFilterMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setFilterAnchorEl(event.currentTarget)
+  }
+
+  const handleFilterMenuClose = () => {
+    setFilterAnchorEl(null)
+  }
+
+  const handleFilterChange = (filterType: 'only_mine' | 'resolved', value: boolean | null) => {
+    const params = new URLSearchParams(searchParams?.toString())
+
+    if (filterType === 'only_mine') {
+      if (value) {
+        params.set('only_mine', 'true')
+      } else {
+        params.delete('only_mine')
+      }
+    } else if (filterType === 'resolved') {
+      if (value === false) {
+        params.set('resolved', 'false')
+      } else if (value === true) {
+        params.set('resolved', 'true')
+      } else {
+        params.delete('resolved')
+      }
+    }
+
+    router.replace(`/${routeName}?${params.toString()}`)
+    handleFilterMenuClose()
+  }
+
+  // 监听筛选参数变化，重新获取数据
+  useEffect(() => {
+    const currentOnlyMine = searchParams?.get('only_mine') === 'true'
+    const currentResolved = searchParams?.get('resolved')
+    const resolvedBool = currentResolved === null || currentResolved === undefined ? null : currentResolved === 'true'
+
+    // 只有当参数真正变化时才重新获取数据
+    if (currentOnlyMine !== onlyMine || currentResolved !== resolved) {
+      fetchList(status as Status, search, topics, currentOnlyMine, resolvedBool)
+    }
+  }, [status, onlyMine, resolved, searchParams, search, topics, fetchList])
 
   return (
     <>
@@ -342,7 +425,7 @@ const Article = ({
           sx={{
             flex: 1,
             minWidth: 0,
-            maxWidth: { lg: 720 },
+            maxWidth: { lg: 798 },
             width: { xs: '100%', lg: 'auto' },
             pt: 0,
             px: 3,
@@ -426,56 +509,129 @@ const Article = ({
                 },
               }}
             >
-              {currentSortOptions
-                .filter((opt) => !opt.disabled)
-                .map((option) => (
-                  <ToggleButton
-                    key={option.value}
-                    value={option.value}
-                    sx={{
-                      height: 30,
-                      fontWeight: 500,
-                      fontSize: '14px',
-                      color: '#21222D',
-                      '&.Mui-selected': {
-                        bgcolor: 'rgba(0,99,151,0.06)',
-                        border: '1px solid rgba(0,99,151,0.1)',
-                        color: 'primary.main',
-                        '&.Mui-focusVisible': {
-                          bgcolor: '#000000',
-                          color: '#ffffff',
-                          outline: '2px solid #000000',
-                          outlineOffset: '2px',
-                        },
+              {currentSortOptions.map((option) => (
+                <ToggleButton
+                  key={option.value}
+                  value={option.value}
+                  sx={{
+                    height: 30,
+                    fontWeight: 500,
+                    fontSize: '14px',
+                    color: '#21222D',
+                    '&.Mui-selected': {
+                      bgcolor: 'rgba(0,99,151,0.06)',
+                      border: '1px solid rgba(0,99,151,0.1)',
+                      color: 'primary.main',
+                      '&.Mui-focusVisible': {
+                        bgcolor: '#000000',
+                        color: '#ffffff',
+                        outline: '2px solid #000000',
+                        outlineOffset: '2px',
                       },
-                      '&:hover': { bgcolor: '#f3f4f6', color: '#000000' },
-                    }}
-                  >
-                    {option.label}
-                  </ToggleButton>
-                ))}
+                    },
+                    '&:hover': { bgcolor: '#f3f4f6', color: '#000000' },
+                  }}
+                >
+                  {option.label}
+                </ToggleButton>
+              ))}
             </ToggleButtonGroup>
-
-            <Typography
-              variant='body2'
-              component='span'
-              sx={{
-                color: '#9ca3af',
-                fontSize: '0.75rem',
-                fontWeight: 500,
-                position: 'relative',
-                top: '2px',
-              }}
-            >
-              共{' '}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Box
                 component='span'
-                sx={{ display: 'inline-block', color: '#000000', fontSize: '0.75rem', fontWeight: 500 }}
+                sx={{
+                  fontSize: '14px',
+                  color: '#9ca3af',
+                  fontWeight: 500,
+                }}
               >
-                {articleData.total || 0}
-              </Box>{' '}
-              个帖子
-            </Typography>
+                共{' '}
+                <Box component='span' sx={{ display: 'inline-block', color: '#000000', fontWeight: 500 }}>
+                  {articleData.total || 0}
+                </Box>{' '}
+                个帖子
+              </Box>
+              {/* 下拉筛选按钮 */}
+              <Button
+                onClick={handleFilterMenuOpen}
+                startIcon={<FilterListIcon sx={{ fontSize: 18 }} />}
+                sx={{
+                  height: 30,
+                  px: 1.5,
+                  borderRadius: '6px',
+                  bgcolor: onlyMine || resolved !== null ? 'rgba(0,99,151,0.06)' : 'transparent',
+                  color: onlyMine || resolved !== null ? 'primary.main' : '#21222D',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  textTransform: 'none',
+                  '&:hover': {
+                    bgcolor: '#f3f4f6',
+                    borderColor: '#d1d5db',
+                  },
+                }}
+              >
+                筛选
+              </Button>
+
+              {/* 下拉筛选菜单 */}
+              <Menu
+                anchorEl={filterAnchorEl}
+                open={filterMenuOpen}
+                onClose={handleFilterMenuClose}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'left',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'left',
+                }}
+                PaperProps={{
+                  sx: {
+                    mt: 0.5,
+                    minWidth: 150,
+                    borderRadius: '6px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  },
+                }}
+              >
+                <MenuItem
+                  onClick={() => handleFilterChange('only_mine', !onlyMine)}
+                  selected={onlyMine}
+                  sx={{
+                    fontSize: '14px',
+                    py: 1,
+                    '&.Mui-selected': {
+                      bgcolor: 'rgba(0,99,151,0.06)',
+                      '&:hover': {
+                        bgcolor: 'rgba(0,99,151,0.1)',
+                      },
+                    },
+                  }}
+                >
+                  我参与的
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    const newResolved = resolved === 'false' ? null : false
+                    handleFilterChange('resolved', newResolved)
+                  }}
+                  selected={resolved === 'false'}
+                  sx={{
+                    fontSize: '14px',
+                    py: 1,
+                    '&.Mui-selected': {
+                      bgcolor: 'rgba(0,99,151,0.06)',
+                      '&:hover': {
+                        bgcolor: 'rgba(0,99,151,0.1)',
+                      },
+                    },
+                  }}
+                >
+                  未解决
+                </MenuItem>
+              </Menu>
+            </Box>
           </Box>
           <Divider />
           {/* 帖子列表 */}
@@ -545,6 +701,7 @@ const Article = ({
 
         {/* 右侧边栏 */}
         <Box
+          ref={sidebarRef}
           sx={{
             width: 300,
             flexShrink: 0,
@@ -554,7 +711,9 @@ const Article = ({
             pr: 3,
             scrollbarGutter: 'stable',
             position: 'sticky',
-            top: 96,
+            top: 84,
+            maxHeight: 'calc(100vh - 96px)',
+            overflowY: 'auto',
           }}
         >
           {/* 公告 */}
@@ -648,11 +807,33 @@ const Article = ({
               mb: 2,
             }}
           >
-            <Stack direction='row' alignItems='center' gap={1} sx={{ mb: 2 }}>
-              <Image alt='crown' width={20} height={20} src='/crown.svg' />
-              <Typography variant='subtitle2' sx={{ fontWeight: 700, color: '#111827', fontSize: '0.9375rem' }}>
-                贡献达人
-              </Typography>
+            <Stack direction='row' alignItems='center' justifyContent={'space-between'} sx={{ mb: 2 }}>
+              <Stack direction='row' alignItems='center' gap={1}>
+                <Image alt='crown' width={20} height={20} src='/crown.svg' />
+                <Typography variant='subtitle2' sx={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>
+                  贡献达人
+                </Typography>
+              </Stack>
+              <Stack direction='row' alignItems='center' gap={1}>
+                <IconButton
+                  size='small'
+                  aria-label='刷新贡献达人列表'
+                  onClick={() => {
+                    // 支持二次点击立即重新获取贡献达人
+                    if (typeof fetchContributors === 'function') {
+                      fetchContributors()
+                    }
+                  }}
+                  sx={{
+                    p: 0.5,
+                  }}
+                >
+                  <Icon type='icon-shuaxin' sx={{ fontSize: 18, color: '#6b7280' }} />
+                </IconButton>
+                <Typography variant='body2' sx={{ fontSize: '14px', color: 'rgba(33, 34, 45, 0.50)' }}>
+                  近 7 天
+                </Typography>
+              </Stack>
             </Stack>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
@@ -672,103 +853,122 @@ const Article = ({
                   暂无数据
                 </Typography>
               ) : (
-                contributors.map((contributor, index) => (
-                  <Box
-                    key={contributor.id || index}
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1,
-                      p: 0.75,
-                      pl: 0,
-                      borderRadius: '4px',
-                      bgcolor: 'transparent',
-                      border: 'none',
-                    }}
-                  >
+                contributors.map((contributor, index) => {
+                  const contributorProfileHref = contributor.id ? `/profile/${contributor.id}` : undefined
+                  return (
                     <Box
+                      key={contributor.id || index}
                       sx={{
-                        width: 20,
-                        height: 20,
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        borderRadius: '3px',
-                        fontSize: '0.8rem',
-                        fontWeight: 800,
-                        flexShrink: 0,
-                        fontFamily: 'Gilroy',
-                        fontStyle: 'italic',
-                        letterSpacing: '-0.02em',
-                        textRendering: 'optimizeLegibility',
-                        WebkitFontSmoothing: 'antialiased',
-                        background:
-                          index === 0
-                            ? 'linear-gradient(to bottom, #F64E54, #FB868D)'
-                            : index === 1
-                              ? 'linear-gradient(to bottom, #FC8664, #FBAD86)'
-                              : index === 2
-                                ? 'linear-gradient(to bottom, #FBC437, #FFE0A9)'
-                                : 'linear-gradient(to bottom, #BCBCBC, #E1E1E1)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
+                        gap: 1,
+                        p: 0.75,
+                        pl: 0,
+                        borderRadius: '4px',
+                        bgcolor: 'transparent',
+                        border: 'none',
                       }}
                     >
-                      {index + 1}
-                    </Box>
-                    <Avatar
-                      sx={{
-                        bgcolor: '#000000',
-                        width: 24,
-                        height: 24,
-                        fontSize: '0.65rem',
-                        fontWeight: 600,
-                        flexShrink: 0,
-                      }}
-                      src={contributor.avatar}
-                    >
-                      {contributor.name?.[0] || 'U'}
-                    </Avatar>
-                    <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' }}>
-                      <Typography
-                        variant='body2'
+                      <Box
                         sx={{
-                          fontWeight: 600,
-                          color: '#111827',
-                          fontSize: '0.875rem',
-                          lineHeight: 1.3,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
+                          width: 20,
+                          height: 20,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '3px',
+                          fontSize: '0.8rem',
+                          fontWeight: 800,
+                          flexShrink: 0,
+                          fontFamily: 'Gilroy',
+                          fontStyle: 'italic',
+                          letterSpacing: '-0.02em',
+                          textRendering: 'optimizeLegibility',
+                          WebkitFontSmoothing: 'antialiased',
+                          background:
+                            index === 0
+                              ? 'linear-gradient(to bottom, #F64E54, #FB868D)'
+                              : index === 1
+                                ? 'linear-gradient(to bottom, #FC8664, #FBAD86)'
+                                : index === 2
+                                  ? 'linear-gradient(to bottom, #FBC437, #FFE0A9)'
+                                  : 'linear-gradient(to bottom, #BCBCBC, #E1E1E1)',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          backgroundClip: 'text',
                         }}
                       >
-                        {contributor.name || '未知用户'}
-                      </Typography>
-                    </Box>
-                    {contributor.score !== undefined && (
-                      <Box sx={{ display: 'flex', gap: 0.75, flexShrink: 0 }}>
-                        <Typography
-                          variant='caption'
-                          sx={{
-                            fontFamily: 'Gilroy, Gilroy',
-                            fontWeight: 500,
-                            fontSize: '14px',
-                            color: '#21222D',
-                            lineHeight: '24px',
-                            textAlign: 'right',
-                            fontStyle: 'normal',
-                          }}
-                        >
-                          {Math.round(contributor.score)}
-                        </Typography>
+                        {index + 1}
                       </Box>
-                    )}
-                  </Box>
-                ))
+                      {contributorProfileHref ? (
+                        <Link href={contributorProfileHref} style={{ display: 'inline-flex' }}>
+                          <CommonAvatar src={contributor.avatar} name={contributor.name} />
+                        </Link>
+                      ) : (
+                        <CommonAvatar src={contributor.avatar} name={contributor.name} />
+                      )}
+                      <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' }}>
+                        {contributorProfileHref ? (
+                          <Link
+                            href={contributorProfileHref}
+                            style={{
+                              fontWeight: 600,
+                              color: '#111827',
+                              fontSize: '0.875rem',
+                              lineHeight: 1.3,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              textDecoration: 'none',
+                              display: 'block',
+                            }}
+                          >
+                            {contributor.name || '未知用户'}
+                          </Link>
+                        ) : (
+                          <Typography
+                            variant='body2'
+                            sx={{
+                              fontWeight: 600,
+                              color: '#111827',
+                              fontSize: '0.875rem',
+                              lineHeight: 1.3,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {contributor.name || '未知用户'}
+                          </Typography>
+                        )}
+                      </Box>
+                      {contributor.score !== undefined && (
+                        <Box sx={{ display: 'flex', gap: 0.75, flexShrink: 0 }}>
+                          <Typography
+                            variant='caption'
+                            sx={{
+                              fontFamily: 'Gilroy, Gilroy',
+                              fontWeight: 500,
+                              fontSize: '14px',
+                              color: 'rgba(33, 34, 45, 1)',
+                              lineHeight: '24px',
+                              textAlign: 'right',
+                              fontStyle: 'normal',
+                            }}
+                          >
+                            {Math.round(contributor.score)}
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  )
+                })
               )}
             </Box>
           </Paper>
+
+          {/* 品牌声明 */}
+          <BrandAttribution inSidebar={true} sidebarRef={sidebarRef as React.RefObject<HTMLElement>} />
         </Box>
       </Box>
 
@@ -776,7 +976,11 @@ const Article = ({
         open={releaseModalVisible}
         onClose={releaseModalClose}
         onOk={() => {
-          fetchList(status as Status, search, topics)
+          const currentOnlyMine = searchParams?.get('only_mine') === 'true'
+          const currentResolved = searchParams?.get('resolved')
+          const resolvedBool =
+            currentResolved === null || currentResolved === undefined ? null : currentResolved === 'true'
+          fetchList(status as Status, search, topics, currentOnlyMine, resolvedBool)
           router.refresh()
           releaseModalClose()
         }}

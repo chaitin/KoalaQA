@@ -37,7 +37,7 @@ const Toc = ({ headings }: TocProps) => {
           pb: 0,
         }}
       >
-        <Typography variant='subtitle2' color='text.main'>
+        <Typography variant='subtitle2' sx={{ fontWeight: 700, color: '#111827', fontSize: '14px', mb: 2 }}>
           内容大纲
         </Typography>
       </Stack>

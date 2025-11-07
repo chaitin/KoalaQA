@@ -11,7 +11,7 @@ export default function RouteLayout({ children }: { children: React.ReactNode })
   const [showFilters, setShowFilters] = useState(!isMobile)
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: 'background.paper' }}>
+    <Box sx={{ bgcolor: 'background.paper' }}>
       <Box
         sx={{
           display: 'flex',
@@ -27,7 +27,7 @@ export default function RouteLayout({ children }: { children: React.ReactNode })
               flexShrink: 0,
               display: isMobile && !showFilters ? 'none' : 'block',
               pl: { xs: 2, lg: 3 },
-              pt: 2,
+              py: { xs: 2, lg: 3 },
             }}
           >
             <FilterPanel />
@@ -35,7 +35,7 @@ export default function RouteLayout({ children }: { children: React.ReactNode })
         )}
 
         {/* 主内容区域 */}
-        <Container maxWidth="xl" sx={{ py: { xs: 2, md: 4 }, flex: 1, minWidth: 0 }}>
+        <Container sx={{ pt: { xs: 2, md: 3 }, flex: 1, minWidth: 0 }}>
           <Box
             sx={{
               display: 'flex',
@@ -59,13 +59,10 @@ export default function RouteLayout({ children }: { children: React.ReactNode })
                 <FilterListIcon />
               </IconButton>
             )}
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              {children}
-            </Box>
+            <Box sx={{ flex: 1, minWidth: 0 }}>{children}</Box>
           </Box>
         </Container>
       </Box>
     </Box>
   )
 }
-

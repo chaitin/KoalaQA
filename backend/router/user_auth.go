@@ -100,6 +100,11 @@ type notifyRes struct {
 	Data any        `json:"data"`
 }
 
+type notifyInfo struct {
+	model.MessageNotifyInfo
+	New bool `json:"new"`
+}
+
 type notifyReq struct {
 	Type notifyType `json:"type"`
 	ID   uint       `json:"id"`
@@ -148,7 +153,13 @@ func (u *userAuth) Notify(ctx *context.Context) {
 				case <-ctx.Done():
 				case writeC <- notifyRes{
 					Type: notifyTypeInfo,
-					Data: item,
+					Data: notifyInfo{
+						MessageNotifyInfo: model.MessageNotifyInfo{
+							ID:                  item.ID,
+							MessageNotifyCommon: item.MessageNotifyCommon,
+						},
+						New: false,
+					},
 				}:
 				}
 
@@ -166,7 +177,10 @@ func (u *userAuth) Notify(ctx *context.Context) {
 			case <-ctx.Done():
 			case writeC <- notifyRes{
 				Type: notifyTypeInfo,
-				Data: notifyData,
+				Data: notifyInfo{
+					MessageNotifyInfo: notifyData,
+					New:               true,
+				},
 			}:
 			}
 
@@ -208,6 +222,17 @@ func (u *userAuth) Notify(ctx *context.Context) {
 					Data: struct{}{},
 				}:
 				}
+			case notifyTypeRead:
+				err = u.in.SvcNotify.Read(ctx, ctx.GetUser().UID, svc.NotifyReadReq{
+					ID: req.ID,
+				})
+				if err != nil {
+					logger.WithErr(err).With("id", req.ID).Warn("set notify read failed")
+					continue
+				}
+
+				// 需要返回未读数量
+				fallthrough
 			case notifyTypeUnread:
 				num, err := u.in.SvcNotify.UnreadTotal(ctx, ctx.GetUser().UID)
 				if err != nil {
@@ -221,14 +246,6 @@ func (u *userAuth) Notify(ctx *context.Context) {
 					Type: notifyTypeUnread,
 					Data: num,
 				}:
-				}
-			case notifyTypeRead:
-				err = u.in.SvcNotify.Read(ctx, ctx.GetUser().UID, svc.NotifyReadReq{
-					ID: req.ID,
-				})
-				if err != nil {
-					logger.WithErr(err).With("id", req.ID).Warn("set notify read failed")
-					continue
 				}
 			}
 		case websocket.CloseMessage:

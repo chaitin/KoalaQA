@@ -7,16 +7,17 @@ import { useForum } from '@/contexts/ForumContext'
 import { useAuthConfig } from '@/hooks/useAuthConfig'
 import { useForumId } from '@/hooks/useForumId'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
+import { SettingsIcon } from '@/utils/mui-imports'
+import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import SearchIcon from '@mui/icons-material/Search'
 import { AppBar, Box, Button, InputAdornment, Link, OutlinedInput, Stack, Toolbar, Typography } from '@mui/material'
 import { useBoolean } from 'ahooks'
 import Image from 'next/image'
 import { useParams, usePathname, useRouter } from 'next/navigation'
 import { useCallback, useContext, useEffect, useState } from 'react'
+import ForumSelector from '../ForumSelector'
 import SearchResultModal from '../SearchResultModal'
 import LoggedInView from './loggedInView'
-import ForumSelector from '../ForumSelector'
-import { SettingsIcon } from '@/utils/mui-imports'
 
 interface HeaderProps {
   brandConfig: ModelSystemBrand
@@ -358,7 +359,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
             <>
               {registrationEnabled && (
                 <Button
-                  variant='outlined'
+                  variant='text'
                   sx={{
                     borderRadius: 1,
                     height: 36,
@@ -366,7 +367,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                     fontSize: 14,
                     textTransform: 'none',
                     borderColor: 'rgba(255, 255, 255, 0.3)',
-                    color: 'common.white',
+                    color: 'common.black',
                     '&:hover': {
                       borderColor: 'rgba(255, 255, 255, 0.5)',
                       bgcolor: 'rgba(255, 255, 255, 0.1)',
@@ -387,14 +388,15 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                   px: 2,
                   fontSize: 14,
                   textTransform: 'none',
-                  bgcolor: '#000000',
-                  color: 'common.white',
+                  bgcolor: '#fff',
+                  color: 'primary.main',
                   boxShadow: 'none',
                   '&:hover': {
                     bgcolor: '#111827',
                     boxShadow: 'none',
                   },
                 }}
+                startIcon={<AccountCircleIcon sx={{ fontSize: 24 }} />}
                 onClick={() => {
                   plainRouter.push('/login')
                 }}

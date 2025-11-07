@@ -2,7 +2,6 @@
 import { postUserLogout } from '@/api'
 import { clearAuthData } from '@/api/httpClient'
 import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Stack } from '@mui/material'
-import { useLocalStorageState } from 'ahooks'
 import { useRouter } from 'next/navigation'
 import { useContext } from 'react'
 import { AuthContext } from '../authProvider'
@@ -17,8 +16,12 @@ export const OPT_LIST = [
     link: '/profile',
   },
 ]
-const ProfilePanel = () => {
-  const [, setToken] = useLocalStorageState<string>('auth_token')
+
+interface ProfilePanelProps {
+  onClose?: () => void
+}
+
+const ProfilePanel: React.FC<ProfilePanelProps> = ({ onClose }) => {
   const { user } = useContext(AuthContext)
   const router = useRouter()
 
@@ -34,12 +37,10 @@ const ProfilePanel = () => {
     try {
       // 使用统一的清除认证信息函数（不调用服务端登出API，因为已经调用过了）
       await clearAuthData(false)
-      setToken('')
       router.push('/login')
     } catch (error) {
       console.error('Failed to clear auth data:', error)
       // 即使清理失败，也要重定向到登录页
-      setToken('')
       router.push('/login')
     }
   }
@@ -92,7 +93,9 @@ const ProfilePanel = () => {
                   background: 'rgba(32,108,255,0.1)',
                 },
               }}
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation()
+                onClose?.()
                 router.push(item.link)
               }}
             >
@@ -125,7 +128,10 @@ const ProfilePanel = () => {
           }}
         >
           <ListItemButton
-            onClick={handleLogout}
+            onClick={(e) => {
+              e.stopPropagation()
+              handleLogout()
+            }}
             dense
             sx={{
               '&:hover': {

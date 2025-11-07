@@ -7,6 +7,7 @@ import { ReleaseModal } from '@/components/discussion'
 import EditorWrap, { EditorWrapRef } from '@/components/editor/edit/Wrap'
 import Toc from '@/components/Toc'
 import { useForum } from '@/contexts/ForumContext'
+import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import { Box, Button, Stack, TextField } from '@mui/material'
 import { useParams, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -17,6 +18,7 @@ export default function EditPage() {
   const routeParams = useParams()
   const routeName = routeParams?.route_name as string
   const { forums } = useForum()
+  const router = useRouterWithRouteName()
   const queryId = useMemo(() => params.get('id') || params.get('discId') || undefined, [params]) as string | undefined
   const [data, setData] = useState<ModelDiscussionDetail>({
     title: '',
@@ -26,7 +28,6 @@ export default function EditPage() {
   })
   const [releaseOpen, setReleaseOpen] = useState(false)
   const [titleTouched, setTitleTouched] = useState(false)
-  const [modalContent, setModalContent] = useState('')
   const editorRef = useRef<EditorWrapRef>(null)
 
   // 根据 route_name 获取对应的 forumInfo
@@ -62,12 +63,12 @@ export default function EditPage() {
     >
       {/* 主内容区域 */}
       <Card
-        sx={{ 
-          flex: 1, 
-          minWidth: 0, 
-          maxWidth: { xs: '100%', lg: 720 }, 
-          width: { xs: '100%', lg: 'auto' }, 
-          px: { xs: 0, md: 3 } 
+        sx={{
+          flex: 1,
+          minWidth: 0,
+          maxWidth: { xs: '100%', lg: 798 },
+          width: { xs: '100%', lg: 'auto' },
+          px: { xs: 0, md: 3 },
         }}
       >
         <h1 style={{ display: 'none' }}>编辑讨论</h1>
@@ -91,8 +92,8 @@ export default function EditPage() {
               variant={'contained'}
               color={'primary'}
               onClick={() => {
-                const content = editorRef.current?.getMarkdown() || ''
-                setModalContent(content)
+                const content = editorRef.current?.getHTML() || ''
+                setData({ ...data, content })
                 setReleaseOpen(true)
               }}
               disabled={(data.title || '').trim() === ''}
@@ -140,10 +141,8 @@ export default function EditPage() {
         <Stack spacing={3}>
           <Card
             sx={{
-              position: 'sticky',
               top: 63,
-              maxHeight: 'calc(100vh - 100px)',
-              overflowY: 'auto',
+              border: '1px solid #D9DEE2',
             }}
           >
             <Toc headings={headings} />
@@ -154,13 +153,19 @@ export default function EditPage() {
       <ReleaseModal
         open={releaseOpen}
         onClose={() => setReleaseOpen(false)}
-        onOk={() => setReleaseOpen(false)}
+        onOk={() => {
+          setReleaseOpen(false)
+          // 如果是编辑模式，跳转到帖子详情页
+          if (queryId) {
+            router.push(`/${routeName}/${queryId}`)
+          }
+        }}
         selectedTags={[]}
         status={queryId ? 'edit' : 'create'}
         initialTitle={data.title}
         data={data}
         id={queryId}
-        initialContent={modalContent}
+        initialContent={''}
         type={modalType}
         forumInfo={forumInfo}
         showContentEditor={false}
