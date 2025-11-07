@@ -3214,13 +3214,13 @@ const docTemplate = `{
                         "enum": [
                             "hot",
                             "new",
-                            "mine"
+                            "publish"
                         ],
                         "type": "string",
                         "x-enum-varnames": [
                             "DiscussionListFilterHot",
                             "DiscussionListFilterNew",
-                            "DiscussionListFilterMine"
+                            "DiscussionListFilterPublish"
                         ],
                         "name": "filter",
                         "in": "query"
@@ -3245,9 +3245,19 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "name": "only_mine",
+                        "in": "query"
+                    },
+                    {
                         "minimum": 1,
                         "type": "integer",
                         "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "name": "resolved",
                         "in": "query"
                     },
                     {
@@ -6149,12 +6159,12 @@ const docTemplate = `{
             "enum": [
                 "hot",
                 "new",
-                "mine"
+                "publish"
             ],
             "x-enum-varnames": [
                 "DiscussionListFilterHot",
                 "DiscussionListFilterNew",
-                "DiscussionListFilterMine"
+                "DiscussionListFilterPublish"
             ]
         },
         "svc.DiscussionUpdateReq": {

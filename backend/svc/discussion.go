@@ -259,9 +259,9 @@ func (d *Discussion) Delete(ctx context.Context, user model.UserInfo, uuid strin
 type DiscussionListFilter string
 
 const (
-	DiscussionListFilterHot  DiscussionListFilter = "hot"
-	DiscussionListFilterNew  DiscussionListFilter = "new"
-	DiscussionListFilterMine DiscussionListFilter = "mine"
+	DiscussionListFilterHot     DiscussionListFilter = "hot"
+	DiscussionListFilterNew     DiscussionListFilter = "new"
+	DiscussionListFilterPublish DiscussionListFilter = "publish"
 )
 
 type DiscussionListReq struct {
@@ -272,6 +272,8 @@ type DiscussionListReq struct {
 	Type     model.DiscussionType `json:"type" form:"type,default=qa"`
 	GroupIDs model.Int64Array     `json:"group_ids" form:"group_ids"`
 	ForumID  uint                 `json:"forum_id" form:"forum_id"`
+	OnlyMine bool                 `json:"only_mine" form:"only_mine"`
+	Resolved *bool                `json:"resolved" form:"resolved"`
 }
 
 func (d *Discussion) ListSimilarity(ctx context.Context, discUUID string) (*model.ListRes[*model.DiscussionListItem], error) {
@@ -335,9 +337,11 @@ func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListRe
 	}
 
 	var query []repo.QueryOptFunc
-	query = append(query, repo.QueryWithEqual("type", req.Type))
-	query = append(query, repo.QueryWithEqual("forum_id", req.ForumID))
-	if req.Filter == DiscussionListFilterMine {
+	query = append(query, repo.QueryWithEqual("type", req.Type),
+		repo.QueryWithEqual("forum_id", req.ForumID),
+		repo.QueryWithEqual("resolve", req.Resolved),
+	)
+	if req.OnlyMine {
 		query = append(query, repo.QueryWithEqual("members", userID, repo.EqualOPValIn))
 	}
 
@@ -353,7 +357,7 @@ func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListRe
 		pageFuncs = append(pageFuncs, repo.QueryWithOrderBy(`hot DESC, created_at DESC`))
 	case DiscussionListFilterNew:
 		pageFuncs = append(pageFuncs, repo.QueryWithOrderBy("updated_at DESC"))
-	case DiscussionListFilterMine:
+	case DiscussionListFilterPublish:
 		pageFuncs = append(pageFuncs, repo.QueryWithOrderBy("created_at DESC"))
 	}
 	err = d.in.DiscRepo.List(ctx, &res.Items, append(query, pageFuncs...)...)
