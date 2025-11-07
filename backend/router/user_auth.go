@@ -222,6 +222,17 @@ func (u *userAuth) Notify(ctx *context.Context) {
 					Data: struct{}{},
 				}:
 				}
+			case notifyTypeRead:
+				err = u.in.SvcNotify.Read(ctx, ctx.GetUser().UID, svc.NotifyReadReq{
+					ID: req.ID,
+				})
+				if err != nil {
+					logger.WithErr(err).With("id", req.ID).Warn("set notify read failed")
+					continue
+				}
+
+				// 需要返回未读数量
+				fallthrough
 			case notifyTypeUnread:
 				num, err := u.in.SvcNotify.UnreadTotal(ctx, ctx.GetUser().UID)
 				if err != nil {
@@ -235,14 +246,6 @@ func (u *userAuth) Notify(ctx *context.Context) {
 					Type: notifyTypeUnread,
 					Data: num,
 				}:
-				}
-			case notifyTypeRead:
-				err = u.in.SvcNotify.Read(ctx, ctx.GetUser().UID, svc.NotifyReadReq{
-					ID: req.ID,
-				})
-				if err != nil {
-					logger.WithErr(err).With("id", req.ID).Warn("set notify read failed")
-					continue
 				}
 			}
 		case websocket.CloseMessage:
