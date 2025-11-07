@@ -80,7 +80,6 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(({
   const editorRef = useTiptap({
     editable: true,
     content: value || detail?.content || '',
-    // contentType: 'markdown',
     exclude: ['invisibleCharacters', 'youtube', 'mention', ...(aiWriting ? [] : ['aiWriting'])],
     // SSR 环境需显式关闭立即渲染以避免水合不匹配
     immediatelyRender: false,
@@ -134,11 +133,7 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(({
   useImperativeHandle(ref, () => ({
     getMarkdown: () => {
       try {
-        const anyRef = editorRef as unknown as { getMarkdown?: () => string; getHTML?: () => string };
-        if (anyRef.getMarkdown) {
-          return anyRef.getMarkdown();
-        }
-        return anyRef.getHTML ? anyRef.getHTML() : '';
+        return editorRef.getHTML();
       } catch (e) {
         return '';
       }

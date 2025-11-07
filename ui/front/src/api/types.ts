@@ -21,7 +21,7 @@ export enum TopicTaskStatus {
 export enum SvcDiscussionListFilter {
   DiscussionListFilterHot = "hot",
   DiscussionListFilterNew = "new",
-  DiscussionListFilterMine = "mine",
+  DiscussionListFilterPublish = "publish",
 }
 
 export enum PlatformPlatformType {
@@ -1191,12 +1191,14 @@ export interface DeleteAdminUserUserIdParams {
 }
 
 export interface GetDiscussionParams {
-  filter?: "hot" | "new" | "mine";
+  filter?: "hot" | "new" | "publish";
   forum_id?: number;
   group_ids?: number[];
   keyword?: string;
+  only_mine?: boolean;
   /** @min 1 */
   page?: number;
+  resolved?: boolean;
   /** @min 1 */
   size?: number;
   type?: "qa" | "feedback" | "blog";

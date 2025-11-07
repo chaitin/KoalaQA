@@ -47,11 +47,12 @@ import {
   Stack,
   TextField,
   Typography,
-  Avatar,
 } from '@mui/material'
+import CommonAvatar from '@/components/CommonAvatar'
 import dayjs from '@/lib/dayjs'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import React, { useContext, useState, useEffect } from 'react'
 import EditCommentModal from './editCommentModal'
 
@@ -516,7 +517,7 @@ const DiscussCard = (props: {
     return checkAuth(() => setMdEditShow(true))
   }
   const onSubmit = async () => {
-    const content = editorRef.current?.getMarkdown() || ''
+    const content = editorRef.current?.getHTML() || ''
     await postDiscussionDiscIdComment(
       { discId: id },
       {
@@ -603,6 +604,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const answerEditorRef = React.useRef<EditorWrapRef>(null)
   const commentEditorRef = React.useRef<EditorWrapRef>(null)
   const commentEditorRefs = React.useRef<{ [key: number]: EditorWrapRef | null }>({})
+  const prevHasAcceptedRef = React.useRef<boolean>(false)
 
   const handleClick = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -695,8 +697,34 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const hasAcceptedComment = data.comments?.some((comment) => comment.accepted)
   const isAuthor = data.user_id === (user?.uid || 0)
 
+  // 当有采纳的回答时,自动收起其他回答下的评论(仅问答类型)
+  useEffect(() => {
+    // 如果有采纳且是问答类型,则收起其他回答下的评论
+    if (
+      hasAcceptedComment &&
+      data.type === ModelDiscussionType.DiscussionTypeQA &&
+      data.comments
+    ) {
+      // 只在采纳状态从无到有时,或者页面首次加载且有采纳时执行
+      if (!prevHasAcceptedRef.current) {
+        // 收起所有未被采纳的回答下的评论
+        setCollapsedComments((prev) => {
+          const updated = { ...prev }
+          data.comments?.forEach((comment) => {
+            if (!comment.accepted) {
+              updated[comment.id!] = true
+            }
+          })
+          return updated
+        })
+      }
+    }
+    // 更新上一次的采纳状态
+    prevHasAcceptedRef.current = hasAcceptedComment || false
+  }, [hasAcceptedComment, data.type, data.comments])
+
   const handleSubmitAnswer = async () => {
-    const content = answerEditorRef.current?.getMarkdown() || ''
+    const content = answerEditorRef.current?.getHTML() || ''
     if (!content.trim()) return
     return checkAuth(async () => {
       await postDiscussionDiscIdComment({ discId: id }, { content })
@@ -709,7 +737,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   }
 
   const handleSubmitNewComment = async () => {
-    const content = commentEditorRef.current?.getMarkdown() || ''
+    const content = commentEditorRef.current?.getHTML() || ''
     if (!content.trim()) return
     return checkAuth(async () => {
       await postDiscussionDiscIdComment({ discId: id }, { content })
@@ -722,7 +750,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   }
 
   const handleSubmitComment = async (answerId: number) => {
-    const comment = commentEditorRefs.current[answerId]?.getMarkdown() || ''
+    const comment = commentEditorRefs.current[answerId]?.getHTML() || ''
     if (!comment.trim()) return
     return checkAuth(async () => {
       await postDiscussionDiscIdComment({ discId: id }, { content: comment, comment_id: answerId })
@@ -933,6 +961,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
           {sortedComments.map((answer) => {
             const isLiked = answer.user_like_state === ModelCommentLikeState.CommentLikeStateLike
             const isDisliked = answer.user_like_state === ModelCommentLikeState.CommentLikeStateDislike
+            const answerProfileHref = answer.user_id ? `/profile/${answer.user_id}` : undefined
             return (
               <Paper
                 key={answer.id}
@@ -948,20 +977,30 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Avatar
-                      sx={{
-                        bgcolor: '#6b7280',
-                        width: 20,
-                        height: 20,
-                        fontSize: '0.65rem',
-                        fontWeight: 600,
-                      }}
-                    >
-                      {answer.user_avatar || answer.user_name?.[0]}
-                    </Avatar>
-                    <Typography variant='body2' sx={{ fontWeight: 600, color: '#111827', fontSize: '0.875rem' }}>
-                      {answer.user_name || '未知用户'}
-                    </Typography>
+                    {answerProfileHref ? (
+                      <Link href={answerProfileHref} style={{ display: 'inline-flex' }}>
+                        <CommonAvatar src={answer.user_avatar} name={answer.user_name} />
+                      </Link>
+                    ) : (
+                      <CommonAvatar src={answer.user_avatar} name={answer.user_name} />
+                    )}
+                    {answerProfileHref ? (
+                      <Link
+                        href={answerProfileHref}
+                        style={{
+                          fontWeight: 600,
+                          color: '#111827',
+                          fontSize: '0.875rem',
+                          textDecoration: 'none',
+                        }}
+                      >
+                        {answer.user_name || '未知用户'}
+                      </Link>
+                    ) : (
+                      <Typography variant='body2' sx={{ fontWeight: 600, color: '#111827', fontSize: '0.875rem' }}>
+                        {answer.user_name || '未知用户'}
+                      </Typography>
+                    )}
                   </Box>
 
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -1115,7 +1154,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                     border: '1px solid #f3f4f6',
                   }}
                 >
-                  <EditorContent content={answer.content} onTocUpdate={() => {}} />
+                  <EditorContent content={answer.content} />
                 </Box>
 
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5, mb: 2 }}>
@@ -1160,9 +1199,11 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
 
                   <Collapse in={!collapsedComments[answer.id!]}>
                     <Box sx={{ pl: 0 }}>
-                      {answer.replies?.map((reply) => (
-                        <Box
-                          key={reply.id}
+                      {answer.replies?.map((reply) => {
+                        const replyProfileHref = reply.user_id ? `/profile/${reply.user_id}` : undefined
+                        return (
+                          <Box
+                            key={reply.id}
                           sx={{
                             mb: 2,
                             pb: 2,
@@ -1170,24 +1211,35 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                             '&:last-child': { borderBottom: 'none', mb: 0, pb: 0 },
                           }}
                         >
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                            <Avatar
-                              sx={{
-                                bgcolor: '#9ca3af',
-                                width: 20,
-                                height: 20,
-                                fontSize: '0.625rem',
-                              }}
-                            >
-                              {reply.user_avatar || reply.user_name?.[0]}
-                            </Avatar>
-                            <Typography
-                              variant='body2'
-                              sx={{ fontWeight: 600, color: '#111827', fontSize: '0.8125rem' }}
-                            >
-                              {reply.user_name || '未知用户'}
-                            </Typography>
-                          </Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                              {replyProfileHref ? (
+                                <Link href={replyProfileHref} style={{ display: 'inline-flex' }}>
+                                  <CommonAvatar src={reply.user_avatar} name={reply.user_name} />
+                                </Link>
+                              ) : (
+                                <CommonAvatar src={reply.user_avatar} name={reply.user_name} />
+                              )}
+                              {replyProfileHref ? (
+                                <Link
+                                  href={replyProfileHref}
+                                  style={{
+                                    fontWeight: 600,
+                                    color: '#111827',
+                                    fontSize: '0.8125rem',
+                                    textDecoration: 'none',
+                                  }}
+                                >
+                                  {reply.user_name || '未知用户'}
+                                </Link>
+                              ) : (
+                                <Typography
+                                  variant='body2'
+                                  sx={{ fontWeight: 600, color: '#111827', fontSize: '0.8125rem' }}
+                                >
+                                  {reply.user_name || '未知用户'}
+                                </Typography>
+                              )}
+                            </Box>
 
                           <Box
                             sx={{
@@ -1219,8 +1271,9 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                               </Typography>
                             )}
                           </Box>
-                        </Box>
-                      ))}
+                          </Box>
+                        )
+                      })}
                       <Box sx={{ mt: (answer.replies?.length || 0) > 0 ? 2 : 0 }}>
                         {!showCommentEditors[answer.id!] ? (
                           <TextField

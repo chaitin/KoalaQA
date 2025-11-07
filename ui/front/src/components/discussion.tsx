@@ -235,7 +235,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
       onCancel={onClose}
       onOk={() => {
         if (showContentEditor) {
-          const content = editorRef.current?.getMarkdown() || ''
+          const content = editorRef.current?.getHTML() || ''
           setValue('content', content, { shouldValidate: true, shouldDirty: true })
         }
         onSubmit()

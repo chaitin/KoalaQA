@@ -49,13 +49,14 @@ const OutlineSidebar = ({ discussion }: { discussion: ModelDiscussionDetail }) =
       <Card
         sx={{
           overflowY: 'auto',
+          border: '1px solid #D9DEE2',
           flexShrink: 0,
           '& .editor-container p': {
             fontSize: '13px',
           },
         }}
       >
-        <Typography variant='subtitle2' sx={{ mb: 2 }}>
+        <Typography variant='subtitle2' sx={{ mb: 2,fontSize: '14px' }}>
           文章概览
         </Typography>
         {discussion.summary ? (
@@ -77,11 +78,8 @@ const OutlineSidebar = ({ discussion }: { discussion: ModelDiscussionDetail }) =
       </Card>
       <Card
         sx={{
-          position: 'sticky',
-          top: 110,
-          maxHeight: '70vh',
-          overflowY: 'auto',
           flexShrink: 0,
+          border: '1px solid #D9DEE2',
         }}
       >
         <Toc headings={headings} />

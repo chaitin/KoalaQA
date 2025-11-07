@@ -49,7 +49,7 @@ const RelatedContent = ({ discId }: { discId: string }) => {
         mb: 2,
       }}
     >
-      <Typography variant='subtitle2' sx={{ fontWeight: 700, color: '#111827', fontSize: '0.9375rem', mb: 2 }}>
+      <Typography variant='subtitle2' sx={{ fontWeight: 700, color: '#111827', fontSize: '14px', mb: 2 }}>
         相关内容
       </Typography>
       {loading ? (

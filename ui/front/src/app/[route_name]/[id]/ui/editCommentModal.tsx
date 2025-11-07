@@ -13,7 +13,7 @@ const EditCommentModal: React.FC<EditCommentModalProps> = ({ data, open, onOk, o
   const editorRef = useRef<EditorWrapRef>(null)
 
   const onSubmit = async () => {
-    const content = editorRef.current?.getMarkdown() || data?.content || ''
+    const content = editorRef.current?.getHTML() || data?.content || ''
     onOk(content)
   }
 

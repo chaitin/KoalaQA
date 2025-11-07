@@ -1,7 +1,7 @@
 'use client'
 import { AuthContext } from '@/components/authProvider'
 import { useForum } from '@/contexts/ForumContext'
-import { Badge, Box, Button, IconButton, Stack, Tooltip, Typography } from '@mui/material'
+import { Badge, Box, Button, IconButton, Menu, Stack, Typography } from '@mui/material'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import ProfilePanel from './profilePanel'
@@ -13,6 +13,7 @@ import {
   showNotification,
   formatNotificationData,
 } from '@/utils/browserNotification'
+import { postUserNotifyRead } from '@/api'
 
 // 内容类型枚举
 enum ContentType {
@@ -190,6 +191,7 @@ type MessageNotifyInfo = {
   to_bot: boolean
   id: number
   forum_id: number
+  new: boolean
 }
 
 // 导出内容类型配置管理器，供其他模块使用
@@ -224,30 +226,10 @@ export const getNotificationTextForExport = (
     to_bot: info.to_bot || false,
     id: (info as any).id || 0,
     forum_id: (info as any).forum_id || 0,
+    new: (info as any).new || false,
   }
   return getNotificationText(adaptedInfo)
 }
-
-/**
- * 使用示例：
- *
- * // 在其他模块中注册新的内容类型
- * const configManager = getContentTypeConfigManager()
- * configManager.registerConfig('video', {
- *   replyAction: '评论了你的视频',
- *   commentAction: '回复了你的评论',
- *   applyAction: '采纳了你的评论',
- *   likeAction: '点赞了你的评论',
- *   dislikeAction: '不喜欢你的评论',
- *   dislikeBotAction: '不喜欢机器人的评论',
- *   botUnknownAction: '提出了机器人无法回答的问题',
- *   likeFeedbackAction: '点赞了你的反馈',
- * })
- *
- * // 获取支持的内容类型
- * const supportedTypes = configManager.getSupportedTypes()
- * console.log('支持的内容类型:', supportedTypes)
- */
 export interface LoggedInProps {
   user: any | null
   verified?: boolean
@@ -260,6 +242,8 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
   const [notifications, setNotifications] = useState<MessageNotifyInfo[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [webNotifyEnabled, setWebNotifyEnabled] = useState(false)
+  const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null)
+  const [profileAnchorEl, setProfileAnchorEl] = useState<null | HTMLElement>(null)
   const router = useRouterWithRouteName()
   // 保存 ws 实例的 ref
   const wsRef = useRef<WebSocket | null>(null)
@@ -296,12 +280,10 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
     // 确保在客户端环境中执行
     if (typeof window === 'undefined') return
 
-    const token = localStorage.getItem('auth_token')
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const url = new URL('/api/user/notify', window.location.href)
     url.protocol = wsProtocol
-    const wsUrlBase = url.toString()
-    const wsUrl = token ? `${wsUrlBase}` : wsUrlBase
+    const wsUrl = url.toString()
     const ws = new WebSocket(wsUrl)
     // 保存 ws 实例
     wsRef.current = ws
@@ -318,7 +300,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
           setNotifications((prev) => [newNotification, ...prev])
           ws.send(JSON.stringify({ type: 1 }))
 
-          if (user.web_notify) {
+          if (user.web_notify && newNotification.new) {
             const notificationText = getNotificationText(newNotification)
             const { title, options } = formatNotificationData(newNotification, notificationText)
 
@@ -326,8 +308,19 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
 
             // 点击通知时跳转到对应页面
             if (browserNotification) {
-              browserNotification.onclick = () => {
+              browserNotification.onclick = async () => {
                 window.focus()
+                // 标记通知为已读
+                if (newNotification.id) {
+                  try {
+                    await postUserNotifyRead({ id: newNotification.id })
+                    // 更新UI
+                    setUnreadCount((c) => Math.max(0, c - 1))
+                    setNotifications((prev) => prev.filter((n) => n.id !== newNotification.id))
+                  } catch (error) {
+                    console.error('标记通知已读失败:', error)
+                  }
+                }
                 const forum = forums.find((f) => f.id === newNotification.forum_id)
                 const routePath = forum?.route_name
                   ? `/${forum.route_name}/${newNotification.discuss_uuid}`
@@ -400,182 +393,213 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
     }
   }
 
+  const handleNotificationMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setNotificationAnchorEl(event.currentTarget)
+    setProfileAnchorEl(null)
+  }
+
+  const handleNotificationMenuClose = () => {
+    setNotificationAnchorEl(null)
+  }
+
+  const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setProfileAnchorEl(event.currentTarget)
+    setNotificationAnchorEl(null)
+  }
+
+  const handleProfileMenuClose = () => {
+    setProfileAnchorEl(null)
+  }
+
   return (
     <>
-      <Tooltip
-        placement='bottom-end'
-        sx={{ mx: 2 }}
-        slotProps={{
-          tooltip: {
-            sx: {
-              backgroundColor: '#fff',
-              boxShadow: '0px 20px 40px 0px rgba(0,28,85,0.06)',
-              minWidth: '300px',
-              padding: '20px',
-              pb: 1,
-              borderRadius: '8px',
-              color: 'primary.main',
-            },
+      <IconButton
+        disableRipple
+        onClick={handleNotificationMenuOpen}
+        sx={{
+          color: 'common.white',
+          transition: 'all 0.15s ease-in-out',
+          mx: 2,
+          '&:hover': {
+            color: 'common.white',
+            bgcolor: 'rgba(255, 255, 255, 0.1)',
+            transform: 'scale(1.05)',
           },
-          popper: {
-            sx: {
-              paddingRight: '24px',
-              margin: '0px -24px 0px 0px !important',
-            },
+          '&:active': { transform: 'scale(0.95)' },
+        }}
+      >
+        <Badge badgeContent={unreadCount} color='error'>
+          <NotificationsIcon sx={{ fontSize: 24 }} />
+        </Badge>
+      </IconButton>
+      <Menu
+        anchorEl={notificationAnchorEl}
+        open={Boolean(notificationAnchorEl)}
+        onClose={handleNotificationMenuClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        PaperProps={{
+          sx: {
+            backgroundColor: '#fff',
+            boxShadow: '0px 20px 40px 0px rgba(0,28,85,0.06)',
+            minWidth: '300px',
+            padding: '20px',
+            pb: 1,
+            borderRadius: '8px',
+            color: 'primary.main',
+            mt: 1,
+            maxHeight: 500,
           },
         }}
-        title={
-          <Stack spacing={1}>
-            <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
-              {notifications.length === 0 ? (
-                <Box sx={{ p: 2, textAlign: 'center', color: 'text.secondary', fontSize: '14px' }}>暂无通知</Box>
-              ) : (
-                notifications.map((notification, index) => (
-                  <Stack
-                    key={index}
-                    sx={{
-                      py: 1,
-                      px: 2,
-                      cursor: 'pointer',
-                      '&:hover': {
-                        bgcolor: 'action.hover',
-                      },
-                      borderRadius: 1,
+      >
+        <Stack spacing={1}>
+          <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
+            {notifications.length === 0 ? (
+              <Box sx={{ p: 2, textAlign: 'center', color: 'text.secondary', fontSize: '14px' }}>暂无通知</Box>
+            ) : (
+              notifications.map((notification, index) => (
+                <Stack
+                  key={index}
+                  sx={{
+                    py: 1,
+                    px: 2,
+                    cursor: 'pointer',
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                    },
+                    borderRadius: 1,
+                  }}
+                >
+                  <Box
+                    onClick={() => {
+                      handleNotificationMenuClose()
+                      handleNotificationClick(notification)
                     }}
                   >
-                    <Box onClick={() => handleNotificationClick(notification)}>
-                      <Stack direction='row' spacing={1} alignItems='center' sx={{ mb: 0.5 }}>
-                        <Typography
-                          variant='body2'
-                          sx={{
-                            fontWeight: 500,
-                            color: '#333',
-                            fontSize: '14px',
-                          }}
-                        >
-                          {notification.from_name || '未知用户'}
-                        </Typography>
-                        {(() => {
-                          const notificationText = getNotificationText(notification)
-                          const { action, content } = splitNotificationText(notificationText)
-                          return (
-                            <>
-                              {action && (
-                                <Typography
-                                  variant='body2'
-                                  sx={{
-                                    color: '#666',
-                                    fontSize: '13px',
-                                  }}
-                                >
-                                  {action}
-                                </Typography>
-                              )}
+                    <Stack direction='row' spacing={1} alignItems='center' sx={{ mb: 0.5 }}>
+                      <Typography
+                        variant='body2'
+                        sx={{
+                          fontWeight: 500,
+                          color: '#333',
+                          fontSize: '14px',
+                        }}
+                      >
+                        {notification.from_name || '未知用户'}
+                      </Typography>
+                      {(() => {
+                        const notificationText = getNotificationText(notification)
+                        const { action, content } = splitNotificationText(notificationText)
+                        return (
+                          <>
+                            {action && (
                               <Typography
                                 variant='body2'
                                 sx={{
+                                  color: '#666',
                                   fontSize: '13px',
                                 }}
                               >
-                                {content}
+                                {action}
                               </Typography>
-                            </>
-                          )
-                        })()}
-                      </Stack>
-                      <Typography
-                        variant='caption'
-                        sx={{
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          color: 'text.auxiliary',
-                        }}
-                      >
-                        {notification.discuss_title || '无标题'}
-                      </Typography>
-                    </Box>
-                  </Stack>
-                ))
-              )}
-            </Box>
-            <Box
-              sx={{
-                pt: 1,
-                borderTop: '1px solid',
-                borderColor: 'divider',
-                display: 'flex',
-                justifyContent: 'flex-end',
-              }}
+                            )}
+                            <Typography
+                              variant='body2'
+                              sx={{
+                                fontSize: '13px',
+                              }}
+                            >
+                              {content}
+                            </Typography>
+                          </>
+                        )
+                      })()}
+                    </Stack>
+                    <Typography
+                      variant='caption'
+                      sx={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        color: 'text.auxiliary',
+                      }}
+                    >
+                      {notification.discuss_title || '无标题'}
+                    </Typography>
+                  </Box>
+                </Stack>
+              ))
+            )}
+          </Box>
+          <Box
+            sx={{
+              pt: 1,
+              borderTop: '1px solid',
+              borderColor: 'divider',
+              display: 'flex',
+              justifyContent: 'flex-end',
+            }}
+          >
+            <Button
+              size='small'
+              color='info'
               onClick={() => {
+                handleNotificationMenuClose()
                 router.push('/profile?tab=1')
               }}
             >
-              <Button
-                size='small'
-                color='info'
-              >
-                查看全部通知
-              </Button>
-            </Box>
-          </Stack>
-        }
-      >
-        <IconButton
-          disableRipple
-          sx={{
+              查看全部通知
+            </Button>
+          </Box>
+        </Stack>
+      </Menu>
+      <IconButton
+        disableRipple
+        onClick={handleProfileMenuOpen}
+        sx={{
+          color: 'common.white',
+          transition: 'all 0.15s ease-in-out',
+          '&:hover': {
             color: 'common.white',
-            transition: 'all 0.15s ease-in-out',
-            '&:hover': {
-              color: 'common.white',
-              bgcolor: 'rgba(255, 255, 255, 0.1)',
-              transform: 'scale(1.05)',
-            },
-            '&:active': { transform: 'scale(0.95)' },
-          }}
-        >
-          <Badge badgeContent={unreadCount} color='error'>
-            <NotificationsIcon sx={{ fontSize: 24 }} />
-          </Badge>
-        </IconButton>
-      </Tooltip>
-      <Tooltip
-        placement='bottom-end'
-        slotProps={{
-          tooltip: {
-            sx: {
-              backgroundColor: '#fff',
-              boxShadow: '0px 20px 40px 0px rgba(0,28,85,0.06)',
-              minWidth: '300px',
-              padding: '20px',
-              borderRadius: '8px',
-            },
+            bgcolor: 'rgba(255, 255, 255, 0.1)',
+            transform: 'scale(1.05)',
           },
-          popper: {
-            sx: {
-              paddingRight: '24px',
-              margin: '0px -24px 0px 0px !important',
-            },
+          '&:active': { transform: 'scale(0.95)' },
+        }}
+      >
+        <AccountCircleIcon sx={{ fontSize: 24 }} />
+      </IconButton>
+      <Menu
+        anchorEl={profileAnchorEl}
+        open={Boolean(profileAnchorEl)}
+        onClose={handleProfileMenuClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        PaperProps={{
+          sx: {
+            backgroundColor: '#fff',
+            boxShadow: '0px 20px 40px 0px rgba(0,28,85,0.06)',
+            minWidth: '300px',
+            padding: '20px',
+            borderRadius: '8px',
+            mt: 1,
           },
         }}
-        title={<ProfilePanel />}
       >
-        <IconButton
-          disableRipple
-          sx={{
-            color: 'common.white',
-            transition: 'all 0.15s ease-in-out',
-            '&:hover': {
-              color: 'common.white',
-              bgcolor: 'rgba(255, 255, 255, 0.1)',
-              transform: 'scale(1.05)',
-            },
-            '&:active': { transform: 'scale(0.95)' },
-          }}
-        >
-          <AccountCircleIcon sx={{ fontSize: 24 }} />
-        </IconButton>
-      </Tooltip>
+        <ProfilePanel onClose={handleProfileMenuClose} />
+      </Menu>
     </>
   )
 }

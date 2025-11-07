@@ -159,6 +159,18 @@ func (d *Discussion) Create(ctx context.Context, req DiscussionCreateReq) (strin
 	if err != nil {
 		return "", err
 	}
+
+	if disc.Type == model.DiscussionTypeQA || disc.Type == model.DiscussionTypeBlog {
+		err = d.in.TrendSvc.Create(ctx, &model.Trend{
+			UserID:        disc.UserID,
+			Type:          model.TrendTypeCreateDiscuss,
+			DiscussHeader: disc.Header(),
+		})
+		if err != nil {
+			d.logger.WithContext(ctx).WithErr(err).With("disc_id", disc).Warn("create user trend failed")
+		}
+	}
+
 	d.in.Pub.Publish(ctx, topic.TopicDiscChange, topic.MsgDiscChange{
 		OP:       topic.OPInsert,
 		DiscID:   disc.ID,
@@ -259,9 +271,9 @@ func (d *Discussion) Delete(ctx context.Context, user model.UserInfo, uuid strin
 type DiscussionListFilter string
 
 const (
-	DiscussionListFilterHot  DiscussionListFilter = "hot"
-	DiscussionListFilterNew  DiscussionListFilter = "new"
-	DiscussionListFilterMine DiscussionListFilter = "mine"
+	DiscussionListFilterHot     DiscussionListFilter = "hot"
+	DiscussionListFilterNew     DiscussionListFilter = "new"
+	DiscussionListFilterPublish DiscussionListFilter = "publish"
 )
 
 type DiscussionListReq struct {
@@ -272,6 +284,8 @@ type DiscussionListReq struct {
 	Type     model.DiscussionType `json:"type" form:"type,default=qa"`
 	GroupIDs model.Int64Array     `json:"group_ids" form:"group_ids"`
 	ForumID  uint                 `json:"forum_id" form:"forum_id"`
+	OnlyMine bool                 `json:"only_mine" form:"only_mine"`
+	Resolved *bool                `json:"resolved" form:"resolved"`
 }
 
 func (d *Discussion) ListSimilarity(ctx context.Context, discUUID string) (*model.ListRes[*model.DiscussionListItem], error) {
@@ -335,9 +349,11 @@ func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListRe
 	}
 
 	var query []repo.QueryOptFunc
-	query = append(query, repo.QueryWithEqual("type", req.Type))
-	query = append(query, repo.QueryWithEqual("forum_id", req.ForumID))
-	if req.Filter == DiscussionListFilterMine {
+	query = append(query, repo.QueryWithEqual("type", req.Type),
+		repo.QueryWithEqual("forum_id", req.ForumID),
+		repo.QueryWithEqual("resolved", req.Resolved),
+	)
+	if req.OnlyMine {
 		query = append(query, repo.QueryWithEqual("members", userID, repo.EqualOPValIn))
 	}
 
@@ -353,7 +369,7 @@ func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListRe
 		pageFuncs = append(pageFuncs, repo.QueryWithOrderBy(`hot DESC, created_at DESC`))
 	case DiscussionListFilterNew:
 		pageFuncs = append(pageFuncs, repo.QueryWithOrderBy("updated_at DESC"))
-	case DiscussionListFilterMine:
+	case DiscussionListFilterPublish:
 		pageFuncs = append(pageFuncs, repo.QueryWithOrderBy("created_at DESC"))
 	}
 	err = d.in.DiscRepo.List(ctx, &res.Items, append(query, pageFuncs...)...)
@@ -591,6 +607,17 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 	err = d.in.CommRepo.Create(ctx, &comment)
 	if err != nil {
 		return 0, err
+	}
+
+	if parentID == 0 && !req.Bot {
+		err = d.in.TrendSvc.Create(ctx, &model.Trend{
+			UserID:        uid,
+			Type:          model.TrendTypeAnswer,
+			DiscussHeader: disc.Header(),
+		})
+		if err != nil {
+			d.logger.WithContext(ctx).WithErr(err).With("comment_id", comment.ID).Warn("create user trend failed")
+		}
 	}
 
 	if err = d.in.DiscRepo.Update(ctx, map[string]any{

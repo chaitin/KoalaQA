@@ -7,7 +7,6 @@ import { useForum } from '@/contexts/ForumContext'
 import { aesCbcEncrypt } from '@/utils/aes'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Stack, TextField } from '@mui/material'
-import { useLocalStorageState } from 'ahooks'
 import Cookies from 'js-cookie'
 import { useContext, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
@@ -20,9 +19,6 @@ const schema = z.object({
 })
 
 const Account = ({ isChecked, passwordConfig }: { isChecked: boolean; passwordConfig?: SvcAuthFrontendGetAuth }) => {
-  const [, setToken] = useLocalStorageState<string>('auth_token', {
-    defaultValue: '',
-  })
   const { user, loading, fetchUser } = useContext(AuthContext)
   const { refreshForums } = useForum()
   const searchParams = useSearchParams()
@@ -66,7 +62,6 @@ const Account = ({ isChecked, passwordConfig }: { isChecked: boolean; passwordCo
     const ciphertext = aesCbcEncrypt(password?.trim())
     return postUserLogin({ email, password: ciphertext })
       .then(async (res) => {
-        setToken(res)
         Cookies.set('auth_token', res, {
           path: '/',
           expires: 7, // 7 天
