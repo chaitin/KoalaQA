@@ -566,7 +566,7 @@ type UserStatisticsRes struct {
 	AnswerCount int64  `json:"answer_count"`
 }
 
-func (u *User) Statistics(ctx context.Context, userID uint) (*UserStatisticsRes, error) {
+func (u *User) Statistics(ctx context.Context, curUserID uint, userID uint) (*UserStatisticsRes, error) {
 	user, err := u.Detail(ctx, userID)
 	if err != nil {
 		if errors.Is(err, database.ErrRecordNotFound) {
@@ -580,16 +580,35 @@ func (u *User) Statistics(ctx context.Context, userID uint) (*UserStatisticsRes,
 		Avatar: user.Avatar,
 		Name:   user.Name,
 	}
+	curUserForumIDs, err := u.ForumIDs(ctx, curUserID)
+	if err != nil {
+		return nil, err
+	}
 
-	err = u.repoDisc.Count(ctx, &res.QACount, repo.QueryWithEqual("type", model.DiscussionTypeQA), repo.QueryWithEqual("user_id", user))
+	if len(curUserForumIDs) == 0 {
+		return res, nil
+	}
+
+	err = u.repoDisc.Count(ctx, &res.QACount,
+		repo.QueryWithEqual("type", model.DiscussionTypeQA),
+		repo.QueryWithEqual("user_id", userID),
+		repo.QueryWithEqual("forum_id", curUserForumIDs, repo.EqualOPEqAny),
+	)
 	if err != nil {
 		return nil, err
 	}
-	err = u.repoDisc.Count(ctx, &res.BlogCount, repo.QueryWithEqual("type", model.DiscussionTypeBlog), repo.QueryWithEqual("user_id", user))
+	err = u.repoDisc.Count(ctx, &res.BlogCount,
+		repo.QueryWithEqual("type", model.DiscussionTypeBlog),
+		repo.QueryWithEqual("user_id", userID),
+		repo.QueryWithEqual("forum_id", curUserForumIDs, repo.EqualOPEqAny),
+	)
 	if err != nil {
 		return nil, err
 	}
-	err = u.repoComment.Count(ctx, &res.AnswerCount, repo.QueryWithEqual("parent_id", 0), repo.QueryWithEqual("user_id", userID))
+	err = u.repoComment.CountByForumIDs(ctx, &res.AnswerCount, curUserForumIDs,
+		repo.QueryWithEqual("parent_id", 0),
+		repo.QueryWithEqual("user_id", userID),
+	)
 	if err != nil {
 		return nil, err
 	}
