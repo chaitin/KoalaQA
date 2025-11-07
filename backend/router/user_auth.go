@@ -100,6 +100,11 @@ type notifyRes struct {
 	Data any        `json:"data"`
 }
 
+type notifyInfo struct {
+	model.MessageNotifyInfo
+	New bool `json:"new"`
+}
+
 type notifyReq struct {
 	Type notifyType `json:"type"`
 	ID   uint       `json:"id"`
@@ -148,7 +153,13 @@ func (u *userAuth) Notify(ctx *context.Context) {
 				case <-ctx.Done():
 				case writeC <- notifyRes{
 					Type: notifyTypeInfo,
-					Data: item,
+					Data: notifyInfo{
+						MessageNotifyInfo: model.MessageNotifyInfo{
+							ID:                  item.ID,
+							MessageNotifyCommon: item.MessageNotifyCommon,
+						},
+						New: false,
+					},
 				}:
 				}
 
@@ -166,7 +177,10 @@ func (u *userAuth) Notify(ctx *context.Context) {
 			case <-ctx.Done():
 			case writeC <- notifyRes{
 				Type: notifyTypeInfo,
-				Data: notifyData,
+				Data: notifyInfo{
+					MessageNotifyInfo: notifyData,
+					New:               true,
+				},
 			}:
 			}
 
