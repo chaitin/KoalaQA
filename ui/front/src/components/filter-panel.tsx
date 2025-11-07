@@ -166,8 +166,6 @@ export default function FilterPanel() {
     updateUrlParams(urlTopics, newType)
   }
 
-  const [selectedTags, setSelectedTags] = useState<number[]>([])
-
   return (
     <Box
       sx={{
@@ -177,11 +175,27 @@ export default function FilterPanel() {
         pt: 3,
         pb: 3,
         px: 2,
-        height: 'calc(100vh - 136px)',
+        height: {
+          xs: 'auto', // 移动端使用自动高度
+          md: 'calc(100vh - 110px)', // 平板使用较小的偏移
+          lg: 'calc(100vh - 106px)', // 桌面端使用原始值
+        },
+        // maxHeight: {
+        //   xs: 'none',
+        //   md: 'calc(100vh - 110px)',
+        //   lg: 'calc(100vh - 116px)',
+        // },
         overflowY: 'auto',
         scrollbarGutter: 'stable',
-        position: 'sticky',
-        top: 100,
+        position: {
+          xs: 'relative', // 移动端使用相对定位
+          md: 'sticky', // 平板和桌面端使用粘性定位
+        },
+        top: {
+          xs: 'auto',
+          md: 88,
+          lg: 88,
+        },
         '&::-webkit-scrollbar': {
           width: '6px',
         },
@@ -255,12 +269,12 @@ export default function FilterPanel() {
             <FormControl key={group.id} fullWidth sx={{ mb: 1.5 }}>
               <InputLabel
                 sx={{
-                  fontSize: '0.875rem',
+                  fontSize: '12px',
                   fontWeight: 600,
                   color: '#111827',
                   lineHeight: '1.4375em',
                   '&.Mui-focused': {
-                    color: '#3b82f6',
+                    color: 'primary.main',
                   },
                 }}
               >
@@ -357,7 +371,7 @@ export default function FilterPanel() {
                         },
                         '&.Mui-selected': {
                           bgcolor: '#eff6ff',
-                          color: '#3b82f6',
+                          color: 'primary.main',
                           fontWeight: 600,
                           '&:hover': {
                             bgcolor: '#dbeafe',

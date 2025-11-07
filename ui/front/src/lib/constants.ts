@@ -40,7 +40,6 @@ export const ROUTES = {
 
 // 本地存储键
 export const STORAGE_KEYS = {
-  AUTH_TOKEN: 'auth_token',
   USER_INFO: 'userInfo',
   THEME: 'theme',
   LANGUAGE: 'language',
