@@ -32,7 +32,7 @@ func (t *Trend) List(ctx context.Context, curUserID uint, req TrendListReq) (*mo
 		repo.QueryWithEqual("user_id", req.UserID),
 		repo.QueryWithPagination(req.Pagination),
 		repo.QueryWithEqual("forum_id", curUserForumIDs, repo.EqualOPEqAny),
-		repo.QueryWithOrderBy("created_at DESC"),
+		repo.QueryWithOrderBy("created_at DESC, id DESC"),
 	)
 	if err != nil {
 		return nil, err
