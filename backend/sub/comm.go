@@ -85,24 +85,6 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 		return nil
 	}
 
-	forum, err := d.forum.GetByID(ctx, disc.ForumID)
-	if err != nil {
-		logger.WithErr(err).Warn("get forum failed")
-		return nil
-	}
-
-	// 回答问题更新 trend
-	if comment.ParentID == 0 && !comment.Bot {
-		err = d.trend.Create(ctx, &model.Trend{
-			UserID:        comment.UserID,
-			Type:          model.TrendTypeAnswer,
-			DiscussHeader: disc.Header(),
-		})
-		if err != nil {
-			logger.WithErr(err).Warn("create trend failed")
-		}
-	}
-
 	go func() {
 		if disc.Type != model.DiscussionTypeQA || comment.ParentID == 0 {
 			d.disc.IncrementComment(disc.UUID, !data.NotUpdateDisc)
@@ -112,6 +94,12 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 	question, prompt, err := d.llm.GenerateChatPrompt(ctx, data.DiscID, data.CommID)
 	if err != nil {
 		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
+		return nil
+	}
+
+	forum, err := d.forum.GetByID(ctx, disc.ForumID)
+	if err != nil {
+		logger.WithErr(err).Warn("get forum failed")
 		return nil
 	}
 

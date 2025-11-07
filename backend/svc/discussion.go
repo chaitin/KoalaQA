@@ -159,6 +159,18 @@ func (d *Discussion) Create(ctx context.Context, req DiscussionCreateReq) (strin
 	if err != nil {
 		return "", err
 	}
+
+	if disc.Type == model.DiscussionTypeQA || disc.Type == model.DiscussionTypeBlog {
+		err = d.in.TrendSvc.Create(ctx, &model.Trend{
+			UserID:        disc.UserID,
+			Type:          model.TrendTypeCreateDiscuss,
+			DiscussHeader: disc.Header(),
+		})
+		if err != nil {
+			d.logger.WithContext(ctx).WithErr(err).With("disc_id", disc).Warn("create user trend failed")
+		}
+	}
+
 	d.in.Pub.Publish(ctx, topic.TopicDiscChange, topic.MsgDiscChange{
 		OP:       topic.OPInsert,
 		DiscID:   disc.ID,
@@ -595,6 +607,17 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 	err = d.in.CommRepo.Create(ctx, &comment)
 	if err != nil {
 		return 0, err
+	}
+
+	if parentID == 0 && !req.Bot {
+		err = d.in.TrendSvc.Create(ctx, &model.Trend{
+			UserID:        uid,
+			Type:          model.TrendTypeAnswer,
+			DiscussHeader: disc.Header(),
+		})
+		if err != nil {
+			d.logger.WithContext(ctx).WithErr(err).With("comment_id", comment.ID).Warn("create user trend failed")
+		}
 	}
 
 	if err = d.in.DiscRepo.Update(ctx, map[string]any{
