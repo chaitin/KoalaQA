@@ -81,17 +81,9 @@ const AuthProvider = ({
       return;
     }
 
-    // 检查是否有有效的 token，没有有效 token 则不请求
+    // 检查是否有有效的 token，只检查 cookie
     const hasValidToken = safeClientExecute(() => {
-      const localToken = localStorage.getItem('auth_token');
-      const cookieToken = document.cookie.includes('auth_token');
-      
-      // 如果 token 存在但为空字符串、null 或 "null"，视为无效
-      if (localToken === '' || localToken === '""' || localToken === 'null' || localToken === null) {
-        return false;
-      }
-      
-      return (localToken && localToken !== '""') || cookieToken;
+      return document.cookie.includes('auth_token');
     }) || false;
 
     if (!hasValidToken) {

@@ -30,17 +30,27 @@ async function fetchForumData(route_name: string, searchParams: any) {
     }
 
     // 获取讨论和分组数据
-    const { search, sort, tps, page = '1', type } = searchParams
+    const { search, sort, tps, page = '1', type, only_mine, resolved } = searchParams
     const topics = tps ? tps.split(',').map(Number) : []
     
-    const discussionParams = {
+    const discussionParams: any = {
       page: parseInt(page, 10),
       size: 10,
-      filter: sort as 'hot' | 'new' | 'mine' | undefined,
       keyword: search,
       type: type as 'qa' | 'feedback' | 'blog' | undefined,
       forum_id: forumId,
       group_ids: topics
+    }
+
+    // 设置 filter，默认使用 'publish'（最新发布）
+    discussionParams.filter = (sort || 'publish') as 'hot' | 'new' | 'publish'
+
+    // 添加筛选参数
+    if (only_mine === 'true') {
+      discussionParams.only_mine = true
+    }
+    if (resolved !== undefined && resolved !== null) {
+      discussionParams.resolved = resolved === 'true'
     }
 
     const groupParams = {
@@ -77,7 +87,7 @@ async function fetchForumData(route_name: string, searchParams: any) {
 
 const Page = async (props: {
   params: Promise<{ route_name: string }>
-  searchParams: Promise<{ search?: string; sort?: string; tps?: string; page?: string; type?: string }>
+  searchParams: Promise<{ search?: string; sort?: string; tps?: string; page?: string; type?: string; only_mine?: string; resolved?: string }>
 }) => {
   const { route_name } = await props.params
   const searchParams = await props.searchParams

@@ -20,7 +20,7 @@ import {
   Tab,
 } from '@mui/material'
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera'
-import { useContext, useEffect, useState } from 'react'
+import { useContext, useEffect, useMemo, useState } from 'react'
 import ChangePasswordModal from './ChangePasswordModal'
 import BindEmailModal from './BindEmailModal'
 import UserAvatar from '@/components/UserAvatar'
@@ -28,6 +28,10 @@ import { Message } from '@/components'
 import { useSearchParams, usePathname } from 'next/navigation'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import NotificationCenter from './NotificationCenter'
+import UserTrendList from './UserTrendList'
+import ProfileHeroCard from './ProfileHeroCard'
+import { SvcUserStatisticsRes } from '@/api/types'
+import { getUserUserId } from '@/api'
 
 const roleConfig = {
   [ModelUserRole.UserRoleUnknown]: {
@@ -97,6 +101,15 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [changePasswordModalOpen, setChangePasswordModalOpen] = useState(false)
   const [bindEmailModalOpen, setBindEmailModalOpen] = useState(false)
+  const [statistics, setStatistics] = useState<SvcUserStatisticsRes | null>(null)
+  const metrics = useMemo(
+    () => [
+      { label: '问答', value: statistics?.qa_count ?? 0 },
+      { label: '文章', value: statistics?.blog_count ?? 0 },
+      { label: '回答', value: statistics?.answer_count ?? 0 },
+    ],
+    [statistics],
+  )
 
   useEffect(() => {
     if (initialUser) {
@@ -104,6 +117,28 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
       setEditName(initialUser.username || '')
     }
   }, [initialUser, setUser])
+
+  useEffect(() => {
+    const userId = user?.uid || initialUser?.uid
+    if (!userId) return
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        const response = await getUserUserId({ userId })
+        const stats = (response as { data?: SvcUserStatisticsRes | null })?.data ?? null
+        if (!cancelled) {
+          setStatistics(stats)
+        }
+      } catch (error) {
+        console.error('获取用户统计信息失败', error)
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [user?.uid, initialUser?.uid])
 
   // 监听 URL 参数变化，同步 tab 值
   useEffect(() => {
@@ -185,34 +220,25 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
   return (
     <Container maxWidth='lg'>
       {/* 头部背景区域 */}
-      <Card
-        sx={{
-          backgroundImage: "url('/auth.png')",
-          backgroundSize: 'cover',
-          color: 'white',
-          p: 4,
-          mb: 3,
-          borderRadius: 2,
-          position: 'relative',
-          overflow: 'hidden',
-          height: 170,
-        }}
-      >
-        <Stack direction='row' spacing={3} alignItems='center' sx={{ position: 'relative', zIndex: 1 }}>
+      <ProfileHeroCard
+        avatar={
           <Box sx={{ position: 'relative' }}>
             <Box
               sx={{
                 borderRadius: '50%',
-                width: 100,
-                height: 100,
+                width: 96,
+                height: 96,
                 background: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
               <UserAvatar
                 user={user}
                 sx={{
-                  width: 100,
-                  height: 100,
+                  width: 96,
+                  height: 96,
                 }}
               />
             </Box>
@@ -236,20 +262,26 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
               <input type='file' hidden accept='image/*' onChange={handleAvatarUpload} />
             </IconButton>
           </Box>
-        </Stack>
-      </Card>
+        }
+        title={user?.username || initialUser?.username || '用户'}
+        subtitle='管理您的个人资料和账户安全'
+        metrics={metrics}
+      />
 
       {/* 标签页 */}
       <Card sx={{ borderRadius: 2, boxShadow: 'none' }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs value={tabValue} onChange={handleTabChange} aria-label='个人中心标签页'>
+            <Tab label='动态' />
             <Tab label='基本信息' />
             <Tab label='通知中心' />
           </Tabs>
         </Box>
         <TabPanel value={tabValue} index={0}>
+          <UserTrendList userId={user?.uid || initialUser?.uid || 0} ownerName={user?.username || initialUser?.username} />
+        </TabPanel>
+        <TabPanel value={tabValue} index={1}>
           <Stack spacing={3}>
-            {/* 昵称 */}
             <Box>
               <Stack direction='row' spacing={2} alignItems='center'>
                 <Typography sx={{ width: 100, color: '#666' }}>昵称</Typography>
@@ -280,7 +312,6 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
               <Divider sx={{ mt: 2 }} />
             </Box>
 
-            {/* 邮箱 */}
             <Box>
               <Stack direction='row' spacing={2} alignItems='center'>
                 <Typography sx={{ width: 100, color: '#666' }}>邮箱</Typography>
@@ -306,7 +337,6 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
               <Divider sx={{ mt: 2 }} />
             </Box>
 
-            {/* 用户角色 */}
             <Box>
               <Stack direction='row' spacing={2} alignItems='center'>
                 <Typography sx={{ width: 100, color: '#666' }}>用户角色</Typography>
@@ -314,37 +344,36 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
                   <Typography>{roleConfig[user?.role || ModelUserRole.UserRoleUnknown].name}</Typography>
                 </Stack>
               </Stack>
+              <Divider sx={{ mt: 2 }} />
+            </Box>
+
+            <Box>
+              <Stack direction='row' spacing={2} alignItems='center'>
+                <Typography sx={{ width: 100, color: '#666' }}>账号密码</Typography>
+                <Typography sx={{ flex: 1, color: '#999' }}>••••••••</Typography>
+                {user?.builtin ? (
+                  <Button
+                    size='small'
+                    disabled
+                    sx={{
+                      minWidth: 80,
+                      color: '#999',
+                    }}
+                    title='内置用户不允许修改密码'
+                  >
+                    修改
+                  </Button>
+                ) : (
+                  <Button onClick={handleChangePasswordClick} size='small' sx={{ minWidth: 80 }}>
+                    修改
+                  </Button>
+                )}
+              </Stack>
             </Box>
           </Stack>
         </TabPanel>
-        <TabPanel value={tabValue} index={1}>
+        <TabPanel value={tabValue} index={2}>
           <NotificationCenter />
-        </TabPanel>
-      </Card>
-      <Card sx={{ borderRadius: 2, mt: 3, boxShadow: 'none' }}>
-        <TabPanel value={tabValue} index={0}>
-          {/* 修改密码 */}
-          <Stack direction='row' spacing={2} alignItems='center'>
-            <Typography sx={{ width: 100, color: '#666' }}>账号密码</Typography>
-            <Typography sx={{ flex: 1, color: '#999' }}>••••••••</Typography>
-            {user?.builtin ? (
-              <Button
-                size='small'
-                disabled
-                sx={{
-                  minWidth: 80,
-                  color: '#999',
-                }}
-                title='内置用户不允许修改密码'
-              >
-                修改
-              </Button>
-            ) : (
-              <Button onClick={handleChangePasswordClick} size='small' sx={{ minWidth: 80 }}>
-                修改
-              </Button>
-            )}
-          </Stack>
         </TabPanel>
       </Card>
 

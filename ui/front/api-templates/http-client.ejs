@@ -1,7 +1,22 @@
 <%
 const { apiConfig, generateResponses, config } = it;
 %>
+/* eslint-disable */
+/* tslint:disable */
+// @ts-nocheck
+/*
+ * ---------------------------------------------------------------
+ * ## THIS FILE WAS GENERATED VIA SWAGGER-TYPESCRIPT-API        ##
+ * ##                                                           ##
+ * ## AUTHOR: acacode                                           ##
+ * ## SOURCE: https://github.com/acacode/swagger-typescript-api ##
+ * ---------------------------------------------------------------
+ */
+
 import alert from "@/components/alert";
+import { clearCache, generateCacheKey } from "@/lib/api-cache";
+import { API_CONSTANTS } from "@/lib/constants";
+import { clearAllAuthCookies } from "@/utils/cookie";
 import type {
   AxiosInstance,
   AxiosRequestConfig,
@@ -9,17 +24,7 @@ import type {
   ResponseType,
 } from "axios";
 import axios from "axios";
-import { 
-  generateCacheKey, 
-  getFromCache, 
-  setCache, 
-  clearCache,
-  dedupeRequest,
-  retryRequest 
-} from "@/lib/api-cache";
-import { API_CONSTANTS } from "@/lib/constants";
-import { clearAllAuthCookies } from "@/utils/cookie";
-import { getPublicAccessStatus, clearPublicAccessCache } from "@/utils/publicAccess";
+import qs from "qs";
 
 export type QueryParamsType = Record<string | number, any>;
 
@@ -118,13 +123,10 @@ export const clearCsrfTokenCache = () => {
 };
 
 // 导出公共访问状态获取函数，供其他组件使用
-export const checkPublicAccess = getPublicAccessStatus;
 
 // 清除所有认证信息的函数
-export const clearAuthData = () => {
+export const clearAuthData = async (callLogoutAPI: boolean = true) => {
   if (typeof window !== "undefined") {
-    console.log("Clearing all authentication data...");
-    
     // 清除本地存储的认证信息
     localStorage.removeItem("auth_token");
     localStorage.removeItem("user");
@@ -135,9 +137,31 @@ export const clearAuthData = () => {
 
     // 清除CSRF token缓存
     clearCsrfTokenCache();
-    clearPublicAccessCache();
-    
-    console.log("Authentication data cleared successfully");
+
+    // 根据参数决定是否调用服务端登出API
+    if (callLogoutAPI) {
+      try {
+        await fetch('/api/user/logout', {
+          method: 'POST',
+          credentials: 'include', // 确保发送 cookie
+        });
+      } catch (error) {
+        console.warn("Failed to clear server-side cookies:", error);
+        // 即使服务端清理失败，客户端清理仍然有效
+      }
+    }
+
+    // 清除所有待处理的用户相关请求
+    if (typeof window !== 'undefined' && window.httpClientInstance) {
+      window.httpClientInstance.clearPendingRequestsByPath('/user');
+    }
+
+    // 强制刷新页面状态，确保所有组件重新初始化
+    // 使用 setTimeout 避免在清理过程中立即刷新
+    setTimeout(() => {
+      // 触发自定义事件，通知所有组件认证状态已清除
+      window.dispatchEvent(new CustomEvent('auth:cleared'));
+    }, 100);
   }
 };
 
@@ -149,6 +173,15 @@ export class HttpClient<SecurityDataType = unknown> {
   private format?: ResponseType;
   private pendingRequests = new Map<string, Promise<any>>();
 
+  // 将服务端错误码/文案翻译为用户可读提示
+  private translateErrorMessage(message?: any): string {
+    const raw = typeof message === 'string' ? message : (message?.toString?.() || '');
+    if (raw && /rate\s*limit|ratelimit/i.test(raw)) {
+      return "操作过于频繁，请稍后再试";
+    }
+    return raw || "网络异常";
+  }
+
   constructor({
     securityWorker,
     secure,
@@ -159,6 +192,15 @@ export class HttpClient<SecurityDataType = unknown> {
       withCredentials: true, // 确保客户端请求自动发送cookie
       ...axiosConfig,
       baseURL: axiosConfig.baseURL || "/api",
+      paramsSerializer: {
+        serialize: (params) => {
+          return qs.stringify(params, { 
+            arrayFormat: 'repeat', // 使用 'repeat' 格式，如 group_ids=1&group_ids=2
+            skipNulls: true,
+            encode: false
+          });
+        }
+      }
     });
     this.secure = secure;
     this.format = format;
@@ -174,13 +216,13 @@ export class HttpClient<SecurityDataType = unknown> {
           }
 
           if (alert.error && shouldShowError) {
-            alert.error(res.message || "网络异常");
+            alert.error(this.translateErrorMessage(res.err));
           }
           return Promise.reject(res);
         }
 
         if (alert.error && shouldShowError) {
-          alert.error(response.statusText);
+          alert.error(this.translateErrorMessage(response.statusText));
         }
         return Promise.reject(response);
       },
@@ -194,36 +236,63 @@ export class HttpClient<SecurityDataType = unknown> {
         if (error.response?.status === 401) {
           // 只在客户端环境下进行处理
           if (typeof window !== "undefined") {
-            console.log("401 Unauthorized error detected, clearing auth data:", error.response);
+            console.log(
+              "401 Unauthorized error detected, clearing auth data:",
+              error.response.data.err
+            );
+
+            // 异步清除所有认证信息，包括cookie中的auth_token
+            clearAuthData().then(() => {
+              const currentPath = window.location.pathname;
+              const isAuthPage =
+                currentPath.startsWith("/login") ||
+                currentPath.startsWith("/register");
+
+              // 如果不在认证页面，直接重定向到登录页
+              // middleware已经处理了public_access的检查，这里不需要重复检查
+              if (!isAuthPage) {
+                const fullPath =
+                  window.location.pathname + window.location.search;
+                const loginUrl = `/login?redirect=${encodeURIComponent(fullPath)}`;
+                window.location.href = loginUrl;
+              }
+            }).catch((clearError) => {
+              console.error("Failed to clear auth data on 401:", clearError);
+              // 即使清理失败，也要重定向到登录页
+              const currentPath = window.location.pathname;
+              const isAuthPage =
+                currentPath.startsWith("/login") ||
+                currentPath.startsWith("/register");
+
+              if (!isAuthPage) {
+                const fullPath =
+                  window.location.pathname + window.location.search;
+                const loginUrl = `/login?redirect=${encodeURIComponent(fullPath)}`;
+                window.location.href = loginUrl;
+              }
+            });
             
-            // 立即清除所有认证信息，包括cookie中的auth_token
-            clearAuthData();
-            
-            const currentPath = window.location.pathname;
-            const isAuthPage =
-              currentPath.startsWith("/login") ||
-              currentPath.startsWith("/register");
-              
-            // 如果不在认证页面，直接重定向到登录页
-            // middleware已经处理了public_access的检查，这里不需要重复检查
-            if (!isAuthPage) {
-              const fullPath =
-                window.location.pathname + window.location.search;
-              const loginUrl = `/login?redirect=${encodeURIComponent(fullPath)}`;
-              window.location.href = loginUrl;
-            }
-            return Promise.reject(error.response);
+            return Promise.reject(error.response.data.err);
           }
         }
 
+        // 处理502 Bad Gateway错误 - 网关或代理服务器错误
+        if (error.response?.status === 502) {
+          const requestUrl = error.config?.url || "";
+          if (alert.error) {
+            alert.error("服务暂时不可用，请稍后再试");
+          }
+          return Promise.reject(new Error("502 Bad Gateway: 服务暂时不可用"));
+        }
+        
         // 检查请求路径，如果是 api/user 则不展示报错信息
         const requestUrl = error.config?.url || "";
         const shouldShowError = requestUrl !== "/user";
-
         if (alert.error && shouldShowError) {
-          alert.error(error.message || "网络异常");
+          const msg = error?.response?.data?.err ?? error?.message;
+          alert.error(this.translateErrorMessage(msg));
         }
-        return Promise.reject(error.response);
+        return Promise.reject(error.response?.data?.err ?? error);
       },
     );
   }
@@ -243,7 +312,26 @@ export class HttpClient<SecurityDataType = unknown> {
 
   // 清除所有待处理的请求
   public clearPendingRequests = () => {
+    console.log(`[HttpClient] Clearing ${this.pendingRequests.size} pending requests`);
     this.pendingRequests.clear();
+  };
+
+  // 清除特定类型的待处理请求
+  public clearPendingRequestsByPath = (pathPattern: string) => {
+    const keysToDelete: string[] = [];
+    for (const [key] of this.pendingRequests) {
+      if (key.includes(pathPattern)) {
+        keysToDelete.push(key);
+      }
+    }
+    
+    keysToDelete.forEach(key => {
+      this.pendingRequests.delete(key);
+    });
+    
+    if (keysToDelete.length > 0) {
+      console.log(`[HttpClient] Cleared ${keysToDelete.length} pending requests for path: ${pathPattern}`);
+    }
   };
 
   protected mergeRequestParams(
@@ -307,10 +395,20 @@ export class HttpClient<SecurityDataType = unknown> {
     const cacheKey = generateCacheKey(path, { query, body, ...params });
     const method = params.method?.toUpperCase() || "GET";
     const requestKey = `${method}:${cacheKey}`;
-    
+
     // 检查是否有相同的请求正在进行中（请求去重）
     if (this.pendingRequests.has(requestKey)) {
+      console.log(`[HttpClient] Request already pending: ${requestKey}`);
       return this.pendingRequests.get(requestKey);
+    }
+
+    // 对于 /api/user 请求，添加额外的去重逻辑
+    if (path === '/user' && method === 'GET') {
+      const userRequestKey = 'GET:/user';
+      if (this.pendingRequests.has(userRequestKey)) {
+        console.log('[HttpClient] User request already pending, reusing result');
+        return this.pendingRequests.get(userRequestKey);
+      }
     }
 
     const secureParams =
@@ -339,39 +437,12 @@ export class HttpClient<SecurityDataType = unknown> {
       body = JSON.stringify(body);
     }
 
-    // 获取Authorization token
-    const Authorization = await new Promise(async (resolve) => {
-      if (typeof window === "undefined") {
-        // SSR环境：从cookies中获取token
-        try {
-          const { cookies } = await import("next/headers");
-          const cookieStore = await cookies();
-          const token = cookieStore.get("auth_token")?.value || null;
-          resolve(token);
-        } catch (error) {
-          console.warn("Failed to get cookies in SSR:", error);
-          resolve(null);
-        }
-      } else {
-        // 客户端环境：从localStorage获取token
-        let token = "";
-        try {
-          token = JSON.parse(localStorage.getItem("auth_token") || '""');
-        } catch (e) {
-          // 如果解析失败，尝试直接获取字符串值
-          token = localStorage.getItem("auth_token") || "";
-        }
-        resolve(token);
-      }
-    });
-
     // 准备headers
     const headers: Record<string, string> = {
       ...(requestParams.headers || {}),
       ...(type && type !== ContentType.FormData
         ? { "Content-Type": type }
         : {}),
-      ...(Authorization ? { Authorization: `Bearer ${Authorization}` } : {}),
     };
 
     // 对于非GET请求，添加CSRF token
@@ -407,40 +478,31 @@ export class HttpClient<SecurityDataType = unknown> {
           requestConfig.headers.Cookie = allCookies;
         }
 
-        if (process.env.NODE_ENV === "development") {
-          console.log(`[SSR] API Request to ${path}`);
-          console.log(`[SSR] Cookies available:`, !!allCookies);
-          console.log(`[SSR] Authorization token:`, !!Authorization);
-          if (allCookies) {
-            console.log(
-              `[SSR] Cookie header:`,
-              allCookies.substring(0, 100) + "...",
-            );
-          }
-        }
+        // if (process.env.NODE_ENV === "development") {
+        //   console.log(`[SSR] API Request to ${path}`);
+        //   console.log(`[SSR] Cookies available:`, !!allCookies);
+        //   if (allCookies) {
+        //     console.log(
+        //       `[SSR] Cookie header:`,
+        //       allCookies.substring(0, 100) + "...",
+        //     );
+        //   }
+        // }
       } catch (error) {
         // 在某些情况下cookies可能不可用，忽略错误
         console.warn("Failed to get cookies in SSR:", error);
       }
     }
 
-    // 创建请求 Promise 并添加到待处理请求中
-    const requestPromise = retryRequest(
-      () => this.instance.request(requestConfig),
-      {
-        maxRetries: API_CONSTANTS.RETRY_ATTEMPTS,
-        retryDelay: API_CONSTANTS.RETRY_DELAY,
-        shouldRetry: (error) => {
-          const status = error?.response?.status;
-          return !status || status >= 500;
-        }
-      }
-    ).then(result => {
-      return result;
-    }).finally(() => {
-      // 请求完成后从待处理列表中移除
-      this.pendingRequests.delete(requestKey);
-    });
+    // 创建请求 Promise 并添加到待处理请求中（移除重试机制）
+    const requestPromise = this.instance.request(requestConfig)
+      .then((result) => {
+        return result;
+      })
+      .finally(() => {
+        // 请求完成后从待处理列表中移除
+        this.pendingRequests.delete(requestKey);
+      });
 
     // 将请求添加到待处理列表中
     this.pendingRequests.set(requestKey, requestPromise);
@@ -449,7 +511,15 @@ export class HttpClient<SecurityDataType = unknown> {
   };
 }
 
-export default new HttpClient({
+// 创建全局 httpClient 实例
+const httpClientInstance = new HttpClient({
   format: "json",
   baseURL: (process.env.TARGET || "") + "/api",
-}).request;
+});
+
+// 在客户端环境中将实例挂载到 window 对象上，方便全局访问
+if (typeof window !== "undefined") {
+  (window as any).httpClientInstance = httpClientInstance;
+}
+
+export default httpClientInstance.request;

@@ -77,21 +77,6 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 	logger := d.logger.WithContext(ctx).With("disc_id", data.DiscID)
 	logger.Info("handle insert discussion comment")
 
-	disc, err := d.disc.GetByID(ctx, data.DiscID)
-	if err != nil {
-		logger.WithErr(err).Warn("get disc failed")
-		return nil
-	}
-
-	err = d.trend.Create(ctx, &model.Trend{
-		UserID:        disc.UserID,
-		Type:          model.TrendTypeCreateDiscuss,
-		DiscussHeader: disc.Header(),
-	})
-	if err != nil {
-		logger.WithErr(err).Warn("create trend failed")
-	}
-
 	bot, err := d.bot.Get(ctx)
 	if err != nil {
 		logger.WithErr(err).Error("get bot failed")

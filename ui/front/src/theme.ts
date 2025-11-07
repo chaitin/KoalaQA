@@ -54,7 +54,7 @@ const theme = createTheme(
         paper3: '#F8F9FA',
         footer: '#14141B',
       },
-      divider: '#D9DEE2',
+      divider: 'rgba(217, 222, 226, 1)',
       action: {
         active: 'rgba(33, 34, 45, 0.54)',
         hover: 'rgba(33, 34, 45, 0.04)',

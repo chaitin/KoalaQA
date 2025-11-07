@@ -35,6 +35,14 @@ func (c *Comment) List(ctx context.Context, res any, queryFuncs ...QueryOptFunc)
 		Find(res).Error
 }
 
+func (c *Comment) CountByForumIDs(ctx context.Context, res *int64, forumIDs model.Int64Array, queryFuncs ...QueryOptFunc) error {
+	o := getQueryOpt(queryFuncs...)
+	return c.model(ctx).
+		Where("discussion_id IN (SELECT id FROM discussions WHERE forum_id = ANY(?))", forumIDs).
+		Scopes(o.Scopes()...).
+		Count(res).Error
+}
+
 func init() {
 	register(newComment)
 }

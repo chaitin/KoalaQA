@@ -31,14 +31,15 @@ import {
   Paper,
   Stack,
   Typography,
-  Avatar,
 } from '@mui/material'
+import CommonAvatar from '@/components/CommonAvatar'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import { useBoolean } from 'ahooks'
 import dayjs from '@/lib/dayjs'
 import { useParams, useRouter } from 'next/navigation'
 import { useContext, useRef, useState, useEffect, useMemo } from 'react'
 import { CheckCircleIcon } from '@/utils/mui-imports'
+import Link from 'next/link'
 
 // 添加CSS动画样式
 const animationStyles = `
@@ -143,7 +144,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   }
 
   const onCommentSubmit = async () => {
-    const content = editorRef.current?.getMarkdown() || ''
+    const content = editorRef.current?.getHTML() || ''
     await postDiscussionDiscIdComment(
       { discId: id },
       {
@@ -171,7 +172,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
     })
   }
   const getStatusColor = (status: string) => {
-    if (status === 'answered' || status === 'closed') return '#10b981'
+    if (status === 'answered' || status === 'closed') return 'rgba(25, 135, 84, 1)'
     if (status === 'in-progress') return '#3b82f6'
     if (status === 'planned') return '#f59e0b'
     return '#6b7280'
@@ -190,6 +191,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const isArticlePost = data.type === ModelDiscussionType.DiscussionTypeBlog
   const isFeedbackPost = data.type === ModelDiscussionType.DiscussionTypeFeedback
   const status = data.resolved ? 'closed' : 'open'
+  const profileHref = data.user_id ? `/profile/${data.user_id}` : undefined
 
   const isCategoryTag = (tag: string) => {
     return data.groups?.some((group) => group.name === tag) || false
@@ -277,20 +279,25 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
             {data.title}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
-            <Avatar
-              sx={{
-                bgcolor: '#000000',
-                width: 20,
-                height: 20,
-                fontSize: '0.65rem',
-                fontWeight: 600,
-              }}
-            >
-              {data.user_name?.[0] || 'U'}
-            </Avatar>
-            <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500, fontSize: '0.75rem' }}>
-              {data.user_name || '未知用户'}
-            </Typography>
+            {profileHref ? (
+              <Link href={profileHref} style={{ display: 'inline-flex' }}>
+                <CommonAvatar src={data.user_avatar} name={data.user_name} />
+              </Link>
+            ) : (
+              <CommonAvatar src={data.user_avatar} name={data.user_name} />
+            )}
+            {profileHref ? (
+              <Link
+                href={profileHref}
+                style={{ color: '#6b7280', fontWeight: 500, fontSize: '0.75rem', textDecoration: 'none' }}
+              >
+                {data.user_name || '未知用户'}
+              </Link>
+            ) : (
+              <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500, fontSize: '0.75rem' }}>
+                {data.user_name || '未知用户'}
+              </Typography>
+            )}
             {(data.user_id === user.uid ||
               [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
                 user.role || ModelUserRole.UserRoleUnknown,
@@ -318,35 +325,41 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             {status === 'closed' && !isArticlePost && (
               <Chip
-                icon={<CheckCircleOutlineIcon sx={{ fontSize: 10, color: '#10b981 !important' }} />}
-                label={getStatusLabel(status)}
+                icon={
+                  <CheckCircleOutlineIcon
+                    sx={{
+                      width: 15,
+                      height: 15,
+                      color: '#fff !important',
+                    }}
+                  />
+                }
+                label={getStatusLabel('answered')}
                 size="small"
                 sx={{
-                  bgcolor: `${getStatusColor(status)}15`,
-                  color: getStatusColor(status),
+                  bgcolor: getStatusColor('answered'),
+                  color: '#fff !important',
                   height: 22,
                   fontWeight: 600,
                   fontSize: '0.7rem',
-                  borderRadius: '3px',
-                  border: `1px solid ${getStatusColor(status)}30`,
+                  border: `1px solid ${getStatusColor('answered')}30`,
                 }}
               />
             )}
-            {status === 'open' && !isArticlePost && (
+            {/* {status === 'open' && !isArticlePost && (
               <Chip
                 label={getStatusLabel(status)}
                 size="small"
                 sx={{
-                  bgcolor: `${getStatusColor(status)}15`,
-                  color: getStatusColor(status),
+                  bgcolor: getStatusColor(status),
+                  color: '#fff !important',
                   height: 22,
                   fontWeight: 600,
                   fontSize: '0.7rem',
-                  borderRadius: '3px',
                   border: `1px solid ${getStatusColor(status)}30`,
                 }}
               />
-            )}
+            )} */}
             {data.groups?.map((item) => {
               const isCategory = true
               return (
@@ -355,13 +368,14 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                   label={item.name}
                   size="small"
                   sx={{
-                    bgcolor: isCategory ? '#eff6ff' : '#f9fafb',
-                    color: isCategory ? '#3b82f6' : '#6b7280',
+                    bgcolor: 'rgba(233, 236, 239, 1)',
+                    color: 'rgba(33, 34, 45, 1)',
                     height: 22,
                     fontSize: '0.7rem',
                     fontWeight: isCategory ? 600 : 500,
                     borderRadius: '3px',
-                    border: isCategory ? '1px solid #bfdbfe' : '1px solid #e5e7eb',
+                    cursor: 'default',
+                    pointerEvents: 'none',
                   }}
                 />
               )
@@ -374,13 +388,14 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                   label={tag}
                   size="small"
                   sx={{
-                    bgcolor: isCategory ? '#eff6ff' : '#f9fafb',
-                    color: isCategory ? '#3b82f6' : '#6b7280',
+                    bgcolor: 'rgba(233, 236, 239, 1)',
+                    color: 'rgba(33, 34, 45, 1)',
                     height: 22,
                     fontSize: '0.7rem',
                     fontWeight: isCategory ? 600 : 500,
                     borderRadius: '3px',
-                    border: isCategory ? '1px solid #bfdbfe' : '1px solid #e5e7eb',
+                    cursor: 'default',
+                    pointerEvents: 'none',
                   }}
                 />
               )
