@@ -35,8 +35,10 @@ func (r *Rank) UserContribute(ctx context.Context) ([]model.Rank, error) {
 		return nil, err
 	}
 
-	if len(res) > 0 && res[0].Score == 0 {
-		return make([]model.Rank, 0), nil
+	for i := range res {
+		if res[i].Score == 0 {
+			return res[:i], nil
+		}
 	}
 
 	return res, nil
