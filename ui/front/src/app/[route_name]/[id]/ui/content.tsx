@@ -202,45 +202,21 @@ const BaseDiscussCard = (props: {
             {data.user_id === 0 ? '未知用户' : data.user_name}
           </Typography>
           {data.bot && (
-            <Box
+            <Chip
+              label='AI'
               sx={{
-                width: 22,
-                height: 18,
-                backgroundColor: 'white',
-                position: 'relative',
-                borderRadius: '3px',
-                background: 'linear-gradient(90deg, #4FC3F7 0%, #9C27B0 100%)',
-                p: '1.5px',
+                width: 28,
+                height: 24,
+                background: 'rgba(0,99,151,0.06)',
+                borderRadius: '4px',
+                border: '1px solid rgba(0,99,151,0.1)',
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                '& .MuiChip-label': {
+                  px: 0.5,
+                },
               }}
-            >
-              <Stack
-                justifyContent='center'
-                alignItems='center'
-                sx={{
-                  borderRadius: '2px',
-                  background: '#fff',
-                  height: '100%',
-                  width: '100%',
-                }}
-              >
-                <Stack
-                  justifyContent='center'
-                  alignItems='center'
-                  sx={{
-                    fontSize: 11,
-                    fontWeight: 600,
-                    backgroundImage: 'linear-gradient(90deg, #4FC3F7 0%, #9C27B0 100%)',
-                    backgroundClip: 'text',
-                    WebkitBackgroundClip: 'text',
-                    color: 'transparent',
-                    lineHeight: 1,
-                    fontFamily: 'Mono',
-                  }}
-                >
-                  AI
-                </Stack>
-              </Stack>
-            </Box>
+            />
           )}
         </Stack>
         <Stack direction='row' gap={2} alignItems='center' sx={{ mt: { xs: '12px', sm: 0 } }}>
@@ -909,6 +885,24 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                     {answer.user_name || '未知用户'}
                   </Typography>
                 )}
+                {answer.bot && (
+                  <Chip
+                    label='AI'
+                    sx={{
+                      width: 28,
+                      height: 24,
+                      background: 'rgba(0,99,151,0.06)',
+                      color: 'primary.main',
+                      borderRadius: '4px',
+                      border: '1px solid rgba(0,99,151,0.1)',
+                      fontSize: '0.75rem',
+                      fontWeight: 500,
+                      '& .MuiChip-label': {
+                        px: 0.5,
+                      },
+                    }}
+                  />
+                )}
                 <Stack direction='row' alignItems='center'>
                   <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
                     发布于{' '}
@@ -1183,6 +1177,24 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                               >
                                 {reply.user_name || '未知用户'}
                               </Typography>
+                            )}
+                            {reply.bot && (
+                              <Chip
+                                label='AI'
+                                sx={{
+                                  width: 28,
+                                  height: 24,
+                                  color: 'primary.main',
+                                  background: 'rgba(0,99,151,0.06)',
+                                  borderRadius: '4px',
+                                  border: '1px solid rgba(0,99,151,0.1)',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 500,
+                                  '& .MuiChip-label': {
+                                    px: 0.5,
+                                  },
+                                }}
+                              />
                             )}
                             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5, mt: 0.5 }}>
                               {displayReplyCreatedAt && (
