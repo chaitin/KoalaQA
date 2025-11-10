@@ -4967,6 +4967,9 @@ const docTemplate = `{
                 "content": {
                     "type": "string"
                 },
+                "created_at": {
+                    "type": "integer"
+                },
                 "dislike": {
                     "type": "integer"
                 },
@@ -5205,6 +5208,9 @@ const docTemplate = `{
                 },
                 "content": {
                     "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
                 },
                 "dislike": {
                     "type": "integer"
