@@ -63,8 +63,7 @@ type DiscussionListItem struct {
 }
 
 type DiscussionReply struct {
-	ID            uint             `json:"id"`
-	UpdatedAt     Timestamp        `json:"updated_at"`
+	Base
 	UserID        uint             `json:"user_id"`
 	UserName      string           `json:"user_name"`
 	UserAvatar    string           `json:"user_avatar"`

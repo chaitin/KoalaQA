@@ -11,7 +11,7 @@ export default function RouteLayout({ children }: { children: React.ReactNode })
   const [showFilters, setShowFilters] = useState(!isMobile)
 
   return (
-    <Box sx={{ bgcolor: 'background.paper' }}>
+    <Box sx={{ bgcolor: '#ffffff', minHeight: 'calc(100vh - 64px)' }}>
       <Box
         sx={{
           display: 'flex',

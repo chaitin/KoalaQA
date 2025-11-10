@@ -326,9 +326,14 @@ a {
 
 /* Global scrollbar tweaks - make scrollbars slimmer and less obtrusive */
 html {
-  min-height: 101vh;
   scrollbar-width: thin; /* Firefox */
   scrollbar-color: rgba(0, 0, 0, 0.18) transparent; /* Firefox */
+}
+
+/* 全局字体设置 - 英文和数字使用 Glibory，中文使用苹果字体 */
+html,
+body {
+  font-family: 'Glibory', 'Gilroy', 'PingFang SC', 'Hiragino Sans GB', 'STHeiti', 'Microsoft YaHei', sans-serif;
 }
 
 /* WebKit (Chrome, Edge, Safari) */
