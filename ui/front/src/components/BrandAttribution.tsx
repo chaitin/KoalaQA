@@ -58,6 +58,7 @@ const BrandAttribution = ({ inSidebar = false, sidebarRef }: BrandAttributionPro
     <Stack
       direction={'row'}
       alignItems={'center'}
+      onClick={handleLogoClick}
       sx={{
         fontSize: '11px',
         lineHeight: '16px',

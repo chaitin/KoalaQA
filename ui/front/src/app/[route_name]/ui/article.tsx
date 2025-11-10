@@ -104,6 +104,7 @@ const Article = ({
   const [contributors, setContributors] = useState<SvcRankContributeItem[]>([])
   const [contributorsLoading, setContributorsLoading] = useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
+  const loadMoreTriggerRef = useRef<HTMLDivElement | null>(null)
 
   // 下拉筛选相关状态
   const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null)
@@ -274,6 +275,35 @@ const Article = ({
   useEffect(() => {
     setArticleData(data)
   }, [data])
+
+  useEffect(() => {
+    const target = loadMoreTriggerRef.current
+    if (!target) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries
+        if (
+          entry?.isIntersecting &&
+          page * 10 < (articleData.total || 0) &&
+          !loadingMore
+        ) {
+          fetchMoreList()
+        }
+      },
+      {
+        root: null,
+        rootMargin: '200px',
+        threshold: 0,
+      },
+    )
+
+    observer.observe(target)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [articleData.total, fetchMoreList, loadingMore, page])
 
   // 当URL参数变化时重置页码
   useEffect(() => {
@@ -480,7 +510,6 @@ const Article = ({
                 whiteSpace: 'nowrap',
                 height: '40px',
                 '&:hover': {
-                  background: '#111827',
                   boxShadow: '0 6px 16px rgba(0, 0, 0, 0.3)',
                 },
               }}
@@ -651,44 +680,15 @@ const Article = ({
           {/* 加载更多 */}
           <Box sx={{ width: '100%', textAlign: 'center', mt: 3 }}>
             {page * 10 < (articleData.total || 0) ? (
-              <Button
-                onClick={fetchMoreList}
-                disabled={loadingMore}
-                variant='outlined'
-                sx={{
-                  background: '#fff !important',
-                  borderColor: '#fff !important',
-                  boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
-                  fontWeight: 400,
-                  position: 'relative',
-                  overflow: 'hidden',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  '&:hover': {
-                    fontWeight: 500,
-                    border: '1px solid #206CFF !important',
-                    transform: 'translateY(-2px)',
-                    boxShadow: 'rgba(32, 108, 255, 0.15) 0px 8px 20px 0px',
-                  },
-                  '&:active': {
-                    transform: 'translateY(0) scale(0.98)',
-                  },
-                  '&:disabled': {
-                    opacity: 0.6,
-                    cursor: 'not-allowed',
-                    transform: 'none',
-                  },
-                }}
-                fullWidth
-              >
-                {loadingMore ? (
-                  <Stack direction='row' alignItems='center' gap={1}>
+              <>
+                {loadingMore && (
+                  <Stack direction='row' alignItems='center' justifyContent='center' gap={1} sx={{ py: 1.5 }}>
                     <CircularProgress size={16} sx={{ color: '#206CFF' }} />
                     <Typography>加载中...</Typography>
                   </Stack>
-                ) : (
-                  '查看更多'
                 )}
-              </Button>
+                <Box ref={loadMoreTriggerRef} sx={{ width: '100%', height: 1 }} />
+              </>
             ) : (
               <Divider>
                 <Typography variant='body2' sx={{ color: '#666' }}>
@@ -711,8 +711,8 @@ const Article = ({
             pr: 3,
             scrollbarGutter: 'stable',
             position: 'sticky',
-            top: 84,
-            maxHeight: 'calc(100vh - 96px)',
+            top: 88,
+            maxHeight: 'calc(100vh - 90px)',
             overflowY: 'auto',
           }}
         >
@@ -956,7 +956,7 @@ const Article = ({
                               fontStyle: 'normal',
                             }}
                           >
-                            {Math.round(contributor.score)}
+                            {Math.ceil(contributor.score)}
                           </Typography>
                         </Box>
                       )}

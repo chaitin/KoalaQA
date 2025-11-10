@@ -175,10 +175,15 @@ export default function FilterPanel() {
         pt: 3,
         pb: 3,
         px: 2,
+        width: {
+          xs: '100%', // 移动端使用全宽
+          md: '240px', // 平板和桌面端使用 240px
+          lg: '240px', // PC 端使用 240px
+        },
         height: {
           xs: 'auto', // 移动端使用自动高度
           md: 'calc(100vh - 110px)', // 平板使用较小的偏移
-          lg: 'calc(100vh - 106px)', // 桌面端使用原始值
+          lg: 'calc(100vh - 110px)', // 桌面端使用原始值
         },
         // maxHeight: {
         //   xs: 'none',
@@ -189,7 +194,7 @@ export default function FilterPanel() {
         scrollbarGutter: 'stable',
         position: {
           xs: 'relative', // 移动端使用相对定位
-          md: 'sticky', // 平板和桌面端使用粘性定位
+          md: 'fixed', // 平板和桌面端使用粘性定位
         },
         top: {
           xs: 'auto',
@@ -229,10 +234,10 @@ export default function FilterPanel() {
                     px: 1.5,
                     borderRadius: '4px',
                     mb: 0.5,
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     '&.Mui-selected': {
                       background: 'rgba(0,99,151,0.06)',
                       borderRadius: '8px',
+                      color: 'primary.main',
                       border: '1px solid rgba(0,99,151,0.1)',
                     },
                     '&:hover': { bgcolor: '#f3f4f6', color: '#000000' },
@@ -270,7 +275,6 @@ export default function FilterPanel() {
               <InputLabel
                 sx={{
                   fontSize: '12px',
-                  fontWeight: 600,
                   color: '#111827',
                   lineHeight: '1.4375em',
                   '&.Mui-focused': {

@@ -76,7 +76,6 @@ const getPostType = (type?: ModelDiscussionType): 'question' | 'feedback' | 'art
   return 'question'
 }
 
-
 const getTypeChipStyle = (type?: ModelDiscussionType) => {
   switch (type) {
     case ModelDiscussionType.DiscussionTypeQA:
@@ -157,11 +156,7 @@ const DiscussCard = ({
       <Box sx={{ py: '20px', px: 1 }}>
         <Stack direction='row' alignItems='center' spacing={1}>
           {profileHref ? (
-            <Link
-              href={profileHref}
-              onClick={(event) => event.stopPropagation()}
-              style={{ display: 'inline-flex' }}
-            >
+            <Link href={profileHref} onClick={(event) => event.stopPropagation()} style={{ display: 'inline-flex' }}>
               <CommonAvatar
                 src={it.user_avatar}
                 name={it.user_name}
@@ -235,7 +230,6 @@ const DiscussCard = ({
               flex: 1,
             }}
           >
-            {showType && getTypeLabel(it.type) && `【${getTypeLabel(it.type)}】`}
             {it.title}
           </Typography>
         </Box>
@@ -299,7 +293,6 @@ const DiscussCard = ({
                     color: 'rgba(33, 34, 45, 1)',
                     height: 22,
                     fontSize: '0.7rem',
-                    fontWeight: isCategory ? 600 : 500,
                     borderRadius: '3px',
                     cursor: 'default',
                     pointerEvents: 'none',
