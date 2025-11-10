@@ -6,7 +6,8 @@ import {
   ModelGroupItemInfo,
   SvcDiscussionCreateReq,
 } from '@/api'
-import { postDiscussion, putDiscussionDiscId } from '@/api/Discussion'
+import { postDiscussion, putDiscussionDiscId, getDiscussion } from '@/api/Discussion'
+import { ModelDiscussionListItem, ModelListRes } from '@/api/types'
 // import { Icon } from '@/components'
 import UserAvatar from '@/components/UserAvatar'
 import EditorWrap, { EditorWrapRef } from '@/components/editor/edit/Wrap'
@@ -15,19 +16,108 @@ import { useForum } from '@/contexts/ForumContext'
 import { useForumId } from '@/hooks/useForumId'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Autocomplete, Box, Chip, FormHelperText, Stack, styled, TextField } from '@mui/material'
+import {
+  Autocomplete,
+  Box,
+  Chip,
+  FormHelperText,
+  Stack,
+  styled,
+  TextField,
+  Typography,
+  CircularProgress,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+} from '@mui/material'
 import { useParams } from 'next/navigation'
 import React, { useCallback, useContext, useEffect, useRef, useState, useMemo } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import z from 'zod'
 import { CommonContext } from './commonProvider'
 import { useGroupData } from '@/contexts/GroupDataContext'
+import { QuestionAnswer as QuestionAnswerIcon, ThumbUp as ThumbUpIcon } from '@mui/icons-material'
 
 export const Tag = styled(Chip)({
   borderRadius: '3px',
   height: 22,
   backgroundColor: '#F2F3F5',
 })
+
+// 相似内容项组件（与问题详情页的相关内容UI保持一致）
+const SimilarContentItem = ({ data }: { data: ModelDiscussionListItem }) => {
+  const getTypeLabel = (type?: ModelDiscussionType) => {
+    switch (type) {
+      case ModelDiscussionType.DiscussionTypeFeedback:
+        return '反馈'
+      case ModelDiscussionType.DiscussionTypeQA:
+        return '问题'
+      case ModelDiscussionType.DiscussionTypeBlog:
+        return '文章'
+      default:
+        return ''
+    }
+  }
+
+  return (
+    <Box
+      sx={{
+        p: 1.5,
+        borderRadius: '6px',
+        bgcolor: '#f9fafb',
+        border: '1px solid #e5e7eb',
+        transition: 'all 0.2s',
+      }}
+    >
+      <Typography
+        variant='body2'
+        sx={{
+          fontWeight: 600,
+          color: '#111827',
+          fontSize: '0.8125rem',
+          mb: 1,
+          lineHeight: 1.4,
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+        }}
+      >
+        {data.title}
+      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography
+          variant='caption'
+          sx={{
+            color: '#9ca3af',
+            fontSize: '0.65rem',
+            fontWeight: 500,
+          }}
+        >
+          {getTypeLabel(data.type)}
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          {data.type === ModelDiscussionType.DiscussionTypeQA ? (
+            <>
+              <QuestionAnswerIcon sx={{ fontSize: 12, color: '#9ca3af' }} />
+              <Typography variant='caption' sx={{ color: '#9ca3af', fontWeight: 600, fontSize: '0.7rem' }}>
+                {data.comment || 0}
+              </Typography>
+            </>
+          ) : (
+            <>
+              <ThumbUpIcon sx={{ fontSize: 12, color: '#9ca3af' }} />
+              <Typography variant='caption' sx={{ color: '#9ca3af', fontWeight: 600, fontSize: '0.7rem' }}>
+                {data.like || 0}
+              </Typography>
+            </>
+          )}
+        </Box>
+      </Box>
+    </Box>
+  )
+}
 
 export const ImgLogo = styled('div')(({ theme: _theme }) => {
   return {
@@ -116,23 +206,33 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
     reset,
     handleSubmit,
     register,
-    watch: _watch,
+    watch,
     setValue,
   } = useForm({
     resolver: zodResolver(schema),
   })
+
+  // 监听表单字段变化
+  const title = watch('title')
+  const groupIds = watch('group_ids')
+  const content = watch('content')
   const [loading, setLoading] = useState(false)
   const [groupValidationError, setGroupValidationError] = useState<string>('')
   const { getFilteredGroups } = useGroupData()
 
+  // 相似内容相关状态
+  const [similarDiscussions, setSimilarDiscussions] = useState<ModelDiscussionListItem[]>([])
+  const [similarLoading, setSimilarLoading] = useState(false)
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
   // 根据当前类型从 forumInfo.groups 中筛选对应的分类
   const currentType = type as 'qa' | 'feedback' | 'blog'
-  
+
   // 使用 useMemo 缓存过滤后的分组数据
   const groups = useMemo(() => {
     return getFilteredGroups(undefined, forumInfo, currentType)
   }, [forumInfo, currentType, getFilteredGroups])
-  
+
   const router = useRouterWithRouteName()
   const routeName = useParams()?.route_name as string
   const forumId = useForumId()
@@ -154,7 +254,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
   }, [
     groups.origin.length,
     // 使用 map 生成稳定的字符串来比较
-    groups.origin.map(g => `${g.id}-${g.items?.[0]?.id || ''}`).join(','),
+    groups.origin.map((g) => `${g.id}-${g.items?.[0]?.id || ''}`).join(','),
   ])
 
   const onSubmit = handleSubmit(async (params) => {
@@ -185,14 +285,14 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
 
   // 使用 useRef 存储上一次的 open 状态，避免重复调用 reset
   const prevOpenRef = useRef(open)
-  
+
   useEffect(() => {
     // 只在 open 状态真正变化时才执行
     if (prevOpenRef.current === open) {
       return
     }
     prevOpenRef.current = open
-    
+
     if (!open) {
       // 关闭弹窗时清空所有表单数据和验证错误
       reset({
@@ -226,6 +326,157 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
 
   const editorRef = useRef<EditorWrapRef>(null)
 
+  // 查询相似内容的函数
+  const searchSimilarDiscussions = useCallback(
+    async (searchText: string, categoryIds?: number[]) => {
+      if (!searchText.trim() || !forumId) {
+        setSimilarDiscussions([])
+        return
+      }
+
+      setSimilarLoading(true)
+      try {
+        const params: any = {
+          forum_id: forumId,
+          keyword: searchText.trim(),
+          size: 5, // 只获取前5个结果
+          type: 'qa', // 只查询问答类型
+        }
+
+        // 如果提供了分类，添加到查询参数中
+        if (categoryIds && categoryIds.length > 0) {
+          params.group_ids = categoryIds
+        }
+
+        const result = await getDiscussion(params)
+        // 根据 API 实际返回结构，items 直接在 result 上（与 SearchResultModal 保持一致）
+        // @ts-ignore - API 返回结构可能与类型定义不完全一致
+        const items = result.items || result.data?.items || []
+        setSimilarDiscussions(items)
+      } catch (error) {
+        console.error('查询相似内容失败:', error)
+        setSimilarDiscussions([])
+      } finally {
+        setSimilarLoading(false)
+      }
+    },
+    [forumId],
+  )
+
+  // 监听标题变化，触发查询（仅当 type === 'qa' 且 status === 'create' 时）
+  useEffect(() => {
+    if (status === 'create' && type === 'qa' && open) {
+      // 清除之前的定时器
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
+
+      // 如果标题有内容，延迟500ms后查询（防抖），同时传入分类信息
+      if (title && title.trim()) {
+        searchTimeoutRef.current = setTimeout(() => {
+          searchSimilarDiscussions(title, groupIds)
+        }, 500)
+      } else {
+        setSimilarDiscussions([])
+      }
+
+      return () => {
+        if (searchTimeoutRef.current) {
+          clearTimeout(searchTimeoutRef.current)
+        }
+      }
+    }
+  }, [title, groupIds, status, type, open, searchSimilarDiscussions])
+
+  // 监听分类变化，当分类改变且标题已填写时，触发查询
+  useEffect(() => {
+    if (status === 'create' && type === 'qa' && open && title && title.trim() && groupIds && groupIds.length > 0) {
+      // 清除之前的定时器
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
+
+      // 延迟300ms后查询（防抖）
+      searchTimeoutRef.current = setTimeout(() => {
+        searchSimilarDiscussions(title, groupIds)
+      }, 300)
+
+      return () => {
+        if (searchTimeoutRef.current) {
+          clearTimeout(searchTimeoutRef.current)
+        }
+      }
+    }
+  }, [groupIds, title, status, type, open, searchSimilarDiscussions])
+
+  // 标题输入完成（失去焦点）时立即调用一次接口
+  const handleTitleBlur = useCallback(() => {
+    if (status === 'create' && type === 'qa' && open && title && title.trim()) {
+      // 清除防抖定时器
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
+      // 立即查询，传入分类信息
+      searchSimilarDiscussions(title, groupIds)
+    }
+  }, [title, groupIds, status, type, open, searchSimilarDiscussions])
+
+  // 编辑器内容变化状态
+  const [editorContent, setEditorContent] = useState('')
+
+  // 当标题、分类、内容都填写后，再次查询（更精准）
+  useEffect(() => {
+    if (status === 'create' && type === 'qa' && open) {
+      // 清除之前的定时器
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
+
+      // 如果标题、分类、内容都有内容，延迟800ms后查询（防抖）
+      const hasTitle = title && title.trim()
+      const hasGroups = groupIds && groupIds.length > 0
+      const hasContent = editorContent.trim() || content?.trim()
+
+      if (hasTitle && hasGroups && hasContent) {
+        // 组合标题和内容进行更精准的查询，同时传入分类信息
+        const combinedText = `${title} ${editorContent || content || ''}`
+        searchTimeoutRef.current = setTimeout(() => {
+          searchSimilarDiscussions(combinedText, groupIds)
+        }, 800)
+      }
+
+      return () => {
+        if (searchTimeoutRef.current) {
+          clearTimeout(searchTimeoutRef.current)
+        }
+      }
+    }
+  }, [title, groupIds, content, editorContent, status, type, open, searchSimilarDiscussions])
+
+  // 关闭弹窗时清空相似内容
+  useEffect(() => {
+    if (!open) {
+      setSimilarDiscussions([])
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
+    }
+  }, [open])
+
+  // 处理点击相似内容，在新标签页打开
+  const handleSimilarItemClick = useCallback(
+    (item: ModelDiscussionListItem) => {
+      if (item.uuid) {
+        const url = `/${routeName}/${item.uuid}`
+        window.open(url, '_blank')
+      }
+    },
+    [routeName],
+  )
+
+  // 判断是否显示相似内容栏
+  const showSimilarContent = status === 'create' && type === 'qa'
+
   return (
     <Modal
       title={`${
@@ -241,132 +492,226 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
         onSubmit()
       }}
       okText='发布'
-      width={800}
+      width={showSimilarContent ? 1200 : 800}
       okButtonProps={{
         loading,
         id: 'submit-discussion-id',
       }}
     >
-      <Stack gap={3}>
-        <TextField
-          {...register('title')}
-          required
-          variant='outlined'
-          label={type === 'feedback' ? '反馈标题' : type === 'blog' ? '文章标题' : '你遇到了什么问题？'}
-          fullWidth
-          error={Boolean(errors.title)}
-          helperText={errors.title?.message as string}
-          size='small'
-          autoComplete='off'
-        />
-        <Controller
-          name='group_ids'
-          control={control}
-          render={({ field }) => {
-            const list = typeof groups.origin !== 'undefined' ? groups.origin : []
+      <Box
+        sx={{
+          display: showSimilarContent ? 'flex' : 'block',
+          gap: showSimilarContent ? 3 : 0,
+          alignItems: showSimilarContent ? 'stretch' : 'flex-start',
+          position: 'relative',
+          minHeight: showSimilarContent ? '60vh' : 'auto',
+        }}
+      >
+        <Box sx={{ flex: showSimilarContent ? 1 : 'none', minWidth: 0, width: showSimilarContent ? 'auto' : '100%' }}>
+          <Stack gap={3}>
+            <TextField
+              {...register('title')}
+              required
+              variant='outlined'
+              label={type === 'feedback' ? '反馈标题' : type === 'blog' ? '文章标题' : '你遇到了什么问题？'}
+              fullWidth
+              error={Boolean(errors.title)}
+              helperText={errors.title?.message as string}
+              size='small'
+              autoComplete='off'
+              onBlur={showSimilarContent ? handleTitleBlur : undefined}
+            />
+            <Controller
+              name='group_ids'
+              control={control}
+              render={({ field }) => {
+                const list = typeof groups.origin !== 'undefined' ? groups.origin : []
 
-            const getId = (item: ModelGroupItemInfo) => item?.id as number
-            const getLabel = (item: any) => item?.name ?? item?.title ?? item?.label ?? ''
-            return (
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                {list.map((topic) => {
-                  const options = topic.items || []
-                  const valueForTopic = topic.items?.filter((i) => field.value?.includes(i.id!))
-                  return (
-                    <Box
-                      key={topic.id ?? topic.name}
-                      sx={{
-                        width: 'calc(50% - 8px)',
-                        boxSizing: 'border-box',
-                      }}
-                    >
-                      <Autocomplete
-                        options={options}
-                        value={valueForTopic?.[0] || null}
-                        isOptionEqualToValue={(option, value) => getId(option) === getId(value)}
-                        getOptionLabel={(option) => getLabel(option)}
-                        onChange={(_, newValue) => {
-                          const existing = Array.isArray(field.value) ? [...(field.value as number[])] : []
-                          const otherIds = existing.filter(
-                            (id) => !options.some((o: ModelGroupItemInfo) => getId(o) === id),
-                          )
-                          const newId = newValue ? getId(newValue) : null
-                          // 合并来自各个 Autocomplete 的选择，去重后回传
-                          const merged = newId ? Array.from(new Set([...otherIds, newId])) : otherIds
-                          field.onChange(merged)
-                          // 清除验证错误
-                          setGroupValidationError('')
-                        }}
-                        size='small'
-                        renderOption={(props, option) => {
-                          const { key, ...otherProps } = props
-                          return (
-                            <Box
-                              key={key}
-                              component='li'
-                              {...otherProps}
-                              sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 1,
+                const getId = (item: ModelGroupItemInfo) => item?.id as number
+                const getLabel = (item: any) => item?.name ?? item?.title ?? item?.label ?? ''
+                return (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                    {list.map((topic) => {
+                      const options = topic.items || []
+                      const valueForTopic = topic.items?.filter((i) => field.value?.includes(i.id!))
+                      return (
+                        <Box
+                          key={topic.id ?? topic.name}
+                          sx={{
+                            width: 'calc(50% - 8px)',
+                            boxSizing: 'border-box',
+                          }}
+                        >
+                          <FormControl
+                            fullWidth
+                            size='small'
+                            required
+                            error={Boolean(errors.group_ids) || Boolean(groupValidationError)}
+                          >
+                            <InputLabel>{topic.name}</InputLabel>
+                            <Select
+                              value={valueForTopic?.[0]?.id?.toString() || ''}
+                              label={topic.name}
+                              onChange={(e) => {
+                                const existing = Array.isArray(field.value) ? [...(field.value as number[])] : []
+                                const otherIds = existing.filter(
+                                  (id) => !options.some((o: ModelGroupItemInfo) => getId(o) === id),
+                                )
+                                const newId = e.target.value ? parseInt(e.target.value as string, 10) : null
+                                // 合并来自各个 Select 的选择，去重后回传
+                                const merged = newId ? Array.from(new Set([...otherIds, newId])) : otherIds
+                                field.onChange(merged)
+                                // 清除验证错误
+                                setGroupValidationError('')
                               }}
                             >
-                              {getLabel(option)}
-                            </Box>
-                          )
-                        }}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            required
-                            label={`${topic.name}`}
-                            placeholder='请选择'
-                            error={Boolean(errors.group_ids) || Boolean(groupValidationError)}
-                            helperText={(errors.group_ids?.message as string) || groupValidationError}
-                          />
-                        )}
-                      />
-                    </Box>
-                  )
-                })}
+                              <MenuItem value=''>
+                                <em>请选择</em>
+                              </MenuItem>
+                              {options.map((option) => (
+                                <MenuItem key={getId(option)} value={getId(option).toString()}>
+                                  {getLabel(option)}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                            {(errors.group_ids || groupValidationError) && (
+                              <FormHelperText>
+                                {(errors.group_ids?.message as string) || groupValidationError}
+                              </FormHelperText>
+                            )}
+                          </FormControl>
+                        </Box>
+                      )
+                    })}
+                  </Box>
+                )
+              }}
+            />
+            {showContentEditor && (
+              <Box>
+                <Box
+                  sx={{
+                    border: '1px solid #e0e0e0',
+                    borderRadius: 2,
+                    backgroundColor: '#fff',
+                    overflow: 'hidden', // 保留 overflow 以裁剪内容
+                    '& > div': {
+                      // 确保 EditorWrap 的根容器圆角与外层匹配
+                      borderRadius: '8px !important', // borderRadius: 2 = 8px
+                      overflow: 'hidden',
+                    },
+                  }}
+                >
+                  {/* 编辑器内容 */}
+                  <Box sx={{ p: 0 }}>
+                    <Controller
+                      rules={{ required: '请输入内容' }}
+                      name='content'
+                      control={control}
+                      render={({ field }) => (
+                        <EditorWrap
+                          ref={editorRef}
+                          value={field.value || ''}
+                          showActions={false}
+                          onChange={
+                            // 只在问答类型时添加 onChange，用于相似内容查询
+                            showSimilarContent
+                              ? (content) => {
+                                  // 更新编辑器内容状态，用于相似内容查询
+                                  setEditorContent(content)
+                                  // 同时更新表单字段
+                                  field.onChange(content)
+                                }
+                              : field.onChange
+                          }
+                        />
+                      )}
+                    />
+                  </Box>
+                </Box>
+                {errors.content?.message && (
+                  <FormHelperText error id='component-error-text'>
+                    {errors.content?.message as string}
+                  </FormHelperText>
+                )}
               </Box>
-            )
-          }}
-        />
-        {showContentEditor && (
-          <Box>
-            <Box
+            )}
+          </Stack>
+        </Box>
+
+        {/* 相似内容栏 */}
+        {showSimilarContent && (
+          <Box
+            sx={{
+              width: 360,
+              flexShrink: 0,
+              pl: 3,
+              maxHeight: '70vh',
+              overflowY: 'auto',
+              overflowX: 'hidden', // 防止横向滚动条
+              borderLeft: '1px solid #e0e0e0',
+              alignSelf: 'stretch', // 让分割线覆盖整个容器高度
+            }}
+          >
+            <Typography
+              variant='h6'
               sx={{
-                border: '1px solid #e0e0e0',
-                borderRadius: 2,
-                overflow: 'hidden',
-                backgroundColor: '#fff',
+                fontSize: '16px',
+                fontWeight: 600,
+                color: '#111827',
+                mb: 2,
+                position: 'sticky',
+                top: 0,
+                bgcolor: '#fff',
+                zIndex: 1,
+                pb: 1,
               }}
             >
-              {/* 编辑器内容 */}
-              <Box sx={{ p: 0 }}>
-                <Controller
-                  rules={{ required: '请输入内容' }}
-                  name='content'
-                  control={control}
-                  render={({ field }) => (
-                    <EditorWrap
-                      ref={editorRef}
-                      value={field.value || ''}
-                      showActions={false}
-                    />
-                  )}
-                />
+              相似内容
+            </Typography>
+
+            {similarLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px', py: 4 }}>
+                <CircularProgress size={24} />
               </Box>
-            </Box>
-            {errors.content?.message && (
-              <FormHelperText error id='component-error-text'>
-                {errors.content?.message as string}
-              </FormHelperText>
+            ) : similarDiscussions.length === 0 ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px', py: 4 }}>
+                <Typography
+                  variant='body2'
+                  sx={{
+                    color: 'rgba(0,0,0,0.6)',
+                    fontSize: '14px',
+                    textAlign: 'center',
+                  }}
+                >
+                  暂无相似内容
+                </Typography>
+              </Box>
+            ) : (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, overflowX: 'hidden' }}>
+                {similarDiscussions.map((item, index) => (
+                  <Box
+                    key={item.id || index}
+                    onClick={() => handleSimilarItemClick(item)}
+                    sx={{
+                      cursor: 'pointer',
+                      overflow: 'hidden', // 防止内容超出
+                      '&:hover .similar-item': {
+                        bgcolor: '#f3f4f6',
+                        borderColor: '#d1d5db',
+                      },
+                    }}
+                  >
+                    <Box className='similar-item'>
+                      <SimilarContentItem data={item} />
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
             )}
           </Box>
         )}
-      </Stack>
+      </Box>
     </Modal>
   )
 }

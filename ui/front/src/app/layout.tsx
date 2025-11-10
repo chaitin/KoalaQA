@@ -191,7 +191,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
                       <ThemeProvider theme={theme}>
                         <CssBaseline />
                         <Header brandConfig={brand} initialForums={forums} />
-                        <main id='main-content'>
+                        <main id='main-content' style={{ backgroundColor: '#ffffff', minHeight: 'calc(100vh - 64px)' }}>
                           {props.children}
                         </main>
                         <Scroll />

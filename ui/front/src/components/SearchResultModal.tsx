@@ -1,6 +1,6 @@
 'use client'
 import { getDiscussion } from '@/api'
-import { ModelDiscussionListItem, GetDiscussionParams } from '@/api/types'
+import { GetDiscussionParams, ModelDiscussionListItem } from '@/api/types'
 import DiscussCard from '@/app/[route_name]/ui/discussCard'
 import SearchIcon from '@mui/icons-material/Search'
 import {
@@ -18,7 +18,7 @@ import {
   useTheme,
 } from '@mui/material'
 import Image from 'next/image'
-import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 interface SearchResultModalProps {
   open: boolean

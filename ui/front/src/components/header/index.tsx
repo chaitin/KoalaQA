@@ -370,7 +370,6 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                     color: 'common.black',
                     '&:hover': {
                       borderColor: 'rgba(255, 255, 255, 0.5)',
-                      bgcolor: 'rgba(255, 255, 255, 0.1)',
                     },
                   }}
                   onClick={() => {
@@ -392,7 +391,6 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                   color: 'primary.main',
                   boxShadow: 'none',
                   '&:hover': {
-                    bgcolor: '#111827',
                     boxShadow: 'none',
                   },
                 }}
