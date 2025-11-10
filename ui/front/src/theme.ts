@@ -75,7 +75,12 @@ const theme = createTheme(
     },
     typography: {
       fontFamily: [
+        'Glibory',
         'Gilroy',
+        'PingFang SC',
+        'Hiragino Sans GB',
+        'STHeiti',
+        'Microsoft YaHei',
         '-apple-system',
         'BlinkMacSystemFont',
         '"Segoe UI"',

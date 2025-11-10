@@ -20,18 +20,7 @@ import { formatNumber } from '@/lib/utils'
 import { useForum } from '@/contexts/ForumContext'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import ThumbUpAltOutlinedIcon from '@mui/icons-material/ThumbUpAltOutlined'
-import {
-  Box,
-  Button,
-  Chip,
-  Divider,
-  IconButton,
-  Menu,
-  MenuItem,
-  Paper,
-  Stack,
-  Typography,
-} from '@mui/material'
+import { Box, Button, Chip, Divider, IconButton, Menu, MenuItem, Paper, Stack, Typography } from '@mui/material'
 import CommonAvatar from '@/components/CommonAvatar'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import { useBoolean } from 'ahooks'
@@ -40,6 +29,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useContext, useRef, useState, useEffect, useMemo } from 'react'
 import { CheckCircleIcon } from '@/utils/mui-imports'
 import Link from 'next/link'
+import { Icon } from '@ctzhian/ui'
 
 // 添加CSS动画样式
 const animationStyles = `
@@ -80,7 +70,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   // 根据 route_name 获取对应的 forumInfo
   const forumInfo = useMemo(() => {
     if (!route_name || !forums || forums.length === 0) return null
-    return forums.find(f => f.route_name === route_name) || null
+    return forums.find((f) => f.route_name === route_name) || null
   }, [route_name, forums])
 
   // 根据 data.type 转换为 ReleaseModal 需要的 type
@@ -106,7 +96,6 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const { checkAuth } = useAuthCheck()
   const anchorElRef = useRef(null)
   const editorRef = useRef<EditorWrapRef>(null)
-  const [mdEditShow, setMdEditShow] = useState(false)
 
   const handleDelete = () => {
     menuClose()
@@ -139,10 +128,6 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
     })
   }
 
-  const checkLoginAndFocusMain = () => {
-    return checkAuth(() => setMdEditShow(true))
-  }
-
   const onCommentSubmit = async () => {
     const content = editorRef.current?.getHTML() || ''
     await postDiscussionDiscIdComment(
@@ -151,7 +136,6 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         content,
       },
     )
-    setMdEditShow(false)
     router.refresh()
   }
 
@@ -260,43 +244,75 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         sx={{
           bgcolor: '#ffffff',
           borderRadius: '6px',
-          border: '1px solid #e5e7eb',
-          p: 3,
-          mb: 3,
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
-          <Typography
-            variant="h5"
-            sx={{
-              fontWeight: 700,
-              color: '#111827',
-              lineHeight: 1.3,
-              flex: 1,
-              mr: 2,
-            }}
-          >
-            {data.title}
-          </Typography>
+        {/* 第一行：类型标签、标题、点赞数和更多选项 */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, minWidth: 0 }}>
+            {/* 类型标签 */}
+            <Chip
+              label={isArticlePost ? '文章' : isFeedbackPost ? '反馈' : '问题'}
+              size='small'
+              sx={{
+                bgcolor: isArticlePost ? 'rgba(255,119,68,0.1)' : isFeedbackPost ? '#eff6ff' : 'rgba(26,160,134,0.1)',
+                color: isArticlePost ? '#FF7744' : isFeedbackPost ? '#3b82f6' : '#1AA086',
+                height: 24,
+                fontWeight: 400,
+                fontSize: '14px',
+                borderRadius: '4px',
+                border: `1px solid ${
+                  isArticlePost ? '#FF7744' : isFeedbackPost ? '#bfdbfe' : 'rgba(26, 160, 134, 0.10)'
+                }`,
+                flexShrink: 0,
+              }}
+            />
+            {/* 标题 */}
+            <Typography
+              variant='h5'
+              sx={{
+                fontWeight: 700,
+                color: 'RGBA(33, 34, 45, 1)',
+                lineHeight: 1.3,
+                flex: 1,
+                fontSize: '1.25rem',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+              }}
+            >
+              {data.title}
+            </Typography>
+          </Box>
+          {/* 右侧：点赞数和更多选项 */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
-            {profileHref ? (
-              <Link href={profileHref} style={{ display: 'inline-flex' }}>
-                <CommonAvatar src={data.user_avatar} name={data.user_name} />
-              </Link>
-            ) : (
-              <CommonAvatar src={data.user_avatar} name={data.user_name} />
-            )}
-            {profileHref ? (
-              <Link
-                href={profileHref}
-                style={{ color: '#6b7280', fontWeight: 500, fontSize: '0.75rem', textDecoration: 'none' }}
+            {/* 文章类型显示点赞数 */}
+            {isArticlePost && (
+              <Box
+                onClick={handleLike}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 0.5,
+                  background: 'rgba(0,99,151,0.06)',
+                  color: 'primary.main',
+                  px: 1,
+                  borderRadius: 0.5,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    color: '#000000',
+                    background: 'rgba(0,99,151,0.1)',
+                  },
+                }}
               >
-                {data.user_name || '未知用户'}
-              </Link>
-            ) : (
-              <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500, fontSize: '0.75rem' }}>
-                {data.user_name || '未知用户'}
-              </Typography>
+                <Icon type='icon-wenzhangdianzan' sx={{ fontSize: 12 }} />
+                <Typography variant='caption' sx={{ fontWeight: 600, fontFamily: 'Gilroy', fontSize: '14px' }}>
+                  {formatNumber((data.like || 0) - (data.dislike || 0))}
+                </Typography>
+              </Box>
             )}
             {(data.user_id === user.uid ||
               [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
@@ -304,15 +320,13 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
               )) && (
               <IconButton
                 disableRipple
-                size="small"
+                size='small'
                 ref={anchorElRef}
                 onClick={menuOpen}
                 sx={{
                   color: '#6b7280',
-                  ml: 1,
                   transition: 'all 0.15s ease-in-out',
-                  '&:hover': { color: '#000000', bgcolor: '#f3f4f6', transform: 'rotate(90deg)' },
-                  '&:active': { transform: 'rotate(90deg) scale(0.9)' },
+                  '&:hover': { color: '#000000', bgcolor: '#f3f4f6' },
                 }}
               >
                 <MoreVertIcon />
@@ -321,8 +335,30 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           </Box>
         </Box>
 
+        {/* 第二行：标签和作者信息 */}
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          {/* 左侧：所有标签（分组标签、状态标签、普通标签） */}
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+            {data.groups?.map((item) => {
+              const isCategory = true
+              return (
+                <Chip
+                  key={item.id}
+                  label={item.name}
+                  size='small'
+                  sx={{
+                    bgcolor: 'rgba(233, 236, 239, 1)',
+                    color: 'rgba(33, 34, 45, 1)',
+                    height: 22,
+                    fontWeight: 400,
+                    fontSize: '14px',
+                    borderRadius: '3px',
+                    cursor: 'default',
+                    pointerEvents: 'none',
+                  }}
+                />
+              )
+            })}
             {status === 'closed' && !isArticlePost && (
               <Chip
                 icon={
@@ -335,7 +371,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                   />
                 }
                 label={getStatusLabel('answered')}
-                size="small"
+                size='small'
                 sx={{
                   bgcolor: getStatusColor('answered'),
                   color: '#fff !important',
@@ -343,50 +379,17 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                   fontWeight: 600,
                   fontSize: '0.7rem',
                   border: `1px solid ${getStatusColor('answered')}30`,
+                  fontFamily: 'Glibory, "PingFang SC", "Hiragino Sans GB", "STHeiti", "Microsoft YaHei", sans-serif',
                 }}
               />
             )}
-            {/* {status === 'open' && !isArticlePost && (
-              <Chip
-                label={getStatusLabel(status)}
-                size="small"
-                sx={{
-                  bgcolor: getStatusColor(status),
-                  color: '#fff !important',
-                  height: 22,
-                  fontWeight: 600,
-                  fontSize: '0.7rem',
-                  border: `1px solid ${getStatusColor(status)}30`,
-                }}
-              />
-            )} */}
-            {data.groups?.map((item) => {
-              const isCategory = true
-              return (
-                <Chip
-                  key={item.id}
-                  label={item.name}
-                  size="small"
-                  sx={{
-                    bgcolor: 'rgba(233, 236, 239, 1)',
-                    color: 'rgba(33, 34, 45, 1)',
-                    height: 22,
-                    fontSize: '0.7rem',
-                    fontWeight: isCategory ? 600 : 500,
-                    borderRadius: '3px',
-                    cursor: 'default',
-                    pointerEvents: 'none',
-                  }}
-                />
-              )
-            })}
             {data.tags?.map((tag: string) => {
               const isCategory = isCategoryTag(tag)
               return (
                 <Chip
                   key={tag}
                   label={tag}
-                  size="small"
+                  size='small'
                   sx={{
                     bgcolor: 'rgba(233, 236, 239, 1)',
                     color: 'rgba(33, 34, 45, 1)',
@@ -401,9 +404,32 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
               )
             })}
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
-            <Typography variant="body2" sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
-              发布于{' '}
+          {/* 右侧：作者信息和时间 */}
+          <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, fontSize: '14px' }}>
+            {profileHref ? (
+              <Link href={profileHref} style={{ display: 'inline-flex', marginRight: '8px' }}>
+                <CommonAvatar src={data.user_avatar} name={data.user_name} />
+              </Link>
+            ) : (
+              <CommonAvatar src={data.user_avatar} name={data.user_name} />
+            )}
+            {profileHref ? (
+              <Link
+                href={profileHref}
+                style={{ color: 'RGBA(33, 34, 45, 1)', fontWeight: 500, textDecoration: 'none' }}
+              >
+                {data.user_name || '未知用户'}
+              </Link>
+            ) : (
+              <Typography variant='body2' sx={{ color: 'RGBA(33, 34, 45, 1)', fontWeight: 500 }}>
+                {data.user_name || '未知用户'}
+              </Typography>
+            )}
+            <Typography variant='body2' sx={{ color: 'RGBA(33, 34, 45, 1)', px: 1 }}>
+              ·
+            </Typography>
+            <Typography variant='body2' sx={{ color: 'rgba(33, 34, 45, 0.50)' }}>
+              发布于
               <TimeDisplayWithTag
                 timestamp={data.created_at!}
                 title={dayjs.unix(data.created_at!).format('YYYY-MM-DD HH:mm:ss')}
@@ -411,10 +437,10 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
             </Typography>
             {data.updated_at && data.updated_at !== 0 && data.updated_at !== data.created_at && (
               <>
-                <Typography variant="body2" sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
-                  •
+                <Typography variant='body2' sx={{ color: 'rgba(33, 34, 45, 0.50)', pr: 1 }}>
+                  ,
                 </Typography>
-                <Typography variant="body2" sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
+                <Typography variant='body2' sx={{ color: 'rgba(33, 34, 45, 0.50)' }}>
                   更新于{' '}
                   <TimeDisplayWithTag
                     timestamp={data.updated_at}
@@ -426,48 +452,12 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           </Box>
         </Box>
 
-        <Divider sx={{ my: 2 }} />
-
-        <EditorContent content={data.content} onTocUpdate={() => {}} />
-
-        {/* 文章点赞按钮 */}
-        {isArticlePost && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 3, pt: 2, borderTop: '1px solid #f3f4f6' }}>
-            <Button
-              disableRipple
-              size='small'
-              variant='outlined'
-              startIcon={
-                data.user_like ? (
-                  <ThumbUpAltOutlinedIcon sx={{ fontSize: 16, color: '#3b82f6' }} />
-                ) : (
-                  <ThumbUpAltOutlinedIcon sx={{ fontSize: 16 }} />
-                )
-              }
-              onClick={handleLike}
-              sx={{
-                textTransform: 'none',
-                color: data.user_like ? '#3b82f6' : '#6b7280',
-                borderColor: data.user_like ? '#3b82f6' : '#d1d5db',
-                bgcolor: data.user_like ? '#eff6ff' : '#ffffff',
-                fontWeight: 600,
-                fontSize: '0.875rem',
-                px: 2,
-                py: 0.75,
-                borderRadius: '6px',
-                transition: 'all 0.15s ease-in-out',
-                '&:hover': {
-                  bgcolor: data.user_like ? '#dbeafe' : '#f9fafb',
-                  borderColor: data.user_like ? '#3b82f6' : '#9ca3af',
-                  color: data.user_like ? '#3b82f6' : '#111827',
-                  transform: 'translateY(-1px)',
-                },
-                '&:active': { transform: 'translateY(0) scale(0.98)' },
-              }}
-            >
-              {formatNumber(data.like || 0)}
-            </Button>
-          </Box>
+        {data.content && String(data.content).trim() && (
+          <>
+            <Divider sx={{ my: 2 }} />
+            <EditorContent content={data.content} onTocUpdate={() => {}} />
+            <Divider sx={{ my: 2 }} />
+          </>
         )}
       </Paper>
     </>

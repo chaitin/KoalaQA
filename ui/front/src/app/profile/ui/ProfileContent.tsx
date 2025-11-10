@@ -126,9 +126,8 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
     ;(async () => {
       try {
         const response = await getUserUserId({ userId })
-        const stats = (response as { data?: SvcUserStatisticsRes | null })?.data ?? null
         if (!cancelled) {
-          setStatistics(stats)
+          setStatistics(response)
         }
       } catch (error) {
         console.error('获取用户统计信息失败', error)

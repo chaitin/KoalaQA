@@ -171,6 +171,7 @@ export interface ModelDiscussionComment {
   accepted?: boolean;
   bot?: boolean;
   content?: string;
+  created_at?: number;
   dislike?: number;
   id?: number;
   like?: number;
@@ -247,6 +248,7 @@ export interface ModelDiscussionReply {
   accepted?: boolean;
   bot?: boolean;
   content?: string;
+  created_at?: number;
   dislike?: number;
   id?: number;
   like?: number;
