@@ -25,14 +25,18 @@ func (r *Rank) UserContribute(ctx context.Context) ([]model.Rank, error) {
 	t := time.Now().AddDate(0, 0, -7)
 	var res []model.Rank
 	err := r.db.WithContext(ctx).Model(&model.User{}).
-		Select("? AS type,users.id AS score_id, user_comment.answer_disc_count*0.2+user_comment.accpted_count*0.4+user_disc.blog_count*0.25+user_disc.qa_count*0.15 AS score", model.RankTypeContribute).
-		Joins("JOIN (SELECT user_id, COUNT(1) FILTER (WHERE type = 'qa') AS qa_count, COUNT(1) FILTER (WHERE type = 'blog') AS blog_count FROM discussions WHERE created_at >= ? GROUP BY user_id) AS user_disc ON user_disc.user_id = users.id", t).
-		Joins("JOIN (SELECT user_id, COUNT(1) FILTER (WHERE accepted) AS accpted_count, COUNT(DISTINCT discussion_id) AS answer_disc_count FROM comments WHERE created_at >= ? GROUP BY user_id) AS user_comment ON user_comment.user_id = users.id", t).
-		Order("score DESC").
+		Select("? AS type,users.id AS score_id, COALESCE(user_comment.answer_disc_count, 0)*0.2+COALESCE(user_comment.accpted_count, 0)*0.4+COALESCE(user_disc.blog_count, 0)*0.25+COALESCE(user_disc.qa_count, 0)*0.15 AS score", model.RankTypeContribute).
+		Joins("LEFT JOIN (SELECT user_id, COUNT(1) FILTER (WHERE type = 'qa') AS qa_count, COUNT(1) FILTER (WHERE type = 'blog') AS blog_count FROM discussions WHERE created_at >= ? GROUP BY user_id) AS user_disc ON user_disc.user_id = users.id", t).
+		Joins("LEFT JOIN (SELECT user_id, COUNT(1) FILTER (WHERE accepted) AS accpted_count, COUNT(DISTINCT discussion_id) AS answer_disc_count FROM comments WHERE created_at >= ? GROUP BY user_id) AS user_comment ON user_comment.user_id = users.id", t).
+		Order("score DESC, score_id ASC").
 		Limit(5).
 		Find(&res).Error
 	if err != nil {
 		return nil, err
+	}
+
+	if len(res) > 0 && res[0].Score == 0 {
+		return make([]model.Rank, 0), nil
 	}
 
 	return res, nil
@@ -48,6 +52,10 @@ func (r *Rank) RefresContribute(ctx context.Context) error {
 		err := tx.Model(r.m).Where("type = ?", model.RankTypeContribute).Delete(nil).Error
 		if err != nil {
 			return err
+		}
+
+		if len(ranks) == 0 {
+			return nil
 		}
 
 		err = tx.CreateInBatches(&ranks, 1000).Error
