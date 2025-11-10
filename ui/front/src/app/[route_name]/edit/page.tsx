@@ -165,7 +165,7 @@ export default function EditPage() {
         initialTitle={data.title}
         data={data}
         id={queryId}
-        initialContent={''}
+        initialContent={data.content}
         type={modalType}
         forumInfo={forumInfo}
         showContentEditor={false}
