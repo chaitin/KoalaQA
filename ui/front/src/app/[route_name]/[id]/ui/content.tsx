@@ -599,10 +599,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const commentEditorRefs = React.useRef<{ [key: number]: EditorWrapRef | null }>({})
   const prevHasAcceptedRef = React.useRef<boolean>(false)
   const [hasAnswerContent, setHasAnswerContent] = useState(false)
-  const isReplyEditorVisible = useMemo(
-    () => Object.values(showCommentEditors).some(Boolean),
-    [showCommentEditors],
-  )
+  const isReplyEditorVisible = useMemo(() => Object.values(showCommentEditors).some(Boolean), [showCommentEditors])
 
   const handleAnswerEditorChange = useCallback((content: string) => {
     const normalized = content
@@ -854,7 +851,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         onOk={onSubmit}
         onClose={() => setEditCommentModalVisible(false)}
       />
-      <Box sx={{ py: 2, minHeight: 'calc(100vh - 430px)',  }}>
+      <Box sx={{ pt: 2, minHeight: isArticlePost ? 'unset' : 'calc(100vh - 430px)' }}>
         <Typography
           variant='h6'
           sx={{
@@ -887,7 +884,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                 position: 'relative',
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, gap: 1.5 }}>
                 {answerProfileHref ? (
                   <Link href={answerProfileHref} style={{ display: 'inline-flex' }}>
                     <CommonAvatar src={answer.user_avatar} name={answer.user_name} />
@@ -912,27 +909,29 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                     {answer.user_name || '未知用户'}
                   </Typography>
                 )}
-                <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
-                  发布于{' '}
-                  <TimeDisplayWithTag
-                    timestamp={(answerCreatedAt || answer.updated_at)!}
-                    title={dayjs.unix((answerCreatedAt || answer.updated_at)!).format('YYYY-MM-DD HH:mm:ss')}
-                  />
-                </Typography>
-                {answer.updated_at && answerCreatedAt && answer.updated_at !== answerCreatedAt && (
-                  <>
-                    <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
-                      ,
-                    </Typography>
-                    <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
-                      更新于{' '}
-                      <TimeDisplayWithTag
-                        timestamp={answer.updated_at}
-                        title={dayjs.unix(answer.updated_at).format('YYYY-MM-DD HH:mm:ss')}
-                      />
-                    </Typography>
-                  </>
-                )}
+                <Stack direction='row' alignItems='center'>
+                  <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
+                    发布于{' '}
+                    <TimeDisplayWithTag
+                      timestamp={(answerCreatedAt || answer.updated_at)!}
+                      title={dayjs.unix((answerCreatedAt || answer.updated_at)!).format('YYYY-MM-DD HH:mm:ss')}
+                    />
+                  </Typography>
+                  {answer.updated_at && answerCreatedAt && answer.updated_at !== answerCreatedAt && (
+                    <>
+                      <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem', pr: 0.5 }}>
+                        ,
+                      </Typography>
+                      <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
+                        更新于{' '}
+                        <TimeDisplayWithTag
+                          timestamp={answer.updated_at}
+                          title={dayjs.unix(answer.updated_at).format('YYYY-MM-DD HH:mm:ss')}
+                        />
+                      </Typography>
+                    </>
+                  )}
+                </Stack>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>
                   {/* 采纳按钮 - 只有问答类型且问题作者且问题未被采纳时才显示 */}
                   {!isArticlePost &&
@@ -1188,7 +1187,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5, mt: 0.5 }}>
                               {displayReplyCreatedAt && (
                                 <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
-                                  发布于{' '}
+                                  发布于
                                   <TimeDisplayWithTag
                                     timestamp={displayReplyCreatedAt}
                                     title={dayjs.unix(displayReplyCreatedAt).format('YYYY-MM-DD HH:mm:ss')}
@@ -1331,12 +1330,11 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         <Paper
           elevation={0}
           sx={{
-            position: 'sticky',
+            position: isArticlePost ? 'unset' : 'sticky',
             bottom: '24px',
             width: '100%',
             maxWidth: { lg: '756px' },
             mx: 'auto',
-            mt: { xs: 2, md: 3 },
             mb: { xs: 2, md: 3 },
             zIndex: 9,
             bgcolor: '#ffffff',

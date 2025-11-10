@@ -551,7 +551,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
               color='info'
               onClick={() => {
                 handleNotificationMenuClose()
-                router.push('/profile?tab=1')
+                router.push('/profile?tab=2')
               }}
             >
               查看全部通知
