@@ -1359,7 +1359,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                               endIcon={<ArrowForwardIcon />}
                               onClick={() => handleSubmitComment(answer.id!)}
                               sx={{
-                                background: '#000000',
                                 color: '#ffffff',
                                 textTransform: 'none',
                                 fontWeight: 600,
@@ -1369,7 +1368,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                 fontSize: '0.875rem',
                                 transition: 'all 0.15s ease-in-out',
                                 '&:hover': {
-                                  background: '#111827',
                                   transform: 'translateY(-1px)',
                                 },
                                 '&:active': { transform: 'translateY(0) scale(0.98)' },
@@ -1488,7 +1486,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                         fontSize: '0.9375rem',
                         transition: 'all 0.15s ease-in-out',
                         '&:hover': {
-                          background: '#111827',
                           transform: 'translateY(-1px)',
                         },
                         '&:active': { transform: 'translateY(0) scale(0.98)' },
