@@ -9,6 +9,7 @@ import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Account from './account'
 import { useAuthConfig } from '@/hooks/useAuthConfig'
+import { TroubleshootOutlined } from '@mui/icons-material'
 
 const LoginType = () => {
   // 使用新的 useAuthConfig hook
@@ -92,8 +93,11 @@ const LoginType = () => {
     // 情况1：只有第三方登录，显示左侧样式（简单登录）
     return (
       <Suspense>
-        <Box
+        <Stack
+          alignItems='center'
+          justifyContent='center'
           sx={{
+            height: '100%',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
@@ -104,9 +108,7 @@ const LoginType = () => {
           <Card
             sx={{
               width: 400,
-              p: 4,
               border: '1px solid #e0e0e0',
-              minHeight: 300,
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'center',
@@ -114,7 +116,6 @@ const LoginType = () => {
           >
             <Stack spacing={4} alignItems='center'>
               <Typography
-                variant='h1'
                 sx={{
                   fontSize: '24px',
                   fontWeight: 600,
@@ -122,7 +123,7 @@ const LoginType = () => {
                   textAlign: 'center',
                 }}
               >
-                {'登录'}
+                登录
               </Typography>
 
               {/* 第三方登录按钮 */}
@@ -133,7 +134,7 @@ const LoginType = () => {
                     fullWidth
                     sx={{
                       height: 48,
-                      color: '#40E0D0',
+                      color: 'primary.main',
                       backgroundColor: 'transparent',
                       fontSize: '14px',
                     }}
@@ -148,7 +149,7 @@ const LoginType = () => {
                     fullWidth
                     sx={{
                       height: 48,
-                      color: '#40E0D0',
+                      color: 'primary.main',
                       backgroundColor: 'transparent',
                       fontSize: '14px',
                     }}
@@ -161,22 +162,23 @@ const LoginType = () => {
 
               {/* 注册链接 */}
               {authConfig?.enable_register && (
-                <Box
+                <Stack
+                  direction='row'
+                  alignItems='center'
                   sx={{
-                    textAlign: 'center',
                     color: 'rgba(0,0,0,0.4)',
                     fontSize: 14,
                   }}
                 >
                   还没有注册？
                   <Link href='/register' style={{ textDecoration: 'none' }}>
-                    <Box sx={{ color: '#40E0D0', ml: 0.5, textDecoration: 'none' }}>立即注册</Box>
+                    <Box sx={{ color: 'primary.main', ml: 0.5, textDecoration: 'none' }}>立即注册</Box>
                   </Link>
-                </Box>
+                </Stack>
               )}
             </Stack>
           </Card>
-        </Box>
+        </Stack>
       </Suspense>
     )
   }
