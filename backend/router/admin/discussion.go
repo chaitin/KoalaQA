@@ -12,7 +12,7 @@ type discussion struct {
 
 func (d *discussion) Route(h server.Handler) {
 	g := h.Group("/discussion")
-	g.GET("")
+	g.GET("", d.List)
 }
 
 func newDiscussion(disc *svc.Discussion) server.Router {
