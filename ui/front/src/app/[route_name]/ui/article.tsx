@@ -771,7 +771,7 @@ const Article = ({
                   {announcement.summary && (
                     <Box
                       sx={{
-                        fontSize: '14px!important',
+                        fontSize: '12px!important',
                         color: 'rgba(33, 34, 45, 0.50)',
                         bgcolor: 'transparent',
                         overflow: 'hidden',
