@@ -65,6 +65,7 @@ export default function EditPage() {
       <Card
         sx={{
           flex: 1,
+          pt: 0,
           minWidth: 0,
           maxWidth: { xs: '100%', lg: 798 },
           width: { xs: '100%', lg: 'auto' },
@@ -72,7 +73,7 @@ export default function EditPage() {
         }}
       >
         <h1 style={{ display: 'none' }}>编辑讨论</h1>
-        <Stack spacing={2} sx={{ py: 2 }}>
+        <Stack spacing={2}>
           <Stack direction={'row'} alignItems={'baseline'} gap={2}>
             <TextField
               size={'small'}

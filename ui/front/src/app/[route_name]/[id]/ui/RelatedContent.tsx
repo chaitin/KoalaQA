@@ -1,8 +1,8 @@
 'use client'
 import { getDiscussionDiscIdSimilarity, ModelDiscussionListItem, ModelDiscussionType } from '@/api'
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer'
-import ThumbUpIcon from '@mui/icons-material/ThumbUp'
 import { Box, Paper, Skeleton, Typography } from '@mui/material'
+import { Icon } from '@ctzhian/ui'
 import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -145,7 +145,7 @@ const RelatedContent = ({ discId }: { discId: string }) => {
                   </>
                 ) : (
                   <>
-                    <ThumbUpIcon sx={{ fontSize: 12, color: '#9ca3af' }} />
+                    <Icon type='icon-dianzan1' sx={{ fontSize: 12, color: '#9ca3af' }} />
                     <Typography variant='caption' sx={{ color: '#9ca3af', fontWeight: 600, fontSize: '0.7rem' }}>
                       {relatedPost.like || 0}
                     </Typography>

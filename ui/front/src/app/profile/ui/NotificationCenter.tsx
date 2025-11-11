@@ -264,9 +264,7 @@ export default function NotificationCenter() {
     <Box sx={{ p: 0 }}>
       {/* 头部：标题、未读数、全部已读按钮 */}
       <Stack direction='row' alignItems='center' sx={{ pb: 2, borderBottom: '1px solid #e0e0e0' }}>
-        <Stack direction='row' spacing={2} alignItems='center'>
-          <Typography variant='caption' sx={{ fontSize: '14px' }}>{`${unreadCount}条未读`}</Typography>
-        </Stack>
+        <Typography variant='caption' sx={{ fontSize: '14px',mr: 2 }}>{`${unreadCount}条未读`}</Typography>
         <Button onClick={handleMarkAllRead} sx={{ color: '#006397' }}>
           全部已读
         </Button>
@@ -313,7 +311,6 @@ export default function NotificationCenter() {
             </IconButton>
           </Tooltip>
         </Stack>
-        
       </Stack>
 
       {/* 通知列表 */}

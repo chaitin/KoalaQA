@@ -21,7 +21,7 @@ export enum TopicTaskStatus {
 export enum SvcDiscussionListFilter {
   DiscussionListFilterHot = "hot",
   DiscussionListFilterNew = "new",
-  DiscussionListFilterMine = "mine",
+  DiscussionListFilterPublish = "publish",
 }
 
 export enum PlatformPlatformType {
@@ -143,6 +143,7 @@ export interface ModelAuth {
   auth_infos?: ModelAuthInfo[];
   enable_register?: boolean;
   public_access?: boolean;
+  public_forum_ids?: number[];
 }
 
 export interface ModelAuthConfig {
@@ -170,6 +171,7 @@ export interface ModelDiscussionComment {
   accepted?: boolean;
   bot?: boolean;
   content?: string;
+  created_at?: number;
   dislike?: number;
   id?: number;
   like?: number;
@@ -246,6 +248,7 @@ export interface ModelDiscussionReply {
   accepted?: boolean;
   bot?: boolean;
   content?: string;
+  created_at?: number;
   dislike?: number;
   id?: number;
   like?: number;
@@ -267,6 +270,7 @@ export interface ModelForumGroups {
 }
 
 export interface ModelForumInfo {
+  blog_ids?: number[];
   groups?: ModelJSONBArrayModelForumGroups;
   id?: number;
   index?: number;
@@ -346,7 +350,8 @@ export interface ModelListRes {
   total?: number;
 }
 
-export interface ModelMessageNotifyInfo {
+export interface ModelMessageNotify {
+  created_at?: number;
   discuss_id?: number;
   discuss_title?: string;
   discuss_uuid?: string;
@@ -356,10 +361,14 @@ export interface ModelMessageNotifyInfo {
   from_id?: number;
   from_name?: string;
   id?: number;
+  read?: boolean;
   to_bot?: boolean;
   to_id?: number;
   to_name?: string;
   type?: ModelMsgNotifyType;
+  updated_at?: number;
+  /** 通知到谁，除了发给机器人的信息，user_id 与 to_id 相同 */
+  user_id?: number;
 }
 
 export interface ModelPlatformOpt {
@@ -379,6 +388,20 @@ export interface ModelSystemBrand {
   text?: string;
 }
 
+export interface ModelTrend {
+  created_at?: number;
+  discuss_id?: number;
+  discuss_title?: string;
+  discuss_uuid?: string;
+  discussion_type?: ModelDiscussionType;
+  forum_id?: number;
+  id?: number;
+  trend_type?: number;
+  updated_at?: number;
+  /** 谁的行为 */
+  user_id?: number;
+}
+
 export interface ModelUser {
   avatar?: string;
   builtin?: boolean;
@@ -393,6 +416,7 @@ export interface ModelUser {
   password?: string;
   role?: ModelUserRole;
   updated_at?: number;
+  web_notify?: boolean;
 }
 
 export interface ModelUserInfo {
@@ -405,6 +429,7 @@ export interface ModelUserInfo {
   role?: ModelUserRole;
   uid?: number;
   username?: string;
+  web_notify?: boolean;
 }
 
 export interface ModelWebhook {
@@ -540,6 +565,21 @@ export interface SvcFileExportReq {
   kb_id: number;
   title: string;
   uuid: string;
+}
+
+export interface SvcForumBlog {
+  id?: number;
+  title?: string;
+}
+
+export interface SvcForumRes {
+  blog_ids?: number[];
+  blogs?: SvcForumBlog[];
+  groups?: ModelJSONBArrayModelForumGroups;
+  id?: number;
+  index?: number;
+  name: string;
+  route_name?: string;
 }
 
 export interface SvcForumUpdateReq {
@@ -701,6 +741,13 @@ export interface SvcPolishReq {
   text?: string;
 }
 
+export interface SvcRankContributeItem {
+  avatar?: string;
+  id?: number;
+  name?: string;
+  score?: number;
+}
+
 export interface SvcResolveFeedbackReq {
   resolve?: boolean;
 }
@@ -747,6 +794,10 @@ export interface SvcUpdateSpaceReq {
   title?: string;
 }
 
+export interface SvcUpdateWebNotifyReq {
+  enable?: boolean;
+}
+
 export interface SvcUserJoinOrgReq {
   /** @minItems 1 */
   org_ids?: number[];
@@ -777,6 +828,14 @@ export interface SvcUserRegisterReq {
   email: string;
   name: string;
   password: string;
+}
+
+export interface SvcUserStatisticsRes {
+  answer_count?: number;
+  avatar?: string;
+  blog_count?: number;
+  name?: string;
+  qa_count?: number;
 }
 
 export interface SvcUserUpdateReq {
@@ -845,6 +904,15 @@ export interface PutAdminBotPayload {
   avatar?: File;
   name: string;
   unknown_prompt?: string;
+}
+
+export interface GetAdminDiscussionParams {
+  forum_id: number;
+  keyword?: string;
+  /** @min 1 */
+  page?: number;
+  /** @min 1 */
+  size?: number;
 }
 
 /** request params */
@@ -1150,12 +1218,15 @@ export interface DeleteAdminUserUserIdParams {
 }
 
 export interface GetDiscussionParams {
-  filter?: "hot" | "new" | "mine";
+  discussion_ids?: number[];
+  filter?: "hot" | "new" | "publish";
   forum_id?: number;
   group_ids?: number[];
   keyword?: string;
+  only_mine?: boolean;
   /** @min 1 */
   page?: number;
+  resolved?: boolean;
   /** @min 1 */
   size?: number;
   type?: "qa" | "feedback" | "blog";
@@ -1247,17 +1318,14 @@ export interface PostDiscussionDiscIdRevokeLikeParams {
   discId: string;
 }
 
+export interface GetDiscussionDiscIdSimilarityParams {
+  /** disc_id */
+  discId: string;
+}
+
 export interface GetGroupParams {
   /** forum id */
   forum_id?: number;
-}
-
-export interface GetNotifyListParams {
-  /** @min 1 */
-  page?: number;
-  read?: boolean;
-  /** @min 1 */
-  size?: number;
 }
 
 export interface PutUserPayload {
@@ -1276,4 +1344,25 @@ export interface GetUserLoginThirdParams {
   app?: boolean;
   redirect?: string;
   type: number;
+}
+
+export interface GetUserNotifyListParams {
+  /** @min 1 */
+  page?: number;
+  read?: boolean;
+  /** @min 1 */
+  size?: number;
+}
+
+export interface GetUserTrendParams {
+  /** @min 1 */
+  page?: number;
+  /** @min 1 */
+  size?: number;
+  user_id: number;
+}
+
+export interface GetUserUserIdParams {
+  /** user id */
+  userId: number;
 }

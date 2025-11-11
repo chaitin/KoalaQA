@@ -95,7 +95,7 @@ const Account = ({ isChecked, passwordConfig }: { isChecked: boolean; passwordCo
   }
 
   return (
-    <Stack gap={2} sx={{ width: '100%', alignItems: 'center' }}>
+    <Stack sx={{ width: '100%', alignItems: 'center' }}>
       <TextField
         autoComplete='off'
         {...register('email')}

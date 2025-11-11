@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, useFieldArray, Controller, useWatch } from 'react-hook-form';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { fetchForums, refreshForums } from '@/store/slices/forum';
 import {
   Box,
   Button,
@@ -32,14 +34,23 @@ import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import Card from '@/components/card';
 import LoadingButton from '@/components/LoadingButton';
 import CategorySelector from '@/components/CategorySelector';
-import { getAdminForum, putAdminForum } from '@/api/Forum';
-import { ModelForumInfo, ModelForumGroups, ModelDiscussionType } from '@/api/types';
+import ArticleSelector from '@/components/ArticleSelector';
+import { putAdminForum } from '@/api/Forum';
+import {
+  ModelForumInfo,
+  ModelForumGroups,
+  ModelDiscussionType,
+  SvcForumBlog,
+} from '@/api/types';
+import type { ForumItem } from '@/store/slices/forum';
 
 interface ForumFormData {
   blocks: (ModelForumInfo & {
     qa_group_ids?: number[];
     feedback_group_ids?: number[];
     blog_group_ids?: number[];
+    blog_ids?: number[];
+    blogs?: SvcForumBlog[];
   })[];
 }
 
@@ -49,6 +60,7 @@ interface SortableBlockItemProps {
   control: any;
   onRemove: () => void;
   setIsEdit: (value: boolean) => void;
+  forumId?: number;
 }
 
 const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
@@ -56,7 +68,13 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
   control,
   onRemove,
   setIsEdit,
+  forumId,
 }) => {
+  const blogOptions = useWatch({
+    control,
+    name: `blocks.${index}.blogs`,
+  }) as SvcForumBlog[] | undefined;
+
   const { isDragging, attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: `block-${index}`,
   });
@@ -266,6 +284,40 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
             />
           </Grid>
         </Grid>
+
+        {/* 公告内容选择 */}
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12 }}>
+            <Controller
+              control={control}
+              name={`blocks.${index}.blog_ids`}
+              render={({ field, fieldState: { error } }) => (
+                <Box>
+                  <ArticleSelector
+                    value={field.value || []}
+                    onChange={articleIds => {
+                      field.onChange(articleIds);
+                      setIsEdit(true);
+                    }}
+                    placeholder="请选择公告内容"
+                    label="选择公告内容"
+                    forumId={forumId}
+                    maxSelection={3}
+                    error={!!error}
+                    helperText={error?.message}
+                    initialOptions={(blogOptions || [])
+                      .filter(blog => blog?.id != null)
+                      .map(blog => ({
+                        id: blog.id || 0,
+                        title: blog.title || '',
+                      }))}
+                  />
+                </Box>
+              )}
+            />
+          </Grid>
+        </Grid>
+        
       </Stack>
     </Box>
   );
@@ -278,6 +330,12 @@ const Forum: React.FC = () => {
   const [blockToDelete, setBlockToDelete] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const dispatch = useAppDispatch();
+  
+  // 从 store 获取板块数据
+  const { forums: storeForums, loading: storeLoading } = useAppSelector(
+    state => state.forum
+  );
 
   const sensors = useSensors(useSensor(MouseSensor), useSensor(TouchSensor));
 
@@ -296,47 +354,72 @@ const Forum: React.FC = () => {
   } = useFieldArray({
     control,
     name: 'blocks',
+    keyName: 'fieldKey', // 使用 fieldKey 作为 react-hook-form 的内部 key，避免覆盖真实的 id
   });
 
-  // 获取版块数据
-  const fetchData = useCallback(async () => {
-    try {
-      if (isInitialLoading) {
-        setIsInitialLoading(true);
-      } else {
-        setIsLoading(true);
-      }
+  // 将 store 中的论坛数据转换为表单格式
+  const convertForumsToBlocks = useCallback((forums: ForumItem[]) => {
+    return forums.map(block => {
+      // 确保 groups 是数组
+      const groupsArray = Array.isArray(block.groups) ? block.groups : [];
+      
+      const qaGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeQA);
+      const feedbackGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeFeedback);
+      const blogGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeBlog);
+      
+      return {
+        ...block,
+        qa_group_ids: qaGroups?.group_ids || [],
+        feedback_group_ids: feedbackGroups?.group_ids || [],
+        blog_group_ids: blogGroups?.group_ids || [],
+        blog_ids: block.blog_ids || [],
+        blogs: block.blogs || [],
+      };
+    });
+  }, []);
 
-      const response = await getAdminForum();
-      // 将 groups 按类型转换为对应的 group_ids 以适配表单
-      const blocks = response.map(block => {
-        // 确保 groups 是数组
-        const groupsArray = Array.isArray(block.groups) ? block.groups : [];
-        
-        const qaGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeQA);
-        const feedbackGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeFeedback);
-        const blogGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeBlog);
-        
-        return {
-          ...block,
-          qa_group_ids: qaGroups?.group_ids || [],
-          feedback_group_ids: feedbackGroups?.group_ids || [],
-          blog_group_ids: blogGroups?.group_ids || [],
-        };
-      });
+  // 初始化：从 store 加载数据，如果 store 为空则请求 API
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        if (isInitialLoading) {
+          setIsInitialLoading(true);
+        }
+
+        // 如果 store 中有数据，直接使用
+        if (storeForums.length > 0) {
+          const blocks = convertForumsToBlocks(storeForums);
+          reset({ blocks });
+          setIsInitialLoading(false);
+          return;
+        }
+
+        // 如果 store 中没有数据且不在加载中，则请求 API
+        if (!storeLoading) {
+          await dispatch(fetchForums());
+        }
+      } catch (error) {
+        console.error('获取版块数据失败:', error);
+        reset({ blocks: [] });
+        setIsInitialLoading(false);
+      }
+    };
+
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 只在组件挂载时执行一次
+
+  // 当 store 中的数据变化时，更新表单
+  useEffect(() => {
+    if (storeForums.length > 0) {
+      const blocks = convertForumsToBlocks(storeForums);
       reset({ blocks });
-    } catch (error) {
-      console.error('获取版块数据失败:', error);
-      reset({ blocks: [] });
-    } finally {
-      setIsLoading(false);
+    }
+    // 当请求完成（loading 为 false）时，无论是否有数据，都应该结束初始加载状态
+    if (!storeLoading && isInitialLoading) {
       setIsInitialLoading(false);
     }
-  }, [reset, isInitialLoading]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  }, [storeForums, storeLoading, reset, convertForumsToBlocks, isInitialLoading]);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     setActiveId(event.active.id as string);
@@ -374,6 +457,8 @@ const Forum: React.FC = () => {
       qa_group_ids: [],
       feedback_group_ids: [],
       blog_group_ids: [],
+      blog_ids: [],
+      blogs: [],
     });
     setIsEdit(true);
   };
@@ -452,14 +537,15 @@ const Forum: React.FC = () => {
           route_name: block.route_name?.trim() || '',
           index: index + 1, // 设置排序索引
           groups: groups.length > 0 ? groups : undefined,
+          blog_ids: block.blog_ids && block.blog_ids.length > 0 ? block.blog_ids : undefined,
         };
       });
 
       await putAdminForum({ forums });
       setIsEdit(false);
       message.success('版块保存成功');
-      // 重新获取数据以确保数据同步
-      await fetchData();
+      // 强制刷新数据，确保所有组件都能获取到最新的板块列表
+      await dispatch(refreshForums());
     } catch (error) {
       console.error('保存失败:', error);
       message.error('保存版块失败');
@@ -469,7 +555,11 @@ const Forum: React.FC = () => {
   };
 
   const onCancel = () => {
-    fetchData();
+    // 从 store 重新加载数据
+    if (storeForums.length > 0) {
+      const blocks = convertForumsToBlocks(storeForums);
+      reset({ blocks });
+    }
     setIsEdit(false);
   };
 
@@ -532,11 +622,12 @@ const Forum: React.FC = () => {
           >
             {blockFields.map((block, index) => (
               <SortableBlockItem
-                key={block.id || index}
+                key={block.fieldKey || index}
                 index={index}
                 control={control}
                 onRemove={() => handleRemoveBlock(index)}
                 setIsEdit={setIsEdit}
+                forumId={block.id}
               />
             ))}
           </SortableContext>

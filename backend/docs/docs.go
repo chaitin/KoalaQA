@@ -85,6 +85,78 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/discussion": {
+            "get": {
+                "description": "backend list discussions",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "backend list discussions",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "name": "forum_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/model.DiscussionListItem"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/admin/forum": {
             "get": {
                 "produces": [
@@ -110,7 +182,7 @@ const docTemplate = `{
                                             "items": {
                                                 "allOf": [
                                                     {
-                                                        "$ref": "#/definitions/model.ForumInfo"
+                                                        "$ref": "#/definitions/svc.ForumRes"
                                                     },
                                                     {
                                                         "type": "object",
@@ -3211,6 +3283,15 @@ const docTemplate = `{
                 "summary": "list discussions",
                 "parameters": [
                     {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "discussion_ids",
+                        "in": "query"
+                    },
+                    {
                         "enum": [
                             "hot",
                             "new",
@@ -4114,7 +4195,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/model.ForumInfo"
+                                                "$ref": "#/definitions/svc.ForumRes"
                                             }
                                         }
                                     }
@@ -5384,6 +5465,12 @@ const docTemplate = `{
                 "name"
             ],
             "properties": {
+                "blog_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "groups": {
                     "$ref": "#/definitions/model.JSONB-array_model_ForumGroups"
                 },
@@ -6288,6 +6375,52 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "svc.ForumBlog": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "svc.ForumRes": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "blog_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "blogs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/svc.ForumBlog"
+                    }
+                },
+                "groups": {
+                    "$ref": "#/definitions/model.JSONB-array_model_ForumGroups"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "index": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "route_name": {
                     "type": "string"
                 }
             }

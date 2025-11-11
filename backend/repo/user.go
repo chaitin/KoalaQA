@@ -1,14 +1,20 @@
 package repo
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"mime"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/database"
+	"github.com/chaitin/koalaqa/pkg/glog"
+	"github.com/chaitin/koalaqa/pkg/oss"
 	"github.com/chaitin/koalaqa/pkg/third_auth"
+	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -17,6 +23,8 @@ type User struct {
 	base[*model.User]
 
 	system *System
+	oc     oss.Client
+	logger *glog.Logger
 }
 
 func (u *User) ListWithOrg(ctx context.Context, res any, queryFuncs ...QueryOptFunc) error {
@@ -64,6 +72,52 @@ func (u *User) DeleteByID(ctx context.Context, userID uint) error {
 
 		return nil
 	})
+}
+
+func (u *User) getAvatarFromURL(ctx context.Context, imgURL string) string {
+	if imgURL == "" {
+		return ""
+	}
+
+	logger := u.logger.WithContext(ctx).With("avatar_url", imgURL)
+	imgData, contentType, err := util.HTTPGetWithContentType(imgURL)
+	if err != nil {
+		logger.WithErr(err).Warn("download img failed")
+		return ""
+	}
+
+	logger = logger.With("content_type", contentType)
+
+	if !strings.HasPrefix(contentType, "image") {
+		logger.Info("content type is not img, skip upload")
+		return ""
+	}
+
+	// 默认 jpg
+	ext := ".jpg"
+
+	exts, err := mime.ExtensionsByType(contentType)
+	if err != nil {
+		logger.WithErr(err).Warn("get ext from content_type failed")
+		return ""
+	}
+
+	if len(exts) > 0 {
+		ext = exts[len(exts)-1]
+	}
+
+	avatar, err := u.oc.Upload(ctx, "avatar", bytes.NewReader(imgData),
+		oss.WithLimitSize(),
+		oss.WithFileSize(len(imgData)),
+		oss.WithExt(ext),
+		oss.WithPublic(),
+	)
+	if err != nil {
+		logger.WithErr(err).Warn("upload avatar to oss failed")
+		return ""
+	}
+
+	return avatar
 }
 
 func (u *User) CreateThird(ctx context.Context, orgID uint, user *third_auth.User) (*model.User, error) {
@@ -123,12 +177,15 @@ func (u *User) CreateThird(ctx context.Context, orgID uint, user *third_auth.Use
 		}
 
 		if createUser {
+			user.Avatar = u.getAvatarFromURL(ctx, user.Avatar)
+
 			dbUser = model.User{
 				Name:      user.Name,
 				Email:     user.Email,
 				Builtin:   false,
 				Role:      user.Role,
 				Invisible: false,
+				Avatar:    user.Avatar,
 				LastLogin: model.Timestamp(time.Now().Unix()),
 				Key:       uuid.NewString(),
 				OrgIDs:    model.Int64Array{int64(orgID)},
@@ -159,12 +216,14 @@ func (u *User) CreateThird(ctx context.Context, orgID uint, user *third_auth.Use
 	return &dbUser, nil
 }
 
-func newUser(db *database.DB, system *System) *User {
+func newUser(db *database.DB, system *System, oc oss.Client) *User {
 	return &User{
 		base: base[*model.User]{
 			db: db, m: &model.User{},
 		},
 		system: system,
+		oc:     oc,
+		logger: glog.Module("repo", "user"),
 	}
 }
 

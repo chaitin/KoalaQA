@@ -16,6 +16,7 @@ import {
   FormHelperText,
   IconButton,
   InputAdornment,
+  InputLabel,
   MenuItem,
   OutlinedInput,
   Select,
@@ -25,9 +26,11 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useRequest } from 'ahooks';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { useAppSelector, useAppDispatch } from '@/store';
+import { fetchForums } from '@/store/slices/forum';
 
 // 登录方式类型枚举
 enum AuthType {
@@ -47,6 +50,7 @@ const AUTH_TYPE_OPTIONS = [
 const loginMethodSchema = z.object({
   enable_register: z.boolean(),
   public_access: z.boolean(),
+  public_forum_ids: z.array(z.number()).optional(),
   auth_types: z
     .array(z.number())
     .min(1, '至少需要选择一个登录方式')
@@ -92,6 +96,7 @@ const LoginMethod: React.FC = () => {
     defaultValues: {
       enable_register: true,
       public_access: true,
+      public_forum_ids: [],
       auth_types: [AuthType.PASSWORD],
       password_config: {
         button_desc: '密码登录',
@@ -112,15 +117,28 @@ const LoginMethod: React.FC = () => {
   });
 
   const watchedAuthTypes = watch('auth_types');
+  const watchedPublicAccess = watch('public_access');
   const isPasswordSelected = watchedAuthTypes?.includes(AuthType.PASSWORD) ?? false;
   const isOidcSelected = watchedAuthTypes?.includes(AuthType.OIDC) ?? false;
   const isWecomSelected = watchedAuthTypes?.includes(AuthType.WECOM) ?? false;
+
+  // 从 store 获取板块列表
+  const dispatch = useAppDispatch();
+  const { forums: forumOptions, loading: forumLoading } = useAppSelector(state => state.forum);
+
+  useEffect(() => {
+    // 如果 store 中没有数据且不在加载中，则获取
+    if (forumOptions.length === 0 && !forumLoading) {
+      dispatch(fetchForums());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 只在组件挂载时执行一次
 
   // 获取当前配置
   const { loading } = useRequest(getAdminSystemLoginMethod, {
     onSuccess: res => {
       if (res) {
-        const { enable_register, public_access, auth_infos } = res;
+        const { enable_register, public_access, public_forum_ids, auth_infos } = res;
 
         // 从 auth_infos 中提取认证类型和配置
         const authTypes = auth_infos?.map((info: ModelAuthInfo) => info.type).filter(Boolean) ?? [
@@ -156,6 +174,7 @@ const LoginMethod: React.FC = () => {
         reset({
           enable_register: enable_register ?? true,
           public_access: public_access ?? true,
+          public_forum_ids: public_forum_ids ?? [],
           auth_types: authTypes as number[],
           password_config: passwordConfig,
           oidc_config: oidcConfig,
@@ -228,6 +247,7 @@ const LoginMethod: React.FC = () => {
       const requestData: ModelAuth = {
         enable_register: formData.enable_register,
         public_access: formData.public_access,
+        public_forum_ids: formData.public_forum_ids,
         auth_infos: authInfos,
       };
 
@@ -283,10 +303,10 @@ const LoginMethod: React.FC = () => {
       </Stack>
 
       <Box component="form" onSubmit={handleSubmit(onSubmit)}>
-        <Stack>
+        <Stack gap={1}>
           {/* 用户注册复选框 */}
           <Box display="flex" alignItems="center">
-            <Typography variant="body2" sx={{ mr: 2, minWidth: 160 }}>
+            <Typography variant="body2" sx={{ minWidth: 160 }}>
               开放用户注册
             </Typography>
             <Controller
@@ -308,29 +328,107 @@ const LoginMethod: React.FC = () => {
 
           {/* 公开访问开关 */}
           <Box display="flex" alignItems="center">
-            <Typography variant="body2" sx={{ mr: 2, minWidth: 160 }}>
-              允许公开访问
-            </Typography>
-            <Controller
-              name="public_access"
-              control={control}
-              render={({ field }) => (
-                <Checkbox
-                  checked={field.value}
-                  onChange={field.onChange}
-                  sx={theme => ({
-                    '& svg[data-testid="CheckBoxIcon"]': {
-                      fill: theme.palette.info.main,
-                    },
-                  })}
+            <Box display="flex" alignItems="center" sx={{ flex: 1 }}>
+              <Typography variant="body2" sx={{ minWidth: 160 }}>
+                允许公开访问
+              </Typography>
+              <Controller
+                name="public_access"
+                control={control}
+                render={({ field }) => (
+                  <Checkbox
+                    checked={field.value}
+                    onChange={field.onChange}
+                    sx={theme => ({
+                      '& svg[data-testid="CheckBoxIcon"]': {
+                        fill: theme.palette.info.main,
+                      },
+                    })}
+                  />
+                )}
+              />
+            </Box>
+
+            {/* 游客权限下拉框 */}
+            {watchedPublicAccess && (
+              <FormControl fullWidth sx={{ width: '50%', ml: 'auto' }}>
+                <InputLabel size="small">游客权限</InputLabel>
+                <Controller
+                  name="public_forum_ids"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      multiple
+                      value={field.value || []}
+                      onChange={e => {
+                        const value = e.target.value as number[];
+                        field.onChange(value);
+                      }}
+                      input={<OutlinedInput />}
+                      sx={{
+                        '& .MuiSelect-select': {
+                          py: 1,
+                        },
+                      }}
+                      renderValue={selected => (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                          {Array.isArray(selected) && selected.length === 0 ? (
+                            <Typography variant="body2" color="text.secondary">
+                              请选择板块
+                            </Typography>
+                          ) : (
+                            (selected as number[]).map(id => {
+                              const forum = forumOptions.find(forum => forum.id === id);
+                              return (
+                                <Box
+                                  key={id}
+                                  sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 0.5,
+                                    backgroundColor: '#FFFFFF',
+                                    borderRadius: '16px',
+                                    padding: '2px 8px',
+                                    fontSize: '12px',
+                                    color: '#333333',
+                                  }}
+                                >
+                                  <Typography
+                                    variant="body2"
+                                    sx={{ fontSize: '12px', lineHeight: 'normal' }}
+                                  >
+                                    {forum?.name || `板块ID: ${id}`}
+                                  </Typography>
+                                </Box>
+                              );
+                            })
+                          )}
+                        </Box>
+                      )}
+                    >
+                      {forumOptions.length === 0 ? (
+                        <MenuItem disabled>
+                          <Typography variant="body2" color="text.secondary">
+                            暂无可用板块
+                          </Typography>
+                        </MenuItem>
+                      ) : (
+                        forumOptions.map(forum => (
+                          <MenuItem key={forum.id} value={forum.id}>
+                            {forum.name}
+                          </MenuItem>
+                        ))
+                      )}
+                    </Select>
+                  )}
                 />
-              )}
-            />
+              </FormControl>
+            )}
           </Box>
 
           {/* 登录方式选择 */}
           <Box display="flex" alignItems="center">
-            <Typography variant="body2" sx={{ mr: 2, minWidth: 170 }}>
+            <Typography variant="body2" sx={{ mr: 2, minWidth: 155 }}>
               登录方式
             </Typography>
             <Box flex={1}>
@@ -342,6 +440,7 @@ const LoginMethod: React.FC = () => {
                     <Select
                       multiple
                       value={field.value || []}
+                      variant='outlined'
                       onChange={field.onChange}
                       input={<OutlinedInput />}
                       sx={{

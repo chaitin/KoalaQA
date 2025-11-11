@@ -28,7 +28,7 @@ func init() {
 // @Summary list forum
 // @Tags forum
 // @Produce json
-// @Success 200 {object} context.Response{data=[]model.ForumInfo{groups=[]model.ForumGroups}}
+// @Success 200 {object} context.Response{data=[]svc.ForumRes{groups=[]model.ForumGroups}}
 // @Router /admin/forum [get]
 func (f *forum) List(ctx *context.Context) {
 	res, err := f.svcForum.List(ctx, ctx.GetUser(), false)

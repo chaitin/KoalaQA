@@ -14,7 +14,7 @@ type initRankContribute struct {
 }
 
 func (m *initRankContribute) Version() int64 {
-	return 20251110110326
+	return 20251111102351
 }
 
 func (m *initRankContribute) Migrate(tx *gorm.DB) error {

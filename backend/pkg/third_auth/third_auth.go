@@ -19,6 +19,7 @@ type User struct {
 	Email   string
 	Type    model.AuthType
 	Name    string
+	Avatar  string
 	Role    model.UserRole
 }
 

@@ -5,7 +5,6 @@ import { Article as ArticleIcon, QuestionAnswer as QuestionAnswerIcon } from '@m
 import {
   Box,
   Checkbox,
-  Chip,
   Divider,
   FormControl,
   InputLabel,
@@ -273,10 +272,11 @@ export default function FilterPanel() {
           return (
             <FormControl key={group.id} fullWidth sx={{ mb: 1.5 }}>
               <InputLabel
+                // variant='standard'
                 sx={{
                   fontSize: '12px',
                   color: '#111827',
-                  lineHeight: '1.4375em',
+                  lineHeight: '19px',
                   '&.Mui-focused': {
                     color: 'primary.main',
                   },
@@ -302,35 +302,23 @@ export default function FilterPanel() {
                 }}
                 input={<OutlinedInput label={group.name} />}
                 renderValue={(selected) => {
-                  if ((selected as string[]).length === 0) {
+                  const selectedCount = (selected as string[]).length
+                  if (selectedCount === 0) {
                     return <Typography sx={{ color: 'rgba(0,0,0,0.3)', fontSize: '0.8125rem' }}>全部</Typography>
                   }
-                  const selectedNames = (selected as string[])
-                    .map((id) => {
-                      const option = group.options.find((opt) => opt.id === id)
-                      return option?.name || ''
-                    })
-                    .filter(Boolean)
+                  const summaryText = `已选${selectedCount}项`
                   return (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {selectedNames.map((name, idx) => (
-                        <Chip
-                          key={idx}
-                          label={name}
-                          size='small'
-                          sx={{
-                            height: 20,
-                            borderRadius: '4px',
-                            fontSize: '0.7rem',
-                            bgcolor: '#E9ECEF',
-                            color: 'text.main',
-                            '& .MuiChip-label': {
-                              px: 1,
-                            },
-                          }}
-                        />
-                      ))}
-                    </Box>
+                    <Typography
+                      sx={{
+                        fontSize: '0.8125rem',
+                        color: '#111827',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {summaryText}
+                    </Typography>
                   )
                 }}
                 sx={{

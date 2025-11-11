@@ -6,6 +6,7 @@ import (
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/glog"
+	"github.com/chaitin/koalaqa/pkg/oss"
 	"github.com/chaitin/koalaqa/pkg/util"
 	oidcAuth "github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
@@ -14,6 +15,7 @@ import (
 type oidc struct {
 	cfg         model.AuthConfigOauth
 	callbackURL string
+	oc          oss.Client
 
 	logger *glog.Logger
 }
@@ -105,6 +107,7 @@ func (o *oidc) User(ctx context.Context, code string) (*User, error) {
 
 	var claims struct {
 		Name          string `json:"name"`
+		Picture       string `json:"picture"`
 		Email         string `json:"email"`
 		EmailVerified bool   `json:"email_verified"`
 	}
@@ -126,14 +129,16 @@ func (o *oidc) User(ctx context.Context, code string) (*User, error) {
 		Type:    model.AuthTypeOIDC,
 		Name:    claims.Name,
 		Email:   claims.Email,
+		Avatar:  claims.Picture,
 		Role:    model.UserRoleUser,
 	}, nil
 }
 
-func newOIDC(cfg Config) Author {
+func newOIDC(cfg Config, oc oss.Client) Author {
 	return &oidc{
 		logger:      glog.Module("third_auth", "oidc"),
 		cfg:         cfg.Config.Oauth,
 		callbackURL: cfg.CallbackURL,
+		oc:          oc,
 	}
 }
