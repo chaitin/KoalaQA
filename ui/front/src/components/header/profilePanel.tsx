@@ -1,6 +1,7 @@
 'use client'
 import { postUserLogout } from '@/api'
 import { clearAuthData } from '@/api/httpClient'
+import { ModelUserRole } from '@/api/types'
 import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Stack } from '@mui/material'
 import { useRouter } from 'next/navigation'
 import { useContext } from 'react'
@@ -8,6 +9,7 @@ import { AuthContext } from '../authProvider'
 import Icon from '../icon'
 import UserAvatar from '../UserAvatar'
 import { IdCard, IdInfo, InfoCard } from './components'
+import SettingsIcon from '@mui/icons-material/Settings'
 
 export const OPT_LIST = [
   {
@@ -19,11 +21,24 @@ export const OPT_LIST = [
 
 interface ProfilePanelProps {
   onClose?: () => void
+  adminHref?: string
 }
 
-const ProfilePanel: React.FC<ProfilePanelProps> = ({ onClose }) => {
+const ProfilePanel: React.FC<ProfilePanelProps> = ({ onClose, adminHref }) => {
   const { user } = useContext(AuthContext)
   const router = useRouter()
+
+  const isAdmin = user?.role === ModelUserRole.UserRoleAdmin
+
+  const handleNavigate = (href?: string) => {
+    if (!href) return
+    try {
+      const url = new URL(href, window.location.href)
+      window.location.href = url.toString()
+    } catch (error) {
+      router.push(href)
+    }
+  }
 
   const handleLogout = async () => {
     try {
@@ -33,7 +48,7 @@ const ProfilePanel: React.FC<ProfilePanelProps> = ({ onClose }) => {
       console.warn('Backend logout failed:', error)
       // 即使后端登出失败，也要继续清理本地数据
     }
-    
+
     try {
       // 使用统一的清除认证信息函数（不调用服务端登出API，因为已经调用过了）
       await clearAuthData(false)
@@ -115,6 +130,41 @@ const ProfilePanel: React.FC<ProfilePanelProps> = ({ onClose }) => {
             </ListItem>
           )
         })}
+
+        {isAdmin && adminHref && (
+          <ListItem
+            disablePadding
+            sx={{
+              height: 40,
+              borderRadius: '4px',
+              marginBottom: '4px',
+              transition: 'background 0.3s',
+              '&:hover': {
+                background: 'rgba(32,108,255,0.1)',
+              },
+            }}
+            onClick={(e) => {
+              e.stopPropagation()
+              onClose?.()
+              handleNavigate(adminHref)
+            }}
+          >
+            <ListItemButton
+              sx={{
+                '&:hover': {
+                  background: 'transparent',
+                },
+              }}
+              dense
+            >
+              <ListItemIcon sx={{ minWidth: 34 }}>
+                <SettingsIcon sx={{ fontSize: 18, color: 'text.primary' }} />
+              </ListItemIcon>
+              <ListItemText sx={{ color: '#000' }} primary='后台管理' />
+            </ListItemButton>
+          </ListItem>
+        )}
+
         <ListItem
           disablePadding
           sx={{

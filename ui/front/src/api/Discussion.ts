@@ -15,6 +15,7 @@ import {
   ContextResponse,
   DeleteDiscussionDiscIdCommentCommentIdParams,
   DeleteDiscussionDiscIdParams,
+  GetAdminDiscussionParams,
   GetDiscussionDiscIdParams,
   GetDiscussionDiscIdSimilarityParams,
   GetDiscussionParams,
@@ -39,6 +40,40 @@ import {
   SvcDiscussionUpdateReq,
   SvcResolveFeedbackReq,
 } from "./types";
+
+/**
+ * @description backend list discussions
+ *
+ * @tags discussion
+ * @name GetAdminDiscussion
+ * @summary backend list discussions
+ * @request GET:/admin/discussion
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (ModelDiscussionListItem)[],
+
+}),
+
+})` OK
+ */
+
+export const getAdminDiscussion = (
+  query: GetAdminDiscussionParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: ModelDiscussionListItem[];
+      };
+    }
+  >({
+    path: `/admin/discussion`,
+    method: "GET",
+    query: query,
+    format: "json",
+    ...params,
+  });
 
 /**
  * @description list discussions

@@ -6,9 +6,11 @@ const layout = (props: { children: React.ReactNode }) => {
     <Box
       sx={{
         position: 'relative',
-        minHeight: 700,
-        height: '100vh',
-        bgcolor: 'rgba(246, 247, 248, 0.5)',
+        bgcolor: '#fff',
+        height: 'calc(100vh - 64px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
     >
       {props.children}

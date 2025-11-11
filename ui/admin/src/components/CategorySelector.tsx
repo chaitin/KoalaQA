@@ -61,8 +61,6 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
     };
   }, [handleCategoryUpdate]);
 
-  // 根据value找到对应的选项
-  console.log(value)
   const selectedOptions = options.filter(option => (value || []).includes(option.id));
 
   const handleChange = (event: any, newValue: CategoryOption[] | null) => {
