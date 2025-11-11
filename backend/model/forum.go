@@ -23,7 +23,7 @@ type ForumInfo struct {
 	Index     uint                 `json:"index"`
 	Name      string               `json:"name" binding:"required"`
 	RouteName string               `json:"route_name"`
-	BlogIDs   Int64Array           `json:"blog_ids"`
+	BlogIDs   Int64Array           `json:"blog_ids" gorm:"type:bigint[]"`
 	Groups    JSONB[[]ForumGroups] `json:"groups" gorm:"type:jsonb"`
 }
 

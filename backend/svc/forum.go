@@ -42,6 +42,9 @@ func (f *Forum) List(ctx context.Context, user model.UserInfo, permissionCheck b
 			}
 		}
 
+		if len(forumIDs) == 0 {
+			return make([]*model.ForumInfo, 0), nil
+		}
 	}
 
 	var items []*model.ForumInfo
