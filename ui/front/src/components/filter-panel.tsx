@@ -5,6 +5,7 @@ import { Article as ArticleIcon, QuestionAnswer as QuestionAnswerIcon } from '@m
 import {
   Box,
   Checkbox,
+  Chip,
   Divider,
   FormControl,
   InputLabel,
@@ -302,23 +303,24 @@ export default function FilterPanel() {
                 }}
                 input={<OutlinedInput label={group.name} />}
                 renderValue={(selected) => {
-                  const selectedCount = (selected as string[]).length
+                  const selectedIds = selected as string[]
+                  const selectedCount = selectedIds.length
                   if (selectedCount === 0) {
                     return <Typography sx={{ color: 'rgba(0,0,0,0.3)', fontSize: '0.8125rem' }}>全部</Typography>
                   }
-                  const summaryText = `已选${selectedCount}项`
+                  const firstId = selectedIds[0]
+                  const firstOption = group.options.find((option) => option.id === firstId)
+                  const firstLabel = firstOption?.name ?? ''
+                  
+                  if (selectedCount === 1) {
+                    return <Chip size='small' label={firstLabel} sx={{ maxWidth: '100%', fontSize: '0.75rem' }} />
+                  }
+                  
                   return (
-                    <Typography
-                      sx={{
-                        fontSize: '0.8125rem',
-                        color: '#111827',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {summaryText}
-                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <Chip size='small' label={firstLabel} sx={{ fontSize: '0.75rem' }} />
+                      <Chip size='small' label={`+${selectedCount - 1}`} sx={{ fontSize: '0.75rem' }} />
+                    </Box>
                   )
                 }}
                 sx={{
