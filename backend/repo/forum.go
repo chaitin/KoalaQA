@@ -105,7 +105,7 @@ func (f *Forum) UpdateWithGroup(ctx context.Context, forums []model.ForumInfo) e
 				datasetID = id
 			}
 
-			if len(forum.BlogIDs) > 0 {
+			if len(forum.BlogIDs) > 3 {
 				forum.BlogIDs = forum.BlogIDs[:3]
 			}
 
@@ -124,7 +124,7 @@ func (f *Forum) UpdateWithGroup(ctx context.Context, forums []model.ForumInfo) e
 
 		err := tx.Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "id"}},
-			DoUpdates: clause.AssignmentColumns([]string{"name", "route_name", "index", "groups", "dataset_id"}),
+			DoUpdates: clause.AssignmentColumns([]string{"name", "route_name", "index", "groups", "blog_ids", "dataset_id"}),
 		}).CreateInBatches(data, 1000).Error
 		if err != nil {
 			return err

@@ -27,7 +27,7 @@ func (f *forum) Route(h server.Handler) {
 // @Summary list forums
 // @Tags forum
 // @Produce json
-// @Success 200 {object} context.Response{data=[]model.ForumInfo}
+// @Success 200 {object} context.Response{data=[]svc.ForumRes}
 // @Router /forum [get]
 func (f *forum) List(ctx *context.Context) {
 	res, err := f.svc.List(ctx, ctx.GetUser(), true)

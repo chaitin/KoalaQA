@@ -182,7 +182,7 @@ const docTemplate = `{
                                             "items": {
                                                 "allOf": [
                                                     {
-                                                        "$ref": "#/definitions/model.ForumInfo"
+                                                        "$ref": "#/definitions/svc.ForumRes"
                                                     },
                                                     {
                                                         "type": "object",
@@ -4195,7 +4195,7 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/model.ForumInfo"
+                                                "$ref": "#/definitions/svc.ForumRes"
                                             }
                                         }
                                     }
@@ -6375,6 +6375,52 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "svc.ForumBlog": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "svc.ForumRes": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "blog_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "blogs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/svc.ForumBlog"
+                    }
+                },
+                "groups": {
+                    "$ref": "#/definitions/model.JSONB-array_model_ForumGroups"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "index": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "route_name": {
                     "type": "string"
                 }
             }
