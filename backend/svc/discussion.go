@@ -387,7 +387,7 @@ func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListRe
 	query = append(query, repo.QueryWithEqual("type", req.Type),
 		repo.QueryWithEqual("forum_id", req.ForumID),
 		repo.QueryWithEqual("resolved", req.Resolved),
-		repo.QueryWithEqual("id", req.DiscussionIDs, repo.EqualOPEqAny),
+		repo.QueryWithEqual("discussions.id", req.DiscussionIDs, repo.EqualOPEqAny),
 	)
 	if req.OnlyMine {
 		query = append(query, repo.QueryWithEqual("members", userID, repo.EqualOPValIn))
