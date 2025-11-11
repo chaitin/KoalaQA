@@ -74,6 +74,52 @@ func (u *User) DeleteByID(ctx context.Context, userID uint) error {
 	})
 }
 
+func (u *User) getAvatarFromURL(ctx context.Context, imgURL string) string {
+	if imgURL == "" {
+		return ""
+	}
+
+	logger := u.logger.WithContext(ctx).With("avatar_url", imgURL)
+	imgData, contentType, err := util.HTTPGetWithContentType(imgURL)
+	if err != nil {
+		logger.WithErr(err).Warn("download img failed")
+		return ""
+	}
+
+	logger = logger.With("content_type", contentType)
+
+	if !strings.HasPrefix(contentType, "image") {
+		logger.Info("content type is not img, skip upload")
+		return ""
+	}
+
+	// 默认 jpg
+	ext := ".jpg"
+
+	exts, err := mime.ExtensionsByType(contentType)
+	if err != nil {
+		logger.WithErr(err).Warn("get ext from content_type failed")
+		return ""
+	}
+
+	if len(exts) > 0 {
+		ext = exts[len(exts)-1]
+	}
+
+	avatar, err := u.oc.Upload(ctx, "avatar", bytes.NewReader(imgData),
+		oss.WithLimitSize(),
+		oss.WithFileSize(len(imgData)),
+		oss.WithExt(ext),
+		oss.WithPublic(),
+	)
+	if err != nil {
+		logger.WithErr(err).Warn("upload avatar to oss failed")
+		return ""
+	}
+
+	return avatar
+}
+
 func (u *User) CreateThird(ctx context.Context, orgID uint, user *third_auth.User) (*model.User, error) {
 	if user.ThirdID == "" {
 		return nil, errors.New("empty user third_id")
@@ -131,43 +177,7 @@ func (u *User) CreateThird(ctx context.Context, orgID uint, user *third_auth.Use
 		}
 
 		if createUser {
-			if user.Avatar != "" {
-				imgData, contentType, txErr := util.HTTPGetWithContentType(user.Avatar)
-				if txErr != nil {
-					return txErr
-				}
-
-				if strings.HasPrefix(contentType, "image") {
-					// 默认 jpg
-					ext := ".jpg"
-					exts, err := mime.ExtensionsByType(contentType)
-					if err != nil {
-						u.logger.WithContext(ctx).WithErr(err).With("avatar_url", user.Avatar).With("content_type", contentType).Warn("get ext by content type failed")
-						user.Avatar = ""
-					} else {
-						if len(exts) > 0 {
-							ext = exts[len(exts)-1]
-						}
-
-						avatar, txErr := u.oc.Upload(ctx, "avatar", bytes.NewReader(imgData),
-							oss.WithLimitSize(),
-							oss.WithFileSize(len(imgData)),
-							oss.WithExt(ext),
-							oss.WithPublic(),
-						)
-						if txErr != nil {
-							u.logger.WithContext(ctx).WithErr(err).With("ext", ext).With("avatar_url", user.Avatar).Warn("upload avatar to oss failed")
-							user.Avatar = ""
-						} else {
-							user.Avatar = avatar
-						}
-					}
-				} else {
-					u.logger.WithContext(ctx).With("avatar_url", user.Avatar).With("content_type", contentType).Info("content type is not image, skip upload")
-					user.Avatar = ""
-				}
-
-			}
+			user.Avatar = u.getAvatarFromURL(ctx, user.Avatar)
 
 			dbUser = model.User{
 				Name:      user.Name,
