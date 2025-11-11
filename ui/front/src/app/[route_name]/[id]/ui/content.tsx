@@ -589,24 +589,27 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
     setHasAnswerContent(normalized.length > 0)
   }, [])
 
-  const handleAnswerEditorBlur = useCallback((e: React.FocusEvent<HTMLDivElement>) => {
-    // 检查焦点是否移到了编辑器内部或其他相关元素
-    const relatedTarget = e.relatedTarget as HTMLElement | null
-    if (relatedTarget) {
-      // 如果焦点移到了编辑器内部或按钮区域，不关闭编辑器
-      const editorContainer = e.currentTarget
-      if (editorContainer.contains(relatedTarget)) {
-        return
+  const handleAnswerEditorBlur = useCallback(
+    (e: React.FocusEvent<HTMLDivElement>) => {
+      // 检查焦点是否移到了编辑器内部或其他相关元素
+      const relatedTarget = e.relatedTarget as HTMLElement | null
+      if (relatedTarget) {
+        // 如果焦点移到了编辑器内部或按钮区域，不关闭编辑器
+        const editorContainer = e.currentTarget
+        if (editorContainer.contains(relatedTarget)) {
+          return
+        }
       }
-    }
-    // 延迟检查，确保焦点真的移出了编辑器区域
-    setTimeout(() => {
-      if (!hasAnswerContent) {
-        setShowAnswerEditor(false)
-        setAnswerEditorKey((prev) => prev + 1)
-      }
-    }, 100)
-  }, [hasAnswerContent])
+      // 延迟检查，确保焦点真的移出了编辑器区域
+      setTimeout(() => {
+        if (!hasAnswerContent) {
+          setShowAnswerEditor(false)
+          setAnswerEditorKey((prev) => prev + 1)
+        }
+      }, 100)
+    },
+    [hasAnswerContent],
+  )
 
   // 使用 useEffect 监听编辑器容器的 blur 事件
   useEffect(() => {
@@ -1404,13 +1407,13 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
             '&::before': {
               content: '""',
               position: 'absolute',
-              top: '-43px',
+              top: '-41px',
               left: '-1px',
               right: '-1px',
               height: '40px',
               background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, #FFFFFF 100%)',
               pointerEvents: 'none',
-              zIndex: -1,
+              zIndex: -2,
             },
           }}
         >
@@ -1437,9 +1440,14 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
               />
             ) : (
               <>
-                <Box 
+                <Box
                   ref={answerEditorContainerRef}
-                  sx={{ height: 100, borderRadius: '6px', overflow: 'hidden' }}
+                  sx={{
+                    height: 100,
+                    borderRadius: '6px',
+                    overflow: 'hidden',
+                    '& .tiptap:focus': { backgroundColor: 'transparent' },
+                  }}
                   onBlur={handleAnswerEditorBlur}
                   tabIndex={-1}
                 >
@@ -1453,7 +1461,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                   />
                 </Box>
                 {hasAnswerContent && (
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, px: { xs: 2, md: 3 }, mt: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
                     {isArticlePost && (
                       <Button
                         disableRipple
