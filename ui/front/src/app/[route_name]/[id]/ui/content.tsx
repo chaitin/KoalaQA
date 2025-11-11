@@ -25,8 +25,6 @@ import { useAuthCheck } from '@/hooks/useAuthCheck'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
-import ThumbDownAltOutlinedIcon from '@mui/icons-material/ThumbDownAltOutlined'
-import ThumbUpAltOutlinedIcon from '@mui/icons-material/ThumbUpAltOutlined'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
@@ -57,6 +55,7 @@ import EditCommentModal from './editCommentModal'
 import { formatNumber } from '@/lib/utils'
 import EditorContent from '@/components/EditorContent'
 import Modal from '@/components/modal'
+import { Icon } from '@ctzhian/ui'
 
 // 添加CSS动画样式
 const animationStyles = `
@@ -311,7 +310,8 @@ const BaseDiscussCard = (props: {
                   }}
                   onClick={() => handleLike()}
                 >
-                  <ThumbUpAltOutlinedIcon
+                  <Icon
+                    type='icon-dianzan1'
                     sx={{
                       color: isLiked ? 'info.main' : 'rgba(0,0,0,0.5)',
                       fontSize: 14,
@@ -352,7 +352,8 @@ const BaseDiscussCard = (props: {
                     }}
                     onClick={() => handleDislike()}
                   >
-                    <ThumbDownAltOutlinedIcon
+                    <Icon
+                      type='icon-diancai'
                       sx={{
                         color: isDisliked ? 'info.main' : 'rgba(0,0,0,0.5)',
                         fontSize: 14,
@@ -571,6 +572,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const [collapsedComments, setCollapsedComments] = useState<{ [key: number]: boolean }>({})
   const editorRef = React.useRef<EditorWrapRef>(null)
   const answerEditorRef = React.useRef<EditorWrapRef>(null)
+  const answerEditorContainerRef = React.useRef<HTMLDivElement>(null)
   const commentEditorRef = React.useRef<EditorWrapRef>(null)
   const commentEditorRefs = React.useRef<{ [key: number]: EditorWrapRef | null }>({})
   const prevHasAcceptedRef = React.useRef<boolean>(false)
@@ -586,6 +588,53 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
       .trim()
     setHasAnswerContent(normalized.length > 0)
   }, [])
+
+  const handleAnswerEditorBlur = useCallback((e: React.FocusEvent<HTMLDivElement>) => {
+    // 检查焦点是否移到了编辑器内部或其他相关元素
+    const relatedTarget = e.relatedTarget as HTMLElement | null
+    if (relatedTarget) {
+      // 如果焦点移到了编辑器内部或按钮区域，不关闭编辑器
+      const editorContainer = e.currentTarget
+      if (editorContainer.contains(relatedTarget)) {
+        return
+      }
+    }
+    // 延迟检查，确保焦点真的移出了编辑器区域
+    setTimeout(() => {
+      if (!hasAnswerContent) {
+        setShowAnswerEditor(false)
+        setAnswerEditorKey((prev) => prev + 1)
+      }
+    }, 100)
+  }, [hasAnswerContent])
+
+  // 使用 useEffect 监听编辑器容器的 blur 事件
+  useEffect(() => {
+    if (!showAnswerEditor || !answerEditorContainerRef.current) return
+
+    const container = answerEditorContainerRef.current
+    const handleBlur = (e: FocusEvent) => {
+      const relatedTarget = e.relatedTarget as HTMLElement | null
+      if (relatedTarget) {
+        // 如果焦点移到了编辑器内部或按钮区域，不关闭编辑器
+        if (container.contains(relatedTarget)) {
+          return
+        }
+      }
+      // 延迟检查，确保焦点真的移出了编辑器区域
+      setTimeout(() => {
+        if (!hasAnswerContent) {
+          setShowAnswerEditor(false)
+          setAnswerEditorKey((prev) => prev + 1)
+        }
+      }, 100)
+    }
+
+    container.addEventListener('blur', handleBlur, true)
+    return () => {
+      container.removeEventListener('blur', handleBlur, true)
+    }
+  }, [showAnswerEditor, hasAnswerContent])
 
   const handleClick = (
     event: React.MouseEvent<HTMLButtonElement>,
@@ -1017,7 +1066,8 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                         }}
                         onClick={() => handleVote(answer.id!, 'up')}
                       >
-                        <ThumbUpAltOutlinedIcon
+                        <Icon
+                          type='icon-dianzan1'
                           sx={{
                             color: isLiked ? 'info.main' : 'rgba(0,0,0,0.5)',
                             fontSize: 14,
@@ -1058,7 +1108,8 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                         }}
                         onClick={() => handleVote(answer.id!, 'down')}
                       >
-                        <ThumbDownAltOutlinedIcon
+                        <Icon
+                          type='icon-diancai'
                           sx={{
                             color: isDisliked ? 'info.main' : 'rgba(0,0,0,0.5)',
                             fontSize: 14,
@@ -1308,7 +1359,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                               endIcon={<ArrowForwardIcon />}
                               onClick={() => handleSubmitComment(answer.id!)}
                               sx={{
-                                background: '#000000',
                                 color: '#ffffff',
                                 textTransform: 'none',
                                 fontWeight: 600,
@@ -1318,7 +1368,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                 fontSize: '0.875rem',
                                 transition: 'all 0.15s ease-in-out',
                                 '&:hover': {
-                                  background: '#111827',
                                   transform: 'translateY(-1px)',
                                 },
                                 '&:active': { transform: 'translateY(0) scale(0.98)' },
@@ -1388,7 +1437,12 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
               />
             ) : (
               <>
-                <Box sx={{ height: 100, borderRadius: '6px', overflow: 'hidden' }}>
+                <Box 
+                  ref={answerEditorContainerRef}
+                  sx={{ height: 100, borderRadius: '6px', overflow: 'hidden' }}
+                  onBlur={handleAnswerEditorBlur}
+                  tabIndex={-1}
+                >
                   <EditorWrap
                     key={answerEditorKey}
                     ref={answerEditorRef}
@@ -1432,7 +1486,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                         fontSize: '0.9375rem',
                         transition: 'all 0.15s ease-in-out',
                         '&:hover': {
-                          background: '#111827',
                           transform: 'translateY(-1px)',
                         },
                         '&:active': { transform: 'translateY(0) scale(0.98)' },

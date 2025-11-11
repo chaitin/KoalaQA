@@ -233,9 +233,10 @@ export const getNotificationTextForExport = (
 export interface LoggedInProps {
   user: any | null
   verified?: boolean
+  adminHref?: string
 }
 
-const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
+const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) => {
   const { user: contextUser } = useContext(AuthContext)
   const { forums } = useForum()
   const user = propUser || contextUser
@@ -428,7 +429,25 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
           '&:active': { transform: 'scale(0.95)' },
         }}
       >
-        <Badge badgeContent={unreadCount} color='error'>
+        <Badge
+          badgeContent={unreadCount}
+          color='error'
+          slotProps={{
+            badge: {
+              sx: {
+                height: 14,
+                minWidth: 12,
+                fontSize: '12px',
+                lineHeight: '12px',
+                padding: '0 4px',
+                display: 'flex',
+                right: '2px',
+                alignItems: 'center',
+                justifyContent: 'center',
+              },
+            },
+          }}
+        >
           <NotificationsIcon sx={{ fontSize: 24 }} />
         </Badge>
       </IconButton>
@@ -598,7 +617,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser }) => {
           },
         }}
       >
-        <ProfilePanel onClose={handleProfileMenuClose} />
+        <ProfilePanel onClose={handleProfileMenuClose} adminHref={adminHref} />
       </Menu>
     </>
   )

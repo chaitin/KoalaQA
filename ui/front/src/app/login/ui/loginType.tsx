@@ -15,21 +15,21 @@ const LoginType = () => {
   const { authConfig, loading } = useAuthConfig()
   const searchParams = useSearchParams()
   const redirect = searchParams?.get('redirect') || undefined
-  
+
   // 检测是否在企业微信 app 内打开
   // 使用多种方法组合检测，提高准确性：
   // 1. 检查 window.wxwork 对象（企业微信 JS-SDK 注入）
   // 2. 检查 User-Agent（包含 wxwork 或 wecom）
   const isInWeComApp = (): boolean => {
     if (typeof window === 'undefined') return false
-    
+
     // 方法1: 检查企业微信 JS-SDK 注入的全局对象（最可靠）
     // 企业微信会在 window 上注入 wxwork 对象
     // 注意：需要引入企业微信 JS-SDK 后才会存在，如果未引入则使用 User-Agent 判断
     if ((window as any).wxwork) {
       return true
     }
-    
+
     // 方法2: 检查 User-Agent（辅助判断）
     const ua = navigator.userAgent.toLowerCase()
     // 企业微信的 User-Agent 通常包含 wxwork
@@ -37,20 +37,20 @@ const LoginType = () => {
     if (ua.includes('wxwork')) {
       return true
     }
-    
+
     // 方法3: 检查是否包含 wecom（部分版本可能使用）
     if (ua.includes('wecom')) {
       return true
     }
-    
+
     return false
   }
-  
+
   const handleOAuthLogin = async (type: number) => {
     try {
       // app 字段专为企业微信设计：如果 type 是企业微信并且是在企业微信 app 内打开，则为 true
       const app = type === AuthType.WECOM && isInWeComApp()
-      
+
       // 调用getUserLoginThird接口获取跳转URL
       const response = await getUserLoginThird({ type, redirect, app })
       // 使用类型断言处理API响应
@@ -78,7 +78,7 @@ const LoginType = () => {
   const hasOAuthLogin = authConfig?.auth_types?.some((auth) => auth.type === AuthType.OAUTH) || false
   const hasWeComLogin = authConfig?.auth_types?.some((auth) => auth.type === AuthType.WECOM) || false
   const hasThirdPartyLogin = hasOAuthLogin || hasWeComLogin
-  
+
   const passwordConfig = authConfig?.auth_types?.find((auth) => auth.type === AuthType.PASSWORD)
   const oauthConfig = authConfig?.auth_types?.find((auth) => auth.type === AuthType.OAUTH)
   const wecomConfig = authConfig?.auth_types?.find((auth) => auth.type === AuthType.WECOM)
@@ -97,8 +97,8 @@ const LoginType = () => {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            minHeight: '100vh',
             px: 2,
+            border: '1px solid #D9DEE2',
           }}
         >
           <Card
@@ -184,27 +184,21 @@ const LoginType = () => {
   // 情况2：有账号密码登录（可能同时有第三方登录），显示右侧样式（完整登录表单）
   return (
     <Suspense>
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '100vh',
-          px: 2,
-        }}
-      >
+      <Stack alignItems='center' justifyContent='center' sx={{ height: '100%' }}>
         <Card
           sx={{
             width: 400,
-            p: 4,
+            p: 3,
             borderRadius: 2,
+            mx: 'auto',
+            border: '1px solid #D9DEE2',
           }}
         >
-          <Stack spacing={3}>
+          <Stack spacing={2}>
             <Typography
               variant='h1'
               sx={{
-                fontSize: '24px',
+                fontSize: '20px',
                 fontWeight: 600,
                 textAlign: 'center',
                 color: '#333',
@@ -250,13 +244,12 @@ const LoginType = () => {
                     textAlign: 'center',
                     color: 'rgba(0,0,0,0.4)',
                     fontSize: 14,
-                    mt: 2,
                   }}
                 >
                   使用其他登录方式
                 </Box>
 
-                <Stack spacing={2}>
+                <Stack spacing={1}>
                   {oauthConfig && (
                     <Button
                       variant='outlined'
@@ -288,7 +281,7 @@ const LoginType = () => {
             )}
           </Stack>
         </Card>
-      </Box>
+      </Stack>
     </Suspense>
   )
 }

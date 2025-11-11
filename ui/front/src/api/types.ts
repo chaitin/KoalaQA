@@ -270,6 +270,7 @@ export interface ModelForumGroups {
 }
 
 export interface ModelForumInfo {
+  blog_ids?: number[];
   groups?: ModelJSONBArrayModelForumGroups;
   id?: number;
   index?: number;
@@ -564,6 +565,21 @@ export interface SvcFileExportReq {
   kb_id: number;
   title: string;
   uuid: string;
+}
+
+export interface SvcForumBlog {
+  id?: number;
+  title?: string;
+}
+
+export interface SvcForumRes {
+  blog_ids?: number[];
+  blogs?: SvcForumBlog[];
+  groups?: ModelJSONBArrayModelForumGroups;
+  id?: number;
+  index?: number;
+  name: string;
+  route_name?: string;
 }
 
 export interface SvcForumUpdateReq {
@@ -890,6 +906,15 @@ export interface PutAdminBotPayload {
   unknown_prompt?: string;
 }
 
+export interface GetAdminDiscussionParams {
+  forum_id: number;
+  keyword?: string;
+  /** @min 1 */
+  page?: number;
+  /** @min 1 */
+  size?: number;
+}
+
 /** request params */
 export type PutAdminForumPayload = SvcForumUpdateReq & {
   forums?: (ModelForumInfo & {
@@ -1193,6 +1218,7 @@ export interface DeleteAdminUserUserIdParams {
 }
 
 export interface GetDiscussionParams {
+  discussion_ids?: number[];
   filter?: "hot" | "new" | "publish";
   forum_id?: number;
   group_ids?: number[];

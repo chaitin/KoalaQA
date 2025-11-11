@@ -99,6 +99,7 @@ func (w *weCom) User(ctx context.Context, code string) (*User, error) {
 		}
 
 		res.Email = user.Email
+		res.Avatar = user.Avatar
 	}
 
 	return res, nil

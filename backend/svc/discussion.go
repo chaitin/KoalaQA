@@ -268,26 +268,6 @@ func (d *Discussion) Delete(ctx context.Context, user model.UserInfo, uuid strin
 	return nil
 }
 
-type DiscussionListFilter string
-
-const (
-	DiscussionListFilterHot     DiscussionListFilter = "hot"
-	DiscussionListFilterNew     DiscussionListFilter = "new"
-	DiscussionListFilterPublish DiscussionListFilter = "publish"
-)
-
-type DiscussionListReq struct {
-	*model.Pagination
-
-	Keyword  string               `json:"keyword" form:"keyword"`
-	Filter   DiscussionListFilter `json:"filter" form:"filter,default=hot"`
-	Type     model.DiscussionType `json:"type" form:"type,default=qa"`
-	GroupIDs model.Int64Array     `json:"group_ids" form:"group_ids"`
-	ForumID  uint                 `json:"forum_id" form:"forum_id"`
-	OnlyMine bool                 `json:"only_mine" form:"only_mine"`
-	Resolved *bool                `json:"resolved" form:"resolved"`
-}
-
 func (d *Discussion) ListSimilarity(ctx context.Context, discUUID string) (*model.ListRes[*model.DiscussionListItem], error) {
 	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
 	if err != nil {
@@ -312,6 +292,61 @@ func (d *Discussion) ListSimilarity(ctx context.Context, discUUID string) (*mode
 	}
 	res.Total = int64(len(res.Items))
 	return &res, nil
+}
+
+type DiscussionListBackendReq struct {
+	*model.Pagination
+
+	Keyword *string `json:"keyword" form:"keyword"`
+	ForumID uint    `json:"forum_id" form:"forum_id" binding:"required"`
+}
+
+func (d *Discussion) ListBackend(ctx context.Context, req DiscussionListBackendReq) (*model.ListRes[*model.DiscussionListItem], error) {
+	var res model.ListRes[*model.DiscussionListItem]
+
+	query := []repo.QueryOptFunc{
+		repo.QueryWithEqual("forum_id", req.ForumID),
+		repo.QueryWithILike("title", req.Keyword),
+		repo.QueryWithEqual("type", model.DiscussionTypeBlog),
+	}
+
+	err := d.in.DiscRepo.List(ctx, &res.Items,
+		append([]repo.QueryOptFunc{
+			repo.QueryWithPagination(req.Pagination),
+			repo.QueryWithOrderBy("created_at DESC"),
+		}, query...)...,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	err = d.in.DiscRepo.Count(ctx, &res.Total, query...)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+type DiscussionListFilter string
+
+const (
+	DiscussionListFilterHot     DiscussionListFilter = "hot"
+	DiscussionListFilterNew     DiscussionListFilter = "new"
+	DiscussionListFilterPublish DiscussionListFilter = "publish"
+)
+
+type DiscussionListReq struct {
+	*model.Pagination
+
+	Keyword       string               `json:"keyword" form:"keyword"`
+	Filter        DiscussionListFilter `json:"filter" form:"filter,default=hot"`
+	Type          model.DiscussionType `json:"type" form:"type,default=qa"`
+	GroupIDs      model.Int64Array     `json:"group_ids" form:"group_ids"`
+	ForumID       uint                 `json:"forum_id" form:"forum_id"`
+	OnlyMine      bool                 `json:"only_mine" form:"only_mine"`
+	Resolved      *bool                `json:"resolved" form:"resolved"`
+	DiscussionIDs *model.Int64Array    `json:"discussion_ids" form:"discussion_ids"`
 }
 
 func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListReq) (*model.ListRes[*model.DiscussionListItem], error) {
@@ -352,6 +387,7 @@ func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListRe
 	query = append(query, repo.QueryWithEqual("type", req.Type),
 		repo.QueryWithEqual("forum_id", req.ForumID),
 		repo.QueryWithEqual("resolved", req.Resolved),
+		repo.QueryWithEqual("discussions.id", req.DiscussionIDs, repo.EqualOPEqAny),
 	)
 	if req.OnlyMine {
 		query = append(query, repo.QueryWithEqual("members", userID, repo.EqualOPValIn))

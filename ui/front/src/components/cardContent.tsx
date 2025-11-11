@@ -1,9 +1,9 @@
 import React from 'react';
 import { Box, Stack, Typography, BoxProps } from '@mui/material';
 import RemoveRedEyeOutlinedIcon from '@mui/icons-material/RemoveRedEyeOutlined';
-import ThumbUpAltOutlinedIcon from '@mui/icons-material/ThumbUpAltOutlined';
 import Link from 'next/link';
 import { formatNumber } from '@/lib/utils';
+import { Icon } from '@ctzhian/ui';
 
 interface CardContentProps extends BoxProps {
   data: {
@@ -97,7 +97,8 @@ export const CardContent: React.FC<CardContentProps> = ({ data, ...other }) => {
             </Typography>
           </Stack>
           <Stack direction='row' alignItems='center' gap={1}>
-            <ThumbUpAltOutlinedIcon
+            <Icon
+              type='icon-dianzan1'
               sx={{
                 cursor: 'pointer',
                 color: false ? 'primary.main' : '#999',

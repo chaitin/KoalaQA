@@ -9,6 +9,7 @@ type Forum struct {
 	// Deprecated: only use in migration
 	GroupIDs  Int64Array           `json:"group_ids" gorm:"column:group_ids;type:bigint[]"`
 	Groups    JSONB[[]ForumGroups] `json:"groups" gorm:"column:groups;type:jsonb"`
+	BlogIDs   Int64Array           `json:"blog_ids" gorm:"column:blog_ids;type:bigint[]"`
 	DatasetID string               `json:"-" gorm:"column:dataset_id;type:text;uniqueIndex"`
 }
 
@@ -22,6 +23,7 @@ type ForumInfo struct {
 	Index     uint                 `json:"index"`
 	Name      string               `json:"name" binding:"required"`
 	RouteName string               `json:"route_name"`
+	BlogIDs   Int64Array           `json:"blog_ids" gorm:"type:bigint[]"`
 	Groups    JSONB[[]ForumGroups] `json:"groups" gorm:"type:jsonb"`
 }
 

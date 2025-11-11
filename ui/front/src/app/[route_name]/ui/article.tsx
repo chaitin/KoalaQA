@@ -47,6 +47,7 @@ import { useBoolean } from 'ahooks'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import DiscussCard from './discussCard'
+import { MarkDown } from '@/components'
 
 export type Status = 'hot' | 'new' | 'publish'
 
@@ -103,6 +104,8 @@ const Article = ({
   const [loadingMore, setLoadingMore] = useState(false)
   const [contributors, setContributors] = useState<SvcRankContributeItem[]>([])
   const [contributorsLoading, setContributorsLoading] = useState(false)
+  const [announcements, setAnnouncements] = useState<ModelDiscussionListItem[]>([])
+  const [announcementsLoading, setAnnouncementsLoading] = useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
   const loadMoreTriggerRef = useRef<HTMLDivElement | null>(null)
 
@@ -118,12 +121,6 @@ const Article = ({
   const [lastPathname, setLastPathname] = useState('')
 
   const hookForumId = useForumId()
-  const getCurrentForumId = (): number | undefined => {
-    const id = forumId || hookForumId
-    if (!id) return undefined
-    return typeof id === 'string' ? parseInt(id, 10) : id
-  }
-  const currentForumId = getCurrentForumId()
 
   const fetchContributors = useCallback(async () => {
     try {
@@ -142,6 +139,40 @@ const Article = ({
     fetchContributors()
   }, [fetchContributors])
 
+  // 获取公告列表
+  const fetchAnnouncements = useCallback(async () => {
+    if (!forumInfo?.blog_ids || forumInfo.blog_ids.length === 0) {
+      setAnnouncements([])
+      return
+    }
+
+    try {
+      setAnnouncementsLoading(true)
+      const params: GetDiscussionParams = {
+        discussion_ids: forumInfo.blog_ids,
+        page: 1,
+        size: 10,
+        type: 'blog',
+        forum_id: parseInt(forumId || '0', 10),
+      }
+      const response = await getDiscussion(params)
+      if (response?.items) {
+        setAnnouncements(response.items)
+      } else {
+        setAnnouncements([])
+      }
+    } catch (error) {
+      console.error('Failed to fetch announcements:', error)
+      setAnnouncements([])
+    } finally {
+      setAnnouncementsLoading(false)
+    }
+  }, [forumInfo?.blog_ids, forumInfo?.id])
+
+  useEffect(() => {
+    fetchAnnouncements()
+  }, [fetchAnnouncements])
+
   const fetchMoreList = useCallback(() => {
     // 防止重复请求
     if (page * 10 >= (articleData.total || 0) || loadingMore) {
@@ -155,6 +186,7 @@ const Article = ({
       page: new_page,
       size: 10,
       type: type as 'qa' | 'feedback' | 'blog',
+      forum_id: parseInt(forumId || '0', 10),
     }
 
     // 设置 filter
@@ -168,11 +200,6 @@ const Article = ({
     // 如果有选中的主题，添加到参数中
     if (topics && topics.length > 0) {
       params.group_ids = topics
-    }
-
-    // 添加当前选中的板块ID
-    if (currentForumId) {
-      params.forum_id = currentForumId
     }
 
     // 添加筛选参数
@@ -200,7 +227,7 @@ const Article = ({
       .finally(() => {
         setLoadingMore(false)
       })
-  }, [page, articleData.total, status, search, topics, type, currentForumId, loadingMore, onlyMine, resolved])
+  }, [page, articleData.total, status, search, topics, type, loadingMore, onlyMine, resolved])
 
   const createQueryString = (name: string, value: string) => {
     const params = new URLSearchParams(searchParams?.toString())
@@ -230,11 +257,6 @@ const Article = ({
         params.group_ids = tps
       }
 
-      // 添加当前选中的板块ID
-      if (currentForumId) {
-        params.forum_id = currentForumId
-      }
-
       // 添加筛选参数
       if (onlyMineParam !== undefined) {
         params.only_mine = onlyMineParam
@@ -254,7 +276,7 @@ const Article = ({
           // 保持当前数据，不重置为空
         })
     },
-    [currentForumId, type],
+    [type],
   )
 
   const handleSearch = useCallback(() => {
@@ -283,11 +305,7 @@ const Article = ({
     const observer = new IntersectionObserver(
       (entries) => {
         const [entry] = entries
-        if (
-          entry?.isIntersecting &&
-          page * 10 < (articleData.total || 0) &&
-          !loadingMore
-        ) {
+        if (entry?.isIntersecting && page * 10 < (articleData.total || 0) && !loadingMore) {
           fetchMoreList()
         }
       },
@@ -657,7 +675,7 @@ const Article = ({
                     },
                   }}
                 >
-                  未解决
+                  未解决的
                 </MenuItem>
               </Menu>
             </Box>
@@ -717,83 +735,59 @@ const Article = ({
           }}
         >
           {/* 公告 */}
-          {/* <Paper
-            elevation={0}
-            sx={{
-              bgcolor: '#ffffff',
-              borderRadius: '6px',
-              border: '1px solid #e5e7eb',
-              p: 2,
-              mb: 2,
-            }}
-          >
-            <Typography variant='subtitle2' sx={{ fontWeight: 700, color: '#111827', fontSize: '0.9375rem', mb: 2 }}>
-              公告
-            </Typography>
-            {articleData.items?.find((item) => item.type === 'blog') ? (
-              <Box
+          {announcements.map((announcement) => (
+            <Link
+              key={announcement.uuid}
+              href={`/${routeName}/${announcement.uuid}`}
+              style={{ textDecoration: 'none' }}
+            >
+              <Paper
+                elevation={0}
                 sx={{
-                  p: 1.5,
+                  bgcolor: 'rgba(0,99,151,0.03)',
                   borderRadius: '6px',
-                  bgcolor: '#f9fafb',
-                  border: '1px solid #e5e7eb',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  '&:hover': {
-                    bgcolor: '#f3f4f6',
-                    borderColor: '#d1d5db',
-                  },
-                }}
-                onClick={() => {
-                  const article = articleData.items?.find((item) => item.type === 'blog')
-                  if (article?.uuid) {
-                    router.push(`/${routeName}/${article.uuid}`)
-                  }
+                  border: '1px solid #D9DEE2',
+                  p: 2,
+                  mb: 2,
                 }}
               >
-                <Typography
-                  variant='body2'
-                  sx={{ fontWeight: 600, color: '#111827', fontSize: '0.8125rem', mb: 0.75, lineHeight: 1.4 }}
-                >
-                  {articleData.items?.find((item) => item.type === 'blog')?.title || '暂无公告'}
-                </Typography>
-                <Typography
-                  variant='caption'
-                  sx={{
-                    color: '#6b7280',
-                    fontSize: '0.7rem',
-                    lineHeight: 1.5,
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden',
-                  }}
-                >
-                  {articleData.items?.find((item) => item.type === 'blog')?.summary || '暂无公告内容'}
-                </Typography>
-              </Box>
-            ) : (
-              <Box
-                sx={{
-                  p: 1.5,
-                  borderRadius: '6px',
-                  bgcolor: '#f9fafb',
-                  border: '1px solid #e5e7eb',
-                }}
-              >
-                <Typography
-                  variant='caption'
-                  sx={{
-                    color: '#6b7280',
-                    fontSize: '0.7rem',
-                    lineHeight: 1.5,
-                  }}
-                >
-                  暂无公告
-                </Typography>
-              </Box>
-            )}
-          </Paper> */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Typography
+                    variant='body2'
+                    sx={{
+                      fontSize: '0.875rem',
+                      fontWeight: 500,
+                      color: '#111827',
+                      lineHeight: 1.4,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                    }}
+                  >
+                    {announcement.title}
+                  </Typography>
+                  {announcement.summary && (
+                    <Box
+                      sx={{
+                        fontSize: '12px!important',
+                        color: 'rgba(33, 34, 45, 0.50)',
+                        bgcolor: 'transparent',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                      }}
+                    >
+                      {announcement.summary}
+                    </Box>
+                  )}
+                </Box>
+              </Paper>
+            </Link>
+          ))}
 
           {/* 贡献达人 */}
           <Paper
@@ -997,7 +991,7 @@ const Article = ({
           closeSearchModal()
           setSearch('')
         }}
-        forumId={currentForumId}
+        forumId={parseInt(forumId || '0', 10)}
         initialQuery={search}
         onAsk={handleAsk}
         onFeedback={handleFeedback}

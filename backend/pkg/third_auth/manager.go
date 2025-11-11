@@ -6,11 +6,13 @@ import (
 	"sync"
 
 	"github.com/chaitin/koalaqa/model"
+	"github.com/chaitin/koalaqa/pkg/oss"
 )
 
 type Manager struct {
 	lock    sync.Mutex
 	authors map[model.AuthType]Author
+	oc      oss.Client
 }
 
 func (m *Manager) author(t model.AuthType) (Author, bool) {
@@ -30,7 +32,7 @@ func (m *Manager) Update(t model.AuthType, cfg Config, checkCfg bool) error {
 	var author Author
 	switch t {
 	case model.AuthTypeOIDC:
-		author = newOIDC(cfg)
+		author = newOIDC(cfg, m.oc)
 	case model.AuthTypeWeCom:
 		author = newWeCom(cfg)
 	default:
@@ -67,7 +69,7 @@ func (o *Manager) User(ctx context.Context, t model.AuthType, code string) (*Use
 	return author.User(ctx, code)
 }
 
-func newManager() *Manager {
+func newManager(oc oss.Client) *Manager {
 	return &Manager{
 		authors: make(map[model.AuthType]Author),
 	}

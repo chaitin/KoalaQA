@@ -1,7 +1,7 @@
 'use client'
 
 import { ModelDiscussionListItem, ModelDiscussionType } from '@/api/types'
-import { MarkDown } from '@/components'
+import { MarkDown, QaUnresolvedChip } from '@/components'
 import { CommonContext } from '@/components/commonProvider'
 import { LazyImage } from '@/components/optimized'
 import { TimeDisplay } from '@/components/TimeDisplay'
@@ -9,7 +9,6 @@ import {
   CheckCircleOutline as CheckCircleOutlineIcon,
   HowToVote as HowToVoteIcon,
   QuestionAnswer as QuestionAnswerIcon,
-  ThumbUp as ThumbUpIcon,
 } from '@mui/icons-material'
 import { Box, Chip, Stack, SxProps, Typography } from '@mui/material'
 import CommonAvatar from '@/components/CommonAvatar'
@@ -88,7 +87,7 @@ const getTypeChipStyle = (type?: ModelDiscussionType) => {
       return {
         bgcolor: 'rgba(255,119,68,0.1)',
         color: '#FF7744',
-        borderColor: '#FF7744',
+        borderColor: 'rgba(255,119,68,0.1)',
       }
     default:
       return {
@@ -254,6 +253,9 @@ const DiscussCard = ({
 
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+            {!data.resolved && data.type === ModelDiscussionType.DiscussionTypeQA && (
+              <QaUnresolvedChip type={data.type} resolved={data.resolved} />
+            )}
             {shouldShowStatus(it) && (
               <Chip
                 icon={
@@ -353,7 +355,7 @@ const DiscussCard = ({
                   '&:hover': { color: '#000000' },
                 }}
               >
-                <Icon type='icon-wenzhangdianzan' sx={{ fontSize: 12 }} />
+                <Icon type='icon-dianzan1' sx={{ fontSize: 12 }} />
                 <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
                   {(it.like || 0) - (it.dislike || 0)}
                 </Typography>

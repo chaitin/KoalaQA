@@ -29,8 +29,6 @@ export { zhCN } from '@mui/material/locale';
 export { default as SettingsIcon } from '@mui/icons-material/Settings';
 export { default as CheckCircleIcon } from '@mui/icons-material/CheckCircle';
 export { default as MoreVertIcon } from '@mui/icons-material/MoreVert';
-export { default as ThumbUpAltOutlinedIcon } from '@mui/icons-material/ThumbUpAltOutlined';
-export { default as ThumbDownAltOutlinedIcon } from '@mui/icons-material/ThumbDownAltOutlined';
 export { default as SearchRoundedIcon } from '@mui/icons-material/SearchRounded';
 export { default as ClearRoundedIcon } from '@mui/icons-material/ClearRounded';
 export { default as CloseIcon } from '@mui/icons-material/Close';

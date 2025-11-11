@@ -8,20 +8,30 @@ import (
 )
 
 type Forum struct {
-	repo    *repo.Forum
-	repoOrg *repo.Org
-	svcAuth *Auth
+	repo     *repo.Forum
+	repoOrg  *repo.Org
+	repoDisc *repo.Discussion
+	svcAuth  *Auth
 }
 
-func newForum(forum *repo.Forum, org *repo.Org, auth *Auth) *Forum {
-	return &Forum{repo: forum, repoOrg: org, svcAuth: auth}
+func newForum(forum *repo.Forum, org *repo.Org, disc *repo.Discussion, auth *Auth) *Forum {
+	return &Forum{repo: forum, repoOrg: org, repoDisc: disc, svcAuth: auth}
 }
 
 func init() {
 	registerSvc(newForum)
 }
 
-func (f *Forum) List(ctx context.Context, user model.UserInfo, permissionCheck bool) ([]*model.ForumInfo, error) {
+type ForumBlog struct {
+	ID    uint   `json:"id"`
+	Title string `json:"title"`
+}
+type ForumRes struct {
+	model.ForumInfo
+	Blogs []ForumBlog `json:"blogs" gorm:"-"`
+}
+
+func (f *Forum) List(ctx context.Context, user model.UserInfo, permissionCheck bool) ([]*ForumRes, error) {
 	var forumIDs model.Int64Array
 
 	if permissionCheck {
@@ -42,9 +52,12 @@ func (f *Forum) List(ctx context.Context, user model.UserInfo, permissionCheck b
 			}
 		}
 
+		if len(forumIDs) == 0 {
+			return make([]*ForumRes, 0), nil
+		}
 	}
 
-	var items []*model.ForumInfo
+	var items []*ForumRes
 	err := f.repo.List(ctx, &items,
 		repo.QueryWithOrderBy("index ASC"),
 		repo.QueryWithEqual("id", forumIDs, repo.EqualOPEqAny),
@@ -52,6 +65,18 @@ func (f *Forum) List(ctx context.Context, user model.UserInfo, permissionCheck b
 	if err != nil {
 		return nil, err
 	}
+
+	for i, item := range items {
+		if len(item.BlogIDs) == 0 {
+			continue
+		}
+
+		err = f.repoDisc.List(ctx, &items[i].Blogs, repo.QueryWithEqual("discussions.id", item.BlogIDs, repo.EqualOPEqAny))
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return items, nil
 }
 

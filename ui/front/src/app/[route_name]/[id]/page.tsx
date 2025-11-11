@@ -92,7 +92,7 @@ const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; 
   return (
     <Box sx={{ display: 'flex', gap: { xs: 0, lg: 3 }, justifyContent: { lg: 'center' }, alignItems: { lg: 'flex-start' } }}>
       {/* 主内容区域 */}
-      <Box sx={{ flex: 1, minWidth: 0, maxWidth: { lg: 756 }, width: { xs: '100%', lg: 'auto' },px: { xs: 0, md: 3 } }}>
+      <Box sx={{ flex: 1, minWidth: 0, maxWidth: { lg: 798 }, width: { xs: '100%', lg: 'auto' },px: { xs: 0, md: 3 } }}>
         <h1 style={{ display: 'none' }}>讨论详情</h1>
         <Suspense fallback={<LoadingSpinner />}>
           <TitleCard data={discussion} />

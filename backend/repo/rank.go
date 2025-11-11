@@ -11,6 +11,8 @@ import (
 
 type Rank struct {
 	base[*model.Rank]
+
+	repoBot *Bot
 }
 
 func (r *Rank) ListContribute(ctx context.Context, res any) error {
@@ -22,12 +24,19 @@ func (r *Rank) ListContribute(ctx context.Context, res any) error {
 }
 
 func (r *Rank) UserContribute(ctx context.Context) ([]model.Rank, error) {
+	var bot model.Bot
+	err := r.repoBot.GetByKey(ctx, &bot, model.BotKeyDisscution)
+	if err != nil {
+		return nil, err
+	}
+
 	t := time.Now().AddDate(0, 0, -7)
 	var res []model.Rank
-	err := r.db.WithContext(ctx).Model(&model.User{}).
+	err = r.db.WithContext(ctx).Model(&model.User{}).
 		Select("? AS type,users.id AS score_id, COALESCE(user_comment.answer_disc_count, 0)*0.2+COALESCE(user_comment.accpted_count, 0)*0.4+COALESCE(user_disc.blog_count, 0)*0.25+COALESCE(user_disc.qa_count, 0)*0.15 AS score", model.RankTypeContribute).
 		Joins("LEFT JOIN (SELECT user_id, COUNT(1) FILTER (WHERE type = 'qa') AS qa_count, COUNT(1) FILTER (WHERE type = 'blog') AS blog_count FROM discussions WHERE created_at >= ? GROUP BY user_id) AS user_disc ON user_disc.user_id = users.id", t).
 		Joins("LEFT JOIN (SELECT user_id, COUNT(1) FILTER (WHERE accepted) AS accpted_count, COUNT(DISTINCT discussion_id) AS answer_disc_count FROM comments WHERE created_at >= ? GROUP BY user_id) AS user_comment ON user_comment.user_id = users.id", t).
+		Where("users.id != ?", bot.UserID).
 		Order("score DESC, score_id ASC").
 		Limit(5).
 		Find(&res).Error
@@ -69,8 +78,8 @@ func (r *Rank) RefresContribute(ctx context.Context) error {
 	})
 }
 
-func newRank(db *database.DB) *Rank {
-	return &Rank{base: base[*model.Rank]{db: db, m: &model.Rank{}}}
+func newRank(db *database.DB, bot *Bot) *Rank {
+	return &Rank{base: base[*model.Rank]{db: db, m: &model.Rank{}}, repoBot: bot}
 }
 
 func init() {

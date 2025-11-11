@@ -16,20 +16,25 @@ import {
   DeleteAdminUserUserIdParams,
   GetAdminUserParams,
   GetAdminUserUserIdParams,
-  GetNotifyListParams,
   GetUserLoginThirdParams,
+  GetUserNotifyListParams,
+  GetUserTrendParams,
+  GetUserUserIdParams,
   ModelListRes,
-  ModelMessageNotifyInfo,
+  ModelMessageNotify,
+  ModelTrend,
   ModelUser,
   ModelUserInfo,
   PutAdminUserUserIdParams,
   PutUserPayload,
   SvcAuthFrontendGetRes,
   SvcNotifyReadReq,
+  SvcUpdateWebNotifyReq,
   SvcUserJoinOrgReq,
   SvcUserListItem,
   SvcUserLoginReq,
   SvcUserRegisterReq,
+  SvcUserStatisticsRes,
   SvcUserUpdateReq,
 } from "./types";
 
@@ -159,63 +164,6 @@ export const deleteAdminUserUserId = (
   request<ContextResponse>({
     path: `/admin/user/${userId}`,
     method: "DELETE",
-    format: "json",
-    ...params,
-  });
-
-/**
- * No description
- *
- * @tags user
- * @name GetNotifyList
- * @summary list notify message
- * @request GET:/notify/list
- * @response `200` `(ContextResponse & {
-    data?: (ModelListRes & {
-    items?: (ModelMessageNotifyInfo)[],
-
-}),
-
-})` OK
- */
-
-export const getNotifyList = (
-  query: GetNotifyListParams,
-  params: RequestParams = {},
-) =>
-  request<
-    ContextResponse & {
-      data?: ModelListRes & {
-        items?: ModelMessageNotifyInfo[];
-      };
-    }
-  >({
-    path: `/notify/list`,
-    method: "GET",
-    query: query,
-    format: "json",
-    ...params,
-  });
-
-/**
- * No description
- *
- * @tags user
- * @name PostNotifyRead
- * @summary read notify message
- * @request POST:/notify/read
- * @response `200` `ContextResponse` OK
- */
-
-export const postNotifyRead = (
-  req: SvcNotifyReadReq,
-  params: RequestParams = {},
-) =>
-  request<ContextResponse>({
-    path: `/notify/read`,
-    method: "POST",
-    body: req,
-    type: ContentType.Json,
     format: "json",
     ...params,
   });
@@ -371,6 +319,111 @@ export const postUserLogout = (params: RequestParams = {}) =>
  * No description
  *
  * @tags user
+ * @name GetUserNotifyList
+ * @summary list notify message
+ * @request GET:/user/notify/list
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (ModelMessageNotify)[],
+
+}),
+
+})` OK
+ */
+
+export const getUserNotifyList = (
+  query: GetUserNotifyListParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: ModelMessageNotify[];
+      };
+    }
+  >({
+    path: `/user/notify/list`,
+    method: "GET",
+    query: query,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name PostUserNotifyRead
+ * @summary read notify message
+ * @request POST:/user/notify/read
+ * @response `200` `ContextResponse` OK
+ */
+
+export const postUserNotifyRead = (
+  req: SvcNotifyReadReq,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/user/notify/read`,
+    method: "POST",
+    body: req,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name GetUserNotifyUnread
+ * @summary get notify message unread num
+ * @request GET:/user/notify/unread
+ * @response `200` `(ContextResponse & {
+    data?: number,
+
+})` OK
+ */
+
+export const getUserNotifyUnread = (params: RequestParams = {}) =>
+  request<
+    ContextResponse & {
+      data?: number;
+    }
+  >({
+    path: `/user/notify/unread`,
+    method: "GET",
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name PostUserNotifyWeb
+ * @summary update notify web switch
+ * @request POST:/user/notify/web
+ * @response `200` `ContextResponse` OK
+ */
+
+export const postUserNotifyWeb = (
+  req: SvcUpdateWebNotifyReq,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/user/notify/web`,
+    method: "POST",
+    body: req,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
  * @name PostUserRegister
  * @summary register user
  * @request POST:/user/register
@@ -386,6 +439,68 @@ export const postUserRegister = (
     method: "POST",
     body: req,
     type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name GetUserTrend
+ * @summary list user trend
+ * @request GET:/user/trend
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (ModelTrend)[],
+
+}),
+
+})` OK
+ */
+
+export const getUserTrend = (
+  query: GetUserTrendParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: ModelTrend[];
+      };
+    }
+  >({
+    path: `/user/trend`,
+    method: "GET",
+    query: query,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name GetUserUserId
+ * @summary stat user info
+ * @request GET:/user/{user_id}
+ * @response `200` `(ContextResponse & {
+    data?: SvcUserStatisticsRes,
+
+})` OK
+ */
+
+export const getUserUserId = (
+  { userId, ...query }: GetUserUserIdParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: SvcUserStatisticsRes;
+    }
+  >({
+    path: `/user/${userId}`,
+    method: "GET",
     format: "json",
     ...params,
   });

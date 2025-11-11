@@ -3,6 +3,8 @@ package util
 import (
 	"crypto/tls"
 	"errors"
+	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -70,4 +72,29 @@ func ParseURL(u string, scheme ...string) (*url.URL, error) {
 	}
 
 	return parseURL, nil
+}
+
+func HTTPGet(u string) ([]byte, error) {
+	data, _, err := HTTPGetWithContentType(u)
+	return data, err
+}
+
+func HTTPGetWithContentType(u string) ([]byte, string, error) {
+	resp, err := HTTPClient.Get(u)
+	if err != nil {
+		return nil, "", err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, "", fmt.Errorf("http get %s status code: %d", u, resp.StatusCode)
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return data, resp.Header.Get("Content-Type"), nil
 }
