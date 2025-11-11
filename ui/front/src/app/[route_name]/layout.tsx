@@ -35,7 +35,7 @@ export default function RouteLayout({ children }: { children: React.ReactNode })
         )}
 
         {/* 主内容区域 */}
-        <Container sx={{ pt: { xs: 2, md: 3 }, flex: 1, minWidth: 0 }}>
+        <Container sx={{ flex: 1, minWidth: 0, pt: 3 }}>
           <Box
             sx={{
               display: 'flex',

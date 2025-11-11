@@ -6,9 +6,10 @@ import {
 } from 'react-redux';
 import breadcrumb from './slices/breadcrumb';
 import config from './slices/config';
+import forum from './slices/forum';
 
 const store = configureStore({
-  reducer: { config, breadcrumb },
+  reducer: { config, breadcrumb, forum },
   middleware: getDefaultMiddleware =>
     getDefaultMiddleware({
       serializableCheck: false,

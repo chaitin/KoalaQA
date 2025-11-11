@@ -101,34 +101,19 @@ const theme = createTheme(
           }),
         },
       },
-      MuiInputBase: {
-        styleOverrides: {
-          root: {
-            '&.MuiInput-root::before': {
-              borderColor: 'rgba(0, 0, 0, 0.13) ',
-            },
-            '&.MuiInput-root:hover::before': {
-              borderColor: '#21222D !important',
-            },
-          },
-        },
-      },
       MuiOutlinedInput: {
         styleOverrides: {
-          root: {
-            '&:hover .MuiOutlinedInput-notchedOutline': {
-              borderColor: '#21222D',
-            },
-            '.MuiOutlinedInput-notchedOutline': {
-              borderColor: 'rgba(0, 0, 0, 0.13)',
-            },
+          root: ({ theme }) => ({
             // 移除 webkit autofill 的 box-shadow 和 text-fill-color
             '& .MuiOutlinedInput-input:-webkit-autofill': {
               WebkitBoxShadow: 'none',
               WebkitTextFillColor: 'unset',
               boxShadow: 'none',
             },
-          },
+            '&:hover .MuiOutlinedInput-notchedOutline': {
+              borderColor: theme.palette.primary.main,
+            },
+          }),
         },
       },
       MuiFormControl: {

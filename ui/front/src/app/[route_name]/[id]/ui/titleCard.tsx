@@ -7,7 +7,7 @@ import {
   postDiscussionDiscIdRevokeLike,
 } from '@/api'
 import { ModelDiscussionDetail, ModelDiscussionType, ModelUserRole } from '@/api/types'
-import { Card } from '@/components'
+import { Card, QaUnresolvedChip } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import { ReleaseModal, Tag } from '@/components/discussion'
 import { TimeDisplayWithTag } from '@/components/TimeDisplay'
@@ -19,7 +19,6 @@ import { formatNumber } from '@/lib/utils'
 // import { generateCacheKey, clearCache } from '@/lib/api-cache'
 import { useForum } from '@/contexts/ForumContext'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
-import ThumbUpAltOutlinedIcon from '@mui/icons-material/ThumbUpAltOutlined'
 import { Box, Button, Chip, Divider, IconButton, Menu, MenuItem, Paper, Stack, Typography } from '@mui/material'
 import CommonAvatar from '@/components/CommonAvatar'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
@@ -308,7 +307,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                   },
                 }}
               >
-                <Icon type='icon-wenzhangdianzan' sx={{ fontSize: 12 }} />
+                <Icon type='icon-dianzan1' sx={{ fontSize: 12 }} />
                 <Typography variant='caption' sx={{ fontWeight: 600, fontFamily: 'Gilroy', fontSize: '14px' }}>
                   {formatNumber((data.like || 0) - (data.dislike || 0))}
                 </Typography>
@@ -339,26 +338,6 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
           {/* 左侧：所有标签（分组标签、状态标签、普通标签） */}
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
-            {data.groups?.map((item) => {
-              const isCategory = true
-              return (
-                <Chip
-                  key={item.id}
-                  label={item.name}
-                  size='small'
-                  sx={{
-                    bgcolor: 'rgba(233, 236, 239, 1)',
-                    color: 'rgba(33, 34, 45, 1)',
-                    height: 22,
-                    fontWeight: 400,
-                    fontSize: '14px',
-                    borderRadius: '3px',
-                    cursor: 'default',
-                    pointerEvents: 'none',
-                  }}
-                />
-              )
-            })}
             {status === 'closed' && !isArticlePost && (
               <Chip
                 icon={
@@ -383,6 +362,29 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                 }}
               />
             )}
+            {data.type === ModelDiscussionType.DiscussionTypeQA && !data.resolved && (
+              <QaUnresolvedChip type={data.type} resolved={data.resolved} />
+            )}
+            {data.groups?.map((item) => {
+              const isCategory = true
+              return (
+                <Chip
+                  key={item.id}
+                  label={item.name}
+                  size='small'
+                  sx={{
+                    bgcolor: 'rgba(233, 236, 239, 1)',
+                    color: 'rgba(33, 34, 45, 1)',
+                    height: 22,
+                    fontWeight: 400,
+                    fontSize: '14px',
+                    borderRadius: '3px',
+                    cursor: 'default',
+                    pointerEvents: 'none',
+                  }}
+                />
+              )
+            })}
             {data.tags?.map((tag: string) => {
               const isCategory = isCategoryTag(tag)
               return (

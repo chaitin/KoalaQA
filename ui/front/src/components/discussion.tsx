@@ -37,7 +37,8 @@ import { Controller, useForm } from 'react-hook-form'
 import z from 'zod'
 import { CommonContext } from './commonProvider'
 import { useGroupData } from '@/contexts/GroupDataContext'
-import { QuestionAnswer as QuestionAnswerIcon, ThumbUp as ThumbUpIcon } from '@mui/icons-material'
+import { QuestionAnswer as QuestionAnswerIcon } from '@mui/icons-material'
+import { Icon } from '@ctzhian/ui'
 
 export const Tag = styled(Chip)({
   borderRadius: '3px',
@@ -107,7 +108,7 @@ const SimilarContentItem = ({ data }: { data: ModelDiscussionListItem }) => {
             </>
           ) : (
             <>
-              <ThumbUpIcon sx={{ fontSize: 12, color: '#9ca3af' }} />
+              <Icon type='icon-dianzan1' sx={{ fontSize: 12, color: '#9ca3af' }} />
               <Typography variant='caption' sx={{ color: '#9ca3af', fontWeight: 600, fontSize: '0.7rem' }}>
                 {data.like || 0}
               </Typography>
@@ -565,9 +566,6 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                                 setGroupValidationError('')
                               }}
                             >
-                              <MenuItem value=''>
-                                <em>请选择</em>
-                              </MenuItem>
                               {options.map((option) => (
                                 <MenuItem key={getId(option)} value={getId(option).toString()}>
                                   {getLabel(option)}

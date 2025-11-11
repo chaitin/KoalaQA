@@ -1,28 +1,23 @@
-import { Card } from '@/components';
-import type { Metadata } from 'next';
-import Register from './ui';
+import { Card } from '@/components'
+import type { Metadata } from 'next'
+import Register from './ui'
 
 export const metadata: Metadata = {
   title: '注册',
-};
+}
 
 const page = () => {
   return (
     <Card
       sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        top: 'calc(50% - 260px)',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        position: 'absolute',
+        border: '1px solid #D9DEE2',
+        borderRadius: '8px',
         width: 400,
       }}
     >
       <Register />
     </Card>
-  );
-};
+  )
+}
 
-export default page;
+export default page

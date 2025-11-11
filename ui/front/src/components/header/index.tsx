@@ -7,7 +7,6 @@ import { useForum } from '@/contexts/ForumContext'
 import { useAuthConfig } from '@/hooks/useAuthConfig'
 import { useForumId } from '@/hooks/useForumId'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
-import { SettingsIcon } from '@/utils/mui-imports'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import SearchIcon from '@mui/icons-material/Search'
 import { AppBar, Box, Button, InputAdornment, Link, OutlinedInput, Stack, Toolbar, Typography } from '@mui/material'
@@ -57,8 +56,6 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
   const isPostDetailPage = Boolean(route_name) && Boolean(id) && !pathname.includes('/edit')
   // 检测是否在编辑页面
   const isEditPage = Boolean(route_name) && pathname.includes('/edit')
-  // 是否应该显示搜索框（在帖子列表、详情页和编辑页显示）
-  const shouldShowSearch = isPostListPage || isPostDetailPage || isEditPage
 
   // 获取当前论坛ID
   const hookForumId = useForumId()
@@ -73,11 +70,6 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
     return undefined
   }
   const currentForumId = getCurrentForumId()
-
-  // 从 authConfig 中获取配置
-  const registrationEnabled = authConfig?.enable_register ?? true
-  const publicAccess = authConfig?.public_access ?? false
-  // 使用状态来避免 hydration 不匹配
 
   // 确保只在客户端 mounted 后才执行可能影响渲染的逻辑
   useEffect(() => {
@@ -329,56 +321,11 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
 
           {user?.uid ? (
             <>
-              {user?.role == ModelUserRole.UserRoleAdmin && (
-                <Link href={backHref}>
-                  <Button
-                    variant='outlined'
-                    sx={{
-                      borderRadius: 1,
-                      height: 40,
-                      width: 122,
-                      ml: 2,
-                      fontSize: 14,
-                      boxShadow: 'none !important',
-                      color: 'common.white',
-                      borderColor: 'rgba(255, 255, 255, 0.3)',
-                      '&:hover': {
-                        borderColor: 'rgba(255, 255, 255, 0.5)',
-                        bgcolor: 'rgba(255, 255, 255, 0.1)',
-                      },
-                    }}
-                    startIcon={<SettingsIcon sx={{ color: 'common.white' }} />}
-                  >
-                    后台管理
-                  </Button>
-                </Link>
-              )}
-              <LoggedInView user={user} />
+              <LoggedInView user={user} adminHref={backHref} />
             </>
           ) : (
             <>
-              {registrationEnabled && (
-                <Button
-                  variant='text'
-                  sx={{
-                    borderRadius: 1,
-                    height: 36,
-                    px: 2,
-                    fontSize: 14,
-                    textTransform: 'none',
-                    borderColor: 'rgba(255, 255, 255, 0.3)',
-                    color: 'common.black',
-                    '&:hover': {
-                      borderColor: 'rgba(255, 255, 255, 0.5)',
-                    },
-                  }}
-                  onClick={() => {
-                    plainRouter.push('/register')
-                  }}
-                >
-                  注册
-                </Button>
-              )}
+
               <Button
                 variant='contained'
                 sx={{

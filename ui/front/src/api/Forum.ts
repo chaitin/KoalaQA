@@ -14,8 +14,8 @@ import request, { ContentType, RequestParams } from "./httpClient";
 import {
   ContextResponse,
   ModelForumGroups,
-  ModelForumInfo,
   PutAdminForumPayload,
+  SvcForumRes,
 } from "./types";
 
 /**
@@ -26,7 +26,7 @@ import {
  * @summary list forum
  * @request GET:/admin/forum
  * @response `200` `(ContextResponse & {
-    data?: ((ModelForumInfo & {
+    data?: ((SvcForumRes & {
     groups?: (ModelForumGroups)[],
 
 }))[],
@@ -37,7 +37,7 @@ import {
 export const getAdminForum = (params: RequestParams = {}) =>
   request<
     ContextResponse & {
-      data?: (ModelForumInfo & {
+      data?: (SvcForumRes & {
         groups?: ModelForumGroups[];
       })[];
     }
@@ -79,7 +79,7 @@ export const putAdminForum = (
  * @summary list forums
  * @request GET:/forum
  * @response `200` `(ContextResponse & {
-    data?: (ModelForumInfo)[],
+    data?: (SvcForumRes)[],
 
 })` OK
  */
@@ -87,7 +87,7 @@ export const putAdminForum = (
 export const getForum = (params: RequestParams = {}) =>
   request<
     ContextResponse & {
-      data?: ModelForumInfo[];
+      data?: SvcForumRes[];
     }
   >({
     path: `/forum`,

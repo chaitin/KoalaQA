@@ -15,7 +15,9 @@ import {
   ContextResponse,
   DeleteDiscussionDiscIdCommentCommentIdParams,
   DeleteDiscussionDiscIdParams,
+  GetAdminDiscussionParams,
   GetDiscussionDiscIdParams,
+  GetDiscussionDiscIdSimilarityParams,
   GetDiscussionParams,
   ModelDiscussionDetail,
   ModelDiscussionListItem,
@@ -38,6 +40,40 @@ import {
   SvcDiscussionUpdateReq,
   SvcResolveFeedbackReq,
 } from "./types";
+
+/**
+ * @description backend list discussions
+ *
+ * @tags discussion
+ * @name GetAdminDiscussion
+ * @summary backend list discussions
+ * @request GET:/admin/discussion
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (ModelDiscussionListItem)[],
+
+}),
+
+})` OK
+ */
+
+export const getAdminDiscussion = (
+  query: GetAdminDiscussionParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: ModelDiscussionListItem[];
+      };
+    }
+  >({
+    path: `/admin/discussion`,
+    method: "GET",
+    query: query,
+    format: "json",
+    ...params,
+  });
 
 /**
  * @description list discussions
@@ -524,6 +560,40 @@ export const postDiscussionDiscIdRevokeLike = (
   >({
     path: `/discussion/${discId}/revoke_like`,
     method: "POST",
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description list similarity discussion
+ *
+ * @tags discussion
+ * @name GetDiscussionDiscIdSimilarity
+ * @summary list similarity discussion
+ * @request GET:/discussion/{disc_id}/similarity
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (ModelDiscussionListItem)[],
+
+}),
+
+})` OK
+ */
+
+export const getDiscussionDiscIdSimilarity = (
+  { discId, ...query }: GetDiscussionDiscIdSimilarityParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: ModelDiscussionListItem[];
+      };
+    }
+  >({
+    path: `/discussion/${discId}/similarity`,
+    method: "GET",
     type: ContentType.Json,
     format: "json",
     ...params,
