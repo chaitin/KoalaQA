@@ -86,7 +86,6 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
     const editorRef = useTiptap({
       editable: true,
       content: value || detail?.content || '',
-      contentType: 'markdown',
       exclude: ['invisibleCharacters', 'youtube', 'mention', ...(aiWriting ? [] : ['aiWriting'])],
       // SSR 环境需显式关闭立即渲染以避免水合不匹配
       immediatelyRender: false,
