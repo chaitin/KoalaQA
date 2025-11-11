@@ -18,7 +18,7 @@ type Forum struct {
 	rag  rag.Service
 }
 
-func newForum(db *database.DB, rag rag.Service) *Forum {
+func newForum(db *database.DB, rag rag.Service, disc *Discussion) *Forum {
 	return &Forum{base: base[*model.Forum]{db: db, m: &model.Forum{}}, lock: sync.Mutex{}, rag: rag}
 }
 
@@ -104,6 +104,11 @@ func (f *Forum) UpdateWithGroup(ctx context.Context, forums []model.ForumInfo) e
 				}
 				datasetID = id
 			}
+
+			if len(forum.BlogIDs) > 0 {
+				forum.BlogIDs = forum.BlogIDs[:3]
+			}
+
 			data = append(data, model.Forum{
 				Base: model.Base{
 					ID: forum.ID,
@@ -112,6 +117,7 @@ func (f *Forum) UpdateWithGroup(ctx context.Context, forums []model.ForumInfo) e
 				RouteName: forum.RouteName,
 				Index:     forum.Index,
 				Groups:    forum.Groups,
+				BlogIDs:   forum.BlogIDs,
 				DatasetID: datasetID,
 			})
 		}
