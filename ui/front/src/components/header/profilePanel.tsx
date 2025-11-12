@@ -104,8 +104,8 @@ const ProfilePanel: React.FC<ProfilePanelProps> = ({ onClose, adminHref }) => {
                 borderRadius: '4px',
                 marginBottom: '4px',
                 transition: 'background 0.3s',
-                '&:hover': {
-                  background: 'rgba(32,108,255,0.1)',
+                '&:hover, &:focus': {
+                  background: 'rgba(0,0,0,0.04)', // 使用灰色
                 },
               }}
               onClick={(e) => {
@@ -116,7 +116,7 @@ const ProfilePanel: React.FC<ProfilePanelProps> = ({ onClose, adminHref }) => {
             >
               <ListItemButton
                 sx={{
-                  '&:hover': {
+                  '&:hover, &:focus': {
                     background: 'transparent',
                   },
                 }}
@@ -139,8 +139,8 @@ const ProfilePanel: React.FC<ProfilePanelProps> = ({ onClose, adminHref }) => {
               borderRadius: '4px',
               marginBottom: '4px',
               transition: 'background 0.3s',
-              '&:hover': {
-                background: 'rgba(32,108,255,0.1)',
+              '&:hover, &:focus': {
+                background: 'rgba(0,0,0,0.04)', // 使用灰色
               },
             }}
             onClick={(e) => {
@@ -151,7 +151,7 @@ const ProfilePanel: React.FC<ProfilePanelProps> = ({ onClose, adminHref }) => {
           >
             <ListItemButton
               sx={{
-                '&:hover': {
+                '&:hover, &:focus': {
                   background: 'transparent',
                 },
               }}

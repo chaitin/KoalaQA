@@ -879,7 +879,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         onOk={onSubmit}
         onClose={() => setEditCommentModalVisible(false)}
       />
-      <Box sx={{ pt: 2, minHeight: isArticlePost ? 'unset' : 'calc(100vh - 430px)' }}>
+      <Box sx={{ pt: 2, minHeight: isArticlePost ? 'unset' : 'calc(100vh - 360px)' }}>
         <Typography
           variant='h6'
           sx={{
@@ -910,8 +910,50 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                   ? '2px solid rgba(25, 135, 84, 1) !important'
                   : '1px solid rgba(217, 222, 226, 1)!important',
                 position: 'relative',
+                overflow: 'hidden',
               }}
             >
+              {answer.accepted && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: '-2px',
+                    left: '-2px',
+                    width: '20px',
+                    height: '20px',
+                    bgcolor: 'rgba(25, 135, 84, 1)',
+                    borderTopLeftRadius: '10px',
+                    borderTopRightRadius: '0px',
+                    borderBottomLeftRadius: '0px',
+                    borderBottomRightRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1,
+                  }}
+                >
+                  {/* 用 SVG 替换字符实现直的对钩 */}
+                  <Box
+                    component='svg'
+                    xmlns='http://www.w3.org/2000/svg'
+                    viewBox='0 0 18 18'
+                    sx={{
+                      width: 16,
+                      height: 16,
+                      display: 'block',
+                    }}
+                  >
+                    <polyline
+                      points='4 10 8 14 14 4'
+                      stroke='#fff'
+                      strokeWidth='2'
+                      fill='none'
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                    />
+                  </Box>
+                </Box>
+              )}
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, gap: 1.5 }}>
                 {answerProfileHref ? (
                   <Link href={answerProfileHref} style={{ display: 'inline-flex' }}>
@@ -948,7 +990,8 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                       borderRadius: '4px',
                       border: '1px solid rgba(0,99,151,0.1)',
                       fontSize: '0.75rem',
-                      fontWeight: 500,
+                      fontWeight: 'bold',
+                      fontFamily: 'PingFang SC',
                       '& .MuiChip-label': {
                         px: 0.5,
                       },
@@ -1253,7 +1296,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5, mt: 0.5 }}>
                               {displayReplyCreatedAt && (
                                 <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
-                                  发布于
+                                  发布于{' '}
                                   <TimeDisplayWithTag
                                     timestamp={displayReplyCreatedAt}
                                     title={dayjs.unix(displayReplyCreatedAt).format('YYYY-MM-DD HH:mm:ss')}

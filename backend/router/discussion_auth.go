@@ -61,7 +61,7 @@ func (d *discussionAuth) Create(ctx *context.Context) {
 		return
 	}
 	req.UserID = ctx.GetUser().UID
-	res, err := d.disc.Create(ctx.Request.Context(), req)
+	res, err := d.disc.Create(ctx.Request.Context(), ctx.SessionUUID(), req)
 	if err != nil {
 		ctx.InternalError(err, "failed to create discussion")
 		return

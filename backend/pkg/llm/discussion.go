@@ -33,14 +33,12 @@ type DiscussionPromptTemplate struct {
 	template *template.Template
 }
 
-// KnowledgeDocument 知识库文档结构
 type KnowledgeDocument struct {
 	Title   string `json:"title"`
 	Content string `json:"content"`
 	Source  string `json:"source,omitempty"`
 }
 
-// 帖子模版常量（包含帖子信息和评论楼层结构）
 const discussionPostTemplate = `
 ### ID：{{.Discussion.ID}}
 ### 标题：{{.Discussion.Title}}
@@ -51,8 +49,7 @@ const discussionPostTemplate = `
 {{- end}}
 `
 
-// 回复模版常量（针对新评论的回复）
-const discussionReplyTemplate = `
+const discussionFullTemplate = `
 ## 当前帖子信息
 ### 帖子ID：{{.Discussion.ID}}
 ### 帖子标题：{{.Discussion.Title}}
@@ -75,8 +72,6 @@ const discussionReplyTemplate = `
 
 {{- if .NewComment}}
 针对新评论ID {{.NewComment.ID}} 进行回复
-{{- else}}
-请基于以上信息回复帖子
 {{- end}}
 `
 
@@ -100,30 +95,6 @@ func (t *DiscussionPromptTemplate) Question() string {
 	return q
 }
 
-// BuildPrompt 构建完整的提示词
-func (t *DiscussionPromptTemplate) BuildPrompt() (string, error) {
-	// 确保模版已初始化
-	if t.template == nil {
-		if err := t.initTemplate(); err != nil {
-			return "", fmt.Errorf("初始化模版失败: %w", err)
-		}
-	}
-
-	// 构建评论树
-	t.CommentTree = t.buildCommentTree()
-
-	// 提取BOT历史回复
-	t.ExtractBotReplies()
-
-	// 执行模版
-	var buf bytes.Buffer
-	if err := t.template.Execute(&buf, t); err != nil {
-		return "", fmt.Errorf("执行模版失败: %w", err)
-	}
-
-	return buf.String(), nil
-}
-
 // BuildPostPrompt 构建帖子提示词
 func (t *DiscussionPromptTemplate) BuildPostPrompt() (string, error) {
 	// 初始化帖子模版
@@ -139,15 +110,10 @@ func (t *DiscussionPromptTemplate) BuildPostPrompt() (string, error) {
 	return buf.String(), nil
 }
 
-// BuildReplyPrompt 构建回复提示词（用于回复新评论）
-func (t *DiscussionPromptTemplate) BuildReplyPrompt() (string, error) {
-	if t.NewComment == nil {
-		return "", fmt.Errorf("新评论不能为空")
-	}
-
-	// 初始化回复模版
-	if err := t.initReplyTemplate(); err != nil {
-		return "", fmt.Errorf("初始化回复模版失败: %w", err)
+// BuildFullPrompt 构建完整的提示词
+func (t *DiscussionPromptTemplate) BuildFullPrompt() (string, error) {
+	if err := t.initFullTemplate(); err != nil {
+		return "", fmt.Errorf("初始化完整模版失败: %w", err)
 	}
 
 	// 构建评论树
@@ -159,7 +125,7 @@ func (t *DiscussionPromptTemplate) BuildReplyPrompt() (string, error) {
 	// 执行模版
 	var buf bytes.Buffer
 	if err := t.template.Execute(&buf, t); err != nil {
-		return "", fmt.Errorf("执行回复模版失败: %w", err)
+		return "", fmt.Errorf("执行完整模版失败: %w", err)
 	}
 
 	return buf.String(), nil
@@ -168,7 +134,7 @@ func (t *DiscussionPromptTemplate) BuildReplyPrompt() (string, error) {
 // initTemplate 初始化模版（兼容性方法，根据是否有新评论选择模版）
 func (t *DiscussionPromptTemplate) initTemplate() error {
 	if t.NewComment != nil {
-		return t.initReplyTemplate()
+		return t.initFullTemplate()
 	}
 	return t.initPostTemplate()
 }
@@ -193,8 +159,8 @@ func (t *DiscussionPromptTemplate) initPostTemplate() error {
 	return nil
 }
 
-// initReplyTemplate 初始化回复模版
-func (t *DiscussionPromptTemplate) initReplyTemplate() error {
+// initFullTemplate 初始化完整模版
+func (t *DiscussionPromptTemplate) initFullTemplate() error {
 	funcMap := template.FuncMap{
 		"formatTime":      t.formatTime,
 		"join":            strings.Join,
@@ -204,7 +170,7 @@ func (t *DiscussionPromptTemplate) initReplyTemplate() error {
 		"isReplyToBot":    t.isReplyToBot,
 	}
 
-	tmpl, err := template.New("discussion_reply_prompt").Funcs(funcMap).Parse(discussionReplyTemplate)
+	tmpl, err := template.New("discussion_full_prompt").Funcs(funcMap).Parse(discussionFullTemplate)
 	if err != nil {
 		return err
 	}
@@ -305,9 +271,10 @@ func (t *DiscussionPromptTemplate) renderCommentNode(builder *strings.Builder, n
 	}
 
 	// 渲染当前评论
-	builder.WriteString(fmt.Sprintf("[ID: %d] - %s (%s)%s\n",
+	builder.WriteString(fmt.Sprintf("[ID: %d] - %s (UserID: %d) (%s)%s\n",
 		node.Comment.ID,
 		node.Comment.UserName,
+		node.Comment.UserID,
 		t.formatTime(node.Comment.CreatedAt),
 		tagStr,
 	))

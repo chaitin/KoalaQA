@@ -89,3 +89,8 @@ func (p *Timestamp) Scan(value interface{}) error {
 		return fmt.Errorf("cannot scan %T into ModelParam", value)
 	}
 }
+
+type Count[T any] struct {
+	Key   T     `json:"key"`
+	Count int64 `json:"count"`
+}

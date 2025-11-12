@@ -6,29 +6,33 @@ import (
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
+	"github.com/chaitin/koalaqa/pkg/batch"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/topic"
+	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/svc"
 )
 
 type Disc struct {
-	disc   *svc.Discussion
-	trend  *svc.Trend
-	logger *glog.Logger
-	llm    *svc.LLM
-	bot    *svc.Bot
-	pub    mq.Publisher
+	disc    *svc.Discussion
+	trend   *svc.Trend
+	logger  *glog.Logger
+	llm     *svc.LLM
+	bot     *svc.Bot
+	pub     mq.Publisher
+	batcher batch.Batcher[model.StatInfo]
 }
 
-func NewDisc(disc *svc.Discussion, llm *svc.LLM, bot *svc.Bot, pub mq.Publisher, trend *svc.Trend) *Disc {
+func NewDisc(disc *svc.Discussion, llm *svc.LLM, bot *svc.Bot, pub mq.Publisher, trend *svc.Trend, batcher batch.Batcher[model.StatInfo]) *Disc {
 	return &Disc{
-		disc:   disc,
-		trend:  trend,
-		llm:    llm,
-		bot:    bot,
-		pub:    pub,
-		logger: glog.Module("sub.discussion.change"),
+		disc:    disc,
+		trend:   trend,
+		llm:     llm,
+		bot:     bot,
+		pub:     pub,
+		batcher: batcher,
+		logger:  glog.Module("sub.discussion.change"),
 	}
 }
 
@@ -118,6 +122,11 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 
 	if !answered {
 		logger.Info("ai not know the answer, notify admin")
+		d.batcher.Send(model.StatInfo{
+			Type: model.StatTypeBotUnknown,
+			Ts:   util.TodayZero().Unix(),
+			Key:  data.DiscUUID,
+		})
 		disc, err := d.disc.GetByID(ctx, data.DiscID)
 		if err != nil {
 			logger.WithErr(err).Error("get discussion failed")

@@ -516,27 +516,18 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
                         const notificationText = getNotificationText(notification)
                         const { action, content } = splitNotificationText(notificationText)
                         return (
-                          <>
-                            {action && (
-                              <Typography
-                                variant='body2'
-                                sx={{
-                                  color: '#666',
-                                  fontSize: '13px',
-                                }}
-                              >
-                                {action}
-                              </Typography>
-                            )}
+                          action && (
                             <Typography
                               variant='body2'
                               sx={{
+                                color: '#666',
                                 fontSize: '13px',
                               }}
                             >
+                              {action}
                               {content}
                             </Typography>
-                          </>
+                          )
                         )
                       })()}
                     </Stack>

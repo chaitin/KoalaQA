@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
+	"github.com/chaitin/koalaqa/pkg/batch"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/llm"
 	"github.com/chaitin/koalaqa/pkg/mq"
@@ -42,6 +43,7 @@ type discussionIn struct {
 	ForumRepo     *repo.Forum
 	Limiter       ratelimit.Limiter
 	LLM           *LLM
+	Batcher       batch.Batcher[model.StatInfo]
 }
 
 type Discussion struct {
@@ -103,7 +105,7 @@ var (
 	errPermission = errors.New("permission denied")
 )
 
-func (d *Discussion) Create(ctx context.Context, req DiscussionCreateReq) (string, error) {
+func (d *Discussion) Create(ctx context.Context, sessionUUID string, req DiscussionCreateReq) (string, error) {
 	if !d.allow("discussion", req.UserID) {
 		return "", errRatelimit
 	}
@@ -339,17 +341,18 @@ const (
 type DiscussionListReq struct {
 	*model.Pagination
 
-	Keyword       string               `json:"keyword" form:"keyword"`
-	Filter        DiscussionListFilter `json:"filter" form:"filter,default=hot"`
-	Type          model.DiscussionType `json:"type" form:"type,default=qa"`
-	GroupIDs      model.Int64Array     `json:"group_ids" form:"group_ids"`
-	ForumID       uint                 `json:"forum_id" form:"forum_id"`
-	OnlyMine      bool                 `json:"only_mine" form:"only_mine"`
-	Resolved      *bool                `json:"resolved" form:"resolved"`
-	DiscussionIDs *model.Int64Array    `json:"discussion_ids" form:"discussion_ids"`
+	Type          *model.DiscussionType `json:"type" form:"type"`
+	Keyword       string                `json:"keyword" form:"keyword"`
+	Filter        DiscussionListFilter  `json:"filter" form:"filter,default=hot"`
+	GroupIDs      model.Int64Array      `json:"group_ids" form:"group_ids"`
+	ForumID       uint                  `json:"forum_id" form:"forum_id"`
+	OnlyMine      bool                  `json:"only_mine" form:"only_mine"`
+	Resolved      *bool                 `json:"resolved" form:"resolved"`
+	DiscussionIDs *model.Int64Array     `json:"discussion_ids" form:"discussion_ids"`
+	Stat          bool                  `json:"stat" form:"stat"`
 }
 
-func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListReq) (*model.ListRes[*model.DiscussionListItem], error) {
+func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, req DiscussionListReq) (*model.ListRes[*model.DiscussionListItem], error) {
 	ok, err := d.in.UserRepo.HasForumPermission(ctx, userID, req.ForumID)
 	if err != nil {
 		return nil, err
@@ -361,6 +364,14 @@ func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListRe
 
 	var res model.ListRes[*model.DiscussionListItem]
 	if req.Keyword != "" {
+		if req.Stat {
+			d.in.Batcher.Send(model.StatInfo{
+				Type: model.StatTypeSearch,
+				Ts:   util.TodayZero().Unix(),
+				Key:  sessionUUID,
+			})
+		}
+
 		discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: req.Keyword, ForumID: req.ForumID})
 		if err != nil {
 			return nil, err

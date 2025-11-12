@@ -35,6 +35,15 @@ func (c *Comment) List(ctx context.Context, res any, queryFuncs ...QueryOptFunc)
 		Find(res).Error
 }
 
+func (c *Comment) ListFirstHuman(ctx context.Context, discIDs model.Int64Array) (res []model.Base, err error) {
+	err = c.model(ctx).
+		Select("discussion_id as id, MIN(created_at) AS created_at, MIN(updated_at) AS updated_at").
+		Where("discussion_id =ANY(?)", discIDs).
+		Where("bot = ?", false).
+		Group("discussion_id").Find(&res).Error
+	return
+}
+
 func (c *Comment) CountByForumIDs(ctx context.Context, res *int64, forumIDs model.Int64Array, queryFuncs ...QueryOptFunc) error {
 	o := getQueryOpt(queryFuncs...)
 	return c.model(ctx).

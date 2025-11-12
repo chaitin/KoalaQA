@@ -1,13 +1,21 @@
 'use client'
 
-import { Box, Button } from '@mui/material'
-import { useEffect, useState, useCallback, useRef, useImperativeHandle, forwardRef } from 'react'
-import { NodeDetail } from '..'
-import SaveIcon from '@mui/icons-material/Save'
-import { Editor, useTiptap, EditorProps } from '@ctzhian/tiptap'
-import Toolbar from './Toolbar'
 import { postDiscussionComplete, postDiscussionUpload } from '@/api'
 import alert from '@/components/alert'
+import { useTiptap } from '@ctzhian/tiptap'
+import SaveIcon from '@mui/icons-material/Save'
+import { Box, Button } from '@mui/material'
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import dynamic from 'next/dynamic'
+import { NodeDetail } from '..'
+import Toolbar from './Toolbar'
+import LoadingSpinner from '@/components/LoadingSpinner'
+
+// 使用动态导入来避免 HMR 问题
+const Editor = dynamic(() => import('@ctzhian/tiptap').then((mod) => ({ default: mod.Editor })), {
+  ssr: false,
+  loading: () => null,
+})
 
 interface WrapProps {
   aiWriting?: boolean
@@ -226,112 +234,7 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
 
     // 在服务端渲染时返回漂亮的占位符
     if (!isMounted) {
-      return (
-        <>
-          <Box
-            sx={{
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
-              borderRadius: 3,
-              overflow: 'hidden',
-            }}
-          >
-            {/* 工具栏占位符 */}
-            {showToolbar && (
-              <Box
-                sx={{
-                  height: 60,
-                  background: 'rgba(255,255,255,0.9)',
-                  backdropFilter: 'blur(10px)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  px: 3,
-                }}
-              >
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Box
-                      key={i}
-                      sx={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 1,
-                        background: 'linear-gradient(45deg, #f8f9fa, #e9ecef)',
-                        animation: `pulse 1.5s ease-in-out ${i * 0.1}s infinite alternate`,
-                      }}
-                    />
-                  ))}
-                </Box>
-              </Box>
-            )}
-
-            {/* 编辑器占位符 */}
-            <Box
-              sx={{
-                flex: 1,
-                background: '#ffffff',
-                m: 2,
-                borderRadius: 2,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexDirection: 'column',
-                gap: 2,
-              }}
-            >
-              <Box
-                sx={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: '50%',
-                  background: 'linear-gradient(45deg, #6c757d, #495057)',
-                  animation: 'spin 2s linear infinite',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontSize: 20,
-                }}
-              >
-                ✨
-              </Box>
-              <Box
-                sx={{
-                  color: 'text.secondary',
-                  fontSize: 16,
-                  fontWeight: 500,
-                  textAlign: 'center',
-                }}
-              >
-                编辑器正在加载中...
-              </Box>
-            </Box>
-
-            {/* 保存按钮占位符 - 只在showActions为true时显示 */}
-            {showActions && (
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2 }}>
-                <Button
-                  variant='contained'
-                  startIcon={<SaveIcon />}
-                  disabled
-                  sx={{
-                    background: 'linear-gradient(45deg, #6c757d, #495057)',
-                    borderRadius: 2,
-                    px: 3,
-                    py: 1,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                  }}
-                >
-                  保存
-                </Button>
-              </Box>
-            )}
-          </Box>
-        </>
-      )
+      return
     }
 
     // 客户端渲染的完整编辑器
@@ -344,7 +247,6 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
             display: 'flex',
             flexDirection: 'column',
             borderRadius: 3,
-            overflow: 'hidden',
             transition: 'all 0.3s ease',
             '& .tiptap': {
               outline: 'none',
@@ -404,7 +306,6 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
             <Box
               sx={{
                 background: 'rgba(255,255,255,0.9)',
-                backdropFilter: 'blur(10px)',
                 transition: 'all 0.3s ease',
                 py: 1,
               }}

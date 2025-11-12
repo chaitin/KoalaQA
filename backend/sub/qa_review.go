@@ -3,6 +3,8 @@ package sub
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
@@ -17,6 +19,7 @@ import (
 )
 
 type QA struct {
+	ID       uint
 	Question string
 	Answer   string
 }
@@ -142,15 +145,12 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 			continue
 		}
 		qas = append(qas, QA{
+			ID:       doc.ID,
 			Question: doc.Title,
 			Answer:   string(doc.Markdown),
 		})
-		if newQA.SimilarID == 0 {
-			logger.With("question", newQA.Title).With("similar_id", doc.ID).Info("set similar id")
-			newQA.SimilarID = doc.ID
-		}
 	}
-	like, err := q.llm.Chat(ctx, llm.QASimilarityPrompt, "", map[string]any{
+	result, err := q.llm.Chat(ctx, llm.QASimilarityPrompt, "", map[string]any{
 		"NewQuestion": newQA.Title,
 		"NewAnswer":   string(newQA.Markdown),
 		"ExistingQAs": qas,
@@ -159,9 +159,21 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 		logger.WithErr(err).Warn("check qa similarity failed")
 		return nil
 	}
-	if like == "true" {
-		logger.With("question", newQA.Title).Debug("qa similarity found")
+
+	simID, err := strconv.Atoi(strings.TrimSpace(result))
+	if err != nil {
+		logger.WithErr(err).With("result", result).Warn("parse similarity result failed")
+		return q.CreateQA(ctx, newQA)
+	}
+
+	if simID == 0 {
+		logger.With("question", newQA.Title).Debug("qa fully similar found")
 		return nil
+	}
+	if simID > 0 {
+		logger.With("question", newQA.Title).With("similar_qa_id", simID).Info("create qa review for similar question but different answer")
+		newQA.SimilarID = uint(simID)
+		return q.CreateQA(ctx, newQA)
 	}
 	logger.With("question", newQA.Title).Info("create qa review for no qa similarity")
 	return q.CreateQA(ctx, newQA)

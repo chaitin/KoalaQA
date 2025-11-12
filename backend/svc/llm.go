@@ -140,7 +140,7 @@ func (l *LLM) GenerateChatPrompt(ctx context.Context, discID uint, commID uint) 
 	// 4. 创建提示词模版并生成提示词
 	template := llm.NewDiscussionPromptTemplate(discussion, allComments, newComment)
 
-	prompt, err := template.BuildPrompt()
+	prompt, err := template.BuildFullPrompt()
 	if err != nil {
 		return "", "", fmt.Errorf("generate prompt failed: %w", err)
 	}
