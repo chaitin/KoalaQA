@@ -3444,6 +3444,21 @@ const docTemplate = `{
                         "type": "boolean",
                         "name": "stat",
                         "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "qa",
+                            "feedback",
+                            "blog"
+                        ],
+                        "type": "string",
+                        "x-enum-varnames": [
+                            "DiscussionTypeQA",
+                            "DiscussionTypeFeedback",
+                            "DiscussionTypeBlog"
+                        ],
+                        "name": "type",
+                        "in": "query"
                     }
                 ],
                 "responses": {

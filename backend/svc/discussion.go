@@ -341,14 +341,15 @@ const (
 type DiscussionListReq struct {
 	*model.Pagination
 
-	Keyword       string               `json:"keyword" form:"keyword"`
-	Filter        DiscussionListFilter `json:"filter" form:"filter,default=hot"`
-	GroupIDs      model.Int64Array     `json:"group_ids" form:"group_ids"`
-	ForumID       uint                 `json:"forum_id" form:"forum_id"`
-	OnlyMine      bool                 `json:"only_mine" form:"only_mine"`
-	Resolved      *bool                `json:"resolved" form:"resolved"`
-	DiscussionIDs *model.Int64Array    `json:"discussion_ids" form:"discussion_ids"`
-	Stat          bool                 `json:"stat" form:"stat"`
+	Type          *model.DiscussionType `json:"type" form:"type"`
+	Keyword       string                `json:"keyword" form:"keyword"`
+	Filter        DiscussionListFilter  `json:"filter" form:"filter,default=hot"`
+	GroupIDs      model.Int64Array      `json:"group_ids" form:"group_ids"`
+	ForumID       uint                  `json:"forum_id" form:"forum_id"`
+	OnlyMine      bool                  `json:"only_mine" form:"only_mine"`
+	Resolved      *bool                 `json:"resolved" form:"resolved"`
+	DiscussionIDs *model.Int64Array     `json:"discussion_ids" form:"discussion_ids"`
+	Stat          bool                  `json:"stat" form:"stat"`
 }
 
 func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, req DiscussionListReq) (*model.ListRes[*model.DiscussionListItem], error) {
@@ -394,7 +395,8 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 	}
 
 	var query []repo.QueryOptFunc
-	query = append(query, repo.QueryWithEqual("forum_id", req.ForumID),
+	query = append(query, repo.QueryWithEqual("type", req.Type),
+		repo.QueryWithEqual("forum_id", req.ForumID),
 		repo.QueryWithEqual("resolved", req.Resolved),
 		repo.QueryWithEqual("discussions.id", req.DiscussionIDs, repo.EqualOPEqAny),
 	)
