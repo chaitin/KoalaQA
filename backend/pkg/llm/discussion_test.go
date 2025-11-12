@@ -84,7 +84,7 @@ func TestFullPromptWithAllFeatures(t *testing.T) {
 
 	template := NewDiscussionPromptTemplate(discussion, allComments, newComment)
 
-	prompt, err := template.BuildPrompt()
+	prompt, err := template.BuildFullPrompt()
 	if err != nil {
 		t.Fatalf("生成提示词失败: %v", err)
 	}
