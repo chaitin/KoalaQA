@@ -6,7 +6,6 @@ import (
 	"errors"
 	"mime"
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
@@ -88,22 +87,18 @@ func (u *User) getAvatarFromURL(ctx context.Context, imgURL string) string {
 
 	logger = logger.With("content_type", contentType)
 
-	if !strings.HasPrefix(contentType, "image") {
-		logger.Info("content type is not img, skip upload")
-		return ""
-	}
+	ext := ""
 
-	// 默认 jpg
-	ext := ".jpg"
+	if contentType != "application/octet-stream" {
+		exts, err := mime.ExtensionsByType(contentType)
+		if err != nil {
+			logger.WithErr(err).Warn("get ext from content_type failed")
+			return ""
+		}
 
-	exts, err := mime.ExtensionsByType(contentType)
-	if err != nil {
-		logger.WithErr(err).Warn("get ext from content_type failed")
-		return ""
-	}
-
-	if len(exts) > 0 {
-		ext = exts[len(exts)-1]
+		if len(exts) > 0 {
+			ext = exts[len(exts)-1]
+		}
 	}
 
 	avatar, err := u.oc.Upload(ctx, "avatar", bytes.NewReader(imgData),
