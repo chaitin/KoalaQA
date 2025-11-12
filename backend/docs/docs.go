@@ -3346,21 +3346,6 @@ const docTemplate = `{
                         "type": "integer",
                         "name": "size",
                         "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "qa",
-                            "feedback",
-                            "blog"
-                        ],
-                        "type": "string",
-                        "x-enum-varnames": [
-                            "DiscussionTypeQA",
-                            "DiscussionTypeFeedback",
-                            "DiscussionTypeBlog"
-                        ],
-                        "name": "type",
-                        "in": "query"
                     }
                 ],
                 "responses": {

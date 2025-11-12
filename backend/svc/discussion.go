@@ -341,7 +341,6 @@ type DiscussionListReq struct {
 
 	Keyword       string               `json:"keyword" form:"keyword"`
 	Filter        DiscussionListFilter `json:"filter" form:"filter,default=hot"`
-	Type          model.DiscussionType `json:"type" form:"type,default=qa"`
 	GroupIDs      model.Int64Array     `json:"group_ids" form:"group_ids"`
 	ForumID       uint                 `json:"forum_id" form:"forum_id"`
 	OnlyMine      bool                 `json:"only_mine" form:"only_mine"`
@@ -384,8 +383,7 @@ func (d *Discussion) List(ctx context.Context, userID uint, req DiscussionListRe
 	}
 
 	var query []repo.QueryOptFunc
-	query = append(query, repo.QueryWithEqual("type", req.Type),
-		repo.QueryWithEqual("forum_id", req.ForumID),
+	query = append(query, repo.QueryWithEqual("forum_id", req.ForumID),
 		repo.QueryWithEqual("resolved", req.Resolved),
 		repo.QueryWithEqual("discussions.id", req.DiscussionIDs, repo.EqualOPEqAny),
 	)
