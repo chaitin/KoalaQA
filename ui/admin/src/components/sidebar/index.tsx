@@ -20,15 +20,15 @@ interface AdminMenuItem {
 }
 
 export const ADMIN_MENUS: AdminMenuItem[] = [
-  // {
-  //   label: '仪表盘',
-  //   value: '/admin/dashboard',
-  //   pathname: '/admin/dashboard',
-  //   icon: 'icon-yibiaopan',
-  //   show: true,
-  //   disabled: false,
-  //   roles: [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator],
-  // },
+  {
+    label: '统计分析',
+    value: '/admin/dashboard',
+    pathname: '/admin/dashboard',
+    icon: 'icon-yibiaopan',
+    show: true,
+    disabled: false,
+    roles: [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator],
+  },
   {
     label: '用户管理',
     value: '/admin/users',

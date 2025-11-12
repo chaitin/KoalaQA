@@ -1,7 +1,7 @@
 'use client'
 
 import { ModelDiscussionListItem, ModelDiscussionType } from '@/api/types'
-import { MarkDown, QaUnresolvedChip } from '@/components'
+import { MarkDown, QaUnresolvedChip, DiscussionTypeChip } from '@/components'
 import { CommonContext } from '@/components/commonProvider'
 import { LazyImage } from '@/components/optimized'
 import { TimeDisplay } from '@/components/TimeDisplay'
@@ -15,22 +15,8 @@ import CommonAvatar from '@/components/CommonAvatar'
 import { useParams } from 'next/navigation'
 import { memo, useCallback, useContext, useMemo } from 'react'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
-import { Icon } from '@ctzhian/ui'
+import { Ellipsis, Icon } from '@ctzhian/ui'
 import Link from 'next/link'
-
-// 帖子类型映射函数
-const getTypeLabel = (type?: ModelDiscussionType): string => {
-  switch (type) {
-    case ModelDiscussionType.DiscussionTypeFeedback:
-      return '反馈'
-    case ModelDiscussionType.DiscussionTypeQA:
-      return '问答'
-    case ModelDiscussionType.DiscussionTypeBlog:
-      return '文章'
-    default:
-      return ''
-  }
-}
 
 // 状态相关辅助函数
 const getStatusColor = (status: string) => {
@@ -75,29 +61,6 @@ const getPostType = (type?: ModelDiscussionType): 'question' | 'feedback' | 'art
   return 'question'
 }
 
-const getTypeChipStyle = (type?: ModelDiscussionType) => {
-  switch (type) {
-    case ModelDiscussionType.DiscussionTypeQA:
-      return {
-        bgcolor: 'rgba(26,160,134,0.1)',
-        color: '#1AA086',
-        borderColor: 'rgba(26, 160, 134, 0.10)',
-      }
-    case ModelDiscussionType.DiscussionTypeBlog:
-      return {
-        bgcolor: 'rgba(255,119,68,0.1)',
-        color: '#FF7744',
-        borderColor: 'rgba(255,119,68,0.1)',
-      }
-    default:
-      return {
-        bgcolor: '#eff6ff',
-        color: '#3b82f6',
-        borderColor: '#bfdbfe',
-      }
-  }
-}
-
 const DiscussCard = ({
   data,
   keywords: _keywords,
@@ -113,7 +76,6 @@ const DiscussCard = ({
   const { groups } = useContext(CommonContext)
   const params = useParams()
   const router = useRouterWithRouteName()
-  const typeChipStyle = useMemo(() => getTypeChipStyle(it.type), [it.type])
   const profileHref = it.user_id ? `/profile/${it.user_id}` : undefined
 
   // 使用 useMemo 优化分组名称计算，避免重复查找
@@ -154,8 +116,41 @@ const DiscussCard = ({
     >
       <Box sx={{ py: '20px', px: 1 }}>
         <Stack direction='row' alignItems='center' spacing={1}>
-          {profileHref ? (
-            <Link href={profileHref} onClick={(event) => event.stopPropagation()} style={{ display: 'inline-flex' }}>
+          <Box
+            tabIndex={0}
+            sx={{
+              outline: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              borderRadius: 1,
+              transition: 'box-shadow 0.2s, border-color 0.2s, background 0.2s',
+              '&:focus-within, &:hover': {
+                borderColor: 'primary.main',
+                boxShadow: '0 0 0 2px rgba(32,108,255,0.16)',
+                background: 'rgba(32,108,255,0.06)',
+              },
+              pr: 1,
+              my: '-2px',
+              ml: '-4px',
+            }}
+          >
+            {profileHref ? (
+              <Link
+                href={profileHref}
+                onClick={(event) => event.stopPropagation()}
+                style={{ display: 'inline-flex' }}
+                tabIndex={-1}
+              >
+                <CommonAvatar
+                  src={it.user_avatar}
+                  name={it.user_name}
+                  sx={{
+                    fontSize: '0.65rem',
+                    fontWeight: 600,
+                  }}
+                />
+              </Link>
+            ) : (
               <CommonAvatar
                 src={it.user_avatar}
                 name={it.user_name}
@@ -164,58 +159,37 @@ const DiscussCard = ({
                   fontWeight: 600,
                 }}
               />
-            </Link>
-          ) : (
-            <CommonAvatar
-              src={it.user_avatar}
-              name={it.user_name}
-              sx={{
-                fontSize: '0.65rem',
-                fontWeight: 600,
-              }}
-            />
-          )}
-          <Stack direction='row' spacing={0.5} alignItems='center'>
-            {profileHref ? (
-              <Link
-                href={profileHref}
-                onClick={(event) => event.stopPropagation()}
-                style={{ color: '#111827', fontWeight: 500, fontSize: '14px', textDecoration: 'none' }}
-              >
-                {it.user_name || ''}
-              </Link>
-            ) : (
-              <Typography variant='caption' sx={{ fontWeight: 500, fontSize: '14px', whiteSpace: 'nowrap' }}>
-                {it.user_name || ''}
-              </Typography>
             )}
-            <Typography variant='caption' sx={{ fontWeight: 500, fontSize: '14px', whiteSpace: 'nowrap' }}>
-              · <TimeDisplay style={{ color: 'rgba(33, 34, 45, 0.30)' }} timestamp={it.updated_at!} />
-            </Typography>
-          </Stack>
+            <Stack direction='row' spacing={0.5} alignItems='center' sx={{ ml: 0.5 }}>
+              {profileHref ? (
+                <Link
+                  href={profileHref}
+                  onClick={(event) => event.stopPropagation()}
+                  style={{
+                    color: '#111827',
+                    fontWeight: 500,
+                    fontSize: '14px',
+                    textDecoration: 'none',
+                    outline: 'none',
+                  }}
+                  tabIndex={-1}
+                >
+                  {it.user_name || ''}
+                </Link>
+              ) : (
+                <Typography variant='caption' sx={{ fontWeight: 500, fontSize: '14px', whiteSpace: 'nowrap' }}>
+                  {it.user_name || ''}
+                </Typography>
+              )}
+            </Stack>
+          </Box>
+          <Typography variant='caption' sx={{ fontWeight: 500, fontSize: '14px', whiteSpace: 'nowrap' }}>
+            · <TimeDisplay style={{ color: 'rgba(33, 34, 45, 0.30)' }} timestamp={it.updated_at!} />
+          </Typography>
         </Stack>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', my: 2, gap: 1 }}>
-          <Chip
-            label={
-              it.type === ModelDiscussionType.DiscussionTypeBlog
-                ? '文章'
-                : it.type === ModelDiscussionType.DiscussionTypeQA
-                  ? '问题'
-                  : '反馈'
-            }
-            size='small'
-            sx={{
-              bgcolor: typeChipStyle.bgcolor,
-              color: typeChipStyle.color,
-              height: 22,
-              fontSize: '0.7rem',
-              fontWeight: 600,
-              borderRadius: '3px',
-              border: `1px solid ${typeChipStyle.borderColor}`,
-            }}
-          />
-          <Typography
-            variant='h6'
+          <DiscussionTypeChip type={it.type} variant='default' />
+          <Ellipsis
             sx={{
               fontWeight: 700,
               color: '#111827',
@@ -223,14 +197,11 @@ const DiscussCard = ({
               lineHeight: 1.4,
               letterSpacing: '-0.01em',
               '&:hover': { color: '#000000' },
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
               flex: 1,
             }}
           >
             {it.title}
-          </Typography>
+          </Ellipsis>
         </Box>
 
         <MarkDown
@@ -315,7 +286,6 @@ const DiscussCard = ({
                   color: 'primary.main',
                   px: 1,
                   borderRadius: 0.5,
-                  '&:hover': { color: '#000000' },
                 }}
               >
                 <Icon type='icon-wendapinglun' sx={{ fontSize: 12 }} />
@@ -332,8 +302,6 @@ const DiscussCard = ({
                   gap: 0.5,
                   background: 'rgba(0,99,151,0.06)',
                   color: 'primary.main',
-                  borderRadius: 0.5,
-                  '&:hover': { color: '#000000' },
                 }}
               >
                 <Icon type='icon-wendapinglun' sx={{ fontSize: 12 }} />
@@ -352,7 +320,6 @@ const DiscussCard = ({
                   color: 'primary.main',
                   px: 1,
                   borderRadius: 0.5,
-                  '&:hover': { color: '#000000' },
                 }}
               >
                 <Icon type='icon-dianzan1' sx={{ fontSize: 12 }} />

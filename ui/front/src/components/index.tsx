@@ -13,3 +13,4 @@ export { default as Icon } from './icon';
 export { default as CommonProvider } from './commonProvider';
 export { AuthConfigProvider } from '@/contexts/AuthConfigContext';
 export { default as QaUnresolvedChip } from './QaUnresolvedChip';
+export { default as DiscussionTypeChip } from './DiscussionTypeChip';

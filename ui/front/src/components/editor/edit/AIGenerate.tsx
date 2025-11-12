@@ -1,8 +1,18 @@
 import SSEClient from '@/utils/fetch';
-import { Editor, useTiptap, UseTiptapReturn } from '@ctzhian/tiptap';
+import { useTiptap, UseTiptapReturn } from '@ctzhian/tiptap';
 import { Modal } from '@ctzhian/ui';
 import { Box, Divider, Stack } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
+
+// 使用动态导入来避免 HMR 问题
+const Editor = dynamic(
+  () => import('@ctzhian/tiptap').then((mod) => ({ default: mod.Editor })),
+  {
+    ssr: false,
+    loading: () => null,
+  }
+);
 
 interface AIGenerateProps {
   open: boolean;

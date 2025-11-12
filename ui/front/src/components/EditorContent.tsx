@@ -1,8 +1,18 @@
 'use client'
-import { Editor, useTiptap } from '@ctzhian/tiptap'
+import { useTiptap } from '@ctzhian/tiptap'
 import { Box, Skeleton } from '@mui/material'
 import { SxProps } from '@mui/material/styles'
 import React, { useEffect, useState } from 'react'
+import dynamic from 'next/dynamic'
+
+// 使用动态导入来避免 HMR 问题
+const Editor = dynamic(
+  () => import('@ctzhian/tiptap').then((mod) => ({ default: mod.Editor })),
+  {
+    ssr: false,
+    loading: () => null,
+  }
+)
 
 // 扩展props接口，添加truncate选项
 export interface MarkDownProps {

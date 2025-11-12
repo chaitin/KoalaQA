@@ -292,14 +292,20 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
               sx={{
                 width: 300,
                 color: 'common.white',
-                '& fieldset': { borderColor: 'rgba(255, 255, 255,0.3)!important' },
+                transition: 'box-shadow 0.2s, background 0.2s',
+                boxShadow: 'none',
+                '& fieldset': { borderColor: 'rgba(255, 255, 255,0.3)!important', transition: 'border-width 0.2s' },
                 '& .MuiOutlinedInput-root': {
                   bgcolor: 'rgba(255, 255, 255, 0.1)',
                   borderRadius: '6px',
                   fontSize: '0.875rem',
                   height: '36px',
                   color: 'common.white',
-                  '&.Mui-focused fieldset': { borderColor: '#fff', borderWidth: 2 },
+                  transition: 'background 0.2s, box-shadow 0.2s',
+                  '&': {
+                    bgcolor: 'rgba(255, 255, 255, 0.22)',
+                    boxShadow: '0 0 0 2px #fff',
+                  },
                   '& input': {
                     color: 'common.white',
                     fontSize: '0.875rem',
@@ -310,10 +316,11 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                   opacity: 1,
                   fontSize: '13px!important',
                 },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#fff!important' },
               }}
               startAdornment={
                 <InputAdornment position='start'>
-                  <SearchIcon sx={{ color: 'common.white', fontSize: 18 }} />
+                  <SearchIcon sx={{ color: 'common.white', fontSize: 18, sition: 'font-size 0.2s' }} />
                 </InputAdornment>
               }
             />
@@ -325,7 +332,6 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
             </>
           ) : (
             <>
-
               <Button
                 variant='contained'
                 sx={{

@@ -6,9 +6,24 @@ import Content from './ui/content'
 import TitleCard from './ui/titleCard'
 import DetailSidebarWrapper from './ui/DetailSidebarWrapper'
 
-export const metadata: Metadata = {
-  title: '讨论详情',
-  description: '查看和参与技术讨论',
+// 动态生成 metadata
+export async function generateMetadata(props: { params: Promise<{ route_name: string; id: string }> }): Promise<Metadata> {
+  const { id } = await props.params
+  try {
+    const result = await fetchDiscussionDetail(id)
+    if (result.success && result.data?.title) {
+      return {
+        title: result.data.title,
+        description: result.data.summary || result.data.content?.substring(0, 150) || '查看和参与技术讨论',
+      }
+    }
+  } catch (error) {
+    console.error('Failed to fetch discussion for metadata:', error)
+  }
+  return {
+    title: '讨论详情',
+    description: '查看和参与技术讨论',
+  }
 }
 
 // 数据获取函数
