@@ -26,7 +26,7 @@ func (s *stat) Stat(ctx *context.Context) {
 }
 
 func (s *stat) Route(h server.Handler) {
-	g := h.Group("/stat")
+	g := h.Group("/api/stat")
 	g.POST("", s.Stat)
 }
 
