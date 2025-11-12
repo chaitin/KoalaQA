@@ -91,6 +91,6 @@ func (p *Timestamp) Scan(value interface{}) error {
 }
 
 type Count[T any] struct {
-	Key   T
-	Count int64
+	Key   T     `json:"key"`
+	Count int64 `json:"count"`
 }

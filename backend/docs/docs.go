@@ -2670,7 +2670,22 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/svc.StatDiscussionRes"
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/svc.StatDiscussionRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "discussions": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/svc.StatDiscussionItem"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
                                         }
                                     }
                                 }
@@ -7092,6 +7107,17 @@ const docTemplate = `{
                 }
             }
         },
+        "svc.StatDiscussionItem": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "key": {
+                    "$ref": "#/definitions/model.DiscussionType"
+                }
+            }
+        },
         "svc.StatDiscussionRes": {
             "type": "object",
             "properties": {
@@ -7103,12 +7129,6 @@ const docTemplate = `{
                 },
                 "bot_unknown": {
                     "type": "integer"
-                },
-                "discussions": {
-                    "type": "array",
-                    "items": {
-                        "type": "object"
-                    }
                 },
                 "human_resp_time": {
                     "type": "integer"

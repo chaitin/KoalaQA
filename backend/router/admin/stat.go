@@ -46,7 +46,7 @@ func (s *stat) SearchCoount(ctx *context.Context) {
 // @Summary stat discussion
 // @Tags stat
 // @Produce json
-// @Success 200 {object} context.Response{data=svc.StatDiscussionRes}
+// @Success 200 {object} context.Response{data=svc.StatDiscussionRes{discussions=[]svc.StatDiscussionItem}}
 // @Router /admin/stat/discussion [get]
 func (s *stat) Discussion(ctx *context.Context) {
 	res, err := s.svcStat.Discussion(ctx)

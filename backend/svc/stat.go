@@ -163,8 +163,14 @@ func (s *Stat) HumanResponseTime(ctx context.Context) (int64, error) {
 	return total, nil
 }
 
+// StatDiscussionItem only use in swagger
+type StatDiscussionItem struct {
+	Key   model.DiscussionType `json:"key"`
+	Count int64                `json:"count"`
+}
+
 type StatDiscussionRes struct {
-	Discussions   []model.Count[model.DiscussionType] `json:"discussions"`
+	Discussions   []model.Count[model.DiscussionType] `json:"discussions" swaggerignore:"true"`
 	BotUnknown    int64                               `json:"bot_unknown"`
 	Accept        int64                               `json:"accept"`
 	BotAccept     int64                               `json:"bot_accept"`
