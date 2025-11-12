@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"time"
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/database"
@@ -19,7 +20,11 @@ func newStat(db *database.DB) *Stat {
 
 func (s *Stat) Sum(ctx context.Context, res *int64, queryFuns ...QueryOptFunc) error {
 	opt := getQueryOpt(queryFuns...)
-	return s.model(ctx).Select("SUM(count)").Scopes(opt.Scopes()...).Scan(res).Error
+	return s.model(ctx).Select("COALESCE(SUM(count), 0)").Scopes(opt.Scopes()...).Scan(res).Error
+}
+
+func (s *Stat) BotUnknown(ctx context.Context, res *int64, t time.Time) error {
+	return s.model(ctx).Where("type = ? AND ts = ?", model.StatTypeBotUnknown, t.Unix()).Where("key IN (SELECT uuid FROM discussions WHERE created_at > ?)", t).Count(res).Error
 }
 
 func (s *Stat) Create(ctx context.Context, stats ...model.Stat) error {

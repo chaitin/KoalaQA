@@ -79,10 +79,6 @@ func (s *Stat) SearchCount(ctx context.Context) (int64, error) {
 	return s.Sum(ctx, model.StatTypeSearch)
 }
 
-func (s *Stat) BotUnknown(ctx context.Context) (int64, error) {
-	return s.Sum(ctx, model.StatTypeBotUnknown)
-}
-
 func (s *Stat) Accept(ctx context.Context, onlyBot bool) (count int64, err error) {
 	now := time.Now()
 
@@ -168,17 +164,18 @@ func (s *Stat) HumanResponseTime(ctx context.Context) (int64, error) {
 }
 
 type StatDiscussionRes struct {
-	Discussion    int64 `json:"discussion"`
-	BotUnknown    int64 `json:"bot_unknown"`
-	Accept        int64 `json:"accept"`
-	BotAccept     int64 `json:"bot_accept"`
-	HumanRespTime int64 `json:"human_resp_time"`
+	Discussions   []model.Count[model.DiscussionType] `json:"discussions"`
+	BotUnknown    int64                               `json:"bot_unknown"`
+	Accept        int64                               `json:"accept"`
+	BotAccept     int64                               `json:"bot_accept"`
+	HumanRespTime int64                               `json:"human_resp_time"`
 }
 
 func (s *Stat) Discussion(ctx context.Context) (*StatDiscussionRes, error) {
 	var res StatDiscussionRes
 	now := time.Now()
-	err := s.repoDisc.Count(ctx, &res.Discussion,
+	var err error
+	res.Discussions, err = s.repoDisc.ListType(ctx,
 		repo.QueryWithEqual("created_at", util.DayZero(now), repo.EqualOPGT),
 		repo.QueryWithEqual("created_at", util.DayZero(now.AddDate(0, 0, 1)), repo.EqualOPLT),
 	)
@@ -186,7 +183,7 @@ func (s *Stat) Discussion(ctx context.Context) (*StatDiscussionRes, error) {
 		return nil, err
 	}
 
-	res.BotUnknown, err = s.BotUnknown(ctx)
+	err = s.repoStat.BotUnknown(ctx, &res.BotUnknown, util.TodayZero())
 	if err != nil {
 		return nil, err
 	}

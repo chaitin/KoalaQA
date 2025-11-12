@@ -49,6 +49,12 @@ func (d *Discussion) DetailByUUID(ctx context.Context, uid uint, uuid string) (*
 	return detail, nil
 }
 
+func (d *Discussion) ListType(ctx context.Context, queryFuncs ...QueryOptFunc) (res []model.Count[model.DiscussionType], err error) {
+	opt := getQueryOpt(queryFuncs...)
+	err = d.model(ctx).Select("type AS key, COUNT(*) AS count").Scopes(opt.Scopes()...).Group("type").Find(&res).Error
+	return
+}
+
 func (d *Discussion) Detail(ctx context.Context, uid uint, id uint) (*model.DiscussionDetail, error) {
 	var res model.DiscussionDetail
 	res.CurrentUserID = uid

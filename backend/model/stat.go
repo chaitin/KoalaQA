@@ -7,10 +7,7 @@ type StatType uint
 const (
 	StatTypeVisit StatType = iota + 1
 	StatTypeSearch
-	StatTypeDiscussion
 	StatTypeBotUnknown
-	StatTypeBotAccept
-	StatTypeAccept
 )
 
 type Stat struct {

@@ -60,9 +60,9 @@ func (s *stat) Discussion(ctx *context.Context) {
 
 func (s *stat) Route(h server.Handler) {
 	g := h.Group("/stat")
-	g.GET("/visit")
-	g.GET("/search")
-	g.GET("/discussion")
+	g.GET("/visit", s.Visit)
+	g.GET("/search", s.SearchCoount)
+	g.GET("/discussion", s.Discussion)
 }
 
 func newStat(s *svc.Stat) server.Router {

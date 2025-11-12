@@ -7104,8 +7104,11 @@ const docTemplate = `{
                 "bot_unknown": {
                     "type": "integer"
                 },
-                "discussion": {
-                    "type": "integer"
+                "discussions": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
                 },
                 "human_resp_time": {
                     "type": "integer"
