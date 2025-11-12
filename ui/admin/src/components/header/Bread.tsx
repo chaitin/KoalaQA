@@ -52,6 +52,7 @@ const Bread = () => {
       sx={{
         flexGrow: 1,
         fontSize: '14px',
+        borderBottomRightRadius: 1,
       }}
     >
       {breadcrumbs.map((crumb, index) => {

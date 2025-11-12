@@ -92,15 +92,6 @@ const theme = createTheme(
     },
 
     components: {
-      MuiAlert: {
-        styleOverrides: {
-          root: ({ ownerState }) => ({
-            ...(ownerState.severity === 'info' && {
-              backgroundColor: '#60a5fa',
-            }),
-          }),
-        },
-      },
       MuiOutlinedInput: {
         styleOverrides: {
           root: ({ theme }) => ({
@@ -113,7 +104,13 @@ const theme = createTheme(
             '&:hover .MuiOutlinedInput-notchedOutline': {
               borderColor: theme.palette.primary.main,
             },
+            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+              borderWidth: '1px',
+            },
           }),
+          // notchedOutline: {
+          //   borderColor: '#D9DEE2',
+          // },
         },
       },
       MuiFormControl: {

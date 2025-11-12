@@ -48,6 +48,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import DiscussCard from './discussCard'
 import { MarkDown } from '@/components'
+import { Ellipsis } from '@ctzhian/ui'
 
 export type Status = 'hot' | 'new' | 'publish'
 
@@ -88,7 +89,8 @@ const Article = ({
   const { getFilteredGroups } = useGroupData()
 
   // 根据当前类型从 forumInfo.groups 中筛选对应的分类
-  const currentType = (type || 'qa') as 'qa' | 'feedback' | 'blog'
+  // 当type为undefined时，不传type参数，显示所有类型的分类
+  const currentType = type ? (type as 'qa' | 'feedback' | 'blog') : undefined
 
   // 使用 useMemo 缓存过滤后的分组数据
   const groups = useMemo(() => {
@@ -185,7 +187,8 @@ const Article = ({
     const params: GetDiscussionParams & { forum_id?: number } = {
       page: new_page,
       size: 10,
-      type: type as 'qa' | 'feedback' | 'blog',
+      // 只有当type存在时才传递type参数，否则不传，让后端返回所有类型
+      ...(type ? { type: type as 'qa' | 'feedback' | 'blog' } : {}),
       forum_id: parseInt(forumId || '0', 10),
     }
 
@@ -241,7 +244,8 @@ const Article = ({
       const params: GetDiscussionParams & { forum_id?: number } = {
         page: 1,
         size: 10,
-        type: type as 'qa' | 'feedback' | 'blog',
+        // 只有当type存在时才传递type参数，否则不传，让后端返回所有类型
+        ...(type ? { type: type as 'qa' | 'feedback' | 'blog' } : {}),
       }
 
       // 设置 filter
@@ -393,7 +397,7 @@ const Article = ({
   }
 
   // 根据类型获取排序选项
-  const getSortOptions = (postType: string) => {
+  const getSortOptions = (postType?: string) => {
     if (postType === 'blog') {
       return [
         { value: 'publish', label: '最新发布' },
@@ -401,7 +405,7 @@ const Article = ({
         { value: 'hot', label: '热门内容' },
       ]
     }
-    // Default for qa/feedback
+    // Default for qa/feedback or all types
     return [
       { value: 'publish', label: '最新发布' },
       { value: 'new', label: '最近活跃' },
@@ -497,20 +501,9 @@ const Article = ({
               }}
               sx={{
                 '& .MuiOutlinedInput-root': {
-                  bgcolor: '#ffffff',
                   borderRadius: '6px',
                   fontSize: '0.875rem',
                   height: '40px',
-                  '& fieldset': {
-                    borderColor: '#21222D',
-                  },
-                  '&:hover fieldset': {
-                    borderColor: '#d1d5db',
-                  },
-                  '&.Mui-focused fieldset': {
-                    borderColor: '#000000',
-                    borderWidth: 2,
-                  },
                 },
               }}
             />
@@ -565,6 +558,7 @@ const Article = ({
                     fontWeight: 500,
                     fontSize: '14px',
                     color: '#21222D',
+                    border: '1px solid transparent',
                     '&.Mui-selected': {
                       bgcolor: 'rgba(0,99,151,0.06)',
                       border: '1px solid rgba(0,99,151,0.1)',
@@ -749,25 +743,32 @@ const Article = ({
                   border: '1px solid #D9DEE2',
                   p: 2,
                   mb: 2,
+                  // 为公告 Paper 增加焦点识别样式
+                  transition: 'box-shadow 0.2s, border-color 0.2s',
+                  outline: 'none',
+                  '&:focus-within, &:hover': {
+                    borderColor: 'primary.main',
+                    boxShadow: '0 0 0 2px rgba(32,108,255,0.12)',
+                    backgroundColor: 'rgba(32,108,255,0.04)',
+                  },
+                  cursor: 'pointer',
+                  tabIndex: 0,
                 }}
               >
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  <Typography
-                    variant='body2'
+                  <Ellipsis
                     sx={{
                       fontSize: '0.875rem',
                       fontWeight: 500,
                       color: '#111827',
                       lineHeight: 1.4,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
                       display: '-webkit-box',
                       WebkitLineClamp: 2,
                       WebkitBoxOrient: 'vertical',
                     }}
                   >
                     {announcement.title}
-                  </Typography>
+                  </Ellipsis>
                   {announcement.summary && (
                     <Box
                       sx={{
@@ -803,7 +804,13 @@ const Article = ({
           >
             <Stack direction='row' alignItems='center' justifyContent={'space-between'} sx={{ mb: 2 }}>
               <Stack direction='row' alignItems='center' gap={1}>
-                <Image alt='crown' width={20} height={20} src='/crown.svg' />
+                <Image
+                  alt='crown'
+                  width={20}
+                  height={20}
+                  src='/crown.svg'
+                  style={{ position: 'relative', top: '-0.5px' }}
+                />
                 <Typography variant='subtitle2' sx={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>
                   贡献达人
                 </Typography>
@@ -902,39 +909,22 @@ const Article = ({
                         <CommonAvatar src={contributor.avatar} name={contributor.name} />
                       )}
                       <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' }}>
-                        {contributorProfileHref ? (
-                          <Link
-                            href={contributorProfileHref}
-                            style={{
-                              fontWeight: 600,
-                              color: '#111827',
-                              fontSize: '0.875rem',
-                              lineHeight: 1.3,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              textDecoration: 'none',
-                              display: 'block',
-                            }}
-                          >
-                            {contributor.name || '未知用户'}
-                          </Link>
-                        ) : (
-                          <Typography
-                            variant='body2'
-                            sx={{
-                              fontWeight: 600,
-                              color: '#111827',
-                              fontSize: '0.875rem',
-                              lineHeight: 1.3,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {contributor.name || '未知用户'}
-                          </Typography>
-                        )}
+                        <Link
+                          href={contributorProfileHref || '/'}
+                          style={{
+                            fontWeight: 600,
+                            color: '#111827',
+                            fontSize: '0.875rem',
+                            lineHeight: 1.3,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            textDecoration: 'none',
+                            display: 'block',
+                          }}
+                        >
+                          <Ellipsis>{contributor.name || '未知用户'}</Ellipsis>
+                        </Link>
                       </Box>
                       {contributor.score !== undefined && (
                         <Box sx={{ display: 'flex', gap: 0.75, flexShrink: 0 }}>

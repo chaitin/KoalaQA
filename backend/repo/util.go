@@ -19,6 +19,8 @@ const (
 	EqualOPContainAny
 	EqualOPValIn
 	EqualOPNotEqAny
+	EqualOPLT
+	EqualOPGT
 )
 
 type eqVal struct {
@@ -142,6 +144,10 @@ func equalScope(kv []kv) database.Scope {
 				db = db.Where(data.key+" && ?", data.value.v)
 			case EqualOPValIn:
 				db = db.Where("? = ANY("+data.key+")", data.value.v)
+			case EqualOPGT:
+				db = db.Where(data.key+" > ?", data.value.v)
+			case EqualOPLT:
+				db = db.Where(data.key+" < ?", data.value.v)
 			}
 		}
 

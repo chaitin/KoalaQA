@@ -769,6 +769,19 @@ export interface SvcSitemapListReq {
   url: string;
 }
 
+export interface SvcStatDiscussionRes {
+  accept?: number;
+  bot_accept?: number;
+  bot_unknown?: number;
+  discussion?: number;
+  human_resp_time?: number;
+}
+
+export interface SvcStatVisitRes {
+  pv?: number;
+  uv?: number;
+}
+
 export interface SvcTaskReq {
   ids: string[];
 }
@@ -1229,6 +1242,7 @@ export interface GetDiscussionParams {
   resolved?: boolean;
   /** @min 1 */
   size?: number;
+  stat?: boolean;
   type?: "qa" | "feedback" | "blog";
 }
 

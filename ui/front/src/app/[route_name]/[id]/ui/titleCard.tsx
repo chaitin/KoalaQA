@@ -7,7 +7,7 @@ import {
   postDiscussionDiscIdRevokeLike,
 } from '@/api'
 import { ModelDiscussionDetail, ModelDiscussionType, ModelUserRole } from '@/api/types'
-import { Card, QaUnresolvedChip } from '@/components'
+import { Card, QaUnresolvedChip, DiscussionTypeChip } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import { ReleaseModal, Tag } from '@/components/discussion'
 import { TimeDisplayWithTag } from '@/components/TimeDisplay'
@@ -28,7 +28,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useContext, useRef, useState, useEffect, useMemo } from 'react'
 import { CheckCircleIcon } from '@/utils/mui-imports'
 import Link from 'next/link'
-import { Icon } from '@ctzhian/ui'
+import { Ellipsis, Icon } from '@ctzhian/ui'
 
 // 添加CSS动画样式
 const animationStyles = `
@@ -249,40 +249,21 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, gap: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, minWidth: 0 }}>
             {/* 类型标签 */}
-            <Chip
-              label={isArticlePost ? '文章' : isFeedbackPost ? '反馈' : '问题'}
-              size='small'
-              sx={{
-                bgcolor: isArticlePost ? 'rgba(255,119,68,0.1)' : isFeedbackPost ? '#eff6ff' : 'rgba(26,160,134,0.1)',
-                color: isArticlePost ? '#FF7744' : isFeedbackPost ? '#3b82f6' : '#1AA086',
-                height: 24,
-                fontWeight: 400,
-                fontSize: '14px',
-                borderRadius: '4px',
-                border: `1px solid ${
-                  isArticlePost ? '#FF7744' : isFeedbackPost ? '#bfdbfe' : 'rgba(26, 160, 134, 0.10)'
-                }`,
-                flexShrink: 0,
-              }}
-            />
+            <DiscussionTypeChip type={data.type} variant='default' />
             {/* 标题 */}
-            <Typography
-              variant='h5'
+            <Ellipsis
               sx={{
                 fontWeight: 700,
                 color: 'RGBA(33, 34, 45, 1)',
                 lineHeight: 1.3,
                 flex: 1,
                 fontSize: '1.25rem',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                display: '-webkit-box',
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: 'vertical',
               }}
             >
               {data.title}
-            </Typography>
+            </Ellipsis>
           </Box>
           {/* 右侧：点赞数和更多选项 */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
@@ -431,7 +412,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
               ·
             </Typography>
             <Typography variant='body2' sx={{ color: 'rgba(33, 34, 45, 0.50)' }}>
-              发布于
+              发布于{' '}
               <TimeDisplayWithTag
                 timestamp={data.created_at!}
                 title={dayjs.unix(data.created_at!).format('YYYY-MM-DD HH:mm:ss')}

@@ -40,7 +40,7 @@ func (d *discussion) List(ctx *context.Context) {
 		ctx.BadRequest(err)
 		return
 	}
-	res, err := d.disc.List(ctx, ctx.GetUser().UID, req)
+	res, err := d.disc.List(ctx, ctx.SessionUUID(), ctx.GetUser().UID, req)
 	if err != nil {
 		ctx.InternalError(err, "failed to list discussions")
 		return

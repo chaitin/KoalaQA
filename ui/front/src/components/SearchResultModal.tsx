@@ -78,6 +78,7 @@ export const SearchResultModal = ({
       const params: GetDiscussionParams = {
         forum_id: forumId,
         keyword: query.trim(),
+        stat: true
       }
       
       const result = await getDiscussion(params)
@@ -166,22 +167,8 @@ export const SearchResultModal = ({
                 boxShadow: '0px 4px 12px 0px rgba(0,0,0,0.15), 0px 4px 12px 0px rgba(218,220,224,0.6)',
                 transform: 'translateY(-2px)',
               },
-              '&.Mui-focused': {
-                boxShadow: '0px 6px 20px 0px rgba(32,108,255,0.2), 0px 6px 20px 0px rgba(32,108,255,0.1)',
-                transform: 'translateY(-2px) scale(1.02)',
-                '.MuiOutlinedInput-notchedOutline': {
-                  borderColor: '#206CFF',
-                  borderWidth: 2,
-                },
-              },
               '& .MuiInputAdornment-root': {
                 transition: 'all 0.3s ease',
-              },
-              '&.Mui-focused .MuiInputAdornment-root': {
-                transform: 'scale(1.1)',
-                '& .MuiSvgIcon-root': {
-                  color: '#206CFF',
-                },
               },
             }}
           />
@@ -261,10 +248,6 @@ export const SearchResultModal = ({
                       py: 1.5,
                       fontSize: 14,
                       fontWeight: 500,
-                      '&:hover': {
-                        borderColor: '#206CFF',
-                        color: '#206CFF',
-                      },
                     }}
                   >
                     {button.label}

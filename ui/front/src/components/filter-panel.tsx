@@ -59,14 +59,11 @@ export default function FilterPanel() {
   }, [pathname, routeName])
 
   // 从 URL 参数读取选中的分类和类型
-  // 在详情页时，不使用 URL 参数，也不高亮类型；默认问答
+  // 在详情页时，不使用 URL 参数，也不高亮类型
+  // 默认不选中任何类型，只有主动选中时才传递type参数
   const urlType = useMemo(() => {
     const urlTypeParam = searchParams?.get('type')
-    if (urlTypeParam) {
-      return urlTypeParam
-    }
-    // 默认问答
-    return 'qa'
+    return urlTypeParam || null // 没有参数时返回null，表示不选中任何类型
   }, [searchParams])
   const urlTopics = useMemo(() => {
     const tps = searchParams?.get('tps')
@@ -108,15 +105,15 @@ export default function FilterPanel() {
   }, [categoryGroups, urlTopics])
 
   // 更新 URL 参数的函数
-  const updateUrlParams = (newTopics: number[], newType?: string) => {
+  const updateUrlParams = (newTopics: number[], newType?: string | null) => {
     const params = new URLSearchParams(searchParams?.toString())
 
     // 更新类型参数
-    const typeToSet = newType || urlType
-    if (typeToSet === 'qa') {
-      params.delete('type') // 默认是 qa，删除参数
+    // 如果newType为null或undefined，删除type参数（表示不选中任何类型）
+    if (newType === null || newType === undefined) {
+      params.delete('type')
     } else {
-      params.set('type', typeToSet)
+      params.set('type', newType)
     }
 
     // 更新分类参数
@@ -162,7 +159,9 @@ export default function FilterPanel() {
 
   // 处理类型点击
   const handlePostTypeClick = (typeId: string) => {
-    const newType = urlType === typeId ? 'qa' : typeId // 如果点击已选中的类型，则取消选择（回到默认的 qa）
+    // 如果点击已选中的类型，则取消选择（不传type参数，显示全部）
+    // 如果点击未选中的类型，则选中该类型
+    const newType = urlType === typeId ? null : typeId
     updateUrlParams(urlTopics, newType)
   }
 
@@ -222,7 +221,8 @@ export default function FilterPanel() {
         <List disablePadding>
           {postTypes.map((type) => {
             // 在详情页时不高亮任何类型
-            const isSelected = isDetailPage ? false : urlType === type.id
+            // 在列表页时，只有当urlType存在且等于type.id时才选中
+            const isSelected = isDetailPage ? false : (urlType !== null && urlType === type.id)
             return (
               <ListItem key={type.id} disablePadding>
                 <ListItemButton
@@ -232,13 +232,13 @@ export default function FilterPanel() {
                   sx={{
                     py: 0.75,
                     px: 1.5,
-                    borderRadius: '4px',
+                    border: '1px solid transparent',
                     mb: 0.5,
+                    borderRadius: '8px',
                     '&.Mui-selected': {
                       background: 'rgba(0,99,151,0.06)',
-                      borderRadius: '8px',
                       color: 'primary.main',
-                      border: '1px solid rgba(0,99,151,0.1)',
+                      borderColor: 'rgba(0,99,151,0.1)',
                     },
                     '&:hover': { bgcolor: '#f3f4f6', color: '#000000' },
                   }}

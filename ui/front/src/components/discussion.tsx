@@ -2,43 +2,40 @@
 import {
   ModelDiscussionDetail,
   ModelDiscussionType,
-  ModelGroupWithItem,
   ModelGroupItemInfo,
+  ModelGroupWithItem,
   SvcDiscussionCreateReq,
 } from '@/api'
-import { postDiscussion, putDiscussionDiscId, getDiscussion } from '@/api/Discussion'
-import { ModelDiscussionListItem, ModelListRes } from '@/api/types'
-// import { Icon } from '@/components'
+import { getDiscussion, postDiscussion, putDiscussionDiscId } from '@/api/Discussion'
+import { ModelDiscussionListItem } from '@/api/types'
 import UserAvatar from '@/components/UserAvatar'
 import EditorWrap, { EditorWrapRef } from '@/components/editor/edit/Wrap'
 import Modal from '@/components/modal'
-import { useForum } from '@/contexts/ForumContext'
+import { useGroupData } from '@/contexts/GroupDataContext'
 import { useForumId } from '@/hooks/useForumId'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
+import { Ellipsis, Icon } from '@ctzhian/ui'
 import { zodResolver } from '@hookform/resolvers/zod'
+import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer'
 import {
-  Autocomplete,
   Box,
   Chip,
+  CircularProgress,
+  FormControl,
   FormHelperText,
+  InputLabel,
+  MenuItem,
+  Select,
   Stack,
   styled,
   TextField,
   Typography,
-  CircularProgress,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
 } from '@mui/material'
 import { useParams } from 'next/navigation'
-import React, { useCallback, useContext, useEffect, useRef, useState, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import z from 'zod'
-import { CommonContext } from './commonProvider'
-import { useGroupData } from '@/contexts/GroupDataContext'
-import { QuestionAnswer as QuestionAnswerIcon } from '@mui/icons-material'
-import { Icon } from '@ctzhian/ui'
+import { MarkDown, QaUnresolvedChip, DiscussionTypeChip } from '@/components'
 
 export const Tag = styled(Chip)({
   borderRadius: '3px',
@@ -48,73 +45,52 @@ export const Tag = styled(Chip)({
 
 // 相似内容项组件（与问题详情页的相关内容UI保持一致）
 const SimilarContentItem = ({ data }: { data: ModelDiscussionListItem }) => {
-  const getTypeLabel = (type?: ModelDiscussionType) => {
-    switch (type) {
-      case ModelDiscussionType.DiscussionTypeFeedback:
-        return '反馈'
-      case ModelDiscussionType.DiscussionTypeQA:
-        return '问题'
-      case ModelDiscussionType.DiscussionTypeBlog:
-        return '文章'
-      default:
-        return ''
-    }
-  }
-
   return (
     <Box
       sx={{
-        p: 1.5,
-        borderRadius: '6px',
-        bgcolor: '#f9fafb',
-        border: '1px solid #e5e7eb',
+        py: 1,
+        pl: 2,
         transition: 'all 0.2s',
+        borderBottom: '1px solid #D9DEE2',
       }}
     >
-      <Typography
-        variant='body2'
-        sx={{
-          fontWeight: 600,
-          color: '#111827',
-          fontSize: '0.8125rem',
-          mb: 1,
-          lineHeight: 1.4,
-          display: '-webkit-box',
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden',
-        }}
-      >
-        {data.title}
-      </Typography>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography
-          variant='caption'
+      <Stack direction='row' alignItems='center' spacing={1}>
+        <DiscussionTypeChip type={data.type} variant='default' />
+        <Ellipsis
           sx={{
-            color: '#9ca3af',
-            fontSize: '0.65rem',
-            fontWeight: 500,
+            fontWeight: 600,
+            fontSize: 12,
+            color: '#111827',
+            mb: 1,
+            lineHeight: 1.4,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
           }}
         >
-          {getTypeLabel(data.type)}
-        </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          {data.type === ModelDiscussionType.DiscussionTypeQA ? (
-            <>
-              <QuestionAnswerIcon sx={{ fontSize: 12, color: '#9ca3af' }} />
-              <Typography variant='caption' sx={{ color: '#9ca3af', fontWeight: 600, fontSize: '0.7rem' }}>
-                {data.comment || 0}
-              </Typography>
-            </>
-          ) : (
-            <>
-              <Icon type='icon-dianzan1' sx={{ fontSize: 12, color: '#9ca3af' }} />
-              <Typography variant='caption' sx={{ color: '#9ca3af', fontWeight: 600, fontSize: '0.7rem' }}>
-                {data.like || 0}
-              </Typography>
-            </>
-          )}
-        </Box>
+          {data.title}
+        </Ellipsis>
+      </Stack>
+
+      <Box
+        sx={{
+          mt: 1,
+          color: 'rgba(33,34,45,0.5)',
+          fontSize: '12px',
+          lineHeight: '20px',
+          height: '20px',
+        }}
+      >
+        {data.type === ModelDiscussionType.DiscussionTypeBlog ? (
+          <Ellipsis>{data.summary}</Ellipsis>
+        ) : (
+          <MarkDown content={data.content} sx={{
+            fontSize: '12px',
+            bgcolor: 'transparent',
+            color: 'rgba(33,34,45,0.5)',
+          }} />
+        )}
       </Box>
     </Box>
   )
@@ -493,7 +469,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
         onSubmit()
       }}
       okText='发布'
-      width={showSimilarContent ? 1200 : 800}
+      width={800}
       okButtonProps={{
         loading,
         id: 'submit-discussion-id',
@@ -508,8 +484,8 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
           minHeight: showSimilarContent ? '60vh' : 'auto',
         }}
       >
-        <Box sx={{ flex: showSimilarContent ? 1 : 'none', minWidth: 0, width: showSimilarContent ? 'auto' : '100%' }}>
-          <Stack gap={3}>
+        <Box sx={{ flex: showSimilarContent ? 1 : 'none', minWidth: 0, width: showSimilarContent ? 'auto' : '100%', display: 'flex', flexDirection: 'column', minHeight: showSimilarContent ? '60vh' : 'auto' }}>
+          <Stack gap={3} sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <TextField
               {...register('title')}
               required
@@ -586,22 +562,29 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
               }}
             />
             {showContentEditor && (
-              <Box>
+              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                 <Box
                   sx={{
                     border: '1px solid #e0e0e0',
-                    borderRadius: 2,
+                    borderRadius: '8px',
                     backgroundColor: '#fff',
-                    overflow: 'hidden', // 保留 overflow 以裁剪内容
+                    overflow: 'hidden',
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    minHeight: 0,
                     '& > div': {
-                      // 确保 EditorWrap 的根容器圆角与外层匹配
-                      borderRadius: '8px !important', // borderRadius: 2 = 8px
+                      borderRadius: '8px !important',
                       overflow: 'hidden',
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      minHeight: 0,
                     },
                   }}
                 >
                   {/* 编辑器内容 */}
-                  <Box sx={{ p: 0 }}>
+                  <Box sx={{ p: 0, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, '& .tiptap': { flex: 1, minHeight: 0, overflow: 'auto' } }}>
                     <Controller
                       rules={{ required: '请输入内容' }}
                       name='content'
@@ -609,6 +592,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                       render={({ field }) => (
                         <EditorWrap
                           ref={editorRef}
+                          showToolbar={false}
                           value={field.value || ''}
                           showActions={false}
                           onChange={
@@ -636,75 +620,88 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
             )}
           </Stack>
         </Box>
-
-        {/* 相似内容栏 */}
+        {/* 相似内容栏 - 右侧 */}
         {showSimilarContent && (
           <Box
             sx={{
-              width: 360,
+              width: 320,
+              minHeight: 200,
               flexShrink: 0,
-              pl: 3,
-              maxHeight: '70vh',
+              display: 'flex',
+              flexDirection: 'column',
               overflowY: 'auto',
-              overflowX: 'hidden', // 防止横向滚动条
-              borderLeft: '1px solid #e0e0e0',
-              alignSelf: 'stretch', // 让分割线覆盖整个容器高度
+              background: 'rgba(0,99,151,0.03)',
+              borderRadius: 1,
+              border: '1px solid #D9DEE2',
             }}
           >
-            <Typography
-              variant='h6'
+            <Box
               sx={{
-                fontSize: '16px',
-                fontWeight: 600,
-                color: '#111827',
-                mb: 2,
-                position: 'sticky',
-                top: 0,
-                bgcolor: '#fff',
-                zIndex: 1,
-                pb: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+                p: 2,
+                flexShrink: 0,
               }}
             >
-              相似内容
-            </Typography>
+              <Stack
+                direction='row'
+                alignItems='center'
+                gap={1}
+                sx={{ fontSize: '12px', fontWeight: 400, color: 'primary.main' }}
+              >
+                {similarLoading ? (
+                  <>
+                    <img src='/search_loading.gif' alt='loading' style={{ width: 18, height: 18 }} />
+                    <Box>相似帖子搜集中...</Box>
+                  </>
+                ) : (
+                  <>
+                    <Icon type='icon-xingxingzuhe' sx={{ fontSize: 14, color: 'primary.main' }} />
+                    <Box>相似帖子推荐</Box>
+                  </>
+                )}
+              </Stack>
+            </Box>
 
-            {similarLoading ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px', py: 4 }}>
-                <CircularProgress size={24} />
-              </Box>
-            ) : similarDiscussions.length === 0 ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px', py: 4 }}>
-                <Typography
-                  variant='body2'
+            {similarDiscussions.length > 0 && (
+              <Box
+                sx={{
+                  maxHeight: 'calc(60vh - 60px)',
+                  overflowY: 'auto',
+                  overflowX: 'hidden',
+                  flex: 1,
+                }}
+              >
+                <Box
                   sx={{
-                    color: 'rgba(0,0,0,0.6)',
-                    fontSize: '14px',
-                    textAlign: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 2,
+                    overflowX: 'hidden',
+                    p: 2,
+                    pt: 0,
                   }}
                 >
-                  暂无相似内容
-                </Typography>
-              </Box>
-            ) : (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, overflowX: 'hidden' }}>
-                {similarDiscussions.map((item, index) => (
-                  <Box
-                    key={item.id || index}
-                    onClick={() => handleSimilarItemClick(item)}
-                    sx={{
-                      cursor: 'pointer',
-                      overflow: 'hidden', // 防止内容超出
-                      '&:hover .similar-item': {
-                        bgcolor: '#f3f4f6',
-                        borderColor: '#d1d5db',
-                      },
-                    }}
-                  >
-                    <Box className='similar-item'>
-                      <SimilarContentItem data={item} />
+                  {similarDiscussions.map((item, index) => (
+                    <Box
+                      key={item.id || index}
+                      onClick={() => handleSimilarItemClick(item)}
+                      sx={{
+                        cursor: 'pointer',
+                        overflow: 'hidden',
+                        '&:hover .similar-item': {
+                          bgcolor: '#f3f4f6',
+                          borderColor: '#d1d5db',
+                        },
+                      }}
+                    >
+                      <Box className='similar-item'>
+                        <SimilarContentItem data={item} />
+                      </Box>
                     </Box>
-                  </Box>
-                ))}
+                  ))}
+                </Box>
               </Box>
             )}
           </Box>
