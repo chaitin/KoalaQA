@@ -910,7 +910,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                   ? '2px solid rgba(25, 135, 84, 1) !important'
                   : '1px solid rgba(217, 222, 226, 1)!important',
                 position: 'relative',
-                overflow: 'hidden',
               }}
             >
               {answer.accepted && (
