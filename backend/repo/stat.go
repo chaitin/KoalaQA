@@ -28,9 +28,9 @@ func (s *Stat) Create(ctx context.Context, stats ...model.Stat) error {
 	}
 
 	return s.model(ctx).Clauses(clause.OnConflict{
-		Columns: []clause.Column{{Name: "type"}, {Name: "ts"}},
+		Columns: []clause.Column{{Name: "type"}, {Name: "ts"}, {Name: "key"}},
 		DoUpdates: clause.Assignments(map[string]interface{}{
-			"count": gorm.Expr("stats.count+EXCLUDE.count"),
+			"count": gorm.Expr("stats.count+EXCLUDED.count"),
 		}),
 	}).
 		CreateInBatches(&stats, 1000).Error
