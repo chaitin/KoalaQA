@@ -7,6 +7,7 @@ import (
 	"github.com/chaitin/koalaqa/migration"
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/anydoc"
+	"github.com/chaitin/koalaqa/pkg/batch"
 	"github.com/chaitin/koalaqa/pkg/config"
 	"github.com/chaitin/koalaqa/pkg/cron"
 	"github.com/chaitin/koalaqa/pkg/database"
@@ -50,6 +51,7 @@ func main() {
 		cron.Module(),
 		fx.Provide(version.NewInfo),
 		ratelimit.Module,
+		batch.Module,
 	)
 	ctx := context.Background()
 	if err := app.Start(ctx); err != nil {

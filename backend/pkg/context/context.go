@@ -10,7 +10,9 @@ import (
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/trace"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 var (
@@ -49,6 +51,22 @@ func (ctx *Context) SetUser(u model.UserInfo) {
 
 func (ctx *Context) GetUser() model.UserInfo {
 	return ctx.user
+}
+
+const sessionUUID = "session_uuid"
+
+func (ctx *Context) SessionUUID() string {
+	session := sessions.Default(ctx.Context)
+	data := session.Get(sessionUUID)
+	if data == nil {
+		key := uuid.NewString()
+		session.Set(sessionUUID, key)
+		session.Save()
+
+		return key
+	}
+
+	return data.(string)
 }
 
 func (ctx *Context) Logined() bool {

@@ -2649,6 +2649,99 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/stat/discussion": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stat"
+                ],
+                "summary": "stat discussion",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/svc.StatDiscussionRes"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/stat/search": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stat"
+                ],
+                "summary": "stat search count",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/stat/visit": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stat"
+                ],
+                "summary": "stat visit",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/svc.StatVisitRes"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/admin/system/brand": {
             "get": {
                 "produces": [
@@ -3345,6 +3438,11 @@ const docTemplate = `{
                         "minimum": 1,
                         "type": "integer",
                         "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "name": "stat",
                         "in": "query"
                     }
                 ],
@@ -4301,6 +4399,25 @@ const docTemplate = `{
                                     }
                                 }
                             ]
+                        }
+                    }
+                }
+            }
+        },
+        "/stat": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stat"
+                ],
+                "summary": "stat",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
                         }
                     }
                 }
@@ -6957,6 +7074,37 @@ const docTemplate = `{
             "properties": {
                 "url": {
                     "type": "string"
+                }
+            }
+        },
+        "svc.StatDiscussionRes": {
+            "type": "object",
+            "properties": {
+                "accept": {
+                    "type": "integer"
+                },
+                "bot_accept": {
+                    "type": "integer"
+                },
+                "bot_unknown": {
+                    "type": "integer"
+                },
+                "discussion": {
+                    "type": "integer"
+                },
+                "human_resp_time": {
+                    "type": "integer"
+                }
+            }
+        },
+        "svc.StatVisitRes": {
+            "type": "object",
+            "properties": {
+                "pv": {
+                    "type": "integer"
+                },
+                "uv": {
+                    "type": "integer"
                 }
             }
         },
