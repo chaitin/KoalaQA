@@ -61,7 +61,6 @@ func (ctx *Context) SessionUUID() string {
 	if data == nil {
 		key := uuid.NewString()
 		session.Set(sessionUUID, key)
-		session.Save()
 
 		return key
 	}

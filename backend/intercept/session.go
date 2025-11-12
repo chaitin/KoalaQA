@@ -27,6 +27,8 @@ func newSession() Interceptor {
 
 func (s *session) Intercept(ctx *context.Context) {
 	s.handler(ctx.Context)
+
+	sessions.Default(ctx.Context).Save()
 }
 
 func (s *session) Priority() int {

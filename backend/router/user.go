@@ -124,7 +124,6 @@ func (u *user) LoginThirdURL(ctx *context.Context) {
 		Value:    state,
 		Redirect: req.Redirect,
 	})
-	session.Save()
 
 	ctx.Success(authURL)
 }
