@@ -1536,7 +1536,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                       ref={answerEditorRef}
                       value=''
                       showActions={false}
-                      height={40}
+                      height={80}
                       placeholder={isArticlePost ? '添加评论...' : '回答问题...'}
                       onChange={handleAnswerEditorChange}
                     />
