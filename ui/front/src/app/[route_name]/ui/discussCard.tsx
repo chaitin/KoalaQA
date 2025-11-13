@@ -183,7 +183,6 @@ const DiscussCard = ({
             sx={{
               fontWeight: 700,
               color: '#111827',
-              fontSize: '12px',
               lineHeight: 1.4,
               letterSpacing: '-0.01em',
               '&:hover': { color: '#000000' },

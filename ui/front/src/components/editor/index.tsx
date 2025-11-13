@@ -263,7 +263,6 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
             sx={{
               flex: 1,
               mt: 1,
-              px: 1,
               transition: 'all 0.3s ease',
               position: 'relative',
               overflow: 'auto',
