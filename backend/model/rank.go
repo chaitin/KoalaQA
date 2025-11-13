@@ -18,7 +18,7 @@ type Rank struct {
 
 type RankTimeGroup struct {
 	Time     Timestamp   `json:"time"`
-	ScoreIDs StringArray `json:"score_ids"`
+	ScoreIDs StringArray `json:"score_ids" gorm:"type:text[]"`
 }
 
 func init() {

@@ -70,3 +70,17 @@ func (g *Generator) Doc(ctx context.Context, msgType Type, kbID uint, docID uint
 		return nil, fmt.Errorf("action %d not support", msgType)
 	}
 }
+
+func (g *Generator) AIInsight(ctx context.Context, msgType Type) (Message, error) {
+	address, err := g.in.Common.publicAddress(ctx, "/admin/dashboard")
+	if err != nil {
+		return nil, err
+	}
+
+	switch msgType {
+	case TypeAIInsightKnowledgeGap:
+		return NewAIInsightKnowledgeGap(address), nil
+	default:
+		return nil, fmt.Errorf("action %d not support", msgType)
+	}
+}
