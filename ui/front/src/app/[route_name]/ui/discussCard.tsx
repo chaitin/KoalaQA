@@ -183,7 +183,7 @@ const DiscussCard = ({
             sx={{
               fontWeight: 700,
               color: '#111827',
-              fontSize: '20px',
+              fontSize: '12px',
               lineHeight: 1.4,
               letterSpacing: '-0.01em',
               '&:hover': { color: '#000000' },
@@ -238,7 +238,7 @@ const DiscussCard = ({
                   color: '#fff !important',
                   height: 22,
                   fontWeight: 600,
-                  fontSize: '0.7rem',
+                  fontSize: '12px',
                   // borderRadius: '3px',
                   border: `1px solid ${getStatusColor(postStatus)}30`,
                 }}
@@ -255,7 +255,7 @@ const DiscussCard = ({
                     bgcolor: 'rgba(233, 236, 239, 1)',
                     color: 'rgba(33, 34, 45, 1)',
                     height: 22,
-                    fontSize: '0.7rem',
+                    fontSize: '12px',
                     borderRadius: '3px',
                     cursor: 'default',
                     pointerEvents: 'none',

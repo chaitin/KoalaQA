@@ -11,7 +11,7 @@ import { Card, QaUnresolvedChip, DiscussionTypeChip } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import { ReleaseModal, Tag } from '@/components/discussion'
 import { TimeDisplayWithTag } from '@/components/TimeDisplay'
-import EditorWrap, { EditorWrapRef } from '@/components/editor/edit/Wrap'
+import EditorWrap, { EditorWrapRef } from '@/components/editor'
 import EditorContent from '@/components/EditorContent'
 import Modal from '@/components/modal'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
@@ -128,7 +128,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   }
 
   const onCommentSubmit = async () => {
-    const content = editorRef.current?.getHTML() || ''
+    const content = editorRef.current?.getContent() || ''
     await postDiscussionDiscIdComment(
       { discId: id },
       {
@@ -257,7 +257,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                 color: 'RGBA(33, 34, 45, 1)',
                 lineHeight: 1.3,
                 flex: 1,
-                fontSize: '1.25rem',
+                fontSize: '12px',
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: 'vertical',
               }}
@@ -337,7 +337,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                   color: '#fff !important',
                   height: 22,
                   fontWeight: 600,
-                  fontSize: '0.7rem',
+                  fontSize: '12px',
                   border: `1px solid ${getStatusColor('answered')}30`,
                   fontFamily: 'Glibory, "PingFang SC", "Hiragino Sans GB", "STHeiti", "Microsoft YaHei", sans-serif',
                 }}
@@ -358,7 +358,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                     color: 'rgba(33, 34, 45, 1)',
                     height: 22,
                     fontWeight: 400,
-                    fontSize: '14px',
+                    fontSize: '12px',
                     borderRadius: '3px',
                     cursor: 'default',
                     pointerEvents: 'none',
@@ -377,7 +377,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                     bgcolor: 'rgba(233, 236, 239, 1)',
                     color: 'rgba(33, 34, 45, 1)',
                     height: 22,
-                    fontSize: '0.7rem',
+                    fontSize: '12px',
                     fontWeight: isCategory ? 600 : 500,
                     borderRadius: '3px',
                     cursor: 'default',

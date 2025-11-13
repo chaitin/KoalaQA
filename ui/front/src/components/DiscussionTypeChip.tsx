@@ -40,7 +40,7 @@ const DiscussionTypeChip: React.FC<DiscussionTypeChipProps> = ({ type, variant =
       return {
         ...baseStyle,
         height: 22,
-        fontSize: '0.7rem',
+        fontSize: '12px',
         fontWeight: 600,
         borderRadius: '3px',
       }
@@ -51,7 +51,7 @@ const DiscussionTypeChip: React.FC<DiscussionTypeChipProps> = ({ type, variant =
       ...baseStyle,
       height: 24,
       fontWeight: 400,
-      fontSize: '14px',
+      fontSize: '12px',
       borderRadius: '4px',
     }
   }

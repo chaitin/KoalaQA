@@ -10,7 +10,7 @@ import { getDiscussion, postDiscussion, putDiscussionDiscId } from '@/api/Discus
 import { ModelDiscussionListItem } from '@/api/types'
 import { SimilarContentItem } from '@/components'
 import UserAvatar from '@/components/UserAvatar'
-import EditorWrap, { EditorWrapRef } from '@/components/editor/edit/Wrap'
+import EditorWrap, { EditorWrapRef } from '@/components/editor'
 import Modal from '@/components/modal'
 import { useGroupData } from '@/contexts/GroupDataContext'
 import { useForumId } from '@/hooks/useForumId'
@@ -27,9 +27,11 @@ import {
   Select,
   Stack,
   styled,
-  TextField
+  TextField,
+  Typography,
 } from '@mui/material'
 import { useParams } from 'next/navigation'
+import Image from 'next/image'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import z from 'zod'
@@ -39,7 +41,6 @@ export const Tag = styled(Chip)({
   height: 22,
   backgroundColor: '#F2F3F5',
 })
-
 
 export const ImgLogo = styled('div')(({ theme: _theme }) => {
   return {
@@ -408,13 +409,13 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
       onCancel={onClose}
       onOk={() => {
         if (showContentEditor) {
-          const content = editorRef.current?.getHTML() || ''
+          const content = editorRef.current?.getContent() || ''
           setValue('content', content, { shouldValidate: true, shouldDirty: true })
         }
         onSubmit()
       }}
       okText='发布'
-      width={800}
+      width={900}
       okButtonProps={{
         loading,
         id: 'submit-discussion-id',
@@ -429,7 +430,16 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
           minHeight: showSimilarContent ? '60vh' : 'auto',
         }}
       >
-        <Box sx={{ flex: showSimilarContent ? 1 : 'none', minWidth: 0, width: showSimilarContent ? 'auto' : '100%', display: 'flex', flexDirection: 'column', minHeight: showSimilarContent ? '60vh' : 'auto' }}>
+        <Box
+          sx={{
+            flex: showSimilarContent ? 3 : 'none',
+            minWidth: 0,
+            width: showSimilarContent ? 'auto' : '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: showSimilarContent ? '60vh' : 'auto',
+          }}
+        >
           <Stack gap={3} sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <TextField
               {...register('title')}
@@ -437,6 +447,11 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
               variant='outlined'
               label={type === 'feedback' ? '反馈标题' : type === 'blog' ? '文章标题' : '你遇到了什么问题？'}
               fullWidth
+              slotProps={{
+                inputLabel: {
+                  sx: { fontSize: '12px' },
+                },
+              }}
               error={Boolean(errors.title)}
               helperText={errors.title?.message as string}
               size='small'
@@ -474,6 +489,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                             <Select
                               value={valueForTopic?.[0]?.id?.toString() || ''}
                               label={topic.name}
+                              sx={{ fontSize: '12px' }}
                               onChange={(e) => {
                                 const existing = Array.isArray(field.value) ? [...(field.value as number[])] : []
                                 const otherIds = existing.filter(
@@ -507,37 +523,60 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
               }}
             />
             {showContentEditor && (
-              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+              <Box
+                sx={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 0,
+                  maxHeight: showSimilarContent ? 'calc(60vh - 200px)' : 'none',
+                }}
+              >
                 <Box
                   sx={{
                     border: '1px solid #e0e0e0',
                     borderRadius: '8px',
                     backgroundColor: '#fff',
                     overflow: 'hidden',
-                    flex: 1,
+                    height: showSimilarContent ? '100%' : 'auto',
                     display: 'flex',
                     flexDirection: 'column',
-                    minHeight: 0,
                     '& > div': {
                       borderRadius: '8px !important',
                       overflow: 'hidden',
-                      flex: 1,
+                      height: '100%',
                       display: 'flex',
                       flexDirection: 'column',
-                      minHeight: 0,
                     },
                   }}
                 >
                   {/* 编辑器内容 */}
-                  <Box sx={{ p: 0, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, '& .tiptap': { flex: 1, minHeight: 0, overflow: 'auto' } }}>
+                  <Box
+                    sx={{
+                      p: 0,
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      overflow: 'hidden',
+                      '& .md-container .MuiIconButton-root + *': {
+                        display: 'none',
+                      },
+                      '& .md-container > div': {
+                        // backgroundColor: 'transparent!important',
+                        '& > div': {
+                          border: 'none',
+                        },
+                      },
+                    }}
+                  >
                     <Controller
                       rules={{ required: '请输入内容' }}
                       name='content'
                       control={control}
                       render={({ field }) => (
                         <EditorWrap
+                          height={200}
                           ref={editorRef}
-                          showToolbar={false}
                           value={field.value || ''}
                           showActions={false}
                           onChange={
@@ -569,12 +608,13 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
         {showSimilarContent && (
           <Box
             sx={{
-              width: 320,
+              flex: 1,
               minHeight: 200,
               flexShrink: 0,
               display: 'flex',
               flexDirection: 'column',
-              overflowY: 'auto',
+              height: '60vh',
+              overflow: 'hidden',
               background: 'rgba(0,99,151,0.03)',
               borderRadius: 1,
               border: '1px solid #D9DEE2',
@@ -609,10 +649,10 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
               </Stack>
             </Box>
 
-            {similarDiscussions.length > 0 && (
+            {similarDiscussions.length > 0 ? (
               <Box
                 sx={{
-                  maxHeight: 'calc(60vh - 60px)',
+                  height: 'calc(60vh - 60px)',
                   overflowY: 'auto',
                   overflowX: 'hidden',
                   flex: 1,
@@ -651,6 +691,37 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                   ))}
                 </Box>
               </Box>
+            ) : (
+              !similarLoading && (
+                <Box
+                  sx={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    py: 6,
+                  }}
+                >
+                  <Image
+                    src='/empty.png'
+                    alt='暂无相似帖子'
+                    width={250}
+                    height={137}
+                    style={{ maxWidth: '100%', height: 'auto' }}
+                  />
+                  <Typography
+                    variant='body2'
+                    sx={{
+                      mt: 2,
+                      color: 'rgba(0,0,0,0.6)',
+                      fontSize: 12,
+                    }}
+                  >
+                    暂无相似内容
+                  </Typography>
+                </Box>
+              )
             )}
           </Box>
         )}

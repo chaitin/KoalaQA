@@ -42,7 +42,7 @@ export const SearchResultModal = ({
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const searchInputRef = useRef<HTMLInputElement>(null)
-  
+
   // 内部状态管理
   const [searchQuery, setSearchQuery] = useState(initialQuery)
   const [searchResults, setSearchResults] = useState<ModelDiscussionListItem[]>([])
@@ -70,26 +70,29 @@ export const SearchResultModal = ({
   }, [open, initialQuery])
 
   // 执行搜索的函数
-  const performSearch = useCallback(async (query: string) => {
-    if (!query.trim()) return
-    
-    setLoading(true)
-    try {
-      const params: GetDiscussionParams = {
-        forum_id: forumId,
-        keyword: query.trim(),
-        stat: true
+  const performSearch = useCallback(
+    async (query: string) => {
+      if (!query.trim()) return
+
+      setLoading(true)
+      try {
+        const params: GetDiscussionParams = {
+          forum_id: forumId,
+          keyword: query.trim(),
+          stat: true,
+        }
+
+        const result = await getDiscussion(params)
+        setSearchResults(result.items || [])
+      } catch (error) {
+        console.error('搜索失败:', error)
+        setSearchResults([])
+      } finally {
+        setLoading(false)
       }
-      
-      const result = await getDiscussion(params)
-      setSearchResults(result.items || [])
-    } catch (error) {
-      console.error('搜索失败:', error)
-      setSearchResults([])
-    } finally {
-      setLoading(false)
-    }
-  }, [forumId])
+    },
+    [forumId],
+  )
 
   // 处理键盘事件
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -175,7 +178,7 @@ export const SearchResultModal = ({
         </Stack>
       </DialogTitle>
 
-      <DialogContent sx={{ p: 0, pt: 1 }}>
+      <DialogContent sx={{ p: 0, pt: 1,  }}>
         <Stack sx={{ px: 2, py: 1 }}>
           <Typography variant='body2' sx={{ color: 'rgba(0,0,0,0.6)', fontSize: 14 }}>
             共找到 {searchResults.length} 个结果

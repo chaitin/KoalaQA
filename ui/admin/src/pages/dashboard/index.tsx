@@ -1,13 +1,13 @@
 import {
+  getAdminRankAiInsight,
   getAdminStatDiscussion,
   getAdminStatSearch,
   getAdminStatVisit,
   ModelDiscussionType,
+  ModelRankTimeGroup,
 } from '@/api';
 import Card from '@/components/card';
 import CusTabs from '@/components/CusTabs';
-import { useAppDispatch } from '@/store';
-import { setPageName } from '@/store/slices/breadcrumb';
 import {
   AccessTime,
   Article,
@@ -22,7 +22,7 @@ import {
 import { Box, CircularProgress, Grid, Stack, Typography } from '@mui/material';
 import { useRequest } from 'ahooks';
 import dayjs from 'dayjs';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 type TimePeriod = 'today' | 'week' | 'month';
 
@@ -103,25 +103,51 @@ const Dashboard = () => {
     refreshDeps: [timeRange],
   });
 
+  // 获取 AI 洞察数据
+  const { data: aiInsightResponse } = useRequest(getAdminRankAiInsight);
+
   const loading = visitLoading || searchLoading || discussionLoading;
 
-  const aiInsightData = [
-    {
-      title: '发现新的知识缺口',
-      subtitle: '近 7 天',
-      items: ['如何重置密码？', '账号被锁定怎么办？', '如何修改绑定手机号？'],
-    },
-    {
-      title: '发现新的知识缺口',
-      subtitle: '10月11日-10月18日',
-      items: ['如何申请退款？', '退款多久到账？', '退款失败怎么办？'],
-    },
-    {
-      title: '发现新的知识缺口',
-      subtitle: '10月03日-10月10日',
-      items: ['如何申请退款？', '退款多久到账？', '退款失败怎么办？'],
-    },
-  ];
+  // 格式化 AI 洞察数据
+  const aiInsightData = useMemo(() => {
+    const insightData = aiInsightResponse;
+    if (!insightData || insightData.length === 0) {
+      return [];
+    }
+
+    const now = dayjs();
+    const currentWeekStart = now.startOf('week');
+
+    return insightData.slice(0, 3).map((item: ModelRankTimeGroup) => {
+      const weekStart = dayjs.unix(item.time || 0);
+      const weekEnd = weekStart.add(6, 'day');
+
+      // 判断是否是当前周
+      const isCurrentWeek = weekStart.isSame(currentWeekStart, 'day');
+
+      let subtitle: string;
+      if (isCurrentWeek) {
+        subtitle = '近7天';
+      } else {
+        // 格式化日期：10月11日-10月18日
+        const startStr = weekStart.format('M月D日');
+        const endStr = weekEnd.format('M月D日');
+        subtitle = `${startStr}-${endStr}`;
+      }
+
+      // 将 score_ids 转换为问题列表，如果没有则显示空数组
+      const items = (item.score_ids || []).slice(0, 3).map((scoreId: string) => {
+        // 如果 scoreId 本身就是一个问题，直接使用；否则可以添加问号
+        return scoreId.endsWith('?') || scoreId.endsWith('？') ? scoreId : `${scoreId}?`;
+      });
+
+      return {
+        title: '发现新的知识缺口',
+        subtitle,
+        items,
+      };
+    });
+  }, [aiInsightResponse]);
 
   // 计算统计数据
   const stats = useMemo(() => {
@@ -137,8 +163,8 @@ const Dashboard = () => {
     };
 
     const qaDiscussionCount =
-      discussion.discussions?.find(item => item.key === ModelDiscussionType.DiscussionTypeQA)?.count ??
-      0;
+      discussion.discussions?.find(item => item.key === ModelDiscussionType.DiscussionTypeQA)
+        ?.count ?? 0;
     const botAccept = discussion.bot_accept ?? 0;
     const botUnknown = discussion.bot_unknown ?? 0;
     const acceptCount = discussion.accept ?? 0;
@@ -178,59 +204,84 @@ const Dashboard = () => {
   return (
     <Stack component={Card} sx={{ height: '100%', p: 3 }}>
       {/* AI 洞察介绍 */}
-      {/* <Box
+      <Box
         sx={{
           mb: 3,
-          p: 3,
           borderRadius: 2,
-          bgcolor: 'rgba(39, 125, 255, 0.04)',
-          border: '1px solid',
-          borderColor: 'rgba(39, 125, 255, 0.16)',
         }}
       >
         <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2 }}>
-          <LightbulbOutlined sx={{ color: 'primary.main' }} />
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
             AI 洞察
           </Typography>
         </Stack>
         <Grid container spacing={2}>
-          {aiInsightData.map(item => (
-            <Grid key={item.subtitle} size={{ xs: 12, md: 4 }}>
-              <Box
-                sx={{
-                  p: 2.5,
-                  borderRadius: 2,
-                  bgcolor: '#fff',
-                  boxShadow: '0 2px 8px rgba(15, 23, 42, 0.05)',
-                  height: '100%',
-                }}
+          {aiInsightData.map(
+            (item: { title: string; subtitle: string; items: string[] }, index: number) => (
+              <Grid
+                key={`${item.subtitle}-${index}`}
+                size={{ xs: 12, md: 4 }}
+                sx={{ bgcolor: '#F8F9FA', borderRadius: 1 }}
               >
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-                  <LightbulbOutlined sx={{ fontSize: 20, color: 'primary.main' }} />
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                    {item.title}
-                  </Typography>
-                </Stack>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ display: 'block', mb: 1.5 }}
+                <Box
+                  sx={{
+                    p: 2.5,
+                    borderRadius: 2,
+                    height: '100%',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                  }}
                 >
-                  {item.subtitle}
-                </Typography>
-                <Stack component="ol" sx={{ pl: 2, m: 0 }} spacing={1}>
-                  {item.items.map(text => (
-                    <Typography component="li" key={text} variant="body2" color="text.secondary">
-                      {text}
+                  <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+                    <LightbulbOutlined sx={{ fontSize: 20, color: 'primary.main' }} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                      {item.title}
                     </Typography>
-                  ))}
-                </Stack>
-              </Box>
-            </Grid>
-          ))}
+                    <Box
+                      color="text.secondary"
+                      sx={{
+                        display: 'block',
+                        fontSize: '13px',
+                        mb: 1.5,
+                        px: 1,
+                        py: 0.5,
+                        borderRadius: 3,
+                        ml: 'auto!important',
+                        bgcolor: 'rgba(39, 125, 255, 0.04)',
+                      }}
+                    >
+                      {item.subtitle}
+                    </Box>
+                  </Stack>
+                  {item.items.length > 0 ? (
+                    <Stack
+                      component="ol"
+                      sx={{ p: 1, m: 0 }}
+                      spacing={1}
+                    >
+                      {item.items.map((text: string, idx: number) => (
+                        <Typography
+                          component="li"
+                          key={`${text}-${idx}`}
+                          variant="body2"
+                          sx={{ fontSize: '12px' }}
+                          color="text.secondary"
+                        >
+                          {text}
+                        </Typography>
+                      ))}
+                    </Stack>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      暂无数据
+                    </Typography>
+                  )}
+                </Box>
+              </Grid>
+            )
+          )}
         </Grid>
-      </Box> */}
+      </Box>
 
       {/* 时间选择器 */}
       <Box sx={{ mb: 3 }}>

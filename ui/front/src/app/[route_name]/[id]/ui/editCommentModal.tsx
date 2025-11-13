@@ -1,5 +1,5 @@
 import { ModelDiscussionComment } from '@/api/types'
-import EditorWrap, { EditorWrapRef } from '@/components/editor/edit/Wrap'
+import EditorWrap, { EditorWrapRef } from '@/components/editor'
 import Modal from '@/components/modal'
 import React, { useRef } from 'react'
 
@@ -13,7 +13,7 @@ const EditCommentModal: React.FC<EditCommentModalProps> = ({ data, open, onOk, o
   const editorRef = useRef<EditorWrapRef>(null)
 
   const onSubmit = async () => {
-    const content = editorRef.current?.getHTML() || data?.content || ''
+    const content = editorRef.current?.getContent() || data?.content || ''
     onOk(content)
   }
 

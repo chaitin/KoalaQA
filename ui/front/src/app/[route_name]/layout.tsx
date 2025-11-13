@@ -1,6 +1,6 @@
 'use client'
 
-import { Box, Container, useTheme, useMediaQuery, IconButton } from '@mui/material'
+import { Box, Container, IconButton, useTheme, useMediaQuery } from '@mui/material'
 import { useState } from 'react'
 import FilterPanel from '@/components/filter-panel'
 import FilterListIcon from '@mui/icons-material/FilterList'

@@ -45,7 +45,7 @@ interface DialogRootProps {
 const DialogRoot = styled(Dialog)<DialogRootProps>(({ theme, ownerState }) => ({
   '.MuiDialog-paper': {
     width: ownerState.width,
-    borderRadius: Number(theme.shape.borderRadius) * 3,
+    borderRadius: Number(theme.shape.borderRadius) * 1.5,
   },
 }))
 
