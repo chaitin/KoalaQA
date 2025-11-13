@@ -16,8 +16,8 @@ type Rank struct {
 }
 
 func (r *Rank) ListContribute(ctx context.Context, res any) error {
-	return r.model(ctx).Select("ranks.score_id AS id, ranks.score, users.name, users.avatar").
-		Joins("LEFT JOIN users ON users.id = ranks.score_id").
+	return r.model(ctx).Select("users.id AS id, ranks.score, users.name, users.avatar").
+		Joins("LEFT JOIN users ON users.id::text = ranks.score_id").
 		Where("type = ?", model.RankTypeContribute).
 		Order("score DESC").
 		Limit(5).Find(res).Error
@@ -33,7 +33,7 @@ func (r *Rank) UserContribute(ctx context.Context) ([]model.Rank, error) {
 	t := time.Now().AddDate(0, 0, -7)
 	var res []model.Rank
 	err = r.db.WithContext(ctx).Model(&model.User{}).
-		Select("? AS type,users.id AS score_id, COALESCE(user_comment.answer_disc_count, 0)*0.2+COALESCE(user_comment.accpted_count, 0)*0.4+COALESCE(user_disc.blog_count, 0)*0.25+COALESCE(user_disc.qa_count, 0)*0.15 AS score", model.RankTypeContribute).
+		Select("? AS type,users.id::text AS score_id, COALESCE(user_comment.answer_disc_count, 0)*0.2+COALESCE(user_comment.accpted_count, 0)*0.4+COALESCE(user_disc.blog_count, 0)*0.25+COALESCE(user_disc.qa_count, 0)*0.15 AS score", model.RankTypeContribute).
 		Joins("LEFT JOIN (SELECT user_id, COUNT(1) FILTER (WHERE type = 'qa') AS qa_count, COUNT(1) FILTER (WHERE type = 'blog') AS blog_count FROM discussions WHERE created_at >= ? GROUP BY user_id) AS user_disc ON user_disc.user_id = users.id", t).
 		Joins("LEFT JOIN (SELECT user_id, COUNT(1) FILTER (WHERE accepted) AS accpted_count, COUNT(DISTINCT discussion_id) AS answer_disc_count FROM comments WHERE created_at >= ? GROUP BY user_id) AS user_comment ON user_comment.user_id = users.id", t).
 		Where("users.id != ?", bot.UserID).
@@ -51,6 +51,21 @@ func (r *Rank) UserContribute(ctx context.Context) ([]model.Rank, error) {
 	}
 
 	return res, nil
+}
+
+func (r *Rank) GroupByTime(ctx context.Context, rankLimit int, queryFuncs ...QueryOptFunc) (res []model.RankTimeGroup, err error) {
+	opt := getQueryOpt(queryFuncs...)
+
+	err = r.db.WithContext(ctx).Table("(?) AS group_rank", r.model(ctx).
+		Select("score_id, DATE_TRUNC('week',created_at) AS time, RANK() OVER ( PARTITION BY DATE_TRUNC('week',created_at) order by score*log(2, 1+hit) DESC) AS rank").
+		Scopes(opt.Scopes()...),
+	).
+		Select("time, ARRAY_AGG(score_id) AS score_ids").
+		Where("rank <= ?", rankLimit).
+		Group("time").
+		Find(&res).Error
+
+	return
 }
 
 func (r *Rank) RefresContribute(ctx context.Context) error {
@@ -76,6 +91,16 @@ func (r *Rank) RefresContribute(ctx context.Context) error {
 
 		return nil
 	})
+}
+
+func (r *Rank) UpdateWithExist(ctx context.Context, updateM map[string]any, queryFuncs ...QueryOptFunc) (bool, error) {
+	o := getQueryOpt(queryFuncs...)
+	res := r.model(ctx).Scopes(o.Scopes()...).Updates(updateM)
+	if res.Error != nil {
+		return false, res.Error
+	}
+
+	return res.RowsAffected > 0, nil
 }
 
 func newRank(db *database.DB, bot *Bot) *Rank {
