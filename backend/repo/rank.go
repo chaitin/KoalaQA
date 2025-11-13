@@ -63,6 +63,7 @@ func (r *Rank) GroupByTime(ctx context.Context, rankLimit int, queryFuncs ...Que
 		Select("time, ARRAY_AGG(score_id) AS score_ids").
 		Where("rank <= ?", rankLimit).
 		Group("time").
+		Order("time DESC").
 		Find(&res).Error
 
 	return
