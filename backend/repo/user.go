@@ -115,7 +115,7 @@ func (u *User) getAvatarFromURL(ctx context.Context, imgURL string) string {
 	return avatar
 }
 
-func (u *User) CreateThird(ctx context.Context, orgID uint, user *third_auth.User) (*model.User, error) {
+func (u *User) CreateThird(ctx context.Context, orgID uint, user *third_auth.User, canRegister bool) (*model.User, error) {
 	if user.ThirdID == "" {
 		return nil, errors.New("empty user third_id")
 	}
@@ -133,9 +133,15 @@ func (u *User) CreateThird(ctx context.Context, orgID uint, user *third_auth.Use
 		var userThird model.UserThird
 		txErr = tx.Model(&model.UserThird{}).Where("third_id = ? AND type = ?", user.ThirdID, user.Type).
 			First(&userThird).Error
-		if txErr != nil && !errors.Is(txErr, gorm.ErrRecordNotFound) {
-			return txErr
-		} else if txErr == nil {
+		if txErr != nil {
+			if !errors.Is(txErr, gorm.ErrRecordNotFound) {
+				return txErr
+			}
+
+			if !canRegister {
+				return errors.New("user can not register")
+			}
+		} else {
 			txErr = tx.Model(u.m).Where("id = ?", userThird.UserID).Updates(map[string]any{
 				"updated_at": time.Now(),
 				"last_login": time.Now(),

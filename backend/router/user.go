@@ -18,6 +18,7 @@ type user struct {
 	expire   int
 	svcU     *svc.User
 	svcTrend *svc.Trend
+	svcAuth  *svc.Auth
 }
 
 // Register
