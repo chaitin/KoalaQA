@@ -879,7 +879,14 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         onOk={onSubmit}
         onClose={() => setEditCommentModalVisible(false)}
       />
-      <Box sx={{ pt: 2, minHeight: isArticlePost ? 'unset' : 'calc(100vh - 360px)' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          flex: isArticlePost ? 'unset': 1,
+        }}
+      >
+        <Box sx={{ pt: 2, flex: 1 }}>
         <Typography
           variant='h6'
           sx={{
@@ -954,30 +961,52 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                 </Box>
               )}
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, gap: 1.5 }}>
-                {answerProfileHref ? (
-                  <Link href={answerProfileHref} style={{ display: 'inline-flex' }}>
+                <Stack
+                  tabIndex={0}
+                  direction={'row'}
+                  spacing={1}
+                  sx={{
+                    outline: 'none',
+                    alignItems: 'center',
+                    borderRadius: 1,
+                    transition: 'box-shadow 0.2s, border-color 0.2s, background 0.2s',
+                    color: 'text.primary',
+                    '&:focus-within, &:hover ': {
+                      color: 'primary.main',
+                      '& a, & .MuiTypography-root': {
+                        textShadow: '0.3px 0 0 currentColor, -0.3px 0 0 currentColor',
+                      },
+                    },
+                    my: '-2px',
+                    ml: '-4px',
+                  }}
+                >
+                  {answerProfileHref ? (
+                    <Link href={answerProfileHref} style={{ display: 'inline-flex' }} tabIndex={-1}>
+                      <CommonAvatar src={answer.user_avatar} name={answer.user_name} />
+                    </Link>
+                  ) : (
                     <CommonAvatar src={answer.user_avatar} name={answer.user_name} />
-                  </Link>
-                ) : (
-                  <CommonAvatar src={answer.user_avatar} name={answer.user_name} />
-                )}
-                {answerProfileHref ? (
-                  <Link
-                    href={answerProfileHref}
-                    style={{
-                      fontWeight: 500,
-                      color: '#111827',
-                      fontSize: '0.875rem',
-                      textDecoration: 'none',
-                    }}
-                  >
-                    {answer.user_name || '未知用户'}
-                  </Link>
-                ) : (
-                  <Typography variant='body2' sx={{ fontWeight: 500, color: '#111827', fontSize: '0.875rem' }}>
-                    {answer.user_name || '未知用户'}
-                  </Typography>
-                )}
+                  )}
+                  {answerProfileHref ? (
+                    <Link
+                      href={answerProfileHref}
+                      style={{
+                        fontWeight: 500,
+                        color: 'inherit',
+                        fontSize: '0.875rem',
+                        textDecoration: 'none',
+                      }}
+                      tabIndex={-1}
+                    >
+                      {answer.user_name || '未知用户'}
+                    </Link>
+                  ) : (
+                    <Typography variant='body2' sx={{ fontWeight: 500, color: 'inherit', fontSize: '0.875rem' }}>
+                      {answer.user_name || '未知用户'}
+                    </Typography>
+                  )}
+                </Stack>
                 {answer.bot && (
                   <Chip
                     label='AI'
@@ -1246,34 +1275,55 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                           }}
                         >
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                            {replyProfileHref ? (
-                              <Link href={replyProfileHref} style={{ display: 'inline-flex' }}>
+                            <Stack direction={'row'} spacing={1} alignItems='center'
+                              tabIndex={0}
+                              sx={{
+                                outline: 'none',
+                                display: 'flex',
+                                alignItems: 'center',
+                                borderRadius: 1,
+                                transition: 'box-shadow 0.2s, border-color 0.2s, background 0.2s',
+                                color: 'text.primary',
+                                '&:focus-within, &:hover ': {
+                                  color: 'primary.main',
+                                  '& a, & .MuiTypography-root': {
+                                    textShadow: '0.3px 0 0 currentColor, -0.3px 0 0 currentColor',
+                                  },
+                                },
+                                my: '-2px',
+                                ml: '-4px',
+                              }}
+                            >
+                              {replyProfileHref ? (
+                                <Link href={replyProfileHref} style={{ display: 'inline-flex' }} tabIndex={-1}>
+                                  <CommonAvatar src={reply.user_avatar} name={reply.user_name} />
+                                </Link>
+                              ) : (
                                 <CommonAvatar src={reply.user_avatar} name={reply.user_name} />
-                              </Link>
-                            ) : (
-                              <CommonAvatar src={reply.user_avatar} name={reply.user_name} />
-                            )}
+                              )}
 
-                            {replyProfileHref ? (
-                              <Link
-                                href={replyProfileHref}
-                                style={{
-                                  fontWeight: 600,
-                                  color: '#111827',
-                                  fontSize: '0.8125rem',
-                                  textDecoration: 'none',
-                                }}
-                              >
-                                {reply.user_name || '未知用户'}
-                              </Link>
-                            ) : (
-                              <Typography
-                                variant='body2'
-                                sx={{ fontWeight: 600, color: '#111827', fontSize: '0.8125rem' }}
-                              >
-                                {reply.user_name || '未知用户'}
-                              </Typography>
-                            )}
+                              {replyProfileHref ? (
+                                <Link
+                                  href={replyProfileHref}
+                                  style={{
+                                    fontWeight: 600,
+                                    color: 'inherit',
+                                    fontSize: '0.8125rem',
+                                    textDecoration: 'none',
+                                  }}
+                                  tabIndex={-1}
+                                >
+                                  {reply.user_name || '未知用户'}
+                                </Link>
+                              ) : (
+                                <Typography
+                                  variant='body2'
+                                  sx={{ fontWeight: 600, color: 'inherit', fontSize: '0.8125rem' }}
+                                >
+                                  {reply.user_name || '未知用户'}
+                                </Typography>
+                              )}
+                            </Stack>
                             {reply.bot && (
                               <Chip
                                 label='AI'
@@ -1430,19 +1480,20 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
             </Paper>
           )
         })}
-      </Box>
-      {/* Answers section for questions */}
-      {!isReplyEditorVisible && (
-        <Paper
-          elevation={0}
-          sx={{
-            position: isArticlePost ? 'unset' : 'sticky',
-            bottom: '24px',
-            width: '100%',
-            maxWidth: { lg: '756px' },
-            mx: 'auto',
-            mb: { xs: 2, md: 3 },
-            zIndex: 9,
+        </Box>
+        {/* Answers section for questions */}
+        {!isReplyEditorVisible && (
+          <Paper
+            elevation={0}
+            sx={{
+              position: isArticlePost ? 'unset' : 'sticky',
+              bottom: '24px',
+              width: '100%',
+              maxWidth: { lg: '756px' },
+              mx: 'auto',
+              mb: { xs: 2, md: 3 },
+              mt: isArticlePost ? 0 : 'auto',
+              zIndex: 9,
             bgcolor: '#ffffff',
             borderRadius: '12px',
             border: '1px solid rgba(33, 34, 45, 1)',
@@ -1485,10 +1536,9 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                 <Box
                   ref={answerEditorContainerRef}
                   sx={{
-                    height: 100,
                     borderRadius: '6px',
-                    overflow: 'hidden',
                     '& .tiptap:focus': { backgroundColor: 'transparent' },
+                    '& .tiptap': {height: 100 },
                   }}
                   onBlur={handleAnswerEditorBlur}
                   tabIndex={-1}
@@ -1550,6 +1600,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
           </Box>
         </Paper>
       )}
+      </Box>
     </>
   )
 }

@@ -1,5 +1,5 @@
 import { getDiscussionDiscId, ModelDiscussionType } from '@/api'
-import { Alert, Box, Typography } from '@mui/material'
+import { Alert, Box, Stack, Typography } from '@mui/material'
 import { Metadata } from 'next'
 import { Suspense } from 'react'
 import Content from './ui/content'
@@ -7,7 +7,9 @@ import TitleCard from './ui/titleCard'
 import DetailSidebarWrapper from './ui/DetailSidebarWrapper'
 
 // 动态生成 metadata
-export async function generateMetadata(props: { params: Promise<{ route_name: string; id: string }> }): Promise<Metadata> {
+export async function generateMetadata(props: {
+  params: Promise<{ route_name: string; id: string }>
+}): Promise<Metadata> {
   const { id } = await props.params
   try {
     const result = await fetchDiscussionDetail(id)
@@ -105,24 +107,37 @@ const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; 
   }
 
   return (
-    <Box sx={{ display: 'flex', gap: { xs: 0, lg: 3 }, justifyContent: { lg: 'center' }, alignItems: { lg: 'flex-start' } }}>
+    <Box
+      sx={{
+        display: 'flex',
+        gap: { xs: 0, lg: 3 },
+        justifyContent: { lg: 'center' },
+        alignItems: { lg: 'flex-start' },
+        height: '100%',
+      }}
+    >
       {/* 主内容区域 */}
-      <Box sx={{ flex: 1, minWidth: 0, maxWidth: { lg: 798 }, width: { xs: '100%', lg: 'auto' },px: { xs: 0, md: 3 } }}>
+      <Stack
+        sx={{
+          flex: 1,
+          minWidth: 0,
+          alignSelf: 'stretch',
+          maxWidth: { lg: 798 },
+          width: { xs: '100%', lg: 'auto' },
+          px: { xs: 0, md: 3 },
+          height: '100%',
+        }}
+      >
         <h1 style={{ display: 'none' }}>讨论详情</h1>
         <Suspense fallback={<LoadingSpinner />}>
           <TitleCard data={discussion} />
           <Box sx={{ my: 2, display: { xs: 'block', sm: 'none' } }} />
           <Content data={discussion} />
         </Suspense>
-      </Box>
+      </Stack>
 
       {/* 右侧边栏 - 仅在桌面端显示 */}
-      <DetailSidebarWrapper
-        isArticle={isArticle}
-        discussion={discussion}
-        discId={discussion.uuid || id}
-      />
-      
+      <DetailSidebarWrapper isArticle={isArticle} discussion={discussion} discId={discussion.uuid || id} />
     </Box>
   )
 }

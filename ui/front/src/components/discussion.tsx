@@ -8,19 +8,18 @@ import {
 } from '@/api'
 import { getDiscussion, postDiscussion, putDiscussionDiscId } from '@/api/Discussion'
 import { ModelDiscussionListItem } from '@/api/types'
+import { SimilarContentItem } from '@/components'
 import UserAvatar from '@/components/UserAvatar'
 import EditorWrap, { EditorWrapRef } from '@/components/editor/edit/Wrap'
 import Modal from '@/components/modal'
 import { useGroupData } from '@/contexts/GroupDataContext'
 import { useForumId } from '@/hooks/useForumId'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
-import { Ellipsis, Icon } from '@ctzhian/ui'
+import { Icon } from '@ctzhian/ui'
 import { zodResolver } from '@hookform/resolvers/zod'
-import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer'
 import {
   Box,
   Chip,
-  CircularProgress,
   FormControl,
   FormHelperText,
   InputLabel,
@@ -28,14 +27,12 @@ import {
   Select,
   Stack,
   styled,
-  TextField,
-  Typography,
+  TextField
 } from '@mui/material'
 import { useParams } from 'next/navigation'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import z from 'zod'
-import { MarkDown, QaUnresolvedChip, DiscussionTypeChip } from '@/components'
 
 export const Tag = styled(Chip)({
   borderRadius: '3px',
@@ -43,58 +40,6 @@ export const Tag = styled(Chip)({
   backgroundColor: '#F2F3F5',
 })
 
-// 相似内容项组件（与问题详情页的相关内容UI保持一致）
-const SimilarContentItem = ({ data }: { data: ModelDiscussionListItem }) => {
-  return (
-    <Box
-      sx={{
-        py: 1,
-        pl: 2,
-        transition: 'all 0.2s',
-        borderBottom: '1px solid #D9DEE2',
-      }}
-    >
-      <Stack direction='row' alignItems='center' spacing={1}>
-        <DiscussionTypeChip type={data.type} variant='default' />
-        <Ellipsis
-          sx={{
-            fontWeight: 600,
-            fontSize: 12,
-            color: '#111827',
-            mb: 1,
-            lineHeight: 1.4,
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-          }}
-        >
-          {data.title}
-        </Ellipsis>
-      </Stack>
-
-      <Box
-        sx={{
-          mt: 1,
-          color: 'rgba(33,34,45,0.5)',
-          fontSize: '12px',
-          lineHeight: '20px',
-          height: '20px',
-        }}
-      >
-        {data.type === ModelDiscussionType.DiscussionTypeBlog ? (
-          <Ellipsis>{data.summary}</Ellipsis>
-        ) : (
-          <MarkDown content={data.content} sx={{
-            fontSize: '12px',
-            bgcolor: 'transparent',
-            color: 'rgba(33,34,45,0.5)',
-          }} />
-        )}
-      </Box>
-    </Box>
-  )
-}
 
 export const ImgLogo = styled('div')(({ theme: _theme }) => {
   return {
@@ -681,6 +626,9 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                     overflowX: 'hidden',
                     p: 2,
                     pt: 0,
+                    '& > *:last-child .similar-item > *': {
+                      borderBottom: 'none',
+                    },
                   }}
                 >
                   {similarDiscussions.map((item, index) => (

@@ -740,15 +740,14 @@ const Article = ({
                 sx={{
                   bgcolor: 'rgba(0,99,151,0.03)',
                   borderRadius: '6px',
-                  border: '1px solid #D9DEE2',
+                  // border: '1px solid #D9DEE2',
                   p: 2,
                   mb: 2,
                   // 为公告 Paper 增加焦点识别样式
                   transition: 'box-shadow 0.2s, border-color 0.2s',
                   outline: 'none',
                   '&:focus-within, &:hover': {
-                    borderColor: 'primary.main',
-                    boxShadow: '0 0 0 2px rgba(32,108,255,0.12)',
+                    boxShadow: 'inset 0 0 3px 1px rgba(32,108,255,0.1)',
                     backgroundColor: 'rgba(32,108,255,0.04)',
                   },
                   cursor: 'pointer',
@@ -901,30 +900,70 @@ const Article = ({
                       >
                         {index + 1}
                       </Box>
-                      {contributorProfileHref ? (
-                        <Link href={contributorProfileHref} style={{ display: 'inline-flex' }}>
+                      <Box
+                        tabIndex={0}
+                        sx={{
+                          outline: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          borderRadius: 1,
+                          transition: 'box-shadow 0.2s, border-color 0.2s, background 0.2s',
+                          color: 'text.primary',
+                          '&:focus-within, &:hover ': {
+                            color: 'primary.main',
+                            '& a, & .MuiTypography-root': {
+                              textShadow: '0.3px 0 0 currentColor, -0.3px 0 0 currentColor',
+                            },
+                          },
+                          my: '-2px',
+                          ml: '-4px',
+                          flex: 1,
+                          minWidth: 0,
+                        }}
+                      >
+                        {contributorProfileHref ? (
+                          <Link href={contributorProfileHref} style={{ display: 'inline-flex' }} tabIndex={-1}>
+                            <CommonAvatar src={contributor.avatar} name={contributor.name} />
+                          </Link>
+                        ) : (
                           <CommonAvatar src={contributor.avatar} name={contributor.name} />
-                        </Link>
-                      ) : (
-                        <CommonAvatar src={contributor.avatar} name={contributor.name} />
-                      )}
-                      <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' }}>
-                        <Link
-                          href={contributorProfileHref || '/'}
-                          style={{
-                            fontWeight: 600,
-                            color: '#111827',
-                            fontSize: '0.875rem',
-                            lineHeight: 1.3,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            textDecoration: 'none',
-                            display: 'block',
-                          }}
-                        >
-                          <Ellipsis>{contributor.name || '未知用户'}</Ellipsis>
-                        </Link>
+                        )}
+                        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', ml: 1 }}>
+                          {contributorProfileHref ? (
+                            <Link
+                              href={contributorProfileHref || '/'}
+                              style={{
+                                fontWeight: 600,
+                                color: 'inherit',
+                                fontSize: '0.875rem',
+                                lineHeight: 1.3,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                textDecoration: 'none',
+                                display: 'block',
+                              }}
+                              tabIndex={-1}
+                            >
+                              <Ellipsis>{contributor.name || '未知用户'}</Ellipsis>
+                            </Link>
+                          ) : (
+                            <Typography
+                              variant='body2'
+                              sx={{
+                                fontWeight: 600,
+                                color: 'inherit',
+                                fontSize: '0.875rem',
+                                lineHeight: 1.3,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              <Ellipsis>{contributor.name || '未知用户'}</Ellipsis>
+                            </Typography>
+                          )}
+                        </Box>
                       </Box>
                       {contributor.score !== undefined && (
                         <Box sx={{ display: 'flex', gap: 0.75, flexShrink: 0 }}>

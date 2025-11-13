@@ -389,25 +389,46 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           </Box>
           {/* 右侧：作者信息和时间 */}
           <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, fontSize: '14px' }}>
-            {profileHref ? (
-              <Link href={profileHref} style={{ display: 'inline-flex', marginRight: '8px' }}>
+            <Box
+              tabIndex={0}
+              sx={{
+                outline: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                borderRadius: 1,
+                transition: 'box-shadow 0.2s, border-color 0.2s, background 0.2s',
+                color: 'text.primary',
+                '&:focus-within, &:hover ': {
+                  color: 'primary.main',
+                  '& a, & .MuiTypography-root': {
+                    textShadow: '0.3px 0 0 currentColor, -0.3px 0 0 currentColor',
+                  },
+                },
+                my: '-2px',
+                ml: '-4px',
+              }}
+            >
+              {profileHref ? (
+                <Link href={profileHref} style={{ display: 'inline-flex', marginRight: '8px' }} tabIndex={-1}>
+                  <CommonAvatar src={data.user_avatar} name={data.user_name} />
+                </Link>
+              ) : (
                 <CommonAvatar src={data.user_avatar} name={data.user_name} />
-              </Link>
-            ) : (
-              <CommonAvatar src={data.user_avatar} name={data.user_name} />
-            )}
-            {profileHref ? (
-              <Link
-                href={profileHref}
-                style={{ color: 'RGBA(33, 34, 45, 1)', fontWeight: 500, textDecoration: 'none' }}
-              >
-                {data.user_name || '未知用户'}
-              </Link>
-            ) : (
-              <Typography variant='body2' sx={{ color: 'RGBA(33, 34, 45, 1)', fontWeight: 500 }}>
-                {data.user_name || '未知用户'}
-              </Typography>
-            )}
+              )}
+              {profileHref ? (
+                <Link
+                  href={profileHref}
+                  style={{ color: 'inherit', fontWeight: 500, textDecoration: 'none' }}
+                  tabIndex={-1}
+                >
+                  {data.user_name || '未知用户'}
+                </Link>
+              ) : (
+                <Typography variant='body2' sx={{ color: 'inherit', fontWeight: 500 }}>
+                  {data.user_name || '未知用户'}
+                </Typography>
+              )}
+            </Box>
             <Typography variant='body2' sx={{ color: 'RGBA(33, 34, 45, 1)', px: 1 }}>
               ·
             </Typography>

@@ -124,33 +124,23 @@ const DiscussCard = ({
               alignItems: 'center',
               borderRadius: 1,
               transition: 'box-shadow 0.2s, border-color 0.2s, background 0.2s',
-              '&:focus-within, &:hover': {
-                borderColor: 'primary.main',
-                boxShadow: '0 0 0 2px rgba(32,108,255,0.16)',
-                background: 'rgba(32,108,255,0.06)',
+              color: 'text.primary',
+              '&:focus-within, &:hover ': {
+                color: 'primary.main',
+                '& a, & .MuiTypography-root': {
+                  textShadow: '0.3px 0 0 currentColor, -0.3px 0 0 currentColor',
+                },
               },
-              pr: 1,
               my: '-2px',
               ml: '-4px',
             }}
           >
-            {profileHref ? (
-              <Link
-                href={profileHref}
-                onClick={(event) => event.stopPropagation()}
-                style={{ display: 'inline-flex' }}
-                tabIndex={-1}
-              >
-                <CommonAvatar
-                  src={it.user_avatar}
-                  name={it.user_name}
-                  sx={{
-                    fontSize: '0.65rem',
-                    fontWeight: 600,
-                  }}
-                />
-              </Link>
-            ) : (
+            <Link
+              href={profileHref || '/'}
+              onClick={(event) => event.stopPropagation()}
+              style={{ display: 'inline-flex' }}
+              tabIndex={-1}
+            >
               <CommonAvatar
                 src={it.user_avatar}
                 name={it.user_name}
@@ -159,18 +149,18 @@ const DiscussCard = ({
                   fontWeight: 600,
                 }}
               />
-            )}
+            </Link>
+
             <Stack direction='row' spacing={0.5} alignItems='center' sx={{ ml: 0.5 }}>
               {profileHref ? (
                 <Link
                   href={profileHref}
                   onClick={(event) => event.stopPropagation()}
                   style={{
-                    color: '#111827',
-                    fontWeight: 500,
                     fontSize: '14px',
                     textDecoration: 'none',
                     outline: 'none',
+                    color: 'inherit',
                   }}
                   tabIndex={-1}
                 >

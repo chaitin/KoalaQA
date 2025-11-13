@@ -14,3 +14,4 @@ export { default as CommonProvider } from './commonProvider';
 export { AuthConfigProvider } from '@/contexts/AuthConfigContext';
 export { default as QaUnresolvedChip } from './QaUnresolvedChip';
 export { default as DiscussionTypeChip } from './DiscussionTypeChip';
+export { default as SimilarContentItem } from './SimilarContentItem';
