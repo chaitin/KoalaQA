@@ -128,15 +128,11 @@ const MainLayout = () => {
             <Box>
               <Box sx={{ fontSize: 16, fontWeight: 600, mb: 2 }}>社区基础配置</Box>
               <Access
-                // 在保存成功后，重新校验并尝试关闭
+                // 在保存成功后，仅更新地址配置状态，不自动关闭弹窗
                 onSaved={() => {
-                  // 重新检查配置状态
-                  checkNecessaryConfigurations().then(({ lackModel, lackAddr }) => {
-                    // 只有在检查完成后，如果两个都不需要了，才关闭弹窗
-                    if (!lackModel && !lackAddr) {
-                      setShowGuide(false);
-                    }
-                  });
+                  // 重新检查配置状态，仅更新状态，不关闭弹窗
+                  // 弹窗只有在两个配置都完成时，通过【完成】按钮才能关闭
+                  checkNecessaryConfigurations();
                 }}
               />
             </Box>
@@ -148,13 +144,9 @@ const MainLayout = () => {
                 open={true}
                 mandatory={true}
                 onConfigured={() => {
-                  // 重新检查配置状态
-                  checkNecessaryConfigurations().then(({ lackModel, lackAddr }) => {
-                    // 只有在检查完成后，如果两个都不需要了，才关闭弹窗
-                    if (!lackModel && !lackAddr) {
-                      setShowGuide(false);
-                    }
-                  });
+                  // 重新检查配置状态，仅更新状态，不关闭弹窗
+                  // 弹窗只有在两个配置都完成时，通过【完成】按钮才能关闭
+                  checkNecessaryConfigurations();
                 }}
               />
             </Card>

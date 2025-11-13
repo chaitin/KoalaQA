@@ -10,40 +10,113 @@ export interface MarkDownProps {
   content?: string;
   sx?: SxProps;
   truncateLength?: number; // 添加截断长度选项，0表示不截断
+  onTocUpdate?: ((toc: any) => void) | boolean; // 可选，默认false；true表示仅启用广播
 }
 
 const EditorContent: React.FC<MarkDownProps> = props => {
-  const { content = '' } = props;
-  const [, setLoading] = useState(true);
+  const { content = '', sx, truncateLength = 0, onTocUpdate } = props;
+  const [isMounted, setIsMounted] = useState(false);
+
+  const isHTML = /<[^>]+>/.test(content);
+
+  const stripHtml = (input: string) =>
+    input
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>');
+  const stripMarkdown = (input: string) =>
+    input
+      // images/links
+      .replace(/!\[[^\]]*\]\([^\)]*\)/g, '')
+      .replace(/\[[^\]]*\]\([^\)]*\)/g, '$1')
+      // headings/emphasis/code
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/[*_]{1,3}([^*_]+)[*_]{1,3}/g, '$1')
+      .replace(/`{1,3}([^`]+)`{1,3}/g, '$1')
+      // blockquotes/lists
+      .replace(/^>\s?/gm, '')
+      .replace(/^\s*[-*+]\s+/gm, '')
+      .replace(/^\s*\d+\.\s+/gm, '')
+      // tables fences
+      .replace(/\|/g, ' ')
+      .replace(/^---+$/gm, '');
+
+  const needTruncate = truncateLength > 0;
+  const plainText = isHTML ? stripHtml(content) : stripMarkdown(content);
+  const truncatedText = needTruncate
+    ? (plainText || '').slice(0, truncateLength).trim() + ((plainText || '').length > truncateLength ? '…' : '')
+    : content;
+
+  const displayContent = truncatedText;
   const editorRef = useTiptap({
-    content: content || '',
+    content: displayContent || '',
     editable: false,
+    contentType: needTruncate ? 'markdown' : isHTML ? 'html' : 'markdown',
     immediatelyRender: false,
-    onBeforeCreate: () => {
-      setLoading(true);
-    },
-    onCreate: () => {
-      setLoading(false);
-    },
+    // 大纲更新回调：透传给父级，同时广播全局事件供兄弟侧栏使用
+    onTocUpdate: !!onTocUpdate
+      ? (toc: any) => {
+          try {
+            if (typeof onTocUpdate === 'function') {
+              onTocUpdate(toc);
+            }
+          } catch {}
+          try {
+            if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
+              if (Array.isArray(toc) && toc.length > 0) {
+                (window as any).__lastToc = toc;
+              }
+              window.dispatchEvent(new CustomEvent('toc-update', { detail: toc } as any));
+            }
+          } catch {}
+        }
+      : undefined,
   });
-  // 监听 content 变化，更新编辑器内容
+
   useEffect(() => {
-    if (editorRef.editor) {
-      editorRef.editor.commands.setContent(content || '');
-    }
-  }, [content, editorRef.editor]);
+    if (editorRef.editor)
+      editorRef.editor.commands.setContent(displayContent, {
+        contentType: needTruncate ? 'markdown' : isHTML ? 'html' : 'markdown',
+      } as any);
+  }, [content, displayContent, editorRef, needTruncate, isHTML]);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // 在服务端渲染时返回空内容
+  if (!isMounted) {
+    return null;
+  }
+
+  if (!displayContent || !content) return null;
+
   return (
     <Box
       className="editor-container"
       sx={{
         width: '100%',
         '.tiptap.ProseMirror': {
+          ...(needTruncate
+            ? {
+                display: '-webkit-box',
+                WebkitBoxOrient: 'vertical',
+                WebkitLineClamp: 2,
+                overflow: 'hidden',
+              }
+            : {}),
           '.tableWrapper': {
             transition: 'width 0.3s ease-in-out',
             width: '100%',
             overflowX: 'auto',
           },
         },
+        '& code': {
+          whiteSpace: 'pre-wrap',
+        },
+        ...sx,
       }}
     >
       {editorRef.editor && <Editor editor={editorRef.editor} />}

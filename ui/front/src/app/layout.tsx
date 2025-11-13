@@ -193,7 +193,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
                         <CssBaseline />
                         <PageViewTracker />
                         <Header brandConfig={brand} initialForums={forums} />
-                        <main id='main-content' style={{ backgroundColor: '#ffffff', minHeight: 'calc(100vh - 64px)' }}>
+                        <main id='main-content' style={{ backgroundColor: '#ffffff', height: 'calc(100vh - 64px)', overflow: 'auto' }}>
                           {props.children}
                         </main>
                         <Scroll />

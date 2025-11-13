@@ -1,6 +1,6 @@
 'use client'
 
-import { Box, Container, useTheme, useMediaQuery, IconButton } from '@mui/material'
+import { Box, Container, IconButton, useTheme, useMediaQuery } from '@mui/material'
 import { useState } from 'react'
 import FilterPanel from '@/components/filter-panel'
 import FilterListIcon from '@mui/icons-material/FilterList'
@@ -11,12 +11,14 @@ export default function RouteLayout({ children }: { children: React.ReactNode })
   const [showFilters, setShowFilters] = useState(!isMobile)
 
   return (
-    <Box sx={{ bgcolor: '#ffffff', minHeight: 'calc(100vh - 64px)' }}>
+    <Box sx={{ bgcolor: '#ffffff', minHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column' }}>
       <Box
         sx={{
           display: 'flex',
           gap: { xs: 2, md: 3 },
           flexDirection: { xs: 'column', md: 'row' },
+          flex: 1,
+          alignSelf: 'stretch'
         }}
       >
         {/* 左侧过滤面板 - 靠左对齐 */}
@@ -35,11 +37,12 @@ export default function RouteLayout({ children }: { children: React.ReactNode })
         )}
 
         {/* 主内容区域 */}
-        <Container sx={{ flex: 1, minWidth: 0, pt: 3 }}>
+        <Container sx={{ flex: 1, minWidth: 0, pt: 3, alignSelf: 'stretch' }}>
           <Box
             sx={{
               display: 'flex',
               flexDirection: 'column',
+              height: '100%'
             }}
           >
             {/* 移动端过滤按钮 */}
@@ -59,7 +62,7 @@ export default function RouteLayout({ children }: { children: React.ReactNode })
                 <FilterListIcon />
               </IconButton>
             )}
-            <Box sx={{ flex: 1, minWidth: 0 }}>{children}</Box>
+            <Box sx={{ flex: 1, minWidth: 0, alignSelf: 'stretch' }}>{children}</Box>
           </Box>
         </Container>
       </Box>

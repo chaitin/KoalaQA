@@ -11,6 +11,7 @@ const (
 	TypeNewFeedback
 	TypeNewBlog
 	TypeQANeedReview
+	TypeAIInsightKnowledgeGap
 )
 
 type commonUserThird struct {

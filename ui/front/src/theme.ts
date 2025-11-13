@@ -129,6 +129,13 @@ const theme = createTheme(
           },
         },
       },
+      MuiChip: {
+        styleOverrides: {
+          root: {
+            lineHeight: 1,
+          },
+        },
+      },
     },
   },
   zhCN,

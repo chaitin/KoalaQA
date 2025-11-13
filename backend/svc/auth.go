@@ -87,6 +87,8 @@ func (l *Auth) updateAuthMgmt(ctx context.Context, auth model.Auth, checkCfg boo
 			callbackAddress = publicAddress.FullURL("/api/user/login/third/callback/oidc")
 		case model.AuthTypeWeCom:
 			callbackAddress = publicAddress.FullURL("/api/user/login/third/callback/we_com")
+		case model.AuthTypeWechat:
+			callbackAddress = publicAddress.FullURL("/api/user/login/third/callback/wechat")
 		default:
 			continue
 		}

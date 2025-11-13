@@ -35,6 +35,8 @@ func (m *Manager) Update(t model.AuthType, cfg Config, checkCfg bool) error {
 		author = newOIDC(cfg, m.oc)
 	case model.AuthTypeWeCom:
 		author = newWeCom(cfg)
+	case model.AuthTypeWechat:
+		author = newWechat(cfg)
 	default:
 		return errors.ErrUnsupported
 	}

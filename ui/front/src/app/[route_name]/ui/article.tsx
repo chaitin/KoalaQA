@@ -10,45 +10,42 @@ import {
   SvcRankContributeItem,
 } from '@/api/types'
 import { AuthContext } from '@/components/authProvider'
-import { CommonContext } from '@/components/commonProvider'
-import { ReleaseModal } from '@/components/discussion'
-import SearchResultModal from '@/components/SearchResultModal'
 import BrandAttribution from '@/components/BrandAttribution'
 import CommonAvatar from '@/components/CommonAvatar'
+import { CommonContext } from '@/components/commonProvider'
+import { ReleaseModal } from '@/components/discussion'
 import Icon from '@/components/icon'
+import SearchResultModal from '@/components/SearchResultModal'
 import { useGroupData } from '@/contexts/GroupDataContext'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
 import { useForumId } from '@/hooks/useForumId'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
-import { Person as PersonIcon, Schedule as ScheduleIcon, TrendingUp as TrendingUpIcon } from '@mui/icons-material'
-import AddIcon from '@mui/icons-material/Add'
-import SearchIcon from '@mui/icons-material/Search'
+import { Ellipsis } from '@ctzhian/ui'
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import FilterListIcon from '@mui/icons-material/FilterList'
-import Image from 'next/image'
-import Link from 'next/link'
+import SearchIcon from '@mui/icons-material/Search'
 import {
   Box,
   Button,
-  Chip,
   CircularProgress,
   Divider,
   IconButton,
   InputAdornment,
+  Menu,
+  MenuItem,
   Paper,
   Stack,
   TextField,
-  Typography,
-  ToggleButtonGroup,
   ToggleButton,
-  Menu,
-  MenuItem,
+  ToggleButtonGroup,
+  Typography
 } from '@mui/material'
 import { useBoolean } from 'ahooks'
+import Image from 'next/image'
+import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import DiscussCard from './discussCard'
-import { MarkDown } from '@/components'
-import { Ellipsis } from '@ctzhian/ui'
 
 export type Status = 'hot' | 'new' | 'publish'
 
@@ -116,6 +113,10 @@ const Article = ({
   const filterMenuOpen = Boolean(filterAnchorEl)
   const onlyMine = searchParams?.get('only_mine') === 'true'
   const resolved = searchParams?.get('resolved')
+
+  // 发布类型下拉菜单相关状态
+  const [publishAnchorEl, setPublishAnchorEl] = useState<null | HTMLElement>(null)
+  const publishMenuOpen = Boolean(publishAnchorEl)
 
   // 搜索弹窗相关状态
   const [searchModalOpen, { setTrue: openSearchModal, setFalse: closeSearchModal }] = useBoolean(false)
@@ -396,6 +397,26 @@ const Article = ({
     })
   }
 
+  // 处理发布类型菜单打开
+  const handlePublishMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setPublishAnchorEl(event.currentTarget)
+  }
+
+  // 处理发布类型菜单关闭
+  const handlePublishMenuClose = () => {
+    setPublishAnchorEl(null)
+  }
+
+  // 处理选择发布类型
+  const handlePublishTypeSelect = (publishType: 'qa' | 'blog') => {
+    handlePublishMenuClose()
+    if (publishType === 'qa') {
+      handleAsk()
+    } else if (publishType === 'blog') {
+      handleArticle()
+    }
+  }
+
   // 根据类型获取排序选项
   const getSortOptions = (postType?: string) => {
     if (postType === 'blog') {
@@ -507,26 +528,75 @@ const Article = ({
                 },
               }}
             />
-            <Button
-              variant='contained'
-              onClick={type === 'feedback' ? handleFeedback : type === 'blog' ? handleArticle : handleAsk}
-              sx={{
-                textTransform: 'none',
-                fontWeight: 600,
-                px: 3,
-                py: 0.75,
-                borderRadius: '6px',
-                fontSize: '0.875rem',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
-                whiteSpace: 'nowrap',
-                height: '40px',
-                '&:hover': {
-                  boxShadow: '0 6px 16px rgba(0, 0, 0, 0.3)',
-                },
-              }}
-            >
-              👉 {type === 'blog' ? '发布文章' : '发布内容'}
-            </Button>
+            <Box>
+              <Button
+                variant='contained'
+                onClick={handlePublishMenuOpen}
+                endIcon={<ArrowDropDownIcon sx={{ fontSize: 20 }} />}
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  px: 3,
+                  py: 0.75,
+                  borderRadius: '6px',
+                  fontSize: '0.875rem',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                  whiteSpace: 'nowrap',
+                  height: '40px',
+                  '&:hover': {
+                    boxShadow: '0 6px 16px rgba(0, 0, 0, 0.3)',
+                  },
+                }}
+              >
+                👉 发布内容
+              </Button>
+              <Menu
+                anchorEl={publishAnchorEl}
+                open={publishMenuOpen}
+                onClose={handlePublishMenuClose}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'left',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'left',
+                }}
+                PaperProps={{
+                  sx: {
+                    mt: 0.5,
+                    minWidth: 150,
+                    borderRadius: '6px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  },
+                }}
+              >
+                <MenuItem
+                  onClick={() => handlePublishTypeSelect('qa')}
+                  sx={{
+                    fontSize: '14px',
+                    py: 1,
+                    '&:hover': {
+                      bgcolor: 'rgba(0,99,151,0.06)',
+                    },
+                  }}
+                >
+                  问题
+                </MenuItem>
+                <MenuItem
+                  onClick={() => handlePublishTypeSelect('blog')}
+                  sx={{
+                    fontSize: '14px',
+                    py: 1,
+                    '&:hover': {
+                      bgcolor: 'rgba(0,99,151,0.06)',
+                    },
+                  }}
+                >
+                  文章
+                </MenuItem>
+              </Menu>
+            </Box>
           </Box>
 
           {/* 排序选项 */}
@@ -723,7 +793,7 @@ const Article = ({
             pr: 3,
             scrollbarGutter: 'stable',
             position: 'sticky',
-            top: 88,
+            top: 20,
             maxHeight: 'calc(100vh - 90px)',
             overflowY: 'auto',
           }}
@@ -740,15 +810,14 @@ const Article = ({
                 sx={{
                   bgcolor: 'rgba(0,99,151,0.03)',
                   borderRadius: '6px',
-                  border: '1px solid #D9DEE2',
+                  // border: '1px solid #D9DEE2',
                   p: 2,
                   mb: 2,
                   // 为公告 Paper 增加焦点识别样式
                   transition: 'box-shadow 0.2s, border-color 0.2s',
                   outline: 'none',
                   '&:focus-within, &:hover': {
-                    borderColor: 'primary.main',
-                    boxShadow: '0 0 0 2px rgba(32,108,255,0.12)',
+                    boxShadow: 'inset 0 0 3px 1px rgba(32,108,255,0.1)',
                     backgroundColor: 'rgba(32,108,255,0.04)',
                   },
                   cursor: 'pointer',
@@ -832,7 +901,7 @@ const Article = ({
                   <Icon type='icon-shuaxin' sx={{ fontSize: 18, color: '#6b7280' }} />
                 </IconButton>
                 <Typography variant='body2' sx={{ fontSize: '14px', color: 'rgba(33, 34, 45, 0.50)' }}>
-                  近 7 天
+                  上周
                 </Typography>
               </Stack>
             </Stack>
@@ -901,30 +970,70 @@ const Article = ({
                       >
                         {index + 1}
                       </Box>
-                      {contributorProfileHref ? (
-                        <Link href={contributorProfileHref} style={{ display: 'inline-flex' }}>
+                      <Box
+                        tabIndex={0}
+                        sx={{
+                          outline: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          borderRadius: 1,
+                          transition: 'box-shadow 0.2s, border-color 0.2s, background 0.2s',
+                          color: 'text.primary',
+                          '&:focus-within, &:hover ': {
+                            color: 'primary.main',
+                            '& a, & .MuiTypography-root': {
+                              textShadow: '0.3px 0 0 currentColor, -0.3px 0 0 currentColor',
+                            },
+                          },
+                          my: '-2px',
+                          ml: '-4px',
+                          flex: 1,
+                          minWidth: 0,
+                        }}
+                      >
+                        {contributorProfileHref ? (
+                          <Link href={contributorProfileHref} style={{ display: 'inline-flex' }} tabIndex={-1}>
+                            <CommonAvatar src={contributor.avatar} name={contributor.name} />
+                          </Link>
+                        ) : (
                           <CommonAvatar src={contributor.avatar} name={contributor.name} />
-                        </Link>
-                      ) : (
-                        <CommonAvatar src={contributor.avatar} name={contributor.name} />
-                      )}
-                      <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center' }}>
-                        <Link
-                          href={contributorProfileHref || '/'}
-                          style={{
-                            fontWeight: 600,
-                            color: '#111827',
-                            fontSize: '0.875rem',
-                            lineHeight: 1.3,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            textDecoration: 'none',
-                            display: 'block',
-                          }}
-                        >
-                          <Ellipsis>{contributor.name || '未知用户'}</Ellipsis>
-                        </Link>
+                        )}
+                        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', ml: 1 }}>
+                          {contributorProfileHref ? (
+                            <Link
+                              href={contributorProfileHref || '/'}
+                              style={{
+                                fontWeight: 600,
+                                color: 'inherit',
+                                fontSize: '0.875rem',
+                                lineHeight: 1.3,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                textDecoration: 'none',
+                                display: 'block',
+                              }}
+                              tabIndex={-1}
+                            >
+                              <Ellipsis>{contributor.name || '未知用户'}</Ellipsis>
+                            </Link>
+                          ) : (
+                            <Typography
+                              variant='body2'
+                              sx={{
+                                fontWeight: 600,
+                                color: 'inherit',
+                                fontSize: '0.875rem',
+                                lineHeight: 1.3,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              <Ellipsis>{contributor.name || '未知用户'}</Ellipsis>
+                            </Typography>
+                          )}
+                        </Box>
                       </Box>
                       {contributor.score !== undefined && (
                         <Box sx={{ display: 'flex', gap: 0.75, flexShrink: 0 }}>

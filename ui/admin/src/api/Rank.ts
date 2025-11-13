@@ -11,7 +11,37 @@
  */
 
 import request, { RequestParams } from "./httpClient";
-import { ContextResponse, ModelListRes, SvcRankContributeItem } from "./types";
+import {
+  ContextResponse,
+  ModelListRes,
+  ModelRankTimeGroup,
+  SvcRankContributeItem,
+} from "./types";
+
+/**
+ * No description
+ *
+ * @tags rank
+ * @name GetAdminRankAiInsight
+ * @summary ai insight rank
+ * @request GET:/admin/rank/ai_insight
+ * @response `200` `(ContextResponse & {
+    data?: (ModelRankTimeGroup)[],
+
+})` OK
+ */
+
+export const getAdminRankAiInsight = (params: RequestParams = {}) =>
+  request<
+    ContextResponse & {
+      data?: ModelRankTimeGroup[];
+    }
+  >({
+    path: `/admin/rank/ai_insight`,
+    method: "GET",
+    format: "json",
+    ...params,
+  });
 
 /**
  * No description

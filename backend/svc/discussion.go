@@ -162,7 +162,14 @@ func (d *Discussion) Create(ctx context.Context, sessionUUID string, req Discuss
 		return "", err
 	}
 
-	if disc.Type == model.DiscussionTypeQA || disc.Type == model.DiscussionTypeBlog {
+	switch disc.Type {
+	case model.DiscussionTypeQA:
+		d.in.Pub.Publish(ctx, topic.TopicAIInsight, topic.MsgAIInsight{
+			ForumID: disc.ForumID,
+			Keyword: disc.Title,
+		})
+		fallthrough
+	case model.DiscussionTypeBlog:
 		err = d.in.TrendSvc.Create(ctx, &model.Trend{
 			UserID:        disc.UserID,
 			Type:          model.TrendTypeCreateDiscuss,
@@ -277,7 +284,7 @@ func (d *Discussion) ListSimilarity(ctx context.Context, discUUID string) (*mode
 	}
 
 	var res model.ListRes[*model.DiscussionListItem]
-	discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: disc.Title, ForumID: disc.ForumID})
+	discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: disc.Title, ForumID: disc.ForumID, SimilarityThreshold: 0.2})
 	if err != nil {
 		return nil, err
 	}
@@ -370,9 +377,14 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 				Ts:   util.TodayZero().Unix(),
 				Key:  sessionUUID,
 			})
+
+			d.in.Pub.Publish(ctx, topic.TopicAIInsight, topic.MsgAIInsight{
+				ForumID: req.ForumID,
+				Keyword: req.Keyword,
+			})
 		}
 
-		discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: req.Keyword, ForumID: req.ForumID})
+		discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: req.Keyword, ForumID: req.ForumID, SimilarityThreshold: 0.2})
 		if err != nil {
 			return nil, err
 		}
@@ -569,8 +581,9 @@ func (d *Discussion) RevokeLikeDiscussion(ctx context.Context, discUUID string, 
 }
 
 type DiscussionSearchReq struct {
-	Keyword string
-	ForumID uint
+	Keyword             string
+	ForumID             uint
+	SimilarityThreshold float64
 }
 
 func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*model.DiscussionListItem, error) {
@@ -584,7 +597,7 @@ func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*mo
 		Query:               req.Keyword,
 		GroupIDs:            nil,
 		TopK:                10,
-		SimilarityThreshold: 0.2,
+		SimilarityThreshold: req.SimilarityThreshold,
 	})
 	if err != nil {
 		return nil, err

@@ -8,7 +8,6 @@ import {
   postDiscussionDiscIdCommentCommentIdRevokeLike,
   putDiscussionDiscIdCommentCommentId,
 } from '@/api'
-import { generateCacheKey, clearCache } from '@/lib/api-cache'
 import {
   ModelCommentLikeState,
   ModelDiscussionComment,
@@ -17,17 +16,20 @@ import {
   ModelDiscussionType,
   ModelUserRole,
 } from '@/api/types'
-import { Card, MarkDown } from '@/components'
+import { Card } from '@/components'
 import { AuthContext } from '@/components/authProvider'
+import CommonAvatar from '@/components/CommonAvatar'
+import EditorWrap, { EditorWrapRef } from '@/components/editor'
 import { TimeDisplayWithTag } from '@/components/TimeDisplay'
-import EditorWrap, { EditorWrapRef } from '@/components/editor/edit/Wrap'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
+import { clearCache, generateCacheKey } from '@/lib/api-cache'
+import dayjs from '@/lib/dayjs'
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
-import MoreVertIcon from '@mui/icons-material/MoreVert'
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import MoreVertIcon from '@mui/icons-material/MoreVert'
 import {
   Box,
   Button,
@@ -41,20 +43,17 @@ import {
   OutlinedInput,
   Paper,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material'
-import CommonAvatar from '@/components/CommonAvatar'
-import dayjs from '@/lib/dayjs'
-import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import React, { useContext, useState, useEffect, useCallback, useMemo } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import EditCommentModal from './editCommentModal'
 
-import { formatNumber } from '@/lib/utils'
 import EditorContent from '@/components/EditorContent'
 import Modal from '@/components/modal'
+import { formatNumber } from '@/lib/utils'
 import { Icon } from '@ctzhian/ui'
 
 // 添加CSS动画样式
@@ -491,7 +490,7 @@ const DiscussCard = (props: {
     return checkAuth(() => setMdEditShow(true))
   }
   const onSubmit = async () => {
-    const content = editorRef.current?.getHTML() || ''
+    const content = editorRef.current?.getContent() || ''
     await postDiscussionDiscIdComment(
       { discId: id },
       {
@@ -561,19 +560,14 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const open = Boolean(anchorEl)
 
   const isArticlePost = data.type === ModelDiscussionType.DiscussionTypeBlog
-  const isFeedbackPost = data.type === ModelDiscussionType.DiscussionTypeFeedback
 
   const [showAnswerEditor, setShowAnswerEditor] = useState(false)
-  const [showCommentEditor, setShowCommentEditor] = useState(false)
   const [answerEditorKey, setAnswerEditorKey] = useState(0)
-  const [commentEditorKey, setCommentEditorKey] = useState(0)
   const [commentEditorKeys, setCommentEditorKeys] = useState<{ [key: number]: number }>({})
   const [showCommentEditors, setShowCommentEditors] = useState<{ [key: number]: boolean }>({})
   const [collapsedComments, setCollapsedComments] = useState<{ [key: number]: boolean }>({})
-  const editorRef = React.useRef<EditorWrapRef>(null)
   const answerEditorRef = React.useRef<EditorWrapRef>(null)
   const answerEditorContainerRef = React.useRef<HTMLDivElement>(null)
-  const commentEditorRef = React.useRef<EditorWrapRef>(null)
   const commentEditorRefs = React.useRef<{ [key: number]: EditorWrapRef | null }>({})
   const prevHasAcceptedRef = React.useRef<boolean>(false)
   const [hasAnswerContent, setHasAnswerContent] = useState(false)
@@ -753,7 +747,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   }, [hasAcceptedComment, data.type, data.comments])
 
   const handleSubmitAnswer = async () => {
-    const content = answerEditorRef.current?.getHTML() || ''
+    const content = answerEditorRef.current?.getContent() || ''
     if (!content.trim()) return
     return checkAuth(async () => {
       await postDiscussionDiscIdComment({ discId: id }, { content })
@@ -766,21 +760,8 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
     })
   }
 
-  const handleSubmitNewComment = async () => {
-    const content = commentEditorRef.current?.getHTML() || ''
-    if (!content.trim()) return
-    return checkAuth(async () => {
-      await postDiscussionDiscIdComment({ discId: id }, { content })
-      setShowCommentEditor(false)
-      setCommentEditorKey((prev) => prev + 1) // 重置编辑器
-      const cacheKey = generateCacheKey(`/discussion/${id}`, {})
-      clearCache(cacheKey)
-      router.refresh()
-    })
-  }
-
   const handleSubmitComment = async (answerId: number) => {
-    const comment = commentEditorRefs.current[answerId]?.getHTML() || ''
+    const comment = commentEditorRefs.current[answerId]?.getContent() || ''
     if (!comment.trim()) return
     return checkAuth(async () => {
       await postDiscussionDiscIdComment({ discId: id }, { content: comment, comment_id: answerId })
@@ -879,677 +860,736 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         onOk={onSubmit}
         onClose={() => setEditCommentModalVisible(false)}
       />
-      <Box sx={{ pt: 2, minHeight: isArticlePost ? 'unset' : 'calc(100vh - 360px)' }}>
-        <Typography
-          variant='h6'
-          sx={{
-            fontWeight: 700,
-            color: 'rgba(33, 34, 45, 0.50)',
-            mb: 3,
-            fontSize: '1.25rem',
-          }}
-        >
-          共<span style={{ color: 'rgba(33, 34, 45, 1)', margin: '0 4px' }}>{sortedComments.length}</span>条
-          {isArticlePost ? '评论' : '回答'}
-        </Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          flex: isArticlePost ? 'unset' : 1,
+          '& .md-container .MuiIconButton-root + *': {
+            display: 'none',
+          },
+          '& .md-container > div': {
+            // backgroundColor: 'transparent!important',
+            '& > div':{
+              border: 'none'
+            }
+          },
+        }}
+      >
+        <Box sx={{ pt: 2, flex: 1 }}>
+          <Typography
+            variant='h6'
+            sx={{
+              fontWeight: 700,
+              color: 'rgba(33, 34, 45, 0.50)',
+              mb: 3,
+              fontSize: '1.25rem',
+            }}
+          >
+            共<span style={{ color: 'rgba(33, 34, 45, 1)', margin: '0 4px' }}>{sortedComments.length}</span>条
+            {isArticlePost ? '评论' : '回答'}
+          </Typography>
 
-        {sortedComments.map((answer) => {
-          const isLiked = answer.user_like_state === ModelCommentLikeState.CommentLikeStateLike
-          const isDisliked = answer.user_like_state === ModelCommentLikeState.CommentLikeStateDislike
-          const answerProfileHref = answer.user_id ? `/profile/${answer.user_id}` : undefined
-          const answerCreatedAt = (answer as ModelDiscussionComment & { created_at?: number }).created_at
-          return (
-            <Paper
-              key={answer.id}
-              elevation={0}
-              sx={{
-                bgcolor: answer.accepted ? '#ffffff' : '#ffffff',
-                p: '20px',
-                mb: 2,
-                border: answer.accepted
-                  ? '2px solid rgba(25, 135, 84, 1) !important'
-                  : '1px solid rgba(217, 222, 226, 1)!important',
-                position: 'relative',
-              }}
-            >
-              {answer.accepted && (
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: '-2px',
-                    left: '-2px',
-                    width: '20px',
-                    height: '20px',
-                    bgcolor: 'rgba(25, 135, 84, 1)',
-                    borderTopLeftRadius: '10px',
-                    borderTopRightRadius: '0px',
-                    borderBottomLeftRadius: '0px',
-                    borderBottomRightRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 1,
-                  }}
-                >
-                  {/* 用 SVG 替换字符实现直的对钩 */}
-                  <Box
-                    component='svg'
-                    xmlns='http://www.w3.org/2000/svg'
-                    viewBox='0 0 18 18'
-                    sx={{
-                      width: 16,
-                      height: 16,
-                      display: 'block',
-                    }}
-                  >
-                    <polyline
-                      points='4 10 8 14 14 4'
-                      stroke='#fff'
-                      strokeWidth='2'
-                      fill='none'
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                    />
-                  </Box>
-                </Box>
-              )}
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, gap: 1.5 }}>
-                {answerProfileHref ? (
-                  <Link href={answerProfileHref} style={{ display: 'inline-flex' }}>
-                    <CommonAvatar src={answer.user_avatar} name={answer.user_name} />
-                  </Link>
-                ) : (
-                  <CommonAvatar src={answer.user_avatar} name={answer.user_name} />
-                )}
-                {answerProfileHref ? (
-                  <Link
-                    href={answerProfileHref}
-                    style={{
-                      fontWeight: 500,
-                      color: '#111827',
-                      fontSize: '0.875rem',
-                      textDecoration: 'none',
-                    }}
-                  >
-                    {answer.user_name || '未知用户'}
-                  </Link>
-                ) : (
-                  <Typography variant='body2' sx={{ fontWeight: 500, color: '#111827', fontSize: '0.875rem' }}>
-                    {answer.user_name || '未知用户'}
-                  </Typography>
-                )}
-                {answer.bot && (
-                  <Chip
-                    label='AI'
-                    sx={{
-                      width: 28,
-                      height: 24,
-                      background: 'rgba(0,99,151,0.06)',
-                      color: 'primary.main',
-                      borderRadius: '4px',
-                      border: '1px solid rgba(0,99,151,0.1)',
-                      fontSize: '0.75rem',
-                      fontWeight: 'bold',
-                      fontFamily: 'PingFang SC',
-                      '& .MuiChip-label': {
-                        px: 0.5,
-                      },
-                    }}
-                  />
-                )}
-                <Stack direction='row' alignItems='center'>
-                  <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
-                    发布于{' '}
-                    <TimeDisplayWithTag
-                      timestamp={(answerCreatedAt || answer.updated_at)!}
-                      title={dayjs.unix((answerCreatedAt || answer.updated_at)!).format('YYYY-MM-DD HH:mm:ss')}
-                    />
-                  </Typography>
-                  {answer.updated_at && answerCreatedAt && answer.updated_at !== answerCreatedAt && (
-                    <>
-                      <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem', pr: 0.5 }}>
-                        ,
-                      </Typography>
-                      <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
-                        更新于{' '}
-                        <TimeDisplayWithTag
-                          timestamp={answer.updated_at}
-                          title={dayjs.unix(answer.updated_at).format('YYYY-MM-DD HH:mm:ss')}
-                        />
-                      </Typography>
-                    </>
-                  )}
-                </Stack>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>
-                  {/* 采纳按钮 - 只有问答类型且问题作者且问题未被采纳时才显示 */}
-                  {!isArticlePost &&
-                    data.type === ModelDiscussionType.DiscussionTypeQA &&
-                    isAuthor &&
-                    !hasAcceptedComment &&
-                    !answer.accepted && (
-                      <Button
-                        disableRipple
-                        size='small'
-                        variant='outlined'
-                        startIcon={<CheckCircleOutlineIcon sx={{ fontSize: 12 }} />}
-                        onClick={() => handleAcceptAnswer(answer.id!)}
-                        sx={{
-                          textTransform: 'none',
-                          color: '#6b7280',
-                          borderColor: '#d1d5db',
-                          bgcolor: '#ffffff',
-                          fontWeight: 600,
-                          fontSize: '0.7rem',
-                          px: 1,
-                          py: 0.25,
-                          borderRadius: '4px',
-                          minWidth: 'auto',
-                          width: 70,
-                          height: 24,
-                          transition: 'all 0.15s ease-in-out',
-                          '&:hover': {
-                            bgcolor: '#f9fafb',
-                            borderColor: '#9ca3af',
-                            color: '#111827',
-                            transform: 'scale(1.02)',
-                          },
-                          '&:active': { transform: 'scale(0.98)' },
-                        }}
-                      >
-                        采纳
-                      </Button>
-                    )}
-                  {/* 已采纳标签 - 文章类型不显示，放在点赞前面 */}
-                  {answer.accepted && !isArticlePost && (
-                    <Chip
-                      icon={
-                        <CheckCircleOutlineIcon
-                          sx={{
-                            width: 15,
-                            height: 15,
-                            color: '#fff !important',
-                          }}
-                        />
-                      }
-                      label='已采纳'
-                      size='small'
-                      sx={{
-                        bgcolor: 'rgba(25, 135, 84, 1)',
-                        color: '#fff !important',
-                        height: 22,
-                        fontWeight: 600,
-                        fontSize: '0.7rem',
-                        border: '1px solid rgba(25, 135, 84, 0.3)',
-                        fontFamily:
-                          'Glibory, "PingFang SC", "Hiragino Sans GB", "STHeiti", "Microsoft YaHei", sans-serif',
-                      }}
-                    />
-                  )}
-                  {/* 问答类型显示点赞/点踩按钮 */}
-                  {!isArticlePost && (
-                    <>
-                      <Stack
-                        direction='row'
-                        alignItems='center'
-                        gap={1}
-                        sx={{
-                          background: isLiked ? 'rgba(32,108,255,0.1)' : '#F2F3F5',
-                          borderRadius: 0.5,
-                          px: 1,
-                          py: '1px',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                          transform: 'scale(1)',
-                          '&:hover': {
-                            background: isLiked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
-                            transform: 'scale(1.05)',
-                          },
-                          '&:active': {
-                            transform: 'scale(0.95)',
-                            transition: 'transform 0.1s ease-out',
-                          },
-                        }}
-                        onClick={() => handleVote(answer.id!, 'up')}
-                      >
-                        <Icon
-                          type='icon-dianzan1'
-                          sx={{
-                            color: isLiked ? 'info.main' : 'rgba(0,0,0,0.5)',
-                            fontSize: 14,
-                          }}
-                        />
-                        <Typography
-                          variant='body2'
-                          sx={{
-                            fontSize: 14,
-                            color: isLiked ? 'info.main' : 'rgba(0,0,0,0.5)',
-                            lineHeight: '20px',
-                          }}
-                        >
-                          {formatNumber(answer.like || 0)}
-                        </Typography>
-                      </Stack>
-
-                      <Stack
-                        direction='row'
-                        alignItems='center'
-                        gap={1}
-                        sx={{
-                          background: isDisliked ? 'rgba(32,108,255,0.1)' : '#F2F3F5',
-                          borderRadius: 0.5,
-                          px: 1,
-                          py: '1px',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                          transform: 'scale(1)',
-                          '&:hover': {
-                            background: isDisliked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
-                            transform: 'scale(1.05)',
-                          },
-                          '&:active': {
-                            transform: 'scale(0.95)',
-                            transition: 'transform 0.1s ease-out',
-                          },
-                        }}
-                        onClick={() => handleVote(answer.id!, 'down')}
-                      >
-                        <Icon
-                          type='icon-diancai'
-                          sx={{
-                            color: isDisliked ? 'info.main' : 'rgba(0,0,0,0.5)',
-                            fontSize: 14,
-                          }}
-                        />
-                        <Typography
-                          variant='body2'
-                          sx={{
-                            fontSize: 14,
-                            lineHeight: '20px',
-                            color: isDisliked ? 'info.main' : 'rgba(0,0,0,0.5)',
-                          }}
-                        >
-                          {formatNumber(answer.dislike || 0)}
-                        </Typography>
-                      </Stack>
-                    </>
-                  )}
-
-                  {/* 更多操作按钮 */}
-                  {(answer.user_id === (user?.uid || 0) ||
-                    [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
-                      user?.role || ModelUserRole.UserRoleUnknown,
-                    ) ||
-                    (data.type === ModelDiscussionType.DiscussionTypeQA && isAuthor)) && (
-                    <IconButton
-                      disableRipple
-                      size='small'
-                      onClick={(e) => handleClick(e, answer.content || '', answer)}
-                      sx={{
-                        color: '#6b7280',
-                        ml: 0.5,
-                        transition: 'all 0.15s ease-in-out',
-                        '&:hover': { color: '#000000', bgcolor: '#f3f4f6' },
-                      }}
-                    >
-                      <MoreVertIcon sx={{ fontSize: 18 }} />
-                    </IconButton>
-                  )}
-                </Box>
-              </Box>
-
-              <Box
+          {sortedComments.map((answer) => {
+            const isLiked = answer.user_like_state === ModelCommentLikeState.CommentLikeStateLike
+            const isDisliked = answer.user_like_state === ModelCommentLikeState.CommentLikeStateDislike
+            const answerProfileHref = answer.user_id ? `/profile/${answer.user_id}` : undefined
+            const answerCreatedAt = (answer as ModelDiscussionComment & { created_at?: number }).created_at
+            return (
+              <Paper
+                key={answer.id}
+                elevation={0}
                 sx={{
+                  bgcolor: answer.accepted ? '#ffffff' : '#ffffff',
+                  p: '20px',
                   mb: 2,
+                  border: answer.accepted
+                    ? '2px solid rgba(25, 135, 84, 1) !important'
+                    : '1px solid rgba(217, 222, 226, 1)!important',
+                  position: 'relative',
                 }}
               >
-                <EditorContent content={answer.content} />
-              </Box>
-
-              {/* 操作按钮区域 */}
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Button
-                  disableRipple
-                  size='small'
-                  onClick={() => toggleComments(answer.id!)}
-                  endIcon={collapsedComments[answer.id!] ? <ExpandMoreIcon /> : <ExpandLessIcon />}
-                  sx={{
-                    textTransform: 'none',
-                    color: '#6b7280',
-                    fontWeight: 600,
-                    fontSize: '0.8125rem',
-                    transition: 'all 0.15s ease-in-out',
-                    '&:hover': { color: '#000000', bgcolor: '#f3f4f6' },
-                  }}
-                >
-                  {answer.replies?.length || 0} 条{isArticlePost ? '回复' : '评论'}
-                </Button>
-              </Box>
-
-              <Box>
-                <Collapse in={!collapsedComments[answer.id!]}>
-                  <Box sx={{ mt: 2 }}>
-                    {answer.replies?.map((reply) => {
-                      const replyProfileHref = reply.user_id ? `/profile/${reply.user_id}` : undefined
-                      const replyCreatedAt = (reply as ModelDiscussionReply & { created_at?: number }).created_at
-                      const displayReplyCreatedAt = replyCreatedAt || reply.updated_at
-                      return (
-                        <Box
-                          key={reply.id}
+                {answer.accepted && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: '-2px',
+                      left: '-2px',
+                      width: '20px',
+                      height: '20px',
+                      bgcolor: 'rgba(25, 135, 84, 1)',
+                      borderTopLeftRadius: '10px',
+                      borderTopRightRadius: '0px',
+                      borderBottomLeftRadius: '0px',
+                      borderBottomRightRadius: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      zIndex: 1,
+                    }}
+                  >
+                    {/* 用 SVG 替换字符实现直的对钩 */}
+                    <Box
+                      component='svg'
+                      xmlns='http://www.w3.org/2000/svg'
+                      viewBox='0 0 18 18'
+                      sx={{
+                        width: 16,
+                        height: 16,
+                        display: 'block',
+                      }}
+                    >
+                      <polyline
+                        points='4 10 8 14 14 4'
+                        stroke='#fff'
+                        strokeWidth='2'
+                        fill='none'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                      />
+                    </Box>
+                  </Box>
+                )}
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, gap: 1.5 }}>
+                  <Stack
+                    tabIndex={0}
+                    direction={'row'}
+                    spacing={1}
+                    sx={{
+                      outline: 'none',
+                      alignItems: 'center',
+                      borderRadius: 1,
+                      transition: 'box-shadow 0.2s, border-color 0.2s, background 0.2s',
+                      color: 'text.primary',
+                      '&:focus-within, &:hover ': {
+                        color: 'primary.main',
+                        '& a, & .MuiTypography-root': {
+                          textShadow: '0.3px 0 0 currentColor, -0.3px 0 0 currentColor',
+                        },
+                      },
+                      my: '-2px',
+                      ml: '-4px',
+                    }}
+                  >
+                    {answerProfileHref ? (
+                      <Link href={answerProfileHref} style={{ display: 'inline-flex' }} tabIndex={-1}>
+                        <CommonAvatar src={answer.user_avatar} name={answer.user_name} />
+                      </Link>
+                    ) : (
+                      <CommonAvatar src={answer.user_avatar} name={answer.user_name} />
+                    )}
+                    {answerProfileHref ? (
+                      <Link
+                        href={answerProfileHref}
+                        style={{
+                          fontWeight: 500,
+                          color: 'inherit',
+                          fontSize: '0.875rem',
+                          textDecoration: 'none',
+                        }}
+                        tabIndex={-1}
+                      >
+                        {answer.user_name || '未知用户'}
+                      </Link>
+                    ) : (
+                      <Typography variant='body2' sx={{ fontWeight: 500, color: 'inherit', fontSize: '0.875rem' }}>
+                        {answer.user_name || '未知用户'}
+                      </Typography>
+                    )}
+                  </Stack>
+                  {answer.bot && (
+                    <Chip
+                      label='AI'
+                      sx={{
+                        width: 28,
+                        height: 24,
+                        background: 'rgba(0,99,151,0.06)',
+                        color: 'primary.main',
+                        borderRadius: '4px',
+                        border: '1px solid rgba(0,99,151,0.1)',
+                        fontSize: '0.75rem',
+                        fontWeight: 'bold',
+                        fontFamily: 'PingFang SC',
+                        '& .MuiChip-label': {
+                          px: 0.5,
+                        },
+                      }}
+                    />
+                  )}
+                  <Stack direction='row' alignItems='center'>
+                    <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
+                      发布于{' '}
+                      <TimeDisplayWithTag
+                        timestamp={(answerCreatedAt || answer.updated_at)!}
+                        title={dayjs.unix((answerCreatedAt || answer.updated_at)!).format('YYYY-MM-DD HH:mm:ss')}
+                      />
+                    </Typography>
+                    {answer.updated_at && answerCreatedAt && answer.updated_at !== answerCreatedAt && (
+                      <>
+                        <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem', pr: 0.5 }}>
+                          ,
+                        </Typography>
+                        <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
+                          更新于{' '}
+                          <TimeDisplayWithTag
+                            timestamp={answer.updated_at}
+                            title={dayjs.unix(answer.updated_at).format('YYYY-MM-DD HH:mm:ss')}
+                          />
+                        </Typography>
+                      </>
+                    )}
+                  </Stack>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>
+                    {/* 采纳按钮 - 只有问答类型且问题作者且问题未被采纳时才显示 */}
+                    {!isArticlePost &&
+                      data.type === ModelDiscussionType.DiscussionTypeQA &&
+                      isAuthor &&
+                      !hasAcceptedComment &&
+                      !answer.accepted && (
+                        <Button
+                          disableRipple
+                          size='small'
+                          variant='outlined'
+                          startIcon={<CheckCircleOutlineIcon sx={{ fontSize: 12 }} />}
+                          onClick={() => handleAcceptAnswer(answer.id!)}
                           sx={{
-                            mb: 2,
-                            pb: 2,
-                            p: 2,
-                            background: 'rgba(0,99,151,0.03)',
-                            borderRadius: '8px',
-                            border: '1px solid #D9DEE2',
-                            '&:last-child': { mb: 0, pb: 0 },
+                            textTransform: 'none',
+                            color: '#6b7280',
+                            borderColor: '#d1d5db',
+                            bgcolor: '#ffffff',
+                            fontWeight: 600,
+                            fontSize: '0.7rem',
+                            px: 1,
+                            py: 0.25,
+                            borderRadius: '4px',
+                            minWidth: 'auto',
+                            width: 70,
+                            height: 24,
+                            transition: 'all 0.15s ease-in-out',
+                            '&:hover': {
+                              bgcolor: '#f9fafb',
+                              borderColor: '#9ca3af',
+                              color: '#111827',
+                              transform: 'scale(1.02)',
+                            },
+                            '&:active': { transform: 'scale(0.98)' },
                           }}
                         >
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                            {replyProfileHref ? (
-                              <Link href={replyProfileHref} style={{ display: 'inline-flex' }}>
-                                <CommonAvatar src={reply.user_avatar} name={reply.user_name} />
-                              </Link>
-                            ) : (
-                              <CommonAvatar src={reply.user_avatar} name={reply.user_name} />
-                            )}
-
-                            {replyProfileHref ? (
-                              <Link
-                                href={replyProfileHref}
-                                style={{
-                                  fontWeight: 600,
-                                  color: '#111827',
-                                  fontSize: '0.8125rem',
-                                  textDecoration: 'none',
-                                }}
-                              >
-                                {reply.user_name || '未知用户'}
-                              </Link>
-                            ) : (
-                              <Typography
-                                variant='body2'
-                                sx={{ fontWeight: 600, color: '#111827', fontSize: '0.8125rem' }}
-                              >
-                                {reply.user_name || '未知用户'}
-                              </Typography>
-                            )}
-                            {reply.bot && (
-                              <Chip
-                                label='AI'
-                                sx={{
-                                  width: 28,
-                                  height: 24,
-                                  color: 'primary.main',
-                                  background: 'rgba(0,99,151,0.06)',
-                                  borderRadius: '4px',
-                                  border: '1px solid rgba(0,99,151,0.1)',
-                                  fontSize: '0.75rem',
-                                  fontWeight: 500,
-                                  '& .MuiChip-label': {
-                                    px: 0.5,
-                                  },
-                                }}
-                              />
-                            )}
-                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5, mt: 0.5 }}>
-                              {displayReplyCreatedAt && (
-                                <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
-                                  发布于{' '}
-                                  <TimeDisplayWithTag
-                                    timestamp={displayReplyCreatedAt}
-                                    title={dayjs.unix(displayReplyCreatedAt).format('YYYY-MM-DD HH:mm:ss')}
-                                  />
-                                </Typography>
-                              )}
-                              {reply.updated_at && replyCreatedAt && reply.updated_at !== replyCreatedAt && (
-                                <>
-                                  <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
-                                    ,
-                                  </Typography>
-                                  <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
-                                    更新于{' '}
-                                    <TimeDisplayWithTag
-                                      timestamp={reply.updated_at}
-                                      title={dayjs.unix(reply.updated_at).format('YYYY-MM-DD HH:mm:ss')}
-                                    />
-                                  </Typography>
-                                </>
-                              )}
-                            </Box>
-                          </Box>
-                          <EditorContent
-                            content={reply.content}
+                          采纳
+                        </Button>
+                      )}
+                    {/* 已采纳标签 - 文章类型不显示，放在点赞前面 */}
+                    {answer.accepted && !isArticlePost && (
+                      <Chip
+                        icon={
+                          <CheckCircleOutlineIcon
                             sx={{
-                              color: '#374151',
-                              fontSize: '0.875rem',
-                              lineHeight: 1.6,
+                              width: 15,
+                              height: 15,
+                              color: '#fff !important',
                             }}
                           />
-                        </Box>
-                      )
-                    })}
-                    <Box sx={{ mt: (answer.replies?.length || 0) > 0 ? 2 : 0 }}>
-                      {!showCommentEditors[answer.id!] ? (
-                        <OutlinedInput
-                          fullWidth
-                          size='small'
-                          placeholder={isArticlePost ? '添加评论...' : '添加评论...'}
-                          onClick={() => handleReplyInputClick(answer.id!)}
-                          endAdornment={
-                            <InputAdornment position='end'>
-                              <ArrowForwardIcon sx={{ fontSize: 16, color: '#9ca3af' }} />
-                            </InputAdornment>
-                          }
+                        }
+                        label='已采纳'
+                        size='small'
+                        sx={{
+                          bgcolor: 'rgba(25, 135, 84, 1)',
+                          color: '#fff !important',
+                          height: 22,
+                          fontWeight: 600,
+                          fontSize: '0.7rem',
+                          border: '1px solid rgba(25, 135, 84, 0.3)',
+                          fontFamily:
+                            'Glibory, "PingFang SC", "Hiragino Sans GB", "STHeiti", "Microsoft YaHei", sans-serif',
+                        }}
+                      />
+                    )}
+                    {/* 问答类型显示点赞/点踩按钮 */}
+                    {!isArticlePost && (
+                      <>
+                        <Stack
+                          direction='row'
+                          alignItems='center'
+                          gap={1}
                           sx={{
-                            bgcolor: '#fafbfc',
-                            fontSize: '0.875rem',
+                            background: isLiked ? 'rgba(32,108,255,0.1)' : '#F2F3F5',
+                            borderRadius: 0.5,
+                            px: 1,
+                            py: '1px',
                             cursor: 'pointer',
-                            '& fieldset': { borderColor: '#e5e7eb' },
-                            '&:hover fieldset': { borderColor: '#d1d5db' },
-                            '& input': {
-                              cursor: 'pointer',
+                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            transform: 'scale(1)',
+                            '&:hover': {
+                              background: isLiked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
+                              transform: 'scale(1.05)',
+                            },
+                            '&:active': {
+                              transform: 'scale(0.95)',
+                              transition: 'transform 0.1s ease-out',
                             },
                           }}
-                        />
-                      ) : (
-                        <>
-                          <Box
+                          onClick={() => handleVote(answer.id!, 'up')}
+                        >
+                          <Icon
+                            type='icon-dianzan1'
                             sx={{
-                              mb: 1,
-                              height: 300,
-                              borderRadius: '6px',
-                              overflow: 'hidden',
+                              color: isLiked ? 'info.main' : 'rgba(0,0,0,0.5)',
+                              fontSize: 14,
+                            }}
+                          />
+                          <Typography
+                            variant='body2'
+                            sx={{
+                              fontSize: 14,
+                              color: isLiked ? 'info.main' : 'rgba(0,0,0,0.5)',
+                              lineHeight: '20px',
                             }}
                           >
-                            <EditorWrap
-                              key={commentEditorKeys[answer.id!] || 0}
-                              ref={(ref) => {
-                                if (ref) {
-                                  commentEditorRefs.current[answer.id!] = ref
-                                }
-                              }}
-                              value=''
-                              showActions={false}
-                              onChange={() => {
-                                // 可以在这里更新状态如果需要
+                            {formatNumber(answer.like || 0)}
+                          </Typography>
+                        </Stack>
+
+                        <Stack
+                          direction='row'
+                          alignItems='center'
+                          gap={1}
+                          sx={{
+                            background: isDisliked ? 'rgba(32,108,255,0.1)' : '#F2F3F5',
+                            borderRadius: 0.5,
+                            px: 1,
+                            py: '1px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            transform: 'scale(1)',
+                            '&:hover': {
+                              background: isDisliked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
+                              transform: 'scale(1.05)',
+                            },
+                            '&:active': {
+                              transform: 'scale(0.95)',
+                              transition: 'transform 0.1s ease-out',
+                            },
+                          }}
+                          onClick={() => handleVote(answer.id!, 'down')}
+                        >
+                          <Icon
+                            type='icon-diancai'
+                            sx={{
+                              color: isDisliked ? 'info.main' : 'rgba(0,0,0,0.5)',
+                              fontSize: 14,
+                            }}
+                          />
+                          <Typography
+                            variant='body2'
+                            sx={{
+                              fontSize: 14,
+                              lineHeight: '20px',
+                              color: isDisliked ? 'info.main' : 'rgba(0,0,0,0.5)',
+                            }}
+                          >
+                            {formatNumber(answer.dislike || 0)}
+                          </Typography>
+                        </Stack>
+                      </>
+                    )}
+
+                    {/* 更多操作按钮 */}
+                    {(answer.user_id === (user?.uid || 0) ||
+                      [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
+                        user?.role || ModelUserRole.UserRoleUnknown,
+                      ) ||
+                      (data.type === ModelDiscussionType.DiscussionTypeQA && isAuthor)) && (
+                      <IconButton
+                        disableRipple
+                        size='small'
+                        onClick={(e) => handleClick(e, answer.content || '', answer)}
+                        sx={{
+                          color: '#6b7280',
+                          ml: 0.5,
+                          transition: 'all 0.15s ease-in-out',
+                          '&:hover': { color: '#000000', bgcolor: '#f3f4f6' },
+                        }}
+                      >
+                        <MoreVertIcon sx={{ fontSize: 18 }} />
+                      </IconButton>
+                    )}
+                  </Box>
+                </Box>
+
+                <Box
+                  sx={{
+                    mb: 2,
+                  }}
+                >
+                  <EditorContent content={answer.content} />
+                </Box>
+
+                {/* 操作按钮区域 */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Button
+                    disableRipple
+                    size='small'
+                    onClick={() => toggleComments(answer.id!)}
+                    endIcon={collapsedComments[answer.id!] ? <ExpandMoreIcon /> : <ExpandLessIcon />}
+                    sx={{
+                      textTransform: 'none',
+                      color: '#6b7280',
+                      fontWeight: 600,
+                      fontSize: '0.8125rem',
+                      transition: 'all 0.15s ease-in-out',
+                      '&:hover': { color: '#000000', bgcolor: '#f3f4f6' },
+                    }}
+                  >
+                    {answer.replies?.length || 0} 条{isArticlePost ? '回复' : '评论'}
+                  </Button>
+                </Box>
+
+                <Box>
+                  <Collapse in={!collapsedComments[answer.id!]}>
+                    <Box sx={{ mt: 2 }}>
+                      {answer.replies?.map((reply) => {
+                        const replyProfileHref = reply.user_id ? `/profile/${reply.user_id}` : undefined
+                        const replyCreatedAt = (reply as ModelDiscussionReply & { created_at?: number }).created_at
+                        const displayReplyCreatedAt = replyCreatedAt || reply.updated_at
+                        return (
+                          <Box
+                            key={reply.id}
+                            sx={{
+                              mb: 2,
+                              pb: 2,
+                              p: 2,
+                              background: 'rgba(0,99,151,0.03)',
+                              borderRadius: '8px',
+                              border: '1px solid #D9DEE2',
+                              '&:last-child': { mb: 0, pb: 0 },
+                            }}
+                          >
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                              <Stack
+                                direction={'row'}
+                                spacing={1}
+                                alignItems='center'
+                                tabIndex={0}
+                                sx={{
+                                  outline: 'none',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  borderRadius: 1,
+                                  transition: 'box-shadow 0.2s, border-color 0.2s, background 0.2s',
+                                  color: 'text.primary',
+                                  '&:focus-within, &:hover ': {
+                                    color: 'primary.main',
+                                    '& a, & .MuiTypography-root': {
+                                      textShadow: '0.3px 0 0 currentColor, -0.3px 0 0 currentColor',
+                                    },
+                                  },
+                                  my: '-2px',
+                                  ml: '-4px',
+                                }}
+                              >
+                                {replyProfileHref ? (
+                                  <Link href={replyProfileHref} style={{ display: 'inline-flex' }} tabIndex={-1}>
+                                    <CommonAvatar src={reply.user_avatar} name={reply.user_name} />
+                                  </Link>
+                                ) : (
+                                  <CommonAvatar src={reply.user_avatar} name={reply.user_name} />
+                                )}
+
+                                {replyProfileHref ? (
+                                  <Link
+                                    href={replyProfileHref}
+                                    style={{
+                                      fontWeight: 600,
+                                      color: 'inherit',
+                                      fontSize: '0.8125rem',
+                                      textDecoration: 'none',
+                                    }}
+                                    tabIndex={-1}
+                                  >
+                                    {reply.user_name || '未知用户'}
+                                  </Link>
+                                ) : (
+                                  <Typography
+                                    variant='body2'
+                                    sx={{ fontWeight: 600, color: 'inherit', fontSize: '0.8125rem' }}
+                                  >
+                                    {reply.user_name || '未知用户'}
+                                  </Typography>
+                                )}
+                              </Stack>
+                              {reply.bot && (
+                                <Chip
+                                  label='AI'
+                                  sx={{
+                                    width: 28,
+                                    height: 24,
+                                    color: 'primary.main',
+                                    background: 'rgba(0,99,151,0.06)',
+                                    borderRadius: '4px',
+                                    border: '1px solid rgba(0,99,151,0.1)',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 500,
+                                    '& .MuiChip-label': {
+                                      px: 0.5,
+                                    },
+                                  }}
+                                />
+                              )}
+                              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5, mt: 0.5 }}>
+                                {displayReplyCreatedAt && (
+                                  <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
+                                    发布于{' '}
+                                    <TimeDisplayWithTag
+                                      timestamp={displayReplyCreatedAt}
+                                      title={dayjs.unix(displayReplyCreatedAt).format('YYYY-MM-DD HH:mm:ss')}
+                                    />
+                                  </Typography>
+                                )}
+                                {reply.updated_at && replyCreatedAt && reply.updated_at !== replyCreatedAt && (
+                                  <>
+                                    <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
+                                      ,
+                                    </Typography>
+                                    <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
+                                      更新于{' '}
+                                      <TimeDisplayWithTag
+                                        timestamp={reply.updated_at}
+                                        title={dayjs.unix(reply.updated_at).format('YYYY-MM-DD HH:mm:ss')}
+                                      />
+                                    </Typography>
+                                  </>
+                                )}
+                              </Box>
+                            </Box>
+                            <EditorContent
+                              content={reply.content}
+                              sx={{
+                                color: '#374151',
+                                fontSize: '0.875rem',
+                                lineHeight: 1.6,
                               }}
                             />
                           </Box>
-                          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                            <Button
-                              disableRipple
-                              onClick={() => {
-                                setShowCommentEditors((prev) => ({ ...prev, [answer.id!]: false }))
-                                setCommentEditorKeys((prev) => ({
-                                  ...prev,
-                                  [answer.id!]: (prev[answer.id!] || 0) + 1,
-                                }))
-                              }}
+                        )
+                      })}
+                      <Box sx={{ mt: (answer.replies?.length || 0) > 0 ? 2 : 0 }}>
+                        {!showCommentEditors[answer.id!] ? (
+                          <OutlinedInput
+                            fullWidth
+                            size='small'
+                            placeholder={isArticlePost ? '添加评论...' : '添加评论...'}
+                            onClick={() => handleReplyInputClick(answer.id!)}
+                            endAdornment={
+                              <InputAdornment position='end'>
+                                <ArrowForwardIcon sx={{ fontSize: 16, color: '#9ca3af' }} />
+                              </InputAdornment>
+                            }
+                            sx={{
+                              bgcolor: '#fafbfc',
+                              fontSize: '0.875rem',
+                              cursor: 'pointer',
+                              '& fieldset': { borderColor: '#e5e7eb' },
+                              '&:hover fieldset': { borderColor: '#d1d5db' },
+                              '& input': {
+                                cursor: 'pointer',
+                              },
+                            }}
+                          />
+                        ) : (
+                          <>
+                            <Box
                               sx={{
-                                textTransform: 'none',
-                                color: '#6b7280',
-                                fontWeight: 600,
-                                fontSize: '0.875rem',
-                                transition: 'all 0.15s ease-in-out',
-                                '&:hover': { bgcolor: '#f3f4f6', transform: 'scale(1.02)' },
-                                '&:active': { transform: 'scale(0.98)' },
-                              }}
-                            >
-                              取消
-                            </Button>
-                            <Button
-                              disableRipple
-                              variant='contained'
-                              endIcon={<ArrowForwardIcon />}
-                              onClick={() => handleSubmitComment(answer.id!)}
-                              sx={{
-                                color: '#ffffff',
-                                textTransform: 'none',
-                                fontWeight: 600,
-                                px: 2,
-                                py: 0.5,
+                                mb: 1,
                                 borderRadius: '6px',
-                                fontSize: '0.875rem',
-                                transition: 'all 0.15s ease-in-out',
-                                '&:hover': {
-                                  transform: 'translateY(-1px)',
-                                },
-                                '&:active': { transform: 'translateY(0) scale(0.98)' },
+                                overflow: 'hidden',
                               }}
                             >
-                              发送评论
-                            </Button>
-                          </Box>
-                        </>
-                      )}
+                              <EditorWrap
+                                key={commentEditorKeys[answer.id!] || 0}
+                                ref={(ref) => {
+                                  if (ref) {
+                                    commentEditorRefs.current[answer.id!] = ref
+                                  }
+                                }}
+                                value=''
+                                showActions={false}
+                              />
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                              <Button
+                                disableRipple
+                                onClick={() => {
+                                  setShowCommentEditors((prev) => ({ ...prev, [answer.id!]: false }))
+                                  setCommentEditorKeys((prev) => ({
+                                    ...prev,
+                                    [answer.id!]: (prev[answer.id!] || 0) + 1,
+                                  }))
+                                }}
+                                sx={{
+                                  textTransform: 'none',
+                                  color: '#6b7280',
+                                  fontWeight: 600,
+                                  fontSize: '0.875rem',
+                                  transition: 'all 0.15s ease-in-out',
+                                  '&:hover': { bgcolor: '#f3f4f6', transform: 'scale(1.02)' },
+                                  '&:active': { transform: 'scale(0.98)' },
+                                }}
+                              >
+                                取消
+                              </Button>
+                              <Button
+                                disableRipple
+                                variant='contained'
+                                endIcon={<ArrowForwardIcon />}
+                                onClick={() => handleSubmitComment(answer.id!)}
+                                sx={{
+                                  color: '#ffffff',
+                                  textTransform: 'none',
+                                  fontWeight: 600,
+                                  px: 2,
+                                  py: 0.5,
+                                  borderRadius: '6px',
+                                  fontSize: '0.875rem',
+                                  transition: 'all 0.15s ease-in-out',
+                                  '&:hover': {
+                                    transform: 'translateY(-1px)',
+                                  },
+                                  '&:active': { transform: 'translateY(0) scale(0.98)' },
+                                }}
+                              >
+                                发送评论
+                              </Button>
+                            </Box>
+                          </>
+                        )}
+                      </Box>
                     </Box>
-                  </Box>
-                </Collapse>
-              </Box>
-            </Paper>
-          )
-        })}
-      </Box>
-      {/* Answers section for questions */}
-      {!isReplyEditorVisible && (
-        <Paper
-          elevation={0}
-          sx={{
-            position: isArticlePost ? 'unset' : 'sticky',
-            bottom: '24px',
-            width: '100%',
-            maxWidth: { lg: '756px' },
-            mx: 'auto',
-            mb: { xs: 2, md: 3 },
-            zIndex: 9,
-            bgcolor: '#ffffff',
-            borderRadius: '12px',
-            border: '1px solid rgba(33, 34, 45, 1)',
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: '-41px',
-              left: '-1px',
-              right: '-1px',
-              height: '40px',
-              background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, #FFFFFF 100%)',
-              pointerEvents: 'none',
-              zIndex: -2,
-            },
-          }}
-        >
-          <Box sx={{ p: 2 }}>
-            {isArticlePost && !showAnswerEditor ? (
-              <OutlinedInput
-                fullWidth
-                size='small'
-                placeholder='添加评论...'
-                onClick={() => checkAuth(() => setShowAnswerEditor(true))}
-                endAdornment={
-                  <InputAdornment position='end'>
-                    <ArrowForwardIcon sx={{ fontSize: 16, color: '#9ca3af' }} />
-                  </InputAdornment>
-                }
-                sx={{
-                  fontSize: '0.875rem',
-                  cursor: 'pointer',
-                  '& fieldset': { border: 'none' },
-                  '& input': {
-                    cursor: 'pointer',
-                  },
-                }}
-              />
-            ) : (
-              <>
-                <Box
-                  ref={answerEditorContainerRef}
-                  sx={{
-                    height: 100,
-                    borderRadius: '6px',
-                    overflow: 'hidden',
-                    '& .tiptap:focus': { backgroundColor: 'transparent' },
-                  }}
-                  onBlur={handleAnswerEditorBlur}
-                  tabIndex={-1}
-                >
-                  <EditorWrap
-                    key={answerEditorKey}
-                    ref={answerEditorRef}
-                    value=''
-                    showActions={false}
-                    showToolbar={false}
-                    onChange={handleAnswerEditorChange}
-                  />
+                  </Collapse>
                 </Box>
-                {hasAnswerContent && (
-                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
-                    {isArticlePost && (
+              </Paper>
+            )
+          })}
+        </Box>
+        {/* Answers section for questions */}
+        {!isReplyEditorVisible && (
+          <Paper
+            elevation={0}
+            sx={{
+              position: isArticlePost ? 'unset' : 'sticky',
+              bottom: '24px',
+              width: '100%',
+              maxWidth: { lg: '756px' },
+              mx: 'auto',
+              mb: { xs: 2, md: 3 },
+              mt: isArticlePost ? 0 : 'auto',
+              zIndex: 9,
+              bgcolor: '#ffffff',
+              borderRadius: '12px',
+              border: '1px solid rgba(33, 34, 45, 1)',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: '-41px',
+                left: '-1px',
+                right: '-1px',
+                height: '40px',
+                background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, #FFFFFF 100%)',
+                pointerEvents: 'none',
+                zIndex: -2,
+              },
+            }}
+          >
+            <Box sx={{ p: 1 }}>
+              {isArticlePost && !showAnswerEditor ? (
+                <OutlinedInput
+                  fullWidth
+                  size='small'
+                  placeholder='添加评论...'
+                  onClick={() => checkAuth(() => setShowAnswerEditor(true))}
+                  endAdornment={
+                    <InputAdornment position='end'>
+                      <ArrowForwardIcon sx={{ fontSize: 16, color: '#9ca3af' }} />
+                    </InputAdornment>
+                  }
+                  sx={{
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    '& fieldset': { border: 'none' },
+                    '& input': {
+                      cursor: 'pointer',
+                    },
+                  }}
+                />
+              ) : (
+                <>
+                  <Box
+                    ref={answerEditorContainerRef}
+                    sx={{
+                      borderRadius: '6px',
+                      '& .tiptap:focus': { backgroundColor: 'transparent' },
+                      '& .tiptap': { height: 100 },
+                    }}
+                    tabIndex={-1}
+                  >
+                    <EditorWrap
+                      key={answerEditorKey}
+                      ref={answerEditorRef}
+                      value=''
+                      showActions={false}
+                      height={40}
+                      placeholder={isArticlePost ? '添加评论...' : '回答问题...'}
+                      onChange={handleAnswerEditorChange}
+                    />
+                  </Box>
+                  {hasAnswerContent && (
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                      {isArticlePost && (
+                        <Button
+                          disableRipple
+                          onClick={() => {
+                            setShowAnswerEditor(false)
+                            setAnswerEditorKey((prev) => prev + 1)
+                            setHasAnswerContent(false)
+                          }}
+                          sx={{
+                            textTransform: 'none',
+                            color: '#6b7280',
+                            fontWeight: 600,
+                            fontSize: '0.875rem',
+                            transition: 'all 0.15s ease-in-out',
+                            '&:hover': { bgcolor: '#f3f4f6', transform: 'scale(1.02)' },
+                            '&:active': { transform: 'scale(0.98)' },
+                          }}
+                        >
+                          取消
+                        </Button>
+                      )}
                       <Button
                         disableRipple
-                        onClick={() => {
-                          setShowAnswerEditor(false)
-                          setAnswerEditorKey((prev) => prev + 1)
-                          setHasAnswerContent(false)
-                        }}
+                        variant='contained'
+                        onClick={handleSubmitAnswer}
                         sx={{
                           textTransform: 'none',
-                          color: '#6b7280',
                           fontWeight: 600,
-                          fontSize: '0.875rem',
+                          borderRadius: '6px',
+                          fontSize: '0.9375rem',
                           transition: 'all 0.15s ease-in-out',
-                          '&:hover': { bgcolor: '#f3f4f6', transform: 'scale(1.02)' },
-                          '&:active': { transform: 'scale(0.98)' },
+                          '&:hover': {
+                            transform: 'translateY(-1px)',
+                          },
+                          '&:active': { transform: 'translateY(0) scale(0.98)' },
                         }}
                       >
-                        取消
+                        {isArticlePost ? '提交评论' : '提交回答'}
                       </Button>
-                    )}
-                    <Button
-                      disableRipple
-                      variant='contained'
-                      onClick={handleSubmitAnswer}
-                      sx={{
-                        textTransform: 'none',
-                        fontWeight: 600,
-                        borderRadius: '6px',
-                        fontSize: '0.9375rem',
-                        transition: 'all 0.15s ease-in-out',
-                        '&:hover': {
-                          transform: 'translateY(-1px)',
-                        },
-                        '&:active': { transform: 'translateY(0) scale(0.98)' },
-                      }}
-                    >
-                      {isArticlePost ? '提交评论' : '提交回答'}
-                    </Button>
-                  </Box>
-                )}
-              </>
-            )}
-          </Box>
-        </Paper>
-      )}
+                    </Box>
+                  )}
+                </>
+              )}
+            </Box>
+          </Paper>
+        )}
+      </Box>
     </>
   )
 }

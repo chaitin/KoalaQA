@@ -95,7 +95,7 @@ const InfoRelevance = (props: { data: ModelDiscussionDetail }) => {
       sx={{
         width: 280,
         position: 'sticky',
-        top: 80,
+        top: 20,
         display: { xs: 'none', sm: 'flex' },
         flexDirection: 'column',
         alignSelf: 'flex-start',

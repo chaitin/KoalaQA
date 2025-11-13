@@ -10,12 +10,12 @@
     "start:debugger": "NODE_OPTIONS=--inspect next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "prepare": "husky",
+    "prepare": "test -d .git && husky || true",
     "api": "NODE_TLS_REJECT_UNAUTHORIZED=0 cx-swagger-api",
     "icon": "node ./script/downLoadIcon.js"
   },
   "dependencies": {
-    "@ctzhian/tiptap": "^1.12.20",
+    "@ctzhian/tiptap": "^1.13.0",
     "@ctzhian/ui": "^7.0.5",
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",

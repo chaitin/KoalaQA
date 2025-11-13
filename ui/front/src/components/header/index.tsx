@@ -199,13 +199,12 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
 
   return (
     <AppBar
-      position='sticky'
+      position='relative'
       elevation={0}
       sx={{
         bgcolor: 'primary.main',
         color: 'common.white',
         backdropFilter: 'blur(12px)',
-        zIndex: 100,
       }}
     >
       <Toolbar sx={{ py: 0, display: { xs: 'none', sm: 'flex' }, color: 'common.white' }}>
@@ -258,10 +257,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
           ) : (
             <Box
               sx={{
-                width: 36,
-                height: 36,
                 borderRadius: 2,
-                bgcolor: '#3b82f6',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -272,7 +268,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
               }}
               onClick={handleLogoClick}
             >
-              <Image src='/logo-text.png' alt='Koala QA Logo' width={24} height={24} style={{ objectFit: 'contain' }} />
+              <Image src='/logo-text.png' alt='Koala QA Logo' width={100} height={24} style={{ objectFit: 'contain' }} />
             </Box>
           )}
           {/* Forum切换tab */}

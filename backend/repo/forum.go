@@ -82,6 +82,9 @@ func (f *Forum) UpdateWithGroup(ctx context.Context, forums []model.ForumInfo) e
 				if err := f.rag.DeleteDataset(ctx, forum.DatasetID); err != nil {
 					return err
 				}
+				if err := f.rag.DeleteDataset(ctx, forum.InsightDatasetID); err != nil {
+					return err
+				}
 				if err := tx.Model(&model.Org{}).Where("? =ANY(forum_ids)", delId).Updates(map[string]any{
 					"forum_ids":  gorm.Expr("ARRAY_REMOVE(forum_ids, ?)", delId),
 					"updated_at": time.Now(),
@@ -104,6 +107,14 @@ func (f *Forum) UpdateWithGroup(ctx context.Context, forums []model.ForumInfo) e
 				}
 				datasetID = id
 			}
+			insightDatasetID := existsMap[forum.ID].InsightDatasetID
+			if insightDatasetID == "" {
+				var err error
+				insightDatasetID, err = f.rag.CreateDataset(ctx)
+				if err != nil {
+					return err
+				}
+			}
 
 			if len(forum.BlogIDs) > 3 {
 				forum.BlogIDs = forum.BlogIDs[:3]
@@ -113,12 +124,13 @@ func (f *Forum) UpdateWithGroup(ctx context.Context, forums []model.ForumInfo) e
 				Base: model.Base{
 					ID: forum.ID,
 				},
-				Name:      forum.Name,
-				RouteName: forum.RouteName,
-				Index:     forum.Index,
-				Groups:    forum.Groups,
-				BlogIDs:   forum.BlogIDs,
-				DatasetID: datasetID,
+				Name:             forum.Name,
+				RouteName:        forum.RouteName,
+				Index:            forum.Index,
+				Groups:           forum.Groups,
+				BlogIDs:          forum.BlogIDs,
+				DatasetID:        datasetID,
+				InsightDatasetID: insightDatasetID,
 			})
 		}
 
