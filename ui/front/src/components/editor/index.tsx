@@ -263,6 +263,7 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
             sx={{
               flex: 1,
               mt: 1,
+              px: 1,
               transition: 'all 0.3s ease',
               position: 'relative',
               overflow: 'auto',
@@ -285,6 +286,9 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
                 right: 0,
                 height: 2,
                 transition: 'all 0.3s ease',
+              },
+              '& > div> div ': {
+                bgcolor: '#fff',
               },
             }}
             className='md-container'

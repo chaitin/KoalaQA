@@ -415,7 +415,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
         onSubmit()
       }}
       okText='发布'
-      width={900}
+      width={910}
       okButtonProps={{
         loading,
         id: 'submit-discussion-id',
@@ -423,21 +423,23 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
     >
       <Box
         sx={{
-          display: showSimilarContent ? 'flex' : 'block',
+          display: 'flex',
           gap: showSimilarContent ? 3 : 0,
-          alignItems: showSimilarContent ? 'stretch' : 'flex-start',
+          alignItems: 'stretch',
           position: 'relative',
-          minHeight: showSimilarContent ? '60vh' : 'auto',
+          minHeight: '60vh',
+          height: '60vh',
         }}
       >
         <Box
           sx={{
-            flex: showSimilarContent ? 3 : 'none',
+            flex: showSimilarContent ? 3 : 1,
             minWidth: 0,
             width: showSimilarContent ? 'auto' : '100%',
             display: 'flex',
             flexDirection: 'column',
-            minHeight: showSimilarContent ? '60vh' : 'auto',
+            minHeight: '60vh',
+          height: '60vh',
           }}
         >
           <Stack gap={3} sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -452,6 +454,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                   sx: { fontSize: '12px' },
                 },
               }}
+              sx={{'& input': {py: '6px',}}}
               error={Boolean(errors.title)}
               helperText={errors.title?.message as string}
               size='small'
@@ -529,7 +532,6 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                   display: 'flex',
                   flexDirection: 'column',
                   minHeight: 0,
-                  maxHeight: showSimilarContent ? 'calc(60vh - 200px)' : 'none',
                 }}
               >
                 <Box
@@ -538,7 +540,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                     borderRadius: '8px',
                     backgroundColor: '#fff',
                     overflow: 'hidden',
-                    height: showSimilarContent ? '100%' : 'auto',
+                    height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
                     '& > div': {
@@ -575,7 +577,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                       control={control}
                       render={({ field }) => (
                         <EditorWrap
-                          height={200}
+                          height={220}
                           ref={editorRef}
                           value={field.value || ''}
                           showActions={false}
