@@ -439,7 +439,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
             display: 'flex',
             flexDirection: 'column',
             minHeight: '60vh',
-          height: '60vh',
+            height: '60vh',
           }}
         >
           <Stack gap={3} sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -451,10 +451,10 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
               fullWidth
               slotProps={{
                 inputLabel: {
-                  sx: { fontSize: '12px' },
+                  sx: { fontSize: '14px' },
                 },
               }}
-              sx={{'& input': {py: '6px',}}}
+              sx={{ '& input': { py: '6px' } }}
               error={Boolean(errors.title)}
               helperText={errors.title?.message as string}
               size='small'
@@ -563,8 +563,8 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                       '& .md-container .MuiIconButton-root + *': {
                         display: 'none',
                       },
+                      '& .md-container ': { px: 1 },
                       '& .md-container > div': {
-                        // backgroundColor: 'transparent!important',
                         '& > div': {
                           border: 'none',
                         },

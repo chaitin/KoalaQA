@@ -140,22 +140,92 @@ export class HttpClient<SecurityDataType = unknown> {
           if (res.success) {
             return res.data;
           }
-          message.error(res.message || "网络异常");
+
+          // 检查是否是CSRF token mismatch错误（虽然状态码是200，但success为false）
+          const isCsrfError =
+            res.data === "csrf token mismatch" ||
+            res.err === "csrf token mismatch";
+
+          if (isCsrfError && response.config && !response.config.__isRetry) {
+            clearCsrfTokenCache();
+            response.config.__isRetry = true;
+            // 重新获取CSRF token并重试请求
+            return getCsrfToken()
+              .then((token) => {
+                if (response.config) {
+                  response.config.headers = response.config.headers || {};
+                  response.config.headers["X-CSRF-TOKEN"] = token;
+                }
+                return this.instance.request(response.config);
+              })
+              .catch((retryError) => {
+                return Promise.reject(retryError);
+              })
+              .finally(() => {
+                // 重试完成后清除重试标志（无论成功还是失败）
+                if (response.config) {
+                  delete response.config.__isRetry;
+                }
+              });
+          }
+
+          if (!isCsrfError) {
+            message.error(res.message || "网络异常");
+          }
           return Promise.reject(res);
         }
         message.error(response.statusText);
         return Promise.reject(response);
       },
       (error) => {
-        // 如果是CSRF token相关错误，清除缓存
-        if (error.response?.status === 403 || error.response?.status === 419) {
+        // 检查是否是CSRF token mismatch错误（后端返回400状态码）
+        const isCsrfError =
+          error.response?.status === 400 &&
+          (error.response?.data?.data === "csrf token mismatch" ||
+            error.response?.data?.err === "csrf token mismatch" ||
+            (typeof error.response?.data === "string" &&
+              error.response.data.includes("csrf token mismatch")));
+
+        // 如果是CSRF token相关错误，清除缓存并重试请求
+        if (
+          isCsrfError ||
+          error.response?.status === 403 ||
+          error.response?.status === 419
+        ) {
           clearCsrfTokenCache();
+
+          // 如果是CSRF token mismatch，自动重试一次请求
+          if (isCsrfError && error.config && !error.config.__isRetry) {
+            error.config.__isRetry = true;
+            // 重新获取CSRF token并重试请求
+            return getCsrfToken()
+              .then((token) => {
+                if (error.config) {
+                  error.config.headers = error.config.headers || {};
+                  error.config.headers["X-CSRF-TOKEN"] = token;
+                }
+                return this.instance.request(error.config);
+              })
+              .catch((retryError) => {
+                return Promise.reject(retryError);
+              })
+              .finally(() => {
+                // 重试完成后清除重试标志（无论成功还是失败）
+                if (error.config) {
+                  delete error.config.__isRetry;
+                }
+              });
+          }
         }
+
         if (error.response?.status === 401) {
           window.location.href = "/login";
         }
-        
-        message.error(translateErrorMessage(error));
+
+        // 如果是CSRF token错误且已经重试过，或者不是CSRF错误，才显示错误提示
+        if (!isCsrfError || error.config?.__isRetry) {
+          message.error(translateErrorMessage(error));
+        }
         return Promise.reject(error.response);
       },
     );
