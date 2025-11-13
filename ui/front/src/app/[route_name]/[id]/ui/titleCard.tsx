@@ -11,7 +11,7 @@ import { Card, QaUnresolvedChip, DiscussionTypeChip } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import { ReleaseModal, Tag } from '@/components/discussion'
 import { TimeDisplayWithTag } from '@/components/TimeDisplay'
-import EditorWrap, { EditorWrapRef } from '@/components/editor/edit/Wrap'
+import EditorWrap, { EditorWrapRef } from '@/components/editor'
 import EditorContent from '@/components/EditorContent'
 import Modal from '@/components/modal'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
@@ -128,7 +128,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   }
 
   const onCommentSubmit = async () => {
-    const content = editorRef.current?.getHTML() || ''
+    const content = editorRef.current?.getContent() || ''
     await postDiscussionDiscIdComment(
       { discId: id },
       {
@@ -257,7 +257,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                 color: 'RGBA(33, 34, 45, 1)',
                 lineHeight: 1.3,
                 flex: 1,
-                fontSize: '1.25rem',
+                fontSize: '12px',
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: 'vertical',
               }}
@@ -337,7 +337,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                   color: '#fff !important',
                   height: 22,
                   fontWeight: 600,
-                  fontSize: '0.7rem',
+                  fontSize: '12px',
                   border: `1px solid ${getStatusColor('answered')}30`,
                   fontFamily: 'Glibory, "PingFang SC", "Hiragino Sans GB", "STHeiti", "Microsoft YaHei", sans-serif',
                 }}
@@ -358,7 +358,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                     color: 'rgba(33, 34, 45, 1)',
                     height: 22,
                     fontWeight: 400,
-                    fontSize: '14px',
+                    fontSize: '12px',
                     borderRadius: '3px',
                     cursor: 'default',
                     pointerEvents: 'none',
@@ -377,7 +377,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                     bgcolor: 'rgba(233, 236, 239, 1)',
                     color: 'rgba(33, 34, 45, 1)',
                     height: 22,
-                    fontSize: '0.7rem',
+                    fontSize: '12px',
                     fontWeight: isCategory ? 600 : 500,
                     borderRadius: '3px',
                     cursor: 'default',
@@ -389,25 +389,46 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           </Box>
           {/* 右侧：作者信息和时间 */}
           <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, fontSize: '14px' }}>
-            {profileHref ? (
-              <Link href={profileHref} style={{ display: 'inline-flex', marginRight: '8px' }}>
+            <Box
+              tabIndex={0}
+              sx={{
+                outline: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                borderRadius: 1,
+                transition: 'box-shadow 0.2s, border-color 0.2s, background 0.2s',
+                color: 'text.primary',
+                '&:focus-within, &:hover ': {
+                  color: 'primary.main',
+                  '& a, & .MuiTypography-root': {
+                    textShadow: '0.3px 0 0 currentColor, -0.3px 0 0 currentColor',
+                  },
+                },
+                my: '-2px',
+                ml: '-4px',
+              }}
+            >
+              {profileHref ? (
+                <Link href={profileHref} style={{ display: 'inline-flex', marginRight: '8px' }} tabIndex={-1}>
+                  <CommonAvatar src={data.user_avatar} name={data.user_name} />
+                </Link>
+              ) : (
                 <CommonAvatar src={data.user_avatar} name={data.user_name} />
-              </Link>
-            ) : (
-              <CommonAvatar src={data.user_avatar} name={data.user_name} />
-            )}
-            {profileHref ? (
-              <Link
-                href={profileHref}
-                style={{ color: 'RGBA(33, 34, 45, 1)', fontWeight: 500, textDecoration: 'none' }}
-              >
-                {data.user_name || '未知用户'}
-              </Link>
-            ) : (
-              <Typography variant='body2' sx={{ color: 'RGBA(33, 34, 45, 1)', fontWeight: 500 }}>
-                {data.user_name || '未知用户'}
-              </Typography>
-            )}
+              )}
+              {profileHref ? (
+                <Link
+                  href={profileHref}
+                  style={{ color: 'inherit', fontWeight: 500, textDecoration: 'none' }}
+                  tabIndex={-1}
+                >
+                  {data.user_name || '未知用户'}
+                </Link>
+              ) : (
+                <Typography variant='body2' sx={{ color: 'inherit', fontWeight: 500 }}>
+                  {data.user_name || '未知用户'}
+                </Typography>
+              )}
+            </Box>
             <Typography variant='body2' sx={{ color: 'RGBA(33, 34, 45, 1)', px: 1 }}>
               ·
             </Typography>

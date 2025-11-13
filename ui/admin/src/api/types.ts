@@ -383,6 +383,11 @@ export interface ModelPublicAddress {
   address: string;
 }
 
+export interface ModelRankTimeGroup {
+  score_ids?: string[];
+  time?: number;
+}
+
 export interface ModelSystemBrand {
   logo?: string;
   text?: string;

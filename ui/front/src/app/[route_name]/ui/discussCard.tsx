@@ -124,33 +124,23 @@ const DiscussCard = ({
               alignItems: 'center',
               borderRadius: 1,
               transition: 'box-shadow 0.2s, border-color 0.2s, background 0.2s',
-              '&:focus-within, &:hover': {
-                borderColor: 'primary.main',
-                boxShadow: '0 0 0 2px rgba(32,108,255,0.16)',
-                background: 'rgba(32,108,255,0.06)',
+              color: 'text.primary',
+              '&:focus-within, &:hover ': {
+                color: 'primary.main',
+                '& a, & .MuiTypography-root': {
+                  textShadow: '0.3px 0 0 currentColor, -0.3px 0 0 currentColor',
+                },
               },
-              pr: 1,
               my: '-2px',
               ml: '-4px',
             }}
           >
-            {profileHref ? (
-              <Link
-                href={profileHref}
-                onClick={(event) => event.stopPropagation()}
-                style={{ display: 'inline-flex' }}
-                tabIndex={-1}
-              >
-                <CommonAvatar
-                  src={it.user_avatar}
-                  name={it.user_name}
-                  sx={{
-                    fontSize: '0.65rem',
-                    fontWeight: 600,
-                  }}
-                />
-              </Link>
-            ) : (
+            <Link
+              href={profileHref || '/'}
+              onClick={(event) => event.stopPropagation()}
+              style={{ display: 'inline-flex' }}
+              tabIndex={-1}
+            >
               <CommonAvatar
                 src={it.user_avatar}
                 name={it.user_name}
@@ -159,18 +149,18 @@ const DiscussCard = ({
                   fontWeight: 600,
                 }}
               />
-            )}
+            </Link>
+
             <Stack direction='row' spacing={0.5} alignItems='center' sx={{ ml: 0.5 }}>
               {profileHref ? (
                 <Link
                   href={profileHref}
                   onClick={(event) => event.stopPropagation()}
                   style={{
-                    color: '#111827',
-                    fontWeight: 500,
                     fontSize: '14px',
                     textDecoration: 'none',
                     outline: 'none',
+                    color: 'inherit',
                   }}
                   tabIndex={-1}
                 >
@@ -193,7 +183,7 @@ const DiscussCard = ({
             sx={{
               fontWeight: 700,
               color: '#111827',
-              fontSize: '20px',
+              fontSize: '12px',
               lineHeight: 1.4,
               letterSpacing: '-0.01em',
               '&:hover': { color: '#000000' },
@@ -248,7 +238,7 @@ const DiscussCard = ({
                   color: '#fff !important',
                   height: 22,
                   fontWeight: 600,
-                  fontSize: '0.7rem',
+                  fontSize: '12px',
                   // borderRadius: '3px',
                   border: `1px solid ${getStatusColor(postStatus)}30`,
                 }}
@@ -265,7 +255,7 @@ const DiscussCard = ({
                     bgcolor: 'rgba(233, 236, 239, 1)',
                     color: 'rgba(33, 34, 45, 1)',
                     height: 22,
-                    fontSize: '0.7rem',
+                    fontSize: '12px',
                     borderRadius: '3px',
                     cursor: 'default',
                     pointerEvents: 'none',

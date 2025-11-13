@@ -2,8 +2,10 @@ package svc
 
 import (
 	"context"
+	"time"
 
 	"github.com/chaitin/koalaqa/model"
+	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/repo"
 )
 
@@ -30,6 +32,13 @@ func (r *Rank) Contribute(ctx context.Context) (*model.ListRes[RankContributeIte
 
 func (r *Rank) UpdateContribute(ctx context.Context) error {
 	return r.repoRank.RefresContribute(ctx)
+}
+
+func (r *Rank) AIInsight(ctx context.Context) ([]model.RankTimeGroup, error) {
+	return r.repoRank.GroupByTime(ctx, 3,
+		repo.QueryWithEqual("type", model.RanTypeAIInsight),
+		repo.QueryWithEqual("created_at", util.WeekZero(time.Now().AddDate(0, 0, -14)), repo.EqualOPGT),
+	)
 }
 
 func newRank(r *repo.Rank) *Rank {

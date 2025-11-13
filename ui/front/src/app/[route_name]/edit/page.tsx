@@ -4,7 +4,7 @@ import { getDiscussionDiscId, ModelDiscussionType } from '@/api'
 import { ModelDiscussionDetail } from '@/api/types'
 import { Card } from '@/components'
 import { ReleaseModal } from '@/components/discussion'
-import EditorWrap, { EditorWrapRef } from '@/components/editor/edit/Wrap'
+import EditorWrap, { EditorWrapRef } from '@/components/editor'
 import Toc from '@/components/Toc'
 import { useForum } from '@/contexts/ForumContext'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
@@ -93,7 +93,7 @@ export default function EditPage() {
               variant={'contained'}
               color={'primary'}
               onClick={() => {
-                const content = editorRef.current?.getHTML() || ''
+                const content = editorRef.current?.getContent() || ''
                 setData({ ...data, content })
                 setReleaseOpen(true)
               }}
@@ -106,17 +106,15 @@ export default function EditPage() {
           <Box
             sx={{
               minHeight: '600px',
-              '& .tiptap': {
-                minHeight: '600px',
-              },
-              '& .tiptap:focus': {
-                background: '#fff!important',
+              '& .md-container .MuiIconButton-root': {
+                display: 'none',
               },
             }}
           >
             <EditorWrap
               ref={editorRef}
               aiWriting
+              height={400}
               value={data.content}
               onTocUpdate={setHeadings}
               showActions={false}

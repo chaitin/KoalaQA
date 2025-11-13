@@ -542,12 +542,17 @@ func (u *User) LoginThirdCallback(ctx context.Context, typ model.AuthType, req L
 		return "", err
 	}
 
+	auth, err := u.svcAuth.Get(ctx)
+	if err != nil {
+		return "", err
+	}
+
 	user, err := u.authMgmt.User(ctx, typ, req.Code)
 	if err != nil {
 		return "", err
 	}
 
-	dbUser, err := u.repoUser.CreateThird(ctx, org.ID, user)
+	dbUser, err := u.repoUser.CreateThird(ctx, org.ID, user, auth.EnableRegister)
 	if err != nil {
 		return "", err
 	}

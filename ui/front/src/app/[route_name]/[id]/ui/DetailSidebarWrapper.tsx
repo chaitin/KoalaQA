@@ -25,7 +25,7 @@ const DetailSidebarWrapper = ({ isArticle, discussion, discId }: DetailSidebarWr
         pb: 3,
         pr: 3,
         position: 'sticky',
-        top: 88,
+        top: 26,
         // maxHeight: 'calc(100vh - 100px)',
         // overflowY: 'auto',
       }}

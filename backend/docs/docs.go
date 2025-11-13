@@ -2649,6 +2649,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/rank/ai_insight": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rank"
+                ],
+                "summary": "ai insight rank",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.RankTimeGroup"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/admin/stat/discussion": {
             "get": {
                 "produces": [
@@ -5924,6 +5958,20 @@ const docTemplate = `{
             "properties": {
                 "address": {
                     "type": "string"
+                }
+            }
+        },
+        "model.RankTimeGroup": {
+            "type": "object",
+            "properties": {
+                "score_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "time": {
+                    "type": "integer"
                 }
             }
         },
