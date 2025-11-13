@@ -168,6 +168,10 @@ func (u *user) LoginWeComCallback(ctx *context.Context) {
 	u.loginThirdCallback(ctx, model.AuthTypeWeCom)
 }
 
+func (u *user) LoginWechatCallback(ctx *context.Context) {
+	u.loginThirdCallback(ctx, model.AuthTypeWechat)
+}
+
 func (u *user) Route(h server.Handler) {
 	g := h.Group("/api/user")
 	g.POST("/register", u.Register)
@@ -180,6 +184,7 @@ func (u *user) Route(h server.Handler) {
 			thirdCallbackG := thirdG.Group("/callback")
 			thirdCallbackG.GET("/oidc", u.LoginOIDCCallback)
 			thirdCallbackG.GET("/we_com", u.LoginWeComCallback)
+			thirdCallbackG.GET("/wechat", u.LoginWechatCallback)
 		}
 
 	}

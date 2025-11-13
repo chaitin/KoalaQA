@@ -46,6 +46,7 @@ const (
 	AuthTypePassword = iota + 1
 	AuthTypeOIDC
 	AuthTypeWeCom
+	AuthTypeWechat
 )
 
 type AuthInfo struct {
