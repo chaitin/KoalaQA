@@ -201,7 +201,7 @@ func (i *AIInsight) calcScore(ctx context.Context, data topic.MsgAIInsight) (flo
 	)
 	if err != nil {
 		logger.WithErr(err).Warn("count bot unknown faied")
-		return 0, nil
+		return 0, err
 	}
 
 	var dislikeBot int64
@@ -212,7 +212,7 @@ func (i *AIInsight) calcScore(ctx context.Context, data topic.MsgAIInsight) (flo
 	)
 	if err != nil {
 		logger.WithErr(err).Warn("count dislike bot disc failed")
-		return 0, nil
+		return 0, err
 	}
 
 	if dislikeBot == 0 && botUnknown == 0 {
