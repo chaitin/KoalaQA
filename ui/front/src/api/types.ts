@@ -162,7 +162,7 @@ export interface ModelAuthInfo {
   config?: ModelAuthConfig;
   /**
    * @min 1
-   * @max 3
+   * @max 4
    */
   type?: number;
 }
@@ -381,6 +381,11 @@ export interface ModelPlatformOpt {
 
 export interface ModelPublicAddress {
   address: string;
+}
+
+export interface ModelRankTimeGroup {
+  score_ids?: string[];
+  time?: number;
 }
 
 export interface ModelSystemBrand {
@@ -769,11 +774,15 @@ export interface SvcSitemapListReq {
   url: string;
 }
 
+export interface SvcStatDiscussionItem {
+  count?: number;
+  key?: ModelDiscussionType;
+}
+
 export interface SvcStatDiscussionRes {
   accept?: number;
   bot_accept?: number;
   bot_unknown?: number;
-  discussion?: number;
   human_resp_time?: number;
 }
 

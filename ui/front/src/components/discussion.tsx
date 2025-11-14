@@ -587,10 +587,8 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                               ? (content) => {
                                   // 更新编辑器内容状态，用于相似内容查询
                                   setEditorContent(content)
-                                  // 同时更新表单字段
-                                  field.onChange(content)
                                 }
-                              : field.onChange
+                              : () => {}
                           }
                         />
                       )}

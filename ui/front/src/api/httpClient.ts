@@ -363,11 +363,20 @@ export class HttpClient<SecurityDataType = unknown> {
         const requestUrl = error.config?.url || "";
         const shouldShowError = requestUrl !== "/user" && !isCsrfError;
         // 如果是CSRF token错误且已经重试过，或者不是CSRF错误，才显示错误提示
-        if (alert.error && shouldShowError && (!isCsrfError || error.config?.__isRetry)) {
-          const msg = error?.response?.data?.err ?? error?.response?.data?.data ?? error?.message;
+        if (
+          alert.error &&
+          shouldShowError &&
+          (!isCsrfError || error.config?.__isRetry)
+        ) {
+          const msg =
+            error?.response?.data?.err ??
+            error?.response?.data?.data ??
+            error?.message;
           alert.error(this.translateErrorMessage(msg));
         }
-        return Promise.reject(error.response?.data?.err ?? error.response?.data ?? error);
+        return Promise.reject(
+          error.response?.data?.err ?? error.response?.data ?? error,
+        );
       },
     );
   }

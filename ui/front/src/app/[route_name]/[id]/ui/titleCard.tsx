@@ -257,7 +257,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                 color: 'RGBA(33, 34, 45, 1)',
                 lineHeight: 1.3,
                 flex: 1,
-                fontSize: '12px',
+                fontSize: '1.25rem',
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: 'vertical',
               }}

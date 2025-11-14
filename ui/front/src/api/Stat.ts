@@ -13,6 +13,7 @@
 import request, { RequestParams } from "./httpClient";
 import {
   ContextResponse,
+  SvcStatDiscussionItem,
   SvcStatDiscussionRes,
   SvcStatVisitRes,
 } from "./types";
@@ -25,7 +26,10 @@ import {
  * @summary stat discussion
  * @request GET:/admin/stat/discussion
  * @response `200` `(ContextResponse & {
-    data?: SvcStatDiscussionRes,
+    data?: (SvcStatDiscussionRes & {
+    discussions?: (SvcStatDiscussionItem)[],
+
+}),
 
 })` OK
  */
@@ -33,7 +37,9 @@ import {
 export const getAdminStatDiscussion = (params: RequestParams = {}) =>
   request<
     ContextResponse & {
-      data?: SvcStatDiscussionRes;
+      data?: SvcStatDiscussionRes & {
+        discussions?: SvcStatDiscussionItem[];
+      };
     }
   >({
     path: `/admin/stat/discussion`,

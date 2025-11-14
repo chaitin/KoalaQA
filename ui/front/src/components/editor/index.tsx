@@ -205,57 +205,6 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
             flexDirection: 'column',
             borderRadius: 3,
             transition: 'all 0.3s ease',
-            '& .tiptap': {
-              outline: 'none',
-              border: 'none',
-              borderRadius: 2,
-              padding: 1,
-              minHeight: 200,
-              fontSize: '15px',
-              lineHeight: 1.7,
-              color: '#212529',
-              background: 'transparent',
-              transition: 'all 0.2s ease',
-              '&:focus': {
-                outline: 'none',
-                background: 'rgba(248, 249, 250, 0.5)',
-              },
-              '& p': {
-                margin: '0.5em 0',
-              },
-              '& h1, & h2, & h3': {
-                color: '#212529',
-                fontWeight: 600,
-                margin: '1em 0 0.5em 0',
-              },
-              '& ul, & ol': {
-                paddingLeft: '1.5em',
-                margin: '0.5em 0',
-              },
-              '& blockquote': {
-                borderLeft: '4px solid #6c757d',
-                paddingLeft: '1em',
-                margin: '1em 0',
-                fontStyle: 'italic',
-                background: 'rgba(108, 117, 125, 0.1)',
-                borderRadius: '0 8px 8px 0',
-              },
-              '& code': {
-                background: 'rgba(0,0,0,0.08)',
-                padding: '2px 6px',
-                borderRadius: 4,
-                fontSize: '0.9em',
-                fontFamily: 'Monaco, Consolas, monospace',
-              },
-              '& a': {
-                color: '#495057',
-                textDecoration: 'none',
-                fontWeight: 500,
-                '&:hover': {
-                  textDecoration: 'underline',
-                },
-              },
-            },
           }}
         >
           {/* 编辑器内容区域 */}
@@ -267,28 +216,9 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
               position: 'relative',
               overflow: 'auto',
               cursor: 'text',
-              '& .ace_active-line': {
-                background: 'transparent!important',
-              },
-              '& .ace_gutter': {
-                display: 'none!important',
-              },
-              '& .ace_scroller ': {
-                left: '0!important',
-                right: '0!important',
-              },
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 2,
-                transition: 'all 0.3s ease',
-              },
-              '& > div> div ': {
-                bgcolor: '#fff',
-              },
+              '& .ace_cursor':{
+                opacity: 0,
+              }
             }}
             className='md-container'
           >
@@ -298,19 +228,14 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
                 placeholder={placeholder}
                 onUpload={handleUpload}
                 splitMode={false}
+                highlightActiveLine={false}
                 defaultDisplayMode='edit'
                 height={height}
                 value={innerValue}
                 editor={editorRef.editor}
                 onAceChange={(value) => {
-                  // 防抖处理 onChange 回调
-                  if (debounceTimerRef.current) {
-                    clearTimeout(debounceTimerRef.current)
-                  }
-                  debounceTimerRef.current = setTimeout(() => {
-                    setInnerValue(value)
-                    onChange?.(value)
-                  }, 300)
+                  setInnerValue(value)
+                  onChange?.(value)
                 }}
               />
             )}

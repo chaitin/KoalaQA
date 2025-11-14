@@ -25,7 +25,6 @@ const SimilarContentItem = ({ data }: SimilarContentItemProps) => {
         <Ellipsis
           sx={{
             fontWeight: 600,
-            fontSize: 12,
             color: '#111827',
             mb: 1,
             lineHeight: 1.4,

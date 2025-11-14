@@ -78,11 +78,13 @@ const LoginType = () => {
   const hasPasswordLogin = authConfig?.auth_types?.some((auth) => auth.type === AuthType.PASSWORD) || false
   const hasOAuthLogin = authConfig?.auth_types?.some((auth) => auth.type === AuthType.OAUTH) || false
   const hasWeComLogin = authConfig?.auth_types?.some((auth) => auth.type === AuthType.WECOM) || false
-  const hasThirdPartyLogin = hasOAuthLogin || hasWeComLogin
+  const hasWechatLogin = authConfig?.auth_types?.some((auth) => auth.type === AuthType.WECHAT) || false
+  const hasThirdPartyLogin = hasOAuthLogin || hasWeComLogin || hasWechatLogin
 
   const passwordConfig = authConfig?.auth_types?.find((auth) => auth.type === AuthType.PASSWORD)
   const oauthConfig = authConfig?.auth_types?.find((auth) => auth.type === AuthType.OAUTH)
   const wecomConfig = authConfig?.auth_types?.find((auth) => auth.type === AuthType.WECOM)
+  const wechatConfig = authConfig?.auth_types?.find((auth) => auth.type === AuthType.WECHAT)
 
   if (loading) {
     return
@@ -156,6 +158,21 @@ const LoginType = () => {
                     onClick={() => handleOAuthLogin(wecomConfig.type!)}
                   >
                     {wecomConfig.button_desc || '企业微信登录'}
+                  </Button>
+                )}
+                {wechatConfig && (
+                  <Button
+                    variant='outlined'
+                    fullWidth
+                    sx={{
+                      height: 48,
+                      color: 'primary.main',
+                      backgroundColor: 'transparent',
+                      fontSize: '14px',
+                    }}
+                    onClick={() => handleOAuthLogin(wechatConfig.type!)}
+                  >
+                    {wechatConfig.button_desc || '微信登录'}
                   </Button>
                 )}
               </Stack>
@@ -276,6 +293,19 @@ const LoginType = () => {
                       onClick={() => handleOAuthLogin(wecomConfig.type!)}
                     >
                       {wecomConfig.button_desc || '企业微信登录'}
+                    </Button>
+                  )}
+                  {wechatConfig && (
+                    <Button
+                      variant='outlined'
+                      fullWidth
+                      sx={{
+                        backgroundColor: 'transparent',
+                        fontSize: '14px',
+                      }}
+                      onClick={() => handleOAuthLogin(wechatConfig.type!)}
+                    >
+                      {wechatConfig.button_desc || '微信登录'}
                     </Button>
                   )}
                 </Stack>
