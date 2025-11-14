@@ -5883,6 +5883,9 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "parent_comment": {
+                    "type": "string"
+                },
                 "read": {
                     "type": "boolean"
                 },

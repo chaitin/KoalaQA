@@ -26,8 +26,13 @@ func init() {
 	registerAutoMigrate(&MessageNotify{})
 }
 
+type CommentHeader struct {
+	ParentComment string `json:"parent_comment"`
+}
+
 type MessageNotifyCommon struct {
 	DiscussHeader
+	CommentHeader
 
 	Type     MsgNotifyType `gorm:"column:type" json:"type"`
 	FromID   uint          `gorm:"column:from_id" json:"from_id"`

@@ -9,6 +9,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/topic"
+	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/pkg/webhook/message"
 	"github.com/chaitin/koalaqa/repo"
 	"github.com/chaitin/koalaqa/svc"
@@ -21,6 +22,7 @@ type messageNotifyIn struct {
 	Bot     *svc.Bot
 	User    *repo.User
 	Mn      *repo.MessageNotify
+	Comment *repo.Comment
 	Pub     mq.Publisher `name:"memory_mq"`
 	NatsPub mq.Publisher
 }
@@ -28,6 +30,7 @@ type messageNotify struct {
 	logger  *glog.Logger
 	bot     *svc.Bot
 	user    *repo.User
+	comment *repo.Comment
 	mn      *repo.MessageNotify
 	pub     mq.Publisher
 	natsPub mq.Publisher
@@ -38,6 +41,7 @@ func newMessageNotify(in messageNotifyIn) *messageNotify {
 		logger:  glog.Module("sub", "message_notify"),
 		bot:     in.Bot,
 		user:    in.User,
+		comment: in.Comment,
 		mn:      in.Mn,
 		pub:     in.Pub,
 		natsPub: in.NatsPub,
@@ -97,6 +101,14 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 		dbMessageNotify []model.MessageNotify
 	)
 
+	var parentComment string
+	if data.ParentID != 0 {
+		err = mn.comment.GetByID(ctx, &parentComment, data.ParentID, repo.QueryWithSelectColumn("content"))
+		if err != nil {
+			logger.WithErr(err).Warn("get parent comment failed")
+		}
+	}
+
 	common := model.MessageNotifyCommon{
 		DiscussHeader: model.DiscussHeader{
 			DiscussID:      data.DiscussID,
@@ -104,6 +116,9 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 			DiscussTitle:   data.DiscussTitle,
 			DiscussionType: data.DiscussionType,
 			ForumID:        data.ForumID,
+		},
+		CommentHeader: model.CommentHeader{
+			ParentComment: util.TruncateString(parentComment, 50),
 		},
 		Type:     data.Type,
 		FromID:   data.FromID,
