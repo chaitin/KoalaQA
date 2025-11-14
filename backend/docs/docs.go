@@ -3280,6 +3280,113 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/user/review": {
+            "get": {
+                "description": "list user review",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user_review"
+                ],
+                "summary": "list user review",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "state",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/model.UserReviewWithUser"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/user/review/{review_id}": {
+            "put": {
+                "description": "update user review",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user_review"
+                ],
+                "summary": "update user review",
+                "parameters": [
+                    {
+                        "description": "request params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.UserReviewUpdateReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "review id",
+                        "name": "review_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/user/{user_id}": {
             "get": {
                 "produces": [
@@ -4967,6 +5074,39 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/review/guest": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user_review"
+                ],
+                "summary": "create guest review",
+                "parameters": [
+                    {
+                        "description": "request params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.UserReviewGuestCreateReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/user/trend": {
             "get": {
                 "produces": [
@@ -5139,10 +5279,14 @@ const docTemplate = `{
                 "enable_register": {
                     "type": "boolean"
                 },
+                "need_review": {
+                    "type": "boolean"
+                },
                 "public_access": {
                     "type": "boolean"
                 },
                 "public_forum_ids": {
+                    "description": "Deprecated: only use in migration",
                     "type": "array",
                     "items": {
                         "type": "integer"
@@ -5889,6 +6033,15 @@ const docTemplate = `{
                 "read": {
                     "type": "boolean"
                 },
+                "review_id": {
+                    "type": "integer"
+                },
+                "review_status": {
+                    "type": "integer"
+                },
+                "review_type": {
+                    "type": "integer"
+                },
                 "to_bot": {
                     "type": "boolean"
                 },
@@ -5920,7 +6073,8 @@ const docTemplate = `{
                 4,
                 5,
                 6,
-                7
+                7,
+                8
             ],
             "x-enum-varnames": [
                 "MsgNotifyTypeUnknown",
@@ -5930,7 +6084,8 @@ const docTemplate = `{
                 "MsgNotifyTypeLikeComment",
                 "MsgNotifyTypeDislikeComment",
                 "MsgNotifyTypeBotUnknown",
-                "MsgNotifyTypeLikeDiscussion"
+                "MsgNotifyTypeLikeDiscussion",
+                "MsgNotifyTypeReview"
             ]
         },
         "model.PlatformOpt": {
@@ -6078,6 +6233,9 @@ const docTemplate = `{
         "model.UserInfo": {
             "type": "object",
             "properties": {
+                "auth_type": {
+                    "type": "integer"
+                },
                 "avatar": {
                     "type": "string"
                 },
@@ -6113,6 +6271,44 @@ const docTemplate = `{
                 }
             }
         },
+        "model.UserReviewWithUser": {
+            "type": "object",
+            "properties": {
+                "auth_type": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "integer"
+                },
+                "user_avatar": {
+                    "type": "string"
+                },
+                "user_email": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "user_name": {
+                    "type": "string"
+                }
+            }
+        },
         "model.UserRole": {
             "type": "integer",
             "enum": [
@@ -6120,13 +6316,15 @@ const docTemplate = `{
                 1,
                 2,
                 3,
-                4
+                4,
+                5
             ],
             "x-enum-varnames": [
                 "UserRoleUnknown",
                 "UserRoleAdmin",
                 "UserRoleOperator",
                 "UserRoleUser",
+                "UserRoleGuest",
                 "UserRoleMax"
             ]
         },
@@ -7369,6 +7567,30 @@ const docTemplate = `{
                 },
                 "password": {
                     "type": "string"
+                }
+            }
+        },
+        "svc.UserReviewGuestCreateReq": {
+            "type": "object",
+            "required": [
+                "reason"
+            ],
+            "properties": {
+                "reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "svc.UserReviewUpdateReq": {
+            "type": "object",
+            "required": [
+                "state"
+            ],
+            "properties": {
+                "state": {
+                    "type": "integer",
+                    "maximum": 2,
+                    "minimum": 1
                 }
             }
         },

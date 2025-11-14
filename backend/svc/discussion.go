@@ -536,14 +536,10 @@ func (d *Discussion) LikeDiscussion(ctx context.Context, discUUID string, user m
 	}
 
 	notifyMsg := topic.MsgMessageNotify{
-		DiscussID:      disc.ID,
-		ForumID:        disc.ForumID,
-		DiscussionType: disc.Type,
-		DiscussUUID:    disc.UUID,
-		DiscussTitle:   disc.Title,
-		Type:           model.MsgNotifyTypeLikeDiscussion,
-		FromID:         user.UID,
-		ToID:           disc.UserID,
+		DiscussHeader: disc.Header(),
+		Type:          model.MsgNotifyTypeLikeDiscussion,
+		FromID:        user.UID,
+		ToID:          disc.UserID,
 	}
 	_ = d.in.Pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	go d.RecalculateHot(discUUID)
@@ -701,16 +697,12 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 		toID = parentComment.UserID
 	}
 	notifyMsg := topic.MsgMessageNotify{
-		DiscussID:      disc.ID,
-		ForumID:        disc.ForumID,
-		DiscussionType: disc.Type,
-		DiscussTitle:   disc.Title,
-		DiscussUUID:    disc.UUID,
-		CommentID:      comment.ID,
-		ParentID:       parentID,
-		Type:           typ,
-		FromID:         uid,
-		ToID:           toID,
+		DiscussHeader: disc.Header(),
+		CommentID:     comment.ID,
+		ParentID:      parentID,
+		Type:          typ,
+		FromID:        uid,
+		ToID:          toID,
 	}
 	d.in.Pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	return comment.ID, nil
@@ -925,15 +917,11 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 	}
 
 	notifyMsg := topic.MsgMessageNotify{
-		DiscussID:      disc.ID,
-		ForumID:        disc.ForumID,
-		DiscussionType: disc.Type,
-		DiscussTitle:   disc.Title,
-		DiscussUUID:    disc.UUID,
-		Type:           model.MsgNotifyTypeApplyComment,
-		CommentID:      commentID,
-		FromID:         user.UID,
-		ToID:           comment.UserID,
+		DiscussHeader: disc.Header(),
+		Type:          model.MsgNotifyTypeApplyComment,
+		CommentID:     commentID,
+		FromID:        user.UID,
+		ToID:          comment.UserID,
 	}
 	d.in.Pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 
@@ -976,14 +964,10 @@ func (d *Discussion) LikeComment(ctx context.Context, userInfo model.UserInfo, d
 	}
 
 	notifyMsg := topic.MsgMessageNotify{
-		DiscussID:      disc.ID,
-		ForumID:        disc.ForumID,
-		DiscussionType: disc.Type,
-		DiscussUUID:    disc.UUID,
-		DiscussTitle:   disc.Title,
-		Type:           model.MsgNotifyTypeLikeComment,
-		FromID:         userInfo.UID,
-		ToID:           comment.UserID,
+		DiscussHeader: disc.Header(),
+		Type:          model.MsgNotifyTypeLikeComment,
+		FromID:        userInfo.UID,
+		ToID:          comment.UserID,
 	}
 	err = d.in.Pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	if err != nil {
@@ -1027,14 +1011,10 @@ func (d *Discussion) DislikeComment(ctx context.Context, userInfo model.UserInfo
 	}
 
 	notifyMsg := topic.MsgMessageNotify{
-		DiscussID:      disc.ID,
-		ForumID:        disc.ForumID,
-		DiscussionType: disc.Type,
-		DiscussUUID:    disc.UUID,
-		DiscussTitle:   disc.Title,
-		Type:           model.MsgNotifyTypeDislikeComment,
-		FromID:         userInfo.UID,
-		ToID:           comment.UserID,
+		DiscussHeader: disc.Header(),
+		Type:          model.MsgNotifyTypeDislikeComment,
+		FromID:        userInfo.UID,
+		ToID:          comment.UserID,
 	}
 	err = d.in.Pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	if err != nil {

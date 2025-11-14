@@ -110,13 +110,8 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 	}
 
 	common := model.MessageNotifyCommon{
-		DiscussHeader: model.DiscussHeader{
-			DiscussID:      data.DiscussID,
-			DiscussUUID:    data.DiscussUUID,
-			DiscussTitle:   data.DiscussTitle,
-			DiscussionType: data.DiscussionType,
-			ForumID:        data.ForumID,
-		},
+		DiscussHeader:    data.DiscussHeader,
+		UserReviewHeader: data.UserReviewHeader,
 		CommentHeader: model.CommentHeader{
 			ParentComment: util.TruncateString(parentComment, 50),
 		},
