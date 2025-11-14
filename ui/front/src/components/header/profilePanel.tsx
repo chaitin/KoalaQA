@@ -15,7 +15,7 @@ export const OPT_LIST = [
   {
     name: '个人中心',
     icon: 'icon-iconfontgerenzhongxin',
-    link: '/profile',
+    link: '/profile?tab=1',
   },
 ]
 

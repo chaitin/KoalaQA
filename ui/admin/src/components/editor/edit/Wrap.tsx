@@ -38,7 +38,7 @@ const EditorWrap = ({
   const [isMounted, setIsMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [originalContent, setOriginalContent] = useState(detail?.content || '');
-  
+
   // 性能优化：缓存上次的内容和防抖定时器
   const lastContentRef = useRef<string>('');
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -169,7 +169,6 @@ const EditorWrap = ({
     setOriginalContent(newContent);
   }, [value, detail?.content]);
 
-
   // 在服务端渲染时返回漂亮的占位符
   if (!isMounted) {
     return null;
@@ -260,48 +259,26 @@ const EditorWrap = ({
             position: 'relative',
             overflow: 'auto',
             cursor: 'text',
-            '& .ace_active-line': {
-              background: 'transparent!important',
-            },
-            '& .ace_gutter': {
-              display: 'none!important',
-            },
-            '& .ace_scroller ': {
-              left: '0!important',
-              right: '0!important',
-            },
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              height: 2,
-              transition: 'all 0.3s ease',
+            '& .ace_cursor': {
+              opacity: 0,
             },
           }}
-          className='md-container'
+          className="md-container"
         >
           {editorRef.editor && (
             <EditorMarkdown
               showLineNumbers={false}
-              placeholder='请输入内容...'
+              placeholder="请输入内容..."
               onUpload={handleUpload}
               splitMode={false}
-              defaultDisplayMode='edit'
+              defaultDisplayMode="edit"
+              highlightActiveLine={false}
               height={height}
               value={innerValue}
               editor={editorRef.editor}
-              onAceChange={(value) => {
-                // 防抖处理 onChange 回调
-                if (debounceTimerRef.current) {
-                  clearTimeout(debounceTimerRef.current);
-                }
-                debounceTimerRef.current = setTimeout(() => {
-                  setInnerValue(value);
-                  onChange?.(value);
-                  onContentChange?.(value);
-                }, 300);
+              onAceChange={value => {
+                onChange?.(value);
+                onContentChange?.(value);
               }}
             />
           )}
@@ -320,7 +297,7 @@ const EditorWrap = ({
             }}
           >
             <Button
-              variant='outlined'
+              variant="outlined"
               onClick={handleCancelEdit}
               disabled={isSaving}
               sx={{
@@ -331,7 +308,7 @@ const EditorWrap = ({
               取消
             </Button>
             <Button
-              variant='contained'
+              variant="contained"
               startIcon={<SaveIcon />}
               onClick={handleSave}
               disabled={isSaving}

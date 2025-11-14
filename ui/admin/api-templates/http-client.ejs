@@ -39,7 +39,6 @@ export interface FullRequestParams
   /** request body */
   body?: unknown;
 }
-
 const translateErrorMessage = (error: any) => {
   switch (error.response?.data.err) {
     case 'email already used':
