@@ -30,6 +30,8 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
+import SendIcon from '@mui/icons-material/Send'
+import CancelIcon from '@mui/icons-material/Cancel'
 import {
   Box,
   Button,
@@ -415,15 +417,21 @@ const BaseDiscussCard = (props: {
               size='small'
               sx={{
                 ml: 1,
+                backgroundColor: 'transparent',
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 transform: 'scale(1)',
                 '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
                   transform: 'scale(1.1)',
                 },
                 '&:active': {
                   transform: 'scale(0.95)',
                   transition: 'transform 0.1s ease-out',
+                },
+                '&:focus': {
+                  backgroundColor: 'transparent',
+                },
+                '&.Mui-focusVisible': {
+                  backgroundColor: 'transparent',
                 },
               }}
               onClick={() => setRepliesCollapsed?.((prev: boolean) => !prev)}
@@ -951,26 +959,8 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                   </Box>
                 )}
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, gap: 1.5 }}>
-                  <Stack
-                    tabIndex={0}
-                    direction={'row'}
-                    spacing={1}
-                    sx={{
-                      outline: 'none',
-                      alignItems: 'center',
-                      borderRadius: 1,
-                      transition: 'box-shadow 0.2s, border-color 0.2s, background 0.2s',
-                      color: 'text.primary',
-                      '&:focus-within, &:hover ': {
-                        color: 'primary.main',
-                        '& a, & .MuiTypography-root': {
-                          textShadow: '0.3px 0 0 currentColor, -0.3px 0 0 currentColor',
-                        },
-                      },
-                      my: '-2px',
-                      ml: '-4px',
-                    }}
-                  >
+                  <Stack direction={'row'} spacing={1} alignItems='center'>
+                    {/* 用户名区域 */}
                     {answerProfileHref ? (
                       <Link href={answerProfileHref} style={{ display: 'inline-flex' }} tabIndex={-1}>
                         <CommonAvatar src={answer.user_avatar} name={answer.user_name} />
@@ -996,49 +986,45 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                         {answer.user_name || '未知用户'}
                       </Typography>
                     )}
-                  </Stack>
-                  {answer.bot && (
-                    <Chip
-                      label='AI'
-                      sx={{
-                        width: 28,
-                        height: 24,
-                        background: 'rgba(0,99,151,0.06)',
-                        color: 'primary.main',
-                        borderRadius: '4px',
-                        border: '1px solid rgba(0,99,151,0.1)',
-                        fontSize: '0.75rem',
-                        fontWeight: 'bold',
-                        fontFamily: 'PingFang SC',
-                        '& .MuiChip-label': {
-                          px: 0.5,
-                        },
-                      }}
-                    />
-                  )}
-                  <Stack direction='row' alignItems='center'>
-                    <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
-                      发布于{' '}
-                      <TimeDisplayWithTag
-                        timestamp={(answerCreatedAt || answer.updated_at)!}
-                        title={dayjs.unix((answerCreatedAt || answer.updated_at)!).format('YYYY-MM-DD HH:mm:ss')}
+                    
+                    {/* AI标签 - 已整合到用户名区域 */}
+                    {answer.bot && (
+                      <Chip 
+                        label='AI' 
+                        sx={{ 
+                          width: 28, 
+                          height: 24, 
+                          background: 'rgba(0,99,151,0.06)',
+                          color: 'primary.main',
+                          borderRadius: '4px',
+                          border: '1px solid rgba(0,99,151,0.1)',
+                          fontSize: '0.75rem',
+                          fontWeight: 500,
+                          '& .MuiChip-label': {
+                            px: 0.5,
+                          },
+                        }} 
                       />
+                    )}
+                  </Stack>
+                  
+                  {/* 时间显示 - 已整合到同一区域 */}
+                  <Stack direction='row' alignItems='center'>
+                    <Typography variant='body2' sx={{ color: '#9ca3af' }}>
+                      发布于 <TimeDisplayWithTag timestamp={(answerCreatedAt || answer.updated_at)!} />
                     </Typography>
                     {answer.updated_at && answerCreatedAt && answer.updated_at !== answerCreatedAt && (
                       <>
-                        <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem', pr: 0.5 }}>
+                        <Typography variant='body2' sx={{ color: '#9ca3af', ml: 0.5 }}>
                           ,
                         </Typography>
-                        <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
-                          更新于{' '}
-                          <TimeDisplayWithTag
-                            timestamp={answer.updated_at}
-                            title={dayjs.unix(answer.updated_at).format('YYYY-MM-DD HH:mm:ss')}
-                          />
+                        <Typography variant='body2' sx={{ color: '#9ca3af', ml: 0.5 }}>
+                          更新于 <TimeDisplayWithTag timestamp={answer.updated_at} />
                         </Typography>
                       </>
                     )}
                   </Stack>
+                  
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>
                     {/* 采纳按钮 - 只有问答类型且问题作者且问题未被采纳时才显示 */}
                     {!isArticlePost &&
@@ -1206,8 +1192,15 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                         sx={{
                           color: '#6b7280',
                           ml: 0.5,
+                          backgroundColor: 'transparent',
                           transition: 'all 0.15s ease-in-out',
                           '&:hover': { color: '#000000', bgcolor: '#f3f4f6' },
+                          '&:focus': {
+                            backgroundColor: 'transparent',
+                          },
+                          '&.Mui-focusVisible': {
+                            backgroundColor: 'transparent',
+                          },
                         }}
                       >
                         <MoreVertIcon sx={{ fontSize: 18 }} />
@@ -1236,8 +1229,15 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                       color: '#6b7280',
                       fontWeight: 600,
                       fontSize: '0.8125rem',
+                      backgroundColor: 'transparent',
                       transition: 'all 0.15s ease-in-out',
-                      '&:hover': { color: '#000000', bgcolor: '#f3f4f6' },
+                      '&:hover': { color: '#000000' },
+                      '&:focus': {
+                        backgroundColor: 'transparent',
+                      },
+                      '&.Mui-focusVisible': {
+                        backgroundColor: 'transparent',
+                      },
                     }}
                   >
                     {answer.replies?.length || 0} 条{isArticlePost ? '回复' : '评论'}
@@ -1264,29 +1264,9 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                               '&:last-child': { mb: 0, pb: 0 },
                             }}
                           >
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                              <Stack
-                                direction={'row'}
-                                spacing={1}
-                                alignItems='center'
-                                tabIndex={0}
-                                sx={{
-                                  outline: 'none',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  borderRadius: 1,
-                                  transition: 'box-shadow 0.2s, border-color 0.2s, background 0.2s',
-                                  color: 'text.primary',
-                                  '&:focus-within, &:hover ': {
-                                    color: 'primary.main',
-                                    '& a, & .MuiTypography-root': {
-                                      textShadow: '0.3px 0 0 currentColor, -0.3px 0 0 currentColor',
-                                    },
-                                  },
-                                  my: '-2px',
-                                  ml: '-4px',
-                                }}
-                              >
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, gap: 1.5 }}>
+                              <Stack direction={'row'} spacing={1} alignItems='center'>
+                                {/* 用户名区域 */}
                                 {replyProfileHref ? (
                                   <Link href={replyProfileHref} style={{ display: 'inline-flex' }} tabIndex={-1}>
                                     <CommonAvatar src={reply.user_avatar} name={reply.user_name} />
@@ -1294,7 +1274,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                 ) : (
                                   <CommonAvatar src={reply.user_avatar} name={reply.user_name} />
                                 )}
-
                                 {replyProfileHref ? (
                                   <Link
                                     href={replyProfileHref}
@@ -1316,50 +1295,46 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                     {reply.user_name || '未知用户'}
                                   </Typography>
                                 )}
+                                
+                                {/* AI标签 - 已整合到用户名区域 */}
+                                {reply.bot && (
+                                  <Chip 
+                                    label='AI' 
+                                    sx={{ 
+                                      width: 28, 
+                                      height: 24, 
+                                      background: 'rgba(0,99,151,0.06)',
+                                      color: 'primary.main',
+                                      borderRadius: '4px',
+                                      border: '1px solid rgba(0,99,151,0.1)',
+                                      fontSize: '0.75rem',
+                                      fontWeight: 500,
+                                      '& .MuiChip-label': {
+                                        px: 0.5,
+                                      },
+                                    }} 
+                                  />
+                                )}
                               </Stack>
-                              {reply.bot && (
-                                <Chip
-                                  label='AI'
-                                  sx={{
-                                    width: 28,
-                                    height: 24,
-                                    color: 'primary.main',
-                                    background: 'rgba(0,99,151,0.06)',
-                                    borderRadius: '4px',
-                                    border: '1px solid rgba(0,99,151,0.1)',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 500,
-                                    '& .MuiChip-label': {
-                                      px: 0.5,
-                                    },
-                                  }}
-                                />
-                              )}
-                              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5, mt: 0.5 }}>
-                                {displayReplyCreatedAt && (
-                                  <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
-                                    发布于{' '}
-                                    <TimeDisplayWithTag
-                                      timestamp={displayReplyCreatedAt}
-                                      title={dayjs.unix(displayReplyCreatedAt).format('YYYY-MM-DD HH:mm:ss')}
-                                    />
+                              
+                              {/* 时间显示 - 已整合到同一区域 */}
+                              {displayReplyCreatedAt && (
+                                <Stack direction='row' alignItems='center'>
+                                  <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.8125rem' }}>
+                                    发布于 <TimeDisplayWithTag timestamp={displayReplyCreatedAt} />
                                   </Typography>
-                                )}
-                                {reply.updated_at && replyCreatedAt && reply.updated_at !== replyCreatedAt && (
-                                  <>
-                                    <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
-                                      ,
-                                    </Typography>
-                                    <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.75rem' }}>
-                                      更新于{' '}
-                                      <TimeDisplayWithTag
-                                        timestamp={reply.updated_at}
-                                        title={dayjs.unix(reply.updated_at).format('YYYY-MM-DD HH:mm:ss')}
-                                      />
-                                    </Typography>
-                                  </>
-                                )}
-                              </Box>
+                                  {reply.updated_at && replyCreatedAt && reply.updated_at !== replyCreatedAt && (
+                                    <>
+                                      <Typography variant='body2' sx={{ color: '#9ca3af', ml: 0.5, fontSize: '0.8125rem' }}>
+                                        ,
+                                      </Typography>
+                                      <Typography variant='body2' sx={{ color: '#9ca3af', ml: 0.5, fontSize: '0.8125rem' }}>
+                                        更新于 <TimeDisplayWithTag timestamp={reply.updated_at} />
+                                      </Typography>
+                                    </>
+                                  )}
+                                </Stack>
+                              )}
                             </Box>
                             <EditorContent
                               content={reply.content}
@@ -1399,9 +1374,10 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                           <>
                             <Box
                               sx={{
-                                mb: 1,
+                                mb: 3,
                                 borderRadius: '6px',
                                 overflow: 'hidden',
+                                border: '1px solid #000000',
                               }}
                             >
                               <EditorWrap
@@ -1543,36 +1519,49 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                   </Box>
                   {hasAnswerContent && (
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                      {isArticlePost && (
-                        <Button
-                          disableRipple
-                          onClick={() => {
-                            setShowAnswerEditor(false)
-                            setAnswerEditorKey((prev) => prev + 1)
-                            setHasAnswerContent(false)
-                          }}
-                          sx={{
-                            textTransform: 'none',
-                            color: '#6b7280',
-                            fontWeight: 600,
-                            fontSize: '0.875rem',
-                            transition: 'all 0.15s ease-in-out',
-                            '&:hover': { bgcolor: '#f3f4f6', transform: 'scale(1.02)' },
-                            '&:active': { transform: 'scale(0.98)' },
-                          }}
-                        >
-                          取消
-                        </Button>
-                      )}
+                      <Button
+                        disableRipple
+                        onClick={() => {
+                          setShowAnswerEditor(false)
+                          setAnswerEditorKey((prev) => prev + 1)
+                          setHasAnswerContent(false)
+                          // 清除编辑器内容
+                          if (answerEditorRef.current) {
+                            answerEditorRef.current.setContent('')
+                          }
+                        }}
+                        sx={{
+                          textTransform: 'none',
+                          color: '#6b7280',
+                          fontWeight: 600,
+                          fontSize: '0.875rem',
+                          backgroundColor: 'transparent',
+                          transition: 'all 0.15s ease-in-out',
+                          '&:hover': { bgcolor: '#f3f4f6', transform: 'scale(1.02)' },
+                          '&:active': { transform: 'scale(0.98)' },
+                          '&:focus': {
+                            backgroundColor: 'transparent',
+                          },
+                          '&.Mui-focusVisible': {
+                            backgroundColor: 'transparent',
+                          },
+                        }}
+                      >
+                        取消
+                      </Button>
                       <Button
                         disableRipple
                         variant='contained'
+                        endIcon={<ArrowForwardIcon />}
                         onClick={handleSubmitAnswer}
                         sx={{
+                          color: '#ffffff',
                           textTransform: 'none',
                           fontWeight: 600,
+                          px: 2,
+                          py: 0.5,
                           borderRadius: '6px',
-                          fontSize: '0.9375rem',
+                          fontSize: '0.875rem',
                           transition: 'all 0.15s ease-in-out',
                           '&:hover': {
                             transform: 'translateY(-1px)',
