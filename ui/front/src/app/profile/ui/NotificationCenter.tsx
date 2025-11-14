@@ -365,7 +365,6 @@ export default function NotificationCenter() {
                       ) : (
                         <Ellipsis
                           sx={{
-                            fontWeight: 500,
                             color: 'rgba(33, 34, 45, 0.70)',
                             fontSize: '14px',
                             fontWeight: 400

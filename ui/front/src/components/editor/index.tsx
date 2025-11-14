@@ -21,6 +21,7 @@ interface WrapProps {
 
 export interface EditorWrapRef {
   getContent: () => string
+  resetContent: () => void
 }
 
 const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
@@ -130,7 +131,7 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
       },
     })
 
-    // 暴露命令式 API：getContent / getHTML / getText
+    // 暴露命令式 API：getContent / getHTML / getText / resetContent
     useImperativeHandle(
       ref,
       () => ({
@@ -157,8 +158,19 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
             return ''
           }
         },
+        resetContent: () => {
+          try {
+            if (editorRef.editor) {
+              editorRef.editor.commands.setContent('')
+              setInnerValue('')
+              onChange?.('')
+            }
+          } catch (e) {
+            console.error('重置编辑器内容失败:', e)
+          }
+        },
       }),
-      [editorRef],
+      [editorRef, onChange],
     )
     // 这些函数需要在editorRef初始化后定义
     const handleCancelEdit = () => {
