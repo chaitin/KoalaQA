@@ -127,9 +127,6 @@ const DiscussCard = ({
               color: 'text.primary',
               '&:focus-within, &:hover ': {
                 color: 'primary.main',
-                '& a, & .MuiTypography-root': {
-                  textShadow: '0.3px 0 0 currentColor, -0.3px 0 0 currentColor',
-                },
               },
               my: '-2px',
               ml: '-4px',
@@ -161,13 +158,14 @@ const DiscussCard = ({
                     textDecoration: 'none',
                     outline: 'none',
                     color: 'inherit',
+                    fontWeight: 600,
                   }}
                   tabIndex={-1}
                 >
                   {it.user_name || ''}
                 </Link>
               ) : (
-                <Typography variant='caption' sx={{ fontWeight: 500, fontSize: '14px', whiteSpace: 'nowrap' }}>
+                <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '14px', whiteSpace: 'nowrap', color: 'inherit' }}>
                   {it.user_name || ''}
                 </Typography>
               )}
@@ -185,6 +183,7 @@ const DiscussCard = ({
               color: '#111827',
               lineHeight: 1.4,
               letterSpacing: '-0.01em',
+              fontSize: '18px',
               '&:hover': { color: '#000000' },
               flex: 1,
             }}
@@ -200,9 +199,11 @@ const DiscussCard = ({
             mb: 2,
             lineHeight: 1.5,
             fontSize: '0.8125rem',
+            color: 'rgba(33, 34, 45, 0.50) !important',
             bgcolor: 'transparent !important',
             '&.markdown-body': {
               backgroundColor: 'transparent !important',
+              color: 'rgba(33, 34, 45, 0.50) !important',
             },
             '& *': {
               fontSize: '0.8125rem !important',
