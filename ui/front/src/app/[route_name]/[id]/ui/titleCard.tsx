@@ -400,9 +400,6 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                 color: 'text.primary',
                 '&:focus-within, &:hover ': {
                   color: 'primary.main',
-                  '& a, & .MuiTypography-root': {
-                    textShadow: '0.3px 0 0 currentColor, -0.3px 0 0 currentColor',
-                  },
                 },
                 my: '-2px',
                 ml: '-4px',

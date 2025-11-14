@@ -810,11 +810,11 @@ const Article = ({
                 sx={{
                   bgcolor: 'rgba(0,99,151,0.03)',
                   borderRadius: '6px',
-                  // border: '1px solid #D9DEE2',
+                  border: '1px solid #D9DEE2',
                   p: 2,
                   mb: 2,
                   // 为公告 Paper 增加焦点识别样式
-                  transition: 'box-shadow 0.2s, border-color 0.2s',
+                  transition: 'box-shadow 0.2s, border-color 0.2s, background-color 0.2s',
                   outline: 'none',
                   '&:focus-within, &:hover': {
                     boxShadow: 'inset 0 0 3px 1px rgba(32,108,255,0.1)',
@@ -981,9 +981,6 @@ const Article = ({
                           color: 'text.primary',
                           '&:focus-within, &:hover ': {
                             color: 'primary.main',
-                            '& a, & .MuiTypography-root': {
-                              textShadow: '0.3px 0 0 currentColor, -0.3px 0 0 currentColor',
-                            },
                           },
                           my: '-2px',
                           ml: '-4px',
