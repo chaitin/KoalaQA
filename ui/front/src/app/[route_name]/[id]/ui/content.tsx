@@ -1525,10 +1525,8 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                           setShowAnswerEditor(false)
                           setAnswerEditorKey((prev) => prev + 1)
                           setHasAnswerContent(false)
-                          // 清除编辑器内容
-                          if (answerEditorRef.current) {
-                            answerEditorRef.current.setContent('')
-                          }
+                          // 重置编辑器内容
+                          answerEditorRef.current?.resetContent()
                         }}
                         sx={{
                           textTransform: 'none',
