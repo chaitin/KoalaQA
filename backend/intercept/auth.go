@@ -56,7 +56,10 @@ func authUser(ctx *context.Context, freeAuth bool, j *jwt.Generator, user *svc.U
 		token = authToken
 	}
 
-	var item *model.User
+	var (
+		item *model.User
+		core model.UserCore
+	)
 	if token == "" {
 		if freeAuth {
 			var err error
@@ -66,6 +69,12 @@ func authUser(ctx *context.Context, freeAuth bool, j *jwt.Generator, user *svc.U
 			}
 		} else {
 			return nil, errors.New("auth token is empty")
+		}
+
+		core = model.UserCore{
+			UID:      item.ID,
+			AuthType: model.AuthTypeFree,
+			Key:      item.Key,
 		}
 	} else {
 		userCore, err := j.Verify(token)
@@ -81,13 +90,11 @@ func authUser(ctx *context.Context, freeAuth bool, j *jwt.Generator, user *svc.U
 		if item.Key != userCore.Key {
 			return nil, errors.New("invalid key")
 		}
+		core = *userCore
 	}
 
 	return &model.UserInfo{
-		UserCore: model.UserCore{
-			UID: item.ID,
-			Key: item.Key,
-		},
+		UserCore:   core,
 		OrgIDs:     item.OrgIDs,
 		Role:       item.Role,
 		Email:      item.Email,

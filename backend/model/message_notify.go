@@ -11,6 +11,7 @@ const (
 	MsgNotifyTypeDislikeComment
 	MsgNotifyTypeBotUnknown
 	MsgNotifyTypeLikeDiscussion
+	MsgNotifyTypeReview
 )
 
 type MessageNotify struct {
@@ -28,6 +29,7 @@ func init() {
 
 type MessageNotifyCommon struct {
 	DiscussHeader
+	UserReviewHeader
 
 	Type     MsgNotifyType `gorm:"column:type" json:"type"`
 	FromID   uint          `gorm:"column:from_id" json:"from_id"`

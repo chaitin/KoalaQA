@@ -160,14 +160,10 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 	if !answered {
 		logger.Info("ai not know the answer, notify admin")
 		notifyMsg := topic.MsgMessageNotify{
-			DiscussID:      disc.ID,
-			ForumID:        forum.ID,
-			DiscussionType: disc.Type,
-			DiscussTitle:   disc.Title,
-			DiscussUUID:    disc.UUID,
-			Type:           model.MsgNotifyTypeBotUnknown,
-			FromID:         comment.UserID,
-			ToID:           bot.UserID,
+			DiscussHeader: disc.Header(),
+			Type:          model.MsgNotifyTypeBotUnknown,
+			FromID:        comment.UserID,
+			ToID:          bot.UserID,
 		}
 		d.pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	}

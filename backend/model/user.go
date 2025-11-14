@@ -7,6 +7,7 @@ const (
 	UserRoleAdmin
 	UserRoleOperator
 	UserRoleUser
+	UserRoleGuest
 	UserRoleMax
 )
 
@@ -27,8 +28,9 @@ type User struct {
 }
 
 type UserCore struct {
-	UID uint   `json:"uid"`
-	Key string `json:"key"`
+	UID      uint     `json:"uid"`
+	AuthType AuthType `json:"auth_type"`
+	Key      string   `json:"key"`
 }
 
 type UserInfo struct {

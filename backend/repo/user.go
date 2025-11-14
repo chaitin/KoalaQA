@@ -21,8 +21,8 @@ import (
 type User struct {
 	base[*model.User]
 
-	system *System
 	oc     oss.Client
+	org    *Org
 	logger *glog.Logger
 }
 
@@ -34,13 +34,12 @@ func (u *User) ListWithOrg(ctx context.Context, res any, queryFuncs ...QueryOptF
 
 func (u *User) HasForumPermission(ctx context.Context, userID, forumID uint) (bool, error) {
 	if userID == 0 {
-		var auth model.Auth
-		err := u.system.GetValueByKey(ctx, &auth, model.SystemKeyAuth)
+		org, err := u.org.GetBuiltin(ctx)
 		if err != nil {
 			return false, err
 		}
 
-		return slices.Contains(auth.PublicForumIDs, forumID), nil
+		return slices.Contains(org.ForumIDs, int64(forumID)), nil
 	}
 	var exist bool
 	err := u.model(ctx).Raw("SELECT EXISTS (?)", u.model(ctx).Where("id = ?", userID).
@@ -213,12 +212,12 @@ func (u *User) CreateThird(ctx context.Context, orgID uint, user *third_auth.Use
 	return &dbUser, nil
 }
 
-func newUser(db *database.DB, system *System, oc oss.Client) *User {
+func newUser(db *database.DB, org *Org, oc oss.Client) *User {
 	return &User{
 		base: base[*model.User]{
 			db: db, m: &model.User{},
 		},
-		system: system,
+		org:    org,
 		oc:     oc,
 		logger: glog.Module("repo", "user"),
 	}

@@ -21,15 +21,16 @@ import (
 )
 
 type User struct {
-	jwt         *jwt.Generator
-	repoUser    *repo.User
-	repoDisc    *repo.Discussion
-	repoComment *repo.Comment
-	authMgmt    *third_auth.Manager
-	svcAuth     *Auth
-	oc          oss.Client
-	repoOrg     *repo.Org
-	logger      *glog.Logger
+	jwt            *jwt.Generator
+	repoUser       *repo.User
+	repoDisc       *repo.Discussion
+	repoComment    *repo.Comment
+	authMgmt       *third_auth.Manager
+	svcAuth        *Auth
+	oc             oss.Client
+	repoOrg        *repo.Org
+	repoUserReview *repo.UserReview
+	logger         *glog.Logger
 }
 
 type UserListReq struct {
@@ -97,18 +98,12 @@ func (u *User) Detail(ctx context.Context, id uint) (*model.User, error) {
 
 func (u *User) ForumIDs(ctx context.Context, id uint) (model.Int64Array, error) {
 	if id == 0 {
-		auth, err := u.svcAuth.Get(ctx)
+		org, err := u.repoOrg.GetBuiltin(ctx)
 		if err != nil {
 			return nil, err
 		}
 
-		res := make(model.Int64Array, len(auth.PublicForumIDs))
-
-		for i, v := range auth.PublicForumIDs {
-			res[i] = int64(v)
-		}
-
-		return res, nil
+		return org.ForumIDs, nil
 	}
 
 	user, err := u.Detail(ctx, id)
@@ -175,9 +170,23 @@ func (u *User) Update(ctx context.Context, id uint, req UserUpdateReq) error {
 
 	if !user.Builtin {
 		updateM["role"] = req.Role
+
+		if user.Role == model.UserRoleGuest {
+			err = u.repoUserReview.Update(ctx, map[string]any{
+				"state":      model.UserReviewStatePass,
+				"updated_at": time.Now(),
+			}, repo.QueryWithEqual("user_id", user.ID),
+				repo.QueryWithEqual("type", model.UserReviewTypeGuest),
+				repo.QueryWithEqual("state", model.UserReviewStateReview))
+			if err != nil {
+				return err
+			}
+		}
+		// 更新用户角色，用于后续判断
+		user.Role = req.Role
 	}
 
-	if len(req.OrgIDs) > 0 {
+	if user.Role != model.UserRoleGuest && len(req.OrgIDs) > 0 {
 		err = u.repoOrg.FilterIDs(ctx, &req.OrgIDs)
 		if err != nil {
 			return err
@@ -430,6 +439,11 @@ func (u *User) Register(ctx context.Context, req UserRegisterReq) error {
 		Key:      uuid.NewString(),
 		OrgIDs:   model.Int64Array{int64(org.ID)},
 	}
+
+	if auth.NeedReview {
+		user.Role = model.UserRoleGuest
+	}
+
 	err = u.repoUser.Create(ctx, &user)
 	if err != nil {
 		return err
@@ -478,8 +492,9 @@ func (u *User) Login(ctx context.Context, req UserLoginReq) (string, error) {
 	}
 
 	token, err := u.jwt.Gen(ctx, model.UserCore{
-		UID: user.ID,
-		Key: user.Key,
+		UID:      user.ID,
+		AuthType: model.AuthTypePassword,
+		Key:      user.Key,
 	})
 	if err != nil {
 		return "", err
@@ -537,6 +552,11 @@ func (u *User) LoginThirdCallback(ctx context.Context, typ model.AuthType, req L
 		return "", errors.New("third login disabled")
 	}
 
+	auth, err := u.svcAuth.Get(ctx)
+	if err != nil {
+		return "", err
+	}
+
 	org, err := u.repoOrg.GetBuiltin(ctx)
 	if err != nil {
 		return "", err
@@ -547,14 +567,19 @@ func (u *User) LoginThirdCallback(ctx context.Context, typ model.AuthType, req L
 		return "", err
 	}
 
+	if auth.NeedReview {
+		user.Role = model.UserRoleGuest
+	}
+
 	dbUser, err := u.repoUser.CreateThird(ctx, org.ID, user)
 	if err != nil {
 		return "", err
 	}
 
 	return u.jwt.Gen(ctx, model.UserCore{
-		UID: dbUser.ID,
-		Key: dbUser.Key,
+		UID:      dbUser.ID,
+		AuthType: typ,
+		Key:      dbUser.Key,
 	})
 }
 
@@ -616,17 +641,20 @@ func (u *User) Statistics(ctx context.Context, curUserID uint, userID uint) (*Us
 	return res, nil
 }
 
-func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth, authMgmt *third_auth.Manager, oc oss.Client, org *repo.Org, disc *repo.Discussion, comm *repo.Comment) *User {
+func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth,
+	authMgmt *third_auth.Manager, oc oss.Client, org *repo.Org,
+	disc *repo.Discussion, comm *repo.Comment, review *repo.UserReview) *User {
 	return &User{
-		jwt:         genrator,
-		repoUser:    repoUser,
-		svcAuth:     auth,
-		authMgmt:    authMgmt,
-		oc:          oc,
-		repoOrg:     org,
-		repoDisc:    disc,
-		repoComment: comm,
-		logger:      glog.Module("svc", "user"),
+		jwt:            genrator,
+		repoUser:       repoUser,
+		svcAuth:        auth,
+		authMgmt:       authMgmt,
+		oc:             oc,
+		repoOrg:        org,
+		repoDisc:       disc,
+		repoComment:    comm,
+		repoUserReview: review,
+		logger:         glog.Module("svc", "user"),
 	}
 }
 
