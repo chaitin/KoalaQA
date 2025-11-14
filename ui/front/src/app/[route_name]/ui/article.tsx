@@ -294,7 +294,7 @@ const Article = ({
   }, [search, openSearchModal])
 
   const onInputSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !(e.nativeEvent as KeyboardEvent).isComposing) {
       handleSearch()
     }
   }

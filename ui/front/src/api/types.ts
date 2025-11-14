@@ -361,6 +361,7 @@ export interface ModelMessageNotify {
   from_id?: number;
   from_name?: string;
   id?: number;
+  parent_comment?: string;
   read?: boolean;
   to_bot?: boolean;
   to_id?: number;

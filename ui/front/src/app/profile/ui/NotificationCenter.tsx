@@ -6,35 +6,54 @@ import {
   getUserNotifyUnread,
   postUserNotifyWeb,
   ModelMessageNotify,
+  ModelMsgNotifyType,
 } from '@/api'
-import { Box, Button, Stack, Typography, Chip, Checkbox, FormControlLabel, Tooltip, IconButton } from '@mui/material'
+import {
+  Box,
+  Stack,
+  Typography,
+  Checkbox,
+  FormControlLabel,
+  Tooltip,
+  IconButton,
+  Button,
+  Card,
+  SelectChangeEvent,
+} from '@mui/material'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
-import { Table } from '@ctzhian/ui'
 import { useEffect, useState, useCallback, useContext } from 'react'
 import { useRequest } from 'ahooks'
 import dayjs from '@/lib/dayjs'
-import { Message } from '@/components'
+import { MarkDown, Message } from '@/components'
 import Modal from '@/components/modal'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import { useForum } from '@/contexts/ForumContext'
 import { getNotificationTextForExport, splitNotificationText } from '@/components/header/loggedInView'
 import { AuthContext } from '@/components/authProvider'
+import { Ellipsis } from '@ctzhian/ui'
+import Pagination from '@/components/pagination'
+import Image from 'next/image'
 
 export default function NotificationCenter() {
-  const { forums } = useForum()
   const routerWithRouteName = useRouterWithRouteName()
+  const { forums } = useForum()
   const [notifyPage, setNotifyPage] = useState(1)
   const [notifyPageSize, setNotifyPageSize] = useState(10)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [isNotificationSupported, setIsNotificationSupported] = useState(false)
   const { user, fetchUser } = useContext(AuthContext)
 
   // 检查是否支持浏览器通知（需要 HTTPS 或 localhost）
-  const isNotificationSupported =
-    typeof window !== 'undefined' &&
-    'Notification' in window &&
-    (window.location.protocol === 'https:' ||
-      window.location.hostname === 'localhost' ||
-      window.location.hostname === '127.0.0.1')
+  // 使用 useEffect 确保只在客户端执行，避免 hydration 不匹配
+  useEffect(() => {
+    setIsNotificationSupported(
+      typeof window !== 'undefined' &&
+        'Notification' in window &&
+        (window.location.protocol === 'https:' ||
+          window.location.hostname === 'localhost' ||
+          window.location.hostname === '127.0.0.1'),
+    )
+  }, [])
   // 使用 useRequest 加载通知列表
   const {
     data: notifyData,
@@ -128,11 +147,15 @@ export default function NotificationCenter() {
 
     // 跳转到对应的讨论
     if (notification.discuss_uuid && notification.forum_id) {
-      routerWithRouteName.push(`/${notification.forum_id}/${notification.discuss_uuid}`)
+      const forum = forums.find((f) => f.id === notification.forum_id)
+      const routePath = forum?.route_name
+        ? `/${forum.route_name}/${notification.discuss_uuid}`
+        : `/${notification.forum_id}/${notification.discuss_uuid}`
+      routerWithRouteName.push(routePath)
     }
   }
 
-  const handleMarkAllRead = () => {
+  const handleMarkAllRead = async () => {
     Modal.confirm({
       title: '确定要将所有通知标记为已读吗？',
       content: '此操作将把所有未读通知标记为已读，无法撤销。',
@@ -155,117 +178,47 @@ export default function NotificationCenter() {
     })
   }
 
+  // 处理分页变化
+  const handlePageChange = useCallback((_event: unknown, newPage: number) => {
+    setNotifyPage(newPage)
+  }, [])
+
+  // 处理每页条数变化
+  const handleRowsPerPageChange = useCallback((event: SelectChangeEvent<number>) => {
+    setNotifyPageSize(+event.target.value)
+    setNotifyPage(1) // 重置到第一页
+  }, [])
+
   // 格式化通知文本（使用 loggedInView 中的逻辑）
   const formatNotificationText = (notification: ModelMessageNotify): string => {
     return getNotificationTextForExport(notification)
   }
 
-  // 定义表格列配置
-  const columns = [
-    {
-      title: '',
-      dataIndex: 'content',
-      key: 'content',
-      render: (_: any, record: ModelMessageNotify) => {
-        return (
-          <Box onClick={() => handleNotificationClick(record)} sx={{ cursor: 'pointer' }}>
-            <Stack direction='row' spacing={1} alignItems='center' sx={{ mb: 0.5 }}>
-              <Typography
-                variant='body1'
-                sx={{
-                  fontWeight: 500,
-                  color: '#333',
-                  fontSize: '14px',
-                }}
-              >
-                {record.from_name || '未知用户'}
-              </Typography>
-              {(() => {
-                const notificationText = formatNotificationText(record)
-                const { action, content } = splitNotificationText(notificationText)
-                return (
-                  <>
-                    {action && (
-                      <Typography
-                        variant='body2'
-                        sx={{
-                          color: '#666',
-                          fontSize: '13px',
-                        }}
-                      >
-                        {action}
-                      </Typography>
-                    )}
-                    <Typography
-                      variant='body2'
-                      sx={{
-                        fontSize: '13px',
-                      }}
-                    >
-                      {content}
-                    </Typography>
-                  </>
-                )
-              })()}
-              {!record.read && (
-                <Box
-                  sx={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
-                    backgroundColor: '#FF3B30',
-                    ml: 0.5,
-                  }}
-                />
-              )}
-            </Stack>
-            <Typography
-              variant='body2'
-              sx={{
-                color: '#333',
-                fontSize: '14px',
-                fontWeight: 400,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {record.discuss_title || '无标题'}
-            </Typography>
-          </Box>
-        )
-      },
-    },
-    {
-      title: '',
-      dataIndex: 'time',
-      key: 'time',
-      width: 160,
-      align: 'right' as const,
-      render: (_: any, record: ModelMessageNotify) => {
-        return (
-          <Typography
-            variant='caption'
-            onClick={() => handleNotificationClick(record)}
-            sx={{
-              color: '#999',
-              fontSize: '12px',
-              cursor: 'pointer',
-            }}
-          >
-            {record.created_at ? dayjs(record.created_at * 1000).format('YYYY-MM-DD HH:mm:ss') : ''}
-          </Typography>
-        )
-      },
-    },
-  ]
-
   return (
-    <Box sx={{ p: 0 }}>
-      {/* 头部：标题、未读数、全部已读按钮 */}
-      <Stack direction='row' alignItems='center' sx={{ pb: 2, borderBottom: '1px solid #e0e0e0' }}>
-        <Typography variant='caption' sx={{ fontSize: '14px',mr: 2 }}>{`${unreadCount}条未读`}</Typography>
-        <Button onClick={handleMarkAllRead} sx={{ color: '#006397' }}>
+    <Box sx={{ pb: 3, pt: 1 }}>
+      {/* 头部：未读数量和全部已读按钮 */}
+      <Stack direction='row' alignItems='center' sx={{ pb: 1, borderBottom: '1px solid #e0e0e0', mb: 3 }}>
+        <Typography variant='body2' sx={{ fontSize: '14px', mr: 2 }}>
+          <Box component='span' sx={{ color: 'rgba(33, 34, 45, 1)' }}>
+            {unreadCount}
+          </Box>
+          <Box component='span' sx={{ color: 'rgba(33, 34, 45, 0.50)' }}>
+            {' 条未读'}
+          </Box>
+        </Typography>
+        <Button
+          onClick={handleMarkAllRead}
+          sx={{
+            fontSize: '14px',
+            color: '#006397',
+            textTransform: 'none',
+            padding: '4px 12px',
+            minWidth: 'auto',
+            '&:hover': {
+              backgroundColor: 'transparent',
+            },
+          }}
+        >
           全部已读
         </Button>
 
@@ -277,7 +230,7 @@ export default function NotificationCenter() {
                 checked={user.web_notify ?? false}
                 onChange={handleWebNotifyChange}
                 sx={{
-                  color: '#006397',
+                  color: '#21222D',
                   '&.Mui-checked': {
                     color: '#006397',
                   },
@@ -288,7 +241,7 @@ export default function NotificationCenter() {
             sx={{
               '& .MuiFormControlLabel-label': {
                 fontSize: '14px',
-                color: '#333',
+                color: 'rgba(33, 34, 45, 1)',
               },
             }}
           />
@@ -319,44 +272,145 @@ export default function NotificationCenter() {
           <Typography color='text.secondary'>加载中...</Typography>
         </Box>
       ) : notifications.length === 0 ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            py: 8,
+          }}
+        >
+          <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
+            <Image
+              src='/empty.png'
+              alt='暂无通知'
+              width={250}
+              height={137}
+              style={{ maxWidth: '100%', height: 'auto' }}
+            />
+          </Box>
           <Typography color='text.secondary'>暂无通知</Typography>
         </Box>
       ) : (
-        <>
-          <Table
-            columns={columns}
-            showHeader={false}
-            dataSource={notifications}
-            rowKey='id'
-            pagination={{
-              page: notifyPage,
-              pageSize: notifyPageSize,
-              total: notifyTotal,
-              onChange: (page, rowsPerPage) => {
-                if (rowsPerPage !== undefined && rowsPerPage !== notifyPageSize) {
-                  setNotifyPageSize(rowsPerPage)
-                }
-                setNotifyPage(page)
-              },
-            }}
+        <Stack spacing={2}>
+          {notifications.map((notification) => {
+            const notificationText = formatNotificationText(notification)
+            const { action, content } = splitNotificationText(notificationText)
+
+            return (
+              <Card
+                key={notification.id}
+                onClick={() => handleNotificationClick(notification)}
+                sx={{
+                  boxShadow: 'none',
+                  p: 2,
+                  cursor: 'pointer',
+                  backgroundColor: 'rgba(0,99,151,0.03)',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '8px',
+                  '&:hover': {
+                    backgroundColor: 'rgba(0,99,151,0.05)',
+                  },
+                }}
+              >
+                <Stack direction='row' spacing={1} alignItems='center'>
+                  {/* 未读/已读指示点 */}
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      backgroundColor: !notification.read ? '#FF3B30' : '#999',
+                      flexShrink: 0,
+                    }}
+                  />
+
+                  {/* 通知内容 */}
+                  <Box sx={{ flex: 1, minWidth: 0, textWrap: 'nowrap' }}>
+                    <Stack direction='row' spacing={0.5} alignItems='center'>
+                      <Typography
+                        variant='body2'
+                        sx={{
+                          color: 'rgba(33, 34, 45, 0.70)',
+                          fontSize: '14px',
+                          fontWeight: 400
+                        }}
+                      >
+                        {notification.from_name || '未知用户'}
+                      </Typography>
+                      {action && (
+                        <Typography
+                          variant='body2'
+                          sx={{
+                            color: 'rgba(33, 34, 45, 1)',
+                            fontWeight: '500',
+                            fontSize: '14px',
+                          }}
+                        >
+                          {action}
+                          {content}
+                        </Typography>
+                      )}
+                      {notification.type === ModelMsgNotifyType.MsgNotifyTypeReplyComment ? (
+                        <>
+                          {" '"}
+                          <MarkDown
+                            content={notification.parent_comment}
+                            truncateLength={10}
+                            sx={{ bgcolor: 'transparent', color: 'rgba(33, 34, 45, 0.70)', fontWeight: 400 }}
+                          />
+                          {"'"}
+                        </>
+                      ) : (
+                        <Ellipsis
+                          sx={{
+                            fontWeight: 500,
+                            color: 'rgba(33, 34, 45, 0.70)',
+                            fontSize: '14px',
+                            fontWeight: 400
+                          }}
+                        >
+                          "{notification.discuss_title}"
+                        </Ellipsis>
+                      )}
+                    </Stack>
+                  </Box>
+
+                  {/* 时间戳 */}
+                  <Typography
+                    variant='caption'
+                    sx={{
+                      color: '#999',
+                      fontSize: '12px',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {notification.created_at ? dayjs(notification.created_at * 1000).format('YYYY/MM/DD HH:mm:ss') : ''}
+                  </Typography>
+                </Stack>
+              </Card>
+            )
+          })}
+        </Stack>
+      )}
+
+      {/* 分页器 */}
+      {notifyTotal > notifyPageSize && (
+        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
+          <Pagination
+            count={notifyTotal}
+            page={notifyPage}
+            rowsPerPage={notifyPageSize}
+            onPageChange={handlePageChange}
+            rowsPerPageOptions={[10, 20, 50, 100]}
+            onRowsPerPageChange={handleRowsPerPageChange}
             sx={{
-              '& .MuiTableRow-root': {
-                cursor: 'pointer',
-                '&:hover': {
-                  backgroundColor: '#fafafa',
-                },
-                '&:last-child td': {
-                  borderBottom: 'none',
-                },
-              },
-              '& .MuiTableCell-root': {
-                borderBottom: '1px solid #f0f0f0',
-                padding: '16px 12px',
-              },
+              backgroundColor: 'transparent',
             }}
           />
-        </>
+        </Box>
       )}
     </Box>
   )

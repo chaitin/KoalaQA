@@ -453,20 +453,17 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                 inputLabel: {
                   sx: {
                     fontSize: '12px',
-                    top: -1,
                     '&.MuiInputLabel-shrink': {
                       fontSize: '15px', // 缩小时字体只略小
-                      top: 0,
                     },
                   },
                 },
                 input: {
                   sx:{
-                    fontSize: '13px',
+                    fontSize: '12px',
                   }
                 }
               }}
-              sx={{ '& input': { py: '6px' } }}
               error={Boolean(errors.title)}
               helperText={errors.title?.message as string}
               size='small'

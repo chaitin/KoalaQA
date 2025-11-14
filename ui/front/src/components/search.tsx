@@ -192,7 +192,7 @@ export const DialogSearch = (props: { open: boolean; onClose(): void }) => {
             setKeywords(e.target.value)
           },
           onKeyDown: (e) => {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && !(e.nativeEvent as KeyboardEvent).isComposing) {
               onSearch()
             }
           },

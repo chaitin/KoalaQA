@@ -39,8 +39,7 @@ const PageItemComponent = styled(ButtonBase, {
   ...(disabled && { cursor: "not-allowed" }),
   ...(selected && {
     color: "#fff",
-    background: "linear-gradient(180deg, #52C41A 0%, #11AF60 100%)",
-    boxShadow: "0px 2px 8px 0px rgba(82,196,26,0.5)",
+    background: "#006397",
     transition: "all 0.2 linear",
   }),
 }));

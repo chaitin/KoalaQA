@@ -17,23 +17,18 @@ interface ProfileHeroCardProps {
   sx?: SxProps
 }
 
-export default function ProfileHeroCard({
-  avatar,
-  title,
-  subtitle,
-  metrics,
-  rightSlot,
-  sx,
-}: ProfileHeroCardProps) {
+export default function ProfileHeroCard({ avatar, title, subtitle, metrics, rightSlot, sx }: ProfileHeroCardProps) {
   const hasMetrics = Boolean(metrics && metrics.length > 0)
 
   return (
     <Card
       sx={{
-        borderRadius: 2,
-        p: { xs: 3, md: 4 },
-        background: 'linear-gradient(135deg, #1f2937, #111827)',
-        color: '#fff',
+        p: 3,
+        background: '#fff',
+        color: '#1f2937',
+        boxShadow: 'none',
+        borderRadius: 'unset',
+        borderBottom: '1px solid #D9DEE2',
         ...sx,
       }}
     >
@@ -55,12 +50,12 @@ export default function ProfileHeroCard({
 
         <Box sx={{ flex: 1, textAlign: { xs: 'center', md: 'left' } }}>
           {title && (
-            <Typography variant='h5' sx={{ fontWeight: 700 }}>
+            <Typography variant='h6' sx={{ fontWeight: 700 }}>
               {title}
             </Typography>
           )}
           {subtitle && (
-            <Typography variant='body2' sx={{ color: 'rgba(255,255,255,0.75)', mt: 1 }}>
+            <Typography variant='body2' sx={{ color: 'rgba(0,0,0,0.6)', mt: 1 }}>
               {subtitle}
             </Typography>
           )}
@@ -70,7 +65,13 @@ export default function ProfileHeroCard({
           <Stack
             direction='row'
             spacing={4}
-            divider={<Divider orientation='vertical' flexItem sx={{ borderColor: 'rgba(255,255,255,0.15)' }} />}
+            divider={
+              <Divider
+                orientation='vertical'
+                flexItem
+                sx={{ borderColor: 'rgba(0,0,0,0.12)', height: '24px', alignSelf: 'center' }}
+              />
+            }
             sx={{
               textAlign: 'center',
               flexShrink: 0,
@@ -83,7 +84,7 @@ export default function ProfileHeroCard({
                 <Typography variant='h6' sx={{ fontWeight: 700 }}>
                   {item.value}
                 </Typography>
-                <Typography variant='body2' sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                <Typography variant='body2' sx={{ fontSize: '16px', color: 'rgba(31,35,41,0.5)' }}>
                   {item.label}
                 </Typography>
               </Box>
@@ -96,5 +97,3 @@ export default function ProfileHeroCard({
     </Card>
   )
 }
-
-
