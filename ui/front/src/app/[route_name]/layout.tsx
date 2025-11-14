@@ -37,7 +37,7 @@ export default function RouteLayout({ children }: { children: React.ReactNode })
         )}
 
         {/* 主内容区域 */}
-        <Container sx={{ flex: 1, minWidth: 0, pt: 3, alignSelf: 'stretch' }}>
+        <Container className='forum_main' sx={{ flex: 1, minWidth: 0, pt: 3, alignSelf: 'stretch' }}>
           <Box
             sx={{
               display: 'flex',

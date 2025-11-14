@@ -96,7 +96,7 @@ export const SearchResultModal = ({
 
   // 处理键盘事件
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !(e.nativeEvent as KeyboardEvent).isComposing) {
       e.preventDefault()
       performSearch(searchQuery)
     } else if (e.key === 'Escape') {

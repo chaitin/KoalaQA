@@ -140,7 +140,7 @@ export default function ChangePasswordModal({
         },
       }}
     >
-      <DialogTitle sx={{ pb: 1 }}>修改密码</DialogTitle>
+      <DialogTitle sx={{ pb: 1, fontSize: 16,mb: 1, }}>修改密码</DialogTitle>
       
       <DialogContent>
         <Stack spacing={3} sx={{ mt: 1 }}>
@@ -158,6 +158,7 @@ export default function ChangePasswordModal({
               onChange={(e) => setCurrentPassword(e.target.value)}
               fullWidth
               required
+              size='small'
               disabled={loading}
               InputProps={{
                 endAdornment: (
@@ -167,7 +168,7 @@ export default function ChangePasswordModal({
                       edge="end"
                       size="small"
                     >
-                      {showCurrentPassword ? <VisibilityOff /> : <Visibility />}
+                      {showCurrentPassword ? <VisibilityOff sx={{ fontSize: '16px' }} /> : <Visibility sx={{ fontSize: '16px' }} />}
                     </IconButton>
                   </InputAdornment>
                 ),
@@ -177,6 +178,7 @@ export default function ChangePasswordModal({
 
           <TextField
             label="新密码"
+            size='small'
             type={showNewPassword ? 'text' : 'password'}
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
@@ -192,7 +194,7 @@ export default function ChangePasswordModal({
                     edge="end"
                     size="small"
                   >
-                    {showNewPassword ? <VisibilityOff /> : <Visibility />}
+                    {showNewPassword ? <VisibilityOff sx={{ fontSize: '16px' }} /> : <Visibility sx={{ fontSize: '16px' }} />}
                   </IconButton>
                 </InputAdornment>
               ),
@@ -201,6 +203,8 @@ export default function ChangePasswordModal({
 
           <TextField
             label="确认新密码"
+            size='small'
+            sx={{mt: '16px!important'}}
             type={showConfirmPassword ? 'text' : 'password'}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
@@ -215,7 +219,7 @@ export default function ChangePasswordModal({
                     edge="end"
                     size="small"
                   >
-                    {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    {showConfirmPassword ? <VisibilityOff sx={{ fontSize: '16px' }} /> : <Visibility sx={{ fontSize: '16px' }} />}
                   </IconButton>
                 </InputAdornment>
               ),
@@ -228,7 +232,6 @@ export default function ChangePasswordModal({
         <Button
           onClick={handleClose}
           disabled={loading}
-          color="inherit"
         >
           取消
         </Button>

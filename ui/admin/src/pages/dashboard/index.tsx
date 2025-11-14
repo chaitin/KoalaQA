@@ -22,7 +22,8 @@ import {
 import { Box, CircularProgress, Grid, Stack, Typography } from '@mui/material';
 import { useRequest } from 'ahooks';
 import dayjs from 'dayjs';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 
 type TimePeriod = 'today' | 'week' | 'month';
 
@@ -62,6 +63,7 @@ const StatCard = ({ value, label, icon }: StatCardProps) => {
 };
 
 const Dashboard = () => {
+  const location = useLocation();
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('today');
 
   // 计算时间范围
@@ -104,7 +106,18 @@ const Dashboard = () => {
   });
 
   // 获取 AI 洞察数据
-  const { data: aiInsightResponse } = useRequest(getAdminRankAiInsight);
+  const { data: aiInsightResponse, loading: aiInsightLoading, run: fetchAiInsight } = useRequest(
+    getAdminRankAiInsight,
+    {
+      manual: true,
+    }
+  );
+
+  // 当路由切换到 dashboard 时，立即获取 AI 洞察数据
+  useEffect(() => {
+    fetchAiInsight();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   const loading = visitLoading || searchLoading || discussionLoading;
 

@@ -1,10 +1,6 @@
 'use client'
 
-import {
-  ModelUserInfo,
-  ModelUserRole,
-  putUser,
-} from '@/api'
+import { ModelUserInfo, ModelUserRole, putUser } from '@/api'
 import { AuthContext } from '@/components/authProvider'
 import {
   Box,
@@ -16,8 +12,8 @@ import {
   TextField,
   Typography,
   IconButton,
-  Tabs,
-  Tab,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material'
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera'
 import { useContext, useEffect, useMemo, useState } from 'react'
@@ -81,7 +77,7 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`profile-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      {value === index && <Box sx={{ px: 3, pb: 0 }}>{children}</Box>}
     </div>
   )
 }
@@ -145,19 +141,41 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
     setTabValue(tabFromUrl)
   }, [searchParams])
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue)
+  const handleTabChange = (_event: React.MouseEvent<HTMLElement>, newValue: string | null) => {
+    if (newValue === null) return
+    const tabIndex = parseInt(newValue, 10)
+    setTabValue(tabIndex)
     // 更新 URL 参数
     const params = new URLSearchParams(searchParams?.toString() || '')
-    if (newValue === 0) {
+    if (tabIndex === 0) {
       // 如果回到默认 tab，移除参数
       params.delete('tab')
     } else {
-      params.set('tab', newValue.toString())
+      params.set('tab', tabIndex.toString())
     }
     const queryString = params.toString()
     const newUrl = queryString ? `${pathname}?${queryString}` : pathname
     router.replace(newUrl)
+  }
+
+  const toggleButtonSx = {
+    height: 30,
+    fontWeight: 500,
+    fontSize: '14px',
+    color: '#21222D',
+    border: '1px solid transparent',
+    '&.Mui-selected': {
+      bgcolor: 'rgba(0,99,151,0.06)',
+      border: '1px solid rgba(0,99,151,0.1)',
+      color: 'primary.main',
+      '&.Mui-focusVisible': {
+        bgcolor: '#000000',
+        color: '#ffffff',
+        outline: '2px solid #000000',
+        outlineOffset: '2px',
+      },
+    },
+    '&:hover': { bgcolor: '#f3f4f6', color: '#000000' },
   }
 
   const handleSaveName = async () => {
@@ -217,7 +235,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
   }
 
   return (
-    <Container maxWidth='lg'>
+    <Box sx={{ maxWidth: 748, margin: '0 auto' }}>
       {/* 头部背景区域 */}
       <ProfileHeroCard
         avatar={
@@ -225,8 +243,8 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
             <Box
               sx={{
                 borderRadius: '50%',
-                width: 96,
-                height: 96,
+                width: 88,
+                height: 88,
                 background: '#fff',
                 display: 'flex',
                 alignItems: 'center',
@@ -247,8 +265,8 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
                 position: 'absolute',
                 bottom: -5,
                 right: -5,
-                backgroundColor: 'rgba(255,255,255,0.9)',
-                color: '#666',
+                backgroundColor: 'primary.main',
+                color: '#fff',
                 width: 32,
                 height: 32,
                 '&:hover': {
@@ -263,58 +281,113 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
           </Box>
         }
         title={user?.username || initialUser?.username || '用户'}
-        subtitle='管理您的个人资料和账户安全'
         metrics={metrics}
       />
 
       {/* 标签页 */}
       <Card sx={{ borderRadius: 2, boxShadow: 'none' }}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={tabValue} onChange={handleTabChange} aria-label='个人中心标签页'>
-            <Tab label='动态' />
-            <Tab label='基本信息' />
-            <Tab label='通知中心' />
-          </Tabs>
+        <Box sx={{ px: 1, py: 3 }}>
+          <ToggleButtonGroup
+            value={tabValue.toString()}
+            onChange={handleTabChange}
+            exclusive
+            aria-label='个人中心标签页'
+            sx={{
+              '& .MuiToggleButtonGroup-grouped': {
+                borderRadius: '6px !important',
+                mr: 1,
+              },
+            }}
+          >
+            <ToggleButton value='0' sx={toggleButtonSx}>
+              动态
+            </ToggleButton>
+            <ToggleButton value='1' sx={toggleButtonSx}>
+              基本信息
+            </ToggleButton>
+            <ToggleButton value='2' sx={toggleButtonSx}>
+              通知中心
+            </ToggleButton>
+          </ToggleButtonGroup>
         </Box>
-        <TabPanel value={tabValue} index={0}>
-          <UserTrendList userId={user?.uid || initialUser?.uid || 0} ownerName={user?.username || initialUser?.username} />
-        </TabPanel>
-        <TabPanel value={tabValue} index={1}>
-          <Stack spacing={3}>
-            <Box>
-              <Stack direction='row' spacing={2} alignItems='center'>
-                <Typography sx={{ width: 100, color: '#666' }}>昵称</Typography>
+        {/* 子元素 role=tabpanel 的加个 border */}
+        <Box
+          sx={{
+            '& > [role=tabpanel]': {
+              border: '1px solid #eee',
+              borderRadius: 1,
+              mb: 2,
+              mt: 0,
+              p: 0,
+            },
+          }}
+        >
+          <TabPanel value={tabValue} index={0}>
+            <UserTrendList
+              userId={user?.uid || initialUser?.uid || 0}
+              ownerName={user?.username || initialUser?.username}
+            />
+          </TabPanel>
+          <TabPanel value={tabValue} index={1}>
+            <Stack
+              sx={{
+                '& > div': {
+                  height: '60px',
+                  alignItems: 'center',
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  '&:last-child': {
+                    borderBottom: 'none',
+                  },
+                },
+              }}
+            >
+              <Stack direction='row' alignItems='center'>
+                <Typography variant='body2' sx={{ width: '26%', color: '#666' }}>
+                  昵称
+                </Typography>
                 {isEditingName ? (
                   <>
                     <TextField
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
                       size='small'
-                      sx={{ flex: 1, maxWidth: 300 }}
+                      slotProps={{
+                        input: { sx: { fontSize: '13px' } },
+                      }}
+                      sx={{ flex: 1, maxWidth: 300, ml: 'auto!important', py: 0 }}
                     />
-                    <Button onClick={handleSaveName} variant='contained' size='small'>
+                    <Button onClick={handleSaveName} variant='text' size='small'>
                       保存
                     </Button>
-                    <Button onClick={handleCancelEdit} variant='text' size='small'>
+                    <Button
+                      onClick={handleCancelEdit}
+                      sx={{ color: 'rgba(33, 34, 45, 1)' }}
+                      variant='text'
+                      size='small'
+                    >
                       取消
                     </Button>
                   </>
                 ) : (
                   <>
-                    <Typography sx={{ flex: 1 }}>{user?.username || '-'}</Typography>
+                    <Typography sx={{ flex: 1 }} variant='subtitle2'>
+                      {user?.username || '-'}
+                    </Typography>
                     <Button onClick={() => setIsEditingName(true)} size='small' sx={{ minWidth: 60 }}>
                       修改
                     </Button>
                   </>
                 )}
               </Stack>
-              <Divider sx={{ mt: 2 }} />
-            </Box>
 
-            <Box>
-              <Stack direction='row' spacing={2} alignItems='center'>
-                <Typography sx={{ width: 100, color: '#666' }}>邮箱</Typography>
-                <Typography sx={{ flex: 1 }}>{user?.email || '未绑定'}</Typography>
+              <Stack direction='row' alignItems='center'>
+                <Typography variant='body2' sx={{ width: '26%', color: '#666' }}>
+                  邮箱
+                </Typography>
+                <Typography sx={{ flex: 1 }} variant='subtitle2'>
+                  {user?.email || '未绑定'}
+                </Typography>
                 {!user?.email ? (
                   <Button size='small' sx={{ minWidth: 60 }} onClick={() => setBindEmailModalOpen(true)}>
                     绑定
@@ -333,29 +406,28 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
                   </Button>
                 )}
               </Stack>
-              <Divider sx={{ mt: 2 }} />
-            </Box>
 
-            <Box>
-              <Stack direction='row' spacing={2} alignItems='center'>
-                <Typography sx={{ width: 100, color: '#666' }}>用户角色</Typography>
+              <Stack direction='row' alignItems='center'>
+                <Typography variant='body2' sx={{ width: '26%', color: '#666' }}>
+                  用户角色
+                </Typography>
                 <Stack direction='row' spacing={1} alignItems='center' sx={{ flex: 1 }}>
-                  <Typography>{roleConfig[user?.role || ModelUserRole.UserRoleUnknown].name}</Typography>
+                  <Typography variant='subtitle2'>
+                    {roleConfig[user?.role || ModelUserRole.UserRoleUnknown].name}
+                  </Typography>
                 </Stack>
               </Stack>
-              <Divider sx={{ mt: 2 }} />
-            </Box>
 
-            <Box>
-              <Stack direction='row' spacing={2} alignItems='center'>
-                <Typography sx={{ width: 100, color: '#666' }}>账号密码</Typography>
+              <Stack direction='row' alignItems='center'>
+                <Typography variant='body2' sx={{ width: '26%', color: '#666' }}>
+                  账号密码
+                </Typography>
                 <Typography sx={{ flex: 1, color: '#999' }}>••••••••</Typography>
                 {user?.builtin ? (
                   <Button
                     size='small'
                     disabled
                     sx={{
-                      minWidth: 80,
                       color: '#999',
                     }}
                     title='内置用户不允许修改密码'
@@ -363,17 +435,17 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
                     修改
                   </Button>
                 ) : (
-                  <Button onClick={handleChangePasswordClick} size='small' sx={{ minWidth: 80 }}>
+                  <Button onClick={handleChangePasswordClick} size='small'>
                     修改
                   </Button>
                 )}
               </Stack>
-            </Box>
-          </Stack>
-        </TabPanel>
-        <TabPanel value={tabValue} index={2}>
-          <NotificationCenter />
-        </TabPanel>
+            </Stack>
+          </TabPanel>
+          <TabPanel value={tabValue} index={2}>
+            <NotificationCenter />
+          </TabPanel>
+        </Box>
       </Card>
 
       {/* 修改密码模态框 */}
@@ -395,6 +467,6 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
           await fetchUser()
         }}
       />
-    </Container>
+    </Box>
   )
 }

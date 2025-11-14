@@ -14,6 +14,8 @@ import {
   formatNotificationData,
 } from '@/utils/browserNotification'
 import { postUserNotifyRead } from '@/api'
+import MarkDown from '@/components/markDown'
+import { Ellipsis } from '@ctzhian/ui'
 
 // 内容类型枚举
 enum ContentType {
@@ -192,6 +194,7 @@ type MessageNotifyInfo = {
   id: number
   forum_id: number
   new: boolean
+  parent_comment?: string
 }
 
 // 导出内容类型配置管理器，供其他模块使用
@@ -531,17 +534,23 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
                         )
                       })()}
                     </Stack>
-                    <Typography
-                      variant='caption'
-                      sx={{
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        color: 'text.auxiliary',
-                      }}
-                    >
-                      {notification.discuss_title || '无标题'}
-                    </Typography>
+                    {notification.type === MsgNotifyType.MsgNotifyTypeReplyComment ? (
+                      <MarkDown
+                        content={notification.parent_comment}
+                        truncateLength={10}
+                        sx={{ bgcolor: 'transparent', color: 'text.auxiliary' }}
+                      />
+                    ) : (
+                      <Ellipsis
+                        sx={{
+                          fontWeight: 500,
+                          color: 'text.auxiliary',
+                          fontSize: '14px',
+                        }}
+                      >
+                        {notification.discuss_title || '无标题'}
+                      </Ellipsis>
+                    )}
                   </Box>
                 </Stack>
               ))

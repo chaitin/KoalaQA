@@ -710,6 +710,8 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 		DiscussionType: disc.Type,
 		DiscussTitle:   disc.Title,
 		DiscussUUID:    disc.UUID,
+		CommentID:      comment.ID,
+		ParentID:       parentID,
 		Type:           typ,
 		FromID:         uid,
 		ToID:           toID,
