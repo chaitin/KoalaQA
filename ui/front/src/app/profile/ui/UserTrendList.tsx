@@ -2,15 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import {
-  Box,
-  Button,
-  Card,
-  Chip,
-  CircularProgress,
-  Stack,
-  Typography,
-} from '@mui/material'
+import Image from 'next/image'
+import { Box, Button, Card, CircularProgress, Stack, Typography } from '@mui/material'
 import { getUserTrend } from '@/api'
 import { ModelDiscussionType, ModelListRes, ModelTrend } from '@/api/types'
 import { useForum } from '@/contexts/ForumContext'
@@ -43,19 +36,6 @@ const getTrendDescription = (trend: ModelTrend) => {
   return '有新的动态'
 }
 
-const getDiscussionTypeTag = (discussionType?: ModelDiscussionType) => {
-  switch (discussionType) {
-    case ModelDiscussionType.DiscussionTypeBlog:
-      return { label: '文章', color: '#FF7744' }
-    case ModelDiscussionType.DiscussionTypeFeedback:
-      return { label: '反馈', color: '#f59e0b' }
-    case ModelDiscussionType.DiscussionTypeQA:
-      return { label: '问答', color: '#1AA086' }
-    default:
-      return { label: '动态', color: '#3b82f6' }
-  }
-}
-
 const formatRoute = (trend: ModelTrend, forums: ReturnType<typeof useForum>['forums']) => {
   if (!trend.discuss_uuid) {
     return '#'
@@ -72,23 +52,29 @@ const formatRoute = (trend: ModelTrend, forums: ReturnType<typeof useForum>['for
   return `/${trend.discuss_uuid}`
 }
 
-const EmptyState = ({ ownerName }: { ownerName?: string }) => (
-  <Card
-    variant='outlined'
+const EmptyState = () => (
+  <Box
     sx={{
-      borderRadius: 2,
       p: 6,
-      bgcolor: '#fafafa',
       textAlign: 'center',
     }}
   >
+    <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
+      <Image
+        src='/empty.png'
+        alt='暂无动态'
+        width={250}
+        height={137}
+        style={{ maxWidth: '100%', height: 'auto' }}
+      />
+    </Box>
     <Typography variant='h6' sx={{ mb: 1, fontWeight: 600 }}>
       暂无动态
     </Typography>
     <Typography variant='body2' sx={{ color: '#6b7280' }}>
-      {ownerName ? `${ownerName} 最近还没有新的社区活动。` : '该用户最近还没有新的社区活动。'}
+      最近还没有新的社区活动
     </Typography>
-  </Card>
+  </Box>
 )
 
 export default function UserTrendList({ userId, ownerName }: UserTrendListProps) {
@@ -148,7 +134,10 @@ export default function UserTrendList({ userId, ownerName }: UserTrendListProps)
     return trends.filter((item) => !item.forum_id || accessibleForumIds.has(item.forum_id))
   }, [accessibleForumIds, trends])
 
-  const hiddenCount = useMemo(() => Math.max(trends.length - filteredTrends.length, 0), [filteredTrends.length, trends.length])
+  const hiddenCount = useMemo(
+    () => Math.max(trends.length - filteredTrends.length, 0),
+    [filteredTrends.length, trends.length],
+  )
 
   const hasMore = useMemo(() => filteredTrends.length < total, [filteredTrends.length, total])
 
@@ -158,112 +147,94 @@ export default function UserTrendList({ userId, ownerName }: UserTrendListProps)
   }
 
   if (!loading && filteredTrends.length === 0) {
-    return <EmptyState ownerName={ownerName} />
+    return <EmptyState />
   }
 
   return (
-    <Stack spacing={2}>
-      {error && (
-        <Card variant='outlined' sx={{ borderRadius: 2, p: 3, borderColor: 'error.light' }}>
-          <Typography variant='body2' color='error'>
-            {error}
-          </Typography>
-        </Card>
-      )}
-
-      {filteredTrends.map((trend) => {
-        const trendDescription = getTrendDescription(trend)
-        const tag = getDiscussionTypeTag(trend.discussion_type)
-        const href = formatRoute(trend, forums)
-        
-        return (
-          <Card
-            key={trend.id}
-            variant='outlined'
-            sx={{
-              borderRadius: 2,
-              p: 3,
-              borderColor: '#e5e7eb',
-              boxShadow: 'none',
-              '&:hover': {
-                borderColor: '#d1d5db',
-                boxShadow: '0 6px 18px rgba(0,0,0,0.04)',
-              },
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <Stack spacing={1.5}>
-              <Stack direction='row' spacing={1} alignItems='center'>
-                <Chip
-                  label={tag.label}
-                  size='small'
-                  sx={{
-                    bgcolor: `${tag.color}15`,
-                    color: tag.color,
-                    height: 22,
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                  }}
-                />
-                <Typography variant='subtitle2' sx={{ fontWeight: 600 }}>
-                  {trendDescription}
-                </Typography>
-                {trend.updated_at && (
-                  <TimeDisplay timestamp={trend.updated_at} style={{ color: '#6b7280', fontSize: '0.8rem' }} />
-                )}
-              </Stack>
-
-              {trend.discuss_title && href !== '#' ? (
-                <Link href={href} style={{ textDecoration: 'none' }}>
-                  <Typography
-                    variant='subtitle1'
-                    sx={{
-                      color: '#111827',
-                      fontWeight: 600,
-                      '&:hover': { color: '#000' },
-                    }}
-                  >
-                    {trend.discuss_title}
-                  </Typography>
-                </Link>
-              ) : (
-                <Typography variant='subtitle1' sx={{ color: '#111827', fontWeight: 600 }}>
-                  {trend.discuss_title || '相关内容已不可见'}
-                </Typography>
-              )}
-            </Stack>
+    <Box
+      sx={{
+        borderRadius: 2,
+        pt: 3,
+        pb: 3,
+      }}
+    >
+      <Stack spacing={2}>
+        {error && (
+          <Card variant='outlined' sx={{ borderRadius: 2, p: 3, borderColor: 'error.light' }}>
+            <Typography variant='body2' color='error'>
+              {error}
+            </Typography>
           </Card>
-        )
-      })}
+        )}
 
-      {hiddenCount > 0 && (
-        <Typography variant='caption' sx={{ color: '#9ca3af', textAlign: 'center' }}>
-          有 {hiddenCount} 条动态因缺少板块权限未展示
-        </Typography>
-      )}
+        {filteredTrends.map((trend) => {
+          const trendDescription = getTrendDescription(trend)
+          const href = formatRoute(trend, forums)
 
-      {hasMore && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
-          <Button onClick={handleLoadMore} disabled={loading} variant='outlined' sx={{ minWidth: 160 }}>
-            {loading ? (
-              <Stack direction='row' alignItems='center' spacing={1}>
-                <CircularProgress size={16} thickness={5} />
-                <Typography variant='body2'>加载中...</Typography>
-              </Stack>
-            ) : (
-              '加载更多'
-            )}
-          </Button>
-        </Box>
-      )}
+          return (
+            <Link key={trend.id} href={href} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <Card
+                variant='outlined'
+                sx={{
+                  borderRadius: 1,
+                  p: 2,
+                  bgcolor: 'rgba(0,99,151,0.03)',
+                  border: '1px solid #D9DEE2',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                  },
+                  fontSize: 14,
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <Stack direction='row' justifyContent='space-between' alignItems='center' spacing={2}>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Box component='span' sx={{ color: '#21222D', fontWeight: 700 }}>
+                      {trendDescription}
+                    </Box>
+                    <Box component='span' sx={{ color: 'rgba(33, 34, 45, 0.70)', fontWeight: 400, ml: '4px' }}>
+                      "{trend.discuss_title}"
+                    </Box>
+                  </Box>
+                  {trend.updated_at && (
+                    <Box sx={{ flexShrink: 0 }}>
+                      <TimeDisplay timestamp={trend.updated_at} style={{ color: '#9ca3af', fontSize: '0.875rem' }} />
+                    </Box>
+                  )}
+                </Stack>
+              </Card>
+            </Link>
+          )
+        })}
 
-      {loading && !hasMore && filteredTrends.length === 0 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-          <CircularProgress size={28} />
-        </Box>
-      )}
-    </Stack>
+        {hiddenCount > 0 && (
+          <Typography variant='caption' sx={{ color: '#9ca3af', textAlign: 'center' }}>
+            有 {hiddenCount} 条动态因缺少板块权限未展示
+          </Typography>
+        )}
+
+        {hasMore && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+            <Button onClick={handleLoadMore} disabled={loading} variant='outlined' sx={{ minWidth: 160 }}>
+              {loading ? (
+                <Stack direction='row' alignItems='center' spacing={1}>
+                  <CircularProgress size={16} thickness={5} />
+                  <Typography variant='body2'>加载中...</Typography>
+                </Stack>
+              ) : (
+                '加载更多'
+              )}
+            </Button>
+          </Box>
+        )}
+
+        {loading && !hasMore && filteredTrends.length === 0 && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+            <CircularProgress size={28} />
+          </Box>
+        )}
+      </Stack>
+    </Box>
   )
 }
-
-

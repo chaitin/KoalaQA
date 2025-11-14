@@ -108,9 +108,19 @@ const theme = createTheme(
               borderWidth: '1px',
             },
           }),
+          input: {
+            fontSize: '14px',
+          },
           // notchedOutline: {
           //   borderColor: '#D9DEE2',
           // },
+        },
+      },
+      MuiInputLabel: {
+        styleOverrides: {
+          root: {
+            fontSize: '14px',
+          },
         },
       },
       MuiFormControl: {

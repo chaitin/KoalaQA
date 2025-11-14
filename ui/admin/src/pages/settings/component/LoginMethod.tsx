@@ -37,6 +37,7 @@ enum AuthType {
   PASSWORD = 1, // 密码认证
   OIDC = 2, // OIDC认证
   WECOM = 3, //企业微信认证
+  WECHAT = 4, // 微信扫码认证
 }
 
 // 登录方式选项
@@ -44,6 +45,7 @@ const AUTH_TYPE_OPTIONS = [
   { label: '密码认证', value: AuthType.PASSWORD },
   { label: 'OIDC 认证', value: AuthType.OIDC },
   { label: '企业微信认证', value: AuthType.WECOM },
+  { label: '微信扫码认证', value: AuthType.WECHAT },
 ];
 
 // Zod 验证模式
@@ -76,6 +78,13 @@ const loginMethodSchema = z.object({
       button_desc: z.string().optional(),
     })
     .optional(),
+  wechat_config: z
+    .object({
+      app_id: z.string().optional(),
+      app_secret: z.string().optional(),
+      button_desc: z.string().optional(),
+    })
+    .optional(),
 });
 
 type LoginMethodFormData = z.infer<typeof loginMethodSchema>;
@@ -83,6 +92,7 @@ type LoginMethodFormData = z.infer<typeof loginMethodSchema>;
 const LoginMethod: React.FC = () => {
   const [showClientSecret, setShowClientSecret] = useState(false);
   const [showWecomSecret, setShowWecomSecret] = useState(false);
+  const [showWechatSecret, setShowWechatSecret] = useState(false);
 
   const {
     control,
@@ -113,6 +123,11 @@ const LoginMethod: React.FC = () => {
         secret: '',
         button_desc: '企业微信登陆',
       },
+      wechat_config: {
+        app_id: '',
+        app_secret: '',
+        button_desc: '微信扫码登录',
+      },
     },
   });
 
@@ -121,6 +136,7 @@ const LoginMethod: React.FC = () => {
   const isPasswordSelected = watchedAuthTypes?.includes(AuthType.PASSWORD) ?? false;
   const isOidcSelected = watchedAuthTypes?.includes(AuthType.OIDC) ?? false;
   const isWecomSelected = watchedAuthTypes?.includes(AuthType.WECOM) ?? false;
+  const isWechatSelected = watchedAuthTypes?.includes(AuthType.WECHAT) ?? false;
 
   // 从 store 获取板块列表
   const dispatch = useAppDispatch();
@@ -171,6 +187,14 @@ const LoginMethod: React.FC = () => {
           button_desc: wecomInfo?.button_desc ?? '企业微信登陆',
         };
 
+        // 获取微信扫码配置
+        const wechatInfo = auth_infos?.find((info: ModelAuthInfo) => info.type === AuthType.WECHAT);
+        const wechatConfig = {
+          app_id: wechatInfo?.config?.oauth?.client_id ?? '',
+          app_secret: wechatInfo?.config?.oauth?.client_secret ?? '',
+          button_desc: wechatInfo?.button_desc ?? '微信扫码登录',
+        };
+
         reset({
           enable_register: enable_register ?? true,
           public_access: public_access ?? true,
@@ -179,6 +203,7 @@ const LoginMethod: React.FC = () => {
           password_config: passwordConfig,
           oidc_config: oidcConfig,
           wecom_config: wecomConfig,
+          wechat_config: wechatConfig,
         });
       }
     },
@@ -213,6 +238,17 @@ const LoginMethod: React.FC = () => {
         }
       }
 
+      // 验证微信扫码配置
+      if (formData.auth_types.includes(AuthType.WECHAT)) {
+        if (
+          !formData.wechat_config?.app_id ||
+          !formData.wechat_config?.app_secret
+        ) {
+          message.error('请完善微信扫码配置信息');
+          return;
+        }
+      }
+
       // 构建认证信息
       const authInfos: ModelAuthInfo[] = formData.auth_types.map(type => {
         const authInfo: ModelAuthInfo = { type };
@@ -236,6 +272,15 @@ const LoginMethod: React.FC = () => {
               corp_id: formData.wecom_config.corp_id || '',
               client_id: formData.wecom_config.client_id || '',
               client_secret: formData.wecom_config.secret || '',
+            },
+          };
+          authInfo.config = config;
+        } else if (type === AuthType.WECHAT && formData.wechat_config) {
+          authInfo.button_desc = formData.wechat_config.button_desc || '微信扫码登录';
+          const config: ModelAuthConfig = {
+            oauth: {
+              client_id: formData.wechat_config.app_id || '',
+              client_secret: formData.wechat_config.app_secret || '',
             },
           };
           authInfo.config = config;
@@ -949,6 +994,173 @@ const LoginMethod: React.FC = () => {
                   <Box sx={{ flex: 1 }}>
                     <Controller
                       name="wecom_config.button_desc"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          placeholder="请输入"
+                          fullWidth
+                          size="small"
+                          InputLabelProps={{
+                            shrink: false,
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              backgroundColor: '#F8F9FA',
+                              borderRadius: '10px',
+                            },
+                            '& .MuiInputBase-input': {
+                              fontSize: 14,
+                            },
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+                </Stack>
+              </Stack>
+            </>
+          )}
+
+          {/* 微信扫码配置 */}
+          {isWechatSelected && (
+            <>
+              <Box
+                sx={{
+                  borderTop: '1px dashed #e0e0e0',
+                }}
+              />
+              <Box
+                sx={{
+                  borderRadius: 1,
+                  backgroundColor: 'white',
+                  py: 3,
+                  minHeight: 64,
+                }}
+              >
+                <Box
+                  sx={{
+                    left: 16,
+                    backgroundColor: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    py: 0,
+                    fontSize: 14,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 4,
+                      height: 12,
+                      borderRadius: 1,
+                      background: 'linear-gradient(180deg, #2458E5 0%, #5B8FFC 100%)',
+                      mr: 1,
+                      display: 'inline-block',
+                    }}
+                  />
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 500,
+                      color: '#21222D',
+                      fontSize: 14,
+                    }}
+                  >
+                    微信扫码配置
+                  </Typography>
+                </Box>
+              </Box>
+
+              <Stack spacing={1.5}>
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                    App ID<span style={{ color: 'red' }}>*</span>
+                  </Typography>
+                  <Box sx={{ flex: 1 }}>
+                    <Controller
+                      name="wechat_config.app_id"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          placeholder="请输入"
+                          required
+                          fullWidth
+                          size="small"
+                          InputLabelProps={{
+                            shrink: false,
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              backgroundColor: '#F8F9FA',
+                              borderRadius: '10px',
+                            },
+                            '& .MuiInputBase-input': {
+                              fontSize: 14,
+                            },
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+                </Stack>
+
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                    App Secret<span style={{ color: 'red' }}>*</span>
+                  </Typography>
+                  <Box sx={{ flex: 1 }}>
+                    <Controller
+                      name="wechat_config.app_secret"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          placeholder="请输入"
+                          required
+                          fullWidth
+                          type={showWechatSecret ? 'text' : 'password'}
+                          size="small"
+                          InputProps={{
+                            endAdornment: (
+                              <InputAdornment position="end">
+                                <IconButton
+                                  aria-label="toggle wechat secret visibility"
+                                  onClick={() => setShowWechatSecret(!showWechatSecret)}
+                                  onMouseDown={event => event.preventDefault()}
+                                  edge="end"
+                                  size="small"
+                                >
+                                  {showWechatSecret ? <VisibilityOff /> : <Visibility />}
+                                </IconButton>
+                              </InputAdornment>
+                            ),
+                          }}
+                          InputLabelProps={{
+                            shrink: false,
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              backgroundColor: '#F8F9FA',
+                              borderRadius: '10px',
+                            },
+                            '& .MuiInputBase-input': {
+                              fontSize: 14,
+                            },
+                          }}
+                        />
+                      )}
+                    />
+                  </Box>
+                </Stack>
+
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                    按钮文案
+                  </Typography>
+                  <Box sx={{ flex: 1 }}>
+                    <Controller
+                      name="wechat_config.button_desc"
                       control={control}
                       render={({ field }) => (
                         <TextField

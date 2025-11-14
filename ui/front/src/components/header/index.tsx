@@ -52,10 +52,6 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
 
   // 检测是否在 route_name 页面（即帖子列表页面）
   const isPostListPage = Boolean(route_name) && !id && !pathname.includes('/edit')
-  // 检测是否在帖子详情页面
-  const isPostDetailPage = Boolean(route_name) && Boolean(id) && !pathname.includes('/edit')
-  // 检测是否在编辑页面
-  const isEditPage = Boolean(route_name) && pathname.includes('/edit')
 
   // 获取当前论坛ID
   const hookForumId = useForumId()
@@ -83,31 +79,52 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
     }
   }, [isMounted])
 
-  // 在列表页使用滚动逻辑显示搜索框
+  // 在列表页使用 IntersectionObserver 检测搜索框可见性
   useEffect(() => {
     // 确保只在客户端 mounted 后才执行，避免 hydration 不匹配
-    if (!isMounted) return
+    if (!isMounted || typeof window === 'undefined') return
 
-    // 只在帖子列表页面时监听滚动（详情页直接显示搜索框）
-    if (!isPostListPage || typeof window === 'undefined') {
-      setShowSearchInAppBar(false)
-      return
+    // 非帖子列表页面，直接显示搜索框
+    if (!isPostListPage && !isAuthPage) {
+      return setShowSearchInAppBar(true)
     }
 
-    const handleScroll = () => {
-      setShowSearchInAppBar(window.scrollY > 100)
-    }
+    // 如果是帖子列表页面，检测页面中的搜索框是否可见
+    if (isPostListPage) {
+      const searchBoxElement = document.querySelector('#article-search-box')
+      if (!searchBoxElement) {
+        // 如果找不到搜索框元素，默认显示header中的搜索框
+        setShowSearchInAppBar(true)
+        return
+      }
 
-    // 使用 requestAnimationFrame 延迟初始检查，确保在 hydration 完成后再检查
-    // 这样可以避免 hydration 不匹配
-    const rafId = requestAnimationFrame(() => {
-      handleScroll()
-    })
+      // 使用 IntersectionObserver 检测搜索框是否在视口中可见
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const [entry] = entries
+          // 当搜索框不可见时，显示header中的搜索框
+          // 当搜索框可见时，隐藏header中的搜索框
+          setShowSearchInAppBar(!entry.isIntersecting)
+        },
+        {
+          // 设置根元素为视口
+          root: null,
+          // 当搜索框完全离开视口时才认为不可见
+          rootMargin: '0px',
+          // 当搜索框有任何部分可见时，threshold 为 0 表示只要有一点可见就认为可见
+          threshold: 0,
+        }
+      )
 
-    window.addEventListener('scroll', handleScroll)
-    return () => {
-      cancelAnimationFrame(rafId)
-      window.removeEventListener('scroll', handleScroll)
+      // 使用 requestAnimationFrame 延迟观察，确保在 hydration 完成后再观察
+      const rafId = requestAnimationFrame(() => {
+        observer.observe(searchBoxElement)
+      })
+
+      return () => {
+        cancelAnimationFrame(rafId)
+        observer.disconnect()
+      }
     }
   }, [isMounted, isPostListPage, pathname, route_name])
 
@@ -156,7 +173,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
 
   // 处理键盘事件 - 回车时触发搜索
   const onInputSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !(e.nativeEvent as KeyboardEvent).isComposing) {
       handleSearch()
     }
   }
@@ -268,7 +285,13 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
               }}
               onClick={handleLogoClick}
             >
-              <Image src='/logo-text.png' alt='Koala QA Logo' width={100} height={24} style={{ objectFit: 'contain' }} />
+              <Image
+                src='/logo-text.png'
+                alt='Koala QA Logo'
+                width={100}
+                height={24}
+                style={{ objectFit: 'contain' }}
+              />
             </Box>
           )}
           {/* Forum切换tab */}
@@ -276,9 +299,8 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {/* 搜索框 - 列表页根据滚动显示，详情页和编辑页直接显示 */}
-          {/* 使用 isMounted 确保服务器端和客户端首次渲染一致 */}
-          {((isPostListPage && isMounted && showSearchInAppBar) || isPostDetailPage || isEditPage) && (
+          {/* 搜索框 - 非登录/注册页面显示 */}
+          {showSearchInAppBar && (
             <OutlinedInput
               size='small'
               placeholder='输入任意内容，使用 AI 搜索'

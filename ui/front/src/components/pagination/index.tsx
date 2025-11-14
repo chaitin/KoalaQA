@@ -152,7 +152,7 @@ const Pagination: React.FC<PaginationProps> = (props) => {
           renderItem={renderPageItem}
           count={pageCount}
           page={page}
-          boundaryCount={2}
+          boundaryCount={0}
           onChange={onPageChange}
         />
         <MiddleText size='xs'>跳至</MiddleText>
