@@ -123,21 +123,6 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
       className='editor-container'
       sx={{
         width: '100%',
-        '.tiptap.ProseMirror': {
-          ...(needTruncate
-            ? {
-                display: '-webkit-box',
-                WebkitBoxOrient: 'vertical',
-                WebkitLineClamp: 2,
-                overflow: 'hidden',
-              }
-            : {}),
-          '.tableWrapper': {
-            transition: 'width 0.3s ease-in-out',
-            width: '100%',
-            overflowX: 'auto',
-          },
-        },
         '& code': {
           whiteSpace: 'pre-wrap',
         },

@@ -116,7 +116,9 @@ const Edit = ({ nodeId, kbId, onNodeDetailChange, onGetNodeDetail, onSave }: Edi
           userSelect: 'none',
           whiteSpace: 'nowrap',
         },
-        
+        '& div > div':{
+          bgcolor: 'transparent !important',
+        },
       }}
     >
       {!loading && detail && (
