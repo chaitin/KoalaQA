@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, Button } from '@mui/material';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, forwardRef, useImperativeHandle } from 'react';
 import { NodeDetail } from '..';
 import SaveIcon from '@mui/icons-material/Save';
 import { EditorMarkdown, useTiptap } from '@ctzhian/tiptap';
@@ -13,31 +13,36 @@ interface WrapProps {
   detail: NodeDetail;
   onCancel?: () => void;
   onSave?: (content: string) => void;
-  onContentChange?: (content: string) => void;
   showActions?: boolean; // 是否显示底部的保存和取消按钮，默认为true
   value?: string; // 用于双向绑定的值，当提供时会覆盖detail.content
-  onChange?: (value: string) => void; // 双向绑定的变更回调，类似input组件的onChange
   aiWriting?: boolean;
   height?: number;
   onTocUpdate?: ((toc: any) => void) | boolean; // 可选，默认false；true表示仅启用但不回调
 }
 
-const EditorWrap = ({
-  detail,
-  onSave,
-  onContentChange,
-  onCancel,
-  showActions = true,
-  value,
-  onChange,
-  aiWriting,
-  height = 100,
-  onTocUpdate,
-}: WrapProps) => {
+export interface EditorWrapRef {
+  getContent: () => string;
+  getHTML: () => string;
+  getText: () => string;
+}
+
+const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
+  (
+    {
+      detail,
+      onSave,
+      onCancel,
+      showActions = true,
+      value,
+      aiWriting,
+      height = 100,
+      onTocUpdate,
+    }: WrapProps,
+    ref,
+  ) => {
   const [isSaving, setIsSaving] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [originalContent, setOriginalContent] = useState(detail?.content || '');
 
   // 性能优化：缓存上次的内容和防抖定时器
   const lastContentRef = useRef<string>('');
@@ -51,9 +56,10 @@ const EditorWrap = ({
 
   // 清理防抖定时器，避免内存泄漏
   useEffect(() => {
+    const timer = debounceTimerRef.current;
     return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
+      if (timer) {
+        clearTimeout(timer);
       }
     };
   }, []);
@@ -95,7 +101,9 @@ const EditorWrap = ({
         if (typeof onTocUpdate === 'function') {
           onTocUpdate(toc);
         }
-      } catch {}
+      } catch (error) {
+        console.error('onTocUpdate error:', error);
+      }
     },
     onAiWritingGetSuggestion: onAiWritingGetSuggestion,
     onValidateUrl: async (url: string, type: 'image' | 'video' | 'audio' | 'iframe') => {
@@ -133,6 +141,37 @@ const EditorWrap = ({
     },
   });
 
+  // 暴露命令式 API：getContent / getHTML / getText
+  useImperativeHandle(
+    ref,
+    () => ({
+      getContent: () => {
+        try {
+          // useTiptap helper 统一使用 getContent 获取输入值
+          return editorRef.getContent();
+        } catch {
+          return '';
+        }
+      },
+      getHTML: () => {
+        try {
+          // useTiptap helper 提供 getHTML
+          return editorRef.editor.getHTML();
+        } catch {
+          return '';
+        }
+      },
+      getText: () => {
+        try {
+          return editorRef.editor.getText();
+        } catch {
+          return '';
+        }
+      },
+    }),
+    [editorRef],
+  );
+
   // 这些函数需要在editorRef初始化后定义
   const handleCancelEdit = () => {
     onCancel?.();
@@ -166,7 +205,6 @@ const EditorWrap = ({
   useEffect(() => {
     const newContent = value !== undefined ? value : detail?.content || '';
     setInnerValue(newContent);
-    setOriginalContent(newContent);
   }, [value, detail?.content]);
 
   // 在服务端渲染时返回漂亮的占位符
@@ -185,70 +223,8 @@ const EditorWrap = ({
           flexDirection: 'column',
           borderRadius: 3,
           transition: 'all 0.3s ease',
-          '& .tiptap': {
-            outline: 'none',
-            border: 'none',
-            borderRadius: 2,
-            padding: 1,
-            minHeight: 200,
-            fontSize: '15px',
-            lineHeight: 1.7,
-            color: '#212529',
-            background: 'transparent',
-            transition: 'all 0.2s ease',
-            '&:focus': {
-              outline: 'none',
-              background: 'rgba(248, 249, 250, 0.5)',
-            },
-            '& p': {
-              margin: '0.5em 0',
-            },
-            '& h1, & h2, & h3': {
-              color: '#212529',
-              fontWeight: 600,
-              margin: '1em 0 0.5em 0',
-            },
-            '& ul, & ol': {
-              paddingLeft: '1.5em',
-              margin: '0.5em 0',
-            },
-            '& blockquote': {
-              borderLeft: '4px solid #6c757d',
-              paddingLeft: '1em',
-              margin: '1em 0',
-              fontStyle: 'italic',
-              background: 'rgba(108, 117, 125, 0.1)',
-              borderRadius: '0 8px 8px 0',
-            },
-            '& code': {
-              background: 'rgba(0,0,0,0.08)',
-              padding: '2px 6px',
-              borderRadius: 4,
-              fontSize: '0.9em',
-              fontFamily: 'Monaco, Consolas, monospace',
-            },
-            '& a': {
-              color: '#495057',
-              textDecoration: 'none',
-              fontWeight: 500,
-              '&:hover': {
-                textDecoration: 'underline',
-              },
-            },
-          },
         }}
       >
-        {/* 现代化工具栏 */}
-        <Box
-          sx={{
-            background: 'rgba(255,255,255,0.9)',
-            backdropFilter: 'blur(10px)',
-            transition: 'all 0.3s ease',
-            py: 1,
-          }}
-        >
-          <Toolbar editorRef={editorRef} />
-        </Box>
 
         {/* 编辑器内容区域 */}
         <Box
@@ -262,6 +238,7 @@ const EditorWrap = ({
             '& .ace_cursor': {
               opacity: 0,
             },
+            
           }}
           className="md-container"
         >
@@ -271,14 +248,14 @@ const EditorWrap = ({
               placeholder="请输入内容..."
               onUpload={handleUpload}
               splitMode={false}
+              showAutocomplete={false}
               defaultDisplayMode="edit"
               highlightActiveLine={false}
               height={height}
               value={innerValue}
               editor={editorRef.editor}
               onAceChange={value => {
-                onChange?.(value);
-                onContentChange?.(value);
+                setInnerValue(value);
               }}
             />
           )}
@@ -324,6 +301,7 @@ const EditorWrap = ({
       </Box>
     </>
   );
-};
+  },
+);
 
 export default EditorWrap;

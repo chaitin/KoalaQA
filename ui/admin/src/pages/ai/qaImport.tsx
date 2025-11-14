@@ -7,7 +7,7 @@ import {
   putAdminKbKbIdQuestionQaId,
 } from '@/api';
 import Card from '@/components/card';
-import EditorWrap from '@/components/editor/edit/Wrap';
+import EditorWrap, { EditorWrapRef } from '@/components/editor/edit/Wrap';
 import QaReviewModal from '@/components/qaReviewModal';
 import { zodResolver } from '@hookform/resolvers/zod';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
@@ -38,6 +38,7 @@ const QaImport = (props: {
   const [searchParams] = useSearchParams();
   const kb_id = +searchParams.get('id')!;
   const ref = useRef(null);
+  const editorRef = useRef<EditorWrapRef>(null);
   const [isFullscreen, { enterFullscreen, exitFullscreen }] = useFullscreen(ref, {
     pageFullscreen: true,
   });
@@ -77,7 +78,7 @@ const QaImport = (props: {
   );
 
   const handlePolish = () => {
-    const currentText = watch('markdown');
+    const currentText = editorRef.current?.getContent() || '';
     if (!currentText?.trim()) {
       message.warning('请先输入回答内容');
       return;
@@ -133,16 +134,18 @@ const QaImport = (props: {
     }
   };
   const handleEdit = async (data: z.infer<typeof schema>) => {
+    const content = editorRef.current?.getContent() || '';
     await putAdminKbKbIdQuestionQaId({kbId: kb_id, qaId: data.id!}, {
       title: data.title || '',
-      markdown: data.markdown,
+      markdown: content,
     });
     setEditItem(null);
     setShowCreate(false);
   };
 
   const handleOk = (data: z.infer<typeof schema>) => {
-    postAdminKbKbIdQuestion({kbId: kb_id}, data).then(() => {
+    const content = editorRef.current?.getContent() || '';
+    postAdminKbKbIdQuestion({kbId: kb_id}, { ...data, markdown: content }).then(() => {
       handleCancel();
       message.success('保存成功');
       refresh({});
@@ -181,7 +184,7 @@ const QaImport = (props: {
             </IconButton>
           </Stack>
         }
-        width={800}
+        width={860}
         footer={null}
       >
         <Stack component={Card} sx={{ position: 'relative', pt: 2, overflow: 'auto' }} ref={ref}>
@@ -220,12 +223,13 @@ const QaImport = (props: {
             render={({ field }) => (
               <Box sx={{ position: 'relative' }}>
                 <EditorWrap
+                  ref={editorRef}
                   detail={{
                     id: 'reply-editor',
                     name: '回答',
                     content: field.value,
                   }}
-                  onChange={field.onChange}
+                  height={200}
                   showActions={false}
                 />
                 <Box

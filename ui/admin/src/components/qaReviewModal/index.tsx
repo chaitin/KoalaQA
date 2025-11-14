@@ -5,8 +5,8 @@ import UndoIcon from '@mui/icons-material/Undo';
 import { Box, Button, IconButton, Stack, TextField, Tooltip, Typography } from '@mui/material';
 import { useRequest } from 'ahooks';
 import dayjs from 'dayjs';
-import React, { useEffect, useState } from 'react';
-import EditorWrap from '../editor/edit/Wrap';
+import React, { useEffect, useState, useRef } from 'react';
+import EditorWrap, { EditorWrapRef } from '../editor/edit/Wrap';
 import EditorContent from '../EditorContent';
 
 interface QaReviewModalProps {
@@ -33,6 +33,7 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
   const [originalAnswer, setOriginalAnswer] = useState('');
   const [isPolishing, setIsPolishing] = useState(false);
   const [historicalQaDetail, setHistoricalQaDetail] = useState<any>(null);
+  const editorRef = useRef<EditorWrapRef>(null);
 
   // AI文本润色功能
   const { run: polishText, loading: polishLoading } = useRequest(
@@ -52,13 +53,14 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
   );
 
   const handlePolish = () => {
-    if (!answer?.trim()) {
+    const currentAnswer = editorRef.current?.getContent() || '';
+    if (!currentAnswer?.trim()) {
       message.warning('请先输入回答内容');
       return;
     }
-    setOriginalAnswer(answer);
+    setOriginalAnswer(currentAnswer);
     setIsPolishing(true);
-    polishText(answer);
+    polishText(currentAnswer);
   };
 
   const handleRevert = () => {
@@ -89,7 +91,8 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
 
   const handleApprove = () => {
     if (qaItem) {
-      onApprove({ ...qaItem, title: question, markdown: answer });
+      const content = editorRef.current?.getContent() || '';
+      onApprove({ ...qaItem, title: question, markdown: content });
     }
   };
 
@@ -101,7 +104,8 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
 
   const handleUpdateHistorical = () => {
     if (qaItem && onUpdateHistorical) {
-      onUpdateHistorical({ ...qaItem, title: question, markdown: answer });
+      const content = editorRef.current?.getContent() || '';
+      onUpdateHistorical({ ...qaItem, title: question, markdown: content });
     }
   };
 
@@ -218,10 +222,10 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
             }}
           >
             <EditorWrap
+              ref={editorRef}
               detail={{
                 content: answer,
               }}
-              onChange={setAnswer}
               showActions={false}
             />
             {/* AI文本润色按钮 */}
