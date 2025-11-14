@@ -5186,7 +5186,7 @@ const docTemplate = `{
                 },
                 "type": {
                     "type": "integer",
-                    "maximum": 3,
+                    "maximum": 4,
                     "minimum": 1
                 }
             }

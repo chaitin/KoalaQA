@@ -6,4 +6,5 @@ export enum AuthType {
   PASSWORD = 1, // 账号密码登录
   OAUTH = 2,    // 第三方OAuth登录 (OIDC)
   WECOM = 3,    // 企业微信登录
+  WECHAT = 4,   // 微信扫码登录
 }
