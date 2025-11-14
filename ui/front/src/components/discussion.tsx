@@ -451,8 +451,20 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
               fullWidth
               slotProps={{
                 inputLabel: {
-                  sx: { fontSize: '14px' },
+                  sx: {
+                    fontSize: '12px',
+                    top: -1,
+                    '&.MuiInputLabel-shrink': {
+                      fontSize: '15px', // 缩小时字体只略小
+                      top: 0,
+                    },
+                  },
                 },
+                input: {
+                  sx:{
+                    fontSize: '13px',
+                  }
+                }
               }}
               sx={{ '& input': { py: '6px' } }}
               error={Boolean(errors.title)}
@@ -577,7 +589,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                       control={control}
                       render={({ field }) => (
                         <EditorWrap
-                          height={220}
+                          height={360}
                           ref={editorRef}
                           value={field.value || ''}
                           showActions={false}

@@ -216,9 +216,18 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
               position: 'relative',
               overflow: 'auto',
               cursor: 'text',
-              '& .ace_cursor':{
+              '& .ace_cursor': {
                 opacity: 0,
-              }
+              },
+              '& > div > div': {
+                bgcolor: '#fff',
+              },
+              // 隐藏滚动条
+              '&::-webkit-scrollbar': {
+                display: 'none',
+              },
+              '-ms-overflow-style': 'none', // IE and Edge
+              'scrollbarWidth': 'none', // Firefox
             }}
             className='md-container'
           >
@@ -228,6 +237,7 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
                 placeholder={placeholder}
                 onUpload={handleUpload}
                 splitMode={false}
+                showAutocomplete={false}
                 highlightActiveLine={false}
                 defaultDisplayMode='edit'
                 height={height}

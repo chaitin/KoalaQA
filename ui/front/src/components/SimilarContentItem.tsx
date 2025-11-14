@@ -14,7 +14,7 @@ const SimilarContentItem = ({ data }: SimilarContentItemProps) => {
     <Box
       sx={{
         py: 1,
-        pl: 2,
+        px: 2,
         transition: 'all 0.2s',
         borderBottom: '1px solid #D9DEE2',
       }}
@@ -28,6 +28,7 @@ const SimilarContentItem = ({ data }: SimilarContentItemProps) => {
             color: '#111827',
             mb: 1,
             lineHeight: 1.4,
+            fontSize: '13px',
             display: '-webkit-box',
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
