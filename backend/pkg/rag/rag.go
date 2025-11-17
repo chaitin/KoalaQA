@@ -7,11 +7,11 @@ import (
 )
 
 type QueryRecordsReq struct {
-	DatasetIDs          []string `json:"dataset_ids,omitempty"`
-	Query               string   `json:"query,omitempty"`
-	GroupIDs            []int    `json:"group_ids,omitempty"`
-	TopK                int      `json:"top_k,omitempty"`
-	SimilarityThreshold float64  `json:"similarity_threshold,omitempty"`
+	DatasetID           string  `json:"dataset_ids,omitempty"`
+	Query               string  `json:"query,omitempty"`
+	GroupIDs            []int   `json:"group_ids,omitempty"`
+	TopK                int     `json:"top_k,omitempty"`
+	SimilarityThreshold float64 `json:"similarity_threshold,omitempty"`
 }
 
 type UpdateDatasetReq struct {

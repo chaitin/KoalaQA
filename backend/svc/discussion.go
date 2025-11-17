@@ -585,7 +585,7 @@ func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*mo
 		return nil, err
 	}
 	records, err := d.in.Rag.QueryRecords(ctx, rag.QueryRecordsReq{
-		DatasetIDs:          []string{forum.DatasetID},
+		DatasetID:           forum.DatasetID,
 		Query:               req.Keyword,
 		GroupIDs:            nil,
 		TopK:                10,
