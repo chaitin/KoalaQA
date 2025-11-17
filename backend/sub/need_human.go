@@ -103,12 +103,16 @@ func (d *NeedHuman) Handle(ctx context.Context, msg mq.Message) error {
 	}
 
 	d.pub.Publish(ctx, topic.TopicMessageNotify, topic.MsgMessageNotify{
-		DiscussHeader: disc.Header(),
-		ParentID:      comment.ParentID,
-		CommentID:     comment.ID,
-		Type:          model.MsgNotifyTypeBotUnknown,
-		FromID:        comment.UserID,
-		ToID:          parentComment.UserID,
+		ForumID:        disc.ForumID,
+		DiscussID:      disc.ID,
+		DiscussUUID:    disc.UUID,
+		DiscussTitle:   disc.Title,
+		DiscussionType: disc.Type,
+		ParentID:       comment.ParentID,
+		CommentID:      comment.ID,
+		Type:           model.MsgNotifyTypeBotUnknown,
+		FromID:         comment.UserID,
+		ToID:           parentComment.UserID,
 	})
 
 	return nil
