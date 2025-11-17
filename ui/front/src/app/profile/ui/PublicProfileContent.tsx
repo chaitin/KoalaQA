@@ -93,39 +93,8 @@ export default function PublicProfileContent({ userId, statistics }: PublicProfi
 
       {/* 标签页 */}
       <Card sx={{ borderRadius: 2, boxShadow: 'none' }}>
-        <Box sx={{ p: 3}}>
-          <ToggleButtonGroup
-            value={tabValue.toString()}
-            exclusive
-            aria-label='个人中心标签页'
-            sx={{
-              '& .MuiToggleButtonGroup-grouped': {
-                borderRadius: '6px !important',
-                mr: 1,
-              },
-            }}
-          >
-            <ToggleButton value='0' sx={toggleButtonSx}>
-              动态
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </Box>
         {/* 子元素 role=tabpanel 的加个 border */}
-        <Box
-          sx={{
-            '& > [role=tabpanel]': {
-              border: '1px solid #eee',
-              borderRadius: 1,
-              mb: 2,
-              mt: 0,
-              p: 0,
-            },
-          }}
-        >
-          <TabPanel value={tabValue} index={0}>
-            <UserTrendList userId={userId} ownerName={statistics?.name} />
-          </TabPanel>
-        </Box>
+        <UserTrendList userId={userId} ownerName={statistics?.name} />
       </Card>
     </Box>
   )
