@@ -103,7 +103,7 @@ func (m *datasetInit) initEmbeddingLLM() error {
 		APIHeader:  "",
 		BaseURL:    baseURL,
 		APIVersion: "",
-		Type:       model.LLMTypeEmbedding,
+		Type:       model.LLMTypeDense,
 	}
 	eid, err := m.rag.AddModel(context.Background(), embeddingModel)
 	if err != nil {
@@ -121,7 +121,7 @@ func (m *datasetInit) initEmbeddingLLM() error {
 		APIHeader:  "",
 		BaseURL:    baseURL,
 		APIVersion: "",
-		Type:       model.LLMTypeRerank,
+		Type:       model.LLMTypeReranker,
 	}
 	rid, err := m.rag.AddModel(context.Background(), rerankModel)
 	if err != nil {
