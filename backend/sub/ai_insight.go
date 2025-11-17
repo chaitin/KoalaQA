@@ -3,6 +3,7 @@ package sub
 import (
 	"context"
 	"math"
+	"slices"
 	"strconv"
 	"time"
 
@@ -182,16 +183,20 @@ func (i *AIInsight) calcScore(ctx context.Context, data topic.MsgAIInsight) (flo
 		return 0, err
 	}
 
-	if len(discs) == 0 {
-		logger.Debug("disc not found, skip")
-		return 0, nil
-	}
-
 	discUUIDs := make(model.StringArray, len(discs))
 	discIDs := make(model.Int64Array, len(discs))
 	for i, disc := range discs {
+		if slices.Contains(data.Exclude, int64(disc.ID)) {
+			continue
+		}
+
 		discUUIDs[i] = disc.UUID
 		discIDs[i] = int64(disc.ID)
+	}
+
+	if len(discIDs) == 0 {
+		logger.Debug("disc not found, skip")
+		return 0, nil
 	}
 
 	var botUnknown int64
@@ -219,7 +224,7 @@ func (i *AIInsight) calcScore(ctx context.Context, data topic.MsgAIInsight) (flo
 		return 0, nil
 	}
 
-	floatDiscs := float64(len(discs))
+	floatDiscs := float64(len(discIDs))
 	floatBotUnknown := float64(botUnknown)
 	floatDislikeBot := float64(dislikeBot)
 

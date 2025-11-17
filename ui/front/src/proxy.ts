@@ -78,6 +78,36 @@ async function isValidForumRoute(pathname: string): Promise<boolean> {
 }
 
 /**
+ * 调用后端接口校验 auth_token 是否仍然有效
+ * 由于 cookie 可能早已失效但仍存在浏览器端，这里通过请求 /api/user 来确认
+ */
+async function validateAuthToken(request: NextRequest, baseURL?: string): Promise<boolean> {
+  try {
+    const targetOrigin = baseURL && baseURL.length > 0 ? baseURL : request.nextUrl.origin
+    const verifyUrl = new URL('/api/user', targetOrigin)
+
+    const response = await fetch(verifyUrl.toString(), {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        cookie: request.headers.get('cookie') ?? '',
+      },
+      cache: 'no-store',
+    })
+
+    if (!response.ok) {
+      return false
+    }
+
+    const data = await response.json()
+    return Boolean(data?.data?.uid)
+  } catch (error) {
+    console.warn('[Proxy] Failed to validate auth token:', error)
+    return false
+  }
+}
+
+/**
  * 检查路由是否匹配
  */
 function matchRoute(pathname: string, routes: string[]): boolean {
@@ -169,26 +199,31 @@ async function isProtectedPageAsync(pathname: string): Promise<boolean> {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const baseURL = process.env.TARGET || request.nextUrl.origin;
   // 获取认证 token
   const authToken = request.cookies.get('auth_token')?.value;
-  
-  // 简化的认证检查：只检查是否有有效的token
-  const isAuthenticated = (() => {
-    if (!authToken) {
-      return false;
+  let shouldClearAuthCookie = false;
+  const finalizeResponse = (response: NextResponse) => {
+    if (shouldClearAuthCookie) {
+      response.cookies.delete('auth_token');
     }
-    
-    // 检查token是否为有效字符串且不为空
-    const isValid = typeof authToken === 'string' && 
-                   authToken.length > 0 && 
-                   authToken !== 'null' && 
-                   authToken !== 'undefined' &&
-                   authToken !== '""' &&
-                   authToken !== "''" &&
-                   authToken.trim().length > 0;
-    
-    return isValid;
-  })();
+    return response;
+  };
+  
+  // 简化的认证检查：先验证token格式，再视情况进行后端校验
+  let isAuthenticated = false;
+  if (authToken) {
+    const isValidFormat =
+      typeof authToken === 'string' &&
+      authToken.length > 0 &&
+      authToken !== 'null' &&
+      authToken !== 'undefined' &&
+      authToken !== '""' &&
+      authToken !== "''" &&
+      authToken.trim().length > 0;
+
+    isAuthenticated = isValidFormat;
+  }
   
   // 跳过静态文件和 API 路由
   if (
@@ -197,11 +232,19 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/static') ||
     pathname.includes('.')
   ) {
-    return NextResponse.next();
+    return finalizeResponse(NextResponse.next());
   }
 
   // 处理认证路由（已登录用户重定向到首页）
   if (matchRoute(pathname, AUTH_ROUTES)) {
+    if (isAuthenticated) {
+      const tokenValid = await validateAuthToken(request, baseURL);
+      if (!tokenValid) {
+        isAuthenticated = false;
+        shouldClearAuthCookie = true;
+      }
+    }
+
     if (isAuthenticated) {
       // 检查是否有重定向参数
       const redirectUrl = request.nextUrl.searchParams.get('redirect');
@@ -212,7 +255,7 @@ export async function proxy(request: NextRequest) {
           const redirectUrlObj = new URL(redirectUrl, request.url);
           // 只允许重定向到同域名的路径
           if (redirectUrlObj.origin === request.nextUrl.origin) {
-            return NextResponse.redirect(redirectUrlObj);
+            return finalizeResponse(NextResponse.redirect(redirectUrlObj));
           }
         } catch {
           // 如果重定向URL无效，忽略重定向参数
@@ -226,10 +269,10 @@ export async function proxy(request: NextRequest) {
       
       // 如果是刚登录，给客户端一些时间处理跳转，不要立即重定向
       if (isFromLogin && pathname === '/login') {
-        return NextResponse.next();
+        return finalizeResponse(NextResponse.next());
       }
       
-      return NextResponse.redirect(new URL('/', request.url));
+      return finalizeResponse(NextResponse.redirect(new URL('/', request.url)));
     }
   }
 
@@ -239,19 +282,18 @@ export async function proxy(request: NextRequest) {
   if (shouldProtect) {
     // 如果用户已登录，直接允许访问
     if (isAuthenticated) {
-      return NextResponse.next();
+      return finalizeResponse(NextResponse.next());
     }
 
     // 如果用户未登录，检查public_access状态
     try {
-      const baseURL = process.env.TARGET || '';
       const publicAccess = await getServerPublicAccessStatus(baseURL, request);
       
       // 如果public_access为false，强制跳转到登录页面
       if (!publicAccess) {
         const loginUrl = new URL('/login', request.url);
         loginUrl.searchParams.set('redirect', pathname);
-        return NextResponse.redirect(loginUrl);
+        return finalizeResponse(NextResponse.redirect(loginUrl));
       }
       
       // 如果public_access为true，对于单段路径需要验证是否为有效论坛路由
@@ -261,7 +303,7 @@ export async function proxy(request: NextRequest) {
         const isValidForum = await isValidForumRoute(pathname);
         if (!isValidForum) {
           // 允许访问，让Next.js处理404页面
-          return NextResponse.next();
+          return finalizeResponse(NextResponse.next());
         }
       }
     } catch (error) {
@@ -269,7 +311,7 @@ export async function proxy(request: NextRequest) {
       // 出错时默认要求登录
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
-      return NextResponse.redirect(loginUrl);
+      return finalizeResponse(NextResponse.redirect(loginUrl));
     }
   }
 
@@ -278,7 +320,7 @@ export async function proxy(request: NextRequest) {
     if (!isAuthenticated) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
-      return NextResponse.redirect(loginUrl);
+      return finalizeResponse(NextResponse.redirect(loginUrl));
     }
   }
 
@@ -302,7 +344,7 @@ export async function proxy(request: NextRequest) {
     );
   }
 
-  return response;
+  return finalizeResponse(response);
 }
 
 // 配置匹配的路径
