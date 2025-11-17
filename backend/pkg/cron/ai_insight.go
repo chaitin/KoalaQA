@@ -30,7 +30,7 @@ func (i *aiInsight) Run() {
 
 	exist, err := i.repoRank.Exist(ctx,
 		repo.QueryWithEqual("created_at", util.WeekZero(now), repo.EqualOPLT),
-		repo.QueryWithEqual("created_at", util.WeekZero(now.AddDate(0, 0, -7)), repo.EqualOPGT),
+		repo.QueryWithEqual("created_at", util.WeekZero(now.AddDate(0, 0, -7)), repo.EqualOPGTE),
 	)
 	if err != nil {
 		i.logger.WithErr(err).Warn("get ai insight data failed")

@@ -85,7 +85,7 @@ func (s *Stat) Accept(ctx context.Context, onlyBot bool) (count int64, err error
 	query := []repo.QueryOptFunc{
 		repo.QueryWithEqual("parent_id", 0),
 		repo.QueryWithEqual("accepted", true),
-		repo.QueryWithEqual("updated_at", util.DayZero(now), repo.EqualOPGT),
+		repo.QueryWithEqual("updated_at", util.DayZero(now), repo.EqualOPGTE),
 		repo.QueryWithEqual("updated_at", util.DayZero(now.AddDate(0, 0, 1)), repo.EqualOPLT),
 	}
 
@@ -182,7 +182,7 @@ func (s *Stat) Discussion(ctx context.Context) (*StatDiscussionRes, error) {
 	now := time.Now()
 	var err error
 	res.Discussions, err = s.repoDisc.ListType(ctx,
-		repo.QueryWithEqual("created_at", util.DayZero(now), repo.EqualOPGT),
+		repo.QueryWithEqual("created_at", util.DayZero(now), repo.EqualOPGTE),
 		repo.QueryWithEqual("created_at", util.DayZero(now.AddDate(0, 0, 1)), repo.EqualOPLT),
 	)
 	if err != nil {

@@ -38,9 +38,9 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
-  Typography
+  Typography,
 } from '@mui/material'
-import { useBoolean } from 'ahooks'
+import { useBoolean, useInViewport } from 'ahooks'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
@@ -107,6 +107,10 @@ const Article = ({
   const [announcementsLoading, setAnnouncementsLoading] = useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
   const loadMoreTriggerRef = useRef<HTMLDivElement | null>(null)
+  const [isLoadMoreInView] = useInViewport(loadMoreTriggerRef, {
+    rootMargin: '0px 0px 200px 0px',
+    threshold: 0,
+  })
 
   // 下拉筛选相关状态
   const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null)
@@ -142,6 +146,8 @@ const Article = ({
     fetchContributors()
   }, [fetchContributors])
 
+  const announcementBlogIdsKey = (forumInfo?.blog_ids ?? []).join(',')
+
   // 获取公告列表
   const fetchAnnouncements = useCallback(async () => {
     if (!forumInfo?.blog_ids || forumInfo.blog_ids.length === 0) {
@@ -170,7 +176,7 @@ const Article = ({
     } finally {
       setAnnouncementsLoading(false)
     }
-  }, [forumInfo?.blog_ids, forumInfo?.id])
+  }, [announcementBlogIdsKey, forumInfo?.id, forumId])
 
   useEffect(() => {
     fetchAnnouncements()
@@ -304,29 +310,12 @@ const Article = ({
   }, [data])
 
   useEffect(() => {
-    const target = loadMoreTriggerRef.current
-    if (!target) return
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries
-        if (entry?.isIntersecting && page * 10 < (articleData.total || 0) && !loadingMore) {
-          fetchMoreList()
-        }
-      },
-      {
-        root: null,
-        rootMargin: '200px',
-        threshold: 0,
-      },
-    )
-
-    observer.observe(target)
-
-    return () => {
-      observer.disconnect()
+    if (!isLoadMoreInView || loadingMore || page * 10 >= (articleData.total || 0)) {
+      return
     }
-  }, [articleData.total, fetchMoreList, loadingMore, page])
+
+    fetchMoreList()
+  }, [isLoadMoreInView, loadingMore, fetchMoreList, page, articleData.total])
 
   // 当URL参数变化时重置页码
   useEffect(() => {
@@ -769,7 +758,7 @@ const Article = ({
                     <Typography>加载中...</Typography>
                   </Stack>
                 )}
-                <Box ref={loadMoreTriggerRef} sx={{ width: '100%', height: 1 }} />
+                <Box ref={loadMoreTriggerRef} sx={{ width: '100%', height: '1px' }} />
               </>
             ) : (
               <Divider>

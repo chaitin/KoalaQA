@@ -1,33 +1,30 @@
 'use client'
 
-import { ModelUserInfo, ModelUserRole, putUser } from '@/api'
+import { getUserUserId, ModelUserInfo, ModelUserRole, putUser } from '@/api'
+import { SvcUserStatisticsRes } from '@/api/types'
+import { Message } from '@/components'
 import { AuthContext } from '@/components/authProvider'
+import UserAvatar from '@/components/UserAvatar'
+import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera'
 import {
   Box,
   Button,
   Card,
-  Container,
-  Divider,
+  IconButton,
   Stack,
   TextField,
-  Typography,
-  IconButton,
   ToggleButton,
   ToggleButtonGroup,
+  Typography
 } from '@mui/material'
-import PhotoCameraIcon from '@mui/icons-material/PhotoCamera'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { useContext, useEffect, useMemo, useState } from 'react'
-import ChangePasswordModal from './ChangePasswordModal'
 import BindEmailModal from './BindEmailModal'
-import UserAvatar from '@/components/UserAvatar'
-import { Message } from '@/components'
-import { useSearchParams, usePathname } from 'next/navigation'
-import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
+import ChangePasswordModal from './ChangePasswordModal'
 import NotificationCenter from './NotificationCenter'
-import UserTrendList from './UserTrendList'
 import ProfileHeroCard from './ProfileHeroCard'
-import { SvcUserStatisticsRes } from '@/api/types'
-import { getUserUserId } from '@/api'
+import UserTrendList from './UserTrendList'
 
 const roleConfig = {
   [ModelUserRole.UserRoleUnknown]: {
@@ -286,7 +283,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
 
       {/* 标签页 */}
       <Card sx={{ borderRadius: 2, boxShadow: 'none' }}>
-        <Box sx={{ px: 1, py: 3 }}>
+        <Box sx={{ p: 3 }}>
           <ToggleButtonGroup
             value={tabValue.toString()}
             onChange={handleTabChange}
