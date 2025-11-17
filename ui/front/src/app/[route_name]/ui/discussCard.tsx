@@ -7,9 +7,7 @@ import { CommonContext } from '@/components/commonProvider'
 import { TimeDisplay } from '@/components/TimeDisplay'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import { Ellipsis, Icon } from '@ctzhian/ui'
-import {
-  CheckCircleOutline as CheckCircleOutlineIcon
-} from '@mui/icons-material'
+import { CheckCircleOutline as CheckCircleOutlineIcon } from '@mui/icons-material'
 import { Box, Chip, Stack, SxProps, Typography } from '@mui/material'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
@@ -85,73 +83,68 @@ const DiscussCard = ({
     return it.group_ids.map((groupId) => groupMap.get(groupId)).filter(Boolean) as string[]
   }, [it.group_ids, groups.flat])
 
-
   // 准备数据
   const postStatus = getPostStatus(it)
   const postType = getPostType(it.type)
   const allTags = groupNames
 
   return (
-    <Link href={`/${params?.route_name as string}/${it.uuid}`} key={it.id}>
-      <Box
-        sx={{
-          borderBottom: '1px solid #f3f4f6',
-          transition: 'all 0.2s',
-          cursor: 'pointer',
-          '&:hover': {
-            bgcolor: 'rgba(0,99,151,0.03)',
-          },
-          ...sx,
-        }}
-      >
-        <Box sx={{ py: '20px', px: 1 }}>
-          <Stack direction='row' alignItems='center' spacing={1}>
+    <Box
+      sx={{
+        borderBottom: '1px solid #f3f4f6',
+        transition: 'all 0.2s',
+        cursor: 'pointer',
+        '&:hover': {
+          bgcolor: 'rgba(0,99,151,0.03)',
+        },
+        ...sx,
+      }}
+    >
+      <Box sx={{ py: '20px', px: 1 }}>
+        <Stack direction='row' alignItems='center' spacing={1}>
+          <Box
+            tabIndex={0}
+            sx={{
+              outline: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              borderRadius: 1,
+              transition: 'box-shadow 0.2s, border-color 0.2s, background 0.2s',
+              color: 'text.primary',
+              '&:focus-within, &:hover ': {
+                color: 'primary.main',
+              },
+              my: '-2px',
+              ml: '-4px',
+            }}
+          >
             <Box
-              tabIndex={0}
-              sx={{
-                outline: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                borderRadius: 1,
-                transition: 'box-shadow 0.2s, border-color 0.2s, background 0.2s',
-                color: 'text.primary',
-                '&:focus-within, &:hover ': {
-                  color: 'primary.main',
-                },
-                my: '-2px',
-                ml: '-4px',
+              onClick={(event) => {
+                event.stopPropagation()
+                if (profileHref) {
+                  router.push(profileHref)
+                }
               }}
+              sx={{
+                display: 'inline-flex',
+                cursor: profileHref ? 'pointer' : 'default',
+              }}
+              tabIndex={-1}
             >
-              <Box
-                onClick={(event) => {
-                  event.stopPropagation()
-                  if (profileHref) {
-                    router.push(profileHref)
-                  }
-                }}
+              <CommonAvatar
+                src={it.user_avatar}
+                name={it.user_name}
                 sx={{
-                  display: 'inline-flex',
-                  cursor: profileHref ? 'pointer' : 'default',
+                  fontSize: '0.65rem',
+                  fontWeight: 600,
                 }}
-                tabIndex={-1}
-              >
-                <CommonAvatar
-                  src={it.user_avatar}
-                  name={it.user_name}
-                  sx={{
-                    fontSize: '0.65rem',
-                    fontWeight: 600,
-                  }}
-                />
-              </Box>
+              />
+            </Box>
 
-              <Stack direction='row' spacing={0.5} alignItems='center' sx={{ ml: 0.5 }}>
-                {profileHref ? (
+            <Stack direction='row' spacing={0.5} alignItems='center' sx={{ ml: 0.5 }}>
+              {profileHref ? (
+                <Link href={profileHref} key={it.id} style={{ textDecoration: 'none', color: 'inherit' }}>
                   <Box
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      router.push(profileHref)
-                    }}
                     sx={{
                       fontSize: '14px',
                       textDecoration: 'none',
@@ -164,20 +157,22 @@ const DiscussCard = ({
                   >
                     {it.user_name || ''}
                   </Box>
-                ) : (
-                  <Typography
-                    variant='caption'
-                    sx={{ fontWeight: 600, fontSize: '14px', whiteSpace: 'nowrap', color: 'inherit' }}
-                  >
-                    {it.user_name || ''}
-                  </Typography>
-                )}
-              </Stack>
-            </Box>
-            <Typography variant='caption' sx={{ fontWeight: 500, fontSize: '14px', whiteSpace: 'nowrap' }}>
-              · <TimeDisplay style={{ color: 'rgba(33, 34, 45, 0.30)' }} timestamp={it.updated_at!} />
-            </Typography>
-          </Stack>
+                </Link>
+              ) : (
+                <Typography
+                  variant='caption'
+                  sx={{ fontWeight: 600, fontSize: '14px', whiteSpace: 'nowrap', color: 'inherit' }}
+                >
+                  {it.user_name || ''}
+                </Typography>
+              )}
+            </Stack>
+          </Box>
+          <Typography variant='caption' sx={{ fontWeight: 500, fontSize: '14px', whiteSpace: 'nowrap' }}>
+            · <TimeDisplay style={{ color: 'rgba(33, 34, 45, 0.30)' }} timestamp={it.updated_at!} />
+          </Typography>
+        </Stack>
+        <Link href={`/${params?.route_name as string}/${it.uuid}`} key={it.id}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', my: 2, gap: 1 }}>
             <DiscussionTypeChip type={it.type} variant='default' />
             <Ellipsis
@@ -194,138 +189,138 @@ const DiscussCard = ({
               {it.title}
             </Ellipsis>
           </Box>
+        </Link>
 
-          <MarkDown
-            content={it.type === ModelDiscussionType.DiscussionTypeBlog ? it.summary || '' : it.content || ''}
-            truncateLength={100}
-            sx={{
-              mb: 2,
-              lineHeight: 1.5,
-              fontSize: '0.8125rem',
+        <MarkDown
+          content={it.type === ModelDiscussionType.DiscussionTypeBlog ? it.summary || '' : it.content || ''}
+          truncateLength={100}
+          sx={{
+            mb: 2,
+            lineHeight: 1.5,
+            fontSize: '0.8125rem',
+            color: 'rgba(33, 34, 45, 0.50) !important',
+            bgcolor: 'transparent !important',
+            '&.markdown-body': {
+              backgroundColor: 'transparent !important',
               color: 'rgba(33, 34, 45, 0.50) !important',
-              bgcolor: 'transparent !important',
-              '&.markdown-body': {
-                backgroundColor: 'transparent !important',
-                color: 'rgba(33, 34, 45, 0.50) !important',
-              },
-              '& *': {
-                fontSize: '0.8125rem !important',
-                color: 'rgba(33, 34, 45, 0.50) !important',
-              },
-            }}
-          />
+            },
+            '& *': {
+              fontSize: '0.8125rem !important',
+              color: 'rgba(33, 34, 45, 0.50) !important',
+            },
+          }}
+        />
 
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-              {!data.resolved && data.type === ModelDiscussionType.DiscussionTypeQA && (
-                <QaUnresolvedChip type={data.type} resolved={data.resolved} />
-              )}
-              {shouldShowStatus(it) && (
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+            {!data.resolved && data.type === ModelDiscussionType.DiscussionTypeQA && (
+              <QaUnresolvedChip type={data.type} resolved={data.resolved} />
+            )}
+            {shouldShowStatus(it) && (
+              <Chip
+                icon={
+                  postStatus === 'answered' || postStatus === 'closed' ? (
+                    <CheckCircleOutlineIcon
+                      sx={{
+                        width: 15,
+                        height: 15,
+                        color: '#fff !important',
+                      }}
+                    />
+                  ) : undefined
+                }
+                label={getStatusLabel(postStatus)}
+                size='small'
+                sx={{
+                  // bgcolor: `${getStatusColor(postStatus)}15`,
+                  bgcolor: getStatusColor(postStatus),
+                  color: '#fff !important',
+                  height: 22,
+                  fontWeight: 600,
+                  fontSize: '12px',
+                  // borderRadius: '3px',
+                  border: `1px solid ${getStatusColor(postStatus)}30`,
+                }}
+              />
+            )}
+            {allTags.map((tag, index) => {
+              const isCategory = isCategoryTag(tag, groups.flat)
+              return (
                 <Chip
-                  icon={
-                    postStatus === 'answered' || postStatus === 'closed' ? (
-                      <CheckCircleOutlineIcon
-                        sx={{
-                          width: 15,
-                          height: 15,
-                          color: '#fff !important',
-                        }}
-                      />
-                    ) : undefined
-                  }
-                  label={getStatusLabel(postStatus)}
+                  key={`${tag}-${isCategory ? 'category' : 'tag'}-${index}`}
+                  label={tag}
                   size='small'
                   sx={{
-                    // bgcolor: `${getStatusColor(postStatus)}15`,
-                    bgcolor: getStatusColor(postStatus),
-                    color: '#fff !important',
+                    bgcolor: 'rgba(233, 236, 239, 1)',
+                    color: 'rgba(33, 34, 45, 1)',
                     height: 22,
-                    fontWeight: 600,
                     fontSize: '12px',
-                    // borderRadius: '3px',
-                    border: `1px solid ${getStatusColor(postStatus)}30`,
+                    borderRadius: '3px',
+                    cursor: 'default',
+                    pointerEvents: 'none',
                   }}
                 />
-              )}
-              {allTags.map((tag, index) => {
-                const isCategory = isCategoryTag(tag, groups.flat)
-                return (
-                  <Chip
-                    key={`${tag}-${isCategory ? 'category' : 'tag'}-${index}`}
-                    label={tag}
-                    size='small'
-                    sx={{
-                      bgcolor: 'rgba(233, 236, 239, 1)',
-                      color: 'rgba(33, 34, 45, 1)',
-                      height: 22,
-                      fontSize: '12px',
-                      borderRadius: '3px',
-                      cursor: 'default',
-                      pointerEvents: 'none',
-                    }}
-                  />
-                )
-              })}
-            </Box>
+              )
+            })}
+          </Box>
 
-            <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'center' }}>
-              {postType === 'question' && (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    background: 'rgba(0,99,151,0.06)',
-                    color: 'primary.main',
-                    px: 1,
-                    borderRadius: 0.5,
-                  }}
-                >
-                  <Icon type='icon-wendapinglun' sx={{ fontSize: 12 }} />
-                  <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
-                    {it.comment || 0}
-                  </Typography>
-                </Box>
-              )}
-              {postType === 'feedback' && (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    background: 'rgba(0,99,151,0.06)',
-                    color: 'primary.main',
-                  }}
-                >
-                  <Icon type='icon-wendapinglun' sx={{ fontSize: 12 }} />
-                  <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
-                    {(it.like || 0) - (it.dislike || 0)}
-                  </Typography>
-                </Box>
-              )}
-              {postType === 'article' && (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    background: 'rgba(0,99,151,0.06)',
-                    color: 'primary.main',
-                    px: 1,
-                    borderRadius: 0.5,
-                  }}
-                >
-                  <Icon type='icon-dianzan1' sx={{ fontSize: 12 }} />
-                  <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
-                    {(it.like || 0) - (it.dislike || 0)}
-                  </Typography>
-                </Box>
-              )}
-            </Box>
+          <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'center' }}>
+            {postType === 'question' && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  background: 'rgba(0,99,151,0.06)',
+                  color: 'primary.main',
+                  px: 1,
+                  borderRadius: 0.5,
+                }}
+              >
+                <Icon type='icon-wendapinglun' sx={{ fontSize: 12 }} />
+                <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
+                  {it.comment || 0}
+                </Typography>
+              </Box>
+            )}
+            {postType === 'feedback' && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  background: 'rgba(0,99,151,0.06)',
+                  color: 'primary.main',
+                }}
+              >
+                <Icon type='icon-wendapinglun' sx={{ fontSize: 12 }} />
+                <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
+                  {(it.like || 0) - (it.dislike || 0)}
+                </Typography>
+              </Box>
+            )}
+            {postType === 'article' && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  background: 'rgba(0,99,151,0.06)',
+                  color: 'primary.main',
+                  px: 1,
+                  borderRadius: 0.5,
+                }}
+              >
+                <Icon type='icon-dianzan1' sx={{ fontSize: 12 }} />
+                <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
+                  {(it.like || 0) - (it.dislike || 0)}
+                </Typography>
+              </Box>
+            )}
           </Box>
         </Box>
       </Box>
-    </Link>
+    </Box>
   )
 }
 
