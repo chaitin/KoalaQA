@@ -238,8 +238,8 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
               '&::-webkit-scrollbar': {
                 display: 'none',
               },
-              '-ms-overflow-style': 'none', // IE and Edge
-              'scrollbarWidth': 'none', // Firefox
+              msOverflowStyle: 'none', // IE and Edge
+              scrollbarWidth: 'none', // Firefox
             }}
             className='md-container'
           >
