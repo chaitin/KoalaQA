@@ -198,6 +198,7 @@ func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req Discus
 
 	d.in.Pub.Publish(ctx, topic.TopicDiscChange, topic.MsgDiscChange{
 		OP:       topic.OPInsert,
+		ForumID:  disc.ForumID,
 		DiscID:   disc.ID,
 		DiscUUID: disc.UUID,
 		Type:     disc.Type,
@@ -247,6 +248,7 @@ func (d *Discussion) Update(ctx context.Context, user model.UserInfo, uuid strin
 	}
 	d.in.Pub.Publish(ctx, topic.TopicDiscChange, topic.MsgDiscChange{
 		OP:       topic.OPUpdate,
+		ForumID:  disc.ForumID,
 		DiscID:   disc.ID,
 		DiscUUID: uuid,
 		Type:     disc.Type,
@@ -281,6 +283,7 @@ func (d *Discussion) Delete(ctx context.Context, user model.UserInfo, uuid strin
 	}
 	d.in.Pub.Publish(ctx, topic.TopicDiscChange, topic.MsgDiscChange{
 		OP:       topic.OPDelete,
+		ForumID:  disc.ForumID,
 		DiscID:   disc.ID,
 		DiscUUID: uuid,
 		RagID:    disc.RagID,
@@ -298,7 +301,7 @@ func (d *Discussion) ListSimilarity(ctx context.Context, discUUID string) (*mode
 	}
 
 	var res model.ListRes[*model.DiscussionListItem]
-	discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: disc.Title, ForumID: disc.ForumID, SimilarityThreshold: 0.2})
+	discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: disc.Title, ForumID: disc.ForumID, SimilarityThreshold: 0.01})
 	if err != nil {
 		return nil, err
 	}
@@ -410,7 +413,7 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 			})
 		}
 
-		discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: req.Keyword, ForumID: req.ForumID, SimilarityThreshold: 0.2})
+		discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: req.Keyword, ForumID: req.ForumID, SimilarityThreshold: 0.01})
 		if err != nil {
 			return nil, err
 		}
@@ -748,10 +751,9 @@ func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*mo
 	if err != nil {
 		return nil, err
 	}
-	records, err := d.in.Rag.QueryRecords(ctx, rag.QueryRecordsReq{
-		DatasetIDs:          []string{forum.DatasetID},
+	_, records, err := d.in.Rag.QueryRecords(ctx, rag.QueryRecordsReq{
+		DatasetID:           forum.DatasetID,
 		Query:               req.Keyword,
-		GroupIDs:            nil,
 		TopK:                10,
 		SimilarityThreshold: req.SimilarityThreshold,
 	})
@@ -874,6 +876,7 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 	d.in.Pub.Publish(ctx, topic.TopicCommentChange, topic.MsgCommentChange{
 		OP:       topic.OPInsert,
 		CommID:   comment.ID,
+		ForumID:  disc.ForumID,
 		DiscID:   disc.ID,
 		DiscUUID: discUUID,
 	})
@@ -936,6 +939,7 @@ func (d *Discussion) UpdateComment(ctx context.Context, user model.UserInfo, dis
 	d.in.Pub.Publish(ctx, topic.TopicCommentChange, topic.MsgCommentChange{
 		OP:       topic.OPUpdate,
 		CommID:   commentID,
+		ForumID:  disc.ForumID,
 		DiscID:   disc.ID,
 		DiscUUID: discUUID,
 	})
@@ -969,6 +973,7 @@ func (d *Discussion) DeleteComment(ctx context.Context, user model.UserInfo, dis
 	d.in.Pub.Publish(ctx, topic.TopicCommentChange, topic.MsgCommentChange{
 		OP:       topic.OPDelete,
 		CommID:   commentID,
+		ForumID:  disc.ForumID,
 		DiscID:   disc.ID,
 		DiscUUID: discUUID,
 	})

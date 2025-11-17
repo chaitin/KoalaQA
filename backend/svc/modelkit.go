@@ -155,6 +155,11 @@ type MKUpdateReq struct {
 }
 
 func (m *ModelKit) UpdateByID(ctx context.Context, id uint, req MKUpdateReq) error {
+	var entity model.LLM
+	err := m.repo.GetByID(ctx, &entity, id)
+	if err != nil {
+		return err
+	}
 	data := model.LLM{
 		Model:      req.Model,
 		APIKey:     req.APIKey,
@@ -163,6 +168,7 @@ func (m *ModelKit) UpdateByID(ctx context.Context, id uint, req MKUpdateReq) err
 		Type:       req.Type,
 		BaseURL:    req.BaseURL,
 		Provider:   string(req.Provider),
+		RagID:      entity.RagID,
 	}
 	if req.Param != nil {
 		data.Parameters = *req.Param

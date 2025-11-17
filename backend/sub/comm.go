@@ -15,6 +15,7 @@ import (
 type Comment struct {
 	logger *glog.Logger
 	llm    *svc.LLM
+	prompt *svc.Prompt
 	bot    *svc.Bot
 	trend  *svc.Trend
 	disc   *svc.Discussion
@@ -23,9 +24,10 @@ type Comment struct {
 	rag    rag.Service
 }
 
-func NewComment(disc *svc.Discussion, bot *svc.Bot, llm *svc.LLM, pub mq.Publisher, rag rag.Service, forum *svc.Forum, trend *svc.Trend) *Comment {
+func NewComment(disc *svc.Discussion, bot *svc.Bot, llm *svc.LLM, prompt *svc.Prompt, pub mq.Publisher, rag rag.Service, forum *svc.Forum, trend *svc.Trend) *Comment {
 	return &Comment{
 		llm:    llm,
+		prompt: prompt,
 		logger: glog.Module("sub.comment"),
 		disc:   disc,
 		bot:    bot,
@@ -91,20 +93,22 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 		}
 	}()
 
-	question, prompt, err := d.llm.GenerateChatPrompt(ctx, data.DiscID, data.CommID)
-	if err != nil {
-		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
-		return nil
-	}
-
 	forum, err := d.forum.GetByID(ctx, disc.ForumID)
 	if err != nil {
 		logger.WithErr(err).Warn("get forum failed")
 		return nil
 	}
-
+	ragContent, err := d.prompt.GenerateContentForRetrieval(ctx, data.DiscID)
+	if err != nil {
+		logger.WithContext(ctx).WithErr(err).Error("generate content for retrieval failed")
+		return nil
+	}
 	// record rag
-	ragID, err := d.rag.UpsertRecords(ctx, forum.DatasetID, disc.RagID, prompt, nil)
+	ragID, err := d.rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
+		DatasetID:  forum.DatasetID,
+		DocumentID: disc.RagID,
+		Content:    ragContent,
+	})
 	if err != nil {
 		return err
 	}
@@ -136,10 +140,16 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 		logger.WithContext(ctx).WithErr(err).Error("get bot failed")
 		return nil
 	}
+	question, prompt, err := d.prompt.GenerateAnswerPrompt(ctx, data.DiscID, data.CommID)
+	if err != nil {
+		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
+		return nil
+	}
 	llmRes, answered, err := d.llm.Answer(ctx, svc.GenerateReq{
 		Question:      question,
 		Prompt:        prompt,
 		DefaultAnswer: bot.UnknownPrompt,
+		NewCommentID:  data.CommID,
 	})
 	if err != nil {
 		return err
@@ -171,12 +181,72 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 }
 
 func (d *Comment) handleUpdate(ctx context.Context, data topic.MsgCommentChange) error {
-	d.logger.WithContext(ctx).With("comment_id", data.CommID).Info("handle update comment")
+	logger := d.logger.WithContext(ctx).With("comment_id", data.CommID)
+	logger.Info("handle update comment")
+	ragContent, err := d.prompt.GenerateContentForRetrieval(ctx, data.DiscID)
+	if err != nil {
+		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
+		return nil
+	}
+	forum, err := d.forum.GetByID(ctx, data.ForumID)
+	if err != nil {
+		logger.WithErr(err).Warn("get forum failed")
+		return nil
+	}
+	disc, err := d.disc.GetByID(ctx, data.DiscID)
+	if err != nil {
+		logger.WithErr(err).Error("get discussion failed")
+		return nil
+	}
+	ragID, err := d.rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
+		DatasetID:  forum.DatasetID,
+		DocumentID: disc.RagID,
+		Content:    ragContent,
+	})
+	if err != nil {
+		logger.WithErr(err).Error("update rag failed")
+		return nil
+	}
+	err = d.disc.UpdateRagID(ctx, data.DiscID, ragID)
+	if err != nil {
+		logger.WithErr(err).Error("update discussion rag failed")
+		return nil
+	}
 	return nil
 }
 
 func (d *Comment) handleDelete(ctx context.Context, data topic.MsgCommentChange) error {
 	go d.disc.DecrementComment(data.DiscUUID)
-	d.logger.WithContext(ctx).With("comment_id", data.CommID).Info("handle delete comment")
+	logger := d.logger.WithContext(ctx).With("comment_id", data.CommID)
+	logger.Info("handle delete comment")
+	ragContent, err := d.prompt.GenerateContentForRetrieval(ctx, data.DiscID)
+	if err != nil {
+		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
+		return nil
+	}
+	forum, err := d.forum.GetByID(ctx, data.ForumID)
+	if err != nil {
+		logger.WithErr(err).Warn("get forum failed")
+		return nil
+	}
+	disc, err := d.disc.GetByID(ctx, data.DiscID)
+	if err != nil {
+		logger.WithErr(err).Error("get discussion failed")
+		return nil
+	}
+	ragID, err := d.rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
+		DatasetID:  forum.DatasetID,
+		DocumentID: disc.RagID,
+		Content:    ragContent,
+	})
+	if err != nil {
+		logger.WithErr(err).Error("update rag failed")
+		return nil
+	}
+	err = d.disc.UpdateRagID(ctx, data.DiscID, ragID)
+	if err != nil {
+		logger.WithErr(err).Error("update discussion rag failed")
+		return nil
+	}
 	return nil
 }
