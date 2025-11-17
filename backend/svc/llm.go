@@ -315,8 +315,8 @@ func (l *LLM) queryKnowledgeDocuments(ctx context.Context, query string) ([]llm.
 
 	// 使用RAG服务查询相关文档
 	records, err := l.rag.QueryRecords(ctx, rag.QueryRecordsReq{
-		DatasetIDs: []string{l.dataset.GetBackendID(ctx)},
-		Query:      query,
+		DatasetID: l.dataset.GetBackendID(ctx),
+		Query:     query,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("RAG query failed: %w", err)
