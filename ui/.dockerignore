@@ -1,12 +1,19 @@
 # Node modules - will be installed in container
-node_modules
-*/node_modules
+**/node_modules
+node_modules/
+admin/node_modules
+front/node_modules
 .pnpm-store
+**/.pnpm-store
 
 # Build outputs
-dist
-.next
-build
+**/dist
+**/.next
+**/build
+dist/
+.next/
+build/
+*.tsbuildinfo
 
 # Development files
 .env.local
@@ -72,3 +79,10 @@ jspm_packages/
 # Temporary folders
 tmp/
 temp/
+
+# Additional optimization
+**/.turbo
+.cache
+.parcel-cache
+.eslintcache
+.stylelintcache
