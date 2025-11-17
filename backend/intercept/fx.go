@@ -23,6 +23,10 @@ func registerAdminAPI(i any) {
 	register("admin_api_interceptors", i)
 }
 
+func registerNotGuestAPI(i any) {
+	register("api_not_guest_interceptors", i)
+}
+
 func register(group string, i any) {
 	modules = append(modules, util.ProvideGroup(group, i))
 }
