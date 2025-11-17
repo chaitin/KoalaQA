@@ -65,8 +65,8 @@ func (d *NeedHuman) Handle(ctx context.Context, msg mq.Message) error {
 		return nil
 	}
 
-	if comment.ParentID == 0 {
-		logger.Debug("msg is answer, skip")
+	if comment.ParentID == 0 || comment.Bot {
+		logger.Debug("msg is answer or bot, skip")
 		return nil
 	}
 
