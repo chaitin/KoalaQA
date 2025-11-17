@@ -167,6 +167,7 @@ func (d *Discussion) Create(ctx context.Context, sessionUUID string, req Discuss
 		d.in.Pub.Publish(ctx, topic.TopicAIInsight, topic.MsgAIInsight{
 			ForumID: disc.ForumID,
 			Keyword: disc.Title,
+			Exclude: model.Int64Array{int64(disc.ID)},
 		})
 		fallthrough
 	case model.DiscussionTypeBlog:
@@ -376,11 +377,6 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 				Type: model.StatTypeSearch,
 				Ts:   util.TodayZero().Unix(),
 				Key:  sessionUUID,
-			})
-
-			d.in.Pub.Publish(ctx, topic.TopicAIInsight, topic.MsgAIInsight{
-				ForumID: req.ForumID,
-				Keyword: req.Keyword,
 			})
 		}
 
