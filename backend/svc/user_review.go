@@ -20,13 +20,13 @@ type UserReview struct {
 type UserReviewListReq struct {
 	*model.Pagination
 
-	State *model.UserReviewState `form:"state"`
+	State []model.UserReviewState `form:"state"`
 }
 
 func (u *UserReview) List(ctx context.Context, req UserReviewListReq) (*model.ListRes[model.UserReviewWithUser], error) {
 	var res model.ListRes[model.UserReviewWithUser]
 	err := u.repoReview.ListWithUser(ctx, &res.Items,
-		repo.QueryWithEqual("state", req.State),
+		repo.QueryWithEqual("state", req.State, repo.EqualOPIn),
 		repo.QueryWithPagination(req.Pagination),
 	)
 	if err != nil {
