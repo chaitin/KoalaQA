@@ -16,7 +16,7 @@ services:
 
   api:
     container_name: koala-qa-api
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/api:v1.7.0
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/api:v1.8.0
     restart: always
     environment:
       - TZ=${TIMEZONE:-Asia/Shanghai}
@@ -47,7 +47,7 @@ services:
 
   app:
     container_name: koala-qa-app
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/app:v1.7.0
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/app:v1.8.0
     restart: always
     environment:
       - TZ=${TIMEZONE:-Asia/Shanghai}
