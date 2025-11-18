@@ -27,6 +27,10 @@ func registerApiAuthRouter(r any) {
 	registerRouter("api_auth_routers", r)
 }
 
+func registerApiNotGuestRouter(r any) {
+	registerRouter("api_not_guest_routers", r)
+}
+
 func registerApiNoAuthRouter(r any) {
 	registerRouter("api_no_auth_routers", r)
 }

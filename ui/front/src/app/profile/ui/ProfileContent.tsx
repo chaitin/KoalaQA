@@ -2,7 +2,7 @@
 
 import { getUserUserId, ModelUserInfo, ModelUserRole, putUser } from '@/api'
 import { SvcUserStatisticsRes } from '@/api/types'
-import { Message } from '@/components'
+import { Message, useGuestActivation } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import UserAvatar from '@/components/UserAvatar'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
@@ -16,7 +16,7 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
-  Typography
+  Typography,
 } from '@mui/material'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { useContext, useEffect, useMemo, useState } from 'react'
@@ -25,6 +25,7 @@ import ChangePasswordModal from './ChangePasswordModal'
 import NotificationCenter from './NotificationCenter'
 import ProfileHeroCard from './ProfileHeroCard'
 import UserTrendList from './UserTrendList'
+import { Height } from '@mui/icons-material'
 
 const roleConfig = {
   [ModelUserRole.UserRoleUnknown]: {
@@ -45,6 +46,11 @@ const roleConfig = {
   [ModelUserRole.UserRoleUser]: {
     name: '用户',
     description: '普通用户',
+    color: 'default' as const,
+  },
+  [ModelUserRole.UserRoleGuest]: {
+    name: '游客',
+    description: '未激活用户，注册后待审核',
     color: 'default' as const,
   },
   [ModelUserRole.UserRoleMax]: {
@@ -81,6 +87,7 @@ function TabPanel(props: TabPanelProps) {
 
 export default function ProfileContent({ initialUser }: ProfileContentProps) {
   const { user, setUser, fetchUser } = useContext(AuthContext)
+  const { openModal } = useGuestActivation()
   const routerWithRouteName = useRouterWithRouteName()
   const router = routerWithRouteName.router
   const searchParams = useSearchParams()
@@ -95,6 +102,10 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
   const [changePasswordModalOpen, setChangePasswordModalOpen] = useState(false)
   const [bindEmailModalOpen, setBindEmailModalOpen] = useState(false)
   const [statistics, setStatistics] = useState<SvcUserStatisticsRes | null>(null)
+  const isGuestUser = useMemo(
+    () => (user?.role ?? initialUser?.role) === ModelUserRole.UserRoleGuest,
+    [initialUser?.role, user?.role],
+  )
   const metrics = useMemo(
     () => [
       { label: '问答', value: statistics?.qa_count ?? 0 },
@@ -320,10 +331,32 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
           }}
         >
           <TabPanel value={tabValue} index={0}>
-            <UserTrendList
-              userId={user?.uid || initialUser?.uid || 0}
-              ownerName={user?.username || initialUser?.username}
-            />
+            {isGuestUser ? (
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                sx={{ height: '300px', color: 'text.secondary' }}
+                alignItems='center'
+                justifyContent='center'
+              >
+                <Typography variant='body1' fontWeight={400}>
+                  您的账号未激活，请点击
+                </Typography>
+                <Typography
+                  variant='body1'
+                  sx={{ cursor: 'pointer' }}
+                  color='primary.main'
+                  fontWeight={500}
+                  onClick={openModal}
+                >
+                  提交申请
+                </Typography>
+              </Stack>
+            ) : (
+              <UserTrendList
+                userId={user?.uid || initialUser?.uid || 0}
+                ownerName={user?.username || initialUser?.username}
+              />
+            )}
           </TabPanel>
           <TabPanel value={tabValue} index={1}>
             <Stack

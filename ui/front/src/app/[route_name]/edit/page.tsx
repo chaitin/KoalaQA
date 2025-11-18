@@ -106,18 +106,23 @@ export default function EditPage() {
           <Box
             sx={{
               minHeight: '600px',
+              border: '1px solid #D9DEE2',
+              p: 2,
+              borderRadius: 1,
               '& .md-container .MuiIconButton-root': {
                 display: 'none',
               },
+              '& .editor-toolbar':{
+                borderBottom: '1px solid #D9DEE2',
+              }
             }}
           >
             <EditorWrap
               ref={editorRef}
               aiWriting
-              height={400}
+              mode='advanced'
               value={data.content}
               onTocUpdate={setHeadings}
-              showActions={false}
               key={`editor-${queryId || 'new'}-${data.content ? 1 : 0}`}
             />
           </Box>

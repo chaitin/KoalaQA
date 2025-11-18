@@ -6,7 +6,7 @@ import { Box, Button, IconButton, Stack, TextField, Tooltip, Typography } from '
 import { useRequest } from 'ahooks';
 import dayjs from 'dayjs';
 import React, { useEffect, useState, useRef } from 'react';
-import EditorWrap, { EditorWrapRef } from '../editor/edit/Wrap';
+import EditorWrap, { EditorWrapRef } from '../editor';
 import EditorContent from '../EditorContent';
 
 interface QaReviewModalProps {
@@ -134,7 +134,7 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
         </Stack>
       }
     >
-      <Stack direction="row" spacing={3} sx={{ height: '500px', width: '100%' }}>
+      <Stack direction="row" spacing={3} sx={{ height: '70vh', minHeight: 520, width: '100%' }}>
         {/* 历史问答对（仅查看） */}
         {hasHistoricalQa && (
           <Box sx={{ flex: 1, bgcolor: 'background.paper', p: 2, overflow: 'auto', width: '100%' }}>
@@ -219,14 +219,15 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
               borderRadius: 1,
               overflow: 'hidden',
               mt: 1,
+              minHeight: 320,
             }}
           >
             <EditorWrap
               ref={editorRef}
-              detail={{
-                content: answer,
-              }}
-              showActions={false}
+              value={answer}
+              onChange={setAnswer}
+              placeholder="请输入回答内容..."
+              mode="advanced"
             />
             {/* AI文本润色按钮 */}
             <Box

@@ -28,6 +28,11 @@ const roleConfig = {
     description: '普通用户',
     color: 'default' as const,
   },
+  [ModelUserRole.UserRoleGuest]: {
+    name: '游客',
+    description: '未激活用户，注册后待审核',
+    color: 'default' as const,
+  },
   [ModelUserRole.UserRoleMax]: {
     name: '未知',
     description: '',

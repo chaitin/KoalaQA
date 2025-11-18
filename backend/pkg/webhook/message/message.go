@@ -12,6 +12,7 @@ const (
 	TypeNewBlog
 	TypeQANeedReview
 	TypeAIInsightKnowledgeGap
+	TypeUserReviewGuest
 )
 
 type commonUserThird struct {
@@ -23,6 +24,7 @@ type commonUser struct {
 	ID     uint              `json:"id"`
 	Thirds []commonUserThird `json:"thirds"`
 	Name   string            `json:"name"`
+	Reason string            `json:"reason,omitempty"`
 }
 
 type commonDiscussion struct {

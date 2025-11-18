@@ -7,7 +7,7 @@ import {
   putAdminKbKbIdQuestionQaId,
 } from '@/api';
 import Card from '@/components/card';
-import EditorWrap, { EditorWrapRef } from '@/components/editor/edit/Wrap';
+import EditorWrap, { EditorWrapRef } from '@/components/editor';
 import QaReviewModal from '@/components/qaReviewModal';
 import { zodResolver } from '@hookform/resolvers/zod';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
@@ -224,13 +224,10 @@ const QaImport = (props: {
               <Box sx={{ position: 'relative' }}>
                 <EditorWrap
                   ref={editorRef}
-                  detail={{
-                    id: 'reply-editor',
-                    name: '回答',
-                    content: field.value,
-                  }}
-                  height={200}
-                  showActions={false}
+                  value={field.value ?? ''}
+                  onChange={value => field.onChange(value)}
+                  placeholder="请输入回答内容..."
+                  mode="advanced"
                 />
                 <Box
                   sx={{

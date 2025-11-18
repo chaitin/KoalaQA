@@ -15,7 +15,7 @@ func newDiscussionAuth(svc *svc.Discussion) server.Router {
 }
 
 func init() {
-	registerApiAuthRouter(newDiscussionAuth)
+	registerApiNotGuestRouter(newDiscussionAuth)
 }
 
 func (d *discussionAuth) Route(h server.Handler) {

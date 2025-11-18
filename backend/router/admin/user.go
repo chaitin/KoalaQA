@@ -80,7 +80,7 @@ func (u *user) Update(ctx *context.Context) {
 		return
 	}
 
-	err = u.svcUser.Update(ctx, userID, req)
+	err = u.svcUser.Update(ctx, ctx.GetUser().UID, userID, req)
 	if err != nil {
 		ctx.InternalError(err, "update user failed")
 		return
