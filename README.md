@@ -19,10 +19,10 @@
 
 ## 🌟 界面展示
 
-|     |      |
-| ---------------------------------------- | ---------------------------------------- |
-| <img src="/images/004.jpg" width=370 /> | <img src="/images/003.jpg" width=370 /> |
-| <img src="/images/001.jpg" width=370 /> | <img src="/images/002.jpg" width=370 /> |
+|  KoalaQA 论坛         |   后台管理             |
+| ------------------------------------------ | ------------------------------------------ |
+| <img src="images/004.jpg" width=370 /> | <img src="images/002.jpg" width=370 /> |
+| <img src="images/003.jpg" width=370 /> | <img src="images/005.jpg" width=370 /> |
 
 ## 🔥 功能与特色
 - **AI 智能客服**：7*24 实时解答用户提问，结合持续训练的知识库，提供高准确率回复，支持无缝转人工。
@@ -80,7 +80,7 @@ SUCCESS    密码: **********************
 
 欢迎加入我们的微信群进行交流。
 
-<img src="/images/wechat.png" width="300" />
+<img src="images/wechat.png" width="300" />
 
 ## 🙋‍♂️ 贡献
 
