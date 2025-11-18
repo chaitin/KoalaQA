@@ -2,6 +2,7 @@ package rag
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/chaitin/koalaqa/model"
@@ -57,22 +58,19 @@ func (c *CTRag) UpdateDataset(ctx context.Context, datasetID string, req UpdateD
 
 func (c *CTRag) UpsertRecords(ctx context.Context, datasetID string, ragID string, content string, groupIDs []int) (string, error) {
 	logger := c.logger.WithContext(ctx).With("dataset_id", datasetID).With("group_ids", groupIDs).With("rag_id", ragID)
-	if ragID != "" {
-		err := c.DeleteRecords(ctx, datasetID, []string{ragID})
-		if err != nil {
-			logger.WithErr(err).Warn("delete records failed")
-		}
-	}
 	logger.Debug("upload document text")
-	doc, err := c.client.Documents.Upload(ctx, &raglite.UploadDocumentRequest{
-		DatasetID: datasetID,
-		File:      strings.NewReader(content),
-		Filename:  "document.md",
-		Metadata: map[string]interface{}{
-			"group_ids": groupIDs,
-		},
-		Tags: nil,
-	})
+	req := &raglite.UploadDocumentRequest{
+		DatasetID:  datasetID,
+		DocumentID: ragID,
+		File:       strings.NewReader(content),
+		Filename:   fmt.Sprintf("%s.md", uuid.NewString()),
+		Metadata:   make(map[string]interface{}),
+		Tags:       nil,
+	}
+	if len(groupIDs) > 0 {
+		req.Metadata["group_ids"] = groupIDs
+	}
+	doc, err := c.client.Documents.Upload(ctx, req)
 	if err != nil {
 		return "", err
 	}
