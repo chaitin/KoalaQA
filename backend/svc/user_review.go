@@ -34,7 +34,7 @@ func (u *UserReview) List(ctx context.Context, req UserReviewListReq) (*model.Li
 	}
 
 	err = u.repoReview.Count(ctx, &res.Total,
-		repo.QueryWithEqual("state", req.State),
+		repo.QueryWithEqual("state", req.State, repo.EqualOPIn),
 	)
 	if err != nil {
 		return nil, err
