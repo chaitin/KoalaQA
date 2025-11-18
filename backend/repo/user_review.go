@@ -24,7 +24,11 @@ func (u *UserReview) ListWithUser(ctx context.Context, res any, queryFuncs ...Qu
 
 func (u *UserReview) CreateNotExist(ctx context.Context, data *model.UserReview) (bool, error) {
 	res := u.model(ctx).Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "type"}, {Name: "user_id"}},
+		Columns: []clause.Column{{Name: "type"}, {Name: "user_id"}},
+		TargetWhere: clause.Where{Exprs: []clause.Expression{clause.Eq{
+			Column: "state",
+			Value:  model.UserReviewStateReview,
+		}}},
 		DoNothing: true,
 	}).Create(data)
 
