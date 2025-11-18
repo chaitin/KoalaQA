@@ -1,7 +1,4 @@
-# RAGLite PostgreSQL with zhparser (Chinese Full-Text Search)
-ARG PG_VERSION=17.6
-
-FROM postgres:${PG_VERSION}-bookworm AS builder
+FROM postgres:17.6-bookworm AS builder
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -43,7 +40,7 @@ RUN set -ex \
     && rm -rf zhparser
 
 # 最终镜像
-FROM postgres:${PG_VERSION}-bookworm
+FROM postgres:17.6-bookworm
 
 # 配置中文语言环境
 RUN apt-get update \
@@ -53,11 +50,11 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # 从构建阶段复制文件
-COPY --from=builder /usr/lib/postgresql/${PG_MAJOR}/lib/zhparser.so /usr/lib/postgresql/${PG_MAJOR}/lib/
+COPY --from=builder /usr/lib/postgresql/17/lib/zhparser.so /usr/lib/postgresql/17/lib/
 COPY --from=builder /usr/local/lib/libscws.* /usr/local/lib/
-COPY --from=builder /usr/share/postgresql/${PG_MAJOR}/extension/zhparser* /usr/share/postgresql/${PG_MAJOR}/extension/
-COPY --from=builder /usr/lib/postgresql/${PG_MAJOR}/lib/bitcode/zhparser* /usr/lib/postgresql/${PG_MAJOR}/lib/bitcode/
-COPY --from=builder /usr/share/postgresql/${PG_MAJOR}/tsearch_data/*.utf8.* /usr/share/postgresql/${PG_MAJOR}/tsearch_data/
+COPY --from=builder /usr/share/postgresql/17/extension/zhparser* /usr/share/postgresql/17/extension/
+COPY --from=builder /usr/lib/postgresql/17/lib/bitcode/zhparser* /usr/lib/postgresql/17/lib/bitcode/
+COPY --from=builder /usr/share/postgresql/17/tsearch_data/*.utf8.* /usr/share/postgresql/17/tsearch_data/
 
 RUN ldconfig
 

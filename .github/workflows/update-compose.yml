@@ -32,8 +32,8 @@ jobs:
           extract_tag() {
             local dockerfile="$1"
             if [ -f "$dockerfile" ]; then
-              # Extract the tag from FROM instruction
-              grep "^FROM" "$dockerfile" | head -1 | sed 's/.*://g' | tr -d ' \n\r'
+              # Extract the tag from FROM instruction (handles multi-stage builds with AS)
+              grep "^FROM" "$dockerfile" | head -1 | sed 's/.*:\([^ ]*\).*/\1/' | tr -d '\n\r'
             else
               echo "ERROR: Dockerfile not found: $dockerfile"
               return 1
