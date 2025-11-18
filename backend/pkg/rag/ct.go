@@ -56,21 +56,21 @@ func (c *CTRag) UpdateDataset(ctx context.Context, datasetID string, req UpdateD
 	return nil
 }
 
-func (c *CTRag) UpsertRecords(ctx context.Context, datasetID string, ragID string, content string, groupIDs []int) (string, error) {
-	logger := c.logger.WithContext(ctx).With("dataset_id", datasetID).With("group_ids", groupIDs).With("rag_id", ragID)
-	logger.Debug("upload document text")
-	req := &raglite.UploadDocumentRequest{
-		DatasetID:  datasetID,
-		DocumentID: ragID,
-		File:       strings.NewReader(content),
+func (c *CTRag) UpsertRecords(ctx context.Context, req UpsertRecordsReq) (string, error) {
+	logger := c.logger.WithContext(ctx).With("dataset_id", req.DatasetID).With("rag_id", req.DocumentID)
+	logger.Debug("upsert records")
+	data := &raglite.UploadDocumentRequest{
+		DatasetID:  req.DatasetID,
+		DocumentID: req.DocumentID,
+		File:       strings.NewReader(req.Content),
 		Filename:   fmt.Sprintf("%s.md", uuid.NewString()),
 		Metadata:   make(map[string]interface{}),
-		Tags:       nil,
+		Tags:       make([]string, 0),
 	}
-	if len(groupIDs) > 0 {
-		req.Metadata["group_ids"] = groupIDs
+	if len(req.Tags) > 0 {
+		data.Tags = req.Tags
 	}
-	doc, err := c.client.Documents.Upload(ctx, req)
+	doc, err := c.client.Documents.Upload(ctx, data)
 	if err != nil {
 		return "", err
 	}
@@ -86,12 +86,11 @@ func (c *CTRag) QueryRecords(ctx context.Context, req QueryRecordsReq) ([]*model
 		req.SimilarityThreshold = 0.3
 	}
 	res, err := c.client.Search.Retrieve(ctx, &raglite.SearchRequest{
-		DatasetID: req.DatasetID,
-		Query:     req.Query,
-		TopK:      req.TopK,
-		Metadata: map[string]interface{}{
-			"group_ids": req.GroupIDs,
-		},
+		DatasetID:           req.DatasetID,
+		Query:               req.Query,
+		TopK:                req.TopK,
+		Metadata:            make(map[string]interface{}),
+		Tags:                req.Tags,
 		SimilarityThreshold: req.SimilarityThreshold,
 	})
 	if err != nil {
@@ -109,7 +108,7 @@ func (c *CTRag) QueryRecords(ctx context.Context, req QueryRecordsReq) ([]*model
 	c.logger.WithContext(ctx).
 		With("dataset_id", req.DatasetID).
 		With("query", req.Query).
-		With("group_ids", req.GroupIDs).
+		With("tags", req.Tags).
 		With("nodes_len", len(nodes)).
 		Debug("query records success")
 	return nodes, nil

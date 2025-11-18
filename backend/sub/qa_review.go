@@ -118,7 +118,6 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 	chunks, err := q.rag.QueryRecords(ctx, rag.QueryRecordsReq{
 		DatasetID:           q.dataset.GetBackendID(ctx),
 		Query:               data.DiscussTitle,
-		GroupIDs:            nil,
 		TopK:                1000,
 		SimilarityThreshold: 0.5,
 	})

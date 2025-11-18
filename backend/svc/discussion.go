@@ -751,7 +751,6 @@ func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*mo
 	records, err := d.in.Rag.QueryRecords(ctx, rag.QueryRecordsReq{
 		DatasetID:           forum.DatasetID,
 		Query:               req.Keyword,
-		GroupIDs:            nil,
 		TopK:                10,
 		SimilarityThreshold: req.SimilarityThreshold,
 	})
