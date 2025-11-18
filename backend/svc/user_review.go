@@ -91,18 +91,16 @@ func (u *UserReview) Update(ctx context.Context, opUID uint, id uint, req UserRe
 
 	switch review.Type {
 	case model.UserReviewTypeGuest:
-		if req.State == model.UserReviewStateDeny {
-			break
-		}
-
-		err = u.repoUser.Update(ctx, map[string]any{
-			"role":       model.UserRoleUser,
-			"updated_at": time.Now(),
-		}, repo.QueryWithEqual("id", review.UserID),
-			repo.QueryWithEqual("role", model.UserRoleGuest),
-		)
-		if err != nil {
-			return err
+		if req.State == model.UserReviewStatePass {
+			err = u.repoUser.Update(ctx, map[string]any{
+				"role":       model.UserRoleUser,
+				"updated_at": time.Now(),
+			}, repo.QueryWithEqual("id", review.UserID),
+				repo.QueryWithEqual("role", model.UserRoleGuest),
+			)
+			if err != nil {
+				return err
+			}
 		}
 
 		u.pub.Publish(ctx, topic.TopicMessageNotify, topic.MsgMessageNotify{
@@ -113,7 +111,7 @@ func (u *UserReview) Update(ctx context.Context, opUID uint, id uint, req UserRe
 			},
 			Type:   model.MsgNotifyTypeUserReview,
 			FromID: opUID,
-			ToID:   review.ID,
+			ToID:   review.UserID,
 		})
 	}
 

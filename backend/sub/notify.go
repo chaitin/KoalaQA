@@ -87,13 +87,15 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 	var fromUser model.User
 	err = mn.user.GetByID(ctx, &fromUser, data.FromID)
 	if err != nil {
-		return err
+		logger.WithErr(err).Warn("get from user failed")
+		return nil
 	}
 
 	var toUser model.User
 	err = mn.user.GetByID(ctx, &toUser, data.ToID)
 	if err != nil {
-		return err
+		logger.WithErr(err).Warn("get to user failed")
+		return nil
 	}
 
 	var (
