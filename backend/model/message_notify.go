@@ -11,7 +11,7 @@ const (
 	MsgNotifyTypeDislikeComment
 	MsgNotifyTypeBotUnknown
 	MsgNotifyTypeLikeDiscussion
-	MsgNotifyTypeReview
+	MsgNotifyTypeUserReview
 )
 
 type MessageNotify struct {

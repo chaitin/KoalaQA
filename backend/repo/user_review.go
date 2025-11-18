@@ -40,6 +40,19 @@ func (u *UserReview) Get(ctx context.Context, res any, queryFuncs ...QueryOptFun
 	return u.model(ctx).Scopes(opt.Scopes()...).First(res).Error
 }
 
+func (u *UserReview) GetByIDWithUser(ctx context.Context, id uint) (*model.UserReviewWithUser, error) {
+	var res model.UserReviewWithUser
+	err := u.model(ctx).Select("user_reviews.*, users.email as user_email, users.name as user_name, users.avatar as user_avatar").
+		Joins("LEFT JOIN users ON users.id = user_reviews.user_id").
+		Where("user_reviews.id = ?", id).
+		First(&res).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
 func newUserReview(db *database.DB) *UserReview {
 	return &UserReview{
 		base: base[*model.UserReview]{

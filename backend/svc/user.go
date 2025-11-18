@@ -200,7 +200,7 @@ func (u *User) Update(ctx context.Context, opUserID uint, id uint, req UserUpdat
 						ReviewType:  model.UserReviewTypeGuest,
 						ReviewState: model.UserReviewStatePass,
 					},
-					Type:   model.MsgNotifyTypeReview,
+					Type:   model.MsgNotifyTypeUserReview,
 					FromID: opUserID,
 					ToID:   id,
 				})
