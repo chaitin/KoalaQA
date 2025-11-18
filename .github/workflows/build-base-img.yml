@@ -28,7 +28,7 @@ jobs:
           - name: db
             dockerfile: docker/db/Dockerfile
             context: docker/db
-            tag: "17.6-alpine3.22"
+            tag: "17.6-bookworm"
           - name: mq
             dockerfile: docker/mq/Dockerfile
             context: docker/mq
