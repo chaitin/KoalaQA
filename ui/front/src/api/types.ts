@@ -1264,7 +1264,7 @@ export interface GetAdminUserReviewParams {
   page?: number;
   /** @min 1 */
   size?: number;
-  state?: number;
+  state?: number[];
 }
 
 export interface PutAdminUserReviewReviewIdParams {
