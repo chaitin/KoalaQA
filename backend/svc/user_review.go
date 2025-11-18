@@ -91,6 +91,10 @@ func (u *UserReview) Update(ctx context.Context, opUID uint, id uint, req UserRe
 
 	switch review.Type {
 	case model.UserReviewTypeGuest:
+		if req.State == model.UserReviewStateDeny {
+			break
+		}
+
 		err = u.repoUser.Update(ctx, map[string]any{
 			"role":       model.UserRoleUser,
 			"updated_at": time.Now(),
