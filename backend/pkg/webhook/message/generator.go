@@ -5,13 +5,15 @@ import (
 	"fmt"
 
 	"github.com/chaitin/koalaqa/pkg/glog"
+	"github.com/chaitin/koalaqa/repo"
 	"go.uber.org/fx"
 )
 
 type generatorIn struct {
 	fx.In
 
-	Common *commonGetter
+	RepoReview *repo.UserReview
+	Common     *commonGetter
 }
 
 type Generator struct {
@@ -80,6 +82,29 @@ func (g *Generator) AIInsight(ctx context.Context, msgType Type) (Message, error
 	switch msgType {
 	case TypeAIInsightKnowledgeGap:
 		return NewAIInsightKnowledgeGap(address), nil
+	default:
+		return nil, fmt.Errorf("action %d not support", msgType)
+	}
+}
+
+func (g *Generator) UserReview(ctx context.Context, msgType Type, id uint) (Message, error) {
+	address, err := g.in.Common.publicAddress(ctx, "/admin/users")
+	if err != nil {
+		return nil, err
+	}
+
+	review, err := g.in.RepoReview.GetByIDWithUser(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	switch msgType {
+	case TypeUserReviewGuest:
+		return NewUserReviewGuest(commonUser{
+			ID:     review.UserID,
+			Name:   review.UserName,
+			Reason: review.Reason,
+		}, address), nil
 	default:
 		return nil, fmt.Errorf("action %d not support", msgType)
 	}

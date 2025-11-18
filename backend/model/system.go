@@ -43,7 +43,8 @@ func (s PublicAddress) FullURL(p string) string {
 type AuthType uint
 
 const (
-	AuthTypePassword = iota + 1
+	AuthTypeFree = iota
+	AuthTypePassword
 	AuthTypeOIDC
 	AuthTypeWeCom
 	AuthTypeWechat
@@ -56,8 +57,10 @@ type AuthInfo struct {
 }
 
 type Auth struct {
-	EnableRegister bool       `json:"enable_register"`
-	PublicAccess   bool       `json:"public_access"`
+	EnableRegister bool `json:"enable_register"`
+	NeedReview     bool `json:"need_review"`
+	PublicAccess   bool `json:"public_access"`
+	// Deprecated: only use in migration
 	PublicForumIDs []uint     `json:"public_forum_ids"`
 	AuthInfos      []AuthInfo `json:"auth_infos" binding:"omitempty,dive"`
 }

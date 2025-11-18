@@ -26,14 +26,19 @@ enum ContentType {
 
 // 消息通知类型枚举
 enum MsgNotifyType {
-  MsgNotifyTypeUnknown,
-  MsgNotifyTypeReplyDiscuss, // 回答了你的问题
-  MsgNotifyTypeReplyComment, // 回复了你的回答
-  MsgNotifyTypeApplyComment, // 采纳了你的回答
-  MsgNotifyTypeLikeComment, //赞同了你的回答
-  MsgNotifyTypeDislikeComment, // 不喜欢你的回答 、不喜欢机器人的回答（仅管理员）
-  MsgNotifyTypeBotUnknown, //提出了机器人无法回答的问题（仅管理员
-  MsgNotifyTypeLikeFeedback, //点赞了你的反馈
+  MsgNotifyTypeUnknown = 0,
+  MsgNotifyTypeReplyDiscuss = 1, // 回答了你的问题
+  MsgNotifyTypeReplyComment = 2, // 回复了你的回答
+  MsgNotifyTypeApplyComment = 3, // 采纳了你的回答
+  MsgNotifyTypeLikeComment = 4, //赞同了你的回答
+  MsgNotifyTypeDislikeComment = 5, // 不喜欢你的回答 、不喜欢机器人的回答（仅管理员）
+  MsgNotifyTypeBotUnknown = 6, //提出了机器人无法回答的问题（仅管理员
+  MsgNotifyTypeLikeFeedback = 7, //点赞了你的反馈
+  MsgNotifyTypeUserReview = 8, // 用户审核结果
+}
+
+enum UserReviewType {
+  UserReviewTypeGuest = 1,
 }
 
 // 内容类型配置接口
@@ -135,9 +140,24 @@ class ContentTypeConfigManager {
  * @param info 消息通知信息
  * @returns 格式化的通知文本
  */
+const getUserReviewNotificationText = (info: MessageNotifyInfo): string => {
+  if (info.review_type === UserReviewType.UserReviewTypeGuest) {
+    if (info.review_status === 1) {
+      return '恭喜！管理员通过了您的账号申请'
+    }
+    if (info.review_status === 2) {
+      return '抱歉，管理员拒绝了您的申请，请重试'
+    }
+  }
+  return ''
+}
+
 const getNotificationText = (info: MessageNotifyInfo): string => {
   const configManager = ContentTypeConfigManager.getInstance()
   const config = configManager.getConfig(info.discussion_type)
+  if (info.type === MsgNotifyType.MsgNotifyTypeUserReview) {
+    return getUserReviewNotificationText(info)
+  }
   switch (info.type) {
     case MsgNotifyType.MsgNotifyTypeReplyDiscuss:
       return config.replyAction
@@ -195,6 +215,9 @@ type MessageNotifyInfo = {
   forum_id: number
   new: boolean
   parent_comment?: string
+  review_id?: number
+  review_status?: number
+  review_type?: number
 }
 
 // 导出内容类型配置管理器，供其他模块使用
@@ -230,6 +253,9 @@ export const getNotificationTextForExport = (
     id: (info as any).id || 0,
     forum_id: (info as any).forum_id || 0,
     new: (info as any).new || false,
+    review_id: (info as any).review_id,
+    review_status: (info as any).review_status,
+    review_type: (info as any).review_type,
   }
   return getNotificationText(adaptedInfo)
 }
@@ -309,6 +335,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
             const { title, options } = formatNotificationData(newNotification, notificationText)
 
             const browserNotification = showNotification(title, options)
+            const isUserReview = newNotification.type === MsgNotifyType.MsgNotifyTypeUserReview
 
             // 点击通知时跳转到对应页面
             if (browserNotification) {
@@ -325,11 +352,13 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
                     console.error('标记通知已读失败:', error)
                   }
                 }
-                const forum = forums.find((f) => f.id === newNotification.forum_id)
-                const routePath = forum?.route_name
-                  ? `/${forum.route_name}/${newNotification.discuss_uuid}`
-                  : `/${newNotification.forum_id}/${newNotification.discuss_uuid}`
-                router.push(routePath)
+                if (!isUserReview) {
+                  const forum = forums.find((f) => f.id === newNotification.forum_id)
+                  const routePath = forum?.route_name
+                    ? `/${forum.route_name}/${newNotification.discuss_uuid}`
+                    : `/${newNotification.forum_id}/${newNotification.discuss_uuid}`
+                  router.push(routePath)
+                }
                 browserNotification.close()
               }
             } else {
@@ -387,6 +416,10 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
       // 更新UI
       setUnreadCount((c) => Math.max(0, c - 1))
       setNotifications((prev) => prev.filter((n) => n.id !== notification.id))
+
+      if (notification.type === MsgNotifyType.MsgNotifyTypeUserReview) {
+        return
+      }
 
       // 根据 forum_id 查找对应的 route_name
       const forum = forums.find((f) => f.id === notification.forum_id)
@@ -485,7 +518,11 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
             {notifications.length === 0 ? (
               <Box sx={{ p: 2, textAlign: 'center', color: 'text.secondary', fontSize: '14px' }}>暂无通知</Box>
             ) : (
-              notifications.map((notification, index) => (
+              notifications.map((notification, index) => {
+                const notificationText = getNotificationText(notification)
+                const { action, content } = splitNotificationText(notificationText)
+                const isUserReview = notification.type === MsgNotifyType.MsgNotifyTypeUserReview
+                return (
                 <Stack
                   key={index}
                   sx={{
@@ -505,21 +542,30 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
                     }}
                   >
                     <Stack direction='row' spacing={1} alignItems='center' sx={{ mb: 0.5 }}>
-                      <Typography
-                        variant='body2'
-                        sx={{
-                          fontWeight: 500,
-                          color: '#333',
-                          fontSize: '14px',
-                        }}
-                      >
-                        {notification.from_name || '未知用户'}
-                      </Typography>
-                      {(() => {
-                        const notificationText = getNotificationText(notification)
-                        const { action, content } = splitNotificationText(notificationText)
-                        return (
-                          action && (
+                      {isUserReview ? (
+                        <Typography
+                          variant='body2'
+                          sx={{
+                            fontWeight: 500,
+                            color: '#333',
+                            fontSize: '14px',
+                          }}
+                        >
+                          {notificationText}
+                        </Typography>
+                      ) : (
+                        <>
+                          <Typography
+                            variant='body2'
+                            sx={{
+                              fontWeight: 500,
+                              color: '#333',
+                              fontSize: '14px',
+                            }}
+                          >
+                            {notification.from_name || '未知用户'}
+                          </Typography>
+                          {action && (
                             <Typography
                               variant='body2'
                               sx={{
@@ -530,30 +576,32 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
                               {action}
                               {content}
                             </Typography>
-                          )
-                        )
-                      })()}
+                          )}
+                        </>
+                      )}
                     </Stack>
-                    {notification.type === MsgNotifyType.MsgNotifyTypeReplyComment ? (
-                      <MarkDown
-                        content={notification.parent_comment}
-                        truncateLength={10}
-                        sx={{ bgcolor: 'transparent', color: 'text.auxiliary' }}
-                      />
-                    ) : (
-                      <Ellipsis
-                        sx={{
-                          fontWeight: 500,
-                          color: 'text.auxiliary',
-                          fontSize: '14px',
-                        }}
-                      >
-                        {notification.discuss_title || '无标题'}
-                      </Ellipsis>
-                    )}
+                    {!isUserReview &&
+                      (notification.type === MsgNotifyType.MsgNotifyTypeReplyComment ? (
+                        <MarkDown
+                          content={notification.parent_comment}
+                          truncateLength={10}
+                          sx={{ bgcolor: 'transparent', color: 'text.auxiliary' }}
+                        />
+                      ) : (
+                        <Ellipsis
+                          sx={{
+                            fontWeight: 500,
+                            color: 'text.auxiliary',
+                            fontSize: '14px',
+                          }}
+                        >
+                          {notification.discuss_title || '无标题'}
+                        </Ellipsis>
+                      ))}
                   </Box>
                 </Stack>
-              ))
+              )
+              })
             )}
           </Box>
           <Box

@@ -415,7 +415,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
         onSubmit()
       }}
       okText='发布'
-      width={910}
+      width={type === 'qa' ? 910 : 600}
       okButtonProps={{
         loading,
         id: 'submit-discussion-id',
@@ -427,8 +427,10 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
           gap: showSimilarContent ? 3 : 0,
           alignItems: 'stretch',
           position: 'relative',
-          minHeight: '60vh',
-          height: '60vh',
+          height: showSimilarContent ? '60vh' : 'auto',
+          '& .editor-wrap':{
+            height: '100%',
+          }
         }}
       >
         <Box
@@ -438,8 +440,6 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
             width: showSimilarContent ? 'auto' : '100%',
             display: 'flex',
             flexDirection: 'column',
-            minHeight: '60vh',
-            height: '60vh',
           }}
         >
           <Stack gap={3} sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -586,10 +586,8 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                       control={control}
                       render={({ field }) => (
                         <EditorWrap
-                          height={360}
                           ref={editorRef}
                           value={field.value || ''}
-                          showActions={false}
                           onChange={
                             // 只在问答类型时添加 onChange，用于相似内容查询
                             showSimilarContent
@@ -671,7 +669,6 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                   sx={{
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 2,
                     overflowX: 'hidden',
                     p: 2,
                     pt: 0,

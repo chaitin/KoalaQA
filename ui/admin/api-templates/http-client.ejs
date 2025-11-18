@@ -21,6 +21,7 @@ import type {
   ResponseType,
 } from "axios";
 import axios from "axios";
+import qs from "qs";
 
 export type QueryParamsType = Record<string | number, any>;
 
@@ -132,6 +133,10 @@ export class HttpClient<SecurityDataType = unknown> {
       withCredentials: true,
       ...axiosConfig,
       baseURL: axiosConfig.baseURL || "/api",
+      paramsSerializer: {
+        serialize: (params) =>
+          qs.stringify(params, { arrayFormat: "repeat" }),
+      },
     });
     this.secure = secure;
     this.format = format;

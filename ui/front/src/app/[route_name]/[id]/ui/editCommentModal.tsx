@@ -29,7 +29,7 @@ const EditCommentModal: React.FC<EditCommentModalProps> = ({ data, open, onOk, o
       }}
       width={800}
     >
-      <EditorWrap ref={editorRef} value={data?.content} showActions={false} />
+      <EditorWrap ref={editorRef} value={data?.content} />
     </Modal>
   )
 }
