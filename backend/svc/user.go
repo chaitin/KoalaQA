@@ -12,8 +12,10 @@ import (
 	"github.com/chaitin/koalaqa/pkg/database"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/jwt"
+	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/oss"
 	"github.com/chaitin/koalaqa/pkg/third_auth"
+	"github.com/chaitin/koalaqa/pkg/topic"
 	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/repo"
 	"github.com/google/uuid"
@@ -30,6 +32,7 @@ type User struct {
 	oc             oss.Client
 	repoOrg        *repo.Org
 	repoUserReview *repo.UserReview
+	pub            mq.Publisher
 	logger         *glog.Logger
 }
 
@@ -132,7 +135,7 @@ type UserUpdateReq struct {
 	OrgIDs   model.Int64Array `json:"org_ids"`
 }
 
-func (u *User) Update(ctx context.Context, id uint, req UserUpdateReq) error {
+func (u *User) Update(ctx context.Context, opUserID uint, id uint, req UserUpdateReq) error {
 	var user model.User
 	err := u.repoUser.GetByID(ctx, &user, id)
 	if err != nil {
@@ -172,14 +175,35 @@ func (u *User) Update(ctx context.Context, id uint, req UserUpdateReq) error {
 		updateM["role"] = req.Role
 
 		if user.Role == model.UserRoleGuest {
-			err = u.repoUserReview.Update(ctx, map[string]any{
-				"state":      model.UserReviewStatePass,
-				"updated_at": time.Now(),
-			}, repo.QueryWithEqual("user_id", user.ID),
+			var review model.UserReview
+			err := u.repoUserReview.Get(ctx, &review,
+				repo.QueryWithEqual("user_id", user.ID),
 				repo.QueryWithEqual("type", model.UserReviewTypeGuest),
-				repo.QueryWithEqual("state", model.UserReviewStateReview))
+				repo.QueryWithEqual("state", model.UserReviewStateReview),
+			)
 			if err != nil {
-				return err
+				if !errors.Is(err, database.ErrRecordNotFound) {
+					return err
+				}
+			} else {
+				err = u.repoUserReview.Update(ctx, map[string]any{
+					"state":      model.UserReviewStatePass,
+					"updated_at": time.Now(),
+				}, repo.QueryWithEqual("id", review.ID))
+				if err != nil {
+					return err
+				}
+
+				u.pub.Publish(ctx, topic.TopicMessageNotify, topic.MsgMessageNotify{
+					UserReviewHeader: model.UserReviewHeader{
+						ReviewID:    review.ID,
+						ReviewType:  model.UserReviewTypeGuest,
+						ReviewState: model.UserReviewStatePass,
+					},
+					Type:   model.MsgNotifyTypeReview,
+					FromID: opUserID,
+					ToID:   id,
+				})
 			}
 		}
 		// 更新用户角色，用于后续判断
@@ -643,7 +667,7 @@ func (u *User) Statistics(ctx context.Context, curUserID uint, userID uint) (*Us
 
 func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth,
 	authMgmt *third_auth.Manager, oc oss.Client, org *repo.Org,
-	disc *repo.Discussion, comm *repo.Comment, review *repo.UserReview) *User {
+	disc *repo.Discussion, comm *repo.Comment, review *repo.UserReview, pub mq.Publisher) *User {
 	return &User{
 		jwt:            genrator,
 		repoUser:       repoUser,
@@ -654,6 +678,7 @@ func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth,
 		repoDisc:       disc,
 		repoComment:    comm,
 		repoUserReview: review,
+		pub:            pub,
 		logger:         glog.Module("svc", "user"),
 	}
 }

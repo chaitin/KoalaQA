@@ -17,7 +17,7 @@ const (
 type UserReview struct {
 	Base
 
-	Type     UserReviewType  `gorm:"column:user_review_type;uniqueIndex:udx_user_review_type_user_id" json:"type"`
+	Type     UserReviewType  `gorm:"column:type;uniqueIndex:udx_user_review_type_user_id" json:"type"`
 	UserID   uint            `gorm:"column:user_id;type:bigint;uniqueIndex:udx_user_review_type_user_id" json:"user_id"`
 	AuthType AuthType        `gorm:"column:auth_type" json:"auth_type"`
 	Reason   string          `gorm:"column:reason;type:text" json:"reason"`

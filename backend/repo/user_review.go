@@ -35,6 +35,11 @@ func (u *UserReview) CreateNotExist(ctx context.Context, data *model.UserReview)
 	return res.RowsAffected > 0, nil
 }
 
+func (u *UserReview) Get(ctx context.Context, res any, queryFuncs ...QueryOptFunc) error {
+	opt := getQueryOpt(queryFuncs...)
+	return u.model(ctx).Scopes(opt.Scopes()...).First(res).Error
+}
+
 func newUserReview(db *database.DB) *UserReview {
 	return &UserReview{
 		base: base[*model.UserReview]{
