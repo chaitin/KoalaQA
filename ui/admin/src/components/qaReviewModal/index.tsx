@@ -134,7 +134,7 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
         </Stack>
       }
     >
-      <Stack direction="row" spacing={3} sx={{ height: '500px', width: '100%' }}>
+      <Stack direction="row" spacing={3} sx={{ height: '70vh', minHeight: 520, width: '100%' }}>
         {/* 历史问答对（仅查看） */}
         {hasHistoricalQa && (
           <Box sx={{ flex: 1, bgcolor: 'background.paper', p: 2, overflow: 'auto', width: '100%' }}>
@@ -227,6 +227,7 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
                 content: answer,
               }}
               showActions={false}
+              height={420}
             />
             {/* AI文本润色按钮 */}
             <Box
