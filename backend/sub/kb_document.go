@@ -56,10 +56,8 @@ func (k *KBDoc) Handle(ctx context.Context, msg mq.Message) error {
 	docMsg := msg.(topic.MsgKBDocument)
 	k.logger.WithContext(ctx).With("doc_id", docMsg.DocID).Debug("receive doc msg")
 	switch docMsg.OP {
-	case topic.OPInsert:
+	case topic.OPInsert, topic.OPUpdate:
 		return k.handleInsert(ctx, docMsg.KBID, docMsg.DocID)
-	case topic.OPUpdate:
-		return k.handleUpdate(ctx, docMsg.KBID, docMsg.DocID, docMsg.RagID)
 	case topic.OPDelete:
 		return k.handleDelete(ctx, docMsg.RagID)
 	}
@@ -104,13 +102,6 @@ func (k *KBDoc) handleInsert(ctx context.Context, kbID uint, docID uint) error {
 		return err
 	}
 	return nil
-}
-
-func (k *KBDoc) handleUpdate(ctx context.Context, kbID uint, docID uint, ragID string) error {
-	if err := k.rag.DeleteRecords(ctx, k.dataset.GetBackendID(ctx), []string{ragID}); err != nil {
-		return err
-	}
-	return k.handleInsert(ctx, kbID, docID)
 }
 
 func (k *KBDoc) handleDelete(ctx context.Context, ragID string) error {
