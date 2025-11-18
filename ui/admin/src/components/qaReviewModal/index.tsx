@@ -6,7 +6,7 @@ import { Box, Button, IconButton, Stack, TextField, Tooltip, Typography } from '
 import { useRequest } from 'ahooks';
 import dayjs from 'dayjs';
 import React, { useEffect, useState, useRef } from 'react';
-import EditorWrap, { EditorWrapRef } from '../editor/edit/Wrap';
+import EditorWrap, { EditorWrapRef } from '../editor';
 import EditorContent from '../EditorContent';
 
 interface QaReviewModalProps {
@@ -219,15 +219,15 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
               borderRadius: 1,
               overflow: 'hidden',
               mt: 1,
+              minHeight: 320,
             }}
           >
             <EditorWrap
               ref={editorRef}
-              detail={{
-                content: answer,
-              }}
-              showActions={false}
-              height={420}
+              value={answer}
+              onChange={setAnswer}
+              placeholder="请输入回答内容..."
+              mode="advanced"
             />
             {/* AI文本润色按钮 */}
             <Box

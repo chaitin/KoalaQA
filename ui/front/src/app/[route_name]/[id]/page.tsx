@@ -5,6 +5,7 @@ import { Suspense } from 'react'
 import Content from './ui/content'
 import TitleCard from './ui/titleCard'
 import DetailSidebarWrapper from './ui/DetailSidebarWrapper'
+import LoadingSpinner from '@/components/LoadingSpinner'
 
 // 动态生成 metadata
 export async function generateMetadata(props: {
@@ -42,21 +43,6 @@ async function fetchDiscussionDetail(discId: string) {
     }
   }
 }
-
-const LoadingSpinner = () => (
-  <Box
-    sx={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      minHeight: '200px',
-      fontSize: 16,
-      color: 'rgba(0,0,0,0.6)',
-    }}
-  >
-    加载中...
-  </Box>
-)
 
 const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; id: string }> }) => {
   const { id } = await props.params

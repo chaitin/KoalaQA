@@ -11,6 +11,7 @@ export { default as Message } from './alert';
 export { default as Search } from './search';
 export { default as Icon } from './icon';
 export { default as CommonProvider } from './commonProvider';
+export { default as GuestActivationProvider, useGuestActivation } from './GuestActivationProvider';
 export { AuthConfigProvider } from '@/contexts/AuthConfigContext';
 export { default as QaUnresolvedChip } from './QaUnresolvedChip';
 export { default as DiscussionTypeChip } from './DiscussionTypeChip';

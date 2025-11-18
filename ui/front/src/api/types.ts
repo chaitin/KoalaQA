@@ -48,7 +48,8 @@ export enum ModelUserRole {
   UserRoleAdmin = 1,
   UserRoleOperator = 2,
   UserRoleUser = 3,
-  UserRoleMax = 4,
+  UserRoleGuest = 4,
+  UserRoleMax = 5,
 }
 
 export enum ModelMsgNotifyType {
@@ -60,6 +61,7 @@ export enum ModelMsgNotifyType {
   MsgNotifyTypeDislikeComment = 5,
   MsgNotifyTypeBotUnknown = 6,
   MsgNotifyTypeLikeDiscussion = 7,
+  MsgNotifyTypeUserReview = 8,
 }
 
 export enum ModelLLMType {
@@ -142,7 +144,9 @@ export interface ContextResponse {
 export interface ModelAuth {
   auth_infos?: ModelAuthInfo[];
   enable_register?: boolean;
+  need_review?: boolean;
   public_access?: boolean;
+  /** Deprecated: only use in migration */
   public_forum_ids?: number[];
 }
 
@@ -363,6 +367,9 @@ export interface ModelMessageNotify {
   id?: number;
   parent_comment?: string;
   read?: boolean;
+  review_id?: number;
+  review_status?: number;
+  review_type?: number;
   to_bot?: boolean;
   to_id?: number;
   to_name?: string;
@@ -426,6 +433,7 @@ export interface ModelUser {
 }
 
 export interface ModelUserInfo {
+  auth_type?: number;
   avatar?: string;
   builtin?: boolean;
   email?: string;
@@ -436,6 +444,20 @@ export interface ModelUserInfo {
   uid?: number;
   username?: string;
   web_notify?: boolean;
+}
+
+export interface ModelUserReviewWithUser {
+  auth_type?: number;
+  created_at?: number;
+  id?: number;
+  reason?: string;
+  state?: number;
+  type?: number;
+  updated_at?: number;
+  user_avatar?: string;
+  user_email?: string;
+  user_id?: number;
+  user_name?: string;
 }
 
 export interface ModelWebhook {
@@ -853,6 +875,18 @@ export interface SvcUserRegisterReq {
   password: string;
 }
 
+export interface SvcUserReviewGuestCreateReq {
+  reason: string;
+}
+
+export interface SvcUserReviewUpdateReq {
+  /**
+   * @min 1
+   * @max 2
+   */
+  state: number;
+}
+
 export interface SvcUserStatisticsRes {
   answer_count?: number;
   avatar?: string;
@@ -868,7 +902,7 @@ export interface SvcUserUpdateReq {
   password?: string;
   /**
    * @min 1
-   * @max 3
+   * @max 4
    */
   role?: ModelUserRole;
 }
@@ -1223,6 +1257,19 @@ export interface GetAdminUserParams {
   page?: number;
   /** @min 1 */
   size?: number;
+}
+
+export interface GetAdminUserReviewParams {
+  /** @min 1 */
+  page?: number;
+  /** @min 1 */
+  size?: number;
+  state?: number;
+}
+
+export interface PutAdminUserReviewReviewIdParams {
+  /** review id */
+  reviewId: string;
 }
 
 export interface GetAdminUserUserIdParams {

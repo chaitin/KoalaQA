@@ -142,30 +142,21 @@ const DiscussCard = ({
             </Box>
 
             <Stack direction='row' spacing={0.5} alignItems='center' sx={{ ml: 0.5 }}>
-              {profileHref ? (
-                <Link href={profileHref} key={it.id} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  <Box
-                    sx={{
-                      fontSize: '14px',
-                      textDecoration: 'none',
-                      outline: 'none',
-                      color: 'inherit',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                    tabIndex={-1}
-                  >
-                    {it.user_name || ''}
-                  </Box>
-                </Link>
-              ) : (
-                <Typography
-                  variant='caption'
-                  sx={{ fontWeight: 600, fontSize: '14px', whiteSpace: 'nowrap', color: 'inherit' }}
+              <Link href={profileHref || '/'} key={it.id} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <Box
+                  sx={{
+                    fontSize: '14px',
+                    textDecoration: 'none',
+                    outline: 'none',
+                    color: 'inherit',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                  tabIndex={-1}
                 >
                   {it.user_name || ''}
-                </Typography>
-              )}
+                </Box>
+              </Link>
             </Stack>
           </Box>
           <Typography variant='caption' sx={{ fontWeight: 500, fontSize: '14px', whiteSpace: 'nowrap' }}>

@@ -1,18 +1,21 @@
 import {
   deleteAdminUserUserId,
   getAdminUser,
+  getAdminUserReview,
   ModelUserRole,
   postAdminUserJoinOrg,
   putAdminUserUserId,
   SvcOrgListItem,
   SvcUserListItem,
 } from '@/api';
+import UserReviewModal from '@/components/UserReviewModal';
 import { useListQueryParams } from '@/hooks/useListQueryParams';
 import { message, Modal, Table } from '@ctzhian/ui';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import Visibility from '@mui/icons-material/Visibility';
 import Shuffle from '@mui/icons-material/Shuffle';
 import {
+  Badge,
   Box,
   Button,
   Checkbox,
@@ -41,6 +44,7 @@ const transRole: Record<ModelUserRole, string> = {
   [ModelUserRole.UserRoleAdmin]: '管理员',
   [ModelUserRole.UserRoleOperator]: '客服运营',
   [ModelUserRole.UserRoleUser]: '用户',
+  [ModelUserRole.UserRoleGuest]: '游客',
   [ModelUserRole.UserRoleMax]: '未知',
 };
 
@@ -78,6 +82,7 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
   const [joinOrgModalOpen, setJoinOrgModalOpen] = useState(false);
   const [joinOrgSelectedOrgs, setJoinOrgSelectedOrgs] = useState<number[]>([]);
   const [showPassword, setShowPassword] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const cancelEdit = () => {
     setEditItem(null);
     reset();
@@ -95,6 +100,16 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
         org_id: params.org_id || undefined,
       }),
     { manual: true }
+  );
+
+  // 获取待审批数量
+  const { data: pendingReviewCount, run: fetchPendingReviewCount } = useRequest(
+    () =>
+      getAdminUserReview({
+        page: 1,
+        size: 1,
+        state: [0], // 待审核状态
+      })
   );
 
   // 当 URL 参数变化时，更新本地状态
@@ -160,6 +175,7 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
       const updateData = {
         name: data.name,
         role: data.role,
+        org_ids: orgIds,
         ...(data.password ? { password: aesCbcEncrypt(data.password) } : {}),
         ...(data.email ? { email: data.email } : {}),
       };
@@ -167,32 +183,11 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
       // 更新用户基本信息
       putAdminUserUserId({ userId: editItem.id! }, updateData)
         .then(() => {
-          // 如果组织列表有变化，更新用户与组织的关系
-          const originalOrgIds = editItem.org_ids || (editItem.org_id ? [editItem.org_id] : []);
-          const newOrgIds = orgIds.sort((a, b) => a - b);
-          const sortedOriginalOrgIds = [...originalOrgIds].sort((a, b) => a - b);
-
-          // 检查组织列表是否发生变化
-          const orgIdsChanged =
-            newOrgIds.length !== sortedOriginalOrgIds.length ||
-            !newOrgIds.every((id, idx) => id === sortedOriginalOrgIds[idx]);
-
-          if (orgIdsChanged && orgIds.length > 0) {
-            // 更新用户与组织的关系
-            return postAdminUserJoinOrg({
-              user_ids: [editItem.id!],
-              org_ids: orgIds,
-            });
-          }
-          return Promise.resolve();
-        })
-        .then(() => {
           message.success('修改成功');
           fetchData({
             ...query,
             org_id: orgIdFilter,
           });
-          fetchOrgList();
           cancelEdit();
         })
         .catch(err => {
@@ -339,68 +334,87 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
 
   return (
     <>
-      <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
-        <Stack sx={{ fontSize: 14, color: 'text.secondary' }} direction="row" alignItems="center">
-          共
-          <Typography variant="subtitle2" sx={{ mx: 1, fontFamily: 'Mono' }}>
-            {data?.total || 0}
-          </Typography>{' '}
-          个用户
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        spacing={2}
+        sx={{ mb: 2 }}
+      >
+        <Stack direction="row" alignItems="center" spacing={2}>
+          <Stack sx={{ fontSize: 14, color: 'text.secondary' }} direction="row" alignItems="center">
+            共
+            <Typography variant="subtitle2" sx={{ mx: 1, fontFamily: 'Mono' }}>
+              {data?.total || 0}
+            </Typography>{' '}
+            个用户
+          </Stack>
+          <TextField
+            label="用户名"
+            value={name}
+            size="small"
+            onChange={e => setName(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                setSearch({
+                  name,
+                  email,
+                  org_id: orgIdFilter,
+                });
+              }
+            }}
+          />
+          <TextField
+            label="邮箱"
+            value={email}
+            size="small"
+            onChange={e => setEmail(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                setSearch({
+                  name,
+                  email,
+                  org_id: orgIdFilter,
+                });
+              }
+            }}
+          />
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <InputLabel id="org-filter-label">组织名称</InputLabel>
+            <Select
+              labelId="org-filter-label"
+              label="组织名称"
+              value={orgIdFilter ? String(orgIdFilter) : ''}
+              onChange={e => {
+                const value = e.target.value === '' ? undefined : Number(e.target.value);
+                setOrgIdFilter(value);
+                setSearch({
+                  name,
+                  email,
+                  org_id: value,
+                });
+              }}
+            >
+              <MenuItem value="">全部</MenuItem>
+              {orgOptions.map(org => (
+                <MenuItem key={org.id} value={String(org.id)}>
+                  {org.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Stack>
-        <TextField
-          label="用户名"
-          value={name}
-          size="small"
-          onChange={e => setName(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter') {
-              setSearch({
-                name,
-                email,
-                org_id: orgIdFilter,
-              });
-            }
-          }}
-        />
-        <TextField
-          label="邮箱"
-          value={email}
-          size="small"
-          onChange={e => setEmail(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter') {
-              setSearch({
-                name,
-                email,
-                org_id: orgIdFilter,
-              });
-            }
-          }}
-        />
-        <FormControl size="small" sx={{ minWidth: 150 }}>
-          <InputLabel id="org-filter-label">组织名称</InputLabel>
-          <Select
-            labelId="org-filter-label"
-            label="组织名称"
-            value={orgIdFilter ? String(orgIdFilter) : ''}
-            onChange={e => {
-              const value = e.target.value === '' ? undefined : Number(e.target.value);
-              setOrgIdFilter(value);
-              setSearch({
-                name,
-                email,
-                org_id: value,
-              });
+        <Badge badgeContent={pendingReviewCount?.total || 0} color="error">
+          <Button
+            variant="contained"
+            size="small"
+            onClick={() => {
+              setReviewModalOpen(true);
             }}
           >
-            <MenuItem value="">全部</MenuItem>
-            {orgOptions.map(org => (
-              <MenuItem key={org.id} value={String(org.id)}>
-                {org.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+            用户审批
+          </Button>
+        </Badge>
       </Stack>
       <Table
         sx={{ mx: -2, flex: 1, overflow: 'auto' }}
@@ -601,7 +615,11 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
                     ))
                   )}
                 </Select>
-                {fieldState.error && <FormHelperText sx={{ color: 'error.main' }}>{fieldState.error.message}</FormHelperText>}
+                {fieldState.error && (
+                  <FormHelperText sx={{ color: 'error.main' }}>
+                    {fieldState.error.message}
+                  </FormHelperText>
+                )}
                 {orgOptions.length === 0 && (
                   <FormHelperText>
                     暂无组织，
@@ -669,6 +687,15 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
           已选择 {selectedRowKeys.length} 个用户
         </Typography>
       </Modal>
+
+      {/* 用户审批弹窗 */}
+      <UserReviewModal
+        open={reviewModalOpen}
+        onClose={() => {
+          setReviewModalOpen(false);
+          fetchPendingReviewCount();
+        }}
+      />
     </>
   );
 };

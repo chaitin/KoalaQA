@@ -72,9 +72,9 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
 
   const displayContent = truncatedText
   const editorRef = useTiptap({
-    content: displayContent || '',
+    content: content || '',
     editable: false,
-    contentType: needTruncate ? 'markdown' : isHTML ? 'html' : 'markdown',
+    contentType: 'markdown',
     immediatelyRender: false,
     // 大纲更新回调：透传给父级，同时广播全局事件供兄弟侧栏使用
     onTocUpdate: !!onTocUpdate
@@ -95,12 +95,7 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
         }
       : undefined,
   })
-  useEffect(() => {
-    if (editorRef.editor)
-      editorRef.editor.commands.setContent(displayContent, {
-        contentType: needTruncate ? 'markdown' : isHTML ? 'html' : 'markdown',
-      } as any)
-  }, [content, displayContent, editorRef, needTruncate, isHTML])
+  // }, [content, displayContent, editorRef, needTruncate, isHTML])
   useEffect(() => {
     setIsMounted(true)
   }, [])

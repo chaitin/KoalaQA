@@ -135,6 +135,7 @@ export default function NotificationCenter() {
   }, [notifyPage, notifyPageSize])
 
   const handleNotificationClick = async (notification: ModelMessageNotify) => {
+    const isUserReview = notification.type === ModelMsgNotifyType.MsgNotifyTypeUserReview
     // 标记为已读
     if (notification.id) {
       try {
@@ -143,6 +144,10 @@ export default function NotificationCenter() {
         Message.error('标记已读失败')
         return // 如果标记失败，不跳转
       }
+    }
+
+    if (isUserReview) {
+      return
     }
 
     // 跳转到对应的讨论
@@ -328,52 +333,65 @@ export default function NotificationCenter() {
 
                   {/* 通知内容 */}
                   <Box sx={{ flex: 1, minWidth: 0, textWrap: 'nowrap' }}>
-                    <Stack direction='row' spacing={0.5} alignItems='center'>
+                    {notification.type === ModelMsgNotifyType.MsgNotifyTypeUserReview ? (
                       <Typography
                         variant='body2'
                         sx={{
-                          color: 'rgba(33, 34, 45, 0.70)',
+                          color: 'rgba(33, 34, 45, 1)',
+                          fontWeight: 500,
                           fontSize: '14px',
-                          fontWeight: 400
                         }}
                       >
-                        {notification.from_name || '未知用户'}
+                        {notificationText}
                       </Typography>
-                      {action && (
+                    ) : (
+                      <Stack direction='row' spacing={0.5} alignItems='center'>
                         <Typography
                           variant='body2'
                           sx={{
-                            color: 'rgba(33, 34, 45, 1)',
-                            fontWeight: '500',
-                            fontSize: '14px',
-                          }}
-                        >
-                          {action}
-                          {content}
-                        </Typography>
-                      )}
-                      {notification.type === ModelMsgNotifyType.MsgNotifyTypeReplyComment ? (
-                        <>
-                          {" '"}
-                          <MarkDown
-                            content={notification.parent_comment}
-                            truncateLength={10}
-                            sx={{ bgcolor: 'transparent', color: 'rgba(33, 34, 45, 0.70)', fontWeight: 400 }}
-                          />
-                          {"'"}
-                        </>
-                      ) : (
-                        <Ellipsis
-                          sx={{
                             color: 'rgba(33, 34, 45, 0.70)',
                             fontSize: '14px',
-                            fontWeight: 400
+                            fontWeight: 400,
                           }}
                         >
-                          "{notification.discuss_title}"
-                        </Ellipsis>
-                      )}
-                    </Stack>
+                          {notification.from_name || '未知用户'}
+                        </Typography>
+                        {action && (
+                          <Typography
+                            variant='body2'
+                            sx={{
+                              color: 'rgba(33, 34, 45, 1)',
+                              fontWeight: '500',
+                              fontSize: '14px',
+                            }}
+                          >
+                            {action}
+                            {content}
+                          </Typography>
+                        )}
+                        {notification.type === ModelMsgNotifyType.MsgNotifyTypeReplyComment ? (
+                          <>
+                            {" '"}
+                            <MarkDown
+                              content={notification.parent_comment}
+                              truncateLength={10}
+                              sx={{ bgcolor: 'transparent', color: 'rgba(33, 34, 45, 0.70)', fontWeight: 400 }}
+                            />
+                            {"'"}
+                          </>
+                        ) : (
+                          <Ellipsis
+                            sx={{
+                              color: 'rgba(33, 34, 45, 0.70)',
+                              fontSize: '14px',
+                              fontWeight: 400,
+                            }}
+                          >
+                            "{notification.discuss_title}"
+                          </Ellipsis>
+                        )}
+                      </Stack>
+                    )}
                   </Box>
 
                   {/* 时间戳 */}

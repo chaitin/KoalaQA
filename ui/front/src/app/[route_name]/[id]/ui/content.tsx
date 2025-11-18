@@ -476,86 +476,6 @@ const BaseDiscussCard = (props: {
   )
 }
 
-const DiscussCard = (props: {
-  data: ModelDiscussionComment
-  disData: ModelDiscussionDetail
-  index: number
-  onOpt(
-    event: React.MouseEvent<HTMLButtonElement>,
-    comment: string,
-    index: ModelDiscussionComment | ModelDiscussionReply,
-  ): void
-}) => {
-  const { id }: { id: string } = useParams() || { id: '' }
-  const { user } = useContext(AuthContext)
-  const { checkAuth } = useAuthCheck()
-  const editorRef = React.useRef<EditorWrapRef>(null)
-  const router = useRouter()
-  const [mdEditShow, setMdEditShow] = useState(false)
-
-  // 检查登录状态，未登录则跳转到登录页
-  const checkLoginAndFocus = () => {
-    return checkAuth(() => setMdEditShow(true))
-  }
-  const onSubmit = async () => {
-    const content = editorRef.current?.getContent() || ''
-    await postDiscussionDiscIdComment(
-      { discId: id },
-      {
-        content,
-        comment_id: props.data.id,
-      },
-    )
-    setMdEditShow(false)
-    router.refresh()
-  }
-
-  return (
-    <Card
-      sx={{
-        boxShadow: 'rgba(0, 28, 85, 0.04) 0px 4px 10px 0px',
-        cursor: 'auto',
-        pt: 1.5,
-      }}
-    >
-      <BaseDiscussCard {...props}></BaseDiscussCard>
-      <Box
-        sx={{
-          mt: 3,
-        }}
-      >
-        <Box sx={{ display: !mdEditShow ? 'none' : 'block', height: 400 }}>
-          <EditorWrap
-            ref={editorRef}
-            value=''
-            onSave={async () => {
-              return onSubmit()
-            }}
-            onCancel={() => setMdEditShow(false)}
-          />
-        </Box>
-        <OutlinedInput
-          fullWidth
-          size='small'
-          sx={{
-            display: mdEditShow ? 'none' : 'block',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            '&:hover': {
-              boxShadow: '0 2px 8px rgba(32, 108, 255, 0.1)',
-            },
-            '&.Mui-focused': {
-              boxShadow: '0 4px 12px rgba(32, 108, 255, 0.2)',
-              transform: 'translateY(-1px)',
-            },
-          }}
-          placeholder={user?.uid ? '评论' : '请先登录后评论'}
-          onFocus={checkLoginAndFocus}
-        />
-      </Box>
-    </Card>
-  )
-}
-
 const Content = (props: { data: ModelDiscussionDetail }) => {
   const { data } = props
   const { id }: { id: string } = useParams() || { id: '' }
@@ -878,9 +798,9 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
           },
           '& .md-container > div': {
             // backgroundColor: 'transparent!important',
-            '& > div':{
-              border: 'none'
-            }
+            '& > div': {
+              border: 'none',
+            },
           },
         }}
       >
@@ -972,28 +892,40 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                       <Link
                         href={answerProfileHref}
                         style={{
-                          fontWeight: 500,
-                          color: 'inherit',
-                          fontSize: '0.875rem',
+                          display: 'inline-flex',
                           textDecoration: 'none',
+                          // 去掉默认a标签样式
+                          color: 'inherit',
                         }}
                         tabIndex={-1}
                       >
-                        {answer.user_name || '未知用户'}
+                        <Typography
+                          variant='body2'
+                          sx={{
+                            fontWeight: 500,
+                            color: 'inherit',
+                            fontSize: '0.875rem',
+                            '&:hover': {
+                              color: 'primary.main',
+                            },
+                          }}
+                        >
+                          {answer.user_name || '未知用户'}
+                        </Typography>
                       </Link>
                     ) : (
                       <Typography variant='body2' sx={{ fontWeight: 500, color: 'inherit', fontSize: '0.875rem' }}>
                         {answer.user_name || '未知用户'}
                       </Typography>
                     )}
-                    
+
                     {/* AI标签 - 已整合到用户名区域 */}
                     {answer.bot && (
-                      <Chip 
-                        label='AI' 
-                        sx={{ 
-                          width: 28, 
-                          height: 24, 
+                      <Chip
+                        label='AI'
+                        sx={{
+                          width: 28,
+                          height: 24,
                           background: 'rgba(0,99,151,0.06)',
                           color: 'primary.main',
                           borderRadius: '4px',
@@ -1003,11 +935,11 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                           '& .MuiChip-label': {
                             px: 0.5,
                           },
-                        }} 
+                        }}
                       />
                     )}
                   </Stack>
-                  
+
                   {/* 时间显示 - 已整合到同一区域 */}
                   <Stack direction='row' alignItems='center'>
                     <Typography variant='body2' sx={{ color: '#9ca3af' }}>
@@ -1024,7 +956,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                       </>
                     )}
                   </Stack>
-                  
+
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>
                     {/* 采纳按钮 - 只有问答类型且问题作者且问题未被采纳时才显示 */}
                     {!isArticlePost &&
@@ -1285,7 +1217,15 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                     }}
                                     tabIndex={-1}
                                   >
-                                    {reply.user_name || '未知用户'}
+                                    <Box
+                                      sx={{
+                                        '&:hover': {
+                                          color: 'primary.main',
+                                        },
+                                      }}
+                                    >
+                                      {reply.user_name || '未知用户'}
+                                    </Box>
                                   </Link>
                                 ) : (
                                   <Typography
@@ -1295,14 +1235,14 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                     {reply.user_name || '未知用户'}
                                   </Typography>
                                 )}
-                                
+
                                 {/* AI标签 - 已整合到用户名区域 */}
                                 {reply.bot && (
-                                  <Chip 
-                                    label='AI' 
-                                    sx={{ 
-                                      width: 28, 
-                                      height: 24, 
+                                  <Chip
+                                    label='AI'
+                                    sx={{
+                                      width: 28,
+                                      height: 24,
                                       background: 'rgba(0,99,151,0.06)',
                                       color: 'primary.main',
                                       borderRadius: '4px',
@@ -1312,11 +1252,11 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                       '& .MuiChip-label': {
                                         px: 0.5,
                                       },
-                                    }} 
+                                    }}
                                   />
                                 )}
                               </Stack>
-                              
+
                               {/* 时间显示 - 已整合到同一区域 */}
                               {displayReplyCreatedAt && (
                                 <Stack direction='row' alignItems='center'>
@@ -1325,10 +1265,16 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                   </Typography>
                                   {reply.updated_at && replyCreatedAt && reply.updated_at !== replyCreatedAt && (
                                     <>
-                                      <Typography variant='body2' sx={{ color: '#9ca3af', ml: 0.5, fontSize: '0.8125rem' }}>
+                                      <Typography
+                                        variant='body2'
+                                        sx={{ color: '#9ca3af', ml: 0.5, fontSize: '0.8125rem' }}
+                                      >
                                         ,
                                       </Typography>
-                                      <Typography variant='body2' sx={{ color: '#9ca3af', ml: 0.5, fontSize: '0.8125rem' }}>
+                                      <Typography
+                                        variant='body2'
+                                        sx={{ color: '#9ca3af', ml: 0.5, fontSize: '0.8125rem' }}
+                                      >
                                         更新于 <TimeDisplayWithTag timestamp={reply.updated_at} />
                                       </Typography>
                                     </>
@@ -1378,6 +1324,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                 borderRadius: '6px',
                                 overflow: 'hidden',
                                 border: '1px solid #000000',
+                                px: 1,
                               }}
                             >
                               <EditorWrap
@@ -1388,7 +1335,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                   }
                                 }}
                                 value=''
-                                showActions={false}
                               />
                             </Box>
                             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
@@ -1501,9 +1447,11 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                   <Box
                     ref={answerEditorContainerRef}
                     sx={{
+                      minHeight: '100px',
                       borderRadius: '6px',
+                      px: 1,
                       '& .tiptap:focus': { backgroundColor: 'transparent' },
-                      '& .tiptap': { height: 100 },
+                      '& .tiptap': { overflow: 'auto' },
                     }}
                     tabIndex={-1}
                   >
@@ -1511,8 +1459,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                       key={answerEditorKey}
                       ref={answerEditorRef}
                       value=''
-                      showActions={false}
-                      height={80}
                       placeholder={isArticlePost ? '添加评论...' : '回答问题...'}
                       onChange={handleAnswerEditorChange}
                     />
