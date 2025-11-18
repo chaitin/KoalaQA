@@ -25,7 +25,7 @@ type UserReviewListReq struct {
 
 func (u *UserReview) List(ctx context.Context, req UserReviewListReq) (*model.ListRes[model.UserReviewWithUser], error) {
 	var res model.ListRes[model.UserReviewWithUser]
-	err := u.repoReview.ListWithUser(ctx, &res,
+	err := u.repoReview.ListWithUser(ctx, &res.Items,
 		repo.QueryWithEqual("state", req.State),
 		repo.QueryWithPagination(req.Pagination),
 	)
