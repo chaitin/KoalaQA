@@ -171,9 +171,11 @@ func (c *CTRag) GetModelList(ctx context.Context) ([]*model.LLM, error) {
 
 func (c *CTRag) AddModel(ctx context.Context, model *model.LLM) (string, error) {
 	modelConfig, err := c.client.Models.Create(ctx, &raglite.CreateModelRequest{
-		Name:      model.Model,
-		Provider:  model.Provider,
-		ModelType: string(model.Type),
+		Name:        model.Model,
+		Description: model.ShowName,
+		Provider:    model.Provider,
+		ModelName:   model.Model,
+		ModelType:   string(model.Type),
 		Config: raglite.AIModelConfig{
 			APIBase:         model.BaseURL,
 			APIKey:          model.APIKey,
