@@ -104,7 +104,11 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 	}
 
 	// record rag
-	ragID, err := d.rag.UpsertRecords(ctx, forum.DatasetID, disc.RagID, prompt, nil)
+	ragID, err := d.rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
+		DatasetID:  forum.DatasetID,
+		DocumentID: disc.RagID,
+		Content:    prompt,
+	})
 	if err != nil {
 		return err
 	}
