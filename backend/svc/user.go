@@ -131,7 +131,7 @@ type UserUpdateReq struct {
 	Name     string           `json:"name"`
 	Email    string           `json:"email" binding:"omitempty,email"`
 	Password string           `json:"password"`
-	Role     model.UserRole   `json:"role" binding:"min=1,max=3"`
+	Role     model.UserRole   `json:"role" binding:"min=1,max=4"`
 	OrgIDs   model.Int64Array `json:"org_ids"`
 }
 
@@ -146,7 +146,7 @@ func (u *User) Update(ctx context.Context, opUserID uint, id uint, req UserUpdat
 		"updated_at": time.Now(),
 	}
 
-	if user.Name != "" {
+	if user.Name != "" && req.Name != user.Name {
 		updateM["name"] = req.Name
 	}
 
@@ -171,7 +171,7 @@ func (u *User) Update(ctx context.Context, opUserID uint, id uint, req UserUpdat
 		updateM["email"] = req.Email
 	}
 
-	if !user.Builtin {
+	if !user.Builtin && req.Role != user.Role {
 		updateM["role"] = req.Role
 
 		if user.Role == model.UserRoleGuest {
@@ -205,9 +205,10 @@ func (u *User) Update(ctx context.Context, opUserID uint, id uint, req UserUpdat
 					ToID:   id,
 				})
 			}
+
+			// 更新用户角色，用于后续判断
+			user.Role = req.Role
 		}
-		// 更新用户角色，用于后续判断
-		user.Role = req.Role
 	}
 
 	if user.Role != model.UserRoleGuest && len(req.OrgIDs) > 0 {
@@ -359,7 +360,8 @@ func (u *User) JoinOrg(ctx context.Context, req UserJoinOrgReq) error {
 	err = u.repoUser.Update(ctx, map[string]any{
 		"org_ids":    req.OrgIDs,
 		"updated_at": time.Now(),
-	}, repo.QueryWithEqual("id", req.UserIDs, repo.EqualOPEqAny))
+	}, repo.QueryWithEqual("id", req.UserIDs, repo.EqualOPEqAny),
+		repo.QueryWithEqual("role", model.UserRoleGuest, repo.EqualOPNE))
 	if err != nil {
 		return err
 	}

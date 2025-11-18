@@ -6085,7 +6085,7 @@ const docTemplate = `{
                 "MsgNotifyTypeDislikeComment",
                 "MsgNotifyTypeBotUnknown",
                 "MsgNotifyTypeLikeDiscussion",
-                "MsgNotifyTypeReview"
+                "MsgNotifyTypeUserReview"
             ]
         },
         "model.PlatformOpt": {
@@ -7633,7 +7633,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "role": {
-                    "maximum": 3,
+                    "maximum": 4,
                     "minimum": 1,
                     "allOf": [
                         {
