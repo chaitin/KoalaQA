@@ -110,7 +110,7 @@ services:
 
   db:
     container_name: koala-qa-db
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/db:17.6-alpine3.22
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/db:-bookwormASbuilder
     restart: always
     environment:
       - TZ=${TIMEZONE:-Asia/Shanghai}
