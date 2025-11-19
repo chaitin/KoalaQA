@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/config"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/llm"
@@ -22,20 +21,16 @@ type LLM struct {
 	dataset *repo.Dataset
 	logger  *glog.Logger
 	doc     *repo.KBDocument
-	disc    *repo.Discussion
-	comm    *repo.Comment
 	kit     *ModelKit
 	cfg     config.Config
 }
 
-func newLLM(rag rag.Service, dataset *repo.Dataset, doc *repo.KBDocument, disc *repo.Discussion, comm *repo.Comment, kit *ModelKit, cfg config.Config) *LLM {
+func newLLM(rag rag.Service, dataset *repo.Dataset, doc *repo.KBDocument, kit *ModelKit, cfg config.Config) *LLM {
 	return &LLM{
 		rag:     rag,
 		dataset: dataset,
 		logger:  glog.Module("llm"),
 		doc:     doc,
-		disc:    disc,
-		comm:    comm,
 		kit:     kit,
 		cfg:     cfg,
 	}
@@ -108,68 +103,6 @@ func (l *LLM) Chat(ctx context.Context, sMsg string, uMsg string, params map[str
 	}
 	logger.With("response", res.Content).Debug("llm response success")
 	return res.Content, nil
-}
-
-func (l *LLM) GenerateChatPrompt(ctx context.Context, discID uint, commID uint) (string, string, error) {
-	logger := l.logger.WithContext(ctx).With("discussion_id", discID, "comment_id", commID)
-	logger.Debug("start generate prompt")
-
-	// 1. 获取讨论详情
-	discussion, err := l.disc.Detail(ctx, 0, discID)
-	if err != nil {
-		return "", "", fmt.Errorf("get discussion detail failed: %w", err)
-	}
-
-	// 2. 获取该讨论的所有评论
-	var allComments []model.CommentDetail
-	err = l.comm.List(ctx, &allComments,
-		repo.QueryWithEqual("discussion_id", discID),
-		repo.QueryWithOrderBy("created_at ASC"),
-	)
-	if err != nil {
-		return "", "", fmt.Errorf("get discussion comments failed: %w", err)
-	}
-
-	// 3. 获取新评论详情
-	var newComment *model.CommentDetail
-	if commID > 0 {
-		newComment, err = l.comm.Detail(ctx, commID)
-		if err != nil {
-			return "", "", fmt.Errorf("get new comment detail failed: %w", err)
-		}
-	}
-
-	// 4. 创建提示词模版并生成提示词
-	template := llm.NewDiscussionPromptTemplate(discussion, allComments, newComment)
-
-	prompt, err := template.BuildFullPrompt()
-	if err != nil {
-		return "", "", fmt.Errorf("generate prompt failed: %w", err)
-	}
-
-	logger.With("prompt", prompt).Debug("generate prompt success")
-	return template.Question(), prompt, nil
-}
-
-func (l *LLM) GeneratePostPrompt(ctx context.Context, discID uint) (string, string, error) {
-	logger := l.logger.WithContext(ctx).With("discussion_id", discID)
-	logger.Debug("start generate prompt")
-
-	// 1. 获取讨论详情
-	discussion, err := l.disc.Detail(ctx, 0, discID)
-	if err != nil {
-		return "", "", fmt.Errorf("get discussion detail failed: %w", err)
-	}
-
-	template := llm.NewDiscussionPromptTemplate(discussion, nil, nil)
-
-	prompt, err := template.BuildPostPrompt()
-	if err != nil {
-		return "", "", fmt.Errorf("generate prompt failed: %w", err)
-	}
-
-	logger.With("prompt", prompt).Debug("generate prompt success")
-	return template.Question(), prompt, nil
 }
 
 // queryKnowledgeDocuments 查询相关知识文档
