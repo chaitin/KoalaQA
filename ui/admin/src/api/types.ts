@@ -77,8 +77,8 @@ export enum ModelLLMType {
   LLMTypeChat = "chat",
   LLMTypeEmbedding = "embedding",
   LLMTypeRerank = "rerank",
-  LLMTypeAnalysis = "analysis",
-  LLMTypeAnalysisVL = "analysis-vl",
+  // LLMTypeAnalysis = "analysis",
+  // LLMTypeAnalysisVL = "analysis-vl",
 }
 
 export enum ModelFileType {
