@@ -13,8 +13,14 @@
 import request, { RequestParams } from "./httpClient";
 import {
   ContextResponse,
+  GetAdminStatDiscussionParams,
+  GetAdminStatSearchParams,
+  GetAdminStatTrendParams,
+  GetAdminStatVisitParams,
+  ModelListRes,
   SvcStatDiscussionItem,
   SvcStatDiscussionRes,
+  SvcStatTrendItem,
   SvcStatVisitRes,
 } from "./types";
 
@@ -34,7 +40,10 @@ import {
 })` OK
  */
 
-export const getAdminStatDiscussion = (params: RequestParams = {}) =>
+export const getAdminStatDiscussion = (
+  query: GetAdminStatDiscussionParams,
+  params: RequestParams = {},
+) =>
   request<
     ContextResponse & {
       data?: SvcStatDiscussionRes & {
@@ -44,6 +53,7 @@ export const getAdminStatDiscussion = (params: RequestParams = {}) =>
   >({
     path: `/admin/stat/discussion`,
     method: "GET",
+    query: query,
     format: "json",
     ...params,
   });
@@ -61,7 +71,10 @@ export const getAdminStatDiscussion = (params: RequestParams = {}) =>
 })` OK
  */
 
-export const getAdminStatSearch = (params: RequestParams = {}) =>
+export const getAdminStatSearch = (
+  query: GetAdminStatSearchParams,
+  params: RequestParams = {},
+) =>
   request<
     ContextResponse & {
       data?: number;
@@ -69,6 +82,41 @@ export const getAdminStatSearch = (params: RequestParams = {}) =>
   >({
     path: `/admin/stat/search`,
     method: "GET",
+    query: query,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags stat
+ * @name GetAdminStatTrend
+ * @summary stat trend
+ * @request GET:/admin/stat/trend
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (SvcStatTrendItem)[],
+
+}),
+
+})` OK
+ */
+
+export const getAdminStatTrend = (
+  query: GetAdminStatTrendParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: SvcStatTrendItem[];
+      };
+    }
+  >({
+    path: `/admin/stat/trend`,
+    method: "GET",
+    query: query,
     format: "json",
     ...params,
   });
@@ -86,7 +134,10 @@ export const getAdminStatSearch = (params: RequestParams = {}) =>
 })` OK
  */
 
-export const getAdminStatVisit = (params: RequestParams = {}) =>
+export const getAdminStatVisit = (
+  query: GetAdminStatVisitParams,
+  params: RequestParams = {},
+) =>
   request<
     ContextResponse & {
       data?: SvcStatVisitRes;
@@ -94,6 +145,7 @@ export const getAdminStatVisit = (params: RequestParams = {}) =>
   >({
     path: `/admin/stat/visit`,
     method: "GET",
+    query: query,
     format: "json",
     ...params,
   });

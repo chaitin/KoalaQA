@@ -89,28 +89,40 @@ const ModelManagementModal = ({
                     }}
                   >
                     <Box sx={{ textTransform: 'capitalize' }}>{key} 模型</Box>
-                    <Stack
-                      alignItems={'center'}
-                      justifyContent={'center'}
-                      sx={{
-                        width: 22,
-                        height: 22,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <LottieIcon id="warning" src={ErrorJSON} style={{ width: 20, height: 20 }} />
-                    </Stack>
-                    <Box sx={{ color: 'error.main' }}>
-                      未配置无法使用，如果没有可用模型，可参考&nbsp;
-                      <Box
-                        component={'a'}
-                        sx={{ color: 'primary.main', cursor: 'pointer' }}
-                        href="https://pandawiki.docs.baizhi.cloud/node/01973ffe-e1bc-7165-9a71-e7aa461c05ea"
-                        target="_blank"
-                      >
-                        文档
-                      </Box>
-                    </Box>
+                    {[ModelLLMType.LLMTypeAnalysis, ModelLLMType.LLMTypeAnalysisVL].includes(
+                      key
+                    ) ? (
+                      ''
+                    ) : (
+                      <>
+                        <Stack
+                          alignItems={'center'}
+                          justifyContent={'center'}
+                          sx={{
+                            width: 22,
+                            height: 22,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <LottieIcon
+                            id="warning"
+                            src={ErrorJSON}
+                            style={{ width: 20, height: 20 }}
+                          />
+                        </Stack>
+                        <Box sx={{ color: 'error.main' }}>
+                          未配置无法使用，如果没有可用模型，可参考&nbsp;
+                          <Box
+                            component={'a'}
+                            sx={{ color: 'primary.main', cursor: 'pointer' }}
+                            href="https://pandawiki.docs.baizhi.cloud/node/01973ffe-e1bc-7165-9a71-e7aa461c05ea"
+                            target="_blank"
+                          >
+                            文档
+                          </Box>
+                        </Box>
+                      </>
+                    )}
                   </Stack>
                   <Stack
                     direction={'row'}
@@ -118,7 +130,11 @@ const ModelManagementModal = ({
                     justifyContent={'center'}
                     sx={{ my: '0px', ml: 2, fontSize: 14 }}
                   >
-                    <Box sx={{ height: '20px', color: 'text.auxiliary' }}>尚未配置，</Box>
+                    <Box sx={{ height: '20px', color: 'text.auxiliary' }}>
+                      {[ModelLLMType.LLMTypeAnalysis, ModelLLMType.LLMTypeAnalysisVL].includes(key)
+                        ? '可选配置，'
+                        : '尚未配置，'}
+                    </Box>
                     <Button
                       sx={{ minWidth: 0, px: 0, height: '20px' }}
                       onClick={() => {

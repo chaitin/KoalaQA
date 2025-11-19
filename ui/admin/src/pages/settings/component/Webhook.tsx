@@ -45,6 +45,7 @@ const contentOptions = [
   { value: 5, label: '有新的文章' },
   { value: 6, label: '有新的回答等待审核' },
   { value: 7, label: '有新的 AI 洞察' },
+  { value: 8, label: '你有新的账号激活申请待审核' },
 ];
 
 // 定义表单验证 schema

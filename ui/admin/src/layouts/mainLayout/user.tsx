@@ -1,4 +1,4 @@
-import { getAdminModelList, getAdminSystemPublicAddress } from '@/api';
+import { getAdminModelList, getAdminSystemPublicAddress, ModelLLMType } from '@/api';
 import Card from '@/components/card';
 import Header from '@/components/header';
 import Sidebar from '@/components/sidebar';
@@ -31,7 +31,13 @@ const MainLayout = () => {
         getAdminModelList(),
         getAdminSystemPublicAddress(),
       ]);
-      const lackModel = !models || models.length === 0;
+      const requiredModelTypes = Object.values(ModelLLMType).filter(
+        type => type !== ModelLLMType.LLMTypeAnalysis && type !== ModelLLMType.LLMTypeAnalysisVL,
+      );
+      const modelList = Array.isArray(models) ? models : [];
+      const lackModel = requiredModelTypes.some(type =>
+        !modelList.some(model => model?.type === type),
+      );
       const lackAddr = !addr || !addr.address || addr.address.trim() === '';
       setNeedModel(lackModel);
       setNeedAddress(lackAddr);

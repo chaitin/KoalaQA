@@ -52,6 +52,15 @@ export enum ModelUserRole {
   UserRoleMax = 5,
 }
 
+export enum ModelStatType {
+  StatTypeVisit = 1,
+  StatTypeSearch = 2,
+  StatTypeBotUnknown = 3,
+  StatTypeBotAccept = 4,
+  StatTypeDiscussionQA = 5,
+  StatTypeDiscussionBlog = 6,
+}
+
 export enum ModelMsgNotifyType {
   MsgNotifyTypeUnknown = 0,
   MsgNotifyTypeReplyDiscuss = 1,
@@ -68,6 +77,8 @@ export enum ModelLLMType {
   LLMTypeChat = "chat",
   LLMTypeEmbedding = "embedding",
   LLMTypeRerank = "rerank",
+  LLMTypeAnalysis = "analysis",
+  LLMTypeAnalysisVL = "analysis-vl",
 }
 
 export enum ModelFileType {
@@ -700,7 +711,7 @@ export interface SvcMKCreateReq {
   param?: ModelLLMModelParam;
   provider: string;
   show_name?: string;
-  type: "chat" | "embedding" | "rerank";
+  type: "chat" | "embedding" | "rerank" | "analysis" | "analysis-vl";
 }
 
 export interface SvcMKModelItem {
@@ -712,7 +723,7 @@ export interface SvcMKSupportedReq {
   api_key?: string;
   base_url: string;
   provider: string;
-  type: "chat" | "embedding" | "rerank";
+  type: "chat" | "embedding" | "rerank" | "analysis" | "analysis-vl";
 }
 
 export interface SvcMKSupportedRes {
@@ -730,7 +741,7 @@ export interface SvcMKUpdateReq {
   param?: ModelLLMModelParam;
   provider: string;
   show_name?: string;
-  type: "chat" | "embedding" | "rerank";
+  type: "chat" | "embedding" | "rerank" | "analysis" | "analysis-vl";
 }
 
 export interface SvcModelKitCheckReq {
@@ -742,7 +753,7 @@ export interface SvcModelKitCheckReq {
   model: string;
   provider: string;
   show_name?: string;
-  type: "chat" | "embedding" | "rerank";
+  type: "chat" | "embedding" | "rerank" | "analysis" | "analysis-vl";
 }
 
 export interface SvcNotifyReadReq {
@@ -807,6 +818,12 @@ export interface SvcStatDiscussionRes {
   bot_accept?: number;
   bot_unknown?: number;
   human_resp_time?: number;
+}
+
+export interface SvcStatTrendItem {
+  count?: number;
+  ts?: number;
+  type?: ModelStatType;
 }
 
 export interface SvcStatVisitRes {
@@ -1231,6 +1248,24 @@ export interface PutAdminOrgOrgIdParams {
 export interface DeleteAdminOrgOrgIdParams {
   /** org id */
   orgId: number;
+}
+
+export interface GetAdminStatDiscussionParams {
+  begin: number;
+}
+
+export interface GetAdminStatSearchParams {
+  begin: number;
+}
+
+export interface GetAdminStatTrendParams {
+  begin: number;
+  stat_group: number;
+  stat_types: (1 | 2 | 3 | 4 | 5 | 6)[];
+}
+
+export interface GetAdminStatVisitParams {
+  begin: number;
 }
 
 export interface GetAdminSystemWebhookWebhookIdParams {

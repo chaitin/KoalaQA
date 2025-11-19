@@ -143,10 +143,15 @@ class ContentTypeConfigManager {
 const getUserReviewNotificationText = (info: MessageNotifyInfo): string => {
   if (info.review_type === UserReviewType.UserReviewTypeGuest) {
     if (info.review_status === 1) {
-      return '恭喜！管理员通过了您的账号申请'
+      // 通知审批通过后，重新获取用户信息（如有全局刷新用户数据的方法，可在此处调用）
+      if (typeof window !== 'undefined') {
+        // 尝试触发全局的 AuthContext 用户刷新（如果有 refreshUser 或类似方法，可解耦/自定义修改）
+        window.location.reload()
+      }
+      return '恭喜！管理员通过了您的账号激活申请'
     }
     if (info.review_status === 2) {
-      return '抱歉，管理员拒绝了您的申请，请重试'
+      return '管理员拒绝了您的账号激活申请'
     }
   }
   return ''
@@ -352,7 +357,10 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
                     console.error('标记通知已读失败:', error)
                   }
                 }
-                if (!isUserReview) {
+                if (isUserReview) {
+                  // 对于用户审核通知，跳转到个人中心的通知页面
+                  router.push('/profile?tab=2')
+                } else {
                   const forum = forums.find((f) => f.id === newNotification.forum_id)
                   const routePath = forum?.route_name
                     ? `/${forum.route_name}/${newNotification.discuss_uuid}`
@@ -418,6 +426,8 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
       setNotifications((prev) => prev.filter((n) => n.id !== notification.id))
 
       if (notification.type === MsgNotifyType.MsgNotifyTypeUserReview) {
+        // 对于用户审核通知（如管理员拒绝激活申请），跳转到个人中心的通知页面
+        router.push('/profile?tab=2')
         return
       }
 
