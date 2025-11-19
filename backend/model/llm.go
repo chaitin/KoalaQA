@@ -55,7 +55,7 @@ const (
 )
 
 func (m LLMType) RagSupported() bool {
-	return m == LLMTypeEmbedding || m == LLMTypeRerank
+	return m != LLMTypeChat
 }
 
 type LLM struct {
