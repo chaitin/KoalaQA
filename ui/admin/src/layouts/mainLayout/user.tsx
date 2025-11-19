@@ -31,9 +31,7 @@ const MainLayout = () => {
         getAdminModelList(),
         getAdminSystemPublicAddress(),
       ]);
-      const requiredModelTypes = Object.values(ModelLLMType).filter(
-        type => type !== ModelLLMType.LLMTypeAnalysis && type !== ModelLLMType.LLMTypeAnalysisVL,
-      );
+      const requiredModelTypes = Object.values(ModelLLMType)
       const modelList = Array.isArray(models) ? models : [];
       const lackModel = requiredModelTypes.some(type =>
         !modelList.some(model => model?.type === type),

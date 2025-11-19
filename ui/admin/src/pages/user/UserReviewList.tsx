@@ -1,6 +1,6 @@
 import { getAdminUserReview, ModelUserReviewWithUser } from '@/api';
 import Card from '@/components/card';
-import { Table } from '@ctzhian/ui';
+import { Ellipsis, Table } from '@ctzhian/ui';
 import { Box, Chip, Stack, Typography, Tooltip } from '@mui/material';
 import { useRequest } from 'ahooks';
 import { ColumnsType } from '@ctzhian/ui/dist/Table';
@@ -125,26 +125,7 @@ const UserReviewList = () => {
       title: '申请原因',
       dataIndex: 'reason',
       render: (_, record) => {
-        const reason = record.reason || '';
-        const maxLength = 50;
-        const shouldTruncate = reason.length > maxLength;
-        const displayText = shouldTruncate ? reason.substring(0, maxLength) + '...' : reason;
-
-        return (
-          <Tooltip title={shouldTruncate ? reason : ''} arrow>
-            <Typography
-              variant="body2"
-              sx={{
-                maxWidth: 300,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {displayText || '-'}
-            </Typography>
-          </Tooltip>
-        );
+        return <Ellipsis>{record.reason || '-'}</Ellipsis>;
       },
     },
     {
