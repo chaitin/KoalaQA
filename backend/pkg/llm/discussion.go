@@ -40,38 +40,32 @@ type KnowledgeDocument struct {
 }
 
 const discussionPostTemplate = `
-### ID：{{.Discussion.ID}}
-### 标题：{{.Discussion.Title}}
-### 内容：{{.Discussion.Content}}
-### 时间：{{formatTime .Discussion.CreatedAt}}
+ID：{{.Discussion.ID}}
+标题：{{.Discussion.Title}}
+内容：{{.Discussion.Content}}
+时间：{{formatTime .Discussion.CreatedAt}}
 {{- if .Discussion.Tags}}
-### 标签：{{join .Discussion.Tags ", "}}
+标签：{{join .Discussion.Tags ", "}}
 {{- end}}
 `
 
 const discussionFullTemplate = `
-## 当前帖子信息
-### 帖子ID：{{.Discussion.ID}}
-### 帖子标题：{{.Discussion.Title}}
-### 帖子内容：{{.Discussion.Content}}
-### 发帖人：{{.Discussion.UserName}}
-### 发帖时间：{{formatTime .Discussion.CreatedAt}}
+帖子ID：{{.Discussion.ID}}
+帖子标题：{{.Discussion.Title}}
+帖子内容：{{.Discussion.Content}}
+发帖人：{{.Discussion.UserName}}
+发帖时间：{{formatTime .Discussion.CreatedAt}}
 {{- if .Discussion.Tags}}
-### 帖子标签：{{join .Discussion.Tags ", "}}
+帖子标签：{{join .Discussion.Tags ", "}}
 {{- end}}
-### 解决状态：{{if .Discussion.Resolved}}已解决{{else}}待解决{{end}}
-
-## 评论楼层结构
+解决状态：{{if .Discussion.Resolved}}已解决{{else}}待解决{{end}}
+评论楼层结构
 {{- if .CommentTree}}
 {{- range $i, $node := .CommentTree}}
 楼层{{add $i 1}} {{renderComment $node ""}}
 {{- end}}
 {{- else}}
 暂无评论
-{{- end}}
-
-{{- if .NewComment}}
-针对新评论ID {{.NewComment.ID}} 进行回复
 {{- end}}
 `
 
