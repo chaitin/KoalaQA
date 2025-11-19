@@ -33,15 +33,15 @@ func newUserReview(in userReviewIn) *userReview {
 }
 
 func (u *userReview) MsgType() mq.Message {
-	return topic.MsgMessageNotify{}
+	return topic.MsgUserReview{}
 }
 
 func (u *userReview) Topic() mq.Topic {
-	return topic.TopicMessageNotify
+	return topic.TopicUserReview
 }
 
 func (u *userReview) Group() string {
-	return "koala_message_notify_user_review"
+	return "koala_user_review"
 }
 
 func (u *userReview) AckWait() time.Duration {
@@ -53,21 +53,21 @@ func (u *userReview) Concurrent() uint {
 }
 
 func (u *userReview) Handle(ctx context.Context, msg mq.Message) error {
-	data := msg.(topic.MsgMessageNotify)
+	data := msg.(topic.MsgUserReview)
 
 	logger := u.logger.WithContext(ctx).With("msg", data)
 
 	var msgType message.Type
 	switch data.Type {
-	case model.MsgNotifyTypeUserReview:
+	case model.UserReviewTypeGuest:
 		msgType = message.TypeUserReviewGuest
 	default:
-		logger.Debug("msg is not target type, skip")
+		logger.Debug("review type not supported, skip")
 		return nil
 	}
 
 	logger.Info("send user review webhook...")
-	webhookMsg, err := u.in.Generator.UserReview(ctx, msgType, data.ReviewID)
+	webhookMsg, err := u.in.Generator.UserReview(ctx, msgType, data.ID)
 	if err != nil {
 		logger.WithErr(err).Warn("generate user review msg failed")
 		return nil

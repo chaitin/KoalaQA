@@ -78,7 +78,7 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 		return nil
 	}
 
-	if data.FromID == data.ToID ||
+	if data.FromID == data.ToID || data.ToID == 0 ||
 		(data.ToID == botUserID && !slices.Contains([]model.MsgNotifyType{model.MsgNotifyTypeDislikeComment, model.MsgNotifyTypeBotUnknown}, data.Type)) {
 		logger.With("msg", data).With("bot_user_id", botUserID).Debug("ignore message notify")
 		return nil
