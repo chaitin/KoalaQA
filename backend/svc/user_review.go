@@ -48,13 +48,14 @@ type UserReviewGuestCreateReq struct {
 }
 
 func (u *UserReview) GuestCreate(ctx context.Context, user model.UserInfo, req UserReviewGuestCreateReq) error {
-	updated, err := u.repoReview.CreateNotExist(ctx, &model.UserReview{
+	review := model.UserReview{
 		Type:     model.UserReviewTypeGuest,
 		UserID:   user.UID,
 		AuthType: user.AuthType,
 		Reason:   req.Reason,
 		State:    model.UserReviewStateReview,
-	})
+	}
+	updated, err := u.repoReview.CreateNotExist(ctx, &review)
 	if err != nil {
 		return err
 	}
@@ -62,6 +63,11 @@ func (u *UserReview) GuestCreate(ctx context.Context, user model.UserInfo, req U
 	if !updated {
 		return errors.New("already have review")
 	}
+
+	u.pub.Publish(ctx, topic.TopicUserReview, topic.MsgUserReview{
+		ID:   review.ID,
+		Type: review.Type,
+	})
 
 	return nil
 }
