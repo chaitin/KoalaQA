@@ -853,7 +853,7 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 	if err != nil {
 		return err
 	}
-	if disc.UserID != user.UID {
+	if disc.UserID != user.UID && user.Role != model.UserRoleAdmin {
 		return errors.New("not allowed to accept comment")
 	}
 

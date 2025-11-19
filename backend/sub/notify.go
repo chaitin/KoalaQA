@@ -20,6 +20,7 @@ type messageNotifyIn struct {
 	fx.In
 
 	Bot     *svc.Bot
+	Disc    *svc.Discussion
 	User    *repo.User
 	Mn      *repo.MessageNotify
 	Comment *repo.Comment
@@ -29,6 +30,7 @@ type messageNotifyIn struct {
 type messageNotify struct {
 	logger  *glog.Logger
 	bot     *svc.Bot
+	disc    *svc.Discussion
 	user    *repo.User
 	comment *repo.Comment
 	mn      *repo.MessageNotify
@@ -43,6 +45,7 @@ func newMessageNotify(in messageNotifyIn) *messageNotify {
 		user:    in.User,
 		comment: in.Comment,
 		mn:      in.Mn,
+		disc:    in.Disc,
 		pub:     in.Pub,
 		natsPub: in.NatsPub,
 	}
@@ -150,6 +153,40 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 			}
 
 			return nil
+		case model.MsgNotifyTypeApplyComment:
+			if fromUser.Role == model.UserRoleAdmin {
+				// 管理员采纳需要通知原帖帖主，机器人不需要通知
+				if common.ToBot {
+					logger.Info("admin apply bot comment, skip send notify")
+					return nil
+				}
+
+				disc, err := mn.disc.GetByID(ctx, data.DiscussID)
+				if err != nil {
+					logger.WithErr(err).Warn("get discussion failed, skip notify discuss user")
+				} else if disc.UserID != fromUser.ID {
+					c := common
+					var discUser model.User
+					err := mn.user.GetByID(ctx, &discUser, disc.UserID)
+					if err != nil {
+						logger.WithErr(err).With("user_id", disc.UserID).Warn("get disc user info failed, skip notify disc user")
+					} else {
+						c.Type = model.MsgNotifyTypeApplyCommentByAdmin
+						c.ToID = disc.UserID
+						c.ToName = discUser.Name
+						c.ToBot = false
+						dbMessageNotify = append(dbMessageNotify, model.MessageNotify{
+							UserID:              disc.UserID,
+							MessageNotifyCommon: c,
+							Read:                false,
+						})
+
+						topics[disc.UserID] = topic.NewMessageNotifyUser(disc.UserID)
+					}
+
+				}
+
+			}
 		}
 
 		var users []model.User
@@ -160,6 +197,10 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 		}
 
 		for _, user := range users {
+			if user.ID == data.FromID {
+				continue
+			}
+
 			dbMessageNotify = append(dbMessageNotify, model.MessageNotify{
 				UserID:              user.ID,
 				MessageNotifyCommon: common,
