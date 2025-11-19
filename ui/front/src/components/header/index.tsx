@@ -286,7 +286,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
               onClick={handleLogoClick}
             >
               <Image
-                src='/logo-text.png'
+                src='/inverse_logo-text.png'
                 alt='Koala QA Logo'
                 width={100}
                 height={24}

@@ -95,10 +95,20 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
         }
       : undefined,
   })
-  // }, [content, displayContent, editorRef, needTruncate, isHTML])
+
+  useEffect(() => {
+    if (editorRef.editor && isMounted) {
+      editorRef.editor.commands.setContent(content || '', {
+        contentType: 'markdown',
+      } as any)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [content, isMounted])
+
   useEffect(() => {
     setIsMounted(true)
   }, [])
+
 
   // 在服务端渲染时返回内容预览
   if (!isMounted) {

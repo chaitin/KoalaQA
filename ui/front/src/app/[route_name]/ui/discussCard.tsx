@@ -180,136 +180,135 @@ const DiscussCard = ({
               {it.title}
             </Ellipsis>
           </Box>
-        </Link>
-
-        <MarkDown
-          content={it.type === ModelDiscussionType.DiscussionTypeBlog ? it.summary || '' : it.content || ''}
-          truncateLength={100}
-          sx={{
-            mb: 2,
-            lineHeight: 1.5,
-            fontSize: '0.8125rem',
-            color: 'rgba(33, 34, 45, 0.50) !important',
-            bgcolor: 'transparent !important',
-            '&.markdown-body': {
-              backgroundColor: 'transparent !important',
+          <MarkDown
+            content={it.type === ModelDiscussionType.DiscussionTypeBlog ? it.summary || '' : it.content || ''}
+            truncateLength={100}
+            sx={{
+              mb: 2,
+              lineHeight: 1.5,
+              fontSize: '0.8125rem',
               color: 'rgba(33, 34, 45, 0.50) !important',
-            },
-            '& *': {
-              fontSize: '0.8125rem !important',
-              color: 'rgba(33, 34, 45, 0.50) !important',
-            },
-          }}
-        />
+              bgcolor: 'transparent !important',
+              '&.markdown-body': {
+                backgroundColor: 'transparent !important',
+                color: 'rgba(33, 34, 45, 0.50) !important',
+              },
+              '& *': {
+                fontSize: '0.8125rem !important',
+                color: 'rgba(33, 34, 45, 0.50) !important',
+              },
+            }}
+          />
 
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-            {!data.resolved && data.type === ModelDiscussionType.DiscussionTypeQA && (
-              <QaUnresolvedChip type={data.type} resolved={data.resolved} />
-            )}
-            {shouldShowStatus(it) && (
-              <Chip
-                icon={
-                  postStatus === 'answered' || postStatus === 'closed' ? (
-                    <CheckCircleOutlineIcon
-                      sx={{
-                        width: 15,
-                        height: 15,
-                        color: '#fff !important',
-                      }}
-                    />
-                  ) : undefined
-                }
-                label={getStatusLabel(postStatus)}
-                size='small'
-                sx={{
-                  // bgcolor: `${getStatusColor(postStatus)}15`,
-                  bgcolor: getStatusColor(postStatus),
-                  color: '#fff !important',
-                  height: 22,
-                  fontWeight: 600,
-                  fontSize: '12px',
-                  // borderRadius: '3px',
-                  border: `1px solid ${getStatusColor(postStatus)}30`,
-                }}
-              />
-            )}
-            {allTags.map((tag, index) => {
-              const isCategory = isCategoryTag(tag, groups.flat)
-              return (
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+              {!data.resolved && data.type === ModelDiscussionType.DiscussionTypeQA && (
+                <QaUnresolvedChip type={data.type} resolved={data.resolved} />
+              )}
+              {shouldShowStatus(it) && (
                 <Chip
-                  key={`${tag}-${isCategory ? 'category' : 'tag'}-${index}`}
-                  label={tag}
+                  icon={
+                    postStatus === 'answered' || postStatus === 'closed' ? (
+                      <CheckCircleOutlineIcon
+                        sx={{
+                          width: 15,
+                          height: 15,
+                          color: '#fff !important',
+                        }}
+                      />
+                    ) : undefined
+                  }
+                  label={getStatusLabel(postStatus)}
                   size='small'
                   sx={{
-                    bgcolor: 'rgba(233, 236, 239, 1)',
-                    color: 'rgba(33, 34, 45, 1)',
+                    // bgcolor: `${getStatusColor(postStatus)}15`,
+                    bgcolor: getStatusColor(postStatus),
+                    color: '#fff !important',
                     height: 22,
+                    fontWeight: 600,
                     fontSize: '12px',
-                    borderRadius: '3px',
-                    cursor: 'default',
-                    pointerEvents: 'none',
+                    // borderRadius: '3px',
+                    border: `1px solid ${getStatusColor(postStatus)}30`,
                   }}
                 />
-              )
-            })}
-          </Box>
+              )}
+              {allTags.map((tag, index) => {
+                const isCategory = isCategoryTag(tag, groups.flat)
+                return (
+                  <Chip
+                    key={`${tag}-${isCategory ? 'category' : 'tag'}-${index}`}
+                    label={tag}
+                    size='small'
+                    sx={{
+                      bgcolor: 'rgba(233, 236, 239, 1)',
+                      color: 'rgba(33, 34, 45, 1)',
+                      height: 22,
+                      fontSize: '12px',
+                      borderRadius: '3px',
+                      cursor: 'default',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                )
+              })}
+            </Box>
 
-          <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'center' }}>
-            {postType === 'question' && (
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  background: 'rgba(0,99,151,0.06)',
-                  color: 'primary.main',
-                  px: 1,
-                  borderRadius: 0.5,
-                }}
-              >
-                <Icon type='icon-wendapinglun' sx={{ fontSize: 12 }} />
-                <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
-                  {it.comment || 0}
-                </Typography>
-              </Box>
-            )}
-            {postType === 'feedback' && (
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  background: 'rgba(0,99,151,0.06)',
-                  color: 'primary.main',
-                }}
-              >
-                <Icon type='icon-wendapinglun' sx={{ fontSize: 12 }} />
-                <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
-                  {(it.like || 0) - (it.dislike || 0)}
-                </Typography>
-              </Box>
-            )}
-            {postType === 'article' && (
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  background: 'rgba(0,99,151,0.06)',
-                  color: 'primary.main',
-                  px: 1,
-                  borderRadius: 0.5,
-                }}
-              >
-                <Icon type='icon-dianzan1' sx={{ fontSize: 12 }} />
-                <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
-                  {(it.like || 0) - (it.dislike || 0)}
-                </Typography>
-              </Box>
-            )}
+            <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'center' }}>
+              {postType === 'question' && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    background: 'rgba(0,99,151,0.06)',
+                    color: 'primary.main',
+                    px: 1,
+                    borderRadius: 0.5,
+                  }}
+                >
+                  <Icon type='icon-wendapinglun' sx={{ fontSize: 12 }} />
+                  <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
+                    {it.comment || 0}
+                  </Typography>
+                </Box>
+              )}
+              {postType === 'feedback' && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    background: 'rgba(0,99,151,0.06)',
+                    color: 'primary.main',
+                  }}
+                >
+                  <Icon type='icon-wendapinglun' sx={{ fontSize: 12 }} />
+                  <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
+                    {(it.like || 0) - (it.dislike || 0)}
+                  </Typography>
+                </Box>
+              )}
+              {postType === 'article' && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    background: 'rgba(0,99,151,0.06)',
+                    color: 'primary.main',
+                    px: 1,
+                    borderRadius: 0.5,
+                  }}
+                >
+                  <Icon type='icon-dianzan1' sx={{ fontSize: 12 }} />
+                  <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
+                    {(it.like || 0) - (it.dislike || 0)}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
           </Box>
-        </Box>
+        </Link>
       </Box>
     </Box>
   )

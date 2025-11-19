@@ -1,10 +1,10 @@
-import { ModelDiscussionComment } from '@/api/types'
+import { ModelDiscussionComment, ModelDiscussionReply } from '@/api/types'
 import EditorWrap, { EditorWrapRef } from '@/components/editor'
 import Modal from '@/components/modal'
 import React, { useRef } from 'react'
 
 interface EditCommentModalProps {
-  data: ModelDiscussionComment
+  data: ModelDiscussionComment | ModelDiscussionReply
   open: boolean
   onOk: (val: string) => void
   onClose: () => void

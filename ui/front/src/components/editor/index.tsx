@@ -67,17 +67,10 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
       ({ editor }: { editor: any }) => {
         if (!onChange) return
         try {
-          const markdown = editor?.storage?.markdown?.getMarkdown?.()
+          const markdown = editor?.getMarkdown()
           if (typeof markdown === 'string') {
             onChange(markdown)
             return
-          }
-          if (typeof editor?.getHTML === 'function') {
-            onChange(editor.getHTML())
-            return
-          }
-          if (typeof editor?.getText === 'function') {
-            onChange(editor.getText())
           }
         } catch (error) {
           console.error('处理编辑器更新失败:', error)

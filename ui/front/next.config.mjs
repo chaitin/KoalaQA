@@ -144,8 +144,12 @@ const nextConfig = {
   async rewrites() {
     const rewritesPath = []
     if (process.env.NODE_ENV === 'development') {
-      const target = process.env.TARGET
-      const imageTarget = process.env.TARGET
+      const target = process.env.TARGET || 'https://httpbin.org'
+      const imageTarget = process.env.TARGET || 'https://httpbin.org'
+
+      // 添加调试输出
+      console.log('🔧 Proxy target:', target)
+
       rewritesPath.push(
         ...[
           {
