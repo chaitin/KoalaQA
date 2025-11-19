@@ -564,7 +564,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                   {/* 编辑器内容 */}
                   <Box
                     sx={{
-                      p: 0,
+                      px: 1,
                       height: '100%',
                       display: 'flex',
                       flexDirection: 'column',
