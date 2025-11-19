@@ -197,6 +197,7 @@ func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req Discus
 
 	d.in.Pub.Publish(ctx, topic.TopicDiscChange, topic.MsgDiscChange{
 		OP:       topic.OPInsert,
+		ForumID:  disc.ForumID,
 		DiscID:   disc.ID,
 		DiscUUID: disc.UUID,
 		Type:     disc.Type,
@@ -246,6 +247,7 @@ func (d *Discussion) Update(ctx context.Context, user model.UserInfo, uuid strin
 	}
 	d.in.Pub.Publish(ctx, topic.TopicDiscChange, topic.MsgDiscChange{
 		OP:       topic.OPUpdate,
+		ForumID:  disc.ForumID,
 		DiscID:   disc.ID,
 		DiscUUID: uuid,
 		Type:     disc.Type,
@@ -280,6 +282,7 @@ func (d *Discussion) Delete(ctx context.Context, user model.UserInfo, uuid strin
 	}
 	d.in.Pub.Publish(ctx, topic.TopicDiscChange, topic.MsgDiscChange{
 		OP:       topic.OPDelete,
+		ForumID:  disc.ForumID,
 		DiscID:   disc.ID,
 		DiscUUID: uuid,
 		RagID:    disc.RagID,
@@ -865,6 +868,7 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 	d.in.Pub.Publish(ctx, topic.TopicCommentChange, topic.MsgCommentChange{
 		OP:       topic.OPInsert,
 		CommID:   comment.ID,
+		ForumID:  disc.ForumID,
 		DiscID:   disc.ID,
 		DiscUUID: discUUID,
 	})
@@ -927,6 +931,7 @@ func (d *Discussion) UpdateComment(ctx context.Context, user model.UserInfo, dis
 	d.in.Pub.Publish(ctx, topic.TopicCommentChange, topic.MsgCommentChange{
 		OP:       topic.OPUpdate,
 		CommID:   commentID,
+		ForumID:  disc.ForumID,
 		DiscID:   disc.ID,
 		DiscUUID: discUUID,
 	})
@@ -960,6 +965,7 @@ func (d *Discussion) DeleteComment(ctx context.Context, user model.UserInfo, dis
 	d.in.Pub.Publish(ctx, topic.TopicCommentChange, topic.MsgCommentChange{
 		OP:       topic.OPDelete,
 		CommID:   commentID,
+		ForumID:  disc.ForumID,
 		DiscID:   disc.ID,
 		DiscUUID: discUUID,
 	})

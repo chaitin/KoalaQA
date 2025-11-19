@@ -49,6 +49,7 @@ type GenerateReq struct {
 	Question      string `json:"question"`
 	Prompt        string `json:"prompt"`
 	DefaultAnswer string `json:"default_answer"`
+	NewCommentID  uint   `json:"new_comment_id"`
 }
 
 func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (string, bool, error) {
@@ -65,6 +66,7 @@ func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (st
 	res, err := l.Chat(ctx, sysPrompt, req.Prompt, map[string]any{
 		"Question":           req.Question,
 		"DefaultAnswer":      defaultAnswer,
+		"NewCommentID":       req.NewCommentID,
 		"CurrentDate":        time.Now().Format("2006-01-02"),
 		"KnowledgeDocuments": knowledgeDocuments,
 		"AI_DEBUG":           l.cfg.RAG.DEBUG,
