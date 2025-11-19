@@ -21,7 +21,7 @@ type MKModelBase struct {
 	APIHeader  string        `json:"api_header"`
 	APIVersion string        `json:"api_version"` // for azure openai
 	ShowName   string        `json:"show_name"`
-	Type       model.LLMType `json:"type" binding:"required,oneof=chat embedding rerank"`
+	Type       model.LLMType `json:"type" binding:"required,oneof=chat embedding rerank analysis analysis-vl"`
 }
 
 type ModelKit struct {
@@ -47,7 +47,7 @@ type MKSupportedReq struct {
 	BaseURL   string        `json:"base_url" binding:"required"`
 	APIKey    string        `json:"api_key"`
 	APIHeader string        `json:"api_header"`
-	Type      model.LLMType `json:"type" binding:"required,oneof=chat embedding rerank"`
+	Type      model.LLMType `json:"type" binding:"required,oneof=chat embedding rerank analysis analysis-vl"`
 }
 
 type MKSupportedRes struct {

@@ -7181,7 +7181,9 @@ const docTemplate = `{
                     "enum": [
                         "chat",
                         "embedding",
-                        "rerank"
+                        "rerank",
+                        "analysis",
+                        "analysis-vl"
                     ],
                     "allOf": [
                         {
@@ -7223,7 +7225,9 @@ const docTemplate = `{
                     "enum": [
                         "chat",
                         "embedding",
-                        "rerank"
+                        "rerank",
+                        "analysis",
+                        "analysis-vl"
                     ],
                     "allOf": [
                         {
@@ -7285,7 +7289,9 @@ const docTemplate = `{
                     "enum": [
                         "chat",
                         "embedding",
-                        "rerank"
+                        "rerank",
+                        "analysis",
+                        "analysis-vl"
                     ],
                     "allOf": [
                         {
@@ -7330,7 +7336,9 @@ const docTemplate = `{
                     "enum": [
                         "chat",
                         "embedding",
-                        "rerank"
+                        "rerank",
+                        "analysis",
+                        "analysis-vl"
                     ],
                     "allOf": [
                         {
