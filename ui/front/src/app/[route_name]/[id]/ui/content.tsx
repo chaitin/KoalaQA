@@ -77,7 +77,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const isReplyEditorVisible = useMemo(() => Object.values(showCommentEditors).some(Boolean), [showCommentEditors])
 
   const handleAnswerEditorChange = useCallback((content: string) => {
-    console.log(content)
     const normalized = content
       .replace(/<p><br><\/p>/gi, '')
       .replace(/<br\s*\/?>/gi, '')
@@ -908,6 +907,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                 overflow: 'hidden',
                                 border: '1px solid #000000',
                                 px: 1,
+                                minHeight: '120px'
                               }}
                             >
                               <EditorWrap

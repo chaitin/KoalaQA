@@ -13,7 +13,7 @@ import {
   showNotification,
   formatNotificationData,
 } from '@/utils/browserNotification'
-import { postUserNotifyRead } from '@/api'
+import { postUserNotifyRead, ModelUserRole } from '@/api'
 import MarkDown from '@/components/markDown'
 import { Ellipsis } from '@ctzhian/ui'
 
@@ -138,15 +138,18 @@ class ContentTypeConfigManager {
 /**
  * 获取通知文本
  * @param info 消息通知信息
+ * @param userRole 当前用户角色
  * @returns 格式化的通知文本
  */
-const getUserReviewNotificationText = (info: MessageNotifyInfo): string => {
+const getUserReviewNotificationText = (info: MessageNotifyInfo, userRole?: ModelUserRole): string => {
   if (info.review_type === UserReviewType.UserReviewTypeGuest) {
     if (info.review_status === 1) {
       // 通知审批通过后，重新获取用户信息（如有全局刷新用户数据的方法，可在此处调用）
       if (typeof window !== 'undefined') {
-        // 尝试触发全局的 AuthContext 用户刷新（如果有 refreshUser 或类似方法，可解耦/自定义修改）
-        window.location.reload()
+        // 如果用户角色是游客，则刷新页面
+        if (userRole === ModelUserRole.UserRoleGuest) {
+          window.location.reload()
+        }
       }
       return '恭喜！管理员通过了您的账号激活申请'
     }
@@ -157,11 +160,11 @@ const getUserReviewNotificationText = (info: MessageNotifyInfo): string => {
   return ''
 }
 
-const getNotificationText = (info: MessageNotifyInfo): string => {
+const getNotificationText = (info: MessageNotifyInfo, userRole?: ModelUserRole): string => {
   const configManager = ContentTypeConfigManager.getInstance()
   const config = configManager.getConfig(info.discussion_type)
   if (info.type === MsgNotifyType.MsgNotifyTypeUserReview) {
-    return getUserReviewNotificationText(info)
+    return getUserReviewNotificationText(info, userRole)
   }
   switch (info.type) {
     case MsgNotifyType.MsgNotifyTypeReplyDiscuss:
@@ -336,7 +339,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
           ws.send(JSON.stringify({ type: 1 }))
 
           if (user.web_notify && newNotification.new) {
-            const notificationText = getNotificationText(newNotification)
+            const notificationText = getNotificationText(newNotification, user.role)
             const { title, options } = formatNotificationData(newNotification, notificationText)
 
             const browserNotification = showNotification(title, options)
@@ -529,7 +532,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
               <Box sx={{ p: 2, textAlign: 'center', color: 'text.secondary', fontSize: '14px' }}>暂无通知</Box>
             ) : (
               notifications.map((notification, index) => {
-                const notificationText = getNotificationText(notification)
+                const notificationText = getNotificationText(notification, user.role)
                 const { action, content } = splitNotificationText(notificationText)
                 const isUserReview = notification.type === MsgNotifyType.MsgNotifyTypeUserReview
                 return (
