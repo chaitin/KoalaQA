@@ -238,17 +238,17 @@ func (s *Stat) Trend(ctx context.Context, req StatTrendReq) (*model.ListRes[Stat
 		res model.ListRes[StatTrendItem]
 		err error
 	)
+
+	queryFuncs := []repo.QueryOptFunc{
+		repo.QueryWithEqual("ts", req.Begin, repo.EqualOPGTE),
+		repo.QueryWithEqual("type", req.StatTypes, repo.EqualOPIn),
+	}
+
 	switch req.StatGroup {
 	case StateTrendGroupHour:
-		err = s.repoStat.Trend(ctx, &res.Items,
-			repo.QueryWithEqual("ts", req.Begin, repo.EqualOPGTE),
-			repo.QueryWithEqual("type", req.StatTypes, repo.EqualOPIn),
-		)
+		err = s.repoStat.Trend(ctx, &res.Items, queryFuncs...)
 	case StateTrendGroupDay:
-		err = s.repoStat.TrendDay(ctx, &res.Items,
-			repo.QueryWithEqual("ts", req.Begin, repo.EqualOPGTE),
-			repo.QueryWithEqual("type", req.StatTypes, repo.EqualOPIn),
-		)
+		err = s.repoStat.TrendDay(ctx, &res.Items, queryFuncs...)
 	default:
 		err = errors.New("unsupported stat group")
 	}
