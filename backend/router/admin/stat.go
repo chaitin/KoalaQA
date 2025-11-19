@@ -111,7 +111,7 @@ func (s *stat) Route(h server.Handler) {
 	g.GET("/visit", s.Visit)
 	g.GET("/search", s.SearchCoount)
 	g.GET("/discussion", s.Discussion)
-	g.GET("/trend")
+	g.GET("/trend", s.Trend)
 }
 
 func newStat(s *svc.Stat) server.Router {
