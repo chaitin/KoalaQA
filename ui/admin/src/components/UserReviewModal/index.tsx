@@ -1,5 +1,5 @@
 import { getAdminUserReview, ModelUserReviewWithUser, putAdminUserReviewReviewId } from '@/api';
-import { message, Modal, Table } from '@ctzhian/ui';
+import { Ellipsis, message, Modal, Table } from '@ctzhian/ui';
 import { Badge, Box, Button, Stack, Typography, Tooltip } from '@mui/material';
 import { useRequest } from 'ahooks';
 import { ColumnsType } from '@ctzhian/ui/dist/Table';
@@ -45,7 +45,6 @@ const UserReviewModal = ({ open, onClose }: UserReviewModalProps) => {
       }),
     { manual: true }
   );
-
 
   useEffect(() => {
     if (open) {
@@ -111,26 +110,7 @@ const UserReviewModal = ({ open, onClose }: UserReviewModalProps) => {
       title: '申请原因',
       dataIndex: 'reason',
       render: (_, record) => {
-        const reason = record.reason || '';
-        const maxLength = 50;
-        const shouldTruncate = reason.length > maxLength;
-        const displayText = shouldTruncate ? reason.substring(0, maxLength) + '...' : reason;
-
-        return (
-          <Tooltip title={shouldTruncate ? reason : ''} arrow>
-            <Typography
-              variant="body2"
-              sx={{
-                maxWidth: 300,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {displayText || '-'}
-            </Typography>
-          </Tooltip>
-        );
+        return <Ellipsis>{record.reason || '-'}</Ellipsis>;
       },
     },
     {
@@ -181,7 +161,7 @@ const UserReviewModal = ({ open, onClose }: UserReviewModalProps) => {
       open={open}
       onCancel={onClose}
       title="用户审批"
-      width='780px'
+      width="780px"
       sx={{
         py: 2,
         '& .MuiModal-root': {
