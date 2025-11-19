@@ -24,7 +24,7 @@ func (s *Stat) Sum(ctx context.Context, res *int64, queryFuns ...QueryOptFunc) e
 }
 
 func (s *Stat) BotUnknown(ctx context.Context, res *int64, t time.Time) error {
-	return s.model(ctx).Where("type = ? AND ts = ?", model.StatTypeBotUnknown, t.Unix()).Where("key IN (SELECT uuid FROM discussions WHERE created_at > ?)", t).Count(res).Error
+	return s.model(ctx).Where("type = ? AND ts >= ?", model.StatTypeBotUnknown, t.Unix()).Where("key IN (SELECT uuid FROM discussions WHERE created_at >= ?)", t).Count(res).Error
 }
 
 func (s *Stat) Create(ctx context.Context, stats ...model.Stat) error {
@@ -39,6 +39,28 @@ func (s *Stat) Create(ctx context.Context, stats ...model.Stat) error {
 		}),
 	}).
 		CreateInBatches(&stats, 1000).Error
+}
+
+func (s *Stat) TrendDay(ctx context.Context, res any, queryFuns ...QueryOptFunc) error {
+	opt := getQueryOpt(queryFuns...)
+
+	return s.model(ctx).
+		Select("stat, day_ts AS ts, SUM(count) AS count").
+		Scopes(opt.Scopes()...).
+		Group("stat, ts").
+		Order("ts ASC").
+		Find(res).Error
+}
+
+func (s *Stat) Trend(ctx context.Context, res any, queryFuns ...QueryOptFunc) error {
+	opt := getQueryOpt(queryFuns...)
+
+	return s.model(ctx).
+		Select("stat, ts, SUM(count) AS count").
+		Scopes(opt.Scopes()...).
+		Group("stat, ts").
+		Order("ts ASC").
+		Find(res).Error
 }
 
 func init() {

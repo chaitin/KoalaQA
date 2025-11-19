@@ -8,12 +8,16 @@ const (
 	StatTypeVisit StatType = iota + 1
 	StatTypeSearch
 	StatTypeBotUnknown
+	StatTypeBotAccept
+	StatTypeDiscussionQA
+	StatTypeDiscussionBlog
 )
 
 type Stat struct {
 	Base
 
 	StatInfo
+	DayTs int64 `gorm:"column:day_ts;type:bigint" json:"day_ts"`
 	Count int64 `gorm:"column:count;type:bigint;default:0" json:"count"`
 }
 

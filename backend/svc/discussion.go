@@ -162,8 +162,11 @@ func (d *Discussion) Create(ctx context.Context, sessionUUID string, req Discuss
 		return "", err
 	}
 
+	statType := model.StatTypeDiscussionBlog
+
 	switch disc.Type {
 	case model.DiscussionTypeQA:
+		statType = model.StatTypeDiscussionQA
 		d.in.Pub.Publish(ctx, topic.TopicAIInsight, topic.MsgAIInsight{
 			ForumID: disc.ForumID,
 			Keyword: disc.Title,
@@ -180,6 +183,12 @@ func (d *Discussion) Create(ctx context.Context, sessionUUID string, req Discuss
 			d.logger.WithContext(ctx).WithErr(err).With("disc_id", disc).Warn("create user trend failed")
 		}
 	}
+
+	d.in.Batcher.Send(model.StatInfo{
+		Type: statType,
+		Ts:   util.HourTrunc(time.Now()).Unix(),
+		Key:  disc.UUID,
+	})
 
 	d.in.Pub.Publish(ctx, topic.TopicDiscChange, topic.MsgDiscChange{
 		OP:       topic.OPInsert,
@@ -375,7 +384,7 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 		if req.Stat {
 			d.in.Batcher.Send(model.StatInfo{
 				Type: model.StatTypeSearch,
-				Ts:   util.TodayZero().Unix(),
+				Ts:   util.TodayTrunc().Unix(),
 				Key:  sessionUUID,
 			})
 		}
@@ -891,11 +900,21 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 		return err
 	}
 
+	now := time.Now()
+
 	if err := d.in.CommRepo.UpdateByModel(ctx, &model.Comment{
 		Accepted:   true,
-		AcceptedAt: model.Timestamp(time.Now().Unix()),
+		AcceptedAt: model.Timestamp(now.Unix()),
 	}, repo.QueryWithEqual("id", commentID)); err != nil {
 		return err
+	}
+
+	if comment.Bot {
+		d.in.Batcher.Send(model.StatInfo{
+			Type: model.StatTypeBotAccept,
+			Ts:   util.HourTrunc(now).Unix(),
+			Key:  discUUID,
+		})
 	}
 
 	if !disc.Resolved {

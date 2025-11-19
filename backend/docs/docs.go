@@ -2692,6 +2692,14 @@ const docTemplate = `{
                     "stat"
                 ],
                 "summary": "stat discussion",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "name": "begin",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2738,6 +2746,14 @@ const docTemplate = `{
                     "stat"
                 ],
                 "summary": "stat search count",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "name": "begin",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2760,6 +2776,84 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/stat/trend": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stat"
+                ],
+                "summary": "stat trend",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "name": "begin",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "name": "stat_group",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "enum": [
+                                1,
+                                2,
+                                3,
+                                4,
+                                5,
+                                6
+                            ],
+                            "type": "integer"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "stat_types",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/svc.StatTrendItem"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/admin/stat/visit": {
             "get": {
                 "produces": [
@@ -2769,6 +2863,14 @@ const docTemplate = `{
                     "stat"
                 ],
                 "summary": "stat visit",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "name": "begin",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -6137,6 +6239,25 @@ const docTemplate = `{
                 }
             }
         },
+        "model.StatType": {
+            "type": "integer",
+            "enum": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+            ],
+            "x-enum-varnames": [
+                "StatTypeVisit",
+                "StatTypeSearch",
+                "StatTypeBotUnknown",
+                "StatTypeBotAccept",
+                "StatTypeDiscussionQA",
+                "StatTypeDiscussionBlog"
+            ]
+        },
         "model.SystemBrand": {
             "type": "object",
             "properties": {
@@ -7385,6 +7506,20 @@ const docTemplate = `{
                 },
                 "human_resp_time": {
                     "type": "integer"
+                }
+            }
+        },
+        "svc.StatTrendItem": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "ts": {
+                    "type": "integer"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.StatType"
                 }
             }
         },
