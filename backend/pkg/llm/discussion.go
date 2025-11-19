@@ -186,6 +186,31 @@ func (t *DiscussionPromptTemplate) BuildFullPrompt() (string, error) {
 	return buf.String(), nil
 }
 
+// BuildContentForRetrieval 构建用于检索的纯内容文本（不包含任何标签和提示词）
+func (t *DiscussionPromptTemplate) BuildContentForRetrieval() string {
+	var builder strings.Builder
+
+	// 添加帖子标题和内容
+	builder.WriteString(t.Discussion.Title)
+	builder.WriteString("\n")
+	builder.WriteString(t.Discussion.Content)
+	builder.WriteString("\n")
+
+	// 添加所有评论内容（按时间排序）
+	comments := make([]model.CommentDetail, len(t.AllComments))
+	copy(comments, t.AllComments)
+	sort.Slice(comments, func(i, j int) bool {
+		return comments[i].CreatedAt < comments[j].CreatedAt
+	})
+
+	for _, comment := range comments {
+		builder.WriteString(comment.Content)
+		builder.WriteString("\n")
+	}
+
+	return strings.TrimSpace(builder.String())
+}
+
 // initTemplate 初始化模版（兼容性方法，根据是否有新评论选择模版）
 func (t *DiscussionPromptTemplate) initTemplate() error {
 	if t.NewComment != nil {

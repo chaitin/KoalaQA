@@ -22,20 +22,16 @@ type LLM struct {
 	dataset *repo.Dataset
 	logger  *glog.Logger
 	doc     *repo.KBDocument
-	disc    *repo.Discussion
-	comm    *repo.Comment
 	kit     *ModelKit
 	cfg     config.Config
 }
 
-func newLLM(rag rag.Service, dataset *repo.Dataset, doc *repo.KBDocument, disc *repo.Discussion, comm *repo.Comment, kit *ModelKit, cfg config.Config) *LLM {
+func newLLM(rag rag.Service, dataset *repo.Dataset, doc *repo.KBDocument, kit *ModelKit, cfg config.Config) *LLM {
 	return &LLM{
 		rag:     rag,
 		dataset: dataset,
 		logger:  glog.Module("llm"),
 		doc:     doc,
-		disc:    disc,
-		comm:    comm,
 		kit:     kit,
 		cfg:     cfg,
 	}
