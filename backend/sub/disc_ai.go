@@ -95,6 +95,7 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 		Question:      question,
 		Prompt:        prompt,
 		DefaultAnswer: bot.UnknownPrompt,
+		NewCommentID:  0,
 	})
 	if err != nil {
 		logger.WithErr(err).Error("answer failed")
