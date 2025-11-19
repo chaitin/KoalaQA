@@ -18,13 +18,15 @@ type Blog struct {
 	trend  *svc.Trend
 	logger *glog.Logger
 	llm    *svc.LLM
+	prompt *svc.Prompt
 }
 
-func NewBlog(disc *repo.Discussion, llm *svc.LLM, trend *svc.Trend) *Blog {
+func NewBlog(disc *repo.Discussion, llm *svc.LLM, prompt *svc.Prompt, trend *svc.Trend) *Blog {
 	return &Blog{
 		disc:   disc,
 		trend:  trend,
 		llm:    llm,
+		prompt: prompt,
 		logger: glog.Module("sub", "blog"),
 	}
 }
@@ -70,7 +72,7 @@ func (a *Blog) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 	logger := a.logger.WithContext(ctx).With("disc_uuid", data.DiscUUID).With("type", data.Type)
 	logger.Info("handle insert blog")
 
-	_, prompt, err := a.llm.GeneratePostPrompt(ctx, data.DiscID)
+	_, prompt, err := a.prompt.GeneratePostPrompt(ctx, data.DiscID)
 	if err != nil {
 		logger.WithErr(err).Error("generate post prompt failed")
 		return nil

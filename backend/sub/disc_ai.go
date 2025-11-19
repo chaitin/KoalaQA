@@ -19,16 +19,18 @@ type Disc struct {
 	trend   *svc.Trend
 	logger  *glog.Logger
 	llm     *svc.LLM
+	prompt  *svc.Prompt
 	bot     *svc.Bot
 	pub     mq.Publisher
 	batcher batch.Batcher[model.StatInfo]
 }
 
-func NewDisc(disc *svc.Discussion, llm *svc.LLM, bot *svc.Bot, pub mq.Publisher, trend *svc.Trend, batcher batch.Batcher[model.StatInfo]) *Disc {
+func NewDisc(disc *svc.Discussion, llm *svc.LLM, prompt *svc.Prompt, bot *svc.Bot, pub mq.Publisher, trend *svc.Trend, batcher batch.Batcher[model.StatInfo]) *Disc {
 	return &Disc{
 		disc:    disc,
 		trend:   trend,
 		llm:     llm,
+		prompt:  prompt,
 		bot:     bot,
 		pub:     pub,
 		batcher: batcher,
@@ -86,7 +88,7 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 		logger.WithErr(err).Error("get bot failed")
 		return nil
 	}
-	question, prompt, err := d.llm.GenerateChatPrompt(ctx, data.DiscID, 0)
+	question, prompt, err := d.prompt.GenerateAnswerPrompt(ctx, data.DiscID, 0)
 	if err != nil {
 		logger.WithErr(err).Error("generate prompt failed")
 		return nil
