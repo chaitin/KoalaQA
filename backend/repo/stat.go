@@ -45,7 +45,7 @@ func (s *Stat) TrendDay(ctx context.Context, res any, queryFuns ...QueryOptFunc)
 	opt := getQueryOpt(queryFuns...)
 
 	return s.model(ctx).
-		Select("stat, day_ts AS ts, SUM(count) AS count").
+		Select("stat, day_ts AS ts, COUNT(*) AS count").
 		Scopes(opt.Scopes()...).
 		Group("stat, ts").
 		Order("ts ASC").
@@ -56,7 +56,7 @@ func (s *Stat) Trend(ctx context.Context, res any, queryFuns ...QueryOptFunc) er
 	opt := getQueryOpt(queryFuns...)
 
 	return s.model(ctx).
-		Select("stat, ts, SUM(count) AS count").
+		Select("stat, ts, COUNT(*) AS count").
 		Scopes(opt.Scopes()...).
 		Group("stat, ts").
 		Order("ts ASC").
