@@ -58,14 +58,13 @@ const discussionPostTemplate = `
 `
 
 const discussionFullTemplate = `
-## 当前帖子信息
-### 帖子ID：{{.Discussion.ID}}
-### 帖子标题：{{.Discussion.Title}}
-### 帖子内容：{{.Discussion.Content}}
-### 发帖人：{{.Discussion.UserName}}
-### 发帖时间：{{formatTime .Discussion.CreatedAt}}
+帖子ID：{{.Discussion.ID}}
+帖子标题：{{.Discussion.Title}}
+帖子内容：{{.Discussion.Content}}
+发帖人：{{.Discussion.UserName}}
+发帖时间：{{formatTime .Discussion.CreatedAt}}
 {{- if .Discussion.Tags}}
-### 帖子标签：{{join .Discussion.Tags ", "}}
+帖子标签：{{join .Discussion.Tags ", "}}
 {{- end}}
 ### 解决状态：{{getDiscState .Discussion.Resolved}}
 
