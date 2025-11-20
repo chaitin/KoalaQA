@@ -36,11 +36,17 @@ func (c *closeDiscussion) Run() {
 		return
 	}
 
+	intAutoClose := int(sysDisc.AutoClose)
+	if intAutoClose < 0 {
+		c.logger.Info("invalid auto close value, skip")
+		return
+	}
+
 	err = c.repoDisc.Update(ctx, map[string]any{
 		"resolved":    model.DiscussionStateClosed,
 		"resolved_at": time.Now(),
 	}, repo.QueryWithEqual("resolved", model.DiscussionStateNone),
-		repo.QueryWithEqual("created_at", util.DayTrunc(time.Now().AddDate(0, 0, -int(sysDisc.AutoClose))), repo.EqualOPLT),
+		repo.QueryWithEqual("created_at", util.DayTrunc(time.Now().AddDate(0, 0, -intAutoClose)), repo.EqualOPLT),
 	)
 	if err != nil {
 		c.logger.WithErr(err).With("day_before", sysDisc.AutoClose).Warn("close disc failed")
