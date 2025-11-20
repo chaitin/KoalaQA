@@ -195,17 +195,16 @@ type StatDiscussionRes struct {
 
 func (s *Stat) Discussion(ctx context.Context, req StatReq) (*StatDiscussionRes, error) {
 	var res StatDiscussionRes
-	now := time.Now()
+	t := time.Unix(req.Begin, 0)
 	var err error
 	res.Discussions, err = s.repoDisc.ListType(ctx,
-		repo.QueryWithEqual("created_at", util.DayTrunc(now), repo.EqualOPGTE),
-		repo.QueryWithEqual("created_at", util.DayTrunc(now.AddDate(0, 0, 1)), repo.EqualOPLT),
+		repo.QueryWithEqual("created_at", util.DayTrunc(t), repo.EqualOPGTE),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	err = s.repoStat.BotUnknown(ctx, &res.BotUnknown, time.Unix(req.Begin, 0))
+	err = s.repoStat.BotUnknown(ctx, &res.BotUnknown, t)
 	if err != nil {
 		return nil, err
 	}
