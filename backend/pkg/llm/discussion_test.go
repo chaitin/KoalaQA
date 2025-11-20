@@ -16,7 +16,7 @@ func createTestDiscussion() *model.DiscussionDetail {
 			Title:    "Redis缓存在高并发下的优化策略",
 			Content:  "我们的系统在高峰期Redis响应变慢，求优化建议",
 			Tags:     []string{"Redis", "缓存", "性能优化"},
-			Resolved: false,
+			Resolved: model.DiscussionStateNone,
 		},
 		UserName: "开发小王",
 	}

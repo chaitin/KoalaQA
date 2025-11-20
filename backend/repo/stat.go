@@ -56,9 +56,9 @@ func (s *Stat) Trend(ctx context.Context, res any, queryFuns ...QueryOptFunc) er
 	opt := getQueryOpt(queryFuns...)
 
 	return s.model(ctx).
-		Select("stat, ts, COUNT(*) AS count").
+		Select("type, ts, COUNT(*) AS count").
 		Scopes(opt.Scopes()...).
-		Group("stat, ts").
+		Group("type, ts").
 		Order("ts ASC").
 		Find(res).Error
 }

@@ -2955,6 +2955,68 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/system/discussion": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system_discussion"
+                ],
+                "summary": "system discussion detail",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.SystemDiscussion"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system_discussion"
+                ],
+                "summary": "update system discussion config",
+                "parameters": [
+                    {
+                        "description": "request params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.SystemDiscussion"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/system/login_method": {
             "get": {
                 "produces": [
@@ -3692,7 +3754,17 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "boolean",
+                        "enum": [
+                            0,
+                            1,
+                            2
+                        ],
+                        "type": "integer",
+                        "x-enum-varnames": [
+                            "DiscussionStateNone",
+                            "DiscussionStateResolved",
+                            "DiscussionStateClosed"
+                        ],
                         "name": "resolved",
                         "in": "query"
                     },
@@ -5557,7 +5629,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "resolved": {
-                    "type": "boolean"
+                    "$ref": "#/definitions/model.DiscussionState"
                 },
                 "resolved_at": {
                     "type": "integer"
@@ -5654,7 +5726,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "resolved": {
-                    "type": "boolean"
+                    "$ref": "#/definitions/model.DiscussionState"
                 },
                 "resolved_at": {
                     "type": "integer"
@@ -5734,6 +5806,19 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "model.DiscussionState": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-varnames": [
+                "DiscussionStateNone",
+                "DiscussionStateResolved",
+                "DiscussionStateClosed"
+            ]
         },
         "model.DiscussionType": {
             "type": "string",
@@ -6184,7 +6269,8 @@ const docTemplate = `{
                 5,
                 6,
                 7,
-                8
+                8,
+                9
             ],
             "x-enum-varnames": [
                 "MsgNotifyTypeUnknown",
@@ -6195,7 +6281,8 @@ const docTemplate = `{
                 "MsgNotifyTypeDislikeComment",
                 "MsgNotifyTypeBotUnknown",
                 "MsgNotifyTypeLikeDiscussion",
-                "MsgNotifyTypeUserReview"
+                "MsgNotifyTypeUserReview",
+                "MsgNotifyTypeApplyCommentByAdmin"
             ]
         },
         "model.PlatformOpt": {
@@ -6270,6 +6357,14 @@ const docTemplate = `{
                 },
                 "text": {
                     "type": "string"
+                }
+            }
+        },
+        "model.SystemDiscussion": {
+            "type": "object",
+            "properties": {
+                "auto_close": {
+                    "type": "integer"
                 }
             }
         },
@@ -7437,7 +7532,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "resolve": {
-                    "type": "boolean"
+                    "maximum": 3,
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.DiscussionState"
+                        }
+                    ]
                 }
             }
         },

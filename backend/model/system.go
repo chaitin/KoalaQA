@@ -24,6 +24,7 @@ const (
 	SystemKeyAuth          = "auth"
 	SystemKeyMachineID     = "machine_id"
 	SystemKeyBrand         = "brand"
+	SystemKeyDiscussion    = "discussion"
 )
 
 type PublicAddress struct {
@@ -89,4 +90,8 @@ type AuthConfigOauth struct {
 type SystemBrand struct {
 	Logo string `json:"logo"`
 	Text string `json:"text"`
+}
+
+type SystemDiscussion struct {
+	AutoClose uint `json:"auto_close"`
 }

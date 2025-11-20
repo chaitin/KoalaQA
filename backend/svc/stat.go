@@ -102,7 +102,7 @@ func (s *Stat) Accept(ctx context.Context, onlyBot bool, req StatReq) (count int
 	query := []repo.QueryOptFunc{
 		repo.QueryWithEqual("parent_id", 0),
 		repo.QueryWithEqual("accepted", true),
-		repo.QueryWithEqual("updated_at", req.Begin, repo.EqualOPGTE),
+		repo.QueryWithEqual("updated_at", time.Unix(req.Begin, 0), repo.EqualOPGTE),
 	}
 
 	if onlyBot {
