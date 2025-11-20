@@ -32,7 +32,7 @@ type Discussion struct {
 	Content    string          `json:"content" gorm:"column:content;type:text"`
 	Tags       StringArray     `json:"tags" gorm:"column:tags;type:text[]"`
 	GroupIDs   Int64Array      `json:"group_ids" gorm:"column:group_ids;type:bigint[]"`
-	Resolved   DiscussionState `json:"resolved" gorm:"column:resolved;type:integer"`
+	Resolved   DiscussionState `json:"resolved" gorm:"column:resolved;type:integer;default:0"`
 	ResolvedAt Timestamp       `json:"resolved_at" gorm:"column:resolved_at;type:timestamp with time zone"`
 	Hot        uint            `json:"hot" gorm:"column:hot;type:bigint;default:0"`
 	Like       uint            `json:"like" gorm:"column:like;type:bigint;default:0"`
