@@ -87,7 +87,7 @@ func (s *stat) Discussion(ctx *context.Context) {
 // @Tags stat
 // @Param req query svc.StatTrendReq false "req params"
 // @Produce json
-// @Success 200 {object} context.Response{data=model.ListRes{items=[]svc.StatTrendItem}}
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]model.StatTrend{items=[]model.StatTrendItem}}}
 // @Router /admin/stat/trend [get]
 func (s *stat) Trend(ctx *context.Context) {
 	var req svc.StatTrendReq

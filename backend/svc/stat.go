@@ -232,9 +232,9 @@ type StatTrendItem struct {
 	Count int64          `json:"count"`
 }
 
-func (s *Stat) Trend(ctx context.Context, req StatTrendReq) (*model.ListRes[StatTrendItem], error) {
+func (s *Stat) Trend(ctx context.Context, req StatTrendReq) (*model.ListRes[model.StatTrend], error) {
 	var (
-		res model.ListRes[StatTrendItem]
+		res model.ListRes[model.StatTrend]
 		err error
 	)
 
@@ -245,9 +245,9 @@ func (s *Stat) Trend(ctx context.Context, req StatTrendReq) (*model.ListRes[Stat
 
 	switch req.StatGroup {
 	case StateTrendGroupHour:
-		err = s.repoStat.Trend(ctx, &res.Items, queryFuncs...)
+		res.Items, err = s.repoStat.Trend(ctx, queryFuncs...)
 	case StateTrendGroupDay:
-		err = s.repoStat.TrendDay(ctx, &res.Items, queryFuncs...)
+		res.Items, err = s.repoStat.TrendDay(ctx, queryFuncs...)
 	default:
 		err = errors.New("unsupported stat group")
 	}

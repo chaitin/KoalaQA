@@ -2839,7 +2839,22 @@ const docTemplate = `{
                                                         "items": {
                                                             "type": "array",
                                                             "items": {
-                                                                "$ref": "#/definitions/svc.StatTrendItem"
+                                                                "allOf": [
+                                                                    {
+                                                                        "$ref": "#/definitions/model.StatTrend"
+                                                                    },
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "items": {
+                                                                                "type": "array",
+                                                                                "items": {
+                                                                                    "$ref": "#/definitions/model.StatTrendItem"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                ]
                                                             }
                                                         }
                                                     }
@@ -6020,6 +6035,9 @@ const docTemplate = `{
         "model.JSONB-array_model_ForumGroups": {
             "type": "object"
         },
+        "model.JSONB-array_model_StatTrendItem": {
+            "type": "object"
+        },
         "model.JSONB-model_ExportOpt": {
             "type": "object"
         },
@@ -6327,6 +6345,28 @@ const docTemplate = `{
                 },
                 "time": {
                     "type": "integer"
+                }
+            }
+        },
+        "model.StatTrend": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "$ref": "#/definitions/model.JSONB-array_model_StatTrendItem"
+                },
+                "ts": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.StatTrendItem": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.StatType"
                 }
             }
         },
@@ -7618,20 +7658,6 @@ const docTemplate = `{
                 },
                 "human_resp_time": {
                     "type": "integer"
-                }
-            }
-        },
-        "svc.StatTrendItem": {
-            "type": "object",
-            "properties": {
-                "count": {
-                    "type": "integer"
-                },
-                "ts": {
-                    "type": "integer"
-                },
-                "type": {
-                    "$ref": "#/definitions/model.StatType"
                 }
             }
         },

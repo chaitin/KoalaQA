@@ -27,6 +27,16 @@ type StatInfo struct {
 	Key  string   `gorm:"column:key;type:text;uniqueIndex:udx_stat_type_ts_key" json:"key"`
 }
 
+type StatTrendItem struct {
+	Type  StatType `json:"type"`
+	Count int64    `json:"count"`
+}
+
+type StatTrend struct {
+	Ts    int64                  `json:"ts"`
+	Items JSONB[[]StatTrendItem] `json:"items" gorm:"type:jsonb"`
+}
+
 func (s *StatInfo) UUID() string {
 	return fmt.Sprintf("%d_%d_%s", s.Type, s.Ts, s.Key)
 }
