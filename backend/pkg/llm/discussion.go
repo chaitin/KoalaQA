@@ -59,7 +59,7 @@ const discussionFullTemplate = `
 {{- if .Discussion.Tags}}
 ### 帖子标签：{{join .Discussion.Tags ", "}}
 {{- end}}
-### 解决状态：{{if .Discussion.Resolved}}已解决{{else}}待解决{{end}}
+### 解决状态：{{if eq .Discussion.Resolved 1 }}已解决{{else}}待解决{{end}}
 
 ## 评论楼层结构
 {{- if .CommentTree}}

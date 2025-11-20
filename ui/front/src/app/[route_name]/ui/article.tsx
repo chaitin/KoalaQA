@@ -217,7 +217,10 @@ const Article = ({
       params.only_mine = true
     }
     if (resolved !== null && resolved !== undefined) {
-      params.resolved = resolved === 'true'
+      const resolvedNum = /^(0|1|2)$/.test(resolved) ? parseInt(resolved, 10) : null
+      if (resolvedNum !== null) {
+        params.resolved = resolvedNum as 0 | 1 | 2
+      }
     }
 
     getDiscussion(params)
@@ -246,7 +249,7 @@ const Article = ({
   }
 
   const fetchList = useCallback(
-    (st: Status, se: string, tps: number[], onlyMineParam?: boolean, resolvedParam?: boolean | null) => {
+    (st: Status, se: string, tps: number[], onlyMineParam?: boolean, resolvedParam?: number | null) => {
       setPage(1)
       const params: GetDiscussionParams & { forum_id?: number } = {
         page: 1,
@@ -273,7 +276,7 @@ const Article = ({
         params.only_mine = onlyMineParam
       }
       if (resolvedParam !== null && resolvedParam !== undefined) {
-        params.resolved = resolvedParam
+        params.resolved = resolvedParam as 0 | 1 | 2
       }
 
       return getDiscussion(params)
@@ -332,11 +335,16 @@ const Article = ({
     const currentPath = window.location.pathname
     const currentOnlyMine = searchParams?.get('only_mine') === 'true'
     const currentResolved = searchParams?.get('resolved')
-    const resolvedBool = currentResolved === null || currentResolved === undefined ? null : currentResolved === 'true'
+    const resolvedValue =
+      currentResolved === null || currentResolved === undefined
+        ? null
+        : /^(0|1|2)$/.test(currentResolved)
+          ? parseInt(currentResolved, 10)
+          : null
 
     // 如果当前路径是列表页，且之前记录的不是列表页，说明可能是从详情页返回的
     if (lastPathname && lastPathname !== currentPath && currentPath === `/${routeName}`) {
-      fetchList(status as Status, search, topics, currentOnlyMine, resolvedBool)
+      fetchList(status as Status, search, topics, currentOnlyMine, resolvedValue)
     }
 
     // 更新记录的路径
@@ -434,7 +442,7 @@ const Article = ({
     setFilterAnchorEl(null)
   }
 
-  const handleFilterChange = (filterType: 'only_mine' | 'resolved', value: boolean | null) => {
+  const handleFilterChange = (filterType: 'only_mine' | 'resolved', value: boolean | number | null) => {
     const params = new URLSearchParams(searchParams?.toString())
 
     if (filterType === 'only_mine') {
@@ -444,10 +452,8 @@ const Article = ({
         params.delete('only_mine')
       }
     } else if (filterType === 'resolved') {
-      if (value === false) {
-        params.set('resolved', 'false')
-      } else if (value === true) {
-        params.set('resolved', 'true')
+      if (typeof value === 'number' && value >= 0 && value <= 2) {
+        params.set('resolved', value.toString())
       } else {
         params.delete('resolved')
       }
@@ -461,11 +467,16 @@ const Article = ({
   useEffect(() => {
     const currentOnlyMine = searchParams?.get('only_mine') === 'true'
     const currentResolved = searchParams?.get('resolved')
-    const resolvedBool = currentResolved === null || currentResolved === undefined ? null : currentResolved === 'true'
+    const resolvedValue =
+      currentResolved === null || currentResolved === undefined
+        ? null
+        : /^(0|1|2)$/.test(currentResolved)
+          ? parseInt(currentResolved, 10)
+          : null
 
     // 只有当参数真正变化时才重新获取数据
     if (currentOnlyMine !== onlyMine || currentResolved !== resolved) {
-      fetchList(status as Status, search, topics, currentOnlyMine, resolvedBool)
+      fetchList(status as Status, search, topics, currentOnlyMine, resolvedValue)
     }
   }, [status, onlyMine, resolved, searchParams, search, topics, fetchList])
 
@@ -713,10 +724,9 @@ const Article = ({
                 </MenuItem>
                 <MenuItem
                   onClick={() => {
-                    const newResolved = resolved === 'false' ? null : false
-                    handleFilterChange('resolved', newResolved)
+                    handleFilterChange('resolved', resolved === '0' ? null : 0)
                   }}
-                  selected={resolved === 'false'}
+                  selected={resolved === '0'}
                   sx={{
                     fontSize: '14px',
                     py: 1,
@@ -1057,9 +1067,13 @@ const Article = ({
         onOk={() => {
           const currentOnlyMine = searchParams?.get('only_mine') === 'true'
           const currentResolved = searchParams?.get('resolved')
-          const resolvedBool =
-            currentResolved === null || currentResolved === undefined ? null : currentResolved === 'true'
-          fetchList(status as Status, search, topics, currentOnlyMine, resolvedBool)
+          const resolvedValue =
+            currentResolved === null || currentResolved === undefined
+              ? null
+              : /^(0|1|2)$/.test(currentResolved)
+                ? parseInt(currentResolved, 10)
+                : null
+          fetchList(status as Status, search, topics, currentOnlyMine, resolvedValue)
           router.refresh()
           releaseModalClose()
         }}

@@ -1,6 +1,6 @@
 'use client'
 
-import { ModelDiscussionListItem, ModelDiscussionType } from '@/api/types'
+import { ModelDiscussionListItem, ModelDiscussionState, ModelDiscussionType } from '@/api/types'
 import { DiscussionTypeChip, MarkDown, QaUnresolvedChip } from '@/components'
 import CommonAvatar from '@/components/CommonAvatar'
 import { CommonContext } from '@/components/commonProvider'
@@ -33,7 +33,8 @@ const getStatusLabel = (status: string) => {
 
 const shouldShowStatus = (data: ModelDiscussionListItem) => {
   // 只显示已解决/已关闭的状态，不显示"待解决"
-  return data.resolved || false
+  return data.resolved === ModelDiscussionState.DiscussionStateResolved ||
+         data.resolved === ModelDiscussionState.DiscussionStateClosed
 }
 
 const isCategoryTag = (tag: string, groups: Array<{ name?: string }>) => {
@@ -42,7 +43,10 @@ const isCategoryTag = (tag: string, groups: Array<{ name?: string }>) => {
 
 // 获取帖子状态
 const getPostStatus = (data: ModelDiscussionListItem): string => {
-  if (data.resolved) {
+  if (data.resolved === ModelDiscussionState.DiscussionStateClosed) {
+    return 'closed'
+  }
+  if (data.resolved === ModelDiscussionState.DiscussionStateResolved) {
     return data.type === ModelDiscussionType.DiscussionTypeFeedback ? 'closed' : 'answered'
   }
   return 'open'
@@ -202,7 +206,7 @@ const DiscussCard = ({
 
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-              {!data.resolved && data.type === ModelDiscussionType.DiscussionTypeQA && (
+              {data.resolved === ModelDiscussionState.DiscussionStateNone && data.type === ModelDiscussionType.DiscussionTypeQA && (
                 <QaUnresolvedChip type={data.type} resolved={data.resolved} />
               )}
               {shouldShowStatus(it) && (

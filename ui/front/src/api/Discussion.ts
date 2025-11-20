@@ -31,6 +31,7 @@ import {
   PostDiscussionDiscIdResolveParams,
   PostDiscussionDiscIdRevokeLikeParams,
   PostDiscussionUploadPayload,
+  PutDiscussionDiscIdCloseParams,
   PutDiscussionDiscIdCommentCommentIdParams,
   PutDiscussionDiscIdParams,
   SvcCommentCreateReq,
@@ -277,6 +278,27 @@ export const deleteDiscussionDiscId = (
     path: `/discussion/${discId}`,
     method: "DELETE",
     type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description close discussion
+ *
+ * @tags discussion
+ * @name PutDiscussionDiscIdClose
+ * @summary close discussion
+ * @request PUT:/discussion/{disc_id}/close
+ * @response `200` `ContextResponse` OK
+ */
+
+export const putDiscussionDiscIdClose = (
+  { discId, ...query }: PutDiscussionDiscIdCloseParams,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/discussion/${discId}/close`,
+    method: "PUT",
     format: "json",
     ...params,
   });

@@ -47,13 +47,15 @@ func (p *LLMModelParam) Scan(value interface{}) error {
 type LLMType string
 
 const (
-	LLMTypeChat      LLMType = "chat"
-	LLMTypeEmbedding LLMType = "embedding"
-	LLMTypeRerank    LLMType = "rerank"
+	LLMTypeChat       LLMType = "chat"
+	LLMTypeEmbedding  LLMType = "embedding"
+	LLMTypeRerank     LLMType = "rerank"
+	LLMTypeAnalysis   LLMType = "analysis"
+	LLMTypeAnalysisVL LLMType = "analysis-vl"
 )
 
 func (m LLMType) RagSupported() bool {
-	return m == LLMTypeEmbedding || m == LLMTypeRerank
+	return m != LLMTypeChat
 }
 
 type LLM struct {

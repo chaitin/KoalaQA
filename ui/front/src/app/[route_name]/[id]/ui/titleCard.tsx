@@ -1,34 +1,34 @@
 'use client'
 import {
   deleteDiscussionDiscId,
-  postDiscussionDiscIdResolve,
   postDiscussionDiscIdComment,
   postDiscussionDiscIdLike,
+  postDiscussionDiscIdResolve,
   postDiscussionDiscIdRevokeLike,
+  putDiscussionDiscIdClose,
 } from '@/api'
-import { ModelDiscussionDetail, ModelDiscussionType, ModelUserRole } from '@/api/types'
-import { Card, QaUnresolvedChip, DiscussionTypeChip } from '@/components'
+import { ModelDiscussionDetail, ModelDiscussionState, ModelDiscussionType, ModelUserRole } from '@/api/types'
+import { DiscussionTypeChip, QaUnresolvedChip } from '@/components'
 import { AuthContext } from '@/components/authProvider'
-import { ReleaseModal, Tag } from '@/components/discussion'
-import { TimeDisplayWithTag } from '@/components/TimeDisplay'
-import EditorWrap, { EditorWrapRef } from '@/components/editor'
+import { ReleaseModal } from '@/components/discussion'
+import { EditorWrapRef } from '@/components/editor'
 import EditorContent from '@/components/EditorContent'
 import Modal from '@/components/modal'
+import { TimeDisplayWithTag } from '@/components/TimeDisplay'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
 import { formatNumber } from '@/lib/utils'
 // import { generateCacheKey, clearCache } from '@/lib/api-cache'
-import { useForum } from '@/contexts/ForumContext'
-import MoreVertIcon from '@mui/icons-material/MoreVert'
-import { Box, Button, Chip, Divider, IconButton, Menu, MenuItem, Paper, Stack, Typography } from '@mui/material'
 import CommonAvatar from '@/components/CommonAvatar'
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
-import { useBoolean } from 'ahooks'
+import { useForum } from '@/contexts/ForumContext'
 import dayjs from '@/lib/dayjs'
-import { useParams, useRouter } from 'next/navigation'
-import { useContext, useRef, useState, useEffect, useMemo } from 'react'
-import { CheckCircleIcon } from '@/utils/mui-imports'
-import Link from 'next/link'
 import { Ellipsis, Icon } from '@ctzhian/ui'
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
+import MoreVertIcon from '@mui/icons-material/MoreVert'
+import { Box, Chip, Divider, IconButton, Menu, MenuItem, Paper, Typography } from '@mui/material'
+import { useBoolean } from 'ahooks'
+import Link from 'next/link'
+import { useParams, useRouter } from 'next/navigation'
+import { useContext, useEffect, useMemo, useRef } from 'react'
 
 // 添加CSS动画样式
 const animationStyles = `
@@ -112,14 +112,32 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const handleToggleFeedback = () => {
     menuClose()
     Modal.confirm({
-      title: `确定${data.resolved ? '开启' : '关闭'}反馈吗？`,
+      title: `确定${data.resolved === ModelDiscussionState.DiscussionStateResolved ? '开启' : '关闭'}反馈吗？`,
       content: '',
       onOk: async () => {
         await postDiscussionDiscIdResolve(
           { discId: data.uuid + '' },
           {
-            resolve: !data.resolved,
+            resolve: data.resolved
+              ? ModelDiscussionState.DiscussionStateNone
+              : ModelDiscussionState.DiscussionStateResolved,
           },
+        ).then(() => {
+          router.refresh()
+        })
+      },
+    })
+  }
+
+  const handleCloseQuestion = () => {
+    menuClose()
+    Modal.confirm({
+      title: '确定关闭问题吗？',
+      content: '关闭后的问题将不再支持回答、评论等操作',
+      okButtonProps: { color: 'warning' },
+      onOk: async () => {
+        await putDiscussionDiscIdClose(
+          { discId: data.uuid + '' },
         ).then(() => {
           router.refresh()
         })
@@ -173,7 +191,20 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
 
   const isArticlePost = data.type === ModelDiscussionType.DiscussionTypeBlog
   const isFeedbackPost = data.type === ModelDiscussionType.DiscussionTypeFeedback
-  const status = data.resolved ? 'closed' : 'open'
+  const isQAPost = data.type === ModelDiscussionType.DiscussionTypeQA
+
+  const status = (() => {
+    switch (data.resolved) {
+      case ModelDiscussionState.DiscussionStateResolved:
+        return 'answered'
+      case ModelDiscussionState.DiscussionStateClosed:
+        return 'closed'
+      default:
+        return 'open'
+    }
+  })()
+
+  const isClosed = data.resolved === ModelDiscussionState.DiscussionStateClosed
   const profileHref = data.user_id ? `/profile/${data.user_id}` : undefined
 
   const isCategoryTag = (tag: string) => {
@@ -209,24 +240,30 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
             user.role || ModelUserRole.UserRoleUnknown,
           ) && <MenuItem onClick={handleToggleFeedback}>{data.resolved ? '开启反馈' : '关闭反馈'}</MenuItem>}
-        <MenuItem
-          onClick={() => {
-            if (data.type === ModelDiscussionType.DiscussionTypeBlog) {
-              const rn = route_name || ''
-              router.push(`/${rn}/edit?id=${data.uuid}`)
-            } else {
-              releaseOpen()
-            }
-            menuClose()
-          }}
-        >
-          编辑
-          {data.type === ModelDiscussionType.DiscussionTypeQA
-            ? '问题'
-            : data.type === ModelDiscussionType.DiscussionTypeFeedback
-              ? '反馈'
-              : '文章'}
-        </MenuItem>
+        {data.type === ModelDiscussionType.DiscussionTypeQA &&
+          data.resolved === ModelDiscussionState.DiscussionStateNone && (
+            <MenuItem onClick={handleCloseQuestion}>关闭问题</MenuItem>
+          )}
+        {!(data.type === ModelDiscussionType.DiscussionTypeQA && isClosed) && (
+          <MenuItem
+            onClick={() => {
+              if (data.type === ModelDiscussionType.DiscussionTypeBlog) {
+                const rn = route_name || ''
+                router.push(`/${rn}/edit?id=${data.uuid}`)
+              } else {
+                releaseOpen()
+              }
+              menuClose()
+            }}
+          >
+            编辑
+            {data.type === ModelDiscussionType.DiscussionTypeQA
+              ? '问题'
+              : data.type === ModelDiscussionType.DiscussionTypeFeedback
+                ? '反馈'
+                : '文章'}
+          </MenuItem>
+        )}
         <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
           删除
           {data.type === ModelDiscussionType.DiscussionTypeQA
@@ -319,7 +356,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
           {/* 左侧：所有标签（分组标签、状态标签、普通标签） */}
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
-            {status === 'closed' && !isArticlePost && (
+            {(status === 'answered' || status === 'closed') && !isArticlePost && (
               <Chip
                 icon={
                   <CheckCircleOutlineIcon
@@ -330,22 +367,23 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                     }}
                   />
                 }
-                label={getStatusLabel('answered')}
+                label={getStatusLabel(status)}
                 size='small'
                 sx={{
-                  bgcolor: getStatusColor('answered'),
+                  bgcolor: getStatusColor(status),
                   color: '#fff !important',
                   height: 22,
                   fontWeight: 600,
                   fontSize: '12px',
-                  border: `1px solid ${getStatusColor('answered')}30`,
+                  border: `1px solid ${getStatusColor(status)}30`,
                   fontFamily: 'Glibory, "PingFang SC", "Hiragino Sans GB", "STHeiti", "Microsoft YaHei", sans-serif',
                 }}
               />
             )}
-            {data.type === ModelDiscussionType.DiscussionTypeQA && !data.resolved && (
-              <QaUnresolvedChip type={data.type} resolved={data.resolved} />
-            )}
+            {data.type === ModelDiscussionType.DiscussionTypeQA &&
+              data.resolved === ModelDiscussionState.DiscussionStateNone && (
+                <QaUnresolvedChip type={data.type} resolved={data.resolved} />
+              )}
             {data.groups?.map((item) => {
               const isCategory = true
               return (

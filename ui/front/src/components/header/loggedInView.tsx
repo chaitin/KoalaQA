@@ -35,6 +35,7 @@ enum MsgNotifyType {
   MsgNotifyTypeBotUnknown = 6, //提出了机器人无法回答的问题（仅管理员
   MsgNotifyTypeLikeFeedback = 7, //点赞了你的反馈
   MsgNotifyTypeUserReview = 8, // 用户审核结果
+  MsgNotifyTypeAdminMarkSolved = 9, // 管理员将你的帖子标记为已解决
 }
 
 enum UserReviewType {
@@ -56,6 +57,7 @@ interface ContentTypeConfig {
   // 特殊动作
   botUnknownAction: string // 机器人无法回答动作文本
   likeFeedbackAction: string // 点赞反馈动作文本
+  adminMarkSolvedAction: string // 管理员标记为已解决动作文本
 }
 
 // 内容类型配置映射
@@ -69,6 +71,7 @@ const CONTENT_TYPE_CONFIGS: Record<ContentType, ContentTypeConfig> = {
     dislikeBotAction: '不喜欢机器人的评论',
     botUnknownAction: '提出了机器人无法回答的问题',
     likeFeedbackAction: '点赞了你的反馈',
+    adminMarkSolvedAction: '将你的反馈标记为已解决',
   },
   [ContentType.QA]: {
     replyAction: '回答了你的问题',
@@ -79,6 +82,7 @@ const CONTENT_TYPE_CONFIGS: Record<ContentType, ContentTypeConfig> = {
     dislikeBotAction: '不喜欢机器人的回答',
     botUnknownAction: '提出了机器人无法回答的问题',
     likeFeedbackAction: '点赞了你的反馈',
+    adminMarkSolvedAction: '将你的问题标记为已解决',
   },
   [ContentType.BLOG]: {
     replyAction: '评论了你的文章',
@@ -89,6 +93,7 @@ const CONTENT_TYPE_CONFIGS: Record<ContentType, ContentTypeConfig> = {
     dislikeBotAction: '不喜欢机器人的评论',
     botUnknownAction: '提出了机器人无法回答的问题',
     likeFeedbackAction: '点赞了你的文章',
+    adminMarkSolvedAction: '将你的文章标记为已解决',
   },
 }
 
@@ -181,6 +186,8 @@ const getNotificationText = (info: MessageNotifyInfo, userRole?: ModelUserRole):
       return config.botUnknownAction
     case MsgNotifyType.MsgNotifyTypeLikeFeedback:
       return config.likeFeedbackAction
+    case MsgNotifyType.MsgNotifyTypeAdminMarkSolved:
+      return config.adminMarkSolvedAction
     default:
       return ''
   }
@@ -533,7 +540,6 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
             ) : (
               notifications.map((notification, index) => {
                 const notificationText = getNotificationText(notification, user.role)
-                const { action, content } = splitNotificationText(notificationText)
                 const isUserReview = notification.type === MsgNotifyType.MsgNotifyTypeUserReview
                 return (
                 <Stack
@@ -578,7 +584,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
                           >
                             {notification.from_name || '未知用户'}
                           </Typography>
-                          {action && (
+                          {notificationText && (
                             <Typography
                               variant='body2'
                               sx={{
@@ -586,8 +592,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
                                 fontSize: '13px',
                               }}
                             >
-                              {action}
-                              {content}
+                              {notificationText}
                             </Typography>
                           )}
                         </>

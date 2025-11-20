@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/caarlos0/env/v11 v11.3.1
-	github.com/chaitin/ModelKit v1.8.3
+	github.com/chaitin/ModelKit/v2 v2.7.2
 	github.com/chaitin/pandawiki/sdk/rag v0.0.0-20250927130416-bcfc4bde3379
 	github.com/cloudwego/eino v0.4.7
 	github.com/coreos/go-oidc/v3 v3.15.0
@@ -48,7 +48,7 @@ require (
 	github.com/cloudwego/base64x v0.1.6 // indirect
 	github.com/cloudwego/eino-ext/components/model/deepseek v0.0.0-20250522060253-ddb617598b09 // indirect
 	github.com/cloudwego/eino-ext/components/model/gemini v0.1.2 // indirect
-	github.com/cloudwego/eino-ext/components/model/ollama v0.0.0-20250624023530-68a1e4282a8e // indirect
+	github.com/cloudwego/eino-ext/components/model/ollama v0.1.2 // indirect
 	github.com/cloudwego/eino-ext/components/model/openai v0.0.0-20250710065240-482d48888f25 // indirect
 	github.com/cloudwego/eino-ext/libs/acl/openai v0.0.0-20250626133421-3c142631c961 // indirect
 	github.com/cohesion-org/deepseek-go v1.2.8 // indirect
@@ -105,7 +105,7 @@ require (
 	github.com/nats-io/nkeys v0.4.11 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/nikolalohinski/gonja v1.5.3 // indirect
-	github.com/ollama/ollama v0.6.5 // indirect
+	github.com/ollama/ollama v0.11.9 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/perimeterx/marshmallow v1.1.5 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect

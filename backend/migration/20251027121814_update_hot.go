@@ -20,11 +20,11 @@ func (m *updateHot) Migrate(tx *gorm.DB) error {
 		0.3 * LN(GREATEST(comment, 0) + 1)
 	) * EXP(-0.01 * EXTRACT(EPOCH FROM (NOW() - updated_at))/3600)
 	  * 10000
-	  * CASE WHEN resolved = true THEN 1.3 ELSE 1.0 END`
+	  * CASE WHEN resolved = ? THEN 1.3 ELSE 1.0 END`
 
 	if err := tx.Model(&model.Discussion{}).Where("id > 0").
 		Updates(map[string]any{
-			"hot":        gorm.Expr(hotFormula),
+			"hot":        gorm.Expr(hotFormula, model.DiscussionStateResolved),
 			"updated_at": gorm.Expr("updated_at"),
 		}).Error; err != nil {
 		return err

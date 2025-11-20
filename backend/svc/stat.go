@@ -2,6 +2,7 @@ package svc
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
@@ -20,37 +21,55 @@ type Stat struct {
 func (s *Stat) UpdateStat(ctx context.Context, key string) error {
 	s.batcher.Send(model.StatInfo{
 		Type: model.StatTypeVisit,
-		Ts:   util.TodayZero().Unix(),
+		Ts:   util.HourTrunc(time.Now()).Unix(),
 		Key:  key,
 	})
 
 	return nil
 }
 
-func (s *Stat) Count(ctx context.Context, t model.StatType) (count int64, err error) {
+func (s *Stat) Count(ctx context.Context, t model.StatType, req StatReq) (count int64, err error) {
 	err = s.repoStat.Count(ctx, &count,
 		repo.QueryWithEqual("type", t),
-		repo.QueryWithEqual("ts", util.TodayZero().Unix()),
+		repo.QueryWithEqual("ts", req.Begin, repo.EqualOPGTE),
 	)
 
 	return
 }
 
-func (s *Stat) Sum(ctx context.Context, t model.StatType) (count int64, err error) {
+func (s *Stat) Sum(ctx context.Context, t model.StatType, req StatReq) (count int64, err error) {
 	err = s.repoStat.Sum(ctx, &count,
 		repo.QueryWithEqual("type", t),
-		repo.QueryWithEqual("ts", util.TodayZero().Unix()),
+		repo.QueryWithEqual("ts", req.Begin, repo.EqualOPGTE),
 	)
 
 	return
 }
 
-func (s *Stat) UV(ctx context.Context) (int64, error) {
-	return s.Count(ctx, model.StatTypeVisit)
+func (s *Stat) UV(ctx context.Context, req StatReq) (int64, error) {
+	return s.Count(ctx, model.StatTypeVisit, req)
 }
 
-func (s *Stat) PV(ctx context.Context) (int64, error) {
-	return s.Sum(ctx, model.StatTypeVisit)
+func (s *Stat) PV(ctx context.Context, req StatReq) (int64, error) {
+	return s.Sum(ctx, model.StatTypeVisit, req)
+}
+
+type StatReq struct {
+	Begin int64 `form:"begin" binding:"required"`
+}
+
+type StateTrendGroup uint
+
+const (
+	StateTrendGroupHour = iota + 1
+	StateTrendGroupDay
+)
+
+type StatTrendReq struct {
+	StatReq
+
+	StatGroup StateTrendGroup  `form:"stat_group" binding:"required"`
+	StatTypes []model.StatType `form:"stat_types" binding:"required"`
 }
 
 type StatVisitRes struct {
@@ -58,13 +77,13 @@ type StatVisitRes struct {
 	PV int64 `json:"pv"`
 }
 
-func (s *Stat) Visit(ctx context.Context) (*StatVisitRes, error) {
-	uv, err := s.UV(ctx)
+func (s *Stat) Visit(ctx context.Context, req StatReq) (*StatVisitRes, error) {
+	uv, err := s.UV(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
-	pv, err := s.PV(ctx)
+	pv, err := s.PV(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -75,18 +94,15 @@ func (s *Stat) Visit(ctx context.Context) (*StatVisitRes, error) {
 	}, nil
 }
 
-func (s *Stat) SearchCount(ctx context.Context) (int64, error) {
-	return s.Sum(ctx, model.StatTypeSearch)
+func (s *Stat) SearchCount(ctx context.Context, req StatReq) (int64, error) {
+	return s.Sum(ctx, model.StatTypeSearch, req)
 }
 
-func (s *Stat) Accept(ctx context.Context, onlyBot bool) (count int64, err error) {
-	now := time.Now()
-
+func (s *Stat) Accept(ctx context.Context, onlyBot bool, req StatReq) (count int64, err error) {
 	query := []repo.QueryOptFunc{
 		repo.QueryWithEqual("parent_id", 0),
 		repo.QueryWithEqual("accepted", true),
-		repo.QueryWithEqual("updated_at", util.DayZero(now), repo.EqualOPGTE),
-		repo.QueryWithEqual("updated_at", util.DayZero(now.AddDate(0, 0, 1)), repo.EqualOPLT),
+		repo.QueryWithEqual("updated_at", time.Unix(req.Begin, 0), repo.EqualOPGTE),
 	}
 
 	if onlyBot {
@@ -98,11 +114,11 @@ func (s *Stat) Accept(ctx context.Context, onlyBot bool) (count int64, err error
 	return
 }
 
-func (s *Stat) HumanResponseTime(ctx context.Context) (int64, error) {
+func (s *Stat) HumanResponseTime(ctx context.Context, req StatReq) (int64, error) {
 	var stats []model.Stat
 	err := s.repoStat.List(ctx, &stats,
 		repo.QueryWithEqual("type", model.StatTypeBotUnknown),
-		repo.QueryWithEqual("ts", util.TodayZero().Unix()),
+		repo.QueryWithEqual("ts", req.Begin, repo.EqualOPGTE),
 	)
 	if err != nil {
 		return 0, err
@@ -177,36 +193,69 @@ type StatDiscussionRes struct {
 	HumanRespTime int64                               `json:"human_resp_time"`
 }
 
-func (s *Stat) Discussion(ctx context.Context) (*StatDiscussionRes, error) {
+func (s *Stat) Discussion(ctx context.Context, req StatReq) (*StatDiscussionRes, error) {
 	var res StatDiscussionRes
-	now := time.Now()
+	t := time.Unix(req.Begin, 0)
 	var err error
 	res.Discussions, err = s.repoDisc.ListType(ctx,
-		repo.QueryWithEqual("created_at", util.DayZero(now), repo.EqualOPGTE),
-		repo.QueryWithEqual("created_at", util.DayZero(now.AddDate(0, 0, 1)), repo.EqualOPLT),
+		repo.QueryWithEqual("created_at", util.DayTrunc(t), repo.EqualOPGTE),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	err = s.repoStat.BotUnknown(ctx, &res.BotUnknown, util.TodayZero())
+	err = s.repoStat.BotUnknown(ctx, &res.BotUnknown, t)
 	if err != nil {
 		return nil, err
 	}
 
-	res.Accept, err = s.Accept(ctx, false)
+	res.Accept, err = s.Accept(ctx, false, req)
 	if err != nil {
 		return nil, err
 	}
-	res.BotAccept, err = s.Accept(ctx, true)
+	res.BotAccept, err = s.Accept(ctx, true, req)
 	if err != nil {
 		return nil, err
 	}
 
-	res.HumanRespTime, err = s.HumanResponseTime(ctx)
+	res.HumanRespTime, err = s.HumanResponseTime(ctx, req)
 	if err != nil {
 		return nil, err
 	}
+
+	return &res, nil
+}
+
+type StatTrendItem struct {
+	Type  model.StatType `json:"type"`
+	Ts    int64          `json:"ts"`
+	Count int64          `json:"count"`
+}
+
+func (s *Stat) Trend(ctx context.Context, req StatTrendReq) (*model.ListRes[model.StatTrend], error) {
+	var (
+		res model.ListRes[model.StatTrend]
+		err error
+	)
+
+	queryFuncs := []repo.QueryOptFunc{
+		repo.QueryWithEqual("ts", req.Begin, repo.EqualOPGTE),
+		repo.QueryWithEqual("type", req.StatTypes, repo.EqualOPIn),
+	}
+
+	switch req.StatGroup {
+	case StateTrendGroupHour:
+		res.Items, err = s.repoStat.Trend(ctx, queryFuncs...)
+	case StateTrendGroupDay:
+		res.Items, err = s.repoStat.TrendDay(ctx, queryFuncs...)
+	default:
+		err = errors.New("unsupported stat group")
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	res.Total = int64(len(res.Items))
 
 	return &res, nil
 }

@@ -38,8 +38,8 @@ func (r *Rank) AIInsight(ctx context.Context) ([]model.RankTimeGroup, error) {
 	now := time.Now()
 	return r.repoRank.GroupByTime(ctx, 3,
 		repo.QueryWithEqual("type", model.RanTypeAIInsight),
-		repo.QueryWithEqual("created_at", util.WeekZero(now), repo.EqualOPLT),
-		repo.QueryWithEqual("created_at", util.WeekZero(now.AddDate(0, 0, -21)), repo.EqualOPGTE),
+		repo.QueryWithEqual("created_at", util.WeekTrunc(now), repo.EqualOPLT),
+		repo.QueryWithEqual("created_at", util.WeekTrunc(now.AddDate(0, 0, -21)), repo.EqualOPGTE),
 	)
 }
 

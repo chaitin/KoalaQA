@@ -162,8 +162,11 @@ func (d *Discussion) Create(ctx context.Context, sessionUUID string, req Discuss
 		return "", err
 	}
 
+	statType := model.StatTypeDiscussionBlog
+
 	switch disc.Type {
 	case model.DiscussionTypeQA:
+		statType = model.StatTypeDiscussionQA
 		d.in.Pub.Publish(ctx, topic.TopicAIInsight, topic.MsgAIInsight{
 			ForumID: disc.ForumID,
 			Keyword: disc.Title,
@@ -180,6 +183,12 @@ func (d *Discussion) Create(ctx context.Context, sessionUUID string, req Discuss
 			d.logger.WithContext(ctx).WithErr(err).With("disc_id", disc).Warn("create user trend failed")
 		}
 	}
+
+	d.in.Batcher.Send(model.StatInfo{
+		Type: statType,
+		Ts:   util.HourTrunc(time.Now()).Unix(),
+		Key:  disc.UUID,
+	})
 
 	d.in.Pub.Publish(ctx, topic.TopicDiscChange, topic.MsgDiscChange{
 		OP:       topic.OPInsert,
@@ -199,6 +208,8 @@ func (d *Discussion) Create(ctx context.Context, sessionUUID string, req Discuss
 	return disc.UUID, nil
 }
 
+var errDiscussionClosed = errors.New("discussion has been closed")
+
 type DiscussionUpdateReq struct {
 	Title    string            `json:"title" binding:"required"`
 	Content  string            `json:"content"`
@@ -215,13 +226,9 @@ func (d *Discussion) Update(ctx context.Context, user model.UserInfo, uuid strin
 		return errors.New("not allowed to update discussion")
 	}
 
-	ok, err := d.in.UserRepo.HasForumPermission(ctx, user.UID, disc.ForumID)
+	err = d.CheckPerm(ctx, user.UID, disc)
 	if err != nil {
 		return err
-	}
-
-	if !ok {
-		return errPermission
 	}
 
 	if err := d.in.DiscRepo.Update(ctx, map[string]any{
@@ -349,15 +356,15 @@ const (
 type DiscussionListReq struct {
 	*model.Pagination
 
-	Type          *model.DiscussionType `json:"type" form:"type"`
-	Keyword       string                `json:"keyword" form:"keyword"`
-	Filter        DiscussionListFilter  `json:"filter" form:"filter,default=hot"`
-	GroupIDs      model.Int64Array      `json:"group_ids" form:"group_ids"`
-	ForumID       uint                  `json:"forum_id" form:"forum_id"`
-	OnlyMine      bool                  `json:"only_mine" form:"only_mine"`
-	Resolved      *bool                 `json:"resolved" form:"resolved"`
-	DiscussionIDs *model.Int64Array     `json:"discussion_ids" form:"discussion_ids"`
-	Stat          bool                  `json:"stat" form:"stat"`
+	Type          *model.DiscussionType  `json:"type" form:"type"`
+	Keyword       string                 `json:"keyword" form:"keyword"`
+	Filter        DiscussionListFilter   `json:"filter" form:"filter,default=hot"`
+	GroupIDs      model.Int64Array       `json:"group_ids" form:"group_ids"`
+	ForumID       uint                   `json:"forum_id" form:"forum_id"`
+	OnlyMine      bool                   `json:"only_mine" form:"only_mine"`
+	Resolved      *model.DiscussionState `json:"resolved" form:"resolved"`
+	DiscussionIDs *model.Int64Array      `json:"discussion_ids" form:"discussion_ids"`
+	Stat          bool                   `json:"stat" form:"stat"`
 }
 
 func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, req DiscussionListReq) (*model.ListRes[*model.DiscussionListItem], error) {
@@ -375,7 +382,7 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 		if req.Stat {
 			d.in.Batcher.Send(model.StatInfo{
 				Type: model.StatTypeSearch,
-				Ts:   util.TodayZero().Unix(),
+				Ts:   util.TodayTrunc().Unix(),
 				Key:  sessionUUID,
 			})
 		}
@@ -504,10 +511,10 @@ func (d *Discussion) RecalculateHot(uuid string) {
 		0.3 * LN(GREATEST(comment, 0) + 1)
 	) * EXP(-0.01 * EXTRACT(EPOCH FROM (NOW() - updated_at))/3600)
 	  * 10000
-	  * CASE WHEN resolved = true THEN 1.3 ELSE 1.0 END`
+	  * CASE WHEN resolved = ? THEN 1.3 ELSE 1.0 END`
 
 	d.in.DiscRepo.Update(ctx, map[string]any{
-		"hot":        gorm.Expr(hotFormula),
+		"hot":        gorm.Expr(hotFormula, model.DiscussionStateResolved),
 		"updated_at": gorm.Expr("updated_at"),
 	}, repo.QueryWithEqual("uuid", uuid))
 }
@@ -522,13 +529,9 @@ func (d *Discussion) LikeDiscussion(ctx context.Context, discUUID string, user m
 		return err
 	}
 
-	ok, err := d.in.UserRepo.HasForumPermission(ctx, user.UID, disc.ForumID)
+	err = d.CheckPerm(ctx, user.UID, disc)
 	if err != nil {
 		return err
-	}
-
-	if !ok {
-		return errPermission
 	}
 
 	if err := d.in.DiscRepo.LikeDiscussion(ctx, discUUID, user.UID); err != nil {
@@ -546,6 +549,23 @@ func (d *Discussion) LikeDiscussion(ctx context.Context, discUUID string, user m
 	return nil
 }
 
+func (d *Discussion) CheckPerm(ctx context.Context, uid uint, disc *model.Discussion) error {
+	ok, err := d.in.UserRepo.HasForumPermission(ctx, uid, disc.ForumID)
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		return errPermission
+	}
+
+	if disc.Closed() {
+		return errDiscussionClosed
+	}
+
+	return nil
+}
+
 func (d *Discussion) RevokeLikeDiscussion(ctx context.Context, discUUID string, uid uint) error {
 	if !d.allow("like", discUUID, uid) {
 		return errRatelimit
@@ -556,13 +576,9 @@ func (d *Discussion) RevokeLikeDiscussion(ctx context.Context, discUUID string, 
 		return err
 	}
 
-	ok, err := d.in.UserRepo.HasForumPermission(ctx, uid, disc.ForumID)
+	err = d.CheckPerm(ctx, uid, disc)
 	if err != nil {
 		return err
-	}
-
-	if !ok {
-		return errPermission
 	}
 
 	if err := d.in.DiscRepo.RevokeLikeDiscussion(ctx, discUUID, uid); err != nil {
@@ -612,6 +628,38 @@ func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*mo
 	return sortedDiscussions, nil
 }
 
+func (d *Discussion) Close(ctx context.Context, user model.UserInfo, discUUID string) error {
+	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
+	if err != nil {
+		return err
+	}
+
+	ok, err := d.in.UserRepo.HasForumPermission(ctx, user.UID, disc.ForumID)
+	if err != nil {
+		return err
+	}
+
+	if !ok || (user.Role != model.UserRoleAdmin && user.Role != model.UserRoleOperator && user.UID != disc.UserID) {
+		return errPermission
+	}
+
+	if disc.Resolved != model.DiscussionStateNone || disc.Type != model.DiscussionTypeQA {
+		return errors.New("discussion can not close")
+	}
+
+	err = d.in.DiscRepo.Update(ctx, map[string]any{
+		"resolved":    model.DiscussionStateClosed,
+		"resolved_at": time.Now(),
+	}, repo.QueryWithEqual("id", disc.ID),
+		repo.QueryWithEqual("resolved", model.DiscussionStateNone),
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (d *Discussion) GetByID(ctx context.Context, id uint) (*model.Discussion, error) {
 	var discussion model.Discussion
 	err := d.in.DiscRepo.GetByID(ctx, &discussion, id)
@@ -638,13 +686,9 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 			return 0, errRatelimit
 		}
 
-		ok, err := d.in.UserRepo.HasForumPermission(ctx, uid, disc.ForumID)
+		err = d.CheckPerm(ctx, uid, disc)
 		if err != nil {
 			return 0, err
-		}
-
-		if !ok {
-			return 0, errPermission
 		}
 	}
 
@@ -723,13 +767,9 @@ func (d *Discussion) UpdateComment(ctx context.Context, user model.UserInfo, dis
 		return err
 	}
 
-	ok, err := d.in.UserRepo.HasForumPermission(ctx, user.UID, disc.ForumID)
+	err = d.CheckPerm(ctx, user.UID, disc)
 	if err != nil {
 		return err
-	}
-
-	if !ok {
-		return errPermission
 	}
 
 	comment, err := d.GetCommentByID(ctx, commentID)
@@ -760,13 +800,9 @@ func (d *Discussion) DeleteComment(ctx context.Context, user model.UserInfo, dis
 		return err
 	}
 
-	ok, err := d.in.UserRepo.HasForumPermission(ctx, user.UID, disc.ForumID)
+	err = d.CheckPerm(ctx, user.UID, disc)
 	if err != nil {
 		return err
-	}
-
-	if !ok {
-		return errPermission
 	}
 
 	var comment model.Comment
@@ -844,17 +880,13 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 	if err != nil {
 		return err
 	}
-	if disc.UserID != user.UID {
+	if disc.UserID != user.UID && user.Role != model.UserRoleAdmin {
 		return errors.New("not allowed to accept comment")
 	}
 
-	ok, err := d.in.UserRepo.HasForumPermission(ctx, user.UID, disc.ForumID)
+	err = d.CheckPerm(ctx, user.UID, disc)
 	if err != nil {
 		return err
-	}
-
-	if !ok {
-		return errPermission
 	}
 
 	comment, err := d.in.CommRepo.Detail(ctx, commentID)
@@ -872,7 +904,7 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 		}
 
 		err = d.in.DiscRepo.Update(ctx, map[string]any{
-			"resolved":    false,
+			"resolved":    model.DiscussionStateNone,
 			"resolved_at": gorm.Expr("null"),
 		}, repo.QueryWithEqual("id", disc.ID))
 		if err != nil {
@@ -891,16 +923,26 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 		return err
 	}
 
+	now := time.Now()
+
 	if err := d.in.CommRepo.UpdateByModel(ctx, &model.Comment{
 		Accepted:   true,
-		AcceptedAt: model.Timestamp(time.Now().Unix()),
+		AcceptedAt: model.Timestamp(now.Unix()),
 	}, repo.QueryWithEqual("id", commentID)); err != nil {
 		return err
 	}
 
-	if !disc.Resolved {
+	if comment.Bot {
+		d.in.Batcher.Send(model.StatInfo{
+			Type: model.StatTypeBotAccept,
+			Ts:   util.HourTrunc(now).Unix(),
+			Key:  discUUID,
+		})
+	}
+
+	if disc.Resolved == model.DiscussionStateNone {
 		if err := d.in.DiscRepo.Update(ctx, map[string]any{
-			"resolved":    true,
+			"resolved":    model.DiscussionStateResolved,
 			"resolved_at": model.Timestamp(time.Now().Unix()),
 		}, repo.QueryWithEqual("id", disc.ID)); err != nil {
 			return err
@@ -940,13 +982,9 @@ func (d *Discussion) LikeComment(ctx context.Context, userInfo model.UserInfo, d
 		return err
 	}
 
-	ok, err := d.in.UserRepo.HasForumPermission(ctx, userInfo.UID, disc.ForumID)
+	err = d.CheckPerm(ctx, userInfo.UID, disc)
 	if err != nil {
 		return err
-	}
-
-	if !ok {
-		return errPermission
 	}
 
 	var comment model.Comment
@@ -987,13 +1025,9 @@ func (d *Discussion) DislikeComment(ctx context.Context, userInfo model.UserInfo
 		return err
 	}
 
-	ok, err := d.in.UserRepo.HasForumPermission(ctx, userInfo.UID, disc.ForumID)
+	err = d.CheckPerm(ctx, userInfo.UID, disc)
 	if err != nil {
 		return err
-	}
-
-	if !ok {
-		return errPermission
 	}
 
 	var comment model.Comment
@@ -1034,16 +1068,12 @@ func (d *Discussion) RevokeLike(ctx context.Context, uid uint, discUUID string, 
 		return err
 	}
 
-	ok, err := d.in.UserRepo.HasForumPermission(ctx, uid, disc.ForumID)
+	err = d.CheckPerm(ctx, uid, disc)
 	if err != nil {
 		return err
 	}
 
-	if !ok {
-		return errPermission
-	}
-
-	ok, err = d.in.CommRepo.ExistByID(ctx, commentID)
+	ok, err := d.in.CommRepo.ExistByID(ctx, commentID)
 	if err != nil {
 		return err
 	}
@@ -1081,7 +1111,7 @@ func (d *Discussion) Complete(ctx context.Context, req DiscussionCompeletReq) (s
 }
 
 type ResolveFeedbackReq struct {
-	Resolve bool `json:"resolve"`
+	Resolve model.DiscussionState `json:"resolve" binding:"max=3"`
 }
 
 func (d *Discussion) ResolveFeedback(ctx context.Context, user model.UserInfo, discUUID string, req ResolveFeedbackReq) error {
@@ -1092,6 +1122,10 @@ func (d *Discussion) ResolveFeedback(ctx context.Context, user model.UserInfo, d
 
 	if !user.CanOperator(disc.UserID) || disc.Type != model.DiscussionTypeFeedback {
 		return errors.New("not allowed to close feedback")
+	}
+
+	if disc.Closed() {
+		return errDiscussionClosed
 	}
 
 	err = d.in.DiscRepo.Update(ctx, map[string]any{
