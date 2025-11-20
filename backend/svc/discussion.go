@@ -628,6 +628,38 @@ func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*mo
 	return sortedDiscussions, nil
 }
 
+func (d *Discussion) Close(ctx context.Context, user model.UserInfo, discUUID string) error {
+	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
+	if err != nil {
+		return err
+	}
+
+	ok, err := d.in.UserRepo.HasForumPermission(ctx, user.UID, disc.ForumID)
+	if err != nil {
+		return err
+	}
+
+	if !ok || (user.Role != model.UserRoleAdmin && user.Role != model.UserRoleOperator && user.UID != disc.UserID) {
+		return errPermission
+	}
+
+	if disc.Resolved != model.DiscussionStateNone || disc.Type != model.DiscussionTypeQA {
+		return errors.New("discussion can not close")
+	}
+
+	err = d.in.DiscRepo.Update(ctx, map[string]any{
+		"resolved":    model.DiscussionStateClosed,
+		"resolved_at": time.Now(),
+	}, repo.QueryWithEqual("id", disc.ID),
+		repo.QueryWithEqual("resolved", model.DiscussionStateNone),
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (d *Discussion) GetByID(ctx context.Context, id uint) (*model.Discussion, error) {
 	var discussion model.Discussion
 	err := d.in.DiscRepo.GetByID(ctx, &discussion, id)

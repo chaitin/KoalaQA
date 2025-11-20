@@ -4111,6 +4111,35 @@ const docTemplate = `{
                 }
             }
         },
+        "/discussion/{disc_id}/close": {
+            "put": {
+                "description": "close discussion",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "close discussion",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "disc_id",
+                        "name": "disc_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/discussion/{disc_id}/comment": {
             "post": {
                 "description": "create comment",
