@@ -12,6 +12,7 @@ const (
 	MsgNotifyTypeBotUnknown
 	MsgNotifyTypeLikeDiscussion
 	MsgNotifyTypeUserReview
+	MsgNotifyTypeResolveByAdmin
 )
 
 type MessageNotify struct {

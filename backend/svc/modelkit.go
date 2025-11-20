@@ -2,10 +2,12 @@ package svc
 
 import (
 	"context"
+	"log/slog"
+	"os"
 
-	"github.com/chaitin/ModelKit/consts"
-	"github.com/chaitin/ModelKit/domain"
-	"github.com/chaitin/ModelKit/usecase"
+	"github.com/chaitin/ModelKit/v2/consts"
+	"github.com/chaitin/ModelKit/v2/domain"
+	"github.com/chaitin/ModelKit/v2/usecase"
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/rag"
@@ -21,20 +23,22 @@ type MKModelBase struct {
 	APIHeader  string        `json:"api_header"`
 	APIVersion string        `json:"api_version"` // for azure openai
 	ShowName   string        `json:"show_name"`
-	Type       model.LLMType `json:"type" binding:"required,oneof=chat embedding rerank"`
+	Type       model.LLMType `json:"type" binding:"required,oneof=chat embedding rerank analysis analysis-vl"`
 }
 
 type ModelKit struct {
-	repo   *repo.LLM
-	rag    rag.Service
-	logger *glog.Logger
+	repo     *repo.LLM
+	rag      rag.Service
+	logger   *glog.Logger
+	modelkit *usecase.ModelKit
 }
 
 func NewModelKit(repo *repo.LLM, rag rag.Service) *ModelKit {
 	return &ModelKit{
-		repo:   repo,
-		rag:    rag,
-		logger: glog.Module("modelkit"),
+		repo:     repo,
+		rag:      rag,
+		logger:   glog.Module("modelkit"),
+		modelkit: usecase.NewModelKit(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))),
 	}
 }
 
@@ -47,7 +51,7 @@ type MKSupportedReq struct {
 	BaseURL   string        `json:"base_url" binding:"required"`
 	APIKey    string        `json:"api_key"`
 	APIHeader string        `json:"api_header"`
-	Type      model.LLMType `json:"type" binding:"required,oneof=chat embedding rerank"`
+	Type      model.LLMType `json:"type" binding:"required,oneof=chat embedding rerank analysis analysis-vl"`
 }
 
 type MKSupportedRes struct {
@@ -60,7 +64,7 @@ type MKModelItem struct {
 }
 
 func (m *ModelKit) Supported(ctx context.Context, req MKSupportedReq) (*MKSupportedRes, error) {
-	res, err := usecase.ModelList(ctx, &domain.ModelListReq{
+	res, err := m.modelkit.ModelList(ctx, &domain.ModelListReq{
 		Provider:  req.Provider,
 		BaseURL:   req.BaseURL,
 		APIKey:    req.APIKey,
@@ -92,7 +96,7 @@ type CheckModelRes struct {
 }
 
 func (m *ModelKit) CheckModel(ctx context.Context, req ModelKitCheckReq) (*CheckModelRes, error) {
-	res, err := usecase.CheckModel(ctx, &domain.CheckModelReq{
+	res, err := m.modelkit.CheckModel(ctx, &domain.CheckModelReq{
 		Provider:   string(req.Provider),
 		Model:      req.Model,
 		BaseURL:    req.BaseURL,
@@ -186,7 +190,7 @@ func (m *ModelKit) GetChatModel(ctx context.Context) (einoModel.BaseChatModel, e
 	if err != nil {
 		return nil, err
 	}
-	res, err := usecase.GetChatModel(ctx, &domain.ModelMetadata{
+	res, err := m.modelkit.GetChatModel(ctx, &domain.ModelMetadata{
 		Provider:   consts.ParseModelProvider(string(chat.Provider)),
 		ModelName:  chat.Model,
 		APIKey:     chat.APIKey,

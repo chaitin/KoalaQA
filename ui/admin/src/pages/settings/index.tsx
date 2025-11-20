@@ -1,6 +1,7 @@
 import { Box, Grid, Stack } from '@mui/material';
 import Forum from './component/Forum';
 import GroupTagManager from './component/Topic';
+import PostManagement from './component/PostManagement';
 import Access from './component/Access';
 import Webhook from './component/Webhook';
 import LoginMethod from './component/LoginMethod';
@@ -25,6 +26,7 @@ const Settings = () => {
           <Grid size={{ xs: 12, md: 6 }}>
             <Stack spacing={2}>
               <LoginMethod />
+              <PostManagement />
               <Access />
               <Webhook />
             </Stack>

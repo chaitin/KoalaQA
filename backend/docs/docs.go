@@ -2692,6 +2692,14 @@ const docTemplate = `{
                     "stat"
                 ],
                 "summary": "stat discussion",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "name": "begin",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2738,6 +2746,14 @@ const docTemplate = `{
                     "stat"
                 ],
                 "summary": "stat search count",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "name": "begin",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2760,6 +2776,99 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/stat/trend": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "stat"
+                ],
+                "summary": "stat trend",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "name": "begin",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "name": "stat_group",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "enum": [
+                                1,
+                                2,
+                                3,
+                                4,
+                                5,
+                                6
+                            ],
+                            "type": "integer"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "stat_types",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "allOf": [
+                                                                    {
+                                                                        "$ref": "#/definitions/model.StatTrend"
+                                                                    },
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "items": {
+                                                                                "type": "array",
+                                                                                "items": {
+                                                                                    "$ref": "#/definitions/model.StatTrendItem"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/admin/stat/visit": {
             "get": {
                 "produces": [
@@ -2769,6 +2878,14 @@ const docTemplate = `{
                     "stat"
                 ],
                 "summary": "stat visit",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "name": "begin",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2840,6 +2957,68 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/model.SystemBrand"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/system/discussion": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system_discussion"
+                ],
+                "summary": "system discussion detail",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.SystemDiscussion"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system_discussion"
+                ],
+                "summary": "update system discussion config",
+                "parameters": [
+                    {
+                        "description": "request params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.SystemDiscussion"
                         }
                     }
                 ],
@@ -3590,7 +3769,17 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "boolean",
+                        "enum": [
+                            0,
+                            1,
+                            2
+                        ],
+                        "type": "integer",
+                        "x-enum-varnames": [
+                            "DiscussionStateNone",
+                            "DiscussionStateResolved",
+                            "DiscussionStateClosed"
+                        ],
                         "name": "resolved",
                         "in": "query"
                     },
@@ -3917,6 +4106,35 @@ const docTemplate = `{
                                     }
                                 }
                             ]
+                        }
+                    }
+                }
+            }
+        },
+        "/discussion/{disc_id}/close": {
+            "put": {
+                "description": "close discussion",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "close discussion",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "disc_id",
+                        "name": "disc_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
                         }
                     }
                 }
@@ -5455,7 +5673,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "resolved": {
-                    "type": "boolean"
+                    "$ref": "#/definitions/model.DiscussionState"
                 },
                 "resolved_at": {
                     "type": "integer"
@@ -5552,7 +5770,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "resolved": {
-                    "type": "boolean"
+                    "$ref": "#/definitions/model.DiscussionState"
                 },
                 "resolved_at": {
                     "type": "integer"
@@ -5632,6 +5850,19 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "model.DiscussionState": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-varnames": [
+                "DiscussionStateNone",
+                "DiscussionStateResolved",
+                "DiscussionStateClosed"
+            ]
         },
         "model.DiscussionType": {
             "type": "string",
@@ -5833,6 +6064,9 @@ const docTemplate = `{
         "model.JSONB-array_model_ForumGroups": {
             "type": "object"
         },
+        "model.JSONB-array_model_StatTrendItem": {
+            "type": "object"
+        },
         "model.JSONB-model_ExportOpt": {
             "type": "object"
         },
@@ -5982,12 +6216,16 @@ const docTemplate = `{
             "enum": [
                 "chat",
                 "embedding",
-                "rerank"
+                "rerank",
+                "analysis",
+                "analysis-vl"
             ],
             "x-enum-varnames": [
                 "LLMTypeChat",
                 "LLMTypeEmbedding",
-                "LLMTypeRerank"
+                "LLMTypeRerank",
+                "LLMTypeAnalysis",
+                "LLMTypeAnalysisVL"
             ]
         },
         "model.ListRes": {
@@ -6078,7 +6316,8 @@ const docTemplate = `{
                 5,
                 6,
                 7,
-                8
+                8,
+                9
             ],
             "x-enum-varnames": [
                 "MsgNotifyTypeUnknown",
@@ -6089,7 +6328,8 @@ const docTemplate = `{
                 "MsgNotifyTypeDislikeComment",
                 "MsgNotifyTypeBotUnknown",
                 "MsgNotifyTypeLikeDiscussion",
-                "MsgNotifyTypeUserReview"
+                "MsgNotifyTypeUserReview",
+                "MsgNotifyTypeApplyCommentByAdmin"
             ]
         },
         "model.PlatformOpt": {
@@ -6137,6 +6377,47 @@ const docTemplate = `{
                 }
             }
         },
+        "model.StatTrend": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "$ref": "#/definitions/model.JSONB-array_model_StatTrendItem"
+                },
+                "ts": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.StatTrendItem": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.StatType"
+                }
+            }
+        },
+        "model.StatType": {
+            "type": "integer",
+            "enum": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+            ],
+            "x-enum-varnames": [
+                "StatTypeVisit",
+                "StatTypeSearch",
+                "StatTypeBotUnknown",
+                "StatTypeBotAccept",
+                "StatTypeDiscussionQA",
+                "StatTypeDiscussionBlog"
+            ]
+        },
         "model.SystemBrand": {
             "type": "object",
             "properties": {
@@ -6145,6 +6426,14 @@ const docTemplate = `{
                 },
                 "text": {
                     "type": "string"
+                }
+            }
+        },
+        "model.SystemDiscussion": {
+            "type": "object",
+            "properties": {
+                "auto_close": {
+                    "type": "integer"
                 }
             }
         },
@@ -7056,7 +7345,9 @@ const docTemplate = `{
                     "enum": [
                         "chat",
                         "embedding",
-                        "rerank"
+                        "rerank",
+                        "analysis",
+                        "analysis-vl"
                     ],
                     "allOf": [
                         {
@@ -7098,7 +7389,9 @@ const docTemplate = `{
                     "enum": [
                         "chat",
                         "embedding",
-                        "rerank"
+                        "rerank",
+                        "analysis",
+                        "analysis-vl"
                     ],
                     "allOf": [
                         {
@@ -7160,7 +7453,9 @@ const docTemplate = `{
                     "enum": [
                         "chat",
                         "embedding",
-                        "rerank"
+                        "rerank",
+                        "analysis",
+                        "analysis-vl"
                     ],
                     "allOf": [
                         {
@@ -7205,7 +7500,9 @@ const docTemplate = `{
                     "enum": [
                         "chat",
                         "embedding",
-                        "rerank"
+                        "rerank",
+                        "analysis",
+                        "analysis-vl"
                     ],
                     "allOf": [
                         {
@@ -7304,7 +7601,12 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "resolve": {
-                    "type": "boolean"
+                    "maximum": 3,
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.DiscussionState"
+                        }
+                    ]
                 }
             }
         },

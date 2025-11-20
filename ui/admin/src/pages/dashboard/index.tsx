@@ -1,129 +1,851 @@
 import {
+  AccessTime,
+  Bolt,
+  CheckCircle,
+  ChevronRight,
+  Comment,
+  Dashboard as DashboardIcon,
+  Description,
+  Notifications,
+  People,
+  Search,
+} from '@mui/icons-material';
+import {
+  Alert,
+  Avatar,
+  Box,
+  Card,
+  CircularProgress,
+  Collapse,
+  Grid,
+  IconButton,
+  Paper,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+  useTheme,
+} from '@mui/material';
+import dayjs from 'dayjs';
+import React, { ReactNode, useEffect, useMemo, useState } from 'react';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+} from 'recharts';
+import {
   getAdminRankAiInsight,
   getAdminStatDiscussion,
   getAdminStatSearch,
+  getAdminStatTrend,
   getAdminStatVisit,
-  ModelDiscussionType,
-  ModelRankTimeGroup,
-} from '@/api';
-import Card from '@/components/card';
-import CusTabs from '@/components/CusTabs';
+} from '../../api';
 import {
-  AccessTime,
-  Article,
-  CheckCircle,
-  LightbulbOutlined,
-  People,
-  RemoveRedEye,
-  Search,
-  SmartToy,
-  TrendingUp,
-} from '@mui/icons-material';
-import { Box, CircularProgress, Grid, Stack, Typography } from '@mui/material';
-import { useRequest } from 'ahooks';
-import dayjs from 'dayjs';
-import { useEffect, useMemo, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+  ModelRankTimeGroup,
+  ModelStatTrend,
+  ModelStatTrendItem,
+  ModelStatType,
+  SvcStatDiscussionItem,
+  SvcStatDiscussionRes,
+  SvcStatVisitRes,
+} from '../../api/types';
 
-type TimePeriod = 'today' | 'week' | 'month';
+// --- 类型定义 ---
 
-interface StatCardProps {
-  value: string | number;
-  label: string;
-  icon: React.ReactNode;
+interface ChartDataPoint {
+  name: string;
+  visits: number;
+  posts: number;
+  aiResponse: number;
+  aiResolve: number;
 }
 
-const StatCard = ({ value, label, icon }: StatCardProps) => {
+interface DashboardData {
+  visitStats: SvcStatVisitRes | null;
+  discussionStats: SvcStatDiscussionRes | null;
+  discussions: SvcStatDiscussionItem[] | null;
+  searchCount: number | null;
+  aiInsights: ModelRankTimeGroup[] | null;
+  // 独立的趋势数据
+  visitTrendData: ModelStatTrend[] | null; // 访问用户情况趋势
+  postTrendData: ModelStatTrend[] | null; // 发帖情况趋势
+  aiResponseRateData: ModelStatTrend[] | null; // AI 应答率趋势原始数据
+  aiResolveRateData: ModelStatTrend[] | null; // AI 解决率趋势原始数据
+}
+
+type TimeRange = 'today' | 'week' | 'month';
+
+interface MetricItem {
+  value: string;
+  unit?: string;
+  label: string;
+  icon: ReactNode;
+}
+
+interface StatCardProps {
+  type: 'blue' | 'purple';
+  metrics: MetricItem[];
+}
+
+interface ChartSectionProps {
+  title: string;
+  children: ReactNode;
+}
+
+interface InsightItemProps {
+  type: 'critical' | 'normal';
+  time: string;
+  title: string;
+  scoreIds: string[];
+  isExpanded?: boolean;
+}
+
+// --- 时间范围转换工具 ---
+const getTimeRangeBegin = (timeRange: TimeRange): number => {
+  const now = new Date();
+  const begin = new Date();
+
+  switch (timeRange) {
+    case 'today':
+      begin.setHours(0, 0, 0, 0);
+      break;
+    case 'week':
+      begin.setDate(now.getDate() - 7);
+      break;
+    case 'month':
+      begin.setDate(now.getDate() - 30);
+      break;
+  }
+
+  return Math.floor(begin.getTime() / 1000);
+};
+
+// --- 获取统计分组方式 ---
+const getStatGroup = (timeRange: TimeRange): number => {
+  switch (timeRange) {
+    case 'today':
+    case 'week':
+      return 1; // StateTrendGroupHour - 按小时分组（后端始终按小时返回）
+    case 'month':
+      return 2; // StateTrendGroupDay - 按天分组
+    default:
+      return 2;
+  }
+};
+
+// --- 数据格式化工具 ---
+const formatNumber = (num: number | null | undefined): string => {
+  if (num === null || num === undefined) return '0';
+  return num.toLocaleString();
+};
+
+const formatPercentage = (num: number | null | undefined): string => {
+  if (num === null || num === undefined) return '0';
+  return num.toFixed(1);
+};
+
+const formatTime = (seconds: number | null | undefined): string => {
+  if (seconds === null || seconds === undefined) return '0';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return `${hours}h${remainingMinutes}m`;
+};
+
+// --- AI 比率趋势数据转换 ---
+interface AIRateTrendDataPoint {
+  name: string;
+  value: number; // AI 应答率或解决率
+}
+
+// AI 应答率趋势计算：(StatTypeDiscussionQA - StatTypeBotUnknown) / StatTypeDiscussionQA
+const transformAIResponseRateTrendData = (trendData: ModelStatTrend[]): AIRateTrendDataPoint[] => {
+  const groupedData: { [key: string]: { qaCount: number; botUnknownCount: number } } = {};
+
+  // 处理所有趋势数据，根据类型分别统计
+  trendData.forEach(trend => {
+    if (!trend.items || trend.ts === undefined || trend.ts === null) return;
+
+    const dateKey = getDayKey(trend.ts);
+    if (!groupedData[dateKey]) {
+      groupedData[dateKey] = { qaCount: 0, botUnknownCount: 0 };
+    }
+
+    trend.items.forEach((item: ModelStatTrendItem) => {
+      if (item.type === ModelStatType.StatTypeDiscussionQA) {
+        groupedData[dateKey].qaCount += item.count || 0;
+      } else if (item.type === ModelStatType.StatTypeBotUnknown) {
+        groupedData[dateKey].botUnknownCount += item.count || 0;
+      }
+    });
+  });
+
+  // 补充缺失的天数（确保连续30天的数据）
+  const today = new Date();
+  const result: AIRateTrendDataPoint[] = [];
+
+  for (let i = 29; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dateKey = `${date.getMonth() + 1}-${date.getDate()}`;
+
+    const stats = groupedData[dateKey] || { qaCount: 0, botUnknownCount: 0 };
+    const responseRate =
+      stats.qaCount > 0 ? ((stats.qaCount - stats.botUnknownCount) / stats.qaCount) * 100 : 0;
+
+    result.push({
+      name: dateKey,
+      value: responseRate,
+    });
+  }
+
+  return result;
+};
+
+// AI 解决率趋势计算：StatTypeBotAccept / StatTypeDiscussionQA
+const transformAIResolveRateTrendData = (trendData: ModelStatTrend[]): AIRateTrendDataPoint[] => {
+  const groupedData: { [key: string]: { qaCount: number; botAcceptCount: number } } = {};
+
+  // 处理所有趋势数据，根据类型分别统计
+  trendData.forEach(trend => {
+    if (!trend.items || trend.ts === undefined || trend.ts === null) return;
+
+    const dateKey = getDayKey(trend.ts);
+    if (!groupedData[dateKey]) {
+      groupedData[dateKey] = { qaCount: 0, botAcceptCount: 0 };
+    }
+
+    trend.items.forEach((item: ModelStatTrendItem) => {
+      if (item.type === ModelStatType.StatTypeDiscussionQA) {
+        groupedData[dateKey].qaCount += item.count || 0;
+      } else if (item.type === ModelStatType.StatTypeBotAccept) {
+        groupedData[dateKey].botAcceptCount += item.count || 0;
+      }
+    });
+  });
+
+  // 补充缺失的天数（确保连续30天的数据）
+  const today = new Date();
+  const result: AIRateTrendDataPoint[] = [];
+
+  for (let i = 29; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dateKey = `${date.getMonth() + 1}-${date.getDate()}`;
+
+    const stats = groupedData[dateKey] || { qaCount: 0, botAcceptCount: 0 };
+    const resolveRate = stats.qaCount > 0 ? (stats.botAcceptCount / stats.qaCount) * 100 : 0;
+
+    result.push({
+      name: dateKey,
+      value: resolveRate,
+    });
+  }
+
+  return result;
+};
+
+// 辅助函数：获取日期键
+const getDayKey = (timestamp: number | undefined): string => {
+  if (!timestamp) return '';
+  const date = new Date(timestamp * 1000);
+  return `${date.getMonth() + 1}-${date.getDate()}`;
+};
+
+// --- 生成完整的时间序列数据 ---
+const generateTimeSeries = (timeRange: TimeRange): { name: string; timestamp: number }[] => {
+  const now = new Date();
+  const timeSeries: { name: string; timestamp: number }[] = [];
+
+  if (timeRange === 'today') {
+    // 今天：从0点开始，每小时一个数据点
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const currentHour = now.getHours();
+    for (let hour = 0; hour <= currentHour; hour++) {
+      const time = new Date(startOfDay);
+      time.setHours(hour);
+      timeSeries.push({
+        name: `${hour.toString().padStart(2, '0')}:00`,
+        timestamp: Math.floor(time.getTime() / 1000),
+      });
+    }
+  } else if (timeRange === 'week') {
+    // 本周：从周一0点开始，每6小时一个数据点
+    const startOfWeek = new Date(now);
+    const day = startOfWeek.getDay();
+    const daysSinceMonday = day === 0 ? 6 : day - 1; // 周日是0，转换为6天前的周一
+    startOfWeek.setDate(now.getDate() - daysSinceMonday);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 7);
+
+    for (let time = new Date(startOfWeek); time < endOfWeek; time.setHours(time.getHours() + 6)) {
+      const month = time.getMonth() + 1;
+      const day = time.getDate();
+      const hour = time.getHours();
+      timeSeries.push({
+        name: `${month}/${day} ${hour.toString().padStart(2, '0')}:00`,
+        timestamp: Math.floor(time.getTime() / 1000),
+      });
+    }
+  } else if (timeRange === 'month') {
+    // 本月：从30天前开始，每天一个数据点
+    const startOfMonth = new Date(now);
+    startOfMonth.setDate(now.getDate() - 29); // 30天前（包括今天）
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    for (let day = 0; day < 30; day++) {
+      const time = new Date(startOfMonth);
+      time.setDate(startOfMonth.getDate() + day);
+      const month = time.getMonth() + 1;
+      const date = time.getDate();
+      timeSeries.push({
+        name: `${month}-${date}`,
+        timestamp: Math.floor(time.getTime() / 1000),
+      });
+    }
+  }
+
+  return timeSeries;
+};
+
+// --- 将小时数据聚合为6小时间隔的数据 ---
+const aggregateTo6HourIntervals = (
+  trendItems: ModelStatTrend[],
+  timeSeries: { name: string; timestamp: number }[]
+): ChartDataPoint[] => {
+  const result: ChartDataPoint[] = [];
+
+  timeSeries.forEach(({ name, timestamp }) => {
+    const periodEnd = timestamp + 6 * 3600; // 6小时后
+    const aggregated: ChartDataPoint = {
+      name,
+      visits: 0,
+      posts: 0,
+      aiResponse: 0,
+      aiResolve: 0,
+    };
+
+    // 聚合这个6小时窗口内的所有原始数据
+    trendItems.forEach(trend => {
+      if (!trend.items || !trend.ts) return;
+
+      // 如果这个趋势数据点在当前6小时窗口内
+      if (trend.ts >= timestamp && trend.ts < periodEnd) {
+        // 处理每个趋势项目中的具体统计数据
+        trend.items.forEach((item: any) => {
+          switch (item.type) {
+            case ModelStatType.StatTypeVisit:
+              aggregated.visits += item.count || 0;
+              break;
+            case ModelStatType.StatTypeDiscussionQA:
+            case ModelStatType.StatTypeDiscussionBlog:
+              aggregated.posts += item.count || 0;
+              break;
+            case ModelStatType.StatTypeBotAccept:
+              aggregated.aiResponse += item.count || 0;
+              break;
+            case ModelStatType.StatTypeBotUnknown:
+              aggregated.aiResolve += item.count || 0;
+              break;
+          }
+        });
+      }
+    });
+
+    result.push(aggregated);
+  });
+
+  return result;
+};
+
+const transformTrendData = (
+  trendItems: ModelStatTrend[],
+  timeRange: TimeRange
+): ChartDataPoint[] => {
+  const hourlyData: { [key: string]: ChartDataPoint } = {};
+
+  // 首先处理原始数据，按小时分组（因为后端始终返回小时数据）
+  trendItems.forEach(trend => {
+    if (!trend.items || !trend.ts) return;
+
+    const date = new Date(trend.ts * 1000);
+    const hourKey = `${date.getHours().toString().padStart(2, '0')}:00`;
+
+    if (!hourlyData[hourKey]) {
+      hourlyData[hourKey] = {
+        name: hourKey,
+        visits: 0,
+        posts: 0,
+        aiResponse: 0,
+        aiResolve: 0,
+      };
+    }
+
+    // 处理每个趋势项目中的具体统计数据
+    trend.items.forEach((item: any) => {
+      switch (item.type) {
+        case ModelStatType.StatTypeVisit:
+          hourlyData[hourKey].visits += item.count || 0;
+          break;
+        case ModelStatType.StatTypeDiscussionQA:
+        case ModelStatType.StatTypeDiscussionBlog:
+          hourlyData[hourKey].posts += item.count || 0;
+          break;
+        case ModelStatType.StatTypeBotAccept:
+          hourlyData[hourKey].aiResponse += item.count || 0;
+          break;
+        case ModelStatType.StatTypeBotUnknown:
+          hourlyData[hourKey].aiResolve += item.count || 0;
+          break;
+      }
+    });
+  });
+
+  // 根据时间范围生成完整的时间序列
+  const timeSeries = generateTimeSeries(timeRange);
+
+  if (timeRange === 'today') {
+    // 今天：直接按小时处理，但补充缺失的小时
+    return timeSeries.map(({ name }) => {
+      return (
+        hourlyData[name] || {
+          name,
+          visits: 0,
+          posts: 0,
+          aiResponse: 0,
+          aiResolve: 0,
+        }
+      );
+    });
+  } else if (timeRange === 'week') {
+    // 本周：聚合为6小时间隔
+    return aggregateTo6HourIntervals(trendItems, timeSeries);
+  } else {
+    // 本月：按天处理
+    const dailyData: { [key: string]: ChartDataPoint } = {};
+
+    // 将小时数据聚合为天数据
+    trendItems.forEach(trend => {
+      if (!trend.items || !trend.ts) return;
+
+      const date = new Date(trend.ts * 1000);
+      const dayKey = `${date.getMonth() + 1}-${date.getDate()}`;
+
+      if (!dailyData[dayKey]) {
+        dailyData[dayKey] = {
+          name: dayKey,
+          visits: 0,
+          posts: 0,
+          aiResponse: 0,
+          aiResolve: 0,
+        };
+      }
+
+      // 处理每个趋势项目中的具体统计数据
+      trend.items.forEach((item: any) => {
+        switch (item.type) {
+          case ModelStatType.StatTypeVisit:
+            dailyData[dayKey].visits += item.count || 0;
+            break;
+          case ModelStatType.StatTypeDiscussionQA:
+          case ModelStatType.StatTypeDiscussionBlog:
+            dailyData[dayKey].posts += item.count || 0;
+            break;
+          case ModelStatType.StatTypeBotAccept:
+            dailyData[dayKey].aiResponse += item.count || 0;
+            break;
+          case ModelStatType.StatTypeBotUnknown:
+            dailyData[dayKey].aiResolve += item.count || 0;
+            break;
+        }
+      });
+    });
+
+    // 补充缺失的天
+    return timeSeries.map(({ name }) => {
+      return (
+        dailyData[name] || {
+          name,
+          visits: 0,
+          posts: 0,
+          aiResponse: 0,
+          aiResolve: 0,
+        }
+      );
+    });
+  }
+};
+
+// --- 子组件 ---
+
+const TopFilter: React.FC<{
+  value: TimeRange;
+  onChange: (event: React.MouseEvent<HTMLElement>, timeRange: TimeRange | null) => void;
+}> = ({ value, onChange }) => {
   return (
-    <Card
+    <Paper
+      elevation={0}
       sx={{
-        p: 3,
+        p: 0.5,
+        mb: 3,
+        borderRadius: 2,
+        width: 'fit-content',
         border: '1px solid',
         borderColor: 'divider',
-        borderRadius: 2,
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
       }}
     >
-      <Typography variant="h4" sx={{ fontWeight: 600, fontSize: '28px' }}>
-        {value}
-      </Typography>
-      <Stack direction="row" alignItems="center" spacing={2} sx={{ mt: 2 }}>
-        <Box sx={{ fontSize: 20, color: 'text.secondary', display: 'flex', alignItems: 'center' }}>
-          {icon}
-        </Box>
-        <Typography variant="body2" color="text.secondary">
-          {label}
-        </Typography>
+      <ToggleButtonGroup
+        value={value}
+        exclusive
+        onChange={onChange}
+        aria-label="time range"
+        size="small"
+        sx={{
+          '& .MuiToggleButton-root': {
+            border: 'none',
+            borderRadius: '6px !important',
+            px: 3,
+            py: 0.5,
+            fontSize: '0.875rem',
+            fontWeight: 500,
+            color: 'text.secondary',
+            '&.Mui-selected': {
+              bgcolor: 'primary.main',
+              color: 'white',
+              '&:hover': {
+                bgcolor: 'primary.dark',
+              },
+            },
+          },
+        }}
+      >
+        <ToggleButton value="today">今日</ToggleButton>
+        <ToggleButton value="week">本周</ToggleButton>
+        <ToggleButton value="month">本月</ToggleButton>
+      </ToggleButtonGroup>
+    </Paper>
+  );
+};
+
+const StatCard: React.FC<StatCardProps> = ({ type, metrics }) => {
+  const isBlue = type === 'blue';
+
+  // 定义样式变量
+  const bgGradient = isBlue
+    ? 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' // Blue 50 -> Blue 100
+    : 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)'; // Purple 50 -> Purple 100
+
+  const textColor = isBlue ? '#1e3a8a' : '#581c87'; // Blue 900 / Purple 900
+  const subColor = isBlue ? '#2563eb' : '#9333ea'; // Blue 600 / Purple 600
+
+  return (
+    <Card
+      elevation={0}
+      sx={{
+        background: bgGradient,
+        borderRadius: 3,
+        p: 2,
+        height: '100%',
+      }}
+    >
+      <Stack direction="row" justifyContent="space-between" alignItems="center">
+        {metrics.map((m, idx) => (
+          <Box key={idx} sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Typography
+              variant="h5"
+              fontWeight={700}
+              sx={{ color: textColor, display: 'flex', alignItems: 'flex-end', lineHeight: 1 }}
+            >
+              {m.value}
+              {m.unit && (
+                <Typography
+                  component="span"
+                  variant="caption"
+                  sx={{ ml: 0.5, mb: 0.5, fontWeight: 600 }}
+                >
+                  {m.unit}
+                </Typography>
+              )}
+            </Typography>
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              <Box sx={{ color: subColor, display: 'flex' }}>{m.icon}</Box>
+              <Typography variant="caption" fontWeight={500} sx={{ color: subColor }}>
+                {m.label}
+              </Typography>
+            </Stack>
+          </Box>
+        ))}
       </Stack>
     </Card>
   );
 };
 
-const Dashboard = () => {
-  const location = useLocation();
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>('today');
-
-  // 计算时间范围
-  const timeRange = useMemo(() => {
-    const now = dayjs();
-    let start: dayjs.Dayjs;
-    const end: dayjs.Dayjs = now;
-
-    switch (timePeriod) {
-      case 'today':
-        start = now.startOf('day');
-        break;
-      case 'week':
-        start = now.startOf('week');
-        break;
-      case 'month':
-        start = now.startOf('month');
-        break;
-    }
-
-    return {
-      start_time: start.unix(),
-      end_time: end.unix(),
-    };
-  }, [timePeriod]);
-
-  // 获取访问统计
-  const { data: visitData, loading: visitLoading } = useRequest(getAdminStatVisit, {
-    refreshDeps: [timeRange],
-  });
-
-  // 获取搜索统计
-  const { data: searchData, loading: searchLoading } = useRequest(getAdminStatSearch, {
-    refreshDeps: [timeRange],
-  });
-
-  // 获取讨论统计
-  const { data: discussionData, loading: discussionLoading } = useRequest(getAdminStatDiscussion, {
-    refreshDeps: [timeRange],
-  });
-
-  // 获取 AI 洞察数据
-  const { data: aiInsightResponse, loading: aiInsightLoading, run: fetchAiInsight } = useRequest(
-    getAdminRankAiInsight,
-    {
-      manual: true,
-    }
+const ChartSection: React.FC<ChartSectionProps> = ({ title, children }) => {
+  return (
+    <Card
+      elevation={0}
+      sx={{
+        p: 2,
+        borderRadius: 3,
+        height: '35vh',
+        display: 'flex',
+        flexDirection: 'column',
+        border: '1px solid',
+        borderColor: 'divider',
+      }}
+    >
+      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+        <Typography variant="subtitle1" fontWeight={700} color="text.primary">
+          {title}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          近 30 天
+        </Typography>
+      </Stack>
+      <Box sx={{ flexGrow: 1, minHeight: 0, width: '100%' }}>{children}</Box>
+    </Card>
   );
+};
 
-  // 当路由切换到 dashboard 时，立即获取 AI 洞察数据
-  useEffect(() => {
-    fetchAiInsight();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]);
+interface MainDashboardCardProps {
+  children: ReactNode;
+  sx?: object;
+}
 
-  const loading = visitLoading || searchLoading || discussionLoading;
+const MainDashboardCard: React.FC<MainDashboardCardProps> = ({ children, sx = {} }) => {
+  return (
+    <Card
+      elevation={0}
+      sx={{
+        p: 1.5,
+        borderRadius: 3,
+        border: '1px solid',
+        borderColor: 'divider',
+        height: 'fit-content',
+        ...sx,
+      }}
+    >
+      {children}
+    </Card>
+  );
+};
+
+const InsightItem: React.FC<InsightItemProps> = ({
+  type,
+  time,
+  title,
+  scoreIds,
+  isExpanded: propIsExpanded,
+}) => {
+  const isCritical = type === 'critical';
+  const [localIsExpanded, setLocalIsExpanded] = useState(propIsExpanded || false);
+
+  // 背景色和文字色配置
+  const bgColor = isCritical ? '#fef2f2' : '#ecfeff'; // Red 50 / Cyan 50
+  const iconBg = isCritical ? '#fee2e2' : '#cffafe'; // Red 100 / Cyan 100
+  const iconColor = isCritical ? '#ef4444' : '#06b6d4'; // Red 500 / Cyan 500
+  const titleColor = isCritical ? '#b91c1c' : '#0e7490'; // Red 700 / Cyan 700
+
+  return (
+    <Box
+      sx={{
+        bgcolor: bgColor,
+        borderRadius: 3,
+        p: 1.5,
+        mb: 1,
+        transition: 'all 0.3s',
+      }}
+    >
+      <Stack direction="row" spacing={2} alignItems="flex-start">
+        <Avatar
+          sx={{
+            bgcolor: iconBg,
+            color: iconColor,
+            width: 32,
+            height: 32,
+          }}
+        >
+          <Notifications sx={{ fontSize: 16 }} />
+        </Avatar>
+
+        <Box sx={{ flexGrow: 1 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+            <Box>
+              <Typography variant="body2" fontWeight={600} sx={{ color: titleColor }}>
+                {title}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+                {time}
+              </Typography>
+            </Box>
+            <IconButton
+              size="small"
+              sx={{ p: 0, color: 'text.disabled' }}
+              onClick={() => setLocalIsExpanded(!localIsExpanded)}
+            >
+              <ChevronRight
+                fontSize="small"
+                sx={{
+                  transform: localIsExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s ease-in-out',
+                }}
+              />
+            </IconButton>
+          </Stack>
+        </Box>
+      </Stack>
+      <Collapse in={localIsExpanded}>
+        <Paper
+          elevation={0}
+          sx={{
+            mt: 2,
+            p: 2,
+            bgcolor: '#fdfdfd',
+            borderRadius: 2,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+          }}
+        >
+          <Stack spacing={1}>
+            {scoreIds.map(item => (
+              <Typography variant="caption" color="text.secondary">
+                · {item}
+              </Typography>
+            ))}
+          </Stack>
+        </Paper>
+      </Collapse>
+    </Box>
+  );
+};
+
+// --- 主页面 ---
+
+const Dashboard: React.FC = () => {
+  const theme = useTheme();
+  const [timeRange, setTimeRange] = useState<TimeRange>('month');
+
+  // 数据状态
+  const [data, setData] = useState<DashboardData>({
+    visitStats: null,
+    discussionStats: null,
+    discussions: null,
+    searchCount: null,
+    aiInsights: null,
+    // 独立的趋势数据
+    visitTrendData: null,
+    postTrendData: null,
+    aiResponseRateData: null,
+    aiResolveRateData: null,
+  });
+
+  // 错误状态
+  const [error, setError] = useState<string | null>(null);
+
+  // 获取时间相关的统计数据
+  const fetchTimeRelatedData = async (selectedTimeRange: TimeRange) => {
+    const begin = getTimeRangeBegin(selectedTimeRange);
+    const statGroup = getStatGroup(selectedTimeRange);
+    setError(null);
+
+    try {
+      // 并行获取时间相关的数据
+      const [
+        visitResponse,
+        discussionResponse,
+        searchResponse,
+        visitTrendResponse, // 访问用户情况趋势（受时间范围控制）
+        postTrendResponse, // 发帖情况趋势（受时间范围控制）
+      ] = await Promise.all([
+        getAdminStatVisit({ begin }),
+        getAdminStatDiscussion({ begin }),
+        getAdminStatSearch({ begin }),
+
+        // 访问用户情况趋势 - 受时间范围控制
+        getAdminStatTrend({
+          begin,
+          stat_group: statGroup,
+          stat_types: [ModelStatType.StatTypeVisit], // [1]
+        }),
+
+        // 发帖情况趋势 - 受时间范围控制
+        getAdminStatTrend({
+          begin,
+          stat_group: statGroup,
+          stat_types: [ModelStatType.StatTypeDiscussionQA, ModelStatType.StatTypeDiscussionBlog], // [5, 6]
+        }),
+      ]);
+
+      // 只更新时间相关的数据
+      setData(prev => ({
+        ...prev,
+        visitStats: visitResponse || null,
+        discussionStats: discussionResponse || null,
+        discussions: discussionResponse?.discussions || null,
+        searchCount: searchResponse || 0,
+        // 独立的趋势数据 - 新API结构：response.data.items
+        visitTrendData: visitTrendResponse?.items || [],
+        postTrendData: postTrendResponse?.items || [],
+      }));
+    } catch (err) {
+      console.error('Failed to fetch time related data:', err);
+      setError('数据加载失败，请稍后重试');
+    }
+  };
+
+  // 获取AI相关数据（不受时间影响）
+  const fetchAIData = async () => {
+    const thirtyDaysBegin = Math.floor((new Date().getTime() - 30 * 24 * 60 * 60 * 1000) / 1000);
+
+    try {
+      // 并行获取AI相关数据
+      const [
+        aiResponseRateResponse, // AI 应答率趋势原始数据（固定30天）
+        aiResolveRateResponse, // AI 解决率趋势原始数据（固定30天）
+        aiInsightResponse,
+      ] = await Promise.all([
+        // AI 应答率趋势原始数据 - 固定30天
+        getAdminStatTrend({
+          begin: thirtyDaysBegin,
+          stat_group: 2, // 按天分组，30天趋势
+          stat_types: [ModelStatType.StatTypeDiscussionQA, ModelStatType.StatTypeBotUnknown], // [5, 3]
+        }),
+
+        // AI 解决率趋势原始数据 - 固定30天
+        getAdminStatTrend({
+          begin: thirtyDaysBegin,
+          stat_group: 2, // 按天分组，30天趋势
+          stat_types: [ModelStatType.StatTypeBotAccept, ModelStatType.StatTypeDiscussionQA], // [4, 5]
+        }),
+
+        getAdminRankAiInsight(),
+      ]);
+
+      // 只更新AI相关的数据
+      setData(prev => ({
+        ...prev,
+        aiInsights: aiInsightResponse || [],
+        aiResponseRateData: aiResponseRateResponse?.items || [],
+        aiResolveRateData: aiResolveRateResponse?.items || [],
+      }));
+    } catch (err) {
+      console.error('Failed to fetch AI data:', err);
+      setError('AI数据加载失败，请稍后重试');
+    }
+  };
 
   // 格式化 AI 洞察数据
   const aiInsightData = useMemo(() => {
-    const insightData = aiInsightResponse;
+    const insightData = data.aiInsights;
     if (!insightData || insightData.length === 0) {
       return [];
     }
@@ -160,221 +882,427 @@ const Dashboard = () => {
         items,
       };
     });
-  }, [aiInsightResponse]);
+  }, [data.aiInsights]);
+  // 初始化数据获取 - 只在组件挂载时获取一次AI数据和时间相关数据
+  useEffect(() => {
+    // 使用初始时间范围获取时间相关数据
+    const initialTimeRange = 'month'; // 默认初始时间范围
+    fetchAIData();
+    fetchTimeRelatedData(initialTimeRange);
+  }, []);
+
+  // 时间相关数据获取 - 只在时间范围改变时获取
+  useEffect(() => {
+    fetchTimeRelatedData(timeRange);
+  }, [timeRange]);
+
+  // 处理时间范围变更
+  const handleTimeRangeChange = (
+    _: React.MouseEvent<HTMLElement>,
+    newAlignment: TimeRange | null
+  ) => {
+    if (newAlignment !== null) {
+      setTimeRange(newAlignment);
+    }
+  };
+
+  // 计算访问用户情况图表数据
+  const visitChartData = useMemo(() => {
+    if (!data.visitTrendData || data.visitTrendData.length === 0) {
+      return [];
+    }
+    return transformTrendData(data.visitTrendData, timeRange);
+  }, [data.visitTrendData, timeRange]);
+
+  // 计算发帖情况图表数据
+  const postChartData = useMemo(() => {
+    if (!data.postTrendData || data.postTrendData.length === 0) {
+      return [];
+    }
+    return transformTrendData(data.postTrendData, timeRange);
+  }, [data.postTrendData, timeRange]);
+
+  // 计算 AI 应答率趋势数据
+  const aiResponseRateData = useMemo(() => {
+    if (!data.aiResponseRateData || data.aiResponseRateData.length === 0) {
+      return [];
+    }
+
+    // API返回的数据已包含QA和BotUnknown类型，直接传递给转换函数
+    // 转换函数内部会根据不同的type进行分组处理
+    return transformAIResponseRateTrendData(data.aiResponseRateData);
+  }, [data.aiResponseRateData]);
+
+  // 计算 AI 解决率趋势数据
+  const aiResolveRateData = useMemo(() => {
+    if (!data.aiResolveRateData || data.aiResolveRateData.length === 0) {
+      return [];
+    }
+
+    // API返回的数据已包含QA和BotAccept类型，直接传递给转换函数
+    // 转换函数内部会根据不同的type进行分组处理
+    return transformAIResolveRateTrendData(data.aiResolveRateData);
+  }, [data.aiResolveRateData]);
 
   // 计算统计数据
-  const stats = useMemo(() => {
-    const visit = visitData || { pv: 0, uv: 0 };
-    const search = searchData || 0;
-    const discussion = discussionData || {
-      discussion: 0,
-      bot_accept: 0,
-      bot_unknown: 0,
-      accept: 0,
-      human_resp_time: 0,
-      discussions: [],
-    };
-
-    const qaDiscussionCount =
-      discussion.discussions?.find(item => item.key === ModelDiscussionType.DiscussionTypeQA)
-        ?.count ?? 0;
-    const botAccept = discussion.bot_accept ?? 0;
-    const botUnknown = discussion.bot_unknown ?? 0;
-    const acceptCount = discussion.accept ?? 0;
-
-    // 格式化数字，添加千分位
-    const formatNumber = (num: number) => {
-      return num.toLocaleString('zh-CN');
-    };
-
-    // 计算 AI 解决率
-    const aiResolutionRate =
-      qaDiscussionCount > 0 ? ((botAccept / qaDiscussionCount) * 100).toFixed(1) : '0.0';
-
-    // 计算总解决率
-    const totalResolutionRate =
-      qaDiscussionCount > 0 ? ((acceptCount / qaDiscussionCount) * 100).toFixed(1) : '0.0';
-
-    // 格式化响应时长（秒转分钟）
-    const humanRespTime = discussion.human_resp_time
-      ? (discussion.human_resp_time / 60).toFixed(1)
-      : '0.0';
-
+  const metrics = useMemo(() => {
+    const visitStats = data.visitStats;
+    const discussionStats = data.discussionStats;
+    const searchCount = data.searchCount;
+    const qaCount =
+      (data.discussions && data.discussions?.find(item => item.key === 'qa')?.count) || 0;
     return {
-      visitCount: formatNumber(visit.pv || 0),
-      visitUserCount: formatNumber(visit.uv || 0),
-      searchCount: formatNumber(search),
-      postCount: formatNumber(
-        discussion.discussions?.reduce((sum, item) => sum + (item.count ?? 0), 0) ?? 0
+      // 访问相关指标
+      visits: formatNumber(visitStats?.pv || 0),
+      uniqueVisitors: formatNumber(visitStats?.uv || 0),
+      searches: formatNumber(searchCount || 0),
+      posts: formatNumber(data.discussions?.reduce((sum, item) => sum + (item.count || 0), 0) || 0),
+
+      // AI相关指标
+      aiResponseRate: formatPercentage(
+        qaCount > 0 ? ((qaCount - (discussionStats?.bot_unknown || 0)) / qaCount) * 100 : 0
       ),
-      aiSuccessCount: formatNumber(Math.max(qaDiscussionCount - botUnknown, 0)),
-      aiResolutionRate: `${aiResolutionRate}%`,
-      totalResolutionRate: `${totalResolutionRate}%`,
-      humanRespTime: `${humanRespTime} min`,
+      aiResolveRate: formatPercentage(
+        qaCount > 0 ? ((discussionStats?.bot_accept || 0) / qaCount) * 100 : 0
+      ),
+      totalResolveRate: formatPercentage(
+        qaCount > 0 ? ((discussionStats?.accept || 0) / qaCount) * 100 : 0
+      ),
+      humanResponseTime: formatTime(discussionStats?.human_resp_time || 0),
     };
-  }, [visitData, searchData, discussionData]);
+  }, [data]);
+
+  // 如果有错误，显示错误信息
+  if (error) {
+    return (
+      <Box sx={{ p: 4 }}>
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      </Box>
+    );
+  }
+
+  // 显示加载状态
+  const isLoading =
+    !data.visitStats &&
+    !data.discussionStats &&
+    !data.searchCount &&
+    !data.visitTrendData &&
+    !data.postTrendData &&
+    !data.aiResponseRateData &&
+    !data.aiResolveRateData;
 
   return (
-    <Stack component={Card} sx={{ height: '100%', p: 3 }}>
-      {/* AI 洞察介绍 */}
-      <Box
-        sx={{
-          mb: 3,
-          borderRadius: 2,
-        }}
-      >
-        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-            AI 洞察
-          </Typography>
-        </Stack>
-        <Grid container spacing={2}>
-          {aiInsightData.map(
-            (item: { title: string; subtitle: string; items: string[] }, index: number) => (
-              <Grid
-                key={`${item.subtitle}-${index}`}
-                size={{ xs: 12, md: 4 }}
-                sx={{ bgcolor: '#F8F9FA', borderRadius: 1 }}
-              >
-                <Box
-                  sx={{
-                    p: 2.5,
-                    borderRadius: 2,
-                    height: '100%',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                  }}
-                >
-                  <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-                    <LightbulbOutlined sx={{ fontSize: 20, color: 'primary.main' }} />
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                      {item.title}
-                    </Typography>
-                    <Box
-                      color="text.secondary"
-                      sx={{
-                        display: 'block',
-                        fontSize: '13px',
-                        mb: 1.5,
-                        px: 1,
-                        py: 0.5,
-                        borderRadius: 3,
-                        ml: 'auto!important',
-                        bgcolor: 'rgba(39, 125, 255, 0.04)',
-                      }}
-                    >
-                      {item.subtitle}
-                    </Box>
-                  </Stack>
-                  {item.items.length > 0 ? (
-                    <Stack
-                      component="ol"
-                      sx={{ p: 1, m: 0 }}
-                      spacing={1}
-                    >
-                      {item.items.map((text: string, idx: number) => (
-                        <Typography
-                          component="li"
-                          key={`${text}-${idx}`}
-                          variant="body2"
-                          sx={{ fontSize: '12px' }}
-                          color="text.secondary"
-                        >
-                          {text}
-                        </Typography>
-                      ))}
-                    </Stack>
-                  ) : (
-                    <Typography variant="body2" color="text.secondary">
-                      暂无数据
-                    </Typography>
-                  )}
-                </Box>
-              </Grid>
-            )
-          )}
-        </Grid>
-      </Box>
-
-      {/* 时间选择器 */}
-      <Box sx={{ mb: 3 }}>
-        <CusTabs
-          list={[
-            { label: '今日', value: 'today' },
-            { label: '本周', value: 'week', disabled: true },
-            { label: '本月', value: 'month', disabled: true },
-          ]}
-          value={timePeriod}
-          onChange={value => setTimePeriod(value as TimePeriod)}
-        />
-      </Box>
-
-      {/* 统计卡片 */}
-      {loading ? (
+    <>
+      {isLoading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 8 }}>
           <CircularProgress />
         </Box>
-      ) : (
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              value={stats.visitCount}
-              label="访问次数"
-              icon={<RemoveRedEye sx={{ fontSize: 20 }} />}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              value={stats.visitUserCount}
-              label="访问用户数"
-              icon={<People sx={{ fontSize: 20 }} />}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              value={stats.searchCount}
-              label="搜索次数"
-              icon={<Search sx={{ fontSize: 20 }} />}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              value={stats.postCount}
-              label="发帖数"
-              icon={<Article sx={{ fontSize: 20 }} />}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              value={stats.aiSuccessCount}
-              label="AI 成功回答数"
-              icon={<SmartToy sx={{ fontSize: 20 }} />}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              value={stats.aiResolutionRate}
-              label="AI 解决率"
-              icon={<CheckCircle sx={{ fontSize: 20 }} />}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              value={stats.totalResolutionRate}
-              label="总解决率"
-              icon={<TrendingUp sx={{ fontSize: 20 }} />}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <StatCard
-              value={stats.humanRespTime}
-              label="人工平均响应时长"
-              icon={<AccessTime sx={{ fontSize: 20 }} />}
-            />
-          </Grid>
-        </Grid>
       )}
-    </Stack>
+
+      {!isLoading && (
+        <Box sx={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
+          <Grid
+            container
+            spacing={2}
+            sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}
+          >
+            {/* 第一行：主内容区域 */}
+            <Grid size={12} sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <Grid container spacing={2} sx={{ flex: 1 }}>
+                {/* 主仪表板卡片 */}
+                <Grid size={{ xs: 12, lg: 9 }} sx={{ display: 'flex' }}>
+                  <MainDashboardCard sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    {/* 时间选择器 */}
+                    <TopFilter value={timeRange} onChange={handleTimeRangeChange} />
+
+                    {/* 顶部统计卡片区域 */}
+                    <Grid container spacing={2} sx={{ mb: 2, flexShrink: 0 }}>
+                      <Grid size={{ xs: 12, md: 6 }}>
+                        <StatCard
+                          type="blue"
+                          metrics={[
+                            {
+                              value: metrics.visits,
+                              label: '访问次数',
+                              icon: <DashboardIcon sx={{ fontSize: 14 }} />,
+                            },
+                            {
+                              value: metrics.uniqueVisitors,
+                              label: '独立访客',
+                              icon: <People sx={{ fontSize: 14 }} />,
+                            },
+                            {
+                              value: metrics.searches,
+                              label: '搜索次数',
+                              icon: <Search sx={{ fontSize: 14 }} />,
+                            },
+                            {
+                              value: metrics.posts,
+                              label: '发帖数',
+                              icon: <Description sx={{ fontSize: 14 }} />,
+                            },
+                          ]}
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 6 }}>
+                        <StatCard
+                          type="purple"
+                          metrics={[
+                            {
+                              value: metrics.aiResponseRate,
+                              unit: '%',
+                              label: 'AI 应答率',
+                              icon: <Comment sx={{ fontSize: 14 }} />,
+                            },
+                            {
+                              value: metrics.aiResolveRate,
+                              unit: '%',
+                              label: 'AI 解决率',
+                              icon: <Bolt sx={{ fontSize: 14 }} />,
+                            },
+                            {
+                              value: metrics.totalResolveRate,
+                              unit: '%',
+                              label: '总解决率',
+                              icon: <CheckCircle sx={{ fontSize: 14 }} />,
+                            },
+                            {
+                              value: metrics.humanResponseTime,
+                              label: '人工响应',
+                              icon: <AccessTime sx={{ fontSize: 14 }} />,
+                            },
+                          ]}
+                        />
+                      </Grid>
+                    </Grid>
+
+                    {/* 柱状图区域 */}
+                    <Grid container spacing={2}>
+                      <Grid size={{ xs: 12, md: 6 }}>
+                        <ChartSection title="访问用户情况">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <div style={{ outline: 'none' }} onMouseDown={e => e.preventDefault()}>
+                              <BarChart
+                                data={visitChartData}
+                                barSize={8}
+                                margin={{ left: 10, right: 10, top: 10, bottom: 10 }}
+                              >
+                                <CartesianGrid
+                                  vertical={false}
+                                  strokeDasharray="3 3"
+                                  stroke="#f0f0f0"
+                                />
+                                <XAxis
+                                  dataKey="name"
+                                  axisLine={false}
+                                  tickLine={false}
+                                  tick={{ fontSize: 12, fill: theme.palette.text.secondary }}
+                                  interval={6}
+                                />
+                                <Tooltip
+                                  cursor={{ fill: '#f9fafb' }}
+                                  contentStyle={{
+                                    borderRadius: 8,
+                                    border: 'none',
+                                    boxShadow: theme.shadows[3],
+                                  }}
+                                />
+                                <Bar dataKey="visits" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                              </BarChart>
+                            </div>
+                          </ResponsiveContainer>
+                        </ChartSection>
+                      </Grid>
+                      <Grid size={{ xs: 12, md: 6 }}>
+                        <ChartSection title="发帖情况">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <div style={{ outline: 'none' }} onMouseDown={e => e.preventDefault()}>
+                              <BarChart
+                                data={postChartData}
+                                barSize={8}
+                                margin={{ left: 10, right: 10, top: 10, bottom: 10 }}
+                              >
+                                <CartesianGrid
+                                  vertical={false}
+                                  strokeDasharray="3 3"
+                                  stroke="#f0f0f0"
+                                />
+                                <XAxis
+                                  dataKey="name"
+                                  axisLine={false}
+                                  tickLine={false}
+                                  tick={{ fontSize: 12, fill: theme.palette.text.secondary }}
+                                  interval={6}
+                                />
+                                <Tooltip
+                                  cursor={{ fill: '#f9fafb' }}
+                                  contentStyle={{
+                                    borderRadius: 8,
+                                    border: 'none',
+                                    boxShadow: theme.shadows[3],
+                                  }}
+                                />
+                                <Bar dataKey="posts" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                              </BarChart>
+                            </div>
+                          </ResponsiveContainer>
+                        </ChartSection>
+                      </Grid>
+                    </Grid>
+                  </MainDashboardCard>
+                </Grid>
+
+                {/* 右侧 AI 洞察卡片 */}
+                <Grid size={{ xs: 12, lg: 3 }} sx={{ overflow: ' auto' }}>
+                  <Card
+                    elevation={0}
+                    sx={{
+                      p: 2,
+                      borderRadius: 3,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                  >
+                    <Typography variant="h6" fontWeight={700} gutterBottom sx={{ mb: 1 }}>
+                      AI 洞察
+                    </Typography>
+                    <Box
+                      sx={{
+                        flexGrow: 1,
+                        overflowY: 'auto',
+                        maxHeight: '360px', // 减去标题高度
+                        '&::-webkit-scrollbar': {
+                          width: '4px',
+                        },
+                        '&::-webkit-scrollbar-track': {
+                          background: '#f1f1f1',
+                          borderRadius: '2px',
+                        },
+                        '&::-webkit-scrollbar-thumb': {
+                          background: '#c1c1c1',
+                          borderRadius: '2px',
+                          '&:hover': {
+                            background: '#a8a8a8',
+                          },
+                        },
+                      }}
+                    >
+                      {aiInsightData && aiInsightData.length > 0 ? (
+                        aiInsightData.map((insight, index) => {
+                          return (
+                            <InsightItem
+                              key={index}
+                              type={'normal'}
+                              time={insight.subtitle}
+                              title={insight.title}
+                              scoreIds={insight.items}
+                              isExpanded={true}
+                            />
+                          );
+                        })
+                      ) : (
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ textAlign: 'center', py: 4 }}
+                        >
+                          暂无AI洞察数据
+                        </Typography>
+                      )}
+                    </Box>
+                  </Card>
+                </Grid>
+              </Grid>
+            </Grid>
+
+            {/* 第二行：AI 趋势图表 - 全宽底部区域 */}
+            <Grid size={12}>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <ChartSection title="AI 应答率趋势">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <div style={{ outline: 'none' }} onMouseDown={e => e.preventDefault()}>
+                        <LineChart
+                          data={aiResponseRateData}
+                          margin={{ left: 10, right: 10, top: 10, bottom: 10 }}
+                        >
+                          <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f0f0f0" />
+                          <XAxis
+                            dataKey="name"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 12, fill: theme.palette.text.secondary }}
+                            interval={6}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              borderRadius: 8,
+                              border: 'none',
+                              boxShadow: theme.shadows[3],
+                            }}
+                            formatter={(value: number) => [`${value.toFixed(1)}%`, 'AI 应答率']}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="value"
+                            stroke="#2dd4bf"
+                            strokeWidth={3}
+                            dot={false}
+                            activeDot={false}
+                          />
+                        </LineChart>
+                      </div>
+                    </ResponsiveContainer>
+                  </ChartSection>
+                </Grid>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <ChartSection title="AI 解决率趋势">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <div style={{ outline: 'none' }} onMouseDown={e => e.preventDefault()}>
+                        <LineChart
+                          data={aiResolveRateData}
+                          margin={{ left: 10, right: 10, top: 10, bottom: 10 }}
+                        >
+                          <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f0f0f0" />
+                          <XAxis
+                            dataKey="name"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 12, fill: theme.palette.text.secondary }}
+                            interval={6}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              borderRadius: 8,
+                              border: 'none',
+                              boxShadow: theme.shadows[3],
+                            }}
+                            formatter={(value: number) => [`${value.toFixed(1)}%`, 'AI 解决率']}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="value"
+                            stroke="#f97316"
+                            strokeWidth={3}
+                            dot={false}
+                            activeDot={false}
+                          />
+                        </LineChart>
+                      </div>
+                    </ResponsiveContainer>
+                  </ChartSection>
+                </Grid>
+              </Grid>
+            </Grid>
+          </Grid>
+        </Box>
+      )}
+    </>
   );
 };
 

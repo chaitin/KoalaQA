@@ -31,10 +31,12 @@ const MainLayout = () => {
         getAdminModelList(),
         getAdminSystemPublicAddress(),
       ]);
-      const requiredModelTypes = Object.values(ModelLLMType)
+      const requiredModelTypes = Object.values(ModelLLMType).filter(type =>
+        ![ModelLLMType.LLMTypeAnalysis, ModelLLMType.LLMTypeAnalysisVL].includes(type)
+      );
       const modelList = Array.isArray(models) ? models : [];
-      const lackModel = requiredModelTypes.some(type =>
-        !modelList.some(model => model?.type === type),
+      const lackModel = requiredModelTypes.some(
+        type => !modelList.some(model => model?.type === type)
       );
       const lackAddr = !addr || !addr.address || addr.address.trim() === '';
       setNeedModel(lackModel);

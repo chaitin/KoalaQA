@@ -18,9 +18,10 @@ import {
   GetAdminStatTrendParams,
   GetAdminStatVisitParams,
   ModelListRes,
+  ModelStatTrend,
+  ModelStatTrendItem,
   SvcStatDiscussionItem,
   SvcStatDiscussionRes,
-  SvcStatTrendItem,
   SvcStatVisitRes,
 } from "./types";
 
@@ -96,7 +97,10 @@ export const getAdminStatSearch = (
  * @request GET:/admin/stat/trend
  * @response `200` `(ContextResponse & {
     data?: (ModelListRes & {
-    items?: (SvcStatTrendItem)[],
+    items?: ((ModelStatTrend & {
+    items?: (ModelStatTrendItem)[],
+
+}))[],
 
 }),
 
@@ -110,7 +114,9 @@ export const getAdminStatTrend = (
   request<
     ContextResponse & {
       data?: ModelListRes & {
-        items?: SvcStatTrendItem[];
+        items?: (ModelStatTrend & {
+          items?: ModelStatTrendItem[];
+        })[];
       };
     }
   >({

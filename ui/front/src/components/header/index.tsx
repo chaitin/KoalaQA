@@ -1,7 +1,7 @@
 'use client'
 
 import { ModelSystemBrand } from '@/api'
-import { ModelForumInfo as ModelForum, ModelUserRole } from '@/api/types'
+import { ModelForumInfo as ModelForum } from '@/api/types'
 import { AuthContext } from '@/components/authProvider'
 import { useForum } from '@/contexts/ForumContext'
 import { useAuthConfig } from '@/hooks/useAuthConfig'
@@ -23,7 +23,7 @@ interface HeaderProps {
   initialForums?: ModelForum[]
 }
 
-const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
+const Header = ({ brandConfig }: HeaderProps) => {
   const { user } = useContext(AuthContext)
   const router = useRouterWithRouteName()
   const plainRouter = useRouter()

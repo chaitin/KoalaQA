@@ -124,7 +124,7 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 		logger.Info("ai not know the answer, notify admin")
 		d.batcher.Send(model.StatInfo{
 			Type: model.StatTypeBotUnknown,
-			Ts:   util.TodayZero().Unix(),
+			Ts:   util.HourTrunc(time.Now()).Unix(),
 			Key:  data.DiscUUID,
 		})
 		disc, err := d.disc.GetByID(ctx, data.DiscID)

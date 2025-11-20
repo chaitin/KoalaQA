@@ -301,7 +301,6 @@ export default function NotificationCenter() {
         <Stack spacing={2}>
           {notifications.map((notification) => {
             const notificationText = formatNotificationText(notification)
-            const { action, content } = splitNotificationText(notificationText)
 
             return (
               <Card
@@ -356,7 +355,7 @@ export default function NotificationCenter() {
                         >
                           {notification.from_name || '未知用户'}
                         </Typography>
-                        {action && (
+                        {notificationText && (
                           <Typography
                             variant='body2'
                             sx={{
@@ -365,8 +364,7 @@ export default function NotificationCenter() {
                               fontSize: '14px',
                             }}
                           >
-                            {action}
-                            {content}
+                            {notificationText}
                           </Typography>
                         )}
                         {notification.type === ModelMsgNotifyType.MsgNotifyTypeReplyComment ? (
