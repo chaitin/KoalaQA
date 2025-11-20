@@ -1,14 +1,14 @@
 import { Chip, ChipProps } from '@mui/material'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
-import { ModelDiscussionType } from '@/api/types'
+import { ModelDiscussionType, ModelDiscussionState } from '@/api/types'
 
 interface QaUnresolvedChipProps extends Omit<ChipProps, 'label'> {
   type?: ModelDiscussionType
-  resolved?: boolean
+  resolved?: ModelDiscussionState
 }
 
 const QaUnresolvedChip: React.FC<QaUnresolvedChipProps> = ({ type, resolved, sx, ...restProps }) => {
-  if (type !== ModelDiscussionType.DiscussionTypeQA || resolved) {
+  if (type !== ModelDiscussionType.DiscussionTypeQA || resolved !== ModelDiscussionState.DiscussionStateNone) {
     return null
   }
 

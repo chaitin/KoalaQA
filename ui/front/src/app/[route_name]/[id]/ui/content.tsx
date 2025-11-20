@@ -13,6 +13,7 @@ import {
   ModelDiscussionComment,
   ModelDiscussionDetail,
   ModelDiscussionReply,
+  ModelDiscussionState,
   ModelDiscussionType,
   ModelUserRole,
 } from '@/api/types'
@@ -75,6 +76,12 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const prevHasAcceptedRef = React.useRef<boolean>(false)
   const [hasAnswerContent, setHasAnswerContent] = useState(false)
   const isReplyEditorVisible = useMemo(() => Object.values(showCommentEditors).some(Boolean), [showCommentEditors])
+
+  // Check if this is a closed post (applies to all types)
+  const isQAPost = data.type === ModelDiscussionType.DiscussionTypeQA
+  const isClosed = data.resolved === ModelDiscussionState.DiscussionStateClosed
+  const isClosedQAPost = isQAPost && isClosed
+  const isClosedPost = isClosed // All post types should be read-only when closed
 
   const handleAnswerEditorChange = useCallback((content: string) => {
     const normalized = content
@@ -201,6 +208,10 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   // 判断帖子是否有被采纳的评论
   const hasAcceptedComment = data.comments?.some((comment) => comment.accepted)
   const isAuthor = data.user_id === (user?.uid || 0)
+  const isAdmin = [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
+    user?.role || ModelUserRole.UserRoleUnknown,
+  )
+  const canAcceptAnswer = isAuthor || isAdmin
 
   // 当有采纳的回答时,自动收起其他回答下的评论(仅问答类型)
   useEffect(() => {
@@ -240,6 +251,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
 
   const handleSubmitComment = async (answerId: number) => {
     const comment = commentEditorRefs.current[answerId]?.getContent() || ''
+    console.log(comment)
     if (!comment.trim()) return
     return checkAuth(async () => {
       await postDiscussionDiscIdComment({ discId: id }, { content: comment, comment_id: answerId })
@@ -265,7 +277,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         setShowCommentEditors((prev) => ({ ...prev, [answerId]: true }))
       })
     },
-    [checkAuth],
+    [checkAuth, isClosedQAPost],
   )
 
   const handleVote = async (answerId: number, type: 'up' | 'down') => {
@@ -308,14 +320,14 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
       <Menu id='basic-menu' anchorEl={anchorEl} open={open} onClose={handleClose}>
         {!isArticlePost &&
           data.type === ModelDiscussionType.DiscussionTypeQA &&
-          data.user_id === (user?.uid || 0) &&
+          canAcceptAnswer &&
           commentIndex &&
           'replies' in commentIndex && // 只有主评论才有replies字段
           !commentIndex.accepted &&
           !hasAcceptedComment && <MenuItem onClick={handleAcceptComment}>采纳</MenuItem>}
         {!isArticlePost &&
           data.type === ModelDiscussionType.DiscussionTypeQA &&
-          data.user_id === (user?.uid || 0) &&
+          canAcceptAnswer &&
           commentIndex &&
           'replies' in commentIndex && // 只有主评论才有replies字段
           commentIndex.accepted && <MenuItem onClick={handleUnacceptComment}>取消采纳</MenuItem>}
@@ -510,16 +522,17 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                   </Stack>
 
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>
-                    {/* 采纳按钮 - 只有问答类型且问题作者且问题未被采纳时才显示 */}
+                    {/* 采纳按钮 - 只有问答类型且问题作者或管理员且问题未被采纳时才显示 */}
                     {!isArticlePost &&
                       data.type === ModelDiscussionType.DiscussionTypeQA &&
-                      isAuthor &&
+                      canAcceptAnswer &&
                       !hasAcceptedComment &&
                       !answer.accepted && (
                         <Button
                           disableRipple
                           size='small'
                           variant='outlined'
+                          disabled={isClosedQAPost}
                           startIcon={<CheckCircleOutlineIcon sx={{ fontSize: 12 }} />}
                           onClick={() => handleAcceptAnswer(answer.id!)}
                           sx={{
@@ -578,13 +591,15 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                     {!isArticlePost && (
                       <>
                         <Stack
+                          component={Button}
                           direction='row'
                           alignItems='center'
                           gap={1}
                           sx={{
                             background: isLiked ? 'rgba(32,108,255,0.1)' : '#F2F3F5',
                             borderRadius: 0.5,
-                            px: 1,
+                            px: '0px!important',
+                            minWidth: '50px',
                             py: '1px',
                             cursor: 'pointer',
                             transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -598,6 +613,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                               transition: 'transform 0.1s ease-out',
                             },
                           }}
+                          disabled={isClosedQAPost}
                           onClick={() => handleVote(answer.id!, 'up')}
                         >
                           <Icon
@@ -620,13 +636,15 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                         </Stack>
 
                         <Stack
+                          component={Button}
                           direction='row'
                           alignItems='center'
                           gap={1}
                           sx={{
                             background: isDisliked ? 'rgba(32,108,255,0.1)' : '#F2F3F5',
                             borderRadius: 0.5,
-                            px: 1,
+                            px: '0px!important',
+                            minWidth: '50px',
                             py: '1px',
                             cursor: 'pointer',
                             transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -640,6 +658,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                               transition: 'transform 0.1s ease-out',
                             },
                           }}
+                          disabled={isClosedQAPost}
                           onClick={() => handleVote(answer.id!, 'down')}
                         >
                           <Icon
@@ -670,6 +689,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                       ) ||
                       (data.type === ModelDiscussionType.DiscussionTypeQA && isAuthor)) && (
                       <IconButton
+                        disabled={isClosedQAPost}
                         disableRipple
                         size='small'
                         onClick={(e) => handleClick(e, answer.content || '', answer)}
@@ -842,6 +862,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                   )) && (
                                   <IconButton
                                     disableRipple
+                                    disabled={isClosedQAPost}
                                     size='small'
                                     onClick={(e) => handleClick(e, reply.content || '', reply)}
                                     sx={{
@@ -882,21 +903,22 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                             size='small'
                             placeholder={isArticlePost ? '添加评论...' : '添加评论...'}
                             onClick={() => handleReplyInputClick(answer.id!)}
+                            disabled={isClosedPost}
+                            sx={{
+                              bgcolor: '#fafbfc',
+                              fontSize: '0.875rem',
+                              cursor: isClosedPost ? 'not-allowed' : 'pointer',
+                              '& fieldset': { borderColor: '#e5e7eb' },
+                              '&:hover fieldset': isClosedPost ? undefined : { borderColor: '#d1d5db' },
+                              '& input': {
+                                cursor: isClosedPost ? 'not-allowed' : 'pointer',
+                              },
+                            }}
                             endAdornment={
                               <InputAdornment position='end'>
                                 <ArrowForwardIcon sx={{ fontSize: 16, color: '#9ca3af' }} />
                               </InputAdornment>
                             }
-                            sx={{
-                              bgcolor: '#fafbfc',
-                              fontSize: '0.875rem',
-                              cursor: 'pointer',
-                              '& fieldset': { borderColor: '#e5e7eb' },
-                              '&:hover fieldset': { borderColor: '#d1d5db' },
-                              '& input': {
-                                cursor: 'pointer',
-                              },
-                            }}
                           />
                         ) : (
                           <>
@@ -918,6 +940,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                   }
                                 }}
                                 value=''
+                                readonly={isClosedPost}
                               />
                             </Box>
                             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
@@ -947,6 +970,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                 variant='contained'
                                 endIcon={<ArrowForwardIcon />}
                                 onClick={() => handleSubmitComment(answer.id!)}
+                                disabled={isClosedPost}
                                 sx={{
                                   color: '#ffffff',
                                   textTransform: 'none',
@@ -1045,6 +1069,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                       value=''
                       placeholder={isArticlePost ? '添加评论...' : '回答问题...'}
                       onChange={handleAnswerEditorChange}
+                      readonly={isClosedPost}
                     />
                   </Box>
                   {hasAnswerContent && (
@@ -1082,6 +1107,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                         variant='contained'
                         endIcon={<ArrowForwardIcon />}
                         onClick={handleSubmitAnswer}
+                        disabled={isClosedPost}
                         sx={{
                           color: '#ffffff',
                           textTransform: 'none',

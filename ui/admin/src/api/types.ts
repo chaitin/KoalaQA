@@ -71,14 +71,15 @@ export enum ModelMsgNotifyType {
   MsgNotifyTypeBotUnknown = 6,
   MsgNotifyTypeLikeDiscussion = 7,
   MsgNotifyTypeUserReview = 8,
+  MsgNotifyTypeApplyCommentByAdmin = 9,
 }
 
 export enum ModelLLMType {
   LLMTypeChat = "chat",
   LLMTypeEmbedding = "embedding",
   LLMTypeRerank = "rerank",
-  // LLMTypeAnalysis = "analysis",
-  // LLMTypeAnalysisVL = "analysis-vl",
+  LLMTypeAnalysis = "analysis",
+  LLMTypeAnalysisVL = "analysis-vl",
 }
 
 export enum ModelFileType {
@@ -124,6 +125,12 @@ export enum ModelDiscussionType {
   DiscussionTypeQA = "qa",
   DiscussionTypeFeedback = "feedback",
   DiscussionTypeBlog = "blog",
+}
+
+export enum ModelDiscussionState {
+  DiscussionStateNone = 0,
+  DiscussionStateResolved = 1,
+  DiscussionStateClosed = 2,
 }
 
 export enum ModelCommentLikeState {
@@ -213,7 +220,7 @@ export interface ModelDiscussionDetail {
   like?: number;
   members?: number[];
   rag_id?: string;
-  resolved?: boolean;
+  resolved?: ModelDiscussionState;
   resolved_at?: number;
   summary?: string;
   tags?: string[];
@@ -245,7 +252,7 @@ export interface ModelDiscussionListItem {
   like?: number;
   members?: number[];
   rag_id?: string;
-  resolved?: boolean;
+  resolved?: ModelDiscussionState;
   resolved_at?: number;
   summary?: string;
   tags?: string[];
@@ -306,6 +313,8 @@ export interface ModelGroupWithItem {
 }
 
 export type ModelJSONBArrayModelForumGroups = Record<string, any>;
+
+export type ModelJSONBArrayModelStatTrendItem = Record<string, any>;
 
 export type ModelJSONBModelExportOpt = Record<string, any>;
 
@@ -407,9 +416,23 @@ export interface ModelRankTimeGroup {
   time?: number;
 }
 
+export interface ModelStatTrend {
+  items?: ModelJSONBArrayModelStatTrendItem;
+  ts?: number;
+}
+
+export interface ModelStatTrendItem {
+  count?: number;
+  type?: ModelStatType;
+}
+
 export interface ModelSystemBrand {
   logo?: string;
   text?: string;
+}
+
+export interface ModelSystemDiscussion {
+  auto_close?: number;
 }
 
 export interface ModelTrend {
@@ -788,7 +811,8 @@ export interface SvcRankContributeItem {
 }
 
 export interface SvcResolveFeedbackReq {
-  resolve?: boolean;
+  /** @max 3 */
+  resolve?: ModelDiscussionState;
 }
 
 export interface SvcReviewReq {
@@ -818,12 +842,6 @@ export interface SvcStatDiscussionRes {
   bot_accept?: number;
   bot_unknown?: number;
   human_resp_time?: number;
-}
-
-export interface SvcStatTrendItem {
-  count?: number;
-  ts?: number;
-  type?: ModelStatType;
 }
 
 export interface SvcStatVisitRes {
@@ -1331,7 +1349,7 @@ export interface GetDiscussionParams {
   only_mine?: boolean;
   /** @min 1 */
   page?: number;
-  resolved?: boolean;
+  resolved?: 0 | 1 | 2;
   /** @min 1 */
   size?: number;
   stat?: boolean;
@@ -1358,6 +1376,11 @@ export interface PutDiscussionDiscIdParams {
 }
 
 export interface DeleteDiscussionDiscIdParams {
+  /** disc_id */
+  discId: string;
+}
+
+export interface PutDiscussionDiscIdCloseParams {
   /** disc_id */
   discId: string;
 }
