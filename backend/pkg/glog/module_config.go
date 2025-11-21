@@ -145,7 +145,9 @@ func parseConfig(path string, modTime time.Time) {
 			} else {
 				sub, ok := t.submodule[splitModule]
 				if !ok || sub == nil {
-					sub = &module{}
+					sub = &module{
+						submodule: make(map[string]*module),
+					}
 					t.submodule[splitModule] = sub
 				}
 				t = sub

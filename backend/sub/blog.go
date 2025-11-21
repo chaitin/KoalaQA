@@ -52,6 +52,7 @@ func (a *Blog) Concurrent() uint {
 func (a *Blog) Handle(ctx context.Context, msg mq.Message) error {
 	data := msg.(topic.MsgDiscChange)
 	if data.Type != string(model.DiscussionTypeBlog) {
+		a.logger.WithContext(ctx).With("msg", data).Debug("msg is not target type, skip")
 		return nil
 	}
 	switch data.OP {

@@ -65,6 +65,25 @@ func (ns *natsSubscriber) Subscribe(ctx context.Context) error {
 		topic := h.Topic()
 		ns.logger.WithContext(ctx).With("topic", topic).Debug("begin subscribe")
 
+		if topic.Persistence() {
+			stream, err := ns.in.JS.js.StreamNameBySubject(topic.Name())
+			if err != nil {
+				return err
+			}
+
+			info, err := ns.in.JS.js.ConsumerInfo(stream, h.Group())
+			if err != nil {
+				if !errors.Is(err, nats.ErrConsumerNotFound) {
+					return err
+				}
+			} else if info.Config.DeliverPolicy != nats.DeliverNewPolicy {
+				err = ns.in.JS.js.DeleteConsumer(stream, h.Group())
+				if err != nil {
+					return err
+				}
+			}
+		}
+
 		callback := func(msg *nats.Msg) {
 			ctx := trace.Context(ctx, msg.Header.Values("X-Trace-ID")...)
 
@@ -109,7 +128,7 @@ func (ns *natsSubscriber) Subscribe(ctx context.Context) error {
 				_, err := ns.in.JS.js.QueueSubscribe(topic.Name(), h.Group(), callback,
 					nats.AckExplicit(),
 					nats.MaxDeliver(3),
-					nats.DeliverAll(),
+					nats.DeliverNew(),
 					nats.AckWait(h.AckWait()),
 					nats.Durable(h.Group()),
 					nats.ConsumerName(h.Group()),
