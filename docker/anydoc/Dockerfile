@@ -1,3 +1,3 @@
-FROM chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/anydoc:v0.6.7
+FROM chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/anydoc:v0.7.0
 
 EXPOSE 8080

@@ -16,13 +16,12 @@ import (
 type wechat struct {
 	logger      *glog.Logger
 	cfg         model.AuthConfigOauth
-	callbackURL string
+	callbackURL CallbackURLFunc
 }
 
 func (w *wechat) Check(ctx context.Context) error {
-	_, err := util.ParseHTTP(w.callbackURL)
-	if err != nil {
-		return err
+	if w.callbackURL == nil {
+		return errors.New("callback url func is nil")
 	}
 
 	if w.cfg.ClientID == "" {
@@ -38,8 +37,13 @@ func (w *wechat) Check(ctx context.Context) error {
 func (w *wechat) AuthURL(ctx context.Context, state string, optFuncs ...authURLOptFunc) (string, error) {
 	query := make(url.Values)
 
+	callbackURL, err := w.callbackURL(ctx, "/api/user/login/third/callback/wechat")
+	if err != nil {
+		return "", err
+	}
+
 	query.Set("appid", w.cfg.ClientID)
-	query.Set("redirect_uri", w.callbackURL)
+	query.Set("redirect_uri", callbackURL)
 	query.Set("response_type", "code")
 	query.Set("scope", "snsapi_login")
 	query.Set("state", state)
