@@ -48,6 +48,7 @@ type AuthFrontendGetAuth struct {
 type AuthFrontendGetRes struct {
 	EnableRegister bool                  `json:"enable_register"`
 	PublicAccess   bool                  `json:"public_access"`
+	Prompt         string                `json:"prompt"`
 	AuthTypes      []AuthFrontendGetAuth `json:"auth_types"`
 }
 
@@ -60,6 +61,7 @@ func (l *Auth) FrontendGet(ctx context.Context) (*AuthFrontendGetRes, error) {
 	res := AuthFrontendGetRes{
 		EnableRegister: data.EnableRegister,
 		PublicAccess:   data.PublicAccess,
+		Prompt:         data.Prompt,
 		AuthTypes:      make([]AuthFrontendGetAuth, 0),
 	}
 
