@@ -93,5 +93,6 @@ type SystemBrand struct {
 }
 
 type SystemDiscussion struct {
-	AutoClose uint `json:"auto_close"`
+	AutoClose          uint   `json:"auto_close"`
+	ContentPlaceholder string `json:"content_placeholder"`
 }
