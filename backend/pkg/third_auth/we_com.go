@@ -16,13 +16,12 @@ import (
 type weCom struct {
 	logger      *glog.Logger
 	cfg         model.AuthConfigOauth
-	callbackURL string
+	callbackURL CallbackURLFunc
 }
 
 func (w *weCom) Check(ctx context.Context) error {
-	_, err := util.ParseHTTP(w.callbackURL)
-	if err != nil {
-		return err
+	if w.callbackURL == nil {
+		return errors.New("callback url func is nil")
 	}
 
 	if w.cfg.ClientID == "" {
@@ -41,9 +40,14 @@ func (w *weCom) Check(ctx context.Context) error {
 func (w *weCom) AuthURL(ctx context.Context, state string, optFuncs ...authURLOptFunc) (string, error) {
 	opt := getAuthURLOpt(optFuncs...)
 
+	callbackURL, err := w.callbackURL(ctx, "/api/user/login/third/callback/we_com")
+	if err != nil {
+		return "", err
+	}
+
 	query := make(url.Values)
 	query.Set("appid", w.cfg.CorpID)
-	query.Set("redirect_uri", w.callbackURL)
+	query.Set("redirect_uri", callbackURL)
 	query.Set("agentid", w.cfg.ClientID)
 	query.Set("state", state)
 

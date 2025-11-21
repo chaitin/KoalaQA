@@ -75,29 +75,24 @@ func (l *Auth) FrontendGet(ctx context.Context) (*AuthFrontendGetRes, error) {
 	return &res, nil
 }
 
-func (l *Auth) updateAuthMgmt(ctx context.Context, auth model.Auth, checkCfg bool) error {
+func (l *Auth) callbackURL(ctx context.Context, urlPath string) (string, error) {
 	publicAddress, err := l.svcPublicAddr.Get(ctx)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	for _, authInfo := range auth.AuthInfos {
-		callbackAddress := ""
+	return publicAddress.FullURL(urlPath), nil
+}
 
-		switch authInfo.Type {
-		case model.AuthTypeOIDC:
-			callbackAddress = publicAddress.FullURL("/api/user/login/third/callback/oidc")
-		case model.AuthTypeWeCom:
-			callbackAddress = publicAddress.FullURL("/api/user/login/third/callback/we_com")
-		case model.AuthTypeWechat:
-			callbackAddress = publicAddress.FullURL("/api/user/login/third/callback/wechat")
-		default:
+func (l *Auth) updateAuthMgmt(ctx context.Context, auth model.Auth, checkCfg bool) error {
+	for _, authInfo := range auth.AuthInfos {
+		if authInfo.Type == model.AuthTypePassword {
 			continue
 		}
 
-		err = l.authMgmt.Update(authInfo.Type, third_auth.Config{
+		err := l.authMgmt.Update(authInfo.Type, third_auth.Config{
 			Config:      authInfo.Config,
-			CallbackURL: callbackAddress,
+			CallbackURL: l.callbackURL,
 		}, checkCfg)
 		if err != nil {
 			l.logger.WithContext(ctx).WithErr(err).With("config", authInfo.Config).Warn("update auth mgnt failed")

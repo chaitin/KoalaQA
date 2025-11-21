@@ -9,9 +9,11 @@ import (
 	"github.com/chaitin/koalaqa/pkg/util"
 )
 
+type CallbackURLFunc func(ctx context.Context, path string) (string, error)
+
 type Config struct {
 	Config      model.AuthConfig
-	CallbackURL string
+	CallbackURL CallbackURLFunc
 }
 
 type User struct {
