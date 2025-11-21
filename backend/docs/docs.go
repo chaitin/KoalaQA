@@ -4847,6 +4847,37 @@ const docTemplate = `{
                 }
             }
         },
+        "/system/discussion": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system"
+                ],
+                "summary": "system discussion detail",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.SystemDiscussion"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/system/info": {
             "get": {
                 "produces": [
@@ -6329,7 +6360,7 @@ const docTemplate = `{
                 "MsgNotifyTypeBotUnknown",
                 "MsgNotifyTypeLikeDiscussion",
                 "MsgNotifyTypeUserReview",
-                "MsgNotifyTypeApplyCommentByAdmin"
+                "MsgNotifyTypeResolveByAdmin"
             ]
         },
         "model.PlatformOpt": {
@@ -6434,6 +6465,9 @@ const docTemplate = `{
             "properties": {
                 "auto_close": {
                     "type": "integer"
+                },
+                "content_placeholder": {
+                    "type": "string"
                 }
             }
         },

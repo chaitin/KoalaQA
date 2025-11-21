@@ -14,7 +14,7 @@ import (
 
 type oidc struct {
 	cfg         model.AuthConfigOauth
-	callbackURL string
+	callbackURL CallbackURLFunc
 	oc          oss.Client
 
 	logger *glog.Logger
@@ -28,9 +28,8 @@ func (o *oidc) Check(ctx context.Context) error {
 		return err
 	}
 
-	_, err = util.ParseHTTP(o.callbackURL)
-	if err != nil {
-		return err
+	if o.callbackURL == nil {
+		return errors.New("callback url func is nil")
 	}
 
 	if o.cfg.ClientID == "" {
@@ -55,8 +54,9 @@ func (o *oidc) Check(ctx context.Context) error {
 func (o *oidc) AuthURL(ctx context.Context, state string, optFuncs ...authURLOptFunc) (string, error) {
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, util.HTTPClient)
 
-	if o.callbackURL == "" {
-		return "", errors.New("empty callback addr")
+	callbackURL, err := o.callbackURL(ctx, "/api/user/login/third/callback/oidc")
+	if err != nil {
+		return "", err
 	}
 
 	provider, err := oidcAuth.NewProvider(ctx, o.cfg.URL)
@@ -68,13 +68,18 @@ func (o *oidc) AuthURL(ctx context.Context, state string, optFuncs ...authURLOpt
 		ClientID:     o.cfg.ClientID,
 		ClientSecret: o.cfg.ClientSecret,
 		Endpoint:     provider.Endpoint(),
-		RedirectURL:  o.callbackURL,
+		RedirectURL:  callbackURL,
 		Scopes:       []string{oidcAuth.ScopeOpenID, "profile", "email"},
 	}).AuthCodeURL(state), nil
 }
 
 func (o *oidc) User(ctx context.Context, code string) (*User, error) {
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, util.HTTPClient)
+
+	callbackURL, err := o.callbackURL(ctx, "/api/user/login/third/callback/oidc")
+	if err != nil {
+		return nil, err
+	}
 
 	provider, err := oidcAuth.NewProvider(ctx, o.cfg.URL)
 	if err != nil {
@@ -85,7 +90,7 @@ func (o *oidc) User(ctx context.Context, code string) (*User, error) {
 		ClientID:     o.cfg.ClientID,
 		ClientSecret: o.cfg.ClientSecret,
 		Endpoint:     provider.Endpoint(),
-		RedirectURL:  o.callbackURL,
+		RedirectURL:  callbackURL,
 		Scopes:       []string{oidcAuth.ScopeOpenID, "profile", "email"},
 	}
 

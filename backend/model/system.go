@@ -58,9 +58,10 @@ type AuthInfo struct {
 }
 
 type Auth struct {
-	EnableRegister bool `json:"enable_register"`
-	NeedReview     bool `json:"need_review"`
-	PublicAccess   bool `json:"public_access"`
+	EnableRegister bool   `json:"enable_register"`
+	NeedReview     bool   `json:"need_review"`
+	PublicAccess   bool   `json:"public_access"`
+	Prompt         string `json:"prompt"`
 	// Deprecated: only use in migration
 	PublicForumIDs []uint     `json:"public_forum_ids"`
 	AuthInfos      []AuthInfo `json:"auth_infos" binding:"omitempty,dive"`
@@ -93,5 +94,6 @@ type SystemBrand struct {
 }
 
 type SystemDiscussion struct {
-	AutoClose uint `json:"auto_close"`
+	AutoClose          uint   `json:"auto_close"`
+	ContentPlaceholder string `json:"content_placeholder"`
 }
