@@ -8,6 +8,7 @@ import EditorWrap, { EditorWrapRef } from '@/components/editor'
 import Toc from '@/components/Toc'
 import { useForum } from '@/contexts/ForumContext'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
+import { useSystemDiscussion } from '@/contexts/SystemDiscussionContext'
 import { Box, Button, Stack, TextField } from '@mui/material'
 import { useParams, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -19,6 +20,7 @@ export default function EditPage() {
   const routeName = routeParams?.route_name as string
   const { forums } = useForum()
   const router = useRouterWithRouteName()
+  const { config: systemConfig } = useSystemDiscussion()
   const queryId = useMemo(() => params.get('id') || params.get('discId') || undefined, [params]) as string | undefined
   const [data, setData] = useState<ModelDiscussionDetail>({
     title: '',
@@ -51,6 +53,16 @@ export default function EditPage() {
     }
     run()
   }, [queryId])
+
+  // 当systemConfig加载完成时，如果是新建Q&A帖子且内容为空，则设置默认内容
+  useEffect(() => {
+    if (!queryId && systemConfig?.content_placeholder && !data.content && data.type === ModelDiscussionType.DiscussionTypeQA) {
+      setData(prev => ({
+        ...prev,
+        content: systemConfig.content_placeholder
+      }))
+    }
+  }, [systemConfig, queryId, data.content, data.type])
 
   return (
     <Box

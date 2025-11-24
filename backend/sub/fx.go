@@ -20,5 +20,6 @@ var Module = fx.Options(
 	fx.Provide(mq.AsSubscriber(newAIInsight)),
 	fx.Provide(mq.AsSubscriber(newNeedHuman)),
 	fx.Provide(mq.AsSubscriber(newUserReview)),
+	fx.Provide(mq.AsSubscriber(NewCommentSummary)),
 	fx.Provide(newCache),
 )

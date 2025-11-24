@@ -39,6 +39,8 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material'
 import { useBoolean, useInViewport } from 'ahooks'
 import Image from 'next/image'
@@ -80,10 +82,13 @@ const Article = ({
   const routeName = params?.route_name as string
   const router = useRouterWithRouteName()
   const nextRouter = useRouter()
-  const { user } = useContext(AuthContext)
   const { checkAuth } = useAuthCheck()
-  const { groupsLoading } = useContext(CommonContext)
   const { getFilteredGroups } = useGroupData()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  console.log(isMobile, )
+  // 根据设备类型动态设置搜索placeholder
+  const searchPlaceholder = isMobile ? '使用 AI 搜索' : '输入任意内容，使用 AI 搜索'
 
   // 根据当前类型从 forumInfo.groups 中筛选对应的分类
   // 当type为undefined时，不传type参数，显示所有类型的分类
@@ -416,6 +421,12 @@ const Article = ({
 
   // 根据类型获取排序选项
   const getSortOptions = (postType?: string) => {
+    if (isMobile)
+      return [
+        { value: 'publish', label: '最新' },
+        { value: 'new', label: '活跃' },
+        { value: 'hot', label: '热门' },
+      ]
     if (postType === 'blog') {
       return [
         { value: 'publish', label: '最新发布' },
@@ -501,14 +512,14 @@ const Article = ({
             maxWidth: { lg: 798 },
             width: { xs: '100%', lg: 'auto' },
             pt: 0,
-            px: 3,
+            px: { xs: 0, sm: 3 },
           }}
         >
           {/* 搜索和发帖按钮 */}
           <Box id='article-search-box' sx={{ display: 'flex', gap: 3, mb: 2, alignItems: 'center' }}>
             <TextField
               fullWidth
-              placeholder='输入任意内容，使用 AI 搜索'
+              placeholder={searchPlaceholder}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={onInputSearch}
@@ -663,26 +674,32 @@ const Article = ({
                 个帖子
               </Box>
               {/* 下拉筛选按钮 */}
-              <Button
-                onClick={handleFilterMenuOpen}
-                startIcon={<FilterListIcon sx={{ fontSize: 18 }} />}
-                sx={{
-                  height: 30,
-                  px: 1.5,
-                  borderRadius: '6px',
-                  bgcolor: onlyMine || resolved !== null ? 'rgba(0,99,151,0.06)' : 'transparent',
-                  color: onlyMine || resolved !== null ? 'primary.main' : '#21222D',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  textTransform: 'none',
-                  '&:hover': {
-                    bgcolor: '#f3f4f6',
-                    borderColor: '#d1d5db',
-                  },
-                }}
-              >
-                筛选
-              </Button>
+              {isMobile ? (
+                <IconButton onClick={handleFilterMenuOpen}>
+                  <FilterListIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+              ) : (
+                <Button
+                  onClick={handleFilterMenuOpen}
+                  startIcon={<FilterListIcon sx={{ fontSize: 18 }} />}
+                  sx={{
+                    height: 30,
+                    px: 1.5,
+                    borderRadius: '6px',
+                    bgcolor: onlyMine || resolved !== null ? 'rgba(0,99,151,0.06)' : 'transparent',
+                    color: onlyMine || resolved !== null ? 'primary.main' : '#21222D',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    textTransform: 'none',
+                    '&:hover': {
+                      bgcolor: '#f3f4f6',
+                      borderColor: '#d1d5db',
+                    },
+                  }}
+                >
+                  筛选
+                </Button>
+              )}
 
               {/* 下拉筛选菜单 */}
               <Menu
@@ -792,7 +809,7 @@ const Article = ({
             pr: 3,
             scrollbarGutter: 'stable',
             position: 'sticky',
-            top: 20,
+            top: 25,
             maxHeight: 'calc(100vh - 90px)',
             overflowY: 'auto',
           }}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Box, Button, Card, CircularProgress, Stack, Typography } from '@mui/material'
@@ -95,6 +95,9 @@ export default function UserTrendList({ userId, ownerName }: UserTrendListProps)
   const [loading, setLoading] = useState(false)
   const [trends, setTrends] = useState<ModelTrend[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const observerTarget = useRef<HTMLDivElement>(null)
 
   const fetchTrend = useCallback(
     async (pageToFetch: number) => {
@@ -139,12 +142,47 @@ export default function UserTrendList({ userId, ownerName }: UserTrendListProps)
     [filteredTrends.length, trends.length],
   )
 
-  const hasMore = useMemo(() => filteredTrends.length < total, [filteredTrends.length, total])
+  // 更新hasMore状态
+  useEffect(() => {
+    setHasMore(filteredTrends.length < total)
+  }, [filteredTrends.length, total])
 
   const handleLoadMore = () => {
-    if (loading) return
-    fetchTrend(page + 1)
+    if (loading || isLoadingMore || !hasMore) return
+    setIsLoadingMore(true)
+    fetchTrend(page + 1).finally(() => {
+      setIsLoadingMore(false)
+    })
   }
+
+  // Intersection Observer 用于监听滚动到底部
+  useEffect(() => {
+    if (!hasMore || loading || isLoadingMore) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries
+        if (entry.isIntersecting) {
+          handleLoadMore()
+        }
+      },
+      {
+        threshold: 0.1,
+        rootMargin: '100px',
+      }
+    )
+
+    const currentTarget = observerTarget.current
+    if (currentTarget) {
+      observer.observe(currentTarget)
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget)
+      }
+    }
+  }, [hasMore, loading, isLoadingMore, page])
 
   if (!loading && filteredTrends.length === 0) {
     return <EmptyState />
@@ -214,21 +252,28 @@ export default function UserTrendList({ userId, ownerName }: UserTrendListProps)
           </Typography>
         )}
 
-        {hasMore && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
-            <Button onClick={handleLoadMore} disabled={loading} variant='outlined' sx={{ minWidth: 160 }}>
-              {loading ? (
-                <Stack direction='row' alignItems='center' spacing={1}>
-                  <CircularProgress size={16} thickness={5} />
-                  <Typography variant='body2'>加载中...</Typography>
-                </Stack>
-              ) : (
-                '加载更多'
-              )}
-            </Button>
-          </Box>
-        )}
+        {/* 滚动加载指示器 */}
+        <Box
+          ref={observerTarget}
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            py: 2,
+            minHeight: '60px',
+            alignItems: 'center',
+          }}
+        >
+          {(isLoadingMore || (loading && filteredTrends.length > 0)) && (
+            <Stack direction='row' alignItems='center' spacing={1}>
+              <CircularProgress size={20} thickness={4} />
+              <Typography variant='body2' sx={{ color: '#6b7280' }}>
+                加载更多动态...
+              </Typography>
+            </Stack>
+          )}
+        </Box>
 
+        {/* 初始加载状态 */}
         {loading && !hasMore && filteredTrends.length === 0 && (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
             <CircularProgress size={28} />

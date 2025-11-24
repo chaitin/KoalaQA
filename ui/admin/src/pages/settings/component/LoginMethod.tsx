@@ -52,6 +52,7 @@ const loginMethodSchema = z.object({
   enable_register: z.boolean(),
   need_review: z.boolean(),
   public_access: z.boolean(),
+  prompt: z.string().optional(),
   auth_types: z
     .array(z.number())
     .min(1, '至少需要选择一个登录方式')
@@ -84,7 +85,18 @@ const loginMethodSchema = z.object({
       button_desc: z.string().optional(),
     })
     .optional(),
-});
+}).refine(
+  (data) => {
+    if (data.need_review && !data.prompt?.trim()) {
+      return false;
+    }
+    return true;
+  },
+  {
+    message: '需要审批时，用户申请提示语不能为空',
+    path: ['prompt'],
+  }
+);
 
 type LoginMethodFormData = z.infer<typeof loginMethodSchema>;
 
@@ -106,6 +118,7 @@ const LoginMethod: React.FC = () => {
       enable_register: true,
       need_review: false,
       public_access: true,
+      prompt: '',
       auth_types: [AuthType.PASSWORD],
       password_config: {
         button_desc: '密码登录',
@@ -131,6 +144,7 @@ const LoginMethod: React.FC = () => {
   });
 
   const watchedAuthTypes = watch('auth_types');
+  const watchedNeedReview = watch('need_review');
   const isPasswordSelected = watchedAuthTypes?.includes(AuthType.PASSWORD) ?? false;
   const isOidcSelected = watchedAuthTypes?.includes(AuthType.OIDC) ?? false;
   const isWecomSelected = watchedAuthTypes?.includes(AuthType.WECOM) ?? false;
@@ -185,6 +199,7 @@ const LoginMethod: React.FC = () => {
           enable_register: enable_register ?? true,
           need_review: need_review ?? false,
           public_access: public_access ?? true,
+          prompt: res?.prompt,
           auth_types: authTypes as number[],
           password_config: passwordConfig,
           oidc_config: oidcConfig,
@@ -200,6 +215,12 @@ const LoginMethod: React.FC = () => {
 
   const onSubmit = async (formData: LoginMethodFormData) => {
     try {
+      // 验证用户申请提示语
+      if (formData.need_review && !formData.prompt?.trim()) {
+        message.error('请输入用户申请提示语');
+        return;
+      }
+
       // 验证OIDC配置
       if (formData.auth_types.includes(AuthType.OIDC)) {
         if (
@@ -279,6 +300,7 @@ const LoginMethod: React.FC = () => {
         enable_register: formData.enable_register,
         need_review: formData.need_review,
         public_access: formData.public_access,
+        prompt: formData.prompt,
         auth_infos: authInfos,
       };
 
@@ -380,6 +402,46 @@ const LoginMethod: React.FC = () => {
               )}
             />
           </Box>
+
+          {/* 用户申请提示语 - 仅在需要审批时显示 */}
+          {watchedNeedReview && (
+            <Box display="flex" alignItems="flex-start" sx={{ mt: 1 }}>
+              <Typography variant="body2" sx={{ minWidth: 170, mt: 1 }}>
+                用户申请提示语<span style={{ color: 'red' }}>*</span>
+              </Typography>
+              <Box sx={{ flex: 1 }}>
+                <Controller
+                  name="prompt"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      placeholder="如：您的注册申请已提交，请等待管理员审批。"
+                      required
+                      fullWidth
+                      size="small"
+                      multiline
+                      rows={2}
+                      error={!!errors.prompt}
+                      helperText={errors.prompt?.message}
+                      InputLabelProps={{
+                        shrink: false,
+                      }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          backgroundColor: '#F8F9FA',
+                          borderRadius: '10px',
+                        },
+                        '& .MuiInputBase-input': {
+                          fontSize: 14,
+                        },
+                      }}
+                    />
+                  )}
+                />
+              </Box>
+            </Box>
+          )}
 
           {/* 公开访问 */}
           <Box display="flex" alignItems="center">

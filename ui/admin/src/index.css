@@ -395,3 +395,9 @@ select:-webkit-autofill {
     --mui-palette-background-paper: transparent;
   }
 }
+.tiptap .MuiSelect-root{
+  background-color: unset!important;
+}
+.MuiPaper-root {
+  background-color: #fff!important;
+}

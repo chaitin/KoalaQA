@@ -147,9 +147,6 @@ const nextConfig = {
       const target = process.env.TARGET || 'https://httpbin.org'
       const imageTarget = process.env.TARGET || 'https://httpbin.org'
 
-      // 添加调试输出
-      console.log('🔧 Proxy target:', target)
-
       rewritesPath.push(
         ...[
           {

@@ -8,8 +8,21 @@ import { useAuthConfig } from '@/hooks/useAuthConfig'
 import { useForumId } from '@/hooks/useForumId'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
+import MenuIcon from '@mui/icons-material/Menu'
 import SearchIcon from '@mui/icons-material/Search'
-import { AppBar, Box, Button, InputAdornment, Link, OutlinedInput, Stack, Toolbar, Typography } from '@mui/material'
+import {
+  AppBar,
+  Box,
+  Button,
+  Drawer,
+  InputAdornment,
+  IconButton,
+  Link,
+  OutlinedInput,
+  Stack,
+  Toolbar,
+  Typography,
+} from '@mui/material'
 import { useBoolean } from 'ahooks'
 import Image from 'next/image'
 import { useParams, usePathname, useRouter } from 'next/navigation'
@@ -17,6 +30,7 @@ import { useCallback, useContext, useEffect, useState } from 'react'
 import ForumSelector from '../ForumSelector'
 import SearchResultModal from '../SearchResultModal'
 import LoggedInView from './loggedInView'
+import FilterPanel from '../filter-panel'
 
 interface HeaderProps {
   brandConfig: ModelSystemBrand
@@ -30,6 +44,7 @@ const Header = ({ brandConfig }: HeaderProps) => {
   const pathname = usePathname()
   const [backHref, setBackHref] = useState('/admin/ai')
   const [searchModalOpen, { setTrue: openSearchModal, setFalse: closeSearchModal }] = useBoolean(false)
+  const [mobileMenuOpen, { setTrue: openMobileMenu, setFalse: closeMobileMenu }] = useBoolean(false)
   const [searchInputValue, setSearchInputValue] = useState('')
   const [isMounted, setIsMounted] = useState(false)
 
@@ -40,12 +55,9 @@ const Header = ({ brandConfig }: HeaderProps) => {
   }, [closeSearchModal])
   const [showSearchInAppBar, setShowSearchInAppBar] = useState(false)
 
-  // 使用新的 useAuthConfig hook
-  const { authConfig } = useAuthConfig()
-
   // 使用ForumProvider中的动态数据
   const { forums } = useForum()
-
+  // console.log(forums)
   // 使用板块选择器 - 只在非登录/注册页面使用
   const isAuthPage = ['/login', '/register'].includes(pathname)
   const { forum_id, route_name, id } = useParams()
@@ -113,7 +125,7 @@ const Header = ({ brandConfig }: HeaderProps) => {
           rootMargin: '0px',
           // 当搜索框有任何部分可见时，threshold 为 0 表示只要有一点可见就认为可见
           threshold: 0,
-        }
+        },
       )
 
       // 使用 requestAnimationFrame 延迟观察，确保在 hydration 完成后再观察
@@ -215,169 +227,333 @@ const Header = ({ brandConfig }: HeaderProps) => {
   }, [handleCloseSearchModal, route_name, forums, router])
 
   return (
-    <AppBar
-      position='relative'
-      elevation={0}
-      sx={{
-        bgcolor: 'primary.main',
-        color: 'common.white',
-        backdropFilter: 'blur(12px)',
-      }}
-    >
-      <Toolbar sx={{ py: 0, display: { xs: 'none', sm: 'flex' }, color: 'common.white' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1 }}>
-          {brandConfig?.logo && brandConfig?.text ? (
-            <Stack
-              direction='row'
-              alignItems='center'
-              gap={1.5}
-              sx={{ cursor: 'pointer', color: 'common.white' }}
-              onClick={handleLogoClick}
-            >
+    <>
+      {/* Desktop Header */}
+      <AppBar
+        position='fixed'
+        elevation={0}
+        sx={{
+          bgcolor: 'primary.main',
+          color: 'common.white',
+          backdropFilter: 'blur(12px)',
+          display: { xs: 'none', sm: 'block' },
+        }}
+      >
+        <Toolbar sx={{ py: 0, color: 'common.white' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1 }}>
+            {brandConfig?.logo && brandConfig?.text ? (
+              <Stack
+                direction='row'
+                alignItems='center'
+                gap={1.5}
+                sx={{ cursor: 'pointer', color: 'common.white' }}
+                onClick={handleLogoClick}
+              >
+                <Box
+                  sx={{
+                    width: 36,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    fontSize: '1.25rem',
+                    color: 'common.white',
+                  }}
+                >
+                  <Image
+                    src={brandConfig.logo}
+                    alt='Logo'
+                    width={24}
+                    height={24}
+                    style={{
+                      objectFit: 'contain',
+                    }}
+                    unoptimized={true}
+                  />
+                </Box>
+                {brandConfig.text && (
+                  <Typography
+                    variant='h6'
+                    component='div'
+                    sx={{
+                      fontWeight: 700,
+                      color: 'common.white',
+                      fontSize: { xs: '1rem', md: '1.25rem' },
+                      letterSpacing: '-0.02em',
+                    }}
+                  >
+                    {brandConfig.text}
+                  </Typography>
+                )}
+              </Stack>
+            ) : (
               <Box
                 sx={{
-                  width: 36,
+                  borderRadius: 2,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontWeight: 700,
                   fontSize: '1.25rem',
                   color: 'common.white',
+                  cursor: 'pointer',
                 }}
+                onClick={handleLogoClick}
               >
+                <Image
+                  src='/inverse_logo-text.png'
+                  alt='Koala QA Logo'
+                  width={100}
+                  height={24}
+                  style={{ objectFit: 'contain' }}
+                />
+              </Box>
+            )}
+            {/* Forum切换tab */}
+            {forums && forums.length > 1 && <ForumSelector forums={forums} selectedForumId={currentForumId} />}
+          </Box>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {/* 搜索框 - 非登录/注册页面显示 */}
+            {showSearchInAppBar && (
+              <OutlinedInput
+                size='small'
+                placeholder='输入任意内容，使用 AI 搜索'
+                value={searchInputValue}
+                onChange={(e) => setSearchInputValue(e.target.value)}
+                onKeyDown={onInputSearch}
+                sx={{
+                  width: 300,
+                  color: 'common.white',
+                  transition: 'box-shadow 0.2s, background 0.2s',
+                  boxShadow: 'none',
+                  '& fieldset': { borderColor: 'rgba(255, 255, 255,0.3)!important', transition: 'border-width 0.2s' },
+                  '& .MuiOutlinedInput-root': {
+                    bgcolor: 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: '6px',
+                    fontSize: '0.875rem',
+                    height: '36px',
+                    color: 'common.white',
+                    transition: 'background 0.2s, box-shadow 0.2s',
+                    '&': {
+                      bgcolor: 'rgba(255, 255, 255, 0.22)',
+                      boxShadow: '0 0 0 2px #fff',
+                    },
+                    '& input': {
+                      color: 'common.white',
+                      fontSize: '0.875rem',
+                    },
+                  },
+                  '& input::placeholder': {
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    opacity: 1,
+                    fontSize: '13px!important',
+                  },
+                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#fff!important' },
+                }}
+                startAdornment={
+                  <InputAdornment position='start'>
+                    <SearchIcon sx={{ color: 'common.white', fontSize: 18, sition: 'font-size 0.2s' }} />
+                  </InputAdornment>
+                }
+              />
+            )}
+
+            {user?.uid ? (
+              <>
+                <LoggedInView user={user} adminHref={backHref} />
+              </>
+            ) : (
+              <>
+                <Button
+                  variant='contained'
+                  sx={{
+                    borderRadius: 1,
+                    height: 36,
+                    px: 2,
+                    fontSize: 14,
+                    textTransform: 'none',
+                    bgcolor: '#fff',
+                    color: 'primary.main',
+                    boxShadow: 'none',
+                    '&:hover': {
+                      boxShadow: 'none',
+                    },
+                  }}
+                  startIcon={<AccountCircleIcon sx={{ fontSize: 24 }} />}
+                  onClick={() => {
+                    plainRouter.push('/login')
+                  }}
+                >
+                  登录
+                </Button>
+              </>
+            )}
+          </Box>
+        </Toolbar>
+
+        {/* 搜索结果弹窗 */}
+        <SearchResultModal
+          open={searchModalOpen}
+          onClose={handleCloseSearchModal}
+          forumId={currentForumId}
+          initialQuery={searchInputValue}
+          onAsk={handleAsk}
+          onFeedback={handleFeedback}
+          onArticle={handleArticle}
+        />
+      </AppBar>
+
+      {/* Mobile Header */}
+      <AppBar
+        position='fixed'
+        elevation={0}
+        sx={{
+          bgcolor: 'primary.main',
+          color: 'common.white',
+          backdropFilter: 'blur(12px)',
+          display: { xs: 'block', sm: 'none' },
+        }}
+      >
+        <Toolbar sx={{ py: 1, px: 1, color: 'common.white' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
+            {/* Menu button */}
+            <IconButton
+              size='small'
+              onClick={openMobileMenu}
+              sx={{
+                color: 'common.white',
+                '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
+              }}
+            >
+              <MenuIcon />
+            </IconButton>
+
+            {/* Logo */}
+            <Box
+              sx={{
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                flexGrow: 1,
+                minWidth: 0,
+              }}
+              onClick={handleLogoClick}
+            >
+              {brandConfig?.logo ? (
                 <Image
                   src={brandConfig.logo}
                   alt='Logo'
                   width={24}
                   height={24}
-                  style={{
-                    objectFit: 'contain',
-                  }}
+                  style={{ objectFit: 'contain' }}
                   unoptimized={true}
                 />
-              </Box>
-              {brandConfig.text && (
-                <Typography
-                  variant='h6'
-                  component='div'
-                  sx={{
-                    fontWeight: 700,
-                    color: 'common.white',
-                    fontSize: { xs: '1rem', md: '1.25rem' },
-                    letterSpacing: '-0.02em',
-                  }}
-                >
-                  {brandConfig.text}
-                </Typography>
+              ) : (
+                <Image
+                  src='/inverse_logo-text.png'
+                  alt='Koala QA Logo'
+                  width={80}
+                  height={20}
+                  style={{ objectFit: 'contain' }}
+                />
               )}
-            </Stack>
-          ) : (
-            <Box
-              sx={{
-                borderRadius: 2,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 700,
-                fontSize: '1.25rem',
-                color: 'common.white',
-                cursor: 'pointer',
-              }}
-              onClick={handleLogoClick}
-            >
-              <Image
-                src='/inverse_logo-text.png'
-                alt='Koala QA Logo'
-                width={100}
-                height={24}
-                style={{ objectFit: 'contain' }}
-              />
             </Box>
-          )}
-          {/* Forum切换tab */}
-          {forums && forums.length > 1 && <ForumSelector forums={forums} selectedForumId={currentForumId} />}
-        </Box>
+          </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {/* 搜索框 - 非登录/注册页面显示 */}
-          {showSearchInAppBar && (
-            <OutlinedInput
+          {/* Right side actions */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            {/* Search button */}
+            <IconButton
               size='small'
-              placeholder='输入任意内容，使用 AI 搜索'
-              value={searchInputValue}
-              onChange={(e) => setSearchInputValue(e.target.value)}
-              onKeyDown={onInputSearch}
-              sx={{
-                width: 300,
-                color: 'common.white',
-                transition: 'box-shadow 0.2s, background 0.2s',
-                boxShadow: 'none',
-                '& fieldset': { borderColor: 'rgba(255, 255, 255,0.3)!important', transition: 'border-width 0.2s' },
-                '& .MuiOutlinedInput-root': {
-                  bgcolor: 'rgba(255, 255, 255, 0.1)',
-                  borderRadius: '6px',
-                  fontSize: '0.875rem',
-                  height: '36px',
-                  color: 'common.white',
-                  transition: 'background 0.2s, box-shadow 0.2s',
-                  '&': {
-                    bgcolor: 'rgba(255, 255, 255, 0.22)',
-                    boxShadow: '0 0 0 2px #fff',
-                  },
-                  '& input': {
-                    color: 'common.white',
-                    fontSize: '0.875rem',
-                  },
-                },
-                '& input::placeholder': {
-                  color: 'rgba(255, 255, 255, 0.7)',
-                  opacity: 1,
-                  fontSize: '13px!important',
-                },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#fff!important' },
+              onClick={() => {
+                // Open search modal directly
+                if (searchInputValue.trim()) {
+                  openSearchModal()
+                } else {
+                  // If no search input, just focus to allow typing
+                  setSearchInputValue('')
+                  // Trigger search modal with empty input to show search interface
+                  setTimeout(() => openSearchModal(), 0)
+                }
               }}
-              startAdornment={
-                <InputAdornment position='start'>
-                  <SearchIcon sx={{ color: 'common.white', fontSize: 18, sition: 'font-size 0.2s' }} />
-                </InputAdornment>
-              }
-            />
-          )}
+              sx={{
+                color: 'common.white',
+                '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
+              }}
+            >
+              <SearchIcon sx={{ fontSize: 20 }} />
+            </IconButton>
 
-          {user?.uid ? (
-            <>
+            {user?.uid ? (
               <LoggedInView user={user} adminHref={backHref} />
-            </>
-          ) : (
-            <>
-              <Button
-                variant='contained'
+            ) : (
+              <IconButton
+                size='small'
+                onClick={() => plainRouter.push('/login')}
                 sx={{
-                  borderRadius: 1,
-                  height: 36,
-                  px: 2,
-                  fontSize: 14,
-                  textTransform: 'none',
-                  bgcolor: '#fff',
-                  color: 'primary.main',
-                  boxShadow: 'none',
-                  '&:hover': {
-                    boxShadow: 'none',
-                  },
-                }}
-                startIcon={<AccountCircleIcon sx={{ fontSize: 24 }} />}
-                onClick={() => {
-                  plainRouter.push('/login')
+                  color: 'common.white',
+                  '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
                 }}
               >
-                登录
-              </Button>
-            </>
-          )}
-        </Box>
-      </Toolbar>
+                <AccountCircleIcon sx={{ fontSize: 20 }} />
+              </IconButton>
+            )}
+          </Box>
+        </Toolbar>
+      </AppBar>
 
-      {/* 搜索结果弹窗 */}
+      {/* Mobile Menu Drawer */}
+      <Drawer
+        anchor='left'
+        open={mobileMenuOpen}
+        onClose={closeMobileMenu}
+        sx={{
+          '& .MuiDrawer-paper': {
+            width: 280,
+            bgcolor: 'background.paper',
+          },
+        }}
+      >
+        <Stack sx={{ p: 2 }} spacing={2}>
+          {forums && forums.length > 1 && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {forums.map((forum) => {
+                const isSelected = currentForumId === forum.id
+                return (
+                  <Button
+                    key={forum.id}
+                    onClick={() => {
+                      const routePath = forum.route_name ? `/${forum.route_name}` : `/${forum.id}`
+                      router.push(routePath)
+                      closeMobileMenu()
+                    }}
+                    sx={{
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      fontSize: '0.875rem',
+                      borderRadius: '8px',
+                      py: 1.5,
+                      px: 2,
+                      justifyContent: 'flex-start',
+                      bgcolor: isSelected ? 'primary.main' : 'transparent',
+                      color: isSelected ? 'primary.contrastText' : 'text.primary',
+                      '&:hover': {
+                        bgcolor: isSelected ? 'primary.dark' : 'action.hover',
+                      },
+                    }}
+                  >
+                    {forum.name}
+                  </Button>
+                )
+              })}
+            </Box>
+          )}
+          <FilterPanel />
+        </Stack>
+      </Drawer>
+
+      {/* Global Search Result Modal */}
       <SearchResultModal
         open={searchModalOpen}
         onClose={handleCloseSearchModal}
@@ -387,7 +563,19 @@ const Header = ({ brandConfig }: HeaderProps) => {
         onFeedback={handleFeedback}
         onArticle={handleArticle}
       />
-    </AppBar>
+    </>
+  )
+}
+
+// Spacer component to account for fixed header
+export const HeaderSpacer = () => {
+  return (
+    <Box
+      sx={{
+        display: { xs: 'block', sm: 'none' },
+        height: '64px', // Adjusted for mobile header height (Toolbar only)
+      }}
+    />
   )
 }
 

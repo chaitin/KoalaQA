@@ -5,6 +5,7 @@ import { AuthProvider, CommonProvider, GuestActivationProvider } from '@/compone
 import { ForumProvider } from '@/contexts/ForumContext'
 import { AuthConfigProvider } from '@/contexts/AuthConfigContext'
 import { GroupDataProvider } from '@/contexts/GroupDataContext'
+import { SystemDiscussionProvider } from '@/contexts/SystemDiscussionContext'
 import ServerErrorBoundary from '@/components/ServerErrorBoundary'
 import { safeApiCall, safeLogError } from '@/lib/error-utils'
 import theme from '@/theme'
@@ -52,11 +53,11 @@ export async function generateMetadata(): Promise<Metadata> {
     // 构建时如果无法获取品牌信息，使用默认值
     safeLogError('Failed to fetch brand info during build', error)
   }
-  
+
   return {
     title: {
       default: `${brandName} - 技术讨论社区`,
-      template: `%s | ${brandName}`
+      template: `%s | ${brandName}`,
     },
     description: '一个专业的技术讨论和知识分享社区',
     keywords: ['技术讨论', '问答', '知识分享', '开发者社区'],
@@ -118,12 +119,12 @@ async function getForumData(authConfig: any, user: any) {
   try {
     // 检查是否允许公共访问或用户已登录
     const canAccess = authConfig?.public_access || user?.uid
-    
+
     if (!canAccess) {
       // 如果不允许公共访问且用户未登录，返回空数组
       return []
     }
-    
+
     const forumData = await getForum()
     return forumData || []
   } catch (error) {
@@ -147,12 +148,8 @@ async function getAuthConfigData() {
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
   // 首先获取认证配置和用户数据，因为论坛数据依赖这些信息
-  const [brandResponse, authConfig, user] = await Promise.all([
-    getSystemBrand(),
-    getAuthConfigData(),
-    getUserData()
-  ])
-  
+  const [brandResponse, authConfig, user] = await Promise.all([getSystemBrand(), getAuthConfigData(), getUserData()])
+
   // 基于认证状态和公共访问配置获取论坛数据
   const forums = await getForumData(authConfig, user)
 
@@ -165,21 +162,18 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
         {/* DNS 预解析优化 */}
         <link rel='dns-prefetch' href='//fonts.googleapis.com' />
         <link rel='preconnect' href='//fonts.googleapis.com' crossOrigin='anonymous' />
-        <link 
-          rel="icon" 
-          href={brand?.logo || '/logo.svg'} 
-        />
+        <link rel='icon' href={brand?.logo || '/logo.svg'} />
       </head>
       <body className={`${monoFont.variable} ${alimamashuheitiFont.variable}`}>
         {/* 图标字体预加载 - beforeInteractive 确保在交互前加载 */}
         <Script src='/font/iconfont.js' strategy='beforeInteractive' />
-        
+
         {/* 埋点图片 - 用于采集用户使用记录 */}
-        <img 
-          src="https://release.baizhi.cloud/koala-qa/icon.png" 
-          alt="" 
+        <img
+          src='https://release.baizhi.cloud/koala-qa/icon.png'
+          alt=''
           style={{ display: 'none', position: 'absolute', width: 0, height: 0 }}
-          aria-hidden="true"
+          aria-hidden='true'
         />
 
         <ServerErrorBoundary>
@@ -188,19 +182,24 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
               <ForumProvider initialForums={forums}>
                 <CommonProvider>
                   <GroupDataProvider>
-                    <AppRouterCacheProvider>
-                      <ThemeProvider theme={theme}>
-                        <CssBaseline />
-                        <GuestActivationProvider>
-                          <PageViewTracker />
-                          <Header brandConfig={brand} initialForums={forums} />
-                          <main id='main-content' style={{ backgroundColor: '#ffffff', height: 'calc(100vh - 64px)', overflow: 'auto' }}>
-                            {props.children}
-                          </main>
-                          <Scroll />
-                        </GuestActivationProvider>
-                      </ThemeProvider>
-                    </AppRouterCacheProvider>
+                    <SystemDiscussionProvider>
+                      <AppRouterCacheProvider>
+                        <ThemeProvider theme={theme}>
+                          <CssBaseline />
+                          <GuestActivationProvider>
+                            <PageViewTracker />
+                            <Header brandConfig={brand} initialForums={forums} />
+                            <main
+                              id='main-content'
+                              style={{ backgroundColor: '#ffffff', height: 'calc(100vh - 64px)', overflow: 'auto' }}
+                            >
+                              {props.children}
+                            </main>
+                            <Scroll />
+                          </GuestActivationProvider>
+                        </ThemeProvider>
+                      </AppRouterCacheProvider>
+                    </SystemDiscussionProvider>
                   </GroupDataProvider>
                 </CommonProvider>
               </ForumProvider>

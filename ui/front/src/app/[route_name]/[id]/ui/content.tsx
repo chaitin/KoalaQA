@@ -352,10 +352,8 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         onOk={onSubmit}
         onClose={() => setEditCommentModalVisible(false)}
       />
-      <Box
+      <Stack
         sx={{
-          display: 'flex',
-          flexDirection: 'column',
           flex: isArticlePost ? 'unset' : 1,
           '& .md-container .MuiIconButton-root + *': {
             display: 'none',
@@ -442,7 +440,12 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                     </Box>
                   </Box>
                 )}
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, gap: 1.5 }}>
+                <Stack
+                  direction={'row'}
+                  flexWrap='wrap'
+                  justifyContent='space-between'
+                  sx={{ alignItems: 'center', mb: 1.5, gap: 1.5 }}
+                >
                   <Stack direction={'row'} spacing={1} alignItems='center'>
                     {/* 用户名区域 */}
                     {answerProfileHref ? (
@@ -521,7 +524,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                     )}
                   </Stack>
 
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>
+                  <Stack direction='row' sx={{ alignItems: 'center', gap: 1, ml: 'auto', flex: {xs: 1, sm: 'unset'} }}>
                     {/* 采纳按钮 - 只有问答类型且问题作者或管理员且问题未被采纳时才显示 */}
                     {!isArticlePost &&
                       data.type === ModelDiscussionType.DiscussionTypeQA &&
@@ -587,8 +590,8 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                         }}
                       />
                     )}
-                    {/* 问答类型显示点赞/点踩按钮 */}
-                    {!isArticlePost && (
+                    {/* 问答类型显示点赞/点踩按钮 - 已关闭帖子不显示 */}
+                    {!isArticlePost && !isClosedQAPost && (
                       <>
                         <Stack
                           component={Button}
@@ -613,7 +616,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                               transition: 'transform 0.1s ease-out',
                             },
                           }}
-                          disabled={isClosedQAPost}
                           onClick={() => handleVote(answer.id!, 'up')}
                         >
                           <Icon
@@ -658,7 +660,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                               transition: 'transform 0.1s ease-out',
                             },
                           }}
-                          disabled={isClosedQAPost}
                           onClick={() => handleVote(answer.id!, 'down')}
                         >
                           <Icon
@@ -695,7 +696,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                         onClick={(e) => handleClick(e, answer.content || '', answer)}
                         sx={{
                           color: '#6b7280',
-                          ml: 0.5,
+                          ml: { xs: 'auto', sm: 0.5 },
                           backgroundColor: 'transparent',
                           transition: 'all 0.15s ease-in-out',
                           '&:hover': { color: '#000000', bgcolor: '#f3f4f6' },
@@ -710,8 +711,8 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                         <MoreVertIcon sx={{ fontSize: 18 }} />
                       </IconButton>
                     )}
-                  </Box>
-                </Box>
+                  </Stack>
+                </Stack>
 
                 <Box
                   sx={{
@@ -768,7 +769,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                               '&:last-child': { mb: 0, pb: 0 },
                             }}
                           >
-                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, gap: 1.5 }}>
+                            <Stack direction='row' flexWrap='wrap' sx={{ alignItems: 'center', mb: 1.5, gap: 1.5 }}>
                               <Stack direction={'row'} spacing={1} alignItems='center'>
                                 {/* 用户名区域 */}
                                 {replyProfileHref ? (
@@ -883,8 +884,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                   </IconButton>
                                 )}
                               </Box>
-
-                            </Box>
+                            </Stack>
                             <EditorContent
                               content={reply.content}
                               sx={{
@@ -896,102 +896,101 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                           </Box>
                         )
                       })}
-                      <Box sx={{ mt: (answer.replies?.length || 0) > 0 ? 2 : 0 }}>
-                        {!showCommentEditors[answer.id!] ? (
-                          <OutlinedInput
-                            fullWidth
-                            size='small'
-                            placeholder={isArticlePost ? '添加评论...' : '添加评论...'}
-                            onClick={() => handleReplyInputClick(answer.id!)}
-                            disabled={isClosedPost}
-                            sx={{
-                              bgcolor: '#fafbfc',
-                              fontSize: '0.875rem',
-                              cursor: isClosedPost ? 'not-allowed' : 'pointer',
-                              '& fieldset': { borderColor: '#e5e7eb' },
-                              '&:hover fieldset': isClosedPost ? undefined : { borderColor: '#d1d5db' },
-                              '& input': {
-                                cursor: isClosedPost ? 'not-allowed' : 'pointer',
-                              },
-                            }}
-                            endAdornment={
-                              <InputAdornment position='end'>
-                                <ArrowForwardIcon sx={{ fontSize: 16, color: '#9ca3af' }} />
-                              </InputAdornment>
-                            }
-                          />
-                        ) : (
-                          <>
-                            <Box
+                      {!isClosedPost && (
+                        <Box sx={{ mt: (answer.replies?.length || 0) > 0 ? 2 : 0 }}>
+                          {!showCommentEditors[answer.id!] ? (
+                            <OutlinedInput
+                              fullWidth
+                              size='small'
+                              placeholder={isArticlePost ? '添加评论...' : '添加评论...'}
+                              onClick={() => handleReplyInputClick(answer.id!)}
                               sx={{
-                                mb: 3,
-                                borderRadius: '6px',
-                                overflow: 'hidden',
-                                border: '1px solid #000000',
-                                px: 1,
-                                minHeight: '120px'
+                                bgcolor: '#fafbfc',
+                                fontSize: '0.875rem',
+                                cursor: 'pointer',
+                                '& fieldset': { borderColor: '#e5e7eb' },
+                                '&:hover fieldset': { borderColor: '#d1d5db' },
+                                '& input': {
+                                  cursor: 'pointer',
+                                },
                               }}
-                            >
-                              <EditorWrap
-                                key={commentEditorKeys[answer.id!] || 0}
-                                ref={(ref) => {
-                                  if (ref) {
-                                    commentEditorRefs.current[answer.id!] = ref
-                                  }
-                                }}
-                                value=''
-                                readonly={isClosedPost}
-                              />
-                            </Box>
-                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                              <Button
-                                disableRipple
-                                onClick={() => {
-                                  setShowCommentEditors((prev) => ({ ...prev, [answer.id!]: false }))
-                                  setCommentEditorKeys((prev) => ({
-                                    ...prev,
-                                    [answer.id!]: (prev[answer.id!] || 0) + 1,
-                                  }))
-                                }}
+                              endAdornment={
+                                <InputAdornment position='end'>
+                                  <ArrowForwardIcon sx={{ fontSize: 16, color: '#9ca3af' }} />
+                                </InputAdornment>
+                              }
+                            />
+                          ) : (
+                            <>
+                              <Box
                                 sx={{
-                                  textTransform: 'none',
-                                  color: '#6b7280',
-                                  fontWeight: 600,
-                                  fontSize: '0.875rem',
-                                  transition: 'all 0.15s ease-in-out',
-                                  '&:hover': { bgcolor: '#f3f4f6', transform: 'scale(1.02)' },
-                                  '&:active': { transform: 'scale(0.98)' },
-                                }}
-                              >
-                                取消
-                              </Button>
-                              <Button
-                                disableRipple
-                                variant='contained'
-                                endIcon={<ArrowForwardIcon />}
-                                onClick={() => handleSubmitComment(answer.id!)}
-                                disabled={isClosedPost}
-                                sx={{
-                                  color: '#ffffff',
-                                  textTransform: 'none',
-                                  fontWeight: 600,
-                                  px: 2,
-                                  py: 0.5,
+                                  mb: 3,
                                   borderRadius: '6px',
-                                  fontSize: '0.875rem',
-                                  transition: 'all 0.15s ease-in-out',
-                                  '&:hover': {
-                                    transform: 'translateY(-1px)',
-                                  },
-                                  '&:active': { transform: 'translateY(0) scale(0.98)' },
+                                  overflow: 'hidden',
+                                  border: '1px solid #000000',
+                                  px: 1,
+                                  minHeight: '120px',
                                 }}
                               >
-                                发送评论
-                              </Button>
-                            </Box>
-                          </>
-                        )}
-                      </Box>
+                                <EditorWrap
+                                  key={commentEditorKeys[answer.id!] || 0}
+                                  ref={(ref) => {
+                                    if (ref) {
+                                      commentEditorRefs.current[answer.id!] = ref
+                                    }
+                                  }}
+                                  value=''
+                                />
+                              </Box>
+                              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                                <Button
+                                  disableRipple
+                                  onClick={() => {
+                                    setShowCommentEditors((prev) => ({ ...prev, [answer.id!]: false }))
+                                    setCommentEditorKeys((prev) => ({
+                                      ...prev,
+                                      [answer.id!]: (prev[answer.id!] || 0) + 1,
+                                    }))
+                                  }}
+                                  sx={{
+                                    textTransform: 'none',
+                                    color: '#6b7280',
+                                    fontWeight: 600,
+                                    fontSize: '0.875rem',
+                                    transition: 'all 0.15s ease-in-out',
+                                    '&:hover': { bgcolor: '#f3f4f6', transform: 'scale(1.02)' },
+                                    '&:active': { transform: 'scale(0.98)' },
+                                  }}
+                                >
+                                  取消
+                                </Button>
+                                <Button
+                                  disableRipple
+                                  variant='contained'
+                                  endIcon={<ArrowForwardIcon />}
+                                  onClick={() => handleSubmitComment(answer.id!)}
+                                  sx={{
+                                    color: '#ffffff',
+                                    textTransform: 'none',
+                                    fontWeight: 600,
+                                    px: 2,
+                                    py: 0.5,
+                                    borderRadius: '6px',
+                                    fontSize: '0.875rem',
+                                    transition: 'all 0.15s ease-in-out',
+                                    '&:hover': {
+                                      transform: 'translateY(-1px)',
+                                    },
+                                    '&:active': { transform: 'translateY(0) scale(0.98)' },
+                                  }}
+                                >
+                                  发送评论
+                                </Button>
+                              </Box>
+                            </>
+                          )}
+                        </Box>
+                      )}
                     </Box>
                   </Collapse>
                 </Box>
@@ -999,26 +998,25 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
             )
           })}
         </Box>
-        {/* Answers section for questions */}
-        {!isReplyEditorVisible && (
+        {/* Answers section for questions - 已关闭帖子不显示编辑器 */}
+        {!isReplyEditorVisible && !isClosedPost && (
           <Paper
             elevation={0}
             sx={{
               position: isArticlePost ? 'unset' : 'sticky',
-              bottom: '24px',
+              bottom: 0,
+              pb: 3,
               width: '100%',
               maxWidth: { lg: '756px' },
               mx: 'auto',
-              mb: { xs: 2, md: 3 },
               mt: isArticlePost ? 0 : 'auto',
               zIndex: 9,
+              borderRadius: 0,
               bgcolor: '#ffffff',
-              borderRadius: '12px',
-              border: '1px solid rgba(33, 34, 45, 1)',
               '&::before': {
                 content: '""',
                 position: 'absolute',
-                top: '-41px',
+                top: '-38px',
                 left: '-1px',
                 right: '-1px',
                 height: '40px',
@@ -1028,7 +1026,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
               },
             }}
           >
-            <Box sx={{ p: 1 }}>
+            <Box sx={{ p: 1, border: '1px solid rgba(33, 34, 45, 1)', borderRadius: '12px',}}>
               {isArticlePost && !showAnswerEditor ? (
                 <OutlinedInput
                   fullWidth
@@ -1058,7 +1056,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                       borderRadius: '6px',
                       px: 1,
                       '& .tiptap:focus': { backgroundColor: 'transparent' },
-                      '& .tiptap': { overflow: 'auto' },
+                      '& .tiptap': { overflow: 'auto', maxHeight: '40vh' },
                     }}
                     tabIndex={-1}
                     onClick={() => checkAuth()}
@@ -1132,7 +1130,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
             </Box>
           </Paper>
         )}
-      </Box>
+      </Stack>
     </>
   )
 }
