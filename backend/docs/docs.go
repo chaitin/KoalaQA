@@ -3937,6 +3937,31 @@ const docTemplate = `{
                 }
             }
         },
+        "/discussion/summary": {
+            "get": {
+                "description": "discussions summary",
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "discussions summary",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "uuids",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/discussion/upload": {
             "post": {
                 "description": "discussion upload file",
@@ -5535,6 +5560,9 @@ const docTemplate = `{
                 "need_review": {
                     "type": "boolean"
                 },
+                "prompt": {
+                    "type": "string"
+                },
                 "public_access": {
                     "type": "boolean"
                 },
@@ -6797,6 +6825,9 @@ const docTemplate = `{
                 },
                 "enable_register": {
                     "type": "boolean"
+                },
+                "prompt": {
+                    "type": "string"
                 },
                 "public_access": {
                     "type": "boolean"

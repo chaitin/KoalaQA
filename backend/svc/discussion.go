@@ -444,6 +444,48 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 	return &res, nil
 }
 
+type DiscussionSummaryReq struct {
+	UUIDs model.StringArray `form:"uuids" binding:"required"`
+}
+
+func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummaryReq) (*LLMStream, error) {
+	var discs []model.DiscussionListItem
+	err := d.in.DiscRepo.List(ctx, &discs, repo.QueryWithEqual("uuid", req.UUIDs, repo.EqualOPEqAny))
+	if err != nil {
+		return nil, err
+	}
+
+	if len(discs) == 0 {
+		return nil, errors.New("invalid request")
+	}
+
+	forumM := make(map[uint]struct{})
+	for _, disc := range discs {
+		if _, ok := forumM[disc.ForumID]; ok {
+			continue
+		}
+
+		ok, err := d.in.UserRepo.HasForumPermission(ctx, uid, disc.ForumID)
+		if err != nil {
+			return nil, err
+		}
+
+		if !ok {
+			return nil, errPermission
+		}
+		forumM[disc.ForumID] = struct{}{}
+	}
+
+	userPrompt, err := llm.DiscussionSummaryUserPrompt(discs)
+	if err != nil {
+		return nil, err
+	}
+
+	return d.in.LLM.StreamChat(ctx, llm.DiscussionSummarySystemPrompt, userPrompt, map[string]any{
+		"Discussions": discs,
+	})
+}
+
 func (d *Discussion) DetailByUUID(ctx context.Context, uid uint, uuid string) (*model.DiscussionDetail, error) {
 	discussion, err := d.in.DiscRepo.DetailByUUID(ctx, uid, uuid)
 	if err != nil {
@@ -966,6 +1008,13 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 		ToID:          comment.UserID,
 	}
 	d.in.Pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
+	d.in.Pub.Publish(ctx, topic.TopicCommentChange, topic.MsgCommentChange{
+		OP:       topic.OPAccept,
+		DiscID:   disc.ID,
+		DiscUUID: discUUID,
+		CommID:   commentID,
+		RagID:    comment.RagID,
+	})
 
 	go d.RecalculateHot(discUUID)
 

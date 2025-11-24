@@ -1,6 +1,8 @@
 package router
 
 import (
+	"io"
+
 	"github.com/chaitin/koalaqa/pkg/context"
 	"github.com/chaitin/koalaqa/server"
 	"github.com/chaitin/koalaqa/svc"
@@ -21,6 +23,7 @@ func init() {
 func (d *discussion) Route(h server.Handler) {
 	g := h.Group("/discussion")
 	g.GET("", d.List)
+	g.GET("/summary", d.Summary)
 	g.GET("/:disc_id", d.Detail)
 	g.GET("/:disc_id/similarity", d.ListSimilarity)
 }
@@ -46,6 +49,42 @@ func (d *discussion) List(ctx *context.Context) {
 		return
 	}
 	ctx.Success(res)
+}
+
+// Summary
+// @Summary discussions summary
+// @Description discussions summary
+// @Tags discussion
+// @Produce text/event-stream
+// @Param req query svc.DiscussionSummaryReq false "req params"
+// @Router /discussion/summary [get]
+func (d *discussion) Summary(ctx *context.Context) {
+	var req svc.DiscussionSummaryReq
+	err := ctx.ShouldBindQuery(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	stream, err := d.disc.Summary(ctx, ctx.GetUser().UID, req)
+	if err != nil {
+		ctx.InternalError(err, "get summary stream failed")
+		return
+	}
+	defer stream.Close()
+
+	ctx.Writer.Header().Set("X-Accel-Buffering", "no")
+
+	ctx.Stream(func(_ io.Writer) bool {
+		content, ok := stream.Text(ctx)
+		if !ok {
+			ctx.SSEvent("end", true)
+			return false
+		}
+
+		ctx.SSEvent("text", content)
+		return true
+	})
 }
 
 // ListSimilarity

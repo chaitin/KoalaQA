@@ -1,6 +1,8 @@
 package util
 
-import "time"
+import (
+	"time"
+)
 
 func TodayTrunc() time.Time {
 	return DayTrunc(time.Now())
