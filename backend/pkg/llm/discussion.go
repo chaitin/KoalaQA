@@ -43,9 +43,18 @@ const discussionPostTemplate = `
 ### ID：{{.Discussion.ID}}
 ### 标题：{{.Discussion.Title}}
 ### 内容：{{.Discussion.Content}}
+### 发帖人：{{.Discussion.UserName}}
 ### 时间：{{formatTime .Discussion.CreatedAt}}
 {{- if .Discussion.Tags}}
 ### 标签：{{join .Discussion.Tags ", "}}
+{{- end}}
+### 解决状态：{{if eq .Discussion.Resolved 1 }}已解决{{else if eq .Discussion.Resolved 2 }}已关闭{{else}}待解决{{end}}
+
+{{- if .CommentTree}}
+## 评论楼层结构
+{{- range $i, $node := .CommentTree}}
+楼层{{add $i 1}} {{renderComment $node ""}}
+{{- end}}
 {{- end}}
 `
 
@@ -59,7 +68,7 @@ const discussionFullTemplate = `
 {{- if .Discussion.Tags}}
 ### 帖子标签：{{join .Discussion.Tags ", "}}
 {{- end}}
-### 解决状态：{{if eq .Discussion.Resolved 1 }}已解决{{else}}待解决{{end}}
+### 解决状态：{{if eq .Discussion.Resolved 1 }}已解决{{else if eq .Discussion.Resolved 2 }}已关闭{{else}}待解决{{end}}
 
 ## 评论楼层结构
 {{- if .CommentTree}}
@@ -101,6 +110,9 @@ func (t *DiscussionPromptTemplate) BuildPostPrompt() (string, error) {
 	if err := t.initPostTemplate(); err != nil {
 		return "", fmt.Errorf("初始化帖子模版失败: %w", err)
 	}
+
+	// 构建评论树
+	t.CommentTree = t.buildCommentTree()
 
 	var buf bytes.Buffer
 	if err := t.template.Execute(&buf, t); err != nil {
@@ -193,6 +205,10 @@ func (t *DiscussionPromptTemplate) renderComment(node *CommentNode, prefix strin
 
 // buildCommentTree 构建评论树结构
 func (t *DiscussionPromptTemplate) buildCommentTree() []*CommentNode {
+	if len(t.AllComments) == 0 {
+		return nil
+	}
+
 	// 创建评论映射
 	commentMap := make(map[uint]*CommentNode)
 	var rootNodes []*CommentNode

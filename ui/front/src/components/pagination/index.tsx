@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { styled, SxProps } from '@mui/material/styles';
+import { styled, SxProps, useTheme } from '@mui/material/styles';
 import {
   Pagination as MuiPage,
   Select,
@@ -8,6 +8,8 @@ import {
   InputBase,
   PaginationRenderItemParams,
   SelectChangeEvent,
+  Box,
+  useMediaQuery,
 } from '@mui/material';
 import PageItem from './PageItem';
 import Text from '@/components/text';
@@ -84,6 +86,8 @@ const Pagination: React.FC<PaginationProps> = (props) => {
     onRowsPerPageChange,
     sx,
   } = props;
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const pageCount = getPageCount(count, rowsPerPage);
   const [input, setInput] = useState<string>('');
 
@@ -123,47 +127,78 @@ const Pagination: React.FC<PaginationProps> = (props) => {
   }, []);
 
   return (
-    <FlexRow sx={sx}>
-      <Flex>
-        {rowsPerPageOptions && (
-          <>
-            <Select
-              variant='outlined'
-              size='small'
-              value={count ? rowsPerPage : ''}
-              input={<NarrowInput />}
-              sx={{ marginRight: 1, minWidth: '80px', backgroundColor: '#fff' }}
-              onChange={onRowsPerPageChange}
-            >
-              {rowsPerPageOptions.map((option) => (
-                <MenuItem key={`rows-pre-page-${option}`} value={option}>
-                  {option}
-                </MenuItem>
-              ))}
-            </Select>
-            <MiddleText size='xs'>条每页，共{count}条</MiddleText>
-          </>
-        )}
-      </Flex>
-      <Flex>
+    <FlexRow
+      sx={{
+        ...sx,
+        flexDirection: isMobile ? 'column' : 'row',
+        gap: isMobile ? 2 : 0,
+        alignItems: isMobile ? 'center' : 'stretch',
+      }}
+    >
+      {/* 每页条数选择器 - 移动端隐藏或简化 */}
+      {!isMobile && rowsPerPageOptions && (
+        <Flex>
+          <Select
+            variant='outlined'
+            size='small'
+            value={count ? rowsPerPage : ''}
+            input={<NarrowInput />}
+            sx={{ marginRight: 1, minWidth: '80px', backgroundColor: '#fff' }}
+            onChange={onRowsPerPageChange}
+          >
+            {rowsPerPageOptions.map((option) => (
+              <MenuItem key={`rows-pre-page-${option}`} value={option}>
+                {option}
+              </MenuItem>
+            ))}
+          </Select>
+          <MiddleText size='xs'>条每页，共{count}条</MiddleText>
+        </Flex>
+      )}
+
+      {/* 分页导航 */}
+      <Flex
+        sx={{
+          flexDirection: isMobile ? 'column' : 'row',
+          alignItems: 'center',
+          gap: isMobile ? 1 : 0,
+        }}
+      >
         <MuiPage
           variant='outlined'
           color='primary'
           renderItem={renderPageItem}
           count={pageCount}
           page={page}
-          boundaryCount={0}
+          boundaryCount={isMobile ? 1 : 0}
+          siblingCount={isMobile ? 1 : 2}
           onChange={onPageChange}
+          size={isMobile ? 'small' : 'medium'}
         />
-        <MiddleText size='xs'>跳至</MiddleText>
-        <SimpleInput
-          size={'small'}
-          value={input}
-          onChange={handleInputChange}
-          onKeyUp={handlePressEnter}
-        />
-        <MiddleText size='xs'>/ {pageCount}页</MiddleText>
+
+        {/* 页面跳转输入框 - 移动端隐藏 */}
+        {!isMobile && (
+          <>
+            <MiddleText size='xs'>跳至</MiddleText>
+            <SimpleInput
+              size={'small'}
+              value={input}
+              onChange={handleInputChange}
+              onKeyUp={handlePressEnter}
+            />
+            <MiddleText size='xs'>/ {pageCount}页</MiddleText>
+          </>
+        )}
       </Flex>
+
+      {/* 移动端显示简单的页面信息 */}
+      {isMobile && (
+        <Box sx={{ textAlign: 'center' }}>
+          <MiddleText size='xs'>
+            第 {page} / {pageCount} 页，共 {count} 条
+          </MiddleText>
+        </Box>
+      )}
     </FlexRow>
   );
 };

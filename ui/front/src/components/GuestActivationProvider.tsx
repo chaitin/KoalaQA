@@ -1,18 +1,10 @@
 'use client'
 
-import { postUserReviewGuest } from '@/api'
+import { postUserReviewGuest, getUserLoginMethod } from '@/api'
 import Message from './alert'
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material'
+import { Box, Button, Dialog, DialogContent, DialogTitle, Stack, TextField, Tooltip, Typography } from '@mui/material'
 import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from 'react'
+import { useRequest } from 'ahooks'
 
 interface GuestActivationContextType {
   openModal: () => void
@@ -33,6 +25,11 @@ const GuestActivationProvider = ({ children }: { children: ReactNode }) => {
   const [reason, setReason] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  // 获取登录配置以获取prompt
+  const { data: loginConfig } = useRequest(getUserLoginMethod, {
+    manual: false,
+  })
 
   const handleClose = useCallback(() => {
     setOpen(false)
@@ -84,10 +81,24 @@ const GuestActivationProvider = ({ children }: { children: ReactNode }) => {
           激活账号
         </DialogTitle>
         <DialogContent>
-          <Stack spacing={3}>
-            <Typography color='text.secondary' fontSize={14}>
-              您的账号尚未激活，请填写申请理由并提交，我们会尽快处理。
-            </Typography>
+          <Stack spacing={3} sx={{ fontSize: '14px' }}>
+            <Tooltip title={loginConfig?.prompt || '您的账号尚未激活，请填写申请理由并提交，我们会尽快处理。'}>
+              <Typography
+                color='text.secondary'
+                fontSize={14}
+                sx={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: 3,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                }}
+              >
+                {loginConfig?.prompt || '您的账号尚未激活，请填写申请理由并提交，我们会尽快处理。'}
+              </Typography>
+            </Tooltip>
             <Box>
               <TextField
                 multiline
@@ -106,11 +117,7 @@ const GuestActivationProvider = ({ children }: { children: ReactNode }) => {
                 helperText={error}
               />
             </Box>
-            <Button
-              variant='contained'
-              onClick={handleSubmit}
-              disabled={submitting}
-            >
+            <Button variant='contained' onClick={handleSubmit} disabled={submitting}>
               {submitting ? '提交中...' : '提交申请'}
             </Button>
           </Stack>
@@ -121,4 +128,3 @@ const GuestActivationProvider = ({ children }: { children: ReactNode }) => {
 }
 
 export default GuestActivationProvider
-

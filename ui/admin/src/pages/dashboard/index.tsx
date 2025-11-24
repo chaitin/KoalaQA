@@ -114,12 +114,20 @@ const getTimeRangeBegin = (timeRange: TimeRange): number => {
     case 'today':
       begin.setHours(0, 0, 0, 0);
       break;
-    case 'week':
-      begin.setDate(now.getDate() - 7);
+    case 'week': {
+      // 当前周：从本周一0点开始
+      const dayOfWeek = now.getDay(); // 0是周日，1是周一，...，6是周六
+      const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // 如果是周日，需要回退6天到周一
+      begin.setDate(now.getDate() - daysSinceMonday);
+      begin.setHours(0, 0, 0, 0);
       break;
-    case 'month':
-      begin.setDate(now.getDate() - 30);
+    }
+    case 'month': {
+      // 当前月：从本月1号0点开始
+      begin.setDate(1);
+      begin.setHours(0, 0, 0, 0);
       break;
+    }
   }
 
   return Math.floor(begin.getTime() / 1000);
@@ -278,17 +286,16 @@ const generateTimeSeries = (timeRange: TimeRange): { name: string; timestamp: nu
       });
     }
   } else if (timeRange === 'week') {
-    // 本周：从周一0点开始，每6小时一个数据点
+    // 当前周：从本周一0点开始，到当前时间结束，每6小时一个数据点
     const startOfWeek = new Date(now);
     const day = startOfWeek.getDay();
     const daysSinceMonday = day === 0 ? 6 : day - 1; // 周日是0，转换为6天前的周一
     startOfWeek.setDate(now.getDate() - daysSinceMonday);
     startOfWeek.setHours(0, 0, 0, 0);
 
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 7);
+    const currentEnd = new Date(now);
 
-    for (let time = new Date(startOfWeek); time < endOfWeek; time.setHours(time.getHours() + 6)) {
+    for (let time = new Date(startOfWeek); time <= currentEnd; time.setHours(time.getHours() + 6)) {
       const month = time.getMonth() + 1;
       const day = time.getDate();
       const hour = time.getHours();
@@ -298,14 +305,14 @@ const generateTimeSeries = (timeRange: TimeRange): { name: string; timestamp: nu
       });
     }
   } else if (timeRange === 'month') {
-    // 本月：从30天前开始，每天一个数据点
+    // 当前月：从本月1号0点开始，到当前时间结束，每天一个数据点
     const startOfMonth = new Date(now);
-    startOfMonth.setDate(now.getDate() - 29); // 30天前（包括今天）
+    startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    for (let day = 0; day < 30; day++) {
+    for (let dayOffset = 0; dayOffset <= now.getDate() - 1; dayOffset++) {
       const time = new Date(startOfMonth);
-      time.setDate(startOfMonth.getDate() + day);
+      time.setDate(startOfMonth.getDate() + dayOffset);
       const month = time.getMonth() + 1;
       const date = time.getDate();
       timeSeries.push({

@@ -83,6 +83,23 @@ func (l *LLM) Chat(ctx context.Context, sMsg string, uMsg string, params map[str
 		return "", err
 	}
 	logger := l.logger.WithContext(ctx)
+
+	msgs, err := l.msgs(ctx, sMsg, uMsg, params)
+	if err != nil {
+		return "", err
+	}
+
+	logger.Debug("wait llm response")
+	res, err := cm.Generate(ctx, msgs)
+	if err != nil {
+		logger.WithErr(err).Error("llm response failed")
+		return "", err
+	}
+	logger.With("response", res.Content).Debug("llm response success")
+	return res.Content, nil
+}
+
+func (l *LLM) msgs(ctx context.Context, sMsg string, uMsg string, params map[string]any) ([]*schema.Message, error) {
 	templates := []schema.MessagesTemplate{
 		schema.SystemMessage(sMsg),
 	}
@@ -92,20 +109,108 @@ func (l *LLM) Chat(ctx context.Context, sMsg string, uMsg string, params map[str
 	template := prompt.FromMessages(schema.GoTemplate, templates...)
 	msgs, err := template.Format(ctx, params)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	for _, msg := range msgs {
 		fmt.Println(msg.Role, msg.Content)
 		// logger.With("role", msg.Role, "content", msg.Content).Debug("format message")
 	}
-	logger.Debug("wait llm response")
-	res, err := cm.Generate(ctx, msgs)
-	if err != nil {
-		logger.WithErr(err).Error("llm response failed")
-		return "", err
+
+	return msgs, nil
+}
+
+type LLMStream struct {
+	c    chan string
+	stop chan struct{}
+}
+
+func (l *LLMStream) Close() {
+	close(l.stop)
+
+	for {
+		select {
+		case <-l.c:
+		default:
+			return
+		}
 	}
-	logger.With("response", res.Content).Debug("llm response success")
-	return res.Content, nil
+}
+
+func (l *LLMStream) Recv(f func() (string, error)) {
+	defer close(l.c)
+	for {
+		content, err := f()
+		if err != nil {
+			return
+		}
+
+		select {
+		case <-l.stop:
+			return
+		case l.c <- content:
+		}
+	}
+}
+
+func (l *LLMStream) Send(ctx context.Context, f func(content string)) {
+	defer l.Close()
+
+	for {
+		content, ok := l.Text(ctx)
+		if !ok {
+			return
+		}
+
+		f(content)
+	}
+}
+
+func (l *LLMStream) Text(ctx context.Context) (string, bool) {
+	select {
+	case <-ctx.Done():
+		return "", false
+	case content, ok := <-l.c:
+		if !ok {
+			return "", false
+		}
+
+		return content, true
+	}
+}
+
+func (l *LLM) StreamChat(ctx context.Context, sMsg string, uMsg string, params map[string]any) (*LLMStream, error) {
+	cm, err := l.kit.GetChatModel(ctx)
+	if err != nil {
+		return nil, err
+	}
+	logger := l.logger.WithContext(ctx)
+
+	msgs, err := l.msgs(ctx, sMsg, uMsg, params)
+	if err != nil {
+		return nil, err
+	}
+
+	logger.Debug("wait llm stream response")
+	reader, err := cm.Stream(ctx, msgs)
+	if err != nil {
+		return nil, err
+	}
+
+	s := LLMStream{
+		c:    make(chan string, 8),
+		stop: make(chan struct{}),
+	}
+
+	go s.Recv(func() (string, error) {
+		msg, err := reader.Recv()
+		if err != nil {
+			return "", err
+		}
+
+		return msg.Content, nil
+	})
+
+	return &s, nil
 }
 
 func (l *LLM) GenerateChatPrompt(ctx context.Context, discID uint, commID uint) (string, string, error) {
@@ -159,7 +264,19 @@ func (l *LLM) GeneratePostPrompt(ctx context.Context, discID uint) (string, stri
 		return "", "", fmt.Errorf("get discussion detail failed: %w", err)
 	}
 
-	template := llm.NewDiscussionPromptTemplate(discussion, nil, nil)
+	// 2. 如果为问答，获取该讨论的所有评论
+	var allComments []model.CommentDetail
+	if discussion.Type == model.DiscussionTypeQA {
+		err = l.comm.List(ctx, &allComments,
+			repo.QueryWithEqual("discussion_id", discID),
+			repo.QueryWithOrderBy("created_at ASC"),
+		)
+		if err != nil {
+			return "", "", fmt.Errorf("get discussion comments failed: %w", err)
+		}
+	}
+
+	template := llm.NewDiscussionPromptTemplate(discussion, allComments, nil)
 
 	prompt, err := template.BuildPostPrompt()
 	if err != nil {

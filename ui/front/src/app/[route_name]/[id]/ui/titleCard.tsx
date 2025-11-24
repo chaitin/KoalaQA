@@ -24,7 +24,7 @@ import dayjs from '@/lib/dayjs'
 import { Ellipsis, Icon } from '@ctzhian/ui'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
-import { Box, Chip, Divider, IconButton, Menu, MenuItem, Paper, Typography } from '@mui/material'
+import { Box, Chip, Divider, IconButton, Menu, MenuItem, Paper, Stack, Typography } from '@mui/material'
 import { useBoolean } from 'ahooks'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
@@ -304,8 +304,8 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           </Box>
           {/* 右侧：点赞数和更多选项 */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
-            {/* 文章类型显示点赞数 */}
-            {isArticlePost && (
+            {/* 文章类型显示点赞数 - 已关闭帖子不显示 */}
+            {isArticlePost && !isClosed && (
               <Box
                 onClick={handleLike}
                 sx={{
@@ -353,9 +353,9 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         </Box>
 
         {/* 第二行：标签和作者信息 */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+        <Stack direction='row' flexWrap='wrap' sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 2 }} gap={2}>
           {/* 左侧：所有标签（分组标签、状态标签、普通标签） */}
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Stack direction='row' flexWrap='wrap' sx={{ gap: 1, alignItems: 'center' }}>
             {(status === 'answered' || status === 'closed') && !isArticlePost && (
               <Chip
                 icon={
@@ -385,7 +385,6 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                 <QaUnresolvedChip type={data.type} resolved={data.resolved} />
               )}
             {data.groups?.map((item) => {
-              const isCategory = true
               return (
                 <Chip
                   key={item.id}
@@ -424,8 +423,8 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                 />
               )
             })}
-          </Box>
-          {/* 右侧：作者信息和时间 */}
+          </Stack>
+          {/* 作者信息和时间 */}
           <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, fontSize: '14px' }}>
             <Box
               tabIndex={0}
@@ -489,7 +488,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
               </>
             )}
           </Box>
-        </Box>
+        </Stack>
 
         {data.content && String(data.content).trim() && (
           <>

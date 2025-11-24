@@ -597,7 +597,7 @@ func (u *User) LoginThirdCallback(ctx context.Context, typ model.AuthType, req L
 		user.Role = model.UserRoleGuest
 	}
 
-	dbUser, err := u.repoUser.CreateThird(ctx, org.ID, user)
+	dbUser, err := u.repoUser.CreateThird(ctx, org.ID, user, auth.EnableRegister)
 	if err != nil {
 		return "", err
 	}

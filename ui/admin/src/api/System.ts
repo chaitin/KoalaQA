@@ -11,7 +11,36 @@
  */
 
 import request, { RequestParams } from "./httpClient";
-import { ContextResponse, RouterSystemInfoRes } from "./types";
+import {
+  ContextResponse,
+  ModelSystemDiscussion,
+  RouterSystemInfoRes,
+} from "./types";
+
+/**
+ * No description
+ *
+ * @tags system
+ * @name GetSystemDiscussion
+ * @summary system discussion detail
+ * @request GET:/system/discussion
+ * @response `200` `(ContextResponse & {
+    data?: ModelSystemDiscussion,
+
+})` OK
+ */
+
+export const getSystemDiscussion = (params: RequestParams = {}) =>
+  request<
+    ContextResponse & {
+      data?: ModelSystemDiscussion;
+    }
+  >({
+    path: `/system/discussion`,
+    method: "GET",
+    format: "json",
+    ...params,
+  });
 
 /**
  * No description

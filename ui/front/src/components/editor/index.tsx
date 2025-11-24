@@ -228,6 +228,9 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
             '& .tiptap': {
               height: '100%',
             },
+            '& .editor-toolbar > div':{
+              flexWrap: 'wrap'
+            }
           }}
         >
           {editorRef.editor && (

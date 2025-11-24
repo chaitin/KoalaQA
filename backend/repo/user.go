@@ -114,7 +114,7 @@ func (u *User) getAvatarFromURL(ctx context.Context, imgURL string) string {
 	return avatar
 }
 
-func (u *User) CreateThird(ctx context.Context, orgID uint, user *third_auth.User) (*model.User, error) {
+func (u *User) CreateThird(ctx context.Context, orgID uint, user *third_auth.User, enableRegister bool) (*model.User, error) {
 	if user.ThirdID == "" {
 		return nil, errors.New("empty user third_id")
 	}
@@ -135,6 +135,10 @@ func (u *User) CreateThird(ctx context.Context, orgID uint, user *third_auth.Use
 		if txErr != nil {
 			if !errors.Is(txErr, gorm.ErrRecordNotFound) {
 				return txErr
+			}
+
+			if !enableRegister && user.Type == model.AuthTypeWechat {
+				return errors.New("register is disabled")
 			}
 		} else {
 			txErr = tx.Model(u.m).Where("id = ?", userThird.UserID).Updates(map[string]any{
