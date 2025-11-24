@@ -134,7 +134,7 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
         </Stack>
       }
     >
-      <Stack direction="row" spacing={3} sx={{ height: '70vh', minHeight: 520, width: '100%' }}>
+      <Stack direction="row" spacing={3} sx={{ width: '100%' }}>
         {/* 历史问答对（仅查看） */}
         {hasHistoricalQa && (
           <Box sx={{ flex: 1, bgcolor: 'background.paper', p: 2, overflow: 'auto', width: '100%' }}>
@@ -219,7 +219,9 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
               borderRadius: 1,
               overflow: 'hidden',
               mt: 1,
-              minHeight: 320,
+              '& .tiptap': {
+                height: '320px',
+              },
             }}
           >
             <EditorWrap

@@ -335,6 +335,9 @@ html,
 body {
   font-family: 'Glibory', 'Gilroy', 'PingFang SC', 'Hiragino Sans GB', 'STHeiti', 'Microsoft YaHei', sans-serif;
 }
+body{
+  padding-top: 64px;
+}
 
 /* WebKit (Chrome, Edge, Safari) */
 *::-webkit-scrollbar {

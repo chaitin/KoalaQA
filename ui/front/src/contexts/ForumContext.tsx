@@ -58,8 +58,8 @@ export const ForumProvider = ({ children, initialForums = [] }: ForumProviderPro
     try {
       // 动态导入以避免服务端渲染问题
       const { getForum } = await import('@/api')
-      const response = await getForum()
-      const forumData = response || []
+      const forumData =  await getForum() || []
+      console.log(forumData)
       setForums(forumData)
       setLoading(false)
       return forumData

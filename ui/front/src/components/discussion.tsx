@@ -15,6 +15,7 @@ import Modal from '@/components/modal'
 import { useGroupData } from '@/contexts/GroupDataContext'
 import { useForumId } from '@/hooks/useForumId'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
+import { useSystemDiscussion } from '@/contexts/SystemDiscussionContext'
 import { Icon } from '@ctzhian/ui'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
@@ -123,6 +124,8 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
   showContentEditor = true,
   forumInfo,
 }) => {
+  const { config: systemConfig } = useSystemDiscussion()
+
   const {
     control,
     formState: { errors },
@@ -232,14 +235,14 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
         group_ids: defaultGroupIds,
       })
     } else if (status === 'create') {
-      // 当打开创建模态框但没有初始标题时，清空所有字段
+      // 当打开创建模态框时，使用默认内容或content_placeholder
       reset({
-        content: initialContent || '',
+        content: systemConfig?.content_placeholder || initialContent || '',
         group_ids: defaultGroupIds,
         title: '',
       })
     }
-  }, [open, initialTitle, initialContent, status, reset, defaultGroupIds])
+  }, [open, initialTitle, initialContent, status, reset, defaultGroupIds, systemConfig])
 
   useEffect(() => {
     if (status === 'edit' && data && open) {
@@ -618,7 +621,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
               flex: 1,
               minHeight: 200,
               flexShrink: 0,
-              display: 'flex',
+              display: {xs: 'none', sm: 'flex'},
               flexDirection: 'column',
               height: '60vh',
               overflow: 'hidden',

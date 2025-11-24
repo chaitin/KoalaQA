@@ -9,6 +9,7 @@ interface WrapProps {
   aiWriting?: boolean
   value?: string
   placeholder?: string
+  readonly?: boolean
   mode?: 'advanced' | 'simple'
   onChange?: (value: string) => void // 双向绑定的变更回调，类似input组件的onChange
   onTocUpdate?: ((toc: any) => void) | boolean // 可选，默认false；true表示仅启用但不回调
@@ -16,7 +17,10 @@ interface WrapProps {
 
 export interface EditorWrapRef {
   getContent: () => string
+  getHTML: () => string
+  getText: () => string
   resetContent: () => void
+  setReadonly: (readonly: boolean) => void
 }
 
 const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
@@ -28,6 +32,7 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
       aiWriting,
       onTocUpdate,
       mode = 'simple',
+      readonly = false,
     }: WrapProps,
     ref,
   ) => {
@@ -67,17 +72,10 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
       ({ editor }: { editor: any }) => {
         if (!onChange) return
         try {
-          const markdown = editor?.storage?.markdown?.getMarkdown?.()
+          const markdown = editor?.getMarkdown()
           if (typeof markdown === 'string') {
             onChange(markdown)
             return
-          }
-          if (typeof editor?.getHTML === 'function') {
-            onChange(editor.getHTML())
-            return
-          }
-          if (typeof editor?.getText === 'function') {
-            onChange(editor.getText())
           }
         } catch (error) {
           console.error('处理编辑器更新失败:', error)
@@ -93,7 +91,7 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
       : undefined
     const editorRef = useTiptap({
       contentType: 'markdown',
-      editable: true,
+      editable: !readonly,
       exclude: ['invisibleCharacters'],
       // SSR 环境需显式关闭立即渲染以避免水合不匹配
       immediatelyRender: false,
@@ -152,6 +150,12 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
       }, 0)
       return () => clearTimeout(timer)
     }, [editorRef?.editor])
+
+  // 当 readonly 状态改变时，更新编辑器的可编辑状态
+  useEffect(() => {
+      if (!editorRef?.editor) return
+      editorRef.editor.setEditable(!readonly)
+  }, [readonly, editorRef?.editor])
     // 暴露命令式 API：getContent / getHTML / getText / resetContent
     useImperativeHandle(
       ref,
@@ -183,14 +187,25 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
           try {
             if (editorRef.editor) {
               editorRef.editor.commands.setContent('')
-              onChange?.('')
+              if (!readonly) {
+                onChange?.('')
+              }
             }
           } catch (e) {
             console.error('重置编辑器内容失败:', e)
           }
         },
+        setReadonly: (newReadonly: boolean) => {
+          try {
+            if (editorRef.editor) {
+              editorRef.editor.setEditable(!newReadonly)
+            }
+          } catch (e) {
+            console.error('设置编辑器只读状态失败:', e)
+          }
+        },
       }),
-      [editorRef, onChange],
+      [editorRef, onChange, readonly],
     )
     if (!isMounted) {
       return
@@ -200,7 +215,7 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
     return (
       <EditorThemeProvider mode='light'>
         <Box
-          className='editor-wrap'
+          className='editor-wrap tiptap'
           sx={{
             display: 'flex',
             flexDirection: 'column',
@@ -213,6 +228,9 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
             '& .tiptap': {
               height: '100%',
             },
+            '& .editor-toolbar > div':{
+              flexWrap: 'wrap'
+            }
           }}
         >
           {editorRef.editor && (

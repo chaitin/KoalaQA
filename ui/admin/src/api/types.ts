@@ -71,15 +71,15 @@ export enum ModelMsgNotifyType {
   MsgNotifyTypeBotUnknown = 6,
   MsgNotifyTypeLikeDiscussion = 7,
   MsgNotifyTypeUserReview = 8,
-  MsgNotifyTypeApplyCommentByAdmin = 9,
+  MsgNotifyTypeResolveByAdmin = 9,
 }
 
 export enum ModelLLMType {
   LLMTypeChat = "chat",
   LLMTypeEmbedding = "embedding",
   LLMTypeRerank = "rerank",
-  LLMTypeAnalysis = "analysis",
-  LLMTypeAnalysisVL = "analysis-vl",
+  // LLMTypeAnalysis = "analysis",
+  // LLMTypeAnalysisVL = "analysis-vl",
 }
 
 export enum ModelFileType {
@@ -163,6 +163,7 @@ export interface ModelAuth {
   auth_infos?: ModelAuthInfo[];
   enable_register?: boolean;
   need_review?: boolean;
+  prompt?: string;
   public_access?: boolean;
   /** Deprecated: only use in migration */
   public_forum_ids?: number[];
@@ -433,6 +434,7 @@ export interface ModelSystemBrand {
 
 export interface ModelSystemDiscussion {
   auto_close?: number;
+  content_placeholder?: string;
 }
 
 export interface ModelTrend {
@@ -532,6 +534,7 @@ export interface SvcAuthFrontendGetAuth {
 export interface SvcAuthFrontendGetRes {
   auth_types?: SvcAuthFrontendGetAuth[];
   enable_register?: boolean;
+  prompt?: string;
   public_access?: boolean;
 }
 

@@ -221,7 +221,7 @@ const QaImport = (props: {
             name="markdown"
             control={control}
             render={({ field }) => (
-              <Box sx={{ position: 'relative' }}>
+              <Box sx={{ position: 'relative', height: '250px' }}>
                 <EditorWrap
                   ref={editorRef}
                   value={field.value ?? ''}

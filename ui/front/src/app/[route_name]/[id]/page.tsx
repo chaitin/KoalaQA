@@ -117,7 +117,6 @@ const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; 
         <h1 style={{ display: 'none' }}>讨论详情</h1>
         <Suspense fallback={<LoadingSpinner />}>
           <TitleCard data={discussion} />
-          <Box sx={{ my: 2, display: { xs: 'block', sm: 'none' } }} />
           <Content data={discussion} />
         </Suspense>
       </Stack>

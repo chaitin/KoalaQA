@@ -11,61 +11,43 @@ export default function RouteLayout({ children }: { children: React.ReactNode })
   const [showFilters, setShowFilters] = useState(!isMobile)
 
   return (
-    <Box sx={{ bgcolor: '#ffffff', minHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column' }}>
-      <Box
-        sx={{
-          display: 'flex',
-          gap: { xs: 2, md: 3 },
-          flexDirection: { xs: 'column', md: 'row' },
-          flex: 1,
-          alignSelf: 'stretch'
-        }}
-      >
-        {/* 左侧过滤面板 - 靠左对齐 */}
-        {showFilters && (
-          <Box
-            sx={{
-              width: isMobile ? '100%' : 240,
-              flexShrink: 0,
-              display: isMobile && !showFilters ? 'none' : 'block',
-              pl: { xs: 2, lg: 3 },
-              py: { xs: 2, lg: 3 },
-            }}
-          >
-            <FilterPanel />
-          </Box>
-        )}
+    <Box
+      sx={{
+        display: 'flex',
+        gap: { xs: 2, md: 3 },
+        flexDirection: { xs: 'column', md: 'row' },
+        flex: 1,
+        height:'100%',
+        alignSelf: 'stretch',
+      }}
+    >
+      {/* 左侧过滤面板 - 靠左对齐 */}
+      {showFilters && (
+        <Box
+          sx={{
+            width: isMobile ? '100%' : 240,
+            flexShrink: 0,
+            display: { xs: 'none', sm: 'block' },
+            pl: { xs: 2, lg: 3 },
+            py: { xs: 2, lg: 3 },
+          }}
+        >
+          <FilterPanel />
+        </Box>
+      )}
 
-        {/* 主内容区域 */}
-        <Container className='forum_main' sx={{ flex: 1, minWidth: 0, pt: 3, alignSelf: 'stretch' }}>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              height: '100%'
-            }}
-          >
-            {/* 移动端过滤按钮 */}
-            {isMobile && (
-              <IconButton
-                disableRipple
-                onClick={() => setShowFilters(!showFilters)}
-                sx={{
-                  bgcolor: '#f3f4f6',
-                  borderRadius: 2,
-                  mb: 2,
-                  '&:hover': {
-                    bgcolor: '#e5e7eb',
-                  },
-                }}
-              >
-                <FilterListIcon />
-              </IconButton>
-            )}
-            <Box sx={{ flex: 1, minWidth: 0, alignSelf: 'stretch' }}>{children}</Box>
-          </Box>
-        </Container>
-      </Box>
+      {/* 主内容区域 */}
+      <Container className='forum_main' sx={{ flex: 1, minWidth: 0, pt: { xs: 0, sm: 3 }, alignSelf: 'stretch' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+          }}
+        >
+          <Box sx={{ flex: 1, minWidth: 0, alignSelf: 'stretch' }}>{children}</Box>
+        </Box>
+      </Container>
     </Box>
   )
 }
