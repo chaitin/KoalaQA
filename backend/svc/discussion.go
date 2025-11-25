@@ -459,9 +459,13 @@ func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummar
 		return nil, errors.New("invalid request")
 	}
 
-	forumM := make(map[uint]struct{})
+	var forumID uint
 	for _, disc := range discs {
-		if _, ok := forumM[disc.ForumID]; ok {
+		if forumID == 0 {
+			forumID = disc.ForumID
+		} else if disc.ForumID != forumID {
+			return nil, errors.New("invalid request")
+		} else {
 			continue
 		}
 
@@ -473,7 +477,6 @@ func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummar
 		if !ok {
 			return nil, errPermission
 		}
-		forumM[disc.ForumID] = struct{}{}
 	}
 
 	userPrompt, err := llm.DiscussionSummaryUserPrompt(discs)
