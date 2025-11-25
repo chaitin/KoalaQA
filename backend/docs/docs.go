@@ -3992,7 +3992,7 @@ const docTemplate = `{
             }
         },
         "/discussion/summary": {
-            "get": {
+            "post": {
                 "description": "discussions summary",
                 "produces": [
                     "text/event-stream"

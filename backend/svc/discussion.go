@@ -461,7 +461,7 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 }
 
 type DiscussionSummaryReq struct {
-	UUIDs model.StringArray `form:"uuids" binding:"required"`
+	UUIDs model.StringArray `json:"uuids" binding:"required"`
 }
 
 func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummaryReq) (*LLMStream, error) {
