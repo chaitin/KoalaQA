@@ -8036,6 +8036,9 @@ const docTemplate = `{
                 },
                 "qa_count": {
                     "type": "integer"
+                },
+                "role": {
+                    "$ref": "#/definitions/model.UserRole"
                 }
             }
         },
