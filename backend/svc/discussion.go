@@ -316,10 +316,26 @@ type DiscussionListBackendReq struct {
 
 	Keyword *string `json:"keyword" form:"keyword"`
 	ForumID uint    `json:"forum_id" form:"forum_id" binding:"required"`
+	AI      bool    `json:"ai" form:"ai"`
 }
 
 func (d *Discussion) ListBackend(ctx context.Context, req DiscussionListBackendReq) (*model.ListRes[*model.DiscussionListItem], error) {
 	var res model.ListRes[*model.DiscussionListItem]
+
+	if req.AI && req.Keyword != nil && *req.Keyword != "" {
+		var err error
+		res.Items, err = d.Search(ctx, DiscussionSearchReq{
+			Keyword:             *req.Keyword,
+			ForumID:             req.ForumID,
+			SimilarityThreshold: 0.8,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		res.Total = int64(len(res.Items))
+		return &res, nil
+	}
 
 	query := []repo.QueryOptFunc{
 		repo.QueryWithEqual("forum_id", req.ForumID),
