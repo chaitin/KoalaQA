@@ -505,6 +505,46 @@ func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummar
 	})
 }
 
+type DiscussionKeywordAnswerReq struct {
+	Keyword string            `form:"keyword" binding:"required"`
+	UUIDs   model.StringArray `form:"uuids"`
+}
+
+func (d *Discussion) KeywordAnswer(ctx context.Context, req DiscussionKeywordAnswerReq) (string, error) {
+	var discs []model.DiscussionListItem
+	if len(req.UUIDs) > 0 {
+		err := d.in.DiscRepo.List(ctx, &discs, repo.QueryWithEqual("uuid", req.UUIDs, repo.EqualOPEqAny))
+		if err != nil {
+			return "", err
+		}
+	}
+
+	discIDs := make([]uint, len(discs))
+	for _, disc := range discs {
+		discIDs = append(discIDs, disc.ID)
+	}
+
+	prompt, err := d.in.LLM.GenerateDiscussionPrompt(ctx, discIDs...)
+	if err != nil {
+		return "", err
+	}
+
+	content, answer, err := d.in.LLM.AnswerWithThink(ctx, GenerateReq{
+		Question:      req.Keyword,
+		Prompt:        prompt,
+		DefaultAnswer: "无法回答问题",
+	})
+	if err != nil {
+		return "", err
+	}
+
+	if !answer {
+		return "", nil
+	}
+
+	return content, nil
+}
+
 func (d *Discussion) DetailByUUID(ctx context.Context, uid uint, uuid string) (*model.DiscussionDetail, error) {
 	discussion, err := d.in.DiscRepo.DetailByUUID(ctx, uid, uuid)
 	if err != nil {
