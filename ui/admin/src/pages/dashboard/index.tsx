@@ -96,7 +96,7 @@ interface StatCardProps {
 interface ChartSectionProps {
   title: string;
   children: ReactNode;
-  showTime?: boolean
+  showTime?: boolean;
 }
 
 interface InsightItemProps {
@@ -172,6 +172,7 @@ const formatTime = (seconds: number | null | undefined): string => {
 interface AIRateTrendDataPoint {
   name: string;
   value: number; // AI 应答率或解决率
+  areaValue: number; // 用于Area组件显示，避免tooltip重复
 }
 
 // AI 应答率趋势计算：(StatTypeDiscussionQA - StatTypeBotUnknown) / StatTypeDiscussionQA
@@ -212,6 +213,7 @@ const transformAIResponseRateTrendData = (trendData: ModelStatTrend[]): AIRateTr
     result.push({
       name: dateKey,
       value: responseRate,
+      areaValue: responseRate,
     });
   }
 
@@ -255,6 +257,7 @@ const transformAIResolveRateTrendData = (trendData: ModelStatTrend[]): AIRateTre
     result.push({
       name: dateKey,
       value: resolveRate,
+      areaValue: resolveRate,
     });
   }
 
@@ -663,16 +666,15 @@ const InsightItem: React.FC<InsightItemProps> = ({
 
   // 背景色和文字色配置
   const bgColor = isCritical ? '#fef2f2' : '#ecfeff'; // Red 50 / Cyan 50
-  const iconBg = isCritical ? '#fee2e2' : 'rgba(76, 165, 167, 0.08)'; // Red 100 / Cyan 100
+  const iconBg = isCritical ? '#fee2e2' : 'rgba(76, 165, 167, 0.10)'; // Red 100 / Cyan 100
   const iconColor = isCritical ? '#ef4444' : 'rgba(76, 165, 167, 1)'; // Red 500 / Cyan 500
 
   return (
     <Box
       sx={{
-        bgcolor: bgColor,
+        bgcolor: 'rgba(76, 165, 167, 0.08)',
         borderRadius: 1,
         p: 1.5,
-        mb: 1,
         transition: 'all 0.3s',
       }}
     >
@@ -1111,7 +1113,11 @@ const Dashboard: React.FC = () => {
                                     boxShadow: theme.shadows[3],
                                   }}
                                   formatter={(value: any, name: string) => {
-                                    return [`${value}`, '访问量'];
+                                    return [
+                                      <span
+                                        style={{ color: '#2E6AFE' }}
+                                      >{`访问量: ${value}`}</span>,
+                                    ];
                                   }}
                                   labelFormatter={label => {
                                     return `${label}`;
@@ -1161,8 +1167,12 @@ const Dashboard: React.FC = () => {
                                     border: 'none',
                                     boxShadow: theme.shadows[3],
                                   }}
-                                  formatter={(value: any, name: string) => {
-                                    return [`${value}`, '发帖量'];
+                                   formatter={(value: any, name: string) => {
+                                    return [
+                                      <span
+                                        style={{ color: 'rgba(99, 103, 233, 1)' }}
+                                      >{`发帖量: ${value}`}</span>,
+                                    ];
                                   }}
                                   labelFormatter={label => {
                                     return `${label}`;
@@ -1205,11 +1215,11 @@ const Dashboard: React.FC = () => {
                     <Typography variant="h6" fontWeight={700} gutterBottom sx={{ mb: 1 }}>
                       AI 洞察
                     </Typography>
-                    <Box
+                    <Stack
                       sx={{
                         flexGrow: 1,
                         overflowY: 'auto',
-                        maxHeight: '360px', // 减去标题高度
+                        maxHeight: 'calc(35vh + 110px)', // 减去标题高度
                         '&::-webkit-scrollbar': {
                           width: '4px',
                         },
@@ -1225,6 +1235,7 @@ const Dashboard: React.FC = () => {
                           },
                         },
                       }}
+                      spacing={1}
                     >
                       {aiInsightData && aiInsightData.length > 0 ? (
                         aiInsightData.map((insight, index) => {
@@ -1248,7 +1259,7 @@ const Dashboard: React.FC = () => {
                           暂无AI洞察数据
                         </Typography>
                       )}
-                    </Box>
+                    </Stack>
                   </Card>
                 </Grid>
               </Grid>
@@ -1281,12 +1292,6 @@ const Dashboard: React.FC = () => {
                             }}
                             formatter={(value: number) => [`${value.toFixed(1)}%`, 'AI 应答率']}
                           />
-                          <defs>
-                            <linearGradient id="aiResponseGradient" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="rgba(76,165,167,0.2)" />
-                              <stop offset="100%" stopColor="rgba(76,165,167,0)" />
-                            </linearGradient>
-                          </defs>
                           <Line
                             type="monotone"
                             dataKey="value"
@@ -1294,12 +1299,6 @@ const Dashboard: React.FC = () => {
                             strokeWidth={3}
                             dot={false}
                             activeDot={false}
-                          />
-                          <Area
-                            type="monotone"
-                            dataKey="value"
-                            fill="url(#aiResponseGradient)"
-                            stroke="none"
                           />
                         </LineChart>
                       </div>

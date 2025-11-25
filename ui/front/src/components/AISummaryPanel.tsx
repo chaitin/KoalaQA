@@ -209,7 +209,7 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
     <Paper
       elevation={0}
       sx={{
-        flex: '0 0 30%',
+        flex: '0 0 32%',
         minWidth: 0,
         height: '100%',
         display: 'flex',
@@ -222,16 +222,15 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
       {/* 头部 - 固定高度 */}
       <Box sx={{ flexShrink: 0, mb: 2 }}>
         <Stack direction='row' alignItems='center' spacing={1.5}>
-          {isSummarizing ? (
-            <img src='/ai_purple.png' alt='loading' style={{ width: 18, height: 18 }} />
-          ) : (
-            <Icon type='icon-xingxingzuhe' sx={{ fontSize: 14, color: 'primary.main' }} />
-          )}
-
+          <img
+            src={isSummarizing ? 'ai-loading.gif' : '/ai_purple.png'}
+            alt='loading'
+            style={{ width: 18, height: 18 }}
+          />
           <Typography
             variant='h6'
             sx={{
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: 600,
               lineHeight: 1.2,
               background: 'linear-gradient(180deg, #A76EFB 0%, #2070F9 100%)',
@@ -241,7 +240,7 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
               WebkitTextFillColor: 'transparent',
             }}
           >
-            AI 智能总结
+            {isSummarizing ? '正在总结...' : 'AI 智能总结'}
           </Typography>
         </Stack>
       </Box>
@@ -252,7 +251,6 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
           display: 'flex',
           flexDirection: 'column',
           minHeight: 0, // 关键：允许flex子项收缩
-          mb: 2,
           borderRadius: 1,
           border: '1px solid rgba(32, 112, 249, 0.5)',
           overflow: 'auto',
@@ -333,11 +331,6 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
           >
             <EditorContent content={summary} />
             {/* 总结完成的标签 */}
-            {!isSummarizing && summary && (
-              <Typography color='text.secondary' sx={{ fontSize: '12px' }}>
-                本内容由 AI 基于搜索结果生成整理，如信息已过期或失效，可能不适用于当前情形，仅供参考。
-              </Typography>
-            )}
           </Box>
         ) : (
           <Box
@@ -372,6 +365,14 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
           </Box>
         )}
       </Box>
+      {!isSummarizing && summary && (
+        <Typography
+          color='text.secondary'
+          sx={{ fontSize: '12px', transform: 'scale(0.9)',transformOrigin: 'bottom', marginTop: 1, textAlign: 'left'}}
+        >
+          本内容由 AI 基于搜索结果生成整理，如信息已过期或失效，可能不适用于当前情形，仅供参考。
+        </Typography>
+      )}
     </Paper>
   )
 }
