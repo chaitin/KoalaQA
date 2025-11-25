@@ -1,141 +1,283 @@
-type SSECallback<T> = (data: T) => void;
-type SSEErrorCallback = (error: Error) => void;
-type SSECompleteCallback = () => void;
+type SSECallback<T> = (data: T) => void
+type SSEErrorCallback = (error: Error) => void
+type SSECompleteCallback = () => void
 
 interface SSEClientOptions {
-  url: string;
-  headers?: Record<string, string>;
-  onOpen?: SSECompleteCallback;
-  onError?: SSEErrorCallback;
-  onCancel?: SSEErrorCallback;
-  onComplete?: SSECompleteCallback;
-  method?: string;
+  url: string
+  headers?: Record<string, string>
+  onOpen?: SSECompleteCallback
+  onError?: SSEErrorCallback
+  onCancel?: SSEErrorCallback
+  onComplete?: SSECompleteCallback
+  method?: string
+  streamMode?: boolean // 新增：是否启用流式模式（处理每个数据块）
 }
 
 class SSEClient<T> {
-  private controller: AbortController;
-  private reader: ReadableStreamDefaultReader<Uint8Array> | null;
-  private textDecoder: TextDecoder;
-  private buffer: string;
+  private controller: AbortController
+  private reader: ReadableStreamDefaultReader<Uint8Array> | null
+  private textDecoder: TextDecoder
+  private buffer: string
 
   constructor(private options: SSEClientOptions) {
-    this.controller = new AbortController();
-    this.reader = null;
-    this.textDecoder = new TextDecoder();
-    this.buffer = '';
+    this.controller = new AbortController()
+    this.reader = null
+    this.textDecoder = new TextDecoder()
+    this.buffer = ''
   }
 
   public subscribe(body: BodyInit, onMessage: SSECallback<T>) {
-    this.controller.abort();
-    this.controller = new AbortController();
-    const {
-      url,
-      headers,
-      onOpen,
-      onError,
-      onComplete,
-      method = 'POST',
-    } = this.options;
+    this.controller.abort()
+    this.controller = new AbortController()
+    const { url, headers, onOpen, onError, onComplete, method = 'POST' } = this.options
 
-    const timeoutDuration = 300000;
+    const timeoutDuration = 300000
     const timeoutId = setTimeout(() => {
-      this.unsubscribe();
-      onError?.(new Error('Request timed out after 5 minutes'));
-    }, timeoutDuration);
+      this.unsubscribe()
+      onError?.(new Error('Request timed out after 5 minutes'))
+    }, timeoutDuration)
 
-    const upperMethod = method.toUpperCase();
-    const hasBody =
-      upperMethod !== 'GET' &&
-      upperMethod !== 'HEAD' &&
-      body !== undefined &&
-      body !== null;
+    const upperMethod = method.toUpperCase()
+    const hasBody = upperMethod !== 'GET' && upperMethod !== 'HEAD' && body !== undefined && body !== null
 
     fetch(url, {
       method,
       headers: {
-        Accept: 'text/event-stream',
+        ...(headers || {}), // 用户提供的headers优先级最低
+        Accept: 'text/event-stream', // 确保SSE的Accept头不被覆盖
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
         ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
-        ...headers,
       },
       body: hasBody ? body : undefined,
       signal: this.controller.signal,
     })
-      .then(async response => {
+      .then(async (response) => {
+
         if (!response.ok) {
-          clearTimeout(timeoutId);
-          throw new Error(`HTTP error! status: ${response.status}`);
+          clearTimeout(timeoutId)
+          throw new Error(`HTTP error! status: ${response.status}`)
         }
         if (!response.body) {
-          clearTimeout(timeoutId);
-          onError?.(new Error('No response body'));
-          return;
+          clearTimeout(timeoutId)
+          onError?.(new Error('No response body'))
+          return
         }
 
-        onOpen?.();
-        this.reader = response.body.getReader();
+        // 检查响应类型
+        const contentType = response.headers.get('content-type')
+        const isEventStream = contentType?.includes('text/event-stream')
 
+        // 强制设置为流式模式，无论Content-Type如何
+        if (!this.options.streamMode && isEventStream) {
+          this.options.streamMode = true
+        }
+
+        onOpen?.()
+        this.reader = response.body.getReader()
+
+        try {
         while (true) {
-          const { done, value } = await this.reader.read();
+          const { done, value } = await this.reader.read()
           if (done) {
-            clearTimeout(timeoutId);
-            onComplete?.();
-            break;
+            clearTimeout(timeoutId)
+            onComplete?.()
+            break
           }
-          this.processChunk(value, onMessage);
+          this.processChunk(value, onMessage)
+        }
+      } catch (error) {
+        clearTimeout(timeoutId)
+        // 如果是因为中止导致的错误，不调用 onError
+        if (error instanceof Error && error.name !== 'AbortError') {
+          onError?.(error)
+        }
+      }
+      })
+      .catch((error) => {
+        clearTimeout(timeoutId)
+        if (error instanceof Error && error.name !== 'AbortError') {
+          onError?.(error)
         }
       })
-      .catch(error => {
-        clearTimeout(timeoutId);
-        if (error.name !== 'AbortError') {
-          onError?.(error);
-        }
-      });
   }
 
-  private processChunk(
-    chunk: Uint8Array | undefined,
-    callback: SSECallback<T>,
-  ) {
-    if (!chunk) return;
+  private processChunk(chunk: Uint8Array | undefined, callback: SSECallback<T>) {
+    if (!chunk) return
 
-    this.buffer += this.textDecoder.decode(chunk, { stream: true });
-    const lines = this.buffer.split('\n');
-    let currentData = '';
-    let isDataLine = false;
+    // 解码新的数据块
+    const chunkText = this.textDecoder.decode(chunk, { stream: true })
+    this.buffer += chunkText
+
+    // 添加时间戳调试信息
+    const timestamp = new Date().toISOString().split('T')[1].split('.')[0]
+    if (this.options.streamMode) {
+      // 流式模式：逐字符处理
+      this.processStreamingData(callback)
+    } else {
+      // 标准SSE模式：按完整消息处理
+      this.processStandardSSEData(callback)
+    }
+  }
+
+  private processStreamingData(callback: SSECallback<T>) {
+    // 流式模式：立即处理缓冲区中的数据，不等待完整消息
+    if (this.buffer.length === 0) return
+
+    try {
+      // 检查是否包含SSE格式的数据
+      if (this.buffer.includes('data:')) {
+        // 包含SSE格式，按SSE处理
+        this.processStreamingSSEData(callback)
+      } else if (this.buffer.includes('{') || this.buffer.includes('[')) {
+        console.log('Detected JSON format, processing as JSON chunks')
+        // 尝试按JSON块处理
+        this.processJsonChunks(callback)
+      } else {
+        console.log('Processing as plain text stream')
+        // 纯文本流，直接处理
+        const textData = this.buffer.replace(/[\r\n]/g, '') // 移除换行符
+        if (textData) {
+          callback(textData as any)
+        }
+      }
+
+      // 清空缓冲区
+      this.buffer = ''
+    } catch (error) {
+      console.error('Error processing streaming data:', error)
+      // 出错时仍然尝试发送原始数据
+      if (this.buffer) {
+        try {
+          callback(this.buffer as any)
+        } catch (fallbackError) {
+          this.options.onError?.(new Error('Failed to process streaming data'))
+        }
+      }
+      this.buffer = ''
+    }
+  }
+
+  private processJsonChunks(callback: SSECallback<T>) {
+    // 尝试处理JSON格式的流式数据
+    const chunks = this.buffer.split(/(?<=\})\s*(?=\{)|(?<=\])\s*(?=\{)|(?<=\})\s*(?=\[)|(?<=\])\s*(?=\[)/)
+
+    for (const chunk of chunks) {
+      const trimmedChunk = chunk.trim()
+      if (trimmedChunk) {
+        try {
+          const parsed = JSON.parse(trimmedChunk)
+          console.log('Parsed JSON chunk:', parsed)
+          callback(parsed as T)
+        } catch (e) {
+          // 如果不是完整JSON，当作文本处理
+          if (trimmedChunk) {
+            console.log('Invalid JSON chunk, treating as text:', trimmedChunk)
+            callback(trimmedChunk as any)
+          }
+        }
+      }
+    }
+  }
+
+  private processStreamingSSEData(callback: SSECallback<T>) {
+    // 处理流式SSE数据格式，立即提取并处理数据
+    const lines = this.buffer.split('\n')
 
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
+      const line = lines[i].trim()
+
+      if (line.startsWith('data:')) {
+        const dataContent = line.startsWith('data: ') ? line.slice(6) : line.slice(5)
+
+        if (dataContent && dataContent !== 'csrf token mismatch') {
+          try {
+            // 尝试解析为JSON
+            const parsedData = JSON.parse(dataContent)
+            callback(parsedData as T)
+          } catch (jsonError) {
+            // 不是JSON，直接作为文本处理
+            if (dataContent) {
+              callback(dataContent as any)
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private processStandardSSEData(callback: SSECallback<T>) {
+    // 标准SSE模式：按完整的SSE消息格式处理
+    const lines = this.buffer.split('\n')
+    let currentData = ''
+    let isDataLine = false
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim()
+
+      // 处理不同格式的 SSE 数据
       if (line.startsWith('data: ')) {
         if (isDataLine) {
-          currentData += '\n';
+          currentData += '\n'
         }
-        currentData += line.slice(6);
-        isDataLine = true;
-      } else if (line === '') {
+        const dataContent = line.slice(6)
+        currentData += dataContent
+        isDataLine = true
+      } else if (line.startsWith('data:')) {
+        // 处理没有空格的 data: 格式
         if (isDataLine) {
-          try {
-            const data = JSON.parse(currentData) as T;
-            callback(data);
-          } catch (error) {
-            console.error(error);
-            this.options.onError?.(new Error('Failed to parse SSE data'));
-          }
-          currentData = '';
-          isDataLine = false;
+          currentData += '\n'
+        }
+        const dataContent = line.slice(5)
+        currentData += dataContent
+        isDataLine = true
+      } else if (line.startsWith('event: ')) {
+        // 处理事件类型
+        const eventType = line.slice(7)
+        continue
+      } else if (line === '' || line === '\r') {
+        if (isDataLine) {
+          this.processData(currentData, callback)
+          currentData = ''
+          isDataLine = false
         }
       }
     }
 
-    this.buffer = lines[lines.length - 1];
+    // 如果还有未处理的数据，保留在缓冲区中
+    this.buffer = isDataLine ? currentData : ''
+  }
+
+  private processData(rawData: string, callback: SSECallback<T>) {
+    try {
+      // 尝试解析为 JSON
+      let data: T
+      try {
+        data = JSON.parse(rawData) as T
+      } catch (jsonError) {
+        data = { content: rawData } as T
+      }
+      callback(data)
+    } catch (error) {
+      console.error('Error processing SSE data:', error)
+      console.error('Raw data:', rawData)
+      this.options.onError?.(new Error('Failed to parse SSE data'))
+    }
   }
 
   public unsubscribe() {
-    this.controller.abort();
+    this.controller.abort()
     if (this.reader) {
-      this.reader.cancel();
+      this.reader.cancel().catch((error) => {
+        // 忽略 AbortError，这是正常的中止行为
+        if (error instanceof Error && error.name !== 'AbortError') {
+          console.warn('Error canceling stream reader:', error)
+        }
+      })
     }
-    this.options.onCancel?.(new Error('Request canceled'));
+    this.options.onCancel?.(new Error('Request canceled'))
   }
 }
 
-export default SSEClient;
+export default SSEClient

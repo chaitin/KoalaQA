@@ -216,20 +216,6 @@ const ModelManagementModal = ({
             </Card>
           );
         })}
-
-        {mandatory && modelList.length === 0 && (
-          <Box
-            sx={{
-              mt: 2,
-              p: 2,
-              bgcolor: 'warning.light',
-              borderRadius: 1,
-              color: 'warning.dark',
-            }}
-          >
-            请至少配置一个模型后才能继续使用系统
-          </Box>
-        )}
       </Stack>
 
       <ModelModal

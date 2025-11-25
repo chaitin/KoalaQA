@@ -107,6 +107,7 @@ const nextConfig = {
   // 配置需要转译的外部包
   transpilePackages: ['@ctzhian/tiptap', '@ctzhian/ui'],
 
+  
   // 性能日志
   logging: {
     fetches: {
@@ -138,6 +139,34 @@ const nextConfig = {
           },
         ],
       },
+      // 开发环境下 API 路由支持流式响应
+      ...(process.env.NODE_ENV === 'development' ? [
+        {
+          source: '/api/:path*',
+          headers: [
+            {
+              key: 'Cache-Control',
+              value: 'no-cache, no-store, must-revalidate',
+            },
+            {
+              key: 'Connection',
+              value: 'keep-alive',
+            },
+            {
+              key: 'Access-Control-Allow-Headers',
+              value: 'Cache-Control, Content-Type, Accept, text/event-stream',
+            },
+            {
+              key: 'Access-Control-Allow-Methods',
+              value: 'GET, POST, PUT, DELETE, OPTIONS',
+            },
+            {
+              key: 'Access-Control-Allow-Origin',
+              value: '*',
+            },
+          ],
+        },
+      ] : []),
     ]
   },
 

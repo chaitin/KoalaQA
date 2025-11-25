@@ -84,6 +84,46 @@ const discussionFullTemplate = `
 {{- end}}
 `
 
+var discussionsFullTemplate = template.New("discussions_full_template")
+
+const discussionsFullTemplateStr = `
+## 所有帖子信息
+{{- range $j, $disc := .Discussions}}
+### 帖子{{add $j 1}}
+#### 帖子ID：{{$disc.Discussion.ID}}
+#### 帖子标题：{{$disc.Discussion.Title}}
+#### 帖子内容：{{$disc.Discussion.Content}}
+#### 发帖人：{{$disc.Discussion.UserName}}
+#### 发帖时间：{{formatTime $disc.Discussion.CreatedAt}}
+{{- if $disc.Discussion.Tags}}
+#### 帖子标签：{{join $disc.Discussion.Tags ", "}}
+{{- end}}
+#### 解决状态：{{if eq $disc.Discussion.Resolved 1 }}已解决{{else if eq $disc.Discussion.Resolved 2 }}已关闭{{else}}待解决{{end}}
+
+### 帖子{{add $j 1}}评论楼层结构
+{{- if $disc.CommentTree}}
+{{- range $i, $node := $disc.CommentTree}}
+楼层{{add $i 1}} {{renderComment $node ""}}
+{{- end}}
+{{- else}}
+暂无评论
+{{- end}}
+{{- end}}
+`
+
+func init() {
+	var err error
+	discussionsFullTemplate, err = discussionsFullTemplate.Funcs(template.FuncMap{
+		"formatTime":    formatTime,
+		"join":          strings.Join,
+		"add":           func(a, b int) int { return a + b },
+		"renderComment": renderComment,
+	}).Parse(discussionsFullTemplateStr)
+	if err != nil {
+		panic(err)
+	}
+}
+
 // CommentNode 评论节点，用于构建层级结构
 type CommentNode struct {
 	Comment  model.CommentDetail
@@ -154,10 +194,10 @@ func (t *DiscussionPromptTemplate) initTemplate() error {
 // initPostTemplate 初始化帖子模版
 func (t *DiscussionPromptTemplate) initPostTemplate() error {
 	funcMap := template.FuncMap{
-		"formatTime":      t.formatTime,
+		"formatTime":      formatTime,
 		"join":            strings.Join,
 		"add":             func(a, b int) int { return a + b },
-		"renderComment":   t.renderComment,
+		"renderComment":   renderComment,
 		"findCommentByID": t.findCommentByID,
 		"isReplyToBot":    t.isReplyToBot,
 	}
@@ -174,10 +214,10 @@ func (t *DiscussionPromptTemplate) initPostTemplate() error {
 // initFullTemplate 初始化完整模版
 func (t *DiscussionPromptTemplate) initFullTemplate() error {
 	funcMap := template.FuncMap{
-		"formatTime":      t.formatTime,
+		"formatTime":      formatTime,
 		"join":            strings.Join,
 		"add":             func(a, b int) int { return a + b },
-		"renderComment":   t.renderComment,
+		"renderComment":   renderComment,
 		"findCommentByID": t.findCommentByID,
 		"isReplyToBot":    t.isReplyToBot,
 	}
@@ -192,14 +232,14 @@ func (t *DiscussionPromptTemplate) initFullTemplate() error {
 }
 
 // formatTime 格式化时间
-func (t *DiscussionPromptTemplate) formatTime(timestamp model.Timestamp) string {
+func formatTime(timestamp model.Timestamp) string {
 	return time.Unix(int64(timestamp), 0).Format("2006-01-02 15:04:05")
 }
 
 // renderComment 渲染评论节点（用于模版）
-func (t *DiscussionPromptTemplate) renderComment(node *CommentNode, prefix string) string {
+func renderComment(node *CommentNode, prefix string) string {
 	var builder strings.Builder
-	t.renderCommentNode(&builder, node, prefix)
+	renderCommentNode(&builder, node, prefix)
 	return builder.String()
 }
 
@@ -268,7 +308,7 @@ func (t *DiscussionPromptTemplate) sortChildComments(node *CommentNode) {
 }
 
 // renderCommentNode 渲染评论节点
-func (t *DiscussionPromptTemplate) renderCommentNode(builder *strings.Builder, node *CommentNode, prefix string) {
+func renderCommentNode(builder *strings.Builder, node *CommentNode, prefix string) {
 	// 构建评论标识
 	var tags []string
 	if node.IsBot {
@@ -291,7 +331,7 @@ func (t *DiscussionPromptTemplate) renderCommentNode(builder *strings.Builder, n
 		node.Comment.ID,
 		node.Comment.UserName,
 		node.Comment.UserID,
-		t.formatTime(node.Comment.CreatedAt),
+		formatTime(node.Comment.CreatedAt),
 		tagStr,
 	))
 
@@ -307,7 +347,7 @@ func (t *DiscussionPromptTemplate) renderCommentNode(builder *strings.Builder, n
 			builder.WriteString(fmt.Sprintf("%s├── 回复%d.%d ", prefix, node.Level+1, i+1))
 			childPrefix = prefix + "│   "
 		}
-		t.renderCommentNode(builder, child, childPrefix)
+		renderCommentNode(builder, child, childPrefix)
 	}
 }
 
@@ -357,4 +397,20 @@ func NewDiscussionPromptTemplate(
 		AllComments: allComments,
 		NewComment:  newComment,
 	}
+}
+
+type DiscussionPromptTemplates []DiscussionPromptTemplate
+
+func (d DiscussionPromptTemplates) BuildFullPrompt() (string, error) {
+	for i := range d {
+		d[i].CommentTree = d[i].buildCommentTree()
+	}
+
+	var buf bytes.Buffer
+	err := discussionsFullTemplate.Execute(&buf, d)
+	if err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
 }

@@ -51,7 +51,7 @@ type GenerateReq struct {
 	DefaultAnswer string `json:"default_answer"`
 }
 
-func (l *LLM) Answer(ctx context.Context, req GenerateReq) (string, bool, error) {
+func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (string, bool, error) {
 	defaultAnswer := req.DefaultAnswer
 
 	if defaultAnswer == "" {
@@ -62,7 +62,7 @@ func (l *LLM) Answer(ctx context.Context, req GenerateReq) (string, bool, error)
 	if err != nil {
 		return "", false, err
 	}
-	res, err := l.Chat(ctx, llm.SystemChatPrompt, req.Prompt, map[string]any{
+	res, err := l.Chat(ctx, sysPrompt, req.Prompt, map[string]any{
 		"DefaultAnswer":      defaultAnswer,
 		"CurrentDate":        time.Now().Format("2006-01-02"),
 		"KnowledgeDocuments": knowledgeDocuments,
@@ -75,6 +75,14 @@ func (l *LLM) Answer(ctx context.Context, req GenerateReq) (string, bool, error)
 		return req.DefaultAnswer, false, nil
 	}
 	return res, true, nil
+}
+
+func (l *LLM) Answer(ctx context.Context, req GenerateReq) (string, bool, error) {
+	return l.answer(ctx, llm.SystemChatPrompt, req)
+}
+
+func (l *LLM) AnswerWithThink(ctx context.Context, req GenerateReq) (string, bool, error) {
+	return l.answer(ctx, llm.SystemChatWithThinkPrompt, req)
 }
 
 func (l *LLM) Chat(ctx context.Context, sMsg string, uMsg string, params map[string]any) (string, error) {
@@ -126,14 +134,6 @@ type LLMStream struct {
 
 func (l *LLMStream) Close() {
 	close(l.stop)
-
-	for {
-		select {
-		case <-l.c:
-		default:
-			return
-		}
-	}
 }
 
 func (l *LLMStream) Recv(f func() (string, error)) {
@@ -213,14 +213,24 @@ func (l *LLM) StreamChat(ctx context.Context, sMsg string, uMsg string, params m
 	return &s, nil
 }
 
-func (l *LLM) GenerateChatPrompt(ctx context.Context, discID uint, commID uint) (string, string, error) {
-	logger := l.logger.WithContext(ctx).With("discussion_id", discID, "comment_id", commID)
-	logger.Debug("start generate prompt")
+func (l *LLM) GenerateDiscussionPrompt(ctx context.Context, discIDs ...uint) (string, error) {
+	var discTemplates llm.DiscussionPromptTemplates
+	for _, discID := range discIDs {
+		template, err := l.discussionPromptTemplate(ctx, discID, 0)
+		if err != nil {
+			return "", nil
+		}
+		discTemplates = append(discTemplates, *template)
+	}
 
+	return discTemplates.BuildFullPrompt()
+}
+
+func (l *LLM) discussionPromptTemplate(ctx context.Context, discID uint, commID uint) (*llm.DiscussionPromptTemplate, error) {
 	// 1. 获取讨论详情
 	discussion, err := l.disc.Detail(ctx, 0, discID)
 	if err != nil {
-		return "", "", fmt.Errorf("get discussion detail failed: %w", err)
+		return nil, fmt.Errorf("get discussion detail failed: %w", err)
 	}
 
 	// 2. 获取该讨论的所有评论
@@ -230,7 +240,7 @@ func (l *LLM) GenerateChatPrompt(ctx context.Context, discID uint, commID uint) 
 		repo.QueryWithOrderBy("created_at ASC"),
 	)
 	if err != nil {
-		return "", "", fmt.Errorf("get discussion comments failed: %w", err)
+		return nil, fmt.Errorf("get discussion comments failed: %w", err)
 	}
 
 	// 3. 获取新评论详情
@@ -238,12 +248,21 @@ func (l *LLM) GenerateChatPrompt(ctx context.Context, discID uint, commID uint) 
 	if commID > 0 {
 		newComment, err = l.comm.Detail(ctx, commID)
 		if err != nil {
-			return "", "", fmt.Errorf("get new comment detail failed: %w", err)
+			return nil, fmt.Errorf("get new comment detail failed: %w", err)
 		}
 	}
 
-	// 4. 创建提示词模版并生成提示词
-	template := llm.NewDiscussionPromptTemplate(discussion, allComments, newComment)
+	return llm.NewDiscussionPromptTemplate(discussion, allComments, newComment), nil
+}
+
+func (l *LLM) GenerateChatPrompt(ctx context.Context, discID uint, commID uint) (string, string, error) {
+	logger := l.logger.WithContext(ctx).With("discussion_id", discID, "comment_id", commID)
+	logger.Debug("start generate prompt")
+
+	template, err := l.discussionPromptTemplate(ctx, discID, commID)
+	if err != nil {
+		return "", "", err
+	}
 
 	prompt, err := template.BuildFullPrompt()
 	if err != nil {

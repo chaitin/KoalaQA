@@ -316,10 +316,26 @@ type DiscussionListBackendReq struct {
 
 	Keyword *string `json:"keyword" form:"keyword"`
 	ForumID uint    `json:"forum_id" form:"forum_id" binding:"required"`
+	AI      bool    `json:"ai" form:"ai"`
 }
 
 func (d *Discussion) ListBackend(ctx context.Context, req DiscussionListBackendReq) (*model.ListRes[*model.DiscussionListItem], error) {
 	var res model.ListRes[*model.DiscussionListItem]
+
+	if req.AI && req.Keyword != nil && *req.Keyword != "" {
+		var err error
+		res.Items, err = d.Search(ctx, DiscussionSearchReq{
+			Keyword:             *req.Keyword,
+			ForumID:             req.ForumID,
+			SimilarityThreshold: 0.8,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		res.Total = int64(len(res.Items))
+		return &res, nil
+	}
 
 	query := []repo.QueryOptFunc{
 		repo.QueryWithEqual("forum_id", req.ForumID),
@@ -445,7 +461,7 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 }
 
 type DiscussionSummaryReq struct {
-	UUIDs model.StringArray `form:"uuids" binding:"required"`
+	UUIDs model.StringArray `json:"uuids" binding:"required"`
 }
 
 func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummaryReq) (*LLMStream, error) {
@@ -459,9 +475,13 @@ func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummar
 		return nil, errors.New("invalid request")
 	}
 
-	forumM := make(map[uint]struct{})
+	var forumID uint
 	for _, disc := range discs {
-		if _, ok := forumM[disc.ForumID]; ok {
+		if forumID == 0 {
+			forumID = disc.ForumID
+		} else if disc.ForumID != forumID {
+			return nil, errors.New("invalid request")
+		} else {
 			continue
 		}
 
@@ -473,7 +493,6 @@ func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummar
 		if !ok {
 			return nil, errPermission
 		}
-		forumM[disc.ForumID] = struct{}{}
 	}
 
 	userPrompt, err := llm.DiscussionSummaryUserPrompt(discs)
@@ -484,6 +503,46 @@ func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummar
 	return d.in.LLM.StreamChat(ctx, llm.DiscussionSummarySystemPrompt, userPrompt, map[string]any{
 		"Discussions": discs,
 	})
+}
+
+type DiscussionKeywordAnswerReq struct {
+	Keyword string            `form:"keyword" binding:"required"`
+	UUIDs   model.StringArray `form:"uuids"`
+}
+
+func (d *Discussion) KeywordAnswer(ctx context.Context, req DiscussionKeywordAnswerReq) (string, error) {
+	var discs []model.DiscussionListItem
+	if len(req.UUIDs) > 0 {
+		err := d.in.DiscRepo.List(ctx, &discs, repo.QueryWithEqual("uuid", req.UUIDs, repo.EqualOPEqAny))
+		if err != nil {
+			return "", err
+		}
+	}
+
+	discIDs := make([]uint, len(discs))
+	for _, disc := range discs {
+		discIDs = append(discIDs, disc.ID)
+	}
+
+	prompt, err := d.in.LLM.GenerateDiscussionPrompt(ctx, discIDs...)
+	if err != nil {
+		return "", err
+	}
+
+	content, answer, err := d.in.LLM.AnswerWithThink(ctx, GenerateReq{
+		Question:      req.Keyword,
+		Prompt:        prompt,
+		DefaultAnswer: "无法回答问题",
+	})
+	if err != nil {
+		return "", err
+	}
+
+	if !answer {
+		return "", nil
+	}
+
+	return content, nil
 }
 
 func (d *Discussion) DetailByUUID(ctx context.Context, uid uint, uuid string) (*model.DiscussionDetail, error) {

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"strings"
 	"text/template"
-	"time"
 
 	"github.com/chaitin/koalaqa/model"
 )
@@ -76,11 +75,9 @@ func DiscussionSummaryUserPrompt(discs []model.DiscussionListItem) (string, erro
 func init() {
 	var err error
 	discissopmSummaryUserTpl, err = discissopmSummaryUserTpl.Funcs(template.FuncMap{
-		"add":  func(a, b int) int { return a + b },
-		"join": strings.Join,
-		"formatTime": func(timestamp model.Timestamp) string {
-			return time.Unix(int64(timestamp), 0).Format("2006-01-02 15:04:05")
-		},
+		"add":        func(a, b int) int { return a + b },
+		"join":       strings.Join,
+		"formatTime": formatTime,
 	}).Parse(discussionSummaryUserTplStr)
 	if err != nil {
 		panic(err)

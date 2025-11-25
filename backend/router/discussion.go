@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/chaitin/koalaqa/pkg/context"
@@ -23,7 +24,7 @@ func init() {
 func (d *discussion) Route(h server.Handler) {
 	g := h.Group("/discussion")
 	g.GET("", d.List)
-	g.GET("/summary", d.Summary)
+	g.POST("/summary", d.Summary)
 	g.GET("/:disc_id", d.Detail)
 	g.GET("/:disc_id/similarity", d.ListSimilarity)
 }
@@ -57,10 +58,10 @@ func (d *discussion) List(ctx *context.Context) {
 // @Tags discussion
 // @Produce text/event-stream
 // @Param req query svc.DiscussionSummaryReq false "req params"
-// @Router /discussion/summary [get]
+// @Router /discussion/summary [post]
 func (d *discussion) Summary(ctx *context.Context) {
 	var req svc.DiscussionSummaryReq
-	err := ctx.ShouldBindQuery(&req)
+	err := ctx.ShouldBindJSON(&req)
 	if err != nil {
 		ctx.BadRequest(err)
 		return
@@ -82,7 +83,7 @@ func (d *discussion) Summary(ctx *context.Context) {
 			return false
 		}
 
-		ctx.SSEvent("text", content)
+		ctx.SSEvent("text", fmt.Sprintf("%q", content))
 		return true
 	})
 }
