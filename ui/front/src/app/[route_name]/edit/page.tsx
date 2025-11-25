@@ -56,10 +56,15 @@ export default function EditPage() {
 
   // 当systemConfig加载完成时，如果是新建Q&A帖子且内容为空，则设置默认内容
   useEffect(() => {
-    if (!queryId && systemConfig?.content_placeholder && !data.content && data.type === ModelDiscussionType.DiscussionTypeQA) {
-      setData(prev => ({
+    if (
+      !queryId &&
+      systemConfig?.content_placeholder &&
+      !data.content &&
+      data.type === ModelDiscussionType.DiscussionTypeQA
+    ) {
+      setData((prev) => ({
         ...prev,
-        content: systemConfig.content_placeholder
+        content: systemConfig.content_placeholder,
       }))
     }
   }, [systemConfig, queryId, data.content, data.type])
@@ -124,9 +129,12 @@ export default function EditPage() {
               '& .md-container .MuiIconButton-root': {
                 display: 'none',
               },
-              '& .editor-toolbar':{
+              '& .tiptap': {
+                minHeight: '560px',
+              },
+              '& .editor-toolbar': {
                 borderBottom: '1px solid #D9DEE2',
-              }
+              },
             }}
           >
             <EditorWrap

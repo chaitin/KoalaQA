@@ -391,17 +391,6 @@ const Header = ({ brandConfig }: HeaderProps) => {
             )}
           </Box>
         </Toolbar>
-
-        {/* 搜索结果弹窗 */}
-        <SearchResultModal
-          open={searchModalOpen}
-          onClose={handleCloseSearchModal}
-          forumId={currentForumId}
-          initialQuery={searchInputValue}
-          onAsk={handleAsk}
-          onFeedback={handleFeedback}
-          onArticle={handleArticle}
-        />
       </AppBar>
 
       {/* Mobile Header */}

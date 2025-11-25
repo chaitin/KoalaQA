@@ -2,6 +2,7 @@
 import { getDiscussion } from '@/api'
 import { GetDiscussionParams, ModelDiscussionListItem } from '@/api/types'
 import DiscussCard from '@/app/[route_name]/ui/discussCard'
+import AISummaryPanel from './AISummaryPanel'
 import SearchIcon from '@mui/icons-material/Search'
 import {
   Box,
@@ -17,6 +18,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material'
+import ClearIcon from '@mui/icons-material/Clear'
 import Image from 'next/image'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -69,6 +71,21 @@ export const SearchResultModal = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialQuery])
 
+  // 当搜索内容改变时的处理函数
+  useEffect(() => {
+    // 只在弹窗打开且搜索内容变化时进行处理
+    if (open) {
+      const timer = setTimeout(() => {
+        // 只有当搜索内容与初始查询不同时才触发自动搜索
+        if (searchQuery.trim() && searchQuery !== initialQuery) {
+          performSearch(searchQuery.trim())
+        }
+      }, 500) // 500ms 防抖，给用户更多时间输入
+
+      return () => clearTimeout(timer)
+    }
+  }, [searchQuery, open, initialQuery])
+
   // 执行搜索的函数
   const performSearch = useCallback(
     async (query: string) => {
@@ -94,12 +111,29 @@ export const SearchResultModal = ({
     [forumId],
   )
 
+  // 处理搜索输入变化
+  const handleSearchInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setSearchQuery(value)
+  }, [])
+
+  // 清空搜索
+  const handleClearSearch = useCallback(() => {
+    setSearchQuery('')
+    setSearchResults([])
+    searchInputRef.current?.focus()
+  }, [])
+
   // 处理键盘事件
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !(e.nativeEvent as KeyboardEvent).isComposing) {
       e.preventDefault()
-      performSearch(searchQuery)
+      // Enter 键直接触发搜索，但不关闭弹窗
+      if (searchQuery.trim()) {
+        performSearch(searchQuery.trim())
+      }
     } else if (e.key === 'Escape') {
+      // 只有当用户明确想关闭弹窗时才调用 onClose
       onClose()
     }
   }
@@ -125,7 +159,7 @@ export const SearchResultModal = ({
           <OutlinedInput
             ref={searchInputRef}
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearchInputChange}
             onKeyDown={handleKeyDown}
             placeholder='输入任意内容，使用 AI 搜索'
             startAdornment={
@@ -135,6 +169,21 @@ export const SearchResultModal = ({
             }
             endAdornment={
               <InputAdornment position='end'>
+                {searchQuery && (
+                  <IconButton
+                    onClick={handleClearSearch}
+                    size='small'
+                    sx={{
+                      color: 'rgba(0,0,0,0.4)',
+                      mr: 1,
+                      '&:hover': {
+                        backgroundColor: 'rgba(0,0,0,0.04)',
+                      },
+                    }}
+                  >
+                    <ClearIcon fontSize='small' />
+                  </IconButton>
+                )}
                 <IconButton
                   onClick={onClose}
                   size='small'
@@ -178,98 +227,132 @@ export const SearchResultModal = ({
         </Stack>
       </DialogTitle>
 
-      <DialogContent sx={{ p: 0, pt: 1,  }}>
-        <Stack sx={{ px: 2, py: 1 }}>
-          <Typography variant='body2' sx={{ color: 'rgba(0,0,0,0.6)', fontSize: 14 }}>
-            共找到 {searchResults.length} 个结果
-          </Typography>
-        </Stack>
+      <DialogContent sx={{ p: 0, pt: 1, height: '60vh' }}>
+        {/* 主要内容区域 - 左右两列布局 */}
         <Box
           sx={{
-            maxHeight: isMobile ? 'calc(100vh - 120px)' : '60vh',
-            overflow: 'auto',
+            display: 'flex',
+            gap: 2,
+            // maxHeight: isMobile ? 'calc(100vh - 140px)' : '65vh',
             px: 2,
             py: 1,
+            height: '100%',
           }}
         >
-          {loading ? (
-            <Stack alignItems='center' justifyContent='center' sx={{ py: 4 }}>
-              <Typography variant='body2' sx={{ color: 'rgba(0,0,0,0.6)' }}>
-                搜索中...
+          {/* 左侧搜索结果区域（包含标题和列表）- 70% */}
+          <Box
+            sx={{
+              flex: '1',
+              display: 'flex',
+              flexDirection: 'column',
+              minWidth: 0, // 防止 flex 子项溢出
+              height: '100%',
+            }}
+          >
+            {/* 搜索结果标题 - 固定在顶部 */}
+            <Box sx={{ pb: 2, flexShrink: 0 }}>
+              <Typography variant='body2' sx={{ color: 'rgba(0,0,0,0.6)', fontSize: 14 }}>
+                共找到 {searchResults.length} 个结果
               </Typography>
-            </Stack>
-          ) : searchResults.length === 0 ? (
-            <Stack alignItems='center' justifyContent='center' sx={{ py: 6 }}>
-              {/* 空状态图标 */}
-              <Box sx={{ mb: 3 }}>
-                <Image
-                  src='/empty.png'
-                  alt='空状态'
-                  width={250}
-                  height={137}
-                  style={{ maxWidth: '100%', height: 'auto' }}
-                />
-              </Box>
+            </Box>
+            {/* 搜索结果列表 - 可滚动区域 */}
+            <Box
+              sx={{
+                flex: 1,
+                overflow: 'auto',
+                minHeight: 0, // 确保可以收缩
+              }}
+            >
+              {loading ? (
+                <Stack alignItems='center' justifyContent='center' sx={{ py: 4 }}>
+                  <Typography variant='body2' sx={{ color: 'rgba(0,0,0,0.6)' }}>
+                    搜索中...
+                  </Typography>
+                </Stack>
+              ) : searchResults.length === 0 ? (
+                <Stack alignItems='center' justifyContent='center' sx={{ py: 6 }}>
+                  {/* 空状态图标 */}
+                  <Box sx={{ mb: 3 }}>
+                    <Image
+                      src='/empty.png'
+                      alt='空状态'
+                      width={250}
+                      height={137}
+                      style={{ maxWidth: '100%', height: 'auto' }}
+                    />
+                  </Box>
 
-              {/* 提示文字 */}
-              <Typography
-                variant='body1'
-                sx={{
-                  color: 'rgba(0,0,0,0.6)',
-                  fontSize: 16,
-                  mb: 3,
-                  textAlign: 'center',
-                }}
-              >
-                未搜索到相关内容,您可以
-              </Typography>
-
-              {/* 操作按钮 */}
-              <Stack spacing={2} sx={{ width: '100%', maxWidth: 200 }}>
-                {[
-                  {
-                    label: '👉发帖提问',
-                    onClick: onAsk,
-                  },
-                  // {
-                  //   label: '👉提交反馈',
-                  //   onClick: onFeedback,
-                  // },
-                  {
-                    label: '👉发布文章',
-                    onClick: onArticle,
-                    variant: 'outlined' as const,
-                  },
-                ].map((button, index) => (
-                  <Button
-                    key={index}
-                    variant={'outlined'}
-                    onClick={button.onClick}
+                  {/* 提示文字 */}
+                  <Typography
+                    variant='body1'
                     sx={{
                       color: 'rgba(0,0,0,0.6)',
-                      borderRadius: 2,
-                      py: 1.5,
-                      fontSize: 14,
-                      fontWeight: 500,
+                      fontSize: 16,
+                      mb: 3,
+                      textAlign: 'center',
                     }}
                   >
-                    {button.label}
-                  </Button>
-                ))}
-              </Stack>
-            </Stack>
-          ) : (
-            <Stack spacing={1}>
-              {searchResults.map((item, index) => (
-                <DiscussCard
-                  key={item.id || index}
-                  sx={{ border: '1px solid ', borderColor: 'divider', borderRadius: 1 }}
-                  data={item}
-                  keywords={searchQuery}
-                  showType={true}
-                />
-              ))}
-            </Stack>
+                    未搜索到相关内容,您可以
+                  </Typography>
+
+                  {/* 操作按钮 */}
+                  <Stack spacing={2} sx={{ width: '100%', maxWidth: 200 }}>
+                    {[
+                      {
+                        label: '👉发帖提问',
+                        onClick: onAsk,
+                      },
+                      // {
+                      //   label: '👉提交反馈',
+                      //   onClick: onFeedback,
+                      // },
+                      {
+                        label: '👉发布文章',
+                        onClick: onArticle,
+                        variant: 'outlined' as const,
+                      },
+                    ].map((button, index) => (
+                      <Button
+                        key={index}
+                        variant={'outlined'}
+                        onClick={button.onClick}
+                        sx={{
+                          color: 'rgba(0,0,0,0.6)',
+                          borderRadius: 2,
+                          py: 1.5,
+                          fontSize: 14,
+                          fontWeight: 500,
+                        }}
+                      >
+                        {button.label}
+                      </Button>
+                    ))}
+                  </Stack>
+                </Stack>
+              ) : (
+                <Stack spacing={1}>
+                  {searchResults.map((item, index) => (
+                    <DiscussCard
+                      key={item.id || index}
+                      sx={{ border: '1px solid ', borderColor: 'divider', borderRadius: 1 }}
+                      data={item}
+                      keywords={searchQuery}
+                      showType={true}
+                    />
+                  ))}
+                </Stack>
+              )}
+            </Box>{' '}
+            {/* 结束搜索结果列表的可滚动区域 */}
+          </Box>{' '}
+          {/* 结束左侧搜索结果区域 */}
+          {/* 右侧智能总结面板 - 30% */}
+          {!isMobile && (
+            <AISummaryPanel
+              searchResults={searchResults}
+              searchQuery={searchQuery}
+              visible={!loading && searchResults.length > 0}
+            />
           )}
         </Box>
       </DialogContent>

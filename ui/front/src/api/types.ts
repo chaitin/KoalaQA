@@ -1002,12 +1002,18 @@ export interface PutAdminBotPayload {
 }
 
 export interface GetAdminDiscussionParams {
+  ai?: boolean;
   forum_id: number;
   keyword?: string;
   /** @min 1 */
   page?: number;
   /** @min 1 */
   size?: number;
+}
+
+export interface GetAdminDiscussionQuestionParams {
+  keyword: string;
+  uuids?: string[];
 }
 
 /** request params */
@@ -1357,6 +1363,10 @@ export interface GetDiscussionParams {
   size?: number;
   stat?: boolean;
   type?: "qa" | "feedback" | "blog";
+}
+
+export interface PostDiscussionSummaryParams {
+  uuids: string[];
 }
 
 /** request params */

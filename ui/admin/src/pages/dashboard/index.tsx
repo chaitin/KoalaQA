@@ -32,6 +32,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Area,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -95,6 +96,7 @@ interface StatCardProps {
 interface ChartSectionProps {
   title: string;
   children: ReactNode;
+  showTime?: boolean;
 }
 
 interface InsightItemProps {
@@ -170,6 +172,7 @@ const formatTime = (seconds: number | null | undefined): string => {
 interface AIRateTrendDataPoint {
   name: string;
   value: number; // AI 应答率或解决率
+  areaValue: number; // 用于Area组件显示，避免tooltip重复
 }
 
 // AI 应答率趋势计算：(StatTypeDiscussionQA - StatTypeBotUnknown) / StatTypeDiscussionQA
@@ -210,6 +213,7 @@ const transformAIResponseRateTrendData = (trendData: ModelStatTrend[]): AIRateTr
     result.push({
       name: dateKey,
       value: responseRate,
+      areaValue: responseRate,
     });
   }
 
@@ -253,6 +257,7 @@ const transformAIResolveRateTrendData = (trendData: ModelStatTrend[]): AIRateTre
     result.push({
       name: dateKey,
       value: resolveRate,
+      areaValue: resolveRate,
     });
   }
 
@@ -597,7 +602,7 @@ const StatCard: React.FC<StatCardProps> = ({ type, metrics }) => {
   );
 };
 
-const ChartSection: React.FC<ChartSectionProps> = ({ title, children }) => {
+const ChartSection: React.FC<ChartSectionProps> = ({ title, children, showTime = true }) => {
   return (
     <Card
       elevation={0}
@@ -615,9 +620,11 @@ const ChartSection: React.FC<ChartSectionProps> = ({ title, children }) => {
         <Typography variant="subtitle1" fontWeight={700} color="text.primary">
           {title}
         </Typography>
-        <Typography variant="caption" color="text.secondary">
-          近 30 天
-        </Typography>
+        {showTime && (
+          <Typography variant="caption" color="text.secondary">
+            近 30 天
+          </Typography>
+        )}
       </Stack>
       <Box sx={{ flexGrow: 1, minHeight: 0, width: '100%' }}>{children}</Box>
     </Card>
@@ -659,17 +666,15 @@ const InsightItem: React.FC<InsightItemProps> = ({
 
   // 背景色和文字色配置
   const bgColor = isCritical ? '#fef2f2' : '#ecfeff'; // Red 50 / Cyan 50
-  const iconBg = isCritical ? '#fee2e2' : '#cffafe'; // Red 100 / Cyan 100
-  const iconColor = isCritical ? '#ef4444' : '#06b6d4'; // Red 500 / Cyan 500
-  const titleColor = isCritical ? '#b91c1c' : '#0e7490'; // Red 700 / Cyan 700
+  const iconBg = isCritical ? '#fee2e2' : 'rgba(76, 165, 167, 0.10)'; // Red 100 / Cyan 100
+  const iconColor = isCritical ? '#ef4444' : 'rgba(76, 165, 167, 1)'; // Red 500 / Cyan 500
 
   return (
     <Box
       sx={{
-        bgcolor: bgColor,
-        borderRadius: 3,
+        bgcolor: 'rgba(76, 165, 167, 0.08)',
+        borderRadius: 1,
         p: 1.5,
-        mb: 1,
         transition: 'all 0.3s',
       }}
     >
@@ -688,26 +693,18 @@ const InsightItem: React.FC<InsightItemProps> = ({
         <Box sx={{ flexGrow: 1 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
             <Box>
-              <Typography variant="body2" fontWeight={600} sx={{ color: titleColor }}>
+              <Typography variant="body2" fontWeight={600} sx={{ color: 'rgba(76, 165, 167, 1)' }}>
                 {title}
               </Typography>
-              <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+              <Typography
+                variant="caption"
+                color="rgba(76, 165, 167, 0.50)"
+                display="block"
+                mt={0.5}
+              >
                 {time}
               </Typography>
             </Box>
-            <IconButton
-              size="small"
-              sx={{ p: 0, color: 'text.disabled' }}
-              onClick={() => setLocalIsExpanded(!localIsExpanded)}
-            >
-              <ChevronRight
-                fontSize="small"
-                sx={{
-                  transform: localIsExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-                  transition: 'transform 0.2s ease-in-out',
-                }}
-              />
-            </IconButton>
           </Stack>
         </Box>
       </Stack>
@@ -717,9 +714,9 @@ const InsightItem: React.FC<InsightItemProps> = ({
           sx={{
             mt: 2,
             p: 2,
-            bgcolor: '#fdfdfd',
-            borderRadius: 2,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+            bgcolor: 'rgba(255,255,255,0.8)',
+            borderRadius: 1,
+            boxShadow: '0px 0px 1px 1px rgba(54,59,76,0.03)',
           }}
         >
           <Stack spacing={1}>
@@ -739,7 +736,7 @@ const InsightItem: React.FC<InsightItemProps> = ({
 
 const Dashboard: React.FC = () => {
   const theme = useTheme();
-  const [timeRange, setTimeRange] = useState<TimeRange>('month');
+  const [timeRange, setTimeRange] = useState<TimeRange>('today');
 
   // 数据状态
   const [data, setData] = useState<DashboardData>({
@@ -1088,7 +1085,7 @@ const Dashboard: React.FC = () => {
                     {/* 柱状图区域 */}
                     <Grid container spacing={2}>
                       <Grid size={{ xs: 12, md: 6 }}>
-                        <ChartSection title="访问用户情况">
+                        <ChartSection title="访问用户情况" showTime={false}>
                           <ResponsiveContainer width="100%" height="100%">
                             <div style={{ outline: 'none' }} onMouseDown={e => e.preventDefault()}>
                               <BarChart
@@ -1115,15 +1112,35 @@ const Dashboard: React.FC = () => {
                                     border: 'none',
                                     boxShadow: theme.shadows[3],
                                   }}
+                                  formatter={(value: any, name: string) => {
+                                    return [
+                                      <span
+                                        style={{ color: '#2E6AFE' }}
+                                      >{`访问量: ${value}`}</span>,
+                                    ];
+                                  }}
+                                  labelFormatter={label => {
+                                    return `${label}`;
+                                  }}
                                 />
-                                <Bar dataKey="visits" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                                <Bar
+                                  dataKey="visits"
+                                  fill="url(#visitGradient)"
+                                  radius={[4, 4, 0, 0]}
+                                />
+                                <defs>
+                                  <linearGradient id="visitGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#2E6AFE" />
+                                    <stop offset="100%" stopColor="#6894FD" />
+                                  </linearGradient>
+                                </defs>
                               </BarChart>
                             </div>
                           </ResponsiveContainer>
                         </ChartSection>
                       </Grid>
                       <Grid size={{ xs: 12, md: 6 }}>
-                        <ChartSection title="发帖情况">
+                        <ChartSection title="发帖情况" showTime={false}>
                           <ResponsiveContainer width="100%" height="100%">
                             <div style={{ outline: 'none' }} onMouseDown={e => e.preventDefault()}>
                               <BarChart
@@ -1150,8 +1167,28 @@ const Dashboard: React.FC = () => {
                                     border: 'none',
                                     boxShadow: theme.shadows[3],
                                   }}
+                                   formatter={(value: any, name: string) => {
+                                    return [
+                                      <span
+                                        style={{ color: 'rgba(99, 103, 233, 1)' }}
+                                      >{`发帖量: ${value}`}</span>,
+                                    ];
+                                  }}
+                                  labelFormatter={label => {
+                                    return `${label}`;
+                                  }}
                                 />
-                                <Bar dataKey="posts" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                                <Bar
+                                  dataKey="posts"
+                                  fill="url(#postGradient)"
+                                  radius={[4, 4, 0, 0]}
+                                />
+                                <defs>
+                                  <linearGradient id="postGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#6367E9" />
+                                    <stop offset="100%" stopColor="#9CA0F6" />
+                                  </linearGradient>
+                                </defs>
                               </BarChart>
                             </div>
                           </ResponsiveContainer>
@@ -1178,11 +1215,11 @@ const Dashboard: React.FC = () => {
                     <Typography variant="h6" fontWeight={700} gutterBottom sx={{ mb: 1 }}>
                       AI 洞察
                     </Typography>
-                    <Box
+                    <Stack
                       sx={{
                         flexGrow: 1,
                         overflowY: 'auto',
-                        maxHeight: '360px', // 减去标题高度
+                        maxHeight: 'calc(35vh + 110px)', // 减去标题高度
                         '&::-webkit-scrollbar': {
                           width: '4px',
                         },
@@ -1198,6 +1235,7 @@ const Dashboard: React.FC = () => {
                           },
                         },
                       }}
+                      spacing={1}
                     >
                       {aiInsightData && aiInsightData.length > 0 ? (
                         aiInsightData.map((insight, index) => {
@@ -1221,7 +1259,7 @@ const Dashboard: React.FC = () => {
                           暂无AI洞察数据
                         </Typography>
                       )}
-                    </Box>
+                    </Stack>
                   </Card>
                 </Grid>
               </Grid>
@@ -1236,7 +1274,7 @@ const Dashboard: React.FC = () => {
                       <div style={{ outline: 'none' }} onMouseDown={e => e.preventDefault()}>
                         <LineChart
                           data={aiResponseRateData}
-                          margin={{ left: 10, right: 10, top: 10, bottom: 10 }}
+                          margin={{ left: 20, right: 10, top: 10, bottom: 10 }}
                         >
                           <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f0f0f0" />
                           <XAxis
@@ -1273,7 +1311,7 @@ const Dashboard: React.FC = () => {
                       <div style={{ outline: 'none' }} onMouseDown={e => e.preventDefault()}>
                         <LineChart
                           data={aiResolveRateData}
-                          margin={{ left: 10, right: 10, top: 10, bottom: 10 }}
+                          margin={{ left: 20, right: 10, top: 10, bottom: 10 }}
                         >
                           <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f0f0f0" />
                           <XAxis
