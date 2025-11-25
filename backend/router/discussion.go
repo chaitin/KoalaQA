@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/chaitin/koalaqa/pkg/context"
@@ -82,7 +83,7 @@ func (d *discussion) Summary(ctx *context.Context) {
 			return false
 		}
 
-		ctx.SSEvent("text", content)
+		ctx.SSEvent("text", fmt.Sprintf("%q", content))
 		return true
 	})
 }
