@@ -16,6 +16,7 @@ import {
   DeleteDiscussionDiscIdCommentCommentIdParams,
   DeleteDiscussionDiscIdParams,
   GetAdminDiscussionParams,
+  GetAdminDiscussionQuestionParams,
   GetDiscussionDiscIdParams,
   GetDiscussionDiscIdSimilarityParams,
   GetDiscussionParams,
@@ -30,6 +31,7 @@ import {
   PostDiscussionDiscIdLikeParams,
   PostDiscussionDiscIdResolveParams,
   PostDiscussionDiscIdRevokeLikeParams,
+  PostDiscussionSummaryParams,
   PostDiscussionUploadPayload,
   PutDiscussionDiscIdCloseParams,
   PutDiscussionDiscIdCommentCommentIdParams,
@@ -70,6 +72,35 @@ export const getAdminDiscussion = (
     }
   >({
     path: `/admin/discussion`,
+    method: "GET",
+    query: query,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description discussion ketword answer
+ *
+ * @tags discussion
+ * @name GetAdminDiscussionQuestion
+ * @summary discussion keyword answer
+ * @request GET:/admin/discussion/question
+ * @response `200` `(ContextResponse & {
+    data?: string,
+
+})` OK
+ */
+
+export const getAdminDiscussionQuestion = (
+  query: GetAdminDiscussionQuestionParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: string;
+    }
+  >({
+    path: `/admin/discussion/question`,
     method: "GET",
     query: query,
     format: "json",
@@ -167,6 +198,26 @@ export const postDiscussionComplete = (
     body: req,
     type: ContentType.Json,
     format: "json",
+    ...params,
+  });
+
+/**
+ * @description discussions summary
+ *
+ * @tags discussion
+ * @name PostDiscussionSummary
+ * @summary discussions summary
+ * @request POST:/discussion/summary
+ */
+
+export const postDiscussionSummary = (
+  query: PostDiscussionSummaryParams,
+  params: RequestParams = {},
+) =>
+  request<unknown>({
+    path: `/discussion/summary`,
+    method: "POST",
+    query: query,
     ...params,
   });
 
