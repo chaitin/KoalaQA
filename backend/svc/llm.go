@@ -134,14 +134,6 @@ type LLMStream struct {
 
 func (l *LLMStream) Close() {
 	close(l.stop)
-
-	for {
-		select {
-		case <-l.c:
-		default:
-			return
-		}
-	}
 }
 
 func (l *LLMStream) Recv(f func() (string, error)) {
