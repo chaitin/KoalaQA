@@ -222,12 +222,12 @@ const ModelManagementModal = ({
             sx={{
               mt: 2,
               p: 2,
-              bgcolor: 'warning.light',
+              bgcolor: 'info.main',
               borderRadius: 1,
-              color: 'warning.dark',
+              color: '#fff',
             }}
           >
-            请至少配置一个模型后才能继续使用系统
+            配置模型后才能继续使用系统
           </Box>
         )}
       </Stack>

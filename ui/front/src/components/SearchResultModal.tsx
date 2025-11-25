@@ -142,7 +142,7 @@ export const SearchResultModal = ({
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth='lg'
+      maxWidth='md'
       fullWidth
       fullScreen={isMobile}
       sx={{
@@ -227,120 +227,133 @@ export const SearchResultModal = ({
         </Stack>
       </DialogTitle>
 
-      <DialogContent sx={{ p: 0, pt: 1, }}>
-        <Stack sx={{ px: 2, py: 1 }}>
-          <Typography variant='body2' sx={{ color: 'rgba(0,0,0,0.6)', fontSize: 14 }}>
-            共找到 {searchResults.length} 个结果
-          </Typography>
-        </Stack>
-
+      <DialogContent sx={{ p: 0, pt: 1, height: '60vh' }}>
         {/* 主要内容区域 - 左右两列布局 */}
-        <Box sx={{ px: 2, py: 1 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            // maxHeight: isMobile ? 'calc(100vh - 140px)' : '65vh',
+            px: 2,
+            py: 1,
+            height: '100%',
+          }}
+        >
+          {/* 左侧搜索结果区域（包含标题和列表）- 70% */}
           <Box
             sx={{
+              flex: '1',
               display: 'flex',
-              gap: 2,
-              maxHeight: isMobile ? 'calc(100vh - 140px)' : '65vh',
+              flexDirection: 'column',
+              minWidth: 0, // 防止 flex 子项溢出
+              height: '100%',
             }}
           >
-            {/* 左侧搜索结果 */}
+            {/* 搜索结果标题 - 固定在顶部 */}
+            <Box sx={{ pb: 2, flexShrink: 0 }}>
+              <Typography variant='body2' sx={{ color: 'rgba(0,0,0,0.6)', fontSize: 14 }}>
+                共找到 {searchResults.length} 个结果
+              </Typography>
+            </Box>
+            {/* 搜索结果列表 - 可滚动区域 */}
             <Box
               sx={{
                 flex: 1,
                 overflow: 'auto',
-                minWidth: 0, // 防止 flex 子项溢出
+                minHeight: 0, // 确保可以收缩
               }}
             >
-            {loading ? (
-              <Stack alignItems='center' justifyContent='center' sx={{ py: 4 }}>
-                <Typography variant='body2' sx={{ color: 'rgba(0,0,0,0.6)' }}>
-                  搜索中...
-                </Typography>
-              </Stack>
-            ) : searchResults.length === 0 ? (
-              <Stack alignItems='center' justifyContent='center' sx={{ py: 6 }}>
-                {/* 空状态图标 */}
-                <Box sx={{ mb: 3 }}>
-                  <Image
-                    src='/empty.png'
-                    alt='空状态'
-                    width={250}
-                    height={137}
-                    style={{ maxWidth: '100%', height: 'auto' }}
-                  />
-                </Box>
+              {loading ? (
+                <Stack alignItems='center' justifyContent='center' sx={{ py: 4 }}>
+                  <Typography variant='body2' sx={{ color: 'rgba(0,0,0,0.6)' }}>
+                    搜索中...
+                  </Typography>
+                </Stack>
+              ) : searchResults.length === 0 ? (
+                <Stack alignItems='center' justifyContent='center' sx={{ py: 6 }}>
+                  {/* 空状态图标 */}
+                  <Box sx={{ mb: 3 }}>
+                    <Image
+                      src='/empty.png'
+                      alt='空状态'
+                      width={250}
+                      height={137}
+                      style={{ maxWidth: '100%', height: 'auto' }}
+                    />
+                  </Box>
 
-                {/* 提示文字 */}
-                <Typography
-                  variant='body1'
-                  sx={{
-                    color: 'rgba(0,0,0,0.6)',
-                    fontSize: 16,
-                    mb: 3,
-                    textAlign: 'center',
-                  }}
-                >
-                  未搜索到相关内容,您可以
-                </Typography>
+                  {/* 提示文字 */}
+                  <Typography
+                    variant='body1'
+                    sx={{
+                      color: 'rgba(0,0,0,0.6)',
+                      fontSize: 16,
+                      mb: 3,
+                      textAlign: 'center',
+                    }}
+                  >
+                    未搜索到相关内容,您可以
+                  </Typography>
 
-                {/* 操作按钮 */}
-                <Stack spacing={2} sx={{ width: '100%', maxWidth: 200 }}>
-                  {[
-                    {
-                      label: '👉发帖提问',
-                      onClick: onAsk,
-                    },
-                    // {
-                    //   label: '👉提交反馈',
-                    //   onClick: onFeedback,
-                    // },
-                    {
-                      label: '👉发布文章',
-                      onClick: onArticle,
-                      variant: 'outlined' as const,
-                    },
-                  ].map((button, index) => (
-                    <Button
-                      key={index}
-                      variant={'outlined'}
-                      onClick={button.onClick}
-                      sx={{
-                        color: 'rgba(0,0,0,0.6)',
-                        borderRadius: 2,
-                        py: 1.5,
-                        fontSize: 14,
-                        fontWeight: 500,
-                      }}
-                    >
-                      {button.label}
-                    </Button>
+                  {/* 操作按钮 */}
+                  <Stack spacing={2} sx={{ width: '100%', maxWidth: 200 }}>
+                    {[
+                      {
+                        label: '👉发帖提问',
+                        onClick: onAsk,
+                      },
+                      // {
+                      //   label: '👉提交反馈',
+                      //   onClick: onFeedback,
+                      // },
+                      {
+                        label: '👉发布文章',
+                        onClick: onArticle,
+                        variant: 'outlined' as const,
+                      },
+                    ].map((button, index) => (
+                      <Button
+                        key={index}
+                        variant={'outlined'}
+                        onClick={button.onClick}
+                        sx={{
+                          color: 'rgba(0,0,0,0.6)',
+                          borderRadius: 2,
+                          py: 1.5,
+                          fontSize: 14,
+                          fontWeight: 500,
+                        }}
+                      >
+                        {button.label}
+                      </Button>
+                    ))}
+                  </Stack>
+                </Stack>
+              ) : (
+                <Stack spacing={1}>
+                  {searchResults.map((item, index) => (
+                    <DiscussCard
+                      key={item.id || index}
+                      sx={{ border: '1px solid ', borderColor: 'divider', borderRadius: 1 }}
+                      data={item}
+                      keywords={searchQuery}
+                      showType={true}
+                    />
                   ))}
                 </Stack>
-              </Stack>
-            ) : (
-              <Stack spacing={1}>
-                {searchResults.map((item, index) => (
-                  <DiscussCard
-                    key={item.id || index}
-                    sx={{ border: '1px solid ', borderColor: 'divider', borderRadius: 1 }}
-                    data={item}
-                    keywords={searchQuery}
-                    showType={true}
-                  />
-                ))}
-              </Stack>
-            )}
-            </Box>
-
-            {/* 右侧智能总结面板 - 仅在桌面端显示 */}
-            {!isMobile && (
-              <AISummaryPanel
-                searchResults={searchResults}
-                searchQuery={searchQuery}
-                visible={!loading && searchResults.length > 0}
-              />
-            )}
-          </Box>
+              )}
+            </Box>{' '}
+            {/* 结束搜索结果列表的可滚动区域 */}
+          </Box>{' '}
+          {/* 结束左侧搜索结果区域 */}
+          {/* 右侧智能总结面板 - 30% */}
+          {!isMobile && (
+            <AISummaryPanel
+              searchResults={searchResults}
+              searchQuery={searchQuery}
+              visible={!loading && searchResults.length > 0}
+            />
+          )}
         </Box>
       </DialogContent>
     </Dialog>

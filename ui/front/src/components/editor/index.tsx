@@ -217,6 +217,7 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
         <Box
           className='editor-wrap'
           sx={{
+            height: '100%',
             display: 'flex',
             flexDirection: 'column',
             borderRadius: 3,

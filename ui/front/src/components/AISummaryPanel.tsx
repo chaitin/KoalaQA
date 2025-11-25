@@ -209,57 +209,58 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
     <Paper
       elevation={0}
       sx={{
-        width: '30%',
+        flex: '0 0 30%',
+        minWidth: 0,
         height: '100%',
-        overflow:'auto',
         display: 'flex',
+        pt: 0,
+        pr: 2,
         flexDirection: 'column',
-        border: '1px solid',
-        borderColor: 'divider',
         borderRadius: 1,
-        backgroundColor: 'grey.50',
-        ml: 2,
       }}
     >
-      {/* 头部 */}
-      <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
+      {/* 头部 - 固定高度 */}
+      <Box sx={{ flexShrink: 0, mb: 2 }}>
         <Stack direction='row' alignItems='center' spacing={1.5}>
           {isSummarizing ? (
-            <img src='/search_loading.gif' alt='loading' style={{ width: 18, height: 18 }} />
+            <img src='/ai_purple.png' alt='loading' style={{ width: 18, height: 18 }} />
           ) : (
             <Icon type='icon-xingxingzuhe' sx={{ fontSize: 14, color: 'primary.main' }} />
           )}
-          <Stack>
-            <Typography variant='h6' sx={{ fontSize: 16, fontWeight: 600, lineHeight: 1.2 }}>
-              AI 智能总结
-            </Typography>
-          </Stack>
+
+          <Typography
+            variant='h6'
+            sx={{
+              fontSize: 16,
+              fontWeight: 600,
+              lineHeight: 1.2,
+              background: 'linear-gradient(180deg, #A76EFB 0%, #2070F9 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              color: 'transparent',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            AI 智能总结
+          </Typography>
         </Stack>
-
-        {/* 进度条 */}
-        {isSummarizing && (
-          <Box sx={{ mt: 2 }}>
-            <LinearProgress
-              sx={{
-                height: 4,
-                borderRadius: 2,
-                backgroundColor: 'grey.200',
-                '& .MuiLinearProgress-bar': {
-                  borderRadius: 2,
-                  animation: 'progress 2s ease-in-out infinite',
-                  '@keyframes progress': {
-                    '0%': { transform: 'translateX(-100%)' },
-                    '100%': { transform: 'translateX(100%)' },
-                  },
-                },
-              }}
-            />
-          </Box>
-        )}
       </Box>
-
-      {/* 内容区域 */}
-      <Box sx={{ flex: 1, p: 3, overflow: 'auto' }}>
+      {/* 内容区域 - 撑满剩余空间，内部滚动 */}
+      <Box
+        sx={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0, // 关键：允许flex子项收缩
+          mb: 2,
+          borderRadius: 1,
+          border: '1px solid rgba(32, 112, 249, 0.5)',
+          overflow: 'auto',
+          height: '100%',
+          p: 2,
+          backgroundImage: 'linear-gradient( 180deg, rgba(32,112,249,0.04) 0%, rgba(167,110,251,0.04) 100%)',
+        }}
+      >
         {error ? (
           <Box
             sx={{
@@ -275,22 +276,67 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
             </Typography>
           </Box>
         ) : summary ? (
-          <Box>
+          <Box
+            sx={{
+              // 限制子元素的字体大小
+              '& p': {
+                fontSize: '12px !important',
+                lineHeight: 1.6,
+                margin: '8px 0',
+              },
+              '& h1': {
+                fontSize: '18px !important',
+                lineHeight: 1.4,
+                margin: '12px 0 8px 0',
+                fontWeight: 600,
+              },
+              '& h2': {
+                fontSize: '16px !important',
+                lineHeight: 1.4,
+                margin: '10px 0 6px 0',
+                fontWeight: 600,
+              },
+              '& h3': {
+                fontSize: '15px !important',
+                lineHeight: 1.4,
+                margin: '8px 0 4px 0',
+                fontWeight: 600,
+              },
+              '& h4, & h5, & h6': {
+                fontSize: '14px !important',
+                lineHeight: 1.4,
+                margin: '6px 0 4px 0',
+                fontWeight: 600,
+              },
+              '& ul, & ol': {
+                margin: '8px 0',
+                paddingLeft: '20px',
+                fontSize: '14px',
+              },
+              '& li': {
+                margin: '4px 0',
+                fontSize: '12px',
+              },
+              '& blockquote': {
+                margin: '8px 0',
+                padding: '4px 12px',
+                fontSize: '12px',
+                fontStyle: 'italic',
+              },
+              '& code': {
+                fontSize: '12px !important',
+              },
+              '& pre': {
+                fontSize: '12px !important',
+              },
+            }}
+          >
             <EditorContent content={summary} />
             {/* 总结完成的标签 */}
             {!isSummarizing && summary && (
-              <Box sx={{ mt: 2 }}>
-                <Chip
-                  label='总结完成'
-                  size='small'
-                  sx={{
-                    backgroundColor: 'success.light',
-                    color: 'success.dark',
-                    fontWeight: 500,
-                    fontSize: 11,
-                  }}
-                />
-              </Box>
+              <Typography color='text.secondary' sx={{ fontSize: '12px' }}>
+                本内容由 AI 基于搜索结果生成整理，如信息已过期或失效，可能不适用于当前情形，仅供参考。
+              </Typography>
             )}
           </Box>
         ) : (
@@ -299,7 +345,7 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              minHeight: 100,
+              minHeight: 200,
               textAlign: 'center',
             }}
           >
