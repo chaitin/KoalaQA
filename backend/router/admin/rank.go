@@ -14,7 +14,7 @@ type rank struct {
 // @Summary ai insight rank
 // @Tags rank
 // @Produce json
-// @Success 200 {object} context.Response{data=[]model.RankTimeGroup}
+// @Success 200 {object} context.Response{data=[]model.RankTimeGroup{items=[]model.RankTimeGroupItem}}
 // @Router /admin/rank/ai_insight [get]
 func (r *rank) AIInsight(ctx *context.Context) {
 	res, err := r.svcRank.AIInsight(ctx)
