@@ -2726,7 +2726,22 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/model.RankTimeGroup"
+                                                "allOf": [
+                                                    {
+                                                        "$ref": "#/definitions/model.RankTimeGroup"
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "items": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "$ref": "#/definitions/model.RankTimeGroupItem"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                ]
                                             }
                                         }
                                     }
@@ -6336,6 +6351,9 @@ const docTemplate = `{
         "model.JSONB-array_model_ForumGroups": {
             "type": "object"
         },
+        "model.JSONB-array_model_RankTimeGroupItem": {
+            "type": "object"
+        },
         "model.JSONB-array_model_StatTrendItem": {
             "type": "object"
         },
@@ -6638,14 +6656,22 @@ const docTemplate = `{
         "model.RankTimeGroup": {
             "type": "object",
             "properties": {
-                "score_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "items": {
+                    "$ref": "#/definitions/model.JSONB-array_model_RankTimeGroupItem"
                 },
                 "time": {
                     "type": "integer"
+                }
+            }
+        },
+        "model.RankTimeGroupItem": {
+            "type": "object",
+            "properties": {
+                "foreign_id": {
+                    "type": "integer"
+                },
+                "score_id": {
+                    "type": "string"
                 }
             }
         },
