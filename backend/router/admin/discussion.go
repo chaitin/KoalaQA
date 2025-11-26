@@ -13,7 +13,6 @@ type discussion struct {
 func (d *discussion) Route(h server.Handler) {
 	g := h.Group("/discussion")
 	g.GET("", d.List)
-	g.GET("/question", d.QuesionAnswer)
 }
 
 func newDiscussion(disc *svc.Discussion) server.Router {
@@ -43,31 +42,6 @@ func (d *discussion) List(ctx *context.Context) {
 	res, err := d.disc.ListBackend(ctx, req)
 	if err != nil {
 		ctx.InternalError(err, "list discussion failed")
-		return
-	}
-
-	ctx.Success(res)
-}
-
-// KeywordAnswer
-// @Summary discussion keyword answer
-// @Description discussion ketword answer
-// @Tags discussion
-// @Produce json
-// @Param req query svc.DiscussionKeywordAnswerReq false "req params"
-// @Success 200 {object} context.Response{data=string}
-// @Router /admin/discussion/question [get]
-func (d *discussion) QuesionAnswer(ctx *context.Context) {
-	var req svc.DiscussionKeywordAnswerReq
-	err := ctx.ShouldBindQuery(&req)
-	if err != nil {
-		ctx.BadRequest(err)
-		return
-	}
-
-	res, err := d.disc.KeywordAnswer(ctx, req)
-	if err != nil {
-		ctx.InternalError(err, "get keyword answer failed")
 		return
 	}
 

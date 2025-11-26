@@ -37,7 +37,7 @@ func (r *Rank) UpdateContribute(ctx context.Context) error {
 func (r *Rank) AIInsight(ctx context.Context) ([]model.RankTimeGroup, error) {
 	now := time.Now()
 	return r.repoRank.GroupByTime(ctx, 3,
-		repo.QueryWithEqual("type", model.RanTypeAIInsight),
+		repo.QueryWithEqual("type", model.RankTypeAIInsight),
 		repo.QueryWithEqual("created_at", util.WeekTrunc(now), repo.EqualOPLT),
 		repo.QueryWithEqual("created_at", util.WeekTrunc(now.AddDate(0, 0, -21)), repo.EqualOPGTE),
 	)

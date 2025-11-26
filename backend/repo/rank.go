@@ -57,10 +57,10 @@ func (r *Rank) GroupByTime(ctx context.Context, rankLimit int, queryFuncs ...Que
 	opt := getQueryOpt(queryFuncs...)
 
 	err = r.db.WithContext(ctx).Table("(?) AS group_rank", r.model(ctx).
-		Select("score_id, foreign_id, DATE_TRUNC('week',created_at) AS time, RANK() OVER ( PARTITION BY DATE_TRUNC('week',created_at) order by score*log(2, 1+hit) DESC) AS rank").
+		Select("score_id, foreign_id, extra, DATE_TRUNC('week',created_at) AS time, RANK() OVER ( PARTITION BY DATE_TRUNC('week',created_at) order by score*log(2, 1+hit) DESC) AS rank").
 		Scopes(opt.Scopes()...),
 	).
-		Select("time, JSONB_AGG(jsonb_build_object('score_id',score_id, 'foreign_id', foreign_id)) AS items").
+		Select("time, JSONB_AGG(jsonb_build_object('score_id',score_id, 'foreign_id', foreign_id, 'extra', extra)) AS items").
 		Where("rank <= ?", rankLimit).
 		Group("time").
 		Order("time DESC").

@@ -4,7 +4,7 @@ type RankType uint
 
 const (
 	RankTypeContribute RankType = iota + 1
-	RanTypeAIInsight
+	RankTypeAIInsight
 )
 
 type Rank struct {
@@ -14,12 +14,14 @@ type Rank struct {
 	Score     float64  `gorm:"column:score;index:idx_rank_type_score" json:"score"`
 	RagID     string   `gorm:"column:rag_id;type:text;index" json:"rag_id"`
 	ForeignID uint     `gorm:"column:foreign_id;type:bigint;default:0;uniqueIndex:udx_rank_type_id_foreign_id" json:"foreign_id"`
+	Extra     string   `gorm:"column:extra;type:text" json:"extra"`
 	Hit       int64    `gorm:"column:hit;type:bigint;default:1" json:"hit"`
 }
 
 type RankTimeGroupItem struct {
 	SocreID   string `json:"score_id"`
 	ForeignID uint   `json:"foreign_id"`
+	Extra     string `json:"extra"`
 }
 
 type RankTimeGroup struct {

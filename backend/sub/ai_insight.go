@@ -96,7 +96,7 @@ func (i *AIInsight) Handle(ctx context.Context, msg mq.Message) error {
 	}
 
 	err = i.in.RepoRank.Create(ctx, &model.Rank{
-		Type:      model.RanTypeAIInsight,
+		Type:      model.RankTypeAIInsight,
 		ScoreID:   data.Keyword,
 		Score:     score,
 		RagID:     ragID,
@@ -159,7 +159,7 @@ func (i *AIInsight) exist(ctx context.Context, datasetID string, data topic.MsgA
 
 	exist, err := i.in.RepoRank.UpdateWithExist(ctx, map[string]any{
 		"hit": gorm.Expr("hit+1"),
-	}, repo.QueryWithEqual("type", model.RanTypeAIInsight),
+	}, repo.QueryWithEqual("type", model.RankTypeAIInsight),
 		repo.QueryWithEqual("rag_id", records[index].DocID),
 	)
 	if err != nil {

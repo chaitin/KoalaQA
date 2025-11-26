@@ -162,55 +162,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/discussion/question": {
-            "get": {
-                "description": "discussion ketword answer",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "discussion"
-                ],
-                "summary": "discussion keyword answer",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "name": "keyword",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "uuids",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/context.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "string"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
         "/admin/forum": {
             "get": {
                 "produces": [
@@ -6667,6 +6618,9 @@ const docTemplate = `{
         "model.RankTimeGroupItem": {
             "type": "object",
             "properties": {
+                "extra": {
+                    "type": "string"
+                },
                 "foreign_id": {
                     "type": "integer"
                 },
