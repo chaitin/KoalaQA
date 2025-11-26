@@ -63,7 +63,6 @@ const getPostType = (type?: ModelDiscussionType): 'question' | 'feedback' | 'art
 const DiscussCard = ({
   data,
   keywords: _keywords,
-  showType = false,
   sx,
 }: {
   data: ModelDiscussionListItem
@@ -163,8 +162,8 @@ const DiscussCard = ({
               </Link>
             </Stack>
           </Box>
-          <Typography variant='caption' sx={{ fontWeight: 500, fontSize: '14px', whiteSpace: 'nowrap' }}>
-            · <TimeDisplay style={{ color: 'rgba(33, 34, 45, 0.30)' }} timestamp={it.updated_at!} />
+          <Typography variant='caption' sx={{ fontWeight: 400, fontSize: '14px', whiteSpace: 'nowrap' }}>
+            · <TimeDisplay style={{ color: 'rgba(33,34,45, 0.7)' }} timestamp={it.updated_at!} />
           </Typography>
         </Stack>
         <Link href={`/${params?.route_name as string}/${it.uuid}`} key={it.id}>

@@ -63,6 +63,7 @@ func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (st
 		return "", false, err
 	}
 	res, err := l.Chat(ctx, sysPrompt, req.Prompt, map[string]any{
+		"Question":           req.Question,
 		"DefaultAnswer":      defaultAnswer,
 		"CurrentDate":        time.Now().Format("2006-01-02"),
 		"KnowledgeDocuments": knowledgeDocuments,

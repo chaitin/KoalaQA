@@ -345,6 +345,95 @@ func (u *userAuth) UpdateWeb(ctx *context.Context) {
 	ctx.Success(nil)
 }
 
+// QuickReplyList
+// @Summary list user quick reply
+// @Tags user_quick_reply
+// @Produce json
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]model.UserQuickReply}}
+// @Router /user/quick_reply [get]
+func (u *userAuth) QuickReplyList(ctx *context.Context) {
+	res, err := u.in.SvcUserQR.List(ctx, ctx.GetUser())
+	if err != nil {
+		ctx.InternalError(err, "list user quick reply failed")
+		return
+	}
+
+	ctx.Success(res)
+}
+
+// QuickReplyCreate
+// @Summary create user quick reply
+// @Tags user_quick_reply
+// @Produce json
+// @Accept json
+// @Param req body svc.UserQuickReplyCreateReq true "req params"
+// @Success 200 {object} context.Response{data=uint}
+// @Router /user/quick_reply [post]
+func (u *userAuth) QuickReplyCreate(ctx *context.Context) {
+	var req svc.UserQuickReplyCreateReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	id, err := u.in.SvcUserQR.Create(ctx, ctx.GetUser(), req)
+	if err != nil {
+		ctx.InternalError(err, "create user quick reply failed")
+		return
+	}
+
+	ctx.Success(id)
+}
+
+// QuickReplyDelete
+// @Summary delete user quick reply
+// @Tags user_quick_reply
+// @Produce json
+// @Param quick_reply_id path uint true "quick_reply_id"
+// @Success 200 {object} context.Response
+// @Router /user/quick_reply/{quick_reply_id} [delete]
+func (u *userAuth) QuickReplyDelete(ctx *context.Context) {
+	quickReplyID, err := ctx.ParamUint("quick_reply_id")
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	err = u.in.SvcUserQR.Delete(ctx, ctx.GetUser(), quickReplyID)
+	if err != nil {
+		ctx.InternalError(err, "delete quick reply failed")
+		return
+	}
+
+	ctx.Success(nil)
+}
+
+// QuickReplyReindex
+// @Summary reindex user quick reply
+// @Tags user_quick_reply
+// @Produce json
+// @Accept json
+// @Param req body svc.QuickReplyReindexReq true "req params"
+// @Success 200 {object} context.Response
+// @Router /user/quick_reply/reindex [put]
+func (u userAuth) QuickReplyReindex(ctx *context.Context) {
+	var req svc.QuickReplyReindexReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	err = u.in.SvcUserQR.Reindex(ctx, ctx.GetUser(), req)
+	if err != nil {
+		ctx.InternalError(err, "reindex user quick reply failed")
+		return
+	}
+
+	ctx.Success(nil)
+}
+
 func (u *userAuth) Route(h server.Handler) {
 	g := h.Group("/user")
 	g.POST("/logout", u.Logout)
@@ -359,11 +448,23 @@ func (u *userAuth) Route(h server.Handler) {
 		notifyG.GET("/list", u.ListNotify)
 		notifyG.POST("/web", u.UpdateWeb)
 	}
+
+	{
+		qrG := g.Group("/quick_reply")
+		qrG.GET("", u.QuickReplyList)
+		qrG.POST("", u.QuickReplyCreate)
+		qrG.PUT("/reindex", u.QuickReplyReindex)
+		{
+			qrDetailG := qrG.Group(":quick_reply_id")
+			qrDetailG.DELETE("", u.QuickReplyDelete)
+		}
+	}
 }
 
 type userAuthIn struct {
 	fx.In
 
+	SvcUserQR *svc.UserQuickReply
 	SvcU      *svc.User
 	SvcNotify *svc.MessageNotify
 	Sub       mq.SubscriberWithHandler `name:"memory_mq"`

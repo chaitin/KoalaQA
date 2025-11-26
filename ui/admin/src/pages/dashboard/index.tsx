@@ -9,6 +9,9 @@ import {
   Notifications,
   People,
   Search,
+  Edit,
+  Save,
+  OpenInNew,
 } from '@mui/icons-material';
 import {
   Alert,
@@ -17,6 +20,10 @@ import {
   Card,
   CircularProgress,
   Collapse,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   Grid,
   IconButton,
   Paper,
@@ -25,9 +32,16 @@ import {
   ToggleButtonGroup,
   Typography,
   useTheme,
+  Button,
+  TextField,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
 } from '@mui/material';
 import dayjs from 'dayjs';
 import React, { ReactNode, useEffect, useMemo, useState } from 'react';
+import AIInsightDetailModal from '../../components/AIInsightDetailModal';
 import {
   Bar,
   BarChart,
@@ -45,6 +59,7 @@ import {
   getAdminStatSearch,
   getAdminStatTrend,
   getAdminStatVisit,
+  getAdminDiscussion,
 } from '../../api';
 import {
   ModelRankTimeGroup,
@@ -54,6 +69,8 @@ import {
   SvcStatDiscussionItem,
   SvcStatDiscussionRes,
   SvcStatVisitRes,
+  ModelDiscussionListItem,
+  ModelRankTimeGroupItem,
 } from '../../api/types';
 
 // --- 类型定义 ---
@@ -81,6 +98,18 @@ interface DashboardData {
 
 type TimeRange = 'today' | 'week' | 'month';
 
+// 洞察数据接口
+interface InsightData {
+  title: string;
+  time: string;
+  questions: ModelRankTimeGroupItem[];
+}
+
+// 扩展的问题处理项接口
+interface ExtendedQuestionItem extends ModelRankTimeGroupItem {
+  insightData?: InsightData;
+}
+
 interface MetricItem {
   value: string;
   unit?: string;
@@ -93,6 +122,16 @@ interface StatCardProps {
   metrics: MetricItem[];
 }
 
+interface AIInsightModalState {
+  open: boolean;
+  selectedQuestion: string;
+  relatedPosts: ModelDiscussionListItem[];
+  aiAnswer: string;
+  isEditing: boolean;
+  editedAnswer: string;
+  loading: boolean;
+}
+
 interface ChartSectionProps {
   title: string;
   children: ReactNode;
@@ -103,8 +142,9 @@ interface InsightItemProps {
   type: 'critical' | 'normal';
   time: string;
   title: string;
-  scoreIds: string[];
+  scoreIds: ModelRankTimeGroupItem[];
   isExpanded?: boolean;
+  onQuestionClick?: (item: ExtendedQuestionItem) => void;
 }
 
 // --- 时间范围转换工具 ---
@@ -654,20 +694,23 @@ const MainDashboardCard: React.FC<MainDashboardCardProps> = ({ children, sx = {}
   );
 };
 
-const InsightItem: React.FC<InsightItemProps> = ({
-  type,
-  time,
-  title,
-  scoreIds,
-  isExpanded: propIsExpanded,
-}) => {
-  const isCritical = type === 'critical';
-  const [localIsExpanded, setLocalIsExpanded] = useState(propIsExpanded || false);
+const InsightItem: React.FC<InsightItemProps> = ({ time, title, scoreIds, onQuestionClick }) => {
+  const iconBg = 'rgba(76, 165, 167, 0.10)'; // Red 100 / Cyan 100
+  const iconColor = 'rgba(76, 165, 167, 1)';
 
-  // 背景色和文字色配置
-  const bgColor = isCritical ? '#fef2f2' : '#ecfeff'; // Red 50 / Cyan 50
-  const iconBg = isCritical ? '#fee2e2' : 'rgba(76, 165, 167, 0.10)'; // Red 100 / Cyan 100
-  const iconColor = isCritical ? '#ef4444' : 'rgba(76, 165, 167, 1)'; // Red 500 / Cyan 500
+  const handleInsightClick = () => {
+    if (onQuestionClick && scoreIds.length > 0) {
+      // 传递整个洞察数据，包含标题、时间和所有相关问题
+      onQuestionClick({
+        score_id: title,
+        insightData: {
+          title,
+          time,
+          questions: scoreIds,
+        },
+      });
+    }
+  };
 
   return (
     <Box
@@ -676,7 +719,15 @@ const InsightItem: React.FC<InsightItemProps> = ({
         borderRadius: 1,
         p: 1.5,
         transition: 'all 0.3s',
+        cursor: onQuestionClick ? 'pointer' : 'default',
+        '&:hover': {
+          bgcolor: 'rgba(76, 165, 167, 0.12)',
+          '& .check_detail': {
+            visibility: 'visible',
+          },
+        },
       }}
+      onClick={handleInsightClick}
     >
       <Stack direction="row" spacing={2} alignItems="flex-start">
         <Avatar
@@ -691,43 +742,42 @@ const InsightItem: React.FC<InsightItemProps> = ({
         </Avatar>
 
         <Box sx={{ flexGrow: 1 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-            <Box>
-              <Typography variant="body2" fontWeight={600} sx={{ color: 'rgba(76, 165, 167, 1)' }}>
-                {title}
-              </Typography>
-              <Typography
-                variant="caption"
-                color="rgba(76, 165, 167, 0.50)"
-                display="block"
-                mt={0.5}
-              >
-                {time}
-              </Typography>
-            </Box>
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            sx={{ color: 'rgba(76, 165, 167, 1)' }}
+          >
+            <Typography variant="body2" fontWeight={600}>
+              {title}
+            </Typography>
+            <Typography variant="caption" className="check_detail" sx={{ visibility: 'hidden' }}>
+              查看详情
+            </Typography>
           </Stack>
+          <Typography variant="caption" color="rgba(76, 165, 167, 0.50)" display="block" mt={0.5}>
+            {time}
+          </Typography>
         </Box>
       </Stack>
-      <Collapse in={localIsExpanded}>
-        <Paper
-          elevation={0}
-          sx={{
-            mt: 2,
-            p: 2,
-            bgcolor: 'rgba(255,255,255,0.8)',
-            borderRadius: 1,
-            boxShadow: '0px 0px 1px 1px rgba(54,59,76,0.03)',
-          }}
-        >
-          <Stack spacing={1}>
-            {scoreIds.map(item => (
-              <Typography variant="caption" color="text.secondary">
-                · {item}
-              </Typography>
-            ))}
-          </Stack>
-        </Paper>
-      </Collapse>
+      <Paper
+        elevation={0}
+        sx={{
+          mt: 2,
+          p: 2,
+          bgcolor: 'rgba(255,255,255,0.8)',
+          borderRadius: 1,
+          boxShadow: '0px 0px 1px 1px rgba(54,59,76,0.03)',
+        }}
+      >
+        <Stack spacing={1}>
+          {scoreIds.map((item, index) => (
+            <Typography key={index} variant="caption" color="text.secondary">
+              · {item?.score_id || '未知问题'}
+            </Typography>
+          ))}
+        </Stack>
+      </Paper>
     </Box>
   );
 };
@@ -737,6 +787,10 @@ const InsightItem: React.FC<InsightItemProps> = ({
 const Dashboard: React.FC = () => {
   const theme = useTheme();
   const [timeRange, setTimeRange] = useState<TimeRange>('today');
+
+  // AI洞察弹窗状态
+  const [insightModalOpen, setInsightModalOpen] = useState(false);
+  const [currentInsightData, setCurrentInsightData] = useState<InsightData | undefined>();
 
   // 数据状态
   const [data, setData] = useState<DashboardData>({
@@ -754,6 +808,18 @@ const Dashboard: React.FC = () => {
 
   // 错误状态
   const [error, setError] = useState<string | null>(null);
+
+  // 处理AI洞察问题点击
+  const handleQuestionClick = (item: ExtendedQuestionItem) => {
+    setCurrentInsightData(item.insightData);
+    setInsightModalOpen(true);
+  };
+
+  // 关闭AI洞察弹窗
+  const handleCloseInsightModal = () => {
+    setInsightModalOpen(false);
+    setCurrentInsightData(undefined);
+  };
 
   // 获取时间相关的统计数据
   const fetchTimeRelatedData = async (selectedTimeRange: TimeRange) => {
@@ -857,7 +923,7 @@ const Dashboard: React.FC = () => {
     const now = dayjs();
     const currentWeekStart = now.startOf('week');
 
-    return insightData.slice(0, 3).map((item: ModelRankTimeGroup) => {
+    return insightData.map((item: ModelRankTimeGroup) => {
       const weekStart = dayjs.unix(item.time || 0);
       const weekEnd = weekStart.add(6, 'day');
 
@@ -875,24 +941,19 @@ const Dashboard: React.FC = () => {
       }
 
       // 将 score_ids 转换为问题列表，如果没有则显示空数组
-      const items = (item.score_ids || []).slice(0, 3).map((scoreId: string) => {
-        // 如果 scoreId 本身就是一个问题，直接使用；否则可以添加问号
-        return scoreId.endsWith('?') || scoreId.endsWith('？') ? scoreId : `${scoreId}?`;
-      });
+      // 确保 items 是一个数组
+      const items = Array.isArray(item.items) ? item.items : [];
 
       return {
         title: '发现新的知识缺口',
         subtitle,
-        items,
+        items: items,
       };
     });
   }, [data.aiInsights]);
   // 初始化数据获取 - 只在组件挂载时获取一次AI数据和时间相关数据
   useEffect(() => {
-    // 使用初始时间范围获取时间相关数据
-    const initialTimeRange = 'month'; // 默认初始时间范围
     fetchAIData();
-    fetchTimeRelatedData(initialTimeRange);
   }, []);
 
   // 时间相关数据获取 - 只在时间范围改变时获取
@@ -955,12 +1016,13 @@ const Dashboard: React.FC = () => {
     const searchCount = data.searchCount;
     const qaCount =
       (data.discussions && data.discussions?.find(item => item.key === 'qa')?.count) || 0;
+    const posts = data.discussions?.reduce((sum, item) => sum + (item.count || 0), 0) || 0;
     return {
       // 访问相关指标
       visits: formatNumber(visitStats?.pv || 0),
       uniqueVisitors: formatNumber(visitStats?.uv || 0),
       searches: formatNumber(searchCount || 0),
-      posts: formatNumber(data.discussions?.reduce((sum, item) => sum + (item.count || 0), 0) || 0),
+      posts: formatNumber(posts),
 
       // AI相关指标
       aiResponseRate: formatPercentage(
@@ -972,7 +1034,7 @@ const Dashboard: React.FC = () => {
       totalResolveRate: formatPercentage(
         qaCount > 0 ? ((discussionStats?.accept || 0) / qaCount) * 100 : 0
       ),
-      humanResponseTime: formatTime(discussionStats?.human_resp_time || 0),
+      humanResponseTime: formatTime((discussionStats?.human_resp_time || 0) / (posts || 1)),
     };
   }, [data]);
 
@@ -1167,7 +1229,7 @@ const Dashboard: React.FC = () => {
                                     border: 'none',
                                     boxShadow: theme.shadows[3],
                                   }}
-                                   formatter={(value: any, name: string) => {
+                                  formatter={(value: any, name: string) => {
                                     return [
                                       <span
                                         style={{ color: 'rgba(99, 103, 233, 1)' }}
@@ -1199,7 +1261,7 @@ const Dashboard: React.FC = () => {
                 </Grid>
 
                 {/* 右侧 AI 洞察卡片 */}
-                <Grid size={{ xs: 12, lg: 3 }} sx={{ overflow: ' auto' }}>
+                <Grid size={{ xs: 12, lg: 3 }} sx={{ overflow: 'auto', scrollbarWidth: 'thin', '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-track': { background: '#f1f1f1' }, '&::-webkit-scrollbar-thumb': { background: '#c1c1c1', borderRadius: '3px' }, '&::-webkit-scrollbar-thumb:hover': { background: '#a8a8a8' } }}>
                   <Card
                     elevation={0}
                     sx={{
@@ -1247,6 +1309,7 @@ const Dashboard: React.FC = () => {
                               title={insight.title}
                               scoreIds={insight.items}
                               isExpanded={true}
+                              onQuestionClick={handleQuestionClick}
                             />
                           );
                         })
@@ -1347,6 +1410,28 @@ const Dashboard: React.FC = () => {
           </Grid>
         </Box>
       )}
+
+      {/* AI洞察详情弹窗 */}
+      <Dialog
+        open={insightModalOpen}
+        onClose={handleCloseInsightModal}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            maxHeight: '90vh',
+          },
+        }}
+      >
+        <DialogContent sx={{ p: 0 }}>
+          <AIInsightDetailModal
+            open={insightModalOpen}
+            onClose={handleCloseInsightModal}
+            insightData={currentInsightData}
+          />
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
