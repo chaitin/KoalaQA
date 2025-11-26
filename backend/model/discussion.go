@@ -79,6 +79,7 @@ type DiscussionReply struct {
 	UserID        uint             `json:"user_id"`
 	UserName      string           `json:"user_name"`
 	UserAvatar    string           `json:"user_avatar"`
+	UserRole      UserRole         `json:"user_role"`
 	UserLikeState CommentLikeState `json:"user_like_state"`
 	Like          int64            `json:"like"`
 	Dislike       int64            `json:"dislike"`
@@ -102,6 +103,7 @@ type DiscussionDetail struct {
 	UserID        uint                `json:"user_id"`
 	UserName      string              `json:"user_name"`
 	UserAvatar    string              `json:"user_avatar"`
+	UserRole      UserRole            `json:"user_role"`
 	Groups        []DiscussionGroup   `json:"groups" gorm:"-"`
 	Comments      []DiscussionComment `json:"comments" gorm:"-"`
 	UserLike      bool                `json:"user_like"`
