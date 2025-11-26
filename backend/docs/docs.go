@@ -6457,16 +6457,12 @@ const docTemplate = `{
             "enum": [
                 "chat",
                 "embedding",
-                "rerank",
-                "analysis",
-                "analysis-vl"
+                "rerank"
             ],
             "x-enum-varnames": [
                 "LLMTypeChat",
                 "LLMTypeEmbedding",
-                "LLMTypeRerank",
-                "LLMTypeAnalysis",
-                "LLMTypeAnalysisVL"
+                "LLMTypeRerank"
             ]
         },
         "model.ListRes": {
