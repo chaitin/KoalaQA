@@ -60,7 +60,7 @@ func (r *Rank) GroupByTime(ctx context.Context, rankLimit int, queryFuncs ...Que
 		Select("score_id, foreign_id, DATE_TRUNC('week',created_at) AS time, RANK() OVER ( PARTITION BY DATE_TRUNC('week',created_at) order by score*log(2, 1+hit) DESC) AS rank").
 		Scopes(opt.Scopes()...),
 	).
-		Select("time, JSONB_AGG(jsonb_build_object('score_id',score_id, 'foreign_id', foreign_id))").
+		Select("time, JSONB_AGG(jsonb_build_object('score_id',score_id, 'foreign_id', foreign_id)) AS items").
 		Where("rank <= ?", rankLimit).
 		Group("time").
 		Order("time DESC").

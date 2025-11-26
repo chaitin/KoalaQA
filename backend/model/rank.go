@@ -24,7 +24,7 @@ type RankTimeGroupItem struct {
 
 type RankTimeGroup struct {
 	Time  Timestamp                  `json:"time"`
-	Items JSONB[[]RankTimeGroupItem] `json:"items" gorm:"type:text[]"`
+	Items JSONB[[]RankTimeGroupItem] `json:"items" gorm:"type:jsonb"`
 }
 
 func init() {
