@@ -10,15 +10,32 @@
  * ---------------------------------------------------------------
  */
 
-import { message } from '@ctzhian/ui';
-import type { AxiosInstance, AxiosRequestConfig, HeadersDefaults, ResponseType } from 'axios';
-import axios from 'axios';
-import qs from 'qs';
+/* eslint-disable */
+/* tslint:disable */
+// @ts-nocheck
+/*
+ * ---------------------------------------------------------------
+ * ## THIS FILE WAS GENERATED VIA SWAGGER-TYPESCRIPT-API        ##
+ * ##                                                           ##
+ * ## AUTHOR: acacode                                           ##
+ * ## SOURCE: https://github.com/acacode/swagger-typescript-api ##
+ * ---------------------------------------------------------------
+ */
+
+import { message } from "@ctzhian/ui";
+import type {
+  AxiosInstance,
+  AxiosRequestConfig,
+  HeadersDefaults,
+  ResponseType,
+} from "axios";
+import axios from "axios";
+import qs from "qs";
 
 export type QueryParamsType = Record<string | number, any>;
 
 export interface FullRequestParams
-  extends Omit<AxiosRequestConfig, 'data' | 'params' | 'url' | 'responseType'> {
+  extends Omit<AxiosRequestConfig, "data" | "params" | "url" | "responseType"> {
   /** set parameter to `true` for call `securityWorker` for this request */
   secure?: boolean;
   /** request path */
@@ -34,13 +51,16 @@ export interface FullRequestParams
 }
 const translateErrorMessage = (error: any) => {
   switch (error.response?.data.err) {
-    case 'email already used':
-      return '该邮箱已被其他账号绑定';
+    case "email already used":
+      return "该邮箱已被其他账号绑定";
     default:
       return error.response?.data.err;
   }
 };
-export type RequestParams = Omit<FullRequestParams, 'body' | 'method' | 'query' | 'path'>;
+export type RequestParams = Omit<
+  FullRequestParams,
+  "body" | "method" | "query" | "path"
+>;
 // CSRF token 缓存
 let csrfTokenPromise: Promise<string> | null = null;
 
@@ -54,24 +74,24 @@ const getCsrfToken = async (): Promise<string> => {
   // 创建新的获取token的Promise
   csrfTokenPromise = new Promise(async (resolve, reject) => {
     try {
-      const response = await axios.get('/api/csrf', {
+      const response = await axios.get("/api/csrf", {
         withCredentials: true,
       });
 
-      let token = '';
+      let token = "";
       if (response.data && response.data.success && response.data.data) {
         token = response.data.data;
-      } else if (response.data && typeof response.data === 'string') {
+      } else if (response.data && typeof response.data === "string") {
         token = response.data;
       }
 
       if (token) {
         resolve(token);
       } else {
-        reject(new Error('Failed to get CSRF token'));
+        reject(new Error("Failed to get CSRF token"));
       }
     } catch (error) {
-      console.error('Failed to fetch CSRF token:', error);
+      console.error("Failed to fetch CSRF token:", error);
       reject(error);
     } finally {
       // 清除Promise缓存，允许重试
@@ -88,19 +108,19 @@ export const clearCsrfTokenCache = () => {
 };
 
 export interface ApiConfig<SecurityDataType = unknown>
-  extends Omit<AxiosRequestConfig, 'data' | 'cancelToken'> {
+  extends Omit<AxiosRequestConfig, "data" | "cancelToken"> {
   securityWorker?: (
-    securityData: SecurityDataType | null
+    securityData: SecurityDataType | null,
   ) => Promise<AxiosRequestConfig | void> | AxiosRequestConfig | void;
   secure?: boolean;
   format?: ResponseType;
 }
 
 export enum ContentType {
-  Json = 'application/json',
-  FormData = 'multipart/form-data',
-  UrlEncoded = 'application/x-www-form-urlencoded',
-  Text = 'text/plain',
+  Json = "application/json",
+  FormData = "multipart/form-data",
+  UrlEncoded = "application/x-www-form-urlencoded",
+  Text = "text/plain",
 }
 
 type ExtractDataProp<T> = T extends { data?: infer U } ? U : T;
@@ -108,7 +128,7 @@ type ExtractDataProp<T> = T extends { data?: infer U } ? U : T;
 export class HttpClient<SecurityDataType = unknown> {
   public instance: AxiosInstance;
   private securityData: SecurityDataType | null = null;
-  private securityWorker?: ApiConfig<SecurityDataType>['securityWorker'];
+  private securityWorker?: ApiConfig<SecurityDataType>["securityWorker"];
   private secure?: boolean;
   private format?: ResponseType;
 
@@ -121,16 +141,16 @@ export class HttpClient<SecurityDataType = unknown> {
     this.instance = axios.create({
       withCredentials: true,
       ...axiosConfig,
-      baseURL: axiosConfig.baseURL || '/api',
+      baseURL: axiosConfig.baseURL || "/api",
       paramsSerializer: {
-        serialize: params => qs.stringify(params, { arrayFormat: 'repeat' }),
+        serialize: (params) => qs.stringify(params, { arrayFormat: "repeat" }),
       },
     });
     this.secure = secure;
     this.format = format;
     this.securityWorker = securityWorker;
     this.instance.interceptors.response.use(
-      response => {
+      (response) => {
         if (response.status === 200) {
           const res = response.data;
           if (res.success) {
@@ -139,21 +159,22 @@ export class HttpClient<SecurityDataType = unknown> {
 
           // 检查是否是CSRF token mismatch错误（虽然状态码是200，但success为false）
           const isCsrfError =
-            res.data === 'csrf token mismatch' || res.err === 'csrf token mismatch';
+            res.data === "csrf token mismatch" ||
+            res.err === "csrf token mismatch";
 
           if (isCsrfError && response.config && !response.config.__isRetry) {
             clearCsrfTokenCache();
             response.config.__isRetry = true;
             // 重新获取CSRF token并重试请求
             return getCsrfToken()
-              .then(token => {
+              .then((token) => {
                 if (response.config) {
                   response.config.headers = response.config.headers || {};
-                  response.config.headers['X-CSRF-TOKEN'] = token;
+                  response.config.headers["X-CSRF-TOKEN"] = token;
                 }
                 return this.instance.request(response.config);
               })
-              .catch(retryError => {
+              .catch((retryError) => {
                 return Promise.reject(retryError);
               })
               .finally(() => {
@@ -165,24 +186,28 @@ export class HttpClient<SecurityDataType = unknown> {
           }
 
           if (!isCsrfError) {
-            message.error(res.message || '网络异常');
+            message.error(res.message || "网络异常");
           }
           return Promise.reject(res);
         }
         message.error(response.statusText);
         return Promise.reject(response);
       },
-      error => {
+      (error) => {
         // 检查是否是CSRF token mismatch错误（后端返回400状态码）
         const isCsrfError =
           error.response?.status === 400 &&
-          (error.response?.data?.data === 'csrf token mismatch' ||
-            error.response?.data?.err === 'csrf token mismatch' ||
-            (typeof error.response?.data === 'string' &&
-              error.response.data.includes('csrf token mismatch')));
+          (error.response?.data?.data === "csrf token mismatch" ||
+            error.response?.data?.err === "csrf token mismatch" ||
+            (typeof error.response?.data === "string" &&
+              error.response.data.includes("csrf token mismatch")));
 
         // 如果是CSRF token相关错误，清除缓存并重试请求
-        if (isCsrfError || error.response?.status === 403 || error.response?.status === 419) {
+        if (
+          isCsrfError ||
+          error.response?.status === 403 ||
+          error.response?.status === 419
+        ) {
           clearCsrfTokenCache();
 
           // 如果是CSRF token mismatch，自动重试一次请求
@@ -190,14 +215,14 @@ export class HttpClient<SecurityDataType = unknown> {
             error.config.__isRetry = true;
             // 重新获取CSRF token并重试请求
             return getCsrfToken()
-              .then(token => {
+              .then((token) => {
                 if (error.config) {
                   error.config.headers = error.config.headers || {};
-                  error.config.headers['X-CSRF-TOKEN'] = token;
+                  error.config.headers["X-CSRF-TOKEN"] = token;
                 }
                 return this.instance.request(error.config);
               })
-              .catch(retryError => {
+              .catch((retryError) => {
                 return Promise.reject(retryError);
               })
               .finally(() => {
@@ -210,7 +235,7 @@ export class HttpClient<SecurityDataType = unknown> {
         }
 
         if (error.response?.status === 401) {
-          window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+          window.location.href = "/login";
         }
 
         // 如果是CSRF token错误且已经重试过，或者不是CSRF错误，才显示错误提示
@@ -218,7 +243,7 @@ export class HttpClient<SecurityDataType = unknown> {
           message.error(translateErrorMessage(error));
         }
         return Promise.reject(error.response);
-      }
+      },
     );
   }
 
@@ -228,7 +253,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
   protected mergeRequestParams(
     params1: AxiosRequestConfig,
-    params2?: AxiosRequestConfig
+    params2?: AxiosRequestConfig,
   ): AxiosRequestConfig {
     const method = params1.method || (params2 && params2.method);
 
@@ -238,7 +263,9 @@ export class HttpClient<SecurityDataType = unknown> {
       ...(params2 || {}),
       headers: {
         ...((method &&
-          this.instance.defaults.headers[method.toLowerCase() as keyof HeadersDefaults]) ||
+          this.instance.defaults.headers[
+            method.toLowerCase() as keyof HeadersDefaults
+          ]) ||
           {}),
         ...(params1.headers || {}),
         ...((params2 && params2.headers) || {}),
@@ -247,7 +274,7 @@ export class HttpClient<SecurityDataType = unknown> {
   }
 
   protected stringifyFormItem(formItem: unknown) {
-    if (typeof formItem === 'object' && formItem !== null) {
+    if (typeof formItem === "object" && formItem !== null) {
       return JSON.stringify(formItem);
     } else {
       return `${formItem}`;
@@ -257,11 +284,15 @@ export class HttpClient<SecurityDataType = unknown> {
   protected createFormData(input: Record<string, unknown>): FormData {
     return Object.keys(input || {}).reduce((formData, key) => {
       const property = input[key];
-      const propertyContent: any[] = property instanceof Array ? property : [property];
+      const propertyContent: any[] =
+        property instanceof Array ? property : [property];
 
       for (const formItem of propertyContent) {
         const isFileType = formItem instanceof Blob || formItem instanceof File;
-        formData.append(key, isFileType ? formItem : this.stringifyFormItem(formItem));
+        formData.append(
+          key,
+          isFileType ? formItem : this.stringifyFormItem(formItem),
+        );
       }
 
       return formData;
@@ -278,32 +309,44 @@ export class HttpClient<SecurityDataType = unknown> {
     ...params
   }: FullRequestParams): Promise<ExtractDataProp<T>> => {
     const secureParams =
-      ((typeof secure === 'boolean' ? secure : this.secure) &&
+      ((typeof secure === "boolean" ? secure : this.secure) &&
         this.securityWorker &&
         (await this.securityWorker(this.securityData))) ||
       {};
     const requestParams = this.mergeRequestParams(params, secureParams);
     const responseFormat = format || this.format || undefined;
 
-    if (type === ContentType.FormData && body && body !== null && typeof body === 'object') {
+    if (
+      type === ContentType.FormData &&
+      body &&
+      body !== null &&
+      typeof body === "object"
+    ) {
       body = this.createFormData(body as Record<string, unknown>);
     }
 
-    if (type === ContentType.Text && body && body !== null && typeof body !== 'string') {
+    if (
+      type === ContentType.Text &&
+      body &&
+      body !== null &&
+      typeof body !== "string"
+    ) {
       body = JSON.stringify(body);
     }
     const headers = {
       ...(requestParams.headers || {}),
-      ...(type && type !== ContentType.FormData ? { 'Content-Type': type } : {}),
+      ...(type && type !== ContentType.FormData
+        ? { "Content-Type": type }
+        : {}),
     };
-    const method = params.method?.toUpperCase() || 'GET';
+    const method = params.method?.toUpperCase() || "GET";
 
-    if (method !== 'GET') {
+    if (method !== "GET") {
       try {
         const csrfToken = await getCsrfToken();
-        headers['X-CSRF-TOKEN'] = csrfToken;
+        headers["X-CSRF-TOKEN"] = csrfToken;
       } catch (error) {
-        console.error('Failed to get CSRF token for request:', error);
+        console.error("Failed to get CSRF token for request:", error);
         // 继续执行请求，让服务器处理CSRF验证失败
       }
     }
@@ -317,4 +360,4 @@ export class HttpClient<SecurityDataType = unknown> {
     });
   };
 }
-export default new HttpClient({ format: 'json' }).request;
+export default new HttpClient({ format: "json" }).request;
