@@ -1,4 +1,6 @@
-import { getAdminModelList, getAdminSystemPublicAddress, ModelLLMType } from '@/api';
+import { getAdminModelList, getAdminSystemPublicAddress, getAdminKb, ModelLLMType } from '@/api';
+import { useAppDispatch } from '@/store';
+import { setKbId } from '@/store/slices/config';
 import Card from '@/components/card';
 import Header from '@/components/header';
 import Sidebar from '@/components/sidebar';
@@ -8,6 +10,7 @@ import ModelManagementModal from '@/pages/settings/component/ModelManagementModa
 import { Box, Button, Modal, Stack, Typography } from '@mui/material';
 import { useContext, useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
+import { refreshForums } from '@/store/slices/forum';
 
 const MainLayout = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -15,6 +18,11 @@ const MainLayout = () => {
   const [needModel, setNeedModel] = useState(false);
   const [needAddress, setNeedAddress] = useState(false);
   const [user] = useContext(AuthContext);
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    dispatch(refreshForums())
+  }, []);
   useEffect(() => {
     if (user?.uid) {
       setIsAuthenticated(true);
@@ -23,25 +31,33 @@ const MainLayout = () => {
     } else {
       setIsAuthenticated(false);
     }
-  }, [user]);
+  }, [user, dispatch]);
 
   const checkNecessaryConfigurations = async () => {
     try {
-      const [models, addr] = await Promise.all([
+      const [models, addr, kbRes] = await Promise.all([
         getAdminModelList(),
         getAdminSystemPublicAddress(),
+        getAdminKb(),
       ]);
-      const requiredModelTypes = Object.values(ModelLLMType).filter(type =>
-        ![ModelLLMType.LLMTypeAnalysis, ModelLLMType.LLMTypeAnalysisVL].includes(type)
-      );
+
+      const requiredModelTypes = Object.values(ModelLLMType);
       const modelList = Array.isArray(models) ? models : [];
       const lackModel = requiredModelTypes.some(
         type => !modelList.some(model => model?.type === type)
       );
       const lackAddr = !addr || !addr.address || addr.address.trim() === '';
+
+      // 检查知识库
+      const kbList = kbRes.items || [];
+      // 如果有知识库且当前没有设置或者设置的kb_id无效，设置第一个知识库
+      if (kbList.length > 0 && kbList[0]?.id) {
+        dispatch(setKbId(kbList[0].id));
+      }
+
       setNeedModel(lackModel);
       setNeedAddress(lackAddr);
-      setShowGuide(lackModel || lackAddr);
+      setShowGuide(lackModel || lackAddr || kbList.length === 0);
       // 返回检查结果
       return { lackModel, lackAddr };
     } catch {

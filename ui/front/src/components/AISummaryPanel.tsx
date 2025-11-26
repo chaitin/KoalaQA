@@ -1,14 +1,10 @@
 'use client'
-import { Box, Paper, Typography, LinearProgress, Stack, Chip } from '@mui/material'
-import SmartToyIcon from '@mui/icons-material/SmartToy'
-import { ModelDiscussionListItem } from '@/api/types'
 import { getCsrfToken } from '@/api/httpClient'
-import { useCallback, useEffect, useState, useRef } from 'react'
+import { ModelDiscussionListItem } from '@/api/types'
 import SSEClient from '@/utils/fetch'
-import dayjs from 'dayjs'
-import MarkDown from './markDown'
+import { Box, Paper, Stack, Typography } from '@mui/material'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import EditorContent from './EditorContent'
-import { Icon } from '@ctzhian/ui'
 
 interface AISummaryPanelProps {
   searchResults: ModelDiscussionListItem[]
@@ -21,6 +17,25 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
   const [isSummarizing, setIsSummarizing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const sseClientRef = useRef<any>(null)
+  const lastTokenRefreshRef = useRef<number>(0)
+  const maxRetryCount = 3 // 增加重试次数
+  const tokenRefreshInterval = 5 * 60 * 1000 // 5分钟刷新一次token
+
+  // 获取新的CSRF token
+  const getFreshCsrfToken = useCallback(async (forceRefresh = false) => {
+    const now = Date.now()
+    const shouldRefresh = forceRefresh || (now - lastTokenRefreshRef.current) > tokenRefreshInterval
+
+    if (shouldRefresh) {
+      console.log('Refreshing CSRF token...')
+      // 清除缓存的token
+      const { clearCsrfTokenCache } = await import('@/api/httpClient')
+      clearCsrfTokenCache()
+      lastTokenRefreshRef.current = now
+    }
+
+    return await getCsrfToken()
+  }, [])
 
   // 开始生成总结
   const startSummary = useCallback(
@@ -46,7 +61,7 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
         }
 
         // 获取 CSRF token（重试时强制刷新token）
-        const csrfToken = await getCsrfToken()
+        const csrfToken = await getFreshCsrfToken(retryCount > 0)
 
         // 创建 SSE 客户端进行 POST 请求（启用流式模式）
         const sseClient = new SSEClient<any>({
@@ -65,14 +80,9 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
               error.message.includes('403') ||
               error.message.includes('419')
 
-            if (isCsrfError && retryCount < 1) {
-              console.log('CSRF token error detected, retrying with fresh token...')
-              // 清除缓存的token
-              import('@/api/httpClient').then(({ clearCsrfTokenCache }) => {
-                clearCsrfTokenCache()
-              })
-
-              // 延迟后重试
+            if (isCsrfError && retryCount < maxRetryCount) {
+              console.log(`CSRF token error detected, retrying (${retryCount + 1}/${maxRetryCount})...`)
+              // 延迟后重试，使用getFreshCsrfToken会自动刷新token
               setTimeout(() => {
                 startSummary(retryCount + 1)
               }, 1000)
@@ -95,15 +105,10 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
           // 检查是否是CSRF错误消息
           if (data.data === 'csrf token mismatch' || data === 'csrf token mismatch') {
             console.error('CSRF token mismatch detected in SSE data')
-            if (retryCount < 1) {
-              console.log('CSRF token error in SSE stream, retrying...')
+            if (retryCount < maxRetryCount) {
+              console.log(`CSRF token error in SSE stream, retrying (${retryCount + 1}/${maxRetryCount})...`)
               // 断开当前连接
               sseClient.unsubscribe()
-
-              // 清除缓存的token并重试
-              import('@/api/httpClient').then(({ clearCsrfTokenCache }) => {
-                clearCsrfTokenCache()
-              })
 
               setTimeout(() => {
                 startSummary(retryCount + 1)
@@ -142,14 +147,9 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
           err instanceof Error &&
           (err.message.includes('csrf') || err.message.includes('403') || err.message.includes('419'))
 
-        if (isCsrfError && retryCount < 1) {
-          console.log('CSRF error in request, retrying...')
-          // 清除缓存的token
-          import('@/api/httpClient').then(({ clearCsrfTokenCache }) => {
-            clearCsrfTokenCache()
-          })
-
-          // 延迟后重试
+        if (isCsrfError && retryCount < maxRetryCount) {
+          console.log(`CSRF error in request, retrying (${retryCount + 1}/${maxRetryCount})...`)
+          // 延迟后重试，使用getFreshCsrfToken会自动刷新token
           setTimeout(() => {
             startSummary(retryCount + 1)
           }, 1000)
@@ -162,6 +162,18 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
     },
     [searchQuery, searchResults],
   )
+
+  // 当组件重新获得可见性时，检查是否需要刷新token
+  useEffect(() => {
+    if (visible) {
+      // 检查距离上次token刷新是否超过设定时间间隔
+      const now = Date.now()
+      if ((now - lastTokenRefreshRef.current) > tokenRefreshInterval) {
+        console.log('Component visible after long time, refreshing CSRF token...')
+        getFreshCsrfToken(true).catch(console.error)
+      }
+    }
+  }, [visible, getFreshCsrfToken])
 
   // 清理资源
   useEffect(() => {
@@ -214,9 +226,9 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
         height: '100%',
         display: 'flex',
         pt: 0,
-        pr: 2,
         flexDirection: 'column',
         borderRadius: 1,
+        alignItems: 'stretch'
       }}
     >
       {/* 头部 - 固定高度 */}
@@ -255,7 +267,7 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
           border: '1px solid rgba(32, 112, 249, 0.5)',
           overflow: 'auto',
           height: '100%',
-          p: 2,
+          p: 1,
           backgroundImage: 'linear-gradient( 180deg, rgba(32,112,249,0.04) 0%, rgba(167,110,251,0.04) 100%)',
         }}
       >
@@ -327,6 +339,13 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
               '& pre': {
                 fontSize: '12px !important',
               },
+              '& .tiptap.ProseMirror ol, & .tiptap.ProseMirror ul': {
+                p: '0 0 0 24px',
+              },
+              '& .tiptap.ProseMirror ol li:before': {
+                fontSize: '12px!important',
+                left: '-18px!important'
+              }
             }}
           >
             <EditorContent content={summary} />
@@ -368,7 +387,7 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
       {!isSummarizing && summary && (
         <Typography
           color='text.secondary'
-          sx={{ fontSize: '12px', transform: 'scale(0.9)',transformOrigin: 'bottom', marginTop: 1, textAlign: 'left'}}
+          sx={{ fontSize: '11px', marginTop: 1}}
         >
           本内容由 AI 基于搜索结果生成整理，如信息已过期或失效，可能不适用于当前情形，仅供参考。
         </Typography>

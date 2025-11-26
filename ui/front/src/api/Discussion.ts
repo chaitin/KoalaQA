@@ -16,7 +16,6 @@ import {
   DeleteDiscussionDiscIdCommentCommentIdParams,
   DeleteDiscussionDiscIdParams,
   GetAdminDiscussionParams,
-  GetAdminDiscussionQuestionParams,
   GetDiscussionDiscIdParams,
   GetDiscussionDiscIdSimilarityParams,
   GetDiscussionParams,
@@ -91,21 +90,6 @@ export const getAdminDiscussion = (
 })` OK
  */
 
-export const getAdminDiscussionQuestion = (
-  query: GetAdminDiscussionQuestionParams,
-  params: RequestParams = {},
-) =>
-  request<
-    ContextResponse & {
-      data?: string;
-    }
-  >({
-    path: `/admin/discussion/question`,
-    method: "GET",
-    query: query,
-    format: "json",
-    ...params,
-  });
 
 /**
  * @description list discussions
