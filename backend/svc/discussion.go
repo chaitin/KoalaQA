@@ -501,6 +501,7 @@ func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummar
 	}
 
 	return d.in.LLM.StreamChat(ctx, llm.DiscussionSummarySystemPrompt, userPrompt, map[string]any{
+		"CurrentDate": time.Now().Format("2006-01-02"),
 		"Discussions": discs,
 	})
 }

@@ -88,7 +88,7 @@ var discussionsFullTemplate = template.New("discussions_full_template")
 
 const discussionsFullTemplateStr = `
 ## 所有帖子信息
-{{- range $j, $disc := .Discussions}}
+{{- range $j, $disc := .}}
 ### 帖子{{add $j 1}}
 #### 帖子ID：{{$disc.Discussion.ID}}
 #### 帖子标题：{{$disc.Discussion.Title}}
