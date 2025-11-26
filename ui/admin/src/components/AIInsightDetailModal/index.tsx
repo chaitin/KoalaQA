@@ -329,7 +329,7 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
                         mr: 1,
                       }}
                     >
-                      {index+1}
+                      {index + 1}
                     </Box>
                     <ListItemText
                       primary={item.text}
@@ -426,18 +426,6 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
                 {selectedQuestion ? selectedQuestion.text : '请选择一个问题'}
               </Typography>
               <Stack direction="row" spacing={1}>
-                <Button
-                  variant="outlined"
-                  onClick={handleCancel}
-                  disabled={saving}
-                  sx={{
-                    textTransform: 'none',
-                    fontSize: '0.8rem',
-                    padding: '6px 12px',
-                  }}
-                >
-                  取消
-                </Button>
                 <Button
                   variant="contained"
                   onClick={handleSave}
