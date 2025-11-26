@@ -36,7 +36,7 @@ image.nginx:
 
 image.anydoc:
 	cd docker/anydoc && DOCKER_BUILDKIT=1 docker build \
-		-t chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/anydoc:v0.7.1 .
+		-t chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/anydoc:v0.7.2 .
 
 run: image.app image.api
 	docker compose up -d

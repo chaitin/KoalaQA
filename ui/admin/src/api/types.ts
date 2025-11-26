@@ -204,6 +204,7 @@ export interface ModelDiscussionComment {
   user_id?: number;
   user_like_state?: ModelCommentLikeState;
   user_name?: string;
+  user_role?: ModelUserRole;
 }
 
 export interface ModelDiscussionDetail {
@@ -232,6 +233,7 @@ export interface ModelDiscussionDetail {
   user_id?: number;
   user_like?: boolean;
   user_name?: string;
+  user_role?: ModelUserRole;
   uuid?: string;
   view?: number;
 }
@@ -280,6 +282,7 @@ export interface ModelDiscussionReply {
   user_id?: number;
   user_like_state?: ModelCommentLikeState;
   user_name?: string;
+  user_role?: ModelUserRole;
 }
 
 export interface ModelExportOpt {
@@ -314,6 +317,8 @@ export interface ModelGroupWithItem {
 }
 
 export type ModelJSONBArrayModelForumGroups = Record<string, any>;
+
+export type ModelJSONBArrayModelRankTimeGroupItem = Record<string, any>;
 
 export type ModelJSONBArrayModelStatTrendItem = Record<string, any>;
 
@@ -413,8 +418,14 @@ export interface ModelPublicAddress {
 }
 
 export interface ModelRankTimeGroup {
-  score_ids?: string[];
+  items?: ModelJSONBArrayModelRankTimeGroupItem;
   time?: number;
+}
+
+export interface ModelRankTimeGroupItem {
+  extra?: string;
+  foreign_id?: number;
+  score_id?: string;
 }
 
 export interface ModelStatTrend {
@@ -480,6 +491,16 @@ export interface ModelUserInfo {
   uid?: number;
   username?: string;
   web_notify?: boolean;
+}
+
+export interface ModelUserQuickReply {
+  content?: string;
+  created_at?: number;
+  id?: number;
+  index?: number;
+  name?: string;
+  updated_at?: number;
+  user_id?: number;
 }
 
 export interface ModelUserReviewWithUser {
@@ -806,6 +827,10 @@ export interface SvcPolishReq {
   text?: string;
 }
 
+export interface SvcQuickReplyReindexReq {
+  ids: number[];
+}
+
 export interface SvcRankContributeItem {
   avatar?: string;
   id?: number;
@@ -907,6 +932,12 @@ export interface SvcUserLoginReq {
   password: string;
 }
 
+export interface SvcUserQuickReplyCreateReq {
+  content: string;
+  /** @maxLength 10 */
+  name: string;
+}
+
 export interface SvcUserRegisterReq {
   email: string;
   name: string;
@@ -931,6 +962,7 @@ export interface SvcUserStatisticsRes {
   blog_count?: number;
   name?: string;
   qa_count?: number;
+  role?: ModelUserRole;
 }
 
 export interface SvcUserUpdateReq {
@@ -1002,6 +1034,7 @@ export interface PutAdminBotPayload {
 }
 
 export interface GetAdminDiscussionParams {
+  ai?: boolean;
   forum_id: number;
   keyword?: string;
   /** @min 1 */
@@ -1359,6 +1392,10 @@ export interface GetDiscussionParams {
   type?: "qa" | "feedback" | "blog";
 }
 
+export interface PostDiscussionSummaryParams {
+  uuids: string[];
+}
+
 /** request params */
 export interface PostDiscussionUploadPayload {
   /**
@@ -1484,6 +1521,11 @@ export interface GetUserNotifyListParams {
   read?: boolean;
   /** @min 1 */
   size?: number;
+}
+
+export interface DeleteUserQuickReplyQuickReplyIdParams {
+  /** quick_reply_id */
+  quickReplyId: number;
 }
 
 export interface GetUserTrendParams {

@@ -162,55 +162,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/discussion/question": {
-            "get": {
-                "description": "discussion ketword answer",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "discussion"
-                ],
-                "summary": "discussion keyword answer",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "name": "keyword",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "uuids",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/context.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "string"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
         "/admin/forum": {
             "get": {
                 "produces": [
@@ -2726,7 +2677,22 @@ const docTemplate = `{
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/model.RankTimeGroup"
+                                                "allOf": [
+                                                    {
+                                                        "$ref": "#/definitions/model.RankTimeGroup"
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "items": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "$ref": "#/definitions/model.RankTimeGroupItem"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                ]
                                             }
                                         }
                                     }
@@ -5373,6 +5339,156 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/quick_reply": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user_quick_reply"
+                ],
+                "summary": "list user quick reply",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/model.UserQuickReply"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user_quick_reply"
+                ],
+                "summary": "create user quick reply",
+                "parameters": [
+                    {
+                        "description": "req params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.UserQuickReplyCreateReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/user/quick_reply/reindex": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user_quick_reply"
+                ],
+                "summary": "reindex user quick reply",
+                "parameters": [
+                    {
+                        "description": "req params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.QuickReplyReindexReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/quick_reply/{quick_reply_id}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user_quick_reply"
+                ],
+                "summary": "delete user quick reply",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "quick_reply_id",
+                        "name": "quick_reply_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/user/register": {
             "post": {
                 "consumes": [
@@ -5725,6 +5841,9 @@ const docTemplate = `{
                 },
                 "user_name": {
                     "type": "string"
+                },
+                "user_role": {
+                    "$ref": "#/definitions/model.UserRole"
                 }
             }
         },
@@ -5820,6 +5939,9 @@ const docTemplate = `{
                 },
                 "user_name": {
                     "type": "string"
+                },
+                "user_role": {
+                    "$ref": "#/definitions/model.UserRole"
                 },
                 "uuid": {
                     "type": "string"
@@ -5961,6 +6083,9 @@ const docTemplate = `{
                 },
                 "user_name": {
                     "type": "string"
+                },
+                "user_role": {
+                    "$ref": "#/definitions/model.UserRole"
                 }
             }
         },
@@ -6177,6 +6302,9 @@ const docTemplate = `{
         "model.JSONB-array_model_ForumGroups": {
             "type": "object"
         },
+        "model.JSONB-array_model_RankTimeGroupItem": {
+            "type": "object"
+        },
         "model.JSONB-array_model_StatTrendItem": {
             "type": "object"
         },
@@ -6329,16 +6457,12 @@ const docTemplate = `{
             "enum": [
                 "chat",
                 "embedding",
-                "rerank",
-                "analysis",
-                "analysis-vl"
+                "rerank"
             ],
             "x-enum-varnames": [
                 "LLMTypeChat",
                 "LLMTypeEmbedding",
-                "LLMTypeRerank",
-                "LLMTypeAnalysis",
-                "LLMTypeAnalysisVL"
+                "LLMTypeRerank"
             ]
         },
         "model.ListRes": {
@@ -6479,14 +6603,25 @@ const docTemplate = `{
         "model.RankTimeGroup": {
             "type": "object",
             "properties": {
-                "score_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "items": {
+                    "$ref": "#/definitions/model.JSONB-array_model_RankTimeGroupItem"
                 },
                 "time": {
                     "type": "integer"
+                }
+            }
+        },
+        "model.RankTimeGroupItem": {
+            "type": "object",
+            "properties": {
+                "extra": {
+                    "type": "string"
+                },
+                "foreign_id": {
+                    "type": "integer"
+                },
+                "score_id": {
+                    "type": "string"
                 }
             }
         },
@@ -6677,6 +6812,32 @@ const docTemplate = `{
                 },
                 "web_notify": {
                     "type": "boolean"
+                }
+            }
+        },
+        "model.UserQuickReply": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "index": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -7699,6 +7860,20 @@ const docTemplate = `{
                 }
             }
         },
+        "svc.QuickReplyReindexReq": {
+            "type": "object",
+            "required": [
+                "ids"
+            ],
+            "properties": {
+                "ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
         "svc.RankContributeItem": {
             "type": "object",
             "properties": {
@@ -7973,6 +8148,22 @@ const docTemplate = `{
                 },
                 "password": {
                     "type": "string"
+                }
+            }
+        },
+        "svc.UserQuickReplyCreateReq": {
+            "type": "object",
+            "required": [
+                "content",
+                "name"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 10
                 }
             }
         },

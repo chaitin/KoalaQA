@@ -1,7 +1,8 @@
 import { postUserLogout } from '@/api';
 import { message } from '@ctzhian/ui';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { IconButton, Stack, Tooltip } from '@mui/material';
+import PublicIcon from '@mui/icons-material/Public';
+import { Button, IconButton, Stack, Tooltip } from '@mui/material';
 import Bread from './Bread';
 
 const Header = () => {
@@ -12,6 +13,14 @@ const Header = () => {
       window.location.href = `${window.location.protocol}//${window.location.hostname}:3000/login`;
     } else {
       window.location.href = `${window.location.origin}/login`;
+    }
+  };
+
+  const goToCommunity = () => {
+    if (process.env.NODE_ENV === 'development') {
+      window.location.href = `${window.location.protocol}//${window.location.hostname}:3000`;
+    } else {
+      window.location.href = `${window.location.origin}`;
     }
   };
   return (
@@ -26,8 +35,10 @@ const Header = () => {
       }}
     >
       <Bread />
-
       <Stack direction={'row'} alignItems={'center'} gap={2}>
+        <Button variant="outlined" size="small" onClick={goToCommunity}>
+          访问社区前台
+        </Button>
         <Tooltip title="退出登录">
           <IconButton
             size="small"

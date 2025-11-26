@@ -501,22 +501,24 @@ func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummar
 	}
 
 	return d.in.LLM.StreamChat(ctx, llm.DiscussionSummarySystemPrompt, userPrompt, map[string]any{
+		"CurrentDate": time.Now().Format("2006-01-02"),
 		"Discussions": discs,
 	})
 }
 
 type DiscussionKeywordAnswerReq struct {
-	Keyword string            `form:"keyword" binding:"required"`
-	UUIDs   model.StringArray `form:"uuids"`
+	ForumID uint
+	Keyword string
 }
 
 func (d *Discussion) KeywordAnswer(ctx context.Context, req DiscussionKeywordAnswerReq) (string, error) {
-	var discs []model.DiscussionListItem
-	if len(req.UUIDs) > 0 {
-		err := d.in.DiscRepo.List(ctx, &discs, repo.QueryWithEqual("uuid", req.UUIDs, repo.EqualOPEqAny))
-		if err != nil {
-			return "", err
-		}
+	discs, err := d.Search(ctx, DiscussionSearchReq{
+		ForumID:             req.ForumID,
+		Keyword:             req.Keyword,
+		SimilarityThreshold: 0.8,
+	})
+	if err != nil {
+		return "", err
 	}
 
 	discIDs := make([]uint, len(discs))

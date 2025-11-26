@@ -19,7 +19,6 @@ const configSlice = createSlice({
   initialState,
   reducers: {
     setKbId(state, { payload }) {
-      localStorage.setItem('kb_id', payload);
       state.kb_id = payload;
     },
     setKbC(state, { payload }) {

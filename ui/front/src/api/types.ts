@@ -1011,10 +1011,6 @@ export interface GetAdminDiscussionParams {
   size?: number;
 }
 
-export interface GetAdminDiscussionQuestionParams {
-  keyword: string;
-  uuids?: string[];
-}
 
 /** request params */
 export type PutAdminForumPayload = SvcForumUpdateReq & {

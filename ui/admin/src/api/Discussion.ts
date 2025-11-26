@@ -30,6 +30,7 @@ import {
   PostDiscussionDiscIdLikeParams,
   PostDiscussionDiscIdResolveParams,
   PostDiscussionDiscIdRevokeLikeParams,
+  PostDiscussionSummaryParams,
   PostDiscussionUploadPayload,
   PutDiscussionDiscIdCloseParams,
   PutDiscussionDiscIdCommentCommentIdParams,
@@ -167,6 +168,26 @@ export const postDiscussionComplete = (
     body: req,
     type: ContentType.Json,
     format: "json",
+    ...params,
+  });
+
+/**
+ * @description discussions summary
+ *
+ * @tags discussion
+ * @name PostDiscussionSummary
+ * @summary discussions summary
+ * @request POST:/discussion/summary
+ */
+
+export const postDiscussionSummary = (
+  query: PostDiscussionSummaryParams,
+  params: RequestParams = {},
+) =>
+  request<unknown>({
+    path: `/discussion/summary`,
+    method: "POST",
+    query: query,
     ...params,
   });
 
