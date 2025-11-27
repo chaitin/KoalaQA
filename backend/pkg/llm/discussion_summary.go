@@ -87,7 +87,7 @@ const discussionSummaryUserTplStr = `
 {{- if $disc.Tags}}
 #### 帖子标签：{{join $disc.Tags ", "}}
 {{- end}}
-{{if eq $disc.Type "qa"}}#### 帖子状态：{{if eq $disc.Resolved 1 }}已解决{{else if eq $disc.Resolved 2 }}已关闭{{else}}待解决{{end}}{{end}}
+{{if eq $disc.Type "qa"}}#### 帖子状态：{{getDiscState $disc.Resolved}}{{end}}
 {{- end}}
 `
 
@@ -106,23 +106,11 @@ func DiscussionSummaryUserPrompt(discs []model.DiscussionListItem) (string, erro
 func init() {
 	var err error
 	discissopmSummaryUserTpl, err = discissopmSummaryUserTpl.Funcs(template.FuncMap{
-		"add":        func(a, b int) int { return a + b },
-		"join":       strings.Join,
-		"formatTime": formatTime,
-		"getDiscType": func(t model.DiscussionType) string {
-			switch t {
-			case model.DiscussionTypeQA:
-				return "问答"
-			case model.DiscussionTypeBlog:
-				return "文章"
-			case model.DiscussionTypeFeedback:
-				return "反馈"
-			case model.DiscussionTypeIssue:
-				return "Issue"
-			default:
-				return "未知"
-			}
-		},
+		"add":          add,
+		"join":         strings.Join,
+		"formatTime":   formatTime,
+		"getDiscType":  getDiscType,
+		"getDiscState": getDiscState,
 	}).Parse(discussionSummaryUserTplStr)
 	if err != nil {
 		panic(err)

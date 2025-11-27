@@ -6,7 +6,6 @@ import (
 	"sort"
 	"strings"
 	"text/template"
-	"time"
 
 	"github.com/chaitin/koalaqa/model"
 )
@@ -48,7 +47,7 @@ const discussionPostTemplate = `
 {{- if .Discussion.Tags}}
 ### 标签：{{join .Discussion.Tags ", "}}
 {{- end}}
-### 解决状态：{{if eq .Discussion.Resolved 1 }}已解决{{else if eq .Discussion.Resolved 2 }}已关闭{{else}}待解决{{end}}
+### 解决状态：{{getDiscState $disc.Discussion.Resolved}}
 
 {{- if .CommentTree}}
 ## 评论楼层结构
@@ -68,7 +67,7 @@ const discussionFullTemplate = `
 {{- if .Discussion.Tags}}
 ### 帖子标签：{{join .Discussion.Tags ", "}}
 {{- end}}
-### 解决状态：{{if eq .Discussion.Resolved 1 }}已解决{{else if eq .Discussion.Resolved 2 }}已关闭{{else}}待解决{{end}}
+### 解决状态：{{getDiscState $disc.Discussion.Resolved}}
 
 ## 评论楼层结构
 {{- if .CommentTree}}
@@ -99,7 +98,7 @@ const discussionsFullTemplateStr = `
 {{- if $disc.Discussion.Tags}}
 #### 帖子标签：{{join $disc.Discussion.Tags ", "}}
 {{- end}}
-#### 解决状态：{{if eq $disc.Discussion.Resolved 1 }}已解决{{else if eq $disc.Discussion.Resolved 2 }}已关闭{{else}}待解决{{end}}
+#### 解决状态：{{getDiscState $disc.Discussion.Resolved}}
 
 ### 帖子{{add $j 1}}评论楼层结构
 {{- if $disc.CommentTree}}
@@ -122,6 +121,7 @@ func init() {
 		"join":          strings.Join,
 		"add":           func(a, b int) int { return a + b },
 		"renderComment": renderComment,
+		"getDiscState":  getDiscState,
 	}).Parse(discussionsFullTemplateStr)
 	if err != nil {
 		panic(err)
@@ -200,10 +200,11 @@ func (t *DiscussionPromptTemplate) initPostTemplate() error {
 	funcMap := template.FuncMap{
 		"formatTime":      formatTime,
 		"join":            strings.Join,
-		"add":             func(a, b int) int { return a + b },
+		"add":             add,
 		"renderComment":   renderComment,
 		"findCommentByID": t.findCommentByID,
 		"isReplyToBot":    t.isReplyToBot,
+		"getDiscState":    getDiscState,
 	}
 
 	tmpl, err := template.New("discussion_post_prompt").Funcs(funcMap).Parse(discussionPostTemplate)
@@ -220,10 +221,11 @@ func (t *DiscussionPromptTemplate) initFullTemplate() error {
 	funcMap := template.FuncMap{
 		"formatTime":      formatTime,
 		"join":            strings.Join,
-		"add":             func(a, b int) int { return a + b },
+		"add":             add,
 		"renderComment":   renderComment,
 		"findCommentByID": t.findCommentByID,
 		"isReplyToBot":    t.isReplyToBot,
+		"getDiscState":    getDiscState,
 	}
 
 	tmpl, err := template.New("discussion_full_prompt").Funcs(funcMap).Parse(discussionFullTemplate)
@@ -233,18 +235,6 @@ func (t *DiscussionPromptTemplate) initFullTemplate() error {
 
 	t.template = tmpl
 	return nil
-}
-
-// formatTime 格式化时间
-func formatTime(timestamp model.Timestamp) string {
-	return time.Unix(int64(timestamp), 0).Format("2006-01-02 15:04:05")
-}
-
-// renderComment 渲染评论节点（用于模版）
-func renderComment(node *CommentNode, prefix string) string {
-	var builder strings.Builder
-	renderCommentNode(&builder, node, prefix)
-	return builder.String()
 }
 
 // buildCommentTree 构建评论树结构
@@ -308,50 +298,6 @@ func (t *DiscussionPromptTemplate) sortChildComments(node *CommentNode) {
 
 	for _, child := range node.Children {
 		t.sortChildComments(child)
-	}
-}
-
-// renderCommentNode 渲染评论节点
-func renderCommentNode(builder *strings.Builder, node *CommentNode, prefix string) {
-	// 构建评论标识
-	var tags []string
-	if node.IsBot {
-		tags = append(tags, "BOT回复")
-	}
-	if node.IsNew {
-		tags = append(tags, "NEW")
-	}
-	if node.Comment.Accepted {
-		tags = append(tags, "已采纳")
-	}
-
-	tagStr := ""
-	if len(tags) > 0 {
-		tagStr = fmt.Sprintf(" 【%s】", strings.Join(tags, "，"))
-	}
-
-	// 渲染当前评论
-	builder.WriteString(fmt.Sprintf("[ID: %d] - %s (UserID: %d) (%s)%s\n",
-		node.Comment.ID,
-		node.Comment.UserName,
-		node.Comment.UserID,
-		formatTime(node.Comment.CreatedAt),
-		tagStr,
-	))
-
-	builder.WriteString(fmt.Sprintf("%s内容：%s\n", prefix, node.Comment.Content))
-
-	// 渲染子评论
-	for i, child := range node.Children {
-		var childPrefix string
-		if i == len(node.Children)-1 {
-			builder.WriteString(fmt.Sprintf("%s└── 回复%d.%d ", prefix, node.Level+1, i+1))
-			childPrefix = prefix + "    "
-		} else {
-			builder.WriteString(fmt.Sprintf("%s├── 回复%d.%d ", prefix, node.Level+1, i+1))
-			childPrefix = prefix + "│   "
-		}
-		renderCommentNode(builder, child, childPrefix)
 	}
 }
 
