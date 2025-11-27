@@ -47,7 +47,7 @@ const discussionPostTemplate = `
 {{- if .Discussion.Tags}}
 ### 标签：{{join .Discussion.Tags ", "}}
 {{- end}}
-### 解决状态：{{getDiscState $disc.Discussion.Resolved}}
+### 解决状态：{{getDiscState .Discussion.Resolved}}
 
 {{- if .CommentTree}}
 ## 评论楼层结构
@@ -67,7 +67,7 @@ const discussionFullTemplate = `
 {{- if .Discussion.Tags}}
 ### 帖子标签：{{join .Discussion.Tags ", "}}
 {{- end}}
-### 解决状态：{{getDiscState $disc.Discussion.Resolved}}
+### 解决状态：{{getDiscState .Discussion.Resolved}}
 
 ## 评论楼层结构
 {{- if .CommentTree}}
