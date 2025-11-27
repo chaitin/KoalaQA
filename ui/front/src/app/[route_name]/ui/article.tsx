@@ -767,6 +767,7 @@ const Article = ({
                 key={it.uuid}
                 data={it}
                 keywords={searchRef.current}
+                onNavigate={releaseModalClose}
                 sx={{
                   borderBottom: index < (articleData.items?.length || 0) - 1 ? '1px solid #f3f4f6' : 'none',
                 }}
