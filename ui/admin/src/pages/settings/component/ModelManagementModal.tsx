@@ -105,7 +105,7 @@ const ModelManagementModal = ({
                       <Box
                         component={'a'}
                         sx={{ color: 'primary.main', cursor: 'pointer' }}
-                        href="https://pandawiki.docs.baizhi.cloud/node/01973ffe-e1bc-7165-9a71-e7aa461c05ea"
+                        href="https://koalaqa.docs.baizhi.cloud/node/019951c1-6723-7224-8cea-98df2fd452f3"
                         target="_blank"
                       >
                         文档

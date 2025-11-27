@@ -29,6 +29,9 @@ func (d *discussionAuth) Route(h server.Handler) {
 	g.POST("/:disc_id/revoke_like", d.RevokeLikeDiscussion)
 	g.POST(":disc_id/resolve", d.ResolveFeedback)
 	g.PUT("/:disc_id/close", d.CloseDiscussion)
+	g.POST("/:disc_id/resolve_issue", d.ResolveIssue)
+	g.POST("/:disc_id/requirement", d.Requirement)
+	g.POST("/:disc_id/associate", d.Associate)
 
 	{
 		comG := g.Group("/:disc_id/comment")
@@ -61,8 +64,7 @@ func (d *discussionAuth) Create(ctx *context.Context) {
 		ctx.BadRequest(err)
 		return
 	}
-	req.UserID = ctx.GetUser().UID
-	res, err := d.disc.Create(ctx.Request.Context(), ctx.SessionUUID(), req)
+	res, err := d.disc.Create(ctx.Request.Context(), ctx.GetUser(), req)
 	if err != nil {
 		ctx.InternalError(err, "failed to create discussion")
 		return
@@ -376,6 +378,33 @@ func (d *discussionAuth) ResolveFeedback(ctx *context.Context) {
 	ctx.Success(nil)
 }
 
+// ResolveIssue
+// @Summary resolve issue
+// @Description resolve issue
+// @Tags discussion
+// @Accept json
+// @Param req body svc.ResolveIssueReq true "req params"
+// @Produce json
+// @Param disc_id path string true "disc_id"
+// @Success 200 {object} context.Response
+// @Router /discussion/{disc_id}/resolve_issue [post]
+func (d *discussionAuth) ResolveIssue(ctx *context.Context) {
+	var req svc.ResolveIssueReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	err = d.disc.ResolveIssue(ctx, ctx.GetUser(), ctx.Param("disc_id"), req)
+	if err != nil {
+		ctx.InternalError(err, "resolve issue failed")
+		return
+	}
+
+	ctx.Success(nil)
+}
+
 // UploadFile
 // @Summary discussion upload file
 // @Description discussion upload file
@@ -425,4 +454,50 @@ func (d *discussionAuth) AcceptComment(ctx *context.Context) {
 		return
 	}
 	ctx.Success(nil)
+}
+
+// Associate
+// @Summary associate discussion
+// @Description associate discussion
+// @Tags discussion
+// @Accept json
+// @Produce json
+// @Param disc_id path string true "disc_id"
+// @Param discussion body svc.AssociateDiscussionReq true "discussion"
+// @Success 200 {object} context.Response
+// @Router /discussion/{disc_id}/associate [post]
+func (d *discussionAuth) Associate(ctx *context.Context) {
+	var req svc.AssociateDiscussionReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	err = d.disc.AssociateDiscussion(ctx, ctx.GetUser(), ctx.Param("disc_id"), req)
+	if err != nil {
+		ctx.InternalError(err, "associate discussion failed")
+		return
+	}
+
+	ctx.Success(nil)
+}
+
+// Requirement
+// @Summary discussion requirement
+// @Description discussion requirement
+// @Tags discussion
+// @Accept json
+// @Produce json
+// @Param disc_id path string true "disc_id"
+// @Success 200 {object} context.Response
+// @Router /discussion/{disc_id}/requirement [post]
+func (d *discussionAuth) Requirement(ctx *context.Context) {
+	res, err := d.disc.DiscussionRequirement(ctx, ctx.GetUser(), ctx.Param("disc_uuid"))
+	if err != nil {
+		ctx.InternalError(err, "get discussion requirement failed")
+		return
+	}
+
+	ctx.Success(res)
 }

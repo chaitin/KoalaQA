@@ -9,11 +9,11 @@ const (
 
 type Rank struct {
 	Base
-	Type      RankType `gorm:"column:type;index:idx_rank_type_score;uniqueIndex:udx_rank_type_id_foreign_id" json:"type"`
-	ScoreID   string   `gorm:"column:score_id;type:text;index;uniqueIndex:udx_rank_type_id_foreign_id" json:"score_id"`
+	Type      RankType `gorm:"column:type;index:idx_rank_type_score" json:"type"`
+	ScoreID   string   `gorm:"column:score_id;type:text;index" json:"score_id"`
 	Score     float64  `gorm:"column:score;index:idx_rank_type_score" json:"score"`
 	RagID     string   `gorm:"column:rag_id;type:text;index" json:"rag_id"`
-	ForeignID uint     `gorm:"column:foreign_id;type:bigint;default:0;uniqueIndex:udx_rank_type_id_foreign_id" json:"foreign_id"`
+	ForeignID uint     `gorm:"column:foreign_id;type:bigint;default:0" json:"foreign_id"`
 	Extra     string   `gorm:"column:extra;type:text" json:"extra"`
 	Hit       int64    `gorm:"column:hit;type:bigint;default:1" json:"hit"`
 }

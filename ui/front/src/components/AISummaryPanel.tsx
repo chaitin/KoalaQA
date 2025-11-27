@@ -235,9 +235,9 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
       <Box sx={{ flexShrink: 0, mb: 2 }}>
         <Stack direction='row' alignItems='center' spacing={1.5}>
           <img
-            src={isSummarizing ? 'ai-loading.gif' : '/ai_purple.png'}
+            src={isSummarizing ? '/ai-loading.gif' : '/ai_purple.png'}
             alt='loading'
-            style={{ width: 18, height: 18 }}
+            style={{ width: 18, height: 18, position: 'relative', top: '-2px' }}
           />
           <Typography
             variant='h6'
@@ -267,7 +267,7 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
           border: '1px solid rgba(32, 112, 249, 0.5)',
           overflow: 'auto',
           height: '100%',
-          p: 1,
+          p: 2,
           backgroundImage: 'linear-gradient( 180deg, rgba(32,112,249,0.04) 0%, rgba(167,110,251,0.04) 100%)',
         }}
       >
@@ -386,7 +386,7 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
       </Box>
       {!isSummarizing && summary && (
         <Typography
-          color='text.secondary'
+          color='rgba(33, 34, 45, 0.50)'
           sx={{ fontSize: '11px', marginTop: 1}}
         >
           本内容由 AI 基于搜索结果生成整理，如信息已过期或失效，可能不适用于当前情形，仅供参考。

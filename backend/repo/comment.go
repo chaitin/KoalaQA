@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"time"
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/database"
@@ -49,6 +50,14 @@ func (c *Comment) CountByForumIDs(ctx context.Context, res *int64, forumIDs mode
 	return c.model(ctx).
 		Where("discussion_id IN (SELECT id FROM discussions WHERE forum_id = ANY(?))", forumIDs).
 		Scopes(o.Scopes()...).
+		Count(res).Error
+}
+
+func (c *Comment) CountDiscussion(ctx context.Context, res *int64, begin time.Time, queryFuncs ...QueryOptFunc) error {
+	o := getQueryOpt(queryFuncs...)
+
+	return c.model(ctx).Scopes(o.Scopes()...).
+		Where("discussion_id IN (SELECT id FROM discussions where created_at >= ?)", begin).
 		Count(res).Error
 }
 

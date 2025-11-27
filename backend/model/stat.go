@@ -11,7 +11,14 @@ const (
 	StatTypeBotAccept
 	StatTypeDiscussionQA
 	StatTypeDiscussionBlog
+	StatTypeDiscussionIssue
 )
+
+var DiscussionType2StatType = map[DiscussionType]StatType{
+	DiscussionTypeQA:    StatTypeDiscussionQA,
+	DiscussionTypeBlog:  StatTypeDiscussionBlog,
+	DiscussionTypeIssue: StatTypeDiscussionIssue,
+}
 
 type Stat struct {
 	Base

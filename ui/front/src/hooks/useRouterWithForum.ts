@@ -1,16 +1,16 @@
 import { useRouter } from 'next/navigation'
 import { useForumId } from './useForumId'
-import { useForum } from '@/contexts/ForumContext'
+import { useForumStore } from '@/store'
 import { buildRouteWithRouteName } from '@/lib/utils'
 
 
 /**
  * 带 route_name 自动补全的路由 hook
- * 当路由跳转时，如果路径不包含 forum 信息，会自动从当前路径或上下文获取并补上
+ * 当路由跳转时，如果路径不包含 forum 信息，会自动从当前路径或 store 获取并补上
  */
 export const useRouterWithRouteName = () => {
   const router = useRouter()
-  const { forums } = useForum()
+  const { forums } = useForumStore()
   const forumId = useForumId()
 
   // 获取当前论坛信息
@@ -37,7 +37,6 @@ export const useRouterWithRouteName = () => {
   const refresh = () => {
     router.refresh()
   }
-
   return {
     push,
     replace,

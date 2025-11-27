@@ -7,8 +7,7 @@ import { ColumnsType } from '@ctzhian/ui/dist/Table';
 import dayjs from 'dayjs';
 import { useEffect, useMemo } from 'react';
 import { useListQueryParams } from '@/hooks/useListQueryParams';
-import { useAppDispatch } from '@/store';
-import { setPageName } from '@/store/slices/breadcrumb';
+import { useBreadcrumbStore } from '@/store';
 
 // 审批状态枚举
 enum ReviewState {
@@ -33,7 +32,7 @@ const REVIEW_STATE_MAP: Record<number, { text: string; color: 'success' | 'error
 };
 
 const UserReviewList = () => {
-  const dispatch = useAppDispatch();
+  const { setPageName } = useBreadcrumbStore();
   const { page, size, setParams } = useListQueryParams();
 
   // 获取已通过和已拒绝的记录
@@ -72,11 +71,11 @@ const UserReviewList = () => {
 
   useEffect(() => {
     // 设置面包屑导航
-    dispatch(setPageName('审批记录'));
+    setPageName('审批记录');
     return () => {
-      dispatch(setPageName(''));
+      setPageName('');
     };
-  }, [dispatch]);
+  }, [setPageName]);
 
   useEffect(() => {
     // 查询所有已通过和已拒绝的记录（不分页，前端分页）

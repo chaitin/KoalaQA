@@ -21,6 +21,7 @@ export interface EditorWrapRef {
   getText: () => string
   resetContent: () => void
   setReadonly: (readonly: boolean) => void
+  setContent: (content: string) => void
 }
 
 const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
@@ -151,11 +152,11 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
       return () => clearTimeout(timer)
     }, [editorRef?.editor])
 
-  // 当 readonly 状态改变时，更新编辑器的可编辑状态
-  useEffect(() => {
+    // 当 readonly 状态改变时，更新编辑器的可编辑状态
+    useEffect(() => {
       if (!editorRef?.editor) return
       editorRef.editor.setEditable(!readonly)
-  }, [readonly, editorRef?.editor])
+    }, [readonly, editorRef?.editor])
     // 暴露命令式 API：getContent / getHTML / getText / resetContent
     useImperativeHandle(
       ref,
@@ -181,6 +182,22 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
             return editorRef.editor.getText()
           } catch (e) {
             return ''
+          }
+        },
+        setContent: (content: string) => {
+          try {
+            if (editorRef.editor) {
+              // setContent should receive the content string directly; remove unsupported options
+              editorRef.editor.commands.setContent(content || '', {
+                contentType: 'markdown',
+              } as any)
+
+              if (!readonly) {
+                onChange?.(content)
+              }
+            }
+          } catch (e) {
+            console.error('设置编辑器内容失败:', e)
           }
         },
         resetContent: () => {
@@ -229,9 +246,9 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
             '& .tiptap': {
               height: '100%',
             },
-            '& .editor-toolbar > div':{
-              flexWrap: 'wrap'
-            }
+            '& .editor-toolbar > div': {
+              flexWrap: 'wrap',
+            },
           }}
         >
           {editorRef.editor && (

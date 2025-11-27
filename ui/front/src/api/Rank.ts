@@ -15,6 +15,7 @@ import {
   ContextResponse,
   ModelListRes,
   ModelRankTimeGroup,
+  ModelRankTimeGroupItem,
   SvcRankContributeItem,
 } from "./types";
 
@@ -26,7 +27,10 @@ import {
  * @summary ai insight rank
  * @request GET:/admin/rank/ai_insight
  * @response `200` `(ContextResponse & {
-    data?: (ModelRankTimeGroup)[],
+    data?: ((ModelRankTimeGroup & {
+    items?: (ModelRankTimeGroupItem)[],
+
+}))[],
 
 })` OK
  */
@@ -34,7 +38,9 @@ import {
 export const getAdminRankAiInsight = (params: RequestParams = {}) =>
   request<
     ContextResponse & {
-      data?: ModelRankTimeGroup[];
+      data?: (ModelRankTimeGroup & {
+        items?: ModelRankTimeGroupItem[];
+      })[];
     }
   >({
     path: `/admin/rank/ai_insight`,

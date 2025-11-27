@@ -1,6 +1,6 @@
 'use client'
 import { AuthContext } from '@/components/authProvider'
-import { useForum } from '@/contexts/ForumContext'
+import { useForumStore } from '@/store'
 import { Badge, Box, Button, IconButton, Menu, Stack, Typography } from '@mui/material'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import React, { useContext, useEffect, useRef, useState } from 'react'
@@ -282,7 +282,7 @@ export interface LoggedInProps {
 
 const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) => {
   const { user: contextUser } = useContext(AuthContext)
-  const { forums } = useForum()
+  const forums = useForumStore((s) => s.forums)
   const user = propUser || contextUser
   const [notifications, setNotifications] = useState<MessageNotifyInfo[]>([])
   const [unreadCount, setUnreadCount] = useState(0)

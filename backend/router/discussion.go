@@ -52,6 +52,16 @@ func (d *discussion) List(ctx *context.Context) {
 	ctx.Success(res)
 }
 
+func (d *discussion) ListAssociate(ctx *context.Context) {
+	res, err := d.disc.ListAssociateDiscussion(ctx, ctx.GetUser().UID, ctx.Param("disc_id"))
+	if err != nil {
+		ctx.InternalError(err, "list associate failed")
+		return
+	}
+
+	ctx.Success(res)
+}
+
 // Summary
 // @Summary discussions summary
 // @Description discussions summary

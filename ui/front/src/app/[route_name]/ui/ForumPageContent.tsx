@@ -6,6 +6,8 @@ import { Button, Stack } from '@mui/material'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import ArticleCard from './article'
+import { useEffect } from 'react'
+import { useForumStore } from '@/store'
 
 interface ForumPageContentProps {
   route_name: string
@@ -27,6 +29,14 @@ interface ForumPageContentProps {
 const ForumPageContent = ({ route_name, searchParams, initialData }: ForumPageContentProps) => {
   const { tps, type } = searchParams
   const { forumId, forumInfo, discussions, groups } = initialData
+  const setRouteName = useForumStore((s) => s.setRouteName)
+
+  // 确保 store 中记录 route_name，以便 selectedForumId 能尽快被设置
+  useEffect(() => {
+    if (route_name) {
+      setRouteName(route_name)
+    }
+  }, [route_name, setRouteName])
 
   // 将 url 中的 tps 参数（逗号分隔的字符串）转换为数字数组
   const topics = tps ? tps.split(',').map(Number) : []

@@ -10,6 +10,7 @@ const (
 	DiscussionTypeQA       DiscussionType = "qa"
 	DiscussionTypeFeedback DiscussionType = "feedback"
 	DiscussionTypeBlog     DiscussionType = "blog"
+	DiscussionTypeIssue    DiscussionType = "issue"
 )
 
 type DiscussionState uint
@@ -18,6 +19,7 @@ const (
 	DiscussionStateNone DiscussionState = iota
 	DiscussionStateResolved
 	DiscussionStateClosed
+	DiscussionStateInProgress
 )
 
 type Discussion struct {
@@ -27,21 +29,22 @@ type Discussion struct {
 	UserID uint   `json:"user_id" gorm:"column:user_id;type:bigint;index"`
 	RagID  string `json:"rag_id" gorm:"column:rag_id;type:text;index"`
 
-	Title      string          `json:"title" gorm:"column:title;type:text"`
-	Summary    string          `json:"summary" gorm:"column:summary;type:text"`
-	Content    string          `json:"content" gorm:"column:content;type:text"`
-	Tags       StringArray     `json:"tags" gorm:"column:tags;type:text[]"`
-	GroupIDs   Int64Array      `json:"group_ids" gorm:"column:group_ids;type:bigint[]"`
-	Resolved   DiscussionState `json:"resolved" gorm:"column:resolved;type:integer;default:0"`
-	ResolvedAt Timestamp       `json:"resolved_at" gorm:"column:resolved_at;type:timestamp with time zone"`
-	Hot        uint            `json:"hot" gorm:"column:hot;type:bigint;default:0"`
-	Like       uint            `json:"like" gorm:"column:like;type:bigint;default:0"`
-	Dislike    uint            `json:"dislike" gorm:"column:dislike;type:bigint;default:0"`
-	View       uint            `json:"view" gorm:"column:view;type:bigint;default:0"`
-	Comment    uint            `json:"comment" gorm:"column:comment;type:bigint;default:0"`
-	Type       DiscussionType  `json:"type" gorm:"column:type;type:text;default:qa"`
-	ForumID    uint            `json:"forum_id" gorm:"column:forum_id;type:bigint;index"`
-	Members    Int64Array      `json:"members" gorm:"column:members;type:bigint[]"`
+	Title       string          `json:"title" gorm:"column:title;type:text"`
+	Summary     string          `json:"summary" gorm:"column:summary;type:text"`
+	Content     string          `json:"content" gorm:"column:content;type:text"`
+	Tags        StringArray     `json:"tags" gorm:"column:tags;type:text[]"`
+	GroupIDs    Int64Array      `json:"group_ids" gorm:"column:group_ids;type:bigint[]"`
+	Resolved    DiscussionState `json:"resolved" gorm:"column:resolved;type:integer;default:0"`
+	ResolvedAt  Timestamp       `json:"resolved_at" gorm:"column:resolved_at;type:timestamp with time zone"`
+	Hot         uint            `json:"hot" gorm:"column:hot;type:bigint;default:0"`
+	Like        uint            `json:"like" gorm:"column:like;type:bigint;default:0"`
+	Dislike     uint            `json:"dislike" gorm:"column:dislike;type:bigint;default:0"`
+	View        uint            `json:"view" gorm:"column:view;type:bigint;default:0"`
+	Comment     uint            `json:"comment" gorm:"column:comment;type:bigint;default:0"`
+	Type        DiscussionType  `json:"type" gorm:"column:type;type:text;default:qa"`
+	ForumID     uint            `json:"forum_id" gorm:"column:forum_id;type:bigint;index"`
+	Members     Int64Array      `json:"members" gorm:"column:members;type:bigint[]"`
+	AssociateID uint            `json:"associate_id" gorm:"column:associate_id;type:bigint;default:0;index"`
 }
 
 func (d *Discussion) TitleContent() string {

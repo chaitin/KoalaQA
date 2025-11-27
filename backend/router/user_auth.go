@@ -366,11 +366,11 @@ func (u *userAuth) QuickReplyList(ctx *context.Context) {
 // @Tags user_quick_reply
 // @Produce json
 // @Accept json
-// @Param req body svc.UserQuickReplyCreateReq true "req params"
+// @Param req body svc.UserQuickReplyReq true "req params"
 // @Success 200 {object} context.Response{data=uint}
 // @Router /user/quick_reply [post]
 func (u *userAuth) QuickReplyCreate(ctx *context.Context) {
-	var req svc.UserQuickReplyCreateReq
+	var req svc.UserQuickReplyReq
 	err := ctx.ShouldBindJSON(&req)
 	if err != nil {
 		ctx.BadRequest(err)
@@ -384,6 +384,38 @@ func (u *userAuth) QuickReplyCreate(ctx *context.Context) {
 	}
 
 	ctx.Success(id)
+}
+
+// QuickReplyUpdate
+// @Summary update user quick reply
+// @Tags user_quick_reply
+// @Produce json
+// @Accept json
+// @Param req body svc.UserQuickReplyReq true "req params"
+// @Param quick_reply_id path uint true "quick_reply_id"
+// @Success 200 {object} context.Response
+// @Router /user/quick_reply/{quick_reply_id} [put]
+func (u *userAuth) QuickReplyUpdate(ctx *context.Context) {
+	quickReplyID, err := ctx.ParamUint("quick_reply_id")
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	var req svc.UserQuickReplyReq
+	err = ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	err = u.in.SvcUserQR.Update(ctx, ctx.GetUser(), quickReplyID, req)
+	if err != nil {
+		ctx.InternalError(err, "update quick reply failed")
+		return
+	}
+
+	ctx.Success(nil)
 }
 
 // QuickReplyDelete
@@ -457,6 +489,7 @@ func (u *userAuth) Route(h server.Handler) {
 		{
 			qrDetailG := qrG.Group(":quick_reply_id")
 			qrDetailG.DELETE("", u.QuickReplyDelete)
+			qrDetailG.PUT("", u.QuickReplyUpdate)
 		}
 	}
 }

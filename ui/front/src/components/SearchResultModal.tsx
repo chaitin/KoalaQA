@@ -21,11 +21,11 @@ import {
 import ClearIcon from '@mui/icons-material/Clear'
 import Image from 'next/image'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useForumStore } from '@/store'
 
 interface SearchResultModalProps {
   open: boolean
   onClose: () => void
-  forumId?: number
   initialQuery?: string
   onAsk?: () => void
   onFeedback?: () => void
@@ -35,7 +35,6 @@ interface SearchResultModalProps {
 export const SearchResultModal = ({
   open,
   onClose,
-  forumId,
   initialQuery = '',
   onAsk,
   onFeedback,
@@ -44,6 +43,9 @@ export const SearchResultModal = ({
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const searchInputRef = useRef<HTMLInputElement>(null)
+
+  // 从 store 获取 forumId
+  const forumId = useForumStore((s) => s.selectedForumId)
 
   // 内部状态管理
   const [searchQuery, setSearchQuery] = useState(initialQuery)
@@ -94,7 +96,7 @@ export const SearchResultModal = ({
       setLoading(true)
       try {
         const params: GetDiscussionParams = {
-          forum_id: forumId,
+          forum_id: forumId as any,
           keyword: query.trim(),
           stat: true,
         }
@@ -338,6 +340,7 @@ export const SearchResultModal = ({
                       data={item}
                       keywords={searchQuery}
                       showType={true}
+                      onNavigate={onClose}
                     />
                   ))}
                 </Stack>

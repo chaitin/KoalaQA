@@ -3,7 +3,7 @@ import { postUserLogin, SvcAuthFrontendGetAuth } from '@/api'
 import { Message } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import LoadingBtn from '@/components/loadingButton'
-import { useForum } from '@/contexts/ForumContext'
+import { useForumStore } from '@/store'
 import { aesCbcEncrypt } from '@/utils/aes'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Stack, TextField } from '@mui/material'
@@ -20,7 +20,7 @@ const schema = z.object({
 
 const Account = ({ isChecked, passwordConfig }: { isChecked: boolean; passwordConfig?: SvcAuthFrontendGetAuth }) => {
   const { user, loading, fetchUser } = useContext(AuthContext)
-  const { refreshForums } = useForum()
+  const refreshForums = useForumStore((s) => s.refreshForums)
   const searchParams = useSearchParams()
   const router = useRouter()
   const redirectUrl = searchParams?.get('redirect')
