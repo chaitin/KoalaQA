@@ -46,7 +46,7 @@ import { useBoolean, useInViewport } from 'ahooks'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import DiscussCard from './discussCard'
 
 export type Status = 'hot' | 'new' | 'publish'
@@ -108,7 +108,6 @@ const Article = ({
   const [contributors, setContributors] = useState<SvcRankContributeItem[]>([])
   const [contributorsLoading, setContributorsLoading] = useState(false)
   const [announcements, setAnnouncements] = useState<ModelDiscussionListItem[]>([])
-  const [announcementsLoading, setAnnouncementsLoading] = useState(false)
   const sidebarRef = useRef<HTMLDivElement>(null)
   const loadMoreTriggerRef = useRef<HTMLDivElement | null>(null)
   const [isLoadMoreInView] = useInViewport(loadMoreTriggerRef, {
@@ -160,7 +159,6 @@ const Article = ({
     }
 
     try {
-      setAnnouncementsLoading(true)
       const params: GetDiscussionParams = {
         discussion_ids: forumInfo.blog_ids,
         page: 1,
@@ -177,9 +175,7 @@ const Article = ({
     } catch (error) {
       console.error('Failed to fetch announcements:', error)
       setAnnouncements([])
-    } finally {
-      setAnnouncementsLoading(false)
-    }
+    } 
   }, [announcementBlogIdsKey, forumInfo?.id, forumId])
 
   useEffect(() => {
@@ -1110,7 +1106,6 @@ const Article = ({
           closeSearchModal()
           setSearch('')
         }}
-        forumId={parseInt(forumId || '0', 10)}
         initialQuery={search}
         onAsk={handleAsk}
         onFeedback={handleFeedback}

@@ -386,7 +386,7 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
       </Box>
       {!isSummarizing && summary && (
         <Typography
-          color='text.secondary'
+          color='rgba(33, 34, 45, 0.50)'
           sx={{ fontSize: '11px', marginTop: 1}}
         >
           本内容由 AI 基于搜索结果生成整理，如信息已过期或失效，可能不适用于当前情形，仅供参考。

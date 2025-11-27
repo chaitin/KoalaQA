@@ -2,7 +2,7 @@
 
 import { ModelUserQuickReply } from '@/api'
 import DragHandleIcon from '@mui/icons-material/DragHandle'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
+import CancelIcon from '@mui/icons-material/Cancel'
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import { Box, Button, IconButton, Stack, Typography, Card, CircularProgress } from '@mui/material'
 import { useEffect, useState } from 'react'
@@ -21,6 +21,7 @@ import { useSortable } from '@dnd-kit/sortable'
 import QuickReplyEditModal from './QuickReplyEditModal'
 import Modal from '@/components/modal'
 import { useQuickReplyStore } from '@/store/quickReplyStore'
+import { Message } from '@/components'
 
 interface SortableItemProps {
   id: string | number
@@ -94,12 +95,12 @@ function SortableItem({ id, item, onEdit, onDelete }: SortableItemProps) {
         </Typography>
       </Box>
 
-      <Stack direction='row' spacing={0.5} sx={{ flexShrink: 0 }}>
-        <IconButton size='small' onClick={() => onEdit(item)} sx={{ color: 'primary.main' }} title='编辑'>
-          <EditOutlinedIcon fontSize='small' />
-        </IconButton>
-        <IconButton size='small' onClick={() => onDelete(item.id!)} sx={{ color: '#ff4d4f' }} title='删除'>
-          <DeleteOutlineIcon fontSize='small' />
+      <Stack direction='row' spacing={1} sx={{ flexShrink: 0 }}>
+        <Button variant='outlined' size='small' onClick={() => onEdit(item)}>
+          编辑
+        </Button>
+        <IconButton size='small' onClick={() => onDelete(item.id!)} title='删除'>
+          <CancelIcon fontSize='small' />
         </IconButton>
       </Stack>
     </Box>
@@ -137,14 +138,6 @@ export default function QuickReplyList() {
     if (over && active.id !== over.id) {
       // 先本地更新
       localReorderQuickReplies(active.id as number, over.id as number)
-
-      // 然后调用 API
-      try {
-        const ids = quickReplies.map((item) => item.id!).filter((id) => id > 0)
-        await reorderQuickReplies(ids)
-      } catch (error) {
-        // 错误会在 store 中处理
-      }
     }
   }
 
@@ -221,7 +214,7 @@ export default function QuickReplyList() {
           size='small'
           sx={{ textTransform: 'none' }}
         >
-          + 创建快捷回复
+          创建快捷回复
         </Button>
       </Box>
 

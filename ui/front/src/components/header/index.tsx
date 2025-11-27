@@ -81,6 +81,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
     closeSearchModal()
     setSearchInputValue('')
   }, [closeSearchModal])
+  
   const [showSearchInAppBar, setShowSearchInAppBar] = useState(false)
 
   // 使用 zustand store 中的数据，保证迁移后组件直接读取同一数据源
@@ -125,8 +126,16 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
     if (!isMounted || typeof window === 'undefined') return
 
     // 非帖子列表页面，直接显示搜索框
-    if (!isPostListPage && !isAuthPage) {
-      return setShowSearchInAppBar(true)
+    if (!isPostListPage) {
+      // 仅在帖子详情页（存在 id）或文章编辑页（路径包含 /edit）时显示 header 搜索框
+      const isPostDetailPage = Boolean(id)
+      const isEditPage = typeof pathname === 'string' && pathname.includes('/edit')
+      if (isPostDetailPage || isEditPage) {
+        setShowSearchInAppBar(true)
+      } else {
+        setShowSearchInAppBar(false)
+      }
+      return
     }
 
     // 如果是帖子列表页面，检测页面中的搜索框是否可见
@@ -574,7 +583,6 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
       <SearchResultModal
         open={searchModalOpen}
         onClose={handleCloseSearchModal}
-        forumId={currentForumId}
         initialQuery={searchInputValue}
         onAsk={handleAsk}
         onFeedback={handleFeedback}

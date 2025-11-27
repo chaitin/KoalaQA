@@ -30,7 +30,7 @@ const AdminDocument = () => {
     data,
     loading,
     run: fetchData,
-  } = useRequest(params => getAdminKbKbIdQuestion({ ...params, kbId: kb_id }), { manual: true });
+  } = useRequest(params => getAdminKbKbIdQuestion({ page, size, ...params, kbId: kb_id }), { manual: true });
   const deleteDoc = (item: SvcDocListItem) => {
     Modal.confirm({
       title: '提示',

@@ -18,6 +18,7 @@ export default function EditPage() {
   const params = useSearchParams()
   const routeParams = useParams()
   const routeName = routeParams?.route_name as string
+  const setRouteName = useForumStore((s) => s.setRouteName)
   const forums = useForumStore((s) => s.forums)
   const router = useRouterWithRouteName()
   const { config: systemConfig } = useSystemDiscussion()
@@ -53,6 +54,13 @@ export default function EditPage() {
     }
     run()
   }, [queryId])
+
+  // Ensure forumStore knows current route_name (robustness against race)
+  useEffect(() => {
+    if (routeName) {
+      setRouteName(routeName)
+    }
+  }, [routeName, setRouteName])
 
   // 当systemConfig加载完成时，如果是新建Q&A帖子且内容为空，则设置默认内容
   useEffect(() => {

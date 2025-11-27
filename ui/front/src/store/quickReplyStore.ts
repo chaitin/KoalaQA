@@ -127,6 +127,14 @@ export const useQuickReplyStore = create<QuickReplyStore>((set, get) => ({
       }
 
       const newItems = arrayMove(state.quickReplies, oldIndex, newIndex)
+      try {
+        const ids = newItems.map((item) => item.id!).filter((id) => id > 0)
+        putUserQuickReplyReindex({ ids }).then(() => {
+          Message.success('排序成功')
+        })
+      } catch (error) {
+        // 错误会在 store 中处理
+      }
       return { quickReplies: newItems }
     })
   },

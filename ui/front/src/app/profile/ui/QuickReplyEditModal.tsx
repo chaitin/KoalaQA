@@ -1,6 +1,7 @@
 'use client'
 
 import { ModelUserQuickReply, putUserQuickReplyQuickReplyId } from '@/api'
+import EditorWrap from '@/components/editor'
 import {
   Dialog,
   DialogTitle,
@@ -21,12 +22,7 @@ interface QuickReplyEditModalProps {
   editingItem?: ModelUserQuickReply | null
 }
 
-export default function QuickReplyEditModal({
-  open,
-  onClose,
-  onSave,
-  editingItem,
-}: QuickReplyEditModalProps) {
+export default function QuickReplyEditModal({ open, onClose, onSave, editingItem }: QuickReplyEditModalProps) {
   const [name, setName] = useState('')
   const [content, setContent] = useState('')
   const [nameError, setNameError] = useState('')
@@ -91,61 +87,33 @@ export default function QuickReplyEditModal({
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth='sm' fullWidth>
-      <DialogTitle>
-        {editingItem ? '编辑快捷回复' : '创建快捷回复'}
-      </DialogTitle>
+      <DialogTitle>{editingItem ? '编辑快捷回复' : '创建快捷回复'}</DialogTitle>
 
-      <DialogContent sx={{ pt: 2 }}>
-        <Stack spacing={2}>
-          <Box>
-            <Stack direction='row' alignItems='center' sx={{ mb: 1 }}>
-              <Typography variant='body2' sx={{ fontWeight: 600 }}>
-                标题
-              </Typography>
-              <Typography variant='caption' sx={{ color: '#ff4d4f', ml: 0.5 }}>
-                *
-              </Typography>
-            </Stack>
-            <TextField
-              fullWidth
-              size='small'
-              placeholder='输入标题（不超过10个字）'
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value)
-                if (e.target.value) {
-                  setNameError('')
-                }
-              }}
-              error={!!nameError}
-              helperText={nameError}
-              inputProps={{ maxLength: 10 }}
-            />
-          </Box>
-
-          <Box>
-            <Stack direction='row' alignItems='center' sx={{ mb: 1 }}>
-              <Typography variant='body2' sx={{ fontWeight: 600 }}>
-                内容
-              </Typography>
-              <Typography variant='caption' sx={{ color: '#ff4d4f', ml: 0.5 }}>
-                *
-              </Typography>
-            </Stack>
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
+      <DialogContent>
+        <Stack spacing={2} sx={{pt: 1}}>
+          <TextField
+            fullWidth
+            label='标题'
+            size='small'
+            placeholder='输入标题（不超过10个字）'
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value)
+              if (e.target.value) {
+                setNameError('')
+              }
+            }}
+            error={!!nameError}
+            helperText={nameError}
+            inputProps={{ maxLength: 10 }}
+          />
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1, minHeight: 200 }}>
+            <EditorWrap
               placeholder='输入快捷回复内容'
               value={content}
               onChange={(e) => {
-                setContent(e.target.value)
-                if (e.target.value) {
-                  setContentError('')
-                }
+                setContent(e)
               }}
-              error={!!contentError}
-              helperText={contentError}
             />
           </Box>
         </Stack>

@@ -78,7 +78,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const prevHasAcceptedRef = React.useRef<boolean>(false)
   const [hasAnswerContent, setHasAnswerContent] = useState(false)
   const isReplyEditorVisible = useMemo(() => Object.values(showCommentEditors).some(Boolean), [showCommentEditors])
-
+  const { quickReplies } = useQuickReplyStore()
   // Check if this is a closed post (applies to all types)
   const isQAPost = data.type === ModelDiscussionType.DiscussionTypeQA
   const isClosed = data.resolved === ModelDiscussionState.DiscussionStateClosed
@@ -210,9 +210,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   // 判断帖子是否有被采纳的评论
   const hasAcceptedComment = data.comments?.some((comment) => comment.accepted)
   const isAuthor = data.user_id === (user?.uid || 0)
-  const isAdmin = isAdminRole(
-    user?.role || ModelUserRole.UserRoleUnknown,
-  )
+  const isAdmin = isAdminRole(user?.role || ModelUserRole.UserRoleUnknown)
   const canAcceptAnswer = isAuthor || isAdmin
 
   // 当有采纳的回答时,自动收起其他回答下的评论(仅问答类型)
@@ -325,7 +323,8 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
           commentIndex &&
           'replies' in commentIndex && // 只有主评论才有replies字段
           !commentIndex.accepted &&
-          !hasAcceptedComment && <MenuItem onClick={handleAcceptComment}>采纳</MenuItem>}
+          !hasAcceptedComment &&
+          !isClosedPost && <MenuItem onClick={handleAcceptComment}>采纳</MenuItem>}
         {!isArticlePost &&
           data.type === ModelDiscussionType.DiscussionTypeQA &&
           canAcceptAnswer &&
@@ -535,12 +534,12 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                       data.type === ModelDiscussionType.DiscussionTypeQA &&
                       canAcceptAnswer &&
                       !hasAcceptedComment &&
-                      !answer.accepted && (
+                      !answer.accepted &&
+                      !isClosedPost && (
                         <Button
                           disableRipple
                           size='small'
                           variant='outlined'
-                          disabled={isClosedQAPost}
                           startIcon={<CheckCircleOutlineIcon sx={{ fontSize: 12 }} />}
                           onClick={() => handleAcceptAnswer(answer.id!)}
                           sx={{
@@ -947,26 +946,29 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                   }}
                                   value=''
                                 />
+                              </Box>
+                              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, alignItems: 'center' }}>
                                 {/* 快捷回复选择器（管理员/运营可见） */}
-                                {isAdmin && (
-                                  <Box sx={{ my: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                    {useQuickReplyStore.getState().quickReplies.map((qr) => (
-                                      <Chip
+                                {isAdmin && !isArticlePost && (
+                                  <Box sx={{ mr: 'auto', display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                    {quickReplies.map((qr) => (
+                                      <Button
+                                        variant='outlined'
                                         key={qr.id}
-                                        label={qr.name}
                                         size='small'
+                                        sx={{ color: 'text.primary', borderColor: 'text.disabled' }}
                                         onClick={() => {
                                           const ref = commentEditorRefs.current[answer.id!]
                                           if (ref && typeof ref.setContent === 'function') {
                                             ref.setContent(qr.content || '')
                                           }
                                         }}
-                                      />
+                                      >
+                                        {'# ' + qr.name}
+                                      </Button>
                                     ))}
                                   </Box>
                                 )}
-                              </Box>
-                              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
                                 <Button
                                   disableRipple
                                   onClick={() => {
@@ -1093,79 +1095,84 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                       onChange={handleAnswerEditorChange}
                       readonly={isClosedPost}
                     />
+                  </Box>
+
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, alignItems: 'center' }}>
                     {/* 快捷回复选择器（管理员/运营可见） */}
-                    {isAdmin && (
-                      <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                        {useQuickReplyStore.getState().quickReplies.map((qr) => (
-                          <Chip
+                    {isAdmin && !isArticlePost && (
+                      <Box sx={{ mr: 'auto', display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        {quickReplies.map((qr) => (
+                          <Button
+                            variant='outlined'
                             key={qr.id}
-                            label={qr.name}
                             size='small'
+                            sx={{ color: 'text.primary', borderColor: 'text.disabled' }}
                             onClick={() => {
                               if (answerEditorRef.current && typeof answerEditorRef.current.setContent === 'function') {
                                 answerEditorRef.current.setContent(qr.content || '')
                               }
                             }}
-                          />
+                          >
+                            {'# ' + qr.name}
+                          </Button>
                         ))}
                       </Box>
                     )}
+                    {hasAnswerContent && (
+                      <>
+                        <Button
+                          disableRipple
+                          onClick={() => {
+                            setShowAnswerEditor(false)
+                            setAnswerEditorKey((prev) => prev + 1)
+                            setHasAnswerContent(false)
+                            // 重置编辑器内容
+                            answerEditorRef.current?.resetContent()
+                          }}
+                          sx={{
+                            textTransform: 'none',
+                            color: '#6b7280',
+                            fontWeight: 600,
+                            fontSize: '0.875rem',
+                            backgroundColor: 'transparent',
+                            transition: 'all 0.15s ease-in-out',
+                            '&:hover': { bgcolor: '#f3f4f6', transform: 'scale(1.02)' },
+                            '&:active': { transform: 'scale(0.98)' },
+                            '&:focus': {
+                              backgroundColor: 'transparent',
+                            },
+                            '&.Mui-focusVisible': {
+                              backgroundColor: 'transparent',
+                            },
+                          }}
+                        >
+                          取消
+                        </Button>
+                        <Button
+                          disableRipple
+                          variant='contained'
+                          onClick={handleSubmitAnswer}
+                          disabled={isClosedPost}
+                          sx={{
+                            color: '#ffffff',
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            px: 2,
+                            py: 0.5,
+                            borderRadius: '6px',
+                            fontSize: '0.875rem',
+                            transition: 'all 0.15s ease-in-out',
+                            '&:hover': {
+                              transform: 'translateY(-1px)',
+                            },
+                            '&:active': { transform: 'translateY(0) scale(0.98)' },
+                          }}
+                        >
+                          {isArticlePost ? '提交评论' : '提交回答'}
+                        </Button>
+                      </>
+                    )}
                   </Box>
-                  {hasAnswerContent && (
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                      <Button
-                        disableRipple
-                        onClick={() => {
-                          setShowAnswerEditor(false)
-                          setAnswerEditorKey((prev) => prev + 1)
-                          setHasAnswerContent(false)
-                          // 重置编辑器内容
-                          answerEditorRef.current?.resetContent()
-                        }}
-                        sx={{
-                          textTransform: 'none',
-                          color: '#6b7280',
-                          fontWeight: 600,
-                          fontSize: '0.875rem',
-                          backgroundColor: 'transparent',
-                          transition: 'all 0.15s ease-in-out',
-                          '&:hover': { bgcolor: '#f3f4f6', transform: 'scale(1.02)' },
-                          '&:active': { transform: 'scale(0.98)' },
-                          '&:focus': {
-                            backgroundColor: 'transparent',
-                          },
-                          '&.Mui-focusVisible': {
-                            backgroundColor: 'transparent',
-                          },
-                        }}
-                      >
-                        取消
-                      </Button>
-                      <Button
-                        disableRipple
-                        variant='contained'
-                        endIcon={<ArrowForwardIcon />}
-                        onClick={handleSubmitAnswer}
-                        disabled={isClosedPost}
-                        sx={{
-                          color: '#ffffff',
-                          textTransform: 'none',
-                          fontWeight: 600,
-                          px: 2,
-                          py: 0.5,
-                          borderRadius: '6px',
-                          fontSize: '0.875rem',
-                          transition: 'all 0.15s ease-in-out',
-                          '&:hover': {
-                            transform: 'translateY(-1px)',
-                          },
-                          '&:active': { transform: 'translateY(0) scale(0.98)' },
-                        }}
-                      >
-                        {isArticlePost ? '提交评论' : '提交回答'}
-                      </Button>
-                    </Box>
-                  )}
                 </>
               )}
             </Box>

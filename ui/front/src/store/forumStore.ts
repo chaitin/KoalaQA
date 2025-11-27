@@ -42,15 +42,40 @@ export const useForumStore = create<ForumState>((set, get) => {
 
     setSelectedForumId: (id) => set({ selectedForumId: id }),
 
-    setForums: (forums) => set({ forums }),
+    setForums: (forums) => {
+      set({ forums })
+      // 如果已经有 routeName，则尝试根据 routeName 设置 selectedForumId
+      const { routeName } = get()
+      if (routeName && forums.length > 0) {
+        const forum = forums.find((f) => f.route_name === routeName)
+        set({ selectedForumId: forum?.id || null })
+      }
+    },
 
     setRouteName: (name) => {
       set({ routeName: name })
       // 通过 route_name 查找对应的 forum_id
-      if (name && get().forums.length > 0) {
-        const forum = get().forums.find((f) => f.route_name === name)
+      if (!name) return
+
+      const forums = get().forums
+      if (forums.length > 0) {
+        const forum = forums.find((f) => f.route_name === name)
         set({ selectedForumId: forum?.id || null })
+        return
       }
+
+      // 如果当前没有 forums，主动刷新一次并根据 routeName 设置 selectedForumId
+      ;(async () => {
+        try {
+          const refreshed = await get().refreshForums()
+          if (refreshed && refreshed.length > 0) {
+            const forum = refreshed.find((f) => f.route_name === name)
+            set({ selectedForumId: forum?.id || null })
+          }
+        } catch (e) {
+          // 忽略错误，refreshForums 内部已处理重试和错误日志
+        }
+      })()
     },
 
     clearCache: () => set({ forums: [], loading: false, error: null }),
