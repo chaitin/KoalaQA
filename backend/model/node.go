@@ -8,10 +8,11 @@ const (
 )
 
 type NodeContentChunk struct {
-	ID      string `json:"id"`
-	KBID    string `json:"kb_id"`
-	DocID   string `json:"doc_id"`
-	Content string `json:"content"`
+	ID         string  `json:"id"`
+	KBID       string  `json:"kb_id"`
+	DocID      string  `json:"doc_id"`
+	Content    string  `json:"content"`
+	Similarity float64 `json:"similarity"`
 }
 
 type RankedNodeChunks struct {

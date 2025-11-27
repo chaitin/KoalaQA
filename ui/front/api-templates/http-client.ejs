@@ -73,7 +73,7 @@ let csrfTokenCache: string | null = null;
 let csrfTokenPromise: Promise<string> | null = null;
 
 // 获取CSRF token的函数
-const getCsrfToken = async (): Promise<string> => {
+export const getCsrfToken = async (): Promise<string> => {
   // 如果已经有缓存的token，直接返回
   if (csrfTokenCache) {
     return csrfTokenCache;

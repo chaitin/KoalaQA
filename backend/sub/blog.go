@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/llm"
 	"github.com/chaitin/koalaqa/pkg/mq"
@@ -50,6 +51,14 @@ func (a *Blog) Concurrent() uint {
 
 func (a *Blog) Handle(ctx context.Context, msg mq.Message) error {
 	data := msg.(topic.MsgDiscChange)
+
+	switch data.Type {
+	case model.DiscussionTypeQA, model.DiscussionTypeBlog:
+	default:
+		a.logger.WithContext(ctx).With("data", data).Debug("ignore disc summary update")
+		return nil
+	}
+
 	switch data.OP {
 	case topic.OPInsert, topic.OPUpdate:
 		return a.handleInsert(ctx, data)

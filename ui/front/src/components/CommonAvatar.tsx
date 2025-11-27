@@ -40,9 +40,9 @@ export const CommonAvatar: React.FC<CommonAvatarProps> = ({
           objectFit: 'contain',
           objectPosition: 'center',
         },
-        width: 24,
-        height: 24,
-        fontSize: '0.75rem',
+        width: 22,
+        height: 22,
+        fontSize: '14px',
         ...sx,
       }}
       {...props}

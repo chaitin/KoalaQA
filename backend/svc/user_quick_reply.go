@@ -2,6 +2,7 @@ package svc
 
 import (
 	"context"
+	"time"
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/repo"
@@ -36,12 +37,12 @@ func (u *UserQuickReply) List(ctx context.Context, user model.UserInfo) (*model.
 	return &res, nil
 }
 
-type UserQuickReplyCreateReq struct {
+type UserQuickReplyReq struct {
 	Name    string `json:"name" binding:"required,max=10"`
 	Content string `json:"content" binding:"required"`
 }
 
-func (u *UserQuickReply) Create(ctx context.Context, user model.UserInfo, req UserQuickReplyCreateReq) (uint, error) {
+func (u *UserQuickReply) Create(ctx context.Context, user model.UserInfo, req UserQuickReplyReq) (uint, error) {
 	if !u.canAccess(user) {
 		return 0, errPermission
 	}
@@ -57,6 +58,18 @@ func (u *UserQuickReply) Create(ctx context.Context, user model.UserInfo, req Us
 	}
 
 	return userQR.ID, nil
+}
+
+func (u *UserQuickReply) Update(ctx context.Context, user model.UserInfo, id uint, req UserQuickReplyReq) error {
+	if !u.canAccess(user) {
+		return errPermission
+	}
+
+	return u.repoUserQR.Update(ctx, map[string]any{
+		"name":       req.Name,
+		"content":    req.Content,
+		"updated_at": time.Now(),
+	}, repo.QueryWithEqual("id", id), repo.QueryWithEqual("user_id", user.UID))
 }
 
 func (u *UserQuickReply) Delete(ctx context.Context, user model.UserInfo, id uint) error {

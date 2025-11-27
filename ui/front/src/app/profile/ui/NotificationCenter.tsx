@@ -27,7 +27,7 @@ import dayjs from '@/lib/dayjs'
 import { MarkDown, Message } from '@/components'
 import Modal from '@/components/modal'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
-import { useForum } from '@/contexts/ForumContext'
+import { useForumStore } from '@/store'
 import { getNotificationTextForExport, splitNotificationText } from '@/components/header/loggedInView'
 import { AuthContext } from '@/components/authProvider'
 import { Ellipsis } from '@ctzhian/ui'
@@ -36,7 +36,7 @@ import Image from 'next/image'
 
 export default function NotificationCenter() {
   const routerWithRouteName = useRouterWithRouteName()
-  const { forums } = useForum()
+  const forums = useForumStore((s) => s.forums)
   const [notifyPage, setNotifyPage] = useState(1)
   const [notifyPageSize, setNotifyPageSize] = useState(10)
   const [unreadCount, setUnreadCount] = useState(0)

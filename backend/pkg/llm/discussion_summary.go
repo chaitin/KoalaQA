@@ -8,6 +8,27 @@ import (
 	"github.com/chaitin/koalaqa/model"
 )
 
+var DiscussionRequirementSystemPrompt = `
+## 当前日期
+{{.CurrentDate}}
+
+## 角色定义
+你是一名产品经理，擅长从论坛帖子中提取需求
+
+## 目标
+仔细分析论坛帖子内容，并将其总结为一份简洁的产品需求文档
+
+输出要求：
+- 使用中文输出。
+- 采用以下结构，使用清晰的标题和项目符号列表：
+	1. 问题描述：简要概括帖子中描述的核心问题或痛点。
+	2. 目标用户：说明哪些用户群体受此问题影响，包括用户角色或场景。
+	3. 功能需求：列出需要实现的具体功能点（基于帖子内容）。
+	4. 非功能需求：如涉及性能、易用性、安全性等方面的要求。
+	5. 优先级评估：根据问题紧迫性和影响范围，给出优先级建议（高/中/低）。
+- 保持内容客观，基于帖子信息，不添加额外假设。
+`
+
 var DiscussionSummarySystemPrompt = `
 ## 当前日期
 {{.CurrentDate}}
@@ -48,6 +69,7 @@ var DiscussionSummarySystemPrompt = `
     - 优先使用「已解决 + 时间较新 + 标签高度匹配」的内容作为主结论；
     - 对于「未解决」或「已关闭」的帖子，只作为补充参考，并在表述中点明其局限性（例如“该方案来自未解决的历史帖子，仅供尝试”）。
 8. 禁止在输出中使用任何图标、表情、emoji或者注释。
+9. 引用文章类型的帖子时，避免提及帖子状态
 `
 
 var discissopmSummaryUserTpl = template.New("discussion_summary_user_prompt")
@@ -57,6 +79,7 @@ const discussionSummaryUserTplStr = `
 {{- range $i, $disc := .Discussions}}
 ### 帖子{{add $i 1}}
 #### 帖子ID：{{$disc.ID}}
+#### 帖子类型：{{getDiscType $disc.Type}}
 #### 帖子标题：{{$disc.Title}}
 #### 帖子总结：{{ if eq $disc.Summary ""}} 无 {{- else}} {{- $disc.Summary}} {{- end}}
 #### 发帖人：{{$disc.UserName}}
@@ -64,7 +87,7 @@ const discussionSummaryUserTplStr = `
 {{- if $disc.Tags}}
 #### 帖子标签：{{join $disc.Tags ", "}}
 {{- end}}
-{{if eq $disc.Type "qa"}}#### 帖子状态：{{if eq $disc.Resolved 1 }}已解决{{else if eq $disc.Resolved 2 }}已关闭{{else}}待解决{{end}}{{end}}
+{{if eq $disc.Type "qa"}}#### 帖子状态：{{getDiscState $disc.Resolved}}{{end}}
 {{- end}}
 `
 
@@ -83,9 +106,11 @@ func DiscussionSummaryUserPrompt(discs []model.DiscussionListItem) (string, erro
 func init() {
 	var err error
 	discissopmSummaryUserTpl, err = discissopmSummaryUserTpl.Funcs(template.FuncMap{
-		"add":        func(a, b int) int { return a + b },
-		"join":       strings.Join,
-		"formatTime": formatTime,
+		"add":          add,
+		"join":         strings.Join,
+		"formatTime":   formatTime,
+		"getDiscType":  getDiscType,
+		"getDiscState": getDiscState,
 	}).Parse(discussionSummaryUserTplStr)
 	if err != nil {
 		panic(err)

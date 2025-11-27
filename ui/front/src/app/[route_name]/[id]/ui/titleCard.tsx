@@ -19,7 +19,7 @@ import { useAuthCheck } from '@/hooks/useAuthCheck'
 import { formatNumber } from '@/lib/utils'
 // import { generateCacheKey, clearCache } from '@/lib/api-cache'
 import CommonAvatar from '@/components/CommonAvatar'
-import { useForum } from '@/contexts/ForumContext'
+import { useForumStore } from '@/store'
 import dayjs from '@/lib/dayjs'
 import { Ellipsis, Icon } from '@ctzhian/ui'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
@@ -63,7 +63,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const { user } = useContext(AuthContext)
   const [releaseVisible, { setFalse: releaseClose, setTrue: releaseOpen }] = useBoolean(false)
   const router = useRouter()
-  const { forums } = useForum()
+  const forums = useForumStore((s) => s.forums)
   const { id, route_name }: { id: string; route_name?: string } = (useParams() as any) || { id: '' }
 
   // 根据 route_name 获取对应的 forumInfo

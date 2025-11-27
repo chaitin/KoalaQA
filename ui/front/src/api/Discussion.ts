@@ -22,12 +22,15 @@ import {
   ModelDiscussionDetail,
   ModelDiscussionListItem,
   ModelListRes,
+  PostDiscussionDiscIdAssociateParams,
   PostDiscussionDiscIdCommentCommentIdAcceptParams,
   PostDiscussionDiscIdCommentCommentIdDislikeParams,
   PostDiscussionDiscIdCommentCommentIdLikeParams,
   PostDiscussionDiscIdCommentCommentIdRevokeLikeParams,
   PostDiscussionDiscIdCommentParams,
   PostDiscussionDiscIdLikeParams,
+  PostDiscussionDiscIdRequirementParams,
+  PostDiscussionDiscIdResolveIssueParams,
   PostDiscussionDiscIdResolveParams,
   PostDiscussionDiscIdRevokeLikeParams,
   PostDiscussionSummaryParams,
@@ -35,12 +38,14 @@ import {
   PutDiscussionDiscIdCloseParams,
   PutDiscussionDiscIdCommentCommentIdParams,
   PutDiscussionDiscIdParams,
+  SvcAssociateDiscussionReq,
   SvcCommentCreateReq,
   SvcCommentUpdateReq,
   SvcDiscussionCompeletReq,
   SvcDiscussionCreateReq,
   SvcDiscussionUpdateReq,
   SvcResolveFeedbackReq,
+  SvcResolveIssueReq,
 } from "./types";
 
 /**
@@ -76,20 +81,6 @@ export const getAdminDiscussion = (
     format: "json",
     ...params,
   });
-
-/**
- * @description discussion ketword answer
- *
- * @tags discussion
- * @name GetAdminDiscussionQuestion
- * @summary discussion keyword answer
- * @request GET:/admin/discussion/question
- * @response `200` `(ContextResponse & {
-    data?: string,
-
-})` OK
- */
-
 
 /**
  * @description list discussions
@@ -312,6 +303,30 @@ export const deleteDiscussionDiscId = (
   >({
     path: `/discussion/${discId}`,
     method: "DELETE",
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description associate discussion
+ *
+ * @tags discussion
+ * @name PostDiscussionDiscIdAssociate
+ * @summary associate discussion
+ * @request POST:/discussion/{disc_id}/associate
+ * @response `200` `ContextResponse` OK
+ */
+
+export const postDiscussionDiscIdAssociate = (
+  { discId, ...query }: PostDiscussionDiscIdAssociateParams,
+  discussion: SvcAssociateDiscussionReq,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/discussion/${discId}/associate`,
+    method: "POST",
+    body: discussion,
     type: ContentType.Json,
     format: "json",
     ...params,
@@ -570,6 +585,28 @@ export const postDiscussionDiscIdLike = (
   });
 
 /**
+ * @description discussion requirement
+ *
+ * @tags discussion
+ * @name PostDiscussionDiscIdRequirement
+ * @summary discussion requirement
+ * @request POST:/discussion/{disc_id}/requirement
+ * @response `200` `ContextResponse` OK
+ */
+
+export const postDiscussionDiscIdRequirement = (
+  { discId, ...query }: PostDiscussionDiscIdRequirementParams,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/discussion/${discId}/requirement`,
+    method: "POST",
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
  * @description resolve feedback
  *
  * @tags discussion
@@ -586,6 +623,30 @@ export const postDiscussionDiscIdResolve = (
 ) =>
   request<ContextResponse>({
     path: `/discussion/${discId}/resolve`,
+    method: "POST",
+    body: req,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description resolve issue
+ *
+ * @tags discussion
+ * @name PostDiscussionDiscIdResolveIssue
+ * @summary resolve issue
+ * @request POST:/discussion/{disc_id}/resolve_issue
+ * @response `200` `ContextResponse` OK
+ */
+
+export const postDiscussionDiscIdResolveIssue = (
+  { discId, ...query }: PostDiscussionDiscIdResolveIssueParams,
+  req: SvcResolveIssueReq,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/discussion/${discId}/resolve_issue`,
     method: "POST",
     body: req,
     type: ContentType.Json,

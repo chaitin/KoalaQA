@@ -25,40 +25,10 @@ import ChangePasswordModal from './ChangePasswordModal'
 import NotificationCenter from './NotificationCenter'
 import ProfileHeroCard from './ProfileHeroCard'
 import UserTrendList from './UserTrendList'
-import { Height } from '@mui/icons-material'
+import QuickReplyList from './QuickReplyList'
+import { roleConfig } from '@/constant'
+import { isAdminRole } from '@/lib/utils'
 
-const roleConfig = {
-  [ModelUserRole.UserRoleUnknown]: {
-    name: '未知',
-    description: '',
-    color: 'default' as const,
-  },
-  [ModelUserRole.UserRoleAdmin]: {
-    name: '管理员',
-    description: '平台管理员，主要负责平台相关的配置，所有功能所有权限',
-    color: 'error' as const,
-  },
-  [ModelUserRole.UserRoleOperator]: {
-    name: '客服运营',
-    description: '平台内容的运营，主要对平台内容质量和响应速度负责，前台所有权限',
-    color: 'primary' as const,
-  },
-  [ModelUserRole.UserRoleUser]: {
-    name: '用户',
-    description: '普通用户',
-    color: 'default' as const,
-  },
-  [ModelUserRole.UserRoleGuest]: {
-    name: '游客',
-    description: '未激活用户，注册后待审核',
-    color: 'default' as const,
-  },
-  [ModelUserRole.UserRoleMax]: {
-    name: '未知',
-    description: '',
-    color: 'default' as const,
-  },
-}
 interface ProfileContentProps {
   initialUser: ModelUserInfo
 }
@@ -246,6 +216,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
     <Box sx={{ maxWidth: 748, margin: '0 auto' }}>
       {/* 头部背景区域 */}
       <ProfileHeroCard
+        role={user.role || ModelUserRole.UserRoleGuest}
         avatar={
           <Box sx={{ position: 'relative' }}>
             <Box
@@ -316,6 +287,11 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
             <ToggleButton value='2' sx={toggleButtonSx}>
               通知中心
             </ToggleButton>
+            {isAdminRole(user.role || ModelUserRole.UserRoleGuest) && (
+              <ToggleButton value='3' sx={toggleButtonSx}>
+                客服配置
+              </ToggleButton>
+            )}
           </ToggleButtonGroup>
         </Box>
         {/* 子元素 role=tabpanel 的加个 border */}
@@ -474,6 +450,9 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
           </TabPanel>
           <TabPanel value={tabValue} index={2}>
             <NotificationCenter />
+          </TabPanel>
+          <TabPanel value={tabValue} index={3}>
+            <QuickReplyList />
           </TabPanel>
         </Box>
       </Card>

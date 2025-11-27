@@ -41,7 +41,7 @@ const AdminDocument = () => {
     data,
     loading,
     run: fetchData,
-  } = useRequest(params => getAdminKbKbIdWeb({ ...params, kbId: kb_id }), { manual: true });
+  } = useRequest(params => getAdminKbKbIdWeb({ page, size, ...params, kbId: kb_id }), { manual: true });
   const [detail, setDetail] = useState<ModelKBDocumentDetail | null>(null);
   const [markdownContent, setMarkdownContent] = useState<string>('');
 
@@ -116,7 +116,7 @@ const AdminDocument = () => {
       dataIndex: 'file_type',
       render: (_, record) => {
         return record?.file_type !== undefined
-          ? fileType[record.file_type!] || record?.file_type
+          ? fileType[record.file_type as keyof typeof fileType] || record?.file_type
           : '-';
       },
     },

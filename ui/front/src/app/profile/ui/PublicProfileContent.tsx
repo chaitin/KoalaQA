@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 import { Box, Card, ToggleButton, ToggleButtonGroup } from '@mui/material'
 import CommonAvatar from '@/components/CommonAvatar'
 import UserTrendList from './UserTrendList'
-import { SvcUserStatisticsRes } from '@/api/types'
+import { SvcUserStatisticsRes, ModelUserRole } from '@/api/types'
 import ProfileHeroCard from './ProfileHeroCard'
 
 interface PublicProfileContentProps {
@@ -68,6 +68,7 @@ export default function PublicProfileContent({ userId, statistics }: PublicProfi
     <Box sx={{ maxWidth: 748, margin: '0 auto' }}>
       {/* 头部背景区域 */}
       <ProfileHeroCard
+        role={statistics?.role || ModelUserRole.UserRoleGuest}
         avatar={
           <Box
             sx={{

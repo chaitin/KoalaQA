@@ -105,9 +105,10 @@ func (c *CTRag) QueryRecords(ctx context.Context, req QueryRecordsReq) ([]*model
 	nodes := make([]*model.NodeContentChunk, 0, len(chunks))
 	for _, chunk := range chunks {
 		nodes = append(nodes, &model.NodeContentChunk{
-			ID:      chunk.ID,
-			Content: chunk.Content,
-			DocID:   chunk.DocumentID,
+			ID:         chunk.ID,
+			Content:    chunk.Content,
+			DocID:      chunk.DocumentID,
+			Similarity: chunk.Similarity,
 		})
 	}
 	c.logger.WithContext(ctx).

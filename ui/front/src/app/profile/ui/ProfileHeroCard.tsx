@@ -1,7 +1,9 @@
 'use client'
 
+import { ModelUserRole } from '@/api'
 import { Box, Card, Divider, Stack, SxProps, Typography } from '@mui/material'
 import { ReactNode } from 'react'
+import RoleChip from './RoleChip'
 
 interface MetricItem {
   label: string
@@ -12,12 +14,22 @@ interface ProfileHeroCardProps {
   avatar: ReactNode
   title?: string
   subtitle?: string
+  role: ModelUserRole
   metrics?: MetricItem[]
   rightSlot?: ReactNode
   sx?: SxProps
 }
 
-export default function ProfileHeroCard({ avatar, title, subtitle, metrics, rightSlot, sx }: ProfileHeroCardProps) {
+
+export default function ProfileHeroCard({
+  avatar,
+  title,
+  subtitle,
+  metrics,
+  rightSlot,
+  sx,
+  role,
+}: ProfileHeroCardProps) {
   const hasMetrics = Boolean(metrics && metrics.length > 0)
 
   return (
@@ -54,11 +66,7 @@ export default function ProfileHeroCard({ avatar, title, subtitle, metrics, righ
               {title}
             </Typography>
           )}
-          {subtitle && (
-            <Typography variant='body2' sx={{ color: 'rgba(0,0,0,0.6)', mt: 1 }}>
-              {subtitle}
-            </Typography>
-          )}
+          <RoleChip role={role} />
         </Box>
 
         {hasMetrics && (

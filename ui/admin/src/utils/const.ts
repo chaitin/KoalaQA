@@ -1,4 +1,4 @@
-import { ModelFileType } from '@/api/types';
+import { ModelFileType, ModelUserRole } from '@/api/types';
 
 /**
  * 文件类型映射对象

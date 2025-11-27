@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useForm, useFieldArray, Controller, useWatch } from 'react-hook-form';
-import { useAppDispatch, useAppSelector } from '@/store';
-import { fetchForums, refreshForums } from '@/store/slices/forum';
+import { useForumStore } from '@/store';
 import {
   Box,
   Button,
@@ -330,12 +329,10 @@ const Forum: React.FC = () => {
   const [blockToDelete, setBlockToDelete] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
-  const dispatch = useAppDispatch();
+  const { refreshForums } = useForumStore();
   
   // 从 store 获取板块数据
-  const { forums: storeForums, loading: storeLoading } = useAppSelector(
-    state => state.forum
-  );
+  const { forums: storeForums, loading: storeLoading } = useForumStore();
 
   const sensors = useSensors(useSensor(MouseSensor), useSensor(TouchSensor));
 
@@ -396,7 +393,7 @@ const Forum: React.FC = () => {
 
         // 如果 store 中没有数据且不在加载中，则请求 API
         if (!storeLoading) {
-          await dispatch(fetchForums());
+          await refreshForums();
         }
       } catch (error) {
         console.error('获取版块数据失败:', error);
@@ -545,7 +542,7 @@ const Forum: React.FC = () => {
       setIsEdit(false);
       message.success('版块保存成功');
       // 强制刷新数据，确保所有组件都能获取到最新的板块列表
-      await dispatch(refreshForums());
+      await refreshForums();
     } catch (error) {
       console.error('保存失败:', error);
       message.error('保存版块失败');

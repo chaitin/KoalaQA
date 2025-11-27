@@ -1,6 +1,5 @@
 import Card from '@/components/card';
-import { useAppDispatch } from '@/store';
-import { setPageName } from '@/store/slices/breadcrumb';
+import { useBreadcrumbStore } from '@/store';
 import { Box, Stack } from '@mui/material';
 import { useEffect } from 'react';
 import Doc from './doc';
@@ -9,15 +8,15 @@ import Web from './web';
 import Kb from './kb';
 
 const AdminDocument = ({ tab }: { tab: 'qa' | 'doc' | 'web' | 'kb' }) => {
-  const dispatch = useAppDispatch();
+  const { setPageName } = useBreadcrumbStore();
   useEffect(() => {
     const pageName =
       tab === 'qa' ? '问答对' : tab === 'doc' ? '通用文档' : tab === 'web' ? '在线网页' : '知识库';
-    dispatch(setPageName(pageName));
+    setPageName(pageName);
     return () => {
-      dispatch(setPageName(''));
+      setPageName('');
     };
-  }, [tab]);
+  }, [tab, setPageName]);
   return (
     <Stack
       component={tab !== 'kb' ? Card : Box}

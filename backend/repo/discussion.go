@@ -2,10 +2,13 @@ package repo
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/database"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type Discussion struct {
@@ -173,5 +176,31 @@ func (d *Discussion) RevokeLikeDiscussion(ctx context.Context, discUUID string, 
 			return err
 		}
 		return nil
+	})
+}
+
+func (d *Discussion) ResolveIssue(ctx context.Context, discUUID string, state model.DiscussionState) error {
+	return d.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var disc model.Discussion
+		err := tx.Model(d.m).Where("uuid = ?", discUUID).Clauses(clause.Locking{Strength: clause.LockingStrengthUpdate}).First(&disc).Error
+		if err != nil {
+			return err
+		}
+
+		if disc.Type != model.DiscussionTypeIssue {
+			return errors.New("invalid discussion")
+		}
+
+		if state == model.DiscussionStateInProgress && disc.Resolved != model.DiscussionStateNone ||
+			state == model.DiscussionStateResolved && disc.Resolved != model.DiscussionStateNone {
+			return errors.New("invalid request state")
+		}
+
+		now := time.Now()
+		return tx.Model(d.m).Where("uuid = ?", disc.UUID).Updates(map[string]any{
+			"resolved":    state,
+			"resolved_at": now,
+			"updated_at":  now,
+		}).Error
 	})
 }

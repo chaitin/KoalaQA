@@ -5,8 +5,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Box, Button, Card, CircularProgress, Stack, Typography } from '@mui/material'
 import { getUserTrend } from '@/api'
-import { ModelDiscussionType, ModelListRes, ModelTrend } from '@/api/types'
-import { useForum } from '@/contexts/ForumContext'
+import { ModelDiscussionType, ModelListRes, ModelTrend, ModelForumInfo } from '@/api/types'
+import { useForumStore } from '@/store'
 import { TimeDisplay } from '@/components/TimeDisplay'
 import { buildRouteWithRouteName } from '@/lib/utils'
 
@@ -36,13 +36,13 @@ const getTrendDescription = (trend: ModelTrend) => {
   return '有新的动态'
 }
 
-const formatRoute = (trend: ModelTrend, forums: ReturnType<typeof useForum>['forums']) => {
+const formatRoute = (trend: ModelTrend, forums: ModelForumInfo[] = []) => {
   if (!trend.discuss_uuid) {
     return '#'
   }
 
   if (trend.forum_id) {
-    const forum = forums.find((item) => item.id === trend.forum_id)
+    const forum = forums.find((item: ModelForumInfo) => item.id === trend.forum_id)
     if (forum) {
       return buildRouteWithRouteName(`${trend.discuss_uuid}`, { id: forum.id!, route_name: forum.route_name })
     }
@@ -78,7 +78,7 @@ const EmptyState = () => (
 )
 
 export default function UserTrendList({ userId, ownerName }: UserTrendListProps) {
-  const { forums } = useForum()
+  const forums = useForumStore((s) => s.forums)
   const forumMap = useMemo(() => {
     const map = new Map<number, { name?: string; route_name?: string }>()
     ;(forums || []).forEach((forum) => {

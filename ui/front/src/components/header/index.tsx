@@ -1,9 +1,9 @@
 'use client'
 
 import { ModelSystemBrand } from '@/api'
-import { ModelForumInfo as ModelForum } from '@/api/types'
+import { ModelForumInfo as ModelForum, ModelUserRole } from '@/api/types'
 import { AuthContext } from '@/components/authProvider'
-import { useForum } from '@/contexts/ForumContext'
+import { useForumStore, useQuickReplyStore } from '@/store'
 import { useAuthConfig } from '@/hooks/useAuthConfig'
 import { useForumId } from '@/hooks/useForumId'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
@@ -31,13 +31,14 @@ import ForumSelector from '../ForumSelector'
 import SearchResultModal from '../SearchResultModal'
 import LoggedInView from './loggedInView'
 import FilterPanel from '../filter-panel'
+import { isAdminRole } from '@/lib/utils'
 
 interface HeaderProps {
   brandConfig: ModelSystemBrand
   initialForums?: ModelForum[]
 }
 
-const Header = ({ brandConfig }: HeaderProps) => {
+const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
   const { user } = useContext(AuthContext)
   const router = useRouterWithRouteName()
   const plainRouter = useRouter()
@@ -47,16 +48,44 @@ const Header = ({ brandConfig }: HeaderProps) => {
   const [mobileMenuOpen, { setTrue: openMobileMenu, setFalse: closeMobileMenu }] = useBoolean(false)
   const [searchInputValue, setSearchInputValue] = useState('')
   const [isMounted, setIsMounted] = useState(false)
+  const { fetchQuickReplies } = useQuickReplyStore()
 
+  // 将服务端传下来的 initialForums 同步到 zustand store（如果已经迁移到 useForumStore）
+  // 这样使用新 store 的组件可以立即拿到 forum 数据
+  // 动态导入 store 以避免非客户端执行的问题
+  useEffect(() => {
+    if (!initialForums || initialForums.length === 0) return
+    // 延迟导入以确保在客户端环境
+    import('@/store')
+      .then((mod) => {
+        try {
+          const m: any = mod
+          // 优先使用 hook 方式获取 setter，保证与 zustand 用法一致
+          if (typeof m.useForumStore === 'function') {
+            const setter = m.useForumStore((s: any) => s.setForums)
+            if (typeof setter === 'function') setter(initialForums)
+          }
+        } catch (e) {
+          // 忽略同步失败，不影响 header 渲染
+          // 在调试时可以查看控制台
+          console.warn('Failed to sync initialForums to useForumStore', e)
+        }
+      })
+      .catch(() => {})
+  }, [initialForums])
+  useEffect(() => {
+    if (isAdminRole(user.role || ModelUserRole.UserRoleGuest)) fetchQuickReplies()
+  }, [user.role])
   // 关闭搜索弹窗时清空输入框
   const handleCloseSearchModal = useCallback(() => {
     closeSearchModal()
     setSearchInputValue('')
   }, [closeSearchModal])
+  
   const [showSearchInAppBar, setShowSearchInAppBar] = useState(false)
 
-  // 使用ForumProvider中的动态数据
-  const { forums } = useForum()
+  // 使用 zustand store 中的数据，保证迁移后组件直接读取同一数据源
+  const forums = useForumStore((s) => s.forums)
   // console.log(forums)
   // 使用板块选择器 - 只在非登录/注册页面使用
   const isAuthPage = ['/login', '/register'].includes(pathname)
@@ -97,8 +126,16 @@ const Header = ({ brandConfig }: HeaderProps) => {
     if (!isMounted || typeof window === 'undefined') return
 
     // 非帖子列表页面，直接显示搜索框
-    if (!isPostListPage && !isAuthPage) {
-      return setShowSearchInAppBar(true)
+    if (!isPostListPage) {
+      // 仅在帖子详情页（存在 id）或文章编辑页（路径包含 /edit）时显示 header 搜索框
+      const isPostDetailPage = Boolean(id)
+      const isEditPage = typeof pathname === 'string' && pathname.includes('/edit')
+      if (isPostDetailPage || isEditPage) {
+        setShowSearchInAppBar(true)
+      } else {
+        setShowSearchInAppBar(false)
+      }
+      return
     }
 
     // 如果是帖子列表页面，检测页面中的搜索框是否可见
@@ -546,7 +583,6 @@ const Header = ({ brandConfig }: HeaderProps) => {
       <SearchResultModal
         open={searchModalOpen}
         onClose={handleCloseSearchModal}
-        forumId={currentForumId}
         initialQuery={searchInputValue}
         onAsk={handleAsk}
         onFeedback={handleFeedback}

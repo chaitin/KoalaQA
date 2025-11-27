@@ -13,9 +13,9 @@ import UserAvatar from '@/components/UserAvatar'
 import EditorWrap, { EditorWrapRef } from '@/components/editor'
 import Modal from '@/components/modal'
 import { useGroupData } from '@/contexts/GroupDataContext'
-import { useForumId } from '@/hooks/useForumId'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import { useSystemDiscussion } from '@/contexts/SystemDiscussionContext'
+import { useForumStore } from '@/store'
 import { Icon } from '@ctzhian/ui'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
@@ -161,7 +161,8 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
 
   const router = useRouterWithRouteName()
   const routeName = useParams()?.route_name as string
-  const forumId = useForumId()
+  // 直接从 store 获取 forumId
+  const forumId = useForumStore((s) => s.selectedForumId)
 
   // 获取默认选中的分类ID（所有分类的第一个子项）
   // 使用 useMemo 直接计算默认值，避免作为回调函数

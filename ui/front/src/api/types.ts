@@ -59,6 +59,7 @@ export enum ModelStatType {
   StatTypeBotAccept = 4,
   StatTypeDiscussionQA = 5,
   StatTypeDiscussionBlog = 6,
+  StatTypeDiscussionIssue = 7,
 }
 
 export enum ModelMsgNotifyType {
@@ -78,8 +79,6 @@ export enum ModelLLMType {
   LLMTypeChat = "chat",
   LLMTypeEmbedding = "embedding",
   LLMTypeRerank = "rerank",
-  LLMTypeAnalysis = "analysis",
-  LLMTypeAnalysisVL = "analysis-vl",
 }
 
 export enum ModelFileType {
@@ -125,12 +124,14 @@ export enum ModelDiscussionType {
   DiscussionTypeQA = "qa",
   DiscussionTypeFeedback = "feedback",
   DiscussionTypeBlog = "blog",
+  DiscussionTypeIssue = "issue",
 }
 
 export enum ModelDiscussionState {
   DiscussionStateNone = 0,
   DiscussionStateResolved = 1,
   DiscussionStateClosed = 2,
+  DiscussionStateInProgress = 3,
 }
 
 export enum ModelCommentLikeState {
@@ -204,9 +205,11 @@ export interface ModelDiscussionComment {
   user_id?: number;
   user_like_state?: ModelCommentLikeState;
   user_name?: string;
+  user_role?: ModelUserRole;
 }
 
 export interface ModelDiscussionDetail {
+  associate_id?: number;
   comment?: number;
   comments?: ModelDiscussionComment[];
   content?: string;
@@ -232,6 +235,7 @@ export interface ModelDiscussionDetail {
   user_id?: number;
   user_like?: boolean;
   user_name?: string;
+  user_role?: ModelUserRole;
   uuid?: string;
   view?: number;
 }
@@ -242,6 +246,7 @@ export interface ModelDiscussionGroup {
 }
 
 export interface ModelDiscussionListItem {
+  associate_id?: number;
   comment?: number;
   content?: string;
   created_at?: number;
@@ -280,6 +285,7 @@ export interface ModelDiscussionReply {
   user_id?: number;
   user_like_state?: ModelCommentLikeState;
   user_name?: string;
+  user_role?: ModelUserRole;
 }
 
 export interface ModelExportOpt {
@@ -314,6 +320,8 @@ export interface ModelGroupWithItem {
 }
 
 export type ModelJSONBArrayModelForumGroups = Record<string, any>;
+
+export type ModelJSONBArrayModelRankTimeGroupItem = Record<string, any>;
 
 export type ModelJSONBArrayModelStatTrendItem = Record<string, any>;
 
@@ -413,8 +421,14 @@ export interface ModelPublicAddress {
 }
 
 export interface ModelRankTimeGroup {
-  score_ids?: string[];
+  items?: ModelJSONBArrayModelRankTimeGroupItem;
   time?: number;
+}
+
+export interface ModelRankTimeGroupItem {
+  extra?: string;
+  foreign_id?: number;
+  score_id?: string;
 }
 
 export interface ModelStatTrend {
@@ -482,6 +496,16 @@ export interface ModelUserInfo {
   web_notify?: boolean;
 }
 
+export interface ModelUserQuickReply {
+  content?: string;
+  created_at?: number;
+  id?: number;
+  index?: number;
+  name?: string;
+  updated_at?: number;
+  user_id?: number;
+}
+
 export interface ModelUserReviewWithUser {
   auth_type?: number;
   created_at?: number;
@@ -524,6 +548,13 @@ export interface ModelWebhookConfig {
 
 export interface RouterSystemInfoRes {
   version?: string;
+}
+
+export interface SvcAssociateDiscussionReq {
+  content?: string;
+  group_ids?: number[];
+  issue_uuid?: string;
+  title?: string;
 }
 
 export interface SvcAuthFrontendGetAuth {
@@ -590,7 +621,6 @@ export interface SvcDiscussionCreateReq {
   tags?: string[];
   title: string;
   type?: ModelDiscussionType;
-  user_id?: number;
 }
 
 export interface SvcDiscussionUpdateReq {
@@ -806,6 +836,10 @@ export interface SvcPolishReq {
   text?: string;
 }
 
+export interface SvcQuickReplyReindexReq {
+  ids: number[];
+}
+
 export interface SvcRankContributeItem {
   avatar?: string;
   id?: number;
@@ -816,6 +850,10 @@ export interface SvcRankContributeItem {
 export interface SvcResolveFeedbackReq {
   /** @max 3 */
   resolve?: ModelDiscussionState;
+}
+
+export interface SvcResolveIssueReq {
+  resolve?: 1 | 3;
 }
 
 export interface SvcReviewReq {
@@ -907,6 +945,12 @@ export interface SvcUserLoginReq {
   password: string;
 }
 
+export interface SvcUserQuickReplyReq {
+  content: string;
+  /** @maxLength 10 */
+  name: string;
+}
+
 export interface SvcUserRegisterReq {
   email: string;
   name: string;
@@ -931,6 +975,7 @@ export interface SvcUserStatisticsRes {
   blog_count?: number;
   name?: string;
   qa_count?: number;
+  role?: ModelUserRole;
 }
 
 export interface SvcUserUpdateReq {
@@ -1010,7 +1055,6 @@ export interface GetAdminDiscussionParams {
   /** @min 1 */
   size?: number;
 }
-
 
 /** request params */
 export type PutAdminForumPayload = SvcForumUpdateReq & {
@@ -1284,7 +1328,7 @@ export interface GetAdminStatSearchParams {
 export interface GetAdminStatTrendParams {
   begin: number;
   stat_group: number;
-  stat_types: (1 | 2 | 3 | 4 | 5 | 6)[];
+  stat_types: (1 | 2 | 3 | 4 | 5 | 6 | 7)[];
 }
 
 export interface GetAdminStatVisitParams {
@@ -1349,16 +1393,17 @@ export interface GetDiscussionParams {
   discussion_ids?: number[];
   filter?: "hot" | "new" | "publish";
   forum_id?: number;
+  fuzzy_search?: boolean;
   group_ids?: number[];
   keyword?: string;
   only_mine?: boolean;
   /** @min 1 */
   page?: number;
-  resolved?: 0 | 1 | 2;
+  resolved?: 0 | 1 | 2 | 3;
   /** @min 1 */
   size?: number;
   stat?: boolean;
-  type?: "qa" | "feedback" | "blog";
+  type?: "qa" | "feedback" | "blog" | "issue";
 }
 
 export interface PostDiscussionSummaryParams {
@@ -1385,6 +1430,11 @@ export interface PutDiscussionDiscIdParams {
 }
 
 export interface DeleteDiscussionDiscIdParams {
+  /** disc_id */
+  discId: string;
+}
+
+export interface PostDiscussionDiscIdAssociateParams {
   /** disc_id */
   discId: string;
 }
@@ -1446,7 +1496,17 @@ export interface PostDiscussionDiscIdLikeParams {
   discId: string;
 }
 
+export interface PostDiscussionDiscIdRequirementParams {
+  /** disc_id */
+  discId: string;
+}
+
 export interface PostDiscussionDiscIdResolveParams {
+  /** disc_id */
+  discId: string;
+}
+
+export interface PostDiscussionDiscIdResolveIssueParams {
   /** disc_id */
   discId: string;
 }
@@ -1490,6 +1550,16 @@ export interface GetUserNotifyListParams {
   read?: boolean;
   /** @min 1 */
   size?: number;
+}
+
+export interface PutUserQuickReplyQuickReplyIdParams {
+  /** quick_reply_id */
+  quickReplyId: number;
+}
+
+export interface DeleteUserQuickReplyQuickReplyIdParams {
+  /** quick_reply_id */
+  quickReplyId: number;
 }
 
 export interface GetUserTrendParams {

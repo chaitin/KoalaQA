@@ -13,6 +13,7 @@ const (
 	TypeQANeedReview
 	TypeAIInsightKnowledgeGap
 	TypeUserReviewGuest
+	TypeNewIssue
 )
 
 type commonUserThird struct {

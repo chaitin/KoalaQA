@@ -1,24 +1,5 @@
-import { configureStore } from '@reduxjs/toolkit';
-import {
-  type TypedUseSelectorHook,
-  useDispatch,
-  useSelector,
-} from 'react-redux';
-import breadcrumb from './slices/breadcrumb';
-import config from './slices/config';
-import forum from './slices/forum';
+// Zustand stores
+export { useConfigStore } from './configStore'
+export { useBreadcrumbStore } from './breadcrumbStore'
+export { useForumStore } from './forumStore'
 
-const store = configureStore({
-  reducer: { config, breadcrumb, forum },
-  middleware: getDefaultMiddleware =>
-    getDefaultMiddleware({
-      serializableCheck: false,
-    }),
-});
-
-export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
-
-export const useAppDispatch: () => AppDispatch = useDispatch;
-export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
-export default store;
