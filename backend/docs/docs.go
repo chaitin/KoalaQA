@@ -2827,7 +2827,8 @@ const docTemplate = `{
                                 3,
                                 4,
                                 5,
-                                6
+                                6,
+                                7
                             ],
                             "type": "integer"
                         },
@@ -3764,6 +3765,11 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "name": "fuzzy_search",
+                        "in": "query"
+                    },
+                    {
                         "type": "array",
                         "items": {
                             "type": "integer"
@@ -3792,13 +3798,15 @@ const docTemplate = `{
                         "enum": [
                             0,
                             1,
-                            2
+                            2,
+                            3
                         ],
                         "type": "integer",
                         "x-enum-varnames": [
                             "DiscussionStateNone",
                             "DiscussionStateResolved",
-                            "DiscussionStateClosed"
+                            "DiscussionStateClosed",
+                            "DiscussionStateInProgress"
                         ],
                         "name": "resolved",
                         "in": "query"
@@ -4153,6 +4161,47 @@ const docTemplate = `{
                                     }
                                 }
                             ]
+                        }
+                    }
+                }
+            }
+        },
+        "/discussion/{disc_id}/associate": {
+            "post": {
+                "description": "associate discussion",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "associate discussion",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "disc_id",
+                        "name": "disc_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "discussion",
+                        "name": "discussion",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.AssociateDiscussionReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
                         }
                     }
                 }
@@ -4553,6 +4602,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/discussion/{disc_id}/requirement": {
+            "post": {
+                "description": "discussion requirement",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "discussion requirement",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "disc_id",
+                        "name": "disc_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/discussion/{disc_id}/resolve": {
             "post": {
                 "description": "resolve feedback",
@@ -4574,6 +4655,47 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/svc.ResolveFeedbackReq"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "disc_id",
+                        "name": "disc_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/discussion/{disc_id}/resolve_issue": {
+            "post": {
+                "description": "resolve issue",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "resolve issue",
+                "parameters": [
+                    {
+                        "description": "req params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.ResolveIssueReq"
                         }
                     },
                     {
@@ -5890,6 +6012,9 @@ const docTemplate = `{
         "model.DiscussionDetail": {
             "type": "object",
             "properties": {
+                "associate_id": {
+                    "type": "integer"
+                },
                 "comment": {
                     "type": "integer"
                 },
@@ -6005,6 +6130,9 @@ const docTemplate = `{
         "model.DiscussionListItem": {
             "type": "object",
             "properties": {
+                "associate_id": {
+                    "type": "integer"
+                },
                 "comment": {
                     "type": "integer"
                 },
@@ -6134,12 +6262,14 @@ const docTemplate = `{
             "enum": [
                 0,
                 1,
-                2
+                2,
+                3
             ],
             "x-enum-varnames": [
                 "DiscussionStateNone",
                 "DiscussionStateResolved",
-                "DiscussionStateClosed"
+                "DiscussionStateClosed",
+                "DiscussionStateInProgress"
             ]
         },
         "model.DiscussionType": {
@@ -6697,7 +6827,8 @@ const docTemplate = `{
                 3,
                 4,
                 5,
-                6
+                6,
+                7
             ],
             "x-enum-varnames": [
                 "StatTypeVisit",
@@ -6705,7 +6836,8 @@ const docTemplate = `{
                 "StatTypeBotUnknown",
                 "StatTypeBotAccept",
                 "StatTypeDiscussionQA",
-                "StatTypeDiscussionBlog"
+                "StatTypeDiscussionBlog",
+                "StatTypeDiscussionIssue"
             ]
         },
         "model.SystemBrand": {
@@ -7060,6 +7192,26 @@ const docTemplate = `{
                 }
             }
         },
+        "svc.AssociateDiscussionReq": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "group_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "issue_uuid": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
         "svc.AuthFrontendGetAuth": {
             "type": "object",
             "properties": {
@@ -7237,9 +7389,6 @@ const docTemplate = `{
                 },
                 "type": {
                     "$ref": "#/definitions/model.DiscussionType"
-                },
-                "user_id": {
-                    "type": "integer"
                 }
             }
         },
@@ -7938,6 +8087,22 @@ const docTemplate = `{
             "properties": {
                 "resolve": {
                     "maximum": 3,
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.DiscussionState"
+                        }
+                    ]
+                }
+            }
+        },
+        "svc.ResolveIssueReq": {
+            "type": "object",
+            "properties": {
+                "resolve": {
+                    "enum": [
+                        1,
+                        3
+                    ],
                     "allOf": [
                         {
                             "$ref": "#/definitions/model.DiscussionState"

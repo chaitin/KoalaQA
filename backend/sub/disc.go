@@ -58,7 +58,7 @@ func (d *Disc) Concurrent() uint {
 
 func (d *Disc) Handle(ctx context.Context, msg mq.Message) error {
 	data := msg.(topic.MsgDiscChange)
-	if data.Type != string(model.DiscussionTypeQA) {
+	if data.Type != model.DiscussionTypeQA {
 		d.logger.WithContext(ctx).
 			With("disc_uuid", data.DiscUUID).
 			With("type", data.Type).

@@ -61,6 +61,7 @@ func newDiscussion(in discussionIn) *Discussion {
 			model.DiscussionTypeQA:       message.TypeNewQA,
 			model.DiscussionTypeFeedback: message.TypeNewFeedback,
 			model.DiscussionTypeBlog:     message.TypeNewBlog,
+			model.DiscussionTypeIssue:    message.TypeNewIssue,
 		},
 	}
 }
@@ -70,13 +71,13 @@ func init() {
 }
 
 type DiscussionCreateReq struct {
-	UserID   uint                 `json:"user_id"`
-	Title    string               `json:"title" binding:"required"`
-	Content  string               `json:"content"`
-	Type     model.DiscussionType `json:"type"`
-	Tags     []string             `json:"tags"`
-	GroupIDs model.Int64Array     `json:"group_ids"`
-	ForumID  uint                 `json:"forum_id"`
+	Title     string               `json:"title" binding:"required"`
+	Content   string               `json:"content"`
+	Type      model.DiscussionType `json:"type"`
+	Tags      []string             `json:"tags"`
+	GroupIDs  model.Int64Array     `json:"group_ids"`
+	ForumID   uint                 `json:"forum_id"`
+	skipLimit bool                 `json:"-"`
 }
 
 func (d *Discussion) generateUUID() string {
@@ -105,17 +106,21 @@ var (
 	errPermission = errors.New("permission denied")
 )
 
-func (d *Discussion) Create(ctx context.Context, sessionUUID string, req DiscussionCreateReq) (string, error) {
-	if !d.allow("discussion", req.UserID) {
+func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req DiscussionCreateReq) (string, error) {
+	if !req.skipLimit && !d.allow("discussion", user.UID) {
 		return "", errRatelimit
 	}
 
-	ok, err := d.in.UserRepo.HasForumPermission(ctx, req.UserID, req.ForumID)
+	ok, err := d.in.UserRepo.HasForumPermission(ctx, user.UID, req.ForumID)
 	if err != nil {
 		return "", err
 	}
 
 	if !ok {
+		return "", errPermission
+	}
+
+	if req.Type == model.DiscussionTypeIssue && !user.CanOperator(0) {
 		return "", errPermission
 	}
 
@@ -151,10 +156,10 @@ func (d *Discussion) Create(ctx context.Context, sessionUUID string, req Discuss
 		Tags:     req.Tags,
 		GroupIDs: req.GroupIDs,
 		UUID:     d.generateUUID(),
-		UserID:   req.UserID,
+		UserID:   user.UID,
 		Type:     req.Type,
 		ForumID:  req.ForumID,
-		Members:  model.Int64Array{int64(req.UserID)},
+		Members:  model.Int64Array{int64(user.UID)},
 		Hot:      2000,
 	}
 	err = d.in.DiscRepo.Create(ctx, &disc)
@@ -162,18 +167,15 @@ func (d *Discussion) Create(ctx context.Context, sessionUUID string, req Discuss
 		return "", err
 	}
 
-	statType := model.StatTypeDiscussionBlog
-
 	switch disc.Type {
 	case model.DiscussionTypeQA:
-		statType = model.StatTypeDiscussionQA
 		d.in.Pub.Publish(ctx, topic.TopicAIInsight, topic.MsgAIInsight{
 			ForumID: disc.ForumID,
 			Keyword: disc.Title,
 			Exclude: model.Int64Array{int64(disc.ID)},
 		})
 		fallthrough
-	case model.DiscussionTypeBlog:
+	case model.DiscussionTypeBlog, model.DiscussionTypeIssue:
 		err = d.in.TrendSvc.Create(ctx, &model.Trend{
 			UserID:        disc.UserID,
 			Type:          model.TrendTypeCreateDiscuss,
@@ -184,23 +186,26 @@ func (d *Discussion) Create(ctx context.Context, sessionUUID string, req Discuss
 		}
 	}
 
-	d.in.Batcher.Send(model.StatInfo{
-		Type: statType,
-		Ts:   util.HourTrunc(time.Now()).Unix(),
-		Key:  disc.UUID,
-	})
+	statType, ok := model.DiscussionType2StatType[disc.Type]
+	if ok {
+		d.in.Batcher.Send(model.StatInfo{
+			Type: statType,
+			Ts:   util.HourTrunc(time.Now()).Unix(),
+			Key:  disc.UUID,
+		})
+	}
 
 	d.in.Pub.Publish(ctx, topic.TopicDiscChange, topic.MsgDiscChange{
 		OP:       topic.OPInsert,
 		DiscID:   disc.ID,
 		DiscUUID: disc.UUID,
-		Type:     string(disc.Type),
+		Type:     disc.Type,
 	})
 
 	if webhookType, ok := d.webhookType[disc.Type]; ok {
 		d.in.Pub.Publish(ctx, topic.TopicDiscussWebhook, topic.MsgDiscussWebhook{
 			MsgType:   webhookType,
-			UserID:    req.UserID,
+			UserID:    user.UID,
 			DiscussID: disc.ID,
 		})
 	}
@@ -243,7 +248,7 @@ func (d *Discussion) Update(ctx context.Context, user model.UserInfo, uuid strin
 		OP:       topic.OPUpdate,
 		DiscID:   disc.ID,
 		DiscUUID: uuid,
-		Type:     string(disc.Type),
+		Type:     disc.Type,
 	})
 	return nil
 }
@@ -278,7 +283,7 @@ func (d *Discussion) Delete(ctx context.Context, user model.UserInfo, uuid strin
 		DiscID:   disc.ID,
 		DiscUUID: uuid,
 		RagID:    disc.RagID,
-		Type:     string(disc.Type),
+		Type:     disc.Type,
 	})
 
 	_ = d.in.OC.Delete(ctx, d.ossDir(disc.UUID))
@@ -381,6 +386,7 @@ type DiscussionListReq struct {
 	Resolved      *model.DiscussionState `json:"resolved" form:"resolved"`
 	DiscussionIDs *model.Int64Array      `json:"discussion_ids" form:"discussion_ids"`
 	Stat          bool                   `json:"stat" form:"stat"`
+	FuzzySearch   bool                   `json:"fuzzy_search"`
 }
 
 func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, req DiscussionListReq) (*model.ListRes[*model.DiscussionListItem], error) {
@@ -394,7 +400,7 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 	}
 
 	var res model.ListRes[*model.DiscussionListItem]
-	if req.Keyword != "" {
+	if req.Keyword != "" && !req.FuzzySearch {
 		if req.Stat {
 			d.in.Batcher.Send(model.StatInfo{
 				Type: model.StatTypeSearch,
@@ -433,6 +439,9 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 	)
 	if req.OnlyMine {
 		query = append(query, repo.QueryWithEqual("members", userID, repo.EqualOPValIn))
+	}
+	if req.Keyword != "" && req.FuzzySearch {
+		query = append(query, repo.QueryWithILike("title", &req.Keyword))
 	}
 
 	if len(groupM) > 0 {
@@ -504,6 +513,34 @@ func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummar
 		"CurrentDate": time.Now().Format("2006-01-02"),
 		"Discussions": discs,
 	})
+}
+
+func (d *Discussion) DiscussionRequirement(ctx context.Context, user model.UserInfo, discUUID string) (string, error) {
+	if !user.CanOperator(0) {
+		return "", errPermission
+	}
+
+	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
+	if err != nil {
+		return "", err
+	}
+
+	if disc.Type != model.DiscussionTypeQA {
+		return "", errors.New("invalid discussion")
+	}
+
+	_, prompt, err := d.in.LLM.GeneratePostPrompt(ctx, disc.ID)
+	if err != nil {
+		return "", err
+	}
+	requirement, err := d.in.LLM.Chat(ctx, llm.DiscussionRequirementSystemPrompt, prompt, map[string]any{
+		"CurrentDate": time.Now().Format("2006-01-02"),
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return requirement, nil
 }
 
 type DiscussionKeywordAnswerReq struct {
@@ -1242,6 +1279,106 @@ func (d *Discussion) ResolveFeedback(ctx context.Context, user model.UserInfo, d
 		"resolved":    req.Resolve,
 		"resolved_at": model.Timestamp(time.Now().Unix()),
 	}, repo.QueryWithEqual("id", disc.ID))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type ResolveIssueReq struct {
+	Resolve model.DiscussionState `json:"resolve" binding:"oneof=1 3"`
+}
+
+func (d *Discussion) ResolveIssue(ctx context.Context, user model.UserInfo, discUUID string, req ResolveIssueReq) error {
+	if !user.CanOperator(0) {
+		return errPermission
+	}
+
+	return d.in.DiscRepo.ResolveIssue(ctx, discUUID, req.Resolve)
+}
+
+func (d *Discussion) ListAssociateDiscussion(ctx context.Context, userID uint, discUUID string) (*model.ListRes[*model.DiscussionListItem], error) {
+	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	if disc.Type != model.DiscussionTypeIssue {
+		return &model.ListRes[*model.DiscussionListItem]{}, nil
+	}
+
+	ok, err := d.in.UserRepo.HasForumPermission(ctx, userID, disc.ForumID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !ok {
+		return nil, errPermission
+	}
+
+	var res model.ListRes[*model.DiscussionListItem]
+	err = d.in.DiscRepo.List(ctx, &res.Items, repo.QueryWithEqual("associate_id", disc.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	res.Total = int64(len(res.Items))
+	return &res, nil
+}
+
+type AssociateDiscussionReq struct {
+	IssueUUID string           `json:"issue_uuid"`
+	Title     string           `json:"title"`
+	GroupIDs  model.Int64Array `json:"group_ids"`
+	Content   string           `json:"content"`
+}
+
+func (d *Discussion) AssociateDiscussion(ctx context.Context, user model.UserInfo, discUUID string, req AssociateDiscussionReq) error {
+	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
+	if err != nil {
+		return err
+	}
+
+	if disc.Type != model.DiscussionTypeQA {
+		return errors.New("invalid discussion")
+	}
+
+	if req.IssueUUID == "" {
+		if req.Title == "" {
+			return errors.New("issue title required")
+		}
+
+		issueUUID, err := d.Create(ctx, user, DiscussionCreateReq{
+			Title:     req.Title,
+			Content:   req.Content,
+			Type:      model.DiscussionTypeIssue,
+			GroupIDs:  req.GroupIDs,
+			ForumID:   disc.ForumID,
+			skipLimit: true,
+		})
+		if err != nil {
+			return err
+		}
+		req.IssueUUID = issueUUID
+	}
+
+	issue, err := d.in.DiscRepo.GetByUUID(ctx, req.IssueUUID)
+	if err != nil {
+		return err
+	}
+
+	if issue.Type != model.DiscussionTypeIssue {
+		return errors.New("invalid issue")
+	}
+
+	now := time.Now()
+	err = d.in.DiscRepo.Update(ctx, map[string]any{
+		"resolved":     model.DiscussionStateClosed,
+		"resolved_at":  now,
+		"associate_id": req.IssueUUID,
+		"updated_at":   now,
+	}, repo.QueryWithEqual("uuid", req.IssueUUID))
 	if err != nil {
 		return err
 	}
