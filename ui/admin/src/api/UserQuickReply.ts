@@ -16,8 +16,9 @@ import {
   DeleteUserQuickReplyQuickReplyIdParams,
   ModelListRes,
   ModelUserQuickReply,
+  PutUserQuickReplyQuickReplyIdParams,
   SvcQuickReplyReindexReq,
-  SvcUserQuickReplyCreateReq,
+  SvcUserQuickReplyReq,
 } from "./types";
 
 /**
@@ -64,7 +65,7 @@ export const getUserQuickReply = (params: RequestParams = {}) =>
  */
 
 export const postUserQuickReply = (
-  req: SvcUserQuickReplyCreateReq,
+  req: SvcUserQuickReplyReq,
   params: RequestParams = {},
 ) =>
   request<
@@ -96,6 +97,30 @@ export const putUserQuickReplyReindex = (
 ) =>
   request<ContextResponse>({
     path: `/user/quick_reply/reindex`,
+    method: "PUT",
+    body: req,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user_quick_reply
+ * @name PutUserQuickReplyQuickReplyId
+ * @summary update user quick reply
+ * @request PUT:/user/quick_reply/{quick_reply_id}
+ * @response `200` `ContextResponse` OK
+ */
+
+export const putUserQuickReplyQuickReplyId = (
+  { quickReplyId, ...query }: PutUserQuickReplyQuickReplyIdParams,
+  req: SvcUserQuickReplyReq,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/user/quick_reply/${quickReplyId}`,
     method: "PUT",
     body: req,
     type: ContentType.Json,

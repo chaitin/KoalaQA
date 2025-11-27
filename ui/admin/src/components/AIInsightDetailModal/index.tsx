@@ -15,7 +15,7 @@ import {
 import React, { useCallback, useEffect, useState } from 'react';
 import { getAdminDiscussion, postAdminKbKbIdQuestion } from '../../api';
 import { ModelDiscussionListItem, ModelRankTimeGroupItem } from '../../api/types';
-import { useAppSelector } from '../../store';
+import { useForumStore, useConfigStore } from '../../store';
 import EditorWrap from '../editor';
 
 // 知识缺陷数据结构 - 严格还原原型设计
@@ -57,13 +57,13 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
   const [editedAnswer, setEditedAnswer] = useState(defaultContentText);
   const [saving, setSaving] = useState(false);
   // 从 store 获取板块数据
-  const { forums: storeForums, loading: storeLoading } = useAppSelector(state => state.forum);
+  const { forums: storeForums, loading: storeLoading } = useForumStore();
   const [questionPostsCache, setQuestionPostsCache] = useState<
     Map<string, ModelDiscussionListItem[]>
   >(new Map());
   const [aiAnswerCache, setAiAnswerCache] = useState<Map<string, string>>(new Map());
   const [processedQuestions, setProcessedQuestions] = useState<Set<string>>(new Set());
-  const currentKbId = useAppSelector(state => state.config.kb_id);
+  const { kb_id: currentKbId } = useConfigStore();
 
   // 严格还原原型图的颜色和样式
   const primaryTextColor = '#333';
@@ -108,6 +108,7 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
   // 获取问题的完整数据
   const fetchQuestionCompleteData = useCallback(
     async (questionScoreId: string, forum_id: number) => {
+      if (!forum_id) return;
       // 如果已经处理过这个问题，直接从缓存中获取数据
       if (processedQuestions.has(questionScoreId)) {
         const cachedPosts = questionPostsCache.get(questionScoreId) || [];
@@ -176,7 +177,7 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
   const handleQuestionSelect = (questionId: number) => {
     setSelectedId(questionId);
     const question = questions.find(q => q.id === questionId);
-    if (question) {
+    if (question && question.forum_id) {
       fetchQuestionCompleteData(question.score_id, question.forum_id);
     }
   };

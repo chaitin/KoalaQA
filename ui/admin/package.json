@@ -43,7 +43,6 @@
     "react-dropzone": "^14.3.8",
     "react-hook-form": "^7.56.4",
     "react-markdown": "^10.1.0",
-    "react-redux": "^9.2.0",
     "react-router-dom": "^7.6.0",
     "react-syntax-highlighter": "^15.6.1",
     "recharts": "^3.4.1",
@@ -54,7 +53,8 @@
     "tailwindcss": "^4.1.13",
     "unist-util-visit": "^5.0.0",
     "vite-plugin-dts": "^4.5.4",
-    "zod": "^4.0.17"
+    "zod": "^4.0.17",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@ctzhian/cx-swagger-api": "^1.0.0",

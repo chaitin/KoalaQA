@@ -235,7 +235,7 @@ export class HttpClient<SecurityDataType = unknown> {
         }
 
         if (error.response?.status === 401) {
-          window.location.href = "/login";
+          window.location.href = `/login?redirect=${window.location.pathname}`;
         }
 
         // 如果是CSRF token错误且已经重试过，或者不是CSRF错误，才显示错误提示

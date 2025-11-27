@@ -1,4 +1,4 @@
-import { useAppSelector } from '@/store';
+import { useBreadcrumbStore } from '@/store';
 import KeyboardArrowRightRoundedIcon from '@mui/icons-material/KeyboardArrowRightRounded';
 import { Box, Stack, Typography } from '@mui/material';
 import { useMemo } from 'react';
@@ -19,7 +19,7 @@ const ADMIN_BREADCRUMB_MAP: Record<string, { title: string; to: string }> = ADMI
 
 const Bread = () => {
   const { pathname } = useLocation();
-  const { pageName } = useAppSelector(state => state.breadcrumb);
+  const { pageName } = useBreadcrumbStore();
   const breadcrumbs = useMemo(() => {
     const pathParts = pathname.split('/').filter(Boolean);
 

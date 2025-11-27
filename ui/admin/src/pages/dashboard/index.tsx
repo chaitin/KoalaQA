@@ -2,16 +2,12 @@ import {
   AccessTime,
   Bolt,
   CheckCircle,
-  ChevronRight,
   Comment,
   Dashboard as DashboardIcon,
   Description,
   Notifications,
   People,
-  Search,
-  Edit,
-  Save,
-  OpenInNew,
+  Search
 } from '@mui/icons-material';
 import {
   Alert,
@@ -19,59 +15,47 @@ import {
   Box,
   Card,
   CircularProgress,
-  Collapse,
   Dialog,
-  DialogTitle,
   DialogContent,
-  DialogActions,
   Grid,
-  IconButton,
   Paper,
   Stack,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
-  useTheme,
-  Button,
-  TextField,
-  List,
-  ListItem,
-  ListItemText,
-  Divider,
+  useTheme
 } from '@mui/material';
 import dayjs from 'dayjs';
 import React, { ReactNode, useEffect, useMemo, useState } from 'react';
-import AIInsightDetailModal from '../../components/AIInsightDetailModal';
 import {
   Bar,
   BarChart,
   CartesianGrid,
-  Area,
   Line,
   LineChart,
   ResponsiveContainer,
   Tooltip,
-  XAxis,
+  XAxis
 } from 'recharts';
 import {
   getAdminRankAiInsight,
   getAdminStatDiscussion,
   getAdminStatSearch,
   getAdminStatTrend,
-  getAdminStatVisit,
-  getAdminDiscussion,
+  getAdminStatVisit
 } from '../../api';
 import {
+  ModelDiscussionListItem,
   ModelRankTimeGroup,
+  ModelRankTimeGroupItem,
   ModelStatTrend,
   ModelStatTrendItem,
   ModelStatType,
   SvcStatDiscussionItem,
   SvcStatDiscussionRes,
   SvcStatVisitRes,
-  ModelDiscussionListItem,
-  ModelRankTimeGroupItem,
 } from '../../api/types';
+import AIInsightDetailModal from '../../components/AIInsightDetailModal';
 
 // --- 类型定义 ---
 
