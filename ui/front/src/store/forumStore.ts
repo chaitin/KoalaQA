@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { ModelForumInfo } from '@/api/types'
-import { usePublicAccess } from './authConfigStore'
+import { useAuthConfigStore } from './authConfigStore'
 
 interface ForumState {
   selectedForumId: number | null
@@ -23,7 +23,8 @@ export const useForumStore = create<ForumState>((set, get) => {
   // 监听 auth:cleared 事件
   if (typeof window !== 'undefined') {
     window.addEventListener('auth:cleared', () => {
-      const publicAccess = usePublicAccess()
+      const authConfig = useAuthConfigStore.getState().authConfig
+      const publicAccess = authConfig?.public_access ?? false
       if (!publicAccess) {
         // 如果不允许公共访问，登出时清空论坛缓存
         set({ forums: [], loading: false, error: null })

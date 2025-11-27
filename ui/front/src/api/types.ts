@@ -59,6 +59,7 @@ export enum ModelStatType {
   StatTypeBotAccept = 4,
   StatTypeDiscussionQA = 5,
   StatTypeDiscussionBlog = 6,
+  StatTypeDiscussionIssue = 7,
 }
 
 export enum ModelMsgNotifyType {
@@ -130,6 +131,7 @@ export enum ModelDiscussionState {
   DiscussionStateNone = 0,
   DiscussionStateResolved = 1,
   DiscussionStateClosed = 2,
+  DiscussionStateInProgress = 3,
 }
 
 export enum ModelCommentLikeState {
@@ -207,6 +209,7 @@ export interface ModelDiscussionComment {
 }
 
 export interface ModelDiscussionDetail {
+  associate_id?: number;
   comment?: number;
   comments?: ModelDiscussionComment[];
   content?: string;
@@ -243,6 +246,7 @@ export interface ModelDiscussionGroup {
 }
 
 export interface ModelDiscussionListItem {
+  associate_id?: number;
   comment?: number;
   content?: string;
   created_at?: number;
@@ -546,6 +550,13 @@ export interface RouterSystemInfoRes {
   version?: string;
 }
 
+export interface SvcAssociateDiscussionReq {
+  content?: string;
+  group_ids?: number[];
+  issue_uuid?: string;
+  title?: string;
+}
+
 export interface SvcAuthFrontendGetAuth {
   button_desc?: string;
   type?: number;
@@ -610,7 +621,6 @@ export interface SvcDiscussionCreateReq {
   tags?: string[];
   title: string;
   type?: ModelDiscussionType;
-  user_id?: number;
 }
 
 export interface SvcDiscussionUpdateReq {
@@ -840,6 +850,10 @@ export interface SvcRankContributeItem {
 export interface SvcResolveFeedbackReq {
   /** @max 3 */
   resolve?: ModelDiscussionState;
+}
+
+export interface SvcResolveIssueReq {
+  resolve?: 1 | 3;
 }
 
 export interface SvcReviewReq {
@@ -1314,7 +1328,7 @@ export interface GetAdminStatSearchParams {
 export interface GetAdminStatTrendParams {
   begin: number;
   stat_group: number;
-  stat_types: (1 | 2 | 3 | 4 | 5 | 6)[];
+  stat_types: (1 | 2 | 3 | 4 | 5 | 6 | 7)[];
 }
 
 export interface GetAdminStatVisitParams {
@@ -1379,12 +1393,13 @@ export interface GetDiscussionParams {
   discussion_ids?: number[];
   filter?: "hot" | "new" | "publish";
   forum_id?: number;
+  fuzzy_search?: boolean;
   group_ids?: number[];
   keyword?: string;
   only_mine?: boolean;
   /** @min 1 */
   page?: number;
-  resolved?: 0 | 1 | 2;
+  resolved?: 0 | 1 | 2 | 3;
   /** @min 1 */
   size?: number;
   stat?: boolean;
@@ -1415,6 +1430,11 @@ export interface PutDiscussionDiscIdParams {
 }
 
 export interface DeleteDiscussionDiscIdParams {
+  /** disc_id */
+  discId: string;
+}
+
+export interface PostDiscussionDiscIdAssociateParams {
   /** disc_id */
   discId: string;
 }
@@ -1476,7 +1496,17 @@ export interface PostDiscussionDiscIdLikeParams {
   discId: string;
 }
 
+export interface PostDiscussionDiscIdRequirementParams {
+  /** disc_id */
+  discId: string;
+}
+
 export interface PostDiscussionDiscIdResolveParams {
+  /** disc_id */
+  discId: string;
+}
+
+export interface PostDiscussionDiscIdResolveIssueParams {
   /** disc_id */
   discId: string;
 }

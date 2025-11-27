@@ -1,7 +1,7 @@
 'use client'
 
 import { ModelSystemBrand } from '@/api'
-import { ModelForumInfo as ModelForum } from '@/api/types'
+import { ModelForumInfo as ModelForum, ModelUserRole } from '@/api/types'
 import { AuthContext } from '@/components/authProvider'
 import { useForumStore, useQuickReplyStore } from '@/store'
 import { useAuthConfig } from '@/hooks/useAuthConfig'
@@ -31,6 +31,7 @@ import ForumSelector from '../ForumSelector'
 import SearchResultModal from '../SearchResultModal'
 import LoggedInView from './loggedInView'
 import FilterPanel from '../filter-panel'
+import { isAdminRole } from '@/lib/utils'
 
 interface HeaderProps {
   brandConfig: ModelSystemBrand
@@ -73,8 +74,8 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
       .catch(() => {})
   }, [initialForums])
   useEffect(() => {
-    fetchQuickReplies()
-  }, [])
+    if (isAdminRole(user.role || ModelUserRole.UserRoleGuest)) fetchQuickReplies()
+  }, [user.role])
   // 关闭搜索弹窗时清空输入框
   const handleCloseSearchModal = useCallback(() => {
     closeSearchModal()

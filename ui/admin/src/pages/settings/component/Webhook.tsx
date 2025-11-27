@@ -41,7 +41,7 @@ const contentOptions = [
   { value: 3, label: '有新的提问' },
   { value: 1, label: '点踩 AI 的回答' },
   { value: 2, label: 'AI 无法解答问题' },
-  { value: 4, label: '有新的反馈' },
+  // { value: 4, label: '有新的反馈' },
   { value: 5, label: '有新的文章' },
   { value: 6, label: '有新的回答等待审核' },
   { value: 7, label: '有新的 AI 洞察' },
