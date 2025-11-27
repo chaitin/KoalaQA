@@ -400,7 +400,11 @@ const Article = ({
 
   // 处理发布类型菜单打开
   const handlePublishMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setPublishAnchorEl(event.currentTarget)
+    if(type) {
+      handlePublishTypeSelect(type as 'qa' | 'blog')
+    }else{
+      setPublishAnchorEl(event.currentTarget)
+    }
   }
 
   // 处理发布类型菜单关闭
