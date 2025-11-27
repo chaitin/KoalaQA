@@ -86,7 +86,6 @@ const Article = ({
   const { getFilteredGroups } = useGroupData()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
-  console.log(isMobile, )
   // 根据设备类型动态设置搜索placeholder
   const searchPlaceholder = isMobile ? '使用 AI 搜索' : '输入任意内容，使用 AI 搜索'
 

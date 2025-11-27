@@ -39,8 +39,8 @@ const DiscussionTypeChip: React.FC<DiscussionTypeChipProps> = ({ type, variant =
     if (variant === 'compact') {
       return {
         ...baseStyle,
-        height: 22,
-        fontSize: '0.7rem',
+        height: 20,
+        fontSize: '12px',
         fontWeight: 600,
         borderRadius: '3px',
       }
@@ -49,9 +49,9 @@ const DiscussionTypeChip: React.FC<DiscussionTypeChipProps> = ({ type, variant =
     // default variant
     return {
       ...baseStyle,
-      height: 24,
+      height: 20,
       fontWeight: 400,
-      fontSize: '14px',
+      fontSize: '12px',
       borderRadius: '4px',
     }
   }

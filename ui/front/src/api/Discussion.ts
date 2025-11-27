@@ -78,20 +78,6 @@ export const getAdminDiscussion = (
   });
 
 /**
- * @description discussion ketword answer
- *
- * @tags discussion
- * @name GetAdminDiscussionQuestion
- * @summary discussion keyword answer
- * @request GET:/admin/discussion/question
- * @response `200` `(ContextResponse & {
-    data?: string,
-
-})` OK
- */
-
-
-/**
  * @description list discussions
  *
  * @tags discussion

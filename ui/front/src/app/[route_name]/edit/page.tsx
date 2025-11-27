@@ -6,7 +6,7 @@ import { Card } from '@/components'
 import { ReleaseModal } from '@/components/discussion'
 import EditorWrap, { EditorWrapRef } from '@/components/editor'
 import Toc from '@/components/Toc'
-import { useForum } from '@/contexts/ForumContext'
+import { useForumStore } from '@/store'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import { useSystemDiscussion } from '@/contexts/SystemDiscussionContext'
 import { Box, Button, Stack, TextField } from '@mui/material'
@@ -18,7 +18,7 @@ export default function EditPage() {
   const params = useSearchParams()
   const routeParams = useParams()
   const routeName = routeParams?.route_name as string
-  const { forums } = useForum()
+  const forums = useForumStore((s) => s.forums)
   const router = useRouterWithRouteName()
   const { config: systemConfig } = useSystemDiscussion()
   const queryId = useMemo(() => params.get('id') || params.get('discId') || undefined, [params]) as string | undefined

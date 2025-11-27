@@ -1,6 +1,6 @@
 'use client'
 
-import { useForum } from '@/contexts/ForumContext'
+import { useForumStore } from '@/store'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -9,7 +9,10 @@ import { useEffect, useState } from 'react'
  * 当服务端无法获取forum数据时，在客户端进行重定向
  */
 export default function RootPageFallback() {
-  const { forums, loading, error, refreshForums } = useForum()
+  const forums = useForumStore((s) => s.forums)
+  const loading = useForumStore((s) => s.loading)
+  const error = useForumStore((s) => s.error)
+  const refreshForums = useForumStore((s) => s.refreshForums)
   const router = useRouter()
   const [hasRedirected, setHasRedirected] = useState(false)
 

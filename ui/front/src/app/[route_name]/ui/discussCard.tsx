@@ -33,8 +33,10 @@ const getStatusLabel = (status: string) => {
 
 const shouldShowStatus = (data: ModelDiscussionListItem) => {
   // 只显示已解决/已关闭的状态，不显示"待解决"
-  return data.resolved === ModelDiscussionState.DiscussionStateResolved ||
-         data.resolved === ModelDiscussionState.DiscussionStateClosed
+  return (
+    data.resolved === ModelDiscussionState.DiscussionStateResolved ||
+    data.resolved === ModelDiscussionState.DiscussionStateClosed
+  )
 }
 
 const isCategoryTag = (tag: string, groups: Array<{ name?: string }>) => {
@@ -100,11 +102,12 @@ const DiscussCard = ({
         '&:hover': {
           bgcolor: 'rgba(0,99,151,0.03)',
         },
+        p: 2,
         ...sx,
       }}
     >
-      <Box sx={{ py: '20px', px: 1 }}>
-        <Stack direction='row' alignItems='center' spacing={1}>
+      <Stack direction='row' alignItems='center' spacing={1} sx={{ lineHeight: '22px' }}>
+        <Link href={profileHref || '/'} key={it.id} style={{ textDecoration: 'none', color: 'inherit' }}>
           <Box
             tabIndex={0}
             sx={{
@@ -122,12 +125,6 @@ const DiscussCard = ({
             }}
           >
             <Box
-              onClick={(event) => {
-                event.stopPropagation()
-                if (profileHref) {
-                  router.push(profileHref)
-                }
-              }}
               sx={{
                 display: 'inline-flex',
                 cursor: profileHref ? 'pointer' : 'default',
@@ -143,176 +140,180 @@ const DiscussCard = ({
                 }}
               />
             </Box>
-
-            <Stack direction='row' spacing={0.5} alignItems='center' sx={{ ml: 0.5 }}>
-              <Link href={profileHref || '/'} key={it.id} style={{ textDecoration: 'none', color: 'inherit' }}>
-                <Box
-                  sx={{
-                    fontSize: '14px',
-                    textDecoration: 'none',
-                    outline: 'none',
-                    color: 'inherit',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                  }}
-                  tabIndex={-1}
-                >
-                  {it.user_name || ''}
-                </Box>
-              </Link>
-            </Stack>
-          </Box>
-          <Typography variant='caption' sx={{ fontWeight: 400, fontSize: '14px', whiteSpace: 'nowrap' }}>
-            · <TimeDisplay style={{ color: 'rgba(33,34,45, 0.7)' }} timestamp={it.updated_at!} />
-          </Typography>
-        </Stack>
-        <Link href={`/${params?.route_name as string}/${it.uuid}`} key={it.id}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', my: 2, gap: 1 }}>
-            <DiscussionTypeChip type={it.type} variant='default' />
-            <Ellipsis
+            <Box
               sx={{
-                fontWeight: 700,
-                color: '#111827',
-                lineHeight: 1.4,
-                letterSpacing: '-0.01em',
-                fontSize: '18px',
-                '&:hover': { color: '#000000' },
-                flex: 1,
+                fontSize: '14px',
+                textDecoration: 'none',
+                outline: 'none',
+                color: 'inherit',
+                fontWeight: 600,
+                cursor: 'pointer',
+                ml: 1,
               }}
+              tabIndex={-1}
             >
-              {it.title}
-            </Ellipsis>
-          </Box>
-          <MarkDown
-            content={it.type === ModelDiscussionType.DiscussionTypeBlog ? it.summary || '' : it.content || ''}
-            truncateLength={100}
-            sx={{
-              mb: 2,
-              lineHeight: 1.5,
-              fontSize: '0.8125rem',
-              color: 'rgba(33, 34, 45, 0.50) !important',
-              bgcolor: 'transparent !important',
-              '&.markdown-body': {
-                backgroundColor: 'transparent !important',
-                color: 'rgba(33, 34, 45, 0.50) !important',
-              },
-              '& *': {
-                fontSize: '0.8125rem !important',
-                color: 'rgba(33, 34, 45, 0.50) !important',
-              },
-            }}
-          />
-
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-              {data.resolved === ModelDiscussionState.DiscussionStateNone && data.type === ModelDiscussionType.DiscussionTypeQA && (
-                <QaUnresolvedChip type={data.type} resolved={data.resolved} />
-              )}
-              {shouldShowStatus(it) && (
-                <Chip
-                  icon={
-                    postStatus === 'answered' || postStatus === 'closed' ? (
-                      <CheckCircleOutlineIcon
-                        sx={{
-                          width: 15,
-                          height: 15,
-                          color: '#fff !important',
-                        }}
-                      />
-                    ) : undefined
-                  }
-                  label={getStatusLabel(postStatus)}
-                  size='small'
-                  sx={{
-                    // bgcolor: `${getStatusColor(postStatus)}15`,
-                    bgcolor: getStatusColor(postStatus),
-                    color: '#fff !important',
-                    height: 22,
-                    fontWeight: 600,
-                    fontSize: '12px',
-                    // borderRadius: '3px',
-                    border: `1px solid ${getStatusColor(postStatus)}30`,
-                  }}
-                />
-              )}
-              {allTags.map((tag, index) => {
-                const isCategory = isCategoryTag(tag, groups.flat)
-                return (
-                  <Chip
-                    key={`${tag}-${isCategory ? 'category' : 'tag'}-${index}`}
-                    label={tag}
-                    size='small'
-                    sx={{
-                      bgcolor: 'rgba(233, 236, 239, 1)',
-                      color: 'rgba(33, 34, 45, 1)',
-                      height: 22,
-                      fontSize: '12px',
-                      borderRadius: '3px',
-                      cursor: 'default',
-                      pointerEvents: 'none',
-                    }}
-                  />
-                )
-              })}
-            </Box>
-
-            <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'center' }}>
-              {postType === 'question' && (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    background: 'rgba(0,99,151,0.06)',
-                    color: 'primary.main',
-                    px: 1,
-                    borderRadius: 0.5,
-                  }}
-                >
-                  <Icon type='icon-wendapinglun' sx={{ fontSize: 12 }} />
-                  <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
-                    {it.comment || 0}
-                  </Typography>
-                </Box>
-              )}
-              {postType === 'feedback' && (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    background: 'rgba(0,99,151,0.06)',
-                    color: 'primary.main',
-                  }}
-                >
-                  <Icon type='icon-wendapinglun' sx={{ fontSize: 12 }} />
-                  <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
-                    {(it.like || 0) - (it.dislike || 0)}
-                  </Typography>
-                </Box>
-              )}
-              {postType === 'article' && (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    background: 'rgba(0,99,151,0.06)',
-                    color: 'primary.main',
-                    px: 1,
-                    borderRadius: 0.5,
-                  }}
-                >
-                  <Icon type='icon-dianzan1' sx={{ fontSize: 12 }} />
-                  <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
-                    {(it.like || 0) - (it.dislike || 0)}
-                  </Typography>
-                </Box>
-              )}
+              {it.user_name || ''}
             </Box>
           </Box>
         </Link>
-      </Box>
+        <Box sx={{ fontWeight: 400, fontSize: '14px', whiteSpace: 'nowrap' }}>
+          · <TimeDisplay style={{ color: 'rgba(33,34,45, 0.7)' }} timestamp={it.updated_at!} />
+        </Box>
+      </Stack>
+      <Link href={`/${params?.route_name as string}/${it.uuid}`} key={it.id}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            my: 2,
+            gap: 1,
+            height: '24px',
+          }}
+        >
+          <DiscussionTypeChip type={it.type} variant='default' />
+          <Ellipsis
+            sx={{
+              fontWeight: 700,
+              color: '#111827',
+              letterSpacing: '-0.01em',
+              fontSize: '16px',
+              '&:hover': { color: '#000000' },
+              flex: 1,
+            }}
+          >
+            {it.title}
+          </Ellipsis>
+        </Box>
+        <MarkDown
+          content={(it.type === ModelDiscussionType.DiscussionTypeBlog ? it.summary : it.content) || ''}
+          truncateLength={100}
+          sx={{
+            mb: 2,
+            lineHeight: 1.5,
+            fontSize: '0.8125rem',
+            color: 'rgba(33, 34, 45, 0.50) !important',
+            bgcolor: 'transparent !important',
+            '&.markdown-body': {
+              backgroundColor: 'transparent !important',
+              color: 'rgba(33, 34, 45, 0.50) !important',
+            },
+            '& *': {
+              fontSize: '0.8125rem !important',
+              color: 'rgba(33, 34, 45, 0.50) !important',
+            },
+          }}
+        />
+
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+            {data.resolved === ModelDiscussionState.DiscussionStateNone &&
+              data.type === ModelDiscussionType.DiscussionTypeQA && (
+                <QaUnresolvedChip type={data.type} resolved={data.resolved} />
+              )}
+            {shouldShowStatus(it) && (
+              <Chip
+                icon={
+                  postStatus === 'answered' || postStatus === 'closed' ? (
+                    <CheckCircleOutlineIcon
+                      sx={{
+                        width: 15,
+                        height: 15,
+                        color: '#fff !important',
+                      }}
+                    />
+                  ) : undefined
+                }
+                label={getStatusLabel(postStatus)}
+                size='small'
+                sx={{
+                  // bgcolor: `${getStatusColor(postStatus)}15`,
+                  bgcolor: getStatusColor(postStatus),
+                  color: '#fff !important',
+                  height: 22,
+                  fontWeight: 600,
+                  fontSize: '12px',
+                  // borderRadius: '3px',
+                  border: `1px solid ${getStatusColor(postStatus)}30`,
+                }}
+              />
+            )}
+            {allTags.map((tag, index) => {
+              const isCategory = isCategoryTag(tag, groups.flat)
+              return (
+                <Chip
+                  key={`${tag}-${isCategory ? 'category' : 'tag'}-${index}`}
+                  label={tag}
+                  size='small'
+                  sx={{
+                    bgcolor: 'rgba(233, 236, 239, 1)',
+                    color: 'rgba(33, 34, 45, 1)',
+                    height: 22,
+                    fontSize: '12px',
+                    borderRadius: '3px',
+                    cursor: 'default',
+                    pointerEvents: 'none',
+                  }}
+                />
+              )
+            })}
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'center' }}>
+            {postType === 'question' && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  background: 'rgba(0,99,151,0.06)',
+                  color: 'primary.main',
+                  px: 1,
+                  borderRadius: 0.5,
+                }}
+              >
+                <Icon type='icon-wendapinglun' sx={{ fontSize: 12 }} />
+                <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
+                  {it.comment || 0}
+                </Typography>
+              </Box>
+            )}
+            {postType === 'feedback' && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  background: 'rgba(0,99,151,0.06)',
+                  color: 'primary.main',
+                }}
+              >
+                <Icon type='icon-wendapinglun' sx={{ fontSize: 12 }} />
+                <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
+                  {(it.like || 0) - (it.dislike || 0)}
+                </Typography>
+              </Box>
+            )}
+            {postType === 'article' && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  background: 'rgba(0,99,151,0.06)',
+                  color: 'primary.main',
+                  px: 1,
+                  borderRadius: 0.5,
+                }}
+              >
+                <Icon type='icon-dianzan1' sx={{ fontSize: 12 }} />
+                <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
+                  {(it.like || 0) - (it.dislike || 0)}
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        </Box>
+      </Link>
     </Box>
   )
 }

@@ -1,21 +1,30 @@
 import { useParams } from 'next/navigation'
-import { useForum } from '@/contexts/ForumContext'
+import { useForumStore } from '@/store'
+import { useEffect } from 'react'
 
 /**
  * 获取当前选中的板块ID
- * 从路径参数中读取route_name，然后通过论坛上下文查找对应的forum_id
+ * 从路径参数中读取route_name，然后通过论坛 store 查找对应的forum_id
  * 如果还没有选中板块，返回null
  */
 export const useForumId = () => {
   const params = useParams()
-  const { forums } = useForum()
-  const routeName = params?.route_name as string
-  
+  const forums = useForumStore((s) => s.forums)
+  const setRouteName = useForumStore((s) => s.setRouteName)
+  const routeName = params?.route_name as string | undefined
+
+  // 把对 store 的写操作放到副作用中，避免在渲染阶段触发状态更新导致无限重渲染
+  useEffect(() => {
+    if (routeName && forums.length > 0) {
+      setRouteName(routeName)
+    }
+  }, [routeName, forums, setRouteName])
+
   if (!routeName || forums.length === 0) {
     return null
   }
-  
-  const forum = forums.find(f => f.route_name === routeName)
+
+  const forum = forums.find((f) => f.route_name === routeName)
   return forum?.id || null
 }
 

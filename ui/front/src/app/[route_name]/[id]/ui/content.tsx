@@ -49,8 +49,11 @@ import EditCommentModal from './editCommentModal'
 
 import EditorContent from '@/components/EditorContent'
 import Modal from '@/components/modal'
-import { formatNumber } from '@/lib/utils'
+import { formatNumber, isAdminRole } from '@/lib/utils'
 import { Icon } from '@ctzhian/ui'
+import RoleChip from '@/app/profile/ui/RoleChip'
+import { useQuickReplyStore } from '@/store'
+import { is } from 'zod/v4/locales'
 
 const Content = (props: { data: ModelDiscussionDetail }) => {
   const { data } = props
@@ -62,7 +65,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const [editCommentModalVisible, setEditCommentModalVisible] = useState(false)
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
   const open = Boolean(anchorEl)
-  console.log(data)
   const isArticlePost = data.type === ModelDiscussionType.DiscussionTypeBlog
 
   const [showAnswerEditor, setShowAnswerEditor] = useState(false)
@@ -208,7 +210,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   // 判断帖子是否有被采纳的评论
   const hasAcceptedComment = data.comments?.some((comment) => comment.accepted)
   const isAuthor = data.user_id === (user?.uid || 0)
-  const isAdmin = [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
+  const isAdmin = isAdminRole(
     user?.role || ModelUserRole.UserRoleUnknown,
   )
   const canAcceptAnswer = isAuthor || isAdmin
@@ -251,7 +253,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
 
   const handleSubmitComment = async (answerId: number) => {
     const comment = commentEditorRefs.current[answerId]?.getContent() || ''
-    console.log(comment)
     if (!comment.trim()) return
     return checkAuth(async () => {
       await postDiscussionDiscIdComment({ discId: id }, { content: comment, comment_id: answerId })
@@ -505,6 +506,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                         }}
                       />
                     )}
+                    <RoleChip role={answer.user_role} />
                   </Stack>
 
                   {/* 时间显示 - 已整合到同一区域 */}
@@ -524,7 +526,10 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                     )}
                   </Stack>
 
-                  <Stack direction='row' sx={{ alignItems: 'center', gap: 1, ml: 'auto', flex: {xs: 1, sm: 'unset'} }}>
+                  <Stack
+                    direction='row'
+                    sx={{ alignItems: 'center', gap: 1, ml: 'auto', flex: { xs: 1, sm: 'unset' } }}
+                  >
                     {/* 采纳按钮 - 只有问答类型且问题作者或管理员且问题未被采纳时才显示 */}
                     {!isArticlePost &&
                       data.type === ModelDiscussionType.DiscussionTypeQA &&
@@ -828,6 +833,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                     }}
                                   />
                                 )}
+                                <RoleChip role={reply.user_role} />
                               </Stack>
 
                               {/* 时间显示 - 已整合到同一区域 */}
@@ -941,6 +947,24 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                   }}
                                   value=''
                                 />
+                                {/* 快捷回复选择器（管理员/运营可见） */}
+                                {isAdmin && (
+                                  <Box sx={{ my: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                    {useQuickReplyStore.getState().quickReplies.map((qr) => (
+                                      <Chip
+                                        key={qr.id}
+                                        label={qr.name}
+                                        size='small'
+                                        onClick={() => {
+                                          const ref = commentEditorRefs.current[answer.id!]
+                                          if (ref && typeof ref.setContent === 'function') {
+                                            ref.setContent(qr.content || '')
+                                          }
+                                        }}
+                                      />
+                                    ))}
+                                  </Box>
+                                )}
                               </Box>
                               <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
                                 <Button
@@ -1026,7 +1050,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
               },
             }}
           >
-            <Box sx={{ p: 1, border: '1px solid rgba(33, 34, 45, 1)', borderRadius: '12px',}}>
+            <Box sx={{ p: 1, border: '1px solid rgba(33, 34, 45, 1)', borderRadius: '12px' }}>
               {isArticlePost && !showAnswerEditor ? (
                 <OutlinedInput
                   fullWidth
@@ -1069,6 +1093,23 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                       onChange={handleAnswerEditorChange}
                       readonly={isClosedPost}
                     />
+                    {/* 快捷回复选择器（管理员/运营可见） */}
+                    {isAdmin && (
+                      <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        {useQuickReplyStore.getState().quickReplies.map((qr) => (
+                          <Chip
+                            key={qr.id}
+                            label={qr.name}
+                            size='small'
+                            onClick={() => {
+                              if (answerEditorRef.current && typeof answerEditorRef.current.setContent === 'function') {
+                                answerEditorRef.current.setContent(qr.content || '')
+                              }
+                            }}
+                          />
+                        ))}
+                      </Box>
+                    )}
                   </Box>
                   {hasAnswerContent && (
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
