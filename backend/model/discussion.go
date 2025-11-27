@@ -10,6 +10,7 @@ const (
 	DiscussionTypeQA       DiscussionType = "qa"
 	DiscussionTypeFeedback DiscussionType = "feedback"
 	DiscussionTypeBlog     DiscussionType = "blog"
+	DiscussionTypeIssue    DiscussionType = "issue"
 )
 
 type DiscussionState uint

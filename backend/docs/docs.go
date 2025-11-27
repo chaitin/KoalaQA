@@ -3818,13 +3818,15 @@ const docTemplate = `{
                         "enum": [
                             "qa",
                             "feedback",
-                            "blog"
+                            "blog",
+                            "issue"
                         ],
                         "type": "string",
                         "x-enum-varnames": [
                             "DiscussionTypeQA",
                             "DiscussionTypeFeedback",
-                            "DiscussionTypeBlog"
+                            "DiscussionTypeBlog",
+                            "DiscussionTypeIssue"
                         ],
                         "name": "type",
                         "in": "query"
@@ -5402,7 +5404,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/svc.UserQuickReplyCreateReq"
+                            "$ref": "#/definitions/svc.UserQuickReplyReq"
                         }
                     }
                 ],
@@ -5462,6 +5464,44 @@ const docTemplate = `{
             }
         },
         "/user/quick_reply/{quick_reply_id}": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user_quick_reply"
+                ],
+                "summary": "update user quick reply",
+                "parameters": [
+                    {
+                        "description": "req params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.UserQuickReplyReq"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "quick_reply_id",
+                        "name": "quick_reply_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "produces": [
                     "application/json"
@@ -6107,12 +6147,14 @@ const docTemplate = `{
             "enum": [
                 "qa",
                 "feedback",
-                "blog"
+                "blog",
+                "issue"
             ],
             "x-enum-varnames": [
                 "DiscussionTypeQA",
                 "DiscussionTypeFeedback",
-                "DiscussionTypeBlog"
+                "DiscussionTypeBlog",
+                "DiscussionTypeIssue"
             ]
         },
         "model.DocStatus": {
@@ -8151,7 +8193,7 @@ const docTemplate = `{
                 }
             }
         },
-        "svc.UserQuickReplyCreateReq": {
+        "svc.UserQuickReplyReq": {
             "type": "object",
             "required": [
                 "content",

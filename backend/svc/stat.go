@@ -99,17 +99,18 @@ func (s *Stat) SearchCount(ctx context.Context, req StatReq) (int64, error) {
 }
 
 func (s *Stat) Accept(ctx context.Context, onlyBot bool, req StatReq) (count int64, err error) {
+	beginTime := time.Unix(req.Begin, 0)
 	query := []repo.QueryOptFunc{
 		repo.QueryWithEqual("parent_id", 0),
 		repo.QueryWithEqual("accepted", true),
-		repo.QueryWithEqual("updated_at", time.Unix(req.Begin, 0), repo.EqualOPGTE),
+		repo.QueryWithEqual("created_at", beginTime, repo.EqualOPGTE),
 	}
 
 	if onlyBot {
 		query = append(query, repo.QueryWithEqual("bot", true))
 	}
 
-	err = s.repoComm.Count(ctx, &count, query...)
+	err = s.repoComm.CountDiscussion(ctx, &count, beginTime, query...)
 
 	return
 }
