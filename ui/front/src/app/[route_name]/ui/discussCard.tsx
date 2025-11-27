@@ -163,7 +163,7 @@ const DiscussCard = ({
             </Box>
           </Box>
         </Link>
-        <Box sx={{ fontWeight: 400, whiteSpace: 'nowrap' }}>
+        <Box sx={{ fontWeight: 400, whiteSpace: 'nowrap',fontSize: '14px' }}>
           · <TimeDisplay style={{ color: 'rgba(33,34,45, 0.7)' }} timestamp={it.updated_at!} />
         </Box>
       </Stack>
