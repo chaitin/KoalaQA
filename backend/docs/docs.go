@@ -3979,6 +3979,12 @@ const docTemplate = `{
                 "summary": "discussions summary",
                 "parameters": [
                     {
+                        "type": "string",
+                        "name": "keyword",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
                         "type": "array",
                         "items": {
                             "type": "string"

@@ -386,7 +386,7 @@ type DiscussionListReq struct {
 	Resolved      *model.DiscussionState `json:"resolved" form:"resolved"`
 	DiscussionIDs *model.Int64Array      `json:"discussion_ids" form:"discussion_ids"`
 	Stat          bool                   `json:"stat" form:"stat"`
-	FuzzySearch   bool                   `json:"fuzzy_search"`
+	FuzzySearch   bool                   `json:"fuzzy_search" form:"fuzzy_search"`
 }
 
 func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, req DiscussionListReq) (*model.ListRes[*model.DiscussionListItem], error) {
@@ -470,7 +470,8 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 }
 
 type DiscussionSummaryReq struct {
-	UUIDs model.StringArray `json:"uuids" binding:"required"`
+	Keyword string            `json:"keyword" binding:"required"`
+	UUIDs   model.StringArray `json:"uuids" binding:"required"`
 }
 
 func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummaryReq) (*LLMStream, error) {
@@ -511,6 +512,7 @@ func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummar
 
 	return d.in.LLM.StreamChat(ctx, llm.DiscussionSummarySystemPrompt, userPrompt, map[string]any{
 		"CurrentDate": time.Now().Format("2006-01-02"),
+		"Question":    req.Keyword,
 		"Discussions": discs,
 	})
 }
