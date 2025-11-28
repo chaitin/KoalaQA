@@ -17,7 +17,6 @@ import Modal from '@/components/modal'
 import { TimeDisplayWithTag } from '@/components/TimeDisplay'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
 import { formatNumber } from '@/lib/utils'
-// import { generateCacheKey, clearCache } from '@/lib/api-cache'
 import CommonAvatar from '@/components/CommonAvatar'
 import { useForumStore } from '@/store'
 import dayjs from '@/lib/dayjs'
@@ -108,7 +107,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
       },
     })
   }
-
+  console.log(data.content)
   const handleToggleFeedback = () => {
     menuClose()
     Modal.confirm({

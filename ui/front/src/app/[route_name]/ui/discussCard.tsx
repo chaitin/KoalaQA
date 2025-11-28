@@ -67,11 +67,13 @@ const DiscussCard = ({
   keywords: _keywords,
   onNavigate,
   sx,
+  size = 'medium',
 }: {
   data: ModelDiscussionListItem
   keywords?: string
   showType?: boolean
   sx?: SxProps
+  size?: 'small' | 'medium'
   onNavigate: () => void
 }) => {
   const it = data
@@ -108,7 +110,12 @@ const DiscussCard = ({
         ...sx,
       }}
     >
-      <Stack direction='row' alignItems='center' spacing={1}>
+      <Stack 
+        direction='row' 
+        alignItems='center' 
+        spacing={1}
+        sx={{...(size === 'small' ? { lineHeight: '22px' } : {}), mb: 2}}
+      >
         <Link
           href={profileHref || '/'}
           key={it.id}
@@ -144,12 +151,17 @@ const DiscussCard = ({
                 sx={{
                   fontSize: '0.65rem',
                   fontWeight: 600,
+                  ...(size === 'small' && {
+                    width: 22,
+                    height: 22,
+                  }),
                 }}
               />
             </Box>
             <Box
               sx={{
-                fontSize: '14px',
+                fontSize: size === 'small' ? '14px' : '14px',
+                lineHeight: size === 'small' ? '22px' : 'normal',
                 textDecoration: 'none',
                 outline: 'none',
                 color: 'inherit',
@@ -172,17 +184,18 @@ const DiscussCard = ({
           sx={{
             display: 'flex',
             alignItems: 'center',
-            my: 2,
+            mb: 2,
             gap: 1,
           }}
         >
-          <DiscussionTypeChip type={it.type} variant='default' />
+          <DiscussionTypeChip size={size} type={it.type} variant='default' />
           <Ellipsis
             sx={{
               fontWeight: 700,
               color: '#111827',
               letterSpacing: '-0.01em',
-              fontSize: '18px',
+              fontSize: size === 'small' ? '16px' : '18px',
+              lineHeight: size === 'small' ? '24px' : 'normal',
               '&:hover': { color: '#000000' },
               flex: 1,
             }}
@@ -235,9 +248,9 @@ const DiscussCard = ({
                   // bgcolor: `${getStatusColor(postStatus)}15`,
                   bgcolor: getStatusColor(postStatus),
                   color: '#fff !important',
-                  height: 22,
+                  height: size === 'small' ? 20 : 22,
                   fontWeight: 600,
-                  fontSize: '12px',
+                  fontSize: size === 'small' ? '12px' : '12px',
                   // borderRadius: '3px',
                   border: `1px solid ${getStatusColor(postStatus)}30`,
                 }}
@@ -253,8 +266,8 @@ const DiscussCard = ({
                   sx={{
                     bgcolor: 'rgba(233, 236, 239, 1)',
                     color: 'rgba(33, 34, 45, 1)',
-                    height: 22,
-                    fontSize: '12px',
+                    height: size === 'small' ? 20 : 22,
+                    fontSize: size === 'small' ? '12px' : '12px',
                     borderRadius: '3px',
                     cursor: 'default',
                     pointerEvents: 'none',

@@ -100,7 +100,7 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
         sseClientRef.current = sseClient
 
         // 发送 POST 请求并订阅 SSE 流
-        const requestBody = JSON.stringify({ uuids })
+        const requestBody = JSON.stringify({ uuids, keyword: searchQuery })
         sseClient.subscribe(requestBody, (data) => {
           // 检查是否是CSRF错误消息
           if (data.data === 'csrf token mismatch' || data === 'csrf token mismatch') {
