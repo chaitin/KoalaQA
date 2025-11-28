@@ -50,6 +50,8 @@ func (g *Generator) Discuss(ctx context.Context, msgType Type, dissID uint, user
 		return NewCreateFeedback(*commMsg), nil
 	case TypeNewBlog:
 		return NewCreateBlog(*commMsg), nil
+	case TypeNewIssue:
+		return NewCreateIssue(*commMsg), nil
 	default:
 		return nil, fmt.Errorf("action %d not support", msgType)
 	}
