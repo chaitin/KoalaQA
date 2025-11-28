@@ -68,6 +68,14 @@ func (d *Discussion) Detail(ctx context.Context, uid uint, id uint) (*model.Disc
 	if err != nil {
 		return nil, err
 	}
+
+	if res.AssociateID > 0 {
+		err = d.Get(ctx, &res.Associate, QueryWithEqual("discussions.id", res.AssociateID))
+		if err != nil && !errors.Is(err, database.ErrRecordNotFound) {
+			return nil, err
+		}
+	}
+
 	if len(res.GroupIDs) > 0 {
 		err = d.db.WithContext(ctx).
 			Model(&model.GroupItem{}).
@@ -132,6 +140,15 @@ func (d *Discussion) List(ctx context.Context, res any, queryFuncs ...QueryOptFu
 		Find(res).Error
 }
 
+func (d *Discussion) Get(ctx context.Context, res any, queryFuncs ...QueryOptFunc) error {
+	o := getQueryOpt(queryFuncs...)
+	return d.base.model(ctx).
+		Joins("left join users on users.id = discussions.user_id").
+		Select("discussions.*, users.name as user_name, users.avatar as user_avatar").
+		Scopes(o.Scopes()...).
+		First(res).Error
+}
+
 func (d *Discussion) LikeDiscussion(ctx context.Context, discUUID string, uid uint) error {
 	return d.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		err := tx.Exec(`SELECT pg_advisory_xact_lock(?)`, uid).Error
@@ -192,7 +209,7 @@ func (d *Discussion) ResolveIssue(ctx context.Context, discUUID string, state mo
 		}
 
 		if state == model.DiscussionStateInProgress && disc.Resolved != model.DiscussionStateNone ||
-			state == model.DiscussionStateResolved && disc.Resolved != model.DiscussionStateNone {
+			state == model.DiscussionStateResolved && disc.Resolved != model.DiscussionStateInProgress {
 			return errors.New("invalid request state")
 		}
 
