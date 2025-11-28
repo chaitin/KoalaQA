@@ -22,22 +22,22 @@ type LLM struct {
 	dataset *repo.Dataset
 	logger  *glog.Logger
 	doc     *repo.KBDocument
-	disc    *repo.Discussion
-	comm    *repo.Comment
 	kit     *ModelKit
 	cfg     config.Config
+	disc    *repo.Discussion
+	comm    *repo.Comment
 }
 
-func newLLM(rag rag.Service, dataset *repo.Dataset, doc *repo.KBDocument, disc *repo.Discussion, comm *repo.Comment, kit *ModelKit, cfg config.Config) *LLM {
+func newLLM(rag rag.Service, dataset *repo.Dataset, doc *repo.KBDocument, kit *ModelKit, cfg config.Config, disc *repo.Discussion, comm *repo.Comment) *LLM {
 	return &LLM{
 		rag:     rag,
 		dataset: dataset,
 		logger:  glog.Module("llm"),
 		doc:     doc,
-		disc:    disc,
-		comm:    comm,
 		kit:     kit,
 		cfg:     cfg,
+		disc:    disc,
+		comm:    comm,
 	}
 }
 
@@ -49,6 +49,7 @@ type GenerateReq struct {
 	Question      string `json:"question"`
 	Prompt        string `json:"prompt"`
 	DefaultAnswer string `json:"default_answer"`
+	NewCommentID  uint   `json:"new_comment_id"`
 }
 
 func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (string, bool, error) {
@@ -65,6 +66,7 @@ func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (st
 	res, err := l.Chat(ctx, sysPrompt, req.Prompt, map[string]any{
 		"Question":           req.Question,
 		"DefaultAnswer":      defaultAnswer,
+		"NewCommentID":       req.NewCommentID,
 		"CurrentDate":        time.Now().Format("2006-01-02"),
 		"KnowledgeDocuments": knowledgeDocuments,
 		"AI_DEBUG":           l.cfg.RAG.DEBUG,
@@ -315,8 +317,8 @@ func (l *LLM) queryKnowledgeDocuments(ctx context.Context, query string) ([]llm.
 
 	// 使用RAG服务查询相关文档
 	records, err := l.rag.QueryRecords(ctx, rag.QueryRecordsReq{
-		DatasetIDs: []string{l.dataset.GetBackendID(ctx)},
-		Query:      query,
+		DatasetID: l.dataset.GetBackendID(ctx),
+		Query:     query,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("RAG query failed: %w", err)

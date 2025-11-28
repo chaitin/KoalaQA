@@ -6,6 +6,7 @@ var (
 
 type MsgCommentChange struct {
 	OP            OP     `json:"op"`
+	ForumID       uint   `json:"forum_id"`
 	DiscID        uint   `json:"disc_id"`
 	DiscUUID      string `json:"disc_uuid"`
 	CommID        uint   `json:"comm_id"`
