@@ -25,7 +25,7 @@ import LoadingBtn from '@/components/LoadingButton';
 
 const schema = z.object({
   title: z.string().min(1, '必填').default(''),
-  markdown: z.string().min(1, '必填').default(''),
+  markdown: z.string().default(''),
   id: z.number().optional(),
 });
 
@@ -47,11 +47,17 @@ const QaImport = (props: {
   const [showReview, setShowReview] = useState(false);
   const [originalText, setOriginalText] = useState('');
   const [isPolishing, setIsPolishing] = useState(false);
-  const { register, formState, handleSubmit, reset, control, watch, setValue } = useForm({
+  const { register, formState, handleSubmit, reset, control, watch } = useForm({
     resolver: zodResolver(schema),
   });
   const creat = () => {
+    setEditItem(null);
+    setOriginalText('');
     setShowCreate(true);
+    // 延迟重置，确保编辑器已经初始化
+    setTimeout(() => {
+      reset(schema.parse({}));
+    }, 50);
   };
   const handleCancel = () => {
     setShowCreate(false);
@@ -66,7 +72,8 @@ const QaImport = (props: {
     {
       manual: true,
       onSuccess: result => {
-        setValue('markdown', result);
+        // 直接设置编辑器内容
+        editorRef.current?.setContent(result);
         message.success('文本润色完成');
         setIsPolishing(false);
       },
@@ -90,7 +97,7 @@ const QaImport = (props: {
 
   const handleRevert = () => {
     if (originalText) {
-      setValue('markdown', originalText);
+      editorRef.current?.setContent(originalText);
       message.success('已恢复原文');
     }
   };
@@ -98,10 +105,13 @@ const QaImport = (props: {
   // 审核相关处理
   const handleReviewApprove = (qaItem: ModelKBDocumentDetail) => {
     // 通过审核，更新状态为应用中
-    putAdminKbKbIdQuestionQaId({kbId: kb_id, qaId: qaItem.id!}, {
-      title: qaItem.title || '',
-      markdown: qaItem.markdown,
-    }).then(() => {
+    putAdminKbKbIdQuestionQaId(
+      { kbId: kb_id, qaId: qaItem.id! },
+      {
+        title: qaItem.title || '',
+        markdown: qaItem.markdown,
+      }
+    ).then(() => {
       message.success('审核通过');
       setShowReview(false);
       refresh({});
@@ -110,7 +120,7 @@ const QaImport = (props: {
 
   const handleReviewReject = (qaItem: ModelKBDocumentDetail) => {
     // 拒绝审核，删除记录
-    deleteAdminKbKbIdQuestionQaId({kbId: kb_id, qaId: qaItem.id!}).then(() => {
+    deleteAdminKbKbIdQuestionQaId({ kbId: kb_id, qaId: qaItem.id! }).then(() => {
       message.success('已拒绝');
       setShowReview(false);
       refresh({});
@@ -120,12 +130,15 @@ const QaImport = (props: {
   const handleUpdateHistorical = (qaItem: ModelKBDocumentDetail) => {
     // 更新历史问答对
     if (qaItem.similar_id) {
-      putAdminKbKbIdQuestionQaId({kbId: kb_id, qaId: qaItem.similar_id}, {
-        title: qaItem.title || '',
-        markdown: qaItem.markdown as any,
-      }).then(() => {
+      putAdminKbKbIdQuestionQaId(
+        { kbId: kb_id, qaId: qaItem.similar_id },
+        {
+          title: qaItem.title || '',
+          markdown: qaItem.markdown as any,
+        }
+      ).then(() => {
         // 删除当前待审核记录
-        deleteAdminKbKbIdQuestionQaId({kbId: kb_id, qaId: qaItem.id!}).then(() => {
+        deleteAdminKbKbIdQuestionQaId({ kbId: kb_id, qaId: qaItem.id! }).then(() => {
           message.success('已更新历史问答');
           setShowReview(false);
           refresh({});
@@ -135,17 +148,28 @@ const QaImport = (props: {
   };
   const handleEdit = async (data: z.infer<typeof schema>) => {
     const content = editorRef.current?.getContent() || '';
-    await putAdminKbKbIdQuestionQaId({kbId: kb_id, qaId: data.id!}, {
-      title: data.title || '',
-      markdown: content,
-    });
+    if (!content.trim()) {
+      message.warning('请输入回答内容');
+      return;
+    }
+    await putAdminKbKbIdQuestionQaId(
+      { kbId: kb_id, qaId: data.id! },
+      {
+        title: data.title || '',
+        markdown: content,
+      }
+    );
     setEditItem(null);
     setShowCreate(false);
   };
 
   const handleOk = (data: z.infer<typeof schema>) => {
     const content = editorRef.current?.getContent() || '';
-    postAdminKbKbIdQuestion({kbId: kb_id}, { ...data, markdown: content }).then(() => {
+    if (!content.trim()) {
+      message.warning('请输入回答内容');
+      return;
+    }
+    postAdminKbKbIdQuestion({ kbId: kb_id }, { ...data, markdown: content }).then(() => {
       handleCancel();
       message.success('保存成功');
       refresh({});
@@ -221,11 +245,22 @@ const QaImport = (props: {
             name="markdown"
             control={control}
             render={({ field }) => (
-              <Box sx={{ position: 'relative', height: '250px' }}>
+              <Box
+                sx={{
+                  position: 'relative',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: 1,
+                  px: 2,
+                  '& .tiptap': {
+                    overflow: 'auto',
+                    height: '300px!important',
+                  },
+                }}
+              >
                 <EditorWrap
+                  key={editItem ? `edit-${editItem.id}` : 'create'}
                   ref={editorRef}
                   value={field.value ?? ''}
-                  onChange={value => field.onChange(value)}
                   placeholder="请输入回答内容..."
                   mode="advanced"
                 />

@@ -44,7 +44,7 @@ const SimilarContentItem = ({ data }: SimilarContentItemProps) => {
       className='similar-item'
     >
       <Stack direction='row' alignItems='center' spacing={1}>
-        <DiscussionTypeChip type={data.type} variant='default' sx={{ fontSize: '12px' }} />
+        <DiscussionTypeChip size='small' type={data.type} variant='default' sx={{ fontSize: '12px' }} />
         <Ellipsis
           sx={{
             fontWeight: 600,

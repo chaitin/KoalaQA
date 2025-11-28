@@ -6786,10 +6786,16 @@ const docTemplate = `{
         "model.RankTimeGroupItem": {
             "type": "object",
             "properties": {
+                "associate_id": {
+                    "type": "integer"
+                },
                 "extra": {
                     "type": "string"
                 },
                 "foreign_id": {
+                    "type": "integer"
+                },
+                "id": {
                     "type": "integer"
                 },
                 "score_id": {
@@ -7438,6 +7444,9 @@ const docTemplate = `{
                 "title"
             ],
             "properties": {
+                "ai_insight_id": {
+                    "type": "integer"
+                },
                 "desc": {
                     "type": "string"
                 },

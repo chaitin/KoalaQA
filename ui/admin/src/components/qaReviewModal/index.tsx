@@ -29,7 +29,7 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
   kbId,
 }) => {
   const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState('');
+  const [answer, setAnswer] = useState(''); // 仅用于初始化编辑器
   const [originalAnswer, setOriginalAnswer] = useState('');
   const [isPolishing, setIsPolishing] = useState(false);
   const [historicalQaDetail, setHistoricalQaDetail] = useState<any>(null);
@@ -41,7 +41,7 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
     {
       manual: true,
       onSuccess: result => {
-        setAnswer(result);
+        editorRef.current?.setContent(result);
         message.success('文本润色完成');
         setIsPolishing(false);
       },
@@ -65,7 +65,7 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
 
   const handleRevert = () => {
     if (originalAnswer) {
-      setAnswer(originalAnswer);
+      editorRef.current?.setContent(originalAnswer);
       message.success('已恢复原文');
     }
   };
@@ -115,7 +115,7 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
     <Modal
       open={open}
       onCancel={onClose}
-      width="90%"
+      width={hasHistoricalQa ? '90%': 860}
       title={'审核问答对'}
       maskClosable={false}
       footer={
@@ -172,9 +172,6 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
                 }}
               />
             </Stack>
-            <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '120px' }}>
-              回答
-            </Typography>
             <EditorContent content={historicalQaDetail?.markdown} sx={{ p: 2, mt: 1 }} />
             {/* <TextField
                   label="回答"
@@ -196,10 +193,8 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
             {hasHistoricalQa ? '最新版本' : '问答对'}
           </Typography>
           <Stack direction="row" alignItems="center" sx={{ mb: 2 }}>
-            <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '60px' }}>
-              问题
-            </Typography>
             <TextField
+              label="问题"
               value={question}
               onChange={e => setQuestion(e.target.value)}
               fullWidth
@@ -208,9 +203,6 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
               }}
             />
           </Stack>
-          <Typography variant="subtitle2" sx={{ color: 'text.secondary', width: '120px' }}>
-            回答
-          </Typography>
           <Box
             sx={{
               position: 'relative',
@@ -219,15 +211,16 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
               borderRadius: 1,
               overflow: 'hidden',
               mt: 1,
+              px: 2,
               '& .tiptap': {
                 height: '320px',
+                overflow: 'auto',
               },
             }}
           >
             <EditorWrap
               ref={editorRef}
               value={answer}
-              onChange={setAnswer}
               placeholder="请输入回答内容..."
               mode="advanced"
             />

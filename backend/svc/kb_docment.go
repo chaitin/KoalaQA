@@ -38,6 +38,7 @@ type BaseExportReq struct {
 }
 
 type KBDocument struct {
+	repoRank      *repo.Rank
 	repoDoc       *repo.KBDocument
 	cache         cache.Cache[topic.TaskMeta]
 	svcPublicAddr *PublicAddress
@@ -249,9 +250,10 @@ func (d *KBDocument) List(ctx context.Context, kbID uint, docType model.DocType,
 }
 
 type DocCreateQAReq struct {
-	Title    string `json:"title" binding:"required"`
-	Desc     string `json:"desc"`
-	Markdown string `json:"markdown" binding:"required"`
+	Title       string `json:"title" binding:"required"`
+	Desc        string `json:"desc"`
+	Markdown    string `json:"markdown" binding:"required"`
+	AIInsightID uint   `json:"ai_insight_id"`
 }
 
 func (d *KBDocument) CreateQA(ctx context.Context, kbID uint, req DocCreateQAReq) (uint, error) {
@@ -267,6 +269,16 @@ func (d *KBDocument) CreateQA(ctx context.Context, kbID uint, req DocCreateQAReq
 	if err != nil {
 		return 0, err
 	}
+
+	if req.AIInsightID > 0 {
+		err = d.repoRank.Update(ctx, map[string]any{
+			"associate_id": doc.ID,
+		}, repo.QueryWithEqual("id", req.AIInsightID), repo.QueryWithEqual("type", model.RankTypeAIInsight))
+		if err != nil {
+			d.logger.WithContext(ctx).WithErr(err).With("ai_insight_id", req.AIInsightID).Warn("update ai insight failed")
+		}
+	}
+
 	if err := d.pub.Publish(ctx, topic.TopicKBDocumentRag, topic.MsgKBDocument{
 		OP:    topic.OPInsert,
 		KBID:  kbID,
@@ -971,8 +983,10 @@ func (d *KBDocument) Review(ctx context.Context, req ReviewReq) error {
 	return nil
 }
 
-func newDocument(repoDoc *repo.KBDocument, c cache.Cache[topic.TaskMeta], doc anydoc.Anydoc, pub mq.Publisher, oc oss.Client, pa *PublicAddress) *KBDocument {
+func newDocument(repoDoc *repo.KBDocument, c cache.Cache[topic.TaskMeta], rank *repo.Rank,
+	doc anydoc.Anydoc, pub mq.Publisher, oc oss.Client, pa *PublicAddress) *KBDocument {
 	return &KBDocument{
+		repoRank:      rank,
 		repoDoc:       repoDoc,
 		cache:         c,
 		anydoc:        doc,

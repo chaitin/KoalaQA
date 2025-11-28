@@ -48,6 +48,7 @@ interface ForumFormData {
     qa_group_ids?: number[];
     feedback_group_ids?: number[];
     blog_group_ids?: number[];
+    issue_group_ids?: number[];
     blog_ids?: number[];
     blogs?: SvcForumBlog[];
   })[];
@@ -282,6 +283,33 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
               )}
             />
           </Grid>
+
+          {/* 分类选择 - issue */}
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Controller
+              control={control}
+              name={`blocks.${index}.issue_group_ids`}
+              render={({ field, fieldState: { error } }) => (
+                <Box>
+                  <CategorySelector
+                    value={field.value || []}
+                    onChange={groupIds => {
+                      field.onChange(groupIds);
+                      setIsEdit(true);
+                    }}
+                    placeholder="请选择Issue分类"
+                    label="Issue分类"
+                    error={!!error}
+                  />
+                  {error && (
+                    <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
+                      {error.message}
+                    </Typography>
+                  )}
+                </Box>
+              )}
+            />
+          </Grid>
         </Grid>
 
         {/* 公告内容选择 */}
@@ -363,12 +391,14 @@ const Forum: React.FC = () => {
       const qaGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeQA);
       const feedbackGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeFeedback);
       const blogGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeBlog);
+      const issueGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeIssue);
       
       return {
         ...block,
         qa_group_ids: qaGroups?.group_ids || [],
         feedback_group_ids: feedbackGroups?.group_ids || [],
         blog_group_ids: blogGroups?.group_ids || [],
+        issue_group_ids: issueGroups?.group_ids || [],
         blog_ids: block.blog_ids || [],
         blogs: block.blogs || [],
       };
@@ -454,6 +484,7 @@ const Forum: React.FC = () => {
       qa_group_ids: [],
       feedback_group_ids: [],
       blog_group_ids: [],
+      issue_group_ids: [],
       blog_ids: [],
       blogs: [],
     });
@@ -525,6 +556,12 @@ const Forum: React.FC = () => {
           groups.push({
             type: ModelDiscussionType.DiscussionTypeBlog,
             group_ids: block.blog_group_ids,
+          });
+        }
+        if (block.issue_group_ids && block.issue_group_ids.length > 0) {
+          groups.push({
+            type: ModelDiscussionType.DiscussionTypeIssue,
+            group_ids: block.issue_group_ids,
           });
         }
         
