@@ -24,9 +24,11 @@ type LLM struct {
 	doc     *repo.KBDocument
 	kit     *ModelKit
 	cfg     config.Config
+	disc    *repo.Discussion
+	comm    *repo.Comment
 }
 
-func newLLM(rag rag.Service, dataset *repo.Dataset, doc *repo.KBDocument, kit *ModelKit, cfg config.Config) *LLM {
+func newLLM(rag rag.Service, dataset *repo.Dataset, doc *repo.KBDocument, kit *ModelKit, cfg config.Config, disc *repo.Discussion, comm *repo.Comment) *LLM {
 	return &LLM{
 		rag:     rag,
 		dataset: dataset,
@@ -34,6 +36,8 @@ func newLLM(rag rag.Service, dataset *repo.Dataset, doc *repo.KBDocument, kit *M
 		doc:     doc,
 		kit:     kit,
 		cfg:     cfg,
+		disc:    disc,
+		comm:    comm,
 	}
 }
 
