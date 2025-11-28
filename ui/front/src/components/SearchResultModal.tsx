@@ -335,6 +335,7 @@ export const SearchResultModal = ({
                 <Stack spacing={1}>
                   {searchResults.map((item, index) => (
                     <DiscussCard
+                      size='small'
                       key={item.id || index}
                       sx={{ border: '1px solid ', borderColor: 'divider', borderRadius: 1 }}
                       data={item}
