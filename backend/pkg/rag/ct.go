@@ -85,7 +85,7 @@ func (c *CTRag) QueryRecords(ctx context.Context, req QueryRecordsReq) ([]*model
 	if req.SimilarityThreshold == 0 {
 		req.SimilarityThreshold = 0.3
 	}
-	res, err := c.client.Search.Retrieve(ctx, &raglite.SearchRequest{
+	res, err := c.client.Search.Retrieve(ctx, &raglite.RetrieveRequest{
 		DatasetID:           req.DatasetID,
 		Query:               req.Query,
 		TopK:                req.TopK,
