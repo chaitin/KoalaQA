@@ -1340,7 +1340,7 @@ func (d *Discussion) AssociateDiscussion(ctx context.Context, user model.UserInf
 		return err
 	}
 
-	if disc.Type != model.DiscussionTypeQA {
+	if disc.Type != model.DiscussionTypeQA || disc.Resolved != model.DiscussionStateNone {
 		return errors.New("invalid discussion")
 	}
 
