@@ -18,3 +18,5 @@ data/
 .DS_Store
 
 sync_prompt.py
+
+backend/deploy/
