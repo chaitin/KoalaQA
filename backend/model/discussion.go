@@ -109,6 +109,7 @@ type DiscussionDetail struct {
 	UserRole      UserRole            `json:"user_role"`
 	Groups        []DiscussionGroup   `json:"groups" gorm:"-"`
 	Comments      []DiscussionComment `json:"comments" gorm:"-"`
+	Associate     DiscussionListItem  `json:"associate"`
 	UserLike      bool                `json:"user_like"`
 }
 

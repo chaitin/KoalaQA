@@ -26,6 +26,7 @@ func (d *discussion) Route(h server.Handler) {
 	g.GET("", d.List)
 	g.POST("/summary", d.Summary)
 	g.GET("/:disc_id", d.Detail)
+	g.GET("/:disc_id/associate", d.ListAssociate)
 	g.GET("/:disc_id/similarity", d.ListSimilarity)
 }
 
@@ -52,6 +53,14 @@ func (d *discussion) List(ctx *context.Context) {
 	ctx.Success(res)
 }
 
+// ListAssociate
+// @Summary list associate discussion
+// @Description list associate discussion
+// @Tags discussion
+// @Produce json
+// @Param disc_id path string true "disc_id"
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]model.DiscussionListItem}}
+// @Router /discussion/{disc_id}/associate [get]
 func (d *discussion) ListAssociate(ctx *context.Context) {
 	res, err := d.disc.ListAssociateDiscussion(ctx, ctx.GetUser().UID, ctx.Param("disc_id"))
 	if err != nil {
