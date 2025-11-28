@@ -20,6 +20,7 @@ export interface EditorWrapRef {
   getHTML: () => string;
   getText: () => string;
   resetContent: () => void;
+  setContent: (content: string) => void;
   setReadonly: (readonly: boolean) => void;
 }
 
@@ -204,6 +205,17 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
             }
           } catch (e) {
             console.error('重置编辑器内容失败:', e);
+          }
+        },
+        setContent: (content: string) => {
+          try {
+            if (editorRef.editor) {
+              editorRef.editor.commands.setContent(content, {
+                contentType: 'markdown',
+              } as any);
+            }
+          } catch (e) {
+            console.error('设置编辑器内容失败:', e);
           }
         },
         setReadonly: (newReadonly: boolean) => {

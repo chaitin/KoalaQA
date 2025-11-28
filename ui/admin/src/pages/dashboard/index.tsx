@@ -805,6 +805,34 @@ const Dashboard: React.FC = () => {
     setCurrentInsightData(undefined);
   };
 
+  // 更新AI洞察数据中的 associate_id
+  const handleUpdateAssociateId = (questionId: number, associateId: number) => {
+    // 更新当前弹窗中的 insightData
+    setCurrentInsightData(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        questions: prev.questions.map(q => 
+          q.id === questionId ? { ...q, associate_id: associateId } : q
+        ),
+      };
+    });
+    
+    // 同时更新 data.aiInsights 中的对应数据
+    setData(prev => {
+      if (!prev.aiInsights) return prev;
+      return {
+        ...prev,
+        aiInsights: prev.aiInsights.map(group => ({
+          ...group,
+          items: group.items?.map((item: ModelRankTimeGroupItem) => 
+            item.id === questionId ? { ...item, associate_id: associateId } : item
+          ) || [],
+        })),
+      };
+    });
+  };
+
   // 获取时间相关的统计数据
   const fetchTimeRelatedData = async (selectedTimeRange: TimeRange) => {
     const begin = getTimeRangeBegin(selectedTimeRange);
@@ -1413,6 +1441,7 @@ const Dashboard: React.FC = () => {
             open={insightModalOpen}
             onClose={handleCloseInsightModal}
             insightData={currentInsightData}
+            onUpdateAssociateId={handleUpdateAssociateId}
           />
         </DialogContent>
       </Dialog>

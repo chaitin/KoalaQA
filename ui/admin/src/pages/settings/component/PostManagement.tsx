@@ -4,9 +4,9 @@ import { message } from '@ctzhian/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, FormControlLabel, Radio, RadioGroup, Stack, Typography } from '@mui/material';
 import { useRequest } from 'ahooks';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
-import EditorWrap from '@/components/editor';
+import EditorWrap, { EditorWrapRef } from '@/components/editor';
 import z from 'zod';
 
 const postManagementSchema = z.object({
@@ -40,7 +40,8 @@ const PostManagement = ({ onSaved }: PostManagementProps) => {
 
   // 弹窗状态
   const [isDefaultTextModalOpen, setIsDefaultTextModalOpen] = useState(false);
-  const [editorContent, setEditorContent] = useState('');
+  const [editorContent, setEditorContent] = useState(''); // 仅用于初始化编辑器
+  const editorRef = useRef<EditorWrapRef>(null);
 
   // 处理打开默认文本弹窗
   const handleOpenDefaultTextModal = () => {
@@ -51,18 +52,20 @@ const PostManagement = ({ onSaved }: PostManagementProps) => {
   // 处理保存默认文本
   const handleSaveDefaultText = async () => {
     try {
+      const content = editorRef.current?.getContent() || '';
       // 获取当前表单数据
       const currentFormData = {
         auto_close,
-        content_placeholder: editorContent,
+        content_placeholder: content,
       };
 
       // 直接调用API保存
       await putAdminSystemDiscussion(currentFormData);
 
       // 更新表单状态
-      setValue('content_placeholder', editorContent);
+      setValue('content_placeholder', content);
       reset(currentFormData);
+      setEditorContent(content);
 
       // 关闭弹窗
       setIsDefaultTextModalOpen(false);
@@ -232,8 +235,8 @@ const PostManagement = ({ onSaved }: PostManagementProps) => {
           }}>
             <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <EditorWrap
+                ref={editorRef}
                 value={editorContent}
-                onChange={(value: string) => setEditorContent(value)}
                 placeholder="在此输入问题的默认模板文本..."
               />
             </Box>
