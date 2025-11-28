@@ -426,8 +426,10 @@ export interface ModelRankTimeGroup {
 }
 
 export interface ModelRankTimeGroupItem {
+  associate_id?: number;
   extra?: string;
   foreign_id?: number;
+  id?: number;
   score_id?: string;
 }
 
@@ -631,6 +633,7 @@ export interface SvcDiscussionUpdateReq {
 }
 
 export interface SvcDocCreateQAReq {
+  ai_insight_id?: number;
   desc?: string;
   markdown: string;
   title: string;
@@ -1407,7 +1410,6 @@ export interface GetDiscussionParams {
 }
 
 export interface PostDiscussionSummaryParams {
-  keyword: string;
   uuids: string[];
 }
 
