@@ -49,11 +49,7 @@ func (m *initIssueGroup) Migrate(tx *gorm.DB) error {
 
 	forumGroups := model.ForumGroups{
 		Type:     model.DiscussionTypeIssue,
-		GroupIDs: make(model.Int64Array, len(groupItems)),
-	}
-
-	for i, item := range groupItems {
-		forumGroups.GroupIDs[i] = int64(item.ID)
+		GroupIDs: model.Int64Array{int64(group.ID)},
 	}
 
 	return tx.Model(&model.Forum{}).Where("true").
