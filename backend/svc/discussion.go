@@ -1378,9 +1378,9 @@ func (d *Discussion) AssociateDiscussion(ctx context.Context, user model.UserInf
 	err = d.in.DiscRepo.Update(ctx, map[string]any{
 		"resolved":     model.DiscussionStateClosed,
 		"resolved_at":  now,
-		"associate_id": req.IssueUUID,
+		"associate_id": issue.ID,
 		"updated_at":   now,
-	}, repo.QueryWithEqual("uuid", req.IssueUUID))
+	}, repo.QueryWithEqual("uuid", discUUID))
 	if err != nil {
 		return err
 	}
