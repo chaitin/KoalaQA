@@ -418,6 +418,11 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 		return &res, nil
 	}
 
+	if req.Resolved != nil && req.Type != nil && *req.Type == model.DiscussionTypeBlog {
+		res.Items = make([]*model.DiscussionListItem, 0)
+		return &res, nil
+	}
+
 	groupM := make(map[uint]model.Int64Array)
 	if len(req.GroupIDs) > 0 {
 		var groupItems []model.GroupItem
