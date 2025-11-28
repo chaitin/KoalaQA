@@ -1410,6 +1410,7 @@ export interface GetDiscussionParams {
 }
 
 export interface PostDiscussionSummaryParams {
+  keyword: string;
   uuids: string[];
 }
 
