@@ -13,6 +13,8 @@ const (
 	MsgNotifyTypeLikeDiscussion
 	MsgNotifyTypeUserReview
 	MsgNotifyTypeResolveByAdmin
+	MsgNotifyTypeCloseDiscussion
+	MsgNotifyTypeAssociateIssue
 )
 
 type MessageNotify struct {

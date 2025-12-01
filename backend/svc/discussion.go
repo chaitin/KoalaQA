@@ -1379,6 +1379,8 @@ func (d *Discussion) AssociateDiscussion(ctx context.Context, user model.UserInf
 		return errors.New("invalid issue")
 	}
 
+	disc.AssociateID = issue.ID
+
 	now := time.Now()
 	err = d.in.DiscRepo.Update(ctx, map[string]any{
 		"resolved":     model.DiscussionStateClosed,
@@ -1389,6 +1391,19 @@ func (d *Discussion) AssociateDiscussion(ctx context.Context, user model.UserInf
 	if err != nil {
 		return err
 	}
+
+	d.in.Pub.Publish(ctx, topic.TopicMessageNotify, topic.MsgMessageNotify{
+		DiscussHeader: disc.Header(),
+		Type:          model.MsgNotifyTypeCloseDiscussion,
+		FromID:        user.UID,
+		ToID:          disc.UserID,
+	})
+	d.in.Pub.Publish(ctx, topic.TopicMessageNotify, topic.MsgMessageNotify{
+		DiscussHeader: issue.Header(),
+		Type:          model.MsgNotifyTypeAssociateIssue,
+		FromID:        user.UID,
+		ToID:          disc.UserID,
+	})
 
 	return nil
 }

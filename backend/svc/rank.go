@@ -30,8 +30,12 @@ func (r *Rank) Contribute(ctx context.Context) (*model.ListRes[RankContributeIte
 	return &res, nil
 }
 
-func (r *Rank) UpdateContribute(ctx context.Context) error {
-	return r.repoRank.RefresContribute(ctx)
+type UpdateContributeReq struct {
+	Type model.RankType
+}
+
+func (r *Rank) UpdateContribute(ctx context.Context, req UpdateContributeReq) error {
+	return r.repoRank.RefresContribute(ctx, req.Type)
 }
 
 func (r *Rank) AIInsight(ctx context.Context) ([]model.RankTimeGroup, error) {
