@@ -1,20 +1,12 @@
 'use client'
-import { H1Icon, H2Icon, H3Icon, H4Icon, H5Icon, H6Icon, TocList } from '@ctzhian/tiptap'
+import { TocList } from '@ctzhian/tiptap'
 import { Ellipsis } from '@ctzhian/ui'
 import { Box, Stack, Typography } from '@mui/material'
+import { useMemo } from 'react'
 
 interface TocProps {
   headings: TocList
 }
-
-const HeadingIcon = [
-  <H1Icon sx={{ fontSize: 12 }} key='h1' />,
-  <H2Icon sx={{ fontSize: 12 }} key='h2' />,
-  <H3Icon sx={{ fontSize: 12 }} key='h3' />,
-  <H4Icon sx={{ fontSize: 12 }} key='h4' />,
-  <H5Icon sx={{ fontSize: 12 }} key='h5' />,
-  <H6Icon sx={{ fontSize: 12 }} key='h6' />,
-]
 
 const HeadingSx = [
   { fontSize: 14, fontWeight: 700, color: 'text.secondary' },
@@ -23,7 +15,21 @@ const HeadingSx = [
 ]
 
 const Toc = ({ headings }: TocProps) => {
-  const levels = Array.from(new Set(headings.map((it) => it.level).sort((a, b) => a - b))).slice(0, 3)
+  const renderHeadings = useMemo(() => {
+    // 合并计算 levels 和 renderHeadings，避免 levels 数组引用变化导致重复计算
+    const levels = Array.from(new Set(headings.map((it) => it.level).sort((a, b) => a - b))).slice(0, 3)
+    return headings
+      .filter((it) => levels.includes(it.level))
+      .map((i) => ({
+        ...i,
+        idx: levels.indexOf(i.level),
+      }))
+  }, [headings])
+  if (headings.length > 11)
+    console.log(
+      headings.map((i) => i.id),
+      '----',
+    )
   return (
     <>
       <Stack
@@ -48,44 +54,39 @@ const Toc = ({ headings }: TocProps) => {
           overflowY: 'auto',
         }}
       >
-        {headings
-          .filter((it) => levels.includes(it.level))
-          .map((it) => {
-            const idx = levels.indexOf(it.level)
-            return (
-              <Stack
-                key={it.id}
-                direction={'row'}
-                alignItems={'center'}
-                gap={1}
-                sx={{
-                  cursor: 'pointer',
-                  ':hover': {
-                    color: 'primary.main',
-                  },
-                  ml: idx * 2,
-                  ...HeadingSx[idx],
-                  color: it.isActive ? 'primary.main' : (HeadingSx[idx]?.color ?? 'inherit'),
-                }}
-                onClick={() => {
-                  const element = document.getElementById(it.id)
-                  if (element) {
-                    const offset = 100
-                    const elementPosition = element.getBoundingClientRect().top
-                    const offsetPosition = elementPosition + window.pageYOffset - offset
-                    window.scrollTo({
-                      top: offsetPosition,
-                      behavior: 'smooth',
-                    })
-                  }
-                }}
-              >
-                <Ellipsis arrow sx={{ flex: 1, width: 0 }}>
-                  {it.textContent}
-                </Ellipsis>
-              </Stack>
-            )
-          })}
+        {renderHeadings.map((it, index) => {
+          return (
+            <Stack
+              key={index}
+              direction={'row'}
+              alignItems={'center'}
+              gap={1}
+              sx={{
+                cursor: 'pointer',
+                ':hover': {
+                  color: 'primary.main',
+                },
+                ml: it.idx * 2,
+                ...HeadingSx[it.idx],
+                color: it.isActive ? 'primary.main' : (HeadingSx[it.idx]?.color ?? 'inherit'),
+              }}
+              onClick={() => {
+                const element = document.getElementById(it.id)
+                if (element) {
+                  // 直接使用 scrollIntoView，浏览器会自动处理滚动（包括在容器内的滚动）
+                  element.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start',
+                  })
+                }
+              }}
+            >
+              <Ellipsis arrow sx={{ flex: 1, width: 0 }}>
+                {it.textContent}
+              </Ellipsis>
+            </Stack>
+          )
+        })}
       </Stack>
     </>
   )

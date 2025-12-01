@@ -50,7 +50,7 @@ export default function AuthCallback() {
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        minHeight: '100vh',
+        minHeight: '100%',
         gap: 2,
       }}
     >

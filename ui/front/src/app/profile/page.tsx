@@ -38,7 +38,7 @@ export default async function ProfilePage() {
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          height: '100vh',
+          height: '100%',
           fontSize: 18,
           color: '#666',
         }}
@@ -51,7 +51,7 @@ export default async function ProfilePage() {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
+        minHeight: '100%',
       }}
     >
       <ProfileContent initialUser={user} />

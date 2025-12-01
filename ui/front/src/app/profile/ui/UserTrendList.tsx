@@ -60,13 +60,7 @@ const EmptyState = () => (
     }}
   >
     <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
-      <Image
-        src='/empty.png'
-        alt='暂无动态'
-        width={250}
-        height={137}
-        style={{ maxWidth: '100%', height: 'auto' }}
-      />
+      <Image src='/empty.png' alt='暂无动态' width={250} height={137} style={{ maxWidth: '100%', height: 'auto' }} />
     </Box>
     <Typography variant='h6' sx={{ mb: 1, fontWeight: 600 }}>
       暂无动态
@@ -169,7 +163,7 @@ export default function UserTrendList({ userId, ownerName }: UserTrendListProps)
       {
         threshold: 0.1,
         rootMargin: '100px',
-      }
+      },
     )
 
     const currentTarget = observerTarget.current
@@ -263,7 +257,7 @@ export default function UserTrendList({ userId, ownerName }: UserTrendListProps)
             alignItems: 'center',
           }}
         >
-          {(isLoadingMore || (loading && filteredTrends.length > 0)) && (
+          {((hasMore && isLoadingMore) || (loading && filteredTrends.length > 0)) && (
             <Stack direction='row' alignItems='center' spacing={1}>
               <CircularProgress size={20} thickness={4} />
               <Typography variant='body2' sx={{ color: '#6b7280' }}>

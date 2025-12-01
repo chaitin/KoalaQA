@@ -19,8 +19,8 @@ const DiscussionTypeChip: React.FC<DiscussionTypeChipProps> = ({
     switch (type) {
       case ModelDiscussionType.DiscussionTypeBlog:
         return '文章'
-      case ModelDiscussionType.DiscussionTypeFeedback:
-        return '反馈'
+      case ModelDiscussionType.DiscussionTypeIssue:
+        return 'Issue'
       case ModelDiscussionType.DiscussionTypeQA:
         return '问题'
       default:
@@ -31,13 +31,13 @@ const DiscussionTypeChip: React.FC<DiscussionTypeChipProps> = ({
   // 获取类型样式
   const getTypeStyle = (): SxProps<Theme> => {
     const isArticlePost = type === ModelDiscussionType.DiscussionTypeBlog
-    const isFeedbackPost = type === ModelDiscussionType.DiscussionTypeFeedback
+    const isIssuePost = type === ModelDiscussionType.DiscussionTypeIssue
 
     const baseStyle: SxProps<Theme> = {
-      bgcolor: isArticlePost ? 'rgba(255,119,68,0.1)' : isFeedbackPost ? '#eff6ff' : 'rgba(26,160,134,0.1)',
-      color: isArticlePost ? '#FF7744' : isFeedbackPost ? '#3b82f6' : '#1AA086',
+      bgcolor: isArticlePost ? 'rgba(255,119,68,0.1)' : isIssuePost ? 'rgba(0,99,151,0.1)' : 'rgba(26,160,134,0.1)',
+      color: isArticlePost ? '#FF7744' : isIssuePost ? '#006397' : '#1AA086',
       border: `1px solid ${
-        isArticlePost ? 'rgba(255,119,68,0.1)' : isFeedbackPost ? '#bfdbfe' : 'rgba(26, 160, 134, 0.10)'
+        isArticlePost ? 'rgba(255,119,68,0.1)' : isIssuePost ? '#D9DEE2;' : 'rgba(26, 160, 134, 0.10)'
       }`,
       flexShrink: 0,
     }

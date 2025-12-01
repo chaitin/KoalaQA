@@ -490,10 +490,10 @@ func (d *discussionAuth) Associate(ctx *context.Context) {
 // @Accept json
 // @Produce json
 // @Param disc_id path string true "disc_id"
-// @Success 200 {object} context.Response
+// @Success 200 {object} context.Response{data=string}
 // @Router /discussion/{disc_id}/requirement [post]
 func (d *discussionAuth) Requirement(ctx *context.Context) {
-	res, err := d.disc.DiscussionRequirement(ctx, ctx.GetUser(), ctx.Param("disc_uuid"))
+	res, err := d.disc.DiscussionRequirement(ctx, ctx.GetUser(), ctx.Param("disc_id"))
 	if err != nil {
 		ctx.InternalError(err, "get discussion requirement failed")
 		return

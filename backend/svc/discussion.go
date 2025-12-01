@@ -386,7 +386,7 @@ type DiscussionListReq struct {
 	Resolved      *model.DiscussionState `json:"resolved" form:"resolved"`
 	DiscussionIDs *model.Int64Array      `json:"discussion_ids" form:"discussion_ids"`
 	Stat          bool                   `json:"stat" form:"stat"`
-	FuzzySearch   bool                   `json:"fuzzy_search"`
+	FuzzySearch   bool                   `json:"fuzzy_search" form:"fuzzy_search"`
 }
 
 func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, req DiscussionListReq) (*model.ListRes[*model.DiscussionListItem], error) {
@@ -415,6 +415,11 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 		}
 		res.Items = discs
 		res.Total = int64(len(discs))
+		return &res, nil
+	}
+
+	if req.Resolved != nil && req.Type != nil && *req.Type == model.DiscussionTypeBlog {
+		res.Items = make([]*model.DiscussionListItem, 0)
 		return &res, nil
 	}
 
@@ -470,7 +475,8 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 }
 
 type DiscussionSummaryReq struct {
-	UUIDs model.StringArray `json:"uuids" binding:"required"`
+	Keyword string            `json:"keyword" binding:"required"`
+	UUIDs   model.StringArray `json:"uuids" binding:"required"`
 }
 
 func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummaryReq) (*LLMStream, error) {
@@ -511,6 +517,7 @@ func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummar
 
 	return d.in.LLM.StreamChat(ctx, llm.DiscussionSummarySystemPrompt, userPrompt, map[string]any{
 		"CurrentDate": time.Now().Format("2006-01-02"),
+		"Question":    req.Keyword,
 		"Discussions": discs,
 	})
 }
@@ -1340,7 +1347,7 @@ func (d *Discussion) AssociateDiscussion(ctx context.Context, user model.UserInf
 		return err
 	}
 
-	if disc.Type != model.DiscussionTypeQA {
+	if disc.Type != model.DiscussionTypeQA || disc.Resolved != model.DiscussionStateNone {
 		return errors.New("invalid discussion")
 	}
 
@@ -1376,9 +1383,9 @@ func (d *Discussion) AssociateDiscussion(ctx context.Context, user model.UserInf
 	err = d.in.DiscRepo.Update(ctx, map[string]any{
 		"resolved":     model.DiscussionStateClosed,
 		"resolved_at":  now,
-		"associate_id": req.IssueUUID,
+		"associate_id": issue.ID,
 		"updated_at":   now,
-	}, repo.QueryWithEqual("uuid", req.IssueUUID))
+	}, repo.QueryWithEqual("uuid", discUUID))
 	if err != nil {
 		return err
 	}
