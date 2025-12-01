@@ -337,6 +337,7 @@ body {
 }
 body{
   padding-top: 64px;
+  overflow: hidden;
 }
 
 /* WebKit (Chrome, Edge, Safari) */

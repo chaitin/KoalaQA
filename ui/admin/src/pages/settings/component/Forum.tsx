@@ -46,6 +46,7 @@ import type { ForumItem } from '@/store/slices/forum';
 interface ForumFormData {
   blocks: (ModelForumInfo & {
     qa_group_ids?: number[];
+    issue_group_ids?: number[];
     feedback_group_ids?: number[];
     blog_group_ids?: number[];
     issue_group_ids?: number[];
@@ -231,10 +232,10 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
           </Grid>
 
           {/* 分类选择 - 反馈 */}
-          {/* <Grid size={{ xs: 12, sm: 6 }}>
+          <Grid size={{ xs: 12, sm: 6 }}>
             <Controller
               control={control}
-              name={`blocks.${index}.feedback_group_ids`}
+              name={`blocks.${index}.issue_group_ids`}
               render={({ field, fieldState: { error } }) => (
                 <Box>
                   <CategorySelector
@@ -243,8 +244,8 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
                       field.onChange(groupIds);
                       setIsEdit(true);
                     }}
-                    placeholder="请选择反馈分类"
-                    label="反馈分类"
+                    placeholder="请选择 Issue 分类"
+                    label="Issue 分类"
                     error={!!error}
                   />
                   {error && (
@@ -255,7 +256,7 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
                 </Box>
               )}
             />
-          </Grid> */}
+          </Grid>
 
           {/* 分类选择 - 文章 */}
           <Grid size={{ xs: 12, sm: 6 }}>
@@ -390,12 +391,14 @@ const Forum: React.FC = () => {
       
       const qaGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeQA);
       const feedbackGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeFeedback);
+      const issueGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeIssue);
       const blogGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeBlog);
       const issueGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeIssue);
       
       return {
         ...block,
         qa_group_ids: qaGroups?.group_ids || [],
+        issue_group_ids: issueGroups?.group_ids || [],
         feedback_group_ids: feedbackGroups?.group_ids || [],
         blog_group_ids: blogGroups?.group_ids || [],
         issue_group_ids: issueGroups?.group_ids || [],
@@ -483,6 +486,7 @@ const Forum: React.FC = () => {
       index: blockFields.length + 1,
       qa_group_ids: [],
       feedback_group_ids: [],
+      issue_group_ids: [],
       blog_group_ids: [],
       issue_group_ids: [],
       blog_ids: [],
@@ -544,6 +548,12 @@ const Forum: React.FC = () => {
           groups.push({
             type: ModelDiscussionType.DiscussionTypeQA,
             group_ids: block.qa_group_ids,
+          });
+        }
+        if (block.issue_group_ids && block.issue_group_ids.length > 0) {
+          groups.push({
+            type: ModelDiscussionType.DiscussionTypeIssue,
+            group_ids: block.issue_group_ids,
           });
         }
         if (block.feedback_group_ids && block.feedback_group_ids.length > 0) {

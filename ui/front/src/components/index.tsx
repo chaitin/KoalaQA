@@ -15,4 +15,5 @@ export { default as GuestActivationProvider, useGuestActivation } from './GuestA
 export { AuthConfigProvider } from '@/contexts/AuthConfigContext';
 export { default as QaUnresolvedChip } from './QaUnresolvedChip';
 export { default as DiscussionTypeChip } from './DiscussionTypeChip';
+export { default as IssueStatusChip } from './IssueStatusChip';
 export { default as SimilarContentItem } from './SimilarContentItem';

@@ -209,6 +209,7 @@ export interface ModelDiscussionComment {
 }
 
 export interface ModelDiscussionDetail {
+  associate?: ModelDiscussionListItem;
   associate_id?: number;
   comment?: number;
   comments?: ModelDiscussionComment[];
@@ -1434,6 +1435,11 @@ export interface PutDiscussionDiscIdParams {
 }
 
 export interface DeleteDiscussionDiscIdParams {
+  /** disc_id */
+  discId: string;
+}
+
+export interface GetDiscussionDiscIdAssociateParams {
   /** disc_id */
   discId: string;
 }

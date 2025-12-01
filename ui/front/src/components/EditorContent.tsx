@@ -77,6 +77,9 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
     contentType: 'markdown',
     immediatelyRender: false,
     // 大纲更新回调：透传给父级，同时广播全局事件供兄弟侧栏使用
+    tableOfContentsOptions: {
+      scrollParent: () => document.getElementById('main-content'),
+    },
     onTocUpdate: !!onTocUpdate
       ? (toc: any) => {
           try {

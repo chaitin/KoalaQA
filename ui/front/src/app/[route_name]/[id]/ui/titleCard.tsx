@@ -3,24 +3,26 @@ import {
   deleteDiscussionDiscId,
   postDiscussionDiscIdComment,
   postDiscussionDiscIdLike,
-  postDiscussionDiscIdResolve,
+  postDiscussionDiscIdResolveIssue,
   postDiscussionDiscIdRevokeLike,
   putDiscussionDiscIdClose,
 } from '@/api'
 import { ModelDiscussionDetail, ModelDiscussionState, ModelDiscussionType, ModelUserRole } from '@/api/types'
-import { DiscussionTypeChip, QaUnresolvedChip } from '@/components'
+import { DiscussionTypeChip, IssueStatusChip, QaUnresolvedChip } from '@/components'
 import { AuthContext } from '@/components/authProvider'
+import CommonAvatar from '@/components/CommonAvatar'
+import ConvertToIssueModal from '@/components/ConvertToIssueModal'
 import { ReleaseModal } from '@/components/discussion'
 import { EditorWrapRef } from '@/components/editor'
 import EditorContent from '@/components/EditorContent'
 import Modal from '@/components/modal'
 import { TimeDisplayWithTag } from '@/components/TimeDisplay'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
-import { formatNumber } from '@/lib/utils'
-import CommonAvatar from '@/components/CommonAvatar'
-import { useForumStore } from '@/store'
 import dayjs from '@/lib/dayjs'
+import { formatNumber } from '@/lib/utils'
+import { useForumStore } from '@/store'
 import { Ellipsis, Icon } from '@ctzhian/ui'
+import CancelIcon from '@mui/icons-material/Cancel'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import { Box, Chip, Divider, IconButton, Menu, MenuItem, Paper, Stack, Typography } from '@mui/material'
@@ -61,6 +63,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const [menuVisible, { setFalse: menuClose, setTrue: menuOpen }] = useBoolean(false)
   const { user } = useContext(AuthContext)
   const [releaseVisible, { setFalse: releaseClose, setTrue: releaseOpen }] = useBoolean(false)
+  const [convertToIssueVisible, { setFalse: convertToIssueClose, setTrue: convertToIssueOpen }] = useBoolean(false)
   const router = useRouter()
   const forums = useForumStore((s) => s.forums)
   const { id, route_name }: { id: string; route_name?: string } = (useParams() as any) || { id: '' }
@@ -70,13 +73,6 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
     if (!route_name || !forums || forums.length === 0) return null
     return forums.find((f) => f.route_name === route_name) || null
   }, [route_name, forums])
-
-  // 根据 data.type 转换为 ReleaseModal 需要的 type
-  const modalType = useMemo(() => {
-    if (data.type === ModelDiscussionType.DiscussionTypeQA) return 'qa'
-    if (data.type === ModelDiscussionType.DiscussionTypeFeedback) return 'feedback'
-    return 'blog'
-  }, [data.type])
 
   // 安全地注入样式，避免水合失败
   useEffect(() => {
@@ -107,19 +103,35 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
       },
     })
   }
-  console.log(data.content)
-  const handleToggleFeedback = () => {
+
+  const handleMarkInProgress = () => {
     menuClose()
     Modal.confirm({
-      title: `确定${data.resolved === ModelDiscussionState.DiscussionStateResolved ? '开启' : '关闭'}反馈吗？`,
+      title: '确定标记为进行中吗？',
       content: '',
       onOk: async () => {
-        await postDiscussionDiscIdResolve(
+        await postDiscussionDiscIdResolveIssue(
           { discId: data.uuid + '' },
           {
-            resolve: data.resolved
-              ? ModelDiscussionState.DiscussionStateNone
-              : ModelDiscussionState.DiscussionStateResolved,
+            resolve: ModelDiscussionState.DiscussionStateInProgress,
+          },
+        ).then(() => {
+          router.refresh()
+        })
+      },
+    })
+  }
+
+  const handleMarkCompleted = () => {
+    menuClose()
+    Modal.confirm({
+      title: '确定标记为已完成吗？',
+      content: '',
+      onOk: async () => {
+        await postDiscussionDiscIdResolveIssue(
+          { discId: data.uuid + '' },
+          {
+            resolve: ModelDiscussionState.DiscussionStateResolved,
           },
         ).then(() => {
           router.refresh()
@@ -135,9 +147,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
       content: '关闭后的问题将不再支持回答、评论等操作',
       okButtonProps: { color: 'warning' },
       onOk: async () => {
-        await putDiscussionDiscIdClose(
-          { discId: data.uuid + '' },
-        ).then(() => {
+        await putDiscussionDiscIdClose({ discId: data.uuid + '' }).then(() => {
           router.refresh()
         })
       },
@@ -189,8 +199,8 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   }
 
   const isArticlePost = data.type === ModelDiscussionType.DiscussionTypeBlog
-  const isFeedbackPost = data.type === ModelDiscussionType.DiscussionTypeFeedback
   const isQAPost = data.type === ModelDiscussionType.DiscussionTypeQA
+  const isIssuePost = data.type === ModelDiscussionType.DiscussionTypeIssue
 
   const status = (() => {
     switch (data.resolved) {
@@ -210,6 +220,15 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
     return data.groups?.some((group) => group.name === tag) || false
   }
 
+  // 判断是否显示"转为 Issue 管理"按钮
+  const canConvertToIssue = useMemo(() => {
+    const isAdminOrOperator = [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
+      user.role || ModelUserRole.UserRoleUnknown,
+    )
+    const isUnresolvedQA = isQAPost && data.resolved === ModelDiscussionState.DiscussionStateNone
+    return isAdminOrOperator && isUnresolvedQA
+  }, [user.role, isQAPost, data.resolved])
+
   return (
     <>
       <ReleaseModal
@@ -219,10 +238,28 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         id={id}
         onClose={releaseClose}
         selectedTags={[]}
-        type={modalType}
+        type={
+          data.type === ModelDiscussionType.DiscussionTypeQA
+            ? 'qa'
+            : data.type === ModelDiscussionType.DiscussionTypeBlog
+              ? 'blog'
+              : data.type === ModelDiscussionType.DiscussionTypeIssue ||
+                  data.type === ModelDiscussionType.DiscussionTypeFeedback
+                ? 'issue'
+                : 'qa'
+        }
         forumInfo={forumInfo}
         onOk={() => {
           releaseClose()
+          router.refresh()
+        }}
+      />
+      <ConvertToIssueModal
+        open={convertToIssueVisible}
+        onClose={convertToIssueClose}
+        questionData={data}
+        forumInfo={forumInfo}
+        onSuccess={() => {
           router.refresh()
         }}
       />
@@ -235,14 +272,30 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           'aria-labelledby': 'basic-button',
         }}
       >
-        {data.type === ModelDiscussionType.DiscussionTypeFeedback &&
+        {isIssuePost &&
           [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
             user.role || ModelUserRole.UserRoleUnknown,
-          ) && <MenuItem onClick={handleToggleFeedback}>{data.resolved ? '开启反馈' : '关闭反馈'}</MenuItem>}
-        {data.type === ModelDiscussionType.DiscussionTypeQA &&
-          data.resolved === ModelDiscussionState.DiscussionStateNone && (
-            <MenuItem onClick={handleCloseQuestion}>关闭问题</MenuItem>
+          ) && (
+            <>
+              {data.resolved === ModelDiscussionState.DiscussionStateNone && (
+                <MenuItem onClick={handleMarkInProgress}>标记为进行中</MenuItem>
+              )}
+              {data.resolved === ModelDiscussionState.DiscussionStateInProgress && (
+                <MenuItem onClick={handleMarkCompleted}>标记为已完成</MenuItem>
+              )}
+            </>
           )}
+
+        {canConvertToIssue && (
+          <MenuItem
+            onClick={() => {
+              menuClose()
+              convertToIssueOpen()
+            }}
+          >
+            转为 Issue 管理
+          </MenuItem>
+        )}
         {!(data.type === ModelDiscussionType.DiscussionTypeQA && isClosed) && (
           <MenuItem
             onClick={() => {
@@ -258,17 +311,21 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
             编辑
             {data.type === ModelDiscussionType.DiscussionTypeQA
               ? '问题'
-              : data.type === ModelDiscussionType.DiscussionTypeFeedback
-                ? '反馈'
+              : data.type === ModelDiscussionType.DiscussionTypeIssue
+                ? 'Issue'
                 : '文章'}
           </MenuItem>
         )}
+        {data.type === ModelDiscussionType.DiscussionTypeQA &&
+          data.resolved === ModelDiscussionState.DiscussionStateNone && (
+            <MenuItem onClick={handleCloseQuestion}>关闭问题</MenuItem>
+          )}
         <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
           删除
           {data.type === ModelDiscussionType.DiscussionTypeQA
             ? '问题'
-            : data.type === ModelDiscussionType.DiscussionTypeFeedback
-              ? '反馈'
+            : data.type === ModelDiscussionType.DiscussionTypeIssue
+              ? 'Issue'
               : '文章'}
         </MenuItem>
       </Menu>
@@ -303,8 +360,8 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           </Box>
           {/* 右侧：点赞数和更多选项 */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
-            {/* 文章类型显示点赞数 - 已关闭帖子不显示 */}
-            {isArticlePost && !isClosed && (
+            {/* 文章类型和 Issue 类型显示点赞数 - 已关闭帖子不显示 */}
+            {(isArticlePost || isIssuePost) && !isClosed && (
               <Box
                 onClick={handleLike}
                 sx={{
@@ -352,16 +409,24 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         </Box>
 
         {/* 第二行：标签和作者信息 */}
-        <Stack direction='row' flexWrap='wrap' sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 2 }} gap={2}>
+        <Stack
+          direction='row'
+          flexWrap='wrap'
+          sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 2 }}
+          gap={2}
+        >
           {/* 左侧：所有标签（分组标签、状态标签、普通标签） */}
           <Stack direction='row' flexWrap='wrap' sx={{ gap: 1, alignItems: 'center' }}>
-            {(status === 'answered' || status === 'closed') && !isArticlePost && (
+            {/* Issue 类型使用 IssueStatusChip 显示所有状态 */}
+            {isIssuePost && <IssueStatusChip resolved={data.resolved} size='medium' />}
+            {/* 非 Issue 类型且非文章类型，显示已解决/已关闭状态 */}
+            {!isIssuePost && (status === 'answered' || status === 'closed') && !isArticlePost && (
               <Chip
                 icon={
                   <CheckCircleOutlineIcon
                     sx={{
-                      width: 15,
-                      height: 15,
+                      width: 16,
+                      height: 16,
                       color: '#fff !important',
                     }}
                   />
@@ -372,6 +437,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                   bgcolor: getStatusColor(status),
                   color: '#fff !important',
                   height: 22,
+                  lineHeight: '22px',
                   fontWeight: 600,
                   fontSize: '12px',
                   border: `1px solid ${getStatusColor(status)}30`,
@@ -393,6 +459,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                     bgcolor: 'rgba(233, 236, 239, 1)',
                     color: 'rgba(33, 34, 45, 1)',
                     height: 22,
+                    lineHeight: '22px',
                     fontWeight: 400,
                     fontSize: '12px',
                     borderRadius: '3px',

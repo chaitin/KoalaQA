@@ -55,7 +55,7 @@ const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; 
     return (
       <Box
         sx={{
-          minHeight: '100vh',
+          minHeight: 'calc(100vh - 64px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -79,7 +79,7 @@ const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; 
     return (
       <Box
         sx={{
-          minHeight: '100vh',
+          minHeight: 'calc(100vh - 64px)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

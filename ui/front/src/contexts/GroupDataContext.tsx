@@ -27,7 +27,7 @@ interface GroupDataContextType {
    * 根据 forumInfo 和 type 过滤分组数据
    * @param rawGroups 原始分组数据
    * @param forumInfo 论坛信息（可选）
-   * @param type 类型：'qa' | 'feedback' | 'blog'
+   * @param type 类型：'qa' | 'blog' | 'issue'
    * @returns 过滤后的分组数据
    */
   filterGroupsByForumAndType: (
@@ -38,7 +38,7 @@ interface GroupDataContextType {
       flat: ModelGroupItemInfo[]
     },
     forumInfo?: ModelForumInfo | null,
-    type?: 'qa' | 'feedback' | 'blog'
+    type?: 'qa' | 'blog' | 'issue'
   ) => {
     origin: (ModelGroupWithItem & {
       items?: ModelGroupItemInfo[]
@@ -50,7 +50,7 @@ interface GroupDataContextType {
    * 获取过滤后的分组数据（结合 processGroupsData 和 filterGroupsByForumAndType）
    * @param groupsData SSR传入的分组数据（可选）
    * @param forumInfo 论坛信息（可选）
-   * @param type 类型：'qa' | 'feedback' | 'blog'
+   * @param type 类型：'qa' | 'blog' | 'issue'
    * @returns 处理并过滤后的分组数据
    */
   getFilteredGroups: (
@@ -60,7 +60,7 @@ interface GroupDataContextType {
       })[]
     },
     forumInfo?: ModelForumInfo | null,
-    type?: 'qa' | 'feedback' | 'blog'
+    type?: 'qa' | 'blog' | 'issue'
   ) => {
     origin: (ModelGroupWithItem & {
       items?: ModelGroupItemInfo[]
@@ -119,7 +119,7 @@ export const GroupDataProvider: React.FC<GroupDataProviderProps> = ({ children }
         flat: ModelGroupItemInfo[]
       },
       forumInfo?: ModelForumInfo | null,
-      type?: 'qa' | 'feedback' | 'blog'
+      type?: 'qa' | 'blog' | 'issue'
     ) => {
       // 获取当前类型对应的 group_ids
       let forumGroupIds: number[] = []
@@ -164,7 +164,7 @@ export const GroupDataProvider: React.FC<GroupDataProviderProps> = ({ children }
         })[]
       },
       forumInfo?: ModelForumInfo | null,
-      type?: 'qa' | 'feedback' | 'blog'
+      type?: 'qa' | 'blog' | 'issue'
     ) => {
       const rawGroups = processGroupsData(groupsData)
       return filterGroupsByForumAndType(rawGroups, forumInfo, type)

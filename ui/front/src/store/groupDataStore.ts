@@ -23,7 +23,7 @@ interface GroupDataState {
   filterGroupsByForumAndType: (
     rawGroups: GroupsData,
     forumInfo?: ModelForumInfo | null,
-    type?: 'qa' | 'feedback' | 'blog'
+    type?: 'qa' | 'blog'
   ) => GroupsData
 
   // 获取过滤后的分组数据
@@ -35,7 +35,7 @@ interface GroupDataState {
     },
     contextGroups?: GroupsData,
     forumInfo?: ModelForumInfo | null,
-    type?: 'qa' | 'feedback' | 'blog'
+    type?: 'qa' | 'blog'
   ) => GroupsData
 }
 
@@ -67,7 +67,7 @@ export const useGroupDataStore = create<GroupDataState>((set, get) => {
     return contextGroups
   }
 
-  const filterGroupsByForumAndTypeImpl = (rawGroups: GroupsData, forumInfo?: ModelForumInfo | null, type?: 'qa' | 'feedback' | 'blog'): GroupsData => {
+  const filterGroupsByForumAndTypeImpl = (rawGroups: GroupsData, forumInfo?: ModelForumInfo | null, type?: 'qa' | 'blog'): GroupsData => {
     // 获取当前类型对应的 group_ids
     let forumGroupIds: number[] = []
     if (forumInfo?.groups) {

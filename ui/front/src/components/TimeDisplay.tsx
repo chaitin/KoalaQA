@@ -11,7 +11,7 @@ interface TimeDisplayProps {
 
 /**
  * 格式化时间显示
- * 超过7天显示"几月几日"，7天内显示相对时间
+ * 超过7天显示"几月几日"（如果不是今年则显示年份），7天内显示相对时间
  */
 const formatTimeDisplay = (timestamp: number): string => {
   const now = dayjs()
@@ -20,6 +20,10 @@ const formatTimeDisplay = (timestamp: number): string => {
   
   // 超过7天显示"几月几日"
   if (diffDays > 7) {
+    // 如果不是今年，则显示年份
+    if (targetTime.year() !== now.year()) {
+      return targetTime.format('YYYY年M月D日')
+    }
     return targetTime.format('M月D日')
   }
   

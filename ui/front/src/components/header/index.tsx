@@ -4,7 +4,6 @@ import { ModelSystemBrand } from '@/api'
 import { ModelForumInfo as ModelForum, ModelUserRole } from '@/api/types'
 import { AuthContext } from '@/components/authProvider'
 import { useForumStore, useQuickReplyStore } from '@/store'
-import { useAuthConfig } from '@/hooks/useAuthConfig'
 import { useForumId } from '@/hooks/useForumId'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
@@ -17,7 +16,6 @@ import {
   Drawer,
   InputAdornment,
   IconButton,
-  Link,
   OutlinedInput,
   Stack,
   Toolbar,
@@ -239,18 +237,6 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
     }
   }, [handleCloseSearchModal, route_name, forums, router])
 
-  const handleFeedback = useCallback(() => {
-    handleCloseSearchModal()
-    if (route_name) {
-      router.push(`/${route_name}?type=feedback`)
-    } else if (forums.length > 0) {
-      const firstForum = forums[0]
-      const routePath = firstForum.route_name
-        ? `/${firstForum.route_name}?type=feedback`
-        : `/${firstForum.id}?type=feedback`
-      router.push(routePath)
-    }
-  }, [handleCloseSearchModal, route_name, forums, router])
 
   const handleArticle = useCallback(() => {
     handleCloseSearchModal()
@@ -259,6 +245,17 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
     } else if (forums.length > 0) {
       const firstForum = forums[0]
       const routePath = firstForum.route_name ? `/${firstForum.route_name}/edit` : `/${firstForum.id}/edit`
+      router.push(routePath)
+    }
+  }, [handleCloseSearchModal, route_name, forums, router])
+
+  const handleIssue = useCallback(() => {
+    handleCloseSearchModal()
+    if (route_name) {
+      router.push(`/${route_name}?type=issue`)
+    } else if (forums.length > 0) {
+      const firstForum = forums[0]
+      const routePath = firstForum.route_name ? `/${firstForum.route_name}?type=issue` : `/${firstForum.id}?type=issue`
       router.push(routePath)
     }
   }, [handleCloseSearchModal, route_name, forums, router])
@@ -585,7 +582,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
         onClose={handleCloseSearchModal}
         initialQuery={searchInputValue}
         onAsk={handleAsk}
-        onFeedback={handleFeedback}
+        onIssue={handleIssue}
         onArticle={handleArticle}
       />
     </>

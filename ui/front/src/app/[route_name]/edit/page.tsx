@@ -42,7 +42,7 @@ export default function EditPage() {
   // 根据 data.type 转换为 ReleaseModal 需要的 type
   const modalType = useMemo(() => {
     if (data.type === ModelDiscussionType.DiscussionTypeQA) return 'qa'
-    if (data.type === ModelDiscussionType.DiscussionTypeFeedback) return 'feedback'
+    if (data.type === ModelDiscussionType.DiscussionTypeIssue) return 'issue'
     return 'blog'
   }, [data.type])
 
@@ -166,8 +166,8 @@ export default function EditPage() {
           pb: 3,
           pr: 3,
           position: 'sticky',
-          top: 63,
-          height: 'calc(100vh - 73px)',
+          top: 24,
+          height: 'calc(100vh - 64px)',
         }}
       >
         <Stack spacing={3}>

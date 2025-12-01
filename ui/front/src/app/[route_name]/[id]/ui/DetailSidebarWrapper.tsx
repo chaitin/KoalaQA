@@ -3,8 +3,10 @@ import { Box, Stack } from '@mui/material'
 import { useRef } from 'react'
 import OutlineSidebar from './OutlineSidebar'
 import RelatedContent from './RelatedContent'
+import AssociatedIssue from './AssociatedIssue'
+import AssociatedQuestions from './AssociatedQuestions'
 import BrandAttribution from '@/components/BrandAttribution'
-import { ModelDiscussionDetail } from '@/api/types'
+import { ModelDiscussionDetail, ModelDiscussionType } from '@/api/types'
 
 interface DetailSidebarWrapperProps {
   isArticle: boolean
@@ -14,6 +16,8 @@ interface DetailSidebarWrapperProps {
 
 const DetailSidebarWrapper = ({ isArticle, discussion, discId }: DetailSidebarWrapperProps) => {
   const sidebarRef = useRef<HTMLDivElement>(null)
+  const isIssuePost = discussion.type === ModelDiscussionType.DiscussionTypeIssue
+  const isQAPost = discussion.type === ModelDiscussionType.DiscussionTypeQA
 
   return (
     <Box
@@ -33,7 +37,12 @@ const DetailSidebarWrapper = ({ isArticle, discussion, discId }: DetailSidebarWr
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <Stack spacing={3} sx={{ flex: 1 }}>
           {isArticle && <OutlineSidebar discussion={discussion} />}
-          <RelatedContent discId={discId} />
+          {/* 问题帖显示关联的 Issue */}
+          {isQAPost && discussion.associate && (
+            <AssociatedIssue associate={discussion.associate} />
+          )}
+          {/* Issue 帖显示关联的问题列表 */}
+          {isIssuePost ? <AssociatedQuestions discId={discId} /> : <RelatedContent discId={discId} />}
         </Stack>
         {/* 品牌声明 */}
         <BrandAttribution inSidebar={true} sidebarRef={sidebarRef as React.RefObject<HTMLElement>} />

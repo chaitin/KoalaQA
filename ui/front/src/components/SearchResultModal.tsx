@@ -30,6 +30,7 @@ interface SearchResultModalProps {
   onAsk?: () => void
   onFeedback?: () => void
   onArticle?: () => void
+  onIssue?: () => void
 }
 
 export const SearchResultModal = ({
@@ -39,6 +40,7 @@ export const SearchResultModal = ({
   onAsk,
   onFeedback,
   onArticle,
+  onIssue,
 }: SearchResultModalProps) => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
@@ -304,10 +306,14 @@ export const SearchResultModal = ({
                         label: '👉发帖提问',
                         onClick: onAsk,
                       },
-                      // {
-                      //   label: '👉提交反馈',
-                      //   onClick: onFeedback,
-                      // },
+                      ...(onIssue
+                        ? [
+                            {
+                              label: '👉提交Issue',
+                              onClick: onIssue,
+                            },
+                          ]
+                        : []),
                       {
                         label: '👉发布文章',
                         onClick: onArticle,

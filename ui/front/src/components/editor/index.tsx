@@ -97,10 +97,14 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
       // SSR 环境需显式关闭立即渲染以避免水合不匹配
       immediatelyRender: false,
       onUpload: handleUpload,
+      tableOfContentsOptions: {
+        scrollParent: () => document.getElementById('main-content'),
+      },
       placeholder,
       content: value || '',
-      onTocUpdate: (toc: any) => {
+      onTocUpdate: (toc) => {
         const enabled = !!onTocUpdate
+        console.log(toc)
         if (!enabled) return
         try {
           if (typeof onTocUpdate === 'function') {

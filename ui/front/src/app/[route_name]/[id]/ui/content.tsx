@@ -377,7 +377,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
             }}
           >
             共<span style={{ color: 'rgba(33, 34, 45, 1)', margin: '0 4px' }}>{sortedComments.length}</span>条
-            {isArticlePost ? '评论' : '回答'}
+            {isQAPost ? '回答' : '评论'}
           </Typography>
 
           {sortedComments.map((answer) => {
@@ -787,9 +787,9 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                   <Link
                                     href={replyProfileHref}
                                     style={{
-                                      fontWeight: 600,
+                                      fontWeight: 500,
                                       color: 'inherit',
-                                      fontSize: '0.8125rem',
+                                      fontSize: '14px',
                                       textDecoration: 'none',
                                     }}
                                     tabIndex={-1}
@@ -1029,13 +1029,13 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
           <Paper
             elevation={0}
             sx={{
-              position: isArticlePost ? 'unset' : 'sticky',
+              position: !isQAPost ? 'unset' : 'sticky',
               bottom: 0,
               pb: 3,
               width: '100%',
               maxWidth: { lg: '756px' },
               mx: 'auto',
-              mt: isArticlePost ? 0 : 'auto',
+              mt: !isQAPost ? 0 : 'auto',
               zIndex: 9,
               borderRadius: 0,
               bgcolor: '#ffffff',
@@ -1053,7 +1053,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
             }}
           >
             <Box sx={{ p: 1, border: '1px solid rgba(33, 34, 45, 1)', borderRadius: '12px' }}>
-              {isArticlePost && !showAnswerEditor ? (
+              {!isQAPost && !showAnswerEditor ? (
                 <OutlinedInput
                   fullWidth
                   size='small'
@@ -1091,7 +1091,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                       key={answerEditorKey}
                       ref={answerEditorRef}
                       value=''
-                      placeholder={isArticlePost ? '添加评论...' : '回答问题...'}
+                      placeholder={isQAPost ? '回答问题...' : '添加评论...'}
                       onChange={handleAnswerEditorChange}
                       readonly={isClosedPost}
                     />
@@ -1099,7 +1099,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
 
                   <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, alignItems: 'center' }}>
                     {/* 快捷回复选择器（管理员/运营可见） */}
-                    {isAdmin && !isArticlePost && (
+                    {isAdmin && isQAPost && (
                       <Box sx={{ mr: 'auto', display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                         {quickReplies.map((qr) => (
                           <Button
@@ -1168,7 +1168,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                             '&:active': { transform: 'translateY(0) scale(0.98)' },
                           }}
                         >
-                          {isArticlePost ? '提交评论' : '提交回答'}
+                          {isQAPost ? '提交回答' : '提交评论'}
                         </Button>
                       </>
                     )}

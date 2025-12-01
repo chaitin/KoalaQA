@@ -7,6 +7,7 @@ import {
   ModelGroupItemInfo,
   ModelGroupWithItem,
   ModelListRes,
+  ModelUserRole,
   SvcRankContributeItem,
 } from '@/api/types'
 import { AuthContext } from '@/components/authProvider'
@@ -46,8 +47,9 @@ import { useBoolean, useInViewport } from 'ahooks'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useContext, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import DiscussCard from './discussCard'
+import { isAdminRole } from '@/lib/utils'
 
 export type Status = 'hot' | 'new' | 'publish'
 
@@ -83,6 +85,7 @@ const Article = ({
   const router = useRouterWithRouteName()
   const nextRouter = useRouter()
   const { checkAuth } = useAuthCheck()
+  const { user } = useContext(AuthContext)
   const { getFilteredGroups } = useGroupData()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
@@ -91,7 +94,7 @@ const Article = ({
 
   // 根据当前类型从 forumInfo.groups 中筛选对应的分类
   // 当type为undefined时，不传type参数，显示所有类型的分类
-  const currentType = type ? (type as 'qa' | 'feedback' | 'blog') : undefined
+  const currentType = type ? (type as 'qa' | 'blog') : undefined
 
   // 使用 useMemo 缓存过滤后的分组数据
   const groups = useMemo(() => {
@@ -127,7 +130,7 @@ const Article = ({
 
   // 搜索弹窗相关状态
   const [searchModalOpen, { setTrue: openSearchModal, setFalse: closeSearchModal }] = useBoolean(false)
-  const [selectedModalType, setSelectedModalType] = useState<'qa' | 'feedback' | 'blog'>('qa')
+  const [selectedModalType, setSelectedModalType] = useState<'qa' | 'blog' | 'issue'>('qa')
   const [lastPathname, setLastPathname] = useState('')
 
   const hookForumId = useForumId()
@@ -195,7 +198,7 @@ const Article = ({
       page: new_page,
       size: 10,
       // 只有当type存在时才传递type参数，否则不传，让后端返回所有类型
-      ...(type ? { type: type as 'qa' | 'feedback' | 'blog' } : {}),
+      ...(type ? { type: type as 'qa' | 'blog' } : {}),
       forum_id: parseInt(forumId || '0', 10),
     }
 
@@ -255,7 +258,7 @@ const Article = ({
         page: 1,
         size: 10,
         // 只有当type存在时才传递type参数，否则不传，让后端返回所有类型
-        ...(type ? { type: type as 'qa' | 'feedback' | 'blog' } : {}),
+        ...(type ? { type: type as 'qa' | 'blog' } : {}),
       }
 
       // 设置 filter
@@ -381,10 +384,6 @@ const Article = ({
     checkAuth(() => releaseModalOpen())
   }
 
-  const handleFeedback = () => {
-    setSelectedModalType('feedback')
-    checkAuth(() => releaseModalOpen())
-  }
 
   const handleArticle = () => {
     setSelectedModalType('blog')
@@ -392,6 +391,11 @@ const Article = ({
       const routeName = (params?.route_name as string) || ''
       nextRouter.push(`/${routeName}/edit`)
     })
+  }
+
+  const handleIssue = () => {
+    setSelectedModalType('issue')
+    checkAuth(() => releaseModalOpen())
   }
 
   // 处理发布类型菜单打开
@@ -409,12 +413,14 @@ const Article = ({
   }
 
   // 处理选择发布类型
-  const handlePublishTypeSelect = (publishType: 'qa' | 'blog') => {
+  const handlePublishTypeSelect = (publishType: 'qa' | 'blog' | 'issue') => {
     handlePublishMenuClose()
     if (publishType === 'qa') {
       handleAsk()
     } else if (publishType === 'blog') {
       handleArticle()
+    } else if (publishType === 'issue') {
+      handleIssue()
     }
   }
 
@@ -572,12 +578,14 @@ const Article = ({
                   vertical: 'top',
                   horizontal: 'left',
                 }}
-                PaperProps={{
-                  sx: {
-                    mt: 0.5,
-                    minWidth: 150,
-                    borderRadius: '6px',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                slotProps={{
+                  paper: {
+                    sx: {
+                      mt: 0.5,
+                      minWidth: 150,
+                      borderRadius: '6px',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                    },
                   },
                 }}
               >
@@ -605,6 +613,22 @@ const Article = ({
                 >
                   文章
                 </MenuItem>
+                {isAdminRole(
+                  user?.role || ModelUserRole.UserRoleUnknown,
+                ) && (
+                  <MenuItem
+                    onClick={() => handlePublishTypeSelect('issue')}
+                    sx={{
+                      fontSize: '14px',
+                      py: 1,
+                      '&:hover': {
+                        bgcolor: 'rgba(0,99,151,0.06)',
+                      },
+                    }}
+                  >
+                    Issue
+                  </MenuItem>
+                )}
               </Menu>
             </Box>
           </Box>
@@ -713,12 +737,14 @@ const Article = ({
                   vertical: 'top',
                   horizontal: 'left',
                 }}
-                PaperProps={{
-                  sx: {
-                    mt: 0.5,
-                    minWidth: 150,
-                    borderRadius: '6px',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                slotProps={{
+                  paper: {
+                    sx: {
+                      mt: 0.5,
+                      minWidth: 150,
+                      borderRadius: '6px',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                    },
                   },
                 }}
               >
@@ -768,6 +794,7 @@ const Article = ({
                 data={it}
                 keywords={searchRef.current}
                 onNavigate={releaseModalClose}
+                filter={status as 'hot' | 'new' | 'publish'}
                 sx={{
                   borderBottom: index < (articleData.items?.length || 0) - 1 ? '1px solid #f3f4f6' : 'none',
                 }}
@@ -1109,7 +1136,7 @@ const Article = ({
         }}
         initialQuery={search}
         onAsk={handleAsk}
-        onFeedback={handleFeedback}
+        onIssue={handleIssue}
         onArticle={handleArticle}
       />
     </>
