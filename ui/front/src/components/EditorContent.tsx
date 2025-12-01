@@ -14,6 +14,13 @@ const Editor = dynamic(
   }
 )
 
+// 扩展 useTiptap 选项类型，添加 tableOfContentsOptions
+interface ExtendedTiptapOptions {
+  tableOfContentsOptions?: {
+    scrollParent?: () => HTMLElement | null
+  }
+}
+
 // 扩展props接口，添加truncate选项
 export interface MarkDownProps {
   title?: string
@@ -97,7 +104,7 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
           } catch {}
         }
       : undefined,
-  })
+  } as Parameters<typeof useTiptap>[0] & ExtendedTiptapOptions)
 
   useEffect(() => {
     if (editorRef.editor && isMounted) {

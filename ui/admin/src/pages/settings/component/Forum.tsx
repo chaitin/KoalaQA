@@ -49,7 +49,6 @@ interface ForumFormData {
     issue_group_ids?: number[];
     feedback_group_ids?: number[];
     blog_group_ids?: number[];
-    issue_group_ids?: number[];
     blog_ids?: number[];
     blogs?: SvcForumBlog[];
   })[];
@@ -393,7 +392,6 @@ const Forum: React.FC = () => {
       const feedbackGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeFeedback);
       const issueGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeIssue);
       const blogGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeBlog);
-      const issueGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeIssue);
       
       return {
         ...block,
@@ -401,7 +399,6 @@ const Forum: React.FC = () => {
         issue_group_ids: issueGroups?.group_ids || [],
         feedback_group_ids: feedbackGroups?.group_ids || [],
         blog_group_ids: blogGroups?.group_ids || [],
-        issue_group_ids: issueGroups?.group_ids || [],
         blog_ids: block.blog_ids || [],
         blogs: block.blogs || [],
       };
@@ -488,7 +485,6 @@ const Forum: React.FC = () => {
       feedback_group_ids: [],
       issue_group_ids: [],
       blog_group_ids: [],
-      issue_group_ids: [],
       blog_ids: [],
       blogs: [],
     });

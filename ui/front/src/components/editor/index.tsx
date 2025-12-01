@@ -5,6 +5,13 @@ import { Editor, EditorThemeProvider, EditorToolbar, useTiptap } from '@ctzhian/
 import { Box } from '@mui/material'
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 
+// 扩展 useTiptap 选项类型，添加 tableOfContentsOptions
+interface ExtendedTiptapOptions {
+  tableOfContentsOptions?: {
+    scrollParent?: () => HTMLElement | null
+  }
+}
+
 interface WrapProps {
   aiWriting?: boolean
   value?: string
@@ -102,7 +109,7 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
       },
       placeholder,
       content: value || '',
-      onTocUpdate: (toc) => {
+      onTocUpdate: (toc: any) => {
         const enabled = !!onTocUpdate
         console.log(toc)
         if (!enabled) return
@@ -147,7 +154,7 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
 
         return url
       },
-    })
+    } as Parameters<typeof useTiptap>[0] & ExtendedTiptapOptions)
     useEffect(() => {
       if (!editorRef?.editor) return
       const timer = setTimeout(() => {
