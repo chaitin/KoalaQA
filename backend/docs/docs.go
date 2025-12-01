@@ -3967,6 +3967,67 @@ const docTemplate = `{
                 }
             }
         },
+        "/discussion/follow": {
+            "get": {
+                "description": "list follow discussions",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "list follow discussions",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/model.Discussion"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/discussion/summary": {
             "post": {
                 "description": "discussions summary",
@@ -4615,6 +4676,50 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/discussion/{disc_id}/follow": {
+            "post": {
+                "description": "follow discussion",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "follow discussion",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "disc_id",
+                        "name": "disc_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -6049,6 +6154,86 @@ const docTemplate = `{
                 "CommentLikeStateDislike"
             ]
         },
+        "model.Discussion": {
+            "type": "object",
+            "properties": {
+                "associate_id": {
+                    "type": "integer"
+                },
+                "comment": {
+                    "type": "integer"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "dislike": {
+                    "type": "integer"
+                },
+                "forum_id": {
+                    "type": "integer"
+                },
+                "group_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "hot": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "like": {
+                    "type": "integer"
+                },
+                "members": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "rag_id": {
+                    "type": "string"
+                },
+                "resolved": {
+                    "$ref": "#/definitions/model.DiscussionState"
+                },
+                "resolved_at": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.DiscussionType"
+                },
+                "updated_at": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "uuid": {
+                    "type": "string"
+                },
+                "view": {
+                    "type": "integer"
+                }
+            }
+        },
         "model.DiscussionComment": {
             "type": "object",
             "properties": {
@@ -6821,7 +7006,9 @@ const docTemplate = `{
                 8,
                 9,
                 10,
-                11
+                11,
+                12,
+                13
             ],
             "x-enum-varnames": [
                 "MsgNotifyTypeUnknown",
@@ -6835,7 +7022,9 @@ const docTemplate = `{
                 "MsgNotifyTypeUserReview",
                 "MsgNotifyTypeResolveByAdmin",
                 "MsgNotifyTypeCloseDiscussion",
-                "MsgNotifyTypeAssociateIssue"
+                "MsgNotifyTypeAssociateIssue",
+                "MsgNotifyTypeIssueInProgress",
+                "MsgNotifyTypeIssueResolved"
             ]
         },
         "model.PlatformOpt": {

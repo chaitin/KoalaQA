@@ -19,35 +19,38 @@ import (
 type messageNotifyIn struct {
 	fx.In
 
-	Bot     *svc.Bot
-	Disc    *svc.Discussion
-	User    *repo.User
-	Mn      *repo.MessageNotify
-	Comment *repo.Comment
-	Pub     mq.Publisher `name:"memory_mq"`
-	NatsPub mq.Publisher
+	Bot        *svc.Bot
+	Disc       *svc.Discussion
+	DiscFollow *repo.DiscussionFollow
+	User       *repo.User
+	Mn         *repo.MessageNotify
+	Comment    *repo.Comment
+	Pub        mq.Publisher `name:"memory_mq"`
+	NatsPub    mq.Publisher
 }
 type messageNotify struct {
-	logger  *glog.Logger
-	bot     *svc.Bot
-	disc    *svc.Discussion
-	user    *repo.User
-	comment *repo.Comment
-	mn      *repo.MessageNotify
-	pub     mq.Publisher
-	natsPub mq.Publisher
+	logger     *glog.Logger
+	bot        *svc.Bot
+	disc       *svc.Discussion
+	discFollow *repo.DiscussionFollow
+	user       *repo.User
+	comment    *repo.Comment
+	mn         *repo.MessageNotify
+	pub        mq.Publisher
+	natsPub    mq.Publisher
 }
 
 func newMessageNotify(in messageNotifyIn) *messageNotify {
 	return &messageNotify{
-		logger:  glog.Module("sub", "message_notify"),
-		bot:     in.Bot,
-		user:    in.User,
-		comment: in.Comment,
-		mn:      in.Mn,
-		disc:    in.Disc,
-		pub:     in.Pub,
-		natsPub: in.NatsPub,
+		logger:     glog.Module("sub", "message_notify"),
+		bot:        in.Bot,
+		user:       in.User,
+		comment:    in.Comment,
+		mn:         in.Mn,
+		disc:       in.Disc,
+		pub:        in.Pub,
+		natsPub:    in.NatsPub,
+		discFollow: in.DiscFollow,
 	}
 }
 
@@ -81,7 +84,7 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 		return nil
 	}
 
-	if data.FromID == data.ToID || data.ToID == 0 ||
+	if data.FromID == data.ToID || data.FromID == 0 ||
 		(data.ToID == botUserID && !slices.Contains([]model.MsgNotifyType{model.MsgNotifyTypeDislikeComment, model.MsgNotifyTypeBotUnknown}, data.Type)) {
 		logger.With("msg", data).With("bot_user_id", botUserID).Debug("ignore message notify")
 		return nil
@@ -95,10 +98,12 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 	}
 
 	var toUser model.User
-	err = mn.user.GetByID(ctx, &toUser, data.ToID)
-	if err != nil {
-		logger.WithErr(err).Warn("get to user failed")
-		return nil
+	if data.ToID > 0 {
+		err = mn.user.GetByID(ctx, &toUser, data.ToID)
+		if err != nil {
+			logger.WithErr(err).Warn("get to user failed")
+			return nil
+		}
 	}
 
 	var (
@@ -174,6 +179,28 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 			})
 
 			topics[user.ID] = topic.NewMessageNotifyUser(user.ID)
+		}
+	} else if data.ToID == 0 {
+		switch data.Type {
+		case model.MsgNotifyTypeIssueInProgress, model.MsgNotifyTypeIssueResolved:
+			userIDs, err := mn.discFollow.ListUserID(ctx, data.DiscussID)
+			if err != nil {
+				logger.WithErr(err).Warn("get disc follow user id failed")
+				return nil
+			}
+
+			for _, userID := range userIDs {
+				dbMessageNotify = append(dbMessageNotify, model.MessageNotify{
+					UserID:              userID,
+					MessageNotifyCommon: common,
+					Read:                false,
+				})
+
+				topics[userID] = topic.NewMessageNotifyUser(userID)
+			}
+		default:
+			logger.Warn("invalid msg type, ignore")
+			return nil
 		}
 	} else {
 		switch data.Type {
