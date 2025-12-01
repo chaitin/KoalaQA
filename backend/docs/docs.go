@@ -3979,6 +3979,12 @@ const docTemplate = `{
                 "summary": "discussions summary",
                 "parameters": [
                     {
+                        "type": "string",
+                        "name": "keyword",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
                         "type": "array",
                         "items": {
                             "type": "string"
@@ -4167,6 +4173,60 @@ const docTemplate = `{
             }
         },
         "/discussion/{disc_id}/associate": {
+            "get": {
+                "description": "list associate discussion",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "list associate discussion",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "disc_id",
+                        "name": "disc_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/model.DiscussionListItem"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "associate discussion",
                 "consumes": [
@@ -4628,7 +4688,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/context.Response"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -6012,6 +6084,9 @@ const docTemplate = `{
         "model.DiscussionDetail": {
             "type": "object",
             "properties": {
+                "associate": {
+                    "$ref": "#/definitions/model.DiscussionListItem"
+                },
                 "associate_id": {
                     "type": "integer"
                 },

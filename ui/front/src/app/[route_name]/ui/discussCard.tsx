@@ -1,7 +1,7 @@
 'use client'
 
 import { ModelDiscussionListItem, ModelDiscussionState, ModelDiscussionType } from '@/api/types'
-import { DiscussionTypeChip, MarkDown, QaUnresolvedChip } from '@/components'
+import { DiscussionTypeChip, IssueStatusChip, MarkDown, QaUnresolvedChip } from '@/components'
 import CommonAvatar from '@/components/CommonAvatar'
 import { CommonContext } from '@/components/commonProvider'
 import { TimeDisplay } from '@/components/TimeDisplay'
@@ -32,7 +32,10 @@ const getStatusLabel = (status: string) => {
 }
 
 const shouldShowStatus = (data: ModelDiscussionListItem) => {
-  // 只显示已解决/已关闭的状态，不显示"待解决"
+  // Issue 类型显示所有状态，其他类型只显示已解决/已关闭的状态
+  if (data.type === ModelDiscussionType.DiscussionTypeIssue) {
+    return true
+  }
   return (
     data.resolved === ModelDiscussionState.DiscussionStateResolved ||
     data.resolved === ModelDiscussionState.DiscussionStateClosed
@@ -49,17 +52,9 @@ const getPostStatus = (data: ModelDiscussionListItem): string => {
     return 'closed'
   }
   if (data.resolved === ModelDiscussionState.DiscussionStateResolved) {
-    return data.type === ModelDiscussionType.DiscussionTypeFeedback ? 'closed' : 'answered'
+    return 'answered'
   }
   return 'open'
-}
-
-// 获取帖子类型
-const getPostType = (type?: ModelDiscussionType): 'question' | 'feedback' | 'article' => {
-  if (type === ModelDiscussionType.DiscussionTypeQA) return 'question'
-  if (type === ModelDiscussionType.DiscussionTypeFeedback) return 'feedback'
-  if (type === ModelDiscussionType.DiscussionTypeBlog) return 'article'
-  return 'question'
 }
 
 const DiscussCard = ({
@@ -68,6 +63,7 @@ const DiscussCard = ({
   onNavigate,
   sx,
   size = 'medium',
+  filter,
 }: {
   data: ModelDiscussionListItem
   keywords?: string
@@ -75,6 +71,7 @@ const DiscussCard = ({
   sx?: SxProps
   size?: 'small' | 'medium'
   onNavigate: () => void
+  filter?: 'hot' | 'new' | 'publish'
 }) => {
   const it = data
   const { groups } = useContext(CommonContext)
@@ -94,8 +91,10 @@ const DiscussCard = ({
 
   // 准备数据
   const postStatus = getPostStatus(it)
-  const postType = getPostType(it.type)
   const allTags = groupNames
+  const isIssuePost = it.type === ModelDiscussionType.DiscussionTypeIssue
+  const isQAPost = it.type === ModelDiscussionType.DiscussionTypeQA
+  const isArticlePost = it.type === ModelDiscussionType.DiscussionTypeBlog
 
   return (
     <Box
@@ -110,11 +109,11 @@ const DiscussCard = ({
         ...sx,
       }}
     >
-      <Stack 
-        direction='row' 
-        alignItems='center' 
+      <Stack
+        direction='row'
+        alignItems='center'
         spacing={1}
-        sx={{...(size === 'small' ? { lineHeight: '22px' } : {}), mb: 2}}
+        sx={{ ...(size === 'small' ? { lineHeight: '22px' } : {}), mb: 2 }}
       >
         <Link
           href={profileHref || '/'}
@@ -175,8 +174,12 @@ const DiscussCard = ({
             </Box>
           </Box>
         </Link>
-        <Box sx={{ fontWeight: 400, whiteSpace: 'nowrap',fontSize: '14px' }}>
-          · <TimeDisplay style={{ color: 'rgba(33,34,45, 0.7)' }} timestamp={it.updated_at!} />
+        <Box sx={{ fontWeight: 400, whiteSpace: 'nowrap', fontSize: '14px' }}>
+          ·{' '}
+          <TimeDisplay
+            style={{ color: 'rgba(33, 34, 45, 0.30)' }}
+            timestamp={filter === 'publish' ? it.created_at || it.updated_at! : it.updated_at!}
+          />
         </Box>
       </Stack>
       <Link href={`/${params?.route_name as string}/${it.uuid}`} key={it.id} onClick={onNavigate}>
@@ -229,7 +232,10 @@ const DiscussCard = ({
               data.type === ModelDiscussionType.DiscussionTypeQA && (
                 <QaUnresolvedChip type={data.type} resolved={data.resolved} />
               )}
-            {shouldShowStatus(it) && (
+            {/* Issue 类型使用 IssueStatusChip 显示所有状态 */}
+            {isIssuePost && shouldShowStatus(it) && <IssueStatusChip resolved={it.resolved} size={size} />}
+            {/* 非 Issue 类型显示已解决/已关闭状态 */}
+            {!isIssuePost && shouldShowStatus(it) && (
               <Chip
                 icon={
                   postStatus === 'answered' || postStatus === 'closed' ? (
@@ -268,6 +274,7 @@ const DiscussCard = ({
                     color: 'rgba(33, 34, 45, 1)',
                     height: size === 'small' ? 20 : 22,
                     fontSize: size === 'small' ? '12px' : '12px',
+                    lineHeight: '22px',
                     borderRadius: '3px',
                     cursor: 'default',
                     pointerEvents: 'none',
@@ -278,7 +285,7 @@ const DiscussCard = ({
           </Box>
 
           <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'center' }}>
-            {postType === 'question' && (
+            {isQAPost && (
               <Box
                 sx={{
                   display: 'flex',
@@ -296,23 +303,7 @@ const DiscussCard = ({
                 </Typography>
               </Box>
             )}
-            {postType === 'feedback' && (
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  background: 'rgba(0,99,151,0.06)',
-                  color: 'primary.main',
-                }}
-              >
-                <Icon type='icon-wendapinglun' sx={{ fontSize: 12 }} />
-                <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
-                  {(it.like || 0) - (it.dislike || 0)}
-                </Typography>
-              </Box>
-            )}
-            {postType === 'article' && (
+            {(isArticlePost || isIssuePost) && (
               <Box
                 sx={{
                   display: 'flex',
@@ -343,6 +334,7 @@ export default memo(DiscussCard, (prevProps, nextProps) => {
   return (
     prevProps.data.id === nextProps.data.id &&
     prevProps.data.updated_at === nextProps.data.updated_at &&
+    prevProps.data.created_at === nextProps.data.created_at &&
     prevProps.data.like === nextProps.data.like &&
     prevProps.data.dislike === nextProps.data.dislike &&
     prevProps.data.comment === nextProps.data.comment &&
@@ -350,6 +342,7 @@ export default memo(DiscussCard, (prevProps, nextProps) => {
     prevProps.data.group_ids === nextProps.data.group_ids &&
     prevProps.data.tags === nextProps.data.tags &&
     prevProps.showType === nextProps.showType &&
-    prevProps.keywords === nextProps.keywords
+    prevProps.keywords === nextProps.keywords &&
+    prevProps.filter === nextProps.filter
   )
 })

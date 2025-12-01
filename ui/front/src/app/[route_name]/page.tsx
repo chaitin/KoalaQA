@@ -37,7 +37,7 @@ async function fetchForumData(route_name: string, searchParams: any) {
       page: parseInt(page, 10),
       size: 10,
       keyword: search,
-      type: type as 'qa' | 'feedback' | 'blog' | undefined,
+      type: type as 'qa' | 'blog' | undefined,
       forum_id: forumId,
       group_ids: topics
     }

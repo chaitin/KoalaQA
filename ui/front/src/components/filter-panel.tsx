@@ -1,7 +1,6 @@
 'use client'
 
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
-import { Article as ArticleIcon, QuestionAnswer as QuestionAnswerIcon } from '@mui/icons-material'
 import {
   Box,
   Checkbox,
@@ -19,27 +18,16 @@ import {
   Select,
   Typography,
 } from '@mui/material'
-import { useParams, usePathname, useSearchParams } from 'next/navigation'
-import { useContext, useMemo, useRef, useState } from 'react'
-import { CommonContext } from './commonProvider'
 import Image from 'next/image'
+import { useParams, usePathname, useSearchParams } from 'next/navigation'
+import { useContext, useMemo } from 'react'
+import { CommonContext } from './commonProvider'
+import Icon from './icon'
 
 const postTypes = [
   { id: 'qa', name: '问题', icon: <Image width={20} height={20} src='/qa.svg' alt='问题' /> },
+  { id: 'issue', name: 'Issue', icon: <Icon type='icon-issue' sx={{ fontSize: 20 }} /> },
   { id: 'blog', name: '文章', icon: <Image width={20} height={20} src='/blog.svg' alt='文章' /> },
-]
-
-const popularTags = [
-  { id: 1, name: '配置', count: 145 },
-  { id: 2, name: 'API', count: 132 },
-  { id: 3, name: '性能优化', count: 98 },
-  { id: 4, name: 'UI/UX', count: 87 },
-  { id: 5, name: '多语言', count: 76 },
-  { id: 6, name: '数据导出', count: 65 },
-  { id: 7, name: '安全', count: 58 },
-  { id: 8, name: '集成', count: 52 },
-  { id: 9, name: '文档', count: 47 },
-  { id: 10, name: '部署', count: 43 },
 ]
 
 export default function FilterPanel() {
@@ -74,7 +62,7 @@ export default function FilterPanel() {
       .filter((id) => !isNaN(id))
   }, [searchParams])
 
-  // 将真实的 groups 数据转换为 categoryGroups 格式
+  // 将真实的 groups 数据转换为 categoryGroups 格式，始终显示全部分类
   const categoryGroups = useMemo(() => {
     return groups.origin.map((group) => ({
       id: String(group.id || ''),
@@ -222,7 +210,7 @@ export default function FilterPanel() {
           {postTypes.map((type) => {
             // 在详情页时不高亮任何类型
             // 在列表页时，只有当urlType存在且等于type.id时才选中
-            const isSelected = isDetailPage ? false : (urlType !== null && urlType === type.id)
+            const isSelected = isDetailPage ? false : urlType !== null && urlType === type.id
             return (
               <ListItem key={type.id} disablePadding>
                 <ListItemButton
@@ -311,11 +299,11 @@ export default function FilterPanel() {
                   const firstId = selectedIds[0]
                   const firstOption = group.options.find((option) => option.id === firstId)
                   const firstLabel = firstOption?.name ?? ''
-                  
+
                   if (selectedCount === 1) {
                     return <Chip size='small' label={firstLabel} sx={{ maxWidth: '100%', fontSize: '0.75rem' }} />
                   }
-                  
+
                   return (
                     <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
                       <Chip size='small' label={firstLabel} sx={{ fontSize: '0.75rem' }} />

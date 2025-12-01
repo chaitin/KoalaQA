@@ -76,7 +76,7 @@ interface ReleaseModalProps {
   onClose: () => void
   onOk: () => void
   initialTitle?: string
-  type?: 'qa' | 'feedback' | 'blog'
+  type?: 'qa' | 'blog' | 'issue'
   initialContent?: string
   forumInfo?: any // ModelForumInfo
   showContentEditor?: boolean
@@ -152,7 +152,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // 根据当前类型从 forumInfo.groups 中筛选对应的分类
-  const currentType = type as 'qa' | 'feedback' | 'blog'
+  const currentType = type as 'qa' | 'blog' | 'issue'
 
   // 使用 useMemo 缓存过滤后的分组数据
   const groups = useMemo(() => {
@@ -235,7 +235,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
         content: initialContent || '',
         group_ids: defaultGroupIds,
       })
-    } else if (status === 'create') {
+    } else if (status === 'create' && type === 'qa') {
       // 当打开创建模态框时，使用默认内容或content_placeholder
       reset({
         content: systemConfig?.content_placeholder || initialContent || '',
@@ -407,7 +407,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
   return (
     <Modal
       title={`${
-        status === 'create' ? (type === 'feedback' ? '提交反馈' : type === 'blog' ? '发布文章' : '发帖提问') : '编辑'
+        status === 'create' ? (type === 'issue' ? '提交 Issue' : type === 'blog' ? '发布文章' : '发帖提问') : '编辑'
       }`}
       open={open}
       onCancel={onClose}
@@ -451,7 +451,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
               {...register('title')}
               required
               variant='outlined'
-              label={type === 'feedback' ? '反馈标题' : type === 'blog' ? '文章标题' : '你遇到了什么问题？'}
+              label={type === 'issue' ? 'Issue 标题' : type === 'blog' ? '文章标题' : '你遇到了什么问题？'}
               fullWidth
               slotProps={{
                 inputLabel: {
@@ -570,6 +570,8 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                     sx={{
                       px: 1,
                       height: '100%',
+                      minHeight: '150px',
+                      maxHeight: '350px',
                       display: 'flex',
                       flexDirection: 'column',
                       overflow: 'hidden',

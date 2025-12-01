@@ -120,3 +120,14 @@ func NewCreateBlog(body Common) Message {
 		Common: body,
 	}
 }
+
+func NewCreateIssue(body Common) Message {
+	return &discussMsg{
+		Header: Header{
+			MsgType:       TypeNewIssue,
+			MsgTitle:      "你有新的 Issue",
+			HeadingPrefix: "issue",
+		},
+		Common: body,
+	}
+}

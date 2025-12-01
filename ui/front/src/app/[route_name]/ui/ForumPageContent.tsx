@@ -44,7 +44,7 @@ const ForumPageContent = ({ route_name, searchParams, initialData }: ForumPageCo
   // 如果找不到对应的论坛，返回 404
   if (!forumId) {
     return (
-      <Stack gap={3} sx={{ minHeight: '100vh', alignItems: 'center', justifyContent: 'center' }}>
+      <Stack gap={3} sx={{ minHeight: '100%', alignItems: 'center', justifyContent: 'center' }}>
         <h1>论坛不存在</h1>
         <p>请检查 URL 是否正确</p>
         <Link href='/' style={{ textDecoration: 'none' }}>
@@ -56,7 +56,7 @@ const ForumPageContent = ({ route_name, searchParams, initialData }: ForumPageCo
 
   return (
     <GroupsInitializer groupsData={groups}>
-      <Stack gap={3} sx={{ minHeight: '100vh' }}>
+      <Stack gap={3} sx={{ minHeight: '100%' }}>
         <Suspense>
           <ArticleCard
             data={discussions}
