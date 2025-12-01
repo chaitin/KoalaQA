@@ -17,10 +17,10 @@ type Rank struct {
 	repoBot *Bot
 }
 
-func (r *Rank) ListContribute(ctx context.Context, res any) error {
+func (r *Rank) ListContribute(ctx context.Context, res any, rankType model.RankType) error {
 	return r.model(ctx).Select("users.id AS id, ranks.score, users.name, users.avatar").
 		Joins("LEFT JOIN users ON users.id::text = ranks.score_id").
-		Where("type = ?", model.RankTypeContribute).
+		Where("type = ?", rankType).
 		Order("score DESC").
 		Limit(5).Find(res).Error
 }

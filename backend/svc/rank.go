@@ -20,9 +20,13 @@ type RankContributeItem struct {
 	Score  float64 `json:"score"`
 }
 
-func (r *Rank) Contribute(ctx context.Context) (*model.ListRes[RankContributeItem], error) {
+type ListContributeReq struct {
+	Type model.RankType `form:"type" binding:"required,oneof=1 3"`
+}
+
+func (r *Rank) Contribute(ctx context.Context, req ListContributeReq) (*model.ListRes[RankContributeItem], error) {
 	var res model.ListRes[RankContributeItem]
-	err := r.repoRank.ListContribute(ctx, &res.Items)
+	err := r.repoRank.ListContribute(ctx, &res.Items, req.Type)
 	if err != nil {
 		return nil, err
 	}

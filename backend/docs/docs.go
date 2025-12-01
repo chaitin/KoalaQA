@@ -5001,6 +5001,24 @@ const docTemplate = `{
                     "rank"
                 ],
                 "summary": "contribyte rank",
+                "parameters": [
+                    {
+                        "enum": [
+                            1,
+                            2,
+                            3
+                        ],
+                        "type": "integer",
+                        "x-enum-varnames": [
+                            "RankTypeContribute",
+                            "RankTypeAIInsight",
+                            "RankTypeAllContribute"
+                        ],
+                        "name": "type",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -6801,7 +6819,9 @@ const docTemplate = `{
                 6,
                 7,
                 8,
-                9
+                9,
+                10,
+                11
             ],
             "x-enum-varnames": [
                 "MsgNotifyTypeUnknown",
@@ -6813,7 +6833,9 @@ const docTemplate = `{
                 "MsgNotifyTypeBotUnknown",
                 "MsgNotifyTypeLikeDiscussion",
                 "MsgNotifyTypeUserReview",
-                "MsgNotifyTypeResolveByAdmin"
+                "MsgNotifyTypeResolveByAdmin",
+                "MsgNotifyTypeCloseDiscussion",
+                "MsgNotifyTypeAssociateIssue"
             ]
         },
         "model.PlatformOpt": {
@@ -6877,6 +6899,19 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "model.RankType": {
+            "type": "integer",
+            "enum": [
+                1,
+                2,
+                3
+            ],
+            "x-enum-varnames": [
+                "RankTypeContribute",
+                "RankTypeAIInsight",
+                "RankTypeAllContribute"
+            ]
         },
         "model.StatTrend": {
             "type": "object",
