@@ -65,6 +65,24 @@ func (d *DiscussionFollow) Follow(ctx context.Context, uid uint, discUUID string
 	return follow.ID, nil
 }
 
+func (d *DiscussionFollow) Unfollow(ctx context.Context, uid uint, discUUID string) error {
+	disc, err := d.disc.GetByUUID(ctx, discUUID)
+	if err != nil {
+		return err
+	}
+
+	if disc.Type != model.DiscussionTypeIssue {
+		return errors.New("discussion can not unfollow")
+	}
+
+	err = d.discFollow.Delete(ctx, repo.QueryWithEqual("discussion_id", disc.ID), repo.QueryWithEqual("user_id", uid))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type DiscussionListFollowRes struct {
 	Followed bool  `json:"followed"`
 	Follower int64 `json:"follower"`

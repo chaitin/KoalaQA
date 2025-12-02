@@ -35,6 +35,7 @@ func (d *discussionAuth) Route(h server.Handler) {
 	g.POST("/:disc_id/requirement", d.Requirement)
 	g.POST("/:disc_id/associate", d.Associate)
 	g.POST("/:disc_id/follow", d.Follow)
+	g.DELETE("/:disc_id/follow", d.Unfollow)
 
 	{
 		comG := g.Group("/:disc_id/comment")
@@ -547,4 +548,23 @@ func (d *discussionAuth) Follow(ctx *context.Context) {
 	}
 
 	ctx.Success(res)
+}
+
+// Unfollow
+// @Summary unfollow discussion
+// @Description unfollow discussion
+// @Tags discussion
+// @Accept json
+// @Produce json
+// @Param disc_id path string true "disc_id"
+// @Success 200 {object} context.Response
+// @Router /discussion/{disc_id}/follow [delete]
+func (d *discussionAuth) Unfollow(ctx *context.Context) {
+	err := d.discFollow.Unfollow(ctx, ctx.GetUser().UID, ctx.Param("disc_id"))
+	if err != nil {
+		ctx.InternalError(err, "unfollow discussion failed")
+		return
+	}
+
+	ctx.Success(nil)
 }

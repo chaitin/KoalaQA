@@ -4765,6 +4765,36 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "description": "unfollow discussion",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "unfollow discussion",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "disc_id",
+                        "name": "disc_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
             }
         },
         "/discussion/{disc_id}/like": {
