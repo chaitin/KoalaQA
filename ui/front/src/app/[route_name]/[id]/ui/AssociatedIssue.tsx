@@ -6,6 +6,7 @@ import { TimeDisplay } from '@/components/TimeDisplay'
 import { Box, Paper, Stack, Typography } from '@mui/material'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import { Ellipsis } from '@ctzhian/ui'
 
 interface AssociatedIssueProps {
   associate?: ModelDiscussionListItem
@@ -59,8 +60,7 @@ const AssociatedIssue = ({ associate }: AssociatedIssueProps) => {
             {/* 标题和类型标签 */}
             <Stack direction='row' alignItems='center' spacing={1} sx={{ mb: 0.5 }}>
               <DiscussionTypeChip size='small' type={associate.type} variant='default' />
-              <Typography
-                variant='body2'
+              <Ellipsis
                 sx={{
                   fontWeight: 600,
                   fontSize: '15px',
@@ -71,7 +71,7 @@ const AssociatedIssue = ({ associate }: AssociatedIssueProps) => {
                 }}
               >
                 {associate.title}
-              </Typography>
+              </Ellipsis>
             </Stack>
 
             {/* 状态标签和作者信息 */}
