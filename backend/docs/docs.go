@@ -3967,6 +3967,67 @@ const docTemplate = `{
                 }
             }
         },
+        "/discussion/follow": {
+            "get": {
+                "description": "list follow discussions",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "list follow discussions",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/model.Discussion"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/discussion/summary": {
             "post": {
                 "description": "discussions summary",
@@ -4620,6 +4681,122 @@ const docTemplate = `{
                 }
             }
         },
+        "/discussion/{disc_id}/follow": {
+            "get": {
+                "description": "get discussion follow info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "get discussion follow info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "disc_id",
+                        "name": "disc_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/svc.DiscussionListFollowRes"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "follow discussion",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "follow discussion",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "disc_id",
+                        "name": "disc_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "unfollow discussion",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "unfollow discussion",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "disc_id",
+                        "name": "disc_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/discussion/{disc_id}/like": {
             "post": {
                 "description": "like discussion",
@@ -5001,6 +5178,24 @@ const docTemplate = `{
                     "rank"
                 ],
                 "summary": "contribyte rank",
+                "parameters": [
+                    {
+                        "enum": [
+                            1,
+                            2,
+                            3
+                        ],
+                        "type": "integer",
+                        "x-enum-varnames": [
+                            "RankTypeContribute",
+                            "RankTypeAIInsight",
+                            "RankTypeAllContribute"
+                        ],
+                        "name": "type",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -5201,6 +5396,11 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "name": "email",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "name": "intro",
                         "in": "formData"
                     },
                     {
@@ -6031,6 +6231,86 @@ const docTemplate = `{
                 "CommentLikeStateDislike"
             ]
         },
+        "model.Discussion": {
+            "type": "object",
+            "properties": {
+                "associate_id": {
+                    "type": "integer"
+                },
+                "comment": {
+                    "type": "integer"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "dislike": {
+                    "type": "integer"
+                },
+                "forum_id": {
+                    "type": "integer"
+                },
+                "group_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "hot": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "like": {
+                    "type": "integer"
+                },
+                "members": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "rag_id": {
+                    "type": "string"
+                },
+                "resolved": {
+                    "$ref": "#/definitions/model.DiscussionState"
+                },
+                "resolved_at": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.DiscussionType"
+                },
+                "updated_at": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "uuid": {
+                    "type": "string"
+                },
+                "view": {
+                    "type": "integer"
+                }
+            }
+        },
         "model.DiscussionComment": {
             "type": "object",
             "properties": {
@@ -6801,7 +7081,11 @@ const docTemplate = `{
                 6,
                 7,
                 8,
-                9
+                9,
+                10,
+                11,
+                12,
+                13
             ],
             "x-enum-varnames": [
                 "MsgNotifyTypeUnknown",
@@ -6813,7 +7097,11 @@ const docTemplate = `{
                 "MsgNotifyTypeBotUnknown",
                 "MsgNotifyTypeLikeDiscussion",
                 "MsgNotifyTypeUserReview",
-                "MsgNotifyTypeResolveByAdmin"
+                "MsgNotifyTypeResolveByAdmin",
+                "MsgNotifyTypeCloseDiscussion",
+                "MsgNotifyTypeAssociateIssue",
+                "MsgNotifyTypeIssueInProgress",
+                "MsgNotifyTypeIssueResolved"
             ]
         },
         "model.PlatformOpt": {
@@ -6877,6 +7165,19 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "model.RankType": {
+            "type": "integer",
+            "enum": [
+                1,
+                2,
+                3
+            ],
+            "x-enum-varnames": [
+                "RankTypeContribute",
+                "RankTypeAIInsight",
+                "RankTypeAllContribute"
+            ]
         },
         "model.StatTrend": {
             "type": "object",
@@ -6997,6 +7298,9 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "intro": {
+                    "type": "string"
+                },
                 "invisible": {
                     "type": "boolean"
                 },
@@ -7042,6 +7346,9 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "email": {
+                    "type": "string"
+                },
+                "intro": {
                     "type": "string"
                 },
                 "key": {
@@ -7485,6 +7792,17 @@ const docTemplate = `{
                 "DiscussionListFilterNew",
                 "DiscussionListFilterPublish"
             ]
+        },
+        "svc.DiscussionListFollowRes": {
+            "type": "object",
+            "properties": {
+                "followed": {
+                    "type": "boolean"
+                },
+                "follower": {
+                    "type": "integer"
+                }
+            }
         },
         "svc.DiscussionUpdateReq": {
             "type": "object",
@@ -8199,13 +8517,17 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "add_new",
-                "content"
+                "content",
+                "title"
             ],
             "properties": {
                 "add_new": {
                     "type": "boolean"
                 },
                 "content": {
+                    "type": "string"
+                },
+                "title": {
                     "type": "string"
                 }
             }
@@ -8512,6 +8834,9 @@ const docTemplate = `{
                 },
                 "blog_count": {
                     "type": "integer"
+                },
+                "intro": {
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"

@@ -99,6 +99,7 @@ func authUser(ctx *context.Context, freeAuth bool, j *jwt.Generator, user *svc.U
 		Role:       item.Role,
 		Email:      item.Email,
 		Username:   item.Name,
+		Intro:      item.Intro,
 		Avatar:     item.Avatar,
 		Builtin:    item.Builtin,
 		NoPassword: item.Password == "",

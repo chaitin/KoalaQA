@@ -14,12 +14,16 @@ import request, { ContentType, RequestParams } from "./httpClient";
 import {
   ContextResponse,
   DeleteDiscussionDiscIdCommentCommentIdParams,
+  DeleteDiscussionDiscIdFollowParams,
   DeleteDiscussionDiscIdParams,
   GetAdminDiscussionParams,
   GetDiscussionDiscIdAssociateParams,
+  GetDiscussionDiscIdFollowParams,
   GetDiscussionDiscIdParams,
   GetDiscussionDiscIdSimilarityParams,
+  GetDiscussionFollowParams,
   GetDiscussionParams,
+  ModelDiscussion,
   ModelDiscussionDetail,
   ModelDiscussionListItem,
   ModelListRes,
@@ -29,6 +33,7 @@ import {
   PostDiscussionDiscIdCommentCommentIdLikeParams,
   PostDiscussionDiscIdCommentCommentIdRevokeLikeParams,
   PostDiscussionDiscIdCommentParams,
+  PostDiscussionDiscIdFollowParams,
   PostDiscussionDiscIdLikeParams,
   PostDiscussionDiscIdRequirementParams,
   PostDiscussionDiscIdResolveIssueParams,
@@ -44,6 +49,7 @@ import {
   SvcCommentUpdateReq,
   SvcDiscussionCompeletReq,
   SvcDiscussionCreateReq,
+  SvcDiscussionListFollowRes,
   SvcDiscussionUpdateReq,
   SvcResolveFeedbackReq,
   SvcResolveIssueReq,
@@ -173,6 +179,40 @@ export const postDiscussionComplete = (
     method: "POST",
     body: req,
     type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description list follow discussions
+ *
+ * @tags discussion
+ * @name GetDiscussionFollow
+ * @summary list follow discussions
+ * @request GET:/discussion/follow
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (ModelDiscussion)[],
+
+}),
+
+})` OK
+ */
+
+export const getDiscussionFollow = (
+  query: GetDiscussionFollowParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: ModelDiscussion[];
+      };
+    }
+  >({
+    path: `/discussion/follow`,
+    method: "GET",
+    query: query,
     format: "json",
     ...params,
   });
@@ -584,6 +624,86 @@ export const postDiscussionDiscIdCommentCommentIdRevokeLike = (
   request<ContextResponse>({
     path: `/discussion/${discId}/comment/${commentId}/revoke_like`,
     method: "POST",
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description get discussion follow info
+ *
+ * @tags discussion
+ * @name GetDiscussionDiscIdFollow
+ * @summary get discussion follow info
+ * @request GET:/discussion/{disc_id}/follow
+ * @response `200` `(ContextResponse & {
+    data?: SvcDiscussionListFollowRes,
+
+})` OK
+ */
+
+export const getDiscussionDiscIdFollow = (
+  { discId, ...query }: GetDiscussionDiscIdFollowParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: SvcDiscussionListFollowRes;
+    }
+  >({
+    path: `/discussion/${discId}/follow`,
+    method: "GET",
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description follow discussion
+ *
+ * @tags discussion
+ * @name PostDiscussionDiscIdFollow
+ * @summary follow discussion
+ * @request POST:/discussion/{disc_id}/follow
+ * @response `200` `(ContextResponse & {
+    data?: number,
+
+})` OK
+ */
+
+export const postDiscussionDiscIdFollow = (
+  { discId, ...query }: PostDiscussionDiscIdFollowParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: number;
+    }
+  >({
+    path: `/discussion/${discId}/follow`,
+    method: "POST",
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description unfollow discussion
+ *
+ * @tags discussion
+ * @name DeleteDiscussionDiscIdFollow
+ * @summary unfollow discussion
+ * @request DELETE:/discussion/{disc_id}/follow
+ * @response `200` `ContextResponse` OK
+ */
+
+export const deleteDiscussionDiscIdFollow = (
+  { discId, ...query }: DeleteDiscussionDiscIdFollowParams,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/discussion/${discId}/follow`,
+    method: "DELETE",
     type: ContentType.Json,
     format: "json",
     ...params,

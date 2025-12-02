@@ -30,7 +30,9 @@ const AdminDocument = () => {
     data,
     loading,
     run: fetchData,
-  } = useRequest(params => getAdminKbKbIdQuestion({ page, size, ...params, kbId: kb_id }), { manual: true });
+  } = useRequest(params => getAdminKbKbIdQuestion({ page, size, ...params, kbId: kb_id }), {
+    manual: true,
+  });
   const deleteDoc = (item: SvcDocListItem) => {
     Modal.confirm({
       title: '提示',
@@ -82,11 +84,16 @@ const AdminDocument = () => {
       title: '状态',
       dataIndex: 'status',
       render: (_, record) => {
-        if ([0, 3].includes(record?.status || 0)) return '待应用';
-        if (record.status === ModelDocStatus.DocStatusPendingReview) {
-          return <StatusBadge status={record.status} onClick={() => fetchDetail(record.id!)} />;
-        }
-        return <StatusBadge status={record.status} />;
+        return (
+          <StatusBadge
+            status={record.status}
+            onClick={() => {
+              if (record.status === ModelDocStatus.DocStatusPendingReview) {
+                fetchDetail(record.id!);
+              }
+            }}
+          />
+        );
       },
     },
     {

@@ -7,11 +7,12 @@ import (
 )
 
 type discussionAuth struct {
-	disc *svc.Discussion
+	disc       *svc.Discussion
+	discFollow *svc.DiscussionFollow
 }
 
-func newDiscussionAuth(svc *svc.Discussion) server.Router {
-	return &discussionAuth{disc: svc}
+func newDiscussionAuth(svc *svc.Discussion, discFollow *svc.DiscussionFollow) server.Router {
+	return &discussionAuth{disc: svc, discFollow: discFollow}
 }
 
 func init() {
@@ -21,6 +22,7 @@ func init() {
 func (d *discussionAuth) Route(h server.Handler) {
 	g := h.Group("/discussion")
 	g.POST("", d.Create)
+	g.GET("/follow", d.ListFollow)
 	g.POST("/complete", d.Complete)
 	g.PUT("/:disc_id", d.Update)
 	g.DELETE("/:disc_id", d.Delete)
@@ -32,6 +34,8 @@ func (d *discussionAuth) Route(h server.Handler) {
 	g.POST("/:disc_id/resolve_issue", d.ResolveIssue)
 	g.POST("/:disc_id/requirement", d.Requirement)
 	g.POST("/:disc_id/associate", d.Associate)
+	g.POST("/:disc_id/follow", d.Follow)
+	g.DELETE("/:disc_id/follow", d.Unfollow)
 
 	{
 		comG := g.Group("/:disc_id/comment")
@@ -500,4 +504,67 @@ func (d *discussionAuth) Requirement(ctx *context.Context) {
 	}
 
 	ctx.Success(res)
+}
+
+// ListFollow
+// @Summary list follow discussions
+// @Description list follow discussions
+// @Tags discussion
+// @Produce json
+// @Param req query svc.ListDiscussionFollowReq false "req params"
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]model.Discussion}}
+// @Router /discussion/follow [get]
+func (d *discussionAuth) ListFollow(ctx *context.Context) {
+	var req svc.ListDiscussionFollowReq
+	err := ctx.ShouldBindQuery(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	res, err := d.discFollow.ListDiscussion(ctx, ctx.GetUser().UID, req)
+	if err != nil {
+		ctx.InternalError(err, "list follow discussion failed")
+		return
+	}
+
+	ctx.Success(res)
+}
+
+// Follow
+// @Summary follow discussion
+// @Description follow discussion
+// @Tags discussion
+// @Accept json
+// @Produce json
+// @Param disc_id path string true "disc_id"
+// @Success 200 {object} context.Response{data=uint}
+// @Router /discussion/{disc_id}/follow [post]
+func (d *discussionAuth) Follow(ctx *context.Context) {
+	res, err := d.discFollow.Follow(ctx, ctx.GetUser().UID, ctx.Param("disc_id"))
+	if err != nil {
+		ctx.InternalError(err, "follow discussion failed")
+		return
+	}
+
+	ctx.Success(res)
+}
+
+// Unfollow
+// @Summary unfollow discussion
+// @Description unfollow discussion
+// @Tags discussion
+// @Accept json
+// @Produce json
+// @Param disc_id path string true "disc_id"
+// @Success 200 {object} context.Response
+// @Router /discussion/{disc_id}/follow [delete]
+func (d *discussionAuth) Unfollow(ctx *context.Context) {
+	err := d.discFollow.Unfollow(ctx, ctx.GetUser().UID, ctx.Param("disc_id"))
+	if err != nil {
+		ctx.InternalError(err, "unfollow discussion failed")
+		return
+	}
+
+	ctx.Success(nil)
 }
