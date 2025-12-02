@@ -156,7 +156,7 @@ const Article = ({
     } catch (error) {
       console.error('Failed to fetch announcements:', error)
       setAnnouncements([])
-    } 
+    }
   }, [announcementBlogIdsKey, forumInfo?.id, forumId])
 
   useEffect(() => {
@@ -362,7 +362,6 @@ const Article = ({
     checkAuth(() => releaseModalOpen())
   }
 
-
   const handleArticle = () => {
     setSelectedModalType('blog')
     checkAuth(() => {
@@ -378,9 +377,9 @@ const Article = ({
 
   // 处理发布类型菜单打开
   const handlePublishMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    if(type) {
-      handlePublishTypeSelect(type as 'qa' | 'blog')
-    }else{
+    if (type && (type !== 'issue' || isAdminRole(user?.role || ModelUserRole.UserRoleUnknown))) {
+      handlePublishTypeSelect(type as 'qa' | 'blog' | 'issue')
+    } else {
       setPublishAnchorEl(event.currentTarget)
     }
   }
@@ -591,9 +590,7 @@ const Article = ({
                 >
                   文章
                 </MenuItem>
-                {isAdminRole(
-                  user?.role || ModelUserRole.UserRoleUnknown,
-                ) && (
+                {isAdminRole(user?.role || ModelUserRole.UserRoleUnknown) && (
                   <MenuItem
                     onClick={() => handlePublishTypeSelect('issue')}
                     sx={{
