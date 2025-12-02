@@ -5328,6 +5328,11 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "name": "intro",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
                         "name": "name",
                         "in": "formData"
                     },
@@ -7221,6 +7226,9 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "intro": {
+                    "type": "string"
+                },
                 "invisible": {
                     "type": "boolean"
                 },
@@ -7266,6 +7274,9 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "email": {
+                    "type": "string"
+                },
+                "intro": {
                     "type": "string"
                 },
                 "key": {
@@ -8736,6 +8747,9 @@ const docTemplate = `{
                 },
                 "blog_count": {
                     "type": "integer"
+                },
+                "intro": {
+                    "type": "string"
                 },
                 "name": {
                     "type": "string"

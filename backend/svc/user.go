@@ -245,6 +245,7 @@ func (u *User) UpdateWebNotify(ctx context.Context, id uint, req UpdateWebNotify
 
 type UserUpdateInfoReq struct {
 	Name        string                `form:"name"`
+	Intro       string                `form:"intro"`
 	Email       string                `form:"email" binding:"omitempty,email"`
 	OldPassword string                `form:"old_password"`
 	Password    string                `form:"password"`
@@ -279,6 +280,10 @@ func (u *User) UpdateInfo(ctx context.Context, id uint, req UserUpdateInfoReq) e
 
 	updateM := map[string]any{
 		"updated_at": time.Now(),
+	}
+
+	if user.Intro != req.Intro {
+		updateM["intro"] = req.Intro
 	}
 
 	if user.Email == "" && req.Email != "" {
@@ -612,6 +617,7 @@ func (u *User) LoginThirdCallback(ctx context.Context, typ model.AuthType, req L
 type UserStatisticsRes struct {
 	Avatar      string         `json:"avatar"`
 	Name        string         `json:"name"`
+	Intro       string         `json:"intro"`
 	Role        model.UserRole `json:"role"`
 	QACount     int64          `json:"qa_count"`
 	BlogCount   int64          `json:"blog_count"`
@@ -631,6 +637,7 @@ func (u *User) Statistics(ctx context.Context, curUserID uint, userID uint) (*Us
 	res := &UserStatisticsRes{
 		Avatar: user.Avatar,
 		Name:   user.Name,
+		Intro:  user.Intro,
 		Role:   user.Role,
 	}
 	curUserForumIDs, err := u.ForumIDs(ctx, curUserID)

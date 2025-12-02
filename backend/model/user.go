@@ -18,6 +18,7 @@ type User struct {
 	Name      string     `gorm:"column:name;type:text" json:"name"`
 	Email     string     `gorm:"column:email;type:text;default:null;uniqueIndex" json:"email"`
 	Avatar    string     `gorm:"column:avatar;type:text" json:"avatar"`
+	Intro     string     `gorm:"column:intro;type:text" json:"intro"`
 	Builtin   bool       `gorm:"column:builtin" json:"builtin"`
 	Password  string     `gorm:"column:password;type:text" json:"password"`
 	Role      UserRole   `gorm:"column:role" json:"role"`
@@ -39,6 +40,7 @@ type UserInfo struct {
 	Role       UserRole   `json:"role"`
 	Email      string     `json:"email"`
 	Username   string     `json:"username"`
+	Intro      string     `json:"intro"`
 	Avatar     string     `json:"avatar"`
 	Builtin    bool       `json:"builtin"`
 	NoPassword bool       `json:"no_password"`
