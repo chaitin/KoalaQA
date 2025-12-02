@@ -8434,13 +8434,17 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "add_new",
-                "content"
+                "content",
+                "title"
             ],
             "properties": {
                 "add_new": {
                     "type": "boolean"
                 },
                 "content": {
+                    "type": "string"
+                },
+                "title": {
                     "type": "string"
                 }
             }
