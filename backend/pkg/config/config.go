@@ -27,7 +27,7 @@ type Minio struct {
 }
 
 type Rag struct {
-	BaseURL string `env:"BASE_URL" envDefault:"http://koala-qa-raglite:8080/api/v1"`
+	BaseURL string `env:"BASE_URL" envDefault:"http://koala-qa-raglite:5050"`
 	APIKey  string `env:"API_KEY" envDefault:"koala"`
 	DEBUG   bool   `env:"DEBUG" envDefault:"false"`
 }
