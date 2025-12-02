@@ -458,21 +458,43 @@ export class HttpClient<SecurityDataType = unknown> {
     // 生成缓存键和请求键
     const cacheKey = generateCacheKey(path, { query, body, ...params });
     const method = params.method?.toUpperCase() || "GET";
-    const requestKey = `${method}:${cacheKey}`;
+    
+    // 对于 /user 请求，需要在请求key中包含用户身份标识，确保不同用户的请求不会被去重
+    let requestKey = `${method}:${cacheKey}`;
+    if (path === "/user" && method === "GET") {
+      let authToken = "";
+      try {
+        // 在客户端环境中，从cookie中读取auth_token
+        if (typeof window !== "undefined") {
+          const cookies = document.cookie.split(";");
+          const authCookie = cookies.find((c) => c.trim().startsWith("auth_token="));
+          if (authCookie) {
+            authToken = authCookie.split("=")[1]?.trim() || "";
+          }
+        } else {
+          // 在SSR环境中，从cookieStore中读取auth_token
+          const { cookies } = await import("next/headers");
+          const cookieStore = await cookies();
+          authToken = cookieStore.get("auth_token")?.value || "";
+        }
+      } catch (error) {
+        // 如果无法读取cookie，忽略错误，使用原始key
+        console.warn("Failed to read auth_token for request deduplication:", error);
+      }
+      
+      // 如果获取到了auth_token，将其hash值添加到请求key中
+      // 使用简单的hash函数（前8个字符）来区分不同用户
+      if (authToken) {
+        const tokenHash = authToken.substring(0, 8);
+        requestKey = `${method}:${cacheKey}:${tokenHash}`;
+      }
+    }
 
     // 检查是否有相同的请求正在进行中（请求去重）
+    // 注意：对于 /user 请求，请求key中包含了用户身份标识，确保不同用户的请求不会被去重
     if (this.pendingRequests.has(requestKey)) {
       console.log(`[HttpClient] Request already pending: ${requestKey}`);
       return this.pendingRequests.get(requestKey);
-    }
-
-    // 对于 /api/user 请求，添加额外的去重逻辑
-    if (path === '/user' && method === 'GET') {
-      const userRequestKey = 'GET:/user';
-      if (this.pendingRequests.has(userRequestKey)) {
-        console.log('[HttpClient] User request already pending, reusing result');
-        return this.pendingRequests.get(userRequestKey);
-      }
     }
 
     const secureParams =
