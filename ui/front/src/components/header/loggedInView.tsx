@@ -209,9 +209,9 @@ const getNotificationText = (info: MessageNotifyInfo, userRole?: ModelUserRole):
     case MsgNotifyType.MsgNotifyTypeAssociateIssue:
       return '把你的问题关联到 Issue'
     case MsgNotifyType.MsgNotifyTypeIssueInProgress: // 你关注的 Issue 状态变更为进行中 【Issue 标题】
-      return '你关注的 Issue 状态变更为进行中 '
+      return '将 Issue 状态变更为进行中'
     case MsgNotifyType.MsgNotifyTypeIssueResolved: // 你关注的 Issue 状态变更为已完成 【Issue 标题】
-      return '你关注的 Issue 状态变更为已完成 '
+      return '将 Issue 状态变更为已完成'
     default:
       return ''
   }
@@ -637,7 +637,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
                             fontSize: '14px',
                           }}
                         >
-                          【{notification.discuss_title || '无标题'}】
+                          {notification.discuss_title || '无标题'}
                         </Ellipsis>
                       ))}
                   </Box>
@@ -660,7 +660,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
               color='info'
               onClick={() => {
                 handleNotificationMenuClose()
-                router.push('/profile?tab=2')
+                router.push('/profile?tab=4')
               }}
             >
               查看全部通知
