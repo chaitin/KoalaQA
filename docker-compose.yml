@@ -68,7 +68,16 @@ services:
     restart: always
     environment:
       - TZ=${TIMEZONE:-Asia/Shanghai}
-    command: [ "nats-server", "-c", "/etc/nats/nats.conf", "--user", "koala", "--pass", "${MQ_PASSWORD}" ]
+    command:
+      [
+        "nats-server",
+        "-c",
+        "/etc/nats/nats.conf",
+        "--user",
+        "koala",
+        "--pass",
+        "${MQ_PASSWORD}",
+      ]
     volumes:
       - ./data/nats:/data
     networks:
@@ -79,7 +88,16 @@ services:
     container_name: koala-qa-oss
     image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/oss:RELEASE.2025-04-22T22-12-26Z-cpuv1
     restart: always
-    command: [ "minio", "server", "/data", "--console-address", "0.0.0.0:9001", "--address", "0.0.0.0:9000" ]
+    command:
+      [
+        "minio",
+        "server",
+        "/data",
+        "--console-address",
+        "0.0.0.0:9001",
+        "--address",
+        "0.0.0.0:9000",
+      ]
     volumes:
       - ./data/oss:/data
     environment:
@@ -146,23 +164,21 @@ services:
 
   raglite:
     container_name: koala-qa-raglite
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/raglite:1-3-8
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/raglite:67afa036
     restart: always
     environment:
       - TZ=${TIMEZONE:-Asia/Shanghai}
-      - GIN_MODE=release
-      - DATABASE_HOST=koala-qa-db
-      - DATABASE_USER=koala
-      - DATABASE_PASSWORD=${DB_PASSWORD}
-      - MINIO_ENDPOINT=koala-qa-oss:9000
-      - MINIO_USER=koala
-      - MINIO_PASSWORD=${OSS_SECRET_KEY}
-      - QDRANT_HOST=koala-qa-qdrant
-      - QDRANT_API_KEY=${QDRANT_API_KEY}
-      - RAGLITE_DEFAULT_API_TOKEN=koala
-      - HTTP_PROXY=${HTTP_PROXY}
-      - HTTPS_PROXY=${HTTPS_PROXY}
-      - NO_PROXY=koala-qa-oss,koala-qa-qdrant,${NO_PROXY}
+      - DATABASE_POSTGRESQL_HOST=koala-qa-db
+      - DATABASE_POSTGRESQL_USER=koala
+      - DATABASE_POSTGRESQL_PASSWORD=${DB_PASSWORD}
+      - DATABASE_QDRANT_HOST=koala-qa-qdrant
+      - DATABASE_QDRANT_API_KEY=${QDRANT_API_KEY}
+      - STORAGE_MINIO_ENDPOINT=koala-qa-oss:9000
+      - STORAGE_MINIO_ACCESS_KEY_ID=koala
+      - STORAGE_MINIO_SECRET_ACCESS_KEY=${OSS_SECRET_KEY}
+      - NATS_URL=nats://koala-qa-mq:4222
+      - NATS_USER=koala
+      - NATS_PASSWORD=${MQ_PASSWORD}
     networks:
       koala:
         ipv4_address: "${SUBNET_PREFIX:-169.254.15}.18"
