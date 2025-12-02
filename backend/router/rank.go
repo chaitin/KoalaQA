@@ -14,10 +14,18 @@ type rank struct {
 // @Summary contribyte rank
 // @Tags rank
 // @Produce json
+// @Param req query svc.ListContributeReq false "req params"
 // @Success 200 {object} context.Response{data=model.ListRes{items=[]svc.RankContributeItem}}
 // @Router /rank/contribute [get]
 func (r *rank) Contribute(ctx *context.Context) {
-	res, err := r.svcRank.Contribute(ctx)
+	var req svc.ListContributeReq
+	err := ctx.ShouldBindQuery(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	res, err := r.svcRank.Contribute(ctx, req)
 	if err != nil {
 		ctx.InternalError(err, "get contribute failed")
 		return

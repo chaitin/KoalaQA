@@ -28,22 +28,23 @@ import (
 type discussionIn struct {
 	fx.In
 
-	DiscRepo      *repo.Discussion
-	CommRepo      *repo.Comment
-	CommLikeRepo  *repo.CommentLike
-	UserRepo      *repo.User
-	GroupItemRepo *repo.GroupItem
-	OrgRepo       *repo.Org
-	BotSvc        *Bot
-	TrendSvc      *Trend
-	Pub           mq.Publisher
-	Rag           rag.Service
-	Dataset       *repo.Dataset
-	OC            oss.Client
-	ForumRepo     *repo.Forum
-	Limiter       ratelimit.Limiter
-	LLM           *LLM
-	Batcher       batch.Batcher[model.StatInfo]
+	DiscRepo       *repo.Discussion
+	DiscFollowRepo *repo.DiscussionFollow
+	CommRepo       *repo.Comment
+	CommLikeRepo   *repo.CommentLike
+	UserRepo       *repo.User
+	GroupItemRepo  *repo.GroupItem
+	OrgRepo        *repo.Org
+	BotSvc         *Bot
+	TrendSvc       *Trend
+	Pub            mq.Publisher
+	Rag            rag.Service
+	Dataset        *repo.Dataset
+	OC             oss.Client
+	ForumRepo      *repo.Forum
+	Limiter        ratelimit.Limiter
+	LLM            *LLM
+	Batcher        batch.Batcher[model.StatInfo]
 }
 
 type Discussion struct {
@@ -1302,7 +1303,28 @@ func (d *Discussion) ResolveIssue(ctx context.Context, user model.UserInfo, disc
 		return errPermission
 	}
 
-	return d.in.DiscRepo.ResolveIssue(ctx, discUUID, req.Resolve)
+	err := d.in.DiscRepo.ResolveIssue(ctx, discUUID, req.Resolve)
+	if err != nil {
+		return err
+	}
+
+	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
+	if err != nil {
+		return err
+	}
+
+	state := model.MsgNotifyTypeIssueInProgress
+	if req.Resolve == model.DiscussionStateResolved {
+		state = model.MsgNotifyTypeIssueResolved
+	}
+
+	d.in.Pub.Publish(ctx, topic.TopicMessageNotify, topic.MsgMessageNotify{
+		DiscussHeader: disc.Header(),
+		Type:          state,
+		FromID:        user.UID,
+	})
+
+	return nil
 }
 
 func (d *Discussion) ListAssociateDiscussion(ctx context.Context, userID uint, discUUID string) (*model.ListRes[*model.DiscussionListItem], error) {
@@ -1379,6 +1401,8 @@ func (d *Discussion) AssociateDiscussion(ctx context.Context, user model.UserInf
 		return errors.New("invalid issue")
 	}
 
+	disc.AssociateID = issue.ID
+
 	now := time.Now()
 	err = d.in.DiscRepo.Update(ctx, map[string]any{
 		"resolved":     model.DiscussionStateClosed,
@@ -1389,6 +1413,27 @@ func (d *Discussion) AssociateDiscussion(ctx context.Context, user model.UserInf
 	if err != nil {
 		return err
 	}
+
+	err = d.in.DiscFollowRepo.Create(ctx, &model.DiscussionFollow{
+		DiscussionID: issue.ID,
+		UserID:       disc.UserID,
+	})
+	if err != nil {
+		return err
+	}
+
+	d.in.Pub.Publish(ctx, topic.TopicMessageNotify, topic.MsgMessageNotify{
+		DiscussHeader: disc.Header(),
+		Type:          model.MsgNotifyTypeCloseDiscussion,
+		FromID:        user.UID,
+		ToID:          disc.UserID,
+	})
+	d.in.Pub.Publish(ctx, topic.TopicMessageNotify, topic.MsgMessageNotify{
+		DiscussHeader: issue.Header(),
+		Type:          model.MsgNotifyTypeAssociateIssue,
+		FromID:        user.UID,
+		ToID:          disc.UserID,
+	})
 
 	return nil
 }

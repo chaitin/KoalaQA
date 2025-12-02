@@ -20,9 +20,13 @@ type RankContributeItem struct {
 	Score  float64 `json:"score"`
 }
 
-func (r *Rank) Contribute(ctx context.Context) (*model.ListRes[RankContributeItem], error) {
+type ListContributeReq struct {
+	Type model.RankType `form:"type" binding:"required,oneof=1 3"`
+}
+
+func (r *Rank) Contribute(ctx context.Context, req ListContributeReq) (*model.ListRes[RankContributeItem], error) {
 	var res model.ListRes[RankContributeItem]
-	err := r.repoRank.ListContribute(ctx, &res.Items)
+	err := r.repoRank.ListContribute(ctx, &res.Items, req.Type)
 	if err != nil {
 		return nil, err
 	}
@@ -30,8 +34,12 @@ func (r *Rank) Contribute(ctx context.Context) (*model.ListRes[RankContributeIte
 	return &res, nil
 }
 
-func (r *Rank) UpdateContribute(ctx context.Context) error {
-	return r.repoRank.RefresContribute(ctx)
+type UpdateContributeReq struct {
+	Type model.RankType
+}
+
+func (r *Rank) UpdateContribute(ctx context.Context, req UpdateContributeReq) error {
+	return r.repoRank.RefresContribute(ctx, req.Type)
 }
 
 func (r *Rank) AIInsight(ctx context.Context) ([]model.RankTimeGroup, error) {

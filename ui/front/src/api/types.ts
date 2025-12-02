@@ -62,6 +62,12 @@ export enum ModelStatType {
   StatTypeDiscussionIssue = 7,
 }
 
+export enum ModelRankType {
+  RankTypeContribute = 1,
+  RankTypeAIInsight = 2,
+  RankTypeAllContribute = 3,
+}
+
 export enum ModelMsgNotifyType {
   MsgNotifyTypeUnknown = 0,
   MsgNotifyTypeReplyDiscuss = 1,
@@ -73,6 +79,10 @@ export enum ModelMsgNotifyType {
   MsgNotifyTypeLikeDiscussion = 7,
   MsgNotifyTypeUserReview = 8,
   MsgNotifyTypeResolveByAdmin = 9,
+  MsgNotifyTypeCloseDiscussion = 10,
+  MsgNotifyTypeAssociateIssue = 11,
+  MsgNotifyTypeIssueInProgress = 12,
+  MsgNotifyTypeIssueResolved = 13,
 }
 
 export enum ModelLLMType {
@@ -189,6 +199,31 @@ export interface ModelAuthInfo {
    * @max 4
    */
   type?: number;
+}
+
+export interface ModelDiscussion {
+  associate_id?: number;
+  comment?: number;
+  content?: string;
+  created_at?: number;
+  dislike?: number;
+  forum_id?: number;
+  group_ids?: number[];
+  hot?: number;
+  id?: number;
+  like?: number;
+  members?: number[];
+  rag_id?: string;
+  resolved?: ModelDiscussionState;
+  resolved_at?: number;
+  summary?: string;
+  tags?: string[];
+  title?: string;
+  type?: ModelDiscussionType;
+  updated_at?: number;
+  user_id?: number;
+  uuid?: string;
+  view?: number;
 }
 
 export interface ModelDiscussionComment {
@@ -474,6 +509,7 @@ export interface ModelUser {
   created_at?: number;
   email?: string;
   id?: number;
+  intro?: string;
   invisible?: boolean;
   key?: string;
   last_login?: number;
@@ -490,6 +526,7 @@ export interface ModelUserInfo {
   avatar?: string;
   builtin?: boolean;
   email?: string;
+  intro?: string;
   key?: string;
   no_password?: boolean;
   org_ids?: number[];
@@ -624,6 +661,11 @@ export interface SvcDiscussionCreateReq {
   tags?: string[];
   title: string;
   type?: ModelDiscussionType;
+}
+
+export interface SvcDiscussionListFollowRes {
+  followed?: boolean;
+  follower?: number;
 }
 
 export interface SvcDiscussionUpdateReq {
@@ -863,6 +905,7 @@ export interface SvcResolveIssueReq {
 export interface SvcReviewReq {
   add_new: boolean;
   content: string;
+  title: string;
 }
 
 export interface SvcSitemapExportReq {
@@ -977,6 +1020,7 @@ export interface SvcUserStatisticsRes {
   answer_count?: number;
   avatar?: string;
   blog_count?: number;
+  intro?: string;
   name?: string;
   qa_count?: number;
   role?: ModelUserRole;
@@ -1410,6 +1454,13 @@ export interface GetDiscussionParams {
   type?: "qa" | "feedback" | "blog" | "issue";
 }
 
+export interface GetDiscussionFollowParams {
+  /** @min 1 */
+  page?: number;
+  /** @min 1 */
+  size?: number;
+}
+
 export interface PostDiscussionSummaryParams {
   keyword: string;
   uuids: string[];
@@ -1501,6 +1552,21 @@ export interface PostDiscussionDiscIdCommentCommentIdRevokeLikeParams {
   commentId: number;
 }
 
+export interface GetDiscussionDiscIdFollowParams {
+  /** disc_id */
+  discId: string;
+}
+
+export interface PostDiscussionDiscIdFollowParams {
+  /** disc_id */
+  discId: string;
+}
+
+export interface DeleteDiscussionDiscIdFollowParams {
+  /** disc_id */
+  discId: string;
+}
+
 export interface PostDiscussionDiscIdLikeParams {
   /** disc_id */
   discId: string;
@@ -1536,6 +1602,10 @@ export interface GetGroupParams {
   forum_id?: number;
 }
 
+export interface GetRankContributeParams {
+  type: 1 | 2 | 3;
+}
+
 export interface PutUserPayload {
   /**
    * avatar
@@ -1543,6 +1613,7 @@ export interface PutUserPayload {
    */
   avatar?: File;
   email?: string;
+  intro?: string;
   name?: string;
   old_password?: string;
   password?: string;

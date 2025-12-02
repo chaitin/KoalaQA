@@ -25,6 +25,7 @@ import Footer from '@/components/Footer'
 import Header from '../components/header'
 import Scroll from './scroll'
 import PageViewTracker from '@/components/PageViewTracker'
+import ScrollReset from '@/components/ScrollReset'
 
 export const dynamic = 'force-dynamic'
 // 字体优化 - 添加 display swap 提升首屏性能
@@ -188,6 +189,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
                         <CssBaseline />
                         <GuestActivationProvider>
                           <PageViewTracker />
+                          <ScrollReset />
                           <Header brandConfig={brand} initialForums={forums} />
                           <main
                             id='main-content'

@@ -47,13 +47,12 @@ import { useParams, useRouter } from 'next/navigation'
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import EditCommentModal from './editCommentModal'
 
+import RoleChip from '@/app/profile/ui/RoleChip'
 import EditorContent from '@/components/EditorContent'
 import Modal from '@/components/modal'
 import { formatNumber, isAdminRole } from '@/lib/utils'
-import { Icon } from '@ctzhian/ui'
-import RoleChip from '@/app/profile/ui/RoleChip'
 import { useQuickReplyStore } from '@/store'
-import { is } from 'zod/v4/locales'
+import { Icon } from '@ctzhian/ui'
 
 const Content = (props: { data: ModelDiscussionDetail }) => {
   const { data } = props
@@ -354,7 +353,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
       />
       <Stack
         sx={{
-          flex: isArticlePost ? 'unset' : 1,
+          flex: !isQAPost ? 'unset' : 1,
           '& .md-container .MuiIconButton-root + *': {
             display: 'none',
           },

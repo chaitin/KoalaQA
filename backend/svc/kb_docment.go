@@ -932,9 +932,10 @@ func (d *KBDocument) ListWeb(ctx context.Context, req ListWebReq) (*model.ListRe
 }
 
 type ReviewReq struct {
-	KBID    uint   `json:"kb_id" swaggerignore:"true"`
-	QAID    uint   `json:"qa_id" swaggerignore:"true"`
+	KBID    uint   `json:"-" swaggerignore:"true"`
+	QAID    uint   `json:"-" swaggerignore:"true"`
 	AddNew  bool   `json:"add_new" binding:"required"`
+	Title   string `json:"title" binding:"required"`
 	Content string `json:"content" binding:"required"`
 }
 
@@ -949,6 +950,7 @@ func (d *KBDocument) Review(ctx context.Context, req ReviewReq) error {
 	}
 	if req.AddNew {
 		err := d.repoDoc.UpdateByModel(ctx, &model.KBDocument{
+			Title:    req.Title,
 			Markdown: []byte(req.Content),
 			Status:   model.DocStatusPendingApply,
 		}, repo.QueryWithEqual("id", req.QAID))
@@ -969,6 +971,7 @@ func (d *KBDocument) Review(ctx context.Context, req ReviewReq) error {
 		return err
 	}
 	err = d.repoDoc.UpdateByModel(ctx, &model.KBDocument{
+		Title:    req.Title,
 		Markdown: []byte(req.Content),
 		Status:   model.DocStatusPendingApply,
 	}, repo.QueryWithEqual("id", doc.SimilarID))

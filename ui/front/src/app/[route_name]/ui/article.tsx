@@ -1,5 +1,5 @@
 'use client'
-import { getDiscussion, getRankContribute } from '@/api'
+import { getDiscussion } from '@/api'
 import {
   GetDiscussionParams,
   ModelDiscussionListItem,
@@ -8,14 +8,12 @@ import {
   ModelGroupWithItem,
   ModelListRes,
   ModelUserRole,
-  SvcRankContributeItem,
 } from '@/api/types'
 import { AuthContext } from '@/components/authProvider'
 import BrandAttribution from '@/components/BrandAttribution'
-import CommonAvatar from '@/components/CommonAvatar'
+import ContributorsRank from '@/components/ContributorsRank'
 import { CommonContext } from '@/components/commonProvider'
 import { ReleaseModal } from '@/components/discussion'
-import Icon from '@/components/icon'
 import SearchResultModal from '@/components/SearchResultModal'
 import { useGroupData } from '@/contexts/GroupDataContext'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
@@ -44,7 +42,6 @@ import {
   useTheme,
 } from '@mui/material'
 import { useBoolean, useInViewport } from 'ahooks'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import React, { useContext, useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -108,8 +105,6 @@ const Article = ({
   const [articleData, setArticleData] = useState(data)
   const [page, setPage] = useState(1)
   const [loadingMore, setLoadingMore] = useState(false)
-  const [contributors, setContributors] = useState<SvcRankContributeItem[]>([])
-  const [contributorsLoading, setContributorsLoading] = useState(false)
   const [announcements, setAnnouncements] = useState<ModelDiscussionListItem[]>([])
   const sidebarRef = useRef<HTMLDivElement>(null)
   const loadMoreTriggerRef = useRef<HTMLDivElement | null>(null)
@@ -134,23 +129,6 @@ const Article = ({
   const [lastPathname, setLastPathname] = useState('')
 
   const hookForumId = useForumId()
-
-  const fetchContributors = useCallback(async () => {
-    try {
-      setContributorsLoading(true)
-      const response = await getRankContribute()
-      setContributors(response?.items || [])
-    } catch (error) {
-      console.error('Failed to fetch contributors:', error)
-    } finally {
-      setContributorsLoading(false)
-    }
-  }, [])
-
-  // 获取贡献达人榜单
-  useEffect(() => {
-    fetchContributors()
-  }, [fetchContributors])
 
   const announcementBlogIdsKey = (forumInfo?.blog_ids ?? []).join(',')
 
@@ -903,202 +881,7 @@ const Article = ({
           ))}
 
           {/* 贡献达人 */}
-          <Paper
-            elevation={0}
-            sx={{
-              bgcolor: '#ffffff',
-              borderRadius: 1,
-
-              border: '1px solid #D9DEE2',
-              p: 2,
-              mb: 2,
-            }}
-          >
-            <Stack direction='row' alignItems='center' justifyContent={'space-between'} sx={{ mb: 2 }}>
-              <Stack direction='row' alignItems='center' gap={1}>
-                <Image
-                  alt='crown'
-                  width={20}
-                  height={20}
-                  src='/crown.svg'
-                  style={{ position: 'relative', top: '-0.5px' }}
-                />
-                <Typography variant='subtitle2' sx={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>
-                  贡献达人
-                </Typography>
-              </Stack>
-              <Stack direction='row' alignItems='center' gap={1}>
-                <IconButton
-                  size='small'
-                  aria-label='刷新贡献达人列表'
-                  onClick={() => {
-                    // 支持二次点击立即重新获取贡献达人
-                    if (typeof fetchContributors === 'function') {
-                      fetchContributors()
-                    }
-                  }}
-                  sx={{
-                    p: 0.5,
-                  }}
-                >
-                  <Icon type='icon-shuaxin' sx={{ fontSize: 18, color: '#6b7280' }} />
-                </IconButton>
-                <Typography variant='body2' sx={{ fontSize: '14px', color: 'rgba(33, 34, 45, 0.50)' }}>
-                  上周
-                </Typography>
-              </Stack>
-            </Stack>
-
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-              {contributorsLoading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-                  <CircularProgress size={16} />
-                </Box>
-              ) : contributors.length === 0 ? (
-                <Typography
-                  variant='caption'
-                  sx={{
-                    color: '#6b7280',
-                    fontSize: '0.7rem',
-                    lineHeight: 1.5,
-                  }}
-                >
-                  暂无数据
-                </Typography>
-              ) : (
-                contributors.map((contributor, index) => {
-                  const contributorProfileHref = contributor.id ? `/profile/${contributor.id}` : undefined
-                  return (
-                    <Box
-                      key={contributor.id || index}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        p: 0.75,
-                        pl: 0,
-                        borderRadius: '4px',
-                        bgcolor: 'transparent',
-                        border: 'none',
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: 20,
-                          height: 20,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          borderRadius: '3px',
-                          fontSize: '0.8rem',
-                          fontWeight: 800,
-                          flexShrink: 0,
-                          fontFamily: 'Gilroy',
-                          fontStyle: 'italic',
-                          letterSpacing: '-0.02em',
-                          textRendering: 'optimizeLegibility',
-                          WebkitFontSmoothing: 'antialiased',
-                          background:
-                            index === 0
-                              ? 'linear-gradient(to bottom, #F64E54, #FB868D)'
-                              : index === 1
-                                ? 'linear-gradient(to bottom, #FC8664, #FBAD86)'
-                                : index === 2
-                                  ? 'linear-gradient(to bottom, #FBC437, #FFE0A9)'
-                                  : 'linear-gradient(to bottom, #BCBCBC, #E1E1E1)',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                          backgroundClip: 'text',
-                        }}
-                      >
-                        {index + 1}
-                      </Box>
-                      <Box
-                        tabIndex={0}
-                        sx={{
-                          outline: 'none',
-                          display: 'flex',
-                          alignItems: 'center',
-                          borderRadius: 1,
-                          transition: 'box-shadow 0.2s, border-color 0.2s, background 0.2s',
-                          color: 'text.primary',
-                          '&:focus-within, &:hover ': {
-                            color: 'primary.main',
-                          },
-                          my: '-2px',
-                          ml: '-4px',
-                          flex: 1,
-                          minWidth: 0,
-                        }}
-                      >
-                        {contributorProfileHref ? (
-                          <Link href={contributorProfileHref} style={{ display: 'inline-flex' }} tabIndex={-1}>
-                            <CommonAvatar src={contributor.avatar} name={contributor.name} />
-                          </Link>
-                        ) : (
-                          <CommonAvatar src={contributor.avatar} name={contributor.name} />
-                        )}
-                        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', ml: 1 }}>
-                          {contributorProfileHref ? (
-                            <Link
-                              href={contributorProfileHref || '/'}
-                              style={{
-                                fontWeight: 600,
-                                color: 'inherit',
-                                fontSize: '0.875rem',
-                                lineHeight: 1.3,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                textDecoration: 'none',
-                                display: 'block',
-                              }}
-                              tabIndex={-1}
-                            >
-                              <Ellipsis>{contributor.name || '未知用户'}</Ellipsis>
-                            </Link>
-                          ) : (
-                            <Typography
-                              variant='body2'
-                              sx={{
-                                fontWeight: 600,
-                                color: 'inherit',
-                                fontSize: '0.875rem',
-                                lineHeight: 1.3,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              <Ellipsis>{contributor.name || '未知用户'}</Ellipsis>
-                            </Typography>
-                          )}
-                        </Box>
-                      </Box>
-                      {contributor.score !== undefined && (
-                        <Box sx={{ display: 'flex', gap: 0.75, flexShrink: 0 }}>
-                          <Typography
-                            variant='caption'
-                            sx={{
-                              fontFamily: 'Gilroy, Gilroy',
-                              fontWeight: 500,
-                              fontSize: '14px',
-                              color: 'rgba(33, 34, 45, 1)',
-                              lineHeight: '24px',
-                              textAlign: 'right',
-                              fontStyle: 'normal',
-                            }}
-                          >
-                            {Math.ceil(contributor.score)}
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
-                  )
-                })
-              )}
-            </Box>
-          </Paper>
+          <ContributorsRank />
 
           {/* 品牌声明 */}
           <BrandAttribution inSidebar={true} sidebarRef={sidebarRef as React.RefObject<HTMLElement>} />

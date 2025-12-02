@@ -5,6 +5,7 @@ type RankType uint
 const (
 	RankTypeContribute RankType = iota + 1
 	RankTypeAIInsight
+	RankTypeAllContribute
 )
 
 type Rank struct {

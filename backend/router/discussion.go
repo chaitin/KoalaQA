@@ -10,11 +10,12 @@ import (
 )
 
 type discussion struct {
-	disc *svc.Discussion
+	disc       *svc.Discussion
+	discFollow *svc.DiscussionFollow
 }
 
-func newDiscussion(svc *svc.Discussion) server.Router {
-	return &discussion{disc: svc}
+func newDiscussion(svc *svc.Discussion, discFollow *svc.DiscussionFollow) server.Router {
+	return &discussion{disc: svc, discFollow: discFollow}
 }
 
 func init() {
@@ -28,6 +29,7 @@ func (d *discussion) Route(h server.Handler) {
 	g.GET("/:disc_id", d.Detail)
 	g.GET("/:disc_id/associate", d.ListAssociate)
 	g.GET("/:disc_id/similarity", d.ListSimilarity)
+	g.GET("/:disc_id/follow", d.FollowInfo)
 }
 
 // List
@@ -141,5 +143,23 @@ func (d *discussion) Detail(ctx *context.Context) {
 		ctx.InternalError(err, "failed to detail discussion")
 		return
 	}
+	ctx.Success(res)
+}
+
+// FollowInfo
+// @Summary get discussion follow info
+// @Description get discussion follow info
+// @Tags discussion
+// @Accept json
+// @Produce json
+// @Param disc_id path string true "disc_id"
+// @Success 200 {object} context.Response{data=svc.DiscussionListFollowRes}
+// @Router /discussion/{disc_id}/follow [get]
+func (d *discussion) FollowInfo(ctx *context.Context) {
+	res, err := d.discFollow.FollowInfo(ctx, ctx.GetUser().UID, ctx.Param("disc_id"))
+	if err != nil {
+		ctx.InternalError(err, "list follow info failed")
+	}
+
 	ctx.Success(res)
 }

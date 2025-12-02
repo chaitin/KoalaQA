@@ -22,6 +22,7 @@ enum ContentType {
   FEEDBACK = 'feedback',
   QA = 'qa',
   BLOG = 'blog', // 新增文章类型
+  ISSUE = 'issue', // 新增问题类型
 }
 
 // 消息通知类型枚举
@@ -35,7 +36,11 @@ enum MsgNotifyType {
   MsgNotifyTypeBotUnknown = 6, //提出了机器人无法回答的问题（仅管理员
   MsgNotifyTypeLikeFeedback = 7, //点赞了你的反馈
   MsgNotifyTypeUserReview = 8, // 用户审核结果
-  MsgNotifyTypeAdminMarkSolved = 9, // 管理员将你的帖子标记为已解决
+  MsgNotifyTypeResolveByAdmin = 9, // 管理员将你的帖子标记为已解决
+  MsgNotifyTypeCloseDiscussion = 10, // 管理员关闭了你的帖子
+  MsgNotifyTypeAssociateIssue = 11, // 管理员将你的帖子转为issue
+  MsgNotifyTypeIssueInProgress = 12, // 管理员将你的问题标记为进行中
+  MsgNotifyTypeIssueResolved = 13, // 管理员将你的问题标记为已解决
 }
 
 enum UserReviewType {
@@ -95,6 +100,17 @@ const CONTENT_TYPE_CONFIGS: Record<ContentType, ContentTypeConfig> = {
     likeFeedbackAction: '点赞了你的文章',
     adminMarkSolvedAction: '将你的文章标记为已解决',
   },
+  [ContentType.ISSUE]: {
+    replyAction: '评论了你的问题',
+    commentAction: '回复了你的评论',
+    applyAction: '采纳了你的评论',
+    likeAction: '赞同了你的回答',
+    dislikeAction: '不喜欢你的回答',
+    dislikeBotAction: '不喜欢机器人的回答',
+    botUnknownAction: '提出了机器人无法回答的问题',
+    likeFeedbackAction: '点赞了你的反馈',
+    adminMarkSolvedAction: '将你的问题标记为已解决',
+  },
 }
 
 /**
@@ -119,7 +135,7 @@ class ContentTypeConfigManager {
    * @returns 配置对象
    */
   getConfig(contentType: string): ContentTypeConfig {
-    return this.configs[contentType] || this.configs[ContentType.QA]
+    return this.configs[contentType] || this.configs[ContentType.QA] || this.configs[ContentType.ISSUE]
   }
 
   /**
@@ -186,8 +202,16 @@ const getNotificationText = (info: MessageNotifyInfo, userRole?: ModelUserRole):
       return config.botUnknownAction
     case MsgNotifyType.MsgNotifyTypeLikeFeedback:
       return config.likeFeedbackAction
-    case MsgNotifyType.MsgNotifyTypeAdminMarkSolved:
+    case MsgNotifyType.MsgNotifyTypeResolveByAdmin:
       return config.adminMarkSolvedAction
+    case MsgNotifyType.MsgNotifyTypeCloseDiscussion:
+      return '关闭了你的帖子'
+    case MsgNotifyType.MsgNotifyTypeAssociateIssue:
+      return '把你的问题关联到 Issue'
+    case MsgNotifyType.MsgNotifyTypeIssueInProgress: // 你关注的 Issue 状态变更为进行中 【Issue 标题】
+      return '将 Issue 状态变更为进行中'
+    case MsgNotifyType.MsgNotifyTypeIssueResolved: // 你关注的 Issue 状态变更为已完成 【Issue 标题】
+      return '将 Issue 状态变更为已完成'
     default:
       return ''
   }
@@ -257,7 +281,7 @@ export const getNotificationTextForExport = (
     discuss_id: (info as any).discuss_id || 0,
     discuss_title: (info as any).discuss_title || '',
     discuss_uuid: (info as any).discuss_uuid || '',
-    discussion_type: (info.discussion_type as ContentType) || ContentType.QA,
+    discussion_type: (info.discussion_type as ContentType) || ContentType.QA || ContentType.ISSUE,
     type: (info.type as MsgNotifyType) || MsgNotifyType.MsgNotifyTypeUnknown,
     from_id: (info as any).from_id || 0,
     from_name: (info as any).from_name || '',
@@ -636,7 +660,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
               color='info'
               onClick={() => {
                 handleNotificationMenuClose()
-                router.push('/profile?tab=2')
+                router.push('/profile?tab=4')
               }}
             >
               查看全部通知
