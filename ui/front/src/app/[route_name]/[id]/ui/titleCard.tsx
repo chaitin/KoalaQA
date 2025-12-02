@@ -74,6 +74,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const [releaseVisible, { setFalse: releaseClose, setTrue: releaseOpen }] = useBoolean(false)
   const [convertToIssueVisible, { setFalse: convertToIssueClose, setTrue: convertToIssueOpen }] = useBoolean(false)
   const [followInfo, setFollowInfo] = useState<{ followed?: boolean; follower?: number }>({})
+  const [isHoveringFollow, setIsHoveringFollow] = useState(false)
   const router = useRouter()
   const forums = useForumStore((s) => s.forums)
   const { id, route_name }: { id: string; route_name?: string } = (useParams() as any) || { id: '' }
@@ -426,6 +427,8 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
             {isIssuePost && !isClosed && (
               <Box
                 onClick={handleFollow}
+                onMouseEnter={() => setIsHoveringFollow(true)}
+                onMouseLeave={() => setIsHoveringFollow(false)}
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
@@ -433,16 +436,27 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                   gap: 0.5,
                   background: followInfo.followed ? 'rgba(233, 236, 239, 1)' : 'rgba(0,99,151,0.06)',
                   color: followInfo.followed ? 'text.secondary' : 'primary.main',
-                  px: 1,
-                  lineHeight: '23px',
-                  height: '23px',
+                  minWidth: '70px',
+                  lineHeight: '22px',
+                  height: '22px',
                   borderRadius: 0.5,
                   cursor: 'pointer',
                   transition: 'all 0.2s',
+                  '&:hover': {
+                    background: followInfo.followed ? 'rgba(220, 224, 228, 1)' : 'rgba(0,99,151,0.12)',
+                  },
                 }}
               >
-                <Typography variant='body2' sx={{ fontWeight: followInfo.followed ? 400 : 500, fontSize: '12px' }}>
-                  {followInfo.followed ? '取消关注' : '关注'}
+                <Typography
+                  variant='body2'
+                  sx={{
+                    fontWeight: followInfo.followed ? 400 : 500,
+                    fontSize: '12px',
+                    color: 'inherit',
+                    transition: 'color 0.2s',
+                  }}
+                >
+                  {followInfo.followed ? (isHoveringFollow ? '取消关注' : '已关注') : '关注 Issue'}
                 </Typography>
               </Box>
             )}
@@ -461,6 +475,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                   borderRadius: 0.5,
                   cursor: 'pointer',
                   transition: 'all 0.2s',
+                  height: '22px',
                   '&:hover': {
                     color: '#000000',
                     background: 'rgba(0,99,151,0.1)',
@@ -468,7 +483,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                 }}
               >
                 <Icon type='icon-dianzan1' sx={{ fontSize: 12 }} />
-                <Typography variant='caption' sx={{ fontWeight: 600, fontFamily: 'Gilroy', fontSize: '14px' }}>
+                <Typography variant='caption' sx={{ fontWeight: 600, fontFamily: 'Gilroy', fontSize: '14px',lineHeight: 1 }}>
                   {formatNumber((data.like || 0) - (data.dislike || 0))}
                 </Typography>
               </Box>

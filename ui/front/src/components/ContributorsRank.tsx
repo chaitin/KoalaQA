@@ -2,36 +2,60 @@
 import { getRankContribute } from '@/api'
 import { SvcRankContributeItem } from '@/api/types'
 import CommonAvatar from '@/components/CommonAvatar'
-import Icon from '@/components/icon'
 import { Ellipsis } from '@ctzhian/ui'
-import { Box, CircularProgress, IconButton, Paper, Stack, Typography } from '@mui/material'
-import { useCallback, useEffect, useState } from 'react'
+import RefreshIcon from '@mui/icons-material/Refresh'
+import { Box, IconButton, Paper, Stack, Typography } from '@mui/material'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useCallback, useEffect, useState } from 'react'
 
 type RankType = 1 | 3 // 1: 上周, 3: 总榜
 
 export default function ContributorsRank() {
   const [rankType, setRankType] = useState<RankType>(1) // 默认显示上周
-  const [contributors, setContributors] = useState<SvcRankContributeItem[]>([])
+  // 存储两种类型的数据
+  const [contributorsData, setContributorsData] = useState<{
+    1: SvcRankContributeItem[]
+    3: SvcRankContributeItem[]
+  }>({
+    1: [],
+    3: [],
+  })
   const [contributorsLoading, setContributorsLoading] = useState(false)
 
-  const fetchContributors = useCallback(async () => {
+  // 获取当前选中类型的数据
+  const contributors = contributorsData[rankType]
+
+  // 获取指定类型的数据
+  const fetchContributorsByType = useCallback(async (type: RankType) => {
+    try {
+      const response = await getRankContribute({ type })
+      setContributorsData((prev) => ({
+        ...prev,
+        [type]: response?.items || [],
+      }))
+    } catch (error) {
+      console.error(`Failed to fetch contributors (type ${type}):`, error)
+    }
+  }, [])
+
+  // 获取所有类型的数据
+  const fetchAllContributors = useCallback(async () => {
     try {
       setContributorsLoading(true)
-      const response = await getRankContribute({ type: rankType })
-      setContributors(response?.items || [])
+      // 同时请求两种类型的数据
+      await Promise.all([fetchContributorsByType(1), fetchContributorsByType(3)])
     } catch (error) {
-      console.error('Failed to fetch contributors:', error)
+      console.error('Failed to fetch all contributors:', error)
     } finally {
       setContributorsLoading(false)
     }
-  }, [rankType])
+  }, [fetchContributorsByType])
 
-  // 获取贡献达人榜单
+  // 初始加载时获取所有数据
   useEffect(() => {
-    fetchContributors()
-  }, [fetchContributors])
+    fetchAllContributors()
+  }, [fetchAllContributors])
 
   return (
     <Paper
@@ -46,13 +70,7 @@ export default function ContributorsRank() {
     >
       <Stack direction='row' alignItems='center' justifyContent={'space-between'} sx={{ mb: 2 }}>
         <Stack direction='row' alignItems='center' gap={1}>
-          <Image
-            alt='crown'
-            width={20}
-            height={20}
-            src='/crown.svg'
-            style={{ position: 'relative', top: '-0.5px' }}
-          />
+          <Image alt='crown' width={20} height={20} src='/crown.svg' style={{ position: 'relative', top: '-0.5px' }} />
           <Typography variant='subtitle2' sx={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>
             贡献达人
           </Typography>
@@ -62,14 +80,14 @@ export default function ContributorsRank() {
             size='small'
             aria-label='刷新贡献达人列表'
             onClick={() => {
-              // 支持二次点击立即重新获取贡献达人
-              fetchContributors()
+              // 刷新所有类型的数据
+              fetchAllContributors()
             }}
             sx={{
               p: 0.5,
             }}
           >
-            <Icon type='icon-shuaxin' sx={{ fontSize: 18, color: '#6b7280' }} />
+            <RefreshIcon sx={{ fontSize: 18, color: '#6b7280' }} />
           </IconButton>
           {/* 切换标签 */}
           <Stack
@@ -82,56 +100,37 @@ export default function ContributorsRank() {
               gap: 0,
             }}
           >
-            <Box
-              onClick={() => setRankType(1)}
-              sx={{
-                px: 1,
-                py: 0.25,
-                borderRadius: '2px',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontWeight: rankType === 1 ? 600 : 400,
-                color: rankType === 1 ? '#111827' : 'rgba(33, 34, 45, 0.50)',
-                bgcolor: rankType === 1 ? '#ffffff' : 'transparent',
-                transition: 'all 0.2s',
-                boxShadow: rankType === 1 ? '0 1px 2px rgba(0, 0, 0, 0.05)' : 'none',
-                '&:hover': {
-                  color: '#111827',
-                },
-              }}
-            >
-              上周
-            </Box>
-            <Box
-              onClick={() => setRankType(3)}
-              sx={{
-                px: 1,
-                py: 0.25,
-                borderRadius: '2px',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontWeight: rankType === 3 ? 600 : 400,
-                color: rankType === 3 ? '#111827' : 'rgba(33, 34, 45, 0.50)',
-                bgcolor: rankType === 3 ? '#ffffff' : 'transparent',
-                transition: 'all 0.2s',
-                boxShadow: rankType === 3 ? '0 1px 2px rgba(0, 0, 0, 0.05)' : 'none',
-                '&:hover': {
-                  color: '#111827',
-                },
-              }}
-            >
-              总榜
-            </Box>
+            {[
+              { type: 1 as RankType, label: '上周' },
+              { type: 3 as RankType, label: '总榜' },
+            ].map(({ type, label }) => {
+              const isActive = rankType === type
+              return (
+                <Box
+                  key={type}
+                  onClick={() => setRankType(type)}
+                  sx={{
+                    px: 1,
+                    py: 0.25,
+                    borderRadius: '2px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: isActive ? 600 : 400,
+                    color: isActive ? '#111827' : 'rgba(33, 34, 45, 0.50)',
+                    bgcolor: isActive ? '#ffffff' : 'transparent',
+                    boxShadow: isActive ? '0 1px 2px rgba(0, 0, 0, 0.05)' : 'none',
+                  }}
+                >
+                  {label}
+                </Box>
+              )
+            })}
           </Stack>
         </Stack>
       </Stack>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-        {contributorsLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-            <CircularProgress size={16} />
-          </Box>
-        ) : contributors.length === 0 ? (
+        {contributorsLoading ? null : contributors.length === 0 ? (
           <Typography
             variant='caption'
             sx={{
@@ -278,4 +277,3 @@ export default function ContributorsRank() {
     </Paper>
   )
 }
-

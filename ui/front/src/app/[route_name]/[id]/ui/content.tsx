@@ -353,7 +353,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
       />
       <Stack
         sx={{
-          flex: isArticlePost ? 'unset' : 1,
+          flex: !isQAPost ? 'unset' : 1,
           '& .md-container .MuiIconButton-root + *': {
             display: 'none',
           },
