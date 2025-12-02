@@ -58,6 +58,7 @@ const discussionPostTemplate = `
 `
 
 const discussionFullTemplate = `
+## 当前帖子信息
 帖子ID：{{.Discussion.ID}}
 帖子标题：{{.Discussion.Title}}
 帖子内容：{{.Discussion.Content}}
@@ -66,7 +67,7 @@ const discussionFullTemplate = `
 {{- if .Discussion.Tags}}
 帖子标签：{{join .Discussion.Tags ", "}}
 {{- end}}
-### 解决状态：{{getDiscState .Discussion.Resolved}}
+解决状态：{{getDiscState .Discussion.Resolved}}
 
 ## 评论楼层结构
 {{- if .CommentTree}}
@@ -75,10 +76,6 @@ const discussionFullTemplate = `
 {{- end}}
 {{- else}}
 暂无评论
-{{- end}}
-
-{{- if .NewComment}}
-针对新评论ID {{.NewComment.ID}} 进行回复
 {{- end}}
 `
 
@@ -89,15 +86,15 @@ const discussionsFullTemplateStr = `
 {{- if gt (len .) 0}}
 {{- range $j, $disc := .}}
 ### 帖子{{add $j 1}}
-#### 帖子ID：{{$disc.Discussion.ID}}
-#### 帖子标题：{{$disc.Discussion.Title}}
-#### 帖子内容：{{$disc.Discussion.Content}}
-#### 发帖人：{{$disc.Discussion.UserName}}
-#### 发帖时间：{{formatTime $disc.Discussion.CreatedAt}}
+帖子ID：{{$disc.Discussion.ID}}
+帖子标题：{{$disc.Discussion.Title}}
+帖子内容：{{$disc.Discussion.Content}}
+发帖人：{{$disc.Discussion.UserName}}
+发帖时间：{{formatTime $disc.Discussion.CreatedAt}}
 {{- if $disc.Discussion.Tags}}
-#### 帖子标签：{{join $disc.Discussion.Tags ", "}}
+帖子标签：{{join $disc.Discussion.Tags ", "}}
 {{- end}}
-#### 解决状态：{{getDiscState $disc.Discussion.Resolved}}
+解决状态：{{getDiscState $disc.Discussion.Resolved}}
 
 ### 帖子{{add $j 1}}评论楼层结构
 {{- if $disc.CommentTree}}
