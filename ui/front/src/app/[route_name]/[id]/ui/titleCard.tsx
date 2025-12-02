@@ -237,7 +237,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           } catch (error) {
             console.error('关注操作失败:', error)
           }
-        }
+        },
       })
     })
   }
@@ -431,23 +431,18 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 0.5,
-                  background: followInfo.followed ? 'rgba(0,99,151,0.1)' : 'rgba(0,99,151,0.06)',
-                  color: 'primary.main',
+                  background: followInfo.followed ? 'rgba(233, 236, 239, 1)' : 'rgba(0,99,151,0.06)',
+                  color: followInfo.followed ? 'text.secondary' : 'primary.main',
                   px: 1,
                   lineHeight: '23px',
                   height: '23px',
                   borderRadius: 0.5,
                   cursor: 'pointer',
                   transition: 'all 0.2s',
-                  border: followInfo.followed ? '1px solid rgba(0,99,151,0.2)' : '1px solid transparent',
-                  '&:hover': {
-                    color: '#000000',
-                    background: 'rgba(0,99,151,0.1)',
-                  },
                 }}
               >
-                <Typography variant='body2' sx={{ fontWeight: 500, fontSize: '14px' }}>
-                  {followInfo.followed ? '已关注' : '关注'}
+                <Typography variant='body2' sx={{ fontWeight: followInfo.followed ? 400 : 500, fontSize: '12px' }}>
+                  {followInfo.followed ? '取消关注' : '关注'}
                 </Typography>
               </Box>
             )}
@@ -666,8 +661,6 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                 </Typography>
               </>
             )}
-
-            
           </Box>
         </Stack>
 
