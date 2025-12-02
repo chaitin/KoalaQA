@@ -16,9 +16,12 @@ import {
   DeleteDiscussionDiscIdCommentCommentIdParams,
   DeleteDiscussionDiscIdParams,
   GetAdminDiscussionParams,
+  GetDiscussionDiscIdAssociateParams,
   GetDiscussionDiscIdParams,
   GetDiscussionDiscIdSimilarityParams,
+  GetDiscussionFollowParams,
   GetDiscussionParams,
+  ModelDiscussion,
   ModelDiscussionDetail,
   ModelDiscussionListItem,
   ModelListRes,
@@ -28,6 +31,7 @@ import {
   PostDiscussionDiscIdCommentCommentIdLikeParams,
   PostDiscussionDiscIdCommentCommentIdRevokeLikeParams,
   PostDiscussionDiscIdCommentParams,
+  PostDiscussionDiscIdFollowParams,
   PostDiscussionDiscIdLikeParams,
   PostDiscussionDiscIdRequirementParams,
   PostDiscussionDiscIdResolveIssueParams,
@@ -177,6 +181,40 @@ export const postDiscussionComplete = (
   });
 
 /**
+ * @description list follow discussions
+ *
+ * @tags discussion
+ * @name GetDiscussionFollow
+ * @summary list follow discussions
+ * @request GET:/discussion/follow
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (ModelDiscussion)[],
+
+}),
+
+})` OK
+ */
+
+export const getDiscussionFollow = (
+  query: GetDiscussionFollowParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: ModelDiscussion[];
+      };
+    }
+  >({
+    path: `/discussion/follow`,
+    method: "GET",
+    query: query,
+    format: "json",
+    ...params,
+  });
+
+/**
  * @description discussions summary
  *
  * @tags discussion
@@ -304,6 +342,39 @@ export const deleteDiscussionDiscId = (
     path: `/discussion/${discId}`,
     method: "DELETE",
     type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description list associate discussion
+ *
+ * @tags discussion
+ * @name GetDiscussionDiscIdAssociate
+ * @summary list associate discussion
+ * @request GET:/discussion/{disc_id}/associate
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (ModelDiscussionListItem)[],
+
+}),
+
+})` OK
+ */
+
+export const getDiscussionDiscIdAssociate = (
+  { discId, ...query }: GetDiscussionDiscIdAssociateParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: ModelDiscussionListItem[];
+      };
+    }
+  >({
+    path: `/discussion/${discId}/associate`,
+    method: "GET",
     format: "json",
     ...params,
   });
@@ -556,6 +627,35 @@ export const postDiscussionDiscIdCommentCommentIdRevokeLike = (
   });
 
 /**
+ * @description follow discussion
+ *
+ * @tags discussion
+ * @name PostDiscussionDiscIdFollow
+ * @summary follow discussion
+ * @request POST:/discussion/{disc_id}/follow
+ * @response `200` `(ContextResponse & {
+    data?: number,
+
+})` OK
+ */
+
+export const postDiscussionDiscIdFollow = (
+  { discId, ...query }: PostDiscussionDiscIdFollowParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: number;
+    }
+  >({
+    path: `/discussion/${discId}/follow`,
+    method: "POST",
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
  * @description like discussion
  *
  * @tags discussion
@@ -591,14 +691,21 @@ export const postDiscussionDiscIdLike = (
  * @name PostDiscussionDiscIdRequirement
  * @summary discussion requirement
  * @request POST:/discussion/{disc_id}/requirement
- * @response `200` `ContextResponse` OK
+ * @response `200` `(ContextResponse & {
+    data?: string,
+
+})` OK
  */
 
 export const postDiscussionDiscIdRequirement = (
   { discId, ...query }: PostDiscussionDiscIdRequirementParams,
   params: RequestParams = {},
 ) =>
-  request<ContextResponse>({
+  request<
+    ContextResponse & {
+      data?: string;
+    }
+  >({
     path: `/discussion/${discId}/requirement`,
     method: "POST",
     type: ContentType.Json,

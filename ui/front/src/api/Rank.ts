@@ -13,6 +13,7 @@
 import request, { RequestParams } from "./httpClient";
 import {
   ContextResponse,
+  GetRankContributeParams,
   ModelListRes,
   ModelRankTimeGroup,
   ModelRankTimeGroupItem,
@@ -65,7 +66,10 @@ export const getAdminRankAiInsight = (params: RequestParams = {}) =>
 })` OK
  */
 
-export const getRankContribute = (params: RequestParams = {}) =>
+export const getRankContribute = (
+  query: GetRankContributeParams,
+  params: RequestParams = {},
+) =>
   request<
     ContextResponse & {
       data?: ModelListRes & {
@@ -75,6 +79,7 @@ export const getRankContribute = (params: RequestParams = {}) =>
   >({
     path: `/rank/contribute`,
     method: "GET",
+    query: query,
     format: "json",
     ...params,
   });

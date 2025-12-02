@@ -26,6 +26,7 @@ import NotificationCenter from './NotificationCenter'
 import ProfileHeroCard from './ProfileHeroCard'
 import UserTrendList from './UserTrendList'
 import QuickReplyList from './QuickReplyList'
+import FollowingIssuesList from './FollowingIssuesList'
 import { roleConfig } from '@/constant'
 import { isAdminRole } from '@/lib/utils'
 
@@ -284,14 +285,17 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
             <ToggleButton value='1' sx={toggleButtonSx}>
               基本信息
             </ToggleButton>
-            <ToggleButton value='2' sx={toggleButtonSx}>
-              通知中心
-            </ToggleButton>
             {isAdminRole(user.role || ModelUserRole.UserRoleGuest) && (
-              <ToggleButton value='3' sx={toggleButtonSx}>
+              <ToggleButton value='2' sx={toggleButtonSx}>
                 客服配置
               </ToggleButton>
             )}
+            <ToggleButton value={isAdminRole(user.role || ModelUserRole.UserRoleGuest) ? '3' : '2'} sx={toggleButtonSx}>
+              正在关注
+            </ToggleButton>
+            <ToggleButton value={isAdminRole(user.role || ModelUserRole.UserRoleGuest) ? '4' : '3'} sx={toggleButtonSx}>
+              通知中心
+            </ToggleButton>
           </ToggleButtonGroup>
         </Box>
         {/* 子元素 role=tabpanel 的加个 border */}
@@ -448,11 +452,38 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
               </Stack>
             </Stack>
           </TabPanel>
-          <TabPanel value={tabValue} index={2}>
-            <NotificationCenter />
+          {isAdminRole(user.role || ModelUserRole.UserRoleGuest) && (
+            <TabPanel value={tabValue} index={2}>
+              <QuickReplyList />
+            </TabPanel>
+          )}
+          <TabPanel value={tabValue} index={isAdminRole(user.role || ModelUserRole.UserRoleGuest) ? 3 : 2}>
+            {isGuestUser ? (
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                sx={{ height: '300px', color: 'text.secondary' }}
+                alignItems='center'
+                justifyContent='center'
+              >
+                <Typography variant='body1' fontWeight={400}>
+                  您的账号未激活，请点击
+                </Typography>
+                <Typography
+                  variant='body1'
+                  sx={{ cursor: 'pointer' }}
+                  color='primary.main'
+                  fontWeight={500}
+                  onClick={openModal}
+                >
+                  提交申请
+                </Typography>
+              </Stack>
+            ) : (
+              <FollowingIssuesList />
+            )}
           </TabPanel>
-          <TabPanel value={tabValue} index={3}>
-            <QuickReplyList />
+          <TabPanel value={tabValue} index={isAdminRole(user.role || ModelUserRole.UserRoleGuest) ? 4 : 3}>
+            <NotificationCenter />
           </TabPanel>
         </Box>
       </Card>

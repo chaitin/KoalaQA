@@ -1,13 +1,22 @@
 'use client'
 import {
   deleteDiscussionDiscId,
+  deleteDiscussionDiscIdFollow,
+  getDiscussionDiscIdFollow,
   postDiscussionDiscIdComment,
+  postDiscussionDiscIdFollow,
   postDiscussionDiscIdLike,
   postDiscussionDiscIdResolveIssue,
   postDiscussionDiscIdRevokeLike,
   putDiscussionDiscIdClose,
 } from '@/api'
-import { ModelDiscussionDetail, ModelDiscussionState, ModelDiscussionType, ModelUserRole } from '@/api/types'
+import {
+  ModelDiscussionDetail,
+  ModelDiscussionState,
+  ModelDiscussionType,
+  ModelUserRole,
+  SvcDiscussionListFollowRes,
+} from '@/api/types'
 import { DiscussionTypeChip, IssueStatusChip, QaUnresolvedChip } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import CommonAvatar from '@/components/CommonAvatar'
@@ -29,7 +38,7 @@ import { Box, Chip, Divider, IconButton, Menu, MenuItem, Paper, Stack, Typograph
 import { useBoolean } from 'ahooks'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { useContext, useEffect, useMemo, useRef } from 'react'
+import { useContext, useEffect, useMemo, useRef, useState } from 'react'
 
 // 添加CSS动画样式
 const animationStyles = `
@@ -64,6 +73,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const { user } = useContext(AuthContext)
   const [releaseVisible, { setFalse: releaseClose, setTrue: releaseOpen }] = useBoolean(false)
   const [convertToIssueVisible, { setFalse: convertToIssueClose, setTrue: convertToIssueOpen }] = useBoolean(false)
+  const [followInfo, setFollowInfo] = useState<{ followed?: boolean; follower?: number }>({})
   const router = useRouter()
   const forums = useForumStore((s) => s.forums)
   const { id, route_name }: { id: string; route_name?: string } = (useParams() as any) || { id: '' }
@@ -87,6 +97,24 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
       }
     }
   }, [])
+
+  // 获取关注信息
+  useEffect(() => {
+    const fetchFollowInfo = async () => {
+      try {
+        const followData = await getDiscussionDiscIdFollow({ discId: id })
+        if (followData) {
+          setFollowInfo({
+            followed: followData.followed,
+            follower: followData.follower,
+          })
+        }
+      } catch (error) {
+        console.error('Failed to fetch follow info:', error)
+      }
+    }
+    fetchFollowInfo()
+  }, [id])
   const { checkAuth } = useAuthCheck()
   const anchorElRef = useRef(null)
   const editorRef = useRef<EditorWrapRef>(null)
@@ -179,6 +207,38 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
       } catch (error) {
         console.error('点赞操作失败:', error)
       }
+    })
+  }
+
+  const handleFollow = async () => {
+    return checkAuth(async () => {
+      const isFollowed = followInfo.followed
+      Modal.confirm({
+        title: isFollowed ? '确定要取消关注此帖子吗？' : '确定要关注此帖子吗？',
+        content: isFollowed ? '取消关注后将不再收到该帖子的更新通知。' : '关注后将收到该帖子的更新通知。',
+        onOk: async () => {
+          try {
+            if (isFollowed) {
+              // 取消关注
+              await deleteDiscussionDiscIdFollow({ discId: id })
+            } else {
+              // 关注
+              await postDiscussionDiscIdFollow({ discId: id })
+            }
+            // 刷新关注信息
+            const followData = await getDiscussionDiscIdFollow({ discId: id })
+            if (followData) {
+              setFollowInfo({
+                followed: followData.followed,
+                follower: followData.follower,
+              })
+            }
+            router.refresh()
+          } catch (error) {
+            console.error('关注操作失败:', error)
+          }
+        }
+      })
     })
   }
   const getStatusColor = (status: string) => {
@@ -275,16 +335,18 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         {isIssuePost &&
           [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
             user.role || ModelUserRole.UserRoleUnknown,
-          ) && (
-            <>
-              {data.resolved === ModelDiscussionState.DiscussionStateNone && (
-                <MenuItem onClick={handleMarkInProgress}>标记为进行中</MenuItem>
-              )}
-              {data.resolved === ModelDiscussionState.DiscussionStateInProgress && (
-                <MenuItem onClick={handleMarkCompleted}>标记为已完成</MenuItem>
-              )}
-            </>
-          )}
+          ) && [
+            data.resolved === ModelDiscussionState.DiscussionStateNone && (
+              <MenuItem key='in-progress' onClick={handleMarkInProgress}>
+                标记为进行中
+              </MenuItem>
+            ),
+            data.resolved === ModelDiscussionState.DiscussionStateInProgress && (
+              <MenuItem key='completed' onClick={handleMarkCompleted}>
+                标记为已完成
+              </MenuItem>
+            ),
+          ]}
 
         {canConvertToIssue && (
           <MenuItem
@@ -358,8 +420,37 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
               {data.title}
             </Ellipsis>
           </Box>
-          {/* 右侧：点赞数和更多选项 */}
+          {/* 右侧：关注、点赞数和更多选项 */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+            {/* Issue 类型显示关注按钮 */}
+            {isIssuePost && !isClosed && (
+              <Box
+                onClick={handleFollow}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 0.5,
+                  background: followInfo.followed ? 'rgba(0,99,151,0.1)' : 'rgba(0,99,151,0.06)',
+                  color: 'primary.main',
+                  px: 1,
+                  lineHeight: '23px',
+                  height: '23px',
+                  borderRadius: 0.5,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  border: followInfo.followed ? '1px solid rgba(0,99,151,0.2)' : '1px solid transparent',
+                  '&:hover': {
+                    color: '#000000',
+                    background: 'rgba(0,99,151,0.1)',
+                  },
+                }}
+              >
+                <Typography variant='body2' sx={{ fontWeight: 500, fontSize: '14px' }}>
+                  {followInfo.followed ? '已关注' : '关注'}
+                </Typography>
+              </Box>
+            )}
             {/* 文章类型和 Issue 类型显示点赞数 - 已关闭帖子不显示 */}
             {(isArticlePost || isIssuePost) && !isClosed && (
               <Box
@@ -553,6 +644,30 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                 </Typography>
               </>
             )}
+            {/* Issue 类型显示关注数 */}
+            {isIssuePost && followInfo.follower !== undefined && (
+              <>
+                <Typography variant='body2' sx={{ color: 'rgba(33, 34, 45, 0.50)', px: 1 }}>
+                  ·
+                </Typography>
+                <Typography variant='body2' sx={{ color: 'rgba(33, 34, 45, 0.50)' }}>
+                  {followInfo.follower || 0}关注
+                </Typography>
+              </>
+            )}
+            {/* 显示浏览量 */}
+            {data.view !== undefined && data.view !== null && (
+              <>
+                <Typography variant='body2' sx={{ color: 'rgba(33, 34, 45, 0.50)', px: 1 }}>
+                  ·
+                </Typography>
+                <Typography variant='body2' sx={{ color: 'rgba(33, 34, 45, 0.50)' }}>
+                  {formatNumber(data.view || 0)} 次浏览
+                </Typography>
+              </>
+            )}
+
+            
           </Box>
         </Stack>
 

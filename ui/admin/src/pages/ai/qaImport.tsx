@@ -3,6 +3,7 @@ import {
   ModelDocStatus,
   ModelKBDocumentDetail,
   postAdminKbKbIdQuestion,
+  postAdminKbKbIdQuestionQaIdReview,
   postAdminLlmPolish,
   putAdminKbKbIdQuestionQaId,
 } from '@/api';
@@ -104,12 +105,13 @@ const QaImport = (props: {
 
   // 审核相关处理
   const handleReviewApprove = (qaItem: ModelKBDocumentDetail) => {
-    // 通过审核，更新状态为应用中
-    putAdminKbKbIdQuestionQaId(
+    // 通过审核，使用审核接口
+    postAdminKbKbIdQuestionQaIdReview(
       { kbId: kb_id, qaId: qaItem.id! },
       {
+        add_new: true,
         title: qaItem.title || '',
-        markdown: qaItem.markdown,
+        content: qaItem.markdown || '',
       }
     ).then(() => {
       message.success('审核通过');
@@ -176,6 +178,7 @@ const QaImport = (props: {
     });
   };
   useEffect(() => {
+    console.log(editItem)
     if (editItem) {
       reset(editItem);
       // 如果是待审核状态，显示审核弹窗
