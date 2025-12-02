@@ -64,3 +64,32 @@ func (d *DiscussionFollow) Follow(ctx context.Context, uid uint, discUUID string
 
 	return follow.ID, nil
 }
+
+type DiscussionListFollowRes struct {
+	Followed bool  `json:"followed"`
+	Follower int64 `json:"follower"`
+}
+
+func (d *DiscussionFollow) FollowInfo(ctx context.Context, uid uint, discUUID string) (*DiscussionListFollowRes, error) {
+	disc, err := d.disc.GetByUUID(ctx, discUUID)
+	if err != nil {
+		return nil, err
+	}
+
+	var res DiscussionListFollowRes
+	if disc.Type != model.DiscussionTypeIssue {
+		return &res, nil
+	}
+
+	res.Followed, err = d.discFollow.Exist(ctx, repo.QueryWithEqual("discussion_id", disc.ID), repo.QueryWithEqual("user_id", uid))
+	if err != nil {
+		return nil, err
+	}
+
+	err = d.discFollow.Count(ctx, &res.Follower, repo.QueryWithEqual("discussion_id", disc.ID))
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}

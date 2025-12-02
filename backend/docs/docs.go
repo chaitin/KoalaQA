@@ -4682,6 +4682,48 @@ const docTemplate = `{
             }
         },
         "/discussion/{disc_id}/follow": {
+            "get": {
+                "description": "get discussion follow info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "get discussion follow info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "disc_id",
+                        "name": "disc_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/svc.DiscussionListFollowRes"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "follow discussion",
                 "consumes": [
@@ -7720,6 +7762,17 @@ const docTemplate = `{
                 "DiscussionListFilterNew",
                 "DiscussionListFilterPublish"
             ]
+        },
+        "svc.DiscussionListFollowRes": {
+            "type": "object",
+            "properties": {
+                "followed": {
+                    "type": "boolean"
+                },
+                "follower": {
+                    "type": "integer"
+                }
+            }
         },
         "svc.DiscussionUpdateReq": {
             "type": "object",
