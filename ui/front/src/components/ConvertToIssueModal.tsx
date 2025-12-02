@@ -392,7 +392,7 @@ const ConvertToIssueModal = ({ open, onClose, questionData, onSuccess, forumInfo
                           >
                             {issue.title}
                           </Typography>
-                          <Stack direction='row' spacing={1} flexWrap='wrap' gap={0.5}>
+                          <Stack direction='row' spacing={1} alignItems='center' flexWrap='wrap' gap={0.5}>
                             <IssueStatusChip resolved={issue.resolved} size='small' />
                             {issue.group_ids?.map((groupId) => {
                               const groupName = getGroupName(groupId)
@@ -406,8 +406,8 @@ const ConvertToIssueModal = ({ open, onClose, questionData, onSuccess, forumInfo
                                     bgcolor: '#f5f5f5',
                                     color: '#000',
                                     fontSize: '12px',
-                                    height: 24,
-                                    lineHeight: '24px',
+                                    height: 22,
+                                    lineHeight: '22px',
                                     borderRadius: '4px',
                                     fontWeight: 400,
                                   }}
