@@ -25,6 +25,9 @@ image.app:
 		--build-arg HTTPS_PROXY=${HTTPS_PROXY} \
 		-t chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/app:${IMG_TAG} .
 
+image.db:
+	cd docker/db && DOCKER_BUILDKIT=1 docker build \
+		-t chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/db:17.6-bookworm .
 
 image.raglite:
 	cd docker/raglite && DOCKER_BUILDKIT=1 docker build \
