@@ -413,7 +413,7 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 			})
 		}
 
-		discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: req.Keyword, ForumID: req.ForumID, SimilarityThreshold: 0.2})
+		discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: req.Keyword, ForumID: req.ForumID, SimilarityThreshold: 0.1})
 		if err != nil {
 			return nil, err
 		}
