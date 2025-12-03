@@ -116,7 +116,7 @@ func (i *AIInsight) exist(ctx context.Context, datasetID string, data topic.MsgA
 	logger := i.logger.WithContext(ctx).With("dataset_id", datasetID).With("msg", data)
 	logger.Debug("check keyword exist")
 
-	records, err := i.in.Rag.QueryRecords(ctx, rag.QueryRecordsReq{
+	_, records, err := i.in.Rag.QueryRecords(ctx, rag.QueryRecordsReq{
 		DatasetID:           datasetID,
 		Query:               data.Keyword,
 		TopK:                10,

@@ -751,7 +751,7 @@ func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*mo
 	if err != nil {
 		return nil, err
 	}
-	records, err := d.in.Rag.QueryRecords(ctx, rag.QueryRecordsReq{
+	_, records, err := d.in.Rag.QueryRecords(ctx, rag.QueryRecordsReq{
 		DatasetID:           forum.DatasetID,
 		Query:               req.Keyword,
 		TopK:                10,
