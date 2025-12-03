@@ -38,8 +38,6 @@ const SimilarContentItem = ({ data }: SimilarContentItemProps) => {
       sx={{
         py: 1,
         px: 2,
-        transition: 'all 0.2s',
-        borderBottom: '1px solid #D9DEE2',
       }}
       className='similar-item'
     >

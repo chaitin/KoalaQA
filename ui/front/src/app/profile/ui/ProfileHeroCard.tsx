@@ -4,6 +4,7 @@ import { ModelUserRole } from '@/api'
 import { Box, Card, Divider, Stack, SxProps, Typography } from '@mui/material'
 import { ReactNode } from 'react'
 import RoleChip from './RoleChip'
+import { Ellipsis } from '@ctzhian/ui'
 
 interface MetricItem {
   label: string
@@ -19,7 +20,6 @@ interface ProfileHeroCardProps {
   rightSlot?: ReactNode
   sx?: SxProps
 }
-
 
 export default function ProfileHeroCard({
   avatar,
@@ -60,14 +60,26 @@ export default function ProfileHeroCard({
           {avatar}
         </Box>
 
-        <Box sx={{ flex: 1, textAlign: { xs: 'center', md: 'left' } }}>
-          {title && (
-            <Typography variant='h6' sx={{ fontWeight: 700 }}>
-              {title}
-            </Typography>
-          )}
-          <RoleChip role={role} />
-        </Box>
+        <Stack sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+          <Stack direction='row' alignItems='center' spacing={1} sx={{ textAlign: { xs: 'center', md: 'left' }, minWidth: 0 }}>
+            {title && (
+              <Typography 
+                variant='h6' 
+                sx={{ 
+                  fontWeight: 700,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  minWidth: 0
+                }}
+              >
+                {title}
+              </Typography>
+            )}
+            <RoleChip role={role} sx={{ flexShrink: 0 }} />
+          </Stack>
+          <Ellipsis sx={{ fontSize: '13px', color: 'rgba(31,35,41,0.5)' }}>{subtitle}</Ellipsis>
+        </Stack>
 
         {hasMetrics && (
           <Stack

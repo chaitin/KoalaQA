@@ -254,9 +254,10 @@ const QaImport = (props: {
                   border: '1px solid #e0e0e0',
                   borderRadius: 1,
                   px: 2,
-                  '& .tiptap': {
+                  '& .editor-toolbar + div': {
                     overflow: 'auto',
-                    height: '300px!important',
+                    minHeight: '320px!important',
+                    maxHeight: '340px!important',
                   },
                 }}
               >

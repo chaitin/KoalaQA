@@ -30,8 +30,6 @@ const DetailSidebarWrapper = ({ isArticle, discussion, discId }: DetailSidebarWr
         pr: 3,
         position: 'sticky',
         top: 26,
-        // maxHeight: 'calc(100vh - 100px)',
-        // overflowY: 'auto',
       }}
     >
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>

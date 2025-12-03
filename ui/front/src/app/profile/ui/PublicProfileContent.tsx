@@ -69,6 +69,7 @@ export default function PublicProfileContent({ userId, statistics }: PublicProfi
       {/* 头部背景区域 */}
       <ProfileHeroCard
         role={statistics?.role || ModelUserRole.UserRoleGuest}
+        subtitle={statistics?.intro || '暂无个人介绍'}
         avatar={
           <Box
             sx={{
