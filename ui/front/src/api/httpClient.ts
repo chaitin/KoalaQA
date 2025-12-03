@@ -368,10 +368,42 @@ export class HttpClient<SecurityDataType = unknown> {
           shouldShowError &&
           (!isCsrfError || error.config?.__isRetry)
         ) {
-          const msg =
+          let msg =
             error?.response?.data?.err ??
             error?.response?.data?.data ??
             error?.message;
+
+          // 如果是网络错误（没有 response），构造更详细的错误信息
+          if (!error?.response && error?.message === "Network Error") {
+            const errorDetails: string[] = [];
+            errorDetails.push(`网络错误: ${error.message}`);
+            
+            if (error?.code) {
+              errorDetails.push(`错误码: ${error.code}`);
+            }
+            
+            if (error?.config?.url) {
+              errorDetails.push(`请求地址: ${error.config.url}`);
+            }
+            
+            if (error?.config?.method) {
+              errorDetails.push(`请求方法: ${error.config.method.toUpperCase()}`);
+            }
+
+            // 根据错误码提供更友好的提示
+            if (error?.code === "ERR_NETWORK" || error?.code === "ERR_INTERNET_DISCONNECTED") {
+              errorDetails.push("请检查网络连接");
+            } else if (error?.code === "ERR_TIMEDOUT") {
+              errorDetails.push("请求超时，请稍后重试");
+            } else if (error?.code === "ERR_CONNECTION_REFUSED") {
+              errorDetails.push("服务器拒绝连接");
+            } else if (error?.code === "ERR_NAME_NOT_RESOLVED") {
+              errorDetails.push("无法解析服务器地址");
+            }
+
+            msg = errorDetails.join(" | ");
+          }
+
           alert.error(this.translateErrorMessage(msg));
         }
         return Promise.reject(
