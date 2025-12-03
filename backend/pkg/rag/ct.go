@@ -78,7 +78,7 @@ func (c *CTRag) UpsertRecords(ctx context.Context, req UpsertRecordsReq) (string
 	return doc.DocumentID, nil
 }
 
-func (c *CTRag) QueryRecords(ctx context.Context, req QueryRecordsReq) ([]*model.NodeContentChunk, error) {
+func (c *CTRag) QueryRecords(ctx context.Context, req QueryRecordsReq) (string, []*model.NodeContentChunk, error) {
 	if req.TopK == 0 {
 		req.TopK = 10
 	}
@@ -94,7 +94,7 @@ func (c *CTRag) QueryRecords(ctx context.Context, req QueryRecordsReq) ([]*model
 		SimilarityThreshold: req.SimilarityThreshold,
 	})
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 	nodes := make([]*model.NodeContentChunk, 0, len(res.Results))
 	for _, chunk := range res.Results {
@@ -111,7 +111,8 @@ func (c *CTRag) QueryRecords(ctx context.Context, req QueryRecordsReq) ([]*model
 		With("tags", req.Tags).
 		With("nodes_len", len(nodes)).
 		Debug("query records success")
-	return nodes, nil
+
+	return res.Query, nodes, nil
 }
 
 func (c *CTRag) DeleteRecords(ctx context.Context, datasetID string, docIDs []string) error {

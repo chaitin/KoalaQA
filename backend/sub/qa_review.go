@@ -117,7 +117,7 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 		DocType:  model.DocTypeQuestion,
 		Status:   model.DocStatusPendingReview,
 	}
-	chunks, err := q.rag.QueryRecords(ctx, rag.QueryRecordsReq{
+	_, chunks, err := q.rag.QueryRecords(ctx, rag.QueryRecordsReq{
 		DatasetID:           q.dataset.GetBackendID(ctx),
 		Query:               data.DiscussTitle,
 		TopK:                1000,
