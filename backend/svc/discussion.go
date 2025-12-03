@@ -848,7 +848,7 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 		Content:      req.Content,
 		Bot:          req.Bot,
 	}
-	err = d.in.CommRepo.Create(ctx, &comment)
+	err = d.in.CommRepo.Create(ctx, disc.Type, &comment)
 	if err != nil {
 		return 0, err
 	}
