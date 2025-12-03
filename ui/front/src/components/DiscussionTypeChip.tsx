@@ -37,7 +37,7 @@ const DiscussionTypeChip: React.FC<DiscussionTypeChipProps> = ({
       bgcolor: isArticlePost ? 'rgba(255,119,68,0.1)' : isIssuePost ? 'rgba(0,99,151,0.1)' : 'rgba(26,160,134,0.1)',
       color: isArticlePost ? '#FF7744' : isIssuePost ? '#006397' : '#1AA086',
       border: `1px solid ${
-        isArticlePost ? 'rgba(255,119,68,0.1)' : isIssuePost ? '#D9DEE2;' : 'rgba(26, 160, 134, 0.10)'
+        isArticlePost ? 'rgba(255,119,68,0.1)' : isIssuePost ? 'rgba(0,99,151,0.1)' : 'rgba(26, 160, 134, 0.10)'
       }`,
       flexShrink: 0,
     }

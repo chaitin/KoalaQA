@@ -155,13 +155,6 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
         return url
       },
     } as Parameters<typeof useTiptap>[0] & ExtendedTiptapOptions)
-    useEffect(() => {
-      if (!editorRef?.editor) return
-      const timer = setTimeout(() => {
-        editorRef.editor?.commands.focus('end')
-      }, 0)
-      return () => clearTimeout(timer)
-    }, [editorRef?.editor])
 
     // 当 readonly 状态改变时，更新编辑器的可编辑状态
     useEffect(() => {
@@ -265,7 +258,11 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
           {editorRef.editor && (
             <>
               <EditorToolbar editor={editorRef.editor} mode={mode} />
-              <Editor editor={editorRef.editor} />
+              {readonly && !value ? (
+                <Box sx={{ color: 'divider' }}>{placeholder}</Box>
+              ) : (
+                <Editor editor={editorRef.editor} />
+              )}
             </>
           )}
         </Box>

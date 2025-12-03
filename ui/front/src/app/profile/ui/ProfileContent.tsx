@@ -29,6 +29,7 @@ import QuickReplyList from './QuickReplyList'
 import FollowingIssuesList from './FollowingIssuesList'
 import { roleConfig } from '@/constant'
 import { isAdminRole } from '@/lib/utils'
+import { Ellipsis } from '@ctzhian/ui'
 
 interface ProfileContentProps {
   initialUser: ModelUserInfo
@@ -69,6 +70,8 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
   const [tabValue, setTabValue] = useState(initialTabValue)
   const [isEditingName, setIsEditingName] = useState(false)
   const [editName, setEditName] = useState(user?.username || '')
+  const [isEditingBio, setIsEditingBio] = useState(false)
+  const [editBio, setEditBio] = useState(user?.intro || initialUser?.intro || '暂无个人介绍')
   const [isUploading, setIsUploading] = useState(false)
   const [changePasswordModalOpen, setChangePasswordModalOpen] = useState(false)
   const [bindEmailModalOpen, setBindEmailModalOpen] = useState(false)
@@ -90,6 +93,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
     if (initialUser) {
       setUser(initialUser)
       setEditName(initialUser.username || '')
+      setEditBio(initialUser.intro || '暂无个人介绍')
     }
   }, [initialUser, setUser])
 
@@ -174,6 +178,21 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
     setIsEditingName(false)
   }
 
+  const handleSaveBio = async () => {
+    try {
+      await putUser({ intro: editBio || '暂无个人介绍' })
+      setUser({ ...user, intro: editBio || '暂无个人介绍' })
+      setIsEditingBio(false)
+    } catch (error) {
+      console.error('更新个人介绍失败:', error)
+    }
+  }
+
+  const handleCancelEditBio = () => {
+    setEditBio(user?.intro || initialUser?.intro || '暂无个人介绍')
+    setIsEditingBio(false)
+  }
+
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
@@ -218,6 +237,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
       {/* 头部背景区域 */}
       <ProfileHeroCard
         role={user.role || ModelUserRole.UserRoleGuest}
+        subtitle={user?.intro || initialUser?.intro || '暂无个人介绍'}
         avatar={
           <Box sx={{ position: 'relative' }}>
             <Box
@@ -342,7 +362,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
             <Stack
               sx={{
                 '& > div': {
-                  height: '60px',
+                  minHeight: '60px',
                   alignItems: 'center',
                   borderBottom: '1px solid',
                   borderColor: 'divider',
@@ -381,7 +401,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
                   </>
                 ) : (
                   <>
-                    <Typography sx={{ flex: 1 }} variant='subtitle2'>
+                    <Typography sx={{ flex: 1 }} variant='body2'>
                       {user?.username || '-'}
                     </Typography>
                     <Button onClick={() => setIsEditingName(true)} size='small' sx={{ minWidth: 60 }}>
@@ -393,9 +413,48 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
 
               <Stack direction='row' alignItems='center'>
                 <Typography variant='body2' sx={{ width: '26%', color: '#666' }}>
+                  介绍
+                </Typography>
+                {isEditingBio ? (
+                  <>
+                    <TextField
+                      value={editBio}
+                      onChange={(e) => setEditBio(e.target.value)}
+                      size='small'
+                      slotProps={{
+                        input: { sx: { fontSize: '13px' } },
+                      }}
+                      sx={{ flex: 1, ml: 'auto!important', py: 0 }}
+                    />
+                    <Button onClick={handleSaveBio} variant='text' size='small'>
+                      保存
+                    </Button>
+                    <Button
+                      onClick={handleCancelEditBio}
+                      sx={{ color: 'rgba(33, 34, 45, 1)' }}
+                      variant='text'
+                      size='small'
+                    >
+                      取消
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Ellipsis sx={{ flex: 1, fontSize: '14px', color: 'text.primary' }}>
+                      {user?.intro || initialUser?.intro || '暂无个人介绍'}
+                    </Ellipsis>
+                    <Button onClick={() => setIsEditingBio(true)} size='small' sx={{ minWidth: 60 }}>
+                      修改
+                    </Button>
+                  </>
+                )}
+              </Stack>
+
+              <Stack direction='row' alignItems='center'>
+                <Typography variant='body2' sx={{ width: '26%', color: '#666' }}>
                   邮箱
                 </Typography>
-                <Typography sx={{ flex: 1 }} variant='subtitle2'>
+                <Typography sx={{ flex: 1 }} variant='body2'>
                   {user?.email || '未绑定'}
                 </Typography>
                 {!user?.email ? (
@@ -421,11 +480,9 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
                 <Typography variant='body2' sx={{ width: '26%', color: '#666' }}>
                   用户角色
                 </Typography>
-                <Stack direction='row' spacing={1} alignItems='center' sx={{ flex: 1 }}>
-                  <Typography variant='subtitle2'>
-                    {roleConfig[user?.role || ModelUserRole.UserRoleUnknown].name}
-                  </Typography>
-                </Stack>
+                <Typography variant='body2' sx={{ flex: 1 }}>
+                  {roleConfig[user?.role || ModelUserRole.UserRoleUnknown].name}
+                </Typography>
               </Stack>
 
               <Stack direction='row' alignItems='center'>

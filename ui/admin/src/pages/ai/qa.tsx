@@ -192,7 +192,7 @@ const AdminDocument = () => {
         <QaImport refresh={fetchData} setEditItem={setEditItem} editItem={editItem} />
       </Stack>
       <Table
-        sx={{ mx: -2, flex: 1, overflow: 'auto' }}
+        sx={{ mx: -2, flex: 1, height: '0' }}
         PaginationProps={{
           sx: {
             pt: 2,

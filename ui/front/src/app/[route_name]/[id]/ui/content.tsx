@@ -46,6 +46,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import EditCommentModal from './editCommentModal'
+import DuplicateAnswerModal from './DuplicateAnswerModal'
 
 import RoleChip from '@/app/profile/ui/RoleChip'
 import EditorContent from '@/components/EditorContent'
@@ -62,6 +63,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const { checkAuth } = useAuthCheck()
   const [commentIndex, setCommentIndex] = useState<ModelDiscussionComment | ModelDiscussionReply | null>(null)
   const [editCommentModalVisible, setEditCommentModalVisible] = useState(false)
+  const [duplicateAnswerModalVisible, setDuplicateAnswerModalVisible] = useState(false)
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
   const open = Boolean(anchorEl)
   const isArticlePost = data.type === ModelDiscussionType.DiscussionTypeBlog
@@ -166,6 +168,55 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
     setEditCommentModalVisible(true)
     setAnchorEl(null)
   }
+
+  // 检查用户是否已回答过（仅问答类型）
+  const userHasAnswered = useMemo(() => {
+    if (!isQAPost || !user?.uid) return false
+    return data.comments?.some((comment) => comment.user_id === user.uid) || false
+  }, [isQAPost, user?.uid, data.comments])
+
+  // 获取用户的历史回答
+  const getUserAnswer = useCallback(() => {
+    if (!user?.uid) return null
+    return data.comments?.find((comment) => comment.user_id === user.uid) || null
+  }, [user?.uid, data.comments])
+
+  // 处理点击回答框
+  const handleAnswerInputClick = useCallback(() => {
+    checkAuth(() => {
+      // 如果是问答类型，检查用户是否已回答过
+      if (isQAPost && userHasAnswered) {
+        // 只要用户已回答过，就显示弹窗引导编辑原有回答
+        setDuplicateAnswerModalVisible(true)
+        return
+      }
+      // 如果用户未回答过，正常显示编辑器
+      setShowAnswerEditor(true)
+    })
+  }, [checkAuth, isQAPost, userHasAnswered])
+
+  // 处理编辑原有回答
+  const handleEditExistingAnswer = useCallback(() => {
+    const userAnswer = getUserAnswer()
+    if (userAnswer) {
+      setCommentIndex(userAnswer)
+      setEditCommentModalVisible(true)
+      setDuplicateAnswerModalVisible(false)
+
+      // 滚动到用户回答的位置
+      setTimeout(() => {
+        const answerElement = document.querySelector(`[data-answer-id="${userAnswer.id}"]`)
+        if (answerElement) {
+          answerElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          // 高亮显示
+          answerElement.classList.add('highlight-answer')
+          setTimeout(() => {
+            answerElement.classList.remove('highlight-answer')
+          }, 2000)
+        }
+      }, 100)
+    }
+  }, [getUserAnswer])
 
   const handleAcceptComment = () => {
     setAnchorEl(null)
@@ -350,6 +401,13 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         data={commentIndex!}
         onOk={onSubmit}
         onClose={() => setEditCommentModalVisible(false)}
+        isQAPost={isQAPost}
+        userRole={user?.role}
+      />
+      <DuplicateAnswerModal
+        open={duplicateAnswerModalVisible}
+        onCancel={() => setDuplicateAnswerModalVisible(false)}
+        onEditExisting={handleEditExistingAnswer}
       />
       <Stack
         sx={{
@@ -387,6 +445,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
             return (
               <Paper
                 key={answer.id}
+                data-answer-id={answer.id}
                 elevation={0}
                 sx={{
                   bgcolor: answer.accepted ? '#ffffff' : '#ffffff',
@@ -396,6 +455,11 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                     ? '2px solid rgba(25, 135, 84, 1) !important'
                     : '1px solid rgba(217, 222, 226, 1)!important',
                   position: 'relative',
+                  transition: 'all 0.3s ease',
+                  '&.highlight-answer': {
+                    border: '2px solid rgba(0, 99, 151, 1) !important',
+                    boxShadow: '0 0 0 4px rgba(0, 99, 151, 0.1)',
+                  },
                 }}
               >
                 {answer.accepted && (
@@ -535,37 +599,45 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                       !hasAcceptedComment &&
                       !answer.accepted &&
                       !isClosedPost && (
-                        <Button
-                          disableRipple
-                          size='small'
-                          variant='outlined'
-                          startIcon={<CheckCircleOutlineIcon sx={{ fontSize: 12 }} />}
+                        <Box
                           onClick={() => handleAcceptAnswer(answer.id!)}
                           sx={{
-                            textTransform: 'none',
-                            color: '#6b7280',
-                            borderColor: '#d1d5db',
-                            bgcolor: '#ffffff',
-                            fontWeight: 600,
-                            fontSize: '0.7rem',
-                            px: 1,
-                            py: 0.25,
-                            borderRadius: '4px',
-                            minWidth: 'auto',
-                            width: 70,
-                            height: 24,
-                            transition: 'all 0.15s ease-in-out',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 0.5,
+                            background: 'rgba(0,99,151,0.06)',
+                            color: 'primary.main',
+                            px: 1.5,
+                            lineHeight: '22px',
+                            height: '22px',
+                            borderRadius: 0.5,
+                            cursor: 'pointer',
+                            transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            transform: 'scale(1)',
+                            border: '1px solid rgba(0,99,151,0.1)',
                             '&:hover': {
-                              bgcolor: '#f9fafb',
-                              borderColor: '#9ca3af',
-                              color: '#111827',
-                              transform: 'scale(1.02)',
+                              background: 'rgba(0,99,151,0.12)',
+                              transform: 'scale(1.05)',
                             },
-                            '&:active': { transform: 'scale(0.98)' },
+                            '&:active': {
+                              transform: 'scale(0.95)',
+                              transition: 'transform 0.1s ease-out',
+                            },
                           }}
                         >
-                          采纳
-                        </Button>
+                          <Typography
+                            variant='body2'
+                            sx={{
+                              fontWeight: 500,
+                              fontSize: '12px',
+                              color: 'inherit',
+                              transition: 'color 0.2s',
+                            }}
+                          >
+                            采纳
+                          </Typography>
+                        </Box>
                       )}
                     {/* 已采纳标签 - 文章类型不显示，放在点赞前面 */}
                     {answer.accepted && !isArticlePost && (
@@ -906,7 +978,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                             <OutlinedInput
                               fullWidth
                               size='small'
-                              placeholder={isArticlePost ? '添加评论...' : '添加评论...'}
+                              placeholder={'添加评论...'}
                               onClick={() => handleReplyInputClick(answer.id!)}
                               sx={{
                                 bgcolor: '#fafbfc',
@@ -1084,21 +1156,21 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                       '& .tiptap': { overflow: 'auto', maxHeight: '40vh' },
                     }}
                     tabIndex={-1}
-                    onClick={() => checkAuth()}
+                    onClick={handleAnswerInputClick}
                   >
                     <EditorWrap
                       key={answerEditorKey}
                       ref={answerEditorRef}
+                      readonly={isClosedPost || userHasAnswered}
                       value=''
                       placeholder={isQAPost ? '回答问题...' : '添加评论...'}
                       onChange={handleAnswerEditorChange}
-                      readonly={isClosedPost}
                     />
                   </Box>
 
                   <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, alignItems: 'center' }}>
                     {/* 快捷回复选择器（管理员/运营可见） */}
-                    {isAdmin && isQAPost && (
+                    {isAdmin && isQAPost && !userHasAnswered && (
                       <Box sx={{ mr: 'auto', display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                         {quickReplies.map((qr) => (
                           <Button

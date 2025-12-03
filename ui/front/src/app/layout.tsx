@@ -20,6 +20,9 @@ import localFont from 'next/font/local'
 import { cookies } from 'next/headers'
 import Script from 'next/script'
 import * as React from 'react'
+import fs from 'fs'
+import path from 'path'
+import { execSync } from 'child_process'
 
 import Footer from '@/components/Footer'
 import Header from '../components/header'
@@ -28,6 +31,56 @@ import PageViewTracker from '@/components/PageViewTracker'
 import ScrollReset from '@/components/ScrollReset'
 
 export const dynamic = 'force-dynamic'
+
+// 获取 iconfont 文件名（带 commit id），用于防止浏览器缓存
+// 文件名包含 commit id，每次下载新图标时文件名会自动更新
+function getIconfontFileName(): string {
+  try {
+    // 读取版本文件获取 commit id
+    const versionPath = path.join(process.cwd(), 'public/font/iconfont.version.json')
+    if (fs.existsSync(versionPath)) {
+      const versionData = JSON.parse(fs.readFileSync(versionPath, 'utf-8'))
+      const commitId = versionData.commitId
+      
+      // 检查对应的文件是否存在
+      const iconPath = path.join(process.cwd(), `public/font/iconfont.${commitId}.js`)
+      if (fs.existsSync(iconPath)) {
+        // 开发环境下输出文件名，方便调试
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[Iconfont] File: iconfont.${commitId}.js`)
+        }
+        return `iconfont.${commitId}.js`
+      }
+    }
+    
+    // 如果版本文件不存在或文件不存在，尝试获取当前 commit id
+    try {
+      const commitId = execSync('git rev-parse --short HEAD', {
+        cwd: process.cwd(),
+        encoding: 'utf-8',
+      }).trim()
+      
+      const iconPath = path.join(process.cwd(), `public/font/iconfont.${commitId}.js`)
+      if (fs.existsSync(iconPath)) {
+        return `iconfont.${commitId}.js`
+      }
+    } catch (error) {
+      // 忽略 git 命令错误
+    }
+    
+    // 如果都失败，回退到默认文件名
+    const defaultPath = path.join(process.cwd(), 'public/font/iconfont.js')
+    if (fs.existsSync(defaultPath)) {
+      return 'iconfont.js'
+    }
+  } catch (error) {
+    safeLogError('Failed to get iconfont file name', error)
+  }
+  
+  // 最后的降级方案
+  return 'iconfont.js'
+}
+
 // 字体优化 - 添加 display swap 提升首屏性能
 const monoFont = localFont({
   src: '../asset/font/Mono.ttf',
@@ -155,6 +208,9 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
   const forums = await getForumData(authConfig, user)
 
   const brand = brandResponse || null
+  
+  // 获取 iconfont 文件名（带 commit id）
+  const iconfontFileName = getIconfontFileName()
 
   return (
     <html lang='zh-CN'>
@@ -167,7 +223,8 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
       </head>
       <body className={`${monoFont.variable} ${alimamashuheitiFont.variable}`}>
         {/* 图标字体预加载 - beforeInteractive 确保在交互前加载 */}
-        <Script src='/font/iconfont.js' strategy='beforeInteractive' />
+        {/* 文件名包含 commit id，每次下载新图标时文件名会自动更新，防止浏览器缓存 */}
+        <Script src={`/font/${iconfontFileName}`} strategy='beforeInteractive' />
 
         {/* 埋点图片 - 用于采集用户使用记录 */}
         <img

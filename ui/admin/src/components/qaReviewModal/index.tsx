@@ -115,7 +115,7 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
     <Modal
       open={open}
       onCancel={onClose}
-      width={hasHistoricalQa ? '90%': 860}
+      width={hasHistoricalQa ? '90%' : 860}
       title={'审核问答对'}
       maskClosable={false}
       footer={
@@ -212,9 +212,10 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
               overflow: 'hidden',
               mt: 1,
               px: 2,
-              '& .tiptap': {
-                height: '320px',
+              '& .editor-toolbar + div': {
                 overflow: 'auto',
+                height: '320px!important',
+                flex: 'unset!important',
               },
             }}
           >

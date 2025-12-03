@@ -5,7 +5,6 @@ import { DiscussionStatusChip, DiscussionTypeChip, MarkDown } from '@/components
 import CommonAvatar from '@/components/CommonAvatar'
 import { CommonContext } from '@/components/commonProvider'
 import { TimeDisplay } from '@/components/TimeDisplay'
-import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import { Ellipsis, Icon } from '@ctzhian/ui'
 import { Box, Chip, Stack, SxProps, Typography } from '@mui/material'
 import Link from 'next/link'
@@ -16,7 +15,7 @@ const isCategoryTag = (tag: string, groups: Array<{ name?: string }>) => {
   return groups.some((group) => group.name === tag)
 }
 
-const DiscussCard = ({
+const SearchDiscussCard = ({
   data,
   keywords: _keywords,
   onNavigate,
@@ -35,7 +34,6 @@ const DiscussCard = ({
   const it = data
   const { groups } = useContext(CommonContext)
   const params = useParams()
-  const router = useRouterWithRouteName()
   const profileHref = it.user_id ? `/profile/${it.user_id}` : undefined
 
   // 使用 useMemo 优化分组名称计算，避免重复查找
@@ -50,9 +48,6 @@ const DiscussCard = ({
 
   // 准备数据
   const allTags = groupNames
-  const isQAPost = it.type === ModelDiscussionType.DiscussionTypeQA
-  const isArticlePost = it.type === ModelDiscussionType.DiscussionTypeBlog
-  const isIssuePost = it.type === ModelDiscussionType.DiscussionTypeIssue
 
   return (
     <Box
@@ -67,79 +62,6 @@ const DiscussCard = ({
         ...sx,
       }}
     >
-      <Stack
-        direction='row'
-        alignItems='center'
-        spacing={1}
-        sx={{ ...(size === 'small' ? { lineHeight: '22px' } : {}), mb: 2 }}
-      >
-        <Link
-          href={profileHref || '/'}
-          key={it.id}
-          style={{ textDecoration: 'none', color: 'inherit' }}
-          onClick={onNavigate}
-        >
-          <Box
-            tabIndex={0}
-            sx={{
-              outline: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              borderRadius: 1,
-              transition: 'box-shadow 0.2s, border-color 0.2s, background 0.2s',
-              color: 'text.primary',
-              '&:focus-within, &:hover ': {
-                color: 'primary.main',
-              },
-              my: '-2px',
-              ml: '-4px',
-            }}
-          >
-            <Box
-              sx={{
-                display: 'inline-flex',
-                cursor: profileHref ? 'pointer' : 'default',
-              }}
-              tabIndex={-1}
-            >
-              <CommonAvatar
-                src={it.user_avatar}
-                name={it.user_name}
-                sx={{
-                  fontSize: '0.65rem',
-                  fontWeight: 600,
-                  ...(size === 'small' && {
-                    width: 22,
-                    height: 22,
-                  }),
-                }}
-              />
-            </Box>
-            <Box
-              sx={{
-                fontSize: size === 'small' ? '14px' : '14px',
-                lineHeight: size === 'small' ? '22px' : 'normal',
-                textDecoration: 'none',
-                outline: 'none',
-                color: 'inherit',
-                fontWeight: 600,
-                cursor: 'pointer',
-                ml: 1,
-              }}
-              tabIndex={-1}
-            >
-              {it.user_name || ''}
-            </Box>
-          </Box>
-        </Link>
-        <Box sx={{ fontWeight: 400, whiteSpace: 'nowrap', fontSize: '14px' }}>
-          ·{' '}
-          <TimeDisplay
-            style={{ color: 'rgba(33, 34, 45, 0.30)' }}
-            timestamp={filter === 'publish' ? it.created_at || it.updated_at! : it.updated_at!}
-          />
-        </Box>
-      </Stack>
       <Link href={`/${params?.route_name as string}/${it.uuid}`} key={it.id} onClick={onNavigate}>
         <Box
           sx={{
@@ -210,43 +132,11 @@ const DiscussCard = ({
             })}
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'center' }}>
-            {isQAPost && (
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  background: 'rgba(0,99,151,0.06)',
-                  color: 'primary.main',
-                  px: 1,
-                  borderRadius: 0.5,
-                }}
-              >
-                <Icon type='icon-wendapinglun' sx={{ fontSize: 12 }} />
-                <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
-                  {it.comment || 0}
-                </Typography>
-              </Box>
-            )}
-            {(isArticlePost || isIssuePost) && (
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  background: 'rgba(0,99,151,0.06)',
-                  color: 'primary.main',
-                  px: 1,
-                  borderRadius: 0.5,
-                }}
-              >
-                <Icon type='icon-dianzan1' sx={{ fontSize: 12 }} />
-                <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
-                  {(it.like || 0) - (it.dislike || 0)}
-                </Typography>
-              </Box>
-            )}
+          <Box
+            sx={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: 0.5, color: 'rgba(33,34,45,0.5)' }}
+          >
+            <Box sx={{}}>{filter === 'publish' ? '发布于' : '更新于'}</Box>
+            <TimeDisplay timestamp={filter === 'publish' ? it.created_at || it.updated_at! : it.updated_at!} />
           </Box>
         </Box>
       </Link>
@@ -255,7 +145,7 @@ const DiscussCard = ({
 }
 
 // 使用 React.memo 优化组件，避免不必要的重新渲染
-export default memo(DiscussCard, (prevProps, nextProps) => {
+export default memo(SearchDiscussCard, (prevProps, nextProps) => {
   // 自定义比较函数，只在关键属性变化时才重新渲染
   return (
     prevProps.data.id === nextProps.data.id &&
