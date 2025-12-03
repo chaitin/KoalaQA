@@ -1,6 +1,6 @@
 'use client'
 import { getDiscussion } from '@/api'
-import { GetDiscussionParams, ModelDiscussionListItem } from '@/api/types'
+import { GetDiscussionParams, ModelDiscussionListItem, ModelUserRole } from '@/api/types'
 import DiscussCard from '@/app/[route_name]/ui/discussCard'
 import AISummaryPanel from './AISummaryPanel'
 import SearchIcon from '@mui/icons-material/Search'
@@ -20,17 +20,19 @@ import {
 } from '@mui/material'
 import ClearIcon from '@mui/icons-material/Clear'
 import Image from 'next/image'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { useForumStore } from '@/store'
+import SearchDiscussCard from '@/app/[route_name]/ui/searchDiscussCard'
+import { isAdminRole } from '@/lib/utils'
+import { AuthContext } from '@/components/authProvider'
 
 interface SearchResultModalProps {
   open: boolean
   onClose: () => void
   initialQuery?: string
-  onAsk?: () => void
-  onFeedback?: () => void
-  onArticle?: () => void
-  onIssue?: () => void
+  onAsk?: (query: string) => void
+  onArticle?: (query: string) => void
+  onIssue?: (query: string) => void
 }
 
 export const SearchResultModal = ({
@@ -38,13 +40,13 @@ export const SearchResultModal = ({
   onClose,
   initialQuery = '',
   onAsk,
-  onFeedback,
   onArticle,
   onIssue,
 }: SearchResultModalProps) => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const { user } = useContext(AuthContext)
 
   // 从 store 获取 forumId
   const forumId = useForumStore((s) => s.selectedForumId)
@@ -304,19 +306,19 @@ export const SearchResultModal = ({
                     {[
                       {
                         label: '👉发帖提问',
-                        onClick: onAsk,
+                        onClick: () => onAsk?.(searchQuery.trim()),
                       },
-                      ...(onIssue
+                      ...(isAdminRole(user.role || ModelUserRole.UserRoleUnknown)
                         ? [
                             {
                               label: '👉提交Issue',
-                              onClick: onIssue,
+                              onClick: () => onIssue?.(searchQuery.trim()),
                             },
                           ]
                         : []),
                       {
                         label: '👉发布文章',
-                        onClick: onArticle,
+                        onClick: () => onArticle?.(searchQuery.trim()),
                         variant: 'outlined' as const,
                       },
                     ].map((button, index) => (
@@ -340,10 +342,10 @@ export const SearchResultModal = ({
               ) : (
                 <Stack spacing={1}>
                   {searchResults.map((item, index) => (
-                    <DiscussCard
+                    <SearchDiscussCard
                       size='small'
                       key={item.id || index}
-                      sx={{ border: '1px solid ', borderColor: 'divider', borderRadius: 1 }}
+                      sx={{}}
                       data={item}
                       keywords={searchQuery}
                       showType={true}

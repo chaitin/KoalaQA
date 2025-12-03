@@ -23,6 +23,8 @@ export default function EditPage() {
   const router = useRouterWithRouteName()
   const { config: systemConfig } = useSystemDiscussion()
   const queryId = useMemo(() => params.get('id') || params.get('discId') || undefined, [params]) as string | undefined
+  const urlType = params.get('type')
+  const urlTitle = params.get('title')
   const [data, setData] = useState<ModelDiscussionDetail>({
     title: '',
     content: '',
@@ -32,6 +34,7 @@ export default function EditPage() {
   const [releaseOpen, setReleaseOpen] = useState(false)
   const [titleTouched, setTitleTouched] = useState(false)
   const editorRef = useRef<EditorWrapRef>(null)
+  const titleInitializedRef = useRef(false)
 
   // 根据 route_name 获取对应的 forumInfo
   const forumInfo = useMemo(() => {
@@ -61,6 +64,26 @@ export default function EditPage() {
       setRouteName(routeName)
     }
   }, [routeName, setRouteName])
+
+  // 从 URL 参数读取 type 和 title（仅在新建时）
+  useEffect(() => {
+    if (!queryId && !titleInitializedRef.current) {
+      // 设置帖子类型
+      if (urlType === 'qa') {
+        setData((prev) => ({ ...prev, type: ModelDiscussionType.DiscussionTypeQA }))
+      } else if (urlType === 'issue') {
+        setData((prev) => ({ ...prev, type: ModelDiscussionType.DiscussionTypeIssue }))
+      } else if (urlType === 'blog') {
+        setData((prev) => ({ ...prev, type: ModelDiscussionType.DiscussionTypeBlog }))
+      }
+
+      // 设置标题（如果 URL 中有）
+      if (urlTitle) {
+        setData((prev) => ({ ...prev, title: decodeURIComponent(urlTitle) }))
+        titleInitializedRef.current = true
+      }
+    }
+  }, [queryId, urlType, urlTitle])
 
   // 当systemConfig加载完成时，如果是新建Q&A帖子且内容为空，则设置默认内容
   useEffect(() => {

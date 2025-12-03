@@ -7,7 +7,7 @@ interface QaUnresolvedChipProps extends Omit<ChipProps, 'label'> {
   resolved?: ModelDiscussionState
 }
 
-const QaUnresolvedChip: React.FC<QaUnresolvedChipProps> = ({ type, resolved, sx, ...restProps }) => {
+const QaUnresolvedChip: React.FC<QaUnresolvedChipProps> = ({ type, resolved, sx, size = 'medium', ...restProps }) => {
   if (type !== ModelDiscussionType.DiscussionTypeQA || resolved !== ModelDiscussionState.DiscussionStateNone) {
     return null
   }
@@ -30,7 +30,7 @@ const QaUnresolvedChip: React.FC<QaUnresolvedChipProps> = ({ type, resolved, sx,
         {
           bgcolor: 'rgba(255, 119, 68, 1)',
           color: '#fff',
-          height: 22,
+          height: size === 'small' ? 20 : 22,
           fontWeight: 600,
           fontSize: '12px',
           borderRadius: '12px',

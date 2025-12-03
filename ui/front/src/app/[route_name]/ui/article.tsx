@@ -127,6 +127,8 @@ const Article = ({
   const [searchModalOpen, { setTrue: openSearchModal, setFalse: closeSearchModal }] = useBoolean(false)
   const [selectedModalType, setSelectedModalType] = useState<'qa' | 'blog' | 'issue'>('qa')
   const [lastPathname, setLastPathname] = useState('')
+  const [initialTitleFromSearch, setInitialTitleFromSearch] = useState<string>('')
+  const actionProcessedRef = useRef<string>('')
 
   const hookForumId = useForumId()
 
@@ -332,6 +334,52 @@ const Article = ({
     setLastPathname(currentPath)
   }, [routeName, lastPathname, status, search, topics, searchParams, fetchList])
 
+  // 监听自定义事件，直接打开弹窗（优先于 URL 参数）
+  useEffect(() => {
+    const handleOpenModal = (event: CustomEvent<{ type: 'qa' | 'issue'; title?: string }>) => {
+      const { type, title } = event.detail
+      setSelectedModalType(type)
+      if (title) {
+        setInitialTitleFromSearch(title)
+      }
+      checkAuth(() => releaseModalOpen())
+    }
+
+    window.addEventListener('openReleaseModal' as any, handleOpenModal as EventListener)
+    return () => {
+      window.removeEventListener('openReleaseModal' as any, handleOpenModal as EventListener)
+    }
+  }, [checkAuth, releaseModalOpen])
+
+  // 检测 URL 参数中的 action，自动打开对应的弹窗（作为 fallback，用于跨页面跳转）
+  useEffect(() => {
+    const action = searchParams?.get('action')
+    const title = searchParams?.get('title')
+    const actionKey = `${action}-${title || ''}`
+    
+    // 避免重复处理相同的 action
+    if ((action === 'ask' || action === 'issue') && actionProcessedRef.current !== actionKey) {
+      actionProcessedRef.current = actionKey
+      setSelectedModalType(action === 'ask' ? 'qa' : 'issue')
+      if (title) {
+        setInitialTitleFromSearch(decodeURIComponent(title))
+      }
+      checkAuth(() => {
+        releaseModalOpen()
+        // 清除 URL 参数，避免刷新时重复打开
+        const params = new URLSearchParams(searchParams?.toString())
+        params.delete('action')
+        params.delete('title')
+        const newUrl = params.toString() ? `/${routeName}?${params.toString()}` : `/${routeName}`
+        router.replace(newUrl)
+        // 重置处理标记，允许下次处理
+        setTimeout(() => {
+          actionProcessedRef.current = ''
+        }, 100)
+      })
+    }
+  }, [searchParams, checkAuth, releaseModalOpen, router, routeName])
+
   const handleTopicClick = useCallback(
     (t: number) => {
       let newTopics: number[]
@@ -357,21 +405,24 @@ const Article = ({
     [topics, searchParams, router],
   )
 
-  const handleAsk = () => {
+  const handleAsk = (query?: string) => {
     setSelectedModalType('qa')
+    setInitialTitleFromSearch(query || '')
     checkAuth(() => releaseModalOpen())
   }
 
-  const handleArticle = () => {
+  const handleArticle = (query?: string) => {
     setSelectedModalType('blog')
     checkAuth(() => {
       const routeName = (params?.route_name as string) || ''
-      nextRouter.push(`/${routeName}/edit`)
+      const titleParam = query ? `?title=${encodeURIComponent(query)}` : ''
+      nextRouter.push(`/${routeName}/edit${titleParam}`)
     })
   }
 
-  const handleIssue = () => {
+  const handleIssue = (query?: string) => {
     setSelectedModalType('issue')
+    setInitialTitleFromSearch(query || '')
     checkAuth(() => releaseModalOpen())
   }
 
@@ -887,7 +938,10 @@ const Article = ({
 
       <ReleaseModal
         open={releaseModalVisible}
-        onClose={releaseModalClose}
+        onClose={() => {
+          releaseModalClose()
+          setInitialTitleFromSearch('')
+        }}
         onOk={() => {
           const currentOnlyMine = searchParams?.get('only_mine') === 'true'
           const currentResolved = searchParams?.get('resolved')
@@ -900,9 +954,10 @@ const Article = ({
           fetchList(status as Status, search, topics, currentOnlyMine, resolvedValue)
           router.refresh()
           releaseModalClose()
+          setInitialTitleFromSearch('')
         }}
         selectedTags={[]}
-        initialTitle={searchParams?.get('search') || ''}
+        initialTitle={initialTitleFromSearch || searchParams?.get('search') || ''}
         type={selectedModalType}
         forumInfo={forumInfo}
       />

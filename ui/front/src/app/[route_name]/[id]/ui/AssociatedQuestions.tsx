@@ -1,9 +1,10 @@
 'use client'
 import { getDiscussionDiscIdAssociate, ModelDiscussionListItem } from '@/api'
-import { SimilarContentItem } from '@/components'
+import { DiscussionStatusChip } from '@/components'
 import { Box, Paper, Skeleton, Stack, Typography } from '@mui/material'
 import { useParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import AssociatedItemCard from './AssociatedItemCard'
 
 interface AssociatedQuestionsProps {
   discId: string
@@ -37,12 +38,6 @@ const AssociatedQuestions = ({ discId }: AssociatedQuestionsProps) => {
     }
   }, [discId])
 
-  const handleQuestionClick = (question: ModelDiscussionListItem) => {
-    if (typeof window !== 'undefined' && routeName && question.uuid) {
-      window.open(`/${routeName}/${question.uuid}`, '_blank')
-    }
-  }
-
   if (loading) {
     return (
       <Paper sx={{ p: 2 }}>
@@ -63,25 +58,12 @@ const AssociatedQuestions = ({ discId }: AssociatedQuestionsProps) => {
       </Typography>
       <Stack spacing={1}>
         {questions.map((question) => (
-          <Box
+          <AssociatedItemCard
             key={question.id}
-            onClick={() => handleQuestionClick(question)}
-            sx={{
-              cursor: 'pointer',
-              overflow: 'hidden',
-              '&:hover .similar-item': {
-                bgcolor: '#f3f4f6',
-              },
-              bgcolor: 'rgba(0,99,151,0.03)',
-              '& .similar-item': {
-                border: '1px solid #d1d5db',
-                py: 2,
-                borderRadius: 1,
-              },
-            }}
-          >
-            <SimilarContentItem data={question} />
-          </Box>
+            item={question}
+            routeName={routeName}
+            statusChip={<DiscussionStatusChip item={question} size='small' />}
+          />
         ))}
       </Stack>
     </Box>

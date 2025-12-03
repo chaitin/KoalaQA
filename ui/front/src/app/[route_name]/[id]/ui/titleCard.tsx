@@ -14,10 +14,9 @@ import {
   ModelDiscussionDetail,
   ModelDiscussionState,
   ModelDiscussionType,
-  ModelUserRole,
-  SvcDiscussionListFollowRes,
+  ModelUserRole
 } from '@/api/types'
-import { DiscussionTypeChip, IssueStatusChip, QaUnresolvedChip } from '@/components'
+import { DiscussionStatusChip, DiscussionTypeChip } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import CommonAvatar from '@/components/CommonAvatar'
 import ConvertToIssueModal from '@/components/ConvertToIssueModal'
@@ -31,8 +30,6 @@ import dayjs from '@/lib/dayjs'
 import { formatNumber } from '@/lib/utils'
 import { useForumStore } from '@/store'
 import { Ellipsis, Icon } from '@ctzhian/ui'
-import CancelIcon from '@mui/icons-material/Cancel'
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import { Box, Chip, Divider, IconButton, Menu, MenuItem, Paper, Stack, Typography } from '@mui/material'
 import { useBoolean } from 'ahooks'
@@ -242,37 +239,9 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
       })
     })
   }
-  const getStatusColor = (status: string) => {
-    if (status === 'answered' || status === 'closed') return 'rgba(25, 135, 84, 1)'
-    if (status === 'in-progress') return '#3b82f6'
-    if (status === 'planned') return '#f59e0b'
-    return '#6b7280'
-  }
-
-  const getStatusLabel = (status: string) => {
-    if (status === 'answered') return '已解决'
-    if (status === 'in-progress') return '进行中'
-    if (status === 'planned') return '已计划'
-    if (status === 'open') return '待解决'
-    if (status === 'closed') return '已关闭'
-    if (status === 'published') return '已发布'
-    return ''
-  }
-
   const isArticlePost = data.type === ModelDiscussionType.DiscussionTypeBlog
   const isQAPost = data.type === ModelDiscussionType.DiscussionTypeQA
   const isIssuePost = data.type === ModelDiscussionType.DiscussionTypeIssue
-
-  const status = (() => {
-    switch (data.resolved) {
-      case ModelDiscussionState.DiscussionStateResolved:
-        return 'answered'
-      case ModelDiscussionState.DiscussionStateClosed:
-        return 'closed'
-      default:
-        return 'open'
-    }
-  })()
 
   const isClosed = data.resolved === ModelDiscussionState.DiscussionStateClosed
   const profileHref = data.user_id ? `/profile/${data.user_id}` : undefined
@@ -518,38 +487,8 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         >
           {/* 左侧：所有标签（分组标签、状态标签、普通标签） */}
           <Stack direction='row' flexWrap='wrap' sx={{ gap: 1, alignItems: 'center' }}>
-            {/* Issue 类型使用 IssueStatusChip 显示所有状态 */}
-            {isIssuePost && <IssueStatusChip resolved={data.resolved} size='medium' />}
-            {/* 非 Issue 类型且非文章类型，显示已解决/已关闭状态 */}
-            {!isIssuePost && (status === 'answered' || status === 'closed') && !isArticlePost && (
-              <Chip
-                icon={
-                  <CheckCircleOutlineIcon
-                    sx={{
-                      width: 16,
-                      height: 16,
-                      color: '#fff !important',
-                    }}
-                  />
-                }
-                label={getStatusLabel(status)}
-                size='small'
-                sx={{
-                  bgcolor: getStatusColor(status),
-                  color: '#fff !important',
-                  height: 22,
-                  lineHeight: '22px',
-                  fontWeight: 600,
-                  fontSize: '12px',
-                  border: `1px solid ${getStatusColor(status)}30`,
-                  fontFamily: 'Glibory, "PingFang SC", "Hiragino Sans GB", "STHeiti", "Microsoft YaHei", sans-serif',
-                }}
-              />
-            )}
-            {data.type === ModelDiscussionType.DiscussionTypeQA &&
-              data.resolved === ModelDiscussionState.DiscussionStateNone && (
-                <QaUnresolvedChip type={data.type} resolved={data.resolved} />
-              )}
+            {/* 使用通用状态标签组件 */}
+            <DiscussionStatusChip item={data} size='medium' />
             {data.groups?.map((item) => {
               return (
                 <Chip

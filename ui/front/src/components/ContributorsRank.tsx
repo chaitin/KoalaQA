@@ -3,8 +3,7 @@ import { getRankContribute } from '@/api'
 import { SvcRankContributeItem } from '@/api/types'
 import CommonAvatar from '@/components/CommonAvatar'
 import { Ellipsis } from '@ctzhian/ui'
-import RefreshIcon from '@mui/icons-material/Refresh'
-import { Box, IconButton, Paper, Stack, Typography } from '@mui/material'
+import { Box, Paper, Stack, Typography } from '@mui/material'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
@@ -76,19 +75,6 @@ export default function ContributorsRank() {
           </Typography>
         </Stack>
         <Stack direction='row' alignItems='center' gap={1}>
-          <IconButton
-            size='small'
-            aria-label='刷新贡献达人列表'
-            onClick={() => {
-              // 刷新所有类型的数据
-              fetchAllContributors()
-            }}
-            sx={{
-              p: 0.5,
-            }}
-          >
-            <RefreshIcon sx={{ fontSize: 18, color: '#6b7280' }} />
-          </IconButton>
           {/* 切换标签 */}
           <Stack
             direction='row'
