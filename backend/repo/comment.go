@@ -2,10 +2,12 @@ package repo
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/database"
+	"gorm.io/gorm"
 )
 
 type Comment struct {
@@ -14,6 +16,31 @@ type Comment struct {
 
 func newComment(db *database.DB) *Comment {
 	return &Comment{base: base[*model.Comment]{db: db, m: &model.Comment{}}}
+}
+
+func (c *Comment) Create(ctx context.Context, discType model.DiscussionType, comment *model.Comment) error {
+	return c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if comment.ParentID == 0 && discType == model.DiscussionTypeQA {
+			err := tx.Exec(`SELECT pg_advisory_xact_lock(?)`, comment.UserID).Error
+			if err != nil {
+				return err
+			}
+
+			var exist bool
+			err = tx.Raw("SELECT EXISTS (?)", tx.Model(c.m).
+				Where("discussion_id = ? AND user_id = ? AND parent_id = ?", comment.DiscussionID, comment.UserID, 0),
+			).Scan(&exist).Error
+			if err != nil {
+				return err
+			}
+
+			if exist {
+				return errors.New("user can only have one answer")
+			}
+		}
+
+		return tx.Model(c.m).Create(comment).Error
+	})
 }
 
 func (c *Comment) Detail(ctx context.Context, id uint) (*model.CommentDetail, error) {
