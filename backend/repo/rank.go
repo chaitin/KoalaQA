@@ -105,6 +105,10 @@ func (r *Rank) RefresContribute(ctx context.Context, rankType model.RankType) er
 	})
 }
 
+func (r *Rank) BatchCreate(ctx context.Context, ranks *[]model.Rank) error {
+	return r.db.WithContext(ctx).CreateInBatches(ranks, 1000).Error
+}
+
 func (r *Rank) UpdateWithExist(ctx context.Context, updateM map[string]any, queryFuncs ...QueryOptFunc) (bool, error) {
 	o := getQueryOpt(queryFuncs...)
 	res := r.model(ctx).Scopes(o.Scopes()...).Updates(updateM)

@@ -48,7 +48,7 @@ type Discussion struct {
 }
 
 func (d *Discussion) TitleContent() string {
-	return fmt.Sprintf("### 帖子标题：%s\n### 帖子内容：%s", d.Title, d.Content)
+	return fmt.Sprintf("帖子标题：%s\n帖子内容：%s", d.Title, d.Content)
 }
 
 func (d *Discussion) Header() DiscussHeader {

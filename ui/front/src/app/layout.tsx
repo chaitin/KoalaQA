@@ -1,13 +1,13 @@
-import { getSystemBrand, getUser, getForum, getUserLoginMethod } from '@/api'
+import { getForum, getSystemBrand, getUser, getUserLoginMethod } from '@/api'
 import '@/asset/styles/common.css'
 import '@/asset/styles/markdown.css'
 import { AuthProvider, CommonProvider, GuestActivationProvider } from '@/components'
 import ClientInit from '@/components/ClientInit'
+import ServerErrorBoundary from '@/components/ServerErrorBoundary'
 import { AuthConfigProvider } from '@/contexts/AuthConfigContext'
 import { GroupDataProvider } from '@/contexts/GroupDataContext'
 import { SystemDiscussionProvider } from '@/contexts/SystemDiscussionContext'
-import ServerErrorBoundary from '@/components/ServerErrorBoundary'
-import { safeApiCall, safeLogError } from '@/lib/error-utils'
+import { safeLogError } from '@/lib/error-utils'
 import theme from '@/theme'
 import '@ctzhian/tiptap/dist/index.css'
 // 初始化 dayjs 中文配置
@@ -15,20 +15,19 @@ import '@/lib/dayjs'
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v14-appRouter'
 import CssBaseline from '@mui/material/CssBaseline'
 import { ThemeProvider } from '@mui/material/styles'
+import { execSync } from 'child_process'
+import fs from 'fs'
 import { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
 import { cookies } from 'next/headers'
 import Script from 'next/script'
-import * as React from 'react'
-import fs from 'fs'
 import path from 'path'
-import { execSync } from 'child_process'
+import * as React from 'react'
 
-import Footer from '@/components/Footer'
-import Header from '../components/header'
-import Scroll from './scroll'
 import PageViewTracker from '@/components/PageViewTracker'
 import ScrollReset from '@/components/ScrollReset'
+import Header from '../components/header'
+import Scroll from './scroll'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,7 +40,7 @@ function getIconfontFileName(): string {
     if (fs.existsSync(versionPath)) {
       const versionData = JSON.parse(fs.readFileSync(versionPath, 'utf-8'))
       const commitId = versionData.commitId
-      
+
       // 检查对应的文件是否存在
       const iconPath = path.join(process.cwd(), `public/font/iconfont.${commitId}.js`)
       if (fs.existsSync(iconPath)) {
@@ -52,14 +51,14 @@ function getIconfontFileName(): string {
         return `iconfont.${commitId}.js`
       }
     }
-    
+
     // 如果版本文件不存在或文件不存在，尝试获取当前 commit id
     try {
       const commitId = execSync('git rev-parse --short HEAD', {
         cwd: process.cwd(),
         encoding: 'utf-8',
       }).trim()
-      
+
       const iconPath = path.join(process.cwd(), `public/font/iconfont.${commitId}.js`)
       if (fs.existsSync(iconPath)) {
         return `iconfont.${commitId}.js`
@@ -67,7 +66,7 @@ function getIconfontFileName(): string {
     } catch (error) {
       // 忽略 git 命令错误
     }
-    
+
     // 如果都失败，回退到默认文件名
     const defaultPath = path.join(process.cwd(), 'public/font/iconfont.js')
     if (fs.existsSync(defaultPath)) {
@@ -76,7 +75,7 @@ function getIconfontFileName(): string {
   } catch (error) {
     safeLogError('Failed to get iconfont file name', error)
   }
-  
+
   // 最后的降级方案
   return 'iconfont.js'
 }
@@ -208,7 +207,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
   const forums = await getForumData(authConfig, user)
 
   const brand = brandResponse || null
-  
+
   // 获取 iconfont 文件名（带 commit id）
   const iconfontFileName = getIconfontFileName()
 
@@ -221,7 +220,9 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
         <link rel='preconnect' href='//fonts.googleapis.com' crossOrigin='anonymous' />
         <link rel='icon' href={brand?.logo || '/logo.svg'} />
       </head>
-      <body className={`${monoFont.variable} ${alimamashuheitiFont.variable}`}>
+      <body
+        className={`${monoFont.variable} ${alimamashuheitiFont.variable}`}
+      >
         {/* 图标字体预加载 - beforeInteractive 确保在交互前加载 */}
         {/* 文件名包含 commit id，每次下载新图标时文件名会自动更新，防止浏览器缓存 */}
         <Script src={`/font/${iconfontFileName}`} strategy='beforeInteractive' />

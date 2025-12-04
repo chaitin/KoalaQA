@@ -259,6 +259,9 @@ const QaImport = (props: {
                     minHeight: '320px!important',
                     maxHeight: '340px!important',
                   },
+                  '& .tiptap':{
+                    minHeight: { xs: '150px', sm: '300px' },
+                  },
                 }}
               >
                 <EditorWrap

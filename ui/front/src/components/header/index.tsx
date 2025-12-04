@@ -97,7 +97,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
     closeSearchModal()
     setSearchInputValue('')
   }, [closeSearchModal])
-  
+
   const [showSearchInAppBar, setShowSearchInAppBar] = useState(false)
 
   // 使用 zustand store 中的数据，保证迁移后组件直接读取同一数据源
@@ -123,22 +123,22 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
     return undefined
   }
   const currentForumId = getCurrentForumId()
-  
+
   // 获取当前论坛信息
-  const currentForumInfo = currentForumId 
-    ? forums.find(f => f.id === currentForumId) || forums[0] || null
+  const currentForumInfo = currentForumId
+    ? forums.find((f) => f.id === currentForumId) || forums[0] || null
     : forums[0] || null
 
   // 监听自定义事件，直接打开弹窗（Header 总是处理，确保在所有页面都能打开弹窗）
   useEffect(() => {
     const handleOpenModal = (event: CustomEvent<OpenReleaseModalEventDetail>) => {
       const { type, title } = event.detail
-      
+
       setSelectedModalType(type)
       if (title) {
         setInitialTitleFromSearch(title)
       }
-      
+
       // 直接打开弹窗
       releaseModalOpen()
     }
@@ -269,40 +269,48 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
   }
 
   // 处理提问、反馈、文章操作
-  const handleAsk = useCallback((query?: string) => {
-    handleCloseSearchModal()
-    
-    // 直接触发事件打开弹窗，无论是否在列表页面
-    const event = new CustomEvent<OpenReleaseModalEventDetail>('openReleaseModal', {
-      detail: { type: 'qa', title: query }
-    })
-    window.dispatchEvent(event)
-  }, [handleCloseSearchModal])
+  const handleAsk = useCallback(
+    (query?: string) => {
+      handleCloseSearchModal()
 
+      // 直接触发事件打开弹窗，无论是否在列表页面
+      const event = new CustomEvent<OpenReleaseModalEventDetail>('openReleaseModal', {
+        detail: { type: 'qa', title: query },
+      })
+      window.dispatchEvent(event)
+    },
+    [handleCloseSearchModal],
+  )
 
-  const handleArticle = useCallback((query?: string) => {
-    handleCloseSearchModal()
-    const titleParam = query ? `?title=${encodeURIComponent(query)}` : ''
-    if (route_name) {
-      router.push(`/${route_name}/edit${titleParam}`)
-    } else if (forums.length > 0) {
-      const firstForum = forums[0]
-      const routePath = firstForum.route_name 
-        ? `/${firstForum.route_name}/edit${titleParam}` 
-        : `/${firstForum.id}/edit${titleParam}`
-      router.push(routePath)
-    }
-  }, [handleCloseSearchModal, route_name, forums, router])
+  const handleArticle = useCallback(
+    (query?: string) => {
+      handleCloseSearchModal()
+      const titleParam = query ? `?title=${encodeURIComponent(query)}` : ''
+      if (route_name) {
+        router.push(`/${route_name}/edit${titleParam}`)
+      } else if (forums.length > 0) {
+        const firstForum = forums[0]
+        const routePath = firstForum.route_name
+          ? `/${firstForum.route_name}/edit${titleParam}`
+          : `/${firstForum.id}/edit${titleParam}`
+        router.push(routePath)
+      }
+    },
+    [handleCloseSearchModal, route_name, forums, router],
+  )
 
-  const handleIssue = useCallback((query?: string) => {
-    handleCloseSearchModal()
-    
-    // 直接触发事件打开弹窗，无论是否在列表页面
-    const event = new CustomEvent<OpenReleaseModalEventDetail>('openReleaseModal', {
-      detail: { type: 'issue', title: query }
-    })
-    window.dispatchEvent(event)
-  }, [handleCloseSearchModal])
+  const handleIssue = useCallback(
+    (query?: string) => {
+      handleCloseSearchModal()
+
+      // 直接触发事件打开弹窗，无论是否在列表页面
+      const event = new CustomEvent<OpenReleaseModalEventDetail>('openReleaseModal', {
+        detail: { type: 'issue', title: query },
+      })
+      window.dispatchEvent(event)
+    },
+    [handleCloseSearchModal],
+  )
 
   return (
     <>
@@ -549,7 +557,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                 '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
               }}
             >
-              <SearchIcon sx={{ fontSize: 20 }} />
+              <SearchIcon sx={{ fontSize: 24 }} />
             </IconButton>
 
             {user?.uid ? (
@@ -649,18 +657,6 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
         forumInfo={currentForumInfo}
       />
     </>
-  )
-}
-
-// Spacer component to account for fixed header
-export const HeaderSpacer = () => {
-  return (
-    <Box
-      sx={{
-        display: { xs: 'block', sm: 'none' },
-        height: '64px', // Adjusted for mobile header height (Toolbar only)
-      }}
-    />
   )
 }
 

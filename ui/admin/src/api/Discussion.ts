@@ -14,9 +14,11 @@ import request, { ContentType, RequestParams } from "./httpClient";
 import {
   ContextResponse,
   DeleteDiscussionDiscIdCommentCommentIdParams,
+  DeleteDiscussionDiscIdFollowParams,
   DeleteDiscussionDiscIdParams,
   GetAdminDiscussionParams,
   GetDiscussionDiscIdAssociateParams,
+  GetDiscussionDiscIdFollowParams,
   GetDiscussionDiscIdParams,
   GetDiscussionDiscIdSimilarityParams,
   GetDiscussionFollowParams,
@@ -47,6 +49,7 @@ import {
   SvcCommentUpdateReq,
   SvcDiscussionCompeletReq,
   SvcDiscussionCreateReq,
+  SvcDiscussionListFollowRes,
   SvcDiscussionUpdateReq,
   SvcResolveFeedbackReq,
   SvcResolveIssueReq,
@@ -627,6 +630,35 @@ export const postDiscussionDiscIdCommentCommentIdRevokeLike = (
   });
 
 /**
+ * @description get discussion follow info
+ *
+ * @tags discussion
+ * @name GetDiscussionDiscIdFollow
+ * @summary get discussion follow info
+ * @request GET:/discussion/{disc_id}/follow
+ * @response `200` `(ContextResponse & {
+    data?: SvcDiscussionListFollowRes,
+
+})` OK
+ */
+
+export const getDiscussionDiscIdFollow = (
+  { discId, ...query }: GetDiscussionDiscIdFollowParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: SvcDiscussionListFollowRes;
+    }
+  >({
+    path: `/discussion/${discId}/follow`,
+    method: "GET",
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
  * @description follow discussion
  *
  * @tags discussion
@@ -650,6 +682,28 @@ export const postDiscussionDiscIdFollow = (
   >({
     path: `/discussion/${discId}/follow`,
     method: "POST",
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description unfollow discussion
+ *
+ * @tags discussion
+ * @name DeleteDiscussionDiscIdFollow
+ * @summary unfollow discussion
+ * @request DELETE:/discussion/{disc_id}/follow
+ * @response `200` `ContextResponse` OK
+ */
+
+export const deleteDiscussionDiscIdFollow = (
+  { discId, ...query }: DeleteDiscussionDiscIdFollowParams,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/discussion/${discId}/follow`,
+    method: "DELETE",
     type: ContentType.Json,
     format: "json",
     ...params,

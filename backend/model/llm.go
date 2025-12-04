@@ -15,8 +15,15 @@ type LLMModelParam struct {
 	SupportPromptCache bool `json:"support_prompt_cache"`
 }
 
-func (p LLMModelParam) Bytes() ([]byte, error) {
-	return json.Marshal(p)
+func (p LLMModelParam) Map() map[string]any {
+	return map[string]any{
+		"context_window":       p.ContextWindow,
+		"max_tokens":           p.MaxTokens,
+		"r1_enabled":           p.R1Enabled,
+		"support_computer_use": p.SupportComputerUse,
+		"support_images":       p.SupportImages,
+		"support_prompt_cache": p.SupportPromptCache,
+	}
 }
 
 // Value implements the driver.Valuer interface for GORM
@@ -47,11 +54,11 @@ func (p *LLMModelParam) Scan(value interface{}) error {
 type LLMType string
 
 const (
-	LLMTypeChat      LLMType = "chat"
-	LLMTypeEmbedding LLMType = "embedding"
-	LLMTypeRerank    LLMType = "rerank"
-	// LLMTypeAnalysis   LLMType = "analysis"
-	// LLMTypeAnalysisVL LLMType = "analysis-vl"
+	LLMTypeChat       LLMType = "chat"
+	LLMTypeEmbedding  LLMType = "embedding"
+	LLMTypeRerank     LLMType = "rerank"
+	LLMTypeAnalysis   LLMType = "analysis"
+	LLMTypeAnalysisVL LLMType = "analysis-vl"
 )
 
 func (m LLMType) RagSupported() bool {

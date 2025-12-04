@@ -30,7 +30,9 @@ import {
   styled,
   TextField,
   Typography,
+  useTheme,
 } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -203,6 +205,11 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
       } else {
         const discussionData: SvcDiscussionCreateReq = { ..._params, type: type as ModelDiscussionType }
         const uid = await postDiscussion(discussionData)
+        // 显示积分提示：发文章 +10
+        if (type === 'blog') {
+          const { showPointNotification, PointActionType } = await import('@/utils/pointNotification')
+          showPointNotification(PointActionType.CREATE_ARTICLE)
+        }
         router.push(`/${routeName}/${uid}`)
       }
     } finally {
@@ -432,9 +439,9 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
           alignItems: 'stretch',
           position: 'relative',
           height: showSimilarContent ? '60vh' : 'auto',
-          '& .editor-wrap':{
+          '& .editor-wrap': {
             height: '100%',
-          }
+          },
         }}
       >
         <Box
@@ -453,26 +460,22 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
               variant='outlined'
               label={type === 'issue' ? 'Issue 标题' : type === 'blog' ? '文章标题' : '你遇到了什么问题？'}
               fullWidth
-              slotProps={{
-                inputLabel: {
-                  sx: {
-                    fontSize: '12px',
-                    '&.MuiInputLabel-shrink': {
-                      fontSize: '15px', // 缩小时字体只略小
-                    },
-                  },
-                },
-                input: {
-                  sx:{
-                    fontSize: '12px',
-                  }
-                }
-              }}
               error={Boolean(errors.title)}
               helperText={errors.title?.message as string}
               size='small'
               autoComplete='off'
               onBlur={showSimilarContent ? handleTitleBlur : undefined}
+              sx={{
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#e0e0e0',
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#e0e0e0',
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#e0e0e0',
+                },
+              }}
             />
             <Controller
               name='group_ids'
@@ -505,7 +508,18 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                             <Select
                               value={valueForTopic?.[0]?.id?.toString() || ''}
                               label={topic.name}
-                              sx={{ fontSize: '12px' }}
+                              sx={{
+                                fontSize: '12px',
+                                '& .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: '#e0e0e0',
+                                },
+                                '&:hover .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: '#e0e0e0',
+                                },
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: '#e0e0e0',
+                                },
+                              }}
                               onChange={(e) => {
                                 const existing = Array.isArray(field.value) ? [...(field.value as number[])] : []
                                 const otherIds = existing.filter(
@@ -570,13 +584,14 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                     sx={{
                       px: 1,
                       height: '100%',
-                      minHeight: '150px',
-                      maxHeight: '350px',
                       display: 'flex',
                       flexDirection: 'column',
                       overflow: 'hidden',
                       '& .md-container .MuiIconButton-root + *': {
                         display: 'none',
+                      },
+                      '& .tiptap': {
+                        minHeight: { xs: '150px', sm: '300px' },
                       },
                       '& .md-container ': { px: 1 },
                       '& .md-container > div': {
@@ -624,7 +639,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
               flex: 1,
               minHeight: 200,
               flexShrink: 0,
-              display: {xs: 'none', sm: 'flex'},
+              display: { xs: 'none', sm: 'flex' },
               flexDirection: 'column',
               height: '60vh',
               overflow: 'hidden',

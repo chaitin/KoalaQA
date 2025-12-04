@@ -190,7 +190,7 @@ func (u *User) CreateThird(ctx context.Context, orgID uint, user *third_auth.Use
 				Key:       uuid.NewString(),
 				OrgIDs:    model.Int64Array{int64(orgID)},
 			}
-			txErr = tx.Model(&model.User{}).Create(&dbUser).Error
+			txErr = u.createUser(tx, &dbUser)
 			if txErr != nil {
 				return txErr
 			}
@@ -214,6 +214,64 @@ func (u *User) CreateThird(ctx context.Context, orgID uint, user *third_auth.Use
 	}
 
 	return &dbUser, nil
+}
+
+func (u *User) createUser(tx *gorm.DB, user *model.User) error {
+	user.Point = 0
+
+	err := tx.Model(u.m).Create(user).Error
+	if err != nil {
+		return err
+	}
+
+	records := make([]model.UserPointRecord, 0, 3)
+	point := 0
+
+	if user.Role != model.UserRoleGuest {
+		point += 1
+		records = append(records, model.UserPointRecord{
+			UserPointRecordInfo: model.UserPointRecordInfo{
+				UserID: user.ID,
+				Type:   model.UserPointTypeUserRole,
+			},
+			Point: 1,
+		})
+	}
+
+	if user.Avatar != "" {
+		point += 5
+		records = append(records, model.UserPointRecord{
+			UserPointRecordInfo: model.UserPointRecordInfo{
+				UserID: user.ID,
+				Type:   model.UserPointTypeUserAvatar,
+			},
+			Point: 5,
+		})
+	}
+
+	if user.Intro != "" {
+		point += 5
+		records = append(records, model.UserPointRecord{
+			UserPointRecordInfo: model.UserPointRecordInfo{
+				UserID: user.ID,
+				Type:   model.UserPointTypeUserIntro,
+			},
+			Point: 5,
+		})
+	}
+
+	err = tx.CreateInBatches(&records, 4).Error
+	if err != nil {
+		return err
+	}
+
+	return tx.Model(u.m).Where("id = ?", user.ID).UpdateColumn("point", point).Error
+}
+
+func (u *User) Create(ctx context.Context, user *model.User) error {
+	return u.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return u.createUser(tx, user)
+	})
 }
 
 func newUser(db *database.DB, org *Org, oc oss.Client) *User {

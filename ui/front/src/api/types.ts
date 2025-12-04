@@ -516,6 +516,7 @@ export interface ModelUser {
   name?: string;
   org_ids?: number[];
   password?: string;
+  point?: number;
   role?: ModelUserRole;
   updated_at?: number;
   web_notify?: boolean;
@@ -530,6 +531,7 @@ export interface ModelUserInfo {
   key?: string;
   no_password?: boolean;
   org_ids?: number[];
+  point?: number;
   role?: ModelUserRole;
   uid?: number;
   username?: string;
@@ -1022,6 +1024,7 @@ export interface SvcUserStatisticsRes {
   blog_count?: number;
   intro?: string;
   name?: string;
+  point?: number;
   qa_count?: number;
   role?: ModelUserRole;
 }

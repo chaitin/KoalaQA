@@ -9,17 +9,18 @@ import {
   ModelListRes,
   ModelUserRole,
 } from '@/api/types'
+import AnnouncementCard from '@/components/AnnouncementCard'
+import AnnouncementCarousel from '@/components/AnnouncementCarousel'
 import { AuthContext } from '@/components/authProvider'
 import BrandAttribution from '@/components/BrandAttribution'
 import ContributorsRank from '@/components/ContributorsRank'
-import { CommonContext } from '@/components/commonProvider'
 import { ReleaseModal } from '@/components/discussion'
 import SearchResultModal from '@/components/SearchResultModal'
 import { useGroupData } from '@/contexts/GroupDataContext'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
 import { useForumId } from '@/hooks/useForumId'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
-import { Ellipsis } from '@ctzhian/ui'
+import { isAdminRole } from '@/lib/utils'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import FilterListIcon from '@mui/icons-material/FilterList'
 import SearchIcon from '@mui/icons-material/Search'
@@ -32,21 +33,18 @@ import {
   InputAdornment,
   Menu,
   MenuItem,
-  Paper,
   Stack,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
   useMediaQuery,
-  useTheme,
+  useTheme
 } from '@mui/material'
 import { useBoolean, useInViewport } from 'ahooks'
-import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import React, { useContext, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import DiscussCard from './discussCard'
-import { isAdminRole } from '@/lib/utils'
 
 export type Status = 'hot' | 'new' | 'publish'
 
@@ -659,6 +657,13 @@ const Article = ({
             </Box>
           </Box>
 
+          {/* 手机端公告轮播 */}
+          {announcements.length > 0 && (
+            <Box sx={{ display: { xs: 'block', lg: 'none' }, mb: 2 }}>
+              <AnnouncementCarousel announcements={announcements} routeName={routeName} />
+            </Box>
+          )}
+
           {/* 排序选项 */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
             <ToggleButtonGroup
@@ -869,63 +874,7 @@ const Article = ({
         >
           {/* 公告 */}
           {announcements.map((announcement) => (
-            <Link
-              key={announcement.uuid}
-              href={`/${routeName}/${announcement.uuid}`}
-              style={{ textDecoration: 'none' }}
-            >
-              <Paper
-                elevation={0}
-                sx={{
-                  bgcolor: 'rgba(0,99,151,0.03)',
-                  borderRadius: '6px',
-                  border: '1px solid #D9DEE2',
-                  p: 2,
-                  mb: 2,
-                  // 为公告 Paper 增加焦点识别样式
-                  transition: 'box-shadow 0.2s, border-color 0.2s, background-color 0.2s',
-                  outline: 'none',
-                  '&:focus-within, &:hover': {
-                    boxShadow: 'inset 0 0 3px 1px rgba(32,108,255,0.1)',
-                    backgroundColor: 'rgba(32,108,255,0.04)',
-                  },
-                  cursor: 'pointer',
-                  tabIndex: 0,
-                }}
-              >
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  <Ellipsis
-                    sx={{
-                      fontSize: '0.875rem',
-                      fontWeight: 500,
-                      color: '#111827',
-                      lineHeight: 1.4,
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                    }}
-                  >
-                    {announcement.title}
-                  </Ellipsis>
-                  {announcement.summary && (
-                    <Box
-                      sx={{
-                        fontSize: '12px!important',
-                        color: 'rgba(33, 34, 45, 0.50)',
-                        bgcolor: 'transparent',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 3,
-                        WebkitBoxOrient: 'vertical',
-                      }}
-                    >
-                      {announcement.summary}
-                    </Box>
-                  )}
-                </Box>
-              </Paper>
-            </Link>
+            <AnnouncementCard key={announcement.uuid} announcement={announcement} routeName={routeName} />
           ))}
 
           {/* 贡献达人 */}

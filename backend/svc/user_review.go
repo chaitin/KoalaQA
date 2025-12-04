@@ -119,6 +119,16 @@ func (u *UserReview) Update(ctx context.Context, opUID uint, id uint, req UserRe
 			FromID: opUID,
 			ToID:   review.UserID,
 		})
+
+		err = u.pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+			UserPointRecordInfo: model.UserPointRecordInfo{
+				UserID: review.UserID,
+				Type:   model.UserPointTypeUserRole,
+			},
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

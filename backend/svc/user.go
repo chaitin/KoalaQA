@@ -204,6 +204,16 @@ func (u *User) Update(ctx context.Context, opUserID uint, id uint, req UserUpdat
 					FromID: opUserID,
 					ToID:   id,
 				})
+
+				err = u.pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+					UserPointRecordInfo: model.UserPointRecordInfo{
+						UserID: id,
+						Type:   model.UserPointTypeUserRole,
+					},
+				})
+				if err != nil {
+					return err
+				}
 			}
 
 			// 更新用户角色，用于后续判断
@@ -341,6 +351,28 @@ func (u *User) UpdateInfo(ctx context.Context, id uint, req UserUpdateInfoReq) e
 		err = u.oc.Delete(ctx, util.TrimFirstDir(user.Avatar))
 		if err != nil {
 			u.logger.WithContext(ctx).WithErr(err).With("avatar", user.Avatar).Warn("remove user avatar failed")
+		}
+	} else if avatarPath != "" {
+		err = u.pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+			UserPointRecordInfo: model.UserPointRecordInfo{
+				UserID: user.ID,
+				Type:   model.UserPointTypeUserAvatar,
+			},
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	if user.Intro == "" && req.Intro != "" {
+		err = u.pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+			UserPointRecordInfo: model.UserPointRecordInfo{
+				UserID: user.ID,
+				Type:   model.UserPointTypeUserIntro,
+			},
+		})
+		if err != nil {
+			return err
 		}
 	}
 
@@ -618,6 +650,7 @@ type UserStatisticsRes struct {
 	Avatar      string         `json:"avatar"`
 	Name        string         `json:"name"`
 	Intro       string         `json:"intro"`
+	Point       uint           `json:"point"`
 	Role        model.UserRole `json:"role"`
 	QACount     int64          `json:"qa_count"`
 	BlogCount   int64          `json:"blog_count"`
@@ -638,6 +671,7 @@ func (u *User) Statistics(ctx context.Context, curUserID uint, userID uint) (*Us
 		Avatar: user.Avatar,
 		Name:   user.Name,
 		Intro:  user.Intro,
+		Point:  user.Point,
 		Role:   user.Role,
 	}
 	curUserForumIDs, err := u.ForumIDs(ctx, curUserID)

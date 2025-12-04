@@ -25,6 +25,7 @@ type User struct {
 	LastLogin Timestamp  `gorm:"column:last_login;type:timestamp with time zone" json:"last_login"`
 	Invisible bool       `gorm:"column:invisible"`
 	Key       string     `gorm:"column:key;type:text;uniqueIndex"`
+	Point     uint       `gorm:"column:point;type:bigint;default:0" json:"point"`
 	WebNotify bool       `gorm:"column:web_notify" json:"web_notify"`
 }
 
@@ -44,6 +45,7 @@ type UserInfo struct {
 	Avatar     string     `json:"avatar"`
 	Builtin    bool       `json:"builtin"`
 	NoPassword bool       `json:"no_password"`
+	Point      uint       `json:"point"`
 	WebNotify  bool       `json:"web_notify"`
 }
 
