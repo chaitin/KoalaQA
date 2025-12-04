@@ -203,6 +203,11 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
       } else {
         const discussionData: SvcDiscussionCreateReq = { ..._params, type: type as ModelDiscussionType }
         const uid = await postDiscussion(discussionData)
+        // 显示积分提示：发文章 +10
+        if (type === 'blog') {
+          const { showPointNotification, PointActionType } = await import('@/utils/pointNotification')
+          showPointNotification(PointActionType.CREATE_ARTICLE)
+        }
         router.push(`/${routeName}/${uid}`)
       }
     } finally {
@@ -453,21 +458,6 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
               variant='outlined'
               label={type === 'issue' ? 'Issue 标题' : type === 'blog' ? '文章标题' : '你遇到了什么问题？'}
               fullWidth
-              slotProps={{
-                inputLabel: {
-                  sx: {
-                    fontSize: '12px',
-                    '&.MuiInputLabel-shrink': {
-                      fontSize: '15px', // 缩小时字体只略小
-                    },
-                  },
-                },
-                input: {
-                  sx:{
-                    fontSize: '12px',
-                  }
-                }
-              }}
               error={Boolean(errors.title)}
               helperText={errors.title?.message as string}
               size='small'

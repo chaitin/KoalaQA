@@ -89,6 +89,8 @@ export enum ModelLLMType {
   LLMTypeChat = "chat",
   LLMTypeEmbedding = "embedding",
   LLMTypeRerank = "rerank",
+  LLMTypeAnalysis = "analysis",
+  LLMTypeAnalysisVL = "analysis-vl",
 }
 
 export enum ModelFileType {
@@ -516,6 +518,7 @@ export interface ModelUser {
   name?: string;
   org_ids?: number[];
   password?: string;
+  point?: number;
   role?: ModelUserRole;
   updated_at?: number;
   web_notify?: boolean;
@@ -530,6 +533,7 @@ export interface ModelUserInfo {
   key?: string;
   no_password?: boolean;
   org_ids?: number[];
+  point?: number;
   role?: ModelUserRole;
   uid?: number;
   username?: string;
@@ -661,6 +665,11 @@ export interface SvcDiscussionCreateReq {
   tags?: string[];
   title: string;
   type?: ModelDiscussionType;
+}
+
+export interface SvcDiscussionListFollowRes {
+  followed?: boolean;
+  follower?: number;
 }
 
 export interface SvcDiscussionUpdateReq {
@@ -1017,6 +1026,7 @@ export interface SvcUserStatisticsRes {
   blog_count?: number;
   intro?: string;
   name?: string;
+  point?: number;
   qa_count?: number;
   role?: ModelUserRole;
 }
@@ -1547,7 +1557,17 @@ export interface PostDiscussionDiscIdCommentCommentIdRevokeLikeParams {
   commentId: number;
 }
 
+export interface GetDiscussionDiscIdFollowParams {
+  /** disc_id */
+  discId: string;
+}
+
 export interface PostDiscussionDiscIdFollowParams {
+  /** disc_id */
+  discId: string;
+}
+
+export interface DeleteDiscussionDiscIdFollowParams {
   /** disc_id */
   discId: string;
 }

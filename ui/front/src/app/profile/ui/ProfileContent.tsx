@@ -7,6 +7,7 @@ import { AuthContext } from '@/components/authProvider'
 import UserAvatar from '@/components/UserAvatar'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera'
+import { showCustomPointNotification } from '@/utils/pointNotification'
 import {
   Box,
   Button,
@@ -85,6 +86,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
       { label: '问答', value: statistics?.qa_count ?? 0 },
       { label: '文章', value: statistics?.blog_count ?? 0 },
       { label: '回答', value: statistics?.answer_count ?? 0 },
+      { label: '积分', value: statistics?.point ?? 0 },
     ],
     [statistics],
   )
@@ -142,11 +144,15 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
   }
 
   const toggleButtonSx = {
-    height: 30,
+    height: { xs: 28, sm: 30 },
     fontWeight: 500,
-    fontSize: '14px',
+    fontSize: { xs: '13px', sm: '14px' },
     color: '#21222D',
     border: '1px solid transparent',
+    px: { xs: 1.25, sm: 2 },
+    py: { xs: 0.5, sm: 0.75 },
+    whiteSpace: 'nowrap',
+    flex: { xs: '0 1 auto', sm: 'none' },
     '&.Mui-selected': {
       bgcolor: 'rgba(0,99,151,0.06)',
       border: '1px solid rgba(0,99,151,0.1)',
@@ -183,6 +189,16 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
       await putUser({ intro: editBio || '暂无个人介绍' })
       setUser({ ...user, intro: editBio || '暂无个人介绍' })
       setIsEditingBio(false)
+      
+      // 刷新统计信息以更新积分显示（如果后端给了完善个人介绍的积分奖励，会在这里显示）
+      const response = await getUserUserId({ userId: user?.uid || initialUser?.uid || 0 })
+      const oldPoint = statistics?.point || 0
+      const newPoint = response?.point || 0
+      if (newPoint > oldPoint) {
+        // 如果积分增加了，显示积分提示
+        showCustomPointNotification(newPoint - oldPoint)
+      }
+      setStatistics(response)
     } catch (error) {
       console.error('更新个人介绍失败:', error)
     }
@@ -210,10 +226,20 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
 
     setIsUploading(true)
     try {
+      const oldPoint = statistics?.point || 0
       await putUser({ avatar: file })
 
       // 头像上传成功后，重新获取用户信息以获取最新的头像URL
       await fetchUser()
+      
+      // 刷新统计信息以更新积分显示（如果后端给了完善头像的积分奖励，会在这里显示）
+      const response = await getUserUserId({ userId: user?.uid || initialUser?.uid || 0 })
+      const newPoint = response?.point || 0
+      if (newPoint > oldPoint) {
+        // 如果积分增加了，显示积分提示
+        showCustomPointNotification(newPoint - oldPoint)
+      }
+      setStatistics(response)
     } catch (error) {
       console.error('头像上传失败:', error)
     } finally {
@@ -286,16 +312,20 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
 
       {/* 标签页 */}
       <Card sx={{ borderRadius: 2, boxShadow: 'none' }}>
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: { xs: 2, sm: 3 } }}>
           <ToggleButtonGroup
             value={tabValue.toString()}
             onChange={handleTabChange}
             exclusive
             aria-label='个人中心标签页'
             sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: { xs: 0.75, sm: 1 },
               '& .MuiToggleButtonGroup-grouped': {
                 borderRadius: '6px !important',
-                mr: 1,
+                mr: 0,
+                whiteSpace: 'nowrap',
               },
             }}
           >

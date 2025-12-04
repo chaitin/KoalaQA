@@ -92,6 +92,14 @@ const theme = createTheme(
     },
 
     components: {
+      MuiCssBaseline: {
+        styleOverrides: {
+          body: {
+            backgroundColor: '#ffffff',
+            color: '#21222D',
+          },
+        },
+      },
       MuiOutlinedInput: {
         styleOverrides: {
           root: ({ theme }) => ({

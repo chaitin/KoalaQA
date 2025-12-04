@@ -54,6 +54,7 @@ import Modal from '@/components/modal'
 import { formatNumber, isAdminRole } from '@/lib/utils'
 import { useQuickReplyStore } from '@/store'
 import { Icon } from '@ctzhian/ui'
+import { showPointNotification, PointActionType } from '@/utils/pointNotification'
 
 const Content = (props: { data: ModelDiscussionDetail }) => {
   const { data } = props
@@ -96,34 +97,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
     setHasAnswerContent(normalized.length > 0)
   }, [])
 
-  // 使用 useEffect 监听编辑器容器的 blur 事件
-  useEffect(() => {
-    if (!showAnswerEditor || !answerEditorContainerRef.current) return
-
-    const container = answerEditorContainerRef.current
-    const handleBlur = (e: FocusEvent) => {
-      const relatedTarget = e.relatedTarget as HTMLElement | null
-      if (relatedTarget) {
-        // 如果焦点移到了编辑器内部或按钮区域，不关闭编辑器
-        if (container.contains(relatedTarget)) {
-          return
-        }
-      }
-      // 延迟检查，确保焦点真的移出了编辑器区域
-      setTimeout(() => {
-        if (!hasAnswerContent) {
-          setShowAnswerEditor(false)
-          setAnswerEditorKey((prev) => prev + 1)
-        }
-      }, 100)
-    }
-
-    container.addEventListener('blur', handleBlur, true)
-    return () => {
-      container.removeEventListener('blur', handleBlur, true)
-    }
-  }, [showAnswerEditor, hasAnswerContent])
-
   const handleClick = (
     event: React.MouseEvent<HTMLButtonElement>,
     _comment: string,
@@ -157,6 +130,8 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
           discId: data.uuid!,
           commentId: commentIndex.id!,
         })
+        // 显示积分提示：删除回答 -1
+        showPointNotification(PointActionType.DELETE_ANSWER)
         // 清除讨论详情的缓存
         const cacheKey = generateCacheKey(`/discussion/${data.uuid}`, {})
         clearCache(cacheKey)
@@ -229,6 +204,9 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
           discId: data.uuid!,
           commentId: commentIndex.id!,
         })
+        // 显示积分提示：采纳回答 +2（提问者），回答被采纳 +10（回答者）
+        // 注意：这里只显示提问者的积分提示，回答者的积分提示应该在后端返回或通过其他方式通知
+        showPointNotification(PointActionType.ACCEPT_ANSWER)
         // 清除讨论详情的缓存
         const cacheKey = generateCacheKey(`/discussion/${data.uuid}`, {})
         clearCache(cacheKey)
@@ -249,6 +227,8 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
           discId: data.uuid!,
           commentId: commentIndex.id!,
         })
+        // 显示积分提示：取消采纳 -2（提问者）
+        showPointNotification(PointActionType.REVOKE_ACCEPT, -2)
         // 清除讨论详情的缓存
         const cacheKey = generateCacheKey(`/discussion/${data.uuid}`, {})
         clearCache(cacheKey)
@@ -290,6 +270,8 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
     if (!content.trim()) return
     return checkAuth(async () => {
       await postDiscussionDiscIdComment({ discId: id }, { content })
+      // 显示积分提示：回答问题 +1
+      showPointNotification(PointActionType.ANSWER_QUESTION)
       setShowAnswerEditor(false)
       setAnswerEditorKey((prev) => prev + 1) // 重置编辑器
       setHasAnswerContent(false)
@@ -315,6 +297,8 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
 
   const handleAcceptAnswer = async (answerId: number) => {
     await postDiscussionDiscIdCommentCommentIdAccept({ discId: data.uuid!, commentId: answerId })
+    // 显示积分提示：采纳回答 +2（提问者）
+    showPointNotification(PointActionType.ACCEPT_ANSWER)
     const cacheKey = generateCacheKey(`/discussion/${data.uuid}`, {})
     clearCache(cacheKey)
     router.refresh()
@@ -336,15 +320,28 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
 
       if (type === 'up') {
         if (comment.user_like_state === ModelCommentLikeState.CommentLikeStateLike) {
+          // 取消点赞
           await postDiscussionDiscIdCommentCommentIdRevokeLike({ discId: id, commentId: answerId })
+          // 显示积分提示：取消点赞 -5（被点赞者）
+          showPointNotification(PointActionType.REVOKE_LIKE)
         } else {
+          // 点赞
           await postDiscussionDiscIdCommentCommentIdLike({ discId: id, commentId: answerId })
+          // 注意：点赞别人的回答不给自己加积分，只给被点赞者加积分
+          // 如果当前用户是回答者，会收到通知，这里不显示积分提示
         }
       } else {
         if (comment.user_like_state === ModelCommentLikeState.CommentLikeStateDislike) {
+          // 取消点踩
           await postDiscussionDiscIdCommentCommentIdRevokeLike({ discId: id, commentId: answerId })
+          // 显示积分提示：取消点踩 +5（被点踩者）或 +2（点踩者）
+          // 这里假设是点踩者取消点踩，所以是 +2
+          showPointNotification(PointActionType.REVOKE_DISLIKE, 2)
         } else {
+          // 点踩
           await postDiscussionDiscIdCommentCommentIdDislike({ discId: id, commentId: answerId })
+          // 显示积分提示：点踩别人的回答 -2（点踩者）
+          showPointNotification(PointActionType.DISLIKE_ANSWER)
         }
       }
       const cacheKey = generateCacheKey(`/discussion/${id}`, {})
@@ -423,7 +420,19 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
           },
         }}
       >
-        <Box sx={{ pt: 2, flex: 1 }}>
+        <Box
+          sx={{
+            pt: 2,
+            flex: 1,
+            // 移动端为固定定位的编辑器预留底部空间，避免内容被遮挡
+            // 注意：占位元素会在内容区域后面添加，这里只需要少量 padding 作为缓冲
+            ...(isQAPost && {
+              '@media (max-width: 600px)': {
+                paddingBottom: 2,
+              },
+            }),
+          }}
+        >
           <Typography
             variant='h6'
             sx={{
@@ -1095,21 +1104,45 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
             )
           })}
         </Box>
+        {/* 移动端固定定位编辑器的占位元素，避免内容被遮挡 */}
+        {!isReplyEditorVisible && !isClosedPost && isQAPost && (
+          <Box
+            sx={{
+              display: { xs: 'block', sm: 'none' },
+              height: 'calc(250px + max(env(safe-area-inset-bottom, 0px), 44px))',
+              flexShrink: 0,
+            }}
+          />
+        )}
         {/* Answers section for questions - 已关闭帖子不显示编辑器 */}
         {!isReplyEditorVisible && !isClosedPost && (
           <Paper
             elevation={0}
             sx={{
-              position: !isQAPost ? 'unset' : 'sticky',
-              bottom: 0,
-              pb: 3,
+              position: !isQAPost ? 'unset' : { xs: 'fixed', sm: 'sticky' },
+              bottom: !isQAPost ? 'unset' : { xs: 0, sm: 0 },
+              left: !isQAPost ? 'unset' : { xs: 0, sm: 'unset' },
+              right: !isQAPost ? 'unset' : { xs: 0, sm: 'unset' },
+              pb: !isQAPost ? 3 : { xs: 'calc(24px + max(env(safe-area-inset-bottom, 0px), 44px))', sm: 3 },
               width: '100%',
               maxWidth: { lg: '756px' },
-              mx: 'auto',
+              mx: { xs: 0, sm: 'auto' },
               mt: !isQAPost ? 0 : 'auto',
               zIndex: 9,
               borderRadius: 0,
               bgcolor: '#ffffff',
+              // 移动端添加底部安全区域支持，避免被 Safari 工具栏遮挡
+              ...(isQAPost && {
+                '@media (max-width: 600px)': {
+                  // Safari 工具栏高度约 44px，加上安全区域和内容 padding
+                  paddingBottom: 'calc(24px + max(env(safe-area-inset-bottom, 0px), 44px))',
+                  // 添加左侧和右侧的安全区域支持
+                  paddingLeft: 'max(16px, env(safe-area-inset-left, 0px))',
+                  paddingRight: 'max(16px, env(safe-area-inset-right, 0px))',
+                  // 移除 maxWidth 限制，让 Paper 在移动端占据全宽
+                  maxWidth: '100%',
+                },
+              }),
               '&::before': {
                 content: '""',
                 position: 'absolute',
@@ -1120,6 +1153,10 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                 background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, #FFFFFF 100%)',
                 pointerEvents: 'none',
                 zIndex: -2,
+                // 移动端隐藏渐变，因为使用 fixed 定位
+                '@media (max-width: 600px)': {
+                  display: 'none',
+                },
               },
             }}
           >

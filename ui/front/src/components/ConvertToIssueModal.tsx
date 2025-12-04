@@ -260,6 +260,9 @@ const ConvertToIssueModal = ({ open, onClose, questionData, onSuccess, forumInfo
           },
         )
       }
+      // 显示积分提示：问题转issue +5
+      const { showPointNotification, PointActionType } = await import('@/utils/pointNotification')
+      showPointNotification(PointActionType.QUESTION_TO_ISSUE)
       Message.success('操作成功')
       onSuccess()
       onClose()

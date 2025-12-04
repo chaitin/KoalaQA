@@ -10,12 +10,7 @@ import {
   postDiscussionDiscIdRevokeLike,
   putDiscussionDiscIdClose,
 } from '@/api'
-import {
-  ModelDiscussionDetail,
-  ModelDiscussionState,
-  ModelDiscussionType,
-  ModelUserRole
-} from '@/api/types'
+import { ModelDiscussionDetail, ModelDiscussionState, ModelDiscussionType, ModelUserRole } from '@/api/types'
 import { DiscussionStatusChip, DiscussionTypeChip } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import CommonAvatar from '@/components/CommonAvatar'
@@ -31,7 +26,21 @@ import { formatNumber } from '@/lib/utils'
 import { useForumStore } from '@/store'
 import { Ellipsis, Icon } from '@ctzhian/ui'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
-import { Box, Chip, Divider, IconButton, Menu, MenuItem, Paper, Stack, Typography } from '@mui/material'
+import { showPointNotification, PointActionType } from '@/utils/pointNotification'
+import RemoveRedEyeOutlinedIcon from '@mui/icons-material/RemoveRedEyeOutlined'
+import {
+  Box,
+  Chip,
+  Divider,
+  IconButton,
+  Menu,
+  MenuItem,
+  Paper,
+  Stack,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material'
 import { useBoolean } from 'ahooks'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
@@ -73,6 +82,8 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const [followInfo, setFollowInfo] = useState<{ followed?: boolean; follower?: number }>({})
   const [isHoveringFollow, setIsHoveringFollow] = useState(false)
   const router = useRouter()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const forums = useForumStore((s) => s.forums)
   const { id, route_name }: { id: string; route_name?: string } = (useParams() as any) || { id: '' }
 
@@ -124,6 +135,10 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
       okButtonProps: { color: 'error' },
       onOk: async () => {
         await deleteDiscussionDiscId({ discId: data.uuid + '' }).then(() => {
+          // 显示积分提示：删除文章 -10（如果是文章）或删除问题（不扣积分，因为问题本身不产生积分）
+          if (data.type === ModelDiscussionType.DiscussionTypeBlog) {
+            showPointNotification(PointActionType.DELETE_ARTICLE)
+          }
           router.push('/')
         })
       },
@@ -197,9 +212,13 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         if (data.user_like) {
           // 已点赞，取消点赞
           await postDiscussionDiscIdRevokeLike({ discId: id })
+          // 显示积分提示：取消点赞 -5（被点赞者）
+          showPointNotification(PointActionType.REVOKE_LIKE)
         } else {
           // 未点赞，点赞
           await postDiscussionDiscIdLike({ discId: id })
+          // 注意：点赞别人的文章不给自己加积分，只给被点赞者加积分
+          // 如果当前用户是文章作者，会收到通知，这里不显示积分提示
         }
         router.refresh()
       } catch (error) {
@@ -452,7 +471,10 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                 }}
               >
                 <Icon type='icon-dianzan1' sx={{ fontSize: 12 }} />
-                <Typography variant='caption' sx={{ fontWeight: 600, fontFamily: 'Gilroy', fontSize: '14px',lineHeight: 1 }}>
+                <Typography
+                  variant='caption'
+                  sx={{ fontWeight: 600, fontFamily: 'Gilroy', fontSize: '14px', lineHeight: 1 }}
+                >
                   {formatNumber((data.like || 0) - (data.dislike || 0))}
                 </Typography>
               </Box>
@@ -531,7 +553,17 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
             })}
           </Stack>
           {/* 作者信息和时间 */}
-          <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0, fontSize: '14px' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              flexShrink: 0,
+              fontSize: { xs: '13px', sm: '14px' },
+              gap: { xs: 0.5, sm: 0 },
+              rowGap: { xs: 0.5, sm: 0 },
+            }}
+          >
             <Box
               tabIndex={0}
               sx={{
@@ -545,7 +577,8 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                   color: 'primary.main',
                 },
                 my: '-2px',
-                ml: '-4px',
+                ml: { xs: 0, sm: '-4px' },
+                flexShrink: 0,
               }}
             >
               {profileHref ? (
@@ -569,22 +602,50 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                 </Typography>
               )}
             </Box>
-            <Typography variant='body2' sx={{ color: 'RGBA(33, 34, 45, 1)', px: 1 }}>
+            <Typography
+              variant='body2'
+              sx={{
+                color: 'RGBA(33, 34, 45, 1)',
+                px: { xs: 0.5, sm: 1 },
+                flexShrink: 0,
+              }}
+            >
               ·
             </Typography>
-            <Typography variant='body2' sx={{ color: 'rgba(33, 34, 45, 0.50)' }}>
+            <Typography
+              variant='body2'
+              sx={{
+                color: 'rgba(33, 34, 45, 0.50)',
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
+              }}
+            >
               发布于{' '}
               <TimeDisplayWithTag
                 timestamp={data.created_at!}
                 title={dayjs.unix(data.created_at!).format('YYYY-MM-DD HH:mm:ss')}
               />
             </Typography>
-            {data.updated_at && data.updated_at !== 0 && data.updated_at !== data.created_at && (
+            {data.updated_at && data.updated_at !== 0 && data.updated_at !== data.created_at && !isMobile && (
               <>
-                <Typography variant='body2' sx={{ color: 'rgba(33, 34, 45, 0.50)', pr: 1 }}>
+                <Typography
+                  variant='body2'
+                  sx={{
+                    color: 'rgba(33, 34, 45, 0.50)',
+                    pr: { xs: 0.5, sm: 1 },
+                    flexShrink: 0,
+                  }}
+                >
                   ,
                 </Typography>
-                <Typography variant='body2' sx={{ color: 'rgba(33, 34, 45, 0.50)' }}>
+                <Typography
+                  variant='body2'
+                  sx={{
+                    color: 'rgba(33, 34, 45, 0.50)',
+                    flexShrink: 0,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
                   更新于{' '}
                   <TimeDisplayWithTag
                     timestamp={data.updated_at}
@@ -596,10 +657,24 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
             {/* Issue 类型显示关注数 */}
             {isIssuePost && followInfo.follower !== undefined && (
               <>
-                <Typography variant='body2' sx={{ color: 'rgba(33, 34, 45, 0.50)', px: 1 }}>
+                <Typography
+                  variant='body2'
+                  sx={{
+                    color: 'rgba(33, 34, 45, 0.50)',
+                    px: { xs: 0.5, sm: 1 },
+                    flexShrink: 0,
+                  }}
+                >
                   ·
                 </Typography>
-                <Typography variant='body2' sx={{ color: 'rgba(33, 34, 45, 0.50)' }}>
+                <Typography
+                  variant='body2'
+                  sx={{
+                    color: 'rgba(33, 34, 45, 0.50)',
+                    flexShrink: 0,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
                   {followInfo.follower || 0}关注
                 </Typography>
               </>
@@ -607,12 +682,46 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
             {/* 显示浏览量 */}
             {data.view !== undefined && data.view !== null && (
               <>
-                <Typography variant='body2' sx={{ color: 'rgba(33, 34, 45, 0.50)', px: 1 }}>
+                <Typography
+                  variant='body2'
+                  sx={{
+                    color: 'rgba(33, 34, 45, 0.50)',
+                    px: { xs: 0.5, sm: 1 },
+                    flexShrink: 0,
+                  }}
+                >
                   ·
                 </Typography>
-                <Typography variant='body2' sx={{ color: 'rgba(33, 34, 45, 0.50)' }}>
-                  {formatNumber(data.view || 0)} 次浏览
-                </Typography>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    flexShrink: 0,
+                    color: 'rgba(33, 34, 45, 0.50)',
+                  }}
+                >
+                  <Typography
+                    variant='body2'
+                    sx={{
+                      color: 'rgba(33, 34, 45, 0.50)',
+                      flexShrink: 0,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {formatNumber(data.view || 0)}
+                  </Typography>
+                  <Typography
+                    variant='body2'
+                    sx={{
+                      color: 'rgba(33, 34, 45, 0.50)',
+                      flexShrink: 0,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    次浏览
+                  </Typography>
+                </Box>
               </>
             )}
           </Box>
