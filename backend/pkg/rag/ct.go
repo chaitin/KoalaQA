@@ -64,11 +64,8 @@ func (c *CTRag) UpsertRecords(ctx context.Context, req UpsertRecordsReq) (string
 		DocumentID: req.DocumentID,
 		File:       strings.NewReader(req.Content),
 		Filename:   fmt.Sprintf("%s.md", uuid.NewString()),
-		Metadata:   make(map[string]interface{}),
-		Tags:       make([]string, 0),
-	}
-	if len(req.Tags) > 0 {
-		data.Tags = req.Tags
+		Metadata:   req.Metadata.Map(),
+		Tags:       req.Tags,
 	}
 	doc, err := c.client.Documents.Upload(ctx, data)
 	if err != nil {
@@ -86,7 +83,7 @@ func (c *CTRag) QueryRecords(ctx context.Context, req QueryRecordsReq) (string, 
 		DatasetID:           req.DatasetID,
 		Query:               req.Query,
 		TopK:                req.TopK,
-		Metadata:            make(map[string]interface{}),
+		Metadata:            req.Metadata.Map(),
 		Tags:                req.Tags,
 		SimilarityThreshold: req.SimilarityThreshold,
 	})
