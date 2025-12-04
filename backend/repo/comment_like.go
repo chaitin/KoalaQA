@@ -14,8 +14,9 @@ type CommentLike struct {
 	base[*model.CommentLike]
 }
 
-func (c *CommentLike) Like(ctx context.Context, uid, discID, commentID uint, state model.CommentLikeState) (bool, error) {
-	changed := false
+func (c *CommentLike) Like(ctx context.Context, uid, discID, commentID uint, state model.CommentLikeState) (bool, bool, error) {
+	updated := false
+	stateChanged := false
 	e := c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		updateM := map[string]any{
 			"updated_at": time.Now(),
@@ -66,6 +67,8 @@ func (c *CommentLike) Like(ctx context.Context, uid, discID, commentID uint, sta
 				return err
 			}
 
+			stateChanged = true
+
 			switch state {
 			case model.CommentLikeStateLike:
 				updateM["dislike"] = gorm.Expr("dislike - 1")
@@ -86,21 +89,21 @@ func (c *CommentLike) Like(ctx context.Context, uid, discID, commentID uint, sta
 			return err
 		}
 
-		changed = true
+		updated = true
 		return nil
 	})
 
-	return changed, e
+	return updated, stateChanged, e
 }
 
-func (c *CommentLike) RevokeLike(ctx context.Context, uid, commentID uint) error {
-	return c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+func (c *CommentLike) RevokeLike(ctx context.Context, uid, commentID uint) (model.CommentLike, error) {
+	var commentLike model.CommentLike
+	txErr := c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		err := tx.Exec(`SELECT pg_advisory_xact_lock(?)`, uid).Error
 		if err != nil {
 			return err
 		}
 
-		var commentLike model.CommentLike
 		err = tx.Model(c.m).Where("user_id = ? AND comment_id = ?", uid, commentID).First(&commentLike).Error
 		if err != nil {
 			return err
@@ -136,6 +139,8 @@ func (c *CommentLike) RevokeLike(ctx context.Context, uid, commentID uint) error
 
 		return nil
 	})
+
+	return commentLike, txErr
 }
 
 func newCommentLike(db *database.DB) *CommentLike {

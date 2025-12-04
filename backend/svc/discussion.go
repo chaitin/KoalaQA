@@ -11,6 +11,7 @@ import (
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/batch"
+	"github.com/chaitin/koalaqa/pkg/database"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/llm"
 	"github.com/chaitin/koalaqa/pkg/mq"
@@ -201,6 +202,7 @@ func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req Discus
 		ForumID:  disc.ForumID,
 		DiscID:   disc.ID,
 		DiscUUID: disc.UUID,
+		UserID:   disc.UserID,
 		Type:     disc.Type,
 	})
 
@@ -251,6 +253,7 @@ func (d *Discussion) Update(ctx context.Context, user model.UserInfo, uuid strin
 		ForumID:  disc.ForumID,
 		DiscID:   disc.ID,
 		DiscUUID: uuid,
+		UserID:   disc.UserID,
 		Type:     disc.Type,
 	})
 	return nil
@@ -286,6 +289,7 @@ func (d *Discussion) Delete(ctx context.Context, user model.UserInfo, uuid strin
 		ForumID:  disc.ForumID,
 		DiscID:   disc.ID,
 		DiscUUID: uuid,
+		UserID:   disc.UserID,
 		RagID:    disc.RagID,
 		Type:     disc.Type,
 	})
@@ -697,6 +701,21 @@ func (d *Discussion) LikeDiscussion(ctx context.Context, discUUID string, user m
 	}
 	_ = d.in.Pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	go d.RecalculateHot(discUUID)
+
+	if disc.Type == model.DiscussionTypeBlog {
+		err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+			UserPointRecordInfo: model.UserPointRecordInfo{
+				UserID:    disc.UserID,
+				Type:      model.UserPointTypeLikeBlog,
+				ForeignID: user.UID,
+			},
+			FromUserID: user.UID,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -736,6 +755,20 @@ func (d *Discussion) RevokeLikeDiscussion(ctx context.Context, discUUID string, 
 		return err
 	}
 	go d.RecalculateHot(discUUID)
+
+	if disc.Type == model.DiscussionTypeBlog {
+		err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+			UserPointRecordInfo: model.UserPointRecordInfo{
+				UserID:    disc.UserID,
+				Type:      model.UserPointTypeLikeBlog,
+				ForeignID: uid,
+			},
+			Revoke: true,
+		})
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -855,15 +888,32 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 		return 0, err
 	}
 
-	if parentID == 0 && !req.Bot {
-		err = d.in.TrendSvc.Create(ctx, &model.Trend{
-			UserID:        uid,
-			Type:          model.TrendTypeAnswer,
-			DiscussHeader: disc.Header(),
-		})
-		if err != nil {
-			d.logger.WithContext(ctx).WithErr(err).With("comment_id", comment.ID).Warn("create user trend failed")
+	if parentID == 0 {
+		if !req.Bot {
+			err = d.in.TrendSvc.Create(ctx, &model.Trend{
+				UserID:        uid,
+				Type:          model.TrendTypeAnswer,
+				DiscussHeader: disc.Header(),
+			})
+			if err != nil {
+				d.logger.WithContext(ctx).WithErr(err).With("comment_id", comment.ID).Warn("create user trend failed")
+			}
 		}
+
+		if disc.Type == model.DiscussionTypeQA {
+			err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+				UserPointRecordInfo: model.UserPointRecordInfo{
+					UserID:    comment.UserID,
+					Type:      model.UserPointTypeAnswerQA,
+					ForeignID: comment.ID,
+				},
+				FromUserID: disc.UserID,
+			})
+			if err != nil {
+				return 0, err
+			}
+		}
+
 	}
 
 	if err = d.in.DiscRepo.Update(ctx, map[string]any{
@@ -1056,6 +1106,18 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 			return err
 		}
 
+		err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+			UserPointRecordInfo: model.UserPointRecordInfo{
+				UserID:    comment.UserID,
+				Type:      model.UserPointTypeAnswerAccepted,
+				ForeignID: commentID,
+			},
+			Revoke: true,
+		})
+		if err != nil {
+			return err
+		}
+
 		err = d.in.DiscRepo.Update(ctx, map[string]any{
 			"resolved":    model.DiscussionStateNone,
 			"resolved_at": gorm.Expr("null"),
@@ -1064,7 +1126,27 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 			return err
 		}
 
+		err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+			UserPointRecordInfo: model.UserPointRecordInfo{
+				UserID:    disc.UserID,
+				Type:      model.UserPointTypeAcceptAnswer,
+				ForeignID: disc.ID,
+			},
+			Revoke: true,
+		})
+		if err != nil {
+			return err
+		}
+
 		return nil
+	}
+
+	var comments []model.Comment
+	err = d.in.CommRepo.List(ctx, &comments,
+		repo.QueryWithEqual("discussion_id", disc.ID),
+		repo.QueryWithEqual("accepted", true))
+	if err != nil {
+		return err
 	}
 
 	err = d.in.CommRepo.Update(ctx, map[string]any{
@@ -1076,12 +1158,38 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 		return err
 	}
 
+	for _, comm := range comments {
+		err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+			UserPointRecordInfo: model.UserPointRecordInfo{
+				UserID:    comm.UserID,
+				Type:      model.UserPointTypeAnswerAccepted,
+				ForeignID: comm.ID,
+			},
+			Revoke: true,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
 	now := time.Now()
 
 	if err := d.in.CommRepo.UpdateByModel(ctx, &model.Comment{
 		Accepted:   true,
 		AcceptedAt: model.Timestamp(now.Unix()),
 	}, repo.QueryWithEqual("id", commentID)); err != nil {
+		return err
+	}
+
+	err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+		UserPointRecordInfo: model.UserPointRecordInfo{
+			UserID:    comment.UserID,
+			Type:      model.UserPointTypeAnswerAccepted,
+			ForeignID: commentID,
+		},
+		FromUserID: user.UID,
+	})
+	if err != nil {
 		return err
 	}
 
@@ -1098,6 +1206,33 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 			"resolved":    model.DiscussionStateResolved,
 			"resolved_at": model.Timestamp(time.Now().Unix()),
 		}, repo.QueryWithEqual("id", disc.ID)); err != nil {
+			return err
+		}
+
+		// 自己的问题自己采纳回答
+		if user.UID == disc.UserID {
+			err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+				UserPointRecordInfo: model.UserPointRecordInfo{
+					UserID:    disc.UserID,
+					Type:      model.UserPointTypeAcceptAnswer,
+					ForeignID: disc.ID,
+				},
+				FromUserID: comment.UserID,
+			})
+			if err != nil {
+				return err
+			}
+		}
+	} else if user.UID != disc.UserID {
+		err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+			UserPointRecordInfo: model.UserPointRecordInfo{
+				UserID:    disc.UserID,
+				Type:      model.UserPointTypeAcceptAnswer,
+				ForeignID: disc.ID,
+			},
+			Revoke: true,
+		})
+		if err != nil {
 			return err
 		}
 	}
@@ -1153,11 +1288,11 @@ func (d *Discussion) LikeComment(ctx context.Context, userInfo model.UserInfo, d
 		return err
 	}
 
-	changed, err := d.in.CommLikeRepo.Like(ctx, userInfo.UID, disc.ID, commentID, model.CommentLikeStateLike)
+	updated, stateChanged, err := d.in.CommLikeRepo.Like(ctx, userInfo.UID, disc.ID, commentID, model.CommentLikeStateLike)
 	if err != nil {
 		return err
 	}
-	if !changed {
+	if !updated {
 		return nil
 	}
 
@@ -1170,6 +1305,46 @@ func (d *Discussion) LikeComment(ctx context.Context, userInfo model.UserInfo, d
 	err = d.in.Pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	if err != nil {
 		d.logger.WithContext(ctx).WithErr(err).With("notify_msg", notifyMsg).Warn("notify commentlike failed")
+	}
+
+	if comment.ParentID == 0 && disc.Type == model.DiscussionTypeQA {
+		if stateChanged {
+			err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+				UserPointRecordInfo: model.UserPointRecordInfo{
+					UserID:    comment.UserID,
+					Type:      model.UserPointTypeAnswerDisliked,
+					ForeignID: commentID,
+				},
+				Revoke: true,
+			})
+			if err != nil {
+				return err
+			}
+
+			err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+				UserPointRecordInfo: model.UserPointRecordInfo{
+					UserID:    userInfo.UID,
+					Type:      model.UserPointTypeDislikeAnswer,
+					ForeignID: commentID,
+				},
+				Revoke: true,
+			})
+			if err != nil {
+				return err
+			}
+		}
+
+		err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+			UserPointRecordInfo: model.UserPointRecordInfo{
+				UserID:    comment.UserID,
+				Type:      model.UserPointTypeAnswerLiked,
+				ForeignID: commentID,
+			},
+			FromUserID: userInfo.UID,
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -1196,11 +1371,11 @@ func (d *Discussion) DislikeComment(ctx context.Context, userInfo model.UserInfo
 		return err
 	}
 
-	changed, err := d.in.CommLikeRepo.Like(ctx, userInfo.UID, disc.ID, commentID, model.CommentLikeStateDislike)
+	updated, stateChanged, err := d.in.CommLikeRepo.Like(ctx, userInfo.UID, disc.ID, commentID, model.CommentLikeStateDislike)
 	if err != nil {
 		return err
 	}
-	if !changed {
+	if !updated {
 		return nil
 	}
 
@@ -1213,6 +1388,46 @@ func (d *Discussion) DislikeComment(ctx context.Context, userInfo model.UserInfo
 	err = d.in.Pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	if err != nil {
 		d.logger.WithContext(ctx).WithErr(err).With("notify_msg", notifyMsg).Warn("notify commentlike failed")
+	}
+
+	if comment.ParentID == 0 && disc.Type == model.DiscussionTypeQA {
+		if stateChanged {
+			err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+				UserPointRecordInfo: model.UserPointRecordInfo{
+					UserID:    comment.UserID,
+					Type:      model.UserPointTypeAnswerLiked,
+					ForeignID: commentID,
+				},
+				Revoke: true,
+			})
+			if err != nil {
+				return err
+			}
+		}
+
+		err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+			UserPointRecordInfo: model.UserPointRecordInfo{
+				UserID:    comment.UserID,
+				Type:      model.UserPointTypeAnswerDisliked,
+				ForeignID: commentID,
+			},
+			FromUserID: userInfo.UID,
+		})
+		if err != nil {
+			return err
+		}
+
+		err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+			UserPointRecordInfo: model.UserPointRecordInfo{
+				UserID:    userInfo.UID,
+				Type:      model.UserPointTypeDislikeAnswer,
+				ForeignID: commentID,
+			},
+			FromUserID: comment.UserID,
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -1233,16 +1448,64 @@ func (d *Discussion) RevokeLike(ctx context.Context, uid uint, discUUID string, 
 		return err
 	}
 
-	ok, err := d.in.CommRepo.ExistByID(ctx, commentID)
+	var comment model.Comment
+	err = d.in.CommRepo.GetByID(ctx, &comment, commentID)
+	if err != nil {
+		if errors.Is(err, database.ErrRecordNotFound) {
+			return errors.New("comment not exist")
+		}
+
+		return err
+	}
+
+	commentLike, err := d.in.CommLikeRepo.RevokeLike(ctx, uid, commentID)
 	if err != nil {
 		return err
 	}
 
-	if !ok {
-		return errors.New("comment not exist")
+	if comment.ParentID == 0 && disc.Type == model.DiscussionTypeQA {
+		switch commentLike.State {
+		case model.CommentLikeStateDislike:
+			err := d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+				UserPointRecordInfo: model.UserPointRecordInfo{
+					UserID:    comment.UserID,
+					Type:      model.UserPointTypeAnswerDisliked,
+					ForeignID: commentID,
+				},
+				Revoke: true,
+			})
+			if err != nil {
+				return err
+			}
+
+			err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+				UserPointRecordInfo: model.UserPointRecordInfo{
+					UserID:    commentLike.UserID,
+					Type:      model.UserPointTypeDislikeAnswer,
+					ForeignID: commentID,
+				},
+				Revoke: true,
+			})
+			if err != nil {
+				return err
+			}
+
+		case model.CommentLikeStateLike:
+			err := d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+				UserPointRecordInfo: model.UserPointRecordInfo{
+					UserID:    comment.UserID,
+					Type:      model.UserPointTypeAnswerLiked,
+					ForeignID: commentID,
+				},
+				Revoke: true,
+			})
+			if err != nil {
+				return err
+			}
+		}
 	}
 
-	return d.in.CommLikeRepo.RevokeLike(ctx, uid, commentID)
+	return nil
 }
 
 func (d *Discussion) GetCommentByID(ctx context.Context, id uint) (*model.Comment, error) {
@@ -1439,6 +1702,18 @@ func (d *Discussion) AssociateDiscussion(ctx context.Context, user model.UserInf
 		FromID:        user.UID,
 		ToID:          disc.UserID,
 	})
+
+	err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+		UserPointRecordInfo: model.UserPointRecordInfo{
+			UserID:    disc.UserID,
+			Type:      model.UserPointTypeAssociateIssue,
+			ForeignID: disc.ID,
+		},
+		FromUserID: user.UID,
+	})
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

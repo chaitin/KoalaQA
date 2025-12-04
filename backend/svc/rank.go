@@ -11,6 +11,7 @@ import (
 
 type Rank struct {
 	repoRank *repo.Rank
+	repoUser *repo.User
 }
 
 type RankContributeItem struct {
@@ -26,9 +27,24 @@ type ListContributeReq struct {
 
 func (r *Rank) Contribute(ctx context.Context, req ListContributeReq) (*model.ListRes[RankContributeItem], error) {
 	var res model.ListRes[RankContributeItem]
-	err := r.repoRank.ListContribute(ctx, &res.Items, req.Type)
-	if err != nil {
-		return nil, err
+
+	switch req.Type {
+	case model.RankTypeContribute:
+		err := r.repoRank.ListContribute(ctx, &res.Items, req.Type)
+		if err != nil {
+			return nil, err
+		}
+	case model.RankTypeAllContribute:
+		err := r.repoUser.List(ctx, &res.Items,
+			repo.QueryWithSelectColumn("id", "name", "avatar", "point AS score"),
+			repo.QueryWithPagination(&model.Pagination{
+				Size: 5,
+			}),
+			repo.QueryWithOrderBy("point DESC, id ASC"),
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &res, nil
@@ -51,9 +67,10 @@ func (r *Rank) AIInsight(ctx context.Context) ([]model.RankTimeGroup, error) {
 	)
 }
 
-func newRank(r *repo.Rank) *Rank {
+func newRank(r *repo.Rank, user *repo.User) *Rank {
 	return &Rank{
 		repoRank: r,
+		repoUser: user,
 	}
 }
 

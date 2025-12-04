@@ -103,6 +103,7 @@ func authUser(ctx *context.Context, freeAuth bool, j *jwt.Generator, user *svc.U
 		Avatar:     item.Avatar,
 		Builtin:    item.Builtin,
 		NoPassword: item.Password == "",
+		Point:      item.Point,
 		WebNotify:  item.WebNotify,
 	}, nil
 }

@@ -6984,12 +6984,16 @@ const docTemplate = `{
             "enum": [
                 "chat",
                 "embedding",
-                "rerank"
+                "rerank",
+                "analysis",
+                "analysis-vl"
             ],
             "x-enum-varnames": [
                 "LLMTypeChat",
                 "LLMTypeEmbedding",
-                "LLMTypeRerank"
+                "LLMTypeRerank",
+                "LLMTypeAnalysis",
+                "LLMTypeAnalysisVL"
             ]
         },
         "model.ListRes": {
@@ -7322,6 +7326,9 @@ const docTemplate = `{
                 "password": {
                     "type": "string"
                 },
+                "point": {
+                    "type": "integer"
+                },
                 "role": {
                     "$ref": "#/definitions/model.UserRole"
                 },
@@ -7362,6 +7369,9 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
+                },
+                "point": {
+                    "type": "integer"
                 },
                 "role": {
                     "$ref": "#/definitions/model.UserRole"
@@ -8840,6 +8850,9 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "point": {
+                    "type": "integer"
                 },
                 "qa_count": {
                     "type": "integer"
