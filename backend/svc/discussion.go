@@ -301,7 +301,7 @@ func (d *Discussion) ListSimilarity(ctx context.Context, discUUID string) (*mode
 	}
 
 	var res model.ListRes[*model.DiscussionListItem]
-	discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: disc.Title, ForumID: disc.ForumID, SimilarityThreshold: 0.2})
+	discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: disc.Title, ForumID: disc.ForumID, SimilarityThreshold: 0.01})
 	if err != nil {
 		return nil, err
 	}
