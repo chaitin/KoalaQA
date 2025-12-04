@@ -1321,16 +1321,18 @@ func (d *Discussion) LikeComment(ctx context.Context, userInfo model.UserInfo, d
 				return err
 			}
 
-			err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
-				UserPointRecordInfo: model.UserPointRecordInfo{
-					UserID:    userInfo.UID,
-					Type:      model.UserPointTypeDislikeAnswer,
-					ForeignID: commentID,
-				},
-				Revoke: true,
-			})
-			if err != nil {
-				return err
+			if !comment.Bot {
+				err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+					UserPointRecordInfo: model.UserPointRecordInfo{
+						UserID:    userInfo.UID,
+						Type:      model.UserPointTypeDislikeAnswer,
+						ForeignID: commentID,
+					},
+					Revoke: true,
+				})
+				if err != nil {
+					return err
+				}
 			}
 		}
 
@@ -1417,16 +1419,18 @@ func (d *Discussion) DislikeComment(ctx context.Context, userInfo model.UserInfo
 			return err
 		}
 
-		err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
-			UserPointRecordInfo: model.UserPointRecordInfo{
-				UserID:    userInfo.UID,
-				Type:      model.UserPointTypeDislikeAnswer,
-				ForeignID: commentID,
-			},
-			FromUserID: comment.UserID,
-		})
-		if err != nil {
-			return err
+		if !comment.Bot {
+			err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+				UserPointRecordInfo: model.UserPointRecordInfo{
+					UserID:    userInfo.UID,
+					Type:      model.UserPointTypeDislikeAnswer,
+					ForeignID: commentID,
+				},
+				FromUserID: comment.UserID,
+			})
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -1478,16 +1482,18 @@ func (d *Discussion) RevokeLike(ctx context.Context, uid uint, discUUID string, 
 				return err
 			}
 
-			err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
-				UserPointRecordInfo: model.UserPointRecordInfo{
-					UserID:    commentLike.UserID,
-					Type:      model.UserPointTypeDislikeAnswer,
-					ForeignID: commentID,
-				},
-				Revoke: true,
-			})
-			if err != nil {
-				return err
+			if !comment.Bot {
+				err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+					UserPointRecordInfo: model.UserPointRecordInfo{
+						UserID:    commentLike.UserID,
+						Type:      model.UserPointTypeDislikeAnswer,
+						ForeignID: commentID,
+					},
+					Revoke: true,
+				})
+				if err != nil {
+					return err
+				}
 			}
 
 		case model.CommentLikeStateLike:

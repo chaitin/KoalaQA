@@ -138,7 +138,7 @@ func (d *DiscUserPoint) handleDelete(ctx context.Context, data topic.MsgDiscChan
 		err := d.comm.List(ctx, &comments,
 			repo.QueryWithEqual("comments.discussion_id", data.DiscID),
 			repo.QueryWithEqual("comments.parent_id", 0),
-			repo.QueryWithSelectColumn("comments.id", "comments.user_id", "comments.accepted"),
+			repo.QueryWithSelectColumn("comments.id", "comments.user_id", "comments.accepted", "comments.bot"),
 		)
 		if err != nil {
 			logger.WithErr(err).Error("get qa all answer failed")
@@ -147,6 +147,7 @@ func (d *DiscUserPoint) handleDelete(ctx context.Context, data topic.MsgDiscChan
 
 		answerIDs := make(model.Int64Array, 0, len(comments))
 		commentUser := make(map[uint]uint)
+		var botUserID uint = 0
 		for _, comment := range comments {
 			answerIDs = append(answerIDs, int64(comment.ID))
 			commentUser[comment.ID] = comment.UserID
@@ -178,6 +179,11 @@ func (d *DiscUserPoint) handleDelete(ctx context.Context, data topic.MsgDiscChan
 					return err
 				}
 			}
+
+			if comment.Bot {
+				botUserID = comment.UserID
+			}
+
 			err = d.pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
 				UserPointRecordInfo: model.UserPointRecordInfo{
 					UserID:    comment.UserID,
@@ -207,9 +213,10 @@ func (d *DiscUserPoint) handleDelete(ctx context.Context, data topic.MsgDiscChan
 			for _, commentLike := range commentLikes {
 				switch commentLike.State {
 				case model.CommentLikeStateDislike:
+					commentUserID := commentUser[commentLike.CommentID]
 					err = d.pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
 						UserPointRecordInfo: model.UserPointRecordInfo{
-							UserID:    commentUser[commentLike.CommentID],
+							UserID:    commentUserID,
 							Type:      model.UserPointTypeAnswerDisliked,
 							ForeignID: commentLike.CommentID,
 						},
@@ -220,17 +227,19 @@ func (d *DiscUserPoint) handleDelete(ctx context.Context, data topic.MsgDiscChan
 						return err
 					}
 
-					err = d.pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
-						UserPointRecordInfo: model.UserPointRecordInfo{
-							UserID:    commentLike.UserID,
-							Type:      model.UserPointTypeDislikeAnswer,
-							ForeignID: commentLike.CommentID,
-						},
-						Revoke: true,
-					})
-					if err != nil {
-						logger.WithErr(err).Error("pub user point failed")
-						return err
+					if botUserID != commentUserID {
+						err = d.pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+							UserPointRecordInfo: model.UserPointRecordInfo{
+								UserID:    commentLike.UserID,
+								Type:      model.UserPointTypeDislikeAnswer,
+								ForeignID: commentLike.CommentID,
+							},
+							Revoke: true,
+						})
+						if err != nil {
+							logger.WithErr(err).Error("pub user point failed")
+							return err
+						}
 					}
 				case model.CommentLikeStateLike:
 					err = d.pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
