@@ -30,7 +30,9 @@ import {
   styled,
   TextField,
   Typography,
+  useTheme,
 } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -463,6 +465,17 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
               size='small'
               autoComplete='off'
               onBlur={showSimilarContent ? handleTitleBlur : undefined}
+              sx={{
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#e0e0e0',
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#e0e0e0',
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#e0e0e0',
+                },
+              }}
             />
             <Controller
               name='group_ids'
@@ -495,7 +508,18 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                             <Select
                               value={valueForTopic?.[0]?.id?.toString() || ''}
                               label={topic.name}
-                              sx={{ fontSize: '12px' }}
+                              sx={{
+                                fontSize: '12px',
+                                '& .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: '#e0e0e0',
+                                },
+                                '&:hover .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: '#e0e0e0',
+                                },
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: '#e0e0e0',
+                                },
+                              }}
                               onChange={(e) => {
                                 const existing = Array.isArray(field.value) ? [...(field.value as number[])] : []
                                 const otherIds = existing.filter(
