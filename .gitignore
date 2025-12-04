@@ -18,3 +18,6 @@ data/
 .DS_Store
 
 sync_prompt.py
+sync_remote.sh
+
+backend/deploy/

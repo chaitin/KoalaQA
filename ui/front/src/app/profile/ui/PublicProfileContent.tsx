@@ -38,6 +38,7 @@ const metricItems = (stats?: SvcUserStatisticsRes | null): Array<{ label: string
   { label: '问答', value: stats?.qa_count ?? 0 },
   { label: '文章', value: stats?.blog_count ?? 0 },
   { label: '回答', value: stats?.answer_count ?? 0 },
+  { label: '积分', value: stats?.point ?? 0 },
 ]
 
 const toggleButtonSx = {

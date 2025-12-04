@@ -111,7 +111,6 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
       content: value || '',
       onTocUpdate: (toc: any) => {
         const enabled = !!onTocUpdate
-        console.log(toc)
         if (!enabled) return
         try {
           if (typeof onTocUpdate === 'function') {

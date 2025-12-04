@@ -32,11 +32,12 @@ type QAReview struct {
 	rag     rag.Service
 	dataset *repo.Dataset
 	llm     *svc.LLM
+	prompt  *svc.Prompt
 	disc    *svc.Discussion
 	pub     mq.Publisher
 }
 
-func NewQA(repo *repo.KBDocument, comm *repo.Comment, kb *repo.KnowledgeBase, rag rag.Service, dataset *repo.Dataset, llm *svc.LLM, disc *svc.Discussion, pub mq.Publisher) *QAReview {
+func NewQA(repo *repo.KBDocument, comm *repo.Comment, kb *repo.KnowledgeBase, rag rag.Service, dataset *repo.Dataset, llm *svc.LLM, prompt *svc.Prompt, disc *svc.Discussion, pub mq.Publisher) *QAReview {
 	return &QAReview{
 		repo:    repo,
 		comm:    comm,
@@ -44,6 +45,7 @@ func NewQA(repo *repo.KBDocument, comm *repo.Comment, kb *repo.KnowledgeBase, ra
 		rag:     rag,
 		dataset: dataset,
 		llm:     llm,
+		prompt:  prompt,
 		disc:    disc,
 		pub:     pub,
 		logger:  glog.Module("sub.qa_review"),
@@ -87,7 +89,7 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 		logger.WithErr(err).Warn("summary discussion question failed")
 		return nil
 	}
-	_, answer, err := q.llm.GenerateChatPrompt(ctx, data.DiscussID, 0)
+	_, answer, err := q.prompt.GenerateAnswerPrompt(ctx, data.DiscussID, 0)
 	if err != nil {
 		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
 		return nil
@@ -115,10 +117,9 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 		DocType:  model.DocTypeQuestion,
 		Status:   model.DocStatusPendingReview,
 	}
-	chunks, err := q.rag.QueryRecords(ctx, rag.QueryRecordsReq{
-		DatasetIDs:          []string{q.dataset.GetBackendID(ctx)},
+	_, chunks, err := q.rag.QueryRecords(ctx, rag.QueryRecordsReq{
+		DatasetID:           q.dataset.GetBackendID(ctx),
 		Query:               data.DiscussTitle,
-		GroupIDs:            nil,
 		TopK:                1000,
 		SimilarityThreshold: 0.5,
 	})

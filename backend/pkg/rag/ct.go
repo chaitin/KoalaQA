@@ -3,18 +3,18 @@ package rag
 import (
 	"context"
 	"fmt"
-	"os"
+	"strings"
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/config"
 	"github.com/chaitin/koalaqa/pkg/glog"
-	"github.com/chaitin/pandawiki/sdk/rag"
+	raglite "github.com/chaitin/raglite-go-sdk"
 	"github.com/google/uuid"
 )
 
 type CTRag struct {
 	logger *glog.Logger
-	client *rag.Client
+	client *raglite.Client
 }
 
 func NewCTRag(cfg config.Config) (Service, error) {
@@ -28,12 +28,16 @@ func NewCTRag(cfg config.Config) (Service, error) {
 }
 
 func (c *CTRag) Init(cfg config.Rag) error {
-	c.client = rag.New(cfg.BaseURL, cfg.APIKey)
+	client, err := raglite.NewClient(cfg.BaseURL, raglite.WithAPIKey(cfg.APIKey))
+	if err != nil {
+		return err
+	}
+	c.client = client
 	return nil
 }
 
 func (c *CTRag) CreateDataset(ctx context.Context) (string, error) {
-	dataset, err := c.client.CreateDataset(ctx, rag.CreateDatasetRequest{
+	dataset, err := c.client.Datasets.Create(ctx, &raglite.CreateDatasetRequest{
 		Name: uuid.NewString(),
 	})
 	if err != nil {
@@ -44,9 +48,7 @@ func (c *CTRag) CreateDataset(ctx context.Context) (string, error) {
 }
 
 func (c *CTRag) UpdateDataset(ctx context.Context, datasetID string, req UpdateDatasetReq) error {
-	err := c.client.UpdateDataset(ctx, datasetID, rag.UpdateDatasetRequest{
-		ParserConfig: rag.ParserConfig{},
-	})
+	_, err := c.client.Datasets.Update(ctx, datasetID, &raglite.UpdateDatasetRequest{})
 	if err != nil {
 		return err
 	}
@@ -54,74 +56,64 @@ func (c *CTRag) UpdateDataset(ctx context.Context, datasetID string, req UpdateD
 	return nil
 }
 
-func (c *CTRag) UpsertRecords(ctx context.Context, datasetID string, ragID string, content string, groupIDs []int) (string, error) {
-	logger := c.logger.WithContext(ctx).With("dataset_id", datasetID).With("group_ids", groupIDs).With("rag_id", ragID)
-	if ragID != "" {
-		err := c.DeleteRecords(ctx, datasetID, []string{ragID})
-		if err != nil {
-			logger.WithErr(err).Warn("delete records failed")
-		}
+func (c *CTRag) UpsertRecords(ctx context.Context, req UpsertRecordsReq) (string, error) {
+	logger := c.logger.WithContext(ctx).With("dataset_id", req.DatasetID).With("rag_id", req.DocumentID)
+	logger.Debug("upsert records")
+	data := &raglite.UploadDocumentRequest{
+		DatasetID:  req.DatasetID,
+		DocumentID: req.DocumentID,
+		File:       strings.NewReader(req.Content),
+		Filename:   fmt.Sprintf("%s.md", uuid.NewString()),
+		Metadata:   req.Metadata.Map(),
+		Tags:       req.Tags,
 	}
-
-	tempFile, err := os.CreateTemp("", "*.md")
+	doc, err := c.client.Documents.Upload(ctx, data)
 	if err != nil {
-		return "", fmt.Errorf("create temp file failed: %w", err)
+		return "", err
 	}
-	defer os.Remove(tempFile.Name())
-	_, err = tempFile.WriteString(content)
-	if err != nil {
-		return "", fmt.Errorf("write temp file failed: %w", err)
-	}
-	defer tempFile.Close()
-	logger.Debug("upload document text")
-	docs, err := c.client.UploadDocumentsAndParse(ctx, datasetID, []string{tempFile.Name()}, groupIDs, nil)
-	if err != nil {
-		return "", fmt.Errorf("upload document text failed: %w", err)
-	}
-	if len(docs) == 0 {
-		return "", fmt.Errorf("no docs found")
-	}
-	logger.With("doc_id", docs[0].ID).Debug("upload document success")
-	return docs[0].ID, nil
+	logger.With("doc_id", doc.DocumentID).Debug("upload document success")
+	return doc.DocumentID, nil
 }
 
-func (c *CTRag) QueryRecords(ctx context.Context, req QueryRecordsReq) ([]*model.NodeContentChunk, error) {
+func (c *CTRag) QueryRecords(ctx context.Context, req QueryRecordsReq) (string, []*model.NodeContentChunk, error) {
 	if req.TopK == 0 {
 		req.TopK = 10
 	}
-	if req.SimilarityThreshold == 0 {
-		req.SimilarityThreshold = 0.3
-	}
-	chunks, _, _, err := c.client.RetrieveChunks(ctx, rag.RetrievalRequest{
-		DatasetIDs:          req.DatasetIDs,
-		Question:            req.Query,
+	res, err := c.client.Search.Retrieve(ctx, &raglite.RetrieveRequest{
+		DatasetID:           req.DatasetID,
+		Query:               req.Query,
 		TopK:                req.TopK,
-		UserGroupIDs:        req.GroupIDs,
+		Metadata:            req.Metadata.Map(),
+		Tags:                req.Tags,
 		SimilarityThreshold: req.SimilarityThreshold,
 	})
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
-	nodes := make([]*model.NodeContentChunk, 0, len(chunks))
-	for _, chunk := range chunks {
+	nodes := make([]*model.NodeContentChunk, 0, len(res.Results))
+	for _, chunk := range res.Results {
 		nodes = append(nodes, &model.NodeContentChunk{
-			ID:         chunk.ID,
+			ID:         chunk.ChunkID,
 			Content:    chunk.Content,
 			DocID:      chunk.DocumentID,
-			Similarity: chunk.Similarity,
+			Similarity: chunk.Score,
 		})
 	}
 	c.logger.WithContext(ctx).
-		With("dataset_ids", req.DatasetIDs).
+		With("dataset_id", req.DatasetID).
 		With("query", req.Query).
-		With("group_ids", req.GroupIDs).
+		With("tags", req.Tags).
 		With("nodes_len", len(nodes)).
 		Debug("query records success")
-	return nodes, nil
+
+	return res.Query, nodes, nil
 }
 
 func (c *CTRag) DeleteRecords(ctx context.Context, datasetID string, docIDs []string) error {
-	if err := c.client.DeleteDocuments(ctx, datasetID, docIDs); err != nil {
+	if err := c.client.Documents.BatchDelete(ctx, &raglite.BatchDeleteDocumentsRequest{
+		DatasetID:   datasetID,
+		DocumentIDs: docIDs,
+	}); err != nil {
 		return err
 	}
 	c.logger.WithContext(ctx).With("dataset_id", datasetID).With("doc_ids", docIDs).Debug("delete documents success")
@@ -129,7 +121,7 @@ func (c *CTRag) DeleteRecords(ctx context.Context, datasetID string, docIDs []st
 }
 
 func (c *CTRag) DeleteDataset(ctx context.Context, datasetID string) error {
-	if err := c.client.DeleteDatasets(ctx, []string{datasetID}); err != nil {
+	if err := c.client.Datasets.Delete(ctx, datasetID); err != nil {
 		return err
 	}
 	c.logger.WithContext(ctx).With("dataset_id", datasetID).Debug("delete dataset success")
@@ -137,7 +129,13 @@ func (c *CTRag) DeleteDataset(ctx context.Context, datasetID string) error {
 }
 
 func (c *CTRag) UpdateDocumentGroupIDs(ctx context.Context, datasetID string, docID string, groupIds []int) error {
-	if err := c.client.UpdateDocumentGroupIDs(ctx, datasetID, docID, groupIds); err != nil {
+	if _, err := c.client.Documents.Update(ctx, &raglite.UpdateDocumentRequest{
+		DatasetID:  datasetID,
+		DocumentID: docID,
+		Metadata: map[string]any{
+			"group_ids": groupIds,
+		},
+	}); err != nil {
 		return err
 	}
 	c.logger.WithContext(ctx).With("dataset_id", datasetID).With("doc_id", docID).With("group_ids", groupIds).Debug("update document group ids success")
@@ -145,65 +143,57 @@ func (c *CTRag) UpdateDocumentGroupIDs(ctx context.Context, datasetID string, do
 }
 
 func (c *CTRag) GetModelList(ctx context.Context) ([]*model.LLM, error) {
-	list, err := c.client.GetModelConfigList(ctx)
+	list, err := c.client.Models.List(ctx, &raglite.ListModelsRequest{})
 	if err != nil {
 		return nil, err
 	}
-	models := make([]*model.LLM, 0, len(list))
-	for _, item := range list {
+	models := make([]*model.LLM, 0, len(list.Models))
+	for _, item := range list.Models {
 		models = append(models, &model.LLM{
 			RagID:    item.ID,
 			Model:    item.Name,
 			Provider: item.Provider,
-			BaseURL:  item.ApiBase,
-			APIKey:   item.ApiKey,
-			Type:     model.LLMType(item.TaskType),
+			BaseURL:  item.Config.APIBase,
+			APIKey:   item.Config.APIKey,
+			Type:     model.LLMType(item.ModelType),
 		})
 	}
 	return models, nil
 }
 
 func (c *CTRag) AddModel(ctx context.Context, model *model.LLM) (string, error) {
-	cfg, err := model.Parameters.Bytes()
-	if err != nil {
-		return "", err
-	}
-	addReq := rag.AddModelConfigRequest{
-		Name:      model.Model,
-		Provider:  model.Provider,
-		TaskType:  string(model.Type),
-		ApiBase:   model.BaseURL,
-		ApiKey:    model.APIKey,
-		MaxTokens: 8192,
+	modelConfig, err := c.client.Models.Create(ctx, &raglite.CreateModelRequest{
+		Name:        model.Model,
+		Description: model.ShowName,
+		Provider:    model.Provider,
+		ModelName:   model.Model,
+		ModelType:   string(model.Type),
+		Config: raglite.AIModelConfig{
+			APIBase:         model.BaseURL,
+			APIKey:          model.APIKey,
+			MaxTokens:       raglite.Ptr(8192),
+			ExtraParameters: model.Parameters.Map(),
+		},
 		IsDefault: true,
-		Enabled:   true,
-		Config:    cfg,
-	}
-	modelConfig, err := c.client.AddModelConfig(ctx, addReq)
+	})
 	if err != nil {
 		return "", err
 	}
-	c.logger.WithContext(ctx).With("model_id", modelConfig.ID).Debug("add model success")
+	c.logger.WithContext(ctx).With("model_id", modelConfig.ID).Debug("create model success")
 	return modelConfig.ID, nil
 }
 
 func (c *CTRag) UpdateModel(ctx context.Context, model *model.LLM) error {
-	cfg, err := model.Parameters.Bytes()
-	if err != nil {
-		return err
-	}
-	updateReq := rag.AddModelConfigRequest{
-		Name:      model.Model,
-		Provider:  model.Provider,
-		TaskType:  string(model.Type),
-		ApiBase:   model.BaseURL,
-		ApiKey:    model.APIKey,
-		MaxTokens: 8192,
-		IsDefault: true,
-		Enabled:   true,
-		Config:    cfg,
-	}
-	_, err = c.client.AddModelConfig(ctx, updateReq)
+	_, err := c.client.Models.Update(ctx, model.RagID, &raglite.UpdateModelRequest{
+		Name:     raglite.Ptr(model.Model),
+		Provider: raglite.Ptr(model.Provider),
+		Config: &raglite.AIModelConfig{
+			APIBase:         model.BaseURL,
+			APIKey:          model.APIKey,
+			MaxTokens:       raglite.Ptr(8192),
+			ExtraParameters: model.Parameters.Map(),
+		},
+	})
 	if err != nil {
 		return err
 	}
@@ -212,12 +202,7 @@ func (c *CTRag) UpdateModel(ctx context.Context, model *model.LLM) error {
 }
 
 func (c *CTRag) DeleteModel(ctx context.Context, model *model.LLM) error {
-	if err := c.client.DeleteModelConfig(ctx, []rag.ModelItem{
-		{
-			Name:    model.Model,
-			ApiBase: model.BaseURL,
-		},
-	}); err != nil {
+	if err := c.client.Models.Delete(ctx, model.RagID); err != nil {
 		return err
 	}
 	c.logger.WithContext(ctx).With("model_id", model.RagID).Debug("delete model success")

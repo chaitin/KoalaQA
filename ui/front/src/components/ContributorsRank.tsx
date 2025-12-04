@@ -238,21 +238,41 @@ export default function ContributorsRank() {
                   </Box>
                 </Box>
                 {contributor.score !== undefined && (
-                  <Box sx={{ display: 'flex', gap: 0.75, flexShrink: 0 }}>
-                    <Typography
-                      variant='caption'
-                      sx={{
-                        fontFamily: 'Gilroy, Gilroy',
-                        fontWeight: 500,
-                        fontSize: '14px',
-                        color: 'rgba(33, 34, 45, 1)',
-                        lineHeight: '24px',
-                        textAlign: 'right',
-                        fontStyle: 'normal',
-                      }}
-                    >
-                      {Math.ceil(contributor.score)}
-                    </Typography>
+                  <Box sx={{ display: 'flex', gap: 0.75, flexShrink: 0, alignItems: 'center' }}>
+                    {rankType === 1 ? (
+                      // 上周榜：显示上周积分变化（+198格式）
+                      <Typography
+                        variant='caption'
+                        sx={{
+                          fontFamily: 'Gilroy, Gilroy',
+                          fontWeight: 500,
+                          fontSize: '14px',
+                          color: contributor.score >= 0 ? 'rgba(25, 135, 84, 1)' : 'rgba(211, 47, 47, 1)',
+                          lineHeight: '24px',
+                          textAlign: 'right',
+                          fontStyle: 'normal',
+                        }}
+                      >
+                        {contributor.score >= 0 ? '+' : ''}
+                        {Math.ceil(contributor.score)}
+                      </Typography>
+                    ) : (
+                      // 总榜：显示全部积分
+                      <Typography
+                        variant='caption'
+                        sx={{
+                          fontFamily: 'Gilroy, Gilroy',
+                          fontWeight: 500,
+                          fontSize: '14px',
+                          color: 'rgba(33, 34, 45, 1)',
+                          lineHeight: '24px',
+                          textAlign: 'right',
+                          fontStyle: 'normal',
+                        }}
+                      >
+                        {Math.ceil(contributor.score)}
+                      </Typography>
+                    )}
                   </Box>
                 )}
               </Box>

@@ -92,6 +92,14 @@ const theme = createTheme(
     },
 
     components: {
+      MuiCssBaseline: {
+        styleOverrides: {
+          body: {
+            backgroundColor: '#ffffff',
+            color: '#21222D',
+          },
+        },
+      },
       MuiOutlinedInput: {
         styleOverrides: {
           root: ({ theme }) => ({
@@ -111,6 +119,7 @@ const theme = createTheme(
           input: {
             fontSize: '14px',
           },
+          
           // notchedOutline: {
           //   borderColor: '#D9DEE2',
           // },

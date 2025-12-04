@@ -88,8 +88,10 @@ func (i *AIInsight) Handle(ctx context.Context, msg mq.Message) error {
 		logger.Debug("score is zero, skip")
 		return nil
 	}
-
-	ragID, err := i.in.Rag.UpsertRecords(ctx, forum.InsightDatasetID, "", data.Keyword, nil)
+	ragID, err := i.in.Rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
+		DatasetID: forum.InsightDatasetID,
+		Content:   data.Keyword,
+	})
 	if err != nil {
 		logger.WithErr(err).Warn("insert rag record failed")
 		return nil
@@ -114,10 +116,9 @@ func (i *AIInsight) exist(ctx context.Context, datasetID string, data topic.MsgA
 	logger := i.logger.WithContext(ctx).With("dataset_id", datasetID).With("msg", data)
 	logger.Debug("check keyword exist")
 
-	records, err := i.in.Rag.QueryRecords(ctx, rag.QueryRecordsReq{
-		DatasetIDs:          []string{datasetID},
+	_, records, err := i.in.Rag.QueryRecords(ctx, rag.QueryRecordsReq{
+		DatasetID:           datasetID,
 		Query:               data.Keyword,
-		GroupIDs:            nil,
 		TopK:                10,
 		SimilarityThreshold: 0.5,
 	})

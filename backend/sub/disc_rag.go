@@ -53,12 +53,10 @@ func (d *DiscRag) Concurrent() uint {
 func (d *DiscRag) Handle(ctx context.Context, msg mq.Message) error {
 	data := msg.(topic.MsgDiscChange)
 	switch data.OP {
-	case topic.OPInsert:
+	case topic.OPInsert, topic.OPUpdate:
 		return d.handleInsert(ctx, data.DiscID)
-	case topic.OPUpdate:
-		return d.handleUpdate(ctx, data.DiscID, data.RagID)
 	case topic.OPDelete:
-		return d.handleDelete(ctx, data.DiscID, data.RagID)
+		return d.handleDelete(ctx, data.ForumID, data.RagID)
 	}
 	return nil
 
@@ -77,7 +75,11 @@ func (d *DiscRag) handleInsert(ctx context.Context, discID uint) error {
 		logger.WithErr(err).Warn("get forum failed")
 		return nil
 	}
-	ragID, err := d.rag.UpsertRecords(ctx, forum.DatasetID, disc.RagID, disc.TitleContent(), nil)
+	ragID, err := d.rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
+		DatasetID:  forum.DatasetID,
+		DocumentID: disc.RagID,
+		Content:    disc.TitleContent(),
+	})
 	if err != nil {
 		return err
 	}
@@ -88,30 +90,8 @@ func (d *DiscRag) handleInsert(ctx context.Context, discID uint) error {
 	return nil
 }
 
-func (d *DiscRag) handleUpdate(ctx context.Context, discID uint, ragID string) error {
-	disc, err := d.disc.GetByID(ctx, discID)
-	if err != nil {
-		d.logger.WithContext(ctx).WithErr(err).Error("get discussion failed")
-		return nil
-	}
-	forum, err := d.forum.GetByID(ctx, disc.ForumID)
-	if err != nil {
-		d.logger.WithContext(ctx).WithErr(err).Error("get forum failed")
-		return nil
-	}
-	if err := d.rag.DeleteRecords(ctx, forum.DatasetID, []string{ragID}); err != nil {
-		return err
-	}
-	return d.handleInsert(ctx, discID)
-}
-
-func (d *DiscRag) handleDelete(ctx context.Context, discID uint, ragID string) error {
-	disc, err := d.disc.GetByID(ctx, discID)
-	if err != nil {
-		d.logger.WithContext(ctx).WithErr(err).Error("get discussion failed")
-		return nil
-	}
-	forum, err := d.forum.GetByID(ctx, disc.ForumID)
+func (d *DiscRag) handleDelete(ctx context.Context, forumID uint, ragID string) error {
+	forum, err := d.forum.GetByID(ctx, forumID)
 	if err != nil {
 		d.logger.WithContext(ctx).WithErr(err).Error("get forum failed")
 		return nil
