@@ -437,9 +437,9 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
           alignItems: 'stretch',
           position: 'relative',
           height: showSimilarContent ? '60vh' : 'auto',
-          '& .editor-wrap':{
+          '& .editor-wrap': {
             height: '100%',
-          }
+          },
         }}
       >
         <Box
@@ -560,13 +560,14 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
                     sx={{
                       px: 1,
                       height: '100%',
-                      minHeight: '150px',
-                      maxHeight: '350px',
                       display: 'flex',
                       flexDirection: 'column',
                       overflow: 'hidden',
                       '& .md-container .MuiIconButton-root + *': {
                         display: 'none',
+                      },
+                      '& .tiptap': {
+                        minHeight: { xs: '150px', sm: '300px' },
                       },
                       '& .md-container ': { px: 1 },
                       '& .md-container > div': {
@@ -614,7 +615,7 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
               flex: 1,
               minHeight: 200,
               flexShrink: 0,
-              display: {xs: 'none', sm: 'flex'},
+              display: { xs: 'none', sm: 'flex' },
               flexDirection: 'column',
               height: '60vh',
               overflow: 'hidden',

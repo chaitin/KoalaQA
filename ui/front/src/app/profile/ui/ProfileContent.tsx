@@ -321,7 +321,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
             sx={{
               display: 'flex',
               flexWrap: 'wrap',
-              gap: { xs: 0.75, sm: 1 },
+              gap: { xs: 0.5, sm: 1 },
               '& .MuiToggleButtonGroup-grouped': {
                 borderRadius: '6px !important',
                 mr: 0,

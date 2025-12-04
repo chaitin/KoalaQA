@@ -20,7 +20,7 @@ const MainLayout = () => {
   const { refreshForums } = useForumStore();
 
   useEffect(() => {
-    refreshForums()
+    refreshForums();
   }, [refreshForums]);
   useEffect(() => {
     if (user?.uid) {
@@ -40,7 +40,11 @@ const MainLayout = () => {
         getAdminKb(),
       ]);
 
-      const requiredModelTypes = Object.values(ModelLLMType);
+      const requiredModelTypes = [
+        ModelLLMType.LLMTypeChat,
+        ModelLLMType.LLMTypeEmbedding,
+        ModelLLMType.LLMTypeRerank,
+      ];
       const modelList = Array.isArray(models) ? models : [];
       const lackModel = requiredModelTypes.some(
         type => !modelList.some(model => model?.type === type)

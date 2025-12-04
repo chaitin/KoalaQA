@@ -108,6 +108,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const handleClose = () => {
     setAnchorEl(null)
   }
+
   const onSubmit = (comment: string) => {
     return putDiscussionDiscIdCommentCommentId(
       { discId: id, commentId: commentIndex?.id ?? 0 },

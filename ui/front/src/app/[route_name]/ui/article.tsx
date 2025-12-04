@@ -10,6 +10,7 @@ import {
   ModelUserRole,
 } from '@/api/types'
 import AnnouncementCard from '@/components/AnnouncementCard'
+import AnnouncementCarousel from '@/components/AnnouncementCarousel'
 import { AuthContext } from '@/components/authProvider'
 import BrandAttribution from '@/components/BrandAttribution'
 import ContributorsRank from '@/components/ContributorsRank'
@@ -656,12 +657,10 @@ const Article = ({
             </Box>
           </Box>
 
-          {/* 手机端公告显示 */}
+          {/* 手机端公告轮播 */}
           {announcements.length > 0 && (
             <Box sx={{ display: { xs: 'block', lg: 'none' }, mb: 2 }}>
-              {announcements.map((announcement) => (
-                <AnnouncementCard key={announcement.uuid} announcement={announcement} routeName={routeName} />
-              ))}
+              <AnnouncementCarousel announcements={announcements} routeName={routeName} />
             </Box>
           )}
 
