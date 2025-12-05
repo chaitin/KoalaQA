@@ -1038,7 +1038,7 @@ func (d *Discussion) DeleteComment(ctx context.Context, user model.UserInfo, dis
 		DiscUUID: discUUID,
 	})
 	if disc.Type == model.DiscussionTypeQA && comment.ParentID == 0 {
-		err = d.in.UserPoint.RevokeCommentPoint(ctx, *disc, comment)
+		err = d.in.UserPoint.RevokeCommentPoint(ctx, disc.ID, disc.UserID, comment)
 		if err != nil {
 			return err
 		}

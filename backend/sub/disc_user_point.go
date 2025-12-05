@@ -135,7 +135,7 @@ func (d *DiscUserPoint) handleDelete(ctx context.Context, data topic.MsgDiscChan
 			}
 		}
 	case model.DiscussionTypeQA:
-		err := d.userPoint.RevokeDiscussionPoint(ctx, data.DiscID)
+		err := d.userPoint.RevokeDiscussionPoint(ctx, data.DiscID, data.Type, data.UserID)
 		if err != nil {
 			logger.WithErr(err).Error("revoke comment user point failed")
 			return err
