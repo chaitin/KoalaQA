@@ -40,6 +40,10 @@ func (u *UserPointRecord) updateUserPoint(tx *gorm.DB, record *model.UserPointRe
 
 	record.Point = point - int(user.Point)
 
+	if record.Point == 0 && record.RevokeID == 0 {
+		return nil
+	}
+
 	err = tx.Create(record).Error
 	if err != nil {
 		return err
