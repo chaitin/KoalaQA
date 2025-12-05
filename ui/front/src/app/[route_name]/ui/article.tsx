@@ -127,10 +127,14 @@ const Article = ({
   const [lastPathname, setLastPathname] = useState('')
   const [initialTitleFromSearch, setInitialTitleFromSearch] = useState<string>('')
   const actionProcessedRef = useRef<string>('')
+  const scrollRestoredRef = useRef(false)
+  const restoreRafRef = useRef<number | null>(null)
+  const restoreTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const hookForumId = useForumId()
 
   const announcementBlogIdsKey = (forumInfo?.blog_ids ?? []).join(',')
+  const scrollStorageKey = useMemo(() => `forum-scroll-${routeName || 'unknown'}`, [routeName])
 
   // 获取公告列表
   const fetchAnnouncements = useCallback(async () => {
@@ -162,6 +166,88 @@ const Article = ({
   useEffect(() => {
     fetchAnnouncements()
   }, [fetchAnnouncements])
+
+  useEffect(() => {
+    if (scrollRestoredRef.current) {
+      return
+    }
+
+    restoreScrollPosition()
+  }, [articleData.items, restoreScrollPosition])
+
+  useEffect(() => {
+    return () => {
+      if (restoreRafRef.current !== null) {
+        cancelAnimationFrame(restoreRafRef.current)
+      }
+      if (restoreTimeoutRef.current) {
+        clearTimeout(restoreTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  const saveScrollPosition = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const scrollTop = window.scrollY || document.documentElement.scrollTop || 0
+    const payload = {
+      scrollTop,
+      pathname: `${window.location.pathname}${window.location.search}`,
+      timestamp: Date.now(),
+    }
+
+    try {
+      sessionStorage.setItem(scrollStorageKey, JSON.stringify(payload))
+    } catch (error) {
+      // sessionStorage 写入失败时忽略，不影响导航
+    }
+
+    releaseModalClose()
+  }, [scrollStorageKey, releaseModalClose])
+
+  const restoreScrollPosition = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    if (scrollRestoredRef.current) {
+      return
+    }
+
+    try {
+      const raw = sessionStorage.getItem(scrollStorageKey)
+      if (!raw) {
+        return
+      }
+
+      const { scrollTop, pathname } = JSON.parse(raw) as {
+        scrollTop?: number
+        pathname?: string
+      }
+      const currentPath = `${window.location.pathname}${window.location.search}`
+
+      if (pathname && pathname !== currentPath) {
+        return
+      }
+
+      const targetTop = typeof scrollTop === 'number' ? scrollTop : 0
+
+      scrollRestoredRef.current = true
+      sessionStorage.removeItem(scrollStorageKey)
+
+      restoreRafRef.current = window.requestAnimationFrame(() => {
+        window.scrollTo({ top: targetTop, behavior: 'auto' })
+      })
+
+      restoreTimeoutRef.current = setTimeout(() => {
+        window.scrollTo({ top: targetTop, behavior: 'auto' })
+      }, 0)
+    } catch (error) {
+      scrollRestoredRef.current = true
+    }
+  }, [scrollStorageKey])
 
   const fetchMoreList = useCallback(() => {
     // 防止重复请求
@@ -824,7 +910,7 @@ const Article = ({
                 key={it.uuid}
                 data={it}
                 keywords={searchRef.current}
-                onNavigate={releaseModalClose}
+                onNavigate={saveScrollPosition}
                 filter={status as 'hot' | 'new' | 'publish'}
                 sx={{
                   borderBottom: index < (articleData.items?.length || 0) - 1 ? '1px solid #f3f4f6' : 'none',
