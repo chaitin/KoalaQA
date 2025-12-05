@@ -50,7 +50,7 @@ func (u *userPoint) Handle(ctx context.Context, msg mq.Message) error {
 
 	logger.Debug("receive user point msg")
 
-	err := u.userPoint.CreateRecord(ctx, data.UserPointRecordInfo, data.Revoke, data.FromUserID)
+	err := u.userPoint.CreateRecord(ctx, data.UserPointRecordInfo, data.Revoke)
 	if err != nil {
 		logger.WithErr(err).Error("create user point record failed")
 		return err

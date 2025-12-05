@@ -10,6 +10,7 @@ type Comment struct {
 
 	Content    string    `gorm:"column:content;type:text"`
 	Accepted   bool      `gorm:"column:accepted;type:boolean"`
+	AcceptedBy uint      `gorm:"column:accepted_by;type:bigint;default:0"`
 	AcceptedAt Timestamp `gorm:"column:accepted_at;type:timestamp with time zone"`
 	Like       uint      `gorm:"column:like;type:bigint"`
 	Dislike    uint      `gorm:"column:dislike;type:bigint"`

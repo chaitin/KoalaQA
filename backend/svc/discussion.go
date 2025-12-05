@@ -281,6 +281,10 @@ func (d *Discussion) Delete(ctx context.Context, user model.UserInfo, uuid strin
 		return errPermission
 	}
 
+	if disc.Type == model.DiscussionTypeQA && disc.Resolved == model.DiscussionStateResolved {
+		return errors.New("resolved qa can not delete")
+	}
+
 	if err := d.in.DiscRepo.Delete(ctx, repo.QueryWithEqual("uuid", uuid)); err != nil {
 		return err
 	}
@@ -707,9 +711,9 @@ func (d *Discussion) LikeDiscussion(ctx context.Context, discUUID string, user m
 			UserPointRecordInfo: model.UserPointRecordInfo{
 				UserID:    disc.UserID,
 				Type:      model.UserPointTypeLikeBlog,
-				ForeignID: user.UID,
+				ForeignID: disc.ID,
+				FromID:    user.UID,
 			},
-			FromUserID: user.UID,
 		})
 		if err != nil {
 			return err
@@ -761,7 +765,8 @@ func (d *Discussion) RevokeLikeDiscussion(ctx context.Context, discUUID string, 
 			UserPointRecordInfo: model.UserPointRecordInfo{
 				UserID:    disc.UserID,
 				Type:      model.UserPointTypeLikeBlog,
-				ForeignID: uid,
+				ForeignID: disc.ID,
+				FromID:    uid,
 			},
 			Revoke: true,
 		})
@@ -906,8 +911,8 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 					UserID:    comment.UserID,
 					Type:      model.UserPointTypeAnswerQA,
 					ForeignID: comment.ID,
+					FromID:    disc.UserID,
 				},
-				FromUserID: disc.UserID,
 			})
 			if err != nil {
 				return 0, err
@@ -959,18 +964,20 @@ type CommentUpdateReq struct {
 }
 
 func (d *Discussion) UpdateComment(ctx context.Context, user model.UserInfo, discUUID string, commentID uint, req CommentUpdateReq) error {
-	if !d.allow("comment", discUUID, user.UID) {
-		return errRatelimit
-	}
-
 	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
 	if err != nil {
 		return err
 	}
 
-	err = d.CheckPerm(ctx, user.UID, disc)
-	if err != nil {
-		return err
+	if !req.Bot {
+		if !d.allow("comment", discUUID, user.UID) {
+			return errRatelimit
+		}
+
+		err = d.CheckPerm(ctx, user.UID, disc)
+		if err != nil {
+			return err
+		}
 	}
 
 	comment, err := d.GetCommentByID(ctx, commentID)
@@ -1014,6 +1021,11 @@ func (d *Discussion) DeleteComment(ctx context.Context, user model.UserInfo, dis
 	if !user.CanOperator(comment.UserID) {
 		return errors.New("not allowed to delete comment")
 	}
+
+	if disc.Type == model.DiscussionTypeQA && comment.Accepted {
+		return errors.New("accept comment can not delete")
+	}
+
 	if err := d.in.CommRepo.Delete(ctx, repo.QueryWithEqual("id", commentID)); err != nil {
 		return err
 	}
@@ -1027,6 +1039,17 @@ func (d *Discussion) DeleteComment(ctx context.Context, user model.UserInfo, dis
 		DiscID:   disc.ID,
 		DiscUUID: discUUID,
 	})
+	if disc.Type == model.DiscussionTypeQA && comment.ParentID == 0 {
+		d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+			UserPointRecordInfo: model.UserPointRecordInfo{
+				UserID:    comment.UserID,
+				Type:      model.UserPointTypeAnswerQA,
+				ForeignID: disc.ID,
+				FromID:    disc.UserID,
+			},
+			Revoke: true,
+		})
+	}
 	return nil
 }
 
@@ -1100,6 +1123,7 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 	if comment.Accepted {
 		err = d.in.CommRepo.Update(ctx, map[string]any{
 			"accepted":    false,
+			"accepted_by": 0,
 			"accepted_at": gorm.Expr("null"),
 		}, repo.QueryWithEqual("id", commentID))
 		if err != nil {
@@ -1111,6 +1135,7 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 				UserID:    comment.UserID,
 				Type:      model.UserPointTypeAnswerAccepted,
 				ForeignID: commentID,
+				FromID:    comment.AcceptedBy,
 			},
 			Revoke: true,
 		})
@@ -1131,6 +1156,7 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 				UserID:    disc.UserID,
 				Type:      model.UserPointTypeAcceptAnswer,
 				ForeignID: disc.ID,
+				FromID:    comment.AcceptedBy,
 			},
 			Revoke: true,
 		})
@@ -1151,6 +1177,7 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 
 	err = d.in.CommRepo.Update(ctx, map[string]any{
 		"accepted":    false,
+		"accepted_by": 0,
 		"accepted_at": gorm.Expr("null"),
 	}, repo.QueryWithEqual("discussion_id", disc.ID),
 		repo.QueryWithEqual("accepted", true))
@@ -1164,6 +1191,7 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 				UserID:    comm.UserID,
 				Type:      model.UserPointTypeAnswerAccepted,
 				ForeignID: comm.ID,
+				FromID:    comm.AcceptedBy,
 			},
 			Revoke: true,
 		})
@@ -1176,6 +1204,7 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 
 	if err := d.in.CommRepo.UpdateByModel(ctx, &model.Comment{
 		Accepted:   true,
+		AcceptedBy: user.UID,
 		AcceptedAt: model.Timestamp(now.Unix()),
 	}, repo.QueryWithEqual("id", commentID)); err != nil {
 		return err
@@ -1186,8 +1215,8 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 			UserID:    comment.UserID,
 			Type:      model.UserPointTypeAnswerAccepted,
 			ForeignID: commentID,
+			FromID:    user.UID,
 		},
-		FromUserID: user.UID,
 	})
 	if err != nil {
 		return err
@@ -1210,14 +1239,14 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 		}
 
 		// 自己的问题自己采纳回答
-		if user.UID == disc.UserID {
+		if user.UID == disc.UserID && disc.Type == model.DiscussionTypeQA {
 			err = d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
 				UserPointRecordInfo: model.UserPointRecordInfo{
 					UserID:    disc.UserID,
 					Type:      model.UserPointTypeAcceptAnswer,
 					ForeignID: disc.ID,
+					FromID:    user.UID,
 				},
-				FromUserID: comment.UserID,
 			})
 			if err != nil {
 				return err
@@ -1229,6 +1258,7 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 				UserID:    disc.UserID,
 				Type:      model.UserPointTypeAcceptAnswer,
 				ForeignID: disc.ID,
+				FromID:    disc.UserID,
 			},
 			Revoke: true,
 		})
@@ -1314,6 +1344,7 @@ func (d *Discussion) LikeComment(ctx context.Context, userInfo model.UserInfo, d
 					UserID:    comment.UserID,
 					Type:      model.UserPointTypeAnswerDisliked,
 					ForeignID: commentID,
+					FromID:    userInfo.UID,
 				},
 				Revoke: true,
 			})
@@ -1327,6 +1358,7 @@ func (d *Discussion) LikeComment(ctx context.Context, userInfo model.UserInfo, d
 						UserID:    userInfo.UID,
 						Type:      model.UserPointTypeDislikeAnswer,
 						ForeignID: commentID,
+						FromID:    comment.UserID,
 					},
 					Revoke: true,
 				})
@@ -1341,8 +1373,8 @@ func (d *Discussion) LikeComment(ctx context.Context, userInfo model.UserInfo, d
 				UserID:    comment.UserID,
 				Type:      model.UserPointTypeAnswerLiked,
 				ForeignID: commentID,
+				FromID:    userInfo.UID,
 			},
-			FromUserID: userInfo.UID,
 		})
 		if err != nil {
 			return err
@@ -1399,6 +1431,7 @@ func (d *Discussion) DislikeComment(ctx context.Context, userInfo model.UserInfo
 					UserID:    comment.UserID,
 					Type:      model.UserPointTypeAnswerLiked,
 					ForeignID: commentID,
+					FromID:    userInfo.UID,
 				},
 				Revoke: true,
 			})
@@ -1412,8 +1445,8 @@ func (d *Discussion) DislikeComment(ctx context.Context, userInfo model.UserInfo
 				UserID:    comment.UserID,
 				Type:      model.UserPointTypeAnswerDisliked,
 				ForeignID: commentID,
+				FromID:    userInfo.UID,
 			},
-			FromUserID: userInfo.UID,
 		})
 		if err != nil {
 			return err
@@ -1425,8 +1458,8 @@ func (d *Discussion) DislikeComment(ctx context.Context, userInfo model.UserInfo
 					UserID:    userInfo.UID,
 					Type:      model.UserPointTypeDislikeAnswer,
 					ForeignID: commentID,
+					FromID:    comment.UserID,
 				},
-				FromUserID: comment.UserID,
 			})
 			if err != nil {
 				return err
@@ -1475,6 +1508,7 @@ func (d *Discussion) RevokeLike(ctx context.Context, uid uint, discUUID string, 
 					UserID:    comment.UserID,
 					Type:      model.UserPointTypeAnswerDisliked,
 					ForeignID: commentID,
+					FromID:    commentLike.UserID,
 				},
 				Revoke: true,
 			})
@@ -1488,6 +1522,7 @@ func (d *Discussion) RevokeLike(ctx context.Context, uid uint, discUUID string, 
 						UserID:    commentLike.UserID,
 						Type:      model.UserPointTypeDislikeAnswer,
 						ForeignID: commentID,
+						FromID:    comment.UserID,
 					},
 					Revoke: true,
 				})
@@ -1502,6 +1537,7 @@ func (d *Discussion) RevokeLike(ctx context.Context, uid uint, discUUID string, 
 					UserID:    comment.UserID,
 					Type:      model.UserPointTypeAnswerLiked,
 					ForeignID: commentID,
+					FromID:    commentLike.UserID,
 				},
 				Revoke: true,
 			})
@@ -1714,12 +1750,22 @@ func (d *Discussion) AssociateDiscussion(ctx context.Context, user model.UserInf
 			UserID:    disc.UserID,
 			Type:      model.UserPointTypeAssociateIssue,
 			ForeignID: disc.ID,
+			FromID:    user.UID,
 		},
-		FromUserID: user.UID,
 	})
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (d *Discussion) GetBotComment(ctx context.Context, discID uint) (*model.Comment, error) {
+	var res model.Comment
+	err := d.in.CommRepo.GetBotComment(ctx, &res, discID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
 }
