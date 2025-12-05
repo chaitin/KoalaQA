@@ -283,33 +283,6 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
               )}
             />
           </Grid>
-
-          {/* 分类选择 - issue */}
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <Controller
-              control={control}
-              name={`blocks.${index}.issue_group_ids`}
-              render={({ field, fieldState: { error } }) => (
-                <Box>
-                  <CategorySelector
-                    value={field.value || []}
-                    onChange={groupIds => {
-                      field.onChange(groupIds);
-                      setIsEdit(true);
-                    }}
-                    placeholder="请选择Issue分类"
-                    label="Issue分类"
-                    error={!!error}
-                  />
-                  {error && (
-                    <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
-                      {error.message}
-                    </Typography>
-                  )}
-                </Box>
-              )}
-            />
-          </Grid>
         </Grid>
 
         {/* 公告内容选择 */}
