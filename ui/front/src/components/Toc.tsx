@@ -25,11 +25,6 @@ const Toc = ({ headings }: TocProps) => {
         idx: levels.indexOf(i.level),
       }))
   }, [headings])
-  if (headings.length > 11)
-    console.log(
-      headings.map((i) => i.id),
-      '----',
-    )
   return (
     <>
       <Stack
