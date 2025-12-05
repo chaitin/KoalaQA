@@ -46,6 +46,7 @@ type discussionIn struct {
 	Limiter        ratelimit.Limiter
 	LLM            *LLM
 	Batcher        batch.Batcher[model.StatInfo]
+	UserPoint      *UserPoint
 }
 
 type Discussion struct {
@@ -1029,9 +1030,6 @@ func (d *Discussion) DeleteComment(ctx context.Context, user model.UserInfo, dis
 	if err := d.in.CommRepo.Delete(ctx, repo.QueryWithEqual("id", commentID)); err != nil {
 		return err
 	}
-	if err := d.in.CommLikeRepo.Delete(ctx, repo.QueryWithEqual("comment_id", commentID)); err != nil {
-		return err
-	}
 	d.in.Pub.Publish(ctx, topic.TopicCommentChange, topic.MsgCommentChange{
 		OP:       topic.OPDelete,
 		CommID:   commentID,
@@ -1040,15 +1038,13 @@ func (d *Discussion) DeleteComment(ctx context.Context, user model.UserInfo, dis
 		DiscUUID: discUUID,
 	})
 	if disc.Type == model.DiscussionTypeQA && comment.ParentID == 0 {
-		d.in.Pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
-			UserPointRecordInfo: model.UserPointRecordInfo{
-				UserID:    comment.UserID,
-				Type:      model.UserPointTypeAnswerQA,
-				ForeignID: disc.ID,
-				FromID:    disc.UserID,
-			},
-			Revoke: true,
-		})
+		err = d.in.UserPoint.RevokeCommentPoint(ctx, *disc, comment)
+		if err != nil {
+			return err
+		}
+	}
+	if err := d.in.CommLikeRepo.Delete(ctx, repo.QueryWithEqual("comment_id", commentID)); err != nil {
+		return err
 	}
 	return nil
 }
