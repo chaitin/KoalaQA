@@ -5,36 +5,44 @@ import (
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
+	"github.com/chaitin/koalaqa/pkg/batch"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/rag"
 	"github.com/chaitin/koalaqa/pkg/topic"
+	"github.com/chaitin/koalaqa/pkg/util"
+	"github.com/chaitin/koalaqa/repo"
 	"github.com/chaitin/koalaqa/svc"
 )
 
 type Comment struct {
-	logger *glog.Logger
-	llm    *svc.LLM
-	prompt *svc.Prompt
-	bot    *svc.Bot
-	trend  *svc.Trend
-	disc   *svc.Discussion
-	forum  *svc.Forum
-	pub    mq.Publisher
-	rag    rag.Service
+	logger  *glog.Logger
+	llm     *svc.LLM
+	prompt  *svc.Prompt
+	bot     *svc.Bot
+	trend   *svc.Trend
+	disc    *svc.Discussion
+	forum   *svc.Forum
+	pub     mq.Publisher
+	rag     rag.Service
+	stat    *repo.Stat
+	batcher batch.Batcher[model.StatInfo]
 }
 
-func NewComment(disc *svc.Discussion, bot *svc.Bot, llm *svc.LLM, prompt *svc.Prompt, pub mq.Publisher, rag rag.Service, forum *svc.Forum, trend *svc.Trend) *Comment {
+func NewComment(disc *svc.Discussion, bot *svc.Bot, llm *svc.LLM, prompt *svc.Prompt, batcher batch.Batcher[model.StatInfo],
+	pub mq.Publisher, rag rag.Service, forum *svc.Forum, trend *svc.Trend, stat *repo.Stat) *Comment {
 	return &Comment{
-		llm:    llm,
-		prompt: prompt,
-		logger: glog.Module("sub.comment"),
-		disc:   disc,
-		bot:    bot,
-		trend:  trend,
-		pub:    pub,
-		rag:    rag,
-		forum:  forum,
+		llm:     llm,
+		prompt:  prompt,
+		logger:  glog.Module("sub.comment"),
+		disc:    disc,
+		bot:     bot,
+		trend:   trend,
+		pub:     pub,
+		rag:     rag,
+		forum:   forum,
+		stat:    stat,
+		batcher: batcher,
 	}
 }
 
@@ -168,14 +176,26 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 	}
 
 	if !answered {
-		logger.Info("ai not know the answer, notify admin")
-		notifyMsg := topic.MsgMessageNotify{
-			DiscussHeader: disc.Header(),
-			Type:          model.MsgNotifyTypeBotUnknown,
-			FromID:        comment.UserID,
-			ToID:          bot.UserID,
+		exist, err := d.stat.Exist(ctx, repo.QueryWithEqual("type", []model.StatType{model.StatTypeBotUnknown, model.StatTypeBotUnknownComment}, repo.EqualOPIn),
+			repo.QueryWithEqual("key", disc.UUID),
+		)
+		if err != nil {
+			logger.WithErr(err).Warn("bot unknown exist failed")
+		} else if !exist {
+			logger.Info("ai not know the answer, notify admin")
+			notifyMsg := topic.MsgMessageNotify{
+				DiscussHeader: disc.Header(),
+				Type:          model.MsgNotifyTypeBotUnknown,
+				FromID:        comment.UserID,
+				ToID:          bot.UserID,
+			}
+			d.pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
+			d.batcher.Send(model.StatInfo{
+				Type: model.StatTypeBotUnknownComment,
+				Ts:   util.HourTrunc(time.Now()).Unix(),
+				Key:  disc.UUID,
+			})
 		}
-		d.pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 	}
 	return nil
 }

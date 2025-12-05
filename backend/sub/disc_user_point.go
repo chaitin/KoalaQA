@@ -79,8 +79,8 @@ func (d *DiscUserPoint) handleInsert(ctx context.Context, data topic.MsgDiscChan
 			UserID:    data.UserID,
 			Type:      model.UserPointTypeCreateBlog,
 			ForeignID: data.DiscID,
+			FromID:    0,
 		},
-		Revoke: false,
 	})
 	if err != nil {
 		logger.WithErr(err).Warn("pub user point failed")
@@ -106,6 +106,7 @@ func (d *DiscUserPoint) handleDelete(ctx context.Context, data topic.MsgDiscChan
 				UserID:    data.UserID,
 				Type:      model.UserPointTypeCreateBlog,
 				ForeignID: data.DiscID,
+				FromID:    0,
 			},
 			Revoke: true,
 		})
@@ -124,7 +125,8 @@ func (d *DiscUserPoint) handleDelete(ctx context.Context, data topic.MsgDiscChan
 				UserPointRecordInfo: model.UserPointRecordInfo{
 					UserID:    data.UserID,
 					Type:      model.UserPointTypeLikeBlog,
-					ForeignID: discLike.UserID,
+					ForeignID: data.DiscID,
+					FromID:    discLike.UserID,
 				},
 				Revoke: true,
 			})
@@ -158,6 +160,7 @@ func (d *DiscUserPoint) handleDelete(ctx context.Context, data topic.MsgDiscChan
 						UserID:    comment.UserID,
 						Type:      model.UserPointTypeAnswerAccepted,
 						ForeignID: comment.ID,
+						FromID:    comment.AcceptedBy,
 					},
 					Revoke: true,
 				})
@@ -171,6 +174,7 @@ func (d *DiscUserPoint) handleDelete(ctx context.Context, data topic.MsgDiscChan
 						UserID:    data.UserID,
 						Type:      model.UserPointTypeAcceptAnswer,
 						ForeignID: data.DiscID,
+						FromID:    data.UserID,
 					},
 					Revoke: true,
 				})
@@ -189,6 +193,7 @@ func (d *DiscUserPoint) handleDelete(ctx context.Context, data topic.MsgDiscChan
 					UserID:    comment.UserID,
 					Type:      model.UserPointTypeAnswerQA,
 					ForeignID: comment.ID,
+					FromID:    data.UserID,
 				},
 				Revoke: true,
 			})
@@ -219,6 +224,7 @@ func (d *DiscUserPoint) handleDelete(ctx context.Context, data topic.MsgDiscChan
 							UserID:    commentUserID,
 							Type:      model.UserPointTypeAnswerDisliked,
 							ForeignID: commentLike.CommentID,
+							FromID:    commentLike.UserID,
 						},
 						Revoke: true,
 					})
@@ -233,6 +239,7 @@ func (d *DiscUserPoint) handleDelete(ctx context.Context, data topic.MsgDiscChan
 								UserID:    commentLike.UserID,
 								Type:      model.UserPointTypeDislikeAnswer,
 								ForeignID: commentLike.CommentID,
+								FromID:    commentUserID,
 							},
 							Revoke: true,
 						})
@@ -247,6 +254,7 @@ func (d *DiscUserPoint) handleDelete(ctx context.Context, data topic.MsgDiscChan
 							UserID:    commentUser[commentLike.CommentID],
 							Type:      model.UserPointTypeAnswerLiked,
 							ForeignID: commentLike.CommentID,
+							FromID:    commentLike.UserID,
 						},
 						Revoke: true,
 					})
