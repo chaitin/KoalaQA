@@ -200,7 +200,7 @@ func (d *Disc) handleUpdate(ctx context.Context, data topic.MsgDiscChange) error
 		existUnknown = false
 	}
 
-	if !answered && existUnknown {
+	if !answered && (existUnknown || bot.UnknownPrompt == "") {
 		return nil
 	}
 
