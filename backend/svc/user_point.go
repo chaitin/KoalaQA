@@ -32,7 +32,7 @@ func init() {
 	registerSvc(newUserPoint)
 }
 
-func (u *UserPoint) RevokeCommentPoint(ctx context.Context, disc model.Discussion, comments ...model.Comment) error {
+func (u *UserPoint) RevokeCommentPoint(ctx context.Context, discID uint, discUserID uint, comments ...model.Comment) error {
 	logger := u.logger.WithContext(ctx).With("comments_len", len(comments))
 	answerIDs := make(model.Int64Array, 0, len(comments))
 	commentUser := make(map[uint]uint)
@@ -58,10 +58,10 @@ func (u *UserPoint) RevokeCommentPoint(ctx context.Context, disc model.Discussio
 
 			err = u.pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
 				UserPointRecordInfo: model.UserPointRecordInfo{
-					UserID:    disc.UserID,
+					UserID:    discUserID,
 					Type:      model.UserPointTypeAcceptAnswer,
-					ForeignID: disc.ID,
-					FromID:    disc.UserID,
+					ForeignID: discID,
+					FromID:    discUserID,
 				},
 				Revoke: true,
 			})
@@ -80,7 +80,7 @@ func (u *UserPoint) RevokeCommentPoint(ctx context.Context, disc model.Discussio
 				UserID:    comment.UserID,
 				Type:      model.UserPointTypeAnswerQA,
 				ForeignID: comment.ID,
-				FromID:    disc.UserID,
+				FromID:    discUserID,
 			},
 			Revoke: true,
 		})
@@ -93,7 +93,7 @@ func (u *UserPoint) RevokeCommentPoint(ctx context.Context, disc model.Discussio
 	if len(answerIDs) > 0 {
 		var commentLikes []model.CommentLike
 		err := u.commLike.List(ctx, &commentLikes,
-			repo.QueryWithEqual("discussion_id", disc.ID),
+			repo.QueryWithEqual("discussion_id", discID),
 			repo.QueryWithEqual("comment_id", answerIDs, repo.EqualOPEqAny),
 			repo.QueryWithSelectColumn("comment_id", "user_id", "state"),
 		)
@@ -156,22 +156,16 @@ func (u *UserPoint) RevokeCommentPoint(ctx context.Context, disc model.Discussio
 	return nil
 }
 
-func (u *UserPoint) RevokeDiscussionPoint(ctx context.Context, discID uint) error {
+func (u *UserPoint) RevokeDiscussionPoint(ctx context.Context, discID uint, discType model.DiscussionType, discUserID uint) error {
 	logger := u.logger.WithContext(ctx).With("disc_id", discID)
-	var disc model.Discussion
-	err := u.disc.GetByID(ctx, &disc, discID)
-	if err != nil {
-		logger.WithErr(err).Warn("get discussion failed")
-		return err
-	}
 
-	if disc.Type != model.DiscussionTypeQA {
+	if discType != model.DiscussionTypeQA {
 		logger.Debug("disc is not qa, skip")
 		return nil
 	}
 
 	var comments []model.Comment
-	err = u.comm.List(ctx, &comments,
+	err := u.comm.List(ctx, &comments,
 		repo.QueryWithEqual("comments.discussion_id", discID),
 		repo.QueryWithEqual("comments.parent_id", 0),
 		repo.QueryWithSelectColumn("comments.id", "comments.user_id", "comments.accepted", "comments.bot"),
@@ -181,7 +175,7 @@ func (u *UserPoint) RevokeDiscussionPoint(ctx context.Context, discID uint) erro
 		return err
 	}
 
-	err = u.RevokeCommentPoint(ctx, disc, comments...)
+	err = u.RevokeCommentPoint(ctx, discID, discUserID, comments...)
 	if err != nil {
 		logger.WithErr(err).Error("revoke comments point failed")
 		return err
