@@ -42,7 +42,8 @@ FROM node:20-alpine AS production
 
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories
 
-RUN apk update --no-cache && apk add --no-cache nginx wget tzdata
+RUN apk update --no-cache && \
+    apk add --no-cache --no-scripts nginx wget tzdata
 
 COPY --from=admin-builder /app/admin/dist /var/www/admin
 
@@ -54,8 +55,6 @@ COPY nginx.conf /etc/nginx/nginx.conf
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
-
-RUN chown -R nginx:nginx /var/www/admin
 
 EXPOSE 80
 
