@@ -10,7 +10,7 @@ env:
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
         service:
@@ -23,8 +23,10 @@ jobs:
         platform:
           - arch: amd64
             os: linux/amd64
+            runner: ubuntu-latest
           - arch: arm64
             os: linux/arm64
+            runner: ubuntu-24.04-arm
 
     steps:
       - name: Checkout code
