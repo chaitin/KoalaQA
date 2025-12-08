@@ -282,7 +282,7 @@ func (d *Discussion) Delete(ctx context.Context, user model.UserInfo, uuid strin
 		return errPermission
 	}
 
-	if disc.Type == model.DiscussionTypeQA && disc.Resolved == model.DiscussionStateResolved && user.UID == disc.UserID {
+	if disc.Type == model.DiscussionTypeQA && disc.Resolved == model.DiscussionStateResolved && user.Role != model.UserRoleAdmin && user.UID == disc.UserID {
 		return errors.New("resolved qa can not delete")
 	}
 
