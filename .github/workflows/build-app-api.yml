@@ -106,7 +106,7 @@ jobs:
 
       - name: Build result notification
         run: |
-          if [ "${{ needs.build-and-push.result }}" == "success" ]; then
+          if [ "${{ needs.create-manifest.result }}" == "success" ]; then
             echo "✅ App and UI images built successfully!"
             echo "🚀 Images pushed to Aliyun Cloud: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}"
             echo "📦 Tag: ${{ steps.extract_tag.outputs.tag }}"
