@@ -51,6 +51,7 @@ func (i *aiInsightAnswer) Run() {
 			}
 
 			if content == "" {
+				i.logger.With("item", item).Info("empty ai answer, skip update")
 				continue
 			}
 

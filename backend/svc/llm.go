@@ -227,6 +227,11 @@ func (l *LLM) GenerateDiscussionPrompt(ctx context.Context, discIDs ...uint) (st
 		discTemplates = append(discTemplates, *template)
 	}
 
+	if len(discTemplates) == 0 {
+		l.logger.WithContext(ctx).With("disc_ids", discIDs).Warn("discs not found")
+		return "", nil
+	}
+
 	return discTemplates.BuildFullPrompt()
 }
 
