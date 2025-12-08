@@ -1027,12 +1027,21 @@ func (d *Discussion) DeleteComment(ctx context.Context, user model.UserInfo, dis
 		return errors.New("not allowed to delete comment")
 	}
 
-	if disc.Type == model.DiscussionTypeQA && comment.Accepted && comment.UserID == user.UID {
+	if disc.Type == model.DiscussionTypeQA && comment.Accepted && (comment.UserID == user.UID || disc.UserID == user.UID) {
 		return errors.New("accept comment can not delete")
 	}
 
 	if err := d.in.CommRepo.Delete(ctx, repo.QueryWithEqual("id", commentID)); err != nil {
 		return err
+	}
+	if comment.Accepted {
+		err = d.in.DiscRepo.Update(ctx, map[string]any{
+			"resolved":    model.DiscussionStateNone,
+			"resolved_at": gorm.Expr("null"),
+		}, repo.QueryWithEqual("id", disc.ID))
+		if err != nil {
+			return err
+		}
 	}
 	d.in.Pub.Publish(ctx, topic.TopicCommentChange, topic.MsgCommentChange{
 		OP:       topic.OPDelete,
