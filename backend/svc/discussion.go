@@ -579,7 +579,7 @@ func (d *Discussion) KeywordAnswer(ctx context.Context, req DiscussionKeywordAns
 		return "", err
 	}
 
-	discIDs := make([]uint, len(discs))
+	discIDs := make([]uint, 0, len(discs))
 	for _, disc := range discs {
 		discIDs = append(discIDs, disc.ID)
 	}
