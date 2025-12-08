@@ -22,6 +22,9 @@ const getTrendDescription = (trend: ModelTrend) => {
     if (trend.discussion_type === ModelDiscussionType.DiscussionTypeBlog) {
       return '发表了文章'
     }
+    if (trend.discussion_type === ModelDiscussionType.DiscussionTypeIssue) {
+      return '创建了 Issue'
+    }
     return '提出了问题'
   }
 

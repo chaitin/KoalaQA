@@ -109,7 +109,8 @@ const LoginType = () => {
         >
           <Card
             sx={{
-              width: 400,
+              width: '400px',
+              maxWidth: '80%',
               border: '1px solid #e0e0e0',
               display: 'flex',
               flexDirection: 'column',
@@ -207,6 +208,7 @@ const LoginType = () => {
         <Card
           sx={{
             width: 400,
+            maxWidth: '80%',
             p: 3,
             borderRadius: 2,
             mx: 'auto',

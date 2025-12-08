@@ -1,5 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Autocomplete, TextField, Box, Typography, CircularProgress } from '@mui/material';
+import {
+  Autocomplete,
+  TextField,
+  Box,
+  Typography,
+  CircularProgress,
+  SxProps,
+  Theme,
+  Chip,
+} from '@mui/material';
 import { useGroupData } from '@/context/GroupDataContext';
 import { eventManager, EVENTS } from '@/utils/eventManager';
 
@@ -11,6 +20,7 @@ interface CategorySelectorProps {
   disabled?: boolean;
   error?: boolean;
   helperText?: string;
+  textFieldSx?: SxProps<Theme>;
 }
 
 interface CategoryOption {
@@ -27,6 +37,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
   disabled = false,
   error = false,
   helperText,
+  textFieldSx,
 }) => {
   const { groups, loading, refresh } = useGroupData();
   const [options, setOptions] = useState<CategoryOption[]>([]);
@@ -80,6 +91,21 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
         isOptionEqualToValue={(option, value) => option.id === value.id}
         loading={loading}
         disabled={disabled}
+        renderTags={(value, getTagProps) =>
+          value.map((option, index) => (
+            <Chip
+              {...getTagProps({ index })}
+              key={option.id}
+              label={option.name}
+              size="small"
+              sx={{
+                height: 24,
+                fontSize: 12,
+                '& .MuiChip-label': { fontSize: 12, px: 0.5 },
+              }}
+            />
+          ))
+        }
         renderInput={params => (
           <TextField
             {...params}
@@ -87,6 +113,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
             placeholder={placeholder}
             error={error}
             helperText={helperText}
+            sx={textFieldSx}
             InputProps={{
               ...params.InputProps,
               endAdornment: (
@@ -100,7 +127,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
         )}
         renderOption={(props, option) => (
           <Box component="li" {...props}>
-            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+            <Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>
               {option.name}
             </Typography>
           </Box>

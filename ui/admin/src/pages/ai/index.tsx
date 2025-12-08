@@ -2,13 +2,23 @@ import { getAdminKb, postAdminKb, putAdminKbKbId, SvcKBCreateReq, SvcKBListItem 
 import Card from '@/components/card';
 import { Icon, message, Modal } from '@ctzhian/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { alpha, Box, CircularProgress, Grid, Stack, TextField, Typography } from '@mui/material';
+import {
+  alpha,
+  Box,
+  CircularProgress,
+  Grid,
+  Link,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { useRequest } from 'ahooks';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import z from 'zod';
 import Model from '../settings/component/Model';
+import LaunchIcon from '@mui/icons-material/Launch';
 import Bot from './bot';
 
 const schema = z.object({
@@ -155,9 +165,19 @@ const AdminDocument = () => {
         <Grid size={{ sm: 12, md: 6 }}>
           <Bot />
           <Card sx={{ border: '1px solid', borderColor: 'divider', mt: 2 }}>
-            <Typography variant="subtitle2" sx={{ mb: 0 }}>
-              模型管理
-            </Typography>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Typography variant="subtitle2" sx={{ mb: 0 }}>
+                模型管理
+              </Typography>
+              <Link
+                sx={{ color: 'info.main', cursor: 'pointer', fontSize: '14px' }}
+                href="https://koalaqa.docs.baizhi.cloud/node/019951c1-1700-7e4e-a3a8-b6997d1e5eab"
+                target="_blank"
+              >
+                文档
+                <LaunchIcon sx={{ fontSize: 14, ml: 0.5 }} />
+              </Link>
+            </Stack>
             <Model />
           </Card>
         </Grid>

@@ -6,7 +6,8 @@ import Sidebar from '@/components/sidebar';
 import { AuthContext } from '@/context';
 import Access from '@/pages/settings/component/Access';
 import ModelManagementModal from '@/pages/settings/component/ModelManagementModal';
-import { Box, Button, Modal, Stack, Typography } from '@mui/material';
+import { Box, Button, Link, Modal, Stack, Typography } from '@mui/material';
+import LaunchIcon from '@mui/icons-material/Launch';
 import { useContext, useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 
@@ -162,9 +163,19 @@ const MainLayout = () => {
               />
             </Box>
             <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
-              <Typography variant="subtitle2" sx={{ mb: 0 }}>
-                模型管理
-              </Typography>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Typography variant="subtitle2" sx={{ mb: 0 }}>
+                  模型管理
+                </Typography>
+                <Link
+                  sx={{ color: 'info.main', cursor: 'pointer', fontSize: '14px' }}
+                  href="https://koalaqa.docs.baizhi.cloud/node/019951c1-1700-7e4e-a3a8-b6997d1e5eab"
+                  target="_blank"
+                >
+                  文档
+                  <LaunchIcon sx={{ fontSize: 14, ml: 0.5 }} />
+                </Link>
+              </Stack>
               <ModelManagementModal
                 open={true}
                 mandatory={true}

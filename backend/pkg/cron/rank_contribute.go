@@ -50,6 +50,10 @@ func (r *rankContribute) Run() {
 
 	ranks := make([]model.Rank, 0, 5)
 	for _, v := range data {
+		if v.Point < 1 {
+			break
+		}
+
 		ranks = append(ranks, model.Rank{
 			Type:    model.RankTypeContribute,
 			ScoreID: strconv.FormatUint(uint64(v.UserID), 10),

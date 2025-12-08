@@ -88,6 +88,10 @@ func (c *Comment) CountDiscussion(ctx context.Context, res *int64, begin time.Ti
 		Count(res).Error
 }
 
+func (c *Comment) GetBotComment(ctx context.Context, res any, discID uint) error {
+	return c.model(ctx).Where("discussion_id = ? AND parent_id = 0 AND bot = true", discID).First(res).Error
+}
+
 func init() {
 	register(newComment)
 }

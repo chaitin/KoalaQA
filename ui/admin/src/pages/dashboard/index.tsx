@@ -63,6 +63,9 @@ interface ChartDataPoint {
   name: string;
   visits: number;
   posts: number;
+  qa: number;
+  blog: number;
+  issue: number;
   aiResponse: number;
   aiResolve: number;
 }
@@ -367,6 +370,9 @@ const aggregateTo6HourIntervals = (
       name,
       visits: 0,
       posts: 0,
+      qa: 0,
+      blog: 0,
+      issue: 0,
       aiResponse: 0,
       aiResolve: 0,
     };
@@ -384,7 +390,15 @@ const aggregateTo6HourIntervals = (
               aggregated.visits += item.count || 0;
               break;
             case ModelStatType.StatTypeDiscussionQA:
+              aggregated.qa += item.count || 0;
+              aggregated.posts += item.count || 0;
+              break;
             case ModelStatType.StatTypeDiscussionBlog:
+              aggregated.blog += item.count || 0;
+              aggregated.posts += item.count || 0;
+              break;
+            case ModelStatType.StatTypeDiscussionIssue:
+              aggregated.issue += item.count || 0;
               aggregated.posts += item.count || 0;
               break;
             case ModelStatType.StatTypeBotAccept:
@@ -422,6 +436,9 @@ const transformTrendData = (
         name: hourKey,
         visits: 0,
         posts: 0,
+        qa: 0,
+        blog: 0,
+        issue: 0,
         aiResponse: 0,
         aiResolve: 0,
       };
@@ -434,7 +451,15 @@ const transformTrendData = (
           hourlyData[hourKey].visits += item.count || 0;
           break;
         case ModelStatType.StatTypeDiscussionQA:
+          hourlyData[hourKey].qa += item.count || 0;
+          hourlyData[hourKey].posts += item.count || 0;
+          break;
         case ModelStatType.StatTypeDiscussionBlog:
+          hourlyData[hourKey].blog += item.count || 0;
+          hourlyData[hourKey].posts += item.count || 0;
+          break;
+        case ModelStatType.StatTypeDiscussionIssue:
+          hourlyData[hourKey].issue += item.count || 0;
           hourlyData[hourKey].posts += item.count || 0;
           break;
         case ModelStatType.StatTypeBotAccept:
@@ -458,6 +483,9 @@ const transformTrendData = (
           name,
           visits: 0,
           posts: 0,
+          qa: 0,
+          blog: 0,
+          issue: 0,
           aiResponse: 0,
           aiResolve: 0,
         }
@@ -482,6 +510,9 @@ const transformTrendData = (
           name: dayKey,
           visits: 0,
           posts: 0,
+          qa: 0,
+          blog: 0,
+          issue: 0,
           aiResponse: 0,
           aiResolve: 0,
         };
@@ -494,7 +525,15 @@ const transformTrendData = (
             dailyData[dayKey].visits += item.count || 0;
             break;
           case ModelStatType.StatTypeDiscussionQA:
+            dailyData[dayKey].qa += item.count || 0;
+            dailyData[dayKey].posts += item.count || 0;
+            break;
           case ModelStatType.StatTypeDiscussionBlog:
+            dailyData[dayKey].blog += item.count || 0;
+            dailyData[dayKey].posts += item.count || 0;
+            break;
+          case ModelStatType.StatTypeDiscussionIssue:
+            dailyData[dayKey].issue += item.count || 0;
             dailyData[dayKey].posts += item.count || 0;
             break;
           case ModelStatType.StatTypeBotAccept:
@@ -514,6 +553,9 @@ const transformTrendData = (
           name,
           visits: 0,
           posts: 0,
+          qa: 0,
+          blog: 0,
+          issue: 0,
           aiResponse: 0,
           aiResolve: 0,
         }
@@ -863,7 +905,7 @@ const Dashboard: React.FC = () => {
         getAdminStatTrend({
           begin,
           stat_group: statGroup,
-          stat_types: [ModelStatType.StatTypeDiscussionQA, ModelStatType.StatTypeDiscussionBlog], // [5, 6]
+          stat_types: [ModelStatType.StatTypeDiscussionQA, ModelStatType.StatTypeDiscussionBlog, ModelStatType.StatTypeDiscussionIssue], // [5, 6, 7]
         }),
       ]);
 
@@ -1186,7 +1228,7 @@ const Dashboard: React.FC = () => {
                                     border: 'none',
                                     boxShadow: theme.shadows[3],
                                   }}
-                                  formatter={(value: any, name: string) => {
+                                  formatter={(value: any) => {
                                     return [
                                       <span
                                         style={{ color: '#2E6AFE' }}
@@ -1241,15 +1283,36 @@ const Dashboard: React.FC = () => {
                                     border: 'none',
                                     boxShadow: theme.shadows[3],
                                   }}
-                                  formatter={(value: any, name: string) => {
-                                    return [
-                                      <span
-                                        style={{ color: 'rgba(99, 103, 233, 1)' }}
-                                      >{`发帖量: ${value}`}</span>,
-                                    ];
-                                  }}
-                                  labelFormatter={label => {
-                                    return `${label}`;
+                                  content={({ active, payload }) => {
+                                    if (active && payload && payload.length > 0) {
+                                      const data = payload[0].payload as ChartDataPoint;
+                                      return (
+                                        <Box
+                                          sx={{
+                                            backgroundColor: 'white',
+                                            padding: 1.5,
+                                            borderRadius: 1,
+                                            boxShadow: theme.shadows[3],
+                                          }}
+                                        >
+                                          <Typography variant="body2" sx={{ mb: 1, fontWeight: 600 }}>
+                                            {payload[0].payload.name}
+                                          </Typography>
+                                          <Stack spacing={0.5}>
+                                            <Typography variant="body2" sx={{ color: 'rgba(99, 103, 233, 1)' }}>
+                                              问题：{data.qa || 0}
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ color: 'rgba(99, 103, 233, 1)' }}>
+                                              issue：{data.issue || 0}
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ color: 'rgba(99, 103, 233, 1)' }}>
+                                              文章：{data.blog || 0}
+                                            </Typography>
+                                          </Stack>
+                                        </Box>
+                                      );
+                                    }
+                                    return null;
                                   }}
                                 />
                                 <Bar

@@ -185,6 +185,10 @@ func (d *Discussion) ListDiscLike(ctx context.Context, discUUID string) ([]model
 	return res, nil
 }
 
+func (d *Discussion) DeleteDiscLike(ctx context.Context, discUUID string) error {
+	return d.db.WithContext(ctx).Model(&model.DiscLike{}).Where("uuid = ?", discUUID).Delete(nil).Error
+}
+
 func (d *Discussion) RevokeLikeDiscussion(ctx context.Context, discUUID string, uid uint) error {
 	return d.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		err := tx.Exec(`SELECT pg_advisory_xact_lock(?)`, uid).Error

@@ -385,10 +385,9 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
             user?.role || ModelUserRole.UserRoleUnknown,
           )) && <MenuItem onClick={handleEditComment}>编辑</MenuItem>}
 
-        {(commentIndex?.user_id == (user?.uid || 0) ||
-          [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
-            user?.role || ModelUserRole.UserRoleUnknown,
-          )) && (
+        {/* 已采纳的回答不允许普通用户删除，但管理者和运营者可以删除 */}
+        {(isAdminRole(user?.role || ModelUserRole.UserRoleUnknown) ||
+          (commentIndex?.user_id == (user?.uid || 0) && !commentIndex?.accepted)) && (
           <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
             删除
           </MenuItem>
@@ -1110,7 +1109,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
           <Box
             sx={{
               display: { xs: 'block', sm: 'none' },
-              height: 'calc(250px + max(env(safe-area-inset-bottom, 0px), 44px))',
+              height: 'calc(250px + env(safe-area-inset-bottom, 44px))',
               flexShrink: 0,
             }}
           />
@@ -1124,7 +1123,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
               bottom: !isQAPost ? 'unset' : { xs: 0, sm: 0 },
               left: !isQAPost ? 'unset' : { xs: 0, sm: 'unset' },
               right: !isQAPost ? 'unset' : { xs: 0, sm: 'unset' },
-              pb: !isQAPost ? 3 : { xs: 'calc(24px + max(env(safe-area-inset-bottom, 0px), 44px))', sm: 3 },
+              pb: !isQAPost ? 3 : { xs: 'calc(24px + env(safe-area-inset-bottom, 0))', sm: 3 },
               width: '100%',
               maxWidth: { lg: '756px' },
               mx: { xs: 0, sm: 'auto' },
@@ -1136,7 +1135,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
               ...(isQAPost && {
                 '@media (max-width: 600px)': {
                   // Safari 工具栏高度约 44px，加上安全区域和内容 padding
-                  paddingBottom: 'calc(24px + max(env(safe-area-inset-bottom, 0px), 44px))',
+                  paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0))',
                   // 添加左侧和右侧的安全区域支持
                   paddingLeft: 'max(16px, env(safe-area-inset-left, 0px))',
                   paddingRight: 'max(16px, env(safe-area-inset-right, 0px))',

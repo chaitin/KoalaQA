@@ -63,7 +63,6 @@ const toggleButtonSx = {
 
 export default function PublicProfileContent({ userId, statistics }: PublicProfileContentProps) {
   const metrics = useMemo(() => metricItems(statistics), [statistics])
-  const tabValue = 0 // 只显示动态标签页
 
   return (
     <Box sx={{ maxWidth: 748, margin: '0 auto' }}>
