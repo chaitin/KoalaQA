@@ -347,20 +347,22 @@ func (u *User) UpdateInfo(ctx context.Context, id uint, req UserUpdateInfoReq) e
 		return err
 	}
 
-	if user.Avatar != "" {
-		err = u.oc.Delete(ctx, util.TrimFirstDir(user.Avatar))
-		if err != nil {
-			u.logger.WithContext(ctx).WithErr(err).With("avatar", user.Avatar).Warn("remove user avatar failed")
-		}
-	} else if avatarPath != "" {
-		err = u.pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
-			UserPointRecordInfo: model.UserPointRecordInfo{
-				UserID: user.ID,
-				Type:   model.UserPointTypeUserAvatar,
-			},
-		})
-		if err != nil {
-			return err
+	if avatarPath != "" {
+		if user.Avatar != "" {
+			err = u.oc.Delete(ctx, util.TrimFirstDir(user.Avatar))
+			if err != nil {
+				u.logger.WithContext(ctx).WithErr(err).With("avatar", user.Avatar).Warn("remove user avatar failed")
+			}
+		} else {
+			err = u.pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
+				UserPointRecordInfo: model.UserPointRecordInfo{
+					UserID: user.ID,
+					Type:   model.UserPointTypeUserAvatar,
+				},
+			})
+			if err != nil {
+				return err
+			}
 		}
 	}
 
