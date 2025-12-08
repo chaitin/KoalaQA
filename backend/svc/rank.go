@@ -47,6 +47,7 @@ func (r *Rank) Contribute(ctx context.Context, req ListContributeReq) (*model.Li
 				Size: 5,
 			}),
 			repo.QueryWithEqual("id", botUserID, repo.EqualOPNE),
+			repo.QueryWithEqual("point", 0, repo.EqualOPGT),
 			repo.QueryWithOrderBy("point DESC, id ASC"),
 		)
 		if err != nil {

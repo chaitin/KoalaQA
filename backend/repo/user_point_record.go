@@ -40,6 +40,10 @@ func (u *UserPointRecord) updateUserPoint(tx *gorm.DB, record *model.UserPointRe
 
 	record.Point = point - int(user.Point)
 
+	if record.Point == 0 && record.RevokeID == 0 {
+		return nil
+	}
+
 	err = tx.Create(record).Error
 	if err != nil {
 		return err
@@ -53,11 +57,35 @@ func (u *UserPointRecord) updateUserPoint(tx *gorm.DB, record *model.UserPointRe
 	return nil
 }
 
-func (u *UserPointRecord) CreateRecord(ctx context.Context, record model.UserPointRecordInfo, revoke bool, fromUserID uint) error {
+func (u *UserPointRecord) skipCreate(ctx context.Context, record model.UserPointRecordInfo) (bool, error) {
+	if _, ok := model.UserPointTypePointM[record.Type]; !ok {
+		return true, nil
+	}
+
+	switch record.Type {
+	case model.UserPointTypeUserAvatar, model.UserPointTypeUserIntro, model.UserPointTypeUserRole:
+		exist, err := u.Exist(ctx, QueryWithEqual("type", record.Type), QueryWithEqual("user_id", record.UserID))
+		if err != nil {
+			return false, err
+		}
+
+		if exist {
+			return true, nil
+		}
+	case model.UserPointTypeCreateBlog:
+		return false, nil
+	case model.UserPointTypeAcceptAnswer:
+		return record.FromID != record.UserID, nil
+	}
+
+	return record.FromID == record.UserID, nil
+}
+
+func (u *UserPointRecord) CreateRecord(ctx context.Context, record model.UserPointRecordInfo, revoke bool) error {
 	return u.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if revoke {
 			var lastRecord model.UserPointRecord
-			err := tx.Model(&model.UserPointRecord{}).Where("user_id = ? AND type = ? AND foreign_id = ?", record.UserID, record.Type, record.ForeignID).Order("created_at DESC").First(&lastRecord).Error
+			err := tx.Model(&model.UserPointRecord{}).Where("user_id = ? AND type = ? AND foreign_id = ? AND from_id = ?", record.UserID, record.Type, record.ForeignID, record.FromID).Order("created_at DESC").First(&lastRecord).Error
 			if err != nil {
 				return err
 			}
@@ -73,26 +101,17 @@ func (u *UserPointRecord) CreateRecord(ctx context.Context, record model.UserPoi
 			})
 		}
 
-		switch record.Type {
-		case model.UserPointTypeUserAvatar, model.UserPointTypeUserIntro, model.UserPointTypeUserRole:
-			exist, err := u.Exist(ctx, QueryWithEqual("type", record.Type), QueryWithEqual("user_id", record.UserID))
-			if err != nil {
-				return err
-			}
-
-			if exist {
-				return nil
-			}
+		skip, err := u.skipCreate(ctx, record)
+		if err != nil {
+			return err
 		}
-
-		point := model.UserPointTypePointM[record.Type]
-		if fromUserID == record.UserID {
-			point = 0
+		if skip {
+			return nil
 		}
 
 		return u.updateUserPoint(tx, &model.UserPointRecord{
 			UserPointRecordInfo: record,
-			Point:               point,
+			Point:               model.UserPointTypePointM[record.Type],
 			RevokeID:            0,
 		})
 	})

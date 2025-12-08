@@ -66,7 +66,7 @@ export default function RootPageFallback() {
       flexDirection: 'column',
       gap: '16px'
     }}>
-      <div>正在加载...</div>
+      <div>你的账号没有任何板块权限，请联系管理员添加权限</div>
       {error && (
         <div style={{ color: '#666', fontSize: '14px' }}>
           正在尝试重新获取数据...

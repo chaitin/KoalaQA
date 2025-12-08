@@ -337,8 +337,11 @@ body {
 }
 body{
   padding-top: 64px;
-  overflow: hidden;
   background: #ffffff!important;
+  display: flex;
+  overflow: hidden;
+  flex-direction: column;
+  height: 100vh;
 }
 
 /* WebKit (Chrome, Edge, Safari) */

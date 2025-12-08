@@ -12,6 +12,7 @@ const (
 	StatTypeDiscussionQA
 	StatTypeDiscussionBlog
 	StatTypeDiscussionIssue
+	StatTypeBotUnknownComment
 )
 
 var DiscussionType2StatType = map[DiscussionType]StatType{

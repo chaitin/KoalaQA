@@ -17,20 +17,22 @@ const (
 	UserPointTypeUserIntro
 )
 
-var UserPointTypePointM = map[UserPointType]int{
-	UserPointTypeCreateBlog:     10,
-	UserPointTypeAnswerAccepted: 10,
-	UserPointTypeLikeBlog:       5,
-	UserPointTypeAnswerLiked:    5,
-	UserPointTypeAssociateIssue: 5,
-	UserPointTypeAcceptAnswer:   2,
-	UserPointTypeAnswerQA:       1,
-	UserPointTypeAnswerDisliked: -5,
-	UserPointTypeDislikeAnswer:  -2,
-	UserPointTypeUserRole:       1,
-	UserPointTypeUserAvatar:     5,
-	UserPointTypeUserIntro:      5,
-}
+var (
+	UserPointTypePointM = map[UserPointType]int{
+		UserPointTypeCreateBlog:     10,
+		UserPointTypeAnswerAccepted: 10,
+		UserPointTypeLikeBlog:       5,
+		UserPointTypeAnswerLiked:    5,
+		UserPointTypeAssociateIssue: 5,
+		UserPointTypeAcceptAnswer:   2,
+		UserPointTypeAnswerQA:       1,
+		UserPointTypeAnswerDisliked: -5,
+		UserPointTypeDislikeAnswer:  -2,
+		UserPointTypeUserRole:       1,
+		UserPointTypeUserAvatar:     5,
+		UserPointTypeUserIntro:      5,
+	}
+)
 
 type UserPointRecord struct {
 	Base
@@ -41,9 +43,10 @@ type UserPointRecord struct {
 }
 
 type UserPointRecordInfo struct {
-	UserID    uint          `gorm:"column:user_id;index:idx_user_point_record_user_type" json:"user_id"`
-	Type      UserPointType `gorm:"column:type;index:idx_user_point_record_user_type" json:"type"`
-	ForeignID uint          `gorm:"column:foreign_id;type:bigint;default:0;index" json:"foreign"`
+	UserID    uint          `gorm:"column:user_id;index:idx_user_point_record_user_type_foreign_from" json:"user_id"`
+	Type      UserPointType `gorm:"column:type;index:idx_user_point_record_user_type_foreign_from" json:"type"`
+	ForeignID uint          `gorm:"column:foreign_id;type:bigint;default:0;index:idx_user_point_record_user_type_foreign_from" json:"foreign"`
+	FromID    uint          `gorm:"column:from_id;type:bigint;default:0;index:idx_user_point_record_user_type_foreign_from" json:"from_id"`
 }
 
 type UserPointItem struct {

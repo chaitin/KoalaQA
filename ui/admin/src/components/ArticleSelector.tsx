@@ -1,5 +1,14 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { Autocomplete, TextField, Box, Typography, CircularProgress } from '@mui/material';
+import {
+  Autocomplete,
+  TextField,
+  Box,
+  Typography,
+  CircularProgress,
+  SxProps,
+  Theme,
+  Chip,
+} from '@mui/material';
 import { message } from '@ctzhian/ui';
 import { getAdminDiscussion } from '@/api/Discussion';
 import { ModelDiscussionListItem } from '@/api/types';
@@ -15,6 +24,7 @@ interface ArticleSelectorProps {
   forumId?: number;
   maxSelection?: number;
   initialOptions?: ArticleOption[];
+  textFieldSx?: SxProps<Theme>;
 }
 
 interface ArticleOption {
@@ -33,6 +43,7 @@ const ArticleSelector: React.FC<ArticleSelectorProps> = ({
   forumId,
   maxSelection = 3,
   initialOptions = [],
+  textFieldSx,
 }) => {
   const pageSize = 10;
   const [options, setOptions] = useState<ArticleOption[]>([]);
@@ -185,13 +196,13 @@ const ArticleSelector: React.FC<ArticleSelectorProps> = ({
 
   const handleChange = (event: any, newValue: ArticleOption[] | null) => {
     const selectedIds = (newValue || []).map(option => option.id);
-    
+
     // 限制最多选择数量
     if (selectedIds.length > maxSelection) {
       message.warning(`最多只能选择 ${maxSelection} 个文章`);
       return; // 如果超过最大数量，不更新
     }
-    
+
     if (newValue?.length) {
       setOptionCache(prev => {
         const updated = { ...prev };
@@ -233,11 +244,7 @@ const ArticleSelector: React.FC<ArticleSelectorProps> = ({
     [fetchArticles, open, resetData]
   );
 
-  const handleInputChange = (
-    _event: any,
-    newInputValue: string,
-    reason: string
-  ) => {
+  const handleInputChange = (_event: any, newInputValue: string, reason: string) => {
     if (reason === 'input' || reason === 'clear') {
       setInputValue(newInputValue);
       return;
@@ -251,9 +258,7 @@ const ArticleSelector: React.FC<ArticleSelectorProps> = ({
     }
   };
 
-  const handleKeyDown = (
-    event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (event.key === 'Enter') {
       event.preventDefault();
       handleSearch(inputValue);
@@ -282,11 +287,25 @@ const ArticleSelector: React.FC<ArticleSelectorProps> = ({
         onInputChange={handleInputChange}
         onOpen={handleOpen}
         onClose={handleClose}
-        options={options}
+        options={forumId ? options : []}
         getOptionLabel={option => option.title}
         isOptionEqualToValue={(option, value) => option.id === value.id}
         loading={loading}
-        disabled={disabled || !forumId}
+        renderTags={(value, getTagProps) =>
+          value.map((option, index) => (
+            <Chip
+              {...getTagProps({ index })}
+              key={option.id}
+              label={option.title}
+              size="small"
+              sx={{
+                height: 24,
+                fontSize: 12,
+                '& .MuiChip-label': { fontSize: 12, px: 0.5 },
+              }}
+            />
+          ))
+        }
         // filterOptions={(options) => options} // 禁用客户端过滤，使用服务端搜索
         renderInput={params => (
           <TextField
@@ -294,7 +313,15 @@ const ArticleSelector: React.FC<ArticleSelectorProps> = ({
             label={label}
             placeholder={!forumId ? '请先保存版块后再选择公告内容' : placeholder}
             error={error}
-            helperText={helperText || (!forumId ? '新建版块需要先保存后才能选择公告内容' : value.length > 0 ? `已选择 ${value.length}/${maxSelection} 个文章` : `最多可选择 ${maxSelection} 个文章`)}
+            helperText={
+              helperText ||
+              (!forumId
+                ? '新建版块需要先保存后才能选择公告内容'
+                : value.length > 0
+                  ? `已选择 ${value.length}/${maxSelection} 个文章`
+                  : `最多可选择 ${maxSelection} 个文章`)
+            }
+            sx={textFieldSx}
             InputProps={{
               ...params.InputProps,
               endAdornment: (
@@ -306,9 +333,7 @@ const ArticleSelector: React.FC<ArticleSelectorProps> = ({
             }}
             inputProps={{
               ...params.inputProps,
-              onKeyDown: (
-                event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>
-              ) => {
+              onKeyDown: (event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
                 const defaultOnKeyDown = params.inputProps.onKeyDown;
                 if (defaultOnKeyDown) {
                   defaultOnKeyDown(event as React.KeyboardEvent<HTMLInputElement>);
@@ -336,10 +361,10 @@ const ArticleSelector: React.FC<ArticleSelectorProps> = ({
           loading
             ? '正在加载...'
             : !forumId
-            ? '请先保存版块后再选择公告内容'
-            : searchTerm
-            ? '未找到相关文章'
-            : '暂无文章数据'
+              ? '请先保存版块后再选择公告内容'
+              : searchTerm
+                ? '未找到相关文章'
+                : '暂无文章数据'
         }
         clearOnEscape
         selectOnFocus
@@ -355,4 +380,3 @@ const ArticleSelector: React.FC<ArticleSelectorProps> = ({
 };
 
 export default ArticleSelector;
-

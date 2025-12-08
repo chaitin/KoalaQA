@@ -1,15 +1,21 @@
 import { getAdminModelList, ModelLLM, ModelLLMType } from '@/api';
-import ErrorJSON from '@/assets/json/error.json';
 import Card from '@/components/card';
-import LottieIcon from '@/components/lottieIcon';
 import { addOpacityToColor } from '@/utils';
-import { DEFAULT_MODEL_PROVIDERS, ModelModal } from '@ctzhian/modelkit';
-import { Icon, message } from '@ctzhian/ui';
+import { ModelModal } from '@ctzhian/modelkit';
+import { message } from '@ctzhian/ui';
 import { Box, Button, Stack, useTheme } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { modelService } from './services/modelService';
 
 const model = Object.values(ModelLLMType);
+
+interface ModelConfig {
+  key: ModelLLMType;
+  title: string;
+  description: string;
+  isInUse: boolean;
+  isRequired: boolean;
+}
 
 interface ModelManagementModalProps {
   open: boolean;
@@ -27,6 +33,48 @@ const ModelManagementModal = ({
   const theme = useTheme();
   const [editData, setEditData] = useState<ModelLLM | null>(null);
   const [modelList, setModelList] = useState<ModelLLM[]>([]);
+
+  // 模型配置数组
+  const modelConfigs = useMemo<ModelConfig[]>(() => {
+    const configs: ModelConfig[] = [
+      {
+        key: ModelLLMType.LLMTypeChat,
+        title: '智能对话模型',
+        description: '在机器人回答、智能总结、AI 洞察等场景使用',
+        isInUse: modelList.some(item => item.type === ModelLLMType.LLMTypeChat),
+        isRequired: true,
+      },
+      {
+        key: ModelLLMType.LLMTypeEmbedding,
+        title: '向量模型',
+        description: '在知识库学习、发帖、机器人回答、智能搜索、AI 洞察等场景使用',
+        isInUse: modelList.some(item => item.type === ModelLLMType.LLMTypeEmbedding),
+        isRequired: true,
+      },
+      {
+        key: ModelLLMType.LLMTypeRerank,
+        title: '重排序模型',
+        description: '在机器人回答、智能搜索、相似帖、AI 洞察等场景',
+        isInUse: modelList.some(item => item.type === ModelLLMType.LLMTypeRerank),
+        isRequired: true,
+      },
+      {
+        key: ModelLLMType.LLMTypeAnalysis,
+        title: '文档分析模型',
+        description: '提升文档分析能力，启用后机器人回答等效果会得到加强',
+        isInUse: modelList.some(item => item.type === ModelLLMType.LLMTypeAnalysis),
+        isRequired: false,
+      },
+      {
+        key: ModelLLMType.LLMTypeAnalysisVL,
+        title: '图像分析模型',
+        description: '提升图片识别分析能力，启用后机器人回答等效果会得到加强',
+        isInUse: modelList.some(item => item.type === ModelLLMType.LLMTypeAnalysisVL),
+        isRequired: false,
+      },
+    ];
+    return configs;
+  }, [modelList]);
 
   const getModel = () => {
     getAdminModelList().then(res => {
@@ -70,136 +118,65 @@ const ModelManagementModal = ({
           overflowY: 'auto',
         }}
       >
-        {model.map(key => {
-          const item = modelList.find(item => item.type === key);
+        {modelConfigs.map(config => {
+          const item = modelList.find(item => item.type === config.key);
           return (
-            <Card key={key} sx={{ border: '1px solid', borderColor: 'divider' }}>
-              {!item ? (
-                <>
-                  <Stack
-                    direction={'row'}
-                    alignItems={'center'}
-                    gap={1}
-                    sx={{
-                      fontSize: 14,
-                      lineHeight: '24px',
-                      fontWeight: 'bold',
-                      minWidth: '300px',
-                      mb: 2,
-                    }}
-                  >
-                    <Box sx={{ textTransform: 'capitalize' }}>{key} 模型</Box>
-                    <Stack
-                      alignItems={'center'}
-                      justifyContent={'center'}
+            <Card
+              key={config.key}
+              sx={{ border: '1px solid', px: 2, py: 1, borderColor: 'divider' }}
+            >
+              <Stack
+                direction={'row'}
+                alignItems={'center'}
+                justifyContent={'space-between'}
+                gap={1}
+                sx={{ mt: 1 }}
+              >
+                <Stack spacing={1}>
+                  <Stack direction={'row'} alignItems={'center'} gap={1} sx={{ flexGrow: 1 }}>
+                    <Box
                       sx={{
-                        width: 22,
-                        height: 22,
-                        cursor: 'pointer',
+                        fontSize: 14,
+                        lineHeight: '20px',
+                        color: 'text.main',
                       }}
                     >
-                      <LottieIcon id="warning" src={ErrorJSON} style={{ width: 20, height: 20 }} />
-                    </Stack>
-                    <Box sx={{ color: 'error.main' }}>
-                      未配置无法使用，如果没有可用模型，可参考&nbsp;
-                      <Box
-                        component={'a'}
-                        sx={{ color: 'primary.main', cursor: 'pointer' }}
-                        href="https://koalaqa.docs.baizhi.cloud/node/019951c1-6723-7224-8cea-98df2fd452f3"
-                        target="_blank"
-                      >
-                        文档
-                      </Box>
+                      {config.title}
                     </Box>
-                  </Stack>
-                  <Stack
-                    direction={'row'}
-                    alignItems={'center'}
-                    justifyContent={'center'}
-                    sx={{ my: '0px', ml: 2, fontSize: 14 }}
-                  >
-                    <Box sx={{ height: '20px', color: 'text.auxiliary' }}>尚未配置，</Box>
-                    <Button
-                      sx={{ minWidth: 0, px: 0, height: '20px' }}
-                      onClick={() => {
-                        setEditData(item ? item : { type: key });
-                      }}
-                    >
-                      去添加
-                    </Button>
-                  </Stack>
-                </>
-              ) : (
-                <>
-                  <Stack
-                    direction={'row'}
-                    alignItems={'center'}
-                    justifyContent={'space-between'}
-                    gap={1}
-                    sx={{ mt: 1 }}
-                  >
-                    <Stack direction={'row'} alignItems={'center'} gap={1} sx={{ flexGrow: 1 }}>
-                      <Icon
-                        type={
-                          DEFAULT_MODEL_PROVIDERS[
-                            item.provider as keyof typeof DEFAULT_MODEL_PROVIDERS
-                          ].icon
-                        }
-                        sx={{ fontSize: 18 }}
-                      />
-                      <Box
-                        sx={{
-                          fontSize: 14,
-                          lineHeight: '20px',
-                          color: 'text.auxiliary',
-                        }}
-                      >
-                        {DEFAULT_MODEL_PROVIDERS[
-                          item.provider as keyof typeof DEFAULT_MODEL_PROVIDERS
-                        ].cn ||
-                          DEFAULT_MODEL_PROVIDERS[
-                            item.provider as keyof typeof DEFAULT_MODEL_PROVIDERS
-                          ].label ||
-                          '其他'}
-                        &nbsp;&nbsp;/
-                      </Box>
-                      <Box
-                        sx={{
-                          fontSize: 14,
-                          lineHeight: '20px',
-                          fontFamily: 'Gbold',
-                          ml: -0.5,
-                        }}
-                      >
-                        {item.model}
-                      </Box>
-                      <Box
-                        sx={{
-                          fontSize: 12,
-                          px: 1,
-                          lineHeight: '20px',
-                          borderRadius: '10px',
-                          bgcolor: addOpacityToColor(theme.palette.primary.main, 0.1),
-                          color: 'primary.main',
-                          textTransform: 'capitalize',
-                        }}
-                      >
-                        {item.type} 模型
-                      </Box>
-                    </Stack>
                     <Box
                       sx={{
                         fontSize: 12,
                         px: 1,
                         lineHeight: '20px',
                         borderRadius: '10px',
-                        bgcolor: addOpacityToColor(theme.palette.success.main, 0.1),
-                        color: 'success.main',
+                        bgcolor: config.isRequired
+                          ? addOpacityToColor(theme.palette.info.main, 0.1)
+                          : addOpacityToColor(theme.palette.primary.main, 0.1),
+                        color: config.isRequired ? 'info.main' : 'primary.main',
+                        textTransform: 'capitalize',
                       }}
                     >
-                      状态正常
+                      {config.isRequired ? '必选' : '可选'}
                     </Box>
-                    {item && (
+                  </Stack>
+                  <Box sx={{ fontSize: 12, color: 'text.secondary' }}>{config.description}</Box>
+                </Stack>
+
+                <Stack direction="row" spacing={1} alignItems="center">
+                  {item ? (
+                    <>
+                      <Box
+                        sx={{
+                          fontSize: 12,
+                          px: 1,
+                          lineHeight: '20px',
+                          borderRadius: '10px',
+                          bgcolor: addOpacityToColor(theme.palette.success.main, 0.1),
+                          color: 'success.main',
+                        }}
+                      >
+                        状态正常
+                      </Box>
                       <Button
                         size="small"
                         variant="outlined"
@@ -209,10 +186,36 @@ const ModelManagementModal = ({
                       >
                         修改
                       </Button>
-                    )}
-                  </Stack>
-                </>
-              )}
+                    </>
+                  ) : (
+                    <>
+                      <Box
+                        sx={{
+                          fontSize: 12,
+                          px: 1,
+                          lineHeight: '20px',
+                          borderRadius: '10px',
+                          bgcolor: config.isRequired
+                            ? addOpacityToColor(theme.palette.error.main, 0.1)
+                            : addOpacityToColor(theme.palette.primary.main, 0.1),
+                          color: config.isRequired ? 'error.main' : 'primary.main',
+                        }}
+                      >
+                        {config.isRequired ? '必填模型' : '可选模型'}
+                      </Box>
+                      <Button
+                        size="small"
+                        variant='outlined'
+                        onClick={() => {
+                          setEditData({ type: config.key } as ModelLLM);
+                        }}
+                      >
+                        配置
+                      </Button>
+                    </>
+                  )}
+                </Stack>
+              </Stack>
             </Card>
           );
         })}
