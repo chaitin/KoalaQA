@@ -220,9 +220,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
         <link rel='preconnect' href='//fonts.googleapis.com' crossOrigin='anonymous' />
         <link rel='icon' href={brand?.logo || '/logo.svg'} />
       </head>
-      <body
-        className={`${monoFont.variable} ${alimamashuheitiFont.variable}`}
-      >
+      <body className={`${monoFont.variable} ${alimamashuheitiFont.variable}`}>
         {/* 图标字体预加载 - beforeInteractive 确保在交互前加载 */}
         {/* 文件名包含 commit id，每次下载新图标时文件名会自动更新，防止浏览器缓存 */}
         <Script src={`/font/${iconfontFileName}`} strategy='beforeInteractive' />
@@ -247,12 +245,8 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
                         <CssBaseline />
                         <GuestActivationProvider>
                           <PageViewTracker />
-                          <ScrollReset />
                           <Header brandConfig={brand} initialForums={forums} />
-                          <main
-                            id='main-content'
-                            style={{ backgroundColor: '#ffffff', height: 'calc(100vh - 64px)', overflow: 'auto' }}
-                          >
+                          <main id='main-content' style={{ backgroundColor: '#ffffff', flex: 1, overflow: 'auto' }}>
                             {props.children}
                           </main>
                           <Scroll />

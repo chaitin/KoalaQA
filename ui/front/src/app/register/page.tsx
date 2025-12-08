@@ -13,6 +13,7 @@ const page = () => {
         border: '1px solid #D9DEE2',
         borderRadius: '8px',
         width: 400,
+        maxWidth: '80%',
       }}
     >
       <Register />

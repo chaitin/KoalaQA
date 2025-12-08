@@ -1,11 +1,12 @@
 import { getDiscussionDiscId, ModelDiscussionType } from '@/api'
 import { Alert, Box, Stack, Typography } from '@mui/material'
 import { Metadata } from 'next'
-import { Suspense } from 'react'
+import { cache, Suspense } from 'react'
 import Content from './ui/content'
 import TitleCard from './ui/titleCard'
 import DetailSidebarWrapper from './ui/DetailSidebarWrapper'
 import LoadingSpinner from '@/components/LoadingSpinner'
+import ScrollReset from '@/components/ScrollReset'
 
 // 动态生成 metadata
 export async function generateMetadata(props: {
@@ -13,7 +14,7 @@ export async function generateMetadata(props: {
 }): Promise<Metadata> {
   const { id } = await props.params
   try {
-    const result = await fetchDiscussionDetail(id)
+    const result = await fetchDiscussionDetailCached(id)
     if (result.success && result.data?.title) {
       return {
         title: result.data.title,
@@ -44,11 +45,14 @@ async function fetchDiscussionDetail(discId: string) {
   }
 }
 
+// 避免同一请求周期内重复拉取
+const fetchDiscussionDetailCached = cache(fetchDiscussionDetail)
+
 const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; id: string }> }) => {
   const { id } = await props.params
 
   // 获取讨论详情
-  const result = await fetchDiscussionDetail(id)
+  const result = await fetchDiscussionDetailCached(id)
   const isArticle = result.data?.type === ModelDiscussionType.DiscussionTypeBlog
   // 处理错误情况
   if (!result.success) {
@@ -93,37 +97,40 @@ const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; 
   }
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        gap: { xs: 0, lg: 3 },
-        justifyContent: { lg: 'center' },
-        alignItems: { lg: 'flex-start' },
-        height: '100%',
-      }}
-    >
-      {/* 主内容区域 */}
-      <Stack
+    <>
+      <ScrollReset />
+      <Box
         sx={{
-          flex: 1,
-          minWidth: 0,
-          alignSelf: 'stretch',
-          maxWidth: { lg: 798 },
-          width: { xs: '100%', lg: 'auto' },
-          px: { xs: 0, md: 3 },
+          display: 'flex',
+          gap: { xs: 0, lg: 3 },
+          justifyContent: { lg: 'center' },
+          alignItems: { lg: 'flex-start' },
           height: '100%',
         }}
       >
-        <h1 style={{ display: 'none' }}>讨论详情</h1>
-        <Suspense fallback={<LoadingSpinner />}>
-          <TitleCard data={discussion} />
-          <Content data={discussion} />
-        </Suspense>
-      </Stack>
+        {/* 主内容区域 */}
+        <Stack
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            alignSelf: 'stretch',
+            maxWidth: { lg: 798 },
+            width: { xs: '100%', lg: 'auto' },
+            px: { xs: 0, md: 3 },
+            height: '100%',
+          }}
+        >
+          <h1 style={{ display: 'none' }}>讨论详情</h1>
+          <Suspense fallback={<LoadingSpinner />}>
+            <TitleCard data={discussion} />
+            <Content data={discussion} />
+          </Suspense>
+        </Stack>
 
-      {/* 右侧边栏 - 仅在桌面端显示 */}
-      <DetailSidebarWrapper isArticle={isArticle} discussion={discussion} discId={discussion.uuid || id} />
-    </Box>
+        {/* 右侧边栏 - 仅在桌面端显示 */}
+        <DetailSidebarWrapper isArticle={isArticle} discussion={discussion} discId={discussion.uuid || id} />
+      </Box>
+    </>
   )
 }
 

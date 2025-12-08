@@ -1,12 +1,11 @@
 'use client'
 
-import { ModelDiscussionListItem, ModelDiscussionState, ModelDiscussionType } from '@/api/types'
+import { ModelDiscussionListItem, ModelDiscussionType } from '@/api/types'
 import { DiscussionStatusChip, DiscussionTypeChip, MarkDown } from '@/components'
-import CommonAvatar from '@/components/CommonAvatar'
 import { CommonContext } from '@/components/commonProvider'
 import { TimeDisplay } from '@/components/TimeDisplay'
-import { Ellipsis, Icon } from '@ctzhian/ui'
-import { Box, Chip, Stack, SxProps, Typography } from '@mui/material'
+import { Ellipsis } from '@ctzhian/ui'
+import { Box, Chip, SxProps } from '@mui/material'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { memo, useContext, useMemo } from 'react'
@@ -106,8 +105,26 @@ const SearchDiscussCard = ({
           }}
         />
 
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 1,
+            minWidth: 0,
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 1.5,
+              flexWrap: 'nowrap',
+              overflow: 'hidden',
+              maxWidth: '100%',
+              minWidth: 0,
+              flex: 1,
+            }}
+          >
             {/* 使用通用状态标签组件 */}
             <DiscussionStatusChip item={it} size={size} />
             {allTags.map((tag, index) => {
@@ -126,6 +143,17 @@ const SearchDiscussCard = ({
                     borderRadius: '3px',
                     cursor: 'default',
                     pointerEvents: 'none',
+                    maxWidth: 120,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    '& .MuiChip-label': {
+                      maxWidth: 120,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      px: 0.5,
+                    },
                   }}
                 />
               )
@@ -133,7 +161,15 @@ const SearchDiscussCard = ({
           </Box>
 
           <Box
-            sx={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: 0.5, color: 'rgba(33,34,45,0.5)' }}
+            sx={{
+              fontSize: '0.75rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              color: 'rgba(33,34,45,0.5)',
+              textWrap: 'no-wrap',
+              flexShrink: 0,
+            }}
           >
             <Box sx={{}}>{filter === 'publish' ? '发布于' : '更新于'}</Box>
             <TimeDisplay timestamp={filter === 'publish' ? it.created_at || it.updated_at! : it.updated_at!} />

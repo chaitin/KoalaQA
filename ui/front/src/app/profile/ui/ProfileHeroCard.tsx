@@ -104,7 +104,7 @@ export default function ProfileHeroCard({
                 <Typography variant='h6' sx={{ fontWeight: 700 }}>
                   {item.value}
                 </Typography>
-                <Typography variant='body2' sx={{ fontSize: '16px', color: 'rgba(31,35,41,0.5)' }}>
+                <Typography variant='body2' sx={{ fontSize: '16px', color: 'rgba(31,35,41,0.5)', whiteSpace: 'nowrap' }}>
                   {item.label}
                 </Typography>
               </Box>

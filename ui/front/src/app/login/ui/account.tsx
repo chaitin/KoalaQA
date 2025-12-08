@@ -1,6 +1,5 @@
 'use client'
 import { postUserLogin, SvcAuthFrontendGetAuth } from '@/api'
-import { Message } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import LoadingBtn from '@/components/loadingButton'
 import { useForumStore } from '@/store'
@@ -8,13 +7,13 @@ import { aesCbcEncrypt } from '@/utils/aes'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Stack, TextField } from '@mui/material'
 import Cookies from 'js-cookie'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useContext, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { useSearchParams, useRouter } from 'next/navigation'
 import z from 'zod'
 
 const schema = z.object({
-  email: z.string().email('邮箱格式不正确').default(''),
+  email: z.email({ message: '邮箱格式不正确' }).default(''),
   password: z.string().min(5, '密码不能少于 5 位').default(''),
 })
 

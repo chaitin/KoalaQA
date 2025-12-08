@@ -22,7 +22,7 @@ import Modal from '@/components/modal'
 import { TimeDisplayWithTag } from '@/components/TimeDisplay'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
 import dayjs from '@/lib/dayjs'
-import { formatNumber } from '@/lib/utils'
+import { formatNumber, isAdminRole } from '@/lib/utils'
 import { useForumStore } from '@/store'
 import { Ellipsis, Icon } from '@ctzhian/ui'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
@@ -278,6 +278,12 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
     return isAdminOrOperator && isUnresolvedQA
   }, [user.role, isQAPost, data.resolved])
 
+  // 判断是否有已采纳的回答（仅问题类型）
+  const hasAcceptedComment = useMemo(() => {
+    if (!isQAPost || isAdminRole(user.role || ModelUserRole.UserRoleUnknown)) return false
+    return data.comments?.some((comment) => comment.accepted) || false
+  }, [isQAPost, data.comments])
+
   return (
     <>
       <ReleaseModal
@@ -371,14 +377,17 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           data.resolved === ModelDiscussionState.DiscussionStateNone && (
             <MenuItem onClick={handleCloseQuestion}>关闭问题</MenuItem>
           )}
-        <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
-          删除
-          {data.type === ModelDiscussionType.DiscussionTypeQA
-            ? '问题'
-            : data.type === ModelDiscussionType.DiscussionTypeIssue
-              ? 'Issue'
-              : '文章'}
-        </MenuItem>
+        {/* 如果问题类型且有已采纳的回答，则隐藏删除选项 */}
+        {!hasAcceptedComment && (
+          <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
+            删除
+            {data.type === ModelDiscussionType.DiscussionTypeQA
+              ? '问题'
+              : data.type === ModelDiscussionType.DiscussionTypeIssue
+                ? 'Issue'
+                : '文章'}
+          </MenuItem>
+        )}
       </Menu>
 
       {/* Post header */}

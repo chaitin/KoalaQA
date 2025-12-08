@@ -235,19 +235,12 @@ export const ReleaseModal: React.FC<ReleaseModalProps> = ({
         title: '',
       })
       setGroupValidationError('')
-    } else if (status === 'create' && initialTitle) {
-      // 当打开创建模态框且有初始标题时，设置标题并清空其他字段
-      reset({
-        title: initialTitle,
-        content: initialContent || '',
-        group_ids: defaultGroupIds,
-      })
-    } else if (status === 'create' && type === 'qa') {
+    } else if (status === 'create') {
       // 当打开创建模态框时，使用默认内容或content_placeholder
       reset({
-        content: systemConfig?.content_placeholder || initialContent || '',
+        content: type === 'qa' ? systemConfig?.content_placeholder : initialContent || '',
         group_ids: defaultGroupIds,
-        title: '',
+        title: initialTitle,
       })
     }
   }, [open, initialTitle, initialContent, status, reset, defaultGroupIds, systemConfig])

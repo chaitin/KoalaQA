@@ -54,6 +54,20 @@ interface ForumFormData {
   })[];
 }
 
+const commonFieldSx = {
+  '& .MuiInputLabel-root': { color: 'text.secondary' },
+  '& .MuiInputLabel-root.Mui-focused': { color: 'primary.main' },
+  '& .MuiOutlinedInput-root': {
+    backgroundColor: '#F8F9FA',
+    '& fieldset': { borderColor: 'transparent' },
+    '&:hover fieldset': { borderColor: 'transparent' },
+    '&.Mui-focused fieldset': { borderColor: 'transparent' },
+  },
+  '& .MuiInputBase-input': { fontSize: 14 },
+  '& .MuiInputBase-input::placeholder': { fontSize: 12 },
+  '& .MuiFormHelperText-root': { marginLeft: 0 },
+};
+
 // 可拖拽的版块项组件
 interface SortableBlockItemProps {
   index: number;
@@ -141,6 +155,7 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
                 size="small"
                 error={!!error}
                 helperText={error?.message}
+                sx={commonFieldSx}
                 onChange={e => {
                   field.onChange(e.target.value);
                   setIsEdit(true);
@@ -189,6 +204,7 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
                 size="small"
                 error={!!error}
                 helperText={error?.message || '只能包含字母、数字、下划线和连字符'}
+                sx={commonFieldSx}
                 onChange={e => {
                   field.onChange(e.target.value);
                   setIsEdit(true);
@@ -216,15 +232,12 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
                       field.onChange(groupIds);
                       setIsEdit(true);
                     }}
-                    placeholder="请选择问答分类"
-                    label="问答分类"
+                    placeholder="请选择问题分类"
+                    label="问题分类"
                     error={!!error}
+                    helperText={error?.message}
+                    textFieldSx={commonFieldSx}
                   />
-                  {error && (
-                    <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
-                      {error.message}
-                    </Typography>
-                  )}
                 </Box>
               )}
             />
@@ -246,12 +259,9 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
                     placeholder="请选择 Issue 分类"
                     label="Issue 分类"
                     error={!!error}
+                    helperText={error?.message}
+                    textFieldSx={commonFieldSx}
                   />
-                  {error && (
-                    <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
-                      {error.message}
-                    </Typography>
-                  )}
                 </Box>
               )}
             />
@@ -273,12 +283,9 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
                     placeholder="请选择文章分类"
                     label="文章分类"
                     error={!!error}
+                    helperText={error?.message}
+                    textFieldSx={commonFieldSx}
                   />
-                  {error && (
-                    <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
-                      {error.message}
-                    </Typography>
-                  )}
                 </Box>
               )}
             />
@@ -305,6 +312,7 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
                     maxSelection={3}
                     error={!!error}
                     helperText={error?.message}
+                    textFieldSx={commonFieldSx}
                     initialOptions={(blogOptions || [])
                       .filter(blog => blog?.id != null)
                       .map(blog => ({

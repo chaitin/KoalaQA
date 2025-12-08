@@ -19,6 +19,7 @@ export default function RegisterNotFoundPage() {
         transform: 'translateX(-50%)',
         position: 'absolute',
         width: 400,
+        maxWidth: '80%',
         p: 4,
       }}
     >
