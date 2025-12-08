@@ -569,6 +569,7 @@ type DiscussionKeywordAnswerReq struct {
 }
 
 func (d *Discussion) KeywordAnswer(ctx context.Context, req DiscussionKeywordAnswerReq) (string, error) {
+	logger := d.logger.WithContext(ctx).With("forum_id", req.ForumID).With("keyword", req.Keyword)
 	discs, err := d.Search(ctx, DiscussionSearchReq{
 		ForumID:             req.ForumID,
 		Keyword:             req.Keyword,
@@ -582,6 +583,8 @@ func (d *Discussion) KeywordAnswer(ctx context.Context, req DiscussionKeywordAns
 	for _, disc := range discs {
 		discIDs = append(discIDs, disc.ID)
 	}
+
+	logger.With("disc_ids", discIDs).Info("ai keyword answer get discs")
 
 	prompt, err := d.in.LLM.GenerateDiscussionPrompt(ctx, discIDs...)
 	if err != nil {
@@ -598,6 +601,7 @@ func (d *Discussion) KeywordAnswer(ctx context.Context, req DiscussionKeywordAns
 	}
 
 	if !answer {
+		logger.Info("ai can not answer with think")
 		return "", nil
 	}
 

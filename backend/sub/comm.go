@@ -148,6 +148,14 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 		logger.WithContext(ctx).WithErr(err).Error("get bot failed")
 		return nil
 	}
+
+	exist, err := d.stat.Exist(ctx, repo.QueryWithEqual("type", []model.StatType{model.StatTypeBotUnknown, model.StatTypeBotUnknownComment}, repo.EqualOPIn),
+		repo.QueryWithEqual("key", disc.UUID),
+	)
+	if err != nil {
+		logger.WithErr(err).Warn("bot unknown exist failed")
+	}
+
 	question, prompt, err := d.prompt.GenerateAnswerPrompt(ctx, data.DiscID, data.CommID)
 	if err != nil {
 		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
@@ -162,7 +170,8 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 	if err != nil {
 		return err
 	}
-	if answered || bot.UnknownPrompt != "" {
+	// ai 能够回答或者 ai 第一次无法回答的情况下创建ai回复
+	if answered || (bot.UnknownPrompt != "" && !exist) {
 		newID, err := d.disc.CreateComment(ctx, bot.UserID, data.DiscUUID, svc.CommentCreateReq{
 			Content:   llmRes,
 			Bot:       true,
@@ -175,27 +184,20 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 		logger.WithContext(ctx).With("comment_id", newID).Debug("comment created")
 	}
 
-	if !answered {
-		exist, err := d.stat.Exist(ctx, repo.QueryWithEqual("type", []model.StatType{model.StatTypeBotUnknown, model.StatTypeBotUnknownComment}, repo.EqualOPIn),
-			repo.QueryWithEqual("key", disc.UUID),
-		)
-		if err != nil {
-			logger.WithErr(err).Warn("bot unknown exist failed")
-		} else if !exist {
-			logger.Info("ai not know the answer, notify admin")
-			notifyMsg := topic.MsgMessageNotify{
-				DiscussHeader: disc.Header(),
-				Type:          model.MsgNotifyTypeBotUnknown,
-				FromID:        comment.UserID,
-				ToID:          bot.UserID,
-			}
-			d.pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
-			d.batcher.Send(model.StatInfo{
-				Type: model.StatTypeBotUnknownComment,
-				Ts:   util.HourTrunc(time.Now()).Unix(),
-				Key:  disc.UUID,
-			})
+	if !answered && !exist {
+		logger.Info("ai not know the answer, notify admin")
+		notifyMsg := topic.MsgMessageNotify{
+			DiscussHeader: disc.Header(),
+			Type:          model.MsgNotifyTypeBotUnknown,
+			FromID:        comment.UserID,
+			ToID:          bot.UserID,
 		}
+		d.pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
+		d.batcher.Send(model.StatInfo{
+			Type: model.StatTypeBotUnknownComment,
+			Ts:   util.HourTrunc(time.Now()).Unix(),
+			Key:  disc.UUID,
+		})
 	}
 	return nil
 }
