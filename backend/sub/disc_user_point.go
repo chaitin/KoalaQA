@@ -142,5 +142,10 @@ func (d *DiscUserPoint) handleDelete(ctx context.Context, data topic.MsgDiscChan
 		}
 	}
 
+	err := d.disc.DeleteDiscLike(ctx, data.DiscUUID)
+	if err != nil {
+		logger.WithErr(err).Warn("remove dleted disc like failed")
+	}
+
 	return nil
 }

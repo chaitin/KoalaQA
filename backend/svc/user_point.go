@@ -180,5 +180,13 @@ func (u *UserPoint) RevokeDiscussionPoint(ctx context.Context, discID uint, disc
 		logger.WithErr(err).Error("revoke comments point failed")
 		return err
 	}
+	err = u.comm.Delete(ctx, repo.QueryWithEqual("discussion_id", discID))
+	if err != nil {
+		logger.WithErr(err).Warn("remove disc comments failed")
+	}
+	err = u.commLike.Delete(ctx, repo.QueryWithEqual("discussion_id", discID))
+	if err != nil {
+		logger.WithErr(err).Warn("remove comment like failed")
+	}
 	return nil
 }
