@@ -40,6 +40,7 @@ func (i *aiInsightAnswer) Run() {
 
 	for _, group := range groups {
 		for _, item := range group.Items.Inner() {
+			i.logger.With("item", item).Info("generate ai insight answer")
 			content, err := i.svcDisc.KeywordAnswer(ctx, svc.DiscussionKeywordAnswerReq{
 				ForumID: item.ForeignID,
 				Keyword: item.SocreID,
