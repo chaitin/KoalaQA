@@ -152,7 +152,7 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 }
 
 func (d *Disc) handleUpdate(ctx context.Context, data topic.MsgDiscChange) error {
-	logger := d.logger.WithContext(ctx).With("disc_id", data.DiscID)
+	logger := d.logger.WithContext(ctx).With("data", data)
 	logger.Debug("handle update discussion doc")
 
 	bot, err := d.bot.Get(ctx)
@@ -161,15 +161,18 @@ func (d *Disc) handleUpdate(ctx context.Context, data topic.MsgDiscChange) error
 		return nil
 	}
 
+	haveBotComment := true
 	botComment, err := d.disc.GetBotComment(ctx, data.DiscID)
 	if err != nil {
 		if !errors.Is(err, database.ErrRecordNotFound) {
 			logger.WithErr(err).Warn("query bot comment failed")
+			return nil
 		}
-		return nil
+
+		haveBotComment = false
 	}
 
-	question, prompt, err := d.prompt.GenerateAnswerPrompt(ctx, data.DiscID, 0)
+	question, prompt, err := d.prompt.GeneratePostPrompt(ctx, data.DiscID)
 	if err != nil {
 		logger.WithErr(err).Error("generate prompt failed")
 		return nil
@@ -201,20 +204,31 @@ func (d *Disc) handleUpdate(ctx context.Context, data topic.MsgDiscChange) error
 	}
 
 	if !answered && (existUnknown || bot.UnknownPrompt == "") {
+		logger.Info("ai can not answer, skip")
 		return nil
 	}
 
-	err = d.disc.UpdateComment(ctx, model.UserInfo{
-		UserCore: model.UserCore{
-			UID: botComment.UserID,
-		},
-		Role: model.UserRoleUser,
-	}, data.DiscUUID, botComment.ID, svc.CommentUpdateReq{
-		Content: llmRes,
-		Bot:     true,
-	})
-	if err != nil {
-		logger.WithErr(err).Warn("update bot comment failed")
+	if haveBotComment {
+		err = d.disc.UpdateComment(ctx, model.UserInfo{
+			UserCore: model.UserCore{
+				UID: botComment.UserID,
+			},
+			Role: model.UserRoleUser,
+		}, data.DiscUUID, botComment.ID, svc.CommentUpdateReq{
+			Content: llmRes,
+			Bot:     true,
+		})
+		if err != nil {
+			logger.WithErr(err).Warn("update bot comment failed")
+		}
+	} else if existUnknown {
+		_, err = d.disc.CreateComment(ctx, bot.UserID, data.DiscUUID, svc.CommentCreateReq{
+			Content: llmRes,
+			Bot:     true,
+		})
+		if err != nil {
+			logger.WithErr(err).Warn("create bot comment failed")
+		}
 	}
 
 	return nil
