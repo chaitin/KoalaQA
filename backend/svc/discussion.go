@@ -1027,7 +1027,7 @@ func (d *Discussion) DeleteComment(ctx context.Context, user model.UserInfo, dis
 		return errors.New("not allowed to delete comment")
 	}
 
-	if disc.Type == model.DiscussionTypeQA && comment.Accepted && (comment.UserID == user.UID || disc.UserID == user.UID) {
+	if disc.Type == model.DiscussionTypeQA && comment.Accepted && user.Role != model.UserRoleAdmin && (comment.UserID == user.UID || disc.UserID == user.UID) {
 		return errors.New("accept comment can not delete")
 	}
 
