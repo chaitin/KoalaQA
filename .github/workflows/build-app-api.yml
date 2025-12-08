@@ -20,6 +20,11 @@ jobs:
           - name: app
             dockerfile: ui/Dockerfile
             context: ui
+        platform:
+          - arch: amd64
+            os: linux/amd64
+          - arch: arm64
+            os: linux/arm64
 
     steps:
       - name: Checkout code
@@ -41,16 +46,16 @@ jobs:
           username: ${{ secrets.ALIYUN_CLOUD_USERNAME }}
           password: ${{ secrets.ALIYUN_CLOUD_PASSWORD }}
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image for ${{ matrix.platform.arch }}
         uses: docker/build-push-action@v5
         with:
           context: ${{ matrix.service.context }}
           file: ${{ matrix.service.dockerfile }}
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ matrix.service.name }}:${{ steps.extract_tag.outputs.tag }}
-          platforms: linux/amd64,linux/arm64
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ matrix.service.name }}:${{ steps.extract_tag.outputs.tag }}-${{ matrix.platform.arch }}
+          platforms: ${{ matrix.platform.os }}
+          cache-from: type=gha,scope=${{ matrix.service.name }}-${{ matrix.platform.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service.name }}-${{ matrix.platform.arch }}
           provenance: false
           sbom: false
           build-args: |
@@ -60,8 +65,36 @@ jobs:
             HTTP_PROXY=${{ secrets.HTTP_PROXY }}
             HTTPS_PROXY=${{ secrets.HTTPS_PROXY }}
 
-  notify:
+  create-manifest:
     needs: build-and-push
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - name: api
+          - name: app
+
+    steps:
+      - name: Extract tag name
+        id: extract_tag
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Login to Aliyun Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.ALIYUN_CLOUD_USERNAME }}
+          password: ${{ secrets.ALIYUN_CLOUD_PASSWORD }}
+
+      - name: Create and push manifest
+        run: |
+          docker buildx imagetools create -t \
+            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ matrix.service.name }}:${{ steps.extract_tag.outputs.tag }} \
+            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ matrix.service.name }}:${{ steps.extract_tag.outputs.tag }}-amd64 \
+            ${{ env.REGISTRY }}/${{ env.NAMESPACE }}/${{ matrix.service.name }}:${{ steps.extract_tag.outputs.tag }}-arm64
+
+  notify:
+    needs: create-manifest
     runs-on: ubuntu-latest
     if: always()
     steps:
