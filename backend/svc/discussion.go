@@ -282,7 +282,7 @@ func (d *Discussion) Delete(ctx context.Context, user model.UserInfo, uuid strin
 		return errPermission
 	}
 
-	if disc.Type == model.DiscussionTypeQA && disc.Resolved == model.DiscussionStateResolved {
+	if disc.Type == model.DiscussionTypeQA && disc.Resolved == model.DiscussionStateResolved && user.UID == disc.UserID {
 		return errors.New("resolved qa can not delete")
 	}
 
@@ -1027,7 +1027,7 @@ func (d *Discussion) DeleteComment(ctx context.Context, user model.UserInfo, dis
 		return errors.New("not allowed to delete comment")
 	}
 
-	if disc.Type == model.DiscussionTypeQA && comment.Accepted {
+	if disc.Type == model.DiscussionTypeQA && comment.Accepted && comment.UserID == user.UID {
 		return errors.New("accept comment can not delete")
 	}
 
