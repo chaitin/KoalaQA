@@ -52,6 +52,25 @@ export enum ModelUserRole {
   UserRoleMax = 5,
 }
 
+export enum ModelUserPointType {
+  UserPointTypeCreateBlog = 1,
+  /** 回答被采纳 */
+  UserPointTypeAnswerAccepted = 2,
+  UserPointTypeLikeBlog = 3,
+  UserPointTypeAnswerLiked = 4,
+  UserPointTypeAssociateIssue = 5,
+  /** 采纳别人回答 */
+  UserPointTypeAcceptAnswer = 6,
+  UserPointTypeAnswerQA = 7,
+  /** 回答被点踩 */
+  UserPointTypeAnswerDisliked = 8,
+  /** 点踩别人回答 */
+  UserPointTypeDislikeAnswer = 9,
+  UserPointTypeUserRole = 10,
+  UserPointTypeUserAvatar = 11,
+  UserPointTypeUserIntro = 12,
+}
+
 export enum ModelStatType {
   StatTypeVisit = 1,
   StatTypeSearch = 2,
@@ -60,6 +79,7 @@ export enum ModelStatType {
   StatTypeDiscussionQA = 5,
   StatTypeDiscussionBlog = 6,
   StatTypeDiscussionIssue = 7,
+  StatTypeBotUnknownComment = 8,
 }
 
 export enum ModelRankType {
@@ -83,12 +103,15 @@ export enum ModelMsgNotifyType {
   MsgNotifyTypeAssociateIssue = 11,
   MsgNotifyTypeIssueInProgress = 12,
   MsgNotifyTypeIssueResolved = 13,
+  MsgNotifyTypeUserPoint = 14,
 }
 
 export enum ModelLLMType {
   LLMTypeChat = "chat",
   LLMTypeEmbedding = "embedding",
   LLMTypeRerank = "rerank",
+  LLMTypeAnalysis = "analysis",
+  LLMTypeAnalysisVL = "analysis-vl",
 }
 
 export enum ModelFileType {
@@ -442,6 +465,7 @@ export interface ModelMessageNotify {
   updated_at?: number;
   /** 通知到谁，除了发给机器人的信息，user_id 与 to_id 相同 */
   user_id?: number;
+  user_point?: number;
 }
 
 export interface ModelPlatformOpt {
@@ -487,6 +511,11 @@ export interface ModelSystemBrand {
 export interface ModelSystemDiscussion {
   auto_close?: number;
   content_placeholder?: string;
+}
+
+export interface ModelSystemSEO {
+  desc?: string;
+  keywords?: string[];
 }
 
 export interface ModelTrend {
@@ -536,6 +565,18 @@ export interface ModelUserInfo {
   uid?: number;
   username?: string;
   web_notify?: boolean;
+}
+
+export interface ModelUserPointRecord {
+  created_at?: number;
+  foreign?: number;
+  from_id?: number;
+  id?: number;
+  point?: number;
+  revoke_id?: number;
+  type?: ModelUserPointType;
+  updated_at?: number;
+  user_id?: number;
 }
 
 export interface ModelUserQuickReply {
@@ -1379,7 +1420,7 @@ export interface GetAdminStatSearchParams {
 export interface GetAdminStatTrendParams {
   begin: number;
   stat_group: number;
-  stat_types: (1 | 2 | 3 | 4 | 5 | 6 | 7)[];
+  stat_types: (1 | 2 | 3 | 4 | 5 | 6 | 7 | 8)[];
 }
 
 export interface GetAdminStatVisitParams {
@@ -1632,6 +1673,13 @@ export interface GetUserNotifyListParams {
   /** @min 1 */
   page?: number;
   read?: boolean;
+  /** @min 1 */
+  size?: number;
+}
+
+export interface GetUserPointParams {
+  /** @min 1 */
+  page?: number;
   /** @min 1 */
   size?: number;
 }

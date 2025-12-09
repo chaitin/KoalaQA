@@ -9,6 +9,7 @@ import { Ellipsis } from '@ctzhian/ui'
 interface MetricItem {
   label: string
   value: number | string
+  onClick?: () => void
 }
 
 interface ProfileHeroCardProps {
@@ -100,7 +101,19 @@ export default function ProfileHeroCard({
             }}
           >
             {metrics!.map((item) => (
-              <Box key={item.label} sx={{ textAlign: 'center' }}>
+              <Box
+                key={item.label}
+                sx={{
+                  textAlign: 'center',
+                  cursor: item.onClick ? 'pointer' : 'default',
+                  '&:hover': item.onClick
+                    ? {
+                        opacity: 0.8,
+                      }
+                    : {},
+                }}
+                onClick={item.onClick}
+              >
                 <Typography variant='h6' sx={{ fontWeight: 700 }}>
                   {item.value}
                 </Typography>

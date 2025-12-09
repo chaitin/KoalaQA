@@ -368,42 +368,10 @@ export class HttpClient<SecurityDataType = unknown> {
           shouldShowError &&
           (!isCsrfError || error.config?.__isRetry)
         ) {
-          let msg =
+          const msg =
             error?.response?.data?.err ??
             error?.response?.data?.data ??
             error?.message;
-
-          // 如果是网络错误（没有 response），构造更详细的错误信息
-          if (!error?.response && error?.message === "Network Error") {
-            const errorDetails: string[] = [];
-            errorDetails.push(`网络错误: ${error.message}`);
-            
-            if (error?.code) {
-              errorDetails.push(`错误码: ${error.code}`);
-            }
-            
-            if (error?.config?.url) {
-              errorDetails.push(`请求地址: ${error.config.url}`);
-            }
-            
-            if (error?.config?.method) {
-              errorDetails.push(`请求方法: ${error.config.method.toUpperCase()}`);
-            }
-
-            // 根据错误码提供更友好的提示
-            if (error?.code === "ERR_NETWORK" || error?.code === "ERR_INTERNET_DISCONNECTED") {
-              errorDetails.push("请检查网络连接");
-            } else if (error?.code === "ERR_TIMEDOUT") {
-              errorDetails.push("请求超时，请稍后重试");
-            } else if (error?.code === "ERR_CONNECTION_REFUSED") {
-              errorDetails.push("服务器拒绝连接");
-            } else if (error?.code === "ERR_NAME_NOT_RESOLVED") {
-              errorDetails.push("无法解析服务器地址");
-            }
-
-            msg = errorDetails.join(" | ");
-          }
-
           alert.error(this.translateErrorMessage(msg));
         }
         return Promise.reject(
@@ -467,7 +435,7 @@ export class HttpClient<SecurityDataType = unknown> {
       headers: {
         ...((method &&
           this.instance.defaults.headers[
-          method.toLowerCase() as keyof HeadersDefaults
+            method.toLowerCase() as keyof HeadersDefaults
           ]) ||
           {}),
         ...(params1.headers || {}),
@@ -514,7 +482,7 @@ export class HttpClient<SecurityDataType = unknown> {
     // 生成缓存键和请求键
     const cacheKey = generateCacheKey(path, { query, body, ...params });
     const method = params.method?.toUpperCase() || "GET";
-    
+
     // 对于 /user 请求，需要在请求key中包含用户身份标识，确保不同用户的请求不会被去重
     let requestKey = `${method}:${cacheKey}`;
     if (path === "/user" && method === "GET") {
@@ -523,7 +491,9 @@ export class HttpClient<SecurityDataType = unknown> {
         // 在客户端环境中，从cookie中读取auth_token
         if (typeof window !== "undefined") {
           const cookies = document.cookie.split(";");
-          const authCookie = cookies.find((c) => c.trim().startsWith("auth_token="));
+          const authCookie = cookies.find((c) =>
+            c.trim().startsWith("auth_token="),
+          );
           if (authCookie) {
             authToken = authCookie.split("=")[1]?.trim() || "";
           }
@@ -535,9 +505,12 @@ export class HttpClient<SecurityDataType = unknown> {
         }
       } catch (error) {
         // 如果无法读取cookie，忽略错误，使用原始key
-        console.warn("Failed to read auth_token for request deduplication:", error);
+        console.warn(
+          "Failed to read auth_token for request deduplication:",
+          error,
+        );
       }
-      
+
       // 如果获取到了auth_token，将其hash值添加到请求key中
       // 使用简单的hash函数（前8个字符）来区分不同用户
       if (authToken) {
