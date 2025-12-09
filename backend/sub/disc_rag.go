@@ -18,15 +18,17 @@ type DiscRag struct {
 	logger  *glog.Logger
 	rag     rag.Service
 	forum   *svc.Forum
+	prompt  *svc.Prompt
 }
 
-func NewDiscRag(disc *svc.Discussion, dataset *repo.Dataset, rag rag.Service, forum *svc.Forum) *DiscRag {
+func NewDiscRag(disc *svc.Discussion, dataset *repo.Dataset, rag rag.Service, forum *svc.Forum, prompt *svc.Prompt) *DiscRag {
 	return &DiscRag{
 		disc:    disc,
 		dataset: dataset,
 		rag:     rag,
 		logger:  glog.Module("sub.discussion.rag"),
 		forum:   forum,
+		prompt:  prompt,
 	}
 }
 
@@ -54,7 +56,7 @@ func (d *DiscRag) Handle(ctx context.Context, msg mq.Message) error {
 	data := msg.(topic.MsgDiscChange)
 	switch data.OP {
 	case topic.OPInsert, topic.OPUpdate:
-		return d.handleInsert(ctx, data.DiscID)
+		return d.handleInsert(ctx, data)
 	case topic.OPDelete:
 		return d.handleDelete(ctx, data.ForumID, data.RagID)
 	}
@@ -62,28 +64,28 @@ func (d *DiscRag) Handle(ctx context.Context, msg mq.Message) error {
 
 }
 
-func (d *DiscRag) handleInsert(ctx context.Context, discID uint) error {
-	logger := d.logger.WithContext(ctx).With("disc_id", discID)
+func (d *DiscRag) handleInsert(ctx context.Context, data topic.MsgDiscChange) error {
+	logger := d.logger.WithContext(ctx).With("data", data)
 	logger.Debug("handle insert discussion rag")
-	disc, err := d.disc.GetByID(ctx, discID)
+	ragContent, err := d.prompt.GenerateContentForRetrieval(ctx, data.DiscID)
 	if err != nil {
-		logger.WithContext(ctx).WithErr(err).Error("get discussion failed")
+		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
 		return nil
 	}
-	forum, err := d.forum.GetByID(ctx, disc.ForumID)
+	forum, err := d.forum.GetByID(ctx, data.ForumID)
 	if err != nil {
 		logger.WithErr(err).Warn("get forum failed")
 		return nil
 	}
 	ragID, err := d.rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
 		DatasetID:  forum.DatasetID,
-		DocumentID: disc.RagID,
-		Content:    disc.TitleContent(),
+		DocumentID: data.RagID,
+		Content:    ragContent,
 	})
 	if err != nil {
 		return err
 	}
-	err = d.disc.UpdateRagID(ctx, discID, ragID)
+	err = d.disc.UpdateRagID(ctx, data.DiscID, ragID)
 	if err != nil {
 		return err
 	}

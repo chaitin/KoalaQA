@@ -205,6 +205,7 @@ func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req Discus
 		DiscUUID: disc.UUID,
 		UserID:   disc.UserID,
 		Type:     disc.Type,
+		RagID:    disc.RagID,
 	})
 
 	if webhookType, ok := d.webhookType[disc.Type]; ok {
@@ -256,6 +257,7 @@ func (d *Discussion) Update(ctx context.Context, user model.UserInfo, uuid strin
 		DiscUUID: uuid,
 		UserID:   disc.UserID,
 		Type:     disc.Type,
+		RagID:    disc.RagID,
 	})
 	return nil
 }
