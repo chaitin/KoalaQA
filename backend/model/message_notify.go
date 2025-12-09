@@ -17,6 +17,7 @@ const (
 	MsgNotifyTypeAssociateIssue
 	MsgNotifyTypeIssueInProgress
 	MsgNotifyTypeIssueResolved
+	MsgNotifyTypeUserPoint
 )
 
 type MessageNotify struct {
@@ -36,10 +37,15 @@ type CommentHeader struct {
 	ParentComment string `json:"parent_comment"`
 }
 
+type UserPointHeader struct {
+	UserPoint int `gorm:"column:user_point;default:0" json:"user_point"`
+}
+
 type MessageNotifyCommon struct {
 	DiscussHeader
 	CommentHeader
 	UserReviewHeader
+	UserPointHeader
 
 	Type     MsgNotifyType `gorm:"column:type" json:"type"`
 	FromID   uint          `gorm:"column:from_id" json:"from_id"`

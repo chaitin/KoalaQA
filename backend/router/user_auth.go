@@ -85,6 +85,30 @@ func (u *userAuth) Update(ctx *context.Context) {
 	ctx.Success(nil)
 }
 
+// ListPoint
+// @Summary list user point
+// @Tags user
+// @Produce json
+// @Param req query svc.UserListPointReq false "req params"
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]model.UserPointRecord}}
+// @Router /user/point [get]
+func (u *userAuth) ListPoint(ctx *context.Context) {
+	var req svc.UserListPointReq
+	err := ctx.ShouldBindQuery(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	res, err := u.in.SvcU.ListPoint(ctx, ctx.GetUser().UID, req)
+	if err != nil {
+		ctx.InternalError(err, "list user point failed")
+		return
+	}
+
+	ctx.Success(res)
+}
+
 type notifyType uint
 
 const (
@@ -471,6 +495,7 @@ func (u *userAuth) Route(h server.Handler) {
 	g.POST("/logout", u.Logout)
 	g.GET("", u.Detail)
 	g.PUT("", u.Update)
+	g.GET("/point", u.ListPoint)
 
 	{
 		notifyG := g.Group("/notify")

@@ -12,8 +12,8 @@ importers:
         specifier: ^2.8.1
         version: 2.8.1(ae7a76f0c5742f700f79ed38cb26ab7b)
       '@ctzhian/tiptap':
-        specifier: ^2.5.1
-        version: 2.5.1(f4aae164684081d428c3ba84ab0d0029)
+        specifier: ^2.6.1
+        version: 2.6.1(61117240b7b03cceec73a6c65d5613a4)
       '@ctzhian/ui':
         specifier: ^7.0.5
         version: 7.0.5(@emotion/react@11.14.0(@types/react@19.2.7)(react@19.2.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.7)(react@19.2.1))(@types/react@19.2.7)(react@19.2.1))(@mui/icons-material@7.3.6(@mui/material@7.3.6(@emotion/react@11.14.0(@types/react@19.2.7)(react@19.2.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.7)(react@19.2.1))(@types/react@19.2.7)(react@19.2.1))(@types/react@19.2.7)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(@types/react@19.2.7)(react@19.2.1))(@mui/material@7.3.6(@emotion/react@11.14.0(@types/react@19.2.7)(react@19.2.1))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.7)(react@19.2.1))(@types/react@19.2.7)(react@19.2.1))(@types/react@19.2.7)(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(@mui/utils@7.3.6(@types/react@19.2.7)(react@19.2.1))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -348,8 +348,8 @@ packages:
       react: '>=16.9.0'
       react-dom: '>=16.9.0'
 
-  '@ctzhian/tiptap@2.5.1':
-    resolution: {integrity: sha512-5iS43+LVtoDyqYxJmj1auefGRLL4s73ODwhDWWiCe4jhW+/h6VILBKypB4/8TbvEEPebdsForbhk6/enV5DqVg==}
+  '@ctzhian/tiptap@2.6.1':
+    resolution: {integrity: sha512-LCvRqqh5UKLmdVw73Gx2jRKOWHdyXsBZ3tifew4pBhEhmtcSfl4S6/vr+d9SI3bToXXfIevNguQJXQZweqXFHQ==}
     peerDependencies:
       '@emotion/react': ^11
       '@emotion/styled': ^11
@@ -4135,7 +4135,7 @@ snapshots:
       - react-native
       - typescript
 
-  '@ctzhian/tiptap@2.5.1(f4aae164684081d428c3ba84ab0d0029)':
+  '@ctzhian/tiptap@2.6.1(61117240b7b03cceec73a6c65d5613a4)':
     dependencies:
       '@emotion/react': 11.14.0(@types/react@19.2.7)(react@19.2.1)
       '@emotion/styled': 11.14.1(@emotion/react@11.14.0(@types/react@19.2.7)(react@19.2.1))(@types/react@19.2.7)(react@19.2.1)
@@ -4156,7 +4156,6 @@ snapshots:
       '@tiptap/extension-horizontal-rule': 3.12.0(@tiptap/core@3.12.0(@tiptap/pm@3.12.0))(@tiptap/pm@3.12.0)
       '@tiptap/extension-image': 3.12.0(@tiptap/core@3.12.0(@tiptap/pm@3.12.0))
       '@tiptap/extension-invisible-characters': 3.12.0(@tiptap/core@3.12.0(@tiptap/pm@3.12.0))(@tiptap/extension-text-style@3.12.0(@tiptap/core@3.12.0(@tiptap/pm@3.12.0)))(@tiptap/pm@3.12.0)
-      '@tiptap/extension-link': 3.12.0(@tiptap/core@3.12.0(@tiptap/pm@3.12.0))(@tiptap/pm@3.12.0)
       '@tiptap/extension-list': 3.12.0(@tiptap/core@3.12.0(@tiptap/pm@3.12.0))(@tiptap/pm@3.12.0)
       '@tiptap/extension-mathematics': 3.12.0(@tiptap/core@3.12.0(@tiptap/pm@3.12.0))(@tiptap/pm@3.12.0)(katex@0.16.25)
       '@tiptap/extension-mention': 3.12.0(@tiptap/core@3.12.0(@tiptap/pm@3.12.0))(@tiptap/pm@3.12.0)(@tiptap/suggestion@3.12.0(@tiptap/core@3.12.0(@tiptap/pm@3.12.0))(@tiptap/pm@3.12.0))

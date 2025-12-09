@@ -1,6 +1,6 @@
 'use client'
 
-import { ModelDiscussionListItem, ModelDiscussionState, ModelDiscussionType } from '@/api/types'
+import { ModelDiscussionListItem, ModelDiscussionType } from '@/api/types'
 import { DiscussionStatusChip, DiscussionTypeChip, MarkDown } from '@/components'
 import CommonAvatar from '@/components/CommonAvatar'
 import { CommonContext } from '@/components/commonProvider'

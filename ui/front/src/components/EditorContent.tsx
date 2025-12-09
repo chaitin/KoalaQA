@@ -3,16 +3,7 @@ import { useTiptap } from '@ctzhian/tiptap'
 import { Box, Skeleton } from '@mui/material'
 import { SxProps } from '@mui/material/styles'
 import React, { useEffect, useState } from 'react'
-import dynamic from 'next/dynamic'
-
-// 使用动态导入来避免 HMR 问题
-const Editor = dynamic(
-  () => import('@ctzhian/tiptap').then((mod) => ({ default: mod.Editor })),
-  {
-    ssr: false,
-    loading: () => null,
-  }
-)
+import { Editor } from '@ctzhian/tiptap'
 
 // 扩展 useTiptap 选项类型，添加 tableOfContentsOptions
 interface ExtendedTiptapOptions {
@@ -42,48 +33,14 @@ const ContentSkeleton: React.FC = () => {
 }
 
 const EditorContent: React.FC<MarkDownProps> = (props) => {
-  const { content = '', sx, truncateLength = 0, onTocUpdate } = props
+  const { content = '', sx, onTocUpdate } = props
   const [isMounted, setIsMounted] = useState(false)
 
-  const isHTML = /<[^>]+>/.test(content)
-
-  const stripHtml = (input: string) =>
-    input
-      .replace(/<[^>]*>/g, '')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-  const stripMarkdown = (input: string) =>
-    input
-      // images/links
-      .replace(/!\[[^\]]*\]\([^\)]*\)/g, '')
-      .replace(/\[[^\]]*\]\([^\)]*\)/g, '$1')
-      // headings/emphasis/code
-      .replace(/^#{1,6}\s+/gm, '')
-      .replace(/[*_]{1,3}([^*_]+)[*_]{1,3}/g, '$1')
-      .replace(/`{1,3}([^`]+)`{1,3}/g, '$1')
-      // blockquotes/lists
-      .replace(/^>\s?/gm, '')
-      .replace(/^\s*[-*+]\s+/gm, '')
-      .replace(/^\s*\d+\.\s+/gm, '')
-      // tables fences
-      .replace(/\|/g, ' ')
-      .replace(/^---+$/gm, '')
-
-  const needTruncate = truncateLength > 0
-  const plainText = isHTML ? stripHtml(content) : stripMarkdown(content)
-  const truncatedText = needTruncate
-    ? (plainText || '').slice(0, truncateLength).trim() + ((plainText || '').length > truncateLength ? '…' : '')
-    : content
-
-  const displayContent = truncatedText
   const editorRef = useTiptap({
     content: content || '',
     editable: false,
     contentType: 'markdown',
     immediatelyRender: false,
-    // 大纲更新回调：透传给父级，同时广播全局事件供兄弟侧栏使用
     tableOfContentsOptions: {
       scrollParent: () => document.getElementById('main-content'),
     },
@@ -107,18 +64,8 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
   } as Parameters<typeof useTiptap>[0] & ExtendedTiptapOptions)
 
   useEffect(() => {
-    if (editorRef.editor && isMounted) {
-      editorRef.editor.commands.setContent(content || '', {
-        contentType: 'markdown',
-      } as any)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [content, isMounted])
-
-  useEffect(() => {
     setIsMounted(true)
   }, [])
-
 
   // 在服务端渲染时返回内容预览
   if (!isMounted) {
@@ -131,7 +78,7 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
     )
   }
 
-  if (!displayContent || !content) return null
+  if (!content) return null
 
   return (
     <Box

@@ -26,6 +26,7 @@ type User struct {
 	jwt            *jwt.Generator
 	repoUser       *repo.User
 	repoDisc       *repo.Discussion
+	repoUserPoint  *repo.UserPointRecord
 	repoComment    *repo.Comment
 	authMgmt       *third_auth.Manager
 	svcAuth        *Auth
@@ -255,7 +256,7 @@ func (u *User) UpdateWebNotify(ctx context.Context, id uint, req UpdateWebNotify
 
 type UserUpdateInfoReq struct {
 	Name        string                `form:"name"`
-	Intro       string                `form:"intro"`
+	Intro       *string               `form:"intro"`
 	Email       string                `form:"email" binding:"omitempty,email"`
 	OldPassword string                `form:"old_password"`
 	Password    string                `form:"password"`
@@ -292,7 +293,7 @@ func (u *User) UpdateInfo(ctx context.Context, id uint, req UserUpdateInfoReq) e
 		"updated_at": time.Now(),
 	}
 
-	if user.Intro != req.Intro {
+	if req.Intro != nil && user.Intro != *req.Intro {
 		updateM["intro"] = req.Intro
 	}
 
@@ -366,7 +367,7 @@ func (u *User) UpdateInfo(ctx context.Context, id uint, req UserUpdateInfoReq) e
 		}
 	}
 
-	if user.Intro == "" && req.Intro != "" {
+	if user.Intro == "" && req.Intro != nil && *req.Intro != "" {
 		err = u.pub.Publish(ctx, topic.TopicUserPoint, topic.MsgUserPoint{
 			UserPointRecordInfo: model.UserPointRecordInfo{
 				UserID: user.ID,
@@ -712,8 +713,31 @@ func (u *User) Statistics(ctx context.Context, curUserID uint, userID uint) (*Us
 	return res, nil
 }
 
+type UserListPointReq struct {
+	*model.Pagination
+}
+
+func (u *User) ListPoint(ctx context.Context, uid uint, req UserListPointReq) (*model.ListRes[model.UserPointRecord], error) {
+	var res model.ListRes[model.UserPointRecord]
+	err := u.repoUserPoint.List(ctx, &res.Items,
+		repo.QueryWithEqual("user_id", uid),
+		repo.QueryWithOrderBy("created_at DESC"),
+		repo.QueryWithPagination(req.Pagination),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	err = u.repoUserPoint.Count(ctx, &res.Total, repo.QueryWithEqual("user_id", uid))
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
 func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth,
-	authMgmt *third_auth.Manager, oc oss.Client, org *repo.Org,
+	authMgmt *third_auth.Manager, oc oss.Client, org *repo.Org, userPoint *repo.UserPointRecord,
 	disc *repo.Discussion, comm *repo.Comment, review *repo.UserReview, pub mq.Publisher) *User {
 	return &User{
 		jwt:            genrator,
@@ -726,6 +750,7 @@ func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth,
 		repoComment:    comm,
 		repoUserReview: review,
 		pub:            pub,
+		repoUserPoint:  userPoint,
 		logger:         glog.Module("svc", "user"),
 	}
 }

@@ -22,7 +22,7 @@
  * ---------------------------------------------------------------
  */
 
-import alert from "@/components/alert";
+import Alert from "@/components/alert";
 import { clearCache, generateCacheKey } from "@/lib/api-cache";
 import { clearAllAuthCookies } from "@/utils/cookie";
 import type {
@@ -252,14 +252,14 @@ export class HttpClient<SecurityDataType = unknown> {
               });
           }
 
-          if (alert.error && shouldShowError && !isCsrfError) {
-            alert.error(this.translateErrorMessage(res.err));
+          if (typeof window !== 'undefined' && Alert?.error && shouldShowError && !isCsrfError) {
+            Alert.error(this.translateErrorMessage(res.err));
           }
           return Promise.reject(res);
         }
 
-        if (alert.error && shouldShowError) {
-          alert.error(this.translateErrorMessage(response.statusText));
+        if (typeof window !== 'undefined' && Alert?.error && shouldShowError) {
+          Alert.error(this.translateErrorMessage(response.statusText));
         }
         return Promise.reject(response);
       },
@@ -353,8 +353,8 @@ export class HttpClient<SecurityDataType = unknown> {
         // 处理502 Bad Gateway错误 - 网关或代理服务器错误
         if (error.response?.status === 502) {
           const requestUrl = error.config?.url || "";
-          if (alert.error) {
-            alert.error("服务暂时不可用，请稍后再试");
+          if (typeof window !== 'undefined' && Alert?.error) {
+            Alert.error("服务暂时不可用，请稍后再试");
           }
           return Promise.reject(new Error("502 Bad Gateway: 服务暂时不可用"));
         }
@@ -364,47 +364,58 @@ export class HttpClient<SecurityDataType = unknown> {
         const shouldShowError = requestUrl !== "/user" && !isCsrfError;
         // 如果是CSRF token错误且已经重试过，或者不是CSRF错误，才显示错误提示
         if (
-          alert.error &&
+          typeof window !== 'undefined' &&
+          Alert?.error &&
           shouldShowError &&
           (!isCsrfError || error.config?.__isRetry)
         ) {
-          let msg =
-            error?.response?.data?.err ??
-            error?.response?.data?.data ??
-            error?.message;
-
-          // 如果是网络错误（没有 response），构造更详细的错误信息
-          if (!error?.response && error?.message === "Network Error") {
-            const errorDetails: string[] = [];
-            errorDetails.push(`网络错误: ${error.message}`);
+          let msg: string;
+          
+          // 如果有响应（服务器返回了错误）
+          if (error?.response?.data) {
+            const responseData = error.response.data;
             
-            if (error?.code) {
-              errorDetails.push(`错误码: ${error.code}`);
+            // 优先显示 err 字段
+            if (responseData.err) {
+              msg = responseData.err;
+            } else {
+              // 如果没有 err，则展示完整的后端返回错误信息
+              try {
+                // 尝试序列化完整的响应数据
+                const fullErrorStr = JSON.stringify(responseData, null, 2);
+                // 如果太长，截断一部分
+                if (fullErrorStr.length > 500) {
+                  msg = fullErrorStr.substring(0, 500) + "...";
+                } else {
+                  msg = fullErrorStr;
+                }
+              } catch (e) {
+                // 如果无法序列化，尝试显示其他字段
+                msg = responseData.data ?? responseData.message ?? responseData.error ?? String(responseData);
+              }
             }
-            
-            if (error?.config?.url) {
-              errorDetails.push(`请求地址: ${error.config.url}`);
-            }
-            
-            if (error?.config?.method) {
-              errorDetails.push(`请求方法: ${error.config.method.toUpperCase()}`);
-            }
-
-            // 根据错误码提供更友好的提示
-            if (error?.code === "ERR_NETWORK" || error?.code === "ERR_INTERNET_DISCONNECTED") {
-              errorDetails.push("请检查网络连接");
-            } else if (error?.code === "ERR_TIMEDOUT") {
-              errorDetails.push("请求超时，请稍后重试");
-            } else if (error?.code === "ERR_CONNECTION_REFUSED") {
-              errorDetails.push("服务器拒绝连接");
-            } else if (error?.code === "ERR_NAME_NOT_RESOLVED") {
-              errorDetails.push("无法解析服务器地址");
-            }
-
-            msg = errorDetails.join(" | ");
+          } else {
+            // 没有响应的情况（网络错误等）
+            msg = error?.message ?? "未知错误";
           }
-
-          alert.error(this.translateErrorMessage(msg));
+          
+          // 只在客户端环境中显示错误提示
+          if (typeof window !== 'undefined') {
+            const errorMsg = this.translateErrorMessage(msg);
+            if (Alert?.error) {
+              try {
+                Alert.error(errorMsg);
+              } catch (e) {
+                // 如果 Alert.error 调用失败，至少输出到控制台
+                console.error('Failed to show alert:', e);
+                console.error('Error message:', errorMsg);
+              }
+            } else {
+              // 如果 Alert.error 不存在，至少输出到控制台
+              console.error('Alert.error is not available. Error message:', errorMsg);
+              console.error('Alert object:', Alert);
+            }
+          }
         }
         return Promise.reject(
           error.response?.data?.err ?? error.response?.data ?? error,
@@ -467,7 +478,7 @@ export class HttpClient<SecurityDataType = unknown> {
       headers: {
         ...((method &&
           this.instance.defaults.headers[
-          method.toLowerCase() as keyof HeadersDefaults
+            method.toLowerCase() as keyof HeadersDefaults
           ]) ||
           {}),
         ...(params1.headers || {}),
@@ -514,7 +525,7 @@ export class HttpClient<SecurityDataType = unknown> {
     // 生成缓存键和请求键
     const cacheKey = generateCacheKey(path, { query, body, ...params });
     const method = params.method?.toUpperCase() || "GET";
-    
+
     // 对于 /user 请求，需要在请求key中包含用户身份标识，确保不同用户的请求不会被去重
     let requestKey = `${method}:${cacheKey}`;
     if (path === "/user" && method === "GET") {
@@ -523,7 +534,9 @@ export class HttpClient<SecurityDataType = unknown> {
         // 在客户端环境中，从cookie中读取auth_token
         if (typeof window !== "undefined") {
           const cookies = document.cookie.split(";");
-          const authCookie = cookies.find((c) => c.trim().startsWith("auth_token="));
+          const authCookie = cookies.find((c) =>
+            c.trim().startsWith("auth_token="),
+          );
           if (authCookie) {
             authToken = authCookie.split("=")[1]?.trim() || "";
           }
@@ -535,9 +548,12 @@ export class HttpClient<SecurityDataType = unknown> {
         }
       } catch (error) {
         // 如果无法读取cookie，忽略错误，使用原始key
-        console.warn("Failed to read auth_token for request deduplication:", error);
+        console.warn(
+          "Failed to read auth_token for request deduplication:",
+          error,
+        );
       }
-      
+
       // 如果获取到了auth_token，将其hash值添加到请求key中
       // 使用简单的hash函数（前8个字符）来区分不同用户
       if (authToken) {

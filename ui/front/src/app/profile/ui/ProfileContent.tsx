@@ -28,6 +28,7 @@ import ProfileHeroCard from './ProfileHeroCard'
 import UserTrendList from './UserTrendList'
 import QuickReplyList from './QuickReplyList'
 import FollowingIssuesList from './FollowingIssuesList'
+import UserPointList from './UserPointList'
 import { roleConfig } from '@/constant'
 import { isAdminRole } from '@/lib/utils'
 import { Ellipsis } from '@ctzhian/ui'
@@ -81,14 +82,33 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
     () => (user?.role ?? initialUser?.role) === ModelUserRole.UserRoleGuest,
     [initialUser?.role, user?.role],
   )
+  // 判断是否是当前用户（只能查看自己的积分明细）
+  const isCurrentUser = useMemo(
+    () => user?.uid === initialUser?.uid,
+    [user?.uid, initialUser?.uid],
+  )
+  const isAdmin = isAdminRole(user.role || ModelUserRole.UserRoleGuest)
+  // 计算积分明细 tab 的索引
   const metrics = useMemo(
     () => [
       { label: '问答', value: statistics?.qa_count ?? 0 },
       { label: '文章', value: statistics?.blog_count ?? 0 },
       { label: '回答', value: statistics?.answer_count ?? 0 },
-      { label: '积分', value: statistics?.point ?? 0 },
+      {
+        label: '积分',
+        value: statistics?.point ?? 0,
+        onClick: isCurrentUser
+          ? () => {
+              const params = new URLSearchParams(searchParams?.toString() || '')
+              params.set('tab', '5')
+              const queryString = params.toString()
+              const newUrl = queryString ? `${pathname}?${queryString}` : pathname
+              router.replace(newUrl)
+            }
+          : undefined,
+      },
     ],
-    [statistics],
+    [statistics, isCurrentUser, pathname, router, searchParams],
   )
 
   useEffect(() => {
@@ -572,6 +592,11 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
           <TabPanel value={tabValue} index={isAdminRole(user.role || ModelUserRole.UserRoleGuest) ? 4 : 3}>
             <NotificationCenter />
           </TabPanel>
+          {isCurrentUser && (
+            <TabPanel value={tabValue} index={5}>
+              <UserPointList userId={user?.uid || initialUser?.uid || 0} />
+            </TabPanel>
+          )}
         </Box>
       </Card>
 

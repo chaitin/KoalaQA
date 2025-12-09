@@ -39,8 +39,6 @@ github.com/caarlos0/env/v11 v11.3.1/go.mod h1:qupehSf/Y0TUTsxKywqRt/vJjN5nz6vaui
 github.com/certifi/gocertifi v0.0.0-20190105021004-abcd57078448/go.mod h1:GJKEexRPVJrBSOjoqN5VNOIKJ5Q3RViH6eu3puDRwx4=
 github.com/chaitin/ModelKit/v2 v2.7.2 h1:wNb0p2O31QAczzCulkWBEXWHFr7GiKu5NKYCzodVL7Y=
 github.com/chaitin/ModelKit/v2 v2.7.2/go.mod h1:O5jsT8XqM19FWftIjhuLYsqNNPuvHjjX9ADB3flZn7w=
-github.com/chaitin/raglite-go-sdk v0.0.0-20251124032352-83455d50ec15 h1:U9MPiaQbcR7L7pYyCYXnMBYTBixD2Ihw3IRODF997KA=
-github.com/chaitin/raglite-go-sdk v0.0.0-20251124032352-83455d50ec15/go.mod h1:1klR7WqfFijmd4msUvhRHoGstteUfBsRuRdX4CIJ/so=
 github.com/chaitin/raglite-go-sdk v0.1.0 h1:CtMgwdkpL0oLajUk0mhrrI0sNfwNq5X9mAHMDPtV6EY=
 github.com/chaitin/raglite-go-sdk v0.1.0/go.mod h1:1klR7WqfFijmd4msUvhRHoGstteUfBsRuRdX4CIJ/so=
 github.com/cloudwego/base64x v0.1.6 h1:t11wG9AECkCDk5fMSoxmufanudBtJ+/HemLstXDLI2M=
@@ -267,6 +265,8 @@ github.com/rogpeppe/go-internal v1.14.1/go.mod h1:MaRKkUm5W0goXpeCfT7UZI6fk/L7L7
 github.com/rollbar/rollbar-go v1.0.2/go.mod h1:AcFs5f0I+c71bpHlXNNDbOWJiKwjFDtISeXco0L5PKQ=
 github.com/rs/xid v1.6.0 h1:fV591PaemRlL6JfRxGDEPl69wICngIQ3shQtzfy2gxU=
 github.com/rs/xid v1.6.0/go.mod h1:7XoLgs4eV+QndskICGsho+ADou8ySMSjJKDIan90Nz0=
+github.com/sabloger/sitemap-generator v1.3.0 h1:R8tGnxgxXvZOObL310mgv1ahSiDuaPQmYvlAv6sK4ZM=
+github.com/sabloger/sitemap-generator v1.3.0/go.mod h1:/Qk4vakEIlNrkhGhbLOCDTxs2yseQdQyuI9yJsp1Vs0=
 github.com/sebdah/goldie/v2 v2.5.5 h1:rx1mwF95RxZ3/83sdS4Yp7t2C5TCokvWP4TBRbAyEWY=
 github.com/sebdah/goldie/v2 v2.5.5/go.mod h1:oZ9fp0+se1eapSRjfYbsV/0Hqhbuu3bJVvKI/NNtssI=
 github.com/sergi/go-diff v1.3.1 h1:xkr+Oxo4BOQKmkn/B9eMK0g5Kg/983T9DqqPHwYqD+8=
