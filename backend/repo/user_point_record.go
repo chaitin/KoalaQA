@@ -14,12 +14,16 @@ type UserPointRecord struct {
 	base[*model.UserPointRecord]
 }
 
-func (u *UserPointRecord) updateUserPoint(tx *gorm.DB, record *model.UserPointRecord) error {
+func (u *UserPointRecord) updateUserPoint(tx *gorm.DB, record *model.UserPointRecord, todayAddPoint, addPoint *int) error {
 	if record.Point > 0 && record.RevokeID == 0 {
 		var todayPoints int
 		err := tx.Model(&model.UserPointRecord{}).Select("COALESCE(SUM(point),0)").Where("user_id = ? AND point > 0 AND revoke_id = 0 AND created_at >= ?", record.UserID, util.DayTrunc(time.Now())).Scan(&todayPoints).Error
 		if err != nil {
 			return err
+		}
+
+		if todayAddPoint != nil {
+			*todayAddPoint = todayPoints
 		}
 
 		if 100-todayPoints <= 0 {
@@ -28,28 +32,31 @@ func (u *UserPointRecord) updateUserPoint(tx *gorm.DB, record *model.UserPointRe
 		}
 
 		record.Point = min(record.Point, 100-todayPoints)
+
+		if addPoint != nil {
+			*addPoint = record.Point
+		}
+
+	} else if record.Point < 0 {
+		var user model.User
+		err := tx.Model(&model.User{}).Where("id = ?", record.UserID).First(&user).Error
+		if err != nil {
+			return err
+		}
+
+		record.Point = max(1, int(user.Point)+record.Point) - int(user.Point)
 	}
-
-	var user model.User
-	err := tx.Model(&model.User{}).Where("id = ?", record.UserID).First(&user).Error
-	if err != nil {
-		return err
-	}
-
-	point := max(1, int(user.Point)+record.Point)
-
-	record.Point = point - int(user.Point)
 
 	if record.Point == 0 && record.RevokeID == 0 {
 		return nil
 	}
 
-	err = tx.Create(record).Error
+	err := tx.Create(record).Error
 	if err != nil {
 		return err
 	}
 
-	err = tx.Model(&model.User{}).Where("id = ?", record.UserID).UpdateColumn("point", point).Error
+	err = tx.Model(&model.User{}).Where("id = ?", record.UserID).UpdateColumn("point", gorm.Expr("point+?", record.Point)).Error
 	if err != nil {
 		return err
 	}
@@ -81,7 +88,7 @@ func (u *UserPointRecord) skipCreate(ctx context.Context, record model.UserPoint
 	return record.FromID == record.UserID, nil
 }
 
-func (u *UserPointRecord) CreateRecord(ctx context.Context, record model.UserPointRecordInfo, revoke bool) error {
+func (u *UserPointRecord) CreateRecord(ctx context.Context, record model.UserPointRecordInfo, revoke bool, todayAddPoint, addPoint *int) error {
 	return u.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if revoke {
 			var lastRecord model.UserPointRecord
@@ -98,7 +105,7 @@ func (u *UserPointRecord) CreateRecord(ctx context.Context, record model.UserPoi
 				UserPointRecordInfo: record,
 				Point:               -lastRecord.Point,
 				RevokeID:            lastRecord.ID,
-			})
+			}, todayAddPoint, addPoint)
 		}
 
 		skip, err := u.skipCreate(ctx, record)
@@ -113,7 +120,7 @@ func (u *UserPointRecord) CreateRecord(ctx context.Context, record model.UserPoi
 			UserPointRecordInfo: record,
 			Point:               model.UserPointTypePointM[record.Type],
 			RevokeID:            0,
-		})
+		}, todayAddPoint, addPoint)
 	})
 }
 

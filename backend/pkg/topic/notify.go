@@ -7,6 +7,7 @@ var TopicMessageNotify = newTopic("koala.persistence.message.notify", true)
 type MsgMessageNotify struct {
 	model.DiscussHeader
 	model.UserReviewHeader
+	model.UserPointHeader
 
 	ParentID  uint                `json:"parent_id"`
 	CommentID uint                `json:"comment_id"`

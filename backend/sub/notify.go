@@ -84,17 +84,19 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 		return nil
 	}
 
-	if data.FromID == data.ToID || data.FromID == 0 ||
+	if data.FromID == data.ToID || (data.FromID == 0 && data.Type != model.MsgNotifyTypeUserPoint) ||
 		(data.ToID == botUserID && !slices.Contains([]model.MsgNotifyType{model.MsgNotifyTypeDislikeComment, model.MsgNotifyTypeBotUnknown}, data.Type)) {
 		logger.With("msg", data).With("bot_user_id", botUserID).Debug("ignore message notify")
 		return nil
 	}
 
 	var fromUser model.User
-	err = mn.user.GetByID(ctx, &fromUser, data.FromID)
-	if err != nil {
-		logger.WithErr(err).Warn("get from user failed")
-		return nil
+	if data.FromID > 0 {
+		err = mn.user.GetByID(ctx, &fromUser, data.FromID)
+		if err != nil {
+			logger.WithErr(err).Warn("get from user failed")
+			return nil
+		}
 	}
 
 	var toUser model.User
@@ -125,13 +127,14 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 		CommentHeader: model.CommentHeader{
 			ParentComment: util.TruncateString(parentComment, 50),
 		},
-		Type:     data.Type,
-		FromID:   data.FromID,
-		FromName: fromUser.Name,
-		FromBot:  data.FromID == botUserID,
-		ToID:     data.ToID,
-		ToName:   toUser.Name,
-		ToBot:    data.ToID == botUserID,
+		UserPointHeader: data.UserPointHeader,
+		Type:            data.Type,
+		FromID:          data.FromID,
+		FromName:        fromUser.Name,
+		FromBot:         data.FromID == botUserID,
+		ToID:            data.ToID,
+		ToName:          toUser.Name,
+		ToBot:           data.ToID == botUserID,
 	}
 
 	if data.ToID == botUserID {
@@ -157,6 +160,9 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 				logger.WithErr(err).Warn("send webhook message failed")
 			}
 
+			return nil
+		case model.MsgNotifyTypeUserPoint:
+			// 用户获得积分，机器人不需要通知到管理员
 			return nil
 		}
 

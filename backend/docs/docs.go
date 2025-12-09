@@ -2828,7 +2828,8 @@ const docTemplate = `{
                                 4,
                                 5,
                                 6,
-                                7
+                                7,
+                                8
                             ],
                             "type": "integer"
                         },
@@ -5735,6 +5736,66 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/point": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "list user point",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/model.UserPointRecord"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/user/quick_reply": {
             "get": {
                 "produces": [
@@ -7070,6 +7131,9 @@ const docTemplate = `{
                 "user_id": {
                     "description": "通知到谁，除了发给机器人的信息，user_id 与 to_id 相同",
                     "type": "integer"
+                },
+                "user_point": {
+                    "type": "integer"
                 }
             }
         },
@@ -7089,7 +7153,8 @@ const docTemplate = `{
                 10,
                 11,
                 12,
-                13
+                13,
+                14
             ],
             "x-enum-varnames": [
                 "MsgNotifyTypeUnknown",
@@ -7105,7 +7170,8 @@ const docTemplate = `{
                 "MsgNotifyTypeCloseDiscussion",
                 "MsgNotifyTypeAssociateIssue",
                 "MsgNotifyTypeIssueInProgress",
-                "MsgNotifyTypeIssueResolved"
+                "MsgNotifyTypeIssueResolved",
+                "MsgNotifyTypeUserPoint"
             ]
         },
         "model.PlatformOpt": {
@@ -7214,7 +7280,8 @@ const docTemplate = `{
                 4,
                 5,
                 6,
-                7
+                7,
+                8
             ],
             "x-enum-varnames": [
                 "StatTypeVisit",
@@ -7223,7 +7290,8 @@ const docTemplate = `{
                 "StatTypeBotAccept",
                 "StatTypeDiscussionQA",
                 "StatTypeDiscussionBlog",
-                "StatTypeDiscussionIssue"
+                "StatTypeDiscussionIssue",
+                "StatTypeBotUnknownComment"
             ]
         },
         "model.SystemBrand": {
@@ -7386,6 +7454,89 @@ const docTemplate = `{
                     "type": "boolean"
                 }
             }
+        },
+        "model.UserPointRecord": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "integer"
+                },
+                "foreign": {
+                    "type": "integer"
+                },
+                "from_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "point": {
+                    "type": "integer"
+                },
+                "revoke_id": {
+                    "type": "integer"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.UserPointType"
+                },
+                "updated_at": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.UserPointType": {
+            "type": "integer",
+            "enum": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12
+            ],
+            "x-enum-comments": {
+                "UserPointTypeAcceptAnswer": "采纳别人回答",
+                "UserPointTypeAnswerAccepted": "回答被采纳",
+                "UserPointTypeAnswerDisliked": "回答被点踩",
+                "UserPointTypeDislikeAnswer": "点踩别人回答"
+            },
+            "x-enum-descriptions": [
+                "",
+                "回答被采纳",
+                "",
+                "",
+                "",
+                "采纳别人回答",
+                "",
+                "回答被点踩",
+                "点踩别人回答",
+                "",
+                "",
+                ""
+            ],
+            "x-enum-varnames": [
+                "UserPointTypeCreateBlog",
+                "UserPointTypeAnswerAccepted",
+                "UserPointTypeLikeBlog",
+                "UserPointTypeAnswerLiked",
+                "UserPointTypeAssociateIssue",
+                "UserPointTypeAcceptAnswer",
+                "UserPointTypeAnswerQA",
+                "UserPointTypeAnswerDisliked",
+                "UserPointTypeDislikeAnswer",
+                "UserPointTypeUserRole",
+                "UserPointTypeUserAvatar",
+                "UserPointTypeUserIntro"
+            ]
         },
         "model.UserQuickReply": {
             "type": "object",
