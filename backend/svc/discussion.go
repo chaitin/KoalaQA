@@ -316,7 +316,8 @@ func (d *Discussion) ListSimilarity(ctx context.Context, discUUID string) (*mode
 	}
 
 	for _, searchDisc := range discs {
-		if searchDisc.ID == disc.ID {
+		// 过滤关联 issue 或者帖子本身
+		if searchDisc.ID == disc.ID || searchDisc.ID == disc.AssociateID {
 			continue
 		}
 
