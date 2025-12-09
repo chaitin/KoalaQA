@@ -1295,7 +1295,7 @@ const Dashboard: React.FC = () => {
                                             boxShadow: theme.shadows[3],
                                           }}
                                         >
-                                          <Typography variant="body2" sx={{ mb: 1, fontWeight: 600 }}>
+                                          <Typography variant="body2" sx={{ mb: 1, fontWeight: 400 }}>
                                             {payload[0].payload.name}
                                           </Typography>
                                           <Stack spacing={0.5}>

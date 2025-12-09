@@ -108,7 +108,9 @@ export default function ProfileHeroCard({
                   cursor: item.onClick ? 'pointer' : 'default',
                   '&:hover': item.onClick
                     ? {
-                        opacity: 0.8,
+                        '& h6': {
+                          color: 'primary.main',
+                        }
                       }
                     : {},
                 }}
