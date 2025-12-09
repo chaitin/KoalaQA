@@ -90,6 +90,10 @@ func (p *Timestamp) Scan(value interface{}) error {
 	}
 }
 
+func (p Timestamp) Time() time.Time {
+	return time.Unix(int64(p), 0)
+}
+
 type Count[T any] struct {
 	Key   T     `json:"key"`
 	Count int64 `json:"count"`
