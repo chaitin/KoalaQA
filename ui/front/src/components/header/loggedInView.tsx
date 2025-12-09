@@ -41,6 +41,7 @@ enum MsgNotifyType {
   MsgNotifyTypeAssociateIssue = 11, // 管理员将你的帖子转为issue
   MsgNotifyTypeIssueInProgress = 12, // 管理员将你的问题标记为进行中
   MsgNotifyTypeIssueResolved = 13, // 管理员将你的问题标记为已解决
+  MsgNotifyTypeUserPoint = 14, // 积分变动
 }
 
 enum UserReviewType {
@@ -187,6 +188,11 @@ const getNotificationText = (info: MessageNotifyInfo, userRole?: ModelUserRole):
   if (info.type === MsgNotifyType.MsgNotifyTypeUserReview) {
     return getUserReviewNotificationText(info, userRole)
   }
+  if (info.type === MsgNotifyType.MsgNotifyTypeUserPoint) {
+    // 积分变动通知：恭喜你！今日已获得 X 积分
+    const point = info.user_point || 0
+    return `恭喜你！今日已获得 ${point} 积分`
+  }
   switch (info.type) {
     case MsgNotifyType.MsgNotifyTypeReplyDiscuss:
       return config.replyAction
@@ -257,6 +263,7 @@ type MessageNotifyInfo = {
   review_id?: number
   review_status?: number
   review_type?: number
+  user_point?: number
 }
 
 // 导出内容类型配置管理器，供其他模块使用
@@ -295,6 +302,7 @@ export const getNotificationTextForExport = (
     review_id: (info as any).review_id,
     review_status: (info as any).review_status,
     review_type: (info as any).review_type,
+    user_point: (info as any).user_point,
   }
   return getNotificationText(adaptedInfo)
 }
@@ -375,6 +383,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
 
             const browserNotification = showNotification(title, options)
             const isUserReview = newNotification.type === MsgNotifyType.MsgNotifyTypeUserReview
+            const isUserPoint = newNotification.type === MsgNotifyType.MsgNotifyTypeUserPoint
 
             // 点击通知时跳转到对应页面
             if (browserNotification) {
@@ -394,6 +403,9 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
                 if (isUserReview) {
                   // 对于用户审核通知，跳转到个人中心的通知页面
                   router.push('/profile?tab=2')
+                } else if (isUserPoint) {
+                  // 对于积分变动通知，跳转到个人中心的积分页面
+                  router.push('/profile?tab=3')
                 } else {
                   const forum = forums.find((f) => f.id === newNotification.forum_id)
                   const routePath = forum?.route_name
@@ -462,6 +474,12 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
       if (notification.type === MsgNotifyType.MsgNotifyTypeUserReview) {
         // 对于用户审核通知（如管理员拒绝激活申请），跳转到个人中心的通知页面
         router.push('/profile?tab=2')
+        return
+      }
+
+      if (notification.type === MsgNotifyType.MsgNotifyTypeUserPoint) {
+        // 对于积分变动通知，跳转到个人中心的积分页面
+        router.push('/profile?tab=5')
         return
       }
 
@@ -565,6 +583,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
               notifications.map((notification, index) => {
                 const notificationText = getNotificationText(notification, user.role)
                 const isUserReview = notification.type === MsgNotifyType.MsgNotifyTypeUserReview
+                const isUserPoint = notification.type === MsgNotifyType.MsgNotifyTypeUserPoint
                 return (
                 <Stack
                   key={index}
@@ -585,7 +604,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
                     }}
                   >
                     <Stack direction='row' spacing={1} alignItems='center' sx={{ mb: 0.5 }}>
-                      {isUserReview ? (
+                      {isUserReview || isUserPoint ? (
                         <Typography
                           variant='body2'
                           sx={{
@@ -622,7 +641,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
                         </>
                       )}
                     </Stack>
-                    {!isUserReview &&
+                    {!isUserReview && !isUserPoint &&
                       (notification.type === MsgNotifyType.MsgNotifyTypeReplyComment ? (
                         <MarkDown
                           content={notification.parent_comment}

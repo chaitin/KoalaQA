@@ -136,6 +136,7 @@ export default function NotificationCenter() {
 
   const handleNotificationClick = async (notification: ModelMessageNotify) => {
     const isUserReview = notification.type === ModelMsgNotifyType.MsgNotifyTypeUserReview
+    const isUserPoint = notification.type === ModelMsgNotifyType.MsgNotifyTypeUserPoint
     // 标记为已读
     if (notification.id) {
       try {
@@ -147,6 +148,12 @@ export default function NotificationCenter() {
     }
 
     if (isUserReview) {
+      return
+    }
+
+    if (isUserPoint) {
+      // 对于积分变动通知，跳转到个人中心的积分页面
+      routerWithRouteName.push('/profile?tab=5')
       return
     }
 
@@ -332,7 +339,8 @@ export default function NotificationCenter() {
 
                   {/* 通知内容 */}
                   <Box sx={{ flex: 1, minWidth: 0, textWrap: 'nowrap' }}>
-                    {notification.type === ModelMsgNotifyType.MsgNotifyTypeUserReview ? (
+                    {notification.type === ModelMsgNotifyType.MsgNotifyTypeUserReview ||
+                    notification.type === ModelMsgNotifyType.MsgNotifyTypeUserPoint ? (
                       <Typography
                         variant='body2'
                         sx={{

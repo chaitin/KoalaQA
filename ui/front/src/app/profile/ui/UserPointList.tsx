@@ -13,26 +13,26 @@ interface UserPointListProps {
 
 const PAGE_SIZE = 10
 
-const getPointTypeName = (type?: ModelUserPointType): string => {
+const getPointTypeName = (type?: ModelUserPointType, revoked?: boolean): string => {
   switch (type) {
     case ModelUserPointType.UserPointTypeCreateBlog:
-      return '发表文章'
+      return revoked ? '取消发表文章' : '发表文章'
     case ModelUserPointType.UserPointTypeAnswerAccepted:
-      return '回答被采纳'
+      return revoked ? '回答被取消采纳' : '回答被采纳'
     case ModelUserPointType.UserPointTypeLikeBlog:
-      return '文章收获点赞'
+      return revoked ? '文章被取消点赞' : '文章收获点赞'
     case ModelUserPointType.UserPointTypeAnswerLiked:
-      return '回答收获点赞'
+      return revoked ? '回答被取消点赞' : '回答收获点赞'
     case ModelUserPointType.UserPointTypeAssociateIssue:
-      return '问题被转 issue'
+      return revoked ? '问题被取消转 issue' : '问题被转 issue'
     case ModelUserPointType.UserPointTypeAcceptAnswer:
-      return '提问并采纳回答'
+      return revoked ? '取消采纳已有回答' : '提问并采纳回答'
     case ModelUserPointType.UserPointTypeAnswerQA:
-      return '回答问题'
+      return revoked ? '删除已经回答的问题' : '回答问题'
     case ModelUserPointType.UserPointTypeDislikeAnswer:
-      return '点踩他人回答'
+      return revoked ? '取消点踩他人回答' : '点踩他人回答'
     case ModelUserPointType.UserPointTypeAnswerDisliked:
-      return '回答被点踩'
+      return revoked ? '回答点踩被取消' : '回答被点踩'
     case ModelUserPointType.UserPointTypeUserRole:
     case ModelUserPointType.UserPointTypeUserAvatar:
     case ModelUserPointType.UserPointTypeUserIntro:
@@ -50,7 +50,13 @@ const EmptyState = () => (
     }}
   >
     <Box sx={{ mb: 3, display: 'flex', justifyContent: 'center' }}>
-      <Image src='/empty.png' alt='暂无积分明细' width={250} height={137} style={{ maxWidth: '100%', height: 'auto' }} />
+      <Image
+        src='/empty.png'
+        alt='暂无积分明细'
+        width={250}
+        height={137}
+        style={{ maxWidth: '100%', height: 'auto' }}
+      />
     </Box>
     <Typography variant='h6' sx={{ mb: 1, fontWeight: 600 }}>
       暂无积分明细
@@ -166,7 +172,7 @@ export default function UserPointList({ userId }: UserPointListProps) {
         )}
 
         {points.map((point) => {
-          const pointTypeName = getPointTypeName(point.type)
+          const pointTypeName = getPointTypeName(point.type, !!point.revoke_id)
           const pointValue = point.point || 0
 
           return (
@@ -241,4 +247,3 @@ export default function UserPointList({ userId }: UserPointListProps) {
     </Box>
   )
 }
-
