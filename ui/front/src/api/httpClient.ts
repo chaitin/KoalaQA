@@ -22,7 +22,7 @@
  * ---------------------------------------------------------------
  */
 
-import alert from "@/components/alert";
+import Alert from "@/components/alert";
 import { clearCache, generateCacheKey } from "@/lib/api-cache";
 import { clearAllAuthCookies } from "@/utils/cookie";
 import type {
@@ -252,14 +252,14 @@ export class HttpClient<SecurityDataType = unknown> {
               });
           }
 
-          if (alert.error && shouldShowError && !isCsrfError) {
-            alert.error(this.translateErrorMessage(res.err));
+          if (typeof window !== 'undefined' && Alert?.error && shouldShowError && !isCsrfError) {
+            Alert.error(this.translateErrorMessage(res.err));
           }
           return Promise.reject(res);
         }
 
-        if (alert.error && shouldShowError) {
-          alert.error(this.translateErrorMessage(response.statusText));
+        if (typeof window !== 'undefined' && Alert?.error && shouldShowError) {
+          Alert.error(this.translateErrorMessage(response.statusText));
         }
         return Promise.reject(response);
       },
@@ -353,8 +353,8 @@ export class HttpClient<SecurityDataType = unknown> {
         // 处理502 Bad Gateway错误 - 网关或代理服务器错误
         if (error.response?.status === 502) {
           const requestUrl = error.config?.url || "";
-          if (alert.error) {
-            alert.error("服务暂时不可用，请稍后再试");
+          if (typeof window !== 'undefined' && Alert?.error) {
+            Alert.error("服务暂时不可用，请稍后再试");
           }
           return Promise.reject(new Error("502 Bad Gateway: 服务暂时不可用"));
         }
@@ -364,15 +364,58 @@ export class HttpClient<SecurityDataType = unknown> {
         const shouldShowError = requestUrl !== "/user" && !isCsrfError;
         // 如果是CSRF token错误且已经重试过，或者不是CSRF错误，才显示错误提示
         if (
-          alert.error &&
+          typeof window !== 'undefined' &&
+          Alert?.error &&
           shouldShowError &&
           (!isCsrfError || error.config?.__isRetry)
         ) {
-          const msg =
-            error?.response?.data?.err ??
-            error?.response?.data?.data ??
-            error?.message;
-          alert.error(this.translateErrorMessage(msg));
+          let msg: string;
+          
+          // 如果有响应（服务器返回了错误）
+          if (error?.response?.data) {
+            const responseData = error.response.data;
+            
+            // 优先显示 err 字段
+            if (responseData.err) {
+              msg = responseData.err;
+            } else {
+              // 如果没有 err，则展示完整的后端返回错误信息
+              try {
+                // 尝试序列化完整的响应数据
+                const fullErrorStr = JSON.stringify(responseData, null, 2);
+                // 如果太长，截断一部分
+                if (fullErrorStr.length > 500) {
+                  msg = fullErrorStr.substring(0, 500) + "...";
+                } else {
+                  msg = fullErrorStr;
+                }
+              } catch (e) {
+                // 如果无法序列化，尝试显示其他字段
+                msg = responseData.data ?? responseData.message ?? responseData.error ?? String(responseData);
+              }
+            }
+          } else {
+            // 没有响应的情况（网络错误等）
+            msg = error?.message ?? "未知错误";
+          }
+          
+          // 只在客户端环境中显示错误提示
+          if (typeof window !== 'undefined') {
+            const errorMsg = this.translateErrorMessage(msg);
+            if (Alert?.error) {
+              try {
+                Alert.error(errorMsg);
+              } catch (e) {
+                // 如果 Alert.error 调用失败，至少输出到控制台
+                console.error('Failed to show alert:', e);
+                console.error('Error message:', errorMsg);
+              }
+            } else {
+              // 如果 Alert.error 不存在，至少输出到控制台
+              console.error('Alert.error is not available. Error message:', errorMsg);
+              console.error('Alert object:', Alert);
+            }
+          }
         }
         return Promise.reject(
           error.response?.data?.err ?? error.response?.data ?? error,

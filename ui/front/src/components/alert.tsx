@@ -50,7 +50,7 @@ export function callAlert(props: WarningProps, time = 3000) {
   const warningDom = document.createElement('div');
   document.body.appendChild(warningDom);
   warningDom.id = 'warning-window';
-  warningDom.style.zIndex = '-2';
+  warningDom.style.zIndex = '11111';
   const warningRoot = createRoot(warningDom);
   warningRoot.render(<WarningBar {...props} />);
   setTimeout(() => {
