@@ -25,6 +25,7 @@ const (
 	SystemKeyMachineID     = "machine_id"
 	SystemKeyBrand         = "brand"
 	SystemKeyDiscussion    = "discussion"
+	SystemKeySEO           = "seo"
 )
 
 type PublicAddress struct {
@@ -96,4 +97,9 @@ type SystemBrand struct {
 type SystemDiscussion struct {
 	AutoClose          uint   `json:"auto_close"`
 	ContentPlaceholder string `json:"content_placeholder"`
+}
+
+type SystemSEO struct {
+	Desc     string   `json:"desc"`
+	Keywords []string `json:"keywords"`
 }
