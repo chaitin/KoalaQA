@@ -18,6 +18,7 @@ type sitemap struct {
 	publicAddress *svc.PublicAddress
 	repoForum     *repo.Forum
 	repoDisc      *repo.Discussion
+	repoOrg       *repo.Org
 }
 
 func (s *sitemap) Period() string {
@@ -46,8 +47,18 @@ func (s *sitemap) Run() {
 	smi.SetOutputPath(consts.SitemapDir)
 	smi.SetServerURI("/api/sitemap")
 
+	org, err := s.repoOrg.GetBuiltin(ctx)
+	if err != nil {
+		s.logger.WithErr(err).Warn("get builtin org failed")
+		return
+	}
+	if len(org.ForumIDs) == 0 {
+		s.logger.Info("builtin org without forum, skip generate sitemap")
+		return
+	}
+
 	var forums []model.Forum
-	err = s.repoForum.List(ctx, &forums)
+	err = s.repoForum.List(ctx, &forums, repo.QueryWithEqual("id", org.ForumIDs, repo.EqualOPEqAny))
 	if err != nil {
 		s.logger.WithErr(err).Warn("list forum failed")
 		return
