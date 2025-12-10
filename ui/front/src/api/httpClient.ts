@@ -22,346 +22,314 @@
  * ---------------------------------------------------------------
  */
 
-import Alert from "@/components/alert";
-import { clearCache, generateCacheKey } from "@/lib/api-cache";
-import { clearAllAuthCookies } from "@/utils/cookie";
-import type {
-  AxiosInstance,
-  AxiosRequestConfig,
-  HeadersDefaults,
-  ResponseType,
-} from "axios";
-import axios from "axios";
-import qs from "qs";
+import Alert from '@/components/alert'
+import { clearCache, generateCacheKey } from '@/lib/api-cache'
+import { clearAllAuthCookies } from '@/utils/cookie'
+import type { AxiosInstance, AxiosRequestConfig, HeadersDefaults, ResponseType } from 'axios'
+import axios from 'axios'
+import qs from 'qs'
 
-export type QueryParamsType = Record<string | number, any>;
+export type QueryParamsType = Record<string | number, any>
 
-const pathnameWhiteList = ["/login"];
-export interface FullRequestParams
-  extends Omit<AxiosRequestConfig, "data" | "params" | "url" | "responseType"> {
+const pathnameWhiteList = ['/login']
+export interface FullRequestParams extends Omit<AxiosRequestConfig, 'data' | 'params' | 'url' | 'responseType'> {
   /** set parameter to `true` for call `securityWorker` for this request */
-  secure?: boolean;
+  secure?: boolean
   /** request path */
-  path: string;
+  path: string
   /** content type of request body */
-  type?: ContentType;
+  type?: ContentType
   /** query params */
-  query?: QueryParamsType;
+  query?: QueryParamsType
   /** format of response (i.e. response.json() -> format: "json") */
-  format?: ResponseType;
+  format?: ResponseType
   /** request body */
-  body?: unknown;
+  body?: unknown
 }
 
-export type RequestParams = Omit<
-  FullRequestParams,
-  "body" | "method" | "query" | "path"
->;
+export type RequestParams = Omit<FullRequestParams, 'body' | 'method' | 'query' | 'path'>
 
-export interface ApiConfig<SecurityDataType = unknown>
-  extends Omit<AxiosRequestConfig, "data" | "cancelToken"> {
+export interface ApiConfig<SecurityDataType = unknown> extends Omit<AxiosRequestConfig, 'data' | 'cancelToken'> {
   securityWorker?: (
     securityData: SecurityDataType | null,
-  ) => Promise<AxiosRequestConfig | void> | AxiosRequestConfig | void;
-  secure?: boolean;
-  format?: ResponseType;
+  ) => Promise<AxiosRequestConfig | void> | AxiosRequestConfig | void
+  secure?: boolean
+  format?: ResponseType
 }
 
 export enum ContentType {
-  Json = "application/json",
-  FormData = "multipart/form-data",
-  UrlEncoded = "application/x-www-form-urlencoded",
-  Text = "text/plain",
+  Json = 'application/json',
+  FormData = 'multipart/form-data',
+  UrlEncoded = 'application/x-www-form-urlencoded',
+  Text = 'text/plain',
 }
 
-type ExtractDataProp<T> = T extends { data?: infer U } ? U : T;
+type ExtractDataProp<T> = T extends { data?: infer U } ? U : T
 
 // CSRF token 缓存
-let csrfTokenCache: string | null = null;
-let csrfTokenPromise: Promise<string> | null = null;
+let csrfTokenCache: string | null = null
+let csrfTokenPromise: Promise<string> | null = null
 
 // 获取CSRF token的函数
 export const getCsrfToken = async (): Promise<string> => {
   // 如果已经有缓存的token，直接返回
   if (csrfTokenCache) {
-    return csrfTokenCache;
+    return csrfTokenCache
   }
 
   // 如果正在获取token，等待现有的请求
   if (csrfTokenPromise) {
-    return csrfTokenPromise;
+    return csrfTokenPromise
   }
 
   // 创建新的获取token的Promise
   csrfTokenPromise = new Promise(async (resolve, reject) => {
     try {
-      const response = await axios.get("/api/csrf", {
+      const response = await axios.get('/api/csrf', {
         withCredentials: true,
-      });
+      })
 
-      let token = "";
+      let token = ''
       if (response.data && response.data.success && response.data.data) {
-        token = response.data.data;
-      } else if (response.data && typeof response.data === "string") {
-        token = response.data;
+        token = response.data.data
+      } else if (response.data && typeof response.data === 'string') {
+        token = response.data
       }
 
       if (token) {
-        csrfTokenCache = token;
-        resolve(token);
+        csrfTokenCache = token
+        resolve(token)
       } else {
-        reject(new Error("Failed to get CSRF token"));
+        reject(new Error('Failed to get CSRF token'))
       }
     } catch (error) {
-      console.error("Failed to fetch CSRF token:", error);
-      reject(error);
+      console.error('Failed to fetch CSRF token:', error)
+      reject(error)
     } finally {
       // 清除Promise缓存，允许重试
-      csrfTokenPromise = null;
+      csrfTokenPromise = null
     }
-  });
+  })
 
-  return csrfTokenPromise;
-};
+  return csrfTokenPromise
+}
 
 // 清除CSRF token缓存的函数（在token失效时调用）
 export const clearCsrfTokenCache = () => {
-  csrfTokenCache = null;
-  csrfTokenPromise = null;
-};
+  csrfTokenCache = null
+  csrfTokenPromise = null
+}
 
 // 导出公共访问状态获取函数，供其他组件使用
 
 // 清除所有认证信息的函数
 export const clearAuthData = async (callLogoutAPI: boolean = true) => {
-  if (typeof window !== "undefined") {
+  if (typeof window !== 'undefined') {
     // 清除本地存储的认证信息
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("userInfo");
+    localStorage.removeItem('auth_token')
+    localStorage.removeItem('user')
+    localStorage.removeItem('userInfo')
 
     // 使用工具函数清除所有认证相关的cookie，包括auth_token
-    clearAllAuthCookies();
+    clearAllAuthCookies()
 
     // 清除CSRF token缓存
-    clearCsrfTokenCache();
+    clearCsrfTokenCache()
 
     // 根据参数决定是否调用服务端登出API
     if (callLogoutAPI) {
       try {
-        await fetch("/api/user/logout", {
-          method: "POST",
-          credentials: "include", // 确保发送 cookie
-        });
+        await fetch('/api/user/logout', {
+          method: 'POST',
+          credentials: 'include', // 确保发送 cookie
+        })
       } catch (error) {
-        console.warn("Failed to clear server-side cookies:", error);
+        console.warn('Failed to clear server-side cookies:', error)
         // 即使服务端清理失败，客户端清理仍然有效
       }
     }
 
     // 清除所有待处理的用户相关请求
-    if (typeof window !== "undefined" && window.httpClientInstance) {
-      window.httpClientInstance.clearPendingRequestsByPath("/user");
+    if (typeof window !== 'undefined' && window.httpClientInstance) {
+      window.httpClientInstance.clearPendingRequestsByPath('/user')
     }
 
     // 强制刷新页面状态，确保所有组件重新初始化
     // 使用 setTimeout 避免在清理过程中立即刷新
     setTimeout(() => {
       // 触发自定义事件，通知所有组件认证状态已清除
-      window.dispatchEvent(new CustomEvent("auth:cleared"));
-    }, 100);
+      window.dispatchEvent(new CustomEvent('auth:cleared'))
+    }, 100)
   }
-};
+}
 
 export class HttpClient<SecurityDataType = unknown> {
-  public instance: AxiosInstance;
-  private securityData: SecurityDataType | null = null;
-  private securityWorker?: ApiConfig<SecurityDataType>["securityWorker"];
-  private secure?: boolean;
-  private format?: ResponseType;
-  private pendingRequests = new Map<string, Promise<any>>();
+  public instance: AxiosInstance
+  private securityData: SecurityDataType | null = null
+  private securityWorker?: ApiConfig<SecurityDataType>['securityWorker']
+  private secure?: boolean
+  private format?: ResponseType
+  private pendingRequests = new Map<string, Promise<any>>()
 
   // 将服务端错误码/文案翻译为用户可读提示
   private translateErrorMessage(message?: any): string {
-    const raw =
-      typeof message === "string" ? message : message?.toString?.() || "";
+    const raw = typeof message === 'string' ? message : message?.toString?.() || ''
     if (raw && /rate\s*limit|ratelimit/i.test(raw)) {
-      return "操作过于频繁，请稍后再试";
+      return '操作过于频繁，请稍后再试'
     }
-    return raw || "网络异常";
+    return raw || '网络异常'
   }
 
-  constructor({
-    securityWorker,
-    secure,
-    format,
-    ...axiosConfig
-  }: ApiConfig<SecurityDataType> = {}) {
+  constructor({ securityWorker, secure, format, ...axiosConfig }: ApiConfig<SecurityDataType> = {}) {
     this.instance = axios.create({
       withCredentials: true, // 确保客户端请求自动发送cookie
       ...axiosConfig,
-      baseURL: axiosConfig.baseURL || "/api",
+      baseURL: axiosConfig.baseURL || '/api',
       paramsSerializer: {
         serialize: (params) => {
           return qs.stringify(params, {
-            arrayFormat: "repeat", // 使用 'repeat' 格式，如 group_ids=1&group_ids=2
+            arrayFormat: 'repeat', // 使用 'repeat' 格式，如 group_ids=1&group_ids=2
             skipNulls: true,
             encode: false,
-          });
+          })
         },
       },
-    });
-    this.secure = secure;
-    this.format = format;
-    this.securityWorker = securityWorker;
+    })
+    this.secure = secure
+    this.format = format
+    this.securityWorker = securityWorker
     this.instance.interceptors.response.use(
       (response) => {
-        const requestUrl = response.config?.url || "";
-        const shouldShowError = requestUrl !== "/user";
+        const requestUrl = response.config?.url || ''
+        const shouldShowError = requestUrl !== '/user'
         if (response.status === 200) {
-          const res = response.data;
+          const res = response.data
           if (res.success) {
-            return res.data;
+            return res.data
           }
 
           // 检查是否是CSRF token mismatch错误（虽然状态码是200，但success为false）
-          const isCsrfError =
-            res.data === "csrf token mismatch" ||
-            res.err === "csrf token mismatch";
+          const isCsrfError = res.data === 'csrf token mismatch' || res.err === 'csrf token mismatch'
 
           if (isCsrfError && response.config && !response.config.__isRetry) {
-            clearCsrfTokenCache();
-            response.config.__isRetry = true;
+            clearCsrfTokenCache()
+            response.config.__isRetry = true
             // 重新获取CSRF token并重试请求
             return getCsrfToken()
               .then((token) => {
                 if (response.config) {
-                  response.config.headers = response.config.headers || {};
-                  response.config.headers["X-CSRF-TOKEN"] = token;
+                  response.config.headers = response.config.headers || {}
+                  response.config.headers['X-CSRF-TOKEN'] = token
                 }
-                return this.instance.request(response.config);
+                return this.instance.request(response.config)
               })
               .catch((retryError) => {
-                return Promise.reject(retryError);
+                return Promise.reject(retryError)
               })
               .finally(() => {
                 // 重试完成后清除重试标志（无论成功还是失败）
                 if (response.config) {
-                  delete response.config.__isRetry;
+                  delete response.config.__isRetry
                 }
-              });
+              })
           }
 
           if (typeof window !== 'undefined' && Alert?.error && shouldShowError && !isCsrfError) {
-            Alert.error(this.translateErrorMessage(res.err));
+            Alert.error(this.translateErrorMessage(res.err))
           }
-          return Promise.reject(res);
+          return Promise.reject(res)
         }
 
         if (typeof window !== 'undefined' && Alert?.error && shouldShowError) {
-          Alert.error(this.translateErrorMessage(response.statusText));
+          Alert.error(this.translateErrorMessage(response.statusText))
         }
-        return Promise.reject(response);
+        return Promise.reject(response)
       },
       (error) => {
         // 检查是否是CSRF token mismatch错误（后端返回400状态码）
         const isCsrfError =
           error.response?.status === 400 &&
-          (error.response?.data?.data === "csrf token mismatch" ||
-            error.response?.data?.err === "csrf token mismatch" ||
-            (typeof error.response?.data === "string" &&
-              error.response.data.includes("csrf token mismatch")));
+          (error.response?.data?.data === 'csrf token mismatch' ||
+            error.response?.data?.err === 'csrf token mismatch' ||
+            (typeof error.response?.data === 'string' && error.response.data.includes('csrf token mismatch')))
 
         // 如果是CSRF token相关错误，清除缓存并重试请求
-        if (
-          isCsrfError ||
-          error.response?.status === 403 ||
-          error.response?.status === 419
-        ) {
-          clearCsrfTokenCache();
+        if (isCsrfError || error.response?.status === 403 || error.response?.status === 419) {
+          clearCsrfTokenCache()
 
           // 如果是CSRF token mismatch，自动重试一次请求
           if (isCsrfError && error.config && !error.config.__isRetry) {
-            error.config.__isRetry = true;
+            error.config.__isRetry = true
             // 重新获取CSRF token并重试请求
             return getCsrfToken()
               .then((token) => {
                 if (error.config) {
-                  error.config.headers = error.config.headers || {};
-                  error.config.headers["X-CSRF-TOKEN"] = token;
+                  error.config.headers = error.config.headers || {}
+                  error.config.headers['X-CSRF-TOKEN'] = token
                 }
-                return this.instance.request(error.config);
+                return this.instance.request(error.config)
               })
               .catch((retryError) => {
-                return Promise.reject(retryError);
+                return Promise.reject(retryError)
               })
               .finally(() => {
                 // 重试完成后清除重试标志（无论成功还是失败）
                 if (error.config) {
-                  delete error.config.__isRetry;
+                  delete error.config.__isRetry
                 }
-              });
+              })
           }
         }
 
         // 处理401未授权错误 - 清除认证信息并重定向到登录页
         if (error.response?.status === 401) {
           // 只在客户端环境下进行处理
-          if (typeof window !== "undefined") {
-            console.log(
-              "401 Unauthorized error detected, clearing auth data:",
-              error.response.data.err,
-            );
+          if (typeof window !== 'undefined') {
+            console.log('401 Unauthorized error detected, clearing auth data:', error.response.data.err)
 
             // 异步清除所有认证信息，包括cookie中的auth_token
             clearAuthData()
               .then(() => {
-                const currentPath = window.location.pathname;
-                const isAuthPage =
-                  currentPath.startsWith("/login") ||
-                  currentPath.startsWith("/register");
+                const currentPath = window.location.pathname
+                const isAuthPage = currentPath.startsWith('/login') || currentPath.startsWith('/register')
 
                 // 如果不在认证页面，直接重定向到登录页
                 // middleware已经处理了public_access的检查，这里不需要重复检查
                 if (!isAuthPage) {
-                  const fullPath =
-                    window.location.pathname + window.location.search;
-                  const loginUrl = `/login?redirect=${encodeURIComponent(fullPath)}`;
-                  window.location.href = loginUrl;
+                  const fullPath = window.location.pathname + window.location.search
+                  const loginUrl = `/login?redirect=${encodeURIComponent(fullPath)}`
+                  window.location.href = loginUrl
                 }
               })
               .catch((clearError) => {
-                console.error("Failed to clear auth data on 401:", clearError);
+                console.error('Failed to clear auth data on 401:', clearError)
                 // 即使清理失败，也要重定向到登录页
-                const currentPath = window.location.pathname;
-                const isAuthPage =
-                  currentPath.startsWith("/login") ||
-                  currentPath.startsWith("/register");
+                const currentPath = window.location.pathname
+                const isAuthPage = currentPath.startsWith('/login') || currentPath.startsWith('/register')
 
                 if (!isAuthPage) {
-                  const fullPath =
-                    window.location.pathname + window.location.search;
-                  const loginUrl = `/login?redirect=${encodeURIComponent(fullPath)}`;
-                  window.location.href = loginUrl;
+                  const fullPath = window.location.pathname + window.location.search
+                  const loginUrl = `/login?redirect=${encodeURIComponent(fullPath)}`
+                  window.location.href = loginUrl
                 }
-              });
+              })
 
-            return Promise.reject(error.response.data.err);
+            return Promise.reject(error.response.data.err)
           }
         }
 
         // 处理502 Bad Gateway错误 - 网关或代理服务器错误
         if (error.response?.status === 502) {
-          const requestUrl = error.config?.url || "";
+          const requestUrl = error.config?.url || ''
           if (typeof window !== 'undefined' && Alert?.error) {
-            Alert.error("服务暂时不可用，请稍后再试");
+            Alert.error('服务暂时不可用，请稍后再试')
           }
-          return Promise.reject(new Error("502 Bad Gateway: 服务暂时不可用"));
+          return Promise.reject(new Error('502 Bad Gateway: 服务暂时不可用'))
         }
 
         // 检查请求路径，如果是 api/user 则不展示报错信息
-        const requestUrl = error.config?.url || "";
-        const shouldShowError = requestUrl !== "/user" && !isCsrfError;
+        const requestUrl = error.config?.url || ''
+        const shouldShowError = requestUrl !== '/user' && !isCsrfError
         // 如果是CSRF token错误且已经重试过，或者不是CSRF错误，才显示错误提示
         if (
           typeof window !== 'undefined' &&
@@ -369,148 +337,132 @@ export class HttpClient<SecurityDataType = unknown> {
           shouldShowError &&
           (!isCsrfError || error.config?.__isRetry)
         ) {
-          let msg: string;
-          
+          let msg: string
+
           // 如果有响应（服务器返回了错误）
           if (error?.response?.data) {
-            const responseData = error.response.data;
-            
+            const responseData = error.response.data
+
             // 优先显示 err 字段
             if (responseData.err) {
-              msg = responseData.err;
+              msg = responseData.err
             } else {
               // 如果没有 err，则展示完整的后端返回错误信息
               try {
                 // 尝试序列化完整的响应数据
-                const fullErrorStr = JSON.stringify(responseData, null, 2);
+                const fullErrorStr = JSON.stringify(responseData, null, 2)
                 // 如果太长，截断一部分
                 if (fullErrorStr.length > 500) {
-                  msg = fullErrorStr.substring(0, 500) + "...";
+                  msg = fullErrorStr.substring(0, 500) + '...'
                 } else {
-                  msg = fullErrorStr;
+                  msg = fullErrorStr
                 }
               } catch (e) {
                 // 如果无法序列化，尝试显示其他字段
-                msg = responseData.data ?? responseData.message ?? responseData.error ?? String(responseData);
+                msg = responseData.data ?? responseData.message ?? responseData.error ?? String(responseData)
               }
             }
           } else {
             // 没有响应的情况（网络错误等）
-            msg = error?.message ?? "未知错误";
+            msg = error?.message ?? '未知错误'
           }
-          
+
           // 只在客户端环境中显示错误提示
           if (typeof window !== 'undefined') {
-            const errorMsg = this.translateErrorMessage(msg);
+            const errorMsg = this.translateErrorMessage(msg)
             if (Alert?.error) {
               try {
-                Alert.error(errorMsg);
+                // 打印完整的请求内容
+                Alert.error(error?.response?.status + ': ' + errorMsg + '\n请求内容: ' + JSON.stringify(error?.config, null, 2))
               } catch (e) {
                 // 如果 Alert.error 调用失败，至少输出到控制台
-                console.error('Failed to show alert:', e);
-                console.error('Error message:', errorMsg);
+                console.error('Failed to show alert:', e)
+                console.error('Error message:', errorMsg)
               }
             } else {
               // 如果 Alert.error 不存在，至少输出到控制台
-              console.error('Alert.error is not available. Error message:', errorMsg);
-              console.error('Alert object:', Alert);
+              console.error('Alert.error is not available. Error message:', errorMsg)
+              console.error('Alert object:', Alert)
             }
           }
         }
-        return Promise.reject(
-          error.response?.data?.err ?? error.response?.data ?? error,
-        );
+        return Promise.reject(error.response?.data?.err ?? error.response?.data ?? error)
       },
-    );
+    )
   }
 
   public setSecurityData = (data: SecurityDataType | null) => {
-    this.securityData = data;
-  };
+    this.securityData = data
+  }
 
   // 清除缓存的方法
   public clearCache = (key?: string) => {
     if (key) {
-      clearCache(key);
+      clearCache(key)
     } else {
-      clearCache(); // 清除所有缓存
+      clearCache() // 清除所有缓存
     }
-  };
+  }
 
   // 清除所有待处理的请求
   public clearPendingRequests = () => {
-    console.log(
-      `[HttpClient] Clearing ${this.pendingRequests.size} pending requests`,
-    );
-    this.pendingRequests.clear();
-  };
+    console.log(`[HttpClient] Clearing ${this.pendingRequests.size} pending requests`)
+    this.pendingRequests.clear()
+  }
 
   // 清除特定类型的待处理请求
   public clearPendingRequestsByPath = (pathPattern: string) => {
-    const keysToDelete: string[] = [];
+    const keysToDelete: string[] = []
     for (const [key] of this.pendingRequests) {
       if (key.includes(pathPattern)) {
-        keysToDelete.push(key);
+        keysToDelete.push(key)
       }
     }
 
     keysToDelete.forEach((key) => {
-      this.pendingRequests.delete(key);
-    });
+      this.pendingRequests.delete(key)
+    })
 
     if (keysToDelete.length > 0) {
-      console.log(
-        `[HttpClient] Cleared ${keysToDelete.length} pending requests for path: ${pathPattern}`,
-      );
+      console.log(`[HttpClient] Cleared ${keysToDelete.length} pending requests for path: ${pathPattern}`)
     }
-  };
+  }
 
-  protected mergeRequestParams(
-    params1: AxiosRequestConfig,
-    params2?: AxiosRequestConfig,
-  ): AxiosRequestConfig {
-    const method = params1.method || (params2 && params2.method);
+  protected mergeRequestParams(params1: AxiosRequestConfig, params2?: AxiosRequestConfig): AxiosRequestConfig {
+    const method = params1.method || (params2 && params2.method)
 
     return {
       ...this.instance.defaults,
       ...params1,
       ...(params2 || {}),
       headers: {
-        ...((method &&
-          this.instance.defaults.headers[
-            method.toLowerCase() as keyof HeadersDefaults
-          ]) ||
-          {}),
+        ...((method && this.instance.defaults.headers[method.toLowerCase() as keyof HeadersDefaults]) || {}),
         ...(params1.headers || {}),
         ...((params2 && params2.headers) || {}),
       },
-    };
+    }
   }
 
   protected stringifyFormItem(formItem: unknown) {
-    if (typeof formItem === "object" && formItem !== null) {
-      return JSON.stringify(formItem);
+    if (typeof formItem === 'object' && formItem !== null) {
+      return JSON.stringify(formItem)
     } else {
-      return `${formItem}`;
+      return `${formItem}`
     }
   }
 
   protected createFormData(input: Record<string, unknown>): FormData {
     return Object.keys(input || {}).reduce((formData, key) => {
-      const property = input[key];
-      const propertyContent: any[] =
-        property instanceof Array ? property : [property];
+      const property = input[key]
+      const propertyContent: any[] = property instanceof Array ? property : [property]
 
       for (const formItem of propertyContent) {
-        const isFileType = formItem instanceof Blob || formItem instanceof File;
-        formData.append(
-          key,
-          isFileType ? formItem : this.stringifyFormItem(formItem),
-        );
+        const isFileType = formItem instanceof Blob || formItem instanceof File
+        formData.append(key, isFileType ? formItem : this.stringifyFormItem(formItem))
       }
 
-      return formData;
-    }, new FormData());
+      return formData
+    }, new FormData())
   }
 
   public request = async <T = any, _E = any>({
@@ -523,93 +475,76 @@ export class HttpClient<SecurityDataType = unknown> {
     ...params
   }: FullRequestParams): Promise<ExtractDataProp<T>> => {
     // 生成缓存键和请求键
-    const cacheKey = generateCacheKey(path, { query, body, ...params });
-    const method = params.method?.toUpperCase() || "GET";
+    const cacheKey = generateCacheKey(path, { query, body, ...params })
+    const method = params.method?.toUpperCase() || 'GET'
 
     // 对于 /user 请求，需要在请求key中包含用户身份标识，确保不同用户的请求不会被去重
-    let requestKey = `${method}:${cacheKey}`;
-    if (path === "/user" && method === "GET") {
-      let authToken = "";
+    let requestKey = `${method}:${cacheKey}`
+    if (path === '/user' && method === 'GET') {
+      let authToken = ''
       try {
         // 在客户端环境中，从cookie中读取auth_token
-        if (typeof window !== "undefined") {
-          const cookies = document.cookie.split(";");
-          const authCookie = cookies.find((c) =>
-            c.trim().startsWith("auth_token="),
-          );
+        if (typeof window !== 'undefined') {
+          const cookies = document.cookie.split(';')
+          const authCookie = cookies.find((c) => c.trim().startsWith('auth_token='))
           if (authCookie) {
-            authToken = authCookie.split("=")[1]?.trim() || "";
+            authToken = authCookie.split('=')[1]?.trim() || ''
           }
         } else {
           // 在SSR环境中，从cookieStore中读取auth_token
-          const { cookies } = await import("next/headers");
-          const cookieStore = await cookies();
-          authToken = cookieStore.get("auth_token")?.value || "";
+          const { cookies } = await import('next/headers')
+          const cookieStore = await cookies()
+          authToken = cookieStore.get('auth_token')?.value || ''
         }
       } catch (error) {
         // 如果无法读取cookie，忽略错误，使用原始key
-        console.warn(
-          "Failed to read auth_token for request deduplication:",
-          error,
-        );
+        console.warn('Failed to read auth_token for request deduplication:', error)
       }
 
       // 如果获取到了auth_token，将其hash值添加到请求key中
       // 使用简单的hash函数（前8个字符）来区分不同用户
       if (authToken) {
-        const tokenHash = authToken.substring(0, 8);
-        requestKey = `${method}:${cacheKey}:${tokenHash}`;
+        const tokenHash = authToken.substring(0, 8)
+        requestKey = `${method}:${cacheKey}:${tokenHash}`
       }
     }
 
     // 检查是否有相同的请求正在进行中（请求去重）
     // 注意：对于 /user 请求，请求key中包含了用户身份标识，确保不同用户的请求不会被去重
     if (this.pendingRequests.has(requestKey)) {
-      console.log(`[HttpClient] Request already pending: ${requestKey}`);
-      return this.pendingRequests.get(requestKey);
+      console.log(`[HttpClient] Request already pending: ${requestKey}`)
+      return this.pendingRequests.get(requestKey)
     }
 
     const secureParams =
-      ((typeof secure === "boolean" ? secure : this.secure) &&
+      ((typeof secure === 'boolean' ? secure : this.secure) &&
         this.securityWorker &&
         (await this.securityWorker(this.securityData))) ||
-      {};
-    const requestParams = this.mergeRequestParams(params, secureParams);
-    const responseFormat = format || this.format || undefined;
+      {}
+    const requestParams = this.mergeRequestParams(params, secureParams)
+    const responseFormat = format || this.format || undefined
 
-    if (
-      type === ContentType.FormData &&
-      body &&
-      body !== null &&
-      typeof body === "object"
-    ) {
-      body = this.createFormData(body as Record<string, unknown>);
+    if (type === ContentType.FormData && body && body !== null && typeof body === 'object') {
+      body = this.createFormData(body as Record<string, unknown>)
     }
 
-    if (
-      type === ContentType.Text &&
-      body &&
-      body !== null &&
-      typeof body !== "string"
-    ) {
-      body = JSON.stringify(body);
+    if (type === ContentType.Text && body && body !== null && typeof body !== 'string') {
+      body = JSON.stringify(body)
     }
 
     // 准备headers
     const headers: Record<string, string> = {
       ...(requestParams.headers || {}),
-      ...(type && type !== ContentType.FormData
-        ? { "Content-Type": type }
-        : {}),
-    };
+      ...(type && type !== ContentType.FormData ? { 'Content-Type': type } : {}),
+    }
 
     // 对于非GET请求，添加CSRF token
-    if (method !== "GET") {
+    if (method !== 'GET') {
       try {
-        const csrfToken = await getCsrfToken();
-        headers["X-CSRF-TOKEN"] = csrfToken;
+        const csrfToken = await getCsrfToken()
+        headers['X-CSRF-TOKEN'] = csrfToken
       } catch (error) {
-        console.error("Failed to get CSRF token for request:", error);
+        console.error('Failed to get CSRF token for request:', error)
         // 继续执行请求，让服务器处理CSRF验证失败
       }
     }
@@ -622,18 +557,18 @@ export class HttpClient<SecurityDataType = unknown> {
       responseType: responseFormat,
       data: body,
       url: path,
-    };
+    }
 
     // 如果是SSR环境，转发所有cookie到API请求
-    if (typeof window === "undefined") {
+    if (typeof window === 'undefined') {
       try {
-        const { cookies } = await import("next/headers");
-        const cookieStore = await cookies();
+        const { cookies } = await import('next/headers')
+        const cookieStore = await cookies()
 
         // 转发所有cookie（推荐用于开发环境）
-        const allCookies = cookieStore.toString();
+        const allCookies = cookieStore.toString()
         if (allCookies) {
-          requestConfig.headers.Cookie = allCookies;
+          requestConfig.headers.Cookie = allCookies
         }
 
         // if (process.env.NODE_ENV === "development") {
@@ -648,7 +583,7 @@ export class HttpClient<SecurityDataType = unknown> {
         // }
       } catch (error) {
         // 在某些情况下cookies可能不可用，忽略错误
-        console.warn("Failed to get cookies in SSR:", error);
+        console.warn('Failed to get cookies in SSR:', error)
       }
     }
 
@@ -656,29 +591,29 @@ export class HttpClient<SecurityDataType = unknown> {
     const requestPromise = this.instance
       .request(requestConfig)
       .then((result) => {
-        return result;
+        return result
       })
       .finally(() => {
         // 请求完成后从待处理列表中移除
-        this.pendingRequests.delete(requestKey);
-      });
+        this.pendingRequests.delete(requestKey)
+      })
 
     // 将请求添加到待处理列表中
-    this.pendingRequests.set(requestKey, requestPromise);
+    this.pendingRequests.set(requestKey, requestPromise)
 
-    return requestPromise;
-  };
+    return requestPromise
+  }
 }
 
 // 创建全局 httpClient 实例
 const httpClientInstance = new HttpClient({
-  format: "json",
-  baseURL: (process.env.TARGET || "") + "/api",
-});
+  format: 'json',
+  baseURL: (process.env.TARGET || '') + '/api',
+})
 
 // 在客户端环境中将实例挂载到 window 对象上，方便全局访问
-if (typeof window !== "undefined") {
-  (window as any).httpClientInstance = httpClientInstance;
+if (typeof window !== 'undefined') {
+  ;(window as any).httpClientInstance = httpClientInstance
 }
 
-export default httpClientInstance.request;
+export default httpClientInstance.request

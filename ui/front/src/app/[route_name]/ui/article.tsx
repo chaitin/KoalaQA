@@ -3,6 +3,7 @@ import { getDiscussion } from '@/api'
 import {
   GetDiscussionParams,
   ModelDiscussionListItem,
+  ModelDiscussionType,
   ModelForumInfo,
   ModelGroupItemInfo,
   ModelGroupWithItem,
@@ -16,9 +17,8 @@ import BrandAttribution from '@/components/BrandAttribution'
 import ContributorsRank from '@/components/ContributorsRank'
 import { ReleaseModal } from '@/components/discussion'
 import SearchResultModal from '@/components/SearchResultModal'
-import { useGroupData } from '@/contexts/GroupDataContext'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
-import { useForumId } from '@/hooks/useForumId'
+import { useListPageCache } from '@/hooks/useListPageCache'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import { isAdminRole } from '@/lib/utils'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
@@ -39,7 +39,7 @@ import {
   ToggleButtonGroup,
   Typography,
   useMediaQuery,
-  useTheme
+  useTheme,
 } from '@mui/material'
 import { useBoolean, useInViewport } from 'ahooks'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
@@ -48,31 +48,20 @@ import DiscussCard from './discussCard'
 
 export type Status = 'hot' | 'new' | 'publish'
 
-const TYPE_LIST = [
-  { label: '问题', value: 'qa' },
-  // { label: '反馈', value: 'feedback' },
-  { label: '文章', value: 'blog' },
-]
 const Article = ({
   data,
-  topics,
-  groups: groupsData,
+  tps,
   type,
-  forumId,
   forumInfo,
+  announcements,
 }: {
   data: ModelListRes & {
     items?: ModelDiscussionListItem[]
   }
-  topics: number[]
-  groups?: ModelListRes & {
-    items?: (ModelGroupWithItem & {
-      items?: ModelGroupItemInfo[]
-    })[]
-  }
-  type?: string
-  forumId?: string
+  tps: string
+  type?: ModelDiscussionType
   forumInfo?: ModelForumInfo | null
+  announcements: ModelDiscussionListItem[]
 }) => {
   const searchParams = useSearchParams()
   const params = useParams()
@@ -81,29 +70,26 @@ const Article = ({
   const nextRouter = useRouter()
   const { checkAuth } = useAuthCheck()
   const { user } = useContext(AuthContext)
-  const { getFilteredGroups } = useGroupData()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  const { saveState, restoreState, restoreScrollPosition } = useListPageCache(routeName)
+  const cached = restoreState()
+  const topics = useMemo(() => {
+    return tps ? tps.split(',').map(Number) : []
+  }, [tps])
   // 根据设备类型动态设置搜索placeholder
   const searchPlaceholder = isMobile ? '使用 AI 搜索' : '输入任意内容，使用 AI 搜索'
 
   // 根据当前类型从 forumInfo.groups 中筛选对应的分类
   // 当type为undefined时，不传type参数，显示所有类型的分类
-  const currentType = type ? (type as 'qa' | 'blog') : undefined
-
-  // 使用 useMemo 缓存过滤后的分组数据
-  const groups = useMemo(() => {
-    return getFilteredGroups(groupsData, forumInfo, currentType)
-  }, [groupsData, forumInfo, currentType, getFilteredGroups])
+  const currentType = type ? (type as ModelDiscussionType) : undefined
 
   const [releaseModalVisible, { setTrue: releaseModalOpen, setFalse: releaseModalClose }] = useBoolean(false)
   const status = searchParams?.get('sort') || 'publish'
   const [search, setSearch] = useState(searchParams?.get('search') || '')
-  const searchRef = useRef(search)
-  const [articleData, setArticleData] = useState(data)
-  const [page, setPage] = useState(1)
+  const [articleData, setArticleData] = useState(cached?.data || data)
+  const [page, setPage] = useState(cached?.page || 1)
   const [loadingMore, setLoadingMore] = useState(false)
-  const [announcements, setAnnouncements] = useState<ModelDiscussionListItem[]>([])
   const sidebarRef = useRef<HTMLDivElement>(null)
   const loadMoreTriggerRef = useRef<HTMLDivElement | null>(null)
   const [isLoadMoreInView] = useInViewport(loadMoreTriggerRef, {
@@ -123,61 +109,27 @@ const Article = ({
 
   // 搜索弹窗相关状态
   const [searchModalOpen, { setTrue: openSearchModal, setFalse: closeSearchModal }] = useBoolean(false)
-  const [selectedModalType, setSelectedModalType] = useState<'qa' | 'blog' | 'issue'>('qa')
+  const [selectedModalType, setSelectedModalType] = useState<ModelDiscussionType>(ModelDiscussionType.DiscussionTypeQA)
   const [lastPathname, setLastPathname] = useState('')
   const [initialTitleFromSearch, setInitialTitleFromSearch] = useState<string>('')
   const actionProcessedRef = useRef<string>('')
-
-  const hookForumId = useForumId()
-
-  const announcementBlogIdsKey = (forumInfo?.blog_ids ?? []).join(',')
-
-  // 获取公告列表
-  const fetchAnnouncements = useCallback(async () => {
-    if (!forumInfo?.blog_ids || forumInfo.blog_ids.length === 0) {
-      setAnnouncements([])
-      return
-    }
-
-    try {
-      const params: GetDiscussionParams = {
-        discussion_ids: forumInfo.blog_ids,
-        page: 1,
-        size: 10,
-        type: 'blog',
-        forum_id: parseInt(forumId || '0', 10),
-      }
-      const response = await getDiscussion(params)
-      if (response?.items) {
-        setAnnouncements(response.items)
-      } else {
-        setAnnouncements([])
-      }
-    } catch (error) {
-      console.error('Failed to fetch announcements:', error)
-      setAnnouncements([])
-    }
-  }, [announcementBlogIdsKey, forumInfo?.id, forumId])
-
-  useEffect(() => {
-    fetchAnnouncements()
-  }, [fetchAnnouncements])
+  const restoreStateProcessedRef = useRef<string>('')
+  const isFirstMountRef = useRef(true)
 
   const fetchMoreList = useCallback(() => {
     // 防止重复请求
-    if (page * 10 >= (articleData.total || 0) || loadingMore) {
+    if (page * 10 >= (articleData.total || 0) || loadingMore || !forumInfo?.id) {
       return
     }
 
     setLoadingMore(true)
     const new_page = page + 1
-    setPage(new_page)
     const params: GetDiscussionParams & { forum_id?: number } = {
       page: new_page,
       size: 10,
       // 只有当type存在时才传递type参数，否则不传，让后端返回所有类型
       ...(type ? { type: type as 'qa' | 'blog' } : {}),
-      forum_id: parseInt(forumId || '0', 10),
+      forum_id: forumInfo?.id,
     }
 
     // 设置 filter
@@ -211,68 +163,33 @@ const Article = ({
             total: res.total,
             items: [...(pre.items || []), ...(res.items || [])],
           }))
+          setPage(new_page)
         }
       })
       .catch((error) => {
         console.error('Failed to fetch more discussions:', error)
-        // 回退页码
-        setPage(page)
       })
       .finally(() => {
-        setLoadingMore(false)
+        // 延迟设置 loadingMore 为 false，等待 DOM 更新完成
+        // 这样可以避免在 DOM 更新前 isLoadMoreInView 仍然是 true 导致的连续加载
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            setLoadingMore(false)
+          })
+        })
       })
-  }, [page, articleData.total, status, search, topics, type, loadingMore, onlyMine, resolved])
+  }, [articleData.total, page, status, search, topics, type, loadingMore, onlyMine, resolved, forumInfo?.id])
 
   const createQueryString = (name: string, value: string) => {
     const params = new URLSearchParams(searchParams?.toString())
     params.set(name, value)
     return params.toString()
   }
-
-  const fetchList = useCallback(
-    (st: Status, se: string, tps: number[], onlyMineParam?: boolean, resolvedParam?: number | null) => {
-      setPage(1)
-      const params: GetDiscussionParams & { forum_id?: number } = {
-        page: 1,
-        size: 10,
-        // 只有当type存在时才传递type参数，否则不传，让后端返回所有类型
-        ...(type ? { type: type as 'qa' | 'blog' } : {}),
-      }
-
-      // 设置 filter
-      params.filter = st as 'hot' | 'new' | 'publish'
-
-      // 如果有搜索关键词，添加到参数中
-      if (se && se.trim()) {
-        params.keyword = se.trim()
-      }
-
-      // 如果有选中的主题，添加到参数中
-      if (tps && tps.length > 0) {
-        params.group_ids = tps
-      }
-
-      // 添加筛选参数
-      if (onlyMineParam !== undefined) {
-        params.only_mine = onlyMineParam
-      }
-      if (resolvedParam !== null && resolvedParam !== undefined) {
-        params.resolved = resolvedParam as 0 | 1 | 2
-      }
-
-      return getDiscussion(params)
-        .then((res) => {
-          if (res) {
-            setArticleData(res)
-          }
-        })
-        .catch((error) => {
-          console.error('Failed to fetch discussions:', error)
-          // 保持当前数据，不重置为空
-        })
-    },
-    [type],
-  )
+  const onNavigate = useCallback(() => {
+    const currentSearchParams = window.location.search
+    saveState(articleData, currentSearchParams, page)
+    releaseModalClose()
+  }, [articleData.items?.length, page, saveState, releaseModalClose, cached])
 
   const handleSearch = useCallback(() => {
     const trimmedSearch = search && search.trim() ? search.trim() : ''
@@ -290,51 +207,56 @@ const Article = ({
   }
 
   useEffect(() => {
-    setArticleData(data)
-  }, [data])
-
-  useEffect(() => {
-    if (!isLoadMoreInView || loadingMore || page * 10 >= (articleData.total || 0)) {
+    // // 首次挂载时不请求，使用初始数据
+    if (isFirstMountRef.current) {
+      isFirstMountRef.current = false
       return
     }
-
+    if (!isLoadMoreInView || loadingMore) {
+      return
+    }
     fetchMoreList()
-  }, [isLoadMoreInView, loadingMore, fetchMoreList, page, articleData.total])
-
-  // 当URL参数变化时重置页码
-  useEffect(() => {
-    setPage(1)
-  }, [status, type, topics])
-
-  // 更新搜索引用
-  useEffect(() => {
-    searchRef.current = search
-  }, [search])
+  }, [isLoadMoreInView, loadingMore, fetchMoreList])
 
   // 监听路由变化，检测是否从详情页返回
   useEffect(() => {
     const currentPath = window.location.pathname
-    const currentOnlyMine = searchParams?.get('only_mine') === 'true'
-    const currentResolved = searchParams?.get('resolved')
-    const resolvedValue =
-      currentResolved === null || currentResolved === undefined
-        ? null
-        : /^(0|1|2)$/.test(currentResolved)
-          ? parseInt(currentResolved, 10)
-          : null
+    const currentSearchParams = window.location.search
+    const cacheKey = `${currentPath}${currentSearchParams}`
 
-    // 如果当前路径是列表页，且之前记录的不是列表页，说明可能是从详情页返回的
-    if (lastPathname && lastPathname !== currentPath && currentPath === `/${routeName}`) {
-      fetchList(status as Status, search, topics, currentOnlyMine, resolvedValue)
+    // 如果路径变化了，重置处理标记（允许从详情页返回时恢复状态）
+    if (lastPathname && lastPathname !== currentPath) {
+      restoreStateProcessedRef.current = ''
     }
 
-    // 更新记录的路径
-    setLastPathname(currentPath)
-  }, [routeName, lastPathname, status, search, topics, searchParams, fetchList])
+    // 避免重复处理相同的路径和参数组合
+    if (restoreStateProcessedRef.current === cacheKey) {
+      // 更新记录的路径
+      if (lastPathname !== currentPath) {
+        setLastPathname(currentPath)
+      }
+      return
+    }
 
+    // 检查是否有缓存，如果有缓存且参数匹配，则恢复缓存数据
+    if (cached && cached.searchParams === currentSearchParams) {
+      if (cached.scrollPosition > 0) {
+        restoreScrollPosition(cached.scrollPosition)
+      }
+    } else {
+      setArticleData(data)
+      setPage(1)
+    }
+    restoreStateProcessedRef.current = cacheKey
+
+    // 更新记录的路径
+    if (lastPathname !== currentPath) {
+      setLastPathname(currentPath)
+    }
+  }, [data])
   // 监听自定义事件，直接打开弹窗（优先于 URL 参数）
   useEffect(() => {
-    const handleOpenModal = (event: CustomEvent<{ type: 'qa' | 'issue'; title?: string }>) => {
+    const handleOpenModal = (event: CustomEvent<{ type: ModelDiscussionType; title?: string }>) => {
       const { type, title } = event.detail
       setSelectedModalType(type)
       if (title) {
@@ -354,11 +276,13 @@ const Article = ({
     const action = searchParams?.get('action')
     const title = searchParams?.get('title')
     const actionKey = `${action}-${title || ''}`
-    
+
     // 避免重复处理相同的 action
     if ((action === 'ask' || action === 'issue') && actionProcessedRef.current !== actionKey) {
       actionProcessedRef.current = actionKey
-      setSelectedModalType(action === 'ask' ? 'qa' : 'issue')
+      setSelectedModalType(
+        action === 'ask' ? ModelDiscussionType.DiscussionTypeQA : ModelDiscussionType.DiscussionTypeIssue,
+      )
       if (title) {
         setInitialTitleFromSearch(decodeURIComponent(title))
       }
@@ -378,39 +302,14 @@ const Article = ({
     }
   }, [searchParams, checkAuth, releaseModalOpen, router, routeName])
 
-  const handleTopicClick = useCallback(
-    (t: number) => {
-      let newTopics: number[]
-      if (topics.includes(t)) {
-        // 已选中则取消
-        newTopics = topics.filter((item) => item !== t)
-      } else {
-        // 未选中则添加
-        newTopics = [...topics, t]
-      }
-
-      // 只有在主题真正变化时才更新 URL
-      if (JSON.stringify(newTopics) !== JSON.stringify(topics)) {
-        const params = new URLSearchParams(searchParams?.toString())
-        if (newTopics.length > 0) {
-          params.set('tps', newTopics.join(','))
-        } else {
-          params.delete('tps')
-        }
-        router.replace(`/${routeName}?${params.toString()}`)
-      }
-    },
-    [topics, searchParams, router],
-  )
-
   const handleAsk = (query?: string) => {
-    setSelectedModalType('qa')
+    setSelectedModalType(ModelDiscussionType.DiscussionTypeQA)
     setInitialTitleFromSearch(query || '')
     checkAuth(() => releaseModalOpen())
   }
 
   const handleArticle = (query?: string) => {
-    setSelectedModalType('blog')
+    setSelectedModalType(ModelDiscussionType.DiscussionTypeBlog)
     checkAuth(() => {
       const routeName = (params?.route_name as string) || ''
       const titleParam = query ? `?title=${encodeURIComponent(query)}` : ''
@@ -419,7 +318,7 @@ const Article = ({
   }
 
   const handleIssue = (query?: string) => {
-    setSelectedModalType('issue')
+    setSelectedModalType(ModelDiscussionType.DiscussionTypeIssue)
     setInitialTitleFromSearch(query || '')
     checkAuth(() => releaseModalOpen())
   }
@@ -427,7 +326,7 @@ const Article = ({
   // 处理发布类型菜单打开
   const handlePublishMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     if (type && (type !== 'issue' || isAdminRole(user?.role || ModelUserRole.UserRoleUnknown))) {
-      handlePublishTypeSelect(type as 'qa' | 'blog' | 'issue')
+      handlePublishTypeSelect(type as ModelDiscussionType)
     } else {
       setPublishAnchorEl(event.currentTarget)
     }
@@ -439,13 +338,13 @@ const Article = ({
   }
 
   // 处理选择发布类型
-  const handlePublishTypeSelect = (publishType: 'qa' | 'blog' | 'issue') => {
+  const handlePublishTypeSelect = (publishType: ModelDiscussionType) => {
     handlePublishMenuClose()
-    if (publishType === 'qa') {
+    if (publishType === ModelDiscussionType.DiscussionTypeQA) {
       handleAsk()
-    } else if (publishType === 'blog') {
+    } else if (publishType === ModelDiscussionType.DiscussionTypeBlog) {
       handleArticle()
-    } else if (publishType === 'issue') {
+    } else if (publishType === ModelDiscussionType.DiscussionTypeIssue) {
       handleIssue()
     }
   }
@@ -504,23 +403,6 @@ const Article = ({
     router.replace(`/${routeName}?${params.toString()}`)
     handleFilterMenuClose()
   }
-
-  // 监听筛选参数变化，重新获取数据
-  useEffect(() => {
-    const currentOnlyMine = searchParams?.get('only_mine') === 'true'
-    const currentResolved = searchParams?.get('resolved')
-    const resolvedValue =
-      currentResolved === null || currentResolved === undefined
-        ? null
-        : /^(0|1|2)$/.test(currentResolved)
-          ? parseInt(currentResolved, 10)
-          : null
-
-    // 只有当参数真正变化时才重新获取数据
-    if (currentOnlyMine !== onlyMine || currentResolved !== resolved) {
-      fetchList(status as Status, search, topics, currentOnlyMine, resolvedValue)
-    }
-  }, [status, onlyMine, resolved, searchParams, search, topics, fetchList])
 
   return (
     <>
@@ -616,7 +498,7 @@ const Article = ({
                 }}
               >
                 <MenuItem
-                  onClick={() => handlePublishTypeSelect('qa')}
+                  onClick={() => handlePublishTypeSelect(ModelDiscussionType.DiscussionTypeQA)}
                   sx={{
                     fontSize: '14px',
                     py: 1,
@@ -628,7 +510,7 @@ const Article = ({
                   问题
                 </MenuItem>
                 <MenuItem
-                  onClick={() => handlePublishTypeSelect('blog')}
+                  onClick={() => handlePublishTypeSelect(ModelDiscussionType.DiscussionTypeBlog)}
                   sx={{
                     fontSize: '14px',
                     py: 1,
@@ -641,7 +523,7 @@ const Article = ({
                 </MenuItem>
                 {isAdminRole(user?.role || ModelUserRole.UserRoleUnknown) && (
                   <MenuItem
-                    onClick={() => handlePublishTypeSelect('issue')}
+                    onClick={() => handlePublishTypeSelect(ModelDiscussionType.DiscussionTypeIssue)}
                     sx={{
                       fontSize: '14px',
                       py: 1,
@@ -823,8 +705,8 @@ const Article = ({
               <DiscussCard
                 key={it.uuid}
                 data={it}
-                keywords={searchRef.current}
-                onNavigate={releaseModalClose}
+                keywords={search}
+                onNavigate={onNavigate}
                 filter={status as 'hot' | 'new' | 'publish'}
                 sx={{
                   borderBottom: index < (articleData.items?.length || 0) - 1 ? '1px solid #f3f4f6' : 'none',
@@ -892,16 +774,6 @@ const Article = ({
           setInitialTitleFromSearch('')
         }}
         onOk={() => {
-          const currentOnlyMine = searchParams?.get('only_mine') === 'true'
-          const currentResolved = searchParams?.get('resolved')
-          const resolvedValue =
-            currentResolved === null || currentResolved === undefined
-              ? null
-              : /^(0|1|2)$/.test(currentResolved)
-                ? parseInt(currentResolved, 10)
-                : null
-          fetchList(status as Status, search, topics, currentOnlyMine, resolvedValue)
-          router.refresh()
           releaseModalClose()
           setInitialTitleFromSearch('')
         }}

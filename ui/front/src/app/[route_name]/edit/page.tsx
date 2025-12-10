@@ -42,13 +42,6 @@ export default function EditPage() {
     return forums.find((f) => f.route_name === routeName) || null
   }, [routeName, forums])
 
-  // 根据 data.type 转换为 ReleaseModal 需要的 type
-  const modalType = useMemo(() => {
-    if (data.type === ModelDiscussionType.DiscussionTypeQA) return 'qa'
-    if (data.type === ModelDiscussionType.DiscussionTypeIssue) return 'issue'
-    return 'blog'
-  }, [data.type])
-
   useEffect(() => {
     async function run() {
       if (!queryId) return
@@ -135,7 +128,9 @@ export default function EditPage() {
               required
               error={titleTouched && (data.title || '').trim() === ''}
               helperText={titleTouched && (data.title || '').trim() === '' ? '标题不能为空' : ' '}
-              sx={{ m: 0 }}
+              sx={{ m: 0, '& fieldset': {
+                borderColor: '#D9DEE2!important',
+              }, }}
             />
             <Button
               variant={'contained'}
@@ -221,7 +216,7 @@ export default function EditPage() {
         data={data}
         id={queryId}
         initialContent={data.content}
-        type={modalType}
+        type={data.type}
         forumInfo={forumInfo}
         showContentEditor={false}
       />

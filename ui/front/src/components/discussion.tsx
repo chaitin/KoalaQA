@@ -78,7 +78,7 @@ interface ReleaseModalProps {
   onClose: () => void
   onOk: () => void
   initialTitle?: string
-  type?: 'qa' | 'blog' | 'issue'
+  type?: ModelDiscussionType
   initialContent?: string
   forumInfo?: any // ModelForumInfo
   showContentEditor?: boolean
