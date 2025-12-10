@@ -991,6 +991,23 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "enum": [
+                            0,
+                            1,
+                            2,
+                            3
+                        ],
+                        "type": "integer",
+                        "x-enum-varnames": [
+                            "DocStatusUnknown",
+                            "DocStatusAppling",
+                            "DocStatusPendingReview",
+                            "DocStatusPendingApply"
+                        ],
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "name": "title",
                         "in": "query"
@@ -1212,6 +1229,23 @@ const docTemplate = `{
                         "minimum": 1,
                         "type": "integer",
                         "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            0,
+                            1,
+                            2,
+                            3
+                        ],
+                        "type": "integer",
+                        "x-enum-varnames": [
+                            "DocStatusUnknown",
+                            "DocStatusAppling",
+                            "DocStatusPendingReview",
+                            "DocStatusPendingApply"
+                        ],
+                        "name": "status",
                         "in": "query"
                     },
                     {

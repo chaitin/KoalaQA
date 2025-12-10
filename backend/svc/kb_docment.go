@@ -206,8 +206,9 @@ func (d *KBDocument) exportWithCache(ctx context.Context, platform platform.Plat
 type DocListReq struct {
 	model.Pagination
 
-	Title    *string         `form:"title"`
-	FileType *model.FileType `form:"file_type"`
+	Title    *string          `form:"title"`
+	FileType *model.FileType  `form:"file_type"`
+	Status   *model.DocStatus `form:"status"`
 }
 
 type DocListItem struct {
@@ -231,6 +232,7 @@ func (d *KBDocument) List(ctx context.Context, kbID uint, docType model.DocType,
 		repo.QueryWithEqual("doc_type", docType),
 		repo.QueryWithPagination(&req.Pagination),
 		repo.QueryWithOrderBy("id DESC"),
+		repo.QueryWithEqual("status", req.Status),
 	)
 	if err != nil {
 		return nil, err
@@ -241,6 +243,7 @@ func (d *KBDocument) List(ctx context.Context, kbID uint, docType model.DocType,
 		repo.QueryWithILike("title", req.Title),
 		repo.QueryWithEqual("file_type", req.FileType),
 		repo.QueryWithEqual("doc_type", docType),
+		repo.QueryWithEqual("status", req.Status),
 	)
 	if err != nil {
 		return nil, err
