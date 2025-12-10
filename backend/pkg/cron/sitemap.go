@@ -2,6 +2,7 @@ package cron
 
 import (
 	"context"
+	"os"
 	"strings"
 	"time"
 
@@ -29,6 +30,13 @@ func (s *sitemap) Run() {
 	ctx := context.Background()
 
 	s.logger.Info("sitemap task begin...")
+
+	err := os.RemoveAll(consts.SitemapDir)
+	if err != nil {
+		s.logger.WithErr(err).Warn("remove distemap dir failed")
+		return
+	}
+
 	address, err := s.publicAddress.Get(ctx)
 	if err != nil {
 		s.logger.WithErr(err).Warn("get public address failed")
