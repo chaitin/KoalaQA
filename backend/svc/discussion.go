@@ -56,6 +56,10 @@ type Discussion struct {
 	webhookType map[model.DiscussionType]message.Type
 }
 
+type DiscussionReindexRes struct {
+	Scheduled int `json:"scheduled"`
+}
+
 func newDiscussion(in discussionIn) *Discussion {
 	return &Discussion{
 		in:     in,
@@ -303,6 +307,30 @@ func (d *Discussion) Delete(ctx context.Context, user model.UserInfo, uuid strin
 
 	_ = d.in.OC.Delete(ctx, d.ossDir(disc.UUID))
 	return nil
+}
+
+func (d *Discussion) Reindex(ctx context.Context) (*DiscussionReindexRes, error) {
+	var scheduled int
+	err := d.in.DiscRepo.Iterate(ctx, 200, func(items []model.Discussion) error {
+		for _, disc := range items {
+			msg := topic.MsgDiscReindex{
+				ForumID:  disc.ForumID,
+				DiscID:   disc.ID,
+				DiscUUID: disc.UUID,
+				RagID:    disc.RagID,
+				Type:     disc.Type,
+			}
+			if err := d.in.Pub.Publish(ctx, topic.TopicDiscReindex, msg); err != nil {
+				return err
+			}
+			scheduled++
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &DiscussionReindexRes{Scheduled: scheduled}, nil
 }
 
 func (d *Discussion) ListSimilarity(ctx context.Context, discUUID string) (*model.ListRes[*model.DiscussionListItem], error) {

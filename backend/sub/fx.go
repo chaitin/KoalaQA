@@ -8,6 +8,7 @@ import (
 var Module = fx.Options(
 	fx.Provide(mq.AsSubscriber(NewDisc)),
 	fx.Provide(mq.AsSubscriber(NewDiscRag)),
+	fx.Provide(mq.AsSubscriber(NewDiscReindex)),
 	fx.Provide(mq.AsSubscriber(NewKBQA)),
 	fx.Provide(mq.AsSubscriber(newMessageNotify)),
 	fx.Provide(mq.AsSubscriber(newAnydocTask)),

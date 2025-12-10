@@ -140,6 +140,27 @@ func (d *Discussion) List(ctx context.Context, res any, queryFuncs ...QueryOptFu
 		Find(res).Error
 }
 
+func (d *Discussion) Iterate(ctx context.Context, batchSize int, handler func(items []model.Discussion) error, queryFuncs ...QueryOptFunc) error {
+	if batchSize <= 0 {
+		batchSize = 100
+	}
+	o := getQueryOpt(queryFuncs...)
+	items := make([]model.Discussion, 0, batchSize)
+	result := d.base.db.WithContext(ctx).
+		Model(&model.Discussion{}).
+		Scopes(o.Scopes()...).
+		FindInBatches(&items, batchSize, func(tx *gorm.DB, _ int) error {
+			batch := make([]model.Discussion, len(items))
+			copy(batch, items)
+			items = items[:0]
+			if handler == nil {
+				return nil
+			}
+			return handler(batch)
+		})
+	return result.Error
+}
+
 func (d *Discussion) Get(ctx context.Context, res any, queryFuncs ...QueryOptFunc) error {
 	o := getQueryOpt(queryFuncs...)
 	return d.base.model(ctx).
