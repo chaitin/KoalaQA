@@ -86,6 +86,7 @@ func (c *CTRag) QueryRecords(ctx context.Context, req QueryRecordsReq) (string, 
 		Metadata:            req.Metadata.Map(),
 		Tags:                req.Tags,
 		SimilarityThreshold: req.SimilarityThreshold,
+		MaxChunksPerDoc:     req.MaxChunksPerDoc,
 	})
 	if err != nil {
 		return "", nil, err
