@@ -1,4 +1,4 @@
-import { getDiscussion, GetDiscussionParams, getForum, getGroup } from '@/api'
+import { getDiscussion, GetDiscussionParams, getForum, getGroup, ModelDiscussionListItem } from '@/api'
 import { safeApiCall, safeLogError } from '@/lib/error-utils'
 import { findForumIdByRouteName, findForumInfoByRouteName } from '@/lib/forum-server-utils'
 import { Metadata } from 'next'
@@ -24,6 +24,7 @@ async function fetchForumData(route_name: string, searchParams: any) {
       return {
         forumId: null,
         forumInfo: null,
+        announcements: [] as ModelDiscussionListItem[],
         discussions: { items: [], total: 0 },
         groups: { items: [] },
       }
@@ -89,7 +90,7 @@ async function fetchForumData(route_name: string, searchParams: any) {
     return {
       forumId: null,
       forumInfo: null,
-      announcements: [],
+      announcements: [] as ModelDiscussionListItem[],
       discussions: { items: [], total: 0 },
       groups: { items: [] },
     }
