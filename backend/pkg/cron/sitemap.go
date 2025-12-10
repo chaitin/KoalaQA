@@ -2,9 +2,11 @@ package cron
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
+	"github.com/chaitin/koalaqa/pkg/consts"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/repo"
 	"github.com/chaitin/koalaqa/svc"
@@ -39,9 +41,9 @@ func (s *sitemap) Run() {
 
 	smi := smg.NewSitemapIndex(true)
 	smi.SetCompress(false)
-	smi.SetSitemapIndexName("sitemap_index")
+	smi.SetSitemapIndexName(strings.TrimSuffix(consts.SitemapIndexFilename, ".xml"))
 	smi.SetHostname(address.Address)
-	smi.SetOutputPath("./sitemap")
+	smi.SetOutputPath(consts.SitemapDir)
 	smi.SetServerURI("/api/sitemap")
 
 	var forums []model.Forum
