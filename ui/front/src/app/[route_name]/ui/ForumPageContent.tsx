@@ -21,7 +21,7 @@ interface ForumPageContentProps {
   initialData: {
     forumId: number | null
     forumInfo: ModelForumInfo | null
-    announcements?: ModelDiscussionListItem[]
+    announcements: ModelDiscussionListItem[]
     discussions: { items: ModelDiscussionListItem[]; total: number }
     groups: { items: (ModelGroupWithItem & { items?: ModelGroupItemInfo[] })[] }
   }
