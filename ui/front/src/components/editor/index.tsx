@@ -190,10 +190,28 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
         setContent: (content: string) => {
           try {
             if (editorRef.editor) {
-              // setContent should receive the content string directly; remove unsupported options
-              editorRef.editor.commands.setContent(content || '', {
-                contentType: 'markdown',
-              } as any)
+              const safeContent = content || ''
+              // 使用 try-catch 包装 setContent，捕获可能的 schema 验证错误
+              try {
+                editorRef.editor.commands.setContent(safeContent, {
+                  contentType: 'markdown',
+                } as any)
+              } catch (contentError) {
+                // 如果内容无效，尝试清理并设置空内容，然后重试
+                console.warn('设置内容时遇到错误，尝试清理后重试:', contentError)
+                try {
+                  // 先清空内容
+                  editorRef.editor.commands.clearContent()
+                  // 然后重新设置
+                  editorRef.editor.commands.setContent(safeContent, {
+                    contentType: 'markdown',
+                  } as any)
+                } catch (retryError) {
+                  console.error('重试设置编辑器内容仍然失败:', retryError)
+                  // 如果仍然失败，至少确保编辑器处于有效状态
+                  editorRef.editor.commands.clearContent()
+                }
+              }
 
               if (!readonly) {
                 onChange?.(content)

@@ -3,12 +3,11 @@ import {
   deleteDiscussionDiscId,
   deleteDiscussionDiscIdFollow,
   getDiscussionDiscIdFollow,
-  postDiscussionDiscIdComment,
   postDiscussionDiscIdFollow,
   postDiscussionDiscIdLike,
   postDiscussionDiscIdResolveIssue,
   postDiscussionDiscIdRevokeLike,
-  putDiscussionDiscIdClose,
+  putDiscussionDiscIdClose
 } from '@/api'
 import { ModelDiscussionDetail, ModelDiscussionState, ModelDiscussionType, ModelUserRole } from '@/api/types'
 import { DiscussionStatusChip, DiscussionTypeChip } from '@/components'
@@ -24,10 +23,9 @@ import { useAuthCheck } from '@/hooks/useAuthCheck'
 import dayjs from '@/lib/dayjs'
 import { formatNumber, isAdminRole } from '@/lib/utils'
 import { useForumStore } from '@/store'
+import { PointActionType, showPointNotification } from '@/utils/pointNotification'
 import { Ellipsis, Icon } from '@ctzhian/ui'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
-import { showPointNotification, PointActionType } from '@/utils/pointNotification'
-import RemoveRedEyeOutlinedIcon from '@mui/icons-material/RemoveRedEyeOutlined'
 import {
   Box,
   Chip,
@@ -195,17 +193,6 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
     })
   }
 
-  const onCommentSubmit = async () => {
-    const content = editorRef.current?.getContent() || ''
-    await postDiscussionDiscIdComment(
-      { discId: id },
-      {
-        content,
-      },
-    )
-    router.refresh()
-  }
-
   const handleLike = async () => {
     return checkAuth(async () => {
       try {
@@ -293,16 +280,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         id={id}
         onClose={releaseClose}
         selectedTags={[]}
-        type={
-          data.type === ModelDiscussionType.DiscussionTypeQA
-            ? 'qa'
-            : data.type === ModelDiscussionType.DiscussionTypeBlog
-              ? 'blog'
-              : data.type === ModelDiscussionType.DiscussionTypeIssue ||
-                  data.type === ModelDiscussionType.DiscussionTypeFeedback
-                ? 'issue'
-                : 'qa'
-        }
+        type={data.type}
         forumInfo={forumInfo}
         onOk={() => {
           releaseClose()

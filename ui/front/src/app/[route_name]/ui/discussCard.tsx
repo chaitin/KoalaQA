@@ -255,20 +255,4 @@ const DiscussCard = ({
 }
 
 // 使用 React.memo 优化组件，避免不必要的重新渲染
-export default memo(DiscussCard, (prevProps, nextProps) => {
-  // 自定义比较函数，只在关键属性变化时才重新渲染
-  return (
-    prevProps.data.id === nextProps.data.id &&
-    prevProps.data.updated_at === nextProps.data.updated_at &&
-    prevProps.data.created_at === nextProps.data.created_at &&
-    prevProps.data.like === nextProps.data.like &&
-    prevProps.data.dislike === nextProps.data.dislike &&
-    prevProps.data.comment === nextProps.data.comment &&
-    prevProps.data.resolved === nextProps.data.resolved &&
-    prevProps.data.group_ids === nextProps.data.group_ids &&
-    prevProps.data.tags === nextProps.data.tags &&
-    prevProps.showType === nextProps.showType &&
-    prevProps.keywords === nextProps.keywords &&
-    prevProps.filter === nextProps.filter
-  )
-})
+export default memo(DiscussCard)

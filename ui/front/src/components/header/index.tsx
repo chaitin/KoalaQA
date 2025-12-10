@@ -1,7 +1,7 @@
 'use client'
 
 import { ModelSystemBrand } from '@/api'
-import { ModelForumInfo as ModelForum, ModelUserRole } from '@/api/types'
+import { ModelDiscussionType, ModelForumInfo as ModelForum, ModelUserRole } from '@/api/types'
 import { AuthContext } from '@/components/authProvider'
 import { ReleaseModal } from '@/components/discussion'
 import { useForumStore, useQuickReplyStore } from '@/store'
@@ -40,7 +40,7 @@ interface HeaderProps {
 
 // 自定义事件类型定义
 interface OpenReleaseModalEventDetail {
-  type: 'qa' | 'issue'
+  type: ModelDiscussionType
   title?: string
 }
 
@@ -62,7 +62,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
   const [isMounted, setIsMounted] = useState(false)
   const { fetchQuickReplies } = useQuickReplyStore()
   const [releaseModalVisible, { setTrue: releaseModalOpen, setFalse: releaseModalClose }] = useBoolean(false)
-  const [selectedModalType, setSelectedModalType] = useState<'qa' | 'issue' | 'blog'>('qa')
+  const [selectedModalType, setSelectedModalType] = useState<ModelDiscussionType>(ModelDiscussionType.DiscussionTypeQA)
   const [initialTitleFromSearch, setInitialTitleFromSearch] = useState<string>('')
   const { checkAuth } = useAuthCheck()
 
@@ -275,7 +275,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
 
       // 直接触发事件打开弹窗，无论是否在列表页面
       const event = new CustomEvent<OpenReleaseModalEventDetail>('openReleaseModal', {
-        detail: { type: 'qa', title: query },
+        detail: { type: ModelDiscussionType.DiscussionTypeQA, title: query },
       })
       window.dispatchEvent(event)
     },
@@ -305,7 +305,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
 
       // 直接触发事件打开弹窗，无论是否在列表页面
       const event = new CustomEvent<OpenReleaseModalEventDetail>('openReleaseModal', {
-        detail: { type: 'issue', title: query },
+        detail: { type: ModelDiscussionType.DiscussionTypeIssue, title: query },
       })
       window.dispatchEvent(event)
     },

@@ -1,6 +1,7 @@
 import { getForum, getSystemBrand, getUser, getUserLoginMethod } from '@/api'
 import '@/asset/styles/common.css'
 import '@/asset/styles/markdown.css'
+// import 'react-photo-view/dist/react-photo-view.css';
 import { AuthProvider, CommonProvider, GuestActivationProvider } from '@/components'
 import ClientInit from '@/components/ClientInit'
 import ServerErrorBoundary from '@/components/ServerErrorBoundary'

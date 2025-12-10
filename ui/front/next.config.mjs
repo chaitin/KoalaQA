@@ -2,7 +2,7 @@
 
 const nextConfig = {
   // 开启严格模式以发现潜在问题
-  reactStrictMode: true,
+  // reactStrictMode: true,
 
   // 生产环境使用 standalone 输出
   output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,

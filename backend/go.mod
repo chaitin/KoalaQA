@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/chaitin/ModelKit/v2 v2.7.2
-	github.com/chaitin/raglite-go-sdk v0.1.0
+	github.com/chaitin/raglite-go-sdk v0.1.3
 	github.com/cloudwego/eino v0.4.7
 	github.com/coreos/go-oidc/v3 v3.15.0
 	github.com/gin-contrib/sessions v0.0.0-20190101140330-dc5246754963

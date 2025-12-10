@@ -1,4 +1,4 @@
-import { getDiscussion, getForum, getGroup } from '@/api'
+import { getDiscussion, GetDiscussionParams, getForum, getGroup } from '@/api'
 import { safeApiCall, safeLogError } from '@/lib/error-utils'
 import { findForumIdByRouteName, findForumInfoByRouteName } from '@/lib/forum-server-utils'
 import { Metadata } from 'next'
@@ -25,21 +25,21 @@ async function fetchForumData(route_name: string, searchParams: any) {
         forumId: null,
         forumInfo: null,
         discussions: { items: [], total: 0 },
-        groups: { items: [] }
+        groups: { items: [] },
       }
     }
 
     // 获取讨论和分组数据
     const { search, sort, tps, page = '1', type, only_mine, resolved } = searchParams
     const topics = tps ? tps.split(',').map(Number) : []
-    
+
     const discussionParams: any = {
       page: parseInt(page, 10),
       size: 10,
       keyword: search,
       type: type as 'qa' | 'blog' | undefined,
       forum_id: forumId,
-      group_ids: topics
+      group_ids: topics,
     }
 
     // 设置 filter，默认使用 'publish'（最新发布）
@@ -54,13 +54,22 @@ async function fetchForumData(route_name: string, searchParams: any) {
     }
 
     const groupParams = {
-      forum_id: forumId
+      forum_id: forumId,
+    }
+
+    const params: GetDiscussionParams = {
+      discussion_ids: forumInfo?.blog_ids,
+      page: 1,
+      size: 10,
+      type: 'blog',
+      forum_id: forumInfo?.id,
     }
 
     // 并行获取数据
-    const [discussions, groups] = await Promise.all([
+    const [discussions, groups, announcements] = await Promise.all([
       safeApiCall(() => getDiscussion(discussionParams), { items: [], total: 0 }),
-      safeApiCall(() => getGroup(groupParams), { items: [] })
+      safeApiCall(() => getGroup(groupParams), { items: [] }),
+      safeApiCall(() => getDiscussion(params).then(r=>r.items),[]),
     ])
 
     return {
@@ -68,26 +77,36 @@ async function fetchForumData(route_name: string, searchParams: any) {
       forumInfo,
       discussions: {
         items: discussions?.items || [],
-        total: discussions?.total || 0
+        total: discussions?.total || 0,
       },
+      announcements: announcements || [],
       groups: {
-        items: groups?.items || []
-      }
+        items: groups?.items || [],
+      },
     }
   } catch (error) {
     safeLogError('Failed to fetch forum data in server', error)
     return {
       forumId: null,
       forumInfo: null,
+      announcements: [],
       discussions: { items: [], total: 0 },
-      groups: { items: [] }
+      groups: { items: [] },
     }
   }
 }
 
 const Page = async (props: {
   params: Promise<{ route_name: string }>
-  searchParams: Promise<{ search?: string; sort?: string; tps?: string; page?: string; type?: string; only_mine?: string; resolved?: string }>
+  searchParams: Promise<{
+    search?: string
+    sort?: string
+    tps?: string
+    page?: string
+    type?: string
+    only_mine?: string
+    resolved?: string
+  }>
 }) => {
   const { route_name } = await props.params
   const searchParams = await props.searchParams
@@ -95,13 +114,7 @@ const Page = async (props: {
   // 在服务端获取所有数据
   const forumData = await fetchForumData(route_name, searchParams)
 
-  return (
-    <ForumPageContent 
-      route_name={route_name}
-      searchParams={searchParams}
-      initialData={forumData}
-    />
-  )
+  return <ForumPageContent route_name={route_name} searchParams={searchParams} initialData={forumData} />
 }
 
 export default Page

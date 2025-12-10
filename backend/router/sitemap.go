@@ -6,6 +6,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/chaitin/koalaqa/pkg/consts"
 	"github.com/chaitin/koalaqa/pkg/context"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/util"
@@ -20,7 +21,7 @@ type sitemap struct {
 }
 
 func (s *sitemap) Get(ctx *context.Context) {
-	filename := filepath.Join("sitemap", ctx.Param("filename"))
+	filename := filepath.Join(consts.SitemapDir, ctx.Param("filename"))
 	if path.Ext(filename) != ".xml" {
 		ctx.Status(http.StatusNotFound)
 		return
@@ -55,7 +56,7 @@ func (s *sitemap) Robots(ctx *context.Context) {
 		return
 	}
 
-	exist, err := util.FileExist("sitemap/sitemap_index.xml")
+	exist, err := util.FileExist(filepath.Join(consts.SitemapDir, consts.SitemapIndexFilename))
 	if err != nil {
 		s.logger.WithContext(ctx).WithErr(err).Warn("check sitemap index exist failed")
 		ctx.Status(http.StatusInternalServerError)
@@ -66,7 +67,7 @@ func (s *sitemap) Robots(ctx *context.Context) {
 		return
 	}
 
-	ctx.String(http.StatusOK, fmt.Sprintf(`Sitemap: %s`, publicAddress.FullURL("/api/sitemap/sitemap_index.xml")))
+	ctx.String(http.StatusOK, fmt.Sprintf(`Sitemap: %s`, publicAddress.FullURL("/api/sitemap/"+consts.SitemapIndexFilename)))
 }
 
 func (s *sitemap) Route(h server.Handler) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { ModelDiscussionListItem, ModelForumInfo, ModelGroupItemInfo, ModelGroupWithItem } from '@/api/types'
+import { ModelDiscussionListItem, ModelDiscussionType, ModelForumInfo, ModelGroupItemInfo, ModelGroupWithItem } from '@/api/types'
 import GroupsInitializer from '@/components/groupsInitializer'
 import { Button, Stack } from '@mui/material'
 import Link from 'next/link'
@@ -21,6 +21,7 @@ interface ForumPageContentProps {
   initialData: {
     forumId: number | null
     forumInfo: ModelForumInfo | null
+    announcements?: ModelDiscussionListItem[]
     discussions: { items: ModelDiscussionListItem[]; total: number }
     groups: { items: (ModelGroupWithItem & { items?: ModelGroupItemInfo[] })[] }
   }
@@ -28,7 +29,7 @@ interface ForumPageContentProps {
 
 const ForumPageContent = ({ route_name, searchParams, initialData }: ForumPageContentProps) => {
   const { tps, type } = searchParams
-  const { forumId, forumInfo, discussions, groups } = initialData
+  const { forumId, forumInfo, discussions, groups, announcements } = initialData
   const setRouteName = useForumStore((s) => s.setRouteName)
 
   // 确保 store 中记录 route_name，以便 selectedForumId 能尽快被设置
@@ -38,8 +39,6 @@ const ForumPageContent = ({ route_name, searchParams, initialData }: ForumPageCo
     }
   }, [route_name, setRouteName])
 
-  // 将 url 中的 tps 参数（逗号分隔的字符串）转换为数字数组
-  const topics = tps ? tps.split(',').map(Number) : []
 
   // 如果找不到对应的论坛，返回 404
   if (!forumId) {
@@ -60,10 +59,9 @@ const ForumPageContent = ({ route_name, searchParams, initialData }: ForumPageCo
         <Suspense>
           <ArticleCard
             data={discussions}
-            topics={topics}
-            groups={groups}
-            type={type}
-            forumId={forumId.toString()}
+            announcements={announcements}
+            tps={tps || ''}
+            type={type as ModelDiscussionType | undefined}
             forumInfo={forumInfo}
           />
         </Suspense>

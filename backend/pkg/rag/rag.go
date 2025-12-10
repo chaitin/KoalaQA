@@ -13,6 +13,7 @@ type QueryRecordsReq struct {
 	Metadata            Metadata `json:"metadata,omitempty"`
 	Tags                []string `json:"tags,omitempty"`
 	SimilarityThreshold float64  `json:"similarity_threshold,omitempty"`
+	MaxChunksPerDoc     int      `json:"max_chunks_per_doc,omitempty"`
 }
 
 type UpdateDatasetReq struct {
