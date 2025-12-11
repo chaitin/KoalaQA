@@ -1784,3 +1784,43 @@ func (d *Discussion) GetBotComment(ctx context.Context, discID uint) (*model.Com
 
 	return &res, nil
 }
+
+type ReindexReq struct {
+	Limit int `json:"limit"`
+}
+
+func (d *Discussion) Reindex(ctx context.Context, req ReindexReq) error {
+	if req.Limit > 0 {
+		var discussions []*model.Discussion
+		err := d.in.DiscRepo.List(ctx, &discussions, repo.QueryWithPagination(&model.Pagination{Size: req.Limit}))
+		if err != nil {
+			return err
+		}
+
+		for _, discussion := range discussions {
+			err := d.in.Pub.Publish(ctx, topic.TopicDiscReindex, topic.MsgDiscReindex{
+				ForumID: discussion.ForumID,
+				DiscID:  discussion.ID,
+				RagID:   discussion.RagID,
+			})
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	return d.in.DiscRepo.BatchProcess(ctx, 100, func(discussions []*model.Discussion) error {
+		for _, discussion := range discussions {
+			err := d.in.Pub.Publish(ctx, topic.TopicDiscReindex, topic.MsgDiscReindex{
+				ForumID: discussion.ForumID,
+				DiscID:  discussion.ID,
+				RagID:   discussion.RagID,
+			})
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
