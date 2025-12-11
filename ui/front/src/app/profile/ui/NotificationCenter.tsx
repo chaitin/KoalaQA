@@ -30,8 +30,7 @@ import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import { useForumStore } from '@/store'
 import { getNotificationTextForExport, splitNotificationText } from '@/components/header/loggedInView'
 import { AuthContext } from '@/components/authProvider'
-import { Ellipsis } from '@ctzhian/ui'
-import Pagination from '@/components/pagination'
+import { Ellipsis, Pagination } from '@ctzhian/ui'
 import Image from 'next/image'
 
 export default function NotificationCenter() {
@@ -423,15 +422,10 @@ export default function NotificationCenter() {
       {notifyTotal > notifyPageSize && (
         <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
           <Pagination
-            count={notifyTotal}
+            total={notifyTotal}
             page={notifyPage}
-            rowsPerPage={notifyPageSize}
-            onPageChange={handlePageChange}
-            rowsPerPageOptions={[10, 20, 50, 100]}
-            onRowsPerPageChange={handleRowsPerPageChange}
-            sx={{
-              backgroundColor: 'transparent',
-            }}
+            pageSize={notifyPageSize}
+            onChange={handlePageChange}
           />
         </Box>
       )}
