@@ -78,9 +78,10 @@ func (d *DiscRag) handleInsert(ctx context.Context, data topic.MsgDiscChange) er
 		return nil
 	}
 	ragID, err := d.rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
-		DatasetID:  forum.DatasetID,
-		DocumentID: data.RagID,
-		Content:    ragContent,
+		DatasetID:       forum.DatasetID,
+		DocumentID:      data.RagID,
+		Content:         ragContent,
+		ExtractKeywords: true,
 	})
 	if err != nil {
 		return err

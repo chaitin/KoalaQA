@@ -6,19 +6,10 @@ import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Stack 
 import { useRouter } from 'next/navigation'
 import { useContext } from 'react'
 import { AuthContext } from '../authProvider'
-import Icon from '../icon'
 import UserAvatar from '../UserAvatar'
 import { IdCard, IdInfo, InfoCard } from './components'
 import SettingsIcon from '@mui/icons-material/Settings'
-
-export const OPT_LIST = [
-  {
-    name: '个人中心',
-    icon: 'icon-iconfontgerenzhongxin',
-    link: '/profile?tab=1',
-  },
-]
-
+import { Icon } from '@ctzhian/ui'
 interface ProfilePanelProps {
   onClose?: () => void
   adminHref?: string
@@ -94,42 +85,38 @@ const ProfilePanel: React.FC<ProfilePanelProps> = ({ onClose, adminHref }) => {
           bgcolor: 'background.paper',
         }}
       >
-        {OPT_LIST.map((item) => {
-          return (
-            <ListItem
-              key={item.name}
-              disablePadding
-              sx={{
-                height: 40,
-                borderRadius: '4px',
-                marginBottom: '4px',
-                transition: 'background 0.3s',
-                '&:hover, &:focus': {
-                  background: 'rgba(0,0,0,0.04)', // 使用灰色
-                },
-              }}
-              onClick={(e) => {
-                e.stopPropagation()
-                onClose?.()
-                router.push(item.link)
-              }}
-            >
-              <ListItemButton
-                sx={{
-                  '&:hover, &:focus': {
-                    background: 'transparent',
-                  },
-                }}
-                dense
-              >
-                <ListItemIcon sx={{ minWidth: 34 }}>
-                  <Icon type={item.icon} sx={{ fontSize: 16 }} />
-                </ListItemIcon>
-                <ListItemText sx={{ color: '#000' }} primary={item.name} />
-              </ListItemButton>
-            </ListItem>
-          )
-        })}
+        <ListItem
+          key={'个人中心'}
+          disablePadding
+          sx={{
+            height: 40,
+            borderRadius: '4px',
+            marginBottom: '4px',
+            transition: 'background 0.3s',
+            '&:hover, &:focus': {
+              background: 'rgba(0,0,0,0.04)', // 使用灰色
+            },
+          }}
+          onClick={(e) => {
+            e.stopPropagation()
+            onClose?.()
+            router.push('/profile?tab=1')
+          }}
+        >
+          <ListItemButton
+            sx={{
+              '&:hover, &:focus': {
+                background: 'transparent',
+              },
+            }}
+            dense
+          >
+            <ListItemIcon sx={{ minWidth: 34 }}>
+              <Icon type='icon-iconfontgerenzhongxin' sx={{ fontSize: 16 }} />
+            </ListItemIcon>
+            <ListItemText sx={{ color: '#000' }} primary='个人中心' />
+          </ListItemButton>
+        </ListItem>
 
         {isAdmin && adminHref && (
           <ListItem

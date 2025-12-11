@@ -14,6 +14,7 @@ func (f *forum) Route(h server.Handler) {
 	g := h.Group("/forum")
 	g.GET("", f.List)
 	g.PUT("", f.Update)
+	g.GET("/:forum_id/tags", f.ListAllTag)
 }
 
 func newForum(f *svc.Forum) server.Router {
@@ -60,4 +61,34 @@ func (f *forum) Update(ctx *context.Context) {
 		return
 	}
 	ctx.Success(nil)
+}
+
+// ListAllTag
+// @Summary list forum all tag
+// @Tags forum
+// @Produce json
+// @Param forum_id path uint false "forum id"
+// @Param req query svc.ForumListTagReq false "req params"
+// @Success 200 {object} context.Response{data=[]model.ListRes{items=[]model.DiscussionTag}}
+// @Router /admin/forum/{forum_id}/tags [get]
+func (f *forum) ListAllTag(ctx *context.Context) {
+	forumID, err := ctx.ParamUint("forum_id")
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+	var req svc.ForumListTagReq
+	err = ctx.ShouldBindQuery(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	res, err := f.svcForum.ListForumAllTag(ctx, forumID, req)
+	if err != nil {
+		ctx.InternalError(err, "list forum tag failed")
+		return
+	}
+
+	ctx.Success(res)
 }

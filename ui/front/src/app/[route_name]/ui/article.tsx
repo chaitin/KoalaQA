@@ -52,6 +52,7 @@ const Article = ({
   data,
   tps,
   type,
+  tags,
   forumInfo,
   announcements,
 }: {
@@ -60,6 +61,7 @@ const Article = ({
   }
   tps: string
   type?: ModelDiscussionType
+  tags?: string
   forumInfo?: ModelForumInfo | null
   announcements: ModelDiscussionListItem[]
 }) => {
@@ -77,6 +79,9 @@ const Article = ({
   const topics = useMemo(() => {
     return tps ? tps.split(',').map(Number) : []
   }, [tps])
+  const tagIds = useMemo(() => {
+    return tags ? tags.split(',').map(Number) : []
+  }, [tags])
   // 根据设备类型动态设置搜索placeholder
   const searchPlaceholder = isMobile ? '使用 AI 搜索' : '输入任意内容，使用 AI 搜索'
 
@@ -143,6 +148,11 @@ const Article = ({
     // 如果有选中的主题，添加到参数中
     if (topics && topics.length > 0) {
       params.group_ids = topics
+    }
+
+    // 如果有选中的标签，添加到参数中
+    if (tagIds && tagIds.length > 0) {
+      params.tag_ids = tagIds
     }
 
     // 添加筛选参数

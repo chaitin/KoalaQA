@@ -2,7 +2,7 @@
 
 import { Box, Container, IconButton, useTheme, useMediaQuery } from '@mui/material'
 import { useState } from 'react'
-import FilterPanel from '@/components/filter-panel'
+import FilterPanel from '@/components/FilterPanel'
 
 export default function RouteLayout({ children }: { children: React.ReactNode }) {
   const theme = useTheme()

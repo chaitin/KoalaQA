@@ -14,6 +14,8 @@ import {
   DialogActions,
   Alert,
   Grid,
+  Autocomplete,
+  Chip,
 } from '@mui/material';
 import {
   closestCenter,
@@ -41,6 +43,7 @@ import {
   ModelDiscussionType,
   SvcForumBlog,
 } from '@/api/types';
+
 import type { ForumItem } from '@/store/slices/forum';
 
 interface ForumFormData {
@@ -51,6 +54,7 @@ interface ForumFormData {
     blog_group_ids?: number[];
     blog_ids?: number[];
     blogs?: SvcForumBlog[];
+    tag_ids?: number[];
   })[];
 }
 
@@ -89,6 +93,9 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
     name: `blocks.${index}.blogs`,
   }) as SvcForumBlog[] | undefined;
 
+  // 从 store 获取标签
+  const tags = useForumStore(state => state.tags);
+  const tagOptions = forumId && forumId > 0 ? (tags[forumId] || []) : [];
   const { isDragging, attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: `block-${index}`,
   });
@@ -325,6 +332,95 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
             />
           </Grid>
         </Grid>
+
+        {/* 标签选择 */}
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12 }}>
+            <Controller
+              control={control}
+              name={`blocks.${index}.tag_ids`}
+              render={({ field, fieldState: { error } }) => {
+                const selectedTags = tagOptions.filter(tag => 
+                  (field.value || []).includes(tag.id || 0)
+                );
+
+                return (
+                  <Box>
+                    <Autocomplete
+                      multiple
+                      size="small"
+                      value={selectedTags}
+                      onChange={(event, newValue) => {
+                        const selectedIds = (newValue || []).map(tag => tag.id || 0);
+                        field.onChange(selectedIds);
+                        setIsEdit(true);
+                      }}
+                      options={tagOptions}
+                      getOptionLabel={option => option.name || ''}
+                      isOptionEqualToValue={(option, value) => (option.id || 0) === (value.id || 0)}
+                      disabled={!forumId || forumId <= 0}
+                      renderTags={(value, getTagProps) =>
+                        value.map((option, index) => (
+                          <Chip
+                            {...getTagProps({ index })}
+                            key={option.id}
+                            label={
+                              option.count !== undefined
+                                ? `${option.name || ''} (${option.count})`
+                                : option.name || ''
+                            }
+                            size="small"
+                            sx={{
+                              height: 24,
+                              fontSize: 12,
+                              '& .MuiChip-label': { fontSize: 12, px: 0.5 },
+                            }}
+                          />
+                        ))
+                      }
+                      renderInput={params => (
+                        <TextField
+                          {...params}
+                          label="板块标签"
+                          placeholder={forumId && forumId > 0 ? "请选择标签" : "新增板块暂不支持选择标签"}
+                          error={!!error}
+                          helperText={error?.message}
+                          sx={commonFieldSx}
+                          InputProps={{
+                            ...params.InputProps,
+                          }}
+                        />
+                      )}
+                      renderOption={(props, option) => (
+                        <Box component="li" {...props}>
+                          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ width: '100%' }}>
+                            <Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>
+                              {option.name || ''} 
+                            </Typography>
+                            {option.count !== undefined && (
+                              <Typography variant="body2" sx={{ fontSize: 12, color: 'text.secondary', ml: 1 }}>
+                                ({option.count})
+                              </Typography>
+                            )}
+                          </Stack>
+                        </Box>
+                      )}
+                      noOptionsText={forumId && forumId > 0 ? "暂无标签数据" : "新增板块暂不支持选择标签"}
+                      clearOnEscape
+                      selectOnFocus
+                      handleHomeEndKeys
+                      sx={{
+                        '& .MuiAutocomplete-inputRoot': {
+                          paddingRight: '14px !important',
+                        },
+                      }}
+                    />
+                  </Box>
+                );
+              }}
+            />
+          </Grid>
+        </Grid>
         
       </Stack>
     </Box>
@@ -382,6 +478,7 @@ const Forum: React.FC = () => {
         blog_group_ids: blogGroups?.group_ids || [],
         blog_ids: block.blog_ids || [],
         blogs: block.blogs || [],
+        tag_ids: (block as any).tag_ids || [],
       };
     });
   }, []);
@@ -468,6 +565,7 @@ const Forum: React.FC = () => {
       blog_group_ids: [],
       blog_ids: [],
       blogs: [],
+      tag_ids: [],
     });
     setIsEdit(true);
   };
@@ -558,6 +656,7 @@ const Forum: React.FC = () => {
           route_name: block.route_name?.trim() || '',
           index: index + 1, // 设置排序索引
           groups: groups.length > 0 ? groups : undefined,
+          tag_ids: block.tag_ids && block.tag_ids.length > 0 ? block.tag_ids : undefined,
           blog_ids: block.blog_ids && block.blog_ids.length > 0 ? block.blog_ids : undefined,
         };
       });

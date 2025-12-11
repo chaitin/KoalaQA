@@ -148,9 +148,11 @@ export enum ModelDocType {
 
 export enum ModelDocStatus {
   DocStatusUnknown = 0,
-  DocStatusAppling = 1,
+  DocStatusApplySuccess = 1,
   DocStatusPendingReview = 2,
   DocStatusPendingApply = 3,
+  DocStatusApplyFailed = 4,
+  DocStatusAppling = 5,
 }
 
 export enum ModelDiscussionType {
@@ -240,6 +242,8 @@ export interface ModelDiscussion {
   resolved?: ModelDiscussionState;
   resolved_at?: number;
   summary?: string;
+  tag_ids?: number[];
+  /** Deprecated */
   tags?: string[];
   title?: string;
   type?: ModelDiscussionType;
@@ -286,6 +290,8 @@ export interface ModelDiscussionDetail {
   resolved?: ModelDiscussionState;
   resolved_at?: number;
   summary?: string;
+  tag_ids?: number[];
+  /** Deprecated */
   tags?: string[];
   title?: string;
   type?: ModelDiscussionType;
@@ -320,6 +326,8 @@ export interface ModelDiscussionListItem {
   resolved?: ModelDiscussionState;
   resolved_at?: number;
   summary?: string;
+  tag_ids?: number[];
+  /** Deprecated */
   tags?: string[];
   title?: string;
   type?: ModelDiscussionType;
@@ -347,6 +355,15 @@ export interface ModelDiscussionReply {
   user_role?: ModelUserRole;
 }
 
+export interface ModelDiscussionTag {
+  count?: number;
+  created_at?: number;
+  forum_id?: number;
+  id?: number;
+  name?: string;
+  updated_at?: number;
+}
+
 export interface ModelExportOpt {
   file_type?: string;
   space_id?: string;
@@ -364,6 +381,7 @@ export interface ModelForumInfo {
   index?: number;
   name: string;
   route_name?: string;
+  tag_ids?: number[];
 }
 
 export interface ModelGroupItemInfo {
@@ -764,6 +782,14 @@ export interface SvcForumRes {
   index?: number;
   name: string;
   route_name?: string;
+  tag_ids?: number[];
+  tags?: SvcForumTag[];
+}
+
+export interface SvcForumTag {
+  count?: number;
+  id?: number;
+  name?: string;
 }
 
 export interface SvcForumUpdateReq {
@@ -1155,6 +1181,15 @@ export type PutAdminForumPayload = SvcForumUpdateReq & {
   })[];
 };
 
+export interface GetAdminForumForumIdTagsParams {
+  /** @min 1 */
+  page?: number;
+  /** @min 1 */
+  size?: number;
+  /** forum id */
+  forumId?: number;
+}
+
 export interface PostAdminKbDocumentFileListPayload {
   /**
    * upload file
@@ -1198,6 +1233,7 @@ export interface GetAdminKbKbIdDocumentParams {
   page?: number;
   /** @min 1 */
   size?: number;
+  status?: 0 | 1 | 2 | 3 | 4 | 5;
   title?: string;
   /** kb_id */
   kbId: number;
@@ -1242,6 +1278,7 @@ export interface GetAdminKbKbIdQuestionParams {
   page?: number;
   /** @min 1 */
   size?: number;
+  status?: 0 | 1 | 2 | 3 | 4 | 5;
   title?: string;
   /** kb_id */
   kbId: number;
@@ -1495,6 +1532,7 @@ export interface GetDiscussionParams {
   /** @min 1 */
   size?: number;
   stat?: boolean;
+  tag_ids?: number[];
   type?: "qa" | "feedback" | "blog" | "issue";
 }
 
@@ -1639,6 +1677,11 @@ export interface PostDiscussionDiscIdRevokeLikeParams {
 export interface GetDiscussionDiscIdSimilarityParams {
   /** disc_id */
   discId: string;
+}
+
+export interface GetForumForumIdTagsParams {
+  /** forum id */
+  forumId?: number;
 }
 
 export interface GetGroupParams {

@@ -404,6 +404,7 @@ type DiscussionListReq struct {
 	DiscussionIDs *model.Int64Array      `json:"discussion_ids" form:"discussion_ids"`
 	Stat          bool                   `json:"stat" form:"stat"`
 	FuzzySearch   bool                   `json:"fuzzy_search" form:"fuzzy_search"`
+	TagIDs        model.Int64Array       `json:"tag_ids" form:"tag_ids"`
 }
 
 func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, req DiscussionListReq) (*model.ListRes[*model.DiscussionListItem], error) {
@@ -458,6 +459,7 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 		repo.QueryWithEqual("forum_id", req.ForumID),
 		repo.QueryWithEqual("resolved", req.Resolved),
 		repo.QueryWithEqual("discussions.id", req.DiscussionIDs, repo.EqualOPEqAny),
+		repo.QueryWithEqual("discussions.tag_ids", req.TagIDs, repo.EqualOPContainAny),
 	)
 	if req.OnlyMine {
 		query = append(query, repo.QueryWithEqual("members", userID, repo.EqualOPValIn))
@@ -933,7 +935,7 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 	}
 
 	if err = d.in.DiscRepo.Update(ctx, map[string]any{
-		"members":    gorm.Expr("array_append(members, ?)", uid),
+		"members":    gorm.Expr("array_distinct(array_append(members, ?))", uid),
 		"updated_at": gorm.Expr("updated_at"),
 	}, repo.QueryWithEqual("id", disc.ID)); err != nil {
 		return 0, err

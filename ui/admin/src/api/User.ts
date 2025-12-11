@@ -18,6 +18,7 @@ import {
   GetAdminUserUserIdParams,
   GetUserLoginThirdParams,
   GetUserNotifyListParams,
+  GetUserPointParams,
   GetUserTrendParams,
   GetUserUserIdParams,
   ModelListRes,
@@ -25,6 +26,7 @@ import {
   ModelTrend,
   ModelUser,
   ModelUserInfo,
+  ModelUserPointRecord,
   PutAdminUserUserIdParams,
   PutUserPayload,
   SvcAuthFrontendGetRes,
@@ -416,6 +418,40 @@ export const postUserNotifyWeb = (
     method: "POST",
     body: req,
     type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name GetUserPoint
+ * @summary list user point
+ * @request GET:/user/point
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (ModelUserPointRecord)[],
+
+}),
+
+})` OK
+ */
+
+export const getUserPoint = (
+  query: GetUserPointParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: ModelUserPointRecord[];
+      };
+    }
+  >({
+    path: `/user/point`,
+    method: "GET",
+    query: query,
     format: "json",
     ...params,
   });

@@ -1,4 +1,4 @@
-import { getForum, getSystemBrand, getUser, getUserLoginMethod } from '@/api'
+import { getForum, getSystemBrand, getSystemSeo, getUser, getUserLoginMethod } from '@/api'
 import '@/asset/styles/common.css'
 import '@/asset/styles/markdown.css'
 // import 'react-photo-view/dist/react-photo-view.css';
@@ -26,7 +26,6 @@ import path from 'path'
 import * as React from 'react'
 
 import PageViewTracker from '@/components/PageViewTracker'
-import ScrollReset from '@/components/ScrollReset'
 import Header from '../components/header'
 import Scroll from './scroll'
 
@@ -99,9 +98,10 @@ const alimamashuheitiFont = localFont({
 // 动态生成 metadata
 export async function generateMetadata(): Promise<Metadata> {
   let brandName = 'Koala QA'
-
+  let description = '一个专业的技术讨论和知识分享社区'
+  let keywords = ['技术讨论', '问答', '知识分享', '开发者社区']
   try {
-    const brand = await getSystemBrand()
+    const [brand] = await Promise.all([getSystemBrand()])
     brandName = brand?.text || 'Koala QA'
   } catch (error) {
     // 构建时如果无法获取品牌信息，使用默认值
@@ -113,8 +113,8 @@ export async function generateMetadata(): Promise<Metadata> {
       default: `${brandName} - 技术讨论社区`,
       template: `%s | ${brandName}`,
     },
-    description: '一个专业的技术讨论和知识分享社区',
-    keywords: ['技术讨论', '问答', '知识分享', '开发者社区'],
+    description: description,
+    keywords: keywords,
     authors: [{ name: `${brandName} Team` }],
     creator: brandName,
     metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
@@ -202,12 +202,19 @@ async function getAuthConfigData() {
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
   // 首先获取认证配置和用户数据，因为论坛数据依赖这些信息
-  const [brandResponse, authConfig, user] = await Promise.all([getSystemBrand(), getAuthConfigData(), getUserData()])
+  const [brandResponse, seoResponse, authConfig, user] = await Promise.all([
+    getSystemBrand(),
+    getSystemSeo(),
+    getAuthConfigData(),
+    getUserData(),
+  ])
 
   // 基于认证状态和公共访问配置获取论坛数据
   const forums = await getForumData(authConfig, user)
 
   const brand = brandResponse || null
+  const description = seoResponse?.desc || '一个专业的技术讨论和知识分享社区'
+  const keywords = seoResponse?.keywords || ['技术讨论', '问答', '知识分享', '开发者社区']
 
   // 获取 iconfont 文件名（带 commit id）
   const iconfontFileName = getIconfontFileName()
@@ -216,6 +223,8 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
     <html lang='zh-CN'>
       <head>
         <meta httpEquiv='content-language' content='zh-CN' />
+        <meta name='description' content={description} />
+        <meta name='keywords' content={Array.isArray(keywords) ? keywords.join(',') : keywords} />
         {/* DNS 预解析优化 */}
         <link rel='dns-prefetch' href='//fonts.googleapis.com' />
         <link rel='preconnect' href='//fonts.googleapis.com' crossOrigin='anonymous' />

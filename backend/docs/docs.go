@@ -272,6 +272,75 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/forum/{forum_id}/tags": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "summary": "list forum all tag",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "forum id",
+                        "name": "forum_id",
+                        "in": "path"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "allOf": [
+                                                    {
+                                                        "$ref": "#/definitions/model.ListRes"
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "items": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "$ref": "#/definitions/model.DiscussionTag"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/admin/group": {
             "get": {
                 "produces": [
@@ -995,14 +1064,18 @@ const docTemplate = `{
                             0,
                             1,
                             2,
-                            3
+                            3,
+                            4,
+                            5
                         ],
                         "type": "integer",
                         "x-enum-varnames": [
                             "DocStatusUnknown",
-                            "DocStatusAppling",
+                            "DocStatusApplySuccess",
                             "DocStatusPendingReview",
-                            "DocStatusPendingApply"
+                            "DocStatusPendingApply",
+                            "DocStatusApplyFailed",
+                            "DocStatusAppling"
                         ],
                         "name": "status",
                         "in": "query"
@@ -1236,14 +1309,18 @@ const docTemplate = `{
                             0,
                             1,
                             2,
-                            3
+                            3,
+                            4,
+                            5
                         ],
                         "type": "integer",
                         "x-enum-varnames": [
                             "DocStatusUnknown",
-                            "DocStatusAppling",
+                            "DocStatusApplySuccess",
                             "DocStatusPendingReview",
-                            "DocStatusPendingApply"
+                            "DocStatusPendingApply",
+                            "DocStatusApplyFailed",
+                            "DocStatusAppling"
                         ],
                         "name": "status",
                         "in": "query"
@@ -3920,6 +3997,15 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "tag_ids",
+                        "in": "query"
+                    },
+                    {
                         "enum": [
                             "qa",
                             "feedback",
@@ -5187,6 +5273,63 @@ const docTemplate = `{
                                             "type": "array",
                                             "items": {
                                                 "$ref": "#/definitions/svc.ForumRes"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/forum/{forum_id}/tags": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "forum"
+                ],
+                "summary": "list forum tags",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "forum id",
+                        "name": "forum_id",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "allOf": [
+                                                    {
+                                                        "$ref": "#/definitions/model.ListRes"
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "items": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "$ref": "#/definitions/model.DiscussionTag"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                ]
                                             }
                                         }
                                     }
@@ -6473,7 +6616,14 @@ const docTemplate = `{
                 "summary": {
                     "type": "string"
                 },
+                "tag_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "tags": {
+                    "description": "Deprecated",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -6621,7 +6771,14 @@ const docTemplate = `{
                 "summary": {
                     "type": "string"
                 },
+                "tag_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "tags": {
+                    "description": "Deprecated",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -6724,7 +6881,14 @@ const docTemplate = `{
                 "summary": {
                     "type": "string"
                 },
+                "tag_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "tags": {
+                    "description": "Deprecated",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -6815,6 +6979,29 @@ const docTemplate = `{
                 "DiscussionStateInProgress"
             ]
         },
+        "model.DiscussionTag": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "forum_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "integer"
+                }
+            }
+        },
         "model.DiscussionType": {
             "type": "string",
             "enum": [
@@ -6836,13 +7023,17 @@ const docTemplate = `{
                 0,
                 1,
                 2,
-                3
+                3,
+                4,
+                5
             ],
             "x-enum-varnames": [
                 "DocStatusUnknown",
-                "DocStatusAppling",
+                "DocStatusApplySuccess",
                 "DocStatusPendingReview",
-                "DocStatusPendingApply"
+                "DocStatusPendingApply",
+                "DocStatusApplyFailed",
+                "DocStatusAppling"
             ]
         },
         "model.DocType": {
@@ -6983,6 +7174,12 @@ const docTemplate = `{
                 },
                 "route_name": {
                     "type": "string"
+                },
+                "tag_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 }
             }
         },
@@ -8270,6 +8467,32 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "route_name": {
+                    "type": "string"
+                },
+                "tag_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/svc.ForumTag"
+                    }
+                }
+            }
+        },
+        "svc.ForumTag": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
                     "type": "string"
                 }
             }

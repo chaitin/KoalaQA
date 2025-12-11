@@ -101,7 +101,7 @@ func (k *KBDoc) handleInsert(ctx context.Context, kbID uint, docID uint) error {
 	if err != nil {
 		return err
 	}
-	err = k.doc.UpdateRagID(ctx, doc.KBID, doc.ID, ragID)
+	err = k.doc.UpdateRagID(ctx, doc.KBID, doc.ID, ragID, model.DocStatusPendingApply)
 	if err != nil {
 		return err
 	}

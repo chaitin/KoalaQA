@@ -20,9 +20,15 @@ import {
 } from '@mui/material'
 import Image from 'next/image'
 import { useParams, usePathname, useSearchParams } from 'next/navigation'
-import { useContext, useMemo } from 'react'
+import { useContext, useEffect, useMemo, useState } from 'react'
 import { CommonContext } from './commonProvider'
-import Icon from './icon'
+import { Icon } from '@ctzhian/ui'
+
+type TagWithId = {
+  id: number
+  name?: string
+  count?: number
+}
 
 const postTypes = [
   { id: 'qa', name: '问题', icon: <Image width={20} height={20} src='/qa.svg' alt='问题' /> },
@@ -31,12 +37,18 @@ const postTypes = [
 ]
 
 export default function FilterPanel() {
-  const { groups } = useContext(CommonContext)
+  const { groups, tags } = useContext(CommonContext)
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const params = useParams()
   const router = useRouterWithRouteName()
   const routeName = params?.route_name as string
+  const [selectedTags, setSelectedTags] = useState<number[]>([])
+
+  const popularTags = useMemo(
+    () => (tags || []).filter((tag): tag is TagWithId => typeof tag?.id === 'number'),
+    [tags],
+  )
 
   // 判断是否在详情页（路径包含 /[id]，但不是 /edit）
   const isDetailPage = useMemo(() => {
@@ -61,6 +73,19 @@ export default function FilterPanel() {
       .map(Number)
       .filter((id) => !isNaN(id))
   }, [searchParams])
+  const urlTags = useMemo(() => {
+    const tags = searchParams?.get('tags')
+    if (!tags) return []
+    return tags
+      .split(',')
+      .map(Number)
+      .filter((id) => !isNaN(id))
+  }, [searchParams])
+
+  // 从 URL 初始化标签选择
+  useEffect(() => {
+    setSelectedTags(urlTags.filter((id) => popularTags.some((tag) => tag.id === id)))
+  }, [urlTags, popularTags])
 
   // 将真实的 groups 数据转换为 categoryGroups 格式，始终显示全部分类
   const categoryGroups = useMemo(() => {
@@ -93,7 +118,7 @@ export default function FilterPanel() {
   }, [categoryGroups, urlTopics])
 
   // 更新 URL 参数的函数
-  const updateUrlParams = (newTopics: number[], newType?: string | null) => {
+  const updateUrlParams = (newTopics: number[], newType?: string | null, newTags?: number[]) => {
     const params = new URLSearchParams(searchParams?.toString())
 
     // 更新类型参数
@@ -109,6 +134,15 @@ export default function FilterPanel() {
       params.set('tps', newTopics.join(','))
     } else {
       params.delete('tps')
+    }
+
+    // 更新标签参数
+    if (newTags !== undefined) {
+      if (newTags.length > 0) {
+        params.set('tags', newTags.join(','))
+      } else {
+        params.delete('tags')
+      }
     }
 
     const queryString = params.toString()
@@ -142,7 +176,7 @@ export default function FilterPanel() {
     const newSelected = selectedValues.map(Number).filter((id) => !isNaN(id))
     const allSelected = [...otherSelected, ...newSelected]
 
-    updateUrlParams(allSelected)
+    updateUrlParams(allSelected, urlType, selectedTags)
   }
 
   // 处理类型点击
@@ -150,7 +184,7 @@ export default function FilterPanel() {
     // 如果点击已选中的类型，则取消选择（不传type参数，显示全部）
     // 如果点击未选中的类型，则选中该类型
     const newType = urlType === typeId ? null : typeId
-    updateUrlParams(urlTopics, newType)
+    updateUrlParams(urlTopics, newType, selectedTags)
   }
 
   return (
@@ -383,7 +417,7 @@ export default function FilterPanel() {
         })}
       </Box>
 
-      {/* <Divider sx={{ mb: 2 }} />
+      <Divider sx={{ mb: 2 }} />
 
       <Box>
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
@@ -393,18 +427,20 @@ export default function FilterPanel() {
               label={`${tag.name} (${tag.count})`}
               size="small"
               onClick={() => {
-                setSelectedTags((prev) =>
-                  prev.includes(tag.id) ? prev.filter((t) => t !== tag.id) : [...prev, tag.id],
-                )
+                const newSelectedTags = selectedTags.includes(tag.id)
+                  ? selectedTags.filter((t) => t !== tag.id)
+                  : [...selectedTags, tag.id]
+                setSelectedTags(newSelectedTags)
+                updateUrlParams(urlTopics, urlType, newSelectedTags)
               }}
               sx={{
-                bgcolor: selectedTags.includes(tag.id) ? "#000000" : "#f9fafb",
+                bgcolor: selectedTags.includes(tag.id) ? 'primary.main' : "rgba(0,99,151,0.06)",
                 color: selectedTags.includes(tag.id) ? "#ffffff" : "#6b7280",
                 fontSize: "0.75rem",
                 fontWeight: 600,
                 height: 26,
-                borderRadius: "3px",
-                border: selectedTags.includes(tag.id) ? "none" : "1px solid #e5e7eb",
+                borderRadius: "10px",
+                border: selectedTags.includes(tag.id) ? "none" : "1px solid rgba(0,99,151,0.1)",
                 transition: "all 0.15s ease-in-out",
                 "&:hover": {
                   bgcolor: selectedTags.includes(tag.id) ? "#111827" : "#f3f4f6",
@@ -417,7 +453,7 @@ export default function FilterPanel() {
             />
           ))}
         </Box>
-      </Box> */}
+      </Box>
     </Box>
   )
 }

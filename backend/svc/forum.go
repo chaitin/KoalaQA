@@ -8,13 +8,14 @@ import (
 )
 
 type Forum struct {
-	repo     *repo.Forum
-	repoOrg  *repo.Org
-	repoDisc *repo.Discussion
+	repo        *repo.Forum
+	repoOrg     *repo.Org
+	repoDisc    *repo.Discussion
+	repoDiscTag *repo.DiscussionTag
 }
 
-func newForum(forum *repo.Forum, org *repo.Org, disc *repo.Discussion) *Forum {
-	return &Forum{repo: forum, repoOrg: org, repoDisc: disc}
+func newForum(forum *repo.Forum, org *repo.Org, disc *repo.Discussion, discTag *repo.DiscussionTag) *Forum {
+	return &Forum{repo: forum, repoOrg: org, repoDisc: disc, repoDiscTag: discTag}
 }
 
 func init() {
@@ -25,9 +26,16 @@ type ForumBlog struct {
 	ID    uint   `json:"id"`
 	Title string `json:"title"`
 }
+
+type ForumTag struct {
+	ID    uint   `json:"id"`
+	Name  string `json:"name"`
+	Count uint   `json:"count"`
+}
 type ForumRes struct {
 	model.ForumInfo
 	Blogs []ForumBlog `json:"blogs" gorm:"-"`
+	Tags  []ForumTag  `json:"tags" gorm:"-"`
 }
 
 func (f *Forum) List(ctx context.Context, user model.UserInfo, permissionCheck bool) ([]*ForumRes, error) {
@@ -68,9 +76,18 @@ func (f *Forum) List(ctx context.Context, user model.UserInfo, permissionCheck b
 			continue
 		}
 
-		err = f.repoDisc.List(ctx, &items[i].Blogs, repo.QueryWithEqual("discussions.id", item.BlogIDs, repo.EqualOPEqAny))
-		if err != nil {
-			return nil, err
+		if len(item.BlogIDs) > 0 {
+			err = f.repoDisc.List(ctx, &items[i].Blogs, repo.QueryWithEqual("discussions.id", item.BlogIDs, repo.EqualOPEqAny))
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		if len(item.TagIDs) > 0 {
+			err = f.repoDiscTag.List(ctx, &items[i].Tags, repo.QueryWithEqual("id", item.TagIDs, repo.EqualOPEqAny))
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -95,4 +112,61 @@ func (f *Forum) Update(ctx context.Context, req ForumUpdateReq) error {
 		return err
 	}
 	return nil
+}
+
+type ForumListTagReq struct {
+	*model.Pagination
+}
+
+func (f *Forum) ListForumAllTag(ctx context.Context, forumID uint, req ForumListTagReq) (*model.ListRes[model.DiscussionTag], error) {
+	var res model.ListRes[model.DiscussionTag]
+
+	err := f.repoDiscTag.List(ctx, &res.Items,
+		repo.QueryWithEqual("forum_id", forumID),
+		repo.QueryWithPagination(req.Pagination),
+		repo.QueryWithEqual("count", 0, repo.EqualOPGT),
+		repo.QueryWithOrderBy("COUNT DESC, id ASC"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	err = f.repoDiscTag.Count(ctx, &res.Total,
+		repo.QueryWithEqual("forum_id", forumID),
+		repo.QueryWithEqual("count", 0, repo.EqualOPGT),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+func (f *Forum) ListForumTags(ctx context.Context, forumID uint) (*model.ListRes[model.DiscussionTag], error) {
+	var forum model.Forum
+	err := f.repo.GetByID(ctx, &forum, forumID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(forum.TagIDs) == 0 {
+		return &model.ListRes[model.DiscussionTag]{
+			Items: make([]model.DiscussionTag, 0),
+		}, nil
+	}
+
+	var res model.ListRes[model.DiscussionTag]
+
+	err = f.repoDiscTag.List(ctx, &res.Items,
+		repo.QueryWithEqual("id", forum.TagIDs, repo.EqualOPEqAny),
+		repo.QueryWithEqual("count", 0, repo.EqualOPGT),
+		repo.QueryWithOrderBy("COUNT DESC, id ASC"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	res.Total = int64(len(res.Items))
+
+	return &res, nil
 }

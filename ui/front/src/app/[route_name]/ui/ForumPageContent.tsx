@@ -17,6 +17,7 @@ interface ForumPageContentProps {
     tps?: string
     page?: string
     type?: string
+    tags?: string
   }
   initialData: {
     forumId: number | null
@@ -28,7 +29,7 @@ interface ForumPageContentProps {
 }
 
 const ForumPageContent = ({ route_name, searchParams, initialData }: ForumPageContentProps) => {
-  const { tps, type } = searchParams
+  const { tps, type, tags } = searchParams
   const { forumId, forumInfo, discussions, groups, announcements } = initialData
   const setRouteName = useForumStore((s) => s.setRouteName)
 
@@ -61,6 +62,7 @@ const ForumPageContent = ({ route_name, searchParams, initialData }: ForumPageCo
             data={discussions}
             announcements={announcements}
             tps={tps || ''}
+            tags={tags || ''}
             type={type as ModelDiscussionType | undefined}
             forumInfo={forumInfo}
           />

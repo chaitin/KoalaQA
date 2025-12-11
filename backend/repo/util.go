@@ -14,7 +14,6 @@ const (
 	EqualOPEq eqOP = iota + 1
 	EqualOPIn
 	EqualOPEqAny
-	EqualOPIntesect
 	EqualOPInclude
 	EqualOPContainAny
 	EqualOPValIn
@@ -139,8 +138,6 @@ func equalScope(kv []kv) database.Scope {
 				db = db.Where(data.key+" = ANY(?)", data.value.v)
 			case EqualOPNotEqAny:
 				db = db.Where(data.key+" != ALL(?)", data.value.v)
-			case EqualOPIntesect:
-				db = db.Where(data.key+" && ?", data.value.v)
 			case EqualOPInclude:
 				db = db.Where(data.key+" @> ?", data.value.v)
 			case EqualOPContainAny:

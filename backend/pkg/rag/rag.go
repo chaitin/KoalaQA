@@ -37,11 +37,12 @@ func (m *Metadata) Map() map[string]interface{} {
 }
 
 type UpsertRecordsReq struct {
-	DatasetID  string   `json:"dataset_id,omitempty"`
-	DocumentID string   `json:"document_id,omitempty"`
-	Content    string   `json:"content,omitempty"`
-	Metadata   Metadata `json:"metadata,omitempty"`
-	Tags       []string `json:"tags,omitempty"`
+	DatasetID       string   `json:"dataset_id,omitempty"`
+	DocumentID      string   `json:"document_id,omitempty"`
+	Content         string   `json:"content,omitempty"`
+	Metadata        Metadata `json:"metadata,omitempty"`
+	Tags            []string `json:"tags,omitempty"`
+	ExtractKeywords bool     `json:"extract_keywords,omitempty"`
 }
 
 type Service interface {

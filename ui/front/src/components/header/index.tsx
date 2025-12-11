@@ -30,7 +30,7 @@ import { useCallback, useContext, useEffect, useState } from 'react'
 import ForumSelector from '../ForumSelector'
 import SearchResultModal from '../SearchResultModal'
 import LoggedInView from './loggedInView'
-import FilterPanel from '../filter-panel'
+import FilterPanel from '../FilterPanel'
 import { isAdminRole } from '@/lib/utils'
 
 interface HeaderProps {

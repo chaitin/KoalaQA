@@ -113,9 +113,10 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 	}
 	// record rag
 	ragID, err := d.rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
-		DatasetID:  forum.DatasetID,
-		DocumentID: disc.RagID,
-		Content:    ragContent,
+		DatasetID:       forum.DatasetID,
+		DocumentID:      disc.RagID,
+		Content:         ragContent,
+		ExtractKeywords: true,
 	})
 	if err != nil {
 		return err
@@ -221,9 +222,10 @@ func (d *Comment) handleUpdate(ctx context.Context, data topic.MsgCommentChange)
 		return nil
 	}
 	ragID, err := d.rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
-		DatasetID:  forum.DatasetID,
-		DocumentID: disc.RagID,
-		Content:    ragContent,
+		DatasetID:       forum.DatasetID,
+		DocumentID:      disc.RagID,
+		Content:         ragContent,
+		ExtractKeywords: true,
 	})
 	if err != nil {
 		logger.WithErr(err).Error("update rag failed")
@@ -257,9 +259,10 @@ func (d *Comment) handleDelete(ctx context.Context, data topic.MsgCommentChange)
 		return nil
 	}
 	ragID, err := d.rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
-		DatasetID:  forum.DatasetID,
-		DocumentID: disc.RagID,
-		Content:    ragContent,
+		DatasetID:       forum.DatasetID,
+		DocumentID:      disc.RagID,
+		Content:         ragContent,
+		ExtractKeywords: true,
 	})
 	if err != nil {
 		logger.WithErr(err).Error("update rag failed")

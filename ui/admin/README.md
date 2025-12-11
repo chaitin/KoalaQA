@@ -151,7 +151,7 @@ pnpm dev
 
 ```bash
 # API服务地址
-VITE_API_BASE_URL=http://localhost:8080/
+TARGET=http://localhost:8080/
 
 # 其他环境变量...
 ```
