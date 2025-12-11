@@ -13,6 +13,7 @@ type discussion struct {
 func (d *discussion) Route(h server.Handler) {
 	g := h.Group("/discussion")
 	g.GET("", d.List)
+	g.POST("/reindex", d.Reindex)
 }
 
 func newDiscussion(disc *svc.Discussion) server.Router {
@@ -46,4 +47,21 @@ func (d *discussion) List(ctx *context.Context) {
 	}
 
 	ctx.Success(res)
+}
+
+func (d *discussion) Reindex(ctx *context.Context) {
+	var req svc.ReindexReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	err = d.disc.Reindex(ctx, req)
+	if err != nil {
+		ctx.InternalError(err, "reindex discussion failed")
+		return
+	}
+
+	ctx.Success(nil)
 }

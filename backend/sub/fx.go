@@ -23,5 +23,6 @@ var Module = fx.Options(
 	fx.Provide(mq.AsSubscriber(NewCommentSummary)),
 	fx.Provide(mq.AsSubscriber(newUserPoint)),
 	fx.Provide(mq.AsSubscriber(newDiscUserPoint)),
+	fx.Provide(mq.AsSubscriber(NewDiscReindex)),
 	fx.Provide(newCache),
 )

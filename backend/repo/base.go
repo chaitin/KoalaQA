@@ -90,3 +90,20 @@ func (b *base[T]) FilterIDs(ctx context.Context, ids *model.Int64Array, queryFun
 
 	return nil
 }
+
+// BatchProcess 分批读取数据并对每批执行处理函数
+// batchSize: 每批的数据量
+// processFn: 处理函数，接收一批数据，返回 error。如果返回 error，则停止后续批次的处理
+// queryFuncs: 查询条件
+func (b *base[T]) BatchProcess(ctx context.Context, batchSize int, processFn func([]T) error, queryFuncs ...QueryOptFunc) error {
+	if batchSize <= 0 {
+		batchSize = 100 // 默认批次大小
+	}
+
+	o := getQueryOpt(queryFuncs...)
+	var results []T
+
+	return b.model(ctx).Scopes(o.Scopes()...).FindInBatches(&results, batchSize, func(tx *gorm.DB, batch int) error {
+		return processFn(results)
+	}).Error
+}
