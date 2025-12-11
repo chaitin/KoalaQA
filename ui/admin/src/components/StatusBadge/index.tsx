@@ -13,11 +13,20 @@ const StatusBadge = ({ status, text, variant, onClick, sx, ...props }: StatusBad
   const getDisplayContent = () => {
     if (text) return text;
 
-    if (status === ModelDocStatus.DocStatusAppling) return '应用中';
-    if (status === ModelDocStatus.DocStatusPendingReview) return '待审核';
-    if (status === 0 || status === 3) return '待应用';
-
-    return '未应用';
+    switch (status) {
+      case ModelDocStatus.DocStatusAppling:
+        return '应用中';
+      case ModelDocStatus.DocStatusPendingReview:
+        return '待审核';
+      case ModelDocStatus.DocStatusPendingApply:
+        return '待应用';
+      case ModelDocStatus.DocStatusApplySuccess:
+        return '已应用';
+      case ModelDocStatus.DocStatusApplyFailed:
+        return '应用失败';
+      default:
+        return '未应用';
+    }
   };
 
   // 根据状态或变体确定样式
@@ -39,6 +48,27 @@ const StatusBadge = ({ status, text, variant, onClick, sx, ...props }: StatusBad
               backgroundColor: '#ffeaa7',
             }
           : {},
+      };
+    }
+
+    if (status === ModelDocStatus.DocStatusApplySuccess) {
+      return {
+        backgroundColor: '#e8f5e9',
+        color: '#2e7d32',
+      };
+    }
+
+    if (status === ModelDocStatus.DocStatusApplyFailed) {
+      return {
+        backgroundColor: '#fdecea',
+        color: '#d32f2f',
+      };
+    }
+
+    if (status === ModelDocStatus.DocStatusPendingApply) {
+      return {
+        backgroundColor: 'rgba(0, 0, 0, 0.06)',
+        color: 'rgba(0, 0, 0, 0.6)',
       };
     }
 
