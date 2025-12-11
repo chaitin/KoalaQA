@@ -22,7 +22,7 @@ import Image from 'next/image'
 import { useParams, usePathname, useSearchParams } from 'next/navigation'
 import { useContext, useMemo } from 'react'
 import { CommonContext } from './commonProvider'
-import Icon from './icon'
+import { Icon } from '@ctzhian/ui'
 
 const postTypes = [
   { id: 'qa', name: '问题', icon: <Image width={20} height={20} src='/qa.svg' alt='问题' /> },

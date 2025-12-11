@@ -1198,6 +1198,7 @@ export interface GetAdminKbKbIdDocumentParams {
   page?: number;
   /** @min 1 */
   size?: number;
+  status?: 0 | 1 | 2 | 3;
   title?: string;
   /** kb_id */
   kbId: number;
@@ -1242,6 +1243,7 @@ export interface GetAdminKbKbIdQuestionParams {
   page?: number;
   /** @min 1 */
   size?: number;
+  status?: 0 | 1 | 2 | 3;
   title?: string;
   /** kb_id */
   kbId: number;

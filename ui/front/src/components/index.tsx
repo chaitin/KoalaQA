@@ -9,7 +9,6 @@ export { default as Bread } from './bread';
 export { default as CusTabs } from './cusTabs';
 export { default as Message } from './alert';
 export { default as Search } from './search';
-export { default as Icon } from './icon';
 export { default as CommonProvider } from './commonProvider';
 export { default as GuestActivationProvider, useGuestActivation } from './GuestActivationProvider';
 export { AuthConfigProvider } from '@/contexts/AuthConfigContext';

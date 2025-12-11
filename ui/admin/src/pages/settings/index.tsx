@@ -6,6 +6,7 @@ import Access from './component/Access';
 import Webhook from './component/Webhook';
 import LoginMethod from './component/LoginMethod';
 import Logo from './component/Logo';
+import Seo from './component/Seo.tsx';
 import { GroupDataProvider } from '@/context/GroupDataContext';
 
 const Settings = () => {
@@ -28,6 +29,7 @@ const Settings = () => {
               <LoginMethod />
               <PostManagement />
               <Access />
+              <Seo />
               <Webhook />
             </Stack>
           </Grid>
