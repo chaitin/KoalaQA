@@ -10,7 +10,7 @@ import Card from '@/components/card';
 import StatusBadge from '@/components/StatusBadge';
 import { useListQueryParams } from '@/hooks/useListQueryParams';
 import { Ellipsis, message, Modal, Table } from '@ctzhian/ui';
-import { Box, Button, Stack, TextField, Typography } from '@mui/material';
+import { Box, Button, FormControl, InputLabel, MenuItem, Select, Stack, TextField, Typography } from '@mui/material';
 import { useRequest } from 'ahooks';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
@@ -25,6 +25,17 @@ const AdminDocument = () => {
   const kb_id = +searchParams.get('id')!;
   const [title, setTitle] = useState(query.title);
   const [editItem, setEditItem] = useState<ModelKBDocumentDetail | null>(null);
+  const [statusFilter, setStatusFilter] = useState<ModelDocStatus | ''>(() => {
+    if (query.status === undefined || query.status === '') return '';
+    return Number(query.status) as ModelDocStatus;
+  });
+  const statusOptions = [
+    { value: ModelDocStatus.DocStatusPendingReview, label: '待审核' },
+    { value: ModelDocStatus.DocStatusPendingApply, label: '待应用' },
+    { value: ModelDocStatus.DocStatusAppling, label: '应用中' },
+    { value: ModelDocStatus.DocStatusApplySuccess, label: '已应用' },
+    { value: ModelDocStatus.DocStatusApplyFailed, label: '应用失败' },
+  ];
 
   const {
     data,
@@ -188,6 +199,29 @@ const AdminDocument = () => {
               }
             }}
           />
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>状态</InputLabel>
+            <Select
+              label="状态"
+              value={statusFilter}
+              onChange={e => {
+                const value = e.target.value as ModelDocStatus | '';
+                setStatusFilter(value);
+                setSearch({
+                  status: value || undefined,
+                });
+              }}
+            >
+              <MenuItem value="">
+                <em>全部</em>
+              </MenuItem>
+              {statusOptions.map(option => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </Stack>
         <QaImport refresh={fetchData} setEditItem={setEditItem} editItem={editItem} />
       </Stack>
