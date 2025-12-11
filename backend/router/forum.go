@@ -21,6 +21,7 @@ func init() {
 func (f *forum) Route(h server.Handler) {
 	g := h.Group("/forum")
 	g.GET("", f.List)
+	g.GET("/:forum_id/tags", f.ListTags)
 }
 
 // List

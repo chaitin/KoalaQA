@@ -933,7 +933,7 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 	}
 
 	if err = d.in.DiscRepo.Update(ctx, map[string]any{
-		"members":    gorm.Expr("array_append(members, ?)", uid),
+		"members":    gorm.Expr("array_distinct(array_append(members, ?))", uid),
 		"updated_at": gorm.Expr("updated_at"),
 	}, repo.QueryWithEqual("id", disc.ID)); err != nil {
 		return 0, err
