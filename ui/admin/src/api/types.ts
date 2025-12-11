@@ -148,9 +148,11 @@ export enum ModelDocType {
 
 export enum ModelDocStatus {
   DocStatusUnknown = 0,
-  DocStatusAppling = 1,
+  DocStatusApplySuccess = 1,
   DocStatusPendingReview = 2,
   DocStatusPendingApply = 3,
+  DocStatusApplyFailed = 4,
+  DocStatusAppling = 5,
 }
 
 export enum ModelDiscussionType {
@@ -1245,6 +1247,7 @@ export interface GetAdminKbKbIdQuestionParams {
   size?: number;
   status?: 0 | 1 | 2 | 3;
   title?: string;
+  status?: ModelDocStatus;
   /** kb_id */
   kbId: number;
 }
