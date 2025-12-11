@@ -459,7 +459,7 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 		repo.QueryWithEqual("forum_id", req.ForumID),
 		repo.QueryWithEqual("resolved", req.Resolved),
 		repo.QueryWithEqual("discussions.id", req.DiscussionIDs, repo.EqualOPEqAny),
-		repo.QueryWithEqual("discussions.tag_ids", req.TagIDs, repo.EqualOPEqAny),
+		repo.QueryWithEqual("discussions.tag_ids", req.TagIDs, repo.EqualOPContainAny),
 	)
 	if req.OnlyMine {
 		query = append(query, repo.QueryWithEqual("members", userID, repo.EqualOPValIn))
