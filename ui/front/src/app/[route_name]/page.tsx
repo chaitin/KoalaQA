@@ -31,8 +31,9 @@ async function fetchForumData(route_name: string, searchParams: any) {
     }
 
     // 获取讨论和分组数据
-    const { search, sort, tps, page = '1', type, only_mine, resolved } = searchParams
+    const { search, sort, tps, page = '1', type, only_mine, resolved, tags } = searchParams
     const topics = tps ? tps.split(',').map(Number) : []
+    const tagIds = tags ? tags.split(',').map(Number) : []
 
     const discussionParams: any = {
       page: parseInt(page, 10),
@@ -41,6 +42,7 @@ async function fetchForumData(route_name: string, searchParams: any) {
       type: type as 'qa' | 'blog' | undefined,
       forum_id: forumId,
       group_ids: topics,
+      tag_ids: tagIds,
     }
 
     // 设置 filter，默认使用 'publish'（最新发布）

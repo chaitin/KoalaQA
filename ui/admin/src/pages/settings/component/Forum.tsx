@@ -364,7 +364,11 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
                           <Chip
                             {...getTagProps({ index })}
                             key={option.id}
-                            label={option.name || ''}
+                            label={
+                              option.count !== undefined
+                                ? `${option.name || ''} (${option.count})`
+                                : option.name || ''
+                            }
                             size="small"
                             sx={{
                               height: 24,
@@ -389,9 +393,16 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
                       )}
                       renderOption={(props, option) => (
                         <Box component="li" {...props}>
-                          <Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>
-                            {option.name || ''}
-                          </Typography>
+                          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ width: '100%' }}>
+                            <Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>
+                              {option.name || ''} 
+                            </Typography>
+                            {option.count !== undefined && (
+                              <Typography variant="body2" sx={{ fontSize: 12, color: 'text.secondary', ml: 1 }}>
+                                ({option.count})
+                              </Typography>
+                            )}
+                          </Stack>
                         </Box>
                       )}
                       noOptionsText={forumId && forumId > 0 ? "暂无标签数据" : "新增板块暂不支持选择标签"}

@@ -1,6 +1,6 @@
 'use client';
 
-import { getGroup, ModelGroupItemInfo, ModelGroupWithItem } from '@/api';
+import { getForumForumIdTags, getGroup, ModelDiscussionTag, ModelGroupItemInfo, ModelGroupWithItem } from '@/api';
 import { SxProps, Theme } from '@mui/material';
 import {
   createContext,
@@ -22,6 +22,10 @@ export const CommonContext = createContext<{
   setShowHeaderSearch: Dispatch<SetStateAction<boolean>>;
   keywords: string;
   setKeywords: Dispatch<SetStateAction<string>>;
+  tags: ModelDiscussionTag[];
+  tagsLoading: boolean;
+  fetchTags: () => void;
+  setTags: (tags: ModelDiscussionTag[]) => void;
   groups: {
     origin: (ModelGroupWithItem & {
       items?: ModelGroupItemInfo[];
@@ -43,6 +47,10 @@ export const CommonContext = createContext<{
   setShowHeaderSearch: () => {},
   keywords: '',
   setKeywords: () => {},
+  tags: [],
+  tagsLoading: true,
+  fetchTags: () => {},
+  setTags: () => {},
   groups: {
     origin: [],
     flat: [],
@@ -58,6 +66,8 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
   const [showHeaderSearch, setShowHeaderSearch] = useState(false);
   const [headerStyle, setHeaderStyle] = useState<SxProps<Theme>>({});
   const [keywords, setKeywords] = useState('');
+  const [tags, setTagsState] = useState<ModelDiscussionTag[]>([]);
+  const [tagsLoading, setTagsLoading] = useState(false);
   const [groupsLoading, setGroupsLoading] = useState(false); // 固定初始值为false，避免hydration不匹配
   const [groups, setGroupsState] = useState<{
     origin: (ModelGroupWithItem & {
@@ -72,6 +82,8 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
   // 使用 ref 替代模块级变量，避免 SSR 数据泄露
   const isFetchingRef = useRef(false);
   const hasFetchedRef = useRef(false);
+  const isFetchingTagsRef = useRef(false);
+  const hasFetchedTagsRef = useRef(false);
 
   // 设置groups数据的函数（供SSR页面调用）
   const setGroups = useCallback(
@@ -87,6 +99,13 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
     },
     []
   );
+
+  // 设置tags数据的函数（供SSR页面调用）
+  const setTags = useCallback((newTags: ModelDiscussionTag[]) => {
+    setTagsState(newTags);
+    setTagsLoading(false);
+    hasFetchedTagsRef.current = true;
+  }, []);
 
   // 获取groups数据的函数（供客户端页面调用）
   const fetchGroup = useCallback(() => {
@@ -129,10 +148,44 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
       });
   }, [forumId]);
 
+  // 获取tags数据的函数（供客户端页面调用）
+  const fetchTags = useCallback(() => {
+    if (!forumId) {
+      setTagsLoading(false);
+      return;
+    }
+
+    if (isFetchingTagsRef.current || hasFetchedTagsRef.current) {
+      return;
+    }
+
+    isFetchingTagsRef.current = true;
+    setTagsLoading(true);
+
+    getForumForumIdTags({ forumId })
+      .then((res) => {
+        const items = (Array.isArray(res) ? res?.[0]?.items : (res as any)?.items) as
+          | ModelDiscussionTag[]
+          | undefined;
+        const validTags = (items ?? []).filter((tag) => typeof tag?.id === 'number');
+        setTagsState(validTags);
+        hasFetchedTagsRef.current = true;
+      })
+      .catch((error) => {
+        console.error('Failed to fetch tags:', error);
+      })
+      .finally(() => {
+        setTagsLoading(false);
+        isFetchingTagsRef.current = false;
+      });
+  }, [forumId]);
+
   // forumId 变化时重置已获取标记与数据，确保切换板块后重新拉取
   useEffect(() => {
     hasFetchedRef.current = false;
     setGroupsState({ origin: [], flat: [] });
+    hasFetchedTagsRef.current = false;
+    setTagsState([]);
   }, [forumId]);
 
   useEffect(() => {
@@ -140,7 +193,10 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
     if (!hasFetchedRef.current) {
       fetchGroup();
     }
-  }, [fetchGroup]);
+    if (!hasFetchedTagsRef.current) {
+      fetchTags();
+    }
+  }, [fetchGroup, fetchTags]);
 
   return (
     <CommonContext.Provider
@@ -151,6 +207,10 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
         setShowHeaderSearch,
         keywords,
         setKeywords,
+        tags,
+        tagsLoading,
+        fetchTags,
+        setTags,
         groups,
         groupsLoading,
         fetchGroup,

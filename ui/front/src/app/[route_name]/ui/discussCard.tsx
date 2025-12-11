@@ -1,6 +1,6 @@
 'use client'
 
-import { ModelDiscussionListItem, ModelDiscussionType } from '@/api/types'
+import { ModelDiscussionListItem, ModelDiscussionTag, ModelDiscussionType } from '@/api/types'
 import { DiscussionStatusChip, DiscussionTypeChip, MarkDown } from '@/components'
 import CommonAvatar from '@/components/CommonAvatar'
 import { CommonContext } from '@/components/commonProvider'
@@ -33,7 +33,7 @@ const DiscussCard = ({
   filter?: 'hot' | 'new' | 'publish'
 }) => {
   const it = data
-  const { groups } = useContext(CommonContext)
+  const { groups, tags } = useContext(CommonContext)
   const params = useParams()
   const router = useRouterWithRouteName()
   const profileHref = it.user_id ? `/profile/${it.user_id}` : undefined
@@ -48,8 +48,10 @@ const DiscussCard = ({
     return it.group_ids.map((groupId) => groupMap.get(groupId)).filter(Boolean) as string[]
   }, [it.group_ids, groups.flat])
 
-  // 准备数据
-  const allTags = groupNames
+  const tagNames = useMemo(() => {
+    if (!it.tag_ids || !tags.length) return []
+    return tags.filter((tag) => it.tag_ids?.includes(tag.id || 0)).map((tag) => tag.name) as string[]
+  }, [it.tag_ids, tags])
   const isQAPost = it.type === ModelDiscussionType.DiscussionTypeQA
   const isArticlePost = it.type === ModelDiscussionType.DiscussionTypeBlog
   const isIssuePost = it.type === ModelDiscussionType.DiscussionTypeIssue
@@ -188,7 +190,7 @@ const DiscussCard = ({
           <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
             {/* 使用通用状态标签组件 */}
             <DiscussionStatusChip item={it} size={size} />
-            {allTags.map((tag, index) => {
+            {groupNames.map((tag, index) => {
               const isCategory = isCategoryTag(tag, groups.flat)
               return (
                 <Chip
@@ -204,6 +206,23 @@ const DiscussCard = ({
                     borderRadius: '3px',
                     cursor: 'default',
                     pointerEvents: 'none',
+                  }}
+                />
+              )
+            })}
+            {tagNames.map((tag, index) => {
+              return (
+                <Chip
+                  key={`${tag}-${index}`}
+                  label={'#' + tag}
+                  size='small'
+                  sx={{
+                    bgcolor: 'rgba(0,99,151,0.06)',
+                    color: 'rgba(107, 114, 128, 1)',
+                    height: size === 'small' ? 20 : 22,
+                    fontSize: size === 'small' ? '12px' : '12px',
+                    lineHeight: '22px',
+                    borderRadius: '10px',
                   }}
                 />
               )

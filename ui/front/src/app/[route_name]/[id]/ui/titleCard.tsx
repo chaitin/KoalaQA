@@ -7,12 +7,13 @@ import {
   postDiscussionDiscIdLike,
   postDiscussionDiscIdResolveIssue,
   postDiscussionDiscIdRevokeLike,
-  putDiscussionDiscIdClose
+  putDiscussionDiscIdClose,
 } from '@/api'
 import { ModelDiscussionDetail, ModelDiscussionState, ModelDiscussionType, ModelUserRole } from '@/api/types'
 import { DiscussionStatusChip, DiscussionTypeChip } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import CommonAvatar from '@/components/CommonAvatar'
+import { CommonContext } from '@/components/commonProvider'
 import ConvertToIssueModal from '@/components/ConvertToIssueModal'
 import { ReleaseModal } from '@/components/discussion'
 import { EditorWrapRef } from '@/components/editor'
@@ -75,6 +76,7 @@ const animationStyles = `
 const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const [menuVisible, { setFalse: menuClose, setTrue: menuOpen }] = useBoolean(false)
   const { user } = useContext(AuthContext)
+  const { tags } = useContext(CommonContext)
   const [releaseVisible, { setFalse: releaseClose, setTrue: releaseOpen }] = useBoolean(false)
   const [convertToIssueVisible, { setFalse: convertToIssueClose, setTrue: convertToIssueOpen }] = useBoolean(false)
   const [followInfo, setFollowInfo] = useState<{ followed?: boolean; follower?: number }>({})
@@ -84,7 +86,10 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const forums = useForumStore((s) => s.forums)
   const { id, route_name }: { id: string; route_name?: string } = (useParams() as any) || { id: '' }
-
+  const tagNames = useMemo(() => {
+    if (!data.tag_ids || !tags.length) return []
+    return tags.filter((tag) => data.tag_ids?.includes(tag.id || 0)).map((tag) => tag.name) as string[]
+  }, [data.tag_ids, tags])
   // 根据 route_name 获取对应的 forumInfo
   const forumInfo = useMemo(() => {
     if (!route_name || !forums || forums.length === 0) return null
@@ -518,26 +523,6 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                 />
               )
             })}
-            {data.tags?.map((tag: string) => {
-              const isCategory = isCategoryTag(tag)
-              return (
-                <Chip
-                  key={tag}
-                  label={tag}
-                  size='small'
-                  sx={{
-                    bgcolor: 'rgba(233, 236, 239, 1)',
-                    color: 'rgba(33, 34, 45, 1)',
-                    height: 22,
-                    fontSize: '12px',
-                    fontWeight: isCategory ? 600 : 500,
-                    borderRadius: '3px',
-                    cursor: 'default',
-                    pointerEvents: 'none',
-                  }}
-                />
-              )
-            })}
           </Stack>
           {/* 作者信息和时间 */}
           <Box
@@ -721,6 +706,26 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
             <Divider sx={{ my: 2 }} />
           </>
         )}
+        <Stack direction='row' flexWrap='wrap' sx={{ gap: 1, alignItems: 'center' }}>
+          {tagNames.map((tag, index) => {
+            return (
+              <Chip
+                key={`${tag}-${index}`}
+                label={'#' + tag}
+                size='small'
+                sx={{
+                  bgcolor: 'rgba(249, 250, 251, 1)',
+                  color: 'rgba(107, 114, 128, 1)',
+                  height: 20,
+                  fontSize: '12px',
+                  lineHeight: '22px',
+                  borderRadius: '3px',
+                  border: '1px solid rgba(229, 231, 235, 1)',
+                }}
+              />
+            )
+          })}
+        </Stack>
       </Paper>
     </>
   )

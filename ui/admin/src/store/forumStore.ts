@@ -10,6 +10,7 @@ export type ForumItem = SvcForumRes & {
 export interface TagOption {
   id?: number
   name?: string
+  count?: number
 }
 
 interface ForumState {
@@ -50,8 +51,6 @@ export const useForumStore = create<ForumState>((set, get) => ({
             if (data.length > 0 && data[0]?.items) {
               items = data[0].items
             }
-          } else if (data && typeof data === 'object' && 'items' in data) {
-            items = data.items || []
           }
 
           return { forumId, tags: items }
