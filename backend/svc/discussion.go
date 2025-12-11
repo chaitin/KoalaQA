@@ -404,6 +404,7 @@ type DiscussionListReq struct {
 	DiscussionIDs *model.Int64Array      `json:"discussion_ids" form:"discussion_ids"`
 	Stat          bool                   `json:"stat" form:"stat"`
 	FuzzySearch   bool                   `json:"fuzzy_search" form:"fuzzy_search"`
+	TagIDs        model.Int64Array       `json:"tag_ids" form:"tag_ids"`
 }
 
 func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, req DiscussionListReq) (*model.ListRes[*model.DiscussionListItem], error) {
@@ -458,6 +459,7 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 		repo.QueryWithEqual("forum_id", req.ForumID),
 		repo.QueryWithEqual("resolved", req.Resolved),
 		repo.QueryWithEqual("discussions.id", req.DiscussionIDs, repo.EqualOPEqAny),
+		repo.QueryWithEqual("discussions.tag_ids", req.TagIDs, repo.EqualOPEqAny),
 	)
 	if req.OnlyMine {
 		query = append(query, repo.QueryWithEqual("members", userID, repo.EqualOPValIn))

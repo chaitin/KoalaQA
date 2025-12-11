@@ -3997,6 +3997,15 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "tag_ids",
+                        "in": "query"
+                    },
+                    {
                         "enum": [
                             "qa",
                             "feedback",

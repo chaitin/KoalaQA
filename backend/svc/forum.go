@@ -76,14 +76,18 @@ func (f *Forum) List(ctx context.Context, user model.UserInfo, permissionCheck b
 			continue
 		}
 
-		err = f.repoDisc.List(ctx, &items[i].Blogs, repo.QueryWithEqual("discussions.id", item.BlogIDs, repo.EqualOPEqAny))
-		if err != nil {
-			return nil, err
+		if len(item.BlogIDs) > 0 {
+			err = f.repoDisc.List(ctx, &items[i].Blogs, repo.QueryWithEqual("discussions.id", item.BlogIDs, repo.EqualOPEqAny))
+			if err != nil {
+				return nil, err
+			}
 		}
 
-		err = f.repoDiscTag.List(ctx, &items[i].Tags, repo.QueryWithEqual("id", item.TagIDs, repo.EqualOPEqAny))
-		if err != nil {
-			return nil, err
+		if len(item.TagIDs) > 0 {
+			err = f.repoDiscTag.List(ctx, &items[i].Tags, repo.QueryWithEqual("id", item.TagIDs, repo.EqualOPEqAny))
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -155,6 +159,7 @@ func (f *Forum) ListForumTags(ctx context.Context, forumID uint) (*model.ListRes
 
 	err = f.repoDiscTag.List(ctx, &res.Items,
 		repo.QueryWithEqual("id", forum.TagIDs, repo.EqualOPEqAny),
+		repo.QueryWithEqual("count", 0, repo.EqualOPGT),
 		repo.QueryWithOrderBy("COUNT DESC"),
 	)
 	if err != nil {
