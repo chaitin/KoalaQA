@@ -125,7 +125,7 @@ func (f *Forum) ListForumAllTag(ctx context.Context, forumID uint, req ForumList
 		repo.QueryWithEqual("forum_id", forumID),
 		repo.QueryWithPagination(req.Pagination),
 		repo.QueryWithEqual("count", 0, repo.EqualOPGT),
-		repo.QueryWithOrderBy("COUNT DESC"),
+		repo.QueryWithOrderBy("COUNT DESC, id ASC"),
 	)
 	if err != nil {
 		return nil, err
@@ -160,7 +160,7 @@ func (f *Forum) ListForumTags(ctx context.Context, forumID uint) (*model.ListRes
 	err = f.repoDiscTag.List(ctx, &res.Items,
 		repo.QueryWithEqual("id", forum.TagIDs, repo.EqualOPEqAny),
 		repo.QueryWithEqual("count", 0, repo.EqualOPGT),
-		repo.QueryWithOrderBy("COUNT DESC"),
+		repo.QueryWithOrderBy("COUNT DESC, id ASC"),
 	)
 	if err != nil {
 		return nil, err
