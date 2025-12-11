@@ -235,3 +235,85 @@ func (d *Discussion) ResolveIssue(ctx context.Context, discUUID string, state mo
 		}).Error
 	})
 }
+
+func (d *Discussion) UpdateTagsByRagID(ctx context.Context, ragID string, tags []string) error {
+	return d.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		addTags := make(map[string]struct{})
+		deleteTags := make(map[string]struct{})
+		for _, tag := range tags {
+			addTags[tag] = struct{}{}
+		}
+
+		var disc model.Discussion
+		err := tx.Model(&model.Discussion{}).Select("id, tag_ids").Where("rag_id = ?", ragID).First(&disc).Error
+		if err != nil {
+			if errors.Is(err, database.ErrRecordNotFound) {
+				return nil
+			}
+
+			return err
+		}
+
+		var dbTags []model.DiscussionTag
+		err = tx.Model(&model.DiscussionTag{}).Where("id =ANY(?)", disc.TagIDs).Find(&dbTags).Error
+		if err != nil {
+			return err
+		}
+
+		newTagIDs := make(model.Int64Array, 0)
+
+		for _, tag := range dbTags {
+			if _, ok := addTags[tag.Name]; ok {
+				delete(addTags, tag.Name)
+				newTagIDs = append(newTagIDs, int64(tag.ID))
+				continue
+			}
+
+			deleteTags[tag.Name] = struct{}{}
+		}
+
+		if len(addTags) == 0 && len(deleteTags) == 0 {
+			return nil
+		}
+
+		updateTags := make([]model.DiscussionTag, 0, len(addTags)+len(deleteTags))
+
+		for tag := range addTags {
+			updateTags = append(updateTags, model.DiscussionTag{
+				ForumID: disc.ForumID,
+				Name:    tag,
+				Count:   1,
+			})
+		}
+		for tag := range deleteTags {
+			updateTags = append(updateTags, model.DiscussionTag{
+				ForumID: disc.ForumID,
+				Name:    tag,
+				Count:   -1,
+			})
+		}
+
+		err = tx.Model(&model.DiscussionTag{}).Clauses(clause.OnConflict{
+			Columns: []clause.Column{{Name: "forum_id"}, {Name: "name"}},
+			DoUpdates: clause.Assignments(map[string]interface{}{
+				"count": gorm.Expr("GREATEST(discussion_tags.count+EXCLUDED.count,0)"),
+			}),
+		}).CreateInBatches(&updateTags, 1000).Error
+		if err != nil {
+			return err
+		}
+
+		for i := range len(addTags) {
+			newTagIDs = append(newTagIDs, int64(updateTags[i].ID))
+		}
+		err = tx.Model(&model.Discussion{}).Where("id = ?", disc.ID).Updates(map[string]any{
+			"tag_ids":    newTagIDs,
+			"updated_at": time.Now(),
+		}).Error
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+}

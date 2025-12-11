@@ -10,6 +10,7 @@ type Forum struct {
 	GroupIDs         Int64Array           `json:"group_ids" gorm:"column:group_ids;type:bigint[]"`
 	Groups           JSONB[[]ForumGroups] `json:"groups" gorm:"column:groups;type:jsonb"`
 	BlogIDs          Int64Array           `json:"blog_ids" gorm:"column:blog_ids;type:bigint[]"`
+	TagIDs           Int64Array           `json:"tag_ids" gorm:"column:tag_ids;type:bigint[]"`
 	DatasetID        string               `json:"-" gorm:"column:dataset_id;type:text;uniqueIndex"`
 	InsightDatasetID string               `json:"-" gorm:"column:insight_dataset_id;type:text;uniqueIndex"`
 }
@@ -25,6 +26,7 @@ type ForumInfo struct {
 	Name      string               `json:"name" binding:"required"`
 	RouteName string               `json:"route_name"`
 	BlogIDs   Int64Array           `json:"blog_ids" gorm:"type:bigint[]"`
+	TagIDs    Int64Array           `json:"tag_ids" gorm:"type:bigint[]"`
 	Groups    JSONB[[]ForumGroups] `json:"groups" gorm:"type:jsonb"`
 }
 

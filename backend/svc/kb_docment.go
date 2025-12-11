@@ -266,7 +266,7 @@ func (d *KBDocument) CreateQA(ctx context.Context, kbID uint, req DocCreateQAReq
 		Title:    req.Title,
 		Desc:     req.Desc,
 		Markdown: []byte(req.Markdown),
-		Status:   model.DocStatusAppling,
+		Status:   model.DocStatusUnknown,
 	}
 	err := d.repoDoc.Create(ctx, &doc)
 	if err != nil {
@@ -440,10 +440,10 @@ func (d *KBDocument) GetByID(ctx context.Context, kbID uint, docID uint) (*model
 	return &doc, nil
 }
 
-func (d *KBDocument) UpdateRagID(ctx context.Context, kbID uint, docID uint, ragID string) error {
+func (d *KBDocument) UpdateRagID(ctx context.Context, kbID uint, docID uint, ragID string, status model.DocStatus) error {
 	return d.repoDoc.Update(ctx, map[string]any{
 		"rag_id": ragID,
-		"status": model.DocStatusAppling,
+		"status": status,
 	}, repo.QueryWithEqual("id", docID), repo.QueryWithEqual("kb_id", kbID))
 }
 
@@ -572,7 +572,7 @@ func (d *KBDocument) CreateSpace(ctx context.Context, kbID uint, req CreateSpace
 		Title:       req.Title,
 		FileType:    model.FileTypeFolder,
 		DocType:     model.DocTypeSpace,
-		Status:      model.DocStatusAppling,
+		Status:      model.DocStatusApplySuccess,
 		ParentID:    0,
 	}
 	err = d.repoDoc.Create(ctx, &doc)
@@ -770,7 +770,7 @@ func (d *KBDocument) CreateSpaceFolder(ctx context.Context, kbID uint, parentID 
 			Title:    item.Title,
 			Platform: parentDoc.Platform,
 			FileType: model.FileTypeFolder,
-			Status:   model.DocStatusAppling,
+			Status:   model.DocStatusApplySuccess,
 			DocType:  model.DocTypeSpace,
 			ParentID: parentID,
 		})
@@ -805,35 +805,6 @@ type CreateSpaceDocReq struct {
 	DocID string
 	Title string
 	Desc  string
-}
-
-func (d *KBDocument) CreateSpaceDoc(ctx context.Context, kbID uint, parentID uint, req CreateSpaceDocReq) (uint, error) {
-	parentDoc, err := d.GetByID(ctx, kbID, parentID)
-	if err != nil {
-		return 0, err
-	}
-
-	if parentDoc.DocType != model.DocTypeSpace {
-		return 0, errors.ErrUnsupported
-	}
-
-	doc := model.KBDocument{
-		KBID:     kbID,
-		Platform: parentDoc.Platform,
-		DocID:    req.DocID,
-		Title:    req.Title,
-		Desc:     req.Desc,
-		FileType: model.FileTypeFile,
-		DocType:  model.DocTypeSpace,
-		Status:   model.DocStatusAppling,
-		ParentID: parentID,
-	}
-	err = d.repoDoc.Create(ctx, &doc)
-	if err != nil {
-		return 0, err
-	}
-
-	return doc.ID, nil
 }
 
 type ListSpaceFolderItem struct {

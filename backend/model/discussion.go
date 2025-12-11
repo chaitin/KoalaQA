@@ -29,10 +29,12 @@ type Discussion struct {
 	UserID uint   `json:"user_id" gorm:"column:user_id;type:bigint;index"`
 	RagID  string `json:"rag_id" gorm:"column:rag_id;type:text;index"`
 
-	Title       string          `json:"title" gorm:"column:title;type:text"`
-	Summary     string          `json:"summary" gorm:"column:summary;type:text"`
-	Content     string          `json:"content" gorm:"column:content;type:text"`
+	Title   string `json:"title" gorm:"column:title;type:text"`
+	Summary string `json:"summary" gorm:"column:summary;type:text"`
+	Content string `json:"content" gorm:"column:content;type:text"`
+	//Deprecated
 	Tags        StringArray     `json:"tags" gorm:"column:tags;type:text[]"`
+	TagIDs      Int64Array      `json:"tag_ids" gorm:"column:tag_ids;type:bigint[]"`
 	GroupIDs    Int64Array      `json:"group_ids" gorm:"column:group_ids;type:bigint[]"`
 	Resolved    DiscussionState `json:"resolved" gorm:"column:resolved;type:integer;default:0"`
 	ResolvedAt  Timestamp       `json:"resolved_at" gorm:"column:resolved_at;type:timestamp with time zone"`

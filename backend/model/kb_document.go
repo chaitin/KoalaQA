@@ -8,9 +8,11 @@ type DocStatus uint
 
 const (
 	DocStatusUnknown DocStatus = iota
-	DocStatusAppling
+	DocStatusApplySuccess
 	DocStatusPendingReview
 	DocStatusPendingApply
+	DocStatusApplyFailed
+	DocStatusAppling
 )
 
 type DocType uint
