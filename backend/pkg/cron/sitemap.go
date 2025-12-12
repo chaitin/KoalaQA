@@ -122,12 +122,13 @@ func (s *sitemap) Run() {
 	}
 }
 
-func newSitemap(publicAddress *svc.PublicAddress, forum *repo.Forum, disc *repo.Discussion) Task {
+func newSitemap(publicAddress *svc.PublicAddress, forum *repo.Forum, disc *repo.Discussion, org *repo.Org) Task {
 	return &sitemap{
 		logger:        glog.Module("cron", "sitemap"),
 		publicAddress: publicAddress,
 		repoForum:     forum,
 		repoDisc:      disc,
+		repoOrg:       org,
 	}
 }
 
