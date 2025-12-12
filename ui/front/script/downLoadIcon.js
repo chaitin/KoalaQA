@@ -45,14 +45,13 @@ async function downloadFile(url) {
   }).then((res) => res.text());
 
   // 保存为带 commit id 的文件名
-  const iconPath = path.resolve(__dirname, `../public/font/iconfont.${commitId}.js`);
+  const iconPath = path.resolve(__dirname, `../public/font/iconfont.js`);
   fs.writeFileSync(iconPath, response);
 
   // 解析 symbol id，生成类型文件
   const symbolIds = extractSymbolIds(response);
   writeIconTypesFile(symbolIds);
 
-  console.log(`Saved as: iconfont.${commitId}.js`);
 }
 let argument = process.argv.splice(2);
 downloadFile(argument[0]);

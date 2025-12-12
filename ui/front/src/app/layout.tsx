@@ -16,13 +16,10 @@ import '@/lib/dayjs'
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v14-appRouter'
 import CssBaseline from '@mui/material/CssBaseline'
 import { ThemeProvider } from '@mui/material/styles'
-import { execSync } from 'child_process'
-import fs from 'fs'
 import { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
 import { cookies } from 'next/headers'
 import Script from 'next/script'
-import path from 'path'
 import * as React from 'react'
 
 import PageViewTracker from '@/components/PageViewTracker'
@@ -31,54 +28,8 @@ import Scroll from './scroll'
 
 export const dynamic = 'force-dynamic'
 
-// 获取 iconfont 文件名（带 commit id），用于防止浏览器缓存
-// 文件名包含 commit id，每次下载新图标时文件名会自动更新
-function getIconfontFileName(): string {
-  try {
-    // 读取版本文件获取 commit id
-    const versionPath = path.join(process.cwd(), 'public/font/iconfont.version.json')
-    if (fs.existsSync(versionPath)) {
-      const versionData = JSON.parse(fs.readFileSync(versionPath, 'utf-8'))
-      const commitId = versionData.commitId
-
-      // 检查对应的文件是否存在
-      const iconPath = path.join(process.cwd(), `public/font/iconfont.${commitId}.js`)
-      if (fs.existsSync(iconPath)) {
-        // 开发环境下输出文件名，方便调试
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`[Iconfont] File: iconfont.${commitId}.js`)
-        }
-        return `iconfont.${commitId}.js`
-      }
-    }
-
-    // 如果版本文件不存在或文件不存在，尝试获取当前 commit id
-    try {
-      const commitId = execSync('git rev-parse --short HEAD', {
-        cwd: process.cwd(),
-        encoding: 'utf-8',
-      }).trim()
-
-      const iconPath = path.join(process.cwd(), `public/font/iconfont.${commitId}.js`)
-      if (fs.existsSync(iconPath)) {
-        return `iconfont.${commitId}.js`
-      }
-    } catch (error) {
-      // 忽略 git 命令错误
-    }
-
-    // 如果都失败，回退到默认文件名
-    const defaultPath = path.join(process.cwd(), 'public/font/iconfont.js')
-    if (fs.existsSync(defaultPath)) {
-      return 'iconfont.js'
-    }
-  } catch (error) {
-    safeLogError('Failed to get iconfont file name', error)
-  }
-
-  // 最后的降级方案
-  return 'iconfont.js'
-}
+// 用构建版本号做 URL 版本化，避免浏览器/代理强缓存导致图标无法更新
+const ICONFONT_VERSION = process.env.NEXT_PUBLIC_GIT_SHA || 'dev'
 
 // 字体优化 - 添加 display swap 提升首屏性能
 const monoFont = localFont({
@@ -216,9 +167,6 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
   const description = seoResponse?.desc || '一个专业的技术讨论和知识分享社区'
   const keywords = seoResponse?.keywords || ['技术讨论', '问答', '知识分享', '开发者社区']
 
-  // 获取 iconfont 文件名（带 commit id）
-  const iconfontFileName = getIconfontFileName()
-
   return (
     <html lang='zh-CN'>
       <head>
@@ -231,9 +179,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
         <link rel='icon' href={brand?.logo || '/logo.svg'} />
       </head>
       <body className={`${monoFont.variable} ${alimamashuheitiFont.variable}`}>
-        {/* 图标字体预加载 - beforeInteractive 确保在交互前加载 */}
-        {/* 文件名包含 commit id，每次下载新图标时文件名会自动更新，防止浏览器缓存 */}
-        <Script src={`/font/${iconfontFileName}`} strategy='beforeInteractive' />
+        <Script src={`/font/iconfont.js?v=${ICONFONT_VERSION}`} strategy='beforeInteractive' />
 
         {/* 埋点图片 - 用于采集用户使用记录 */}
         <img

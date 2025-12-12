@@ -1,8 +1,27 @@
 /** @type {import('next').NextConfig} */
 
+import { execSync } from 'node:child_process'
+
+const GIT_SHA = (() => {
+  try {
+    return execSync('git rev-parse --short HEAD', {
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+      .toString()
+      .trim()
+  } catch {
+    return ''
+  }
+})()
+
 const nextConfig = {
   // 开启严格模式以发现潜在问题
   // reactStrictMode: true,
+
+  // 注入构建版本号：用于静态资源 URL 版本化（避免老浏览器强缓存无法更新）
+  env: {
+    NEXT_PUBLIC_GIT_SHA: process.env.NEXT_PUBLIC_GIT_SHA || GIT_SHA || 'dev',
+  },
 
   // 生产环境使用 standalone 输出
   output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
@@ -121,6 +140,20 @@ const nextConfig = {
   // Headers 配置
   async headers() {
     return [
+      // iconfont.js 需要频繁更新：禁用浏览器缓存，避免发布后仍命中旧文件
+      {
+        source: '/font/iconfont.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value:
+              'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          },
+          // 兼容部分旧代理/浏览器
+          { key: 'Pragma', value: 'no-cache' },
+          { key: 'Expires', value: '0' },
+        ],
+      },
       {
         source: '/:all*(svg|jpg|jpeg|png|webp|avif|gif|bmp|tiff|ico)',
         headers: [
@@ -130,8 +163,19 @@ const nextConfig = {
           },
         ],
       },
+      // 带 hash 的 iconfont 资源可以长期缓存
       {
-        source: '/font/:path*',
+        source: '/font/iconfont.:hash*.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      // 字体文件长期缓存
+      {
+        source: '/font/:all*(woff|woff2|ttf|eot|otf)',
         headers: [
           {
             key: 'Cache-Control',
