@@ -219,7 +219,7 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, kbID ui
 	listFolderRes, err := k.doc.ListSpaceFolderDoc(ctx, kbID, folderID, svc.ListSpaceFolderDocReq{})
 	if err != nil {
 		logger.WithErr(err).Warn("list folder doc failed")
-		return nil
+		return err
 	}
 
 	exist := make(map[string]uint)
@@ -235,6 +235,22 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, kbID ui
 	if err != nil {
 		logger.WithErr(err).Warn("list doc failed")
 		return nil
+	}
+
+	if len(exist) > 0 {
+		err = k.repoDoc.Update(ctx, map[string]any{
+			"status":     model.DocStatusPendingExport,
+			"message":    "",
+			"updated_at": time.Now(),
+		},
+			repo.QueryWithEqual("kb_id", kbID),
+			repo.QueryWithEqual("parent_id", folderID),
+			repo.QueryWithEqual("doc_type", model.DocTypeSpace),
+		)
+		if err != nil {
+			logger.WithErr(err).Warn("update space folder doc failed")
+			return err
+		}
 	}
 
 	for _, doc := range list.Docs {
@@ -256,6 +272,23 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, kbID ui
 		})
 		if err != nil {
 			logger.WithErr(err).With("export_doc_id", doc.ID).Warn("export space doc failed")
+
+			err = k.repoDoc.CreateOnIDConflict(ctx, &model.KBDocument{
+				Base: model.Base{
+					ID: exist[doc.ID],
+				},
+				KBID:     kbID,
+				Platform: folder.Platform,
+				DocType:  folder.DocType,
+				DocID:    doc.ID,
+				Title:    doc.Title,
+				Desc:     doc.Summary,
+				Status:   model.DocStatusExportFailed,
+				ParentID: folderID,
+			}, false)
+			if err != nil {
+				logger.WithErr(err).With("export_doc_id", doc.ID).Warn("update doc staus failed")
+			}
 		}
 
 		delete(exist, doc.ID)
