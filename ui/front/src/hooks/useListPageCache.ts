@@ -36,7 +36,6 @@ export const useListPageCache = (routeName: string) => {
     // 获取 main-content 元素的滚动位置
     const mainContent = document.getElementById('main-content')
     const scrollPosition = mainContent ? mainContent.scrollTop : window.scrollY || document.documentElement.scrollTop
-    console.log('saveState', data)
     const state: CachedListState = {
       scrollPosition,
       data,
@@ -97,7 +96,6 @@ export const useListPageCache = (routeName: string) => {
       const mainContent = document.getElementById('main-content')
       if (mainContent) {
         mainContent.scrollTop = position
-        console.log('restoreScrollPosition', position)
       } else if (scrollContainerRef.current) {
         scrollContainerRef.current.scrollTop = position
       } else {

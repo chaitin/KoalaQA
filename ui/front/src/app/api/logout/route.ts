@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { clearAllAuthCookies } from '@/utils/cookie';
 
 /**
  * 退出登录 API 路由

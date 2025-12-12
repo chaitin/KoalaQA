@@ -46,13 +46,8 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
     tableOfContentsOptions: {
       scrollParent: () => document.getElementById('main-content'),
     },
-    onTocUpdate: !!onTocUpdate
+    onTocUpdate: onTocUpdate
       ? (toc: any) => {
-          try {
-            if (typeof onTocUpdate === 'function') {
-              onTocUpdate(toc)
-            }
-          } catch {}
           try {
             if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
               if (Array.isArray(toc) && toc.length > 0) {

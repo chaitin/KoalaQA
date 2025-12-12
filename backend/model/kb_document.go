@@ -13,6 +13,9 @@ const (
 	DocStatusPendingApply
 	DocStatusApplyFailed
 	DocStatusAppling
+	DocStatusPendingExport
+	DocStatusExportSuccess
+	DocStatusExportFailed
 )
 
 type DocType uint
@@ -80,6 +83,7 @@ type KBDocument struct {
 	Status      DocStatus             `json:"status" gorm:"column:status"`
 	ParentID    uint                  `json:"parent_id" gorm:"column:parent_id;type:bigint;default:0"`
 	SimilarID   uint                  `json:"similar_id" gorm:"column:similar_id;type:bigint;default:0"`
+	Message     string                `json:"message" gorm:"column:message;type:text"`
 }
 
 type KBDocumentDetail struct {

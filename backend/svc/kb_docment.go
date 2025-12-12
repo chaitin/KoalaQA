@@ -217,6 +217,7 @@ type DocListItem struct {
 	Platform  platform.PlatformType `json:"platform"`
 	Title     string                `json:"title"`
 	Desc      string                `json:"desc"`
+	DocID     string                `json:"doc_id"`
 	FileType  model.FileType        `json:"file_type"`
 	Status    model.DocStatus       `json:"status"`
 	SimilarID uint                  `json:"similar_id"`
@@ -266,7 +267,7 @@ func (d *KBDocument) CreateQA(ctx context.Context, kbID uint, req DocCreateQAReq
 		Title:    req.Title,
 		Desc:     req.Desc,
 		Markdown: []byte(req.Markdown),
-		Status:   model.DocStatusUnknown,
+		Status:   model.DocStatusExportSuccess,
 	}
 	err := d.repoDoc.Create(ctx, &doc)
 	if err != nil {
@@ -478,27 +479,6 @@ func (d *KBDocument) ListSpace(ctx context.Context, kbID uint) (*model.ListRes[L
 	var res model.ListRes[ListSpaceItem]
 	err := d.repoDoc.ListSpace(ctx, &res.Items, kbID,
 		repo.QueryWithEqual("kb_documents.parent_id", 0),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return &res, nil
-}
-
-type ListSpaceFolderDocItem struct {
-	model.Base
-
-	DocID string `json:"doc_id"`
-}
-
-func (d *KBDocument) ListSpaceFolderDoc(ctx context.Context, kbID uint, folderID uint) (*model.ListRes[ListSpaceFolderDocItem], error) {
-	var res model.ListRes[ListSpaceFolderDocItem]
-
-	err := d.repoDoc.List(ctx, &res.Items,
-		repo.QueryWithEqual("kb_id", kbID),
-		repo.QueryWithEqual("parent_id", folderID),
-		repo.QueryWithEqual("doc_type", model.DocTypeSpace),
 	)
 	if err != nil {
 		return nil, err
@@ -782,7 +762,7 @@ func (d *KBDocument) CreateSpaceFolder(ctx context.Context, kbID uint, parentID 
 		return nil
 	}
 
-	err = d.repoDoc.BatchCreate(ctx, docs)
+	err = d.repoDoc.BatchCreate(ctx, &docs)
 	if err != nil {
 		return err
 	}
@@ -810,11 +790,13 @@ type CreateSpaceDocReq struct {
 type ListSpaceFolderItem struct {
 	model.Base
 
-	RagID  string          `json:"rag_id"`
-	DocID  string          `json:"doc_id"`
-	Title  string          `json:"title"`
-	Status model.DocStatus `json:"status"`
-	Total  int64           `json:"total"`
+	RagID   string          `json:"rag_id"`
+	DocID   string          `json:"doc_id"`
+	Title   string          `json:"title"`
+	Status  model.DocStatus `json:"status"`
+	Total   int64           `json:"total"`
+	Pending int64           `json:"pending"`
+	Failed  int64           `json:"failed"`
 }
 
 func (d *KBDocument) ListSpaceFolder(ctx context.Context, kbID uint, parentID uint) (*model.ListRes[ListSpaceFolderItem], error) {
@@ -857,6 +839,40 @@ func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID 
 	}
 
 	return nil
+}
+
+type ListSpaceFolderDocReq struct {
+	*model.Pagination
+
+	Title *string `form:"title"`
+}
+
+func (d *KBDocument) ListSpaceFolderDoc(ctx context.Context, kbID uint, folderID uint, req ListSpaceFolderDocReq) (*model.ListRes[DocListItem], error) {
+	var res model.ListRes[DocListItem]
+
+	err := d.repoDoc.List(ctx, &res.Items,
+		repo.QueryWithEqual("kb_id", kbID),
+		repo.QueryWithEqual("parent_id", folderID),
+		repo.QueryWithEqual("doc_type", model.DocTypeSpace),
+		repo.QueryWithILike("title", req.Title),
+		repo.QueryWithPagination(req.Pagination),
+		repo.QueryWithOrderBy("created_at DESC"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	err = d.repoDoc.Count(ctx, &res.Total,
+		repo.QueryWithEqual("kb_id", kbID),
+		repo.QueryWithEqual("parent_id", folderID),
+		repo.QueryWithEqual("doc_type", model.DocTypeSpace),
+		repo.QueryWithILike("title", req.Title),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
 }
 
 func (d *KBDocument) DeleteSpaceFolder(ctx context.Context, kbID uint, folderID uint) error {

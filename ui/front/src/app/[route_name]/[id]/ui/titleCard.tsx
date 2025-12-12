@@ -10,12 +10,11 @@ import {
   putDiscussionDiscIdClose,
 } from '@/api'
 import { ModelDiscussionDetail, ModelDiscussionState, ModelDiscussionType, ModelUserRole } from '@/api/types'
-import { DiscussionStatusChip, DiscussionTypeChip } from '@/components'
+import { DiscussionStatusChip, DiscussionTypeChip, TagFilterChip } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import CommonAvatar from '@/components/CommonAvatar'
 import { CommonContext } from '@/components/commonProvider'
 import ConvertToIssueModal from '@/components/ConvertToIssueModal'
-import { ReleaseModal } from '@/components/discussion'
 import { EditorWrapRef } from '@/components/editor'
 import EditorContent from '@/components/EditorContent'
 import Modal from '@/components/modal'
@@ -77,7 +76,6 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const [menuVisible, { setFalse: menuClose, setTrue: menuOpen }] = useBoolean(false)
   const { user } = useContext(AuthContext)
   const { tags } = useContext(CommonContext)
-  const [releaseVisible, { setFalse: releaseClose, setTrue: releaseOpen }] = useBoolean(false)
   const [convertToIssueVisible, { setFalse: convertToIssueClose, setTrue: convertToIssueOpen }] = useBoolean(false)
   const [followInfo, setFollowInfo] = useState<{ followed?: boolean; follower?: number }>({})
   const [isHoveringFollow, setIsHoveringFollow] = useState(false)
@@ -278,7 +276,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
 
   return (
     <>
-      <ReleaseModal
+      {/* <ReleaseModal
         status='edit'
         open={releaseVisible}
         data={data}
@@ -291,7 +289,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           releaseClose()
           router.refresh()
         }}
-      />
+      /> */}
       <ConvertToIssueModal
         open={convertToIssueVisible}
         onClose={convertToIssueClose}
@@ -339,12 +337,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         {!(data.type === ModelDiscussionType.DiscussionTypeQA && isClosed) && (
           <MenuItem
             onClick={() => {
-              if (data.type === ModelDiscussionType.DiscussionTypeBlog) {
-                const rn = route_name || ''
-                router.push(`/${rn}/edit?id=${data.uuid}`)
-              } else {
-                releaseOpen()
-              }
+              router.push(`/${route_name}/edit?id=${data.uuid}&type=${data.type}`)
               menuClose()
             }}
           >
@@ -702,26 +695,18 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         {data.content && String(data.content).trim() && (
           <>
             <Divider sx={{ my: 2 }} />
-            <EditorContent content={data.content} onTocUpdate={() => {}} />
+            <EditorContent content={data.content} onTocUpdate={true} />
             <Divider sx={{ my: 2 }} />
           </>
         )}
         <Stack direction='row' flexWrap='wrap' sx={{ gap: 1, alignItems: 'center' }}>
           {tagNames.map((tag, index) => {
             return (
-              <Chip
-                key={`${tag}-${index}`}
-                label={'#' + tag}
-                size='small'
-                sx={{
-                  bgcolor: 'rgba(249, 250, 251, 1)',
-                  color: 'rgba(107, 114, 128, 1)',
-                  height: 20,
-                  fontSize: '12px',
-                  lineHeight: '22px',
-                  borderRadius: '3px',
-                  border: '1px solid rgba(229, 231, 235, 1)',
-                }}
+              <TagFilterChip
+                key={index}
+                id={index}
+                name={tag}
+                selected={false}
               />
             )
           })}

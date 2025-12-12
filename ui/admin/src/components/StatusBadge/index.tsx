@@ -31,7 +31,7 @@ const StatusBadge = ({ status, text, variant, onClick, sx, ...props }: StatusBad
 
   // 根据状态或变体确定样式
   const getStatusStyles = () => {
-    if (variant === 'applying' || status === ModelDocStatus.DocStatusAppling) {
+    if (variant === 'applying' || [ModelDocStatus.DocStatusAppling, ModelDocStatus.DocStatusApplySuccess].includes(status as ModelDocStatus)) {
       return {
         backgroundColor: 'rgba(56, 96, 244, 0.10)',
         color: '#3860F4',
@@ -51,24 +51,10 @@ const StatusBadge = ({ status, text, variant, onClick, sx, ...props }: StatusBad
       };
     }
 
-    if (status === ModelDocStatus.DocStatusApplySuccess) {
-      return {
-        backgroundColor: '#e8f5e9',
-        color: '#2e7d32',
-      };
-    }
-
     if (status === ModelDocStatus.DocStatusApplyFailed) {
       return {
         backgroundColor: '#fdecea',
         color: '#d32f2f',
-      };
-    }
-
-    if (status === ModelDocStatus.DocStatusPendingApply) {
-      return {
-        backgroundColor: 'rgba(0, 0, 0, 0.06)',
-        color: 'rgba(0, 0, 0, 0.6)',
       };
     }
 
