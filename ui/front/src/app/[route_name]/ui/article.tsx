@@ -74,7 +74,7 @@ const Article = ({
   const { user } = useContext(AuthContext)
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
-  const { saveState, restoreState, restoreScrollPosition } = useListPageCache(routeName)
+  const { saveState, restoreState, restoreScrollPosition, clearCache } = useListPageCache(routeName)
   const cached = restoreState()
   const topics = useMemo(() => {
     return tps ? tps.split(',').map(Number) : []
@@ -257,6 +257,7 @@ const Article = ({
       setArticleData(data)
       setPage(1)
     }
+    clearCache()
     restoreStateProcessedRef.current = cacheKey
 
     // 更新记录的路径
