@@ -759,7 +759,7 @@ const KnowledgeBasePage = () => {
                     </Stack>
                     <Box sx={{ width: '100px', flexShrink: 0 }}>
                       <StatusBadge
-                        text={folder.status === 1 ? '应用中' : '同步中'}
+                        text={folder.status === 1 ? '解析中' : '同步中'}
                         variant={folder.status === 1 ? 'applying' : 'default'}
                       />
                     </Box>
