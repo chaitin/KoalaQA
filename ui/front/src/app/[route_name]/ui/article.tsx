@@ -74,7 +74,7 @@ const Article = ({
   const { user } = useContext(AuthContext)
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
-  const { saveState, restoreState, restoreScrollPosition } = useListPageCache(routeName)
+  const { saveState, restoreState, restoreScrollPosition, clearCache } = useListPageCache(routeName)
   const cached = restoreState()
   const topics = useMemo(() => {
     return tps ? tps.split(',').map(Number) : []
@@ -101,7 +101,6 @@ const Article = ({
     rootMargin: '0px 0px 200px 0px',
     threshold: 0,
   })
-
   // 下拉筛选相关状态
   const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null)
   const filterMenuOpen = Boolean(filterAnchorEl)
@@ -215,7 +214,7 @@ const Article = ({
       handleSearch()
     }
   }
-
+  
   useEffect(() => {
     // // 首次挂载时不请求，使用初始数据
     if (isFirstMountRef.current) {
@@ -257,8 +256,8 @@ const Article = ({
       setArticleData(data)
       setPage(1)
     }
+    clearCache()
     restoreStateProcessedRef.current = cacheKey
-
     // 更新记录的路径
     if (lastPathname !== currentPath) {
       setLastPathname(currentPath)
@@ -312,25 +311,14 @@ const Article = ({
     }
   }, [searchParams, checkAuth, releaseModalOpen, router, routeName])
 
-  const handleAsk = (query?: string) => {
-    setSelectedModalType(ModelDiscussionType.DiscussionTypeQA)
-    setInitialTitleFromSearch(query || '')
-    checkAuth(() => releaseModalOpen())
-  }
 
-  const handleArticle = (query?: string) => {
-    setSelectedModalType(ModelDiscussionType.DiscussionTypeBlog)
+  const handlePublish = (type: ModelDiscussionType, query?: string) => {
+    setSelectedModalType(type)
     checkAuth(() => {
       const routeName = (params?.route_name as string) || ''
       const titleParam = query ? `?title=${encodeURIComponent(query)}` : ''
-      nextRouter.push(`/${routeName}/edit${titleParam}`)
+      nextRouter.push(`/${routeName}/edit${titleParam}?type=${type}`)
     })
-  }
-
-  const handleIssue = (query?: string) => {
-    setSelectedModalType(ModelDiscussionType.DiscussionTypeIssue)
-    setInitialTitleFromSearch(query || '')
-    checkAuth(() => releaseModalOpen())
   }
 
   // 处理发布类型菜单打开
@@ -350,13 +338,7 @@ const Article = ({
   // 处理选择发布类型
   const handlePublishTypeSelect = (publishType: ModelDiscussionType) => {
     handlePublishMenuClose()
-    if (publishType === ModelDiscussionType.DiscussionTypeQA) {
-      handleAsk()
-    } else if (publishType === ModelDiscussionType.DiscussionTypeBlog) {
-      handleArticle()
-    } else if (publishType === ModelDiscussionType.DiscussionTypeIssue) {
-      handleIssue()
-    }
+    handlePublish(publishType)
   }
 
   // 根据类型获取排序选项
@@ -801,9 +783,9 @@ const Article = ({
           setSearch('')
         }}
         initialQuery={search}
-        onAsk={handleAsk}
-        onIssue={handleIssue}
-        onArticle={handleArticle}
+        onAsk={() => handlePublish(ModelDiscussionType.DiscussionTypeQA)}
+        onIssue={() => handlePublish(ModelDiscussionType.DiscussionTypeIssue)}
+        onArticle={() => handlePublish(ModelDiscussionType.DiscussionTypeBlog)}
       />
     </>
   )

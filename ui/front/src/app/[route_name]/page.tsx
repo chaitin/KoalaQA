@@ -74,7 +74,7 @@ async function fetchForumData(route_name: string, searchParams: any) {
       safeApiCall(() => getGroup(groupParams), { items: [] }),
       safeApiCall(() => getDiscussion(params).then(r=>r.items),[]),
     ])
-
+    
     return {
       forumId,
       forumInfo,
@@ -113,7 +113,6 @@ const Page = async (props: {
 }) => {
   const { route_name } = await props.params
   const searchParams = await props.searchParams
-
   // 在服务端获取所有数据
   const forumData = await fetchForumData(route_name, searchParams)
 

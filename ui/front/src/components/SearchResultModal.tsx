@@ -1,8 +1,11 @@
 'use client'
 import { getDiscussion } from '@/api'
 import { GetDiscussionParams, ModelDiscussionListItem, ModelUserRole } from '@/api/types'
-import DiscussCard from '@/app/[route_name]/ui/discussCard'
-import AISummaryPanel from './AISummaryPanel'
+import SearchDiscussCard from '@/app/[route_name]/ui/searchDiscussCard'
+import { AuthContext } from '@/components/authProvider'
+import { isAdminRole } from '@/lib/utils'
+import { useForumStore } from '@/store'
+import ClearIcon from '@mui/icons-material/Clear'
 import SearchIcon from '@mui/icons-material/Search'
 import {
   Box,
@@ -18,13 +21,9 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material'
-import ClearIcon from '@mui/icons-material/Clear'
 import Image from 'next/image'
 import { useCallback, useContext, useEffect, useRef, useState } from 'react'
-import { useForumStore } from '@/store'
-import SearchDiscussCard from '@/app/[route_name]/ui/searchDiscussCard'
-import { isAdminRole } from '@/lib/utils'
-import { AuthContext } from '@/components/authProvider'
+import AISummaryPanel from './AISummaryPanel'
 
 interface SearchResultModalProps {
   open: boolean
