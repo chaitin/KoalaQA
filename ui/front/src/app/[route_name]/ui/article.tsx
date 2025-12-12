@@ -689,7 +689,12 @@ const Article = ({
             scrollbarGutter: 'stable',
             position: 'sticky',
             top: 25,
-            // maxHeight: 'calc(100vh - 90px)',
+            maxHeight: 'calc(100vh - 90px)',
+            overflowY: 'auto',
+          // 隐藏滚动条
+          '&::-webkit-scrollbar': { display: 'none' },
+          '-ms-overflow-style': 'none',
+          'scrollbar-width': 'none',
           }}
         >
           {/* 公告 */}
