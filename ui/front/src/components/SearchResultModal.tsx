@@ -1,6 +1,6 @@
 'use client'
 import { getDiscussion } from '@/api'
-import { GetDiscussionParams, ModelDiscussionListItem, ModelUserRole } from '@/api/types'
+import { GetDiscussionParams, ModelDiscussionListItem, ModelDiscussionType, ModelUserRole } from '@/api/types'
 import SearchDiscussCard from '@/app/[route_name]/ui/searchDiscussCard'
 import { AuthContext } from '@/components/authProvider'
 import { isAdminRole } from '@/lib/utils'
@@ -29,19 +29,10 @@ interface SearchResultModalProps {
   open: boolean
   onClose: () => void
   initialQuery?: string
-  onAsk?: (query: string) => void
-  onArticle?: (query: string) => void
-  onIssue?: (query: string) => void
+  onPublish: (type: ModelDiscussionType, query: string) => void
 }
 
-export const SearchResultModal = ({
-  open,
-  onClose,
-  initialQuery = '',
-  onAsk,
-  onArticle,
-  onIssue,
-}: SearchResultModalProps) => {
+export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish }: SearchResultModalProps) => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -305,19 +296,19 @@ export const SearchResultModal = ({
                     {[
                       {
                         label: '👉发帖提问',
-                        onClick: () => onAsk?.(searchQuery.trim()),
+                        onClick: () => onPublish(ModelDiscussionType.DiscussionTypeQA, searchQuery.trim()),
                       },
                       ...(isAdminRole(user.role || ModelUserRole.UserRoleUnknown)
                         ? [
                             {
                               label: '👉提交Issue',
-                              onClick: () => onIssue?.(searchQuery.trim()),
+                              onClick: () => onPublish(ModelDiscussionType.DiscussionTypeIssue, searchQuery.trim()),
                             },
                           ]
                         : []),
                       {
                         label: '👉发布文章',
-                        onClick: () => onArticle?.(searchQuery.trim()),
+                        onClick: () => onPublish(ModelDiscussionType.DiscussionTypeBlog, searchQuery.trim()),
                         variant: 'outlined' as const,
                       },
                     ].map((button, index) => (

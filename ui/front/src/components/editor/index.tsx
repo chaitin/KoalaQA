@@ -109,15 +109,19 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
       },
       placeholder,
       content: value || '',
-      onTocUpdate: (toc: any) => {
-        const enabled = !!onTocUpdate
-        if (!enabled) return
-        try {
-          if (typeof onTocUpdate === 'function') {
-            onTocUpdate(toc)
-          }
-        } catch {}
-      },
+      onTocUpdate: onTocUpdate
+      ? (toc: any) => {
+          try {
+            if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
+              console.log(toc)
+              if (Array.isArray(toc) && toc.length > 0) {
+                ;(window as any).__lastToc = toc
+              }
+              window.dispatchEvent(new CustomEvent('toc-update', { detail: toc } as any))
+            }
+          } catch {}
+        }
+      : undefined,
       onUpdate: handleEditorUpdate,
       onAiWritingGetSuggestion: onAiWritingGetSuggestion,
       onValidateUrl: async (url: string, type: 'image' | 'video' | 'audio' | 'iframe') => {

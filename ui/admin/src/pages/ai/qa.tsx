@@ -211,9 +211,7 @@ const AdminDocument = () => {
                 });
               }}
             >
-              <MenuItem value="">
-                <em>全部</em>
-              </MenuItem>
+              <MenuItem value="">全部</MenuItem>
               {statusOptions.map(option => (
                 <MenuItem key={option.value} value={option.value}>
                   {option.label}

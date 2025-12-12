@@ -6,11 +6,12 @@ import Toc from '@/components/Toc'
 import { Stack, Typography } from '@mui/material'
 import { useEffect, useState } from 'react'
 
-const OutlineSidebar = ({ discussion }: { discussion: ModelDiscussionDetail }) => {
+const OutlineSidebar = ({ discussion }: { discussion?: ModelDiscussionDetail }) => {
   const [headings, setHeadings] = useState<any[]>([])
 
   useEffect(() => {
     const handler = (e: any) => {
+      console.log(e)
       const toc = e?.detail
       if (Array.isArray(toc)) {
         setHeadings(toc)
@@ -59,7 +60,7 @@ const OutlineSidebar = ({ discussion }: { discussion: ModelDiscussionDetail }) =
         <Typography variant='subtitle2' sx={{ mb: 2,fontSize: '14px' }}>
           文章概览
         </Typography>
-        {discussion.summary ? (
+        {discussion?.summary ? (
           // <Box sx={{ bgcolor: 'background.default', py: 2, px: 1 }}>
           <EditorContent content={discussion.summary} />
         ) : (

@@ -128,7 +128,7 @@ const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; 
         </Stack>
 
         {/* 右侧边栏 - 仅在桌面端显示 */}
-        <DetailSidebarWrapper isArticle={isArticle} discussion={discussion} discId={discussion.uuid || id} />
+        <DetailSidebarWrapper type={discussion.type}  discussion={discussion} discId={discussion.uuid || id} />
       </Box>
     </>
   )

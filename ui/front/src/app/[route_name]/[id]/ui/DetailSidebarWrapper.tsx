@@ -6,18 +6,23 @@ import RelatedContent from './RelatedContent'
 import AssociatedIssue from './AssociatedIssue'
 import AssociatedQuestions from './AssociatedQuestions'
 import BrandAttribution from '@/components/BrandAttribution'
-import { ModelDiscussionDetail, ModelDiscussionType } from '@/api/types'
+import { ModelDiscussionDetail, ModelDiscussionListItem, ModelDiscussionType } from '@/api/types'
+import { SimilarDiscussionsPanel } from '@/components'
 
 interface DetailSidebarWrapperProps {
-  isArticle: boolean
-  discussion: ModelDiscussionDetail
-  discId: string
+  type?: ModelDiscussionType
+  discussion?: ModelDiscussionDetail
+  discId?: string
+  title?: string
+  content?: string
+  groupIds?: number[]
 }
 
-const DetailSidebarWrapper = ({ isArticle, discussion, discId }: DetailSidebarWrapperProps) => {
+const DetailSidebarWrapper = ({ type, discussion, discId, title, content, groupIds }: DetailSidebarWrapperProps) => {
   const sidebarRef = useRef<HTMLDivElement>(null)
-  const isIssuePost = discussion.type === ModelDiscussionType.DiscussionTypeIssue
-  const isQAPost = discussion.type === ModelDiscussionType.DiscussionTypeQA
+  const isIssuePost = (discussion?.type ?? type) === ModelDiscussionType.DiscussionTypeIssue
+  const isQAPost = (discussion?.type ?? type) === ModelDiscussionType.DiscussionTypeQA
+  const isArticle = (discussion?.type ?? type) === ModelDiscussionType.DiscussionTypeBlog
 
   return (
     <Box
@@ -36,11 +41,19 @@ const DetailSidebarWrapper = ({ isArticle, discussion, discId }: DetailSidebarWr
         <Stack spacing={3} sx={{ flex: 1 }}>
           {isArticle && <OutlineSidebar discussion={discussion} />}
           {/* 问题帖显示关联的 Issue */}
-          {isQAPost && discussion.associate && (
-            <AssociatedIssue associate={discussion.associate} />
-          )}
+          {isQAPost &&
+            (discussion?.id ? (
+              <AssociatedIssue associate={discussion.associate || ([] as ModelDiscussionListItem)} />
+            ) : (
+              <SimilarDiscussionsPanel
+                title={title}
+                content={content}
+                editorContent={discussion?.content}
+                groupIds={discussion?.group_ids || groupIds}
+              />
+            ))}
           {/* Issue 帖显示关联的问题列表 */}
-          {isIssuePost ? <AssociatedQuestions discId={discId} /> : <RelatedContent discId={discId} />}
+          {discId && (isIssuePost ? <AssociatedQuestions discId={discId} /> : <RelatedContent discId={discId} />)}
         </Stack>
         {/* 品牌声明 */}
         <BrandAttribution inSidebar={true} sidebarRef={sidebarRef as React.RefObject<HTMLElement>} />
@@ -50,4 +63,3 @@ const DetailSidebarWrapper = ({ isArticle, discussion, discId }: DetailSidebarWr
 }
 
 export default DetailSidebarWrapper
-

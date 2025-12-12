@@ -78,6 +78,7 @@ export const getCsrfToken = async (): Promise<string> => {
     try {
       const response = await axios.get('/api/csrf', {
         withCredentials: true,
+        timeout: 0, // 禁用超时
       })
 
       let token = ''
@@ -174,6 +175,7 @@ export class HttpClient<SecurityDataType = unknown> {
   constructor({ securityWorker, secure, format, ...axiosConfig }: ApiConfig<SecurityDataType> = {}) {
     this.instance = axios.create({
       withCredentials: true, // 确保客户端请求自动发送cookie
+      timeout: 0, // 禁用超时（默认即为0，这里显式声明）
       ...axiosConfig,
       baseURL: axiosConfig.baseURL || '/api',
       paramsSerializer: {

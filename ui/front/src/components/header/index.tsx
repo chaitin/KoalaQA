@@ -3,11 +3,10 @@
 import { ModelSystemBrand } from '@/api'
 import { ModelDiscussionType, ModelForumInfo as ModelForum, ModelUserRole } from '@/api/types'
 import { AuthContext } from '@/components/authProvider'
-import { ReleaseModal } from '@/components/discussion'
-import { useForumStore, useQuickReplyStore } from '@/store'
 import { useForumId } from '@/hooks/useForumId'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
-import { useAuthCheck } from '@/hooks/useAuthCheck'
+import { isAdminRole } from '@/lib/utils'
+import { useForumStore, useQuickReplyStore } from '@/store'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import MenuIcon from '@mui/icons-material/Menu'
 import SearchIcon from '@mui/icons-material/Search'
@@ -16,8 +15,8 @@ import {
   Box,
   Button,
   Drawer,
-  InputAdornment,
   IconButton,
+  InputAdornment,
   OutlinedInput,
   Stack,
   Toolbar,
@@ -27,11 +26,10 @@ import { useBoolean } from 'ahooks'
 import Image from 'next/image'
 import { useParams, usePathname, useRouter } from 'next/navigation'
 import { useCallback, useContext, useEffect, useState } from 'react'
+import FilterPanel from '../FilterPanel'
 import ForumSelector from '../ForumSelector'
 import SearchResultModal from '../SearchResultModal'
 import LoggedInView from './loggedInView'
-import FilterPanel from '../FilterPanel'
-import { isAdminRole } from '@/lib/utils'
 
 interface HeaderProps {
   brandConfig: ModelSystemBrand
@@ -61,10 +59,6 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
   const [searchInputValue, setSearchInputValue] = useState('')
   const [isMounted, setIsMounted] = useState(false)
   const { fetchQuickReplies } = useQuickReplyStore()
-  const [releaseModalVisible, { setTrue: releaseModalOpen, setFalse: releaseModalClose }] = useBoolean(false)
-  const [selectedModalType, setSelectedModalType] = useState<ModelDiscussionType>(ModelDiscussionType.DiscussionTypeQA)
-  const [initialTitleFromSearch, setInitialTitleFromSearch] = useState<string>('')
-  const { checkAuth } = useAuthCheck()
 
   // 将服务端传下来的 initialForums 同步到 zustand store（如果已经迁移到 useForumStore）
   // 这样使用新 store 的组件可以立即拿到 forum 数据
@@ -128,27 +122,6 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
   const currentForumInfo = currentForumId
     ? forums.find((f) => f.id === currentForumId) || forums[0] || null
     : forums[0] || null
-
-  // 监听自定义事件，直接打开弹窗（Header 总是处理，确保在所有页面都能打开弹窗）
-  useEffect(() => {
-    const handleOpenModal = (event: CustomEvent<OpenReleaseModalEventDetail>) => {
-      const { type, title } = event.detail
-
-      setSelectedModalType(type)
-      if (title) {
-        setInitialTitleFromSearch(title)
-      }
-
-      // 直接打开弹窗
-      releaseModalOpen()
-    }
-
-    window.addEventListener('openReleaseModal', handleOpenModal)
-    return () => {
-      window.removeEventListener('openReleaseModal', handleOpenModal)
-    }
-  }, [releaseModalOpen])
-
   // 确保只在客户端 mounted 后才执行可能影响渲染的逻辑
   useEffect(() => {
     setIsMounted(true)
@@ -268,48 +241,13 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
     }
   }
 
-  // 处理提问、反馈、文章操作
-  const handleAsk = useCallback(
-    (query?: string) => {
+  const handlePublish = useCallback(
+    (type: string, query?: string) => {
+      console.log(query)
       handleCloseSearchModal()
-
-      // 直接触发事件打开弹窗，无论是否在列表页面
-      const event = new CustomEvent<OpenReleaseModalEventDetail>('openReleaseModal', {
-        detail: { type: ModelDiscussionType.DiscussionTypeQA, title: query },
-      })
-      window.dispatchEvent(event)
-    },
-    [handleCloseSearchModal],
-  )
-
-  const handleArticle = useCallback(
-    (query?: string) => {
-      handleCloseSearchModal()
-      const titleParam = query ? `?title=${encodeURIComponent(query)}` : ''
-      if (route_name) {
-        router.push(`/${route_name}/edit${titleParam}`)
-      } else if (forums.length > 0) {
-        const firstForum = forums[0]
-        const routePath = firstForum.route_name
-          ? `/${firstForum.route_name}/edit${titleParam}`
-          : `/${firstForum.id}/edit${titleParam}`
-        router.push(routePath)
-      }
+      router.push(`/${route_name}/edit?type=${type}&${query ? `title=${encodeURIComponent(query)}` : ''}`)
     },
     [handleCloseSearchModal, route_name, forums, router],
-  )
-
-  const handleIssue = useCallback(
-    (query?: string) => {
-      handleCloseSearchModal()
-
-      // 直接触发事件打开弹窗，无论是否在列表页面
-      const event = new CustomEvent<OpenReleaseModalEventDetail>('openReleaseModal', {
-        detail: { type: ModelDiscussionType.DiscussionTypeIssue, title: query },
-      })
-      window.dispatchEvent(event)
-    },
-    [handleCloseSearchModal],
   )
 
   return (
@@ -633,28 +571,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
         open={searchModalOpen}
         onClose={handleCloseSearchModal}
         initialQuery={searchInputValue}
-        onAsk={handleAsk}
-        onIssue={handleIssue}
-        onArticle={handleArticle}
-      />
-
-      {/* Release Modal for creating posts */}
-      <ReleaseModal
-        open={releaseModalVisible}
-        onClose={() => {
-          releaseModalClose()
-          setInitialTitleFromSearch('')
-        }}
-        onOk={() => {
-          releaseModalClose()
-          setInitialTitleFromSearch('')
-          // 刷新当前页面
-          router.refresh()
-        }}
-        selectedTags={[]}
-        initialTitle={initialTitleFromSearch}
-        type={selectedModalType}
-        forumInfo={currentForumInfo}
+        onPublish={handlePublish}
       />
     </>
   )
