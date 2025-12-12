@@ -15,13 +15,13 @@ const StatusBadge = ({ status, text, variant, onClick, sx, ...props }: StatusBad
 
     switch (status) {
       case ModelDocStatus.DocStatusAppling:
-        return '应用中';
+        return '解析中';
       case ModelDocStatus.DocStatusPendingReview:
         return '待审核';
       case ModelDocStatus.DocStatusPendingApply:
         return '待应用';
       case ModelDocStatus.DocStatusApplySuccess:
-        return '已应用';
+        return '应用中';
       case ModelDocStatus.DocStatusApplyFailed:
         return '应用失败';
       default:
