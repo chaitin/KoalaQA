@@ -51,6 +51,7 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 		logger.Warn("task timeout")
 		return nil
 	}
+	logger = logger.With("meta_info", meta)
 	meta.TaskHead = taskInfo.TaskHead
 
 	defer func() {
@@ -59,34 +60,9 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 
 	switch meta.Status {
 	case topic.TaskStatusCompleted:
-		if meta.ParentID > 0 {
-			exist, err := t.repoDoc.ExistByID(ctx, meta.ParentID)
-			if err != nil {
-				logger.WithErr(err).With("parent_id", meta.ParentID).Warn("get parent doc failed")
-				return nil
-			}
-
-			if !exist {
-				logger.With("parent_id", meta.ParentID).Info("parent doc not eixst, skip")
-				return nil
-			}
-
-			// 避免入库相同的数据
-			if meta.DBDocID == 0 {
-				exist, err = t.repoDoc.Exist(ctx,
-					repo.QueryWithEqual("parent_id", meta.ParentID),
-					repo.QueryWithEqual("doc_id", meta.DocID),
-				)
-				if err != nil {
-					logger.WithErr(err).With("parent_id", meta.ParentID).With("doc_id", meta.DocID).Warn("query doc doc failed")
-					return nil
-				}
-
-				if exist {
-					logger.With("parent_id", meta.ParentID).With("doc_id", meta.DocID).Info("doc already exist, skip")
-					return nil
-				}
-			}
+		err := t.checkDoc(ctx, meta)
+		if err != nil {
+			return nil
 		}
 
 		var (
@@ -120,11 +96,12 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 			Markdown:    []byte(taskInfo.Markdown),
 			JSON:        []byte(taskInfo.JSON),
 			FileType:    taskInfo.DocType,
-			Status:      model.DocStatusUnknown,
+			Status:      model.DocStatusExportSuccess,
 			ParentID:    meta.ParentID,
+			Message:     "",
 		}
 
-		err := t.repoDoc.CreateOnIDConflict(ctx, &doc)
+		err = t.repoDoc.CreateOnIDConflict(ctx, &doc, true)
 		if err != nil {
 			meta.Status = topic.TaskStatusFailed
 			logger.WithErr(err).With("kb_document", doc).Error("create kb_document failed")
@@ -163,10 +140,81 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 
 	case topic.TaskStatusFailed:
 		logger.Warn("doc export task failed")
+		if meta.ParentID == 0 {
+			return nil
+		}
+
+		err := t.checkDoc(ctx, meta)
+		if err != nil {
+			return nil
+		}
+
+		err = t.repoDoc.CreateOnIDConflict(ctx, &model.KBDocument{
+			Base: model.Base{
+				ID: meta.DBDocID,
+			},
+			KBID:        meta.KBID,
+			Platform:    meta.Platform,
+			DocType:     meta.DocType,
+			PlatformOpt: model.NewJSONB(taskInfo.PlatformOpt),
+			ExportOpt:   model.NewJSONB(meta.ExportOpt),
+			DocID:       taskInfo.DocID,
+			Title:       meta.Title,
+			Desc:        meta.Desc,
+			Markdown:    []byte(taskInfo.Markdown),
+			JSON:        []byte(taskInfo.JSON),
+			FileType:    taskInfo.DocType,
+			Status:      model.DocStatusExportFailed,
+			ParentID:    meta.ParentID,
+			Message:     taskInfo.Err,
+		}, false)
+		if err != nil {
+			logger.WithErr(err).Warn("create kb_document failed")
+			return nil
+		}
+
 	case topic.TaskStatusInProgress, topic.TaskStatusPending:
 		return nil
 	default:
 		logger.Warn("task status not support")
+	}
+
+	return nil
+}
+
+func (t *anydocTask) checkDoc(ctx context.Context, meta topic.TaskMeta) error {
+	if meta.ParentID == 0 {
+		return nil
+	}
+	logger := t.logger.WithContext(ctx).With("meta", meta)
+	logger.Debug("check doc meta info")
+
+	exist, err := t.repoDoc.ExistByID(ctx, meta.ParentID)
+	if err != nil {
+		logger.WithErr(err).With("parent_id", meta.ParentID).Warn("get parent doc failed")
+		return nil
+	}
+
+	if !exist {
+		logger.With("parent_id", meta.ParentID).Info("parent doc not eixst, skip")
+		return nil
+	}
+
+	// 避免入库相同的数据
+	if meta.DBDocID == 0 {
+		exist, err = t.repoDoc.Exist(ctx,
+			repo.QueryWithEqual("parent_id", meta.ParentID),
+			repo.QueryWithEqual("doc_id", meta.DocID),
+		)
+		if err != nil {
+			logger.WithErr(err).With("parent_id", meta.ParentID).With("doc_id", meta.DocID).Warn("query doc doc failed")
+			return nil
+		}
+
+		if exist {
+			logger.With("parent_id", meta.ParentID).With("doc_id", meta.DocID).Info("doc already exist, skip")
+			return nil
+		}
 	}
 
 	return nil

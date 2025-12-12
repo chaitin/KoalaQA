@@ -1066,7 +1066,10 @@ const docTemplate = `{
                             2,
                             3,
                             4,
-                            5
+                            5,
+                            6,
+                            7,
+                            8
                         ],
                         "type": "integer",
                         "x-enum-varnames": [
@@ -1075,7 +1078,10 @@ const docTemplate = `{
                             "DocStatusPendingReview",
                             "DocStatusPendingApply",
                             "DocStatusApplyFailed",
-                            "DocStatusAppling"
+                            "DocStatusAppling",
+                            "DocStatusPendingExport",
+                            "DocStatusExportSuccess",
+                            "DocStatusExportFailed"
                         ],
                         "name": "status",
                         "in": "query"
@@ -1311,7 +1317,10 @@ const docTemplate = `{
                             2,
                             3,
                             4,
-                            5
+                            5,
+                            6,
+                            7,
+                            8
                         ],
                         "type": "integer",
                         "x-enum-varnames": [
@@ -1320,7 +1329,10 @@ const docTemplate = `{
                             "DocStatusPendingReview",
                             "DocStatusPendingApply",
                             "DocStatusApplyFailed",
-                            "DocStatusAppling"
+                            "DocStatusAppling",
+                            "DocStatusPendingExport",
+                            "DocStatusExportSuccess",
+                            "DocStatusExportFailed"
                         ],
                         "name": "status",
                         "in": "query"
@@ -2045,6 +2057,85 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/kb/{kb_id}/space/{space_id}/folder/{folder_id}/doc": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "space"
+                ],
+                "summary": "list kb space folder doc",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "kb_id",
+                        "name": "kb_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "space_id",
+                        "name": "space_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "title",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/svc.DocListItem"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -7025,7 +7116,10 @@ const docTemplate = `{
                 2,
                 3,
                 4,
-                5
+                5,
+                6,
+                7,
+                8
             ],
             "x-enum-varnames": [
                 "DocStatusUnknown",
@@ -7033,7 +7127,10 @@ const docTemplate = `{
                 "DocStatusPendingReview",
                 "DocStatusPendingApply",
                 "DocStatusApplyFailed",
-                "DocStatusAppling"
+                "DocStatusAppling",
+                "DocStatusPendingExport",
+                "DocStatusExportSuccess",
+                "DocStatusExportFailed"
             ]
         },
         "model.DocType": {
@@ -7257,6 +7354,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "markdown": {
+                    "type": "string"
+                },
+                "message": {
                     "type": "string"
                 },
                 "parent_id": {
@@ -8359,6 +8459,9 @@ const docTemplate = `{
                 "desc": {
                     "type": "string"
                 },
+                "doc_id": {
+                    "type": "string"
+                },
                 "file_type": {
                     "$ref": "#/definitions/model.FileType"
                 },
@@ -8622,7 +8725,13 @@ const docTemplate = `{
                 "doc_id": {
                     "type": "string"
                 },
+                "failed": {
+                    "type": "integer"
+                },
                 "id": {
+                    "type": "integer"
+                },
+                "pending": {
                     "type": "integer"
                 },
                 "rag_id": {

@@ -387,6 +387,44 @@ func (s *kbSpace) UpdateSpaceFolder(ctx *context.Context) {
 	ctx.Success(nil)
 }
 
+// ListSpaceFolderDoc
+// @Summary list kb space folder doc
+// @Tags space
+// @Param kb_id path uint true "kb_id"
+// @Param space_id path uint true "space_id"
+// @Param req query svc.ListSpaceFolderDocReq true "req params"
+// @Produce json
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]svc.DocListItem}}
+// @Router /admin/kb/{kb_id}/space/{space_id}/folder/{folder_id}/doc [get]
+func (s *kbSpace) ListSpaceFolderDoc(ctx *context.Context) {
+	kbID, err := ctx.ParamUint("kb_id")
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	folderID, err := ctx.ParamUint("folder_id")
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	var req svc.ListSpaceFolderDocReq
+	err = ctx.ShouldBindQuery(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	res, err := s.svcDoc.ListSpaceFolderDoc(ctx, kbID, folderID, req)
+	if err != nil {
+		ctx.InternalError(err, "list space fodler doc failed")
+		return
+	}
+
+	ctx.Success(res)
+}
+
 func (s *kbSpace) Route(h server.Handler) {
 	h.POST("/kb/space/remote", s.ListRemote)
 
@@ -408,6 +446,7 @@ func (s *kbSpace) Route(h server.Handler) {
 				spaceFolderDetailG := spaceFolderG.Group("/:folder_id")
 				spaceFolderDetailG.PUT("", s.UpdateSpaceFolder)
 				spaceFolderDetailG.DELETE("", s.DeleteSpaceFolder)
+				spaceFolderDetailG.GET("/doc", s.ListSpaceFolderDoc)
 			}
 		}
 	}

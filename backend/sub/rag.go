@@ -91,10 +91,18 @@ func (r *ragDoc) updateKbDocStatus(ctx context.Context, data topic.MsgRagDocUpda
 	logger := r.logger.WithContext(ctx).With("msg", data)
 
 	logger.Info("upadte kb_doc status")
-	err := r.repoDoc.Update(ctx, map[string]any{
+	updateM := map[string]any{
 		"status":     status[1],
 		"updated_at": time.Now(),
-	}, repo.QueryWithEqual("rag_id", data.ID), repo.QueryWithEqual("status", status[0]))
+	}
+	switch data.Status {
+	case topic.RagDocStatusFailed:
+		updateM["message"] = data.Message
+	case topic.RagDocStatusSucceeded:
+		updateM["message"] = ""
+	}
+
+	err := r.repoDoc.Update(ctx, updateM, repo.QueryWithEqual("rag_id", data.ID), repo.QueryWithEqual("status", status[0]))
 	if err != nil {
 		logger.WithErr(err).Warn("update kb doc status failed", err)
 		return err

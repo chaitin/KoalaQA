@@ -12,15 +12,17 @@ import (
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/topic"
+	"github.com/chaitin/koalaqa/repo"
 	"github.com/chaitin/koalaqa/svc"
 )
 
 type kbSpace struct {
-	logger *glog.Logger
-	doc    *svc.KBDocument
-	anydoc anydoc.Anydoc
-	cache  cache.Cache[topic.TaskMeta]
-	pub    mq.Publisher
+	logger  *glog.Logger
+	doc     *svc.KBDocument
+	repoDoc *repo.KBDocument
+	anydoc  anydoc.Anydoc
+	cache   cache.Cache[topic.TaskMeta]
+	pub     mq.Publisher
 
 	running map[uint]bool
 	lock    sync.Mutex
@@ -46,13 +48,14 @@ func (k *kbSpace) done(id uint) {
 	delete(k.running, id)
 }
 
-func newKBSpace(doc *svc.KBDocument, anydoc anydoc.Anydoc, cache cache.Cache[topic.TaskMeta], pub mq.Publisher) *kbSpace {
+func newKBSpace(doc *svc.KBDocument, anydoc anydoc.Anydoc, cache cache.Cache[topic.TaskMeta], pub mq.Publisher, repoDoc *repo.KBDocument) *kbSpace {
 	return &kbSpace{
 		logger:  glog.Module("sub", "kb_space"),
 		doc:     doc,
 		anydoc:  anydoc,
 		cache:   cache,
 		pub:     pub,
+		repoDoc: repoDoc,
 		running: make(map[uint]bool),
 	}
 }
@@ -141,10 +144,37 @@ func (k *kbSpace) handleInsert(ctx context.Context, logger *glog.Logger, kbID ui
 		return nil
 	}
 
-	for _, doc := range list.Docs {
+	if len(list.Docs) == 0 {
+		logger.Info("empty doc, skip space export")
+		return nil
+	}
+
+	pendingDoc := make([]model.KBDocument, len(list.Docs))
+
+	for i, doc := range list.Docs {
+		pendingDoc[i] = model.KBDocument{
+			KBID:     kbID,
+			Platform: folder.Platform,
+			DocType:  folder.DocType,
+			DocID:    doc.ID,
+			Title:    doc.Title,
+			Desc:     doc.Summary,
+			Status:   model.DocStatusPendingExport,
+			ParentID: folderID,
+		}
+	}
+
+	err = k.repoDoc.BatchCreate(ctx, &pendingDoc)
+	if err != nil {
+		logger.WithErr(err).Warn("batch create space folder doc failed")
+		return nil
+	}
+
+	for i, doc := range list.Docs {
 		_, err = k.doc.SpaceExport(ctx, folder.Platform, svc.SpaceExportReq{
 			BaseExportReq: svc.BaseExportReq{
 				DBDoc: svc.BaseDBDoc{
+					ID:       pendingDoc[i].ID,
 					Type:     folder.DocType,
 					ParentID: folderID,
 				},
@@ -159,6 +189,14 @@ func (k *kbSpace) handleInsert(ctx context.Context, logger *glog.Logger, kbID ui
 		})
 		if err != nil {
 			logger.WithErr(err).With("export_doc_id", doc.ID).Warn("export space doc failed")
+			err = k.repoDoc.Update(ctx, map[string]any{
+				"status":     model.DocStatusExportFailed,
+				"message":    err.Error(),
+				"updated_at": time.Now(),
+			}, repo.QueryWithEqual("id", pendingDoc[i].ID))
+			if err != nil {
+				logger.WithErr(err).With("id", pendingDoc[i].ID).Error("update doc status failed")
+			}
 		}
 	}
 
@@ -178,7 +216,7 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, kbID ui
 		return nil
 	}
 
-	listFolderRes, err := k.doc.ListSpaceFolderDoc(ctx, kbID, folderID)
+	listFolderRes, err := k.doc.ListSpaceFolderDoc(ctx, kbID, folderID, svc.ListSpaceFolderDocReq{})
 	if err != nil {
 		logger.WithErr(err).Warn("list folder doc failed")
 		return nil
@@ -234,7 +272,7 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, kbID ui
 }
 
 func (k *kbSpace) handleDelete(ctx context.Context, logger *glog.Logger, kbID uint, folderID uint) error {
-	folder, err := k.doc.ListSpaceFolderDoc(ctx, kbID, folderID)
+	folder, err := k.doc.ListSpaceFolderDoc(ctx, kbID, folderID, svc.ListSpaceFolderDocReq{})
 	if err != nil {
 		logger.WithErr(err).Warn("list space folder failed")
 		return nil

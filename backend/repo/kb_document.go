@@ -31,10 +31,14 @@ func (d *KBDocument) GetByRagIDs(ctx context.Context, ids []string) ([]model.KBD
 	return docs, nil
 }
 
-func (d *KBDocument) CreateOnIDConflict(ctx context.Context, res any) error {
+func (d *KBDocument) CreateOnIDConflict(ctx context.Context, res *model.KBDocument, updateWithDocInfo bool) error {
+	columns := []string{"status", "message"}
+	if updateWithDocInfo {
+		columns = append(columns, "title", "desc", "platform_opt", "export_opt", "file_type", "markdown", "json")
+	}
 	return d.model(ctx).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},
-		DoUpdates: clause.AssignmentColumns([]string{"title", "desc", "markdown", "json"}),
+		DoUpdates: clause.AssignmentColumns(columns),
 	}).Create(res).Error
 }
 
@@ -43,14 +47,14 @@ func (d *KBDocument) ListSpace(ctx context.Context, res any, kbID uint, optFuncs
 
 	return d.model(ctx).
 		Select([]string{"kb_documents.*", "sub_doc.total"}).
-		Joins("LEFT JOIN (select parent_id, COUNT(*) AS total FROM kb_documents where kb_id = ? AND doc_type = ? AND parent_id != 0 GROUP BY parent_id) AS sub_doc ON sub_doc.parent_id = kb_documents.id", kbID, model.DocTypeSpace).
+		Joins("LEFT JOIN (select parent_id, COUNT(*) AS total, COUNT(*) FILTER (WHERE status = ?) AS pending, COUNT(*) FILTER (WHERE status = ?) AS failed FROM kb_documents where kb_id = ? AND doc_type = ? AND parent_id != 0 GROUP BY parent_id) AS sub_doc ON sub_doc.parent_id = kb_documents.id", model.DocStatusPendingExport, model.DocStatusExportFailed, kbID, model.DocTypeSpace).
 		Where("kb_id = ?", kbID).
 		Where("doc_type = ?", model.DocTypeSpace).
 		Scopes(o.Scopes()...).
 		Find(res).Error
 }
 
-func (d *KBDocument) BatchCreate(ctx context.Context, data []model.KBDocument) error {
+func (d *KBDocument) BatchCreate(ctx context.Context, data *[]model.KBDocument) error {
 	return d.model(ctx).CreateInBatches(&data, 1000).Error
 }
 
