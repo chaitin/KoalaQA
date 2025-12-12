@@ -224,40 +224,16 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
       <head>
         <meta httpEquiv='content-language' content='zh-CN' />
         <meta name='description' content={description} />
-        
         <meta name='keywords' content={Array.isArray(keywords) ? keywords.join(',') : keywords} />
         {/* DNS 预解析优化 */}
         <link rel='dns-prefetch' href='//fonts.googleapis.com' />
         <link rel='preconnect' href='//fonts.googleapis.com' crossOrigin='anonymous' />
         <link rel='icon' href={brand?.logo || '/logo.svg'} />
-        
       </head>
       <body className={`${monoFont.variable} ${alimamashuheitiFont.variable}`}>
         {/* 图标字体预加载 - beforeInteractive 确保在交互前加载 */}
         {/* 文件名包含 commit id，每次下载新图标时文件名会自动更新，防止浏览器缓存 */}
         <Script src={`/font/${iconfontFileName}`} strategy='beforeInteractive' />
-
-        {/* vConsole - 移动端调试面板 */}
-        <Script src='https://unpkg.com/vconsole@latest/dist/vconsole.min.js' strategy='afterInteractive' />
-        <Script id='vconsole-init' strategy='afterInteractive'>{`
-          (function () {
-            try {
-              if (typeof window === 'undefined') return;
-              if (window.__VCONSOLE_INSTANCE__) return;
-              var tries = 0;
-              var timer = setInterval(function () {
-                tries++;
-                if (window.VConsole && !window.__VCONSOLE_INSTANCE__) {
-                  window.__VCONSOLE_INSTANCE__ = new window.VConsole();
-                  clearInterval(timer);
-                }
-                if (tries > 50) clearInterval(timer);
-              }, 100);
-            } catch (e) {
-              // ignore
-            }
-          })();
-        `}</Script>
 
         {/* 埋点图片 - 用于采集用户使用记录 */}
         <img
