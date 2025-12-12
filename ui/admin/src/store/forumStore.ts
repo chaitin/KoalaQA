@@ -36,7 +36,8 @@ export const useForumStore = create<ForumState>((set, get) => ({
     if (forumIds.length === 0) return
 
     const { tags } = get()
-    const tagsToFetch = forumIds.filter(id => id > 0 && !tags[id])
+    // 兼容历史解析失败导致 tags[forumId] = [] 的情况：允许空数组重拉一次
+    const tagsToFetch = forumIds.filter(id => id > 0 && (!tags[id] || tags[id].length === 0))
 
     if (tagsToFetch.length === 0) return
 
@@ -47,10 +48,14 @@ export const useForumStore = create<ForumState>((set, get) => ({
           const data = await getAdminForumForumIdTags({ forumId })
           let items: TagOption[] = []
 
+          // 后端实际返回：model.ListRes{ items: [] }（对象）
+          // swagger 可能生成成：ListRes[]（数组）；这里做兼容解析
           if (Array.isArray(data)) {
-            if (data.length > 0 && data[0]?.items) {
-              items = data[0].items
-            }
+            const first = data[0] as any
+            if (first && Array.isArray(first.items)) items = first.items
+          } else if (data && typeof data === 'object') {
+            const obj = data as any
+            if (Array.isArray(obj.items)) items = obj.items
           }
 
           return { forumId, tags: items }
