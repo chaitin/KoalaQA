@@ -227,11 +227,10 @@ func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req Discus
 var errDiscussionClosed = errors.New("discussion has been closed")
 
 type DiscussionUpdateReq struct {
-	Title    string            `json:"title" binding:"required"`
-	Summary  string            `json:"summary"`
-	Content  string            `json:"content"`
-	Tags     model.StringArray `json:"tags"`
-	GroupIDs model.Int64Array  `json:"group_ids"`
+	Title    string           `json:"title"`
+	Summary  string           `json:"summary"`
+	Content  string           `json:"content"`
+	GroupIDs model.Int64Array `json:"group_ids"`
 }
 
 func (d *Discussion) Update(ctx context.Context, user model.UserInfo, uuid string, req DiscussionUpdateReq) error {
@@ -248,11 +247,17 @@ func (d *Discussion) Update(ctx context.Context, user model.UserInfo, uuid strin
 		return err
 	}
 
-	updateM := map[string]any{
-		"title":     req.Title,
-		"content":   req.Content,
-		"tags":      req.Tags,
-		"group_ids": req.GroupIDs,
+	updateM := make(map[string]any)
+
+	if req.Title != "" {
+		updateM["title"] = req.Title
+	}
+	if req.Content != "" {
+		updateM["content"] = req.Content
+	}
+
+	if len(req.GroupIDs) > 0 {
+		updateM["group_ids"] = req.GroupIDs
 	}
 
 	if disc.Type == model.DiscussionTypeBlog && req.Summary != "" {

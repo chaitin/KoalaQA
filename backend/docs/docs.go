@@ -8408,9 +8408,6 @@ const docTemplate = `{
         },
         "svc.DiscussionUpdateReq": {
             "type": "object",
-            "required": [
-                "title"
-            ],
             "properties": {
                 "content": {
                     "type": "string"
@@ -8423,12 +8420,6 @@ const docTemplate = `{
                 },
                 "summary": {
                     "type": "string"
-                },
-                "tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
                 },
                 "title": {
                     "type": "string"
