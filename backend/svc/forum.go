@@ -142,7 +142,11 @@ func (f *Forum) ListForumAllTag(ctx context.Context, forumID uint, req ForumList
 	return &res, nil
 }
 
-func (f *Forum) ListForumTags(ctx context.Context, forumID uint) (*model.ListRes[model.DiscussionTag], error) {
+type ListForumTagsReq struct {
+	Type *model.DiscussionType `form:"type"`
+}
+
+func (f *Forum) ListForumTags(ctx context.Context, forumID uint, req ListForumTagsReq) (*model.ListRes[model.DiscussionTag], error) {
 	var forum model.Forum
 	err := f.repo.GetByID(ctx, &forum, forumID)
 	if err != nil {
@@ -156,6 +160,17 @@ func (f *Forum) ListForumTags(ctx context.Context, forumID uint) (*model.ListRes
 	}
 
 	var res model.ListRes[model.DiscussionTag]
+
+	if req.Type != nil {
+		err = f.repoDisc.FilterTagIDs(ctx, &forum.TagIDs, repo.QueryWithEqual("type", req.Type))
+		if err != nil {
+			return nil, err
+		}
+		if len(forum.TagIDs) == 0 {
+			res.Items = make([]model.DiscussionTag, 0)
+			return &res, nil
+		}
+	}
 
 	err = f.repoDiscTag.List(ctx, &res.Items,
 		repo.QueryWithEqual("id", forum.TagIDs, repo.EqualOPEqAny),

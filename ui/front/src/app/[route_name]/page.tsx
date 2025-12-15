@@ -35,11 +35,15 @@ async function fetchForumData(route_name: string, searchParams: any) {
     const topics = tps ? tps.split(',').map(Number) : []
     const tagIds = tags ? tags.split(',').map(Number) : []
 
+    // type=all 表示“全部”，查询时需要映射为不传 type
+    // 未传 type 时默认展示 qa（问题）
+    const normalizedType = type === 'all' ? undefined : (type || 'qa')
+
     const discussionParams: any = {
       page: parseInt(page, 10),
       size: 10,
       keyword: search,
-      type: type as 'qa' | 'blog' | undefined,
+      type: normalizedType as any,
       forum_id: forumId,
       group_ids: topics,
       tag_ids: tagIds,

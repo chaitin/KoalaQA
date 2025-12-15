@@ -1,10 +1,13 @@
 import {
   deleteAdminKbKbIdSpaceSpaceId,
   deleteAdminKbKbIdSpaceSpaceIdFolderFolderId,
+  getAdminKbKbIdDocumentDocId,
   getAdminKbKbIdSpace,
   getAdminKbKbIdSpaceSpaceId,
   getAdminKbKbIdSpaceSpaceIdFolder,
+  getAdminKbKbIdSpaceSpaceIdFolderFolderIdDoc,
   getAdminKbKbIdSpaceSpaceIdRemote,
+  ModelDocStatus,
   PlatformPlatformType,
   postAdminKbKbIdSpace,
   postAdminKbKbIdSpaceSpaceIdFolder,
@@ -13,6 +16,7 @@ import {
   putAdminKbKbIdSpaceSpaceIdFolderFolderId,
   putAdminKbKbIdSpaceSpaceIdRefresh,
   SvcCreateSpaceReq,
+  SvcDocListItem,
   SvcListRemoteReq,
   SvcListSpaceFolderItem,
   SvcListSpaceItem,
@@ -25,6 +29,9 @@ import LoadingButton from '@/components/LoadingButton';
 import StatusBadge from '@/components/StatusBadge';
 import { Card, Icon, message, Modal } from '@ctzhian/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
+import AutorenewIcon from '@mui/icons-material/Autorenew';
+import CancelIcon from '@mui/icons-material/Cancel';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CloseIcon from '@mui/icons-material/Close';
 import DescriptionIcon from '@mui/icons-material/Description';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -33,6 +40,7 @@ import {
   Box,
   Button,
   Checkbox,
+  Chip,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -51,6 +59,7 @@ import {
   Tab,
   Tabs,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useRequest } from 'ahooks';
@@ -78,6 +87,14 @@ const KnowledgeBasePage = () => {
   const [currentFolder, setCurrentFolder] = useState<SvcListSpaceFolderItem | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showDocStatusModal, setShowDocStatusModal] = useState(false);
+  const [docStatusFolder, setDocStatusFolder] = useState<SvcListSpaceFolderItem | null>(null);
+  const [docStatusSearch, setDocStatusSearch] = useState('');
+  const [docStatusTab, setDocStatusTab] = useState<'all' | 'success' | 'failed'>('all');
+  const [docFailReasonById, setDocFailReasonById] = useState<Record<number, string>>({});
+  const [docFailReasonLoadingById, setDocFailReasonLoadingById] = useState<Record<number, boolean>>(
+    {}
+  );
   const [editSpace, setEditSpace] = useState<SvcListSpaceItem | null>(null);
   const [selectedFolders, setSelectedFolders] = useState<string[]>([]);
   const [expandedDocs, setExpandedDocs] = useState<Set<string>>(new Set());
@@ -178,6 +195,88 @@ const KnowledgeBasePage = () => {
 
   const spaces = spacesData?.items || [];
   const folders = foldersData?.items || [];
+
+  const getDocSyncState = (status?: ModelDocStatus) => {
+    if (
+      status === ModelDocStatus.DocStatusApplySuccess ||
+      status === ModelDocStatus.DocStatusExportSuccess
+    ) {
+      return 'success' as const;
+    }
+    if (
+      status === ModelDocStatus.DocStatusApplyFailed ||
+      status === ModelDocStatus.DocStatusExportFailed
+    ) {
+      return 'failed' as const;
+    }
+    if (
+      status === ModelDocStatus.DocStatusAppling ||
+      status === ModelDocStatus.DocStatusPendingApply ||
+      status === ModelDocStatus.DocStatusPendingExport ||
+      status === ModelDocStatus.DocStatusPendingReview
+    ) {
+      return 'syncing' as const;
+    }
+    return 'unknown' as const;
+  };
+
+  const {
+    data: folderDocListData,
+    run: fetchFolderDocList,
+    loading: folderDocListLoading,
+  } = useRequest(
+    (folder?: SvcListSpaceFolderItem | null) => {
+      if (!selectedSpaceId) return Promise.resolve(null);
+      if (!folder?.id) return Promise.resolve(null);
+      return getAdminKbKbIdSpaceSpaceIdFolderFolderIdDoc({
+        kbId: kb_id,
+        spaceId: selectedSpaceId,
+        folderId: String(folder.id),
+        page: 1,
+        size: 2000,
+      });
+    },
+    { manual: true }
+  );
+
+  const folderDocs: SvcDocListItem[] = folderDocListData?.items || [];
+
+  const openDocStatusModal = (folder: SvcListSpaceFolderItem) => {
+    setDocStatusFolder(folder);
+    setDocStatusSearch('');
+    setDocStatusTab('all');
+    setShowDocStatusModal(true);
+    fetchFolderDocList(folder);
+  };
+
+  const closeDocStatusModal = () => {
+    setShowDocStatusModal(false);
+    setDocStatusFolder(null);
+    setDocStatusSearch('');
+    setDocStatusTab('all');
+  };
+
+  const ensureDocFailReason = async (docId?: number) => {
+    if (!docId) return;
+    if (docFailReasonById[docId]) return;
+    if (docFailReasonLoadingById[docId]) return;
+    setDocFailReasonLoadingById(prev => ({ ...prev, [docId]: true }));
+    try {
+      const detail = await getAdminKbKbIdDocumentDocId({ kbId: kb_id, docId });
+      const reason = (detail?.message || detail?.desc || '').trim();
+      setDocFailReasonById(prev => ({
+        ...prev,
+        [docId]: reason || '暂无失败原因',
+      }));
+    } catch {
+      setDocFailReasonById(prev => ({
+        ...prev,
+        [docId]: '获取失败原因失败',
+      }));
+    } finally {
+      setDocFailReasonLoadingById(prev => ({ ...prev, [docId]: false }));
+    }
+  };
 
   const { register, formState, handleSubmit, reset, watch, setValue } = useForm({
     resolver: zodResolver(spaceSchema),
@@ -382,7 +481,7 @@ const KnowledgeBasePage = () => {
       message.error('获取知识库失败，请检查配置是否正确');
     }
   };
-  const handleGetSpaces =  async() => {
+  const handleGetSpaces = async () => {
     if (currentSpace?.id) {
       setSelectedSpaceId(currentSpace.id || null);
       await fetchRemoteSpaces(currentSpace.id, currentSpace.platform);
@@ -752,16 +851,33 @@ const KnowledgeBasePage = () => {
                       <Typography
                         variant="caption"
                         color="text.secondary"
-                        sx={{ fontSize: '12px', mb: 0.5, '& b': { color: 'text.primary' } }}
+                        sx={{
+                          fontSize: '12px',
+                          mb: 0.5,
+                          '& b': { color: 'text.primary' },
+                          cursor: 'pointer',
+                          userSelect: 'none',
+                          '&:hover': { color: 'text.primary' },
+                        }}
+                        onClick={() => openDocStatusModal(folder)}
                       >
-                        共 <b>{folder.total || 0}</b> 个文档
+                        同步成功{' '}
+                        <b>
+                          {Math.max(
+                            0,
+                            (folder.total || 0) - (folder.failed || 0) - (folder.pending || 0)
+                          )}
+                        </b>{' '}
+                        个
+                        {(folder.failed || 0) > 0 && (
+                          <>
+                            ，同步失败 <b>{folder.failed || 0}</b> 个
+                          </>
+                        )}
                       </Typography>
                     </Stack>
                     <Box sx={{ width: '100px', flexShrink: 0 }}>
-                      <StatusBadge
-                        text={folder.status === 1 ? '应用中' : '同步中'}
-                        variant={folder.status === 1 ? 'applying' : 'default'}
-                      />
+                      <StatusBadge status={folder.status} />
                     </Box>
                     <Box sx={{ flex: 1 }} />
                     <Stack alignItems="flex-end" spacing={1} sx={{ flexShrink: 0 }}>
@@ -1340,6 +1456,168 @@ const KnowledgeBasePage = () => {
             )}
           </List>
         </Box>
+      </Modal>
+
+      {/* 查看同步结果（成功/失败） */}
+      <Modal
+        open={showDocStatusModal}
+        onCancel={closeDocStatusModal}
+        onOk={closeDocStatusModal}
+        okText="关闭"
+        cancelText="取消"
+        title="查看知识库"
+        width={620}
+      >
+        {(() => {
+          const total = docStatusFolder?.total || 0;
+          const failed = docStatusFolder?.failed || 0;
+          const pending = docStatusFolder?.pending || 0;
+          const success = Math.max(0, total - failed - pending);
+
+          const q = docStatusSearch.trim().toLowerCase();
+          const docsAfterSearch = folderDocs.filter(d => (d.title || '').toLowerCase().includes(q));
+          const docsAfterFilter =
+            docStatusTab === 'all'
+              ? docsAfterSearch
+              : docsAfterSearch.filter(d => {
+                  const s = getDocSyncState(d.status);
+                  return docStatusTab === 'success' ? s === 'success' : s === 'failed';
+                });
+          const renderStatusIcon = (doc: SvcDocListItem) => {
+            const state = getDocSyncState(doc.status);
+            const iconBoxSx = { width: 24, height: 24, display: 'flex', alignItems: 'center' };
+            if (state === 'success') {
+              return (
+                <Box sx={iconBoxSx}>
+                  <CheckCircleIcon fontSize="small" color="success" />
+                </Box>
+              );
+            }
+            if (state === 'failed') {
+              const id = doc.id;
+              const title =
+                id && docFailReasonLoadingById[id]
+                  ? '加载失败原因中...'
+                  : id
+                    ? docFailReasonById[id] || '悬停查看失败原因'
+                    : '悬停查看失败原因';
+              return (
+                <Box sx={iconBoxSx}>
+                  <Tooltip
+                    title={title}
+                    arrow
+                    onOpen={() => ensureDocFailReason(id)}
+                    placement="top"
+                  >
+                    <Box component="span" sx={{ display: 'inline-flex' }}>
+                      <CancelIcon fontSize="small" color="error" />
+                    </Box>
+                  </Tooltip>
+                </Box>
+              );
+            }
+            if (state === 'syncing') {
+              return (
+                <Box sx={iconBoxSx}>
+                  <AutorenewIcon
+                    fontSize="small"
+                    sx={{
+                      color: 'text.secondary',
+                      animation: 'kbDocSpin 1s linear infinite',
+                      '@keyframes kbDocSpin': {
+                        from: { transform: 'rotate(0deg)' },
+                        to: { transform: 'rotate(360deg)' },
+                      },
+                    }}
+                  />
+                </Box>
+              );
+            }
+            return (
+              <Box sx={iconBoxSx}>
+                <DescriptionIcon fontSize="small" sx={{ color: 'text.disabled' }} />
+              </Box>
+            );
+          };
+
+          return (
+            <Stack spacing={2}>
+              <Stack spacing={1} direction="row" alignItems="center">
+                <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
+                  {docStatusFolder?.title || '文档'}
+                </Typography>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Chip
+                    size="small"
+                    color="success"
+                    variant="outlined"
+                    label={`同步成功: ${success}`}
+                  />
+                  {failed > 0 && (
+                    <Chip
+                      size="small"
+                      color="error"
+                      variant="outlined"
+                      label={`同步失败: ${failed}`}
+                    />
+                  )}
+                </Stack>
+              </Stack>
+
+              <TextField
+                size="small"
+                placeholder="搜索文档..."
+                value={docStatusSearch}
+                onChange={e => setDocStatusSearch(e.target.value)}
+                fullWidth
+              />
+
+              <Divider />
+
+              <Box sx={{ maxHeight: 420, overflow: 'auto' }}>
+                {folderDocListLoading ? (
+                  <Box sx={{ py: 6, textAlign: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      加载中...
+                    </Typography>
+                  </Box>
+                ) : docsAfterFilter.length === 0 ? (
+                  <Box sx={{ py: 6, textAlign: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      暂无文档
+                    </Typography>
+                  </Box>
+                ) : (
+                  <List dense>
+                    {docsAfterFilter.map(doc => (
+                      <ListItem key={doc.id || doc.doc_id} sx={{ px: 0 }}>
+                        <ListItemIcon sx={{ minWidth: 36 }}>{renderStatusIcon(doc)}</ListItemIcon>
+                        <ListItemText
+                          primary={
+                            <Typography
+                              variant="body2"
+                              sx={{ fontWeight: 500, color: 'text.primary' }}
+                              noWrap
+                            >
+                              {doc.title || '-'}
+                            </Typography>
+                          }
+                          secondary={
+                            doc.updated_at ? (
+                              <Typography variant="caption" color="text.secondary">
+                                更新于 {formatDate(doc.updated_at)}
+                              </Typography>
+                            ) : null
+                          }
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                )}
+              </Box>
+            </Stack>
+          );
+        })()}
       </Modal>
 
       {/* 图片预览弹窗 */}

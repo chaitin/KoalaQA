@@ -46,7 +46,7 @@ func (d *KBDocument) ListSpace(ctx context.Context, res any, kbID uint, optFuncs
 	o := getQueryOpt(optFuncs...)
 
 	return d.model(ctx).
-		Select([]string{"kb_documents.*", "sub_doc.total"}).
+		Select([]string{"kb_documents.*", "sub_doc.total", "sub_doc.pending", "sub_doc.failed"}).
 		Joins("LEFT JOIN (select parent_id, COUNT(*) AS total, COUNT(*) FILTER (WHERE status = ?) AS pending, COUNT(*) FILTER (WHERE status = ?) AS failed FROM kb_documents where kb_id = ? AND doc_type = ? AND parent_id != 0 GROUP BY parent_id) AS sub_doc ON sub_doc.parent_id = kb_documents.id", model.DocStatusPendingExport, model.DocStatusExportFailed, kbID, model.DocTypeSpace).
 		Where("kb_id = ?", kbID).
 		Where("doc_type = ?", model.DocTypeSpace).

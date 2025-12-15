@@ -135,7 +135,29 @@ func (d *Discussion) List(ctx context.Context, res any, queryFuncs ...QueryOptFu
 	o := getQueryOpt(queryFuncs...)
 	return d.base.model(ctx).
 		Joins("left join users on users.id = discussions.user_id").
-		Select("discussions.*, users.name as user_name, users.avatar as user_avatar").
+		Select([]string{
+			"discussions.id",
+			"discussions.created_at",
+			"discussions.updated_at",
+			"discussions.uuid",
+			"discussions.user_id",
+			"discussions.title",
+			"discussions.summary",
+			"discussions.tag_ids",
+			"discussions.group_ids",
+			"discussions.resolved",
+			"discussions.resolved_at",
+			"discussions.hot",
+			"discussions.like",
+			"discussions.dislike",
+			"discussions.view",
+			"discussions.comment",
+			"discussions.type",
+			"discussions.forum_id",
+			"discussions.associate_id",
+			"users.name as user_name",
+			"users.avatar as user_avatar",
+		}).
 		Scopes(o.Scopes()...).
 		Find(res).Error
 }
@@ -316,4 +338,16 @@ func (d *Discussion) UpdateTagsByRagID(ctx context.Context, ragID string, tags [
 
 		return nil
 	})
+}
+
+func (d *Discussion) FilterTagIDs(ctx context.Context, tagIDs *model.Int64Array, querFuncs ...QueryOptFunc) error {
+	o := getQueryOpt(querFuncs...)
+	var filterIDs []int64
+	err := d.db.WithContext(ctx).Raw(`SELECT tag_id FROM (?) WHERE tag_id =ANY(?)`, d.db.Model(d.m).Select("DISTINCT unnest(tag_ids) AS tag_id").Scopes(o.Scopes()...), tagIDs).Scan(&filterIDs).Error
+	if err != nil {
+		return err
+	}
+
+	*tagIDs = filterIDs
+	return nil
 }

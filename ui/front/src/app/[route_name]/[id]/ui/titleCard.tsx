@@ -20,6 +20,7 @@ import EditorContent from '@/components/EditorContent'
 import Modal from '@/components/modal'
 import { TimeDisplayWithTag } from '@/components/TimeDisplay'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
+import { useListPageCache } from '@/hooks/useListPageCache'
 import dayjs from '@/lib/dayjs'
 import { formatNumber, isAdminRole } from '@/lib/utils'
 import { useForumStore } from '@/store'
@@ -79,6 +80,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const [convertToIssueVisible, { setFalse: convertToIssueClose, setTrue: convertToIssueOpen }] = useBoolean(false)
   const [followInfo, setFollowInfo] = useState<{ followed?: boolean; follower?: number }>({})
   const [isHoveringFollow, setIsHoveringFollow] = useState(false)
+  const { clearCache } = useListPageCache()
   const router = useRouter()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
@@ -127,7 +129,6 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   }, [id])
   const { checkAuth } = useAuthCheck()
   const anchorElRef = useRef(null)
-  const editorRef = useRef<EditorWrapRef>(null)
 
   const handleDelete = () => {
     menuClose()
@@ -140,6 +141,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           if (data.type === ModelDiscussionType.DiscussionTypeBlog) {
             showPointNotification(PointActionType.DELETE_ARTICLE)
           }
+          clearCache()
           router.push('/')
         })
       },

@@ -4,7 +4,7 @@ import { ModelDiscussionListItem, ModelDiscussionType, ModelForumInfo, ModelGrou
 import GroupsInitializer from '@/components/groupsInitializer'
 import { Button, Stack } from '@mui/material'
 import Link from 'next/link'
-import { Suspense } from 'react'
+import { Suspense, useMemo } from 'react'
 import ArticleCard from './article'
 import { useEffect } from 'react'
 import { useForumStore } from '@/store'
@@ -32,6 +32,12 @@ const ForumPageContent = ({ route_name, searchParams, initialData }: ForumPageCo
   const { tps, type, tags } = searchParams
   const { forumId, forumInfo, discussions, groups, announcements } = initialData
   const setRouteName = useForumStore((s) => s.setRouteName)
+
+  // type=all 表示“全部”（不传给后端）；未传 type 默认 qa
+  const normalizedType = useMemo(() => {
+    if (type === 'all') return undefined
+    return (type || ModelDiscussionType.DiscussionTypeQA) as ModelDiscussionType
+  }, [type])
 
   // 确保 store 中记录 route_name，以便 selectedForumId 能尽快被设置
   useEffect(() => {
@@ -63,7 +69,7 @@ const ForumPageContent = ({ route_name, searchParams, initialData }: ForumPageCo
             announcements={announcements}
             tps={tps || ''}
             tags={tags || ''}
-            type={type as ModelDiscussionType | undefined}
+            type={normalizedType}
             forumInfo={forumInfo}
           />
         </Suspense>

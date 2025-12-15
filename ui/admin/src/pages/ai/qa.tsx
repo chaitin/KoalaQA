@@ -41,9 +41,7 @@ const AdminDocument = () => {
   });
   const statusOptions = [
     { value: ModelDocStatus.DocStatusPendingReview, label: '待审核' },
-    { value: ModelDocStatus.DocStatusPendingApply, label: '待应用' },
-    { value: ModelDocStatus.DocStatusAppling, label: '已应用' },
-    { value: ModelDocStatus.DocStatusApplySuccess, label: '已应用' },
+    { value: ModelDocStatus.DocStatusApplySuccess, label: '应用中' },
     { value: ModelDocStatus.DocStatusApplyFailed, label: '应用失败' },
   ];
 

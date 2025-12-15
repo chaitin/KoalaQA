@@ -4,12 +4,14 @@ import { getDiscussionDiscId, ModelDiscussionType } from '@/api'
 import { postDiscussion, putDiscussionDiscId } from '@/api/Discussion'
 import { ModelDiscussionDetail, ModelGroupItemInfo, SvcDiscussionCreateReq, SvcDiscussionUpdateReq } from '@/api/types'
 import { Card } from '@/components'
+import EditorContent from '@/components/EditorContent'
 import EditorWrap, { EditorWrapRef } from '@/components/editor'
 import Toc from '@/components/Toc'
 import { useGroupData } from '@/contexts/GroupDataContext'
 import { useForumStore } from '@/store'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import { useSystemDiscussion } from '@/contexts/SystemDiscussionContext'
+import Modal from '@/components/modal'
 import {
   Box,
   Button,
@@ -28,6 +30,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import z from 'zod'
 import DetailSidebarWrapper from '../[id]/ui/DetailSidebarWrapper'
+import { useListPageCache } from '@/hooks/useListPageCache'
 
 // 确保每个分类下至少选择一个子选项（无分类数据时跳过）
 function validateGroupSelection(
@@ -48,8 +51,33 @@ function validateGroupSelection(
   return true
 }
 
+// 概览限制为“纯文本”：尽量把常见 Markdown/HTML 格式符号降级为普通文本
+function sanitizeSummaryPlainText(input: string) {
+  let s = input || ''
+  // 去掉 HTML 标签
+  s = s.replace(/<[^>]*>/g, '')
+  // 统一换行
+  s = s.replace(/\r\n?/g, '\n')
+  // 常见 Markdown：标题、引用、列表
+  s = s.replace(/^\s{0,3}#{1,6}\s+/gm, '')
+  s = s.replace(/^\s{0,3}>\s?/gm, '')
+  s = s.replace(/^\s*(?:[-*+]|(\d+\.))\s+/gm, '')
+  // 链接/图片保留可读文本
+  s = s.replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
+  s = s.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+  // 行内代码、加粗/斜体/删除线
+  s = s.replace(/`{1,3}([^`]+)`{1,3}/g, '$1')
+  s = s.replace(/\*\*([^*]+)\*\*/g, '$1')
+  s = s.replace(/\*([^*]+)\*/g, '$1')
+  s = s.replace(/__([^_]+)__/g, '$1')
+  s = s.replace(/_([^_]+)_/g, '$1')
+  s = s.replace(/~~([^~]+)~~/g, '$1')
+  // 分隔线
+  s = s.replace(/^\s*(?:\*\s*\*\s*\*|-{3,}|_{3,})\s*$/gm, '')
+  return s
+}
+
 export default function EditPage() {
-  const [headings, setHeadings] = useState<any[]>([])
   const [discussion, setDiscussion] = useState<ModelDiscussionDetail | null>(null)
   const params = useSearchParams()
   const routeParams = useParams()
@@ -64,11 +92,14 @@ export default function EditPage() {
   const editorRef = useRef<EditorWrapRef>(null)
   const titleInitializedRef = useRef(false)
   const { getFilteredGroups } = useGroupData()
+  const [summaryModalOpen, setSummaryModalOpen] = useState(false)
+  const [summaryDraft, setSummaryDraft] = useState('')
 
   const schema = useMemo(
     () =>
       z.object({
         title: z.string().min(1, '标题不能为空').default(''),
+        summary: z.string().default(''),
         content: z.string().default(''),
         group_ids: z.array(z.number()).min(1, '请选择至少一个分类').default([]),
         type: z.nativeEnum(ModelDiscussionType).default(ModelDiscussionType.DiscussionTypeBlog),
@@ -92,14 +123,24 @@ export default function EditPage() {
     mode: 'onBlur',
     defaultValues: {
       title: '',
+      summary: '',
       content: '',
       group_ids: [],
       type: ModelDiscussionType.DiscussionTypeBlog,
     },
   })
 
+  // summary 字段没有显式输入框，依赖侧边栏 setValue 写入；
+  // 这里主动 register，确保 handleSubmit 的 vals 中能拿到最新的 summary。
+  useEffect(() => {
+    register('summary')
+  }, [register])
+
   const title = watch('title')
+  const summaryValue = watch('summary')
   const contentValue = watch('content')
+  const { clearCache } = useListPageCache()
+  const isBlogPost = (watch('type') || (urlType as any)) === ModelDiscussionType.DiscussionTypeBlog
 
   // 根据 route_name 获取对应的 forumInfo
   const forumInfo = useMemo(() => {
@@ -137,8 +178,10 @@ export default function EditPage() {
       const detail = await getDiscussionDiscId({ discId: queryId })
       if (detail) {
         setDiscussion(detail as ModelDiscussionDetail)
+        editorRef.current?.setContent(detail.content || '')
         reset({
           title: detail.title || '',
+          summary: detail.summary || '',
           content: detail.content || '',
           group_ids: detail.group_ids || [],
           type: (detail.type as ModelDiscussionType) || ModelDiscussionType.DiscussionTypeBlog,
@@ -178,6 +221,8 @@ export default function EditPage() {
     setValue('content', editorContent, { shouldDirty: true, shouldValidate: true })
 
     const title = (vals.title || '').trim()
+    // 用 getValues 拿最新值，避免 vals 快照没有包含侧边栏刚写入的 summary
+    const summary = ((getValues('summary') as string) || vals.summary || '').trim()
     const selected = Array.isArray(vals.group_ids) ? vals.group_ids : []
     const list = groups?.origin || []
     if (list.length > 0 && !validateGroupSelection(selected, list)) {
@@ -192,6 +237,7 @@ export default function EditPage() {
           title,
           content: editorContent,
           group_ids: selected,
+          summary: summary || undefined,
         }
         await putDiscussionDiscId({ discId: queryId + '' }, payload)
         router.push(`/${routeName}/${queryId}`)
@@ -201,21 +247,21 @@ export default function EditPage() {
       const payload: SvcDiscussionCreateReq = {
         forum_id: forumId || undefined,
         title,
+        summary: isBlogPost && summary ? summary : undefined,
         content: editorContent,
         group_ids: selected,
         type: vals.type,
       }
       // 这里的 request 包装在项目内会直接返回 data（见 ReleaseModal 的用法）
-      const uid: any = await postDiscussion(payload as any)
+      const uid: any = await postDiscussion(payload)
 
       if (vals.type === ModelDiscussionType.DiscussionTypeBlog) {
         const { showPointNotification, PointActionType } = await import('@/utils/pointNotification')
         showPointNotification(PointActionType.CREATE_ARTICLE)
       }
+      clearCache()
       router.push(`/${routeName}/${uid}`)
-    } finally {
-      // no-op: isSubmitting由react-hook-form接管
-    }
+    } finally {}
   })
 
   return (
@@ -275,6 +321,8 @@ export default function EditPage() {
               },
             }}
           />
+
+        
 
           {/* 分类填写（页面内） */}
           <Controller
@@ -382,8 +430,11 @@ export default function EditPage() {
               aiWriting
               mode='advanced'
               value={contentValue}
+              onChange={(val) => {
+                setValue('content', val || '', { shouldDirty: true })
+              }}
               onTocUpdate={true}
-              key={`editor-${queryId || 'new'}-${contentValue ? 1 : 0}`}
+              key={`editor-${queryId || 'new'}`}
             />
           </Box>
           <Stack direction={'row'} alignItems={'center'} justifyContent={'flex-end'} gap={2}>
@@ -400,9 +451,7 @@ export default function EditPage() {
             <Button
               variant={'contained'}
               color={'primary'}
-              onClick={() => {
-                void submit()
-              }}
+              onClick={submit}
               disabled={(title || '').trim() === '' || isSubmitting}
               sx={{ flexShrink: 0 }}
             >
@@ -420,7 +469,47 @@ export default function EditPage() {
         title={title}
         content={contentValue}
         groupIds={getValues('group_ids')}
+        summary={summaryValue}
+        onSummaryChange={(val) => {
+          setValue('summary', val, { shouldDirty: true, shouldValidate: true })
+        }}
       />
+
+      {/* 概览编辑弹窗 */}
+      <Modal
+        title='文章概览'
+        open={summaryModalOpen}
+        onCancel={() => setSummaryModalOpen(false)}
+        onOk={() => {
+          setValue('summary', sanitizeSummaryPlainText(summaryDraft), { shouldDirty: true, shouldValidate: true })
+          setSummaryModalOpen(false)
+        }}
+        okText='保存'
+        cancelText='取消'
+        width={720}
+        okButtonProps={{
+          disabled: false,
+        }}
+      >
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <TextField
+            value={summaryDraft}
+            onChange={(e) => setSummaryDraft(sanitizeSummaryPlainText(e.target.value))}
+            placeholder='请输入概览'
+            fullWidth
+            multiline
+            minRows={10}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                fontSize: '13px',
+              },
+            }}
+          />
+          <Typography variant='body2' sx={{ color: 'text.secondary', fontSize: '12px' }}>
+            留空则发布后自动生成概览
+          </Typography>
+        </Box>
+      </Modal>
     </Box>
   )
 }

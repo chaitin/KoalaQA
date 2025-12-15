@@ -48,6 +48,7 @@ import {
   SvcCommentCreateReq,
   SvcCommentUpdateReq,
   SvcDiscussionCompeletReq,
+  SvcDiscussionContentSummaryReq,
   SvcDiscussionCreateReq,
   SvcDiscussionListFollowRes,
   SvcDiscussionUpdateReq,
@@ -176,6 +177,36 @@ export const postDiscussionComplete = (
     }
   >({
     path: `/discussion/complete`,
+    method: "POST",
+    body: req,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description discussion content summary
+ *
+ * @tags discussion
+ * @name PostDiscussionContentSummary
+ * @summary discussion content summary
+ * @request POST:/discussion/content_summary
+ * @response `200` `(ContextResponse & {
+    data?: string,
+
+})` OK
+ */
+
+export const postDiscussionContentSummary = (
+  req: SvcDiscussionContentSummaryReq,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: string;
+    }
+  >({
+    path: `/discussion/content_summary`,
     method: "POST",
     body: req,
     type: ContentType.Json,

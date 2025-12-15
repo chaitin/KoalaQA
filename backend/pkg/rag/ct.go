@@ -187,8 +187,9 @@ func (c *CTRag) AddModel(ctx context.Context, model *model.LLM) (string, error) 
 
 func (c *CTRag) UpdateModel(ctx context.Context, model *model.LLM) error {
 	_, err := c.client.Models.Update(ctx, model.RagID, &raglite.UpdateModelRequest{
-		Name:     raglite.Ptr(model.Model),
-		Provider: raglite.Ptr(model.Provider),
+		Name:      raglite.Ptr(model.Model),
+		ModelName: raglite.Ptr(model.Model),
+		Provider:  raglite.Ptr(model.Provider),
 		Config: &raglite.AIModelConfig{
 			APIBase:         model.BaseURL,
 			APIKey:          model.APIKey,

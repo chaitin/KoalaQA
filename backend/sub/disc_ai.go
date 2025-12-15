@@ -161,17 +161,6 @@ func (d *Disc) handleUpdate(ctx context.Context, data topic.MsgDiscChange) error
 		return nil
 	}
 
-	haveBotComment := true
-	botComment, err := d.disc.GetBotComment(ctx, data.DiscID)
-	if err != nil {
-		if !errors.Is(err, database.ErrRecordNotFound) {
-			logger.WithErr(err).Warn("query bot comment failed")
-			return nil
-		}
-
-		haveBotComment = false
-	}
-
 	question, prompt, err := d.prompt.GeneratePostPrompt(ctx, data.DiscID)
 	if err != nil {
 		logger.WithErr(err).Error("generate prompt failed")
@@ -206,6 +195,17 @@ func (d *Disc) handleUpdate(ctx context.Context, data topic.MsgDiscChange) error
 	if !answered && (existUnknown || bot.UnknownPrompt == "") {
 		logger.Info("ai can not answer, skip")
 		return nil
+	}
+
+	haveBotComment := true
+	botComment, err := d.disc.GetBotComment(ctx, data.DiscID)
+	if err != nil {
+		if !errors.Is(err, database.ErrRecordNotFound) {
+			logger.WithErr(err).Warn("query bot comment failed")
+			return nil
+		}
+
+		haveBotComment = false
 	}
 
 	if haveBotComment {

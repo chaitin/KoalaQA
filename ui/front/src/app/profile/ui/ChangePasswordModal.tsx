@@ -32,7 +32,6 @@ export default function ChangePasswordModal({
   onSuccess,
   user,
 }: ChangePasswordModalProps) {
-  const router = useRouter();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');

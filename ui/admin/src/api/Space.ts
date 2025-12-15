@@ -16,6 +16,7 @@ import {
   DeleteAdminKbKbIdSpaceSpaceIdFolderFolderIdParams,
   DeleteAdminKbKbIdSpaceSpaceIdParams,
   GetAdminKbKbIdSpaceParams,
+  GetAdminKbKbIdSpaceSpaceIdFolderFolderIdDocParams,
   GetAdminKbKbIdSpaceSpaceIdFolderParams,
   GetAdminKbKbIdSpaceSpaceIdParams,
   GetAdminKbKbIdSpaceSpaceIdRemoteParams,
@@ -28,6 +29,7 @@ import {
   PutAdminKbKbIdSpaceSpaceIdRefreshParams,
   SvcCreateSpaceFolderReq,
   SvcCreateSpaceReq,
+  SvcDocListItem,
   SvcGetSpaceRes,
   SvcListRemoteReq,
   SvcListSpaceFolderItem,
@@ -318,6 +320,45 @@ export const deleteAdminKbKbIdSpaceSpaceIdFolderFolderId = (
   request<ContextResponse>({
     path: `/admin/kb/${kbId}/space/${spaceId}/folder/${folderId}`,
     method: "DELETE",
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags space
+ * @name GetAdminKbKbIdSpaceSpaceIdFolderFolderIdDoc
+ * @summary list kb space folder doc
+ * @request GET:/admin/kb/{kb_id}/space/{space_id}/folder/{folder_id}/doc
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (SvcDocListItem)[],
+
+}),
+
+})` OK
+ */
+
+export const getAdminKbKbIdSpaceSpaceIdFolderFolderIdDoc = (
+  {
+    kbId,
+    spaceId,
+    folderId,
+    ...query
+  }: GetAdminKbKbIdSpaceSpaceIdFolderFolderIdDocParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: SvcDocListItem[];
+      };
+    }
+  >({
+    path: `/admin/kb/${kbId}/space/${spaceId}/folder/${folderId}/doc`,
+    method: "GET",
+    query: query,
     format: "json",
     ...params,
   });

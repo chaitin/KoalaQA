@@ -31,6 +31,7 @@ type discussionIn struct {
 
 	DiscRepo       *repo.Discussion
 	DiscFollowRepo *repo.DiscussionFollow
+	DiscTagRepo    *repo.DiscussionTag
 	CommRepo       *repo.Comment
 	CommLikeRepo   *repo.CommentLike
 	UserRepo       *repo.User
@@ -75,6 +76,7 @@ func init() {
 
 type DiscussionCreateReq struct {
 	Title     string               `json:"title" binding:"required"`
+	Summary   string               `json:"summary"`
 	Content   string               `json:"content"`
 	Type      model.DiscussionType `json:"type"`
 	Tags      []string             `json:"tags"`
@@ -127,6 +129,10 @@ func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req Discus
 		return "", errPermission
 	}
 
+	if req.Type != model.DiscussionTypeBlog {
+		req.Summary = ""
+	}
+
 	if req.ForumID == 0 {
 		forumID, err := d.in.ForumRepo.GetFirstID(ctx)
 		if err != nil {
@@ -155,6 +161,7 @@ func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req Discus
 
 	disc := model.Discussion{
 		Title:    req.Title,
+		Summary:  req.Summary,
 		Content:  req.Content,
 		Tags:     req.Tags,
 		GroupIDs: req.GroupIDs,
@@ -175,7 +182,6 @@ func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req Discus
 		d.in.Pub.Publish(ctx, topic.TopicAIInsight, topic.MsgAIInsight{
 			ForumID: disc.ForumID,
 			Keyword: disc.Title,
-			Exclude: model.Int64Array{int64(disc.ID)},
 		})
 		fallthrough
 	case model.DiscussionTypeBlog, model.DiscussionTypeIssue:
@@ -222,10 +228,10 @@ func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req Discus
 var errDiscussionClosed = errors.New("discussion has been closed")
 
 type DiscussionUpdateReq struct {
-	Title    string            `json:"title" binding:"required"`
-	Content  string            `json:"content"`
-	Tags     model.StringArray `json:"tags"`
-	GroupIDs model.Int64Array  `json:"group_ids"`
+	Title    string           `json:"title"`
+	Summary  string           `json:"summary"`
+	Content  string           `json:"content"`
+	GroupIDs model.Int64Array `json:"group_ids"`
 }
 
 func (d *Discussion) Update(ctx context.Context, user model.UserInfo, uuid string, req DiscussionUpdateReq) error {
@@ -242,12 +248,24 @@ func (d *Discussion) Update(ctx context.Context, user model.UserInfo, uuid strin
 		return err
 	}
 
-	if err := d.in.DiscRepo.Update(ctx, map[string]any{
-		"title":     req.Title,
-		"content":   req.Content,
-		"tags":      req.Tags,
-		"group_ids": req.GroupIDs,
-	}, repo.QueryWithEqual("id", disc.ID)); err != nil {
+	updateM := make(map[string]any)
+
+	if req.Title != "" {
+		updateM["title"] = req.Title
+	}
+	if req.Content != "" {
+		updateM["content"] = req.Content
+	}
+
+	if len(req.GroupIDs) > 0 {
+		updateM["group_ids"] = req.GroupIDs
+	}
+
+	if disc.Type == model.DiscussionTypeBlog && req.Summary != "" {
+		updateM["summary"] = req.Summary
+	}
+
+	if err := d.in.DiscRepo.Update(ctx, updateM, repo.QueryWithEqual("id", disc.ID)); err != nil {
 		return err
 	}
 	d.in.Pub.Publish(ctx, topic.TopicDiscChange, topic.MsgDiscChange{
@@ -291,6 +309,12 @@ func (d *Discussion) Delete(ctx context.Context, user model.UserInfo, uuid strin
 	if err := d.in.DiscRepo.Delete(ctx, repo.QueryWithEqual("uuid", uuid)); err != nil {
 		return err
 	}
+	if err := d.in.DiscTagRepo.Update(ctx, map[string]any{
+		"count": gorm.Expr("GREATEST(0, count-1)"),
+	}, repo.QueryWithEqual("forum_id", disc.ForumID), repo.QueryWithEqual("id", disc.TagIDs, repo.EqualOPEqAny)); err != nil {
+		d.logger.WithErr(err).Warn("desc tag count failed")
+	}
+
 	d.in.Pub.Publish(ctx, topic.TopicDiscChange, topic.MsgDiscChange{
 		OP:       topic.OPDelete,
 		ForumID:  disc.ForumID,
@@ -436,11 +460,6 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 		return &res, nil
 	}
 
-	if req.Resolved != nil && req.Type != nil && *req.Type == model.DiscussionTypeBlog {
-		res.Items = make([]*model.DiscussionListItem, 0)
-		return &res, nil
-	}
-
 	groupM := make(map[uint]model.Int64Array)
 	if len(req.GroupIDs) > 0 {
 		var groupItems []model.GroupItem
@@ -466,6 +485,9 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 	}
 	if req.Keyword != "" && req.FuzzySearch {
 		query = append(query, repo.QueryWithILike("title", &req.Keyword))
+	}
+	if req.Resolved != nil {
+		query = append(query, repo.QueryWithEqual("type", model.DiscussionTypeBlog, repo.EqualOPNE))
 	}
 
 	if len(groupM) > 0 {
@@ -539,6 +561,23 @@ func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummar
 		"Question":    req.Keyword,
 		"Discussions": discs,
 	})
+}
+
+type DiscussionContentSummaryReq struct {
+	Title   string `json:"title" binding:"required"`
+	Content string `json:"content" binding:"required"`
+}
+
+func (d *Discussion) ContentSummary(ctx context.Context, req DiscussionContentSummaryReq) (string, error) {
+	summary, err := d.in.LLM.Chat(ctx, llm.SystemBlogSummaryPrompt, fmt.Sprintf(`### 标题：%s
+### 内容：%s`, req.Title, req.Content), map[string]any{
+		"CurrentDate": time.Now().Format("2006-01-02"),
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return summary, nil
 }
 
 func (d *Discussion) DiscussionRequirement(ctx context.Context, user model.UserInfo, discUUID string) (string, error) {

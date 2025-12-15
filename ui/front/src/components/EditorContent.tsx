@@ -18,7 +18,7 @@ export interface MarkDownProps {
   content?: string
   sx?: SxProps
   truncateLength?: number // 添加截断长度选项，0表示不截断
-  onTocUpdate?: ((toc: any) => void) | boolean // 可选，默认false；true表示仅启用广播
+  onTocUpdate?: boolean // 可选，默认false；true表示仅启用广播
 }
 
 // 骨架图组件
@@ -63,7 +63,7 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
   // 当内容变化时，安全地更新编辑器内容
   useEffect(() => {
     if (!editorRef?.editor || !isMounted || hasError) return
-    
+
     try {
       // 验证内容是否有效
       const safeContent = content || ''

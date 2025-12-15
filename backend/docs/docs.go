@@ -4241,6 +4241,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/discussion/content_summary": {
+            "post": {
+                "description": "discussion content summary",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "discussion content summary",
+                "parameters": [
+                    {
+                        "description": "req params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.DiscussionContentSummaryReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/discussion/follow": {
             "get": {
                 "description": "list follow discussions",
@@ -5389,6 +5435,23 @@ const docTemplate = `{
                         "description": "forum id",
                         "name": "forum_id",
                         "in": "path"
+                    },
+                    {
+                        "enum": [
+                            "qa",
+                            "feedback",
+                            "blog",
+                            "issue"
+                        ],
+                        "type": "string",
+                        "x-enum-varnames": [
+                            "DiscussionTypeQA",
+                            "DiscussionTypeFeedback",
+                            "DiscussionTypeBlog",
+                            "DiscussionTypeIssue"
+                        ],
+                        "name": "type",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -8347,6 +8410,21 @@ const docTemplate = `{
                 }
             }
         },
+        "svc.DiscussionContentSummaryReq": {
+            "type": "object",
+            "required": [
+                "content",
+                "title"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
         "svc.DiscussionCreateReq": {
             "type": "object",
             "required": [
@@ -8364,6 +8442,9 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
+                },
+                "summary": {
+                    "type": "string"
                 },
                 "tags": {
                     "type": "array",
@@ -8405,9 +8486,6 @@ const docTemplate = `{
         },
         "svc.DiscussionUpdateReq": {
             "type": "object",
-            "required": [
-                "title"
-            ],
             "properties": {
                 "content": {
                     "type": "string"
@@ -8418,11 +8496,8 @@ const docTemplate = `{
                         "type": "integer"
                     }
                 },
-                "tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "summary": {
+                    "type": "string"
                 },
                 "title": {
                     "type": "string"

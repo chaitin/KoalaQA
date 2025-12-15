@@ -4,7 +4,7 @@ import { ModelDocStatus } from '@/api';
 export interface StatusBadgeProps extends Omit<BoxProps, 'children'> {
   status?: number;
   text?: string;
-  variant?: 'applying' | 'pending' | 'default';
+  variant?: 'applying' | 'pending' | 'success' | 'default';
   onClick?: () => void;
 }
 
@@ -14,16 +14,24 @@ const StatusBadge = ({ status, text, variant, onClick, sx, ...props }: StatusBad
     if (text) return text;
 
     switch (status) {
+      case ModelDocStatus.DocStatusUnknown:
+        return '未应用';
       case ModelDocStatus.DocStatusAppling:
-        return '应用中';
+        return '解析中';
       case ModelDocStatus.DocStatusPendingReview:
         return '待审核';
       case ModelDocStatus.DocStatusPendingApply:
         return '待应用';
       case ModelDocStatus.DocStatusApplySuccess:
-        return '已应用';
+        return '应用中';
       case ModelDocStatus.DocStatusApplyFailed:
         return '应用失败';
+      case ModelDocStatus.DocStatusPendingExport:
+        return '待导出';
+      case ModelDocStatus.DocStatusExportSuccess:
+        return '导出成功';
+      case ModelDocStatus.DocStatusExportFailed:
+        return '导出失败';
       default:
         return '未应用';
     }
@@ -31,14 +39,26 @@ const StatusBadge = ({ status, text, variant, onClick, sx, ...props }: StatusBad
 
   // 根据状态或变体确定样式
   const getStatusStyles = () => {
-    if (variant === 'applying' || [ModelDocStatus.DocStatusAppling, ModelDocStatus.DocStatusApplySuccess].includes(status as ModelDocStatus)) {
+    if (
+      variant === 'applying' ||
+      [
+        ModelDocStatus.DocStatusAppling,
+        ModelDocStatus.DocStatusPendingApply,
+        ModelDocStatus.DocStatusApplySuccess,
+      ].includes(status as ModelDocStatus)
+    ) {
       return {
         backgroundColor: 'rgba(56, 96, 244, 0.10)',
         color: '#3860F4',
       };
     }
 
-    if (variant === 'pending' || status === ModelDocStatus.DocStatusPendingReview) {
+    if (
+      variant === 'pending' ||
+      [ModelDocStatus.DocStatusPendingReview, ModelDocStatus.DocStatusPendingExport].includes(
+        status as ModelDocStatus
+      )
+    ) {
       return {
         backgroundColor: '#fff3cd',
         color: '#856404',
@@ -51,7 +71,14 @@ const StatusBadge = ({ status, text, variant, onClick, sx, ...props }: StatusBad
       };
     }
 
-    if (status === ModelDocStatus.DocStatusApplyFailed) {
+    if (variant === 'success' || status === ModelDocStatus.DocStatusExportSuccess) {
+      return {
+        backgroundColor: 'rgba(46, 125, 50, 0.10)',
+        color: '#2e7d32',
+      };
+    }
+
+    if ([ModelDocStatus.DocStatusApplyFailed, ModelDocStatus.DocStatusExportFailed].includes(status as ModelDocStatus)) {
       return {
         backgroundColor: '#fdecea',
         color: '#d32f2f',

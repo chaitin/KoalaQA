@@ -153,6 +153,9 @@ export enum ModelDocStatus {
   DocStatusPendingApply = 3,
   DocStatusApplyFailed = 4,
   DocStatusAppling = 5,
+  DocStatusPendingExport = 6,
+  DocStatusExportSuccess = 7,
+  DocStatusExportFailed = 8,
 }
 
 export enum ModelDiscussionType {
@@ -417,6 +420,7 @@ export interface ModelKBDocumentDetail {
   json?: string;
   kb_id?: number;
   markdown?: string;
+  message?: string;
   parent_id?: number;
   platform?: PlatformPlatformType;
   platform_opt?: ModelJSONBModelPlatformOpt;
@@ -715,10 +719,16 @@ export interface SvcDiscussionCompeletReq {
   suffix?: string;
 }
 
+export interface SvcDiscussionContentSummaryReq {
+  content: string;
+  title: string;
+}
+
 export interface SvcDiscussionCreateReq {
   content?: string;
   forum_id?: number;
   group_ids?: number[];
+  summary?: string;
   tags?: string[];
   title: string;
   type?: ModelDiscussionType;
@@ -732,8 +742,8 @@ export interface SvcDiscussionListFollowRes {
 export interface SvcDiscussionUpdateReq {
   content?: string;
   group_ids?: number[];
-  tags?: string[];
-  title: string;
+  summary?: string;
+  title?: string;
 }
 
 export interface SvcDocCreateQAReq {
@@ -746,6 +756,7 @@ export interface SvcDocCreateQAReq {
 export interface SvcDocListItem {
   created_at?: number;
   desc?: string;
+  doc_id?: string;
   file_type?: ModelFileType;
   id?: number;
   platform?: PlatformPlatformType;
@@ -839,7 +850,9 @@ export interface SvcListRemoteReq {
 export interface SvcListSpaceFolderItem {
   created_at?: number;
   doc_id?: string;
+  failed?: number;
   id?: number;
+  pending?: number;
   rag_id?: string;
   status?: ModelDocStatus;
   title?: string;
@@ -1233,7 +1246,7 @@ export interface GetAdminKbKbIdDocumentParams {
   page?: number;
   /** @min 1 */
   size?: number;
-  status?: 0 | 1 | 2 | 3 | 4 | 5;
+  status?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
   title?: string;
   /** kb_id */
   kbId: number;
@@ -1278,9 +1291,8 @@ export interface GetAdminKbKbIdQuestionParams {
   page?: number;
   /** @min 1 */
   size?: number;
-  status?: 0 | 1 | 2 | 3 | 4 | 5;
+  status?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
   title?: string;
-  status?: ModelDocStatus;
   /** kb_id */
   kbId: number;
 }
@@ -1389,6 +1401,19 @@ export interface DeleteAdminKbKbIdSpaceSpaceIdFolderFolderIdParams {
   spaceId: number;
   /** folder_id */
   folderId: number;
+}
+
+export interface GetAdminKbKbIdSpaceSpaceIdFolderFolderIdDocParams {
+  /** @min 1 */
+  page?: number;
+  /** @min 1 */
+  size?: number;
+  title?: string;
+  /** kb_id */
+  kbId: number;
+  /** space_id */
+  spaceId: number;
+  folderId: string;
 }
 
 export interface PutAdminKbKbIdSpaceSpaceIdRefreshParams {
@@ -1533,6 +1558,7 @@ export interface GetDiscussionParams {
   /** @min 1 */
   size?: number;
   stat?: boolean;
+  tag_ids?: number[];
   type?: "qa" | "feedback" | "blog" | "issue";
 }
 
