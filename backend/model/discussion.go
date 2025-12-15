@@ -16,7 +16,8 @@ const (
 type DiscussionState uint
 
 const (
-	DiscussionStateNone DiscussionState = iota
+	DiscussionStateUnknown DiscussionState = iota
+	DiscussionStateNone
 	DiscussionStateResolved
 	DiscussionStateClosed
 	DiscussionStateInProgress
@@ -48,6 +49,29 @@ type Discussion struct {
 	Members     Int64Array      `json:"members" gorm:"column:members;type:bigint[]"`
 	AssociateID uint            `json:"associate_id" gorm:"column:associate_id;type:bigint;default:0;index"`
 	BotUnknown  bool            `json:"bot_unknown" gorm:"column:bot_unknown"`
+}
+
+type DiscMetadata struct {
+	DiscussType  DiscussionType  `json:"discuss_type,omitempty"`
+	DiscussState DiscussionState `json:"discuss_state,omitempty"`
+	GroupIDs     Int64Array      `json:"group_ids,omitempty"`
+	TagIDs       Int64Array      `json:"tag_ids,omitempty"`
+}
+
+func (d *Discussion) Metadata() DiscMetadata {
+	if d.GroupIDs == nil {
+		d.GroupIDs = make(Int64Array, 0)
+	}
+	if d.TagIDs == nil {
+		d.TagIDs = make(Int64Array, 0)
+	}
+
+	return DiscMetadata{
+		DiscussType:  d.Type,
+		DiscussState: d.Resolved,
+		GroupIDs:     d.GroupIDs,
+		TagIDs:       d.TagIDs,
+	}
 }
 
 func (d *Discussion) TitleContent() string {

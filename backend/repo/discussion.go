@@ -7,16 +7,19 @@ import (
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/database"
+	"github.com/chaitin/koalaqa/pkg/rag"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
 type Discussion struct {
 	base[*model.Discussion]
+
+	rag rag.Service
 }
 
-func newDiscussion(db *database.DB) *Discussion {
-	return &Discussion{base: base[*model.Discussion]{db: db, m: &model.Discussion{}}}
+func newDiscussion(db *database.DB, rag rag.Service) *Discussion {
+	return &Discussion{base: base[*model.Discussion]{db: db, m: &model.Discussion{}}, rag: rag}
 }
 
 func init() {
@@ -278,6 +281,12 @@ func (d *Discussion) UpdateTagsByRagID(ctx context.Context, ragID string, tags [
 			return err
 		}
 
+		var forum model.Forum
+		err = tx.Model(&model.Forum{}).Where("id = ?", disc.ForumID).First(&forum).Error
+		if err != nil {
+			return err
+		}
+
 		var dbTags []model.DiscussionTag
 		err = tx.Model(&model.DiscussionTag{}).Where("id =ANY(?)", disc.TagIDs).Find(&dbTags).Error
 		if err != nil {
@@ -334,6 +343,15 @@ func (d *Discussion) UpdateTagsByRagID(ctx context.Context, ragID string, tags [
 			"tag_ids":    newTagIDs,
 			"updated_at": time.Now(),
 		}).Error
+		if err != nil {
+			return err
+		}
+
+		disc.TagIDs = newTagIDs
+
+		err = d.rag.UpdateDocumentMetadata(ctx, forum.DatasetID, disc.RagID, rag.Metadata{
+			DiscMetadata: disc.Metadata(),
+		})
 		if err != nil {
 			return err
 		}

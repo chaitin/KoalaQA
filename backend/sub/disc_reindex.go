@@ -65,11 +65,19 @@ func (d *DiscReindex) Handle(ctx context.Context, msg mq.Message) error {
 		logger.WithErr(err).Warn("get forum failed")
 		return nil
 	}
+	disc, err := d.disc.GetByID(ctx, data.DiscID)
+	if err != nil {
+		logger.WithErr(err).Warn("get disc failed")
+		return nil
+	}
 
 	ragID, err := d.rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
 		DatasetID:  forum.DatasetID,
 		DocumentID: data.RagID,
 		Content:    ragContent,
+		Metadata: rag.Metadata{
+			DiscMetadata: disc.Metadata(),
+		},
 	})
 	if err != nil {
 		return err

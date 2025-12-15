@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/chaitin/ModelKit/v2/consts"
@@ -162,6 +163,11 @@ func (m *ModelKit) UpdateByID(ctx context.Context, id uint, req MKUpdateReq) err
 	if err != nil {
 		return err
 	}
+
+	if slices.Contains([]model.LLMType{model.LLMTypeChat, model.LLMTypeEmbedding, model.LLMTypeRerank}, entity.Type) {
+		entity.IsActive = true
+	}
+
 	data := model.LLM{
 		Model:      req.Model,
 		APIKey:     req.APIKey,
@@ -171,6 +177,7 @@ func (m *ModelKit) UpdateByID(ctx context.Context, id uint, req MKUpdateReq) err
 		BaseURL:    req.BaseURL,
 		Provider:   string(req.Provider),
 		RagID:      entity.RagID,
+		IsActive:   entity.IsActive,
 	}
 	if req.Param != nil {
 		data.Parameters = *req.Param

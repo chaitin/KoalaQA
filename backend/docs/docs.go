@@ -4101,11 +4101,6 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "boolean",
-                        "name": "fuzzy_search",
-                        "in": "query"
-                    },
-                    {
                         "type": "array",
                         "items": {
                             "type": "integer"
@@ -4135,10 +4130,12 @@ const docTemplate = `{
                             0,
                             1,
                             2,
-                            3
+                            3,
+                            4
                         ],
                         "type": "integer",
                         "x-enum-varnames": [
+                            "DiscussionStateUnknown",
                             "DiscussionStateNone",
                             "DiscussionStateResolved",
                             "DiscussionStateClosed",
@@ -6670,6 +6667,9 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string"
+                },
+                "updated_at": {
+                    "type": "integer"
                 }
             }
         },
@@ -7204,9 +7204,11 @@ const docTemplate = `{
                 0,
                 1,
                 2,
-                3
+                3,
+                4
             ],
             "x-enum-varnames": [
+                "DiscussionStateUnknown",
                 "DiscussionStateNone",
                 "DiscussionStateResolved",
                 "DiscussionStateClosed",

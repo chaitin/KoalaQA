@@ -442,7 +442,6 @@ type DiscussionListReq struct {
 	Resolved      *model.DiscussionState `json:"resolved" form:"resolved"`
 	DiscussionIDs *model.Int64Array      `json:"discussion_ids" form:"discussion_ids"`
 	Stat          bool                   `json:"stat" form:"stat"`
-	FuzzySearch   bool                   `json:"fuzzy_search" form:"fuzzy_search"`
 	TagIDs        model.Int64Array       `json:"tag_ids" form:"tag_ids"`
 }
 
@@ -457,7 +456,7 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 	}
 
 	var res model.ListRes[*model.DiscussionListItem]
-	if req.Keyword != "" && !req.FuzzySearch {
+	if req.Keyword != "" {
 		if req.Stat {
 			d.in.Batcher.Send(model.StatInfo{
 				Type: model.StatTypeSearch,
@@ -466,7 +465,16 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 			})
 		}
 
-		discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: req.Keyword, ForumID: req.ForumID, SimilarityThreshold: 0.2, MaxChunksPerDoc: 1})
+		var discType model.DiscussionType
+		if req.Type != nil {
+			discType = *req.Type
+		}
+
+		discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: req.Keyword, ForumID: req.ForumID, SimilarityThreshold: 0.2, MaxChunksPerDoc: 1, Metadata: rag.Metadata{
+			DiscMetadata: model.DiscMetadata{
+				DiscussType: discType,
+			},
+		}})
 		if err != nil {
 			return nil, err
 		}
@@ -497,9 +505,6 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 	)
 	if req.OnlyMine {
 		query = append(query, repo.QueryWithEqual("members", userID, repo.EqualOPValIn))
-	}
-	if req.Keyword != "" && req.FuzzySearch {
-		query = append(query, repo.QueryWithILike("title", &req.Keyword))
 	}
 	if req.Resolved != nil {
 		query = append(query, repo.QueryWithEqual("type", model.DiscussionTypeBlog, repo.EqualOPNE))
@@ -847,6 +852,7 @@ type DiscussionSearchReq struct {
 	ForumID             uint
 	SimilarityThreshold float64
 	MaxChunksPerDoc     int
+	Metadata            rag.Metadata
 }
 
 func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*model.DiscussionListItem, error) {
@@ -861,6 +867,7 @@ func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*mo
 		TopK:                10,
 		SimilarityThreshold: req.SimilarityThreshold,
 		MaxChunksPerDoc:     req.MaxChunksPerDoc,
+		Metadata:            req.Metadata,
 	})
 	if err != nil {
 		return nil, err
@@ -1203,6 +1210,12 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 		return errors.New("not allowed to accept comment")
 	}
 
+	var forum model.Forum
+	err = d.in.ForumRepo.GetByID(ctx, &forum, disc.ForumID)
+	if err != nil {
+		return err
+	}
+
 	err = d.CheckPerm(ctx, user.UID, disc)
 	if err != nil {
 		return err
@@ -1240,6 +1253,14 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 			"resolved":    model.DiscussionStateNone,
 			"resolved_at": gorm.Expr("null"),
 		}, repo.QueryWithEqual("id", disc.ID))
+		if err != nil {
+			return err
+		}
+
+		disc.Resolved = model.DiscussionStateNone
+		err = d.in.Rag.UpdateDocumentMetadata(ctx, forum.DatasetID, disc.RagID, rag.Metadata{
+			DiscMetadata: disc.Metadata(),
+		})
 		if err != nil {
 			return err
 		}
@@ -1328,6 +1349,14 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 			"resolved":    model.DiscussionStateResolved,
 			"resolved_at": model.Timestamp(time.Now().Unix()),
 		}, repo.QueryWithEqual("id", disc.ID)); err != nil {
+			return err
+		}
+
+		disc.Resolved = model.DiscussionStateResolved
+		err = d.in.Rag.UpdateDocumentMetadata(ctx, forum.DatasetID, disc.RagID, rag.Metadata{
+			DiscMetadata: disc.Metadata(),
+		})
+		if err != nil {
 			return err
 		}
 
@@ -1712,6 +1741,19 @@ func (d *Discussion) ResolveIssue(ctx context.Context, user model.UserInfo, disc
 	}
 
 	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
+	if err != nil {
+		return err
+	}
+
+	var forum model.Forum
+	err = d.in.ForumRepo.GetByID(ctx, &forum, disc.ForumID)
+	if err != nil {
+		return err
+	}
+
+	err = d.in.Rag.UpdateDocumentMetadata(ctx, forum.DatasetID, disc.RagID, rag.Metadata{
+		DiscMetadata: disc.Metadata(),
+	})
 	if err != nil {
 		return err
 	}
