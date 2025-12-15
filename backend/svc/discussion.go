@@ -31,6 +31,7 @@ type discussionIn struct {
 
 	DiscRepo       *repo.Discussion
 	DiscFollowRepo *repo.DiscussionFollow
+	DiscTagRepo    *repo.DiscussionTag
 	CommRepo       *repo.Comment
 	CommLikeRepo   *repo.CommentLike
 	UserRepo       *repo.User
@@ -308,6 +309,12 @@ func (d *Discussion) Delete(ctx context.Context, user model.UserInfo, uuid strin
 	if err := d.in.DiscRepo.Delete(ctx, repo.QueryWithEqual("uuid", uuid)); err != nil {
 		return err
 	}
+	if err := d.in.DiscTagRepo.Update(ctx, map[string]any{
+		"count": gorm.Expr("GREATEST(0, count-1)"),
+	}, repo.QueryWithEqual("forum_id", disc.ForumID), repo.QueryWithEqual("id", disc.TagIDs, repo.EqualOPEqAny)); err != nil {
+		d.logger.WithErr(err).Warn("desc tag count failed")
+	}
+
 	d.in.Pub.Publish(ctx, topic.TopicDiscChange, topic.MsgDiscChange{
 		OP:       topic.OPDelete,
 		ForumID:  disc.ForumID,
