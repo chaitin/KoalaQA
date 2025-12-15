@@ -436,11 +436,6 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 		return &res, nil
 	}
 
-	if req.Resolved != nil && req.Type != nil && *req.Type == model.DiscussionTypeBlog {
-		res.Items = make([]*model.DiscussionListItem, 0)
-		return &res, nil
-	}
-
 	groupM := make(map[uint]model.Int64Array)
 	if len(req.GroupIDs) > 0 {
 		var groupItems []model.GroupItem
@@ -466,6 +461,9 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 	}
 	if req.Keyword != "" && req.FuzzySearch {
 		query = append(query, repo.QueryWithILike("title", &req.Keyword))
+	}
+	if req.Resolved != nil {
+		query = append(query, repo.QueryWithEqual("type", model.DiscussionTypeBlog, repo.EqualOPNE))
 	}
 
 	if len(groupM) > 0 {
