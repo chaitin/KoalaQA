@@ -5435,6 +5435,23 @@ const docTemplate = `{
                         "description": "forum id",
                         "name": "forum_id",
                         "in": "path"
+                    },
+                    {
+                        "enum": [
+                            "qa",
+                            "feedback",
+                            "blog",
+                            "issue"
+                        ],
+                        "type": "string",
+                        "x-enum-varnames": [
+                            "DiscussionTypeQA",
+                            "DiscussionTypeFeedback",
+                            "DiscussionTypeBlog",
+                            "DiscussionTypeIssue"
+                        ],
+                        "name": "type",
+                        "in": "query"
                     }
                 ],
                 "responses": {

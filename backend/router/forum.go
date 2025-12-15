@@ -44,6 +44,7 @@ func (f *forum) List(ctx *context.Context) {
 // @Tags forum
 // @Produce json
 // @Param forum_id path uint false "forum id"
+// @Param req query svc.ListForumTagsReq false "req params"
 // @Success 200 {object} context.Response{data=[]model.ListRes{items=[]model.DiscussionTag}}
 // @Router /forum/{forum_id}/tags [get]
 func (f *forum) ListTags(ctx *context.Context) {
@@ -53,7 +54,14 @@ func (f *forum) ListTags(ctx *context.Context) {
 		return
 	}
 
-	res, err := f.svc.ListForumTags(ctx, forumID)
+	var req svc.ListForumTagsReq
+	err = ctx.ShouldBindQuery(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	res, err := f.svc.ListForumTags(ctx, forumID, req)
 	if err != nil {
 		ctx.InternalError(err, "list forum tags failed")
 		return

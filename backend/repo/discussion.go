@@ -339,3 +339,15 @@ func (d *Discussion) UpdateTagsByRagID(ctx context.Context, ragID string, tags [
 		return nil
 	})
 }
+
+func (d *Discussion) FilterTagIDs(ctx context.Context, tagIDs *model.Int64Array, querFuncs ...QueryOptFunc) error {
+	o := getQueryOpt(querFuncs...)
+	var filterIDs []int64
+	err := d.db.WithContext(ctx).Raw(`SELECT tag_id FROM (?) WHERE tag_id =ANY(?)`, d.db.Model(d.m).Select("DISTINCT unnest(tag_ids) AS tag_id").Scopes(o.Scopes()...), tagIDs).Scan(&filterIDs).Error
+	if err != nil {
+		return err
+	}
+
+	*tagIDs = filterIDs
+	return nil
+}
