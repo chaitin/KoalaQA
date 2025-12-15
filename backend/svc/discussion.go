@@ -563,6 +563,23 @@ func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummar
 	})
 }
 
+type DiscussionContentSummaryReq struct {
+	Title   string `json:"title" binding:"required"`
+	Content string `json:"content" binding:"required"`
+}
+
+func (d *Discussion) ContentSummary(ctx context.Context, req DiscussionContentSummaryReq) (string, error) {
+	summary, err := d.in.LLM.Chat(ctx, llm.SystemBlogSummaryPrompt, fmt.Sprintf(`### 标题：%s
+### 内容：%s`, req.Title, req.Content), map[string]any{
+		"CurrentDate": time.Now().Format("2006-01-02"),
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return summary, nil
+}
+
 func (d *Discussion) DiscussionRequirement(ctx context.Context, user model.UserInfo, discUUID string) (string, error) {
 	if !user.CanOperator(0) {
 		return "", errPermission

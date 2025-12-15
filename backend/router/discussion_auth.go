@@ -22,34 +22,40 @@ func init() {
 func (d *discussionAuth) Route(h server.Handler) {
 	g := h.Group("/discussion")
 	g.POST("", d.Create)
+	g.POST("/content_summary", d.ContentSummary)
 	g.GET("/follow", d.ListFollow)
 	g.POST("/complete", d.Complete)
-	g.PUT("/:disc_id", d.Update)
-	g.DELETE("/:disc_id", d.Delete)
 	g.POST("/upload", d.UploadFile)
-	g.POST("/:disc_id/like", d.LikeDiscussion)
-	g.POST("/:disc_id/revoke_like", d.RevokeLikeDiscussion)
-	g.POST(":disc_id/resolve", d.ResolveFeedback)
-	g.PUT("/:disc_id/close", d.CloseDiscussion)
-	g.POST("/:disc_id/resolve_issue", d.ResolveIssue)
-	g.POST("/:disc_id/requirement", d.Requirement)
-	g.POST("/:disc_id/associate", d.Associate)
-	g.POST("/:disc_id/follow", d.Follow)
-	g.DELETE("/:disc_id/follow", d.Unfollow)
 
 	{
-		comG := g.Group("/:disc_id/comment")
-		comG.Handle("POST", "", d.CreateComment)
+		detailG := g.Group("/:disc_id")
+		detailG.PUT("", d.Update)
+		detailG.DELETE("", d.Delete)
+		detailG.POST("/like", d.LikeDiscussion)
+		detailG.POST("/revoke_like", d.RevokeLikeDiscussion)
+		detailG.POST("/resolve", d.ResolveFeedback)
+		detailG.PUT("/close", d.CloseDiscussion)
+		detailG.POST("/resolve_issue", d.ResolveIssue)
+		detailG.POST("/requirement", d.Requirement)
+		detailG.POST("/associate", d.Associate)
+		detailG.POST("/follow", d.Follow)
+		detailG.DELETE("/follow", d.Unfollow)
+
 		{
-			comDetailG := comG.Group("/:comment_id")
-			comDetailG.PUT("", d.UpdateComment)
-			comDetailG.DELETE("", d.DeleteComment)
-			comDetailG.POST("/like", d.LikeComment)
-			comDetailG.POST("/dislike", d.DislikeComment)
-			comDetailG.POST("/revoke_like", d.RevokeCommentLike)
-			comDetailG.POST("/accept", d.AcceptComment)
+			comG := detailG.Group("/comment")
+			comG.Handle("POST", "", d.CreateComment)
+			{
+				comDetailG := comG.Group("/:comment_id")
+				comDetailG.PUT("", d.UpdateComment)
+				comDetailG.DELETE("", d.DeleteComment)
+				comDetailG.POST("/like", d.LikeComment)
+				comDetailG.POST("/dislike", d.DislikeComment)
+				comDetailG.POST("/revoke_like", d.RevokeCommentLike)
+				comDetailG.POST("/accept", d.AcceptComment)
+			}
 		}
 	}
+
 }
 
 // Create
@@ -567,4 +573,30 @@ func (d *discussionAuth) Unfollow(ctx *context.Context) {
 	}
 
 	ctx.Success(nil)
+}
+
+// ContentSummary
+// @Summary discussion content summary
+// @Description discussion content summary
+// @Tags discussion
+// @Accept json
+// @Produce json
+// @Param req body svc.DiscussionContentSummaryReq true "req params"
+// @Success 200 {object} context.Response{data=string}
+// @Router /discussion/content_summary [post]
+func (d *discussionAuth) ContentSummary(ctx *context.Context) {
+	var req svc.DiscussionContentSummaryReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	res, err := d.disc.ContentSummary(ctx, req)
+	if err != nil {
+		ctx.InternalError(err, "summary content failed")
+		return
+	}
+
+	ctx.Success(res)
 }

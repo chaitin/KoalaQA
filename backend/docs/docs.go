@@ -4241,6 +4241,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/discussion/content_summary": {
+            "post": {
+                "description": "discussion content summary",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "discussion content summary",
+                "parameters": [
+                    {
+                        "description": "req params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.DiscussionContentSummaryReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/discussion/follow": {
             "get": {
                 "description": "list follow discussions",
@@ -8343,6 +8389,21 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "suffix": {
+                    "type": "string"
+                }
+            }
+        },
+        "svc.DiscussionContentSummaryReq": {
+            "type": "object",
+            "required": [
+                "content",
+                "title"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "title": {
                     "type": "string"
                 }
             }
