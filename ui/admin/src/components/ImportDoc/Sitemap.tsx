@@ -6,7 +6,7 @@ import {
 import { useExportDoc } from '@/hooks/useExportDoc';
 import { Modal } from '@ctzhian/ui';
 import { Stack, TextField } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { StepText } from './const';
 import Doc2Ai from './Doc2Ai';
 import { ImportDocProps } from './type';
@@ -46,11 +46,25 @@ const SitemapImport = ({ open, refresh, onCancel }: ImportDocProps) => {
   };
 
   const handleURL = async () => {
+    const inputUrl = url.trim();
+    if (!inputUrl) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
     const newQueue: (() => Promise<any>)[] = [];
-    const res = await postAdminKbDocumentSitemapList({ url });
-    setItems([res]);
-    setStep('import');
-    setRequestQueue(newQueue);
+    try {
+      const res = await postAdminKbDocumentSitemapList({ url: inputUrl });
+      setItems(res.docs?.map(item => ({
+        uuid: res.uuid,
+        docs: [item],
+      })) || []);
+      setStep('import');
+      setRequestQueue(newQueue);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleOk = async () => {
@@ -58,22 +72,22 @@ const SitemapImport = ({ open, refresh, onCancel }: ImportDocProps) => {
       handleCancel();
       refresh?.({});
     } else if (step === 'upload') {
-      setLoading(true);
       setIsCancelled(false);
-      handleURL();
+      await handleURL();
     } else if (step === 'import') {
       setLoading(true);
       handleImport(selectIds, postAdminKbDocumentSitemapExport, items);
     }
   };
 
-  const processUrl = async () => {
+  const processUrl = useCallback(async () => {
     if (isCancelled) {
       setItems([]);
     }
     if (requestQueue.length === 0 || isCancelled) {
       setLoading(false);
-      setRequestQueue([]);
+      // 避免 requestQueue 已为空时反复 set 一个新的 []，触发无限渲染循环
+      setRequestQueue(prev => (prev.length === 0 ? prev : []));
       return;
     }
 
@@ -87,7 +101,7 @@ const SitemapImport = ({ open, refresh, onCancel }: ImportDocProps) => {
         setRequestQueue(newQueue);
       } else {
         setLoading(false);
-        setRequestQueue([]);
+        setRequestQueue(prev => (prev.length === 0 ? prev : []));
       }
     } catch (error) {
       console.error('请求执行出错:', error);
@@ -95,14 +109,14 @@ const SitemapImport = ({ open, refresh, onCancel }: ImportDocProps) => {
         setRequestQueue(newQueue);
       } else {
         setLoading(false);
-        setRequestQueue([]);
+        setRequestQueue(prev => (prev.length === 0 ? prev : []));
       }
     }
-  };
+  }, [isCancelled, requestQueue]);
 
   useEffect(() => {
     processUrl();
-  }, [requestQueue.length, isCancelled]);
+  }, [processUrl]);
 
   return (
     <Modal

@@ -1,5 +1,6 @@
 'use client'
 
+import { getDiscussion, ModelDiscussionType } from '@/api'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import {
   Box,
@@ -24,6 +25,9 @@ import { useContext, useEffect, useMemo, useState } from 'react'
 import { CommonContext } from './commonProvider'
 import { Icon } from '@ctzhian/ui'
 import TagFilterChip from './TagFilterChip'
+import { useForumId } from '@/hooks/useForumId'
+import { useForumStore } from '@/store'
+import { useGroupDataStore } from '@/store/groupDataStore'
 
 type TagWithId = {
   id: number
@@ -32,6 +36,7 @@ type TagWithId = {
 }
 
 const postTypes = [
+  { id: 'all', name: '全部', icon: <Icon type='icon-quanbu' sx={{ fontSize: 20 }} /> },
   { id: 'qa', name: '问题', icon: <Image width={20} height={20} src='/qa.svg' alt='问题' /> },
   { id: 'issue', name: 'Issue', icon: <Icon type='icon-issue' sx={{ fontSize: 20 }} /> },
   { id: 'blog', name: '文章', icon: <Image width={20} height={20} src='/blog.svg' alt='文章' /> },
@@ -44,6 +49,9 @@ export default function FilterPanel() {
   const params = useParams()
   const router = useRouterWithRouteName()
   const routeName = params?.route_name as string
+  const forumId = useForumId()
+  const forums = useForumStore((s) => s.forums)
+  const filterGroupsByForumAndType = useGroupDataStore((s) => s.filterGroupsByForumAndType)
   const [selectedTags, setSelectedTags] = useState<number[]>([])
 
   const popularTags = useMemo(() => (tags || []).filter((tag): tag is TagWithId => typeof tag?.id === 'number'), [tags])
@@ -80,14 +88,150 @@ export default function FilterPanel() {
       .filter((id) => !isNaN(id))
   }, [searchParams])
 
+  // 列表页默认选择“问题(qa)”
+  useEffect(() => {
+    if (isDetailPage) return
+    if (!routeName) return
+    if (urlType !== null) return
+    // 默认 type=qa，并保留已有的 tps/tags
+    const params = new URLSearchParams(searchParams?.toString())
+    params.set('type', ModelDiscussionType.DiscussionTypeQA)
+    const queryString = params.toString()
+    router.replace(`/${routeName}${queryString ? `?${queryString}` : ''}`)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDetailPage, routeName, urlType])
+
+  // URL 展示/写回用：未传 type 默认 qa；type=all 表示“全部”
+  const typeForUrl = useMemo(() => {
+    if (isDetailPage) return null
+    return (urlType || ModelDiscussionType.DiscussionTypeQA) as string
+  }, [isDetailPage, urlType])
+
+  // 分类/标签过滤、请求后端用：type=all 时不按类型过滤（也不把 all 传给后端）
+  const typeForFilter = useMemo(() => {
+    if (isDetailPage) return null
+    if (urlType === 'all') return null
+    return (urlType || ModelDiscussionType.DiscussionTypeQA) as string
+  }, [isDetailPage, urlType])
+
+  const forumInfo = useMemo(() => {
+    if (!forumId) return null
+    return forums.find((f) => f.id === forumId) || null
+  }, [forums, forumId])
+
+  // 根据论坛配置 + 当前 type 过滤分类组（只展示该类型允许的分类）
+  const filteredGroups = useMemo(() => {
+    if (!typeForFilter) return groups
+    // groupDataStore 的入参类型比较窄，这里用 any 兼容 issue/feedback 等类型
+    return filterGroupsByForumAndType(groups, forumInfo as any, typeForFilter as any)
+  }, [groups, forumInfo, typeForFilter, filterGroupsByForumAndType])
+
+  // 根据当前 type（可选：叠加当前分类筛选）聚合出“正在使用”的标签 id，用于过滤标签列表展示
+  const [usedTagIdSet, setUsedTagIdSet] = useState<Set<number> | null>(null)
+  // 记录 usedTagIdSet 对应的 key，用于避免切换 type 时短暂展示“其他 type 的标签”
+  const [usedTagReadyKey, setUsedTagReadyKey] = useState<string | null>(null)
+  const [usedTagLoading, setUsedTagLoading] = useState(false)
+  const usedTagCacheRef = useState(() => new Map<string, Set<number>>())[0]
+
+  const usedTagTargetKey = useMemo(() => {
+    if (isDetailPage) return null
+    if (!forumId) return null
+    // typeForFilter 为 null 代表“全部”，不做 used-tag 聚合
+    if (!typeForFilter) return null
+    const topicKey = (urlTopics || []).slice().sort((a, b) => a - b).join(',')
+    return `forum:${forumId}|type:${typeForFilter}|topics:${topicKey}`
+  }, [forumId, isDetailPage, typeForFilter, urlTopics])
+
+  useEffect(() => {
+    if (isDetailPage) return
+    if (!forumId) return
+    // typeForFilter 为 null 时代表“全部”，不做聚合，直接展示全量 popularTags
+    if (!typeForFilter) {
+      setUsedTagLoading(false)
+      setUsedTagIdSet(null)
+      setUsedTagReadyKey(null)
+      return
+    }
+    if (!usedTagTargetKey) return
+
+    let cancelled = false
+    setUsedTagLoading(true)
+
+    // 命中缓存：直接使用，避免闪烁
+    const cached = usedTagCacheRef.get(usedTagTargetKey)
+    if (cached) {
+      setUsedTagIdSet(cached)
+      setUsedTagReadyKey(usedTagTargetKey)
+      setUsedTagLoading(false)
+      return
+    }
+
+    const params: any = {
+      forum_id: forumId,
+      page: 1,
+      size: 200,
+      filter: 'publish',
+    }
+    if (typeForFilter) {
+      params.type = typeForFilter
+    }
+
+    // 如果已经选择了分类（tps），则只统计当前分类下的标签，更贴近“当前问题帖”
+    if (urlTopics.length > 0) {
+      params.group_ids = urlTopics
+    }
+
+    getDiscussion(params)
+      .then((res) => {
+        if (cancelled) return
+        const ids = new Set<number>()
+        ;(res?.items || []).forEach((it: any) => {
+          ;(it?.tag_ids || []).forEach((id: any) => {
+            const n = Number(id)
+            if (!Number.isNaN(n)) ids.add(n)
+          })
+        })
+        usedTagCacheRef.set(usedTagTargetKey, ids)
+        setUsedTagIdSet(ids)
+        setUsedTagReadyKey(usedTagTargetKey)
+      })
+      .catch((e) => {
+        console.error('Failed to fetch used tags:', e)
+        if (!cancelled) {
+          const empty = new Set<number>()
+          usedTagCacheRef.set(usedTagTargetKey, empty)
+          setUsedTagIdSet(empty)
+          setUsedTagReadyKey(usedTagTargetKey)
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setUsedTagLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [forumId, typeForFilter, isDetailPage, usedTagTargetKey, urlTopics, usedTagCacheRef])
+
+  const visibleTags = useMemo(() => {
+    // “全部”：展示全量标签
+    if (!typeForFilter) return popularTags
+    // 切换 type/分类筛选时：若当前 usedTagIdSet 还没 ready（key 不匹配），先不展示，避免闪其他值
+    if (!usedTagTargetKey || usedTagReadyKey !== usedTagTargetKey) return []
+    if (!usedTagIdSet || usedTagIdSet.size === 0) return []
+    return popularTags.filter((t) => usedTagIdSet.has(t.id))
+  }, [popularTags, typeForFilter, usedTagIdSet, usedTagReadyKey, usedTagTargetKey])
+
   // 从 URL 初始化标签选择
   useEffect(() => {
-    setSelectedTags(urlTags.filter((id) => popularTags.some((tag) => tag.id === id)))
-  }, [urlTags, popularTags])
+    // 避免在切换 type 的 loading 阶段把已选标签清空，等 ready 后再同步
+    if (typeForFilter && usedTagTargetKey && usedTagReadyKey !== usedTagTargetKey) return
+    setSelectedTags(urlTags.filter((id) => visibleTags.some((tag) => tag.id === id)))
+  }, [urlTags, visibleTags, typeForFilter, usedTagReadyKey, usedTagTargetKey])
 
   // 将真实的 groups 数据转换为 categoryGroups 格式，始终显示全部分类
   const categoryGroups = useMemo(() => {
-    return groups.origin.map((group) => ({
+    return filteredGroups.origin.map((group) => ({
       id: String(group.id || ''),
       name: group.name || '',
       options: (group.items || []).map((item) => ({
@@ -96,8 +240,40 @@ export default function FilterPanel() {
         count: 0, // 暂时设为0，后续可以添加统计逻辑
       })),
     }))
-  }, [groups.origin])
+  }, [filteredGroups.origin])
 
+  // 清理 URL 中不属于当前 type 的分类/标签（避免“URL 有值但 UI 不展示”）
+  useEffect(() => {
+    if (isDetailPage) return
+    if (!routeName) return
+    if (!typeForUrl) return
+
+    const normalize = (arr: number[]) => arr.slice().sort((a, b) => a - b).join(',')
+
+    const allowedTopicIds = urlTopics.filter((id) => filteredGroups.flat.some((g) => g.id === id))
+    const nextTopicsKey = normalize(allowedTopicIds)
+    const curTopicsKey = normalize(urlTopics)
+
+    // 标签清理：只在 usedTagIdSet ready 时执行，避免切换 type 的 loading 阶段用“旧集合”误删
+    const canCleanTags = !!typeForFilter && usedTagTargetKey && usedTagReadyKey === usedTagTargetKey
+    const allowedTagIds =
+      canCleanTags && usedTagIdSet ? urlTags.filter((id) => usedTagIdSet.has(id)) : urlTags
+    const nextTagsKey = normalize(allowedTagIds)
+    const curTagsKey = normalize(urlTags)
+
+    if (nextTopicsKey === curTopicsKey && nextTagsKey === curTagsKey) return
+
+    const params = new URLSearchParams(searchParams?.toString())
+    params.set('type', typeForUrl)
+    if (allowedTopicIds.length > 0) params.set('tps', allowedTopicIds.join(','))
+    else params.delete('tps')
+    if (allowedTagIds.length > 0) params.set('tags', allowedTagIds.join(','))
+    else params.delete('tags')
+
+    const queryString = params.toString()
+    router.replace(`/${routeName}${queryString ? `?${queryString}` : ''}`)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDetailPage, routeName, typeForUrl, filteredGroups.flat, usedTagIdSet])
   // 获取每个分类组中选中的选项
   const selectedCategories = useMemo(() => {
     const result: Record<string, string[]> = {}
@@ -120,9 +296,12 @@ export default function FilterPanel() {
     const params = new URLSearchParams(searchParams?.toString())
 
     // 更新类型参数
-    // 如果newType为null或undefined，删除type参数（表示不选中任何类型）
+    // 约定：type=all 表示“全部”（后端查询时需要映射为不传 type）
+    // 如果newType为null或undefined，删除type参数（兼容旧链接）
     if (newType === null || newType === undefined) {
       params.delete('type')
+    } else if (newType === 'all') {
+      params.set('type', 'all')
     } else {
       params.set('type', newType)
     }
@@ -174,15 +353,19 @@ export default function FilterPanel() {
     const newSelected = selectedValues.map(Number).filter((id) => !isNaN(id))
     const allSelected = [...otherSelected, ...newSelected]
 
-    updateUrlParams(allSelected, urlType, selectedTags)
+    updateUrlParams(allSelected, typeForUrl, selectedTags)
   }
 
   // 处理类型点击
   const handlePostTypeClick = (typeId: string) => {
-    // 如果点击已选中的类型，则取消选择（不传type参数，显示全部）
-    // 如果点击未选中的类型，则选中该类型
-    const newType = urlType === typeId ? null : typeId
-    updateUrlParams(urlTopics, newType, selectedTags)
+    // “全部”：清空 type 参数
+    if (typeId === 'all') {
+      updateUrlParams(urlTopics, 'all', selectedTags)
+      return
+    }
+    // 已经选中时不再“切回全部”，保持当前选中（需要全部请点“全部”）
+    if (urlType === typeId) return
+    updateUrlParams(urlTopics, typeId, selectedTags)
   }
 
   return (
@@ -242,7 +425,11 @@ export default function FilterPanel() {
           {postTypes.map((type) => {
             // 在详情页时不高亮任何类型
             // 在列表页时，只有当urlType存在且等于type.id时才选中
-            const isSelected = isDetailPage ? false : urlType !== null && urlType === type.id
+            const isSelected = isDetailPage
+              ? false
+              : type.id === 'all'
+                ? urlType === 'all' || urlType === null
+                : urlType !== null && urlType !== 'all' && urlType === type.id
             return (
               <ListItem key={type.id} disablePadding>
                 <ListItemButton
@@ -419,7 +606,7 @@ export default function FilterPanel() {
 
       <Box>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-          {popularTags.map((tag) => {
+          {visibleTags.map((tag) => {
             const isSelected = selectedTags.includes(tag.id)
             return (
               <TagFilterChip
@@ -430,7 +617,7 @@ export default function FilterPanel() {
                 onClick={() => {
                   const newSelectedTags = isSelected ? selectedTags.filter((t) => t !== tag.id) : [...selectedTags, tag.id]
                   setSelectedTags(newSelectedTags)
-                  updateUrlParams(urlTopics, urlType, newSelectedTags)
+                  updateUrlParams(urlTopics, typeForUrl, newSelectedTags)
                 }}
               />
             )

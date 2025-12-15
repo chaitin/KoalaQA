@@ -45,7 +45,6 @@ import {
   getAdminStatVisit
 } from '../../api';
 import {
-  ModelDiscussionListItem,
   ModelRankTimeGroup,
   ModelRankTimeGroupItem,
   ModelStatTrend,
@@ -107,16 +106,6 @@ interface MetricItem {
 interface StatCardProps {
   type: 'blue' | 'purple';
   metrics: MetricItem[];
-}
-
-interface AIInsightModalState {
-  open: boolean;
-  selectedQuestion: string;
-  relatedPosts: ModelDiscussionListItem[];
-  aiAnswer: string;
-  isEditing: boolean;
-  editedAnswer: string;
-  loading: boolean;
 }
 
 interface ChartSectionProps {
@@ -296,6 +285,14 @@ const getDayKey = (timestamp: number | undefined): string => {
   if (!timestamp) return '';
   const date = new Date(timestamp * 1000);
   return `${date.getMonth() + 1}-${date.getDate()}`;
+};
+
+// X轴label格式化：周视图默认是 "M/D HH:mm"，这里仅展示 "M/D"
+const formatXAxisLabel = (label: unknown): string => {
+  if (label == null) return '';
+  const str = String(label);
+  const match = str.match(/^(\d{1,2}[/-]\d{1,2})\s+\d{1,2}:\d{2}$/);
+  return match ? match[1] : str;
 };
 
 // --- 生成完整的时间序列数据 ---
@@ -879,92 +876,82 @@ const Dashboard: React.FC = () => {
   const fetchTimeRelatedData = async (selectedTimeRange: TimeRange) => {
     const begin = getTimeRangeBegin(selectedTimeRange);
     const statGroup = getStatGroup(selectedTimeRange);
-    setError(null);
+    // 并行获取时间相关的数据
+    const [
+      visitResponse,
+      discussionResponse,
+      searchResponse,
+      visitTrendResponse, // 访问用户情况趋势（受时间范围控制）
+      postTrendResponse, // 发帖情况趋势（受时间范围控制）
+    ] = await Promise.all([
+      getAdminStatVisit({ begin }),
+      getAdminStatDiscussion({ begin }),
+      getAdminStatSearch({ begin }),
 
-    try {
-      // 并行获取时间相关的数据
-      const [
-        visitResponse,
-        discussionResponse,
-        searchResponse,
-        visitTrendResponse, // 访问用户情况趋势（受时间范围控制）
-        postTrendResponse, // 发帖情况趋势（受时间范围控制）
-      ] = await Promise.all([
-        getAdminStatVisit({ begin }),
-        getAdminStatDiscussion({ begin }),
-        getAdminStatSearch({ begin }),
+      // 访问用户情况趋势 - 受时间范围控制
+      getAdminStatTrend({
+        begin,
+        stat_group: statGroup,
+        stat_types: [ModelStatType.StatTypeVisit], // [1]
+      }),
 
-        // 访问用户情况趋势 - 受时间范围控制
-        getAdminStatTrend({
-          begin,
-          stat_group: statGroup,
-          stat_types: [ModelStatType.StatTypeVisit], // [1]
-        }),
+      // 发帖情况趋势 - 受时间范围控制
+      getAdminStatTrend({
+        begin,
+        stat_group: statGroup,
+        stat_types: [
+          ModelStatType.StatTypeDiscussionQA,
+          ModelStatType.StatTypeDiscussionBlog,
+          ModelStatType.StatTypeDiscussionIssue,
+        ], // [5, 6, 7]
+      }),
+    ]);
 
-        // 发帖情况趋势 - 受时间范围控制
-        getAdminStatTrend({
-          begin,
-          stat_group: statGroup,
-          stat_types: [ModelStatType.StatTypeDiscussionQA, ModelStatType.StatTypeDiscussionBlog, ModelStatType.StatTypeDiscussionIssue], // [5, 6, 7]
-        }),
-      ]);
-
-      // 只更新时间相关的数据
-      setData(prev => ({
-        ...prev,
-        visitStats: visitResponse || null,
-        discussionStats: discussionResponse || null,
-        discussions: discussionResponse?.discussions || null,
-        searchCount: searchResponse || 0,
-        // 独立的趋势数据 - 新API结构：response.data.items
-        visitTrendData: visitTrendResponse?.items || [],
-        postTrendData: postTrendResponse?.items || [],
-      }));
-    } catch (err) {
-      console.error('Failed to fetch time related data:', err);
-      setError('数据加载失败，请稍后重试');
-    }
+    // 只返回时间相关的数据（不要在这里 setState，避免 effect 调用链触发规则）
+    return {
+      visitStats: visitResponse || null,
+      discussionStats: discussionResponse || null,
+      discussions: discussionResponse?.discussions || null,
+      searchCount: searchResponse || 0,
+      // 独立的趋势数据 - 新API结构：response.data.items
+      visitTrendData: visitTrendResponse?.items || [],
+      postTrendData: postTrendResponse?.items || [],
+    } satisfies Partial<DashboardData>;
   };
 
   // 获取AI相关数据（不受时间影响）
   const fetchAIData = async () => {
     const thirtyDaysBegin = Math.floor((new Date().getTime() - 30 * 24 * 60 * 60 * 1000) / 1000);
 
-    try {
-      // 并行获取AI相关数据
-      const [
-        aiResponseRateResponse, // AI 应答率趋势原始数据（固定30天）
-        aiResolveRateResponse, // AI 解决率趋势原始数据（固定30天）
-        aiInsightResponse,
-      ] = await Promise.all([
-        // AI 应答率趋势原始数据 - 固定30天
-        getAdminStatTrend({
-          begin: thirtyDaysBegin,
-          stat_group: 2, // 按天分组，30天趋势
-          stat_types: [ModelStatType.StatTypeDiscussionQA, ModelStatType.StatTypeBotUnknown], // [5, 3]
-        }),
+    // 并行获取AI相关数据
+    const [
+      aiResponseRateResponse, // AI 应答率趋势原始数据（固定30天）
+      aiResolveRateResponse, // AI 解决率趋势原始数据（固定30天）
+      aiInsightResponse,
+    ] = await Promise.all([
+      // AI 应答率趋势原始数据 - 固定30天
+      getAdminStatTrend({
+        begin: thirtyDaysBegin,
+        stat_group: 2, // 按天分组，30天趋势
+        stat_types: [ModelStatType.StatTypeDiscussionQA, ModelStatType.StatTypeBotUnknown], // [5, 3]
+      }),
 
-        // AI 解决率趋势原始数据 - 固定30天
-        getAdminStatTrend({
-          begin: thirtyDaysBegin,
-          stat_group: 2, // 按天分组，30天趋势
-          stat_types: [ModelStatType.StatTypeBotAccept, ModelStatType.StatTypeDiscussionQA], // [4, 5]
-        }),
+      // AI 解决率趋势原始数据 - 固定30天
+      getAdminStatTrend({
+        begin: thirtyDaysBegin,
+        stat_group: 2, // 按天分组，30天趋势
+        stat_types: [ModelStatType.StatTypeBotAccept, ModelStatType.StatTypeDiscussionQA], // [4, 5]
+      }),
 
-        getAdminRankAiInsight(),
-      ]);
+      getAdminRankAiInsight(),
+    ]);
 
-      // 只更新AI相关的数据
-      setData(prev => ({
-        ...prev,
-        aiInsights: aiInsightResponse || [],
-        aiResponseRateData: aiResponseRateResponse?.items || [],
-        aiResolveRateData: aiResolveRateResponse?.items || [],
-      }));
-    } catch (err) {
-      console.error('Failed to fetch AI data:', err);
-      setError('AI数据加载失败，请稍后重试');
-    }
+    // 只返回AI相关的数据（不要在这里 setState，避免 effect 调用链触发规则）
+    return {
+      aiInsights: aiInsightResponse || [],
+      aiResponseRateData: aiResponseRateResponse?.items || [],
+      aiResolveRateData: aiResolveRateResponse?.items || [],
+    } satisfies Partial<DashboardData>;
   };
 
   // 格式化 AI 洞察数据
@@ -1007,12 +994,42 @@ const Dashboard: React.FC = () => {
   }, [data.aiInsights]);
   // 初始化数据获取 - 只在组件挂载时获取一次AI数据和时间相关数据
   useEffect(() => {
-    fetchAIData();
+    let cancelled = false;
+    void fetchAIData()
+      .then(partial => {
+        if (cancelled) return;
+        setError(null);
+        setData(prev => ({ ...prev, ...partial }));
+      })
+      .catch(err => {
+        if (cancelled) return;
+        console.error('Failed to fetch AI data:', err);
+        setError('AI数据加载失败，请稍后重试');
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // 时间相关数据获取 - 只在时间范围改变时获取
   useEffect(() => {
-    fetchTimeRelatedData(timeRange);
+    let cancelled = false;
+    void fetchTimeRelatedData(timeRange)
+      .then(partial => {
+        if (cancelled) return;
+        setError(null);
+        setData(prev => ({ ...prev, ...partial }));
+      })
+      .catch(err => {
+        if (cancelled) return;
+        console.error('Failed to fetch time related data:', err);
+        setError('数据加载失败，请稍后重试');
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [timeRange]);
 
   // 处理时间范围变更
@@ -1219,6 +1236,7 @@ const Dashboard: React.FC = () => {
                                   axisLine={false}
                                   tickLine={false}
                                   tick={{ fontSize: 12, fill: theme.palette.text.secondary }}
+                                  tickFormatter={formatXAxisLabel}
                                   interval={6}
                                 />
                                 <Tooltip
@@ -1274,6 +1292,7 @@ const Dashboard: React.FC = () => {
                                   axisLine={false}
                                   tickLine={false}
                                   tick={{ fontSize: 12, fill: theme.palette.text.secondary }}
+                                  tickFormatter={formatXAxisLabel}
                                   interval={6}
                                 />
                                 <Tooltip

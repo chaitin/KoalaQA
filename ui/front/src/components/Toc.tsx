@@ -25,6 +25,7 @@ const Toc = ({ headings }: TocProps) => {
         idx: levels.indexOf(i.level),
       }))
   }, [headings])
+
   return (
     <>
       <Stack

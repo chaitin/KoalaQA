@@ -68,7 +68,8 @@ const URLImport = ({ open, refresh, onCancel }: ImportDocProps) => {
     }
     if (requestQueue.length === 0 || isCancelled) {
       setLoading(false);
-      setRequestQueue([]);
+      // 避免队列已为空时反复 set 一个新的 []，造成额外渲染
+      setRequestQueue((prev) => (prev.length === 0 ? prev : []));
       return;
     }
 
@@ -84,7 +85,7 @@ const URLImport = ({ open, refresh, onCancel }: ImportDocProps) => {
       } else {
         setLoading(false);
         setStep('import');
-        setRequestQueue([]);
+        setRequestQueue((prev) => (prev.length === 0 ? prev : []));
       }
     } catch (error) {
       console.error('请求执行出错:', error);
@@ -93,7 +94,7 @@ const URLImport = ({ open, refresh, onCancel }: ImportDocProps) => {
         setStep('import');
       } else {
         setLoading(false);
-        setRequestQueue([]);
+        setRequestQueue((prev) => (prev.length === 0 ? prev : []));
       }
     }
   };

@@ -16,9 +16,20 @@ interface DetailSidebarWrapperProps {
   title?: string
   content?: string
   groupIds?: number[]
+  summary?: string
+  onSummaryChange?: (val: string) => void
 }
 
-const DetailSidebarWrapper = ({ type, discussion, discId, title, content, groupIds }: DetailSidebarWrapperProps) => {
+const DetailSidebarWrapper = ({
+  type,
+  discussion,
+  discId,
+  title,
+  content,
+  groupIds,
+  summary,
+  onSummaryChange,
+}: DetailSidebarWrapperProps) => {
   const sidebarRef = useRef<HTMLDivElement>(null)
   const isIssuePost = (discussion?.type ?? type) === ModelDiscussionType.DiscussionTypeIssue
   const isQAPost = (discussion?.type ?? type) === ModelDiscussionType.DiscussionTypeQA
@@ -39,7 +50,15 @@ const DetailSidebarWrapper = ({ type, discussion, discId, title, content, groupI
     >
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         <Stack spacing={3} sx={{ flex: 1 }}>
-          {isArticle && <OutlineSidebar discussion={discussion} />}
+          {isArticle && (
+            <OutlineSidebar
+              discussion={discussion}
+              summary={summary}
+              onSummaryChange={onSummaryChange}
+              title={title}
+              content={content}
+            />
+          )}
           {/* 问题帖显示关联的 Issue */}
           {isQAPost &&
             (discussion?.id ? (

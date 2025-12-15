@@ -6,7 +6,7 @@ import {
   ModelDiscussionType,
   ModelForumInfo,
   ModelListRes,
-  ModelUserRole
+  ModelUserRole,
 } from '@/api/types'
 import AnnouncementCard from '@/components/AnnouncementCard'
 import AnnouncementCarousel from '@/components/AnnouncementCarousel'
@@ -71,7 +71,7 @@ const Article = ({
   const { user } = useContext(AuthContext)
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
-  const { saveState, restoreState, restoreScrollPosition, clearCache } = useListPageCache(routeName)
+  const { saveState, restoreState, restoreScrollPosition, clearCache } = useListPageCache()
   const cached = restoreState()
   const topics = useMemo(() => {
     return tps ? tps.split(',').map(Number) : []
@@ -87,6 +87,7 @@ const Article = ({
   const currentType = type ? (type as ModelDiscussionType) : undefined
 
   const status = searchParams?.get('sort') || 'publish'
+
   const [search, setSearch] = useState(searchParams?.get('search') || '')
   const [articleData, setArticleData] = useState(cached?.data || data)
   const [page, setPage] = useState(cached?.page || 1)
@@ -110,7 +111,6 @@ const Article = ({
   // 搜索弹窗相关状态
   const [searchModalOpen, { setTrue: openSearchModal, setFalse: closeSearchModal }] = useBoolean(false)
   const [lastPathname, setLastPathname] = useState('')
-  const actionProcessedRef = useRef<string>('')
   const restoreStateProcessedRef = useRef<string>('')
   const isFirstMountRef = useRef(true)
 
@@ -126,7 +126,7 @@ const Article = ({
       page: new_page,
       size: 10,
       // 只有当type存在时才传递type参数，否则不传，让后端返回所有类型
-      ...(type ? { type: type as 'qa' | 'blog' } : {}),
+      ...(type ? { type: type as any } : {}),
       forum_id: forumInfo?.id,
     }
 
@@ -242,12 +242,9 @@ const Article = ({
 
     // 检查是否有缓存，如果有缓存且参数匹配，则恢复缓存数据
     if (cached && cached.searchParams === currentSearchParams) {
-      if (cached.scrollPosition > 0) {
-        restoreScrollPosition(cached.scrollPosition)
-      }
+      if (cached.scrollPosition > 0) restoreScrollPosition(cached.scrollPosition)
     } else {
       setArticleData(data)
-      setPage(1)
     }
     clearCache()
     restoreStateProcessedRef.current = cacheKey
@@ -691,10 +688,10 @@ const Article = ({
             top: 25,
             maxHeight: 'calc(100vh - 90px)',
             overflowY: 'auto',
-          // 隐藏滚动条
-          '&::-webkit-scrollbar': { display: 'none' },
-          '-ms-overflow-style': 'none',
-          'scrollbar-width': 'none',
+            // 隐藏滚动条
+            '&::-webkit-scrollbar': { display: 'none' },
+            '-ms-overflow-style': 'none',
+            'scrollbar-width': 'none',
           }}
         >
           {/* 公告 */}

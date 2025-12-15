@@ -1,7 +1,7 @@
 'use client'
 
 import { ModelDiscussionListItem, ModelListRes } from '@/api/types'
-import { usePathname } from 'next/navigation'
+import { useParams, usePathname } from 'next/navigation'
 import { useRef } from 'react'
 
 interface CachedListState {
@@ -19,8 +19,10 @@ const CACHE_EXPIRY = 5 * 60 * 1000 // 5分钟过期
  * 列表页状态缓存 Hook
  * 用于实现类似 Vue keep-alive 的功能，保存列表页的滚动位置和数据
  */
-export const useListPageCache = (routeName: string) => {
+export const useListPageCache = () => {
   const pathname = usePathname()
+  const params = useParams()
+  const routeName = params?.route_name as string
   const cacheKey = `${CACHE_KEY_PREFIX}${routeName}`
   const scrollContainerRef = useRef<HTMLElement | null>(null)
   const isRestoringRef = useRef(false)

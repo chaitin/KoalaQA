@@ -21,7 +21,6 @@ const Doc2Ai = ({
   handleImport,
   showSelectAll,
 }: ImportDocProps) => {
-  console.log(taskIds, items);
   return (
     <Box
       sx={{
