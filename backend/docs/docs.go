@@ -8365,6 +8365,9 @@ const docTemplate = `{
                         "type": "integer"
                     }
                 },
+                "summary": {
+                    "type": "string"
+                },
                 "tags": {
                     "type": "array",
                     "items": {
@@ -8417,6 +8420,9 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
+                },
+                "summary": {
+                    "type": "string"
                 },
                 "tags": {
                     "type": "array",
