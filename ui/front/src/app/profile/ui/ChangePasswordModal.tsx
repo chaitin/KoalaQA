@@ -50,25 +50,6 @@ export default function ChangePasswordModal({
     setError('');
     onClose();
   };
-  const handleLogout = async () => {
-    try {
-      // 先调用后端登出API
-      await postUserLogout()
-    } catch (error) {
-      console.warn('Backend logout failed:', error)
-      // 即使后端登出失败，也要继续清理本地数据
-    }
-    
-    try {
-      // 使用统一的清除认证信息函数（不调用服务端登出API，因为已经调用过了）
-      await clearAuthData(false)
-      router.push('/login')
-    } catch (error) {
-      console.error('Failed to clear auth data:', error)
-      // 即使清理失败，也要重定向到登录页
-      router.push('/login')
-    }
-  }
   const handleSubmit = async () => {
     setError('');
 

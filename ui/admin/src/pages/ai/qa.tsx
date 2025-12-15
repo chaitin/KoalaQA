@@ -10,7 +10,17 @@ import Card from '@/components/card';
 import StatusBadge from '@/components/StatusBadge';
 import { useListQueryParams } from '@/hooks/useListQueryParams';
 import { Ellipsis, message, Modal, Table } from '@ctzhian/ui';
-import { Box, Button, FormControl, InputLabel, MenuItem, Select, Stack, TextField, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { useRequest } from 'ahooks';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
@@ -119,8 +129,6 @@ const AdminDocument = () => {
       // width: 120,
       render: (_, record) => {
         const isPendingReview = record?.status === ModelDocStatus.DocStatusPendingReview;
-        const isApplying = record?.status === ModelDocStatus.DocStatusAppling;
-
         return (
           <Stack direction="row" alignItems="center" spacing={1}>
             {isPendingReview ? (
@@ -137,7 +145,7 @@ const AdminDocument = () => {
                   删除
                 </Button>
               </>
-            ) : isApplying ? (
+            ) : (
               <>
                 <LoadingBtn
                   variant="text"
@@ -151,15 +159,6 @@ const AdminDocument = () => {
                   删除
                 </Button>
               </>
-            ) : (
-              <LoadingBtn
-                variant="text"
-                size="small"
-                color="primary"
-                onClick={() => fetchDetail(record.id!)}
-              >
-                编辑
-              </LoadingBtn>
             )}
           </Stack>
         );
@@ -210,9 +209,7 @@ const AdminDocument = () => {
                 });
               }}
             >
-              <MenuItem value="">
-                <em>全部</em>
-              </MenuItem>
+              <MenuItem value="">全部</MenuItem>
               {statusOptions.map(option => (
                 <MenuItem key={option.value} value={option.value}>
                   {option.label}

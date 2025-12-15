@@ -95,7 +95,14 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
 
   // 从 store 获取标签
   const tags = useForumStore(state => state.tags);
+  const fetchTagsForForums = useForumStore(state => state.fetchTagsForForums);
   const tagOptions = forumId && forumId > 0 ? (tags[forumId] || []) : [];
+
+  React.useEffect(() => {
+    if (forumId && forumId > 0) {
+      fetchTagsForForums([forumId]);
+    }
+  }, [forumId, fetchTagsForForums]);
   const { isDragging, attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: `block-${index}`,
   });

@@ -15,4 +15,7 @@ export { default as QaUnresolvedChip } from './QaUnresolvedChip';
 export { default as DiscussionTypeChip } from './DiscussionTypeChip';
 export { default as IssueStatusChip } from './IssueStatusChip';
 export { default as DiscussionStatusChip } from './DiscussionStatusChip';
+export { default as TagFilterChip } from './TagFilterChip';
 export { default as SimilarContentItem } from './SimilarContentItem';
+export { default as SimilarDiscussionsPanel } from './SimilarDiscussionsPanel';
+export type { SimilarDiscussionsPanelRef } from './SimilarDiscussionsPanel';

@@ -15,7 +15,6 @@ const AssociatedQuestions = ({ discId }: AssociatedQuestionsProps) => {
   const [loading, setLoading] = useState(true)
   const params = useParams()
   const routeName = params?.route_name as string
-
   useEffect(() => {
     const fetchQuestions = async () => {
       try {

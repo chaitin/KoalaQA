@@ -72,6 +72,19 @@ func (a *Blog) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 	logger := a.logger.WithContext(ctx).With("disc_uuid", data.DiscUUID).With("type", data.Type)
 	logger.Info("handle insert blog")
 
+	if data.Type == model.DiscussionTypeBlog {
+		disc, err := a.disc.GetByUUID(ctx, data.DiscUUID)
+		if err != nil {
+			logger.WithErr(err).Error("get disc failed")
+			return nil
+		}
+
+		if disc.Summary != "" {
+			logger.Info("blog already have summary, skip")
+			return nil
+		}
+	}
+
 	_, prompt, err := a.prompt.GeneratePostPrompt(ctx, data.DiscID)
 	if err != nil {
 		logger.WithErr(err).Error("generate post prompt failed")

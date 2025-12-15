@@ -23,6 +23,7 @@ import { useParams, usePathname, useSearchParams } from 'next/navigation'
 import { useContext, useEffect, useMemo, useState } from 'react'
 import { CommonContext } from './commonProvider'
 import { Icon } from '@ctzhian/ui'
+import TagFilterChip from './TagFilterChip'
 
 type TagWithId = {
   id: number
@@ -45,10 +46,7 @@ export default function FilterPanel() {
   const routeName = params?.route_name as string
   const [selectedTags, setSelectedTags] = useState<number[]>([])
 
-  const popularTags = useMemo(
-    () => (tags || []).filter((tag): tag is TagWithId => typeof tag?.id === 'number'),
-    [tags],
-  )
+  const popularTags = useMemo(() => (tags || []).filter((tag): tag is TagWithId => typeof tag?.id === 'number'), [tags])
 
   // 判断是否在详情页（路径包含 /[id]，但不是 /edit）
   const isDetailPage = useMemo(() => {
@@ -420,38 +418,23 @@ export default function FilterPanel() {
       <Divider sx={{ mb: 2 }} />
 
       <Box>
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-          {popularTags.map((tag) => (
-            <Chip
-              key={tag.id}
-              label={`${tag.name} (${tag.count})`}
-              size="small"
-              onClick={() => {
-                const newSelectedTags = selectedTags.includes(tag.id)
-                  ? selectedTags.filter((t) => t !== tag.id)
-                  : [...selectedTags, tag.id]
-                setSelectedTags(newSelectedTags)
-                updateUrlParams(urlTopics, urlType, newSelectedTags)
-              }}
-              sx={{
-                bgcolor: selectedTags.includes(tag.id) ? 'primary.main' : "rgba(0,99,151,0.06)",
-                color: selectedTags.includes(tag.id) ? "#ffffff" : "#6b7280",
-                fontSize: "0.75rem",
-                fontWeight: 600,
-                height: 26,
-                borderRadius: "10px",
-                border: selectedTags.includes(tag.id) ? "none" : "1px solid rgba(0,99,151,0.1)",
-                transition: "all 0.15s ease-in-out",
-                "&:hover": {
-                  bgcolor: selectedTags.includes(tag.id) ? "#111827" : "#f3f4f6",
-                  color: selectedTags.includes(tag.id) ? "#ffffff" : "#000000",
-                  borderColor: selectedTags.includes(tag.id) ? "transparent" : "#d1d5db",
-                  transform: "translateY(-1px)",
-                },
-                "&:active": { transform: "scale(0.95)" },
-              }}
-            />
-          ))}
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          {popularTags.map((tag) => {
+            const isSelected = selectedTags.includes(tag.id)
+            return (
+              <TagFilterChip
+                key={tag.id}
+                id={tag.id}
+                name={tag.name}
+                selected={isSelected}
+                onClick={() => {
+                  const newSelectedTags = isSelected ? selectedTags.filter((t) => t !== tag.id) : [...selectedTags, tag.id]
+                  setSelectedTags(newSelectedTags)
+                  updateUrlParams(urlTopics, urlType, newSelectedTags)
+                }}
+              />
+            )
+          })}
         </Box>
       </Box>
     </Box>

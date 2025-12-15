@@ -75,6 +75,7 @@ func init() {
 
 type DiscussionCreateReq struct {
 	Title     string               `json:"title" binding:"required"`
+	Summary   string               `json:"summary"`
 	Content   string               `json:"content"`
 	Type      model.DiscussionType `json:"type"`
 	Tags      []string             `json:"tags"`
@@ -127,6 +128,10 @@ func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req Discus
 		return "", errPermission
 	}
 
+	if req.Type != model.DiscussionTypeBlog {
+		req.Summary = ""
+	}
+
 	if req.ForumID == 0 {
 		forumID, err := d.in.ForumRepo.GetFirstID(ctx)
 		if err != nil {
@@ -155,6 +160,7 @@ func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req Discus
 
 	disc := model.Discussion{
 		Title:    req.Title,
+		Summary:  req.Summary,
 		Content:  req.Content,
 		Tags:     req.Tags,
 		GroupIDs: req.GroupIDs,
@@ -175,7 +181,6 @@ func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req Discus
 		d.in.Pub.Publish(ctx, topic.TopicAIInsight, topic.MsgAIInsight{
 			ForumID: disc.ForumID,
 			Keyword: disc.Title,
-			Exclude: model.Int64Array{int64(disc.ID)},
 		})
 		fallthrough
 	case model.DiscussionTypeBlog, model.DiscussionTypeIssue:
@@ -223,6 +228,7 @@ var errDiscussionClosed = errors.New("discussion has been closed")
 
 type DiscussionUpdateReq struct {
 	Title    string            `json:"title" binding:"required"`
+	Summary  string            `json:"summary"`
 	Content  string            `json:"content"`
 	Tags     model.StringArray `json:"tags"`
 	GroupIDs model.Int64Array  `json:"group_ids"`
@@ -242,12 +248,18 @@ func (d *Discussion) Update(ctx context.Context, user model.UserInfo, uuid strin
 		return err
 	}
 
-	if err := d.in.DiscRepo.Update(ctx, map[string]any{
+	updateM := map[string]any{
 		"title":     req.Title,
 		"content":   req.Content,
 		"tags":      req.Tags,
 		"group_ids": req.GroupIDs,
-	}, repo.QueryWithEqual("id", disc.ID)); err != nil {
+	}
+
+	if disc.Type == model.DiscussionTypeBlog && req.Summary != "" {
+		updateM["summary"] = req.Summary
+	}
+
+	if err := d.in.DiscRepo.Update(ctx, updateM, repo.QueryWithEqual("id", disc.ID)); err != nil {
 		return err
 	}
 	d.in.Pub.Publish(ctx, topic.TopicDiscChange, topic.MsgDiscChange{
@@ -436,11 +448,6 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 		return &res, nil
 	}
 
-	if req.Resolved != nil && req.Type != nil && *req.Type == model.DiscussionTypeBlog {
-		res.Items = make([]*model.DiscussionListItem, 0)
-		return &res, nil
-	}
-
 	groupM := make(map[uint]model.Int64Array)
 	if len(req.GroupIDs) > 0 {
 		var groupItems []model.GroupItem
@@ -466,6 +473,9 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 	}
 	if req.Keyword != "" && req.FuzzySearch {
 		query = append(query, repo.QueryWithILike("title", &req.Keyword))
+	}
+	if req.Resolved != nil {
+		query = append(query, repo.QueryWithEqual("type", model.DiscussionTypeBlog, repo.EqualOPNE))
 	}
 
 	if len(groupM) > 0 {

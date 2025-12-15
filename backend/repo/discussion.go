@@ -135,7 +135,29 @@ func (d *Discussion) List(ctx context.Context, res any, queryFuncs ...QueryOptFu
 	o := getQueryOpt(queryFuncs...)
 	return d.base.model(ctx).
 		Joins("left join users on users.id = discussions.user_id").
-		Select("discussions.*, users.name as user_name, users.avatar as user_avatar").
+		Select([]string{
+			"discussions.id",
+			"discussions.created_at",
+			"discussions.updated_at",
+			"discussions.uuid",
+			"discussions.user_id",
+			"discussions.title",
+			"discussions.summary",
+			"discussions.tag_ids",
+			"discussions.group_ids",
+			"discussions.resolved",
+			"discussions.resolved_at",
+			"discussions.hot",
+			"discussions.like",
+			"discussions.dislike",
+			"discussions.view",
+			"discussions.comment",
+			"discussions.type",
+			"discussions.forum_id",
+			"discussions.associate_id",
+			"users.name as user_name",
+			"users.avatar as user_avatar",
+		}).
 		Scopes(o.Scopes()...).
 		Find(res).Error
 }

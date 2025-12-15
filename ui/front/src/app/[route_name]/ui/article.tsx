@@ -5,17 +5,14 @@ import {
   ModelDiscussionListItem,
   ModelDiscussionType,
   ModelForumInfo,
-  ModelGroupItemInfo,
-  ModelGroupWithItem,
   ModelListRes,
-  ModelUserRole,
+  ModelUserRole
 } from '@/api/types'
 import AnnouncementCard from '@/components/AnnouncementCard'
 import AnnouncementCarousel from '@/components/AnnouncementCarousel'
 import { AuthContext } from '@/components/authProvider'
 import BrandAttribution from '@/components/BrandAttribution'
 import ContributorsRank from '@/components/ContributorsRank'
-import { ReleaseModal } from '@/components/discussion'
 import SearchResultModal from '@/components/SearchResultModal'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
 import { useListPageCache } from '@/hooks/useListPageCache'
@@ -74,7 +71,7 @@ const Article = ({
   const { user } = useContext(AuthContext)
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
-  const { saveState, restoreState, restoreScrollPosition } = useListPageCache(routeName)
+  const { saveState, restoreState, restoreScrollPosition, clearCache } = useListPageCache(routeName)
   const cached = restoreState()
   const topics = useMemo(() => {
     return tps ? tps.split(',').map(Number) : []
@@ -89,7 +86,6 @@ const Article = ({
   // 当type为undefined时，不传type参数，显示所有类型的分类
   const currentType = type ? (type as ModelDiscussionType) : undefined
 
-  const [releaseModalVisible, { setTrue: releaseModalOpen, setFalse: releaseModalClose }] = useBoolean(false)
   const status = searchParams?.get('sort') || 'publish'
   const [search, setSearch] = useState(searchParams?.get('search') || '')
   const [articleData, setArticleData] = useState(cached?.data || data)
@@ -101,7 +97,6 @@ const Article = ({
     rootMargin: '0px 0px 200px 0px',
     threshold: 0,
   })
-
   // 下拉筛选相关状态
   const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null)
   const filterMenuOpen = Boolean(filterAnchorEl)
@@ -114,9 +109,7 @@ const Article = ({
 
   // 搜索弹窗相关状态
   const [searchModalOpen, { setTrue: openSearchModal, setFalse: closeSearchModal }] = useBoolean(false)
-  const [selectedModalType, setSelectedModalType] = useState<ModelDiscussionType>(ModelDiscussionType.DiscussionTypeQA)
   const [lastPathname, setLastPathname] = useState('')
-  const [initialTitleFromSearch, setInitialTitleFromSearch] = useState<string>('')
   const actionProcessedRef = useRef<string>('')
   const restoreStateProcessedRef = useRef<string>('')
   const isFirstMountRef = useRef(true)
@@ -198,8 +191,7 @@ const Article = ({
   const onNavigate = useCallback(() => {
     const currentSearchParams = window.location.search
     saveState(articleData, currentSearchParams, page)
-    releaseModalClose()
-  }, [articleData.items?.length, page, saveState, releaseModalClose, cached])
+  }, [articleData.items?.length, page, saveState, cached])
 
   const handleSearch = useCallback(() => {
     const trimmedSearch = search && search.trim() ? search.trim() : ''
@@ -257,80 +249,21 @@ const Article = ({
       setArticleData(data)
       setPage(1)
     }
+    clearCache()
     restoreStateProcessedRef.current = cacheKey
-
     // 更新记录的路径
     if (lastPathname !== currentPath) {
       setLastPathname(currentPath)
     }
   }, [data])
-  // 监听自定义事件，直接打开弹窗（优先于 URL 参数）
-  useEffect(() => {
-    const handleOpenModal = (event: CustomEvent<{ type: ModelDiscussionType; title?: string }>) => {
-      const { type, title } = event.detail
-      setSelectedModalType(type)
-      if (title) {
-        setInitialTitleFromSearch(title)
-      }
-      checkAuth(() => releaseModalOpen())
-    }
 
-    window.addEventListener('openReleaseModal' as any, handleOpenModal as EventListener)
-    return () => {
-      window.removeEventListener('openReleaseModal' as any, handleOpenModal as EventListener)
-    }
-  }, [checkAuth, releaseModalOpen])
-
-  // 检测 URL 参数中的 action，自动打开对应的弹窗（作为 fallback，用于跨页面跳转）
-  useEffect(() => {
-    const action = searchParams?.get('action')
-    const title = searchParams?.get('title')
-    const actionKey = `${action}-${title || ''}`
-
-    // 避免重复处理相同的 action
-    if ((action === 'ask' || action === 'issue') && actionProcessedRef.current !== actionKey) {
-      actionProcessedRef.current = actionKey
-      setSelectedModalType(
-        action === 'ask' ? ModelDiscussionType.DiscussionTypeQA : ModelDiscussionType.DiscussionTypeIssue,
-      )
-      if (title) {
-        setInitialTitleFromSearch(decodeURIComponent(title))
-      }
-      checkAuth(() => {
-        releaseModalOpen()
-        // 清除 URL 参数，避免刷新时重复打开
-        const params = new URLSearchParams(searchParams?.toString())
-        params.delete('action')
-        params.delete('title')
-        const newUrl = params.toString() ? `/${routeName}?${params.toString()}` : `/${routeName}`
-        router.replace(newUrl)
-        // 重置处理标记，允许下次处理
-        setTimeout(() => {
-          actionProcessedRef.current = ''
-        }, 100)
-      })
-    }
-  }, [searchParams, checkAuth, releaseModalOpen, router, routeName])
-
-  const handleAsk = (query?: string) => {
-    setSelectedModalType(ModelDiscussionType.DiscussionTypeQA)
-    setInitialTitleFromSearch(query || '')
-    checkAuth(() => releaseModalOpen())
-  }
-
-  const handleArticle = (query?: string) => {
-    setSelectedModalType(ModelDiscussionType.DiscussionTypeBlog)
+  const handlePublish = (type: ModelDiscussionType, query?: string) => {
+    console.log('handlePublish', type, query)
     checkAuth(() => {
       const routeName = (params?.route_name as string) || ''
-      const titleParam = query ? `?title=${encodeURIComponent(query)}` : ''
-      nextRouter.push(`/${routeName}/edit${titleParam}`)
+      const titleParam = query ? `title=${encodeURIComponent(query)}` : ''
+      nextRouter.push(`/${routeName}/edit?${titleParam}&type=${type}`)
     })
-  }
-
-  const handleIssue = (query?: string) => {
-    setSelectedModalType(ModelDiscussionType.DiscussionTypeIssue)
-    setInitialTitleFromSearch(query || '')
-    checkAuth(() => releaseModalOpen())
   }
 
   // 处理发布类型菜单打开
@@ -350,15 +283,11 @@ const Article = ({
   // 处理选择发布类型
   const handlePublishTypeSelect = (publishType: ModelDiscussionType) => {
     handlePublishMenuClose()
-    if (publishType === ModelDiscussionType.DiscussionTypeQA) {
-      handleAsk()
-    } else if (publishType === ModelDiscussionType.DiscussionTypeBlog) {
-      handleArticle()
-    } else if (publishType === ModelDiscussionType.DiscussionTypeIssue) {
-      handleIssue()
-    }
+    handlePublish(publishType)
   }
-
+  const handlePublishSearch = (type: ModelDiscussionType) => (query: string) => {
+    handlePublish(type, query)
+  }
   // 根据类型获取排序选项
   const getSortOptions = (postType?: string) => {
     if (isMobile)
@@ -762,6 +691,10 @@ const Article = ({
             top: 25,
             maxHeight: 'calc(100vh - 90px)',
             overflowY: 'auto',
+          // 隐藏滚动条
+          '&::-webkit-scrollbar': { display: 'none' },
+          '-ms-overflow-style': 'none',
+          'scrollbar-width': 'none',
           }}
         >
           {/* 公告 */}
@@ -776,23 +709,6 @@ const Article = ({
           <BrandAttribution inSidebar={true} sidebarRef={sidebarRef as React.RefObject<HTMLElement>} />
         </Box>
       </Box>
-
-      <ReleaseModal
-        open={releaseModalVisible}
-        onClose={() => {
-          releaseModalClose()
-          setInitialTitleFromSearch('')
-        }}
-        onOk={() => {
-          releaseModalClose()
-          setInitialTitleFromSearch('')
-        }}
-        selectedTags={[]}
-        initialTitle={initialTitleFromSearch || searchParams?.get('search') || ''}
-        type={selectedModalType}
-        forumInfo={forumInfo}
-      />
-
       {/* 搜索结果弹窗 */}
       <SearchResultModal
         open={searchModalOpen}
@@ -801,9 +717,7 @@ const Article = ({
           setSearch('')
         }}
         initialQuery={search}
-        onAsk={handleAsk}
-        onIssue={handleIssue}
-        onArticle={handleArticle}
+        onPublish={handlePublish}
       />
     </>
   )
