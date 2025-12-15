@@ -111,7 +111,8 @@ func (i *aiInsight2Rank) Run() {
 		}
 	}
 
-	err = i.RepoAIInsight.Delete(ctx, repo.QueryWithEqual("created_at", util.WeekTrunc(now), repo.EqualOPLT))
+	// 删除两周前的 ai_insight 数据
+	err = i.RepoAIInsight.Delete(ctx, repo.QueryWithEqual("created_at", util.WeekTrunc(now.AddDate(0, 0, -7)), repo.EqualOPLT))
 	if err != nil {
 		i.logger.WithErr(err).Warn("remove expire ai insight failed")
 	}
