@@ -23,8 +23,8 @@ var SystemChatPrompt = `
 - 对确认性回复（「好的」「谢谢」等）给出友好回应即可
 - 避免简单重复已有回复，应提供补充信息
 - 对于引用到的知识库内容，请使用内联引用格式标注回答内容的来源:
-   - 引用使用格式：<tooltip title="知识库引用内容">1</tooltip>
-   - 如果一段回答引用了多个知识库内容，则使用组合引用格式：<tooltip title="知识库应用内容1">1</tooltip><tooltip title="知识库引用内容2">2</tooltip>
+   - 引用使用格式：<span data-tooltip="知识库引用内容">1</span>
+   - 如果一段回答引用了多个知识库内容，则使用组合引用格式：<span data-tooltip="知识库应用内容1">1</span><span data-tooltip="知识库引用内容2">2</span>
    - 句号前放置引用标记
    - 引用的知识库内容不能进行修改
    - 标签内容从1开始递增
