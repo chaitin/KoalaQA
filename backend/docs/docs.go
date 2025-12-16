@@ -1982,6 +1982,9 @@ const docTemplate = `{
         },
         "/admin/kb/{kb_id}/space/{space_id}/folder/{folder_id}": {
             "put": {
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2010,6 +2013,15 @@ const docTemplate = `{
                         "name": "folder_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "req params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.UpdateSpaceFolderReq"
+                        }
                     }
                 ],
                 "responses": {
@@ -9449,6 +9461,14 @@ const docTemplate = `{
             "properties": {
                 "prompt": {
                     "type": "string"
+                }
+            }
+        },
+        "svc.UpdateSpaceFolderReq": {
+            "type": "object",
+            "properties": {
+                "doc_id": {
+                    "type": "integer"
                 }
             }
         },
