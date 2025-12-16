@@ -170,7 +170,7 @@ func (m *modelkit) Route(h server.Handler) {
 		g.POST("/check", m.checkModel)
 		g.POST("", m.createModel)
 		g.PUT(":id", m.updateModel)
-		g.DELETE(":id/active", m.activeModel)
+		g.PUT(":id/active", m.activeModel)
 		g.GET("list", m.listModel)
 	}
 }
