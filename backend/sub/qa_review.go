@@ -73,9 +73,10 @@ func (q *QAReview) Concurrent() uint {
 }
 
 func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
-	logger := q.logger.WithContext(ctx)
-	logger.Info("handle qa review")
 	data := msg.(topic.MsgMessageNotify)
+
+	logger := q.logger.WithContext(ctx).With("msg", data)
+	logger.Info("handle qa review")
 	if data.Type != model.MsgNotifyTypeApplyComment {
 		return nil
 	}

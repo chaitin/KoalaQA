@@ -959,7 +959,7 @@ func (d *KBDocument) Review(ctx context.Context, req ReviewReq) error {
 		err := d.repoDoc.UpdateByModel(ctx, &model.KBDocument{
 			Title:    req.Title,
 			Markdown: []byte(req.Content),
-			Status:   model.DocStatusPendingApply,
+			Status:   model.DocStatusExportSuccess,
 		}, repo.QueryWithEqual("id", req.QAID))
 		if err != nil {
 			return err
