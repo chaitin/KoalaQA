@@ -94,7 +94,7 @@ function useQuestions(isOpen: boolean, insightData?: InsightData) {
 
       return convertedQuestions;
     });
-    
+
     postsCacheRef.current.clear();
     loadingRef.current.clear();
   }, [isOpen, insightData]);
@@ -165,12 +165,15 @@ function useQuestions(isOpen: boolean, insightData?: InsightData) {
   /**
    * 更新问题的 associate_id
    */
-  const updateQuestionAssociateId = useCallback((questionId: number | undefined, associateId: number) => {
-    if (questionId === undefined) return;
-    setQuestions(prev =>
-      prev.map(q => (q.id === questionId ? { ...q, associate_id: associateId } : q))
-    );
-  }, []);
+  const updateQuestionAssociateId = useCallback(
+    (questionId: number | undefined, associateId: number) => {
+      if (questionId === undefined) return;
+      setQuestions(prev =>
+        prev.map(q => (q.id === questionId ? { ...q, associate_id: associateId } : q))
+      );
+    },
+    []
+  );
 
   return { questions, loadRelatedPosts, updateQuestionAssociateId };
 }
@@ -183,7 +186,13 @@ function useSaveQA() {
   const { kb_id: currentKbId } = useConfigStore();
 
   const saveQA = useCallback(
-    async (title: string, content: string, scoreId: string, associateId?: number, aiInsightId?: number) => {
+    async (
+      title: string,
+      content: string,
+      scoreId: string,
+      associateId?: number,
+      aiInsightId?: number
+    ) => {
       if (!currentKbId) {
         Message.warning('请先在设置中选择知识库');
         return false;
@@ -220,7 +229,7 @@ function useSaveQA() {
         // 返回创建的问答对 ID（associate_id）
         // 如果请求中已经传了 associate_id 且 > 0，则返回该值（更新操作）
         // 否则返回新创建的 ID（新建操作）
-        const createdId = associateId && associateId > 0 ? associateId : response
+        const createdId = associateId && associateId > 0 ? associateId : response;
         return createdId || true;
       } catch (error) {
         console.error('Failed to save QA pair:', error);
@@ -320,7 +329,7 @@ const QuestionItem: React.FC<QuestionItemProps> = ({
       {isSelected && hasRelatedPosts && (
         <>
           {postCount > 0 && (
-            <Stack direction="row" alignItems="center" spacing={0.5} sx={{mt: 1}}>
+            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mt: 1 }}>
               <Typography
                 variant="caption"
                 sx={{
@@ -453,7 +462,7 @@ const EditorSection: React.FC<EditorSectionProps> = ({
         size="small"
         fullWidth
         value={titleValue}
-        onChange={(e) => onTitleChange(e.target.value)}
+        onChange={e => onTitleChange(e.target.value)}
         disabled={!question || isAssociated}
         sx={{
           fontSize: '14px',
@@ -473,16 +482,24 @@ const EditorSection: React.FC<EditorSectionProps> = ({
         sx={{
           p: 0,
           flex: 1,
-          minHeight: '400px',
           borderColor: 'divider',
           borderRadius: 1,
           mb: 2,
+          maxHeight: '300px',
           '& .tiptap': {
             px: 1,
+            height: '100%',
+            minHeight: '200px',
+            overflow: 'auto',
           },
         }}
       >
-        <EditorWrap ref={editorRef} value={editorValue} placeholder="请输入内容" readonly={isAssociated} />
+        <EditorWrap
+          ref={editorRef}
+          value={editorValue}
+          placeholder="请输入内容"
+          readonly={isAssociated}
+        />
       </Paper>
 
       {/* Save Button or Status Text */}
@@ -533,7 +550,10 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
   const editorRef = useRef<EditorWrapRef>(null);
   const { forums } = useForumStore();
 
-  const { questions, loadRelatedPosts, updateQuestionAssociateId } = useQuestions(open, insightData);
+  const { questions, loadRelatedPosts, updateQuestionAssociateId } = useQuestions(
+    open,
+    insightData
+  );
   const { saving, saveQA } = useSaveQA();
 
   // 当前选中的问题
@@ -605,7 +625,7 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
         }
       }
     };
-    
+
     // 立即尝试设置，如果编辑器还未准备好，延迟再试
     setTimeout(setEditorContent, 0);
     setTimeout(setEditorContent, 100);
@@ -662,7 +682,12 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
     const title = titleValue.trim() || selectedQuestion.score_id || '未命名问题';
     const associateId = selectedQuestion.associate_id;
     const aiInsightId = selectedQuestion.id;
-    console.log('Saving QA pair:', { title, associateId, aiInsightId, scoreId: selectedQuestion.score_id });
+    console.log('Saving QA pair:', {
+      title,
+      associateId,
+      aiInsightId,
+      scoreId: selectedQuestion.score_id,
+    });
     const result = await saveQA(
       title,
       content,
@@ -674,11 +699,14 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
     if (result) {
       // 更新编辑器内容为保存后的内容
       setEditorValue(content);
-      
+
       // 如果返回的是数字（associate_id），则更新问题的 associate_id
       if (typeof result === 'number' && result > 0) {
         updateQuestionAssociateId(selectedQuestion.id, result);
-        console.log('Updated associate_id:', { questionId: selectedQuestion.id, associateId: result });
+        console.log('Updated associate_id:', {
+          questionId: selectedQuestion.id,
+          associateId: result,
+        });
         // 通知父组件更新 insightData 中的 associate_id
         if (onUpdateAssociateId && selectedQuestion.id) {
           onUpdateAssociateId(selectedQuestion.id, result);
@@ -755,7 +783,7 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
       </Box>
 
       {/* Main Content */}
-      <Grid container spacing={3} sx={{ flex: 1, overflow: 'hidden' }}>
+      <Grid container spacing={3} sx={{ flex: 1}}>
         {/* Left: Question List */}
         <Grid size={{ xs: 12, md: 4 }} sx={{ overflow: 'auto', maxHeight: 'calc(100vh - 200px)' }}>
           <QuestionList
@@ -767,7 +795,10 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
         </Grid>
 
         {/* Right: Editor */}
-        <Grid size={{ xs: 12, md: 8 }} sx={{ display: 'flex', flexDirection: 'column' }}>
+        <Grid
+          size={{ xs: 12, md: 8 }}
+          sx={{ display: 'flex', flexDirection: 'column' }}
+        >
           <EditorSection
             question={selectedQuestion}
             editorRef={editorRef}

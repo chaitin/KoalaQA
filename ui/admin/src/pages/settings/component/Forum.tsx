@@ -37,12 +37,7 @@ import LoadingButton from '@/components/LoadingButton';
 import CategorySelector from '@/components/CategorySelector';
 import ArticleSelector from '@/components/ArticleSelector';
 import { putAdminForum } from '@/api/Forum';
-import {
-  ModelForumInfo,
-  ModelForumGroups,
-  ModelDiscussionType,
-  SvcForumBlog,
-} from '@/api/types';
+import { ModelForumInfo, ModelForumGroups, ModelDiscussionType, SvcForumBlog } from '@/api/types';
 
 import type { ForumItem } from '@/store/slices/forum';
 
@@ -96,13 +91,20 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
   // 从 store 获取标签
   const tags = useForumStore(state => state.tags);
   const fetchTagsForForums = useForumStore(state => state.fetchTagsForForums);
-  const tagOptions = forumId && forumId > 0 ? (tags[forumId] || []) : [];
+  const tagOptions = forumId && forumId > 0 ? tags[forumId] || [] : [];
+  // 标签输入框内容（用于在选择后清空输入）
+  const [tagInputValue, setTagInputValue] = useState('');
 
   React.useEffect(() => {
     if (forumId && forumId > 0) {
       fetchTagsForForums([forumId]);
     }
   }, [forumId, fetchTagsForForums]);
+
+  React.useEffect(() => {
+    // 切换版块/新建版块时，避免残留上一次输入
+    setTagInputValue('');
+  }, [forumId]);
   const { isDragging, attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: `block-${index}`,
   });
@@ -127,7 +129,7 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
     >
       <Stack spacing={2}>
         {/* 版块名称和操作按钮 */}
-        <Stack direction="row" alignItems='baseline' spacing={1}>
+        <Stack direction="row" alignItems="baseline" spacing={1}>
           <IconButton
             size="small"
             sx={{
@@ -313,28 +315,26 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
               control={control}
               name={`blocks.${index}.blog_ids`}
               render={({ field, fieldState: { error } }) => (
-                <Box>
-                  <ArticleSelector
-                    value={field.value || []}
-                    onChange={articleIds => {
-                      field.onChange(articleIds);
-                      setIsEdit(true);
-                    }}
-                    placeholder="请选择公告内容"
-                    label="选择公告内容"
-                    forumId={forumId}
-                    maxSelection={3}
-                    error={!!error}
-                    helperText={error?.message}
-                    textFieldSx={commonFieldSx}
-                    initialOptions={(blogOptions || [])
-                      .filter(blog => blog?.id != null)
-                      .map(blog => ({
-                        id: blog.id || 0,
-                        title: blog.title || '',
-                      }))}
-                  />
-                </Box>
+                <ArticleSelector
+                  value={field.value || []}
+                  onChange={articleIds => {
+                    field.onChange(articleIds);
+                    setIsEdit(true);
+                  }}
+                  placeholder="请选择公告内容"
+                  label="选择公告内容"
+                  forumId={forumId}
+                  maxSelection={3}
+                  error={!!error}
+                  helperText={error?.message}
+                  textFieldSx={commonFieldSx}
+                  initialOptions={(blogOptions || [])
+                    .filter(blog => blog?.id != null)
+                    .map(blog => ({
+                      id: blog.id || 0,
+                      title: blog.title || '',
+                    }))}
+                />
               )}
             />
           </Grid>
@@ -347,7 +347,7 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
               control={control}
               name={`blocks.${index}.tag_ids`}
               render={({ field, fieldState: { error } }) => {
-                const selectedTags = tagOptions.filter(tag => 
+                const selectedTags = tagOptions.filter(tag =>
                   (field.value || []).includes(tag.id || 0)
                 );
 
@@ -357,10 +357,20 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
                       multiple
                       size="small"
                       value={selectedTags}
-                      onChange={(event, newValue) => {
+                      inputValue={tagInputValue}
+                      onInputChange={(event, newInputValue, reason) => {
+                        // 这里由 onChange 主动清空；忽略 reset，避免与内部状态互相打架
+                        if (reason === 'reset') return;
+                        setTagInputValue(newInputValue);
+                      }}
+                      onChange={(event, newValue, reason) => {
                         const selectedIds = (newValue || []).map(tag => tag.id || 0);
                         field.onChange(selectedIds);
                         setIsEdit(true);
+                        // 选择一个标签后清空输入框（用户期望行为）
+                        if (reason === 'selectOption') {
+                          setTagInputValue('');
+                        }
                       }}
                       options={tagOptions}
                       getOptionLabel={option => option.name || ''}
@@ -389,7 +399,9 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
                         <TextField
                           {...params}
                           label="板块标签"
-                          placeholder={forumId && forumId > 0 ? "请选择标签" : "新增板块暂不支持选择标签"}
+                          placeholder={
+                            forumId && forumId > 0 ? '请选择标签' : '新增板块暂不支持选择标签'
+                          }
                           error={!!error}
                           helperText={error?.message}
                           sx={commonFieldSx}
@@ -400,19 +412,29 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
                       )}
                       renderOption={(props, option) => (
                         <Box component="li" {...props}>
-                          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ width: '100%' }}>
+                          <Stack
+                            direction="row"
+                            justifyContent="space-between"
+                            alignItems="center"
+                            sx={{ width: '100%' }}
+                          >
                             <Typography variant="body2" sx={{ fontWeight: 500, fontSize: 12 }}>
-                              {option.name || ''} 
+                              {option.name || ''}
                             </Typography>
                             {option.count !== undefined && (
-                              <Typography variant="body2" sx={{ fontSize: 12, color: 'text.secondary', ml: 1 }}>
+                              <Typography
+                                variant="body2"
+                                sx={{ fontSize: 12, color: 'text.secondary', ml: 1 }}
+                              >
                                 ({option.count})
                               </Typography>
                             )}
                           </Stack>
                         </Box>
                       )}
-                      noOptionsText={forumId && forumId > 0 ? "暂无标签数据" : "新增板块暂不支持选择标签"}
+                      noOptionsText={
+                        forumId && forumId > 0 ? '暂无标签数据' : '新增板块暂不支持选择标签'
+                      }
                       clearOnEscape
                       selectOnFocus
                       handleHomeEndKeys
@@ -428,7 +450,6 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
             />
           </Grid>
         </Grid>
-        
       </Stack>
     </Box>
   );
@@ -442,7 +463,7 @@ const Forum: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const { refreshForums } = useForumStore();
-  
+
   // 从 store 获取板块数据
   const { forums: storeForums, loading: storeLoading } = useForumStore();
 
@@ -471,12 +492,14 @@ const Forum: React.FC = () => {
     return forums.map(block => {
       // 确保 groups 是数组
       const groupsArray = Array.isArray(block.groups) ? block.groups : [];
-      
+
       const qaGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeQA);
-      const feedbackGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeFeedback);
+      const feedbackGroups = groupsArray.find(
+        g => g.type === ModelDiscussionType.DiscussionTypeFeedback
+      );
       const issueGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeIssue);
       const blogGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeBlog);
-      
+
       return {
         ...block,
         qa_group_ids: qaGroups?.group_ids || [],
@@ -624,7 +647,7 @@ const Forum: React.FC = () => {
       // 将表单数据转换为 API 需要的格式
       const forums = data.blocks.map((block, index) => {
         const groups: ModelForumGroups[] = [];
-        
+
         // 为每种类型添加对应的分类
         if (block.qa_group_ids && block.qa_group_ids.length > 0) {
           groups.push({
@@ -656,7 +679,7 @@ const Forum: React.FC = () => {
             group_ids: block.issue_group_ids,
           });
         }
-        
+
         return {
           id: block.id,
           name: block.name?.trim() || '',
@@ -715,7 +738,7 @@ const Forum: React.FC = () => {
             }}
             variant="subtitle2"
           >
-            版块管理
+            板块管理
           </Typography>
           {isEdit && (
             <Stack direction="row" spacing={2} justifyContent="flex-end">

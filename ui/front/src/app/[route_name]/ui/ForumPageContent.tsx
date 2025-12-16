@@ -33,10 +33,10 @@ const ForumPageContent = ({ route_name, searchParams, initialData }: ForumPageCo
   const { forumId, forumInfo, discussions, groups, announcements } = initialData
   const setRouteName = useForumStore((s) => s.setRouteName)
 
-  // type=all 表示“全部”（不传给后端）；未传 type 默认 qa
+  // type=all / 未传 type 都表示“全部”（不传给后端）
   const normalizedType = useMemo(() => {
-    if (type === 'all') return undefined
-    return (type || ModelDiscussionType.DiscussionTypeQA) as ModelDiscussionType
+    if (!type || type === 'all') return undefined
+    return type as ModelDiscussionType
   }, [type])
 
   // 确保 store 中记录 route_name，以便 selectedForumId 能尽快被设置

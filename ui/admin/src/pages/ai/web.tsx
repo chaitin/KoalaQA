@@ -41,12 +41,14 @@ const AdminDocument = () => {
     data,
     loading,
     run: fetchData,
-  } = useRequest(params => getAdminKbKbIdWeb({ page, size, ...params, kbId: kb_id }), { manual: true });
+  } = useRequest(params => getAdminKbKbIdWeb({ page, size, ...params, kbId: kb_id }), {
+    manual: true,
+  });
   const [detail, setDetail] = useState<ModelKBDocumentDetail | null>(null);
   const [markdownContent, setMarkdownContent] = useState<string>('');
 
   const viewDetail = async (item: SvcDocListItem) => {
-    const docDetail = await getAdminKbKbIdDocumentDocId({kbId: kb_id, docId: item.id!});
+    const docDetail = await getAdminKbKbIdDocumentDocId({ kbId: kb_id, docId: item.id! });
     setDetail(docDetail);
     // 如果 markdown 字段是 url，则请求内容
     if (docDetail?.markdown && /^https?:\/\//.test(docDetail.markdown)) {
@@ -58,7 +60,7 @@ const AdminDocument = () => {
     }
   };
   const updateDoc = (item: SvcDocListItem) => {
-    putAdminKbKbIdWebDocId({kbId: kb_id, docId: item.id!}).then(() => {
+    putAdminKbKbIdWebDocId({ kbId: kb_id, docId: item.id! }).then(() => {
       message.success('更新成功');
       fetchData({
         page: 1,
@@ -82,7 +84,7 @@ const AdminDocument = () => {
         </>
       ),
       onOk: () => {
-        deleteAdminKbKbIdDocumentDocId({kbId: kb_id, docId: item.id!}).then(() => {
+        deleteAdminKbKbIdDocumentDocId({ kbId: kb_id, docId: item.id! }).then(() => {
           message.success('删除成功');
           fetchData({
             page: 1,
@@ -206,31 +208,26 @@ const AdminDocument = () => {
             setParams({
               page,
               size,
-            })
+            });
           },
         }}
       />
       <Modal
         open={!!detail}
-        title={detail?.title || '文档详情'}
+        title={'文档详情'}
         onCancel={() => setDetail(null)}
-        footer={
-          <Button variant="text" onClick={() => setDetail(null)}>
-            关闭
-          </Button>
-        }
+        width={'60%'}
+        footer={null}
       >
-        <Box sx={{ maxHeight: 600, overflow: 'auto', pr: 1 }}>
-          <Typography variant="subtitle1" sx={{ mb: 1 }}>
-            {detail?.title || '-'}
-          </Typography>
+        <Typography variant="subtitle1" sx={{ mb: 1 }}>
+          {detail?.title}
+        </Typography>
 
-          {detail ? (
-            <MarkDown content={markdownContent || '未查询到回答内容'} />
-          ) : (
-            <Typography sx={{ color: 'text.secondary' }}>无可显示内容</Typography>
-          )}
-        </Box>
+        {detail ? (
+          <MarkDown content={markdownContent || '未查询到回答内容'} />
+        ) : (
+          <Typography sx={{ color: 'text.secondary' }}>无可显示内容</Typography>
+        )}
       </Modal>
     </Stack>
   );

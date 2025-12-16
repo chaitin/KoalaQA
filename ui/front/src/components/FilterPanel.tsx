@@ -88,30 +88,17 @@ export default function FilterPanel() {
       .filter((id) => !isNaN(id))
   }, [searchParams])
 
-  // 列表页默认选择“问题(qa)”
-  useEffect(() => {
-    if (isDetailPage) return
-    if (!routeName) return
-    if (urlType !== null) return
-    // 默认 type=qa，并保留已有的 tps/tags
-    const params = new URLSearchParams(searchParams?.toString())
-    params.set('type', ModelDiscussionType.DiscussionTypeQA)
-    const queryString = params.toString()
-    router.replace(`/${routeName}${queryString ? `?${queryString}` : ''}`)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDetailPage, routeName, urlType])
-
-  // URL 展示/写回用：未传 type 默认 qa；type=all 表示“全部”
+  // URL 展示/写回用：未传 type 表示“全部”；type=all 也表示“全部”
   const typeForUrl = useMemo(() => {
     if (isDetailPage) return null
-    return (urlType || ModelDiscussionType.DiscussionTypeQA) as string
+    return urlType as string | null
   }, [isDetailPage, urlType])
 
-  // 分类/标签过滤、请求后端用：type=all 时不按类型过滤（也不把 all 传给后端）
+  // 分类/标签过滤、请求后端用：未传 type / type=all 时都不按类型过滤（也不把 all 传给后端）
   const typeForFilter = useMemo(() => {
     if (isDetailPage) return null
-    if (urlType === 'all') return null
-    return (urlType || ModelDiscussionType.DiscussionTypeQA) as string
+    if (urlType === 'all' || urlType === null) return null
+    return urlType as string
   }, [isDetailPage, urlType])
 
   const forumInfo = useMemo(() => {

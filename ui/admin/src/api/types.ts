@@ -231,6 +231,7 @@ export interface ModelAuthInfo {
 
 export interface ModelDiscussion {
   associate_id?: number;
+  bot_unknown?: boolean;
   comment?: number;
   content?: string;
   created_at?: number;
@@ -276,6 +277,7 @@ export interface ModelDiscussionComment {
 export interface ModelDiscussionDetail {
   associate?: ModelDiscussionListItem;
   associate_id?: number;
+  bot_unknown?: boolean;
   comment?: number;
   comments?: ModelDiscussionComment[];
   content?: string;
@@ -315,6 +317,7 @@ export interface ModelDiscussionGroup {
 
 export interface ModelDiscussionListItem {
   associate_id?: number;
+  bot_unknown?: boolean;
   comment?: number;
   content?: string;
   created_at?: number;
@@ -653,6 +656,10 @@ export interface ModelWebhookConfig {
 
 export interface RouterSystemInfoRes {
   version?: string;
+}
+
+export interface SvcActiveModelReq {
+  active?: boolean;
 }
 
 export interface SvcAssociateDiscussionReq {
@@ -1037,6 +1044,10 @@ export interface SvcURLListReq {
 
 export interface SvcUpdatePromptReq {
   prompt?: string;
+}
+
+export interface SvcUpdateSpaceFolderReq {
+  doc_id?: number;
 }
 
 export interface SvcUpdateSpaceReq {
@@ -1455,7 +1466,13 @@ export interface DeleteAdminKbKbIdWebDocIdParams {
 }
 
 export interface PutAdminModelIdParams {
-  id: string;
+  /** model_id */
+  id: number;
+}
+
+export interface PutAdminModelIdActiveParams {
+  /** model_id */
+  id: number;
 }
 
 export interface GetAdminOrgParams {
@@ -1706,6 +1723,7 @@ export interface GetDiscussionDiscIdSimilarityParams {
 }
 
 export interface GetForumForumIdTagsParams {
+  type?: "qa" | "feedback" | "blog" | "issue";
   /** forum id */
   forumId?: number;
 }

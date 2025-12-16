@@ -51,7 +51,6 @@ const DiscussCard = ({
   const isQAPost = it.type === ModelDiscussionType.DiscussionTypeQA
   const isArticlePost = it.type === ModelDiscussionType.DiscussionTypeBlog
   const isIssuePost = it.type === ModelDiscussionType.DiscussionTypeIssue
-
   return (
     <Box
       sx={{
@@ -163,7 +162,7 @@ const DiscussCard = ({
           </Ellipsis>
         </Box>
         <MarkDown
-          content={(it.type === ModelDiscussionType.DiscussionTypeBlog ? it.summary : it.content) || ''}
+          content={it.type === ModelDiscussionType.DiscussionTypeBlog ? it.summary : it.content}
           truncateLength={100}
           sx={{
             mb: 2,

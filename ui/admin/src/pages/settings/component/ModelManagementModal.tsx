@@ -1,10 +1,10 @@
-import { getAdminModelList, ModelLLM, ModelLLMType } from '@/api';
+import { getAdminModelList, ModelLLM, ModelLLMType, putAdminModelIdActive } from '@/api';
 import Card from '@/components/card';
 import { addOpacityToColor } from '@/utils';
 import { ModelModal } from '@ctzhian/modelkit';
 import { message } from '@ctzhian/ui';
-import { Box, Button, Stack, useTheme } from '@mui/material';
-import { useEffect, useMemo, useState } from 'react';
+import { Box, Button, CircularProgress, Stack, Switch, useTheme } from '@mui/material';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { modelService } from './services/modelService';
 
 const model = Object.values(ModelLLMType);
@@ -27,12 +27,12 @@ interface ModelManagementModalProps {
 const ModelManagementModal = ({
   open,
   mandatory = false,
-  onClose,
   onConfigured,
 }: ModelManagementModalProps) => {
   const theme = useTheme();
   const [editData, setEditData] = useState<ModelLLM | null>(null);
   const [modelList, setModelList] = useState<ModelLLM[]>([]);
+  const [activeLoadingMap, setActiveLoadingMap] = useState<Record<string, boolean>>({});
 
   // 模型配置数组
   const modelConfigs = useMemo<ModelConfig[]>(() => {
@@ -76,7 +76,7 @@ const ModelManagementModal = ({
     return configs;
   }, [modelList]);
 
-  const getModel = () => {
+  const getModel = useCallback(() => {
     getAdminModelList().then(res => {
       const filteredModels = res.filter(item => model.includes(item.type as any));
       setModelList(filteredModels);
@@ -85,26 +85,16 @@ const ModelManagementModal = ({
         onConfigured();
       }
     });
-  };
+  }, [mandatory, onConfigured]);
 
   useEffect(() => {
     getModel();
-  }, []);
-
-  const handleClose = () => {
-    // 如果是强制模式，不允许关闭
-    if (mandatory) {
-      return;
-    }
-
-    if (onClose) {
-      onClose();
-    }
-  };
-
+  }, [getModel]);
   const handleRefresh = () => {
     getModel();
   };
+
+  if (!open) return null;
 
   return (
     <>
@@ -120,6 +110,10 @@ const ModelManagementModal = ({
       >
         {modelConfigs.map(config => {
           const item = modelList.find(item => item.type === config.key);
+          const itemIdNum = item?.id;
+          const itemId = itemIdNum != null ? String(itemIdNum) : '';
+          const isLoading = itemId ? !!activeLoadingMap[itemId] : false;
+          const isActive = item?.is_active ?? true;
           return (
             <Card
               key={config.key}
@@ -158,6 +152,50 @@ const ModelManagementModal = ({
                     >
                       {config.isRequired ? '必选' : '可选'}
                     </Box>
+                    {[ModelLLMType.LLMTypeAnalysisVL, ModelLLMType.LLMTypeAnalysis].includes(
+                      config.key
+                    ) && (
+                      <Stack direction="row" alignItems="center" gap={0.5} sx={{ ml: 0.5 }}>
+                        {isLoading ? (
+                          <CircularProgress size={16} />
+                        ) : (
+                          <Switch
+                            size="small"
+                            checked={!!item && !!isActive}
+                            disabled={!itemId || isLoading}
+                            onChange={async (_, checked) => {
+                              if (itemIdNum == null) {
+                                message.error('请先配置模型');
+                                return;
+                              }
+                              const prev = isActive;
+                              // 乐观更新
+                              setModelList(list =>
+                                list.map(m =>
+                                  m.id === itemIdNum ? { ...m, is_active: checked } : m
+                                )
+                              );
+                              setActiveLoadingMap(m => ({ ...m, [itemId]: true }));
+                              try {
+                                await putAdminModelIdActive({ id: itemIdNum }, { active: checked });
+                                message.success(checked ? '已启用' : '已禁用');
+                                getModel();
+                              } catch {
+                                // 回滚
+                                setModelList(list =>
+                                  list.map(m =>
+                                    m.id === itemIdNum ? { ...m, is_active: prev } : m
+                                  )
+                                );
+                                message.error('操作失败');
+                              } finally {
+                                setActiveLoadingMap(m => ({ ...m, [itemId]: false }));
+                              }
+                            }}
+                          />
+                        )}
+                      </Stack>
+                    )}
                   </Stack>
                   <Box sx={{ fontSize: 12, color: 'text.secondary' }}>{config.description}</Box>
                 </Stack>
@@ -205,7 +243,7 @@ const ModelManagementModal = ({
                       </Box>
                       <Button
                         size="small"
-                        variant='outlined'
+                        variant="outlined"
                         onClick={() => {
                           setEditData({ type: config.key } as ModelLLM);
                         }}

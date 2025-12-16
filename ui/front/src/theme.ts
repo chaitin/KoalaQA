@@ -20,29 +20,24 @@ export const colors = {
   danger: '#F64E54',
   dangerGradient: 'linear-gradient(225deg, #FF1F1F 0%, #F78900 100%)',
   info: '#006397',
-
   white: '#FFFFFF',
   black: '#000000',
-
   textPrimary: '#21222D',
   textSecondary: 'rgba(33,34,45, 0.7)',
   textAuxiliary: 'rgba(33,34,45, 0.5)',
   textDisabled: 'rgba(33,34,45, 0.2)',
   disabledText: '#BFBFBF',
-
   backgroundDefault: '#f1f2f8',
   backgroundPaper: '#FFFFFF',
   backgroundPaper2: '#F1F2F8',
   backgroundPaper3: '#F8F9FA',
   footer: '#14141B',
   divider: 'rgba(217, 222, 226, 1)',
-
   actionActive: 'rgba(33, 34, 45, 0.54)',
   actionHover: 'rgba(33, 34, 45, 0.04)',
   actionSelected: 'rgba(33, 34, 45, 0.08)',
   actionDisabled: 'rgba(33, 34, 45, 0.26)',
   actionDisabledBg: 'rgba(33, 34, 45, 0.12)',
-
   shadow: '0 4px 14px 0 #1A041B0F',
   disabledBg: '#F7F7F7',
 }
@@ -156,6 +151,30 @@ const theme = createTheme(
           body: {
             backgroundColor: colors.backgroundPaper,
             color: colors.textPrimary,
+          },
+        },
+      },
+      MuiTooltip: {
+        styleOverrides: {
+          tooltip: {
+            backgroundColor: colors.white,
+            color: colors.textSecondary,
+            border: `1px solid ${colors.divider}`,
+            fontSize: '12px',
+            '& h3':{
+              marginTop: '6px',
+              color: colors.textPrimary,
+              marginBottom: '-16px!important',
+              fontSize: '12px',
+            }
+          },
+          arrow: {
+            color: colors.white,
+            '&::before': {
+              backgroundColor: colors.white,
+              border: `1px solid ${colors.divider}`,
+              boxSizing: 'border-box',
+            },
           },
         },
       },

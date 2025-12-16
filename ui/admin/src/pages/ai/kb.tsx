@@ -391,7 +391,7 @@ const KnowledgeBasePage = () => {
         kbId: kb_id,
         spaceId: selectedSpaceId,
         folderId: currentFolder.id!,
-      });
+      }, {});
       message.success('更新成功');
       refreshFolders();
     } catch {

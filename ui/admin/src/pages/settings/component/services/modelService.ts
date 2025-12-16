@@ -3,7 +3,7 @@ import {
   postAdminModelCheck,
   postAdminModelProviderSupported,
   putAdminModelId,
-  SvcMKCreateReq
+  SvcMKCreateReq,
 } from '@/api';
 import type {
   ModelService as IModelService,
