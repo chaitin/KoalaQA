@@ -867,14 +867,36 @@ func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*mo
 		return []*model.DiscussionListItem{}, nil
 	}
 	var ragIDs []string
+	ragIDM := make(map[string]struct{})
 	for _, record := range records {
 		ragIDs = append(ragIDs, record.DocID)
+		ragIDM[record.DocID] = struct{}{}
 	}
 	var discussions []*model.DiscussionListItem
 	err = d.in.DiscRepo.List(ctx, &discussions, repo.QueryWithEqual("rag_id", ragIDs, repo.EqualOPIn))
 	if err != nil {
 		return nil, err
 	}
+	for _, disc := range discussions {
+		delete(ragIDM, disc.RagID)
+	}
+
+	// 删除不存在的 rag
+	if len(ragIDM) > 0 {
+		ids := make([]string, 0, len(ragIDM))
+		for id := range ragIDM {
+			ids = append(ids, id)
+		}
+
+		logger := d.logger.WithContext(ctx).With("rag_ids", ids)
+		logger.Info("clear not exist rag_id")
+
+		err = d.in.Rag.DeleteRecords(ctx, forum.DatasetID, ids)
+		if err != nil {
+			logger.WithErr(err).Warn("clear not exist rag_id failed")
+		}
+	}
+
 	sortedDiscussions := util.SortByKeys(discussions, ragIDs, func(d *model.DiscussionListItem) string {
 		return d.RagID
 	})
