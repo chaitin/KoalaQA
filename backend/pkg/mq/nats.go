@@ -127,7 +127,7 @@ func (ns *natsSubscriber) Subscribe(ctx context.Context) error {
 			if topic.Persistence() {
 				_, err := ns.in.JS.js.QueueSubscribe(topic.Name(), h.Group(), callback,
 					nats.AckExplicit(),
-					nats.MaxDeliver(3),
+					nats.MaxDeliver(MessageMaxDeliver),
 					nats.DeliverNew(),
 					nats.AckWait(h.AckWait()),
 					nats.Durable(h.Group()),

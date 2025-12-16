@@ -47,6 +47,7 @@ type Discussion struct {
 	ForumID     uint            `json:"forum_id" gorm:"column:forum_id;type:bigint;index"`
 	Members     Int64Array      `json:"members" gorm:"column:members;type:bigint[]"`
 	AssociateID uint            `json:"associate_id" gorm:"column:associate_id;type:bigint;default:0;index"`
+	BotUnknown  bool            `json:"bot_unknown" gorm:"column:bot_unknown"`
 }
 
 func (d *Discussion) TitleContent() string {

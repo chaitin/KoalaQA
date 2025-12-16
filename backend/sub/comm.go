@@ -108,7 +108,7 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 	}
 	ragContent, err := d.prompt.GenerateContentForRetrieval(ctx, data.DiscID)
 	if err != nil {
-		logger.WithContext(ctx).WithErr(err).Error("generate content for retrieval failed")
+		logger.WithErr(err).Error("generate content for retrieval failed")
 		return nil
 	}
 	// record rag
@@ -146,20 +146,13 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 	}
 	bot, err := d.bot.Get(ctx)
 	if err != nil {
-		logger.WithContext(ctx).WithErr(err).Error("get bot failed")
+		logger.WithErr(err).Error("get bot failed")
 		return nil
-	}
-
-	exist, err := d.stat.Exist(ctx, repo.QueryWithEqual("type", []model.StatType{model.StatTypeBotUnknown, model.StatTypeBotUnknownComment}, repo.EqualOPIn),
-		repo.QueryWithEqual("key", disc.UUID),
-	)
-	if err != nil {
-		logger.WithErr(err).Warn("bot unknown exist failed")
 	}
 
 	question, prompt, err := d.prompt.GenerateAnswerPrompt(ctx, data.DiscID, data.CommID)
 	if err != nil {
-		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
+		logger.WithErr(err).Error("generate prompt failed")
 		return nil
 	}
 	llmRes, answered, err := d.llm.Answer(ctx, svc.GenerateReq{
@@ -171,8 +164,16 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 	if err != nil {
 		return err
 	}
+
+	if answered == disc.BotUnknown {
+		err = d.disc.SetBotUnknown(ctx, disc.ID, !disc.BotUnknown)
+		if err != nil {
+			logger.WithErr(err).With("answered", answered).Warn("set bot unknown status failed")
+		}
+	}
+
 	// ai 能够回答或者 ai 第一次无法回答的情况下创建ai回复
-	if answered || (bot.UnknownPrompt != "" && !exist) {
+	if answered || (bot.UnknownPrompt != "" && !disc.BotUnknown) {
 		newID, err := d.disc.CreateComment(ctx, bot.UserID, data.DiscUUID, svc.CommentCreateReq{
 			Content:   llmRes,
 			Bot:       true,
@@ -182,10 +183,10 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 			return err
 		}
 
-		logger.WithContext(ctx).With("comment_id", newID).Debug("comment created")
+		logger.With("comment_id", newID).Debug("comment created")
 	}
 
-	if !answered && !exist {
+	if !answered && !disc.BotUnknown {
 		logger.Info("ai not know the answer, notify admin")
 		notifyMsg := topic.MsgMessageNotify{
 			DiscussHeader: disc.Header(),

@@ -90,11 +90,12 @@ type ListRes struct {
 }
 
 type ListDoc struct {
-	ID       string `json:"id"`
-	File     bool   `json:"file"`
-	FileType string `json:"file_type"`
-	Title    string `json:"title"`
-	Summary  string `json:"summary"`
+	ID        string `json:"id"`
+	File      bool   `json:"file"`
+	FileType  string `json:"file_type"`
+	Title     string `json:"title"`
+	Summary   string `json:"summary"`
+	UpdatedAt int64  `json:"updated_at"`
 }
 
 type ExportFunc func(o *model.ExportOpt)

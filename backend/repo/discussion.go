@@ -139,6 +139,7 @@ func (d *Discussion) List(ctx context.Context, res any, queryFuncs ...QueryOptFu
 			"discussions.id",
 			"discussions.created_at",
 			"discussions.updated_at",
+			"discussions.rag_id",
 			"discussions.uuid",
 			"discussions.user_id",
 			"discussions.title",
@@ -155,6 +156,7 @@ func (d *Discussion) List(ctx context.Context, res any, queryFuncs ...QueryOptFu
 			"discussions.type",
 			"discussions.forum_id",
 			"discussions.associate_id",
+			"LEFT(discussions.content, 200) AS content",
 			"users.name as user_name",
 			"users.avatar as user_avatar",
 		}).

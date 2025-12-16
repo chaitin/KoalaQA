@@ -1982,6 +1982,9 @@ const docTemplate = `{
         },
         "/admin/kb/{kb_id}/space/{space_id}/folder/{folder_id}": {
             "put": {
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -2010,6 +2013,15 @@ const docTemplate = `{
                         "name": "folder_id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "req params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.UpdateSpaceFolderReq"
+                        }
                     }
                 ],
                 "responses": {
@@ -2663,6 +2675,13 @@ const docTemplate = `{
                 "summary": "update model",
                 "parameters": [
                     {
+                        "type": "integer",
+                        "description": "model_id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
                         "description": "request params",
                         "name": "req",
                         "in": "body",
@@ -2670,6 +2689,58 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/svc.MKUpdateReq"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/model/{id}/active": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "modelkit"
+                ],
+                "summary": "active model",
+                "parameters": [
+                    {
+                        "description": "req params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.ActiveModelReq"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "model_id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -6722,6 +6793,9 @@ const docTemplate = `{
                 "associate_id": {
                     "type": "integer"
                 },
+                "bot_unknown": {
+                    "type": "boolean"
+                },
                 "comment": {
                     "type": "integer"
                 },
@@ -6862,6 +6936,9 @@ const docTemplate = `{
                 "associate_id": {
                     "type": "integer"
                 },
+                "bot_unknown": {
+                    "type": "boolean"
+                },
                 "comment": {
                     "type": "integer"
                 },
@@ -6986,6 +7063,9 @@ const docTemplate = `{
             "properties": {
                 "associate_id": {
                     "type": "integer"
+                },
+                "bot_unknown": {
+                    "type": "boolean"
                 },
                 "comment": {
                     "type": "integer"
@@ -8242,6 +8322,14 @@ const docTemplate = `{
                 }
             }
         },
+        "svc.ActiveModelReq": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
+                }
+            }
+        },
         "svc.AssociateDiscussionReq": {
             "type": "object",
             "properties": {
@@ -9373,6 +9461,14 @@ const docTemplate = `{
             "properties": {
                 "prompt": {
                     "type": "string"
+                }
+            }
+        },
+        "svc.UpdateSpaceFolderReq": {
+            "type": "object",
+            "properties": {
+                "doc_id": {
+                    "type": "integer"
                 }
             }
         },

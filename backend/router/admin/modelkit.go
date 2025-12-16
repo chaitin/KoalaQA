@@ -93,6 +93,7 @@ func (m *modelkit) createModel(ctx *context.Context) {
 // @Tags modelkit
 // @Accept json
 // @Produce json
+// @Param id path uint true "model_id"
 // @Param req body svc.MKUpdateReq true "request params"
 // @Success 200 {object} context.Response{data=nil}
 // @Router /admin/model/{id} [put]
@@ -115,7 +116,36 @@ func (m *modelkit) updateModel(ctx *context.Context) {
 	ctx.Success(nil)
 }
 
-// Delete Model
+// activeModel
+// @Summary active model
+// @Tags modelkit
+// @Accept json
+// @Param req body svc.ActiveModelReq true "req params"
+// @Produce json
+// @Param id path uint true "model_id"
+// @Success 200 {object} context.Response{data=nil}
+// @Router /admin/model/{id}/active [put]
+func (m *modelkit) activeModel(ctx *context.Context) {
+	id, err := ctx.ParamUint("id")
+	if err != nil {
+		ctx.BadRequest(errors.New("id is required"))
+		return
+	}
+
+	var req svc.ActiveModelReq
+	err = ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	err = m.mk.ActiveModel(ctx, id, req)
+	if err != nil {
+		ctx.InternalError(err, "active model failed")
+		return
+	}
+	ctx.Success(nil)
+}
 
 // List Model
 // @Summary list model
@@ -140,6 +170,7 @@ func (m *modelkit) Route(h server.Handler) {
 		g.POST("/check", m.checkModel)
 		g.POST("", m.createModel)
 		g.PUT(":id", m.updateModel)
+		g.PUT(":id/active", m.activeModel)
 		g.GET("list", m.listModel)
 	}
 }

@@ -613,7 +613,7 @@ func (d *KBDocument) UpdateSpaceAllFolder(ctx context.Context, kbID uint, docID 
 	}
 
 	for _, item := range listRes.Items {
-		err = d.UpdateSpaceFolder(ctx, kbID, item.ID)
+		err = d.UpdateSpaceFolder(ctx, kbID, item.ID, UpdateSpaceFolderReq{})
 		if err != nil {
 			d.logger.WithContext(ctx).WithErr(err).With("folder_id", item.ID).Warn("update folder failed")
 		}
@@ -812,27 +812,45 @@ func (d *KBDocument) ListSpaceFolder(ctx context.Context, kbID uint, parentID ui
 	return &res, nil
 }
 
-func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID uint) error {
+type UpdateSpaceFolderReq struct {
+	DocID      uint `json:"doc_id"`
+	IncrUpdate bool `json:"-"`
+}
+
+func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID uint, req UpdateSpaceFolderReq) error {
 	doc, err := d.GetByID(ctx, kbID, folderID)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	if doc.DocType != model.DocTypeSpace || doc.FileType != model.FileTypeFolder || doc.ParentID == 0 {
 		return errors.ErrUnsupported
 	}
 
+	if req.DocID > 0 {
+		folderDoc, err := d.GetByID(ctx, kbID, req.DocID)
+		if err != nil {
+			return err
+		}
+
+		if folderDoc.ParentID != folderID {
+			return errors.New("invalid doc id")
+		}
+	}
+
 	err = d.repoDoc.Update(ctx, map[string]any{
 		"updated_at": time.Now(),
-	}, repo.QueryWithEqual("id", doc.ID))
+	}, repo.QueryWithEqual("id", folderID))
 	if err != nil {
 		return err
 	}
 
 	err = d.pub.Publish(ctx, topic.TopicKBSpace, topic.MsgKBSpace{
-		OP:       topic.OPUpdate,
-		KBID:     kbID,
-		FolderID: folderID,
+		OP:         topic.OPUpdate,
+		KBID:       kbID,
+		FolderID:   folderID,
+		DocID:      req.DocID,
+		IncrUpdate: req.IncrUpdate,
 	})
 	if err != nil {
 		d.logger.WithContext(ctx).WithErr(err).With("kb_id", kbID).With("folder_id", folderID).Warn("pub update msg failed")
@@ -959,7 +977,7 @@ func (d *KBDocument) Review(ctx context.Context, req ReviewReq) error {
 		err := d.repoDoc.UpdateByModel(ctx, &model.KBDocument{
 			Title:    req.Title,
 			Markdown: []byte(req.Content),
-			Status:   model.DocStatusPendingApply,
+			Status:   model.DocStatusExportSuccess,
 		}, repo.QueryWithEqual("id", req.QAID))
 		if err != nil {
 			return err

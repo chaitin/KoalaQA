@@ -2,8 +2,10 @@ package svc
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"os"
+	"time"
 
 	"github.com/chaitin/ModelKit/v2/consts"
 	"github.com/chaitin/ModelKit/v2/domain"
@@ -180,6 +182,40 @@ func (m *ModelKit) UpdateByID(ctx context.Context, id uint, req MKUpdateReq) err
 		}
 	}
 	return m.repo.UpdateByModel(ctx, &data, repo.QueryWithEqual("id", id))
+}
+
+type ActiveModelReq struct {
+	Active bool `json:"active"`
+}
+
+func (m *ModelKit) ActiveModel(ctx context.Context, id uint, req ActiveModelReq) error {
+	var entity model.LLM
+	err := m.repo.GetByID(ctx, &entity, id)
+	if err != nil {
+		return err
+	}
+
+	if entity.Type != model.LLMTypeAnalysis && entity.Type != model.LLMTypeAnalysisVL {
+		return errors.New("can not active model")
+	}
+
+	if entity.IsActive == req.Active {
+		return nil
+	}
+
+	entity.IsActive = req.Active
+
+	if entity.Type.RagSupported() {
+		err := m.rag.UpdateModel(ctx, &entity)
+		if err != nil {
+			return err
+		}
+	}
+
+	return m.repo.Update(ctx, map[string]any{
+		"is_active":  req.Active,
+		"updated_at": time.Now(),
+	}, repo.QueryWithEqual("id", id))
 }
 
 func (m *ModelKit) List(ctx context.Context) ([]model.LLM, error) {
