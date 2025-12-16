@@ -2663,6 +2663,13 @@ const docTemplate = `{
                 "summary": "update model",
                 "parameters": [
                     {
+                        "type": "integer",
+                        "description": "model_id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
                         "description": "request params",
                         "name": "req",
                         "in": "body",
@@ -2670,6 +2677,44 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/svc.MKUpdateReq"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "modelkit"
+                ],
+                "summary": "delete model",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "model_id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -6722,6 +6767,9 @@ const docTemplate = `{
                 "associate_id": {
                     "type": "integer"
                 },
+                "bot_unknown": {
+                    "type": "boolean"
+                },
                 "comment": {
                     "type": "integer"
                 },
@@ -6862,6 +6910,9 @@ const docTemplate = `{
                 "associate_id": {
                     "type": "integer"
                 },
+                "bot_unknown": {
+                    "type": "boolean"
+                },
                 "comment": {
                     "type": "integer"
                 },
@@ -6986,6 +7037,9 @@ const docTemplate = `{
             "properties": {
                 "associate_id": {
                     "type": "integer"
+                },
+                "bot_unknown": {
+                    "type": "boolean"
                 },
                 "comment": {
                     "type": "integer"

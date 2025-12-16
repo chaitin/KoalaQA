@@ -2,6 +2,7 @@ package svc
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"os"
 
@@ -180,6 +181,27 @@ func (m *ModelKit) UpdateByID(ctx context.Context, id uint, req MKUpdateReq) err
 		}
 	}
 	return m.repo.UpdateByModel(ctx, &data, repo.QueryWithEqual("id", id))
+}
+
+func (m *ModelKit) DeleteByID(ctx context.Context, id uint) error {
+	var entity model.LLM
+	err := m.repo.GetByID(ctx, &entity, id)
+	if err != nil {
+		return err
+	}
+
+	if entity.Type != model.LLMTypeAnalysis && entity.Type != model.LLMTypeAnalysisVL {
+		return errors.New("can not delete model")
+	}
+
+	if entity.Type.RagSupported() {
+		err := m.rag.DeleteModel(ctx, &entity)
+		if err != nil {
+			return err
+		}
+	}
+
+	return m.repo.DeleteByID(ctx, id)
 }
 
 func (m *ModelKit) List(ctx context.Context) ([]model.LLM, error) {

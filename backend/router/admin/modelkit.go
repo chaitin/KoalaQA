@@ -93,6 +93,7 @@ func (m *modelkit) createModel(ctx *context.Context) {
 // @Tags modelkit
 // @Accept json
 // @Produce json
+// @Param id path uint true "model_id"
 // @Param req body svc.MKUpdateReq true "request params"
 // @Success 200 {object} context.Response{data=nil}
 // @Router /admin/model/{id} [put]
@@ -115,7 +116,26 @@ func (m *modelkit) updateModel(ctx *context.Context) {
 	ctx.Success(nil)
 }
 
-// Delete Model
+// deleteModel
+// @Summary delete model
+// @Tags modelkit
+// @Produce json
+// @Param id path uint true "model_id"
+// @Success 200 {object} context.Response{data=nil}
+// @Router /admin/model/{id} [delete]
+func (m *modelkit) deleteModel(ctx *context.Context) {
+	id, err := ctx.ParamUint("id")
+	if err != nil {
+		ctx.BadRequest(errors.New("id is required"))
+		return
+	}
+	err = m.mk.DeleteByID(ctx, id)
+	if err != nil {
+		ctx.InternalError(err, "delete model failed")
+		return
+	}
+	ctx.Success(nil)
+}
 
 // List Model
 // @Summary list model
@@ -140,6 +160,7 @@ func (m *modelkit) Route(h server.Handler) {
 		g.POST("/check", m.checkModel)
 		g.POST("", m.createModel)
 		g.PUT(":id", m.updateModel)
+		g.DELETE(":id", m.deleteModel)
 		g.GET("list", m.listModel)
 	}
 }
