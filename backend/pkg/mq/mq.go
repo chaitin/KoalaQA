@@ -7,6 +7,8 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
+const MessageMaxDeliver = 3
+
 type contextKey string
 
 var keyMessageMetadata = contextKey("message_metadata")
