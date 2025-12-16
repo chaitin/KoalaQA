@@ -160,17 +160,18 @@ func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req Discus
 	}
 
 	disc := model.Discussion{
-		Title:    req.Title,
-		Summary:  req.Summary,
-		Content:  req.Content,
-		Tags:     req.Tags,
-		GroupIDs: req.GroupIDs,
-		UUID:     d.generateUUID(),
-		UserID:   user.UID,
-		Type:     req.Type,
-		ForumID:  req.ForumID,
-		Members:  model.Int64Array{int64(user.UID)},
-		Hot:      2000,
+		Title:      req.Title,
+		Summary:    req.Summary,
+		Content:    req.Content,
+		Tags:       req.Tags,
+		GroupIDs:   req.GroupIDs,
+		UUID:       d.generateUUID(),
+		UserID:     user.UID,
+		Type:       req.Type,
+		ForumID:    req.ForumID,
+		Members:    model.Int64Array{int64(user.UID)},
+		Hot:        2000,
+		BotUnknown: true,
 	}
 	err = d.in.DiscRepo.Create(ctx, &disc)
 	if err != nil {
@@ -265,6 +266,12 @@ func (d *Discussion) Update(ctx context.Context, user model.UserInfo, uuid strin
 		updateM["summary"] = req.Summary
 	}
 
+	if len(updateM) == 0 {
+		return nil
+	}
+
+	updateM["bot_unknown"] = true
+
 	if err := d.in.DiscRepo.Update(ctx, updateM, repo.QueryWithEqual("id", disc.ID)); err != nil {
 		return err
 	}
@@ -278,6 +285,12 @@ func (d *Discussion) Update(ctx context.Context, user model.UserInfo, uuid strin
 		RagID:    disc.RagID,
 	})
 	return nil
+}
+
+func (d *Discussion) SetBotUnknown(ctx context.Context, discID uint, botUnknown bool) error {
+	return d.in.DiscRepo.Update(ctx, map[string]any{
+		"bot_unknown": botUnknown,
+	}, repo.QueryWithEqual("id", discID))
 }
 
 func (d *Discussion) ossDir(uuid string) string {

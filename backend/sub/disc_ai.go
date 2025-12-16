@@ -125,6 +125,14 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 			logger.WithErr(err).Error("create comment failed")
 			return err
 		}
+
+		if answered {
+			err = d.disc.SetBotUnknown(ctx, data.DiscID, false)
+			if err != nil {
+				logger.WithErr(err).Warn("set bot known failed")
+			}
+		}
+
 		logger.With("comment_id", commentID).With("content", llmRes).Info("comment created")
 	}
 
@@ -184,16 +192,26 @@ func (d *Disc) handleUpdate(ctx context.Context, data topic.MsgDiscChange) error
 		}
 	}
 
-	existUnknown, err := d.stat.Exist(ctx, repo.QueryWithEqual("type", model.StatTypeBotUnknown),
-		repo.QueryWithEqual("key", data.DiscUUID),
-	)
+	disc, err := d.disc.GetByID(ctx, data.DiscID)
 	if err != nil {
-		logger.WithErr(err).Warn("bot unknown exist failed")
-		existUnknown = false
+		if errors.Is(err, database.ErrRecordNotFound) {
+			logger.Info("disc not found, return")
+			return nil
+		}
+
+		logger.WithErr(err).Error("get disc failed")
+		return err
 	}
 
-	if !answered && (existUnknown || bot.UnknownPrompt == "") {
+	if !answered && (disc.BotUnknown || bot.UnknownPrompt == "") {
 		logger.Info("ai can not answer, skip")
+		if !disc.BotUnknown {
+			err = d.disc.SetBotUnknown(ctx, disc.ID, true)
+			if err != nil {
+				logger.WithErr(err).Warn("set disc bot known failed")
+			}
+		}
+
 		return nil
 	}
 
@@ -221,13 +239,20 @@ func (d *Disc) handleUpdate(ctx context.Context, data topic.MsgDiscChange) error
 		if err != nil {
 			logger.WithErr(err).Warn("update bot comment failed")
 		}
-	} else if existUnknown {
+	} else if disc.BotUnknown {
 		_, err = d.disc.CreateComment(ctx, bot.UserID, data.DiscUUID, svc.CommentCreateReq{
 			Content: llmRes,
 			Bot:     true,
 		})
 		if err != nil {
 			logger.WithErr(err).Warn("create bot comment failed")
+		}
+	}
+
+	if disc.BotUnknown {
+		err = d.disc.SetBotUnknown(ctx, disc.ID, false)
+		if err != nil {
+			logger.WithErr(err).Warn("set bot unknown failed")
 		}
 	}
 
