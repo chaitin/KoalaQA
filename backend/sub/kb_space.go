@@ -271,27 +271,6 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 		return nil
 	}
 
-	if len(exist) > 0 {
-		var docPtr *uint
-		if msg.DocID > 0 {
-			docPtr = &msg.DocID
-		}
-		err = k.repoDoc.Update(ctx, map[string]any{
-			"status":     model.DocStatusPendingExport,
-			"message":    "",
-			"updated_at": time.Now(),
-		},
-			repo.QueryWithEqual("kb_id", msg.KBID),
-			repo.QueryWithEqual("parent_id", msg.FolderID),
-			repo.QueryWithEqual("doc_type", model.DocTypeSpace),
-			repo.QueryWithEqual("id", docPtr),
-		)
-		if err != nil {
-			logger.WithErr(err).Warn("update space folder doc failed")
-			return err
-		}
-	}
-
 	for _, doc := range list.Docs {
 		dbDoc, ok := exist[doc.ID]
 		// 当 doc_id 大于 0 的时候，只更新该文档
@@ -302,6 +281,36 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 		if msg.IncrUpdate && doc.UpdatedAt > 0 && doc.UpdatedAt < dbDoc.updatedAt {
 			logger.With("doc_id", doc.ID).With("anydoc_updated", doc.UpdatedAt).With("dbdoc_updated", dbDoc.updatedAt).Info("incr update ignore doc")
 			continue
+		}
+
+		if dbDoc.id > 0 {
+			err = k.repoDoc.Update(ctx, map[string]any{
+				"status":     model.DocStatusPendingExport,
+				"message":    "",
+				"updated_at": time.Now(),
+			}, repo.QueryWithEqual("id", dbDoc.id))
+			if err != nil {
+				logger.WithErr(err).With("db_doc_id", dbDoc.id).Warn("update doc status failed, skip")
+				return err
+			}
+		} else {
+			newDoc := model.KBDocument{
+				KBID:     msg.KBID,
+				Platform: folder.Platform,
+				DocType:  folder.DocType,
+				DocID:    doc.ID,
+				Title:    doc.Title,
+				Desc:     doc.Summary,
+				Status:   model.DocStatusPendingExport,
+				ParentID: msg.FolderID,
+			}
+			err = k.repoDoc.Create(ctx, &newDoc)
+			if err != nil {
+				logger.WithErr(err).With("anydoc_doc_id", doc.ID).Warn("create doc failed")
+				return err
+			}
+
+			dbDoc.id = newDoc.ID
 		}
 
 		_, err = k.doc.SpaceExport(ctx, folder.Platform, svc.SpaceExportReq{
