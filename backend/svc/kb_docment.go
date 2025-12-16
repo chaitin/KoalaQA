@@ -813,7 +813,8 @@ func (d *KBDocument) ListSpaceFolder(ctx context.Context, kbID uint, parentID ui
 }
 
 type UpdateSpaceFolderReq struct {
-	DocID uint `json:"doc_id"`
+	DocID      uint `json:"doc_id"`
+	IncrUpdate bool `json:"-"`
 }
 
 func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID uint, req UpdateSpaceFolderReq) error {
@@ -845,10 +846,11 @@ func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID 
 	}
 
 	err = d.pub.Publish(ctx, topic.TopicKBSpace, topic.MsgKBSpace{
-		OP:       topic.OPUpdate,
-		KBID:     kbID,
-		FolderID: folderID,
-		DocID:    req.DocID,
+		OP:         topic.OPUpdate,
+		KBID:       kbID,
+		FolderID:   folderID,
+		DocID:      req.DocID,
+		IncrUpdate: req.IncrUpdate,
 	})
 	if err != nil {
 		d.logger.WithContext(ctx).WithErr(err).With("kb_id", kbID).With("folder_id", folderID).Warn("pub update msg failed")

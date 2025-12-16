@@ -155,6 +155,7 @@ func (d *Discussion) List(ctx context.Context, res any, queryFuncs ...QueryOptFu
 			"discussions.type",
 			"discussions.forum_id",
 			"discussions.associate_id",
+			"LEFT(discussions.content, 100) AS content",
 			"users.name as user_name",
 			"users.avatar as user_avatar",
 		}).

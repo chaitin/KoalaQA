@@ -111,11 +111,11 @@ func (k *kbSpace) Handle(ctx context.Context, msg mq.Message) error {
 
 	switch docMsg.OP {
 	case topic.OPInsert:
-		return k.handleInsert(ctx, logger, docMsg.KBID, docMsg.FolderID)
+		return k.handleInsert(ctx, logger, docMsg)
 	case topic.OPUpdate:
-		return k.handleUpdate(ctx, logger, docMsg.KBID, docMsg.FolderID, docMsg.DocID)
+		return k.handleUpdate(ctx, logger, docMsg)
 	case topic.OPDelete:
-		return k.handleDelete(ctx, logger, docMsg.KBID, docMsg.FolderID)
+		return k.handleDelete(ctx, logger, docMsg)
 	}
 
 	logger.Warn("invalid msg op")
@@ -123,14 +123,14 @@ func (k *kbSpace) Handle(ctx context.Context, msg mq.Message) error {
 	return nil
 }
 
-func (k *kbSpace) handleInsert(ctx context.Context, logger *glog.Logger, kbID uint, folderID uint) error {
-	if !k.run(folderID) {
+func (k *kbSpace) handleInsert(ctx context.Context, logger *glog.Logger, msg topic.MsgKBSpace) error {
+	if !k.run(msg.FolderID) {
 		logger.Info("task running, skip")
 		return nil
 	}
-	defer k.done(folderID)
+	defer k.done(msg.FolderID)
 
-	folder, err := k.getFolder(ctx, kbID, folderID)
+	folder, err := k.getFolder(ctx, msg.KBID, msg.FolderID)
 	if err != nil {
 		logger.WithErr(err).Warn("get folder failed")
 		return nil
@@ -154,14 +154,14 @@ func (k *kbSpace) handleInsert(ctx context.Context, logger *glog.Logger, kbID ui
 
 	for i, doc := range list.Docs {
 		pendingDoc[i] = model.KBDocument{
-			KBID:     kbID,
+			KBID:     msg.KBID,
 			Platform: folder.Platform,
 			DocType:  folder.DocType,
 			DocID:    doc.ID,
 			Title:    doc.Title,
 			Desc:     doc.Summary,
 			Status:   model.DocStatusPendingExport,
-			ParentID: folderID,
+			ParentID: msg.FolderID,
 		}
 	}
 
@@ -177,9 +177,9 @@ func (k *kbSpace) handleInsert(ctx context.Context, logger *glog.Logger, kbID ui
 				DBDoc: svc.BaseDBDoc{
 					ID:       pendingDoc[i].ID,
 					Type:     folder.DocType,
-					ParentID: folderID,
+					ParentID: msg.FolderID,
 				},
-				KBID:  kbID,
+				KBID:  msg.KBID,
 				UUID:  list.UUID,
 				DocID: doc.ID,
 				Title: doc.Title,
@@ -204,35 +204,43 @@ func (k *kbSpace) handleInsert(ctx context.Context, logger *glog.Logger, kbID ui
 	return nil
 }
 
-func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, kbID uint, folderID uint, docID uint) error {
-	if docID == 0 {
-		if !k.run(folderID) {
+type docInfo struct {
+	id        uint
+	updatedAt int64
+}
+
+func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg topic.MsgKBSpace) error {
+	if msg.DocID == 0 {
+		if !k.run(msg.FolderID) {
 			logger.Info("task running, skip")
 			return nil
 		}
-		defer k.done(folderID)
+		defer k.done(msg.FolderID)
 	}
 
-	folder, err := k.getFolder(ctx, kbID, folderID)
+	folder, err := k.getFolder(ctx, msg.KBID, msg.FolderID)
 	if err != nil {
 		logger.WithErr(err).Warn("get folder failed")
 		return nil
 	}
 
-	exist := make(map[string]uint)
+	exist := make(map[string]docInfo)
 
-	if docID == 0 {
-		listFolderRes, err := k.doc.ListSpaceFolderDoc(ctx, kbID, folderID, svc.ListSpaceFolderDocReq{})
+	if msg.DocID == 0 {
+		listFolderRes, err := k.doc.ListSpaceFolderDoc(ctx, msg.KBID, msg.FolderID, svc.ListSpaceFolderDocReq{})
 		if err != nil {
 			logger.WithErr(err).Warn("list folder doc failed")
 			return err
 		}
 
 		for _, item := range listFolderRes.Items {
-			exist[item.DocID] = item.ID
+			exist[item.DocID] = docInfo{
+				id:        item.ID,
+				updatedAt: int64(item.UpdatedAt),
+			}
 		}
 	} else {
-		doc, err := k.doc.GetByID(ctx, kbID, docID)
+		doc, err := k.doc.GetByID(ctx, msg.KBID, msg.DocID)
 		if err != nil {
 			if errors.Is(err, database.ErrRecordNotFound) {
 				logger.Info("doc not found, skip update")
@@ -243,12 +251,15 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, kbID ui
 			return err
 		}
 
-		if doc.ParentID != folderID {
+		if doc.ParentID != msg.FolderID {
 			logger.Info("doc parent is not this folder, skip update")
 			return nil
 		}
 
-		exist[doc.DocID] = doc.ID
+		exist[doc.DocID] = docInfo{
+			id:        doc.ID,
+			updatedAt: int64(doc.UpdatedAt),
+		}
 	}
 
 	list, err := k.anydoc.List(ctx, folder.Platform,
@@ -262,16 +273,16 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, kbID ui
 
 	if len(exist) > 0 {
 		var docPtr *uint
-		if docID > 0 {
-			docPtr = &docID
+		if msg.DocID > 0 {
+			docPtr = &msg.DocID
 		}
 		err = k.repoDoc.Update(ctx, map[string]any{
 			"status":     model.DocStatusPendingExport,
 			"message":    "",
 			"updated_at": time.Now(),
 		},
-			repo.QueryWithEqual("kb_id", kbID),
-			repo.QueryWithEqual("parent_id", folderID),
+			repo.QueryWithEqual("kb_id", msg.KBID),
+			repo.QueryWithEqual("parent_id", msg.FolderID),
 			repo.QueryWithEqual("doc_type", model.DocTypeSpace),
 			repo.QueryWithEqual("id", docPtr),
 		)
@@ -282,22 +293,25 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, kbID ui
 	}
 
 	for _, doc := range list.Docs {
+		dbDoc, ok := exist[doc.ID]
 		// 当 doc_id 大于 0 的时候，只更新该文档
-		if docID > 0 {
-			_, ok := exist[doc.ID]
-			if !ok {
-				continue
-			}
+		if msg.DocID > 0 && !ok {
+			continue
+		}
+
+		if msg.IncrUpdate && doc.UpdatedAt > 0 && doc.UpdatedAt < dbDoc.updatedAt {
+			logger.With("doc_id", doc.ID).With("anydoc_updated", doc.UpdatedAt).With("dbdoc_updated", dbDoc.updatedAt).Info("incr update ignore doc")
+			continue
 		}
 
 		_, err = k.doc.SpaceExport(ctx, folder.Platform, svc.SpaceExportReq{
 			BaseExportReq: svc.BaseExportReq{
 				DBDoc: svc.BaseDBDoc{
-					ID:       exist[doc.ID],
+					ID:       dbDoc.id,
 					Type:     folder.DocType,
-					ParentID: folderID,
+					ParentID: msg.FolderID,
 				},
-				KBID:  kbID,
+				KBID:  msg.KBID,
 				UUID:  list.UUID,
 				DocID: doc.ID,
 				Title: doc.Title,
@@ -311,16 +325,16 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, kbID ui
 
 			err = k.repoDoc.CreateOnIDConflict(ctx, &model.KBDocument{
 				Base: model.Base{
-					ID: exist[doc.ID],
+					ID: dbDoc.id,
 				},
-				KBID:     kbID,
+				KBID:     msg.KBID,
 				Platform: folder.Platform,
 				DocType:  folder.DocType,
 				DocID:    doc.ID,
 				Title:    doc.Title,
 				Desc:     doc.Summary,
 				Status:   model.DocStatusExportFailed,
-				ParentID: folderID,
+				ParentID: msg.FolderID,
 			}, false)
 			if err != nil {
 				logger.WithErr(err).With("export_doc_id", doc.ID).Warn("update doc staus failed")
@@ -330,8 +344,8 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, kbID ui
 		delete(exist, doc.ID)
 	}
 
-	for _, id := range exist {
-		err = k.doc.Delete(ctx, kbID, id)
+	for _, doc := range exist {
+		err = k.doc.Delete(ctx, msg.KBID, doc.id)
 		if err != nil {
 			logger.WithErr(err).Warn("delete space doc failed")
 		}
@@ -340,15 +354,15 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, kbID ui
 	return nil
 }
 
-func (k *kbSpace) handleDelete(ctx context.Context, logger *glog.Logger, kbID uint, folderID uint) error {
-	folder, err := k.doc.ListSpaceFolderDoc(ctx, kbID, folderID, svc.ListSpaceFolderDocReq{})
+func (k *kbSpace) handleDelete(ctx context.Context, logger *glog.Logger, msg topic.MsgKBSpace) error {
+	folder, err := k.doc.ListSpaceFolderDoc(ctx, msg.KBID, msg.FolderID, svc.ListSpaceFolderDocReq{})
 	if err != nil {
 		logger.WithErr(err).Warn("list space folder failed")
 		return nil
 	}
 
 	for _, item := range folder.Items {
-		err = k.doc.Delete(ctx, kbID, item.ID)
+		err = k.doc.Delete(ctx, msg.KBID, item.ID)
 		if err != nil {
 			logger.WithErr(err).With("item_id", item.ID).Warn("publish rag delete failed")
 		}

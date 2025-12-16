@@ -43,7 +43,9 @@ func (s *spaceUpdate) Run() {
 		}
 
 		for _, folder := range folderRes.Items {
-			err = s.doc.UpdateSpaceFolder(ctx, space.KBID, folder.ID, svc.UpdateSpaceFolderReq{})
+			err = s.doc.UpdateSpaceFolder(ctx, space.KBID, folder.ID, svc.UpdateSpaceFolderReq{
+				IncrUpdate: true,
+			})
 			if err != nil {
 				logger.WithErr(err).Warn("update space folder failed")
 				continue
