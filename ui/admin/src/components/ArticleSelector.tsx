@@ -55,6 +55,8 @@ const ArticleSelector: React.FC<ArticleSelectorProps> = ({
   const [open, setOpen] = useState(false);
   const [optionCache, setOptionCache] = useState<Record<number, ArticleOption>>({});
   const isFetchingRef = useRef(false);
+  // 用 ref 保存“当前筛选关键词”，避免 setState 异步导致打开下拉时仍用到旧关键词
+  const searchTermRef = useRef('');
 
   const resetData = useCallback(() => {
     setOptions([]);
@@ -194,7 +196,11 @@ const ArticleSelector: React.FC<ArticleSelectorProps> = ({
       .filter((option): option is ArticleOption => Boolean(option));
   }, [optionCache, value]);
 
-  const handleChange = (event: any, newValue: ArticleOption[] | null) => {
+  const handleChange = (
+    _event: any,
+    newValue: ArticleOption[] | null,
+    reason?: string
+  ) => {
     const selectedIds = (newValue || []).map(option => option.id);
 
     // 限制最多选择数量
@@ -214,6 +220,18 @@ const ArticleSelector: React.FC<ArticleSelectorProps> = ({
     }
 
     onChange(selectedIds);
+
+    // 选择后清空输入框文本（避免残留上一次搜索关键词）
+    if (reason === 'selectOption') {
+      setInputValue('');
+      // 输入为空时，也应恢复为“未筛选”的默认列表，避免下拉仍停留在旧关键词筛选结果
+      searchTermRef.current = '';
+      setSearchTerm('');
+      resetData();
+      if (open) {
+        fetchArticles(1, '', false);
+      }
+    }
   };
 
   const handleOpen = () => {
@@ -222,7 +240,7 @@ const ArticleSelector: React.FC<ArticleSelectorProps> = ({
     }
     setOpen(true);
     if (page === 0) {
-      const keyword = searchTerm.trim();
+      const keyword = searchTermRef.current.trim();
       fetchArticles(1, keyword, false);
     }
   };
@@ -234,6 +252,7 @@ const ArticleSelector: React.FC<ArticleSelectorProps> = ({
   const handleSearch = useCallback(
     (keyword: string) => {
       const trimmed = keyword.trim();
+      searchTermRef.current = trimmed;
       setSearchTerm(trimmed);
       resetData();
       if (!open) {
@@ -245,7 +264,19 @@ const ArticleSelector: React.FC<ArticleSelectorProps> = ({
   );
 
   const handleInputChange = (_event: any, newInputValue: string, reason: string) => {
-    if (reason === 'input' || reason === 'clear') {
+    // 用户清空输入：恢复为“未筛选”的默认列表
+    if (reason === 'clear' || (reason === 'input' && newInputValue.trim() === '')) {
+      setInputValue(newInputValue);
+      searchTermRef.current = '';
+      setSearchTerm('');
+      resetData();
+      if (open) {
+        fetchArticles(1, '', false);
+      }
+      return;
+    }
+
+    if (reason === 'input') {
       setInputValue(newInputValue);
       return;
     }
@@ -271,7 +302,7 @@ const ArticleSelector: React.FC<ArticleSelectorProps> = ({
     }
     const target = event.currentTarget as HTMLUListElement;
     if (target.scrollHeight - target.scrollTop - target.clientHeight <= 4) {
-      fetchArticles(page + 1, searchTerm, true);
+      fetchArticles(page + 1, searchTermRef.current, true);
     }
   };
 
@@ -281,6 +312,7 @@ const ArticleSelector: React.FC<ArticleSelectorProps> = ({
         open={open}
         multiple
         size="small"
+        disabled={disabled || !forumId || forumId <= 0}
         value={selectedOptions}
         onChange={handleChange}
         inputValue={inputValue}

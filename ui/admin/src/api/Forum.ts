@@ -163,6 +163,7 @@ export const getForumForumIdTags = (
   >({
     path: `/forum/${forumId}/tags`,
     method: "GET",
+    query: query,
     format: "json",
     ...params,
   });

@@ -5,7 +5,7 @@ import {
 } from '@/api';
 import { useExportDoc } from '@/hooks/useExportDoc';
 import { Modal } from '@ctzhian/ui';
-import { Stack, TextField } from '@mui/material';
+import { TextField } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import { StepText } from './const';
 import Doc2Ai from './Doc2Ai';
@@ -56,10 +56,12 @@ const SitemapImport = ({ open, refresh, onCancel }: ImportDocProps) => {
     const newQueue: (() => Promise<any>)[] = [];
     try {
       const res = await postAdminKbDocumentSitemapList({ url: inputUrl });
-      setItems(res.docs?.map(item => ({
-        uuid: res.uuid,
-        docs: [item],
-      })) || []);
+      setItems(
+        res.docs?.map(item => ({
+          uuid: res.uuid,
+          docs: [item],
+        })) || []
+      );
       setStep('import');
       setRequestQueue(newQueue);
     } finally {
@@ -79,7 +81,6 @@ const SitemapImport = ({ open, refresh, onCancel }: ImportDocProps) => {
       handleImport(selectIds, postAdminKbDocumentSitemapExport, items);
     }
   };
-
   const processUrl = useCallback(async () => {
     if (isCancelled) {
       setItems([]);
@@ -130,29 +131,16 @@ const SitemapImport = ({ open, refresh, onCancel }: ImportDocProps) => {
       okButtonProps={{ loading }}
     >
       {step === 'upload' && (
-        <>
-          <Stack
-            direction={'row'}
-            alignItems={'center'}
-            justifyContent={'space-between'}
-            sx={{
-              fontSize: 14,
-              lineHeight: '32px',
-              mb: 1,
-            }}
-          >
-            Sitemap 地址
-          </Stack>
-          <TextField
-            fullWidth
-            multiline={false}
-            rows={1}
-            value={url}
-            placeholder={'Sitemap 地址'}
-            autoFocus
-            onChange={e => setUrl(e.target.value)}
-          />
-        </>
+        <TextField
+          label="Sitemap 地址"
+          fullWidth
+          multiline={false}
+          rows={1}
+          value={url}
+          placeholder={'Sitemap 地址'}
+          autoFocus
+          onChange={e => setUrl(e.target.value)}
+        />
       )}
       {step !== 'upload' && (
         <Doc2Ai

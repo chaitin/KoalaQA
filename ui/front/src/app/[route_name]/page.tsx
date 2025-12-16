@@ -35,18 +35,19 @@ async function fetchForumData(route_name: string, searchParams: any) {
     const topics = tps ? tps.split(',').map(Number) : []
     const tagIds = tags ? tags.split(',').map(Number) : []
 
-    // type=all 表示“全部”，查询时需要映射为不传 type
-    // 未传 type 时默认展示 qa（问题）
-    const normalizedType = type === 'all' ? undefined : (type || 'qa')
+    // type=all / 未传 type 都表示“全部”，查询时映射为不传 type
+    const normalizedType = !type || type === 'all' ? undefined : type
 
     const discussionParams: any = {
       page: parseInt(page, 10),
       size: 10,
       keyword: search,
-      type: normalizedType as any,
       forum_id: forumId,
       group_ids: topics,
       tag_ids: tagIds,
+    }
+    if (normalizedType) {
+      discussionParams.type = normalizedType as any
     }
 
     // 设置 filter，默认使用 'publish'（最新发布）

@@ -108,7 +108,7 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
         scrollParent: () => document.getElementById('main-content'),
       },
       placeholder,
-      content: value || '',
+      content: value,
       onTocUpdate: onTocUpdate
       ? (toc: any) => {
           try {

@@ -3,6 +3,7 @@ import React from 'react'
 import { SxProps } from '@mui/material/styles'
 import { Box } from '@mui/material'
 import { extractTextFromMarkdown } from '@/utils/stringUtils'
+import { isImageContent } from './SimilarContentItem'
 
 export interface MarkDownProps {
   title?: string
@@ -13,7 +14,7 @@ export interface MarkDownProps {
 
 const MarkDown: React.FC<MarkDownProps> = (props) => {
   const { content = '', sx } = props
-
+  if (isImageContent(content || '')) return '【图片】'
   // 提取纯文本用于单行显示
   const plainText = extractTextFromMarkdown(content)
   if (!plainText) return null

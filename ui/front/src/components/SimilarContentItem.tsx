@@ -9,7 +9,7 @@ interface SimilarContentItemProps {
 }
 
 // 检测内容是否主要是图片
-const isImageContent = (content: string): boolean => {
+export const isImageContent = (content: string): boolean => {
   if (!content) return false
   
   // 先检查是否包含图片标记

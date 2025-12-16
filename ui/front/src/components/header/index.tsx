@@ -263,7 +263,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
           display: { xs: 'none', sm: 'block' },
         }}
       >
-        <Toolbar sx={{ py: 0, color: 'common.white' }}>
+        <Toolbar sx={{ py: '0!important', px: '20px!important', color: 'common.white' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1 }}>
             {brandConfig?.logo && brandConfig?.text ? (
               <Stack

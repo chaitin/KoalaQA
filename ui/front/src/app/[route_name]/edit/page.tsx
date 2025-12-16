@@ -4,14 +4,14 @@ import { getDiscussionDiscId, ModelDiscussionType } from '@/api'
 import { postDiscussion, putDiscussionDiscId } from '@/api/Discussion'
 import { ModelDiscussionDetail, ModelGroupItemInfo, SvcDiscussionCreateReq, SvcDiscussionUpdateReq } from '@/api/types'
 import { Card } from '@/components'
-import EditorContent from '@/components/EditorContent'
 import EditorWrap, { EditorWrapRef } from '@/components/editor'
-import Toc from '@/components/Toc'
-import { useGroupData } from '@/contexts/GroupDataContext'
-import { useForumStore } from '@/store'
-import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
-import { useSystemDiscussion } from '@/contexts/SystemDiscussionContext'
 import Modal from '@/components/modal'
+import { useGroupData } from '@/contexts/GroupDataContext'
+import { useSystemDiscussion } from '@/contexts/SystemDiscussionContext'
+import { useListPageCache } from '@/hooks/useListPageCache'
+import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
+import { useForumStore } from '@/store'
+import { zodResolver } from '@hookform/resolvers/zod'
 import {
   Box,
   Button,
@@ -24,13 +24,12 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { zodResolver } from '@hookform/resolvers/zod'
 import { useParams, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import z from 'zod'
 import DetailSidebarWrapper from '../[id]/ui/DetailSidebarWrapper'
-import { useListPageCache } from '@/hooks/useListPageCache'
+import { useRequest } from 'ahooks'
 
 // 确保每个分类下至少选择一个子选项（无分类数据时跳过）
 function validateGroupSelection(
@@ -78,7 +77,6 @@ function sanitizeSummaryPlainText(input: string) {
 }
 
 export default function EditPage() {
-  const [discussion, setDiscussion] = useState<ModelDiscussionDetail | null>(null)
   const params = useSearchParams()
   const routeParams = useParams()
   const routeName = routeParams?.route_name as string
@@ -95,6 +93,22 @@ export default function EditPage() {
   const [summaryModalOpen, setSummaryModalOpen] = useState(false)
   const [summaryDraft, setSummaryDraft] = useState('')
 
+  const {
+    run,
+    loading,
+    data: discussion,
+  } = useRequest(() => getDiscussionDiscId({ discId: queryId! }), {
+    manual: true,
+    onSuccess: (result) => {
+      reset({
+        title: result.title || '',
+        summary: result.summary || '',
+        content: result.content || '',
+        group_ids: result.group_ids || [],
+        type: (result.type as ModelDiscussionType) || ModelDiscussionType.DiscussionTypeBlog,
+      })
+    },
+  })
   const schema = useMemo(
     () =>
       z.object({
@@ -141,7 +155,6 @@ export default function EditPage() {
   const contentValue = watch('content')
   const { clearCache } = useListPageCache()
   const isBlogPost = (watch('type') || (urlType as any)) === ModelDiscussionType.DiscussionTypeBlog
-
   // 根据 route_name 获取对应的 forumInfo
   const forumInfo = useMemo(() => {
     if (!routeName || !forums || forums.length === 0) return null
@@ -173,23 +186,10 @@ export default function EditPage() {
   }, [defaultGroupIds, queryId, getValues, setValue])
 
   useEffect(() => {
-    async function run() {
-      if (!queryId) return
-      const detail = await getDiscussionDiscId({ discId: queryId })
-      if (detail) {
-        setDiscussion(detail as ModelDiscussionDetail)
-        editorRef.current?.setContent(detail.content || '')
-        reset({
-          title: detail.title || '',
-          summary: detail.summary || '',
-          content: detail.content || '',
-          group_ids: detail.group_ids || [],
-          type: (detail.type as ModelDiscussionType) || ModelDiscussionType.DiscussionTypeBlog,
-        })
-      }
-    }
+    if (!queryId) return
     run()
-  }, [queryId, reset])
+    // editorRef.current?.setContent(`<span data-tooltip='tip'>text2dsds</span>`)
+  }, [queryId, run])
 
   // 从 URL 参数读取 type 和 title（仅在新建时）
   useEffect(() => {
@@ -261,7 +261,8 @@ export default function EditPage() {
       }
       clearCache()
       router.push(`/${routeName}/${uid}`)
-    } finally {}
+    } finally {
+    }
   })
 
   return (
@@ -321,8 +322,6 @@ export default function EditPage() {
               },
             }}
           />
-
-        
 
           {/* 分类填写（页面内） */}
           <Controller
@@ -410,7 +409,6 @@ export default function EditPage() {
 
           <Box
             sx={{
-              minHeight: '600px',
               border: '1px solid #D9DEE2',
               p: 2,
               borderRadius: 1,
@@ -418,24 +416,26 @@ export default function EditPage() {
                 display: 'none',
               },
               '& .tiptap': {
-                minHeight: '560px',
+                minHeight: 'calc(100vh - 424px)',
               },
               '& .editor-toolbar': {
                 borderBottom: '1px solid #D9DEE2',
               },
             }}
           >
-            <EditorWrap
-              ref={editorRef}
-              aiWriting
-              mode='advanced'
-              value={contentValue}
-              onChange={(val) => {
-                setValue('content', val || '', { shouldDirty: true })
-              }}
-              onTocUpdate={true}
-              key={`editor-${queryId || 'new'}`}
-            />
+            {!loading && (
+              <EditorWrap
+                ref={editorRef}
+                aiWriting
+                mode='advanced'
+                value={contentValue}
+                onChange={(val) => {
+                  setValue('content', val || '', { shouldDirty: true })
+                }}
+                onTocUpdate={true}
+                key={`editor-${queryId || 'new'}`}
+              />
+            )}
           </Box>
           <Stack direction={'row'} alignItems={'center'} justifyContent={'flex-end'} gap={2}>
             <Button
