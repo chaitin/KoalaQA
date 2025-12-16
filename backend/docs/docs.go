@@ -2699,16 +2699,30 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "delete": {
+            }
+        },
+        "/admin/model/{id}/active": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "modelkit"
                 ],
-                "summary": "delete model",
+                "summary": "active model",
                 "parameters": [
+                    {
+                        "description": "req params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.ActiveModelReq"
+                        }
+                    },
                     {
                         "type": "integer",
                         "description": "model_id",
@@ -8293,6 +8307,14 @@ const docTemplate = `{
             "properties": {
                 "version": {
                     "type": "string"
+                }
+            }
+        },
+        "svc.ActiveModelReq": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean"
                 }
             }
         },

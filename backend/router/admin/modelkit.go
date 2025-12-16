@@ -116,22 +116,32 @@ func (m *modelkit) updateModel(ctx *context.Context) {
 	ctx.Success(nil)
 }
 
-// deleteModel
-// @Summary delete model
+// activeModel
+// @Summary active model
 // @Tags modelkit
+// @Accept json
+// @Param req body svc.ActiveModelReq true "req params"
 // @Produce json
 // @Param id path uint true "model_id"
 // @Success 200 {object} context.Response{data=nil}
-// @Router /admin/model/{id} [delete]
-func (m *modelkit) deleteModel(ctx *context.Context) {
+// @Router /admin/model/{id}/active [put]
+func (m *modelkit) activeModel(ctx *context.Context) {
 	id, err := ctx.ParamUint("id")
 	if err != nil {
 		ctx.BadRequest(errors.New("id is required"))
 		return
 	}
-	err = m.mk.DeleteByID(ctx, id)
+
+	var req svc.ActiveModelReq
+	err = ctx.ShouldBindJSON(&req)
 	if err != nil {
-		ctx.InternalError(err, "delete model failed")
+		ctx.BadRequest(err)
+		return
+	}
+
+	err = m.mk.ActiveModel(ctx, id, req)
+	if err != nil {
+		ctx.InternalError(err, "active model failed")
 		return
 	}
 	ctx.Success(nil)
@@ -160,7 +170,7 @@ func (m *modelkit) Route(h server.Handler) {
 		g.POST("/check", m.checkModel)
 		g.POST("", m.createModel)
 		g.PUT(":id", m.updateModel)
-		g.DELETE(":id", m.deleteModel)
+		g.DELETE(":id/active", m.activeModel)
 		g.GET("list", m.listModel)
 	}
 }
