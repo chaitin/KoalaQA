@@ -359,9 +359,11 @@ func (s *kbSpace) DeleteSpaceFolder(ctx *context.Context) {
 // UpdateSpaceFolder
 // @Summary update kb space folder
 // @Tags space
+// @Accept json
 // @Param kb_id path uint true "kb_id"
 // @Param space_id path uint true "space_id"
 // @Param folder_id path uint true "folder_id"
+// @Param req body svc.UpdateSpaceFolderReq true "req params"
 // @Produce json
 // @Success 200 {object} context.Response
 // @Router /admin/kb/{kb_id}/space/{space_id}/folder/{folder_id} [put]
@@ -378,7 +380,14 @@ func (s *kbSpace) UpdateSpaceFolder(ctx *context.Context) {
 		return
 	}
 
-	err = s.svcDoc.UpdateSpaceFolder(ctx, kbID, folderID)
+	var req svc.UpdateSpaceFolderReq
+	err = ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	err = s.svcDoc.UpdateSpaceFolder(ctx, kbID, folderID, req)
 	if err != nil {
 		ctx.InternalError(err, "update space fplder failed")
 		return

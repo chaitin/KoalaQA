@@ -173,6 +173,8 @@ func (c *CTRag) AddModel(ctx context.Context, model *model.LLM) (string, error) 
 		Config: raglite.AIModelConfig{
 			APIBase:         model.BaseURL,
 			APIKey:          model.APIKey,
+			APIHeader:       model.APIHeader,
+			APIVersion:      model.APIVersion,
 			MaxTokens:       raglite.Ptr(8192),
 			ExtraParameters: model.Parameters.Map(),
 		},
@@ -193,9 +195,12 @@ func (c *CTRag) UpdateModel(ctx context.Context, model *model.LLM) error {
 		Config: &raglite.AIModelConfig{
 			APIBase:         model.BaseURL,
 			APIKey:          model.APIKey,
+			APIHeader:       model.APIHeader,
+			APIVersion:      model.APIVersion,
 			MaxTokens:       raglite.Ptr(8192),
 			ExtraParameters: model.Parameters.Map(),
 		},
+		IsActive: raglite.Ptr(model.IsActive),
 	})
 	if err != nil {
 		return err

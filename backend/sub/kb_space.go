@@ -9,6 +9,7 @@ import (
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/anydoc"
 	"github.com/chaitin/koalaqa/pkg/cache"
+	"github.com/chaitin/koalaqa/pkg/database"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/topic"
@@ -112,7 +113,7 @@ func (k *kbSpace) Handle(ctx context.Context, msg mq.Message) error {
 	case topic.OPInsert:
 		return k.handleInsert(ctx, logger, docMsg.KBID, docMsg.FolderID)
 	case topic.OPUpdate:
-		return k.handleUpdate(ctx, logger, docMsg.KBID, docMsg.FolderID)
+		return k.handleUpdate(ctx, logger, docMsg.KBID, docMsg.FolderID, docMsg.DocID)
 	case topic.OPDelete:
 		return k.handleDelete(ctx, logger, docMsg.KBID, docMsg.FolderID)
 	}
@@ -203,12 +204,14 @@ func (k *kbSpace) handleInsert(ctx context.Context, logger *glog.Logger, kbID ui
 	return nil
 }
 
-func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, kbID uint, folderID uint) error {
-	if !k.run(folderID) {
-		logger.Info("task running, skip")
-		return nil
+func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, kbID uint, folderID uint, docID uint) error {
+	if docID == 0 {
+		if !k.run(folderID) {
+			logger.Info("task running, skip")
+			return nil
+		}
+		defer k.done(folderID)
 	}
-	defer k.done(folderID)
 
 	folder, err := k.getFolder(ctx, kbID, folderID)
 	if err != nil {
@@ -216,16 +219,36 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, kbID ui
 		return nil
 	}
 
-	listFolderRes, err := k.doc.ListSpaceFolderDoc(ctx, kbID, folderID, svc.ListSpaceFolderDocReq{})
-	if err != nil {
-		logger.WithErr(err).Warn("list folder doc failed")
-		return err
-	}
-
 	exist := make(map[string]uint)
 
-	for _, item := range listFolderRes.Items {
-		exist[item.DocID] = item.ID
+	if docID == 0 {
+		listFolderRes, err := k.doc.ListSpaceFolderDoc(ctx, kbID, folderID, svc.ListSpaceFolderDocReq{})
+		if err != nil {
+			logger.WithErr(err).Warn("list folder doc failed")
+			return err
+		}
+
+		for _, item := range listFolderRes.Items {
+			exist[item.DocID] = item.ID
+		}
+	} else {
+		doc, err := k.doc.GetByID(ctx, kbID, docID)
+		if err != nil {
+			if errors.Is(err, database.ErrRecordNotFound) {
+				logger.Info("doc not found, skip update")
+				return nil
+			}
+
+			logger.WithErr(err).Warn("get doc failed")
+			return err
+		}
+
+		if doc.ParentID != folderID {
+			logger.Info("doc parent is not this folder, skip update")
+			return nil
+		}
+
+		exist[doc.DocID] = doc.ID
 	}
 
 	list, err := k.anydoc.List(ctx, folder.Platform,
@@ -238,6 +261,10 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, kbID ui
 	}
 
 	if len(exist) > 0 {
+		var docPtr *uint
+		if docID > 0 {
+			docPtr = &docID
+		}
 		err = k.repoDoc.Update(ctx, map[string]any{
 			"status":     model.DocStatusPendingExport,
 			"message":    "",
@@ -246,6 +273,7 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, kbID ui
 			repo.QueryWithEqual("kb_id", kbID),
 			repo.QueryWithEqual("parent_id", folderID),
 			repo.QueryWithEqual("doc_type", model.DocTypeSpace),
+			repo.QueryWithEqual("id", docPtr),
 		)
 		if err != nil {
 			logger.WithErr(err).Warn("update space folder doc failed")
@@ -254,6 +282,14 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, kbID ui
 	}
 
 	for _, doc := range list.Docs {
+		// 当 doc_id 大于 0 的时候，只更新该文档
+		if docID > 0 {
+			_, ok := exist[doc.ID]
+			if !ok {
+				continue
+			}
+		}
+
 		_, err = k.doc.SpaceExport(ctx, folder.Platform, svc.SpaceExportReq{
 			BaseExportReq: svc.BaseExportReq{
 				DBDoc: svc.BaseDBDoc{
