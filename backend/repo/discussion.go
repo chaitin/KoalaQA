@@ -139,6 +139,7 @@ func (d *Discussion) List(ctx context.Context, res any, queryFuncs ...QueryOptFu
 			"discussions.id",
 			"discussions.created_at",
 			"discussions.updated_at",
+			"discussions.rag_id",
 			"discussions.uuid",
 			"discussions.user_id",
 			"discussions.title",
