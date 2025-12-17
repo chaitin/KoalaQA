@@ -181,7 +181,7 @@ func (i *aiInsight2Rank) calcScore(ctx context.Context, data model.AIInsight) (f
 	logger := i.logger.WithContext(ctx).With("msg", data)
 	logger.Debug("calc ai insight score")
 
-	discs, err := i.SvcDisc.Search(ctx, svc.DiscussionSearchReq{
+	searchRes, err := i.SvcDisc.Search(ctx, svc.DiscussionSearchReq{
 		ForumID:             data.ForumID,
 		Keyword:             data.Keyword,
 		SimilarityThreshold: 0.8,
@@ -191,9 +191,9 @@ func (i *aiInsight2Rank) calcScore(ctx context.Context, data model.AIInsight) (f
 		return 0, err
 	}
 
-	discUUIDs := make(model.StringArray, len(discs))
-	discIDs := make(model.Int64Array, len(discs))
-	for i, disc := range discs {
+	discUUIDs := make(model.StringArray, len(searchRes.Items))
+	discIDs := make(model.Int64Array, len(searchRes.Items))
+	for i, disc := range searchRes.Items {
 		discUUIDs[i] = disc.UUID
 		discIDs[i] = int64(disc.ID)
 	}
