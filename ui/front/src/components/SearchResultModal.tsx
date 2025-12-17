@@ -32,10 +32,16 @@ interface SearchResultModalProps {
   onPublish: (type: ModelDiscussionType, query: string) => void
 }
 
+const PAGE_SIZE = 10
+
 export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish }: SearchResultModalProps) => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const listContainerRef = useRef<HTMLDivElement>(null)
+  const latestQueryRef = useRef('')
+  const loadingRef = useRef(false)
+  const loadingMoreRef = useRef(false)
   const { user } = useContext(AuthContext)
 
   // 从 store 获取 forumId
@@ -45,11 +51,112 @@ export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish 
   const [searchQuery, setSearchQuery] = useState(initialQuery)
   const [searchResults, setSearchResults] = useState<ModelDiscussionListItem[]>([])
   const [loading, setLoading] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [page, setPage] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
+
+  const performSearch = useCallback(
+    async (query: string, pageToFetch = 1) => {
+      const trimmedQuery = query.trim()
+      if (!trimmedQuery) return
+
+      const isFirstPage = pageToFetch === 1
+      if (isFirstPage) {
+        if (loadingRef.current) {
+          return
+        }
+        loadingRef.current = true
+        loadingMoreRef.current = false
+        setLoading(true)
+        setLoadingMore(false)
+        setPage(1)
+        setTotalCount(0)
+        setHasMore(false)
+        setSearchResults([])
+        latestQueryRef.current = trimmedQuery
+      } else {
+        if (loadingMoreRef.current || loadingRef.current) {
+          return
+        }
+        loadingMoreRef.current = true
+        setLoadingMore(true)
+      }
+
+      try {
+        const params: GetDiscussionParams = {
+          forum_id: forumId as any,
+          keyword: trimmedQuery,
+          stat: isFirstPage,
+          page: pageToFetch,
+          size: PAGE_SIZE,
+        }
+
+        const result = await getDiscussion(params)
+        if (latestQueryRef.current !== trimmedQuery) {
+          return
+        }
+
+        const items = result.items || []
+        const total = result.total ?? items.length ?? 0
+
+        setSearchResults((prev) => {
+          if (isFirstPage) {
+            listContainerRef.current?.scrollTo({ top: 0 })
+            return items
+          }
+          if (!items.length) {
+            return prev
+          }
+          const next = [...prev]
+          const existing = new Set(
+            prev.map((item) => {
+              if (!item) return ''
+              return `${item.id ?? ''}-${item.uuid ?? ''}-${item.rag_id ?? ''}`
+            }),
+          )
+          items.forEach((item) => {
+            const key = `${item?.id ?? ''}-${item?.uuid ?? ''}-${item?.rag_id ?? ''}`
+            if (!existing.has(key)) {
+              existing.add(key)
+              next.push(item)
+            }
+          })
+          return next
+        })
+
+        setPage(pageToFetch)
+        setTotalCount(total)
+        setHasMore(pageToFetch * PAGE_SIZE < total)
+      } catch (error) {
+        console.error('搜索失败:', error)
+        if (isFirstPage) {
+          setSearchResults([])
+          setTotalCount(0)
+        }
+      } finally {
+        if (isFirstPage) {
+          loadingRef.current = false
+          setLoading(false)
+          loadingMoreRef.current = false
+          setLoadingMore(false)
+        } else {
+          loadingMoreRef.current = false
+          setLoadingMore(false)
+        }
+      }
+    },
+    [forumId],
+  )
 
   // 当弹窗打开时，聚焦到搜索框并初始化查询
   useEffect(() => {
     if (open) {
       setSearchQuery(initialQuery)
+      setPage(1)
+      setTotalCount(0)
+      setHasMore(false)
+      setLoadingMore(false)
       if (searchInputRef.current) {
         setTimeout(() => {
           searchInputRef.current?.focus()
@@ -63,6 +170,14 @@ export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish 
       // 关闭时清空状态
       setSearchQuery('')
       setSearchResults([])
+      setTotalCount(0)
+      setHasMore(false)
+      setPage(1)
+      setLoading(false)
+      setLoadingMore(false)
+      loadingRef.current = false
+      loadingMoreRef.current = false
+      latestQueryRef.current = ''
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialQuery])
@@ -82,30 +197,23 @@ export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish 
     }
   }, [searchQuery, open, initialQuery])
 
-  // 执行搜索的函数
-  const performSearch = useCallback(
-    async (query: string) => {
-      if (!query.trim()) return
+  useEffect(() => {
+    const container = listContainerRef.current
+    if (!container) return
 
-      setLoading(true)
-      try {
-        const params: GetDiscussionParams = {
-          forum_id: forumId as any,
-          keyword: query.trim(),
-          stat: true,
-        }
+    const handleScroll = () => {
+      if (!searchQuery.trim()) return
+      if (!hasMore || loading || loadingMore) return
 
-        const result = await getDiscussion(params)
-        setSearchResults(result.items || [])
-      } catch (error) {
-        console.error('搜索失败:', error)
-        setSearchResults([])
-      } finally {
-        setLoading(false)
+      const { scrollTop, clientHeight, scrollHeight } = container
+      if (scrollTop + clientHeight >= scrollHeight - 80) {
+        performSearch(searchQuery.trim(), page + 1)
       }
-    },
-    [forumId],
-  )
+    }
+
+    container.addEventListener('scroll', handleScroll)
+    return () => container.removeEventListener('scroll', handleScroll)
+  }, [hasMore, loading, loadingMore, page, performSearch, searchQuery])
 
   // 处理搜索输入变化
   const handleSearchInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,6 +225,13 @@ export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish 
   const handleClearSearch = useCallback(() => {
     setSearchQuery('')
     setSearchResults([])
+    setTotalCount(0)
+    setHasMore(false)
+    setPage(1)
+    setLoading(false)
+    setLoadingMore(false)
+    loadingRef.current = false
+    loadingMoreRef.current = false
     searchInputRef.current?.focus()
   }, [])
 
@@ -257,11 +372,12 @@ export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish 
             {/* 搜索结果标题 - 固定在顶部 */}
             <Box sx={{ pb: 2, flexShrink: 0 }}>
               <Typography variant='body2' sx={{ color: 'rgba(0,0,0,0.6)', fontSize: 14 }}>
-                共找到 {searchResults.length} 个结果
+                共找到 {totalCount} 个结果
               </Typography>
             </Box>
             {/* 搜索结果列表 - 可滚动区域 */}
             <Box
+              ref={listContainerRef}
               sx={{
                 flex: 1,
                 overflow: 'auto',
@@ -310,11 +426,11 @@ export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish 
                       },
                       ...(isAdminRole(user.role || ModelUserRole.UserRoleUnknown)
                         ? [
-                            {
-                              label: '👉提交Issue',
-                              onClick: () => onPublish(ModelDiscussionType.DiscussionTypeIssue, searchQuery.trim()),
-                            },
-                          ]
+                          {
+                            label: '👉提交Issue',
+                            onClick: () => onPublish(ModelDiscussionType.DiscussionTypeIssue, searchQuery.trim()),
+                          },
+                        ]
                         : []),
                       {
                         label: '👉发布文章',

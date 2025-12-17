@@ -355,12 +355,12 @@ func (d *Discussion) ListSimilarity(ctx context.Context, discUUID string) (*mode
 	}
 
 	var res model.ListRes[*model.DiscussionListItem]
-	discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: disc.Title, ForumID: disc.ForumID, SimilarityThreshold: 0.2, MaxChunksPerDoc: 1})
+	discsRes, err := d.Search(ctx, DiscussionSearchReq{Keyword: disc.Title, ForumID: disc.ForumID, SimilarityThreshold: 0.2, MaxChunksPerDoc: 1})
 	if err != nil {
 		return nil, err
 	}
 
-	for _, searchDisc := range discs {
+	for _, searchDisc := range discsRes.Items {
 		// 过滤关联 issue 或者帖子本身
 		if searchDisc.ID == disc.ID || searchDisc.ID == disc.AssociateID {
 			continue
@@ -388,7 +388,7 @@ func (d *Discussion) ListBackend(ctx context.Context, req DiscussionListBackendR
 
 	if req.AI && req.Keyword != nil && *req.Keyword != "" {
 		var err error
-		res.Items, err = d.Search(ctx, DiscussionSearchReq{
+		searchRes, err := d.Search(ctx, DiscussionSearchReq{
 			Keyword:             *req.Keyword,
 			ForumID:             req.ForumID,
 			SimilarityThreshold: 0.8,
@@ -398,7 +398,8 @@ func (d *Discussion) ListBackend(ctx context.Context, req DiscussionListBackendR
 			return nil, err
 		}
 
-		res.Total = int64(len(res.Items))
+		res.Items = searchRes.Items
+		res.Total = searchRes.Total
 		return &res, nil
 	}
 
@@ -474,16 +475,30 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 			discType = *req.Type
 		}
 
-		discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: req.Keyword, ForumID: req.ForumID, SimilarityThreshold: 0.2, MaxChunksPerDoc: 1, Metadata: rag.Metadata{
-			DiscMetadata: model.DiscMetadata{
-				DiscussType: discType,
+		page := 1
+		size := 0
+		if req.Pagination != nil {
+			page = req.Pagination.Page
+			size = req.Pagination.Size
+		}
+		searchRes, err := d.Search(ctx, DiscussionSearchReq{
+			Keyword:             req.Keyword,
+			ForumID:             req.ForumID,
+			SimilarityThreshold: 0.2,
+			MaxChunksPerDoc:     1,
+			Metadata: rag.Metadata{
+				DiscMetadata: model.DiscMetadata{
+					DiscussType: discType,
+				},
 			},
-		}})
+			Page: page,
+			Size: size,
+		})
 		if err != nil {
 			return nil, err
 		}
-		res.Items = discs
-		res.Total = int64(len(discs))
+		res.Items = searchRes.Items
+		res.Total = searchRes.Total
 		return &res, nil
 	}
 
@@ -639,7 +654,7 @@ type DiscussionKeywordAnswerReq struct {
 
 func (d *Discussion) KeywordAnswer(ctx context.Context, req DiscussionKeywordAnswerReq) (string, error) {
 	logger := d.logger.WithContext(ctx).With("forum_id", req.ForumID).With("keyword", req.Keyword)
-	discs, err := d.Search(ctx, DiscussionSearchReq{
+	discsRes, err := d.Search(ctx, DiscussionSearchReq{
 		ForumID:             req.ForumID,
 		Keyword:             req.Keyword,
 		SimilarityThreshold: 0.8,
@@ -648,8 +663,8 @@ func (d *Discussion) KeywordAnswer(ctx context.Context, req DiscussionKeywordAns
 		return "", err
 	}
 
-	discIDs := make([]uint, 0, len(discs))
-	for _, disc := range discs {
+	discIDs := make([]uint, 0, len(discsRes.Items))
+	for _, disc := range discsRes.Items {
 		discIDs = append(discIDs, disc.ID)
 	}
 
@@ -896,9 +911,16 @@ type DiscussionSearchReq struct {
 	SimilarityThreshold float64
 	MaxChunksPerDoc     int
 	Metadata            rag.Metadata
+	Page                int
+	Size                int
 }
 
-func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*model.DiscussionListItem, error) {
+type DiscussionSearchRes struct {
+	Items []*model.DiscussionListItem
+	Total int64
+}
+
+func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) (*DiscussionSearchRes, error) {
 	var forum model.Forum
 	err := d.in.ForumRepo.GetByID(ctx, &forum, req.ForumID)
 	if err != nil {
@@ -907,7 +929,7 @@ func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*mo
 	_, records, err := d.in.Rag.QueryRecords(ctx, rag.QueryRecordsReq{
 		DatasetID:           forum.DatasetID,
 		Query:               req.Keyword,
-		TopK:                10,
+		TopK:                50,
 		SimilarityThreshold: req.SimilarityThreshold,
 		MaxChunksPerDoc:     req.MaxChunksPerDoc,
 		Metadata:            req.Metadata,
@@ -916,7 +938,7 @@ func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*mo
 		return nil, err
 	}
 	if len(records) == 0 {
-		return []*model.DiscussionListItem{}, nil
+		return &DiscussionSearchRes{Items: []*model.DiscussionListItem{}, Total: 0}, nil
 	}
 	var ragIDs []string
 	ragIDM := make(map[string]struct{})
@@ -952,7 +974,25 @@ func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*mo
 	sortedDiscussions := util.SortByKeys(discussions, ragIDs, func(d *model.DiscussionListItem) string {
 		return d.RagID
 	})
-	return sortedDiscussions, nil
+	total := len(sortedDiscussions)
+	page := req.Page
+	if page <= 0 {
+		page = 1
+	}
+	size := req.Size
+	if size <= 0 || size > total {
+		size = total
+	}
+	start := (page - 1) * size
+	if start >= total {
+		return &DiscussionSearchRes{Items: []*model.DiscussionListItem{}, Total: int64(total)}, nil
+	}
+	end := start + size
+	if end > total {
+		end = total
+	}
+
+	return &DiscussionSearchRes{Items: sortedDiscussions[start:end], Total: int64(total)}, nil
 }
 
 func (d *Discussion) Close(ctx context.Context, user model.UserInfo, discUUID string) error {
