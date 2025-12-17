@@ -1884,6 +1884,12 @@ func (d *Discussion) AssociateDiscussion(ctx context.Context, user model.UserInf
 		return errors.New("invalid discussion")
 	}
 
+	var forum model.Forum
+	err = d.in.ForumRepo.GetByID(ctx, &forum, disc.ForumID)
+	if err != nil {
+		return err
+	}
+
 	if req.IssueUUID == "" {
 		if req.Title == "" {
 			return errors.New("issue title required")
@@ -1913,6 +1919,7 @@ func (d *Discussion) AssociateDiscussion(ctx context.Context, user model.UserInf
 	}
 
 	disc.AssociateID = issue.ID
+	disc.Resolved = model.DiscussionStateClosed
 
 	now := time.Now()
 	err = d.in.DiscRepo.Update(ctx, map[string]any{
@@ -1923,6 +1930,12 @@ func (d *Discussion) AssociateDiscussion(ctx context.Context, user model.UserInf
 	}, repo.QueryWithEqual("uuid", discUUID))
 	if err != nil {
 		return err
+	}
+	err = d.in.Rag.UpdateDocumentMetadata(ctx, forum.DatasetID, disc.RagID, rag.Metadata{
+		DiscMetadata: disc.Metadata(),
+	})
+	if err != nil {
+		d.logger.WithContext(ctx).WithErr(err).With("disc_id", disc.ID).Warn("update disc rag metadata failed")
 	}
 
 	err = d.in.DiscFollowRepo.Create(ctx, &model.DiscussionFollow{
