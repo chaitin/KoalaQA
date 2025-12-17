@@ -457,17 +457,34 @@ export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish 
                 </Stack>
               ) : (
                 <>
-                  {searchResults.map((item, index) => (
-                    <SearchDiscussCard
-                      size='small'
-                      key={item.id || index}
-                      sx={{}}
-                      data={item}
-                      keywords={searchQuery}
-                      showType={true}
-                      onNavigate={onClose}
-                    />
-                  ))}
+                  <Stack spacing={1}>
+                    {searchResults.map((item, index) => (
+                      <SearchDiscussCard
+                        size='small'
+                        key={item.id || index}
+                        sx={{}}
+                        data={item}
+                        keywords={searchQuery}
+                        showType={true}
+                        onNavigate={onClose}
+                      />
+                    ))}
+                    {loadingMore && (
+                      <Stack alignItems='center' justifyContent='center' sx={{ py: 2 }}>
+                        <Typography variant='body2' sx={{ color: 'rgba(0,0,0,0.6)' }}>
+                          加载中...
+                        </Typography>
+                      </Stack>
+                    )}
+                    {!loading && !loadingMore && !hasMore && searchResults.length > 0 && (
+                      <Typography
+                        variant='body2'
+                        sx={{ color: 'rgba(0,0,0,0.4)', textAlign: 'center', py: 1 }}
+                      >
+                        没有更多了
+                      </Typography>
+                    )}
+                  </Stack>
                 </>
               )}
             </Box>{' '}
