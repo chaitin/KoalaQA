@@ -175,6 +175,7 @@ func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req Discus
 		Members:    model.Int64Array{int64(user.UID)},
 		Hot:        2000,
 		BotUnknown: true,
+		Resolved:   model.DiscussionStateNone,
 	}
 	err = d.in.DiscRepo.Create(ctx, &disc)
 	if err != nil {
@@ -960,6 +961,12 @@ func (d *Discussion) Close(ctx context.Context, user model.UserInfo, discUUID st
 		return err
 	}
 
+	var forum model.Forum
+	err = d.in.ForumRepo.GetByID(ctx, &forum, disc.ForumID)
+	if err != nil {
+		return err
+	}
+
 	ok, err := d.in.UserRepo.HasForumPermission(ctx, user.UID, disc.ForumID)
 	if err != nil {
 		return err
@@ -981,6 +988,13 @@ func (d *Discussion) Close(ctx context.Context, user model.UserInfo, discUUID st
 	)
 	if err != nil {
 		return err
+	}
+
+	err = d.in.Rag.UpdateDocumentMetadata(ctx, forum.DatasetID, disc.RagID, rag.Metadata{
+		DiscMetadata: disc.Metadata(),
+	})
+	if err != nil {
+		d.logger.WithContext(ctx).WithErr(err).With("disc_id", disc.ID).Warn("update rag metadata failed")
 	}
 
 	return nil
