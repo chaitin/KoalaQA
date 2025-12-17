@@ -272,7 +272,7 @@ func (d *Discussion) UpdateTagsByRagID(ctx context.Context, ragID string, tags [
 		}
 
 		var disc model.Discussion
-		err := tx.Model(&model.Discussion{}).Select("id, forum_id, tag_ids").Where("rag_id = ?", ragID).First(&disc).Error
+		err := tx.Model(&model.Discussion{}).Select("id, forum_id, tag_ids, group_ids, resolved, type").Where("rag_id = ?", ragID).First(&disc).Error
 		if err != nil {
 			if errors.Is(err, database.ErrRecordNotFound) {
 				return nil
