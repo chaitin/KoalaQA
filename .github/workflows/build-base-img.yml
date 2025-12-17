@@ -24,7 +24,7 @@ jobs:
           - name: anydoc
             dockerfile: docker/anydoc/Dockerfile
             context: docker/anydoc
-            tag: "v0.7.2"
+            tag: "v0.7.3"
           - name: db
             dockerfile: docker/db/Dockerfile
             context: docker/db
