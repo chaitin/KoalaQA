@@ -233,6 +233,25 @@ const theme = createTheme(
           },
         },
       },
+      MuiButton: {
+        defaultProps: {
+          disableElevation: true,
+        },
+        styleOverrides: {
+          root: {
+            boxShadow: 'none',
+            '&:hover': {
+              boxShadow: 'none',
+            },
+            '&:active': {
+              boxShadow: 'none',
+            },
+            '&.Mui-focusVisible': {
+              boxShadow: 'none',
+            },
+          },
+        },
+      },
     },
   },
   zhCN,

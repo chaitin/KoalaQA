@@ -282,9 +282,6 @@ const Article = ({
     handlePublishMenuClose()
     handlePublish(publishType)
   }
-  const handlePublishSearch = (type: ModelDiscussionType) => (query: string) => {
-    handlePublish(type, query)
-  }
   // 根据类型获取排序选项
   const getSortOptions = (postType?: string) => {
     if (isMobile)
@@ -345,12 +342,11 @@ const Article = ({
       {/* 中间和右侧内容容器 - 在lg及以上时居中 */}
       <Box
         sx={{
-          flex: 1,
-          minWidth: 0,
-          display: { xs: 'block', lg: 'flex' },
-          gap: { xs: 0, lg: 3 },
-          justifyContent: { lg: 'center' },
-          alignItems: { lg: 'flex-start' },
+          display: 'flex',
+          gap: 3,
+          maxWidth: { lg: '1200px' },
+          mx: 'auto',
+          px: { xs: 2, lg: 3 },
         }}
       >
         {/* 主内容区域 */}
@@ -358,10 +354,8 @@ const Article = ({
           sx={{
             flex: 1,
             minWidth: 0,
-            maxWidth: { lg: 798 },
-            width: { xs: '100%', lg: 'auto' },
+            width: { xs: '100%', lg: '750px' },
             pt: 0,
-            px: { xs: 0, sm: 3 },
           }}
         >
           {/* 搜索和发帖按钮 */}
@@ -392,7 +386,7 @@ const Article = ({
               <Button
                 variant='contained'
                 onClick={handlePublishMenuOpen}
-                endIcon={<ArrowDropDownIcon sx={{ fontSize: 20 }} />}
+                // endIcon={<ArrowDropDownIcon sx={{ fontSize: 20 }} />}
                 sx={{
                   textTransform: 'none',
                   fontWeight: 600,
@@ -400,15 +394,15 @@ const Article = ({
                   py: 0.75,
                   borderRadius: '6px',
                   fontSize: '0.875rem',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
                   whiteSpace: 'nowrap',
                   height: '40px',
-                  '&:hover': {
-                    boxShadow: '0 6px 16px rgba(0, 0, 0, 0.3)',
-                  },
+                  boxShadow: 'none',
+                  '&:hover':{
+                    boxShadow: 'none'
+                  }
                 }}
               >
-                👉 发布内容
+                发布内容
               </Button>
               <Menu
                 anchorEl={publishAnchorEl}
@@ -521,6 +515,10 @@ const Article = ({
                         color: '#ffffff',
                         outline: '2px solid #000000',
                         outlineOffset: '2px',
+                      },
+                      '&:hover': {
+                        bgcolor:
+                          'rgba(var(--mui-palette-primary-mainChannel) / calc(var(--mui-palette-action-selectedOpacity) + var(--mui-palette-action-hoverOpacity)))',
                       },
                     },
                     '&:hover': { bgcolor: '#f3f4f6', color: '#000000' },
@@ -636,7 +634,7 @@ const Article = ({
           </Box>
           <Divider />
           {/* 帖子列表 */}
-          <Box sx={{ bgcolor: '#ffffff', borderRadius: '6px', overflow: 'hidden' }}>
+          <Box sx={{ bgcolor: '#ffffff', overflow: 'hidden' }}>
             {articleData.items?.map((it, index) => (
               <DiscussCard
                 key={it.uuid}
@@ -674,8 +672,9 @@ const Article = ({
         </Box>
 
         {/* 右侧边栏 */}
-        <Box
+        <Stack
           ref={sidebarRef}
+          spacing={3}
           sx={{
             width: 300,
             flexShrink: 0,
@@ -684,14 +683,16 @@ const Article = ({
             pb: 3,
             pr: 3,
             scrollbarGutter: 'stable',
+            // 保持在视口内滚动时固定（避免使用 fixed）
             position: 'sticky',
-            top: 25,
-            maxHeight: 'calc(100vh - 90px)',
+            top: 24,
+            alignSelf: 'flex-start',
+            maxHeight: 'calc(100vh - 100px)',
             overflowY: 'auto',
             // 隐藏滚动条
             '&::-webkit-scrollbar': { display: 'none' },
-            '-ms-overflow-style': 'none',
-            'scrollbar-width': 'none',
+            msOverflowStyle: 'none',
+            scrollbarWidth: 'none',
           }}
         >
           {/* 公告 */}
@@ -704,7 +705,7 @@ const Article = ({
 
           {/* 品牌声明 */}
           <BrandAttribution inSidebar={true} sidebarRef={sidebarRef as React.RefObject<HTMLElement>} />
-        </Box>
+        </Stack>
       </Box>
       {/* 搜索结果弹窗 */}
       <SearchResultModal

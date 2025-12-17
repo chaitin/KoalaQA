@@ -163,7 +163,6 @@ const ConvertToIssueModal = ({ open, onClose, questionData, onSuccess, forumInfo
           keyword: keyword.trim(),
           size: 5,
           type: ModelDiscussionType.DiscussionTypeIssue,
-          fuzzy_search: true,
         })
         const items = result.items || []
         setSimilarIssues(items)

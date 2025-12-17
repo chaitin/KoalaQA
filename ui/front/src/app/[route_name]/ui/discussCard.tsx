@@ -64,12 +64,7 @@ const DiscussCard = ({
         ...sx,
       }}
     >
-      <Stack
-        direction='row'
-        alignItems='center'
-        spacing={1}
-        sx={{ ...(size === 'small' ? { lineHeight: '22px' } : {}), mb: 2 }}
-      >
+      <Stack direction='row' alignItems='center' sx={{ ...(size === 'small' ? { lineHeight: '22px' } : {}), mb: 2 }}>
         <Link
           href={profileHref || '/'}
           key={it.id}
@@ -88,8 +83,6 @@ const DiscussCard = ({
               '&:focus-within, &:hover ': {
                 color: 'primary.main',
               },
-              my: '-2px',
-              ml: '-4px',
             }}
           >
             <Box
@@ -129,8 +122,8 @@ const DiscussCard = ({
             </Box>
           </Box>
         </Link>
+        <Box sx={{ mx: 0.5 }}>·</Box>
         <Box sx={{ fontWeight: 400, whiteSpace: 'nowrap', fontSize: '14px' }}>
-          ·{' '}
           <TimeDisplay
             style={{ color: 'rgba(33, 34, 45, 0.30)' }}
             timestamp={filter === 'publish' ? it.created_at || it.updated_at! : it.updated_at!}
@@ -217,6 +210,7 @@ const DiscussCard = ({
                   background: 'rgba(0,99,151,0.06)',
                   color: 'primary.main',
                   px: 1,
+                  height: '22px',
                   borderRadius: 0.5,
                 }}
               >
@@ -235,6 +229,7 @@ const DiscussCard = ({
                   background: 'rgba(0,99,151,0.06)',
                   color: 'primary.main',
                   px: 1,
+                  height: '22px',
                   borderRadius: 0.5,
                 }}
               >

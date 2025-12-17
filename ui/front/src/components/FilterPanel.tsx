@@ -17,6 +17,7 @@ import {
   MenuItem,
   OutlinedInput,
   Select,
+  Stack,
   Typography,
 } from '@mui/material'
 import Image from 'next/image'
@@ -125,7 +126,10 @@ export default function FilterPanel() {
     if (!forumId) return null
     // typeForFilter 为 null 代表“全部”，不做 used-tag 聚合
     if (!typeForFilter) return null
-    const topicKey = (urlTopics || []).slice().sort((a, b) => a - b).join(',')
+    const topicKey = (urlTopics || [])
+      .slice()
+      .sort((a, b) => a - b)
+      .join(',')
     return `forum:${forumId}|type:${typeForFilter}|topics:${topicKey}`
   }, [forumId, isDetailPage, typeForFilter, urlTopics])
 
@@ -235,7 +239,11 @@ export default function FilterPanel() {
     if (!routeName) return
     if (!typeForUrl) return
 
-    const normalize = (arr: number[]) => arr.slice().sort((a, b) => a - b).join(',')
+    const normalize = (arr: number[]) =>
+      arr
+        .slice()
+        .sort((a, b) => a - b)
+        .join(',')
 
     const allowedTopicIds = urlTopics.filter((id) => filteredGroups.flat.some((g) => g.id === id))
     const nextTopicsKey = normalize(allowedTopicIds)
@@ -243,8 +251,7 @@ export default function FilterPanel() {
 
     // 标签清理：只在 usedTagIdSet ready 时执行，避免切换 type 的 loading 阶段用“旧集合”误删
     const canCleanTags = !!typeForFilter && usedTagTargetKey && usedTagReadyKey === usedTagTargetKey
-    const allowedTagIds =
-      canCleanTags && usedTagIdSet ? urlTags.filter((id) => usedTagIdSet.has(id)) : urlTags
+    const allowedTagIds = canCleanTags && usedTagIdSet ? urlTags.filter((id) => usedTagIdSet.has(id)) : urlTags
     const nextTagsKey = normalize(allowedTagIds)
     const curTagsKey = normalize(urlTags)
 
@@ -356,14 +363,12 @@ export default function FilterPanel() {
   }
 
   return (
-    <Box
+    <Stack
       sx={{
         bgcolor: 'rgba(0,99,151,0.03)',
         borderRadius: '8px',
         border: '1px solid rgba(0,99,151,0.1)',
-        pt: 3,
-        pb: 3,
-        px: 2,
+        p: 2,
         width: {
           xs: '100%', // 移动端使用全宽
           md: '240px', // 平板和桌面端使用 240px
@@ -374,13 +379,7 @@ export default function FilterPanel() {
           md: 'calc(100vh - 110px)', // 平板使用较小的偏移
           lg: 'calc(100vh - 110px)', // 桌面端使用原始值
         },
-        // maxHeight: {
-        //   xs: 'none',
-        //   md: 'calc(100vh - 110px)',
-        //   lg: 'calc(100vh - 116px)',
-        // },
         overflowY: 'auto',
-        scrollbarGutter: 'stable',
         position: {
           xs: 'relative', // 移动端使用相对定位
           md: 'fixed', // 平板和桌面端使用粘性定位
@@ -403,6 +402,7 @@ export default function FilterPanel() {
             background: '#d1d5db',
           },
         },
+        scrollbarGutter: 'auto',
         scrollbarWidth: 'thin',
         scrollbarColor: '#e5e7eb transparent',
       }}
@@ -602,7 +602,9 @@ export default function FilterPanel() {
                 name={tag.name}
                 selected={isSelected}
                 onClick={() => {
-                  const newSelectedTags = isSelected ? selectedTags.filter((t) => t !== tag.id) : [...selectedTags, tag.id]
+                  const newSelectedTags = isSelected
+                    ? selectedTags.filter((t) => t !== tag.id)
+                    : [...selectedTags, tag.id]
                   setSelectedTags(newSelectedTags)
                   updateUrlParams(urlTopics, typeForUrl, newSelectedTags)
                 }}
@@ -611,6 +613,6 @@ export default function FilterPanel() {
           })}
         </Box>
       </Box>
-    </Box>
+    </Stack>
   )
 }

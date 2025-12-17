@@ -8,32 +8,23 @@ import Access from '@/pages/settings/component/Access';
 import ModelManagementModal from '@/pages/settings/component/ModelManagementModal';
 import { Box, Button, Link, Modal, Stack, Typography } from '@mui/material';
 import LaunchIcon from '@mui/icons-material/Launch';
-import { useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 
 const MainLayout = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [showGuide, setShowGuide] = useState(false);
   const [needModel, setNeedModel] = useState(false);
   const [needAddress, setNeedAddress] = useState(false);
   const [user] = useContext(AuthContext);
   const { setKbId } = useConfigStore();
   const { refreshForums } = useForumStore();
+  const isAuthenticated = user?.uid ? true : user === undefined ? null : false;
 
   useEffect(() => {
     refreshForums();
   }, [refreshForums]);
-  useEffect(() => {
-    if (user?.uid) {
-      setIsAuthenticated(true);
-      // 登录后检查必要配置
-      checkNecessaryConfigurations();
-    } else {
-      setIsAuthenticated(false);
-    }
-  }, [user]);
 
-  const checkNecessaryConfigurations = async () => {
+  const checkNecessaryConfigurations = useCallback(async () => {
     try {
       const [models, addr, kbRes] = await Promise.all([
         getAdminModelList(),
@@ -71,7 +62,15 @@ const MainLayout = () => {
       setShowGuide(true);
       return { lackModel: true, lackAddr: true };
     }
-  };
+  }, [setKbId]);
+
+  useEffect(() => {
+    if (user?.uid) {
+      // 触发登录后的配置检查（异步状态更新），跳过此行的 effect-setState 规则
+      // eslint-disable-next-line
+      checkNecessaryConfigurations();
+    }
+  }, [user, checkNecessaryConfigurations]);
 
   const tryCloseGuide = () => {
     // 只有当两者都已配置时，才可关闭
@@ -114,6 +113,10 @@ const MainLayout = () => {
             sx={{
               height: 'calc(100% - 43px)',
               overflow: 'auto',
+              // 设置滚动条轨道背景颜色为 transparent
+              '&::-webkit-scrollbar-track': {
+                backgroundColor: 'transparent',
+              },
               mb: 2,
               borderRadius: 2.5,
             }}

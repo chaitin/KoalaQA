@@ -166,10 +166,11 @@ export enum ModelDiscussionType {
 }
 
 export enum ModelDiscussionState {
-  DiscussionStateNone = 0,
-  DiscussionStateResolved = 1,
-  DiscussionStateClosed = 2,
-  DiscussionStateInProgress = 3,
+  DiscussionStateUnknown = 0,
+  DiscussionStateNone = 1,
+  DiscussionStateResolved = 2,
+  DiscussionStateClosed = 3,
+  DiscussionStateInProgress = 4,
 }
 
 export enum ModelCommentLikeState {
@@ -183,6 +184,7 @@ export interface AnydocListDoc {
   id?: string;
   summary?: string;
   title?: string;
+  updated_at?: number;
 }
 
 export interface AnydocListRes {
@@ -231,6 +233,7 @@ export interface ModelAuthInfo {
 
 export interface ModelDiscussion {
   associate_id?: number;
+  bot_unknown?: boolean;
   comment?: number;
   content?: string;
   created_at?: number;
@@ -239,6 +242,8 @@ export interface ModelDiscussion {
   group_ids?: number[];
   hot?: number;
   id?: number;
+  /** 发帖人上次访问时间 */
+  last_visited?: number;
   like?: number;
   members?: number[];
   rag_id?: string;
@@ -254,6 +259,8 @@ export interface ModelDiscussion {
   user_id?: number;
   uuid?: string;
   view?: number;
+  /** 发帖人访问次数 */
+  visit?: number;
 }
 
 export interface ModelDiscussionComment {
@@ -274,8 +281,11 @@ export interface ModelDiscussionComment {
 }
 
 export interface ModelDiscussionDetail {
+  alter?: boolean;
+  alert?: boolean;
   associate?: ModelDiscussionListItem;
   associate_id?: number;
+  bot_unknown?: boolean;
   comment?: number;
   comments?: ModelDiscussionComment[];
   content?: string;
@@ -287,6 +297,8 @@ export interface ModelDiscussionDetail {
   groups?: ModelDiscussionGroup[];
   hot?: number;
   id?: number;
+  /** 发帖人上次访问时间 */
+  last_visited?: number;
   like?: number;
   members?: number[];
   rag_id?: string;
@@ -306,6 +318,8 @@ export interface ModelDiscussionDetail {
   user_role?: ModelUserRole;
   uuid?: string;
   view?: number;
+  /** 发帖人访问次数 */
+  visit?: number;
 }
 
 export interface ModelDiscussionGroup {
@@ -315,6 +329,7 @@ export interface ModelDiscussionGroup {
 
 export interface ModelDiscussionListItem {
   associate_id?: number;
+  bot_unknown?: boolean;
   comment?: number;
   content?: string;
   created_at?: number;
@@ -323,6 +338,8 @@ export interface ModelDiscussionListItem {
   group_ids?: number[];
   hot?: number;
   id?: number;
+  /** 发帖人上次访问时间 */
+  last_visited?: number;
   like?: number;
   members?: number[];
   rag_id?: string;
@@ -340,6 +357,8 @@ export interface ModelDiscussionListItem {
   user_name?: string;
   uuid?: string;
   view?: number;
+  /** 发帖人访问次数 */
+  visit?: number;
 }
 
 export interface ModelDiscussionReply {
@@ -653,6 +672,10 @@ export interface ModelWebhookConfig {
 
 export interface RouterSystemInfoRes {
   version?: string;
+}
+
+export interface SvcActiveModelReq {
+  active?: boolean;
 }
 
 export interface SvcAssociateDiscussionReq {
@@ -981,7 +1004,7 @@ export interface SvcResolveFeedbackReq {
 }
 
 export interface SvcResolveIssueReq {
-  resolve?: 1 | 3;
+  resolve?: 2 | 4;
 }
 
 export interface SvcReviewReq {
@@ -1037,6 +1060,10 @@ export interface SvcURLListReq {
 
 export interface SvcUpdatePromptReq {
   prompt?: string;
+}
+
+export interface SvcUpdateSpaceFolderReq {
+  doc_id?: number;
 }
 
 export interface SvcUpdateSpaceReq {
@@ -1455,7 +1482,13 @@ export interface DeleteAdminKbKbIdWebDocIdParams {
 }
 
 export interface PutAdminModelIdParams {
-  id: string;
+  /** model_id */
+  id: number;
+}
+
+export interface PutAdminModelIdActiveParams {
+  /** model_id */
+  id: number;
 }
 
 export interface GetAdminOrgParams {
@@ -1548,13 +1581,12 @@ export interface GetDiscussionParams {
   discussion_ids?: number[];
   filter?: "hot" | "new" | "publish";
   forum_id?: number;
-  fuzzy_search?: boolean;
   group_ids?: number[];
   keyword?: string;
   only_mine?: boolean;
   /** @min 1 */
   page?: number;
-  resolved?: 0 | 1 | 2 | 3;
+  resolved?: 0 | 1 | 2 | 3 | 4;
   /** @min 1 */
   size?: number;
   stat?: boolean;
@@ -1706,6 +1738,7 @@ export interface GetDiscussionDiscIdSimilarityParams {
 }
 
 export interface GetForumForumIdTagsParams {
+  type?: "qa" | "feedback" | "blog" | "issue";
   /** forum id */
   forumId?: number;
 }

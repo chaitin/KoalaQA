@@ -35,6 +35,7 @@ import {
   SvcListSpaceFolderItem,
   SvcListSpaceItem,
   SvcListSpaceKBItem,
+  SvcUpdateSpaceFolderReq,
   SvcUpdateSpaceReq,
 } from "./types";
 
@@ -289,11 +290,14 @@ export const putAdminKbKbIdSpaceSpaceIdFolderFolderId = (
     folderId,
     ...query
   }: PutAdminKbKbIdSpaceSpaceIdFolderFolderIdParams,
+  req: SvcUpdateSpaceFolderReq,
   params: RequestParams = {},
 ) =>
   request<ContextResponse>({
     path: `/admin/kb/${kbId}/space/${spaceId}/folder/${folderId}`,
     method: "PUT",
+    body: req,
+    type: ContentType.Json,
     format: "json",
     ...params,
   });

@@ -16,7 +16,7 @@ export default function RouteLayout({ children }: { children: React.ReactNode })
         gap: { xs: 2, md: 3 },
         flexDirection: { xs: 'column', md: 'row' },
         flex: 1,
-        height:'100%',
+        height: '100%',
         alignSelf: 'stretch',
       }}
     >
@@ -36,16 +36,20 @@ export default function RouteLayout({ children }: { children: React.ReactNode })
       )}
 
       {/* 主内容区域 */}
-      <Container className='forum_main' sx={{ flex: 1, minWidth: 0, pt: { xs: 0, sm: 3 }, alignSelf: 'stretch' }}>
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            height: '100%',
-          }}
-        >
-          <Box sx={{ flex: 1, minWidth: 0, alignSelf: 'stretch' }}>{children}</Box>
-        </Box>
+      <Container
+        className='forum_main'
+        sx={{
+          flex: 1,
+          minWidth: 0,
+          pt: { xs: 0, sm: 3 },
+          alignSelf: 'stretch',
+          display: { xs: 'block', lg: 'flex' },
+          gap: { xs: 0, lg: 3 },
+          justifyContent: { lg: 'center' },
+          alignItems: { lg: 'flex-start' },
+        }}
+      >
+        {children}
       </Container>
     </Box>
   )

@@ -266,6 +266,7 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
           borderRadius: 1,
           border: '1px solid rgba(32, 112, 249, 0.5)',
           overflow: 'auto',
+          scrollbarWidth: 'thin',
           height: '100%',
           p: 2,
           backgroundImage: 'linear-gradient( 180deg, rgba(32,112,249,0.04) 0%, rgba(167,110,251,0.04) 100%)',
