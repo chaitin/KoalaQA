@@ -39,13 +39,19 @@ const DetailSidebarWrapper = ({
     <Box
       ref={sidebarRef}
       sx={{
+        position: 'sticky',
+        top: 26,
         width: 300,
         flexShrink: 0,
         display: { xs: 'none', lg: 'block' },
-        pb: 3,
-        pr: 3,
-        position: 'sticky',
-        top: 26,
+        height: 'fit-content',
+        maxHeight: 'calc(100vh - 90px)',
+        overflowY: 'auto',
+        scrollbarGutter: 'stable',
+        // 隐藏滚动条
+        '&::-webkit-scrollbar': { display: 'none' },
+        msOverflowStyle: 'none',
+        scrollbarWidth: 'none',
       }}
     >
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>

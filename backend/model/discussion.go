@@ -16,7 +16,8 @@ const (
 type DiscussionState uint
 
 const (
-	DiscussionStateNone DiscussionState = iota
+	DiscussionStateUnknown DiscussionState = iota
+	DiscussionStateNone
 	DiscussionStateResolved
 	DiscussionStateClosed
 	DiscussionStateInProgress
@@ -48,6 +49,31 @@ type Discussion struct {
 	Members     Int64Array      `json:"members" gorm:"column:members;type:bigint[]"`
 	AssociateID uint            `json:"associate_id" gorm:"column:associate_id;type:bigint;default:0;index"`
 	BotUnknown  bool            `json:"bot_unknown" gorm:"column:bot_unknown"`
+	Visit       int             `json:"visit" gorm:"column:visit;default:0"`                                   // 发帖人访问次数
+	LastVisited Timestamp       `json:"last_visited" gorm:"column:last_visited;type:timestamp with time zone"` // 发帖人上次访问时间
+}
+
+type DiscMetadata struct {
+	DiscussType  DiscussionType  `json:"discuss_type,omitempty"`
+	DiscussState DiscussionState `json:"discuss_state,omitempty"`
+	GroupIDs     Int64Array      `json:"group_ids,omitempty"`
+	TagIDs       Int64Array      `json:"tag_ids,omitempty"`
+}
+
+func (d *Discussion) Metadata() DiscMetadata {
+	if d.GroupIDs == nil {
+		d.GroupIDs = make(Int64Array, 0)
+	}
+	if d.TagIDs == nil {
+		d.TagIDs = make(Int64Array, 0)
+	}
+
+	return DiscMetadata{
+		DiscussType:  d.Type,
+		DiscussState: d.Resolved,
+		GroupIDs:     d.GroupIDs,
+		TagIDs:       d.TagIDs,
+	}
 }
 
 func (d *Discussion) TitleContent() string {
@@ -114,6 +140,7 @@ type DiscussionDetail struct {
 	Comments      []DiscussionComment `json:"comments" gorm:"-"`
 	Associate     DiscussionListItem  `json:"associate"`
 	UserLike      bool                `json:"user_like"`
+	Alter         bool                `json:"alter"`
 }
 
 type DiscussHeader struct {

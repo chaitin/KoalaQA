@@ -814,7 +814,7 @@ func (d *KBDocument) ListSpaceFolder(ctx context.Context, kbID uint, parentID ui
 
 type UpdateSpaceFolderReq struct {
 	DocID      uint `json:"doc_id"`
-	IncrUpdate bool `json:"-"`
+	IncrUpdate bool `json:"-" swaggerignore:"true"`
 }
 
 func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID uint, req UpdateSpaceFolderReq) error {
@@ -942,6 +942,7 @@ func (d *KBDocument) ListWeb(ctx context.Context, req ListWebReq) (*model.ListRe
 		repo.QueryWithEqual("doc_type", model.DocTypeWeb),
 		repo.QueryWithPagination(&req.Pagination),
 		repo.QueryWithILike("title", req.Title),
+		repo.QueryWithOrderBy("created_at DESC"),
 	)
 	if err != nil {
 		return nil, err

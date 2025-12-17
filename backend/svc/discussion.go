@@ -23,6 +23,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/webhook/message"
 	"github.com/chaitin/koalaqa/repo"
 	"go.uber.org/fx"
+	"golang.org/x/sync/singleflight"
 	"gorm.io/gorm"
 )
 
@@ -53,6 +54,7 @@ type discussionIn struct {
 type Discussion struct {
 	in discussionIn
 
+	sf          singleflight.Group
 	logger      *glog.Logger
 	webhookType map[model.DiscussionType]message.Type
 }
@@ -61,6 +63,7 @@ func newDiscussion(in discussionIn) *Discussion {
 	return &Discussion{
 		in:     in,
 		logger: glog.Module("svc", "discussion"),
+		sf:     singleflight.Group{},
 		webhookType: map[model.DiscussionType]message.Type{
 			model.DiscussionTypeQA:       message.TypeNewQA,
 			model.DiscussionTypeFeedback: message.TypeNewFeedback,
@@ -172,6 +175,7 @@ func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req Discus
 		Members:    model.Int64Array{int64(user.UID)},
 		Hot:        2000,
 		BotUnknown: true,
+		Resolved:   model.DiscussionStateNone,
 	}
 	err = d.in.DiscRepo.Create(ctx, &disc)
 	if err != nil {
@@ -231,7 +235,7 @@ var errDiscussionClosed = errors.New("discussion has been closed")
 type DiscussionUpdateReq struct {
 	Title    string           `json:"title"`
 	Summary  string           `json:"summary"`
-	Content  string           `json:"content"`
+	Content  *string          `json:"content"`
 	GroupIDs model.Int64Array `json:"group_ids"`
 }
 
@@ -254,8 +258,8 @@ func (d *Discussion) Update(ctx context.Context, user model.UserInfo, uuid strin
 	if req.Title != "" {
 		updateM["title"] = req.Title
 	}
-	if req.Content != "" {
-		updateM["content"] = req.Content
+	if req.Content != nil {
+		updateM["content"] = *req.Content
 	}
 
 	if len(req.GroupIDs) > 0 {
@@ -322,10 +326,12 @@ func (d *Discussion) Delete(ctx context.Context, user model.UserInfo, uuid strin
 	if err := d.in.DiscRepo.Delete(ctx, repo.QueryWithEqual("uuid", uuid)); err != nil {
 		return err
 	}
-	if err := d.in.DiscTagRepo.Update(ctx, map[string]any{
-		"count": gorm.Expr("GREATEST(0, count-1)"),
-	}, repo.QueryWithEqual("forum_id", disc.ForumID), repo.QueryWithEqual("id", disc.TagIDs, repo.EqualOPEqAny)); err != nil {
-		d.logger.WithErr(err).Warn("desc tag count failed")
+	if len(disc.TagIDs) > 0 {
+		if err := d.in.DiscTagRepo.Update(ctx, map[string]any{
+			"count": gorm.Expr("GREATEST(0, count-1)"),
+		}, repo.QueryWithEqual("forum_id", disc.ForumID), repo.QueryWithEqual("id", disc.TagIDs, repo.EqualOPEqAny)); err != nil {
+			d.logger.WithErr(err).Warn("desc tag count failed")
+		}
 	}
 
 	d.in.Pub.Publish(ctx, topic.TopicDiscChange, topic.MsgDiscChange{
@@ -440,7 +446,6 @@ type DiscussionListReq struct {
 	Resolved      *model.DiscussionState `json:"resolved" form:"resolved"`
 	DiscussionIDs *model.Int64Array      `json:"discussion_ids" form:"discussion_ids"`
 	Stat          bool                   `json:"stat" form:"stat"`
-	FuzzySearch   bool                   `json:"fuzzy_search" form:"fuzzy_search"`
 	TagIDs        model.Int64Array       `json:"tag_ids" form:"tag_ids"`
 }
 
@@ -455,7 +460,7 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 	}
 
 	var res model.ListRes[*model.DiscussionListItem]
-	if req.Keyword != "" && !req.FuzzySearch {
+	if req.Keyword != "" {
 		if req.Stat {
 			d.in.Batcher.Send(model.StatInfo{
 				Type: model.StatTypeSearch,
@@ -464,7 +469,16 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 			})
 		}
 
-		discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: req.Keyword, ForumID: req.ForumID, SimilarityThreshold: 0.2, MaxChunksPerDoc: 1})
+		var discType model.DiscussionType
+		if req.Type != nil {
+			discType = *req.Type
+		}
+
+		discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: req.Keyword, ForumID: req.ForumID, SimilarityThreshold: 0.2, MaxChunksPerDoc: 1, Metadata: rag.Metadata{
+			DiscMetadata: model.DiscMetadata{
+				DiscussType: discType,
+			},
+		}})
 		if err != nil {
 			return nil, err
 		}
@@ -495,9 +509,6 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 	)
 	if req.OnlyMine {
 		query = append(query, repo.QueryWithEqual("members", userID, repo.EqualOPValIn))
-	}
-	if req.Keyword != "" && req.FuzzySearch {
-		query = append(query, repo.QueryWithILike("title", &req.Keyword))
 	}
 	if req.Resolved != nil {
 		query = append(query, repo.QueryWithEqual("type", model.DiscussionTypeBlog, repo.EqualOPNE))
@@ -681,6 +692,45 @@ func (d *Discussion) DetailByUUID(ctx context.Context, uid uint, uuid string) (*
 		return nil, errPermission
 	}
 
+	if discussion.UserID == uid && discussion.Type == model.DiscussionTypeQA &&
+		discussion.Resolved != model.DiscussionStateResolved &&
+		discussion.LastVisited != 0 && discussion.Visit < 3 {
+		humanAnswer := false
+
+		for _, comment := range discussion.Comments {
+			if comment.Bot {
+				continue
+			}
+
+			humanAnswer = true
+			break
+		}
+
+		// 当 ai 回答或者存在非 ai 回答时，且时间大于 last_visited 5 分钟以上
+		if (!discussion.BotUnknown || humanAnswer) && time.Now().Unix() > int64(discussion.LastVisited)+300 {
+			discussion.Visit++
+
+			if discussion.Visit == 3 {
+				discussion.Alter = true
+			}
+
+			_, err, _ = d.sf.Do(discussion.UUID, func() (interface{}, error) {
+				e := d.in.DiscRepo.Update(ctx, map[string]any{
+					"visit":        discussion.Visit,
+					"last_visited": time.Now(),
+				}, repo.QueryWithEqual("id", discussion.ID))
+				if e != nil {
+					return nil, e
+				}
+
+				return e, nil
+			})
+			if err != nil {
+				d.logger.WithContext(ctx).With("disc_id", discussion.ID).Warn("update last visted failed")
+			}
+		}
+	}
+
 	go d.IncrementView(uuid)
 	return discussion, nil
 }
@@ -845,6 +895,7 @@ type DiscussionSearchReq struct {
 	ForumID             uint
 	SimilarityThreshold float64
 	MaxChunksPerDoc     int
+	Metadata            rag.Metadata
 }
 
 func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*model.DiscussionListItem, error) {
@@ -859,6 +910,7 @@ func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*mo
 		TopK:                10,
 		SimilarityThreshold: req.SimilarityThreshold,
 		MaxChunksPerDoc:     req.MaxChunksPerDoc,
+		Metadata:            req.Metadata,
 	})
 	if err != nil {
 		return nil, err
@@ -909,6 +961,12 @@ func (d *Discussion) Close(ctx context.Context, user model.UserInfo, discUUID st
 		return err
 	}
 
+	var forum model.Forum
+	err = d.in.ForumRepo.GetByID(ctx, &forum, disc.ForumID)
+	if err != nil {
+		return err
+	}
+
 	ok, err := d.in.UserRepo.HasForumPermission(ctx, user.UID, disc.ForumID)
 	if err != nil {
 		return err
@@ -932,6 +990,13 @@ func (d *Discussion) Close(ctx context.Context, user model.UserInfo, discUUID st
 		return err
 	}
 
+	err = d.in.Rag.UpdateDocumentMetadata(ctx, forum.DatasetID, disc.RagID, rag.Metadata{
+		DiscMetadata: disc.Metadata(),
+	})
+	if err != nil {
+		d.logger.WithContext(ctx).WithErr(err).With("disc_id", disc.ID).Warn("update rag metadata failed")
+	}
+
 	return nil
 }
 
@@ -945,9 +1010,10 @@ func (d *Discussion) GetByID(ctx context.Context, id uint) (*model.Discussion, e
 }
 
 type CommentCreateReq struct {
-	CommentID uint   `json:"comment_id"`
-	Content   string `json:"content" binding:"required"`
-	Bot       bool   `json:"-" swaggerignore:"true"`
+	CommentID   uint   `json:"comment_id"`
+	Content     string `json:"content" binding:"required"`
+	Bot         bool   `json:"-" swaggerignore:"true"`
+	BotAnswered bool   `json:"-" swaggerignore:"true"`
 }
 
 func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID string, req CommentCreateReq) (uint, error) {
@@ -978,6 +1044,15 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 	err = d.in.CommRepo.Create(ctx, disc.Type, &comment)
 	if err != nil {
 		return 0, err
+	}
+
+	if (!req.Bot || req.BotAnswered) && disc.LastVisited == 0 {
+		err = d.in.DiscRepo.Update(ctx, map[string]any{
+			"last_visited": comment.CreatedAt.Time(),
+		}, repo.QueryWithEqual("id", disc.ID))
+		if err != nil {
+			d.logger.WithContext(ctx).WithErr(err).With("disc_id", disc.ID).Warn("update last_visited failed")
+		}
 	}
 
 	if parentID == 0 {
@@ -1201,6 +1276,12 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 		return errors.New("not allowed to accept comment")
 	}
 
+	var forum model.Forum
+	err = d.in.ForumRepo.GetByID(ctx, &forum, disc.ForumID)
+	if err != nil {
+		return err
+	}
+
 	err = d.CheckPerm(ctx, user.UID, disc)
 	if err != nil {
 		return err
@@ -1238,6 +1319,14 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 			"resolved":    model.DiscussionStateNone,
 			"resolved_at": gorm.Expr("null"),
 		}, repo.QueryWithEqual("id", disc.ID))
+		if err != nil {
+			return err
+		}
+
+		disc.Resolved = model.DiscussionStateNone
+		err = d.in.Rag.UpdateDocumentMetadata(ctx, forum.DatasetID, disc.RagID, rag.Metadata{
+			DiscMetadata: disc.Metadata(),
+		})
 		if err != nil {
 			return err
 		}
@@ -1326,6 +1415,14 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 			"resolved":    model.DiscussionStateResolved,
 			"resolved_at": model.Timestamp(time.Now().Unix()),
 		}, repo.QueryWithEqual("id", disc.ID)); err != nil {
+			return err
+		}
+
+		disc.Resolved = model.DiscussionStateResolved
+		err = d.in.Rag.UpdateDocumentMetadata(ctx, forum.DatasetID, disc.RagID, rag.Metadata{
+			DiscMetadata: disc.Metadata(),
+		})
+		if err != nil {
 			return err
 		}
 
@@ -1696,7 +1793,7 @@ func (d *Discussion) ResolveFeedback(ctx context.Context, user model.UserInfo, d
 }
 
 type ResolveIssueReq struct {
-	Resolve model.DiscussionState `json:"resolve" binding:"oneof=1 3"`
+	Resolve model.DiscussionState `json:"resolve" binding:"oneof=2 4"`
 }
 
 func (d *Discussion) ResolveIssue(ctx context.Context, user model.UserInfo, discUUID string, req ResolveIssueReq) error {
@@ -1710,6 +1807,19 @@ func (d *Discussion) ResolveIssue(ctx context.Context, user model.UserInfo, disc
 	}
 
 	disc, err := d.in.DiscRepo.GetByUUID(ctx, discUUID)
+	if err != nil {
+		return err
+	}
+
+	var forum model.Forum
+	err = d.in.ForumRepo.GetByID(ctx, &forum, disc.ForumID)
+	if err != nil {
+		return err
+	}
+
+	err = d.in.Rag.UpdateDocumentMetadata(ctx, forum.DatasetID, disc.RagID, rag.Metadata{
+		DiscMetadata: disc.Metadata(),
+	})
 	if err != nil {
 		return err
 	}
@@ -1774,6 +1884,12 @@ func (d *Discussion) AssociateDiscussion(ctx context.Context, user model.UserInf
 		return errors.New("invalid discussion")
 	}
 
+	var forum model.Forum
+	err = d.in.ForumRepo.GetByID(ctx, &forum, disc.ForumID)
+	if err != nil {
+		return err
+	}
+
 	if req.IssueUUID == "" {
 		if req.Title == "" {
 			return errors.New("issue title required")
@@ -1803,6 +1919,7 @@ func (d *Discussion) AssociateDiscussion(ctx context.Context, user model.UserInf
 	}
 
 	disc.AssociateID = issue.ID
+	disc.Resolved = model.DiscussionStateClosed
 
 	now := time.Now()
 	err = d.in.DiscRepo.Update(ctx, map[string]any{
@@ -1813,6 +1930,12 @@ func (d *Discussion) AssociateDiscussion(ctx context.Context, user model.UserInf
 	}, repo.QueryWithEqual("uuid", discUUID))
 	if err != nil {
 		return err
+	}
+	err = d.in.Rag.UpdateDocumentMetadata(ctx, forum.DatasetID, disc.RagID, rag.Metadata{
+		DiscMetadata: disc.Metadata(),
+	})
+	if err != nil {
+		d.logger.WithContext(ctx).WithErr(err).With("disc_id", disc.ID).Warn("update disc rag metadata failed")
 	}
 
 	err = d.in.DiscFollowRepo.Create(ctx, &model.DiscussionFollow{

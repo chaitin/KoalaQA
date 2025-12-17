@@ -127,7 +127,7 @@ services:
 
   anydoc:
     container_name: koala-qa-anydoc
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/anydoc:v0.7.2
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/anydoc:v0.7.3
     restart: always
     environment:
       - TZ=${TIMEZONE:-Asia/Shanghai}
@@ -166,7 +166,7 @@ services:
 
   raglite:
     container_name: koala-qa-raglite
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/raglite:v2.4.0
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/raglite:v2.5.2
     restart: always
     environment:
       - TZ=${TIMEZONE:-Asia/Shanghai}

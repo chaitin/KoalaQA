@@ -15,7 +15,6 @@ import { AuthContext } from '@/components/authProvider'
 import CommonAvatar from '@/components/CommonAvatar'
 import { CommonContext } from '@/components/commonProvider'
 import ConvertToIssueModal from '@/components/ConvertToIssueModal'
-import { EditorWrapRef } from '@/components/editor'
 import EditorContent from '@/components/EditorContent'
 import Modal from '@/components/modal'
 import { TimeDisplayWithTag } from '@/components/TimeDisplay'
@@ -696,23 +695,17 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
 
         {data.content && String(data.content).trim() && (
           <>
-            <Divider sx={{ my: 2 }} />
             <EditorContent content={data.content} onTocUpdate={true} />
-            <Divider sx={{ my: 2 }} />
           </>
         )}
-        <Stack direction='row' flexWrap='wrap' sx={{ gap: 1, alignItems: 'center' }}>
-          {tagNames.map((tag, index) => {
-            return (
-              <TagFilterChip
-                key={index}
-                id={index}
-                name={tag}
-                selected={false}
-              />
-            )
-          })}
-        </Stack>
+        <Divider sx={{ my: 2 }} />
+        {!!tagNames.length && (
+          <Stack direction='row' flexWrap='wrap' sx={{ gap: 1, alignItems: 'center',mt: 1, mb: 2 }}>
+            {tagNames.map((tag, index) => {
+              return <TagFilterChip key={index} id={index} name={tag} selected={false} />
+            })}
+          </Stack>
+        )}
       </Paper>
     </>
   )

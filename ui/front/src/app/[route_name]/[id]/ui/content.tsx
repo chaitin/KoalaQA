@@ -422,7 +422,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
       >
         <Box
           sx={{
-            pt: 2,
             flex: 1,
             // 移动端为固定定位的编辑器预留底部空间，避免内容被遮挡
             // 注意：占位元素会在内容区域后面添加，这里只需要少量 padding 作为缓冲
@@ -438,8 +437,8 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
             sx={{
               fontWeight: 700,
               color: 'rgba(33, 34, 45, 0.50)',
-              mb: 3,
               fontSize: '1.25rem',
+              mb: 2,
             }}
           >
             共<span style={{ color: 'rgba(33, 34, 45, 1)', margin: '0 4px' }}>{sortedComments.length}</span>条
@@ -564,7 +563,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                         label='AI'
                         sx={{
                           width: 28,
-                          height: 24,
+                          height: 22,
                           background: 'rgba(0,99,151,0.06)',
                           color: 'primary.main',
                           borderRadius: '4px',
@@ -627,7 +626,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                             border: '1px solid rgba(0,99,151,0.1)',
                             '&:hover': {
                               background: 'rgba(0,99,151,0.12)',
-                              transform: 'scale(1.05)',
                             },
                             '&:active': {
                               transform: 'scale(0.95)',
@@ -667,7 +665,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                           color: '#fff !important',
                           height: 22,
                           fontWeight: 600,
-                          fontSize: '0.7rem',
+                          fontSize: '12px',
                           border: '1px solid rgba(25, 135, 84, 0.3)',
                           fontFamily:
                             'Glibory, "PingFang SC", "Hiragino Sans GB", "STHeiti", "Microsoft YaHei", sans-serif',
@@ -693,7 +691,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                             transform: 'scale(1)',
                             '&:hover': {
                               background: isLiked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
-                              transform: 'scale(1.05)',
                             },
                             '&:active': {
                               transform: 'scale(0.95)',
@@ -737,7 +734,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                             transform: 'scale(1)',
                             '&:hover': {
                               background: isDisliked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
-                              transform: 'scale(1.05)',
                             },
                             '&:active': {
                               transform: 'scale(0.95)',
@@ -829,7 +825,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                       },
                     }}
                   >
-                    {answer.replies?.length || 0} 条{isArticlePost ? '回复' : '评论'}
+                    {answer.replies?.length || 0} 条{isQAPost ? '评论' : '回复'}
                   </Button>
                 </Box>
 
@@ -863,35 +859,26 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                 ) : (
                                   <CommonAvatar src={reply.user_avatar} name={reply.user_name} />
                                 )}
-                                {replyProfileHref ? (
-                                  <Link
-                                    href={replyProfileHref}
-                                    style={{
-                                      fontWeight: 500,
-                                      color: 'inherit',
-                                      fontSize: '14px',
-                                      textDecoration: 'none',
+                                <Link
+                                  href={replyProfileHref || 'javascript:void(0)'}
+                                  style={{
+                                    fontWeight: 500,
+                                    color: 'inherit',
+                                    fontSize: '14px',
+                                    textDecoration: 'none',
+                                  }}
+                                  tabIndex={-1}
+                                >
+                                  <Box
+                                    sx={{
+                                      '&:hover': {
+                                        color: 'primary.main',
+                                      },
                                     }}
-                                    tabIndex={-1}
-                                  >
-                                    <Box
-                                      sx={{
-                                        '&:hover': {
-                                          color: 'primary.main',
-                                        },
-                                      }}
-                                    >
-                                      {reply.user_name || '未知用户'}
-                                    </Box>
-                                  </Link>
-                                ) : (
-                                  <Typography
-                                    variant='body2'
-                                    sx={{ fontWeight: 600, color: 'inherit', fontSize: '0.8125rem' }}
                                   >
                                     {reply.user_name || '未知用户'}
-                                  </Typography>
-                                )}
+                                  </Box>
+                                </Link>
 
                                 {/* AI标签 - 已整合到用户名区域 */}
                                 {reply.bot && (
@@ -917,22 +904,14 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
 
                               {/* 时间显示 - 已整合到同一区域 */}
                               {displayReplyCreatedAt && (
-                                <Stack direction='row' alignItems='center'>
-                                  <Typography variant='body2' sx={{ color: '#9ca3af', fontSize: '0.8125rem' }}>
+                                <Stack direction='row' alignItems='center' sx={{ fontSize: '14px', color: '#9ca3af' }}>
+                                  <Typography variant='body2'>
                                     发布于 <TimeDisplayWithTag timestamp={displayReplyCreatedAt} />
                                   </Typography>
                                   {reply.updated_at && replyCreatedAt && reply.updated_at !== replyCreatedAt && (
                                     <>
-                                      <Typography
-                                        variant='body2'
-                                        sx={{ color: '#9ca3af', ml: 0.5, fontSize: '0.8125rem' }}
-                                      >
-                                        ,
-                                      </Typography>
-                                      <Typography
-                                        variant='body2'
-                                        sx={{ color: '#9ca3af', ml: 0.5, fontSize: '0.8125rem' }}
-                                      >
+                                      <Typography variant='body2'>,</Typography>
+                                      <Typography variant='body2'>
                                         更新于 <TimeDisplayWithTag timestamp={reply.updated_at} />
                                       </Typography>
                                     </>
@@ -987,7 +966,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                             <OutlinedInput
                               fullWidth
                               size='small'
-                              placeholder={'添加评论...'}
+                              placeholder={isQAPost ? '添加评论...' : '回复评论...'}
                               onClick={() => handleReplyInputClick(answer.id!)}
                               sx={{
                                 bgcolor: '#fafbfc',
@@ -1010,7 +989,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                               <Box
                                 sx={{
                                   mb: 3,
-                                  borderRadius: '6px',
+                                  borderRadius: 1,
                                   overflow: 'hidden',
                                   border: '1px solid #000000',
                                   px: 1,
@@ -1064,8 +1043,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                     fontWeight: 600,
                                     fontSize: '0.875rem',
                                     transition: 'all 0.15s ease-in-out',
-                                    '&:hover': { bgcolor: '#f3f4f6', transform: 'scale(1.02)' },
-                                    '&:active': { transform: 'scale(0.98)' },
                                   }}
                                 >
                                   取消
@@ -1073,7 +1050,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                 <Button
                                   disableRipple
                                   variant='contained'
-                                  endIcon={<ArrowForwardIcon />}
                                   onClick={() => handleSubmitComment(answer.id!)}
                                   sx={{
                                     color: '#ffffff',
@@ -1081,16 +1057,13 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                     fontWeight: 600,
                                     px: 2,
                                     py: 0.5,
-                                    borderRadius: '6px',
+                                    borderRadius: 1,
                                     fontSize: '0.875rem',
                                     transition: 'all 0.15s ease-in-out',
-                                    '&:hover': {
-                                      transform: 'translateY(-1px)',
-                                    },
                                     '&:active': { transform: 'translateY(0) scale(0.98)' },
                                   }}
                                 >
-                                  发送评论
+                                  {isQAPost ? '提交评论' : '提交回复'}
                                 </Button>
                               </Box>
                             </>
@@ -1125,7 +1098,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
               right: !isQAPost ? 'unset' : { xs: 0, sm: 'unset' },
               pb: !isQAPost ? 3 : { xs: 'calc(24px + env(safe-area-inset-bottom, 0))', sm: 3 },
               width: '100%',
-              maxWidth: { lg: '756px' },
+              maxWidth: { lg: '750px' },
               mx: { xs: 0, sm: 'auto' },
               mt: !isQAPost ? 0 : 'auto',
               zIndex: 9,
@@ -1160,7 +1133,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
               },
             }}
           >
-            <Box sx={{ p: 1, border: '1px solid rgba(33, 34, 45, 1)', borderRadius: '12px' }}>
+            <Box sx={{ p: 1, border: '1px solid rgba(33, 34, 45, 1)', borderRadius: 1 }}>
               {!isQAPost && !showAnswerEditor ? (
                 <OutlinedInput
                   fullWidth
@@ -1187,7 +1160,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                     ref={answerEditorContainerRef}
                     sx={{
                       minHeight: '100px',
-                      borderRadius: '6px',
+                      borderRadius: 1,
                       px: 1,
                       '& .tiptap:focus': { backgroundColor: 'transparent' },
                       '& .tiptap': { overflow: 'auto', maxHeight: '40vh' },
@@ -1242,10 +1215,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                             color: '#6b7280',
                             fontWeight: 600,
                             fontSize: '0.875rem',
-                            backgroundColor: 'transparent',
                             transition: 'all 0.15s ease-in-out',
-                            '&:hover': { bgcolor: '#f3f4f6', transform: 'scale(1.02)' },
-                            '&:active': { transform: 'scale(0.98)' },
                             '&:focus': {
                               backgroundColor: 'transparent',
                             },
@@ -1267,12 +1237,9 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                             fontWeight: 600,
                             px: 2,
                             py: 0.5,
-                            borderRadius: '6px',
+                            borderRadius: 1,
                             fontSize: '0.875rem',
                             transition: 'all 0.15s ease-in-out',
-                            '&:hover': {
-                              transform: 'translateY(-1px)',
-                            },
                             '&:active': { transform: 'translateY(0) scale(0.98)' },
                           }}
                         >

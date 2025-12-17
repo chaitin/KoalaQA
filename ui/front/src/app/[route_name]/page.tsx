@@ -77,7 +77,12 @@ async function fetchForumData(route_name: string, searchParams: any) {
     const [discussions, groups, announcements] = await Promise.all([
       safeApiCall(() => getDiscussion(discussionParams), { items: [], total: 0 }),
       safeApiCall(() => getGroup(groupParams), { items: [] }),
-      safeApiCall(() => getDiscussion(params).then(r=>r.items),[]),
+      safeApiCall(
+        () => forumInfo?.blog_ids == null 
+          ? Promise.resolve([]) 
+          : getDiscussion(params).then(r => r.items), 
+        []
+      ),
     ])
     
     return {

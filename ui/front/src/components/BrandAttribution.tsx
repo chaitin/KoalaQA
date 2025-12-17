@@ -60,7 +60,7 @@ const BrandAttribution = ({ inSidebar = false, sidebarRef }: BrandAttributionPro
       alignItems={'center'}
       onClick={handleLogoClick}
       sx={{
-        fontSize: '11px',
+        fontSize: '12px',
         lineHeight: '16px',
         color: 'rgba(0, 0, 0, 0.45)',
         cursor: 'pointer',
@@ -96,7 +96,7 @@ const BrandAttribution = ({ inSidebar = false, sidebarRef }: BrandAttributionPro
       <Box 
         ref={containerRef} 
         sx={{ 
-          mt: 2,
+          mt: '10px!important',
           position: isFixed ? 'sticky' : 'relative',
           bottom: isFixed ? 0 : 'auto',
           zIndex: isFixed ? 10 : 'auto',

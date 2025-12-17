@@ -18,7 +18,7 @@ export default function AnnouncementCard({ announcement, routeName }: Announceme
         elevation={0}
         sx={{
           bgcolor: 'rgba(0,99,151,0.03)',
-          borderRadius: '6px',
+          borderRadius: 1,
           border: '1px solid #D9DEE2',
           p: 2,
           mb: 2,

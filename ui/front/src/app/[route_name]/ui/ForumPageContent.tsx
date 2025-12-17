@@ -1,6 +1,12 @@
 'use client'
 
-import { ModelDiscussionListItem, ModelDiscussionType, ModelForumInfo, ModelGroupItemInfo, ModelGroupWithItem } from '@/api/types'
+import {
+  ModelDiscussionListItem,
+  ModelDiscussionType,
+  ModelForumInfo,
+  ModelGroupItemInfo,
+  ModelGroupWithItem,
+} from '@/api/types'
 import GroupsInitializer from '@/components/groupsInitializer'
 import { Button, Stack } from '@mui/material'
 import Link from 'next/link'
@@ -46,7 +52,6 @@ const ForumPageContent = ({ route_name, searchParams, initialData }: ForumPageCo
     }
   }, [route_name, setRouteName])
 
-
   // 如果找不到对应的论坛，返回 404
   if (!forumId) {
     return (
@@ -54,27 +59,23 @@ const ForumPageContent = ({ route_name, searchParams, initialData }: ForumPageCo
         <h1>论坛不存在</h1>
         <p>请检查 URL 是否正确</p>
         <Link href='/' style={{ textDecoration: 'none' }}>
-          <Button size='large' variant='contained'>返回首页</Button>
+          <Button size='large' variant='contained'>
+            返回首页
+          </Button>
         </Link>
       </Stack>
     )
   }
 
   return (
-    <GroupsInitializer groupsData={groups}>
-      <Stack gap={3} sx={{ minHeight: '100%' }}>
-        <Suspense>
-          <ArticleCard
-            data={discussions}
-            announcements={announcements}
-            tps={tps || ''}
-            tags={tags || ''}
-            type={normalizedType}
-            forumInfo={forumInfo}
-          />
-        </Suspense>
-      </Stack>
-    </GroupsInitializer>
+      <ArticleCard
+        data={discussions}
+        announcements={announcements}
+        tps={tps || ''}
+        tags={tags || ''}
+        type={normalizedType}
+        forumInfo={forumInfo}
+      />
   )
 }
 

@@ -4101,11 +4101,6 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
-                        "type": "boolean",
-                        "name": "fuzzy_search",
-                        "in": "query"
-                    },
-                    {
                         "type": "array",
                         "items": {
                             "type": "integer"
@@ -4135,10 +4130,12 @@ const docTemplate = `{
                             0,
                             1,
                             2,
-                            3
+                            3,
+                            4
                         ],
                         "type": "integer",
                         "x-enum-varnames": [
+                            "DiscussionStateUnknown",
                             "DiscussionStateNone",
                             "DiscussionStateResolved",
                             "DiscussionStateClosed",
@@ -6670,6 +6667,9 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string"
+                },
+                "updated_at": {
+                    "type": "integer"
                 }
             }
         },
@@ -6823,6 +6823,10 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "last_visited": {
+                    "description": "发帖人上次访问时间",
+                    "type": "integer"
+                },
                 "like": {
                     "type": "integer"
                 },
@@ -6873,6 +6877,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "view": {
+                    "type": "integer"
+                },
+                "visit": {
+                    "description": "发帖人访问次数",
                     "type": "integer"
                 }
             }
@@ -6930,6 +6938,9 @@ const docTemplate = `{
         "model.DiscussionDetail": {
             "type": "object",
             "properties": {
+                "alter": {
+                    "type": "boolean"
+                },
                 "associate": {
                     "$ref": "#/definitions/model.DiscussionListItem"
                 },
@@ -6979,6 +6990,10 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "id": {
+                    "type": "integer"
+                },
+                "last_visited": {
+                    "description": "发帖人上次访问时间",
                     "type": "integer"
                 },
                 "like": {
@@ -7044,6 +7059,10 @@ const docTemplate = `{
                 },
                 "view": {
                     "type": "integer"
+                },
+                "visit": {
+                    "description": "发帖人访问次数",
+                    "type": "integer"
                 }
             }
         },
@@ -7092,6 +7111,10 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "id": {
+                    "type": "integer"
+                },
+                "last_visited": {
+                    "description": "发帖人上次访问时间",
                     "type": "integer"
                 },
                 "like": {
@@ -7151,6 +7174,10 @@ const docTemplate = `{
                 },
                 "view": {
                     "type": "integer"
+                },
+                "visit": {
+                    "description": "发帖人访问次数",
+                    "type": "integer"
                 }
             }
         },
@@ -7204,9 +7231,11 @@ const docTemplate = `{
                 0,
                 1,
                 2,
-                3
+                3,
+                4
             ],
             "x-enum-varnames": [
+                "DiscussionStateUnknown",
                 "DiscussionStateNone",
                 "DiscussionStateResolved",
                 "DiscussionStateClosed",
@@ -9299,8 +9328,8 @@ const docTemplate = `{
             "properties": {
                 "resolve": {
                     "enum": [
-                        1,
-                        3
+                        2,
+                        4
                     ],
                     "allOf": [
                         {

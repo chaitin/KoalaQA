@@ -387,6 +387,7 @@ func (s *kbSpace) UpdateSpaceFolder(ctx *context.Context) {
 		return
 	}
 
+	req.IncrUpdate = true
 	err = s.svcDoc.UpdateSpaceFolder(ctx, kbID, folderID, req)
 	if err != nil {
 		ctx.InternalError(err, "update space fplder failed")

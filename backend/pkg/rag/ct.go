@@ -130,17 +130,15 @@ func (c *CTRag) DeleteDataset(ctx context.Context, datasetID string) error {
 	return nil
 }
 
-func (c *CTRag) UpdateDocumentGroupIDs(ctx context.Context, datasetID string, docID string, groupIds []int) error {
+func (c *CTRag) UpdateDocumentMetadata(ctx context.Context, datasetID string, docID string, metadata Metadata) error {
 	if _, err := c.client.Documents.Update(ctx, &raglite.UpdateDocumentRequest{
 		DatasetID:  datasetID,
 		DocumentID: docID,
-		Metadata: map[string]any{
-			"group_ids": groupIds,
-		},
+		Metadata:   metadata.Map(),
 	}); err != nil {
 		return err
 	}
-	c.logger.WithContext(ctx).With("dataset_id", datasetID).With("doc_id", docID).With("group_ids", groupIds).Debug("update document group ids success")
+	c.logger.WithContext(ctx).With("dataset_id", datasetID).With("doc_id", docID).With("metadata", metadata).Debug("update document group ids success")
 	return nil
 }
 

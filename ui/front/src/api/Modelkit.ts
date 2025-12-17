@@ -14,7 +14,9 @@ import request, { ContentType, RequestParams } from "./httpClient";
 import {
   ContextResponse,
   ModelLLM,
+  PutAdminModelIdActiveParams,
   PutAdminModelIdParams,
+  SvcActiveModelReq,
   SvcCheckModelRes,
   SvcMKCreateReq,
   SvcMKSupportedReq,
@@ -163,6 +165,37 @@ export const putAdminModelId = (
     }
   >({
     path: `/admin/model/${id}`,
+    method: "PUT",
+    body: req,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags modelkit
+ * @name PutAdminModelIdActive
+ * @summary active model
+ * @request PUT:/admin/model/{id}/active
+ * @response `200` `(ContextResponse & {
+    data?: Record<string, any>,
+
+})` OK
+ */
+
+export const putAdminModelIdActive = (
+  { id, ...query }: PutAdminModelIdActiveParams,
+  req: SvcActiveModelReq,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: Record<string, any>;
+    }
+  >({
+    path: `/admin/model/${id}/active`,
     method: "PUT",
     body: req,
     type: ContentType.Json,

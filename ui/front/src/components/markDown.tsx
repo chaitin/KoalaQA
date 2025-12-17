@@ -14,7 +14,7 @@ export interface MarkDownProps {
 
 const MarkDown: React.FC<MarkDownProps> = (props) => {
   const { content = '', sx } = props
-  if (isImageContent(content || '')) return '【图片】'
+  if (isImageContent(content || '')) return <Box sx={sx}>[图片]</Box> 
   // 提取纯文本用于单行显示
   const plainText = extractTextFromMarkdown(content)
   if (!plainText) return null

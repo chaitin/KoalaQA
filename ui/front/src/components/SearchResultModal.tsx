@@ -203,18 +203,27 @@ export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish 
               height: 48,
               backgroundColor: '#fff',
               borderRadius: 1,
-              '.MuiOutlinedInput-notchedOutline': {
-                borderColor: 'transparent',
+              // 去掉原生描边，避免与自定义边框叠加
+              '& .MuiOutlinedInput-notchedOutline': {
+                border: 'none',
+              },
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                border: 'none',
+              },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                border: 'none',
               },
               fontSize: 16,
               border: '1px solid ',
               borderColor: 'divider',
+              '&:hover': {
+                borderColor: 'primary.main',
+              },
+              '&.Mui-focused': {
+                borderColor: 'primary.main',
+              },
               px: 2,
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              '&:hover': {
-                boxShadow: '0px 4px 12px 0px rgba(0,0,0,0.15), 0px 4px 12px 0px rgba(218,220,224,0.6)',
-                transform: 'translateY(-2px)',
-              },
               '& .MuiInputAdornment-root': {
                 transition: 'all 0.3s ease',
               },
@@ -256,6 +265,7 @@ export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish 
               sx={{
                 flex: 1,
                 overflow: 'auto',
+                scrollbarWidth: 'thin',
                 minHeight: 0, // 确保可以收缩
               }}
             >
@@ -330,7 +340,7 @@ export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish 
                   </Stack>
                 </Stack>
               ) : (
-                <Stack spacing={1}>
+                <>
                   {searchResults.map((item, index) => (
                     <SearchDiscussCard
                       size='small'
@@ -342,7 +352,7 @@ export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish 
                       onNavigate={onClose}
                     />
                   ))}
-                </Stack>
+                </>
               )}
             </Box>{' '}
             {/* 结束搜索结果列表的可滚动区域 */}

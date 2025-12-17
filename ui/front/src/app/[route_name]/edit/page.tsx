@@ -280,9 +280,8 @@ export default function EditPage() {
           flex: 1,
           pt: 0,
           minWidth: 0,
-          maxWidth: { xs: '100%', lg: 798 },
-          width: { xs: '100%', lg: 'auto' },
-          px: { xs: 0, md: 3 },
+          width: { xs: '100%', lg: 798 },
+          px: 0,
         }}
       >
         <h1 style={{ display: 'none' }}>编辑讨论</h1>
@@ -318,7 +317,7 @@ export default function EditPage() {
             sx={{
               m: 0,
               '& fieldset': {
-                borderColor: '#D9DEE2!important',
+                borderColor: '#D9DEE2',
               },
             }}
           />

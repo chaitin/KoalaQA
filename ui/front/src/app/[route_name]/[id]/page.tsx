@@ -1,4 +1,4 @@
-import { getDiscussionDiscId, ModelDiscussionType } from '@/api'
+import { getDiscussionDiscId } from '@/api'
 import { Alert, Box, Stack, Typography } from '@mui/material'
 import { Metadata } from 'next'
 import { cache, Suspense } from 'react'
@@ -7,6 +7,7 @@ import TitleCard from './ui/titleCard'
 import DetailSidebarWrapper from './ui/DetailSidebarWrapper'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import ScrollReset from '@/components/ScrollReset'
+import DiscussionAlert from './ui/DiscussionAlert'
 
 // 动态生成 metadata
 export async function generateMetadata(props: {
@@ -53,7 +54,6 @@ const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; 
 
   // 获取讨论详情
   const result = await fetchDiscussionDetailCached(id)
-  const isArticle = result.data?.type === ModelDiscussionType.DiscussionTypeBlog
   // 处理错误情况
   if (!result.success) {
     return (
@@ -78,6 +78,7 @@ const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; 
   }
 
   const discussion = result.data
+  const shouldShowAlert = Boolean(discussion?.alert ?? (discussion as any)?.alter)
 
   if (!discussion) {
     return (
@@ -105,7 +106,7 @@ const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; 
           gap: { xs: 0, lg: 3 },
           justifyContent: { lg: 'center' },
           alignItems: { lg: 'flex-start' },
-          height: '100%',
+          minHeight: '100vh',
         }}
       >
         {/* 主内容区域 */}
@@ -114,12 +115,12 @@ const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; 
             flex: 1,
             minWidth: 0,
             alignSelf: 'stretch',
-            maxWidth: { lg: 798 },
+            maxWidth: { lg: 750 },
             width: { xs: '100%', lg: 'auto' },
-            px: { xs: 0, md: 3 },
-            height: '100%',
+            position: 'relative',
           }}
         >
+          {shouldShowAlert && <DiscussionAlert defaultOpen />}
           <h1 style={{ display: 'none' }}>讨论详情</h1>
           <Suspense fallback={<LoadingSpinner />}>
             <TitleCard data={discussion} />
@@ -128,7 +129,7 @@ const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; 
         </Stack>
 
         {/* 右侧边栏 - 仅在桌面端显示 */}
-        <DetailSidebarWrapper type={discussion.type}  discussion={discussion} discId={discussion.uuid || id} />
+        <DetailSidebarWrapper type={discussion.type} discussion={discussion} discId={discussion.uuid || id} />
       </Box>
     </>
   )

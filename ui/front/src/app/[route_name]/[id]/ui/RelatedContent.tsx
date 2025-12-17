@@ -247,7 +247,7 @@ const RelatedContent = ({ discId }: { discId: string }) => {
                       <Ellipsis
                         sx={{
                           fontWeight: 600,
-                          fontSize: '12px',
+                          fontSize: '14px',
                           color: '#21222D',
                           lineHeight: '20px',
                           flex: 1,

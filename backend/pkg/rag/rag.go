@@ -24,7 +24,7 @@ type ParserConfig struct {
 }
 
 type Metadata struct {
-	GroupIDs []int `json:"group_ids,omitempty"`
+	model.DiscMetadata
 }
 
 func (m *Metadata) Map() map[string]interface{} {
@@ -33,6 +33,16 @@ func (m *Metadata) Map() map[string]interface{} {
 	if m.GroupIDs != nil {
 		result["group_ids"] = m.GroupIDs
 	}
+	if m.TagIDs != nil {
+		result["tag_ids"] = m.TagIDs
+	}
+	if m.DiscussType != "" {
+		result["discuss_type"] = m.DiscussType
+	}
+	if m.DiscussState != model.DiscussionStateUnknown {
+		result["discuss_state"] = m.DiscussState
+	}
+
 	return result
 }
 
@@ -52,7 +62,7 @@ type Service interface {
 	QueryRecords(ctx context.Context, req QueryRecordsReq) (string, []*model.NodeContentChunk, error)
 	DeleteRecords(ctx context.Context, datasetID string, docIDs []string) error
 	DeleteDataset(ctx context.Context, datasetID string) error
-	UpdateDocumentGroupIDs(ctx context.Context, datasetID string, docID string, groupIds []int) error
+	UpdateDocumentMetadata(ctx context.Context, datasetID string, docID string, metadata Metadata) error
 
 	GetModelList(ctx context.Context) ([]*model.LLM, error)
 	AddModel(ctx context.Context, model *model.LLM) (string, error)
