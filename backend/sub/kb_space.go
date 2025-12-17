@@ -278,6 +278,8 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 			continue
 		}
 
+		delete(exist, doc.ID)
+
 		if msg.IncrUpdate && doc.UpdatedAt > 0 && doc.UpdatedAt < dbDoc.updatedAt {
 			logger.With("doc_id", doc.ID).With("anydoc_updated", doc.UpdatedAt).With("dbdoc_updated", dbDoc.updatedAt).Info("incr update ignore doc")
 			continue
@@ -349,8 +351,6 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 				logger.WithErr(err).With("export_doc_id", doc.ID).Warn("update doc staus failed")
 			}
 		}
-
-		delete(exist, doc.ID)
 	}
 
 	for _, doc := range exist {
