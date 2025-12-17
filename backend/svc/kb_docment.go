@@ -942,6 +942,7 @@ func (d *KBDocument) ListWeb(ctx context.Context, req ListWebReq) (*model.ListRe
 		repo.QueryWithEqual("doc_type", model.DocTypeWeb),
 		repo.QueryWithPagination(&req.Pagination),
 		repo.QueryWithILike("title", req.Title),
+		repo.QueryWithOrderBy("created_at DESC"),
 	)
 	if err != nil {
 		return nil, err
