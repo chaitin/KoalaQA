@@ -235,7 +235,7 @@ var errDiscussionClosed = errors.New("discussion has been closed")
 type DiscussionUpdateReq struct {
 	Title    string           `json:"title"`
 	Summary  string           `json:"summary"`
-	Content  string           `json:"content"`
+	Content  *string          `json:"content"`
 	GroupIDs model.Int64Array `json:"group_ids"`
 }
 
@@ -258,8 +258,8 @@ func (d *Discussion) Update(ctx context.Context, user model.UserInfo, uuid strin
 	if req.Title != "" {
 		updateM["title"] = req.Title
 	}
-	if req.Content != "" {
-		updateM["content"] = req.Content
+	if req.Content != nil {
+		updateM["content"] = *req.Content
 	}
 
 	if len(req.GroupIDs) > 0 {
