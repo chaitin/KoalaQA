@@ -9328,8 +9328,8 @@ const docTemplate = `{
             "properties": {
                 "resolve": {
                     "enum": [
-                        1,
-                        3
+                        2,
+                        4
                     ],
                     "allOf": [
                         {

@@ -1793,7 +1793,7 @@ func (d *Discussion) ResolveFeedback(ctx context.Context, user model.UserInfo, d
 }
 
 type ResolveIssueReq struct {
-	Resolve model.DiscussionState `json:"resolve" binding:"oneof=1 3"`
+	Resolve model.DiscussionState `json:"resolve" binding:"oneof=2 4"`
 }
 
 func (d *Discussion) ResolveIssue(ctx context.Context, user model.UserInfo, discUUID string, req ResolveIssueReq) error {
