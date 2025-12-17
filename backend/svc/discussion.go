@@ -23,6 +23,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/webhook/message"
 	"github.com/chaitin/koalaqa/repo"
 	"go.uber.org/fx"
+	"golang.org/x/sync/singleflight"
 	"gorm.io/gorm"
 )
 
@@ -53,6 +54,7 @@ type discussionIn struct {
 type Discussion struct {
 	in discussionIn
 
+	sf          singleflight.Group
 	logger      *glog.Logger
 	webhookType map[model.DiscussionType]message.Type
 }
@@ -61,6 +63,7 @@ func newDiscussion(in discussionIn) *Discussion {
 	return &Discussion{
 		in:     in,
 		logger: glog.Module("svc", "discussion"),
+		sf:     singleflight.Group{},
 		webhookType: map[model.DiscussionType]message.Type{
 			model.DiscussionTypeQA:       message.TypeNewQA,
 			model.DiscussionTypeFeedback: message.TypeNewFeedback,
@@ -688,6 +691,45 @@ func (d *Discussion) DetailByUUID(ctx context.Context, uid uint, uuid string) (*
 		return nil, errPermission
 	}
 
+	if discussion.UserID == uid && discussion.Type == model.DiscussionTypeQA &&
+		discussion.Resolved != model.DiscussionStateResolved &&
+		discussion.LastVisited != 0 && discussion.Visit < 3 {
+		humanAnswer := false
+
+		for _, comment := range discussion.Comments {
+			if comment.Bot {
+				continue
+			}
+
+			humanAnswer = true
+			break
+		}
+
+		// 当 ai 回答或者存在非 ai 回答时，且时间大于 last_visited 5 分钟以上
+		if (!discussion.BotUnknown || humanAnswer) && time.Now().Unix() > int64(discussion.LastVisited)+300 {
+			discussion.Visit++
+
+			if discussion.Visit == 3 {
+				discussion.Alter = true
+			}
+
+			_, err, _ = d.sf.Do(discussion.UUID, func() (interface{}, error) {
+				e := d.in.DiscRepo.Update(ctx, map[string]any{
+					"visit":        discussion.Visit,
+					"last_visited": time.Now(),
+				}, repo.QueryWithEqual("id", discussion.ID))
+				if e != nil {
+					return nil, e
+				}
+
+				return e, nil
+			})
+			if err != nil {
+				d.logger.WithContext(ctx).With("disc_id", discussion.ID).Warn("update last visted failed")
+			}
+		}
+	}
+
 	go d.IncrementView(uuid)
 	return discussion, nil
 }
@@ -954,9 +996,10 @@ func (d *Discussion) GetByID(ctx context.Context, id uint) (*model.Discussion, e
 }
 
 type CommentCreateReq struct {
-	CommentID uint   `json:"comment_id"`
-	Content   string `json:"content" binding:"required"`
-	Bot       bool   `json:"-" swaggerignore:"true"`
+	CommentID   uint   `json:"comment_id"`
+	Content     string `json:"content" binding:"required"`
+	Bot         bool   `json:"-" swaggerignore:"true"`
+	BotAnswered bool   `json:"-" swaggerignore:"true"`
 }
 
 func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID string, req CommentCreateReq) (uint, error) {
@@ -987,6 +1030,15 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 	err = d.in.CommRepo.Create(ctx, disc.Type, &comment)
 	if err != nil {
 		return 0, err
+	}
+
+	if (!req.Bot || req.BotAnswered) && disc.LastVisited == 0 {
+		err = d.in.DiscRepo.Update(ctx, map[string]any{
+			"last_visited": comment.CreatedAt.Time(),
+		}, repo.QueryWithEqual("id", disc.ID))
+		if err != nil {
+			d.logger.WithContext(ctx).WithErr(err).With("disc_id", disc.ID).Warn("update last_visited failed")
+		}
 	}
 
 	if parentID == 0 {

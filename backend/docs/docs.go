@@ -6823,6 +6823,10 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "last_visited": {
+                    "description": "发帖人上次访问时间",
+                    "type": "integer"
+                },
                 "like": {
                     "type": "integer"
                 },
@@ -6873,6 +6877,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "view": {
+                    "type": "integer"
+                },
+                "visit": {
+                    "description": "发帖人访问次数",
                     "type": "integer"
                 }
             }
@@ -6930,6 +6938,9 @@ const docTemplate = `{
         "model.DiscussionDetail": {
             "type": "object",
             "properties": {
+                "alter": {
+                    "type": "boolean"
+                },
                 "associate": {
                     "$ref": "#/definitions/model.DiscussionListItem"
                 },
@@ -6979,6 +6990,10 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "id": {
+                    "type": "integer"
+                },
+                "last_visited": {
+                    "description": "发帖人上次访问时间",
                     "type": "integer"
                 },
                 "like": {
@@ -7044,6 +7059,10 @@ const docTemplate = `{
                 },
                 "view": {
                     "type": "integer"
+                },
+                "visit": {
+                    "description": "发帖人访问次数",
+                    "type": "integer"
                 }
             }
         },
@@ -7092,6 +7111,10 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "id": {
+                    "type": "integer"
+                },
+                "last_visited": {
+                    "description": "发帖人上次访问时间",
                     "type": "integer"
                 },
                 "like": {
@@ -7150,6 +7173,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "view": {
+                    "type": "integer"
+                },
+                "visit": {
+                    "description": "发帖人访问次数",
                     "type": "integer"
                 }
             }

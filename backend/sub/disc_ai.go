@@ -133,9 +133,10 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 	}
 	if answered || bot.UnknownPrompt != "" {
 		commentID, err := d.disc.CreateComment(ctx, bot.UserID, data.DiscUUID, svc.CommentCreateReq{
-			Content:   llmRes,
-			CommentID: 0,
-			Bot:       true,
+			Content:     llmRes,
+			CommentID:   0,
+			Bot:         true,
+			BotAnswered: answered,
 		})
 		if err != nil {
 			logger.WithErr(err).Error("create comment failed")
@@ -256,8 +257,9 @@ func (d *Disc) handleUpdate(ctx context.Context, data topic.MsgDiscChange) error
 		}
 	} else if disc.BotUnknown {
 		_, err = d.disc.CreateComment(ctx, bot.UserID, data.DiscUUID, svc.CommentCreateReq{
-			Content: llmRes,
-			Bot:     true,
+			Content:     llmRes,
+			Bot:         true,
+			BotAnswered: answered,
 		})
 		if err != nil {
 			logger.WithErr(err).Warn("create bot comment failed")

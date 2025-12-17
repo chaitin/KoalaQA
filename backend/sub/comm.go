@@ -178,9 +178,10 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 	// ai 能够回答或者 ai 第一次无法回答的情况下创建ai回复
 	if answered || (bot.UnknownPrompt != "" && !disc.BotUnknown) {
 		newID, err := d.disc.CreateComment(ctx, bot.UserID, data.DiscUUID, svc.CommentCreateReq{
-			Content:   llmRes,
-			Bot:       true,
-			CommentID: data.CommID,
+			Content:     llmRes,
+			Bot:         true,
+			BotAnswered: answered,
+			CommentID:   data.CommID,
 		})
 		if err != nil {
 			return err

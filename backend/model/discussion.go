@@ -49,6 +49,8 @@ type Discussion struct {
 	Members     Int64Array      `json:"members" gorm:"column:members;type:bigint[]"`
 	AssociateID uint            `json:"associate_id" gorm:"column:associate_id;type:bigint;default:0;index"`
 	BotUnknown  bool            `json:"bot_unknown" gorm:"column:bot_unknown"`
+	Visit       int             `json:"visit" gorm:"column:visit;default:0"`                                   // 发帖人访问次数
+	LastVisited Timestamp       `json:"last_visited" gorm:"column:last_visited;type:timestamp with time zone"` // 发帖人上次访问时间
 }
 
 type DiscMetadata struct {
@@ -138,6 +140,7 @@ type DiscussionDetail struct {
 	Comments      []DiscussionComment `json:"comments" gorm:"-"`
 	Associate     DiscussionListItem  `json:"associate"`
 	UserLike      bool                `json:"user_like"`
+	Alter         bool                `json:"alter"`
 }
 
 type DiscussHeader struct {
