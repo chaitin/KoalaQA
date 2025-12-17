@@ -814,7 +814,7 @@ func (d *KBDocument) ListSpaceFolder(ctx context.Context, kbID uint, parentID ui
 
 type UpdateSpaceFolderReq struct {
 	DocID      uint `json:"doc_id"`
-	IncrUpdate bool `json:"-"`
+	IncrUpdate bool `json:"-" swaggerignore:"true"`
 }
 
 func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID uint, req UpdateSpaceFolderReq) error {
