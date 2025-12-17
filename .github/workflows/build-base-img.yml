@@ -44,7 +44,7 @@ jobs:
           - name: raglite
             dockerfile: docker/raglite/Dockerfile
             context: docker/raglite
-            tag: "v2.4.0"
+            tag: "v2.5.1"
 
     steps:
       - name: Checkout code
