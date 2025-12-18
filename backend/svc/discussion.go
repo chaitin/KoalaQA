@@ -718,6 +718,7 @@ func (d *Discussion) DetailByUUID(ctx context.Context, uid uint, uuid string) (*
 				e := d.in.DiscRepo.Update(ctx, map[string]any{
 					"visit":        discussion.Visit,
 					"last_visited": time.Now(),
+					"updated_at":   gorm.Expr("updated_at"),
 				}, repo.QueryWithEqual("id", discussion.ID))
 				if e != nil {
 					return nil, e
