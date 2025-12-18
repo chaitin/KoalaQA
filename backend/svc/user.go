@@ -79,6 +79,7 @@ func (u *User) List(ctx context.Context, req UserListReq) (*model.ListRes[UserLi
 		repo.QueryWithILike("name", req.Name),
 		repo.QueryWithEqual("invisible", false),
 		repo.QueryWithEqual("org_ids", req.OrgID, repo.EqualOPValIn),
+		repo.QueryWithILike("email", req.Email),
 	)
 	if err != nil {
 		return nil, err
