@@ -9061,14 +9061,14 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
-                "pending": {
-                    "type": "integer"
-                },
                 "rag_id": {
                     "type": "string"
                 },
                 "status": {
                     "$ref": "#/definitions/model.DocStatus"
+                },
+                "success": {
+                    "type": "integer"
                 },
                 "title": {
                     "type": "string"

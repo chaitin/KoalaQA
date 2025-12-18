@@ -850,7 +850,7 @@ type ListSpaceFolderItem struct {
 	Title   string          `json:"title"`
 	Status  model.DocStatus `json:"status"`
 	Total   int64           `json:"total"`
-	Pending int64           `json:"pending"`
+	Success int64           `json:"success"`
 	Failed  int64           `json:"failed"`
 }
 
