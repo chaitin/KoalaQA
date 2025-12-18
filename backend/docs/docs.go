@@ -97,11 +97,6 @@ const docTemplate = `{
                 "summary": "backend list discussions",
                 "parameters": [
                     {
-                        "type": "boolean",
-                        "name": "ai",
-                        "in": "query"
-                    },
-                    {
                         "type": "integer",
                         "name": "forum_id",
                         "in": "query",
@@ -2111,6 +2106,26 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "array",
+                        "items": {
+                            "enum": [
+                                0,
+                                1,
+                                2,
+                                3,
+                                4,
+                                5,
+                                6,
+                                7,
+                                8
+                            ],
+                            "type": "integer"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "name": "title",
                         "in": "query"
@@ -2967,6 +2982,61 @@ const docTemplate = `{
                                                     }
                                                 ]
                                             }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/rank/ai_insight/{ai_insight_id}/discussion": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rank"
+                ],
+                "summary": "list ai insight discussion",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ai_insight_id",
+                        "name": "ai_insight_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/svc.AIInsightDiscussionItem"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
                                         }
                                     }
                                 }
@@ -4616,6 +4686,35 @@ const docTemplate = `{
                                     }
                                 }
                             ]
+                        }
+                    }
+                }
+            }
+        },
+        "/discussion/{disc_id}/ai_learn": {
+            "post": {
+                "description": "discussion ai learn",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "discussion ai learn",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "disc_id",
+                        "name": "disc_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
                         }
                     }
                 }
@@ -6938,7 +7037,7 @@ const docTemplate = `{
         "model.DiscussionDetail": {
             "type": "object",
             "properties": {
-                "alter": {
+                "alert": {
                     "type": "boolean"
                 },
                 "associate": {
@@ -7770,6 +7869,19 @@ const docTemplate = `{
                 "MsgNotifyTypeUserPoint"
             ]
         },
+        "model.OrgType": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-varnames": [
+                "OrgTypeNormal",
+                "OrgTypeDefault",
+                "OrgTypeAdmin"
+            ]
+        },
         "model.PlatformOpt": {
             "type": "object",
             "properties": {
@@ -8351,6 +8463,32 @@ const docTemplate = `{
                 }
             }
         },
+        "svc.AIInsightDiscussionItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "integer"
+                },
+                "deleted": {
+                    "type": "boolean"
+                },
+                "discussion_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "rank_id": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "integer"
+                }
+            }
+        },
         "svc.ActiveModelReq": {
             "type": "object",
             "properties": {
@@ -8923,14 +9061,14 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
-                "pending": {
-                    "type": "integer"
-                },
                 "rag_id": {
                     "type": "string"
                 },
                 "status": {
                     "$ref": "#/definitions/model.DocStatus"
+                },
+                "success": {
+                    "type": "integer"
                 },
                 "title": {
                     "type": "string"
@@ -9249,6 +9387,9 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "type": {
+                    "$ref": "#/definitions/model.OrgType"
+                },
                 "updated_at": {
                     "type": "integer"
                 }
@@ -9496,8 +9637,8 @@ const docTemplate = `{
         "svc.UpdateSpaceFolderReq": {
             "type": "object",
             "properties": {
-                "doc_id": {
-                    "type": "integer"
+                "update_type": {
+                    "$ref": "#/definitions/topic.KBSpaceUpdateType"
                 }
             }
         },
@@ -9782,6 +9923,19 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "topic.KBSpaceUpdateType": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-varnames": [
+                "KBSpaceUpdateTypeAll",
+                "KBSpaceUpdateTypeIncr",
+                "KBSpaceUpdateTypeFailed"
+            ]
         },
         "topic.TaskMeta": {
             "type": "object",

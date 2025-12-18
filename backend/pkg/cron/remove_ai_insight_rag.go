@@ -63,12 +63,9 @@ func (i *removeAIInsightRag) Run() {
 		}
 	}
 
-	err = i.repoRank.Delete(ctx,
-		repo.QueryWithEqual("type", model.RankTypeAIInsight),
-		repo.QueryWithEqual("created_at", util.WeekTrunc(now.AddDate(0, 0, -21)), repo.EqualOPLT),
-	)
+	err = i.repoRank.ClearExpireAIInsight(ctx, util.WeekTrunc(now.AddDate(0, 0, -21)))
 	if err != nil {
-		i.logger.WithErr(err).Warn("remove old ai insight failed")
+		i.logger.WithErr(err).Warn("remove expire ai insight failed")
 	}
 
 	err = i.repoRank.Update(ctx, map[string]any{

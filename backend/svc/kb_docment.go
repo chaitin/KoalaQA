@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"mime/multipart"
+	"path"
 	"path/filepath"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
@@ -19,6 +21,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/topic"
 	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/repo"
+	"github.com/google/uuid"
 )
 
 type BaseDBDoc struct {
@@ -38,6 +41,8 @@ type BaseExportReq struct {
 }
 
 type KBDocument struct {
+	repoKB        *repo.KnowledgeBase
+	repoDisc      *repo.Discussion
 	repoRank      *repo.Rank
 	repoDoc       *repo.KBDocument
 	cache         cache.Cache[topic.TaskMeta]
@@ -291,6 +296,56 @@ func (d *KBDocument) CreateQA(ctx context.Context, kbID uint, req DocCreateQAReq
 		return 0, err
 	}
 	return doc.ID, nil
+}
+
+func (d *KBDocument) CreateDocByDisc(ctx context.Context, user model.UserInfo, discUUID string) error {
+	if !user.IsAdmin() {
+		return errPermission
+	}
+
+	disc, err := d.repoDisc.GetByUUID(ctx, discUUID)
+	if err != nil {
+		return err
+	}
+	kb, err := d.repoKB.GetFirst(ctx)
+	if err != nil {
+		return err
+	}
+
+	docPath := fmt.Sprintf("docs/%s.md", uuid.NewString())
+
+	ossPath, err := d.oc.Upload(ctx, docPath, strings.NewReader(disc.Content),
+		oss.WithBucket("anydoc"),
+		oss.WithExt(path.Ext(docPath)),
+		oss.WithFileSize(len(disc.Content)),
+	)
+	if err != nil {
+		return err
+	}
+
+	doc := model.KBDocument{
+		KBID:     kb.ID,
+		DocType:  model.DocTypeDocument,
+		Title:    disc.Title,
+		Desc:     disc.Summary,
+		Markdown: []byte(util.TrimFirstDir(ossPath)),
+		FileType: model.FileTypeMarkdown,
+		Status:   model.DocStatusExportSuccess,
+	}
+
+	err = d.repoDoc.Create(ctx, &doc)
+	if err != nil {
+		return err
+	}
+
+	if err := d.pub.Publish(ctx, topic.TopicKBDocumentRag, topic.MsgKBDocument{
+		OP:    topic.OPInsert,
+		KBID:  kb.ID,
+		DocID: doc.ID,
+	}); err != nil {
+		return err
+	}
+	return nil
 }
 
 type DocUpdateReq struct {
@@ -795,7 +850,7 @@ type ListSpaceFolderItem struct {
 	Title   string          `json:"title"`
 	Status  model.DocStatus `json:"status"`
 	Total   int64           `json:"total"`
-	Pending int64           `json:"pending"`
+	Success int64           `json:"success"`
 	Failed  int64           `json:"failed"`
 }
 
@@ -813,8 +868,7 @@ func (d *KBDocument) ListSpaceFolder(ctx context.Context, kbID uint, parentID ui
 }
 
 type UpdateSpaceFolderReq struct {
-	DocID      uint `json:"doc_id"`
-	IncrUpdate bool `json:"-" swaggerignore:"true"`
+	UpdateType topic.KBSpaceUpdateType `json:"update_type"`
 }
 
 func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID uint, req UpdateSpaceFolderReq) error {
@@ -825,17 +879,6 @@ func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID 
 
 	if doc.DocType != model.DocTypeSpace || doc.FileType != model.FileTypeFolder || doc.ParentID == 0 {
 		return errors.ErrUnsupported
-	}
-
-	if req.DocID > 0 {
-		folderDoc, err := d.GetByID(ctx, kbID, req.DocID)
-		if err != nil {
-			return err
-		}
-
-		if folderDoc.ParentID != folderID {
-			return errors.New("invalid doc id")
-		}
 	}
 
 	err = d.repoDoc.Update(ctx, map[string]any{
@@ -849,8 +892,7 @@ func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID 
 		OP:         topic.OPUpdate,
 		KBID:       kbID,
 		FolderID:   folderID,
-		DocID:      req.DocID,
-		IncrUpdate: req.IncrUpdate,
+		UpdateType: req.UpdateType,
 	})
 	if err != nil {
 		d.logger.WithContext(ctx).WithErr(err).With("kb_id", kbID).With("folder_id", folderID).Warn("pub update msg failed")
@@ -862,7 +904,8 @@ func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID 
 type ListSpaceFolderDocReq struct {
 	*model.Pagination
 
-	Title *string `form:"title"`
+	Title  *string           `form:"title"`
+	Status []model.DocStatus `form:"status"`
 }
 
 func (d *KBDocument) ListSpaceFolderDoc(ctx context.Context, kbID uint, folderID uint, req ListSpaceFolderDocReq) (*model.ListRes[DocListItem], error) {
@@ -875,6 +918,7 @@ func (d *KBDocument) ListSpaceFolderDoc(ctx context.Context, kbID uint, folderID
 		repo.QueryWithILike("title", req.Title),
 		repo.QueryWithPagination(req.Pagination),
 		repo.QueryWithOrderBy("created_at DESC"),
+		repo.QueryWithEqual("status", req.Status, repo.EqualOPIn),
 	)
 	if err != nil {
 		return nil, err
@@ -885,6 +929,7 @@ func (d *KBDocument) ListSpaceFolderDoc(ctx context.Context, kbID uint, folderID
 		repo.QueryWithEqual("parent_id", folderID),
 		repo.QueryWithEqual("doc_type", model.DocTypeSpace),
 		repo.QueryWithILike("title", req.Title),
+		repo.QueryWithEqual("status", req.Status, repo.EqualOPIn),
 	)
 	if err != nil {
 		return nil, err
@@ -1012,10 +1057,12 @@ func (d *KBDocument) Review(ctx context.Context, req ReviewReq) error {
 	return nil
 }
 
-func newDocument(repoDoc *repo.KBDocument, c cache.Cache[topic.TaskMeta], rank *repo.Rank,
-	doc anydoc.Anydoc, pub mq.Publisher, oc oss.Client, pa *PublicAddress) *KBDocument {
+func newDocument(repoDoc *repo.KBDocument, c cache.Cache[topic.TaskMeta], rank *repo.Rank, disc *repo.Discussion,
+	doc anydoc.Anydoc, pub mq.Publisher, oc oss.Client, pa *PublicAddress, kb *repo.KnowledgeBase) *KBDocument {
 	return &KBDocument{
 		repoRank:      rank,
+		repoKB:        kb,
+		repoDisc:      disc,
 		repoDoc:       repoDoc,
 		cache:         c,
 		anydoc:        doc,

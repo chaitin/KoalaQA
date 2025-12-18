@@ -242,9 +242,11 @@ const Article = ({
 
     // 检查是否有缓存，如果有缓存且参数匹配，则恢复缓存数据
     if (cached && cached.searchParams === currentSearchParams) {
-      if (cached.scrollPosition > 0) restoreScrollPosition(cached.scrollPosition)
+      restoreScrollPosition(cached.scrollPosition)
     } else {
       setArticleData(data)
+      const mainContent = document.getElementById('main-content')
+      if (mainContent) mainContent.scrollTop = 0
     }
     clearCache()
     restoreStateProcessedRef.current = cacheKey
@@ -344,7 +346,6 @@ const Article = ({
         sx={{
           display: 'flex',
           gap: 3,
-          maxWidth: { lg: '1200px' },
           mx: 'auto',
           px: { xs: 2, lg: 3 },
         }}
@@ -397,9 +398,9 @@ const Article = ({
                   whiteSpace: 'nowrap',
                   height: '40px',
                   boxShadow: 'none',
-                  '&:hover':{
-                    boxShadow: 'none'
-                  }
+                  '&:hover': {
+                    boxShadow: 'none',
+                  },
                 }}
               >
                 发布内容

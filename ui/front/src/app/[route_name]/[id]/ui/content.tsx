@@ -355,6 +355,37 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
     setCollapsedComments((prev) => ({ ...prev, [answerId]: !prev[answerId] }))
   }
 
+  // 检查是否有可用的菜单项
+  const hasMenuItems = useCallback((item: ModelDiscussionComment | ModelDiscussionReply) => {
+    const isReply = !('replies' in item)
+    let hasItems = false
+
+    // 采纳选项（仅主评论）
+    if (!isReply && isQAPost && canAcceptAnswer && !item.accepted && hasAcceptedComment && !isClosedPost) {
+      hasItems = true
+    }
+
+    // 取消采纳选项（仅主评论）
+    if (!isReply && !isArticlePost && data.type === ModelDiscussionType.DiscussionTypeQA && canAcceptAnswer && item.accepted) {
+      hasItems = true
+    }
+
+    // 编辑选项
+    if ((item.user_id === (user?.uid || 0) ||
+         [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(user?.role || ModelUserRole.UserRoleUnknown)) &&
+        !item.bot) {
+      hasItems = true
+    }
+
+    // 删除选项
+    if ((isAdminRole(user?.role || ModelUserRole.UserRoleUnknown) ||
+         (item.user_id === (user?.uid || 0) && (!isReply || !item.accepted))) && !item.bot) {
+      hasItems = true
+    }
+
+    return hasItems
+  }, [isQAPost, canAcceptAnswer, hasAcceptedComment, isClosedPost, isArticlePost, data.type, user?.uid, user?.role])
+
   const sortedComments =
     data.comments?.sort((a, b) => {
       if (a.accepted && !b.accepted) return -1
@@ -365,13 +396,12 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   return (
     <>
       <Menu id='basic-menu' anchorEl={anchorEl} open={open} onClose={handleClose}>
-        {!isArticlePost &&
-          data.type === ModelDiscussionType.DiscussionTypeQA &&
+        {isQAPost &&
           canAcceptAnswer &&
           commentIndex &&
           'replies' in commentIndex && // 只有主评论才有replies字段
           !commentIndex.accepted &&
-          !hasAcceptedComment &&
+          hasAcceptedComment &&
           !isClosedPost && <MenuItem onClick={handleAcceptComment}>采纳</MenuItem>}
         {!isArticlePost &&
           data.type === ModelDiscussionType.DiscussionTypeQA &&
@@ -383,11 +413,11 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         {(commentIndex?.user_id == (user?.uid || 0) ||
           [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
             user?.role || ModelUserRole.UserRoleUnknown,
-          )) && <MenuItem onClick={handleEditComment}>编辑</MenuItem>}
+          )) && !commentIndex?.bot && <MenuItem onClick={handleEditComment}>编辑</MenuItem>}
 
-        {/* 已采纳的回答不允许普通用户删除，但管理者和运营者可以删除 */}
+        {/* 已采纳的回答不允许普通用户删除，但管理者和运营者可以删除。AI回答不支持删除 */}
         {(isAdminRole(user?.role || ModelUserRole.UserRoleUnknown) ||
-          (commentIndex?.user_id == (user?.uid || 0) && !commentIndex?.accepted)) && (
+          (commentIndex?.user_id == (user?.uid || 0) && !commentIndex?.accepted)) && !commentIndex?.bot && (
           <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
             删除
           </MenuItem>
@@ -764,11 +794,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                     )}
 
                     {/* 更多操作按钮 */}
-                    {(answer.user_id === (user?.uid || 0) ||
-                      [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
-                        user?.role || ModelUserRole.UserRoleUnknown,
-                      ) ||
-                      (data.type === ModelDiscussionType.DiscussionTypeQA && isAuthor)) && (
+                    {hasMenuItems(answer) && (
                       <IconButton
                         disabled={isClosedQAPost}
                         disableRipple
@@ -921,10 +947,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
 
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>
                                 {/* 回复的更多操作按钮 - 作者或管理员可见 */}
-                                {(reply.user_id === (user?.uid || 0) ||
-                                  [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
-                                    user?.role || ModelUserRole.UserRoleUnknown,
-                                  )) && (
+                                {hasMenuItems(reply) && (
                                   <IconButton
                                     disableRipple
                                     disabled={isClosedQAPost}

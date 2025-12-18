@@ -27,9 +27,19 @@ func (o *Org) List(ctx context.Context, res any, queryFuncs ...QueryOptFunc) err
 		Find(res).Error
 }
 
-func (o *Org) GetBuiltin(ctx context.Context) (*model.Org, error) {
+func (o *Org) GetDefaultOrg(ctx context.Context) (*model.Org, error) {
 	var org model.Org
-	err := o.model(ctx).Where("builtin = ?", true).First(&org).Error
+	err := o.model(ctx).Where("builtin = ? AND type = ?", true, model.OrgTypeDefault).First(&org).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &org, nil
+}
+
+func (o *Org) GetAdminOrg(ctx context.Context) (*model.Org, error) {
+	var org model.Org
+	err := o.model(ctx).Where("builtin = ? AND type = ?", true, model.OrgTypeAdmin).First(&org).Error
 	if err != nil {
 		return nil, err
 	}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/glog"
+	"github.com/chaitin/koalaqa/pkg/topic"
 	"github.com/chaitin/koalaqa/repo"
 	"github.com/chaitin/koalaqa/svc"
 )
@@ -44,7 +45,7 @@ func (s *spaceUpdate) Run() {
 
 		for _, folder := range folderRes.Items {
 			err = s.doc.UpdateSpaceFolder(ctx, space.KBID, folder.ID, svc.UpdateSpaceFolderReq{
-				IncrUpdate: true,
+				UpdateType: topic.KBSpaceUpdateTypeIncr,
 			})
 			if err != nil {
 				logger.WithErr(err).Warn("update space folder failed")

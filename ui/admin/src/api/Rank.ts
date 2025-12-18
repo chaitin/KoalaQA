@@ -13,10 +13,12 @@
 import request, { RequestParams } from "./httpClient";
 import {
   ContextResponse,
+  GetAdminRankAiInsightAiInsightIdDiscussionParams,
   GetRankContributeParams,
   ModelListRes,
   ModelRankTimeGroup,
   ModelRankTimeGroupItem,
+  SvcAIInsightDiscussionItem,
   SvcRankContributeItem,
 } from "./types";
 
@@ -45,6 +47,39 @@ export const getAdminRankAiInsight = (params: RequestParams = {}) =>
     }
   >({
     path: `/admin/rank/ai_insight`,
+    method: "GET",
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags rank
+ * @name GetAdminRankAiInsightAiInsightIdDiscussion
+ * @summary list ai insight discussion
+ * @request GET:/admin/rank/ai_insight/{ai_insight_id}/discussion
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (SvcAIInsightDiscussionItem)[],
+
+}),
+
+})` OK
+ */
+
+export const getAdminRankAiInsightAiInsightIdDiscussion = (
+  { aiInsightId, ...query }: GetAdminRankAiInsightAiInsightIdDiscussionParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: SvcAIInsightDiscussionItem[];
+      };
+    }
+  >({
+    path: `/admin/rank/ai_insight/${aiInsightId}/discussion`,
     method: "GET",
     format: "json",
     ...params,

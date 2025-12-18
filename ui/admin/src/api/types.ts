@@ -18,6 +18,12 @@ export enum TopicTaskStatus {
   TaskStatusTimeout = "timeout",
 }
 
+export enum TopicKBSpaceUpdateType {
+  KBSpaceUpdateTypeAll = 0,
+  KBSpaceUpdateTypeIncr = 1,
+  KBSpaceUpdateTypeFailed = 2,
+}
+
 export enum SvcDiscussionListFilter {
   DiscussionListFilterHot = "hot",
   DiscussionListFilterNew = "new",
@@ -86,6 +92,12 @@ export enum ModelRankType {
   RankTypeContribute = 1,
   RankTypeAIInsight = 2,
   RankTypeAllContribute = 3,
+}
+
+export enum ModelOrgType {
+  OrgTypeNormal = 0,
+  OrgTypeDefault = 1,
+  OrgTypeAdmin = 2,
 }
 
 export enum ModelMsgNotifyType {
@@ -166,10 +178,11 @@ export enum ModelDiscussionType {
 }
 
 export enum ModelDiscussionState {
-  DiscussionStateNone = 0,
-  DiscussionStateResolved = 1,
-  DiscussionStateClosed = 2,
-  DiscussionStateInProgress = 3,
+  DiscussionStateUnknown = 0,
+  DiscussionStateNone = 1,
+  DiscussionStateResolved = 2,
+  DiscussionStateClosed = 3,
+  DiscussionStateInProgress = 4,
 }
 
 export enum ModelCommentLikeState {
@@ -183,6 +196,7 @@ export interface AnydocListDoc {
   id?: string;
   summary?: string;
   title?: string;
+  updated_at?: number;
 }
 
 export interface AnydocListRes {
@@ -240,6 +254,8 @@ export interface ModelDiscussion {
   group_ids?: number[];
   hot?: number;
   id?: number;
+  /** 发帖人上次访问时间 */
+  last_visited?: number;
   like?: number;
   members?: number[];
   rag_id?: string;
@@ -255,6 +271,8 @@ export interface ModelDiscussion {
   user_id?: number;
   uuid?: string;
   view?: number;
+  /** 发帖人访问次数 */
+  visit?: number;
 }
 
 export interface ModelDiscussionComment {
@@ -275,6 +293,7 @@ export interface ModelDiscussionComment {
 }
 
 export interface ModelDiscussionDetail {
+  alter?: boolean;
   associate?: ModelDiscussionListItem;
   associate_id?: number;
   bot_unknown?: boolean;
@@ -289,6 +308,8 @@ export interface ModelDiscussionDetail {
   groups?: ModelDiscussionGroup[];
   hot?: number;
   id?: number;
+  /** 发帖人上次访问时间 */
+  last_visited?: number;
   like?: number;
   members?: number[];
   rag_id?: string;
@@ -308,6 +329,8 @@ export interface ModelDiscussionDetail {
   user_role?: ModelUserRole;
   uuid?: string;
   view?: number;
+  /** 发帖人访问次数 */
+  visit?: number;
 }
 
 export interface ModelDiscussionGroup {
@@ -326,6 +349,8 @@ export interface ModelDiscussionListItem {
   group_ids?: number[];
   hot?: number;
   id?: number;
+  /** 发帖人上次访问时间 */
+  last_visited?: number;
   like?: number;
   members?: number[];
   rag_id?: string;
@@ -343,6 +368,8 @@ export interface ModelDiscussionListItem {
   user_name?: string;
   uuid?: string;
   view?: number;
+  /** 发帖人访问次数 */
+  visit?: number;
 }
 
 export interface ModelDiscussionReply {
@@ -658,6 +685,16 @@ export interface RouterSystemInfoRes {
   version?: string;
 }
 
+export interface SvcAIInsightDiscussionItem {
+  created_at?: number;
+  deleted?: boolean;
+  discussion_id?: string;
+  id?: number;
+  rank_id?: number;
+  title?: string;
+  updated_at?: number;
+}
+
 export interface SvcActiveModelReq {
   active?: boolean;
 }
@@ -859,9 +896,9 @@ export interface SvcListSpaceFolderItem {
   doc_id?: string;
   failed?: number;
   id?: number;
-  pending?: number;
   rag_id?: string;
   status?: ModelDocStatus;
+  success?: number;
   title?: string;
   total?: number;
   updated_at?: number;
@@ -959,6 +996,7 @@ export interface SvcOrgListItem {
   forum_names?: string[];
   id?: number;
   name?: string;
+  type?: ModelOrgType;
   updated_at?: number;
 }
 
@@ -988,7 +1026,7 @@ export interface SvcResolveFeedbackReq {
 }
 
 export interface SvcResolveIssueReq {
-  resolve?: 1 | 3;
+  resolve?: 2 | 4;
 }
 
 export interface SvcReviewReq {
@@ -1047,7 +1085,7 @@ export interface SvcUpdatePromptReq {
 }
 
 export interface SvcUpdateSpaceFolderReq {
-  doc_id?: number;
+  update_type?: TopicKBSpaceUpdateType;
 }
 
 export interface SvcUpdateSpaceReq {
@@ -1189,7 +1227,6 @@ export interface PutAdminBotPayload {
 }
 
 export interface GetAdminDiscussionParams {
-  ai?: boolean;
   forum_id: number;
   keyword?: string;
   /** @min 1 */
@@ -1419,6 +1456,7 @@ export interface GetAdminKbKbIdSpaceSpaceIdFolderFolderIdDocParams {
   page?: number;
   /** @min 1 */
   size?: number;
+  status?: (0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8)[];
   title?: string;
   /** kb_id */
   kbId: number;
@@ -1487,6 +1525,11 @@ export interface PutAdminOrgOrgIdParams {
 export interface DeleteAdminOrgOrgIdParams {
   /** org id */
   orgId: number;
+}
+
+export interface GetAdminRankAiInsightAiInsightIdDiscussionParams {
+  /** ai_insight_id */
+  aiInsightId: number;
 }
 
 export interface GetAdminStatDiscussionParams {
@@ -1565,13 +1608,12 @@ export interface GetDiscussionParams {
   discussion_ids?: number[];
   filter?: "hot" | "new" | "publish";
   forum_id?: number;
-  fuzzy_search?: boolean;
   group_ids?: number[];
   keyword?: string;
   only_mine?: boolean;
   /** @min 1 */
   page?: number;
-  resolved?: 0 | 1 | 2 | 3;
+  resolved?: 0 | 1 | 2 | 3 | 4;
   /** @min 1 */
   size?: number;
   stat?: boolean;
@@ -1611,6 +1653,11 @@ export interface PutDiscussionDiscIdParams {
 }
 
 export interface DeleteDiscussionDiscIdParams {
+  /** disc_id */
+  discId: string;
+}
+
+export interface PostDiscussionDiscIdAiLearnParams {
   /** disc_id */
   discId: string;
 }

@@ -24,7 +24,6 @@ export const useListPageCache = () => {
   const params = useParams()
   const routeName = params?.route_name as string
   const cacheKey = `${CACHE_KEY_PREFIX}${routeName}`
-  const scrollContainerRef = useRef<HTMLElement | null>(null)
   const isRestoringRef = useRef(false)
 
   // 保存列表页状态
@@ -98,8 +97,6 @@ export const useListPageCache = () => {
       const mainContent = document.getElementById('main-content')
       if (mainContent) {
         mainContent.scrollTop = position
-      } else if (scrollContainerRef.current) {
-        scrollContainerRef.current.scrollTop = position
       } else {
         // 降级到 window 滚动
         window.scrollTo({
@@ -121,6 +118,5 @@ export const useListPageCache = () => {
     clearCache,
     restoreScrollPosition,
     isListPage,
-    scrollContainerRef,
   }
 }

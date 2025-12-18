@@ -138,7 +138,18 @@ func (f *Forum) UpdateWithGroup(ctx context.Context, forums []model.ForumInfo) e
 		err := tx.Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "id"}},
 			DoUpdates: clause.AssignmentColumns([]string{"name", "route_name", "index", "groups", "blog_ids", "dataset_id", "tag_ids"}),
-		}).CreateInBatches(data, 1000).Error
+		}).CreateInBatches(&data, 1000).Error
+		if err != nil {
+			return err
+		}
+
+		forumIDs := make(model.Int64Array, len(data))
+		for i, forum := range data {
+			forumIDs[i] = int64(forum.ID)
+		}
+
+		err = tx.Model(&model.Org{}).Where("builtin = ? AND type = ?", true, model.OrgTypeAdmin).
+			UpdateColumn("forum_ids", forumIDs).Error
 		if err != nil {
 			return err
 		}

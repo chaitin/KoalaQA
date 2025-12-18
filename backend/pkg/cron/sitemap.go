@@ -55,7 +55,7 @@ func (s *sitemap) Run() {
 	smi.SetOutputPath(consts.SitemapDir)
 	smi.SetServerURI("/api/sitemap")
 
-	org, err := s.repoOrg.GetBuiltin(ctx)
+	org, err := s.repoOrg.GetDefaultOrg(ctx)
 	if err != nil {
 		s.logger.WithErr(err).Warn("get builtin org failed")
 		return

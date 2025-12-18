@@ -69,6 +69,10 @@ func (o *Org) Update(ctx context.Context, orgID uint, req OrgUpsertReq) error {
 		return err
 	}
 
+	if org.Builtin && org.Type == model.OrgTypeAdmin {
+		return errors.New("admin org can not update")
+	}
+
 	if org.Builtin && req.Name != org.Name {
 		return errors.New("builtin org can not update name")
 	}

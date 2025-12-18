@@ -34,7 +34,7 @@ func (u *User) ListWithOrg(ctx context.Context, res any, queryFuncs ...QueryOptF
 
 func (u *User) HasForumPermission(ctx context.Context, userID, forumID uint) (bool, error) {
 	if userID == 0 {
-		org, err := u.org.GetBuiltin(ctx)
+		org, err := u.org.GetDefaultOrg(ctx)
 		if err != nil {
 			return false, err
 		}

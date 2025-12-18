@@ -88,6 +88,12 @@ export enum ModelRankType {
   RankTypeAllContribute = 3,
 }
 
+export enum ModelOrgType {
+  OrgTypeNormal = 0,
+  OrgTypeDefault = 1,
+  OrgTypeAdmin = 2,
+}
+
 export enum ModelMsgNotifyType {
   MsgNotifyTypeUnknown = 0,
   MsgNotifyTypeReplyDiscuss = 1,
@@ -281,7 +287,6 @@ export interface ModelDiscussionComment {
 }
 
 export interface ModelDiscussionDetail {
-  alter?: boolean;
   alert?: boolean;
   associate?: ModelDiscussionListItem;
   associate_id?: number;
@@ -674,6 +679,16 @@ export interface RouterSystemInfoRes {
   version?: string;
 }
 
+export interface SvcAIInsightDiscussionItem {
+  created_at?: number;
+  deleted?: boolean;
+  discussion_id?: string;
+  id?: number;
+  rank_id?: number;
+  title?: string;
+  updated_at?: number;
+}
+
 export interface SvcActiveModelReq {
   active?: boolean;
 }
@@ -975,6 +990,7 @@ export interface SvcOrgListItem {
   forum_names?: string[];
   id?: number;
   name?: string;
+  type?: ModelOrgType;
   updated_at?: number;
 }
 
@@ -1205,7 +1221,6 @@ export interface PutAdminBotPayload {
 }
 
 export interface GetAdminDiscussionParams {
-  ai?: boolean;
   forum_id: number;
   keyword?: string;
   /** @min 1 */
@@ -1505,6 +1520,11 @@ export interface DeleteAdminOrgOrgIdParams {
   orgId: number;
 }
 
+export interface GetAdminRankAiInsightAiInsightIdDiscussionParams {
+  /** ai_insight_id */
+  aiInsightId: number;
+}
+
 export interface GetAdminStatDiscussionParams {
   begin: number;
 }
@@ -1626,6 +1646,11 @@ export interface PutDiscussionDiscIdParams {
 }
 
 export interface DeleteDiscussionDiscIdParams {
+  /** disc_id */
+  discId: string;
+}
+
+export interface PostDiscussionDiscIdAiLearnParams {
   /** disc_id */
   discId: string;
 }

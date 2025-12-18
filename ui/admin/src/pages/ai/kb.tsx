@@ -22,6 +22,7 @@ import {
   SvcListSpaceItem,
   SvcListSpaceKBItem,
   SvcUpdateSpaceReq,
+  TopicKBSpaceUpdateType,
 } from '@/api';
 import dingtalk_screen_1 from '@/assets/images/dingtalk_1.png';
 import dingtalk_screen_2 from '@/assets/images/dingtalk_2.png';
@@ -197,10 +198,7 @@ const KnowledgeBasePage = () => {
   const folders = foldersData?.items || [];
 
   const getDocSyncState = (status?: ModelDocStatus) => {
-    if (
-      status === ModelDocStatus.DocStatusApplySuccess ||
-      status === ModelDocStatus.DocStatusExportSuccess
-    ) {
+    if (status === ModelDocStatus.DocStatusApplySuccess) {
       return 'success' as const;
     }
     if (
@@ -209,15 +207,7 @@ const KnowledgeBasePage = () => {
     ) {
       return 'failed' as const;
     }
-    if (
-      status === ModelDocStatus.DocStatusAppling ||
-      status === ModelDocStatus.DocStatusPendingApply ||
-      status === ModelDocStatus.DocStatusPendingExport ||
-      status === ModelDocStatus.DocStatusPendingReview
-    ) {
-      return 'syncing' as const;
-    }
-    return 'unknown' as const;
+    return 'syncing' as const;
   };
 
   const {
@@ -387,15 +377,39 @@ const KnowledgeBasePage = () => {
     handleMenuClose();
 
     try {
-      await putAdminKbKbIdSpaceSpaceIdFolderFolderId({
-        kbId: kb_id,
-        spaceId: selectedSpaceId,
-        folderId: currentFolder.id!,
-      }, {});
+      await putAdminKbKbIdSpaceSpaceIdFolderFolderId(
+        {
+          kbId: kb_id,
+          spaceId: selectedSpaceId,
+          folderId: currentFolder.id!,
+        },
+        { update_type: TopicKBSpaceUpdateType.KBSpaceUpdateTypeIncr }
+      );
       message.success('更新成功');
       refreshFolders();
     } catch {
       message.error('更新失败');
+    }
+  };
+
+  const handleRetryFailedDocs = async (docIds: number[]) => {
+    if (!docStatusFolder || !selectedSpaceId || docIds.length === 0) return;
+
+    try {
+      // 逐个重试失败的文档
+      await putAdminKbKbIdSpaceSpaceIdFolderFolderId(
+        {
+          kbId: kb_id,
+          spaceId: selectedSpaceId,
+          folderId: docStatusFolder.id!,
+        },
+        { update_type: TopicKBSpaceUpdateType.KBSpaceUpdateTypeFailed }
+      );
+      message.success('重试同步已开始');
+      // 重新获取文档列表
+      fetchFolderDocList(docStatusFolder);
+    } catch {
+      message.error('重试同步失败');
     }
   };
 
@@ -861,14 +875,7 @@ const KnowledgeBasePage = () => {
                         }}
                         onClick={() => openDocStatusModal(folder)}
                       >
-                        同步成功{' '}
-                        <b>
-                          {Math.max(
-                            0,
-                            (folder.total || 0) - (folder.failed || 0) - (folder.pending || 0)
-                          )}
-                        </b>{' '}
-                        个
+                        同步成功 <b>{folder.success || 0}</b> 个
                         {(folder.failed || 0) > 0 && (
                           <>
                             ，同步失败 <b>{folder.failed || 0}</b> 个
@@ -1469,10 +1476,8 @@ const KnowledgeBasePage = () => {
         width={620}
       >
         {(() => {
-          const total = docStatusFolder?.total || 0;
           const failed = docStatusFolder?.failed || 0;
-          const pending = docStatusFolder?.pending || 0;
-          const success = Math.max(0, total - failed - pending);
+          const success = docStatusFolder?.success || 0;
 
           const q = docStatusSearch.trim().toLowerCase();
           const docsAfterSearch = folderDocs.filter(d => (d.title || '').toLowerCase().includes(q));
@@ -1480,8 +1485,12 @@ const KnowledgeBasePage = () => {
             docStatusTab === 'all'
               ? docsAfterSearch
               : docsAfterSearch.filter(d => {
-                  const s = getDocSyncState(d.status);
-                  return docStatusTab === 'success' ? s === 'success' : s === 'failed';
+                  return docStatusTab === 'success'
+                    ? ModelDocStatus.DocStatusApplySuccess === d.status
+                    : [
+                        ModelDocStatus.DocStatusApplyFailed,
+                        ModelDocStatus.DocStatusExportFailed,
+                      ].includes(d.status!);
                 });
           const renderStatusIcon = (doc: SvcDocListItem) => {
             const state = getDocSyncState(doc.status);
@@ -1546,20 +1555,51 @@ const KnowledgeBasePage = () => {
                 <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
                   {docStatusFolder?.title || '文档'}
                 </Typography>
-                <Stack direction="row" spacing={1} alignItems="center">
+                <Stack direction="row" spacing={1} sx={{ flex: 1 }} alignItems="center">
                   <Chip
                     size="small"
                     color="success"
-                    variant="outlined"
+                    variant={docStatusTab === 'success' ? 'filled' : 'outlined'}
                     label={`同步成功: ${success}`}
+                    onClick={() => setDocStatusTab(docStatusTab === 'success' ? 'all' : 'success')}
+                    sx={{
+                      cursor: 'pointer',
+                      '&:hover': {
+                        opacity: 0.8,
+                      },
+                    }}
                   />
                   {failed > 0 && (
                     <Chip
                       size="small"
                       color="error"
-                      variant="outlined"
+                      variant={docStatusTab === 'failed' ? 'filled' : 'outlined'}
                       label={`同步失败: ${failed}`}
+                      onClick={() => setDocStatusTab(docStatusTab === 'failed' ? 'all' : 'failed')}
+                      sx={{
+                        cursor: 'pointer',
+                        '&:hover': {
+                          opacity: 0.8,
+                        },
+                      }}
                     />
+                  )}
+                  {docStatusTab === 'failed' && failed > 0 && (
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="primary"
+                      onClick={() =>
+                        handleRetryFailedDocs(
+                          docsAfterFilter
+                            ?.map(i => i?.id)
+                            .filter((id): id is number => id !== undefined) || []
+                        )
+                      }
+                      sx={{ ml: 'auto!important' }}
+                    >
+                      重试
+                    </Button>
                   )}
                 </Stack>
               </Stack>

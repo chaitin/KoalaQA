@@ -44,7 +44,7 @@ func (f *Forum) List(ctx context.Context, user model.UserInfo, permissionCheck b
 	if permissionCheck {
 		var err error
 		if user.UID == 0 {
-			org, err := f.repoOrg.GetBuiltin(ctx)
+			org, err := f.repoOrg.GetDefaultOrg(ctx)
 			if err != nil {
 				return nil, err
 			}

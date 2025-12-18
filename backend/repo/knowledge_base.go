@@ -64,6 +64,16 @@ func (kb *KnowledgeBase) FirstID(ctx context.Context) (uint, error) {
 	return id, nil
 }
 
+func (kb *KnowledgeBase) GetFirst(ctx context.Context) (*model.KnowledgeBase, error) {
+	var res model.KnowledgeBase
+	err := kb.model(ctx).Where("true").Order("id ASC").First(&res).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
 func newKnowledgeBase(db *database.DB) *KnowledgeBase {
 	return &KnowledgeBase{
 		base: base[*model.KnowledgeBase]{db: db, m: &model.KnowledgeBase{}},
