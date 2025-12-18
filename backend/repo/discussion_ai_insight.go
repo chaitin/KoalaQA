@@ -17,7 +17,7 @@ func newDiscussionAIInsight(db *database.DB) *DiscussionAIInsight {
 
 func (d *DiscussionAIInsight) ListByRank(ctx context.Context, res any, rankID uint) error {
 	return d.model(ctx).Select("discussion_ai_insights.*, discussions.id IS NULL AS deleted").
-		Joins("LEFT JOIN discussions ON discussions.id = discussion_ai_insights.discussion_id").
+		Joins("LEFT JOIN discussions ON discussions.uuid = discussion_ai_insights.discussion_uuid").
 		Where("discussion_ai_insights.rank_id = ?", rankID).
 		Find(res).Error
 }
