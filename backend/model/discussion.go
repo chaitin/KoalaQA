@@ -140,7 +140,7 @@ type DiscussionDetail struct {
 	Comments      []DiscussionComment `json:"comments" gorm:"-"`
 	Associate     DiscussionListItem  `json:"associate"`
 	UserLike      bool                `json:"user_like"`
-	Alter         bool                `json:"alter"`
+	Alert         bool                `json:"alert"`
 }
 
 type DiscussHeader struct {

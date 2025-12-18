@@ -365,13 +365,12 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   return (
     <>
       <Menu id='basic-menu' anchorEl={anchorEl} open={open} onClose={handleClose}>
-        {!isArticlePost &&
-          data.type === ModelDiscussionType.DiscussionTypeQA &&
+        {isQAPost &&
           canAcceptAnswer &&
           commentIndex &&
           'replies' in commentIndex && // 只有主评论才有replies字段
           !commentIndex.accepted &&
-          !hasAcceptedComment &&
+          hasAcceptedComment &&
           !isClosedPost && <MenuItem onClick={handleAcceptComment}>采纳</MenuItem>}
         {!isArticlePost &&
           data.type === ModelDiscussionType.DiscussionTypeQA &&

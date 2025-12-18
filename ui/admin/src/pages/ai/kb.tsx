@@ -22,6 +22,7 @@ import {
   SvcListSpaceItem,
   SvcListSpaceKBItem,
   SvcUpdateSpaceReq,
+  TopicKBSpaceUpdateType,
 } from '@/api';
 import dingtalk_screen_1 from '@/assets/images/dingtalk_1.png';
 import dingtalk_screen_2 from '@/assets/images/dingtalk_2.png';
@@ -387,15 +388,39 @@ const KnowledgeBasePage = () => {
     handleMenuClose();
 
     try {
-      await putAdminKbKbIdSpaceSpaceIdFolderFolderId({
-        kbId: kb_id,
-        spaceId: selectedSpaceId,
-        folderId: currentFolder.id!,
-      }, {});
+      await putAdminKbKbIdSpaceSpaceIdFolderFolderId(
+        {
+          kbId: kb_id,
+          spaceId: selectedSpaceId,
+          folderId: currentFolder.id!,
+        },
+        { update_type: TopicKBSpaceUpdateType.KBSpaceUpdateTypeIncr }
+      );
       message.success('更新成功');
       refreshFolders();
     } catch {
       message.error('更新失败');
+    }
+  };
+
+  const handleRetryFailedDocs = async (docIds: number[]) => {
+    if (!docStatusFolder || !selectedSpaceId || docIds.length === 0) return;
+
+    try {
+      // 逐个重试失败的文档
+      await putAdminKbKbIdSpaceSpaceIdFolderFolderId(
+        {
+          kbId: kb_id,
+          spaceId: selectedSpaceId,
+          folderId: docStatusFolder.id!,
+        },
+        { update_type: TopicKBSpaceUpdateType.KBSpaceUpdateTypeFailed }
+      );
+      message.success('重试同步已开始');
+      // 重新获取文档列表
+      fetchFolderDocList(docStatusFolder);
+    } catch {
+      message.error('重试同步失败');
     }
   };
 
@@ -1546,20 +1571,51 @@ const KnowledgeBasePage = () => {
                 <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
                   {docStatusFolder?.title || '文档'}
                 </Typography>
-                <Stack direction="row" spacing={1} alignItems="center">
+                <Stack direction="row" spacing={1} sx={{ flex: 1 }} alignItems="center">
                   <Chip
                     size="small"
                     color="success"
-                    variant="outlined"
+                    variant={docStatusTab === 'success' ? 'filled' : 'outlined'}
                     label={`同步成功: ${success}`}
+                    onClick={() => setDocStatusTab(docStatusTab === 'success' ? 'all' : 'success')}
+                    sx={{
+                      cursor: 'pointer',
+                      '&:hover': {
+                        opacity: 0.8,
+                      },
+                    }}
                   />
                   {failed > 0 && (
                     <Chip
                       size="small"
                       color="error"
-                      variant="outlined"
+                      variant={docStatusTab === 'failed' ? 'filled' : 'outlined'}
                       label={`同步失败: ${failed}`}
+                      onClick={() => setDocStatusTab(docStatusTab === 'failed' ? 'all' : 'failed')}
+                      sx={{
+                        cursor: 'pointer',
+                        '&:hover': {
+                          opacity: 0.8,
+                        },
+                      }}
                     />
+                  )}
+                  {docStatusTab === 'failed' && failed > 0 && (
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="primary"
+                      onClick={() =>
+                        handleRetryFailedDocs(
+                          docsAfterFilter
+                            ?.map(i => i?.id)
+                            .filter((id): id is number => id !== undefined) || []
+                        )
+                      }
+                      sx={{ ml: 'auto!important' }}
+                    >
+                      重试
+                    </Button>
                   )}
                 </Stack>
               </Stack>

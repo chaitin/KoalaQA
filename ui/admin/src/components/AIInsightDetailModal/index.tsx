@@ -13,14 +13,18 @@ import {
 } from '@mui/material';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { getAdminDiscussion, postAdminKbKbIdQuestion } from '../../api';
+import {
+  getAdminRankAiInsightAiInsightIdDiscussion,
+  postAdminKbKbIdQuestion,
+  SvcAIInsightDiscussionItem,
+} from '../../api';
 import { ModelDiscussionListItem, ModelRankTimeGroupItem } from '../../api/types';
 import { useForumStore, useConfigStore } from '../../store';
 import EditorWrap, { EditorWrapRef } from '../editor';
 
 // ==================== Types ====================
 type QuestionWithPosts = ModelRankTimeGroupItem & {
-  relatedPosts?: ModelDiscussionListItem[];
+  relatedPosts?: SvcAIInsightDiscussionItem[];
 };
 
 interface InsightData {
@@ -102,65 +106,62 @@ function useQuestions(isOpen: boolean, insightData?: InsightData) {
   /**
    * 加载问题的关联帖子
    */
-  const loadRelatedPosts = useCallback(async (scoreId: string, forumId: number) => {
-    console.log('loadRelatedPosts called:', { scoreId, forumId });
-    if (!forumId || forumId <= 0 || !scoreId) {
-      console.log('loadRelatedPosts: missing forumId or scoreId (or forumId is 0)', {
-        forumId,
-        scoreId,
-      });
-      return;
-    }
+  const loadRelatedPosts = useCallback(
+    async (scoreId: string, forumId: number, ai_insight_id: number) => {
+      console.log('loadRelatedPosts called:', { scoreId, forumId });
+      if (!forumId || forumId <= 0 || !scoreId) {
+        console.log('loadRelatedPosts: missing forumId or scoreId (or forumId is 0)', {
+          forumId,
+          scoreId,
+        });
+        return;
+      }
 
-    // 检查缓存
-    if (postsCacheRef.current.has(scoreId)) {
-      console.log('loadRelatedPosts: using cache for', scoreId);
-      const cachedPosts = postsCacheRef.current.get(scoreId) || [];
-      setQuestions(prev => {
-        const question = prev.find(q => q.score_id === scoreId);
-        // 如果已经有相同的数据，不更新
-        if (question?.relatedPosts?.length === cachedPosts.length) {
-          return prev;
-        }
-        return prev.map(q => (q.score_id === scoreId ? { ...q, relatedPosts: cachedPosts } : q));
-      });
-      return;
-    }
+      // 检查缓存
+      if (postsCacheRef.current.has(scoreId)) {
+        console.log('loadRelatedPosts: using cache for', scoreId);
+        const cachedPosts = postsCacheRef.current.get(scoreId) || [];
+        setQuestions(prev => {
+          const question = prev.find(q => q.score_id === scoreId);
+          // 如果已经有相同的数据，不更新
+          if (question?.relatedPosts?.length === cachedPosts.length) {
+            return prev;
+          }
+          return prev.map(q => (q.score_id === scoreId ? { ...q, relatedPosts: cachedPosts } : q));
+        });
+        return;
+      }
 
-    // 检查是否正在加载
-    if (loadingRef.current.has(scoreId)) {
-      console.log('loadRelatedPosts: already loading', scoreId);
-      return;
-    }
+      // 检查是否正在加载
+      if (loadingRef.current.has(scoreId)) {
+        console.log('loadRelatedPosts: already loading', scoreId);
+        return;
+      }
 
-    console.log('loadRelatedPosts: starting request for', scoreId);
-    // 标记为正在加载
-    loadingRef.current.add(scoreId);
+      // 标记为正在加载
+      loadingRef.current.add(scoreId);
 
-    try {
-      const response = await getAdminDiscussion({
-        ai: true,
-        forum_id: forumId,
-        keyword: scoreId,
-        page: 1,
-        size: 10,
-      });
+      try {
+        const response = await getAdminRankAiInsightAiInsightIdDiscussion({
+          aiInsightId: ai_insight_id,
+        });
 
-      const relatedPosts = response?.items || [];
-      console.log('loadRelatedPosts: received posts', relatedPosts.length);
-      postsCacheRef.current.set(scoreId, relatedPosts);
-      setQuestions(prev => prev.map(q => (q.score_id === scoreId ? { ...q, relatedPosts } : q)));
-    } catch (error) {
-      console.error('Failed to load related posts:', error);
-      // 即使失败也设置空数组，避免重复请求
-      postsCacheRef.current.set(scoreId, []);
-      setQuestions(prev =>
-        prev.map(q => (q.score_id === scoreId ? { ...q, relatedPosts: [] } : q))
-      );
-    } finally {
-      loadingRef.current.delete(scoreId);
-    }
-  }, []);
+        const relatedPosts = response.items || [];
+        postsCacheRef.current.set(scoreId, relatedPosts);
+        setQuestions(prev => prev.map(q => (q.score_id === scoreId ? { ...q, relatedPosts } : q)));
+      } catch (error) {
+        console.error('Failed to load related posts:', error);
+        // 即使失败也设置空数组，避免重复请求
+        postsCacheRef.current.set(scoreId, []);
+        setQuestions(prev =>
+          prev.map(q => (q.score_id === scoreId ? { ...q, relatedPosts: [] } : q))
+        );
+      } finally {
+        loadingRef.current.delete(scoreId);
+      }
+    },
+    []
+  );
 
   /**
    * 更新问题的 associate_id
@@ -370,19 +371,23 @@ const QuestionItem: React.FC<QuestionItemProps> = ({
             <Stack spacing={1}>
               {question.relatedPosts?.map((post, postIndex) => (
                 <Typography
-                  key={post.uuid || postIndex}
+                  key={post.discussion_id || postIndex}
                   variant="caption"
                   onClick={e => {
                     e.stopPropagation();
-                    onPostClick(post.uuid || '', question.foreign_id || 0);
+                    if (!post.deleted) {
+                      onPostClick(post.discussion_id || '', question.foreign_id || 0);
+                    }
                   }}
                   sx={{
-                    color: 'text.secondary',
-                    cursor: 'pointer',
-                    '&:hover': {
-                      color: STYLES.selectedBorder,
-                      textDecoration: 'underline',
-                    },
+                    color: post.deleted ? 'text.disabled' : 'text.secondary',
+                    cursor: post.deleted ? 'default' : 'pointer',
+                    '&:hover': post.deleted
+                      ? {}
+                      : {
+                          color: STYLES.selectedBorder,
+                          textDecoration: 'underline',
+                        },
                     '&::before': {
                       content: '"· "',
                       color: STYLES.secondaryText,
@@ -596,14 +601,6 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
       prevSelectedIdRef.current = selectedId;
       return;
     }
-
-    console.log('useEffect: selected question changed', {
-      id: selectedQuestion.id,
-      score_id: selectedQuestion.score_id,
-      foreign_id: selectedQuestion.foreign_id,
-      extra: selectedQuestion.extra,
-    });
-
     // 更新上一次的 selectedId
     prevSelectedIdRef.current = selectedId;
 
@@ -639,10 +636,11 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
     ) {
       // 检查是否已经有相关帖子数据，如果有就不需要重新请求
       if (!selectedQuestion.relatedPosts || selectedQuestion.relatedPosts.length === 0) {
-        console.log('useEffect: calling loadRelatedPosts');
-        loadRelatedPosts(selectedQuestion.score_id, selectedQuestion.foreign_id);
-      } else {
-        console.log('useEffect: relatedPosts already loaded, skipping request');
+        loadRelatedPosts(
+          selectedQuestion.score_id,
+          selectedQuestion.foreign_id,
+          selectedQuestion.id!
+        );
       }
     } else {
       console.log('useEffect: missing score_id or foreign_id (or foreign_id is 0)', {
@@ -682,12 +680,6 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
     const title = titleValue.trim() || selectedQuestion.score_id || '未命名问题';
     const associateId = selectedQuestion.associate_id;
     const aiInsightId = selectedQuestion.id;
-    console.log('Saving QA pair:', {
-      title,
-      associateId,
-      aiInsightId,
-      scoreId: selectedQuestion.score_id,
-    });
     const result = await saveQA(
       title,
       content,
@@ -703,10 +695,6 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
       // 如果返回的是数字（associate_id），则更新问题的 associate_id
       if (typeof result === 'number' && result > 0) {
         updateQuestionAssociateId(selectedQuestion.id, result);
-        console.log('Updated associate_id:', {
-          questionId: selectedQuestion.id,
-          associateId: result,
-        });
         // 通知父组件更新 insightData 中的 associate_id
         if (onUpdateAssociateId && selectedQuestion.id) {
           onUpdateAssociateId(selectedQuestion.id, result);
@@ -783,7 +771,7 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
       </Box>
 
       {/* Main Content */}
-      <Grid container spacing={3} sx={{ flex: 1}}>
+      <Grid container spacing={3} sx={{ flex: 1 }}>
         {/* Left: Question List */}
         <Grid size={{ xs: 12, md: 4 }} sx={{ overflow: 'auto', maxHeight: 'calc(100vh - 200px)' }}>
           <QuestionList
@@ -795,10 +783,7 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
         </Grid>
 
         {/* Right: Editor */}
-        <Grid
-          size={{ xs: 12, md: 8 }}
-          sx={{ display: 'flex', flexDirection: 'column' }}
-        >
+        <Grid size={{ xs: 12, md: 8 }} sx={{ display: 'flex', flexDirection: 'column' }}>
           <EditorSection
             question={selectedQuestion}
             editorRef={editorRef}

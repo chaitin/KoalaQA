@@ -27,6 +27,7 @@ import {
   ModelDiscussionDetail,
   ModelDiscussionListItem,
   ModelListRes,
+  PostDiscussionDiscIdAiLearnParams,
   PostDiscussionDiscIdAssociateParams,
   PostDiscussionDiscIdCommentCommentIdAcceptParams,
   PostDiscussionDiscIdCommentCommentIdDislikeParams,
@@ -376,6 +377,27 @@ export const deleteDiscussionDiscId = (
     path: `/discussion/${discId}`,
     method: "DELETE",
     type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description discussion ai learn
+ *
+ * @tags discussion
+ * @name PostDiscussionDiscIdAiLearn
+ * @summary discussion ai learn
+ * @request POST:/discussion/{disc_id}/ai_learn
+ * @response `200` `ContextResponse` OK
+ */
+
+export const postDiscussionDiscIdAiLearn = (
+  { discId, ...query }: PostDiscussionDiscIdAiLearnParams,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/discussion/${discId}/ai_learn`,
+    method: "POST",
     format: "json",
     ...params,
   });

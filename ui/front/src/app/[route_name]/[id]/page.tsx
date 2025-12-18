@@ -115,8 +115,7 @@ const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; 
             flex: 1,
             minWidth: 0,
             alignSelf: 'stretch',
-            maxWidth: { lg: 750 },
-            width: { xs: '100%', lg: 'auto' },
+            width: { xs: '100%', lg: '750px' },
             position: 'relative',
           }}
         >

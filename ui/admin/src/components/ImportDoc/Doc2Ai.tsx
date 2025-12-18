@@ -2,7 +2,15 @@ import { AnydocListRes, TopicTaskStatus } from '@/api';
 import { TaskType } from '@/hooks/useExportDoc';
 import { Ellipsis, Icon } from '@ctzhian/ui';
 import { KeyboardArrowDown, KeyboardArrowRight } from '@mui/icons-material';
-import { Box, Button, Checkbox, Collapse, IconButton, Stack } from '@mui/material';
+import {
+  Box,
+  Button,
+  Checkbox,
+  CircularProgress,
+  Collapse,
+  IconButton,
+  Stack,
+} from '@mui/material';
 import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 
 interface ImportDocProps {
@@ -13,10 +21,11 @@ interface ImportDocProps {
   taskIds: TaskType[];
   handleImport: (selectIds: string[], items: AnydocListRes[]) => Promise<void>;
   showSelectAll?: boolean;
+  isCompleted?: boolean;
 }
 
 const SELECT_KEY_SEP = '::';
-// 子项选择 key：带上 docIdx，避免同一组里 docId 重复导致“选一个=全选”的视觉/状态问题
+// 子项选择 key：带上 docIdx，避免同一组里 docId 重复导致"选一个=全选"的视觉/状态问题
 const getDocKey = (uuid?: string, docId?: string, docIdx?: number) =>
   `${uuid || ''}${SELECT_KEY_SEP}${docId || ''}${SELECT_KEY_SEP}${docIdx ?? ''}`;
 
@@ -111,6 +120,7 @@ const Doc2Ai = ({
             sx={{ flexShrink: 0, p: 0, m: 0 }}
             checked={selectAllChecked}
             indeterminate={selectAllIndeterminate}
+            disabled={loading}
             onChange={() => {
               if (selectAllChecked) {
                 setSelectIds([]);
@@ -123,7 +133,14 @@ const Doc2Ai = ({
         </Stack>
       )}
       <Stack>
-        {items.map((item, idx) => {
+        {(() => {
+          const filteredItems = items.filter(item => {
+            // 如果显示选择框，显示所有文档；否则只显示有任务的文档
+            if (showSelectAll) return true;
+            const docs = item.docs || [];
+            return docs.some(d => d?.id && taskByDocId.has(d.id));
+          });
+          return filteredItems.map((item, idx) => {
           const uuid = item.uuid || '';
           const docs = item.docs || [];
           const hasChildren = docs.length > 1;
@@ -189,7 +206,7 @@ const Doc2Ai = ({
                   px: 2,
                   py: 1,
                   cursor: hasChildren ? 'default' : 'pointer',
-                  borderBottom: idx === items.length - 1 && !hasChildren ? 'none' : '1px solid',
+                  borderBottom: idx === filteredItems.length - 1 && !hasChildren ? 'none' : '1px solid',
                   borderColor: 'divider',
                   ':hover': {
                     bgcolor: 'background.paper2',
@@ -220,6 +237,7 @@ const Doc2Ai = ({
                       sx={{ flexShrink: 0, p: 0, m: 0 }}
                       checked={parentChecked}
                       indeterminate={parentIndeterminate}
+                      disabled={loading}
                       onChange={() => {
                         setSelectIds(prev => {
                           if (selectableAllSelected) {
@@ -231,7 +249,8 @@ const Doc2Ai = ({
                         });
                       }}
                     />
-                  ) : anyInProgress ? (
+                  ) : anyInProgress ||
+                    (loading && selectableChildKeys.some(key => selectIds.includes(key))) ? (
                     <Icon
                       type="icon-shuaxin"
                       sx={{
@@ -264,9 +283,21 @@ const Doc2Ai = ({
                     size="small"
                     sx={{ flexShrink: 0, p: 0, m: 0 }}
                     checked={selectIds.includes(singleKey)}
+                    disabled={loading}
                     onChange={e => {
                       e.stopPropagation();
                       toggleKey(singleKey);
+                    }}
+                  />
+                ) : loading && selectIds.includes(singleKey) ? (
+                  <CircularProgress
+                    size={18}
+                    color="primary"
+                    thickness={4}
+                    sx={{
+                      '& .MuiCircularProgress-circle': {
+                        strokeLinecap: 'round',
+                      },
                     }}
                   />
                 ) : [
@@ -313,7 +344,7 @@ const Doc2Ai = ({
                       return;
                     }
                     // docs.length === 1 且可选：点击标题也切换勾选
-                    if (!hasChildren && singleSelectable) {
+                    if (!hasChildren && singleSelectable && !loading) {
                       toggleKey(singleKey);
                     }
                   }}
@@ -371,7 +402,7 @@ const Doc2Ai = ({
                             },
                           }}
                           onClick={() => {
-                            if (selectable) toggleKey(docKey);
+                            if (selectable && !loading) toggleKey(docKey);
                           }}
                         >
                           {selectable ? (
@@ -379,9 +410,21 @@ const Doc2Ai = ({
                               size="small"
                               sx={{ flexShrink: 0, p: 0, m: 0 }}
                               checked={selectIds.includes(docKey)}
+                              disabled={loading}
                               onChange={e => {
                                 e.stopPropagation();
                                 toggleKey(docKey);
+                              }}
+                            />
+                          ) : loading && selectIds.includes(docKey) ? (
+                            <CircularProgress
+                              size={18}
+                              color="primary"
+                              thickness={4}
+                              sx={{
+                                '& .MuiCircularProgress-circle': {
+                                  strokeLinecap: 'round',
+                                },
                               }}
                             />
                           ) : [
@@ -454,7 +497,8 @@ const Doc2Ai = ({
               )}
             </Box>
           );
-        })}
+        });
+        })()}
       </Stack>
     </Box>
   );

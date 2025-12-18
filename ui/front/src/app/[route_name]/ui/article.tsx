@@ -346,7 +346,6 @@ const Article = ({
         sx={{
           display: 'flex',
           gap: 3,
-          maxWidth: { lg: '1200px' },
           mx: 'auto',
           px: { xs: 2, lg: 3 },
         }}

@@ -3,6 +3,7 @@ import {
   deleteDiscussionDiscId,
   deleteDiscussionDiscIdFollow,
   getDiscussionDiscIdFollow,
+  postDiscussionDiscIdAiLearn,
   postDiscussionDiscIdFollow,
   postDiscussionDiscIdLike,
   postDiscussionDiscIdResolveIssue,
@@ -10,7 +11,7 @@ import {
   putDiscussionDiscIdClose,
 } from '@/api'
 import { ModelDiscussionDetail, ModelDiscussionState, ModelDiscussionType, ModelUserRole } from '@/api/types'
-import { DiscussionStatusChip, DiscussionTypeChip, TagFilterChip } from '@/components'
+import { DiscussionStatusChip, DiscussionTypeChip, Message, TagFilterChip } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import CommonAvatar from '@/components/CommonAvatar'
 import { CommonContext } from '@/components/commonProvider'
@@ -256,6 +257,20 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const isClosed = data.resolved === ModelDiscussionState.DiscussionStateClosed
   const profileHref = data.user_id ? `/profile/${data.user_id}` : undefined
 
+  const handleAddToAiLearning = () => {
+    menuClose()
+    Modal.confirm({
+      title: '确定加入 AI 学习吗？',
+      content: '加入 AI 学习后，该文章将在后台被归类到【通用文档】中。',
+      onOk: async () => {
+        await postDiscussionDiscIdAiLearn({
+          discId: data.uuid || '',
+        })
+        Message.success('加入 AI 学习成功')
+        router.refresh()
+      },
+    })
+  }
   // 判断是否显示"转为 Issue 管理"按钮
   const canConvertToIssue = useMemo(() => {
     const isAdminOrOperator = [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
@@ -291,6 +306,9 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           'aria-labelledby': 'basic-button',
         }}
       >
+        {isArticlePost && isAdminRole(user?.role || ModelUserRole.UserRoleUnknown) && (
+          <MenuItem onClick={handleAddToAiLearning}>加入 AI 学习</MenuItem>
+        )}
         {isIssuePost &&
           [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
             user.role || ModelUserRole.UserRoleUnknown,

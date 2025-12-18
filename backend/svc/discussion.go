@@ -694,7 +694,7 @@ func (d *Discussion) DetailByUUID(ctx context.Context, uid uint, uuid string) (*
 			discussion.Visit++
 
 			if discussion.Visit == 3 {
-				discussion.Alter = true
+				discussion.Alert = true
 			}
 
 			_, err, _ = d.sf.Do(discussion.UUID, func() (interface{}, error) {

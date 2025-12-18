@@ -34,7 +34,7 @@ const ConfirmDialog: FC<ConfirmDialogProps> = (props) => {
       width={width}
       {...rest}
     >
-      {content && <Box sx={{ color: 'text.secondary', pl: '40px' }}>{content}</Box>}
+      {content && <Box sx={{ color: 'text.secondary', pl: '40px', fontSize: '14px' }}>{content}</Box>}
     </Modal>
   )
 }
