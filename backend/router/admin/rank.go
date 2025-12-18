@@ -31,7 +31,7 @@ func (r *rank) AIInsight(ctx *context.Context) {
 // @Tags rank
 // @Produce json
 // @Param ai_insight_id path uint true "ai_insight_id"
-// @Success 200 {object} context.Response{data=[]model.ListRes{items=[]svc.AIInsightDiscussionItem}}
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]svc.AIInsightDiscussionItem}}
 // @Router /admin/rank/ai_insight/{ai_insight_id}/discussion [get]
 func (r *rank) ListAIInsightDiscussion(ctx *context.Context) {
 	aiInsightID, err := ctx.ParamUint("ai_insight_id")

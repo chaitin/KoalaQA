@@ -3001,25 +3001,22 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "allOf": [
-                                                    {
-                                                        "$ref": "#/definitions/model.ListRes"
-                                                    },
-                                                    {
-                                                        "type": "object",
-                                                        "properties": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
                                                             "items": {
-                                                                "type": "array",
-                                                                "items": {
-                                                                    "$ref": "#/definitions/svc.AIInsightDiscussionItem"
-                                                                }
+                                                                "$ref": "#/definitions/svc.AIInsightDiscussionItem"
                                                             }
                                                         }
                                                     }
-                                                ]
-                                            }
+                                                }
+                                            ]
                                         }
                                     }
                                 }
