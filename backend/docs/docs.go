@@ -97,11 +97,6 @@ const docTemplate = `{
                 "summary": "backend list discussions",
                 "parameters": [
                     {
-                        "type": "boolean",
-                        "name": "ai",
-                        "in": "query"
-                    },
-                    {
                         "type": "integer",
                         "name": "forum_id",
                         "in": "query",
@@ -2961,6 +2956,64 @@ const docTemplate = `{
                                                                 "type": "array",
                                                                 "items": {
                                                                     "$ref": "#/definitions/model.RankTimeGroupItem"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/rank/ai_insight/{ai_insight_id}/discussion": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rank"
+                ],
+                "summary": "list ai insight discussion",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ai_insight_id",
+                        "name": "ai_insight_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "allOf": [
+                                                    {
+                                                        "$ref": "#/definitions/model.ListRes"
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "items": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "$ref": "#/definitions/svc.AIInsightDiscussionItem"
                                                                 }
                                                             }
                                                         }
@@ -8390,6 +8443,32 @@ const docTemplate = `{
             "properties": {
                 "version": {
                     "type": "string"
+                }
+            }
+        },
+        "svc.AIInsightDiscussionItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "integer"
+                },
+                "deleted": {
+                    "type": "boolean"
+                },
+                "discussion_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "rank_id": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "integer"
                 }
             }
         },

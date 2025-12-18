@@ -119,6 +119,42 @@ func (r *Rank) UpdateWithExist(ctx context.Context, updateM map[string]any, quer
 	return res.RowsAffected > 0, nil
 }
 
+func (r *Rank) CreateAIInsight(ctx context.Context, rank *model.Rank, aiInsights []model.DiscussionAIInsight) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		err := tx.Create(rank).Error
+		if err != nil {
+			return err
+		}
+
+		for i := range aiInsights {
+			aiInsights[i].RankID = rank.ID
+		}
+
+		err = tx.Model(&model.DiscussionAIInsight{}).CreateInBatches(&aiInsights, 1000).Error
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
+func (r *Rank) ClearExpireAIInsight(ctx context.Context, before time.Time) error {
+	err := r.db.WithContext(ctx).Where("type = ? AND created_at < ?", model.RankTypeAIInsight, before).Delete(nil).Error
+	if err != nil {
+		return err
+	}
+
+	err = r.db.WithContext(ctx).Model(&model.DiscussionAIInsight{}).
+		Where("rank_id NOT IN (SELECT id FROM ranks)").
+		Delete(nil).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func newRank(db *database.DB, bot *Bot) *Rank {
 	return &Rank{base: base[*model.Rank]{db: db, m: &model.Rank{}}, repoBot: bot}
 }

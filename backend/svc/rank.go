@@ -10,9 +10,10 @@ import (
 )
 
 type Rank struct {
-	repoRank *repo.Rank
-	repoUser *repo.User
-	svcBot   *Bot
+	repoRank          *repo.Rank
+	repoUser          *repo.User
+	repoDiscAIInsight *repo.DiscussionAIInsight
+	svcBot            *Bot
 }
 
 type RankContributeItem struct {
@@ -75,11 +76,29 @@ func (r *Rank) AIInsight(ctx context.Context) ([]model.RankTimeGroup, error) {
 	)
 }
 
-func newRank(r *repo.Rank, user *repo.User, bot *Bot) *Rank {
+type AIInsightDiscussionItem struct {
+	model.DiscussionAIInsight
+
+	Deleted bool `json:"deleted"`
+}
+
+func (r *Rank) AIInsightDiscussion(ctx context.Context, aiInsightID uint) (*model.ListRes[AIInsightDiscussionItem], error) {
+	var res model.ListRes[AIInsightDiscussionItem]
+	err := r.repoDiscAIInsight.ListByRank(ctx, &res.Items, aiInsightID)
+	if err != nil {
+		return nil, err
+	}
+
+	res.Total = int64(len(res.Items))
+	return &res, nil
+}
+
+func newRank(r *repo.Rank, user *repo.User, bot *Bot, discAIInsight *repo.DiscussionAIInsight) *Rank {
 	return &Rank{
-		repoRank: r,
-		repoUser: user,
-		svcBot:   bot,
+		repoRank:          r,
+		repoDiscAIInsight: discAIInsight,
+		repoUser:          user,
+		svcBot:            bot,
 	}
 }
 

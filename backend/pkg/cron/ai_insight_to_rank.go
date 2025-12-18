@@ -76,7 +76,7 @@ func (i *aiInsight2Rank) Run() {
 			continue
 		}
 
-		score, err := i.calcScore(ctx, aiInsight)
+		score, discAIInsights, err := i.calcScore(ctx, aiInsight)
 		if err != nil {
 			continue
 		}
@@ -97,16 +97,16 @@ func (i *aiInsight2Rank) Run() {
 			continue
 		}
 
-		err = i.RepoRank.Create(ctx, &model.Rank{
+		err = i.RepoRank.CreateAIInsight(ctx, &model.Rank{
 			Type:      model.RankTypeAIInsight,
 			ScoreID:   aiInsight.Keyword,
 			Score:     score,
 			RagID:     ragID,
 			ForeignID: aiInsight.ForumID,
 			Hit:       1,
-		})
+		}, discAIInsights)
 		if err != nil {
-			logger.WithErr(err).Warn("create rank failed")
+			logger.WithErr(err).Warn("create ai_insight rank failed")
 			continue
 		}
 	}
@@ -177,7 +177,7 @@ func (i *aiInsight2Rank) exist(ctx context.Context, datasetID string, data model
 	return exist, nil
 }
 
-func (i *aiInsight2Rank) calcScore(ctx context.Context, data model.AIInsight) (float64, error) {
+func (i *aiInsight2Rank) calcScore(ctx context.Context, data model.AIInsight) (float64, []model.DiscussionAIInsight, error) {
 	logger := i.logger.WithContext(ctx).With("msg", data)
 	logger.Debug("calc ai insight score")
 
@@ -188,19 +188,24 @@ func (i *aiInsight2Rank) calcScore(ctx context.Context, data model.AIInsight) (f
 	})
 	if err != nil {
 		logger.WithErr(err).Warn("search disc failed")
-		return 0, err
+		return 0, nil, err
 	}
 
 	discUUIDs := make(model.StringArray, len(discs))
 	discIDs := make(model.Int64Array, len(discs))
+	discAIInsights := make([]model.DiscussionAIInsight, len(discs))
 	for i, disc := range discs {
 		discUUIDs[i] = disc.UUID
 		discIDs[i] = int64(disc.ID)
+		discAIInsights[i] = model.DiscussionAIInsight{
+			DiscussionID: disc.ID,
+			Title:        disc.Title,
+		}
 	}
 
 	if len(discIDs) == 0 {
 		logger.Debug("disc not found, skip")
-		return 0, nil
+		return 0, nil, nil
 	}
 
 	var botUnknown int64
@@ -210,7 +215,7 @@ func (i *aiInsight2Rank) calcScore(ctx context.Context, data model.AIInsight) (f
 	)
 	if err != nil {
 		logger.WithErr(err).Warn("count bot unknown faied")
-		return 0, err
+		return 0, nil, err
 	}
 
 	var dislikeBot int64
@@ -221,11 +226,11 @@ func (i *aiInsight2Rank) calcScore(ctx context.Context, data model.AIInsight) (f
 	)
 	if err != nil {
 		logger.WithErr(err).Warn("count dislike bot disc failed")
-		return 0, err
+		return 0, nil, err
 	}
 
 	if dislikeBot == 0 && botUnknown == 0 {
-		return 0, nil
+		return 0, nil, nil
 	}
 
 	floatDiscs := float64(len(discIDs))
@@ -235,7 +240,8 @@ func (i *aiInsight2Rank) calcScore(ctx context.Context, data model.AIInsight) (f
 	score := math.Log2(1+floatDiscs) * (0.7*floatBotUnknown + 0.3*floatDislikeBot) / floatDiscs
 
 	logger.With("score", score).Debug("calc score done")
-	return score, nil
+
+	return score, discAIInsights, nil
 }
 
 func newAIInsight2Rank(in aiInsight2RankIn) Task {
