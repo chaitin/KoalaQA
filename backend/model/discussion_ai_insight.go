@@ -7,3 +7,7 @@ type DiscussionAIInsight struct {
 	DiscussionUUID string `gorm:"column:discussion_uuid;type:text" json:"discussion_id"`
 	Title          string `gorm:"column:title;type:text" json:"title"`
 }
+
+func init() {
+	registerAutoMigrate(&DiscussionAIInsight{})
+}

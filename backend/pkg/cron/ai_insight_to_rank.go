@@ -174,6 +174,13 @@ func (i *aiInsight2Rank) exist(ctx context.Context, datasetID string, data model
 		return false, err
 	}
 
+	if !exist {
+		err = i.Rag.DeleteRecords(ctx, datasetID, []string{records[index].DocID})
+		if err != nil {
+			logger.WithErr(err).With("rag_id", records[index].DocID).Warn("delete not exist rag failed")
+		}
+	}
+
 	return exist, nil
 }
 
