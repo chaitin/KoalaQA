@@ -2,7 +2,6 @@ package topic
 
 import (
 	"github.com/chaitin/koalaqa/model"
-	"github.com/chaitin/koalaqa/pkg/anydoc/platform"
 )
 
 var AnydocTaskExportTopic = newTopic("anydoc.persistence.doc.task.export", true)
@@ -36,17 +35,4 @@ type TaskHead struct {
 type TaskBody struct {
 	Markdown string `json:"markdown"`
 	JSON     string `json:"json"`
-}
-
-type TaskMeta struct {
-	TaskHead
-
-	DBDocID   uint
-	KBID      uint
-	DocType   model.DocType
-	Platform  platform.PlatformType
-	Title     string
-	Desc      string
-	ExportOpt model.ExportOpt
-	ParentID  uint
 }

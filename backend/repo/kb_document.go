@@ -31,6 +31,16 @@ func (d *KBDocument) GetByRagIDs(ctx context.Context, ids []string) ([]model.KBD
 	return docs, nil
 }
 
+func (d *KBDocument) GetByTaskID(ctx context.Context, taskID string) (*model.KBDocument, error) {
+	var doc model.KBDocument
+	err := d.model(ctx).Where("export_tash_id = ?", taskID).First(&doc).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &doc, nil
+}
+
 func (d *KBDocument) CreateOnIDConflict(ctx context.Context, res *model.KBDocument, updateWithDocInfo bool) error {
 	columns := []string{"status", "message"}
 	if updateWithDocInfo {

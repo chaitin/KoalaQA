@@ -2,10 +2,11 @@ package sub
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
-	"github.com/chaitin/koalaqa/pkg/cache"
+	"github.com/chaitin/koalaqa/pkg/database"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/oss"
@@ -17,7 +18,6 @@ type anydocTask struct {
 	oc      oss.Client
 	pub     mq.Publisher
 	repoDoc *repo.KBDocument
-	cache   cache.Cache[topic.TaskMeta]
 	logger  *glog.Logger
 }
 
@@ -46,76 +46,42 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 	logger := t.logger.WithContext(ctx).With("task_info", taskInfo)
 
 	logger.Debug("receive task result")
-	meta, ok := t.cache.Get(taskInfo.TaskID)
-	if !ok {
-		logger.Warn("task timeout")
-		return nil
+	dbDoc, err := t.repoDoc.GetByTaskID(ctx, taskInfo.TaskID)
+	if err != nil {
+		if errors.Is(err, database.ErrRecordNotFound) {
+			return nil
+		}
+
+		logger.WithErr(err).Warn("get doc by task id failed")
+		return err
 	}
-	logger = logger.With("meta_info", meta)
-	meta.TaskHead = taskInfo.TaskHead
 
-	defer func() {
-		t.cache.Set(taskInfo.TaskID, meta)
-	}()
-
-	switch meta.Status {
+	switch taskInfo.Status {
 	case topic.TaskStatusCompleted:
-		err := t.checkDoc(ctx, meta)
+		err = t.repoDoc.Update(ctx, map[string]any{
+			"status":       model.DocStatusExportSuccess,
+			"message":      "",
+			"platform_opt": model.NewJSONB(taskInfo.PlatformOpt),
+			"file_type":    taskInfo.DocType,
+			"markdown":     []byte(taskInfo.Markdown),
+			"json":         []byte(taskInfo.JSON),
+		}, repo.QueryWithEqual("id", dbDoc.ID))
 		if err != nil {
-			return nil
+			logger.WithErr(err).With("doc_id", dbDoc.ID).Error("update kb_document failed")
+			return err
 		}
 
-		var (
-			markdownPath string
-			jsonPath     string
-		)
+		markdownPath := string(dbDoc.Markdown)
+		jsonPath := string(dbDoc.JSON)
 
-		if meta.DBDocID > 0 {
-			var dbDoc model.KBDocument
-			err := t.repoDoc.GetByID(ctx, &dbDoc, meta.KBID, meta.DBDocID)
-			if err != nil {
-				logger.WithErr(err).With("doc_id", meta.DBDocID).Warn("get db doc failed")
-			} else {
-				markdownPath = string(dbDoc.Markdown)
-				jsonPath = string(dbDoc.JSON)
-			}
-		}
-
-		doc := model.KBDocument{
-			Base: model.Base{
-				ID: meta.DBDocID,
-			},
-			KBID:        meta.KBID,
-			Platform:    meta.Platform,
-			DocType:     meta.DocType,
-			PlatformOpt: model.NewJSONB(taskInfo.PlatformOpt),
-			ExportOpt:   model.NewJSONB(meta.ExportOpt),
-			DocID:       taskInfo.DocID,
-			Title:       meta.Title,
-			Desc:        meta.Desc,
-			Markdown:    []byte(taskInfo.Markdown),
-			JSON:        []byte(taskInfo.JSON),
-			FileType:    taskInfo.DocType,
-			Status:      model.DocStatusExportSuccess,
-			ParentID:    meta.ParentID,
-			Message:     "",
-		}
-
-		err = t.repoDoc.CreateOnIDConflict(ctx, &doc, true)
-		if err != nil {
-			meta.Status = topic.TaskStatusFailed
-			logger.WithErr(err).With("kb_document", doc).Error("create kb_document failed")
-			return nil
-		}
-
-		if markdownPath != "" && markdownPath != string(doc.Markdown) {
+		if markdownPath != "" && markdownPath != taskInfo.Markdown {
 			err = t.oc.Delete(ctx, markdownPath, oss.WithBucket("anydoc"))
 			if err != nil {
 				logger.WithErr(err).With("dir", markdownPath).Warn("remove oss object failed")
 			}
 		}
 
-		if jsonPath != "" && jsonPath != string(doc.JSON) {
+		if jsonPath != "" && jsonPath != taskInfo.JSON {
 			err = t.oc.Delete(ctx, jsonPath, oss.WithBucket("anydoc"))
 			if err != nil {
 				logger.WithErr(err).With("dir", jsonPath).Warn("remove oss object failed")
@@ -123,54 +89,33 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 		}
 
 		op := topic.OPInsert
-		if meta.DBDocID > 0 {
+		if dbDoc.RagID != "" {
 			op = topic.OPUpdate
 		}
 
 		pubMsg := topic.MsgKBDocument{
 			OP:    op,
-			KBID:  meta.KBID,
-			DocID: doc.ID,
+			KBID:  dbDoc.KBID,
+			DocID: dbDoc.ID,
 		}
 		err = t.pub.Publish(ctx, topic.TopicKBDocumentRag, pubMsg)
 		if err != nil {
 			logger.WithErr(err).With("pub_msg", pubMsg).Error("pub msg failed")
-			return nil
+			return err
 		}
 
 	case topic.TaskStatusFailed:
 		logger.Warn("doc export task failed")
-		if meta.ParentID == 0 {
-			return nil
-		}
 
-		err := t.checkDoc(ctx, meta)
+		err = t.repoDoc.Update(ctx, map[string]any{
+			"status":       model.DocStatusExportSuccess,
+			"message":      taskInfo.Err,
+			"platform_opt": model.NewJSONB(taskInfo.PlatformOpt),
+			"file_type":    taskInfo.DocType,
+		}, repo.QueryWithEqual("id", dbDoc.ID))
 		if err != nil {
-			return nil
-		}
-
-		err = t.repoDoc.CreateOnIDConflict(ctx, &model.KBDocument{
-			Base: model.Base{
-				ID: meta.DBDocID,
-			},
-			KBID:        meta.KBID,
-			Platform:    meta.Platform,
-			DocType:     meta.DocType,
-			PlatformOpt: model.NewJSONB(taskInfo.PlatformOpt),
-			ExportOpt:   model.NewJSONB(meta.ExportOpt),
-			DocID:       taskInfo.DocID,
-			Title:       meta.Title,
-			Desc:        meta.Desc,
-			Markdown:    []byte(taskInfo.Markdown),
-			JSON:        []byte(taskInfo.JSON),
-			FileType:    taskInfo.DocType,
-			Status:      model.DocStatusExportFailed,
-			ParentID:    meta.ParentID,
-			Message:     taskInfo.Err,
-		}, false)
-		if err != nil {
-			logger.WithErr(err).Warn("create kb_document failed")
-			return nil
+			logger.WithErr(err).With("doc_id", dbDoc.ID).Warn("create kb_document failed")
+			return err
 		}
 
 	case topic.TaskStatusInProgress, topic.TaskStatusPending:
@@ -182,54 +127,11 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 	return nil
 }
 
-func (t *anydocTask) checkDoc(ctx context.Context, meta topic.TaskMeta) error {
-	if meta.ParentID == 0 {
-		return nil
-	}
-	logger := t.logger.WithContext(ctx).With("meta", meta)
-	logger.Debug("check doc meta info")
-
-	exist, err := t.repoDoc.ExistByID(ctx, meta.ParentID)
-	if err != nil {
-		logger.WithErr(err).With("parent_id", meta.ParentID).Warn("get parent doc failed")
-		return nil
-	}
-
-	if !exist {
-		logger.With("parent_id", meta.ParentID).Info("parent doc not eixst, skip")
-		return nil
-	}
-
-	// 避免入库相同的数据
-	if meta.DBDocID == 0 {
-		exist, err = t.repoDoc.Exist(ctx,
-			repo.QueryWithEqual("parent_id", meta.ParentID),
-			repo.QueryWithEqual("doc_id", meta.DocID),
-		)
-		if err != nil {
-			logger.WithErr(err).With("parent_id", meta.ParentID).With("doc_id", meta.DocID).Warn("query doc doc failed")
-			return nil
-		}
-
-		if exist {
-			logger.With("parent_id", meta.ParentID).With("doc_id", meta.DocID).Info("doc already exist, skip")
-			return nil
-		}
-	}
-
-	return nil
-}
-
-func newAnydocTask(c cache.Cache[topic.TaskMeta], repoDoc *repo.KBDocument, pub mq.Publisher, oc oss.Client) *anydocTask {
+func newAnydocTask(repoDoc *repo.KBDocument, pub mq.Publisher, oc oss.Client) *anydocTask {
 	return &anydocTask{
 		oc:      oc,
 		pub:     pub,
 		repoDoc: repoDoc,
-		cache:   c,
 		logger:  glog.Module("sub", "anydoc"),
 	}
-}
-
-func newCache() cache.Cache[topic.TaskMeta] {
-	return cache.New[topic.TaskMeta](time.Hour * 12)
 }
