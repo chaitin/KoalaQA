@@ -223,7 +223,7 @@ func (u *User) Update(ctx context.Context, opUserID uint, id uint, req UserUpdat
 		}
 	}
 
-	if user.Role != model.UserRoleGuest && len(req.OrgIDs) > 0 {
+	if user.Role != model.UserRoleGuest && (!user.Builtin || user.Role != model.UserRoleAdmin) && len(req.OrgIDs) > 0 {
 		err = u.repoOrg.FilterIDs(ctx, &req.OrgIDs)
 		if err != nil {
 			return err
