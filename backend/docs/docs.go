@@ -7037,7 +7037,7 @@ const docTemplate = `{
         "model.DiscussionDetail": {
             "type": "object",
             "properties": {
-                "alter": {
+                "alert": {
                     "type": "boolean"
                 },
                 "associate": {
