@@ -293,7 +293,7 @@ export interface ModelDiscussionComment {
 }
 
 export interface ModelDiscussionDetail {
-  alert?: boolean;
+  alter?: boolean;
   associate?: ModelDiscussionListItem;
   associate_id?: number;
   bot_unknown?: boolean;
@@ -896,9 +896,9 @@ export interface SvcListSpaceFolderItem {
   doc_id?: string;
   failed?: number;
   id?: number;
-  pending?: number;
   rag_id?: string;
   status?: ModelDocStatus;
+  success?: number;
   title?: string;
   total?: number;
   updated_at?: number;

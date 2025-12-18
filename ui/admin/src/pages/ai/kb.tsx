@@ -198,10 +198,7 @@ const KnowledgeBasePage = () => {
   const folders = foldersData?.items || [];
 
   const getDocSyncState = (status?: ModelDocStatus) => {
-    if (
-      status === ModelDocStatus.DocStatusApplySuccess ||
-      status === ModelDocStatus.DocStatusExportSuccess
-    ) {
+    if (status === ModelDocStatus.DocStatusApplySuccess) {
       return 'success' as const;
     }
     if (
@@ -210,15 +207,7 @@ const KnowledgeBasePage = () => {
     ) {
       return 'failed' as const;
     }
-    if (
-      status === ModelDocStatus.DocStatusAppling ||
-      status === ModelDocStatus.DocStatusPendingApply ||
-      status === ModelDocStatus.DocStatusPendingExport ||
-      status === ModelDocStatus.DocStatusPendingReview
-    ) {
-      return 'syncing' as const;
-    }
-    return 'unknown' as const;
+    return 'syncing' as const;
   };
 
   const {
@@ -886,14 +875,7 @@ const KnowledgeBasePage = () => {
                         }}
                         onClick={() => openDocStatusModal(folder)}
                       >
-                        同步成功{' '}
-                        <b>
-                          {Math.max(
-                            0,
-                            (folder.total || 0) - (folder.failed || 0) - (folder.pending || 0)
-                          )}
-                        </b>{' '}
-                        个
+                        同步成功 <b>{folder.success || 0}</b> 个
                         {(folder.failed || 0) > 0 && (
                           <>
                             ，同步失败 <b>{folder.failed || 0}</b> 个
@@ -1494,10 +1476,8 @@ const KnowledgeBasePage = () => {
         width={620}
       >
         {(() => {
-          const total = docStatusFolder?.total || 0;
           const failed = docStatusFolder?.failed || 0;
-          const pending = docStatusFolder?.pending || 0;
-          const success = Math.max(0, total - failed - pending);
+          const success = docStatusFolder?.success || 0;
 
           const q = docStatusSearch.trim().toLowerCase();
           const docsAfterSearch = folderDocs.filter(d => (d.title || '').toLowerCase().includes(q));
@@ -1505,8 +1485,12 @@ const KnowledgeBasePage = () => {
             docStatusTab === 'all'
               ? docsAfterSearch
               : docsAfterSearch.filter(d => {
-                  const s = getDocSyncState(d.status);
-                  return docStatusTab === 'success' ? s === 'success' : s === 'failed';
+                  return docStatusTab === 'success'
+                    ? ModelDocStatus.DocStatusApplySuccess === d.status
+                    : [
+                        ModelDocStatus.DocStatusApplyFailed,
+                        ModelDocStatus.DocStatusExportFailed,
+                      ].includes(d.status!);
                 });
           const renderStatusIcon = (doc: SvcDocListItem) => {
             const state = getDocSyncState(doc.status);

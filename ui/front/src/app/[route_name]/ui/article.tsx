@@ -242,7 +242,7 @@ const Article = ({
 
     // 检查是否有缓存，如果有缓存且参数匹配，则恢复缓存数据
     if (cached && cached.searchParams === currentSearchParams) {
-      if (cached.scrollPosition > 0) restoreScrollPosition(cached.scrollPosition)
+      restoreScrollPosition(cached.scrollPosition)
     } else {
       setArticleData(data)
       const mainContent = document.getElementById('main-content')

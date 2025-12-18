@@ -3,6 +3,7 @@ import {
   getAdminForum,
   getAdminOrg,
   ModelForumInfo,
+  ModelOrgType,
   postAdminOrg,
   putAdminOrgOrgId,
   SvcOrgListItem,
@@ -87,9 +88,10 @@ const OrgList = ({ orgList: initialOrgList, onRefresh }: OrgListProps) => {
       ...data,
     };
 
-    const request = isEdit && orgEditItem?.id
-      ? putAdminOrgOrgId({ orgId: orgEditItem.id }, submitData)
-      : postAdminOrg(submitData);
+    const request =
+      isEdit && orgEditItem?.id
+        ? putAdminOrgOrgId({ orgId: orgEditItem.id }, submitData)
+        : postAdminOrg(submitData);
 
     request
       .then(() => {
@@ -307,7 +309,12 @@ const OrgList = ({ orgList: initialOrgList, onRefresh }: OrgListProps) => {
         </FormControl>
 
         <FormControl fullWidth sx={{ my: 2 }}>
-          <InputLabel id="forum-select-label">访问权限</InputLabel>
+          <InputLabel
+            id="forum-select-label"
+            disabled={orgEditItem?.type === ModelOrgType.OrgTypeAdmin}
+          >
+            访问权限
+          </InputLabel>
           <Controller
             name="forum_ids"
             control={controlOrg}
@@ -317,6 +324,7 @@ const OrgList = ({ orgList: initialOrgList, onRefresh }: OrgListProps) => {
                 fullWidth
                 label="访问权限"
                 multiple
+                disabled={orgEditItem?.type === ModelOrgType.OrgTypeAdmin}
                 value={field.value || []}
                 onChange={e => {
                   const value = e.target.value as number[];

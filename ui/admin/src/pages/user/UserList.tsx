@@ -103,13 +103,12 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
   );
 
   // 获取待审批数量
-  const { data: pendingReviewCount, run: fetchPendingReviewCount } = useRequest(
-    () =>
-      getAdminUserReview({
-        page: 1,
-        size: 1,
-        state: [0], // 待审核状态
-      })
+  const { data: pendingReviewCount, run: fetchPendingReviewCount } = useRequest(() =>
+    getAdminUserReview({
+      page: 1,
+      size: 1,
+      state: [0], // 待审核状态
+    })
   );
 
   // 当 URL 参数变化时，更新本地状态
@@ -556,7 +555,12 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
         </FormControl>
 
         <FormControl fullWidth sx={{ my: 2 }} error={false}>
-          <InputLabel id="org-select-label">组织</InputLabel>
+          <InputLabel
+            id="org-select-label"
+            disabled={editItem?.builtin && editItem.role === ModelUserRole.UserRoleAdmin}
+          >
+            组织
+          </InputLabel>
           <Controller
             name="org_ids"
             control={control}
@@ -576,6 +580,7 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
                   label="组织"
                   multiple
                   value={field.value || []}
+                  disabled={editItem?.builtin && editItem.role === ModelUserRole.UserRoleAdmin}
                   onChange={e => {
                     const value = e.target.value as number[];
                     field.onChange(value);
@@ -656,7 +661,6 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
         }}
       >
         <FormControl fullWidth sx={{ my: 2 }}>
-          <InputLabel id="batch-org-select-label">选择组织</InputLabel>
           <Select
             labelId="batch-org-select-label"
             fullWidth
