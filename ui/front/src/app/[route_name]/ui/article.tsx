@@ -245,6 +245,8 @@ const Article = ({
       if (cached.scrollPosition > 0) restoreScrollPosition(cached.scrollPosition)
     } else {
       setArticleData(data)
+      const mainContent = document.getElementById('main-content')
+      if (mainContent) mainContent.scrollTop = 0
     }
     clearCache()
     restoreStateProcessedRef.current = cacheKey
@@ -397,9 +399,9 @@ const Article = ({
                   whiteSpace: 'nowrap',
                   height: '40px',
                   boxShadow: 'none',
-                  '&:hover':{
-                    boxShadow: 'none'
-                  }
+                  '&:hover': {
+                    boxShadow: 'none',
+                  },
                 }}
               >
                 发布内容

@@ -256,10 +256,6 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const isClosed = data.resolved === ModelDiscussionState.DiscussionStateClosed
   const profileHref = data.user_id ? `/profile/${data.user_id}` : undefined
 
-  const isCategoryTag = (tag: string) => {
-    return data.groups?.some((group) => group.name === tag) || false
-  }
-
   // 判断是否显示"转为 Issue 管理"按钮
   const canConvertToIssue = useMemo(() => {
     const isAdminOrOperator = [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
@@ -277,20 +273,6 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
 
   return (
     <>
-      {/* <ReleaseModal
-        status='edit'
-        open={releaseVisible}
-        data={data}
-        id={id}
-        onClose={releaseClose}
-        selectedTags={[]}
-        type={data.type}
-        forumInfo={forumInfo}
-        onOk={() => {
-          releaseClose()
-          router.refresh()
-        }}
-      /> */}
       <ConvertToIssueModal
         open={convertToIssueVisible}
         onClose={convertToIssueClose}
@@ -695,12 +677,13 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
 
         {data.content && String(data.content).trim() && (
           <>
+            <Divider sx={{ mb: '10px' }} />
             <EditorContent content={data.content} onTocUpdate={true} />
           </>
         )}
         <Divider sx={{ my: 2 }} />
         {!!tagNames.length && (
-          <Stack direction='row' flexWrap='wrap' sx={{ gap: 1, alignItems: 'center',mt: 1, mb: 2 }}>
+          <Stack direction='row' flexWrap='wrap' sx={{ gap: 1, alignItems: 'center', mt: 1, mb: 2 }}>
             {tagNames.map((tag, index) => {
               return <TagFilterChip key={index} id={index} name={tag} selected={false} />
             })}
