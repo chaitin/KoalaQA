@@ -8456,7 +8456,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "discussion_id": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "id": {
                     "type": "integer"

@@ -198,8 +198,8 @@ func (i *aiInsight2Rank) calcScore(ctx context.Context, data model.AIInsight) (f
 		discUUIDs[i] = disc.UUID
 		discIDs[i] = int64(disc.ID)
 		discAIInsights[i] = model.DiscussionAIInsight{
-			DiscussionID: disc.ID,
-			Title:        disc.Title,
+			DiscussionUUID: disc.UUID,
+			Title:          disc.Title,
 		}
 	}
 
