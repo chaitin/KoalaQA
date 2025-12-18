@@ -328,7 +328,8 @@ func (d *KBDocument) CreateDocByDisc(ctx context.Context, user model.UserInfo, d
 		DocType:  model.DocTypeDocument,
 		Title:    disc.Title,
 		Desc:     disc.Summary,
-		Markdown: []byte(ossPath),
+		Markdown: []byte(util.TrimFirstDir(ossPath)),
+		FileType: model.FileTypeMarkdown,
 		Status:   model.DocStatusExportSuccess,
 	}
 

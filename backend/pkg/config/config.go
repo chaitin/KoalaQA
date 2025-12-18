@@ -22,7 +22,7 @@ type Minio struct {
 	Endpoint    string   `env:"ENDPOINT" envDefault:"koala-qa-oss:9000"`
 	AccessKey   string   `env:"ACCESS_KEY" envDefault:"koala"`
 	SecretKey   string   `env:"SECRET_KEY"`
-	Buckets     []string `env:"BUCKETS" envDefault:"koala"` // first one is default bucket
+	Buckets     []string `env:"BUCKETS" envDefault:"koala,anydoc"` // first one is default bucket
 	MaxFileSize int      `env:"MAX_FILE_SIZE" envDefault:"104857600"`
 }
 
