@@ -3,6 +3,7 @@ package sub
 import (
 	"context"
 	"errors"
+	"slices"
 	"sync"
 	"time"
 
@@ -206,6 +207,7 @@ func (k *kbSpace) handleInsert(ctx context.Context, logger *glog.Logger, msg top
 
 type docInfo struct {
 	id        uint
+	status    model.DocStatus
 	updatedAt int64
 }
 
@@ -236,6 +238,7 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 		for _, item := range listFolderRes.Items {
 			exist[item.DocID] = docInfo{
 				id:        item.ID,
+				status:    item.Status,
 				updatedAt: int64(item.UpdatedAt),
 			}
 		}
@@ -280,7 +283,8 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 
 		delete(exist, doc.ID)
 
-		if msg.DocID == 0 && msg.IncrUpdate && doc.UpdatedAt > 0 && doc.UpdatedAt < dbDoc.updatedAt {
+		if msg.DocID == 0 && msg.IncrUpdate && doc.UpdatedAt > 0 && doc.UpdatedAt < dbDoc.updatedAt &&
+			!slices.Contains([]model.DocStatus{model.DocStatusApplyFailed, model.DocStatusApplyFailed}, dbDoc.status) {
 			logger.With("doc_id", doc.ID).With("anydoc_updated", doc.UpdatedAt).With("dbdoc_updated", dbDoc.updatedAt).Info("incr update ignore doc")
 			continue
 		}
