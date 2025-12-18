@@ -2106,6 +2106,26 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "array",
+                        "items": {
+                            "enum": [
+                                0,
+                                1,
+                                2,
+                                3,
+                                4,
+                                5,
+                                6,
+                                7,
+                                8
+                            ],
+                            "type": "integer"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "name": "title",
                         "in": "query"
@@ -9617,8 +9637,8 @@ const docTemplate = `{
         "svc.UpdateSpaceFolderReq": {
             "type": "object",
             "properties": {
-                "doc_id": {
-                    "type": "integer"
+                "update_type": {
+                    "$ref": "#/definitions/topic.KBSpaceUpdateType"
                 }
             }
         },
@@ -9903,6 +9923,19 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "topic.KBSpaceUpdateType": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-varnames": [
+                "KBSpaceUpdateTypeAll",
+                "KBSpaceUpdateTypeIncr",
+                "KBSpaceUpdateTypeFailed"
+            ]
         },
         "topic.TaskMeta": {
             "type": "object",

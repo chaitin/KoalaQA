@@ -10,7 +10,6 @@ import (
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/anydoc"
 	"github.com/chaitin/koalaqa/pkg/cache"
-	"github.com/chaitin/koalaqa/pkg/database"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/topic"
@@ -212,13 +211,11 @@ type docInfo struct {
 }
 
 func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg topic.MsgKBSpace) error {
-	if msg.DocID == 0 {
-		if !k.run(msg.FolderID) {
-			logger.Info("task running, skip")
-			return nil
-		}
-		defer k.done(msg.FolderID)
+	if !k.run(msg.FolderID) {
+		logger.Info("task running, skip")
+		return nil
 	}
+	defer k.done(msg.FolderID)
 
 	folder, err := k.getFolder(ctx, msg.KBID, msg.FolderID)
 	if err != nil {
@@ -228,40 +225,23 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 
 	exist := make(map[string]docInfo)
 
-	if msg.DocID == 0 {
-		listFolderRes, err := k.doc.ListSpaceFolderDoc(ctx, msg.KBID, msg.FolderID, svc.ListSpaceFolderDocReq{})
-		if err != nil {
-			logger.WithErr(err).Warn("list folder doc failed")
-			return err
-		}
+	req := svc.ListSpaceFolderDocReq{}
 
-		for _, item := range listFolderRes.Items {
-			exist[item.DocID] = docInfo{
-				id:        item.ID,
-				status:    item.Status,
-				updatedAt: int64(item.UpdatedAt),
-			}
-		}
-	} else {
-		doc, err := k.doc.GetByID(ctx, msg.KBID, msg.DocID)
-		if err != nil {
-			if errors.Is(err, database.ErrRecordNotFound) {
-				logger.Info("doc not found, skip update")
-				return nil
-			}
+	if msg.UpdateType == topic.KBSpaceUpdateTypeFailed {
+		req.Status = []model.DocStatus{model.DocStatusApplyFailed, model.DocStatusExportFailed}
+	}
 
-			logger.WithErr(err).Warn("get doc failed")
-			return err
-		}
+	listFolderRes, err := k.doc.ListSpaceFolderDoc(ctx, msg.KBID, msg.FolderID, req)
+	if err != nil {
+		logger.WithErr(err).Warn("list folder doc failed")
+		return err
+	}
 
-		if doc.ParentID != msg.FolderID {
-			logger.Info("doc parent is not this folder, skip update")
-			return nil
-		}
-
-		exist[doc.DocID] = docInfo{
-			id:        doc.ID,
-			updatedAt: int64(doc.UpdatedAt),
+	for _, item := range listFolderRes.Items {
+		exist[item.DocID] = docInfo{
+			id:        item.ID,
+			status:    item.Status,
+			updatedAt: int64(item.UpdatedAt),
 		}
 	}
 
@@ -276,17 +256,14 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 
 	for _, doc := range list.Docs {
 		dbDoc, ok := exist[doc.ID]
-		// 当 doc_id 大于 0 的时候，只更新该文档
-		if msg.DocID > 0 && !ok {
-			continue
-		}
+		if ok {
+			delete(exist, doc.ID)
 
-		delete(exist, doc.ID)
-
-		if msg.DocID == 0 && msg.IncrUpdate && doc.UpdatedAt > 0 && doc.UpdatedAt < dbDoc.updatedAt &&
-			!slices.Contains([]model.DocStatus{model.DocStatusApplyFailed, model.DocStatusApplyFailed}, dbDoc.status) {
-			logger.With("doc_id", doc.ID).With("anydoc_updated", doc.UpdatedAt).With("dbdoc_updated", dbDoc.updatedAt).Info("incr update ignore doc")
-			continue
+			if msg.UpdateType == topic.KBSpaceUpdateTypeIncr && doc.UpdatedAt > 0 && doc.UpdatedAt < dbDoc.updatedAt &&
+				!slices.Contains([]model.DocStatus{model.DocStatusApplyFailed, model.DocStatusApplyFailed}, dbDoc.status) {
+				logger.With("doc_id", doc.ID).With("anydoc_updated", doc.UpdatedAt).With("dbdoc_updated", dbDoc.updatedAt).Info("incr update ignore doc")
+				continue
+			}
 		}
 
 		if dbDoc.id > 0 {

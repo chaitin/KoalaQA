@@ -868,8 +868,7 @@ func (d *KBDocument) ListSpaceFolder(ctx context.Context, kbID uint, parentID ui
 }
 
 type UpdateSpaceFolderReq struct {
-	DocID      uint `json:"doc_id"`
-	IncrUpdate bool `json:"-" swaggerignore:"true"`
+	UpdateType topic.KBSpaceUpdateType `json:"update_type"`
 }
 
 func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID uint, req UpdateSpaceFolderReq) error {
@@ -880,17 +879,6 @@ func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID 
 
 	if doc.DocType != model.DocTypeSpace || doc.FileType != model.FileTypeFolder || doc.ParentID == 0 {
 		return errors.ErrUnsupported
-	}
-
-	if req.DocID > 0 {
-		folderDoc, err := d.GetByID(ctx, kbID, req.DocID)
-		if err != nil {
-			return err
-		}
-
-		if folderDoc.ParentID != folderID {
-			return errors.New("invalid doc id")
-		}
 	}
 
 	err = d.repoDoc.Update(ctx, map[string]any{
@@ -904,8 +892,7 @@ func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID 
 		OP:         topic.OPUpdate,
 		KBID:       kbID,
 		FolderID:   folderID,
-		DocID:      req.DocID,
-		IncrUpdate: req.IncrUpdate,
+		UpdateType: req.UpdateType,
 	})
 	if err != nil {
 		d.logger.WithContext(ctx).WithErr(err).With("kb_id", kbID).With("folder_id", folderID).Warn("pub update msg failed")
@@ -917,7 +904,8 @@ func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID 
 type ListSpaceFolderDocReq struct {
 	*model.Pagination
 
-	Title *string `form:"title"`
+	Title  *string           `form:"title"`
+	Status []model.DocStatus `form:"status"`
 }
 
 func (d *KBDocument) ListSpaceFolderDoc(ctx context.Context, kbID uint, folderID uint, req ListSpaceFolderDocReq) (*model.ListRes[DocListItem], error) {
@@ -930,6 +918,7 @@ func (d *KBDocument) ListSpaceFolderDoc(ctx context.Context, kbID uint, folderID
 		repo.QueryWithILike("title", req.Title),
 		repo.QueryWithPagination(req.Pagination),
 		repo.QueryWithOrderBy("created_at DESC"),
+		repo.QueryWithEqual("status", req.Status, repo.EqualOPIn),
 	)
 	if err != nil {
 		return nil, err
@@ -940,6 +929,7 @@ func (d *KBDocument) ListSpaceFolderDoc(ctx context.Context, kbID uint, folderID
 		repo.QueryWithEqual("parent_id", folderID),
 		repo.QueryWithEqual("doc_type", model.DocTypeSpace),
 		repo.QueryWithILike("title", req.Title),
+		repo.QueryWithEqual("status", req.Status, repo.EqualOPIn),
 	)
 	if err != nil {
 		return nil, err
