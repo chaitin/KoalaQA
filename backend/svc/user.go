@@ -6,6 +6,7 @@ import (
 	"errors"
 	"mime/multipart"
 	"path/filepath"
+	"slices"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
@@ -102,7 +103,7 @@ func (u *User) Detail(ctx context.Context, id uint) (*model.User, error) {
 
 func (u *User) ForumIDs(ctx context.Context, id uint) (model.Int64Array, error) {
 	if id == 0 {
-		org, err := u.repoOrg.GetBuiltin(ctx)
+		org, err := u.repoOrg.GetDefaultOrg(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -226,6 +227,15 @@ func (u *User) Update(ctx context.Context, opUserID uint, id uint, req UserUpdat
 		err = u.repoOrg.FilterIDs(ctx, &req.OrgIDs)
 		if err != nil {
 			return err
+		}
+
+		adminOrg, err := u.repoOrg.GetAdminOrg(ctx)
+		if err != nil {
+			return err
+		}
+
+		if len(req.OrgIDs) > 0 && user.Builtin && user.Role == model.UserRoleAdmin && !slices.Contains(req.OrgIDs, int64(adminOrg.ID)) {
+			req.OrgIDs = append(req.OrgIDs, int64(adminOrg.ID))
 		}
 
 		if len(req.OrgIDs) > 0 {
@@ -491,7 +501,7 @@ func (u *User) Register(ctx context.Context, req UserRegisterReq) error {
 		return errors.New("email already registered")
 	}
 
-	org, err := u.repoOrg.GetBuiltin(ctx)
+	org, err := u.repoOrg.GetDefaultOrg(ctx)
 	if err != nil {
 		return err
 	}
@@ -623,7 +633,7 @@ func (u *User) LoginThirdCallback(ctx context.Context, typ model.AuthType, req L
 		return "", err
 	}
 
-	org, err := u.repoOrg.GetBuiltin(ctx)
+	org, err := u.repoOrg.GetDefaultOrg(ctx)
 	if err != nil {
 		return "", err
 	}
