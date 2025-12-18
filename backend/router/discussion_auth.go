@@ -9,10 +9,11 @@ import (
 type discussionAuth struct {
 	disc       *svc.Discussion
 	discFollow *svc.DiscussionFollow
+	kbDoc      *svc.KBDocument
 }
 
-func newDiscussionAuth(svc *svc.Discussion, discFollow *svc.DiscussionFollow) server.Router {
-	return &discussionAuth{disc: svc, discFollow: discFollow}
+func newDiscussionAuth(svc *svc.Discussion, discFollow *svc.DiscussionFollow, kbDoc *svc.KBDocument) server.Router {
+	return &discussionAuth{disc: svc, discFollow: discFollow, kbDoc: kbDoc}
 }
 
 func init() {
@@ -40,6 +41,7 @@ func (d *discussionAuth) Route(h server.Handler) {
 		detailG.POST("/associate", d.Associate)
 		detailG.POST("/follow", d.Follow)
 		detailG.DELETE("/follow", d.Unfollow)
+		detailG.POST("/ai_learn", d.AILearn)
 
 		{
 			comG := detailG.Group("/comment")
@@ -599,4 +601,22 @@ func (d *discussionAuth) ContentSummary(ctx *context.Context) {
 	}
 
 	ctx.Success(res)
+}
+
+// AILearn
+// @Summary discussion ai learn
+// @Description discussion ai learn
+// @Tags discussion
+// @Produce json
+// @Param disc_id path string true "disc_id"
+// @Success 200 {object} context.Response
+// @Router /discussion/{disc_id}/ai_learn [post]
+func (d *discussionAuth) AILearn(ctx *context.Context) {
+	err := d.kbDoc.CreateDocByDisc(ctx, ctx.GetUser(), ctx.Param("disc_id"))
+	if err != nil {
+		ctx.InternalError(err, "discussion ai learn failed")
+		return
+	}
+
+	ctx.Success(nil)
 }

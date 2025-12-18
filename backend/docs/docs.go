@@ -4621,6 +4621,35 @@ const docTemplate = `{
                 }
             }
         },
+        "/discussion/{disc_id}/ai_learn": {
+            "post": {
+                "description": "discussion ai learn",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "discussion ai learn",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "disc_id",
+                        "name": "disc_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/discussion/{disc_id}/associate": {
             "get": {
                 "description": "list associate discussion",
@@ -7770,6 +7799,19 @@ const docTemplate = `{
                 "MsgNotifyTypeUserPoint"
             ]
         },
+        "model.OrgType": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-varnames": [
+                "OrgTypeNormal",
+                "OrgTypeDefault",
+                "OrgTypeAdmin"
+            ]
+        },
         "model.PlatformOpt": {
             "type": "object",
             "properties": {
@@ -9248,6 +9290,9 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.OrgType"
                 },
                 "updated_at": {
                     "type": "integer"
