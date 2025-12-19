@@ -210,7 +210,7 @@ func (m *initFirstBlog) Migrate(tx *gorm.DB) error {
 	}
 
 	blog := model.Discussion{
-		Title:      `# 👏 欢迎使用 KoalaQA`,
+		Title:      `👏 欢迎使用 KoalaQA`,
 		Summary:    "",
 		Content:    blogContent,
 		GroupIDs:   model.Int64Array{int64(groupItems[6].ID)},
