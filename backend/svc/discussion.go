@@ -82,7 +82,6 @@ type DiscussionCreateReq struct {
 	Summary   string               `json:"summary"`
 	Content   string               `json:"content"`
 	Type      model.DiscussionType `json:"type"`
-	Tags      []string             `json:"tags"`
 	GroupIDs  model.Int64Array     `json:"group_ids"`
 	ForumID   uint                 `json:"forum_id"`
 	skipLimit bool                 `json:"-"`
@@ -166,7 +165,6 @@ func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req Discus
 		Title:      req.Title,
 		Summary:    req.Summary,
 		Content:    req.Content,
-		Tags:       req.Tags,
 		GroupIDs:   req.GroupIDs,
 		UUID:       d.generateUUID(),
 		UserID:     user.UID,
