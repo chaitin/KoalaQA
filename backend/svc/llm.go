@@ -341,15 +341,36 @@ func (l *LLM) queryKnowledgeDocuments(ctx context.Context, query string) (string
 	for _, ragRecord := range records {
 		docContent[ragRecord.DocID] += "\n" + ragRecord.Content
 	}
-	var ragIDs []string
+	var (
+		ragIDs []string
+		ragIDM = make(map[string]struct{})
+	)
 	for _, record := range records {
 		ragIDs = append(ragIDs, record.DocID)
+		ragIDM[record.DocID] = struct{}{}
 	}
 	logger.With("rag_ids", ragIDs).Debug("RAG query success")
 	docs, err := l.doc.GetByRagIDs(ctx, ragIDs)
 	if err != nil {
 		return "", nil, fmt.Errorf("get document detail failed: %w", err)
 	}
+
+	for _, doc := range docs {
+		delete(ragIDM, doc.RagID)
+	}
+
+	if len(ragIDM) > 0 {
+		deleteRagIDs := make([]string, 0, len(ragIDM))
+		for ragID := range ragIDM {
+			deleteRagIDs = append(deleteRagIDs, ragID)
+		}
+
+		err = l.rag.DeleteRecords(ctx, l.dataset.GetBackendID(ctx), deleteRagIDs)
+		if err != nil {
+			logger.WithErr(err).With("rag_ids", deleteRagIDs).Warn("delete not exist rag failed")
+		}
+	}
+
 	knowledgeDocs := make([]llm.KnowledgeDocument, 0, len(docs))
 	for _, doc := range docs {
 		knowledgeDocs = append(knowledgeDocs, llm.KnowledgeDocument{
