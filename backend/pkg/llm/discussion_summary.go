@@ -85,6 +85,9 @@ const discussionSummaryUserTplStr = `
 #### 帖子总结：{{ if eq $disc.Summary ""}} 无 {{- else}} {{- $disc.Summary}} {{- end}}
 #### 发帖人：{{$disc.UserName}}
 #### 发帖时间：{{formatTime $disc.CreatedAt}}
+{{- if $disc.Groups}}
+#### 帖子分组：{{renderGroups $disc.Groups}}
+{{- end}}
 {{- if $disc.Tags}}
 #### 帖子标签：{{join $disc.Tags ", "}}
 {{- end}}
@@ -112,6 +115,7 @@ func init() {
 		"formatTime":   formatTime,
 		"getDiscType":  getDiscType,
 		"getDiscState": getDiscState,
+		"renderGroups": renderGroups,
 	}).Parse(discussionSummaryUserTplStr)
 	if err != nil {
 		panic(err)

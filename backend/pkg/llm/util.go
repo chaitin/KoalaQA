@@ -94,6 +94,15 @@ func renderCommentNode(builder *strings.Builder, node *CommentNode, prefix strin
 	}
 }
 
+func renderGroups(groups []model.DiscussionGroup) string {
+	gr := make([]string, len(groups))
+	for i := range groups {
+		gr[i] = groups[i].Name
+	}
+
+	return strings.Join(gr, ", ")
+}
+
 func add(a, b int) int {
 	return a + b
 }
