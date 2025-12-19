@@ -211,7 +211,7 @@ func (m *initFirstBlog) Migrate(tx *gorm.DB) error {
 
 	blog := model.Discussion{
 		Title:      `👏 欢迎使用 KoalaQA`,
-		Summary:    "",
+		Summary:    `本文介绍了成功搭建KoalaQA后的基础配置流程。完成配置后可邀请同事试用并完善知识库，同时支持配置登录方式和通知渠道。遇到问题可通过扫码加入微信群获得支持。`,
 		Content:    blogContent,
 		GroupIDs:   model.Int64Array{int64(groupItems[6].ID)},
 		UUID:       util.RandomString(16),
