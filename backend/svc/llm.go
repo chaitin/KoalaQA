@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
@@ -46,10 +47,11 @@ func init() {
 }
 
 type GenerateReq struct {
-	Question      string `json:"question"`
-	Prompt        string `json:"prompt"`
-	DefaultAnswer string `json:"default_answer"`
-	NewCommentID  uint   `json:"new_comment_id"`
+	Question      string   `json:"question"`
+	Groups        []string `json:"groups"`
+	Prompt        string   `json:"prompt"`
+	DefaultAnswer string   `json:"default_answer"`
+	NewCommentID  uint     `json:"new_comment_id"`
 }
 
 func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (string, bool, error) {
@@ -59,7 +61,13 @@ func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (st
 		defaultAnswer = "无法回答问题"
 	}
 
-	rewrittenQuery, knowledgeDocuments, err := l.queryKnowledgeDocuments(ctx, req.Question)
+	query := req.Question
+
+	if len(req.Groups) > 0 {
+		query += "\n" + strings.Join(req.Groups, ",")
+	}
+
+	rewrittenQuery, knowledgeDocuments, err := l.queryKnowledgeDocuments(ctx, query)
 	if err != nil {
 		return "", false, err
 	}

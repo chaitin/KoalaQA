@@ -153,13 +153,14 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 		return nil
 	}
 
-	question, prompt, err := d.prompt.GenerateAnswerPrompt(ctx, data.DiscID, data.CommID)
+	question, groups, prompt, err := d.prompt.GenerateAnswerPrompt(ctx, data.DiscID, data.CommID)
 	if err != nil {
 		logger.WithErr(err).Error("generate prompt failed")
 		return nil
 	}
 	llmRes, answered, err := d.llm.Answer(ctx, svc.GenerateReq{
 		Question:      question,
+		Groups:        groups,
 		Prompt:        prompt,
 		DefaultAnswer: bot.UnknownPrompt,
 		NewCommentID:  data.CommID,

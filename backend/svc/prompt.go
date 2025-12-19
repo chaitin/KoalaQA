@@ -29,14 +29,14 @@ func init() {
 }
 
 // GenerateAnswerPrompt 生成回复帖子的提示词
-func (p *Prompt) GenerateAnswerPrompt(ctx context.Context, discID uint, commID uint) (string, string, error) {
+func (p *Prompt) GenerateAnswerPrompt(ctx context.Context, discID uint, commID uint) (string, []string, string, error) {
 	logger := p.logger.WithContext(ctx).With("discussion_id", discID, "comment_id", commID)
 	logger.Debug("start generate prompt")
 
 	// 1. 获取讨论详情
 	discussion, err := p.disc.Detail(ctx, 0, discID)
 	if err != nil {
-		return "", "", fmt.Errorf("get discussion detail failed: %w", err)
+		return "", nil, "", fmt.Errorf("get discussion detail failed: %w", err)
 	}
 
 	// 2. 获取该讨论的所有评论
@@ -46,7 +46,7 @@ func (p *Prompt) GenerateAnswerPrompt(ctx context.Context, discID uint, commID u
 		repo.QueryWithOrderBy("created_at ASC"),
 	)
 	if err != nil {
-		return "", "", fmt.Errorf("get discussion comments failed: %w", err)
+		return "", nil, "", fmt.Errorf("get discussion comments failed: %w", err)
 	}
 
 	// 3. 获取新评论详情
@@ -54,7 +54,7 @@ func (p *Prompt) GenerateAnswerPrompt(ctx context.Context, discID uint, commID u
 	if commID > 0 {
 		newComment, err = p.comm.Detail(ctx, commID)
 		if err != nil {
-			return "", "", fmt.Errorf("get new comment detail failed: %w", err)
+			return "", nil, "", fmt.Errorf("get new comment detail failed: %w", err)
 		}
 	}
 
@@ -63,11 +63,11 @@ func (p *Prompt) GenerateAnswerPrompt(ctx context.Context, discID uint, commID u
 
 	prompt, err := template.BuildFullPrompt()
 	if err != nil {
-		return "", "", fmt.Errorf("generate prompt failed: %w", err)
+		return "", nil, "", fmt.Errorf("generate prompt failed: %w", err)
 	}
 
 	logger.With("prompt", prompt).Debug("generate prompt success")
-	return template.Question(), prompt, nil
+	return template.Question(), discussion.GroupStrs(), prompt, nil
 }
 
 // GenerateContentForRetrieval 生成用于检索的纯内容文本
