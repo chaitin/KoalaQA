@@ -46,16 +46,24 @@ func (m *initAdmin) Migrate(tx *gorm.DB) error {
 		return err
 	}
 
+	updateM := map[string]any{
+		"updated_at": time.Now(),
+	}
+
+	if m.email != admin.Email {
+		updateM["email"] = m.email
+	}
+
 	err = bcrypt.CompareHashAndPassword([]byte(admin.Password), []byte(m.password))
-	if err == nil {
+	if err != nil {
+		updateM["password"] = string(hashPass)
+	}
+
+	if len(updateM) == 1 {
 		return nil
 	}
 
-	return tx.Model(&model.User{}).Where("id = ?", admin.ID).Updates(map[string]any{
-		"email":      m.email,
-		"password":   string(hashPass),
-		"updated_at": time.Now(),
-	}).Error
+	return tx.Model(&model.User{}).Where("id = ?", admin.ID).Updates(updateM).Error
 }
 
 func newInitAdmin(cfg config.Config) (migrator.Migrator, error) {
