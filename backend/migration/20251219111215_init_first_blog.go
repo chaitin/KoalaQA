@@ -119,15 +119,15 @@ func (m *initFirstBlog) Migrate(tx *gorm.DB) error {
 		UpdateColumn("groups", model.NewJSONB([]model.ForumGroups{
 			{
 				Type:     model.DiscussionTypeQA,
-				GroupIDs: model.Int64Array{int64(groupItems[0].ID), int64(groupItems[1].ID), int64(groupItems[2].ID)},
+				GroupIDs: model.Int64Array{int64(groups[0].ID)},
 			},
 			{
 				Type:     model.DiscussionTypeIssue,
-				GroupIDs: model.Int64Array{int64(groupItems[3].ID), int64(groupItems[4].ID)},
+				GroupIDs: model.Int64Array{int64(groups[1].ID)},
 			},
 			{
 				Type:     model.DiscussionTypeBlog,
-				GroupIDs: model.Int64Array{int64(groupItems[5].ID), int64(groupItems[6].ID)},
+				GroupIDs: model.Int64Array{int64(groups[2].ID)},
 			},
 		})).Error
 	if err != nil {
@@ -166,27 +166,27 @@ func (m *initFirstBlog) Migrate(tx *gorm.DB) error {
 
 ### 配置访问地址
 
-![image.png](/public/assets/discussion/public_address.png)
+![image.png](/koala/public/assets/discussion/public_address.png)
 
 ### 配置 AI 大模型
 
-![image.png](/public/assets/discussion/ai_module.png)
+![image.png](/koala/public/assets/discussion/ai_module.png)
 
 ### 导入知识学习，让机器人「了解你的产品」
 
-![image.png](/public/assets/discussion/ai_learn.png)
+![image.png](/koala/public/assets/discussion/ai_learn.png)
 
 ### 社区结构搭建（板块 + 分类）
 
-![image.png](/public/assets/discussion/forum.png)
+![image.png](/koala/public/assets/discussion/forum.png)
 
 ### 自定义机器人形象
 
-![image.png](/public/assets/discussion/bot.png)
+![image.png](/koala/public/assets/discussion/bot.png)
 
 ### 自定义社区品牌
 
-![image.png](/public/assets/discussion/logo.png)
+![image.png](/koala/public/assets/discussion/logo.png)
 
 完成如上配置后，你的 KoalaQA 已经具备提供服务的基础能力，可以开始：
 
@@ -201,7 +201,7 @@ func (m *initFirstBlog) Migrate(tx *gorm.DB) error {
 
 使用过程中遇到任何问题欢迎扫码加入微信群寻求支持帮助
 
-![image.png](/public/assets/discussion/qr_code.png)`
+![image.png](/koala/public/assets/discussion/qr_code.png)`
 
 	var admin model.User
 	err = tx.Model(&model.User{}).Where("builtin = ? AND role = ?", true, model.UserRoleAdmin).First(&admin).Error
