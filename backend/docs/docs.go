@@ -9071,6 +9071,9 @@ const docTemplate = `{
                 "desc": {
                     "type": "string"
                 },
+                "file_type": {
+                    "$ref": "#/definitions/model.FileType"
+                },
                 "id": {
                     "type": "integer"
                 },

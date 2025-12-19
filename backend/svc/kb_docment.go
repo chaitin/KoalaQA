@@ -183,7 +183,7 @@ func (d *KBDocument) export(ctx context.Context, platform platform.PlatformType,
 		Status:       status,
 		ParentID:     baseInfo.DBDoc.ParentID,
 		Message:      msg,
-	}, false)
+	})
 	if err != nil {
 		return "", err
 	}
@@ -951,9 +951,10 @@ func (d *KBDocument) DeleteSpaceFolder(ctx context.Context, kbID uint, folderID 
 type ListWebItem struct {
 	model.Base
 
-	Title  string          `json:"title"`
-	Desc   string          `json:"desc"`
-	Status model.DocStatus `json:"status"`
+	Title    string          `json:"title"`
+	Desc     string          `json:"desc"`
+	FileType model.FileType  `json:"file_type"`
+	Status   model.DocStatus `json:"status"`
 }
 
 type ListWebReq struct {
