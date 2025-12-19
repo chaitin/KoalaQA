@@ -1,19 +1,10 @@
 import {
   AnydocListRes,
-  TopicTaskStatus,
   postAdminKbDocumentFileExport,
-  postAdminKbDocumentTask,
 } from '@/api';
 import { message } from '@ctzhian/ui';
-import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-export const finishedStatus = [
-  TopicTaskStatus.TaskStatusCompleted,
-  TopicTaskStatus.TaskStatusFailed,
-  TopicTaskStatus.TaskStatusTimeout,
-];
-export type TaskType = { uuid: string; docId: string; id: string; status: TopicTaskStatus };
 
 const SELECT_KEY_SEP = '::';
 const parseSelectKey = (key: string): { uuid: string; docId?: string; docIdx?: number } => {
@@ -38,85 +29,7 @@ export const useExportDoc = ({
 }) => {
   const [searchParams] = useSearchParams();
   const kb_id = +searchParams.get('id')!;
-  const [taskIds, setTaskIds] = useState<TaskType[]>([]);
 
-  // 保证任意时刻只有一个轮询在跑，避免同参重复打 /admin/kb/document/task
-  const pollTokenRef = useRef(0);
-  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const taskInFlightRef = useRef(false);
-  const stopPolling = () => {
-    pollTokenRef.current += 1;
-    if (pollTimerRef.current) {
-      clearTimeout(pollTimerRef.current);
-      pollTimerRef.current = null;
-    }
-    taskInFlightRef.current = false;
-  };
-  useEffect(() => {
-    return () => stopPolling();
-  }, []);
-
-  const loopGetTask = async (ids: string[], items: AnydocListRes[] = [], token?: number) => {
-    const curToken = token ?? pollTokenRef.current;
-    if (curToken !== pollTokenRef.current) return;
-    if (!ids || ids.length === 0) return;
-    // 避免同一 hook 实例里并发/重入请求（会导致同参“一口气”打多次）
-    if (taskInFlightRef.current) {
-      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
-      pollTimerRef.current = setTimeout(() => {
-        loopGetTask(ids, items, curToken);
-      }, 300);
-      return;
-    }
-
-    taskInFlightRef.current = true;
-    type TaskMetaList = Awaited<ReturnType<typeof postAdminKbDocumentTask>>;
-    let res: TaskMetaList;
-    try {
-      res = await postAdminKbDocumentTask({ ids });
-    } finally {
-      taskInFlightRef.current = false;
-    }
-    if (curToken !== pollTokenRef.current) return;
-    setTaskIds(pre =>
-      pre.map(t => {
-        const meta = res.find(m => m.task_id === t.id);
-        return meta ? { ...t, status: meta.status as TopicTaskStatus } : t;
-      })
-    );
-
-    res
-      .filter(meta => finishedStatus.includes(meta.status as TopicTaskStatus))
-      .forEach(meta => {
-        const file = items.find(f => f.docs?.some(d => d.id === meta.doc_id));
-        const doc = file?.docs?.find(d => d.id === meta.doc_id);
-        const title = doc?.title || '文档';
-        if (meta.status === TopicTaskStatus.TaskStatusCompleted) {
-          message.success(title + '导入成功');
-        } else if (
-          [TopicTaskStatus.TaskStatusFailed, TopicTaskStatus.TaskStatusTimeout].includes(
-            meta.status as TopicTaskStatus
-          )
-        ) {
-          message.error(title + '导入失败');
-        }
-      });
-    const new_ids = res
-      .filter(item => !finishedStatus.includes(item.status as TopicTaskStatus))
-      .map(item => item.task_id || '')
-      .filter(Boolean);
-    if (new_ids.length === 0) {
-      // setStep("done");
-      stopPolling();
-      onFinished();
-      setTaskIds([]);
-      return;
-    }
-    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
-    pollTimerRef.current = setTimeout(() => {
-      loopGetTask(new_ids, items, curToken);
-    }, 3000);
-  };
 
   const handleImport = async (
     selectIds: string[],
@@ -128,8 +41,6 @@ export const useExportDoc = ({
       onFinished();
       return;
     }
-    // 开始新导入时，先终止旧轮询，避免 /task 同参并发
-    stopPolling();
     const exportTargets: Array<{ uuid: string; docId: string; title: string; desc?: string }> = [];
 
     for (const key of selectIds) {
@@ -183,8 +94,7 @@ export const useExportDoc = ({
     }
 
     try {
-      const task_ids: TaskType[] = [];
-      const taskIdsRaw = await Promise.all(
+      await Promise.all(
         finalTargets.map(t =>
           exportReq({
             doc_id: t.docId,
@@ -199,26 +109,11 @@ export const useExportDoc = ({
         )
       );
 
-      taskIdsRaw.forEach((taskId, idx) => {
-        if (!taskId) return;
-        const t = finalTargets[idx];
-        task_ids.push({
-          id: taskId,
-          uuid: t.uuid,
-          docId: t.docId,
-          status: TopicTaskStatus.TaskStatusInProgress,
-        });
-      });
-
-      setTaskIds(task_ids);
-      const curToken = pollTokenRef.current;
-      loopGetTask(
-        task_ids.map(t => t.id),
-        items,
-        curToken
-      );
+      // 直接调用完成回调，不再轮询任务状态
+      onFinished();
     } catch (error) {
       console.log(error);
+      onFinished();
     }
   };
 
@@ -226,5 +121,5 @@ export const useExportDoc = ({
     setLoading(true);
     return handleImport(ids, postAdminKbDocumentFileExport, items);
   };
-  return { taskIds, setTaskIds, handleImport, fileReImport };
+  return { handleImport, fileReImport };
 };

@@ -16,22 +16,18 @@ const StatusBadge = ({ status, text, variant, onClick, sx, ...props }: StatusBad
     switch (status) {
       case ModelDocStatus.DocStatusUnknown:
         return '未应用';
-      case ModelDocStatus.DocStatusAppling:
-        return '解析中';
       case ModelDocStatus.DocStatusPendingReview:
         return '待审核';
+      case ModelDocStatus.DocStatusExportSuccess://'导出成功';
+      case ModelDocStatus.DocStatusPendingExport:
+      case ModelDocStatus.DocStatusAppling:
       case ModelDocStatus.DocStatusPendingApply:
         return '待应用';
       case ModelDocStatus.DocStatusApplySuccess:
         return '应用中';
+      case ModelDocStatus.DocStatusExportFailed: // '导出失败';
       case ModelDocStatus.DocStatusApplyFailed:
         return '应用失败';
-      case ModelDocStatus.DocStatusPendingExport:
-        return '待导出';
-      case ModelDocStatus.DocStatusExportSuccess:
-        return '导出成功';
-      case ModelDocStatus.DocStatusExportFailed:
-        return '导出失败';
       default:
         return '未应用';
     }

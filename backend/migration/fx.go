@@ -1,12 +1,15 @@
 package migration
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 
 	"go.uber.org/fx"
 
 	"github.com/chaitin/koalaqa/migration/migrator"
+	"github.com/chaitin/koalaqa/model"
+	"github.com/chaitin/koalaqa/pkg/version"
 	"github.com/chaitin/koalaqa/repo"
 )
 
@@ -14,6 +17,7 @@ type In struct {
 	fx.In
 
 	RepoMigrate     *repo.Migration
+	RepoVersion     *repo.Version
 	AlwaysMigrators []migrator.Migrator `group:"always_migrators"`
 	Migrators       []migrator.Migrator `group:"db_migrators"`
 }
@@ -59,7 +63,9 @@ func Module() fx.Option {
 				return err
 			}
 
-			return nil
+			return runner.in.RepoVersion.Create(context.Background(), &model.Version{
+				Version: version.Version,
+			})
 		}),
 	)
 }

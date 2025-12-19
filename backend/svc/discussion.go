@@ -82,7 +82,6 @@ type DiscussionCreateReq struct {
 	Summary   string               `json:"summary"`
 	Content   string               `json:"content"`
 	Type      model.DiscussionType `json:"type"`
-	Tags      []string             `json:"tags"`
 	GroupIDs  model.Int64Array     `json:"group_ids"`
 	ForumID   uint                 `json:"forum_id"`
 	skipLimit bool                 `json:"-"`
@@ -166,7 +165,6 @@ func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req Discus
 		Title:      req.Title,
 		Summary:    req.Summary,
 		Content:    req.Content,
-		Tags:       req.Tags,
 		GroupIDs:   req.GroupIDs,
 		UUID:       d.generateUUID(),
 		UserID:     user.UID,
@@ -729,17 +727,11 @@ func (d *Discussion) IncrementView(uuid string) {
 	go d.RecalculateHot(uuid)
 }
 
-func (d *Discussion) IncrementComment(uuid string, updateTime bool) {
+func (d *Discussion) IncrementComment(uuid string) {
 	ctx := context.Background()
-	m := map[string]any{
+	d.in.DiscRepo.Update(ctx, map[string]any{
 		"comment": gorm.Expr("comment+1"),
-	}
-
-	if !updateTime {
-		m["updated_at"] = gorm.Expr("updated_at")
-	}
-
-	d.in.DiscRepo.Update(ctx, m, repo.QueryWithEqual("uuid", uuid))
+	}, repo.QueryWithEqual("uuid", uuid))
 
 	go d.RecalculateHot(uuid)
 }
@@ -1074,6 +1066,10 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 		return 0, err
 	}
 
+	if disc.Type != model.DiscussionTypeQA || comment.ParentID == 0 {
+		go d.IncrementComment(discUUID)
+	}
+
 	d.in.Pub.Publish(ctx, topic.TopicCommentChange, topic.MsgCommentChange{
 		OP:       topic.OPInsert,
 		CommID:   comment.ID,
@@ -1184,6 +1180,11 @@ func (d *Discussion) DeleteComment(ctx context.Context, user model.UserInfo, dis
 			return err
 		}
 	}
+
+	if disc.Type != model.DiscussionTypeQA || comment.ParentID == 0 {
+		go d.DecrementComment(discUUID)
+	}
+
 	d.in.Pub.Publish(ctx, topic.TopicCommentChange, topic.MsgCommentChange{
 		OP:       topic.OPDelete,
 		CommID:   commentID,

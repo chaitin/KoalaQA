@@ -6,7 +6,7 @@ import {
 import { useExportDoc } from '@/hooks/useExportDoc';
 import { Stack, TextField } from '@mui/material';
 import { Modal } from '@ctzhian/ui';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Doc2Ai from './Doc2Ai';
 import { ImportDocProps } from './type';
 import { StepText } from './const';
@@ -21,10 +21,10 @@ const URLImport = ({ open, refresh, onCancel }: ImportDocProps) => {
     (() => Promise<AnydocListRes>)[]
   >([]);
   const [isCancelled, setIsCancelled] = useState(false);
-  const { taskIds, handleImport, fileReImport } = useExportDoc({
+  const processingRef = useRef(false);
+  const { handleImport, fileReImport } = useExportDoc({
     onFinished: () => {
-      setStep('done');
-      setLoading(false);
+      handleCancel()
     },
     setLoading,
   });
@@ -36,6 +36,7 @@ const URLImport = ({ open, refresh, onCancel }: ImportDocProps) => {
     setItems([]);
     setSelectIds([]);
     setLoading(false);
+    processingRef.current = false;
     onCancel();
     refresh?.({});
   };
@@ -62,46 +63,48 @@ const URLImport = ({ open, refresh, onCancel }: ImportDocProps) => {
     }
   };
 
-  const processUrl = async () => {
-    if (isCancelled) {
-      setItems([]);
-    }
+  useEffect(() => {
+    if (processingRef.current) return;
     if (requestQueue.length === 0 || isCancelled) {
-      setLoading(false);
-      // 避免队列已为空时反复 set 一个新的 []，造成额外渲染
-      setRequestQueue((prev) => (prev.length === 0 ? prev : []));
+      if (!isCancelled) {
+        setLoading(false);
+      }
       return;
     }
 
-    setLoading(true);
-    const newQueue = [...requestQueue];
-    const requests = newQueue.splice(0, 2);
+    const processQueue = async () => {
+      processingRef.current = true;
+      setLoading(true);
 
-    try {
-      const _items = await Promise.all(requests.map((request) => request()));
-      setItems((prevItems) => [...prevItems, ..._items]);
-      if (newQueue.length > 0 && !isCancelled) {
-        setRequestQueue(newQueue);
-      } else {
-        setLoading(false);
-        setStep('import');
-        setRequestQueue((prev) => (prev.length === 0 ? prev : []));
-      }
-    } catch (error) {
-      console.error('请求执行出错:', error);
-      if (newQueue.length > 0 && !isCancelled) {
-        setRequestQueue(newQueue);
-        setStep('import');
-      } else {
-        setLoading(false);
-        setRequestQueue((prev) => (prev.length === 0 ? prev : []));
-      }
-    }
-  };
+      const newQueue = [...requestQueue];
+      const requests = newQueue.splice(0, 2);
 
-  useEffect(() => {
-    processUrl();
-  }, [requestQueue.length, isCancelled]);
+      try {
+        const _items = await Promise.all(requests.map((request) => request()));
+        setItems((prevItems) => [...prevItems, ..._items]);
+
+        if (newQueue.length > 0 && !isCancelled) {
+          setRequestQueue(newQueue);
+        } else {
+          setLoading(false);
+          setStep('import');
+          setRequestQueue([]);
+        }
+      } catch (error) {
+        console.error('请求执行出错:', error);
+        if (newQueue.length > 0 && !isCancelled) {
+          setRequestQueue(newQueue);
+        } else {
+          setLoading(false);
+          setRequestQueue([]);
+        }
+      } finally {
+        processingRef.current = false;
+      }
+    };
+
+    processQueue();
+  }, [requestQueue, isCancelled]);
 
   return (
     <Modal
@@ -141,10 +144,8 @@ const URLImport = ({ open, refresh, onCancel }: ImportDocProps) => {
       )}
       {step !== 'upload' && (
         <Doc2Ai
-          handleImport={fileReImport}
           selectIds={selectIds}
           setSelectIds={setSelectIds}
-          taskIds={taskIds}
           items={items}
           loading={loading}
           showSelectAll={['pull-done', 'import'].includes(step)}

@@ -90,7 +90,7 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 		logger.WithErr(err).Warn("summary discussion question failed")
 		return nil
 	}
-	_, answer, err := q.prompt.GenerateAnswerPrompt(ctx, data.DiscussID, 0)
+	_, _, answer, err := q.prompt.GenerateAnswerPrompt(ctx, data.DiscussID, 0)
 	if err != nil {
 		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
 		return nil

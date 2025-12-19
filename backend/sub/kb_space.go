@@ -9,7 +9,6 @@ import (
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/anydoc"
-	"github.com/chaitin/koalaqa/pkg/cache"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/topic"
@@ -22,7 +21,6 @@ type kbSpace struct {
 	doc     *svc.KBDocument
 	repoDoc *repo.KBDocument
 	anydoc  anydoc.Anydoc
-	cache   cache.Cache[topic.TaskMeta]
 	pub     mq.Publisher
 
 	running map[uint]bool
@@ -49,12 +47,11 @@ func (k *kbSpace) done(id uint) {
 	delete(k.running, id)
 }
 
-func newKBSpace(doc *svc.KBDocument, anydoc anydoc.Anydoc, cache cache.Cache[topic.TaskMeta], pub mq.Publisher, repoDoc *repo.KBDocument) *kbSpace {
+func newKBSpace(doc *svc.KBDocument, anydoc anydoc.Anydoc, pub mq.Publisher, repoDoc *repo.KBDocument) *kbSpace {
 	return &kbSpace{
 		logger:  glog.Module("sub", "kb_space"),
 		doc:     doc,
 		anydoc:  anydoc,
-		cache:   cache,
 		pub:     pub,
 		repoDoc: repoDoc,
 		running: make(map[uint]bool),
@@ -150,32 +147,10 @@ func (k *kbSpace) handleInsert(ctx context.Context, logger *glog.Logger, msg top
 		return nil
 	}
 
-	pendingDoc := make([]model.KBDocument, len(list.Docs))
-
-	for i, doc := range list.Docs {
-		pendingDoc[i] = model.KBDocument{
-			KBID:     msg.KBID,
-			Platform: folder.Platform,
-			DocType:  folder.DocType,
-			DocID:    doc.ID,
-			Title:    doc.Title,
-			Desc:     doc.Summary,
-			Status:   model.DocStatusPendingExport,
-			ParentID: msg.FolderID,
-		}
-	}
-
-	err = k.repoDoc.BatchCreate(ctx, &pendingDoc)
-	if err != nil {
-		logger.WithErr(err).Warn("batch create space folder doc failed")
-		return nil
-	}
-
-	for i, doc := range list.Docs {
-		_, err = k.doc.SpaceExport(ctx, folder.Platform, svc.SpaceExportReq{
+	for _, doc := range list.Docs {
+		taskID, err := k.doc.SpaceExport(ctx, folder.Platform, svc.SpaceExportReq{
 			BaseExportReq: svc.BaseExportReq{
 				DBDoc: svc.BaseDBDoc{
-					ID:       pendingDoc[i].ID,
 					Type:     folder.DocType,
 					ParentID: msg.FolderID,
 				},
@@ -189,15 +164,7 @@ func (k *kbSpace) handleInsert(ctx context.Context, logger *glog.Logger, msg top
 			FileType: doc.FileType,
 		})
 		if err != nil {
-			logger.WithErr(err).With("export_doc_id", doc.ID).Warn("export space doc failed")
-			err = k.repoDoc.Update(ctx, map[string]any{
-				"status":     model.DocStatusExportFailed,
-				"message":    err.Error(),
-				"updated_at": time.Now(),
-			}, repo.QueryWithEqual("id", pendingDoc[i].ID))
-			if err != nil {
-				logger.WithErr(err).With("id", pendingDoc[i].ID).Error("update doc status failed")
-			}
+			logger.WithErr(err).With("export_task_id", taskID).With("export_doc_id", doc.ID).Warn("export space doc failed")
 		}
 	}
 
@@ -266,37 +233,7 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 			}
 		}
 
-		if dbDoc.id > 0 {
-			err = k.repoDoc.Update(ctx, map[string]any{
-				"status":     model.DocStatusPendingExport,
-				"message":    "",
-				"updated_at": time.Now(),
-			}, repo.QueryWithEqual("id", dbDoc.id))
-			if err != nil {
-				logger.WithErr(err).With("db_doc_id", dbDoc.id).Warn("update doc status failed, skip")
-				return err
-			}
-		} else {
-			newDoc := model.KBDocument{
-				KBID:     msg.KBID,
-				Platform: folder.Platform,
-				DocType:  folder.DocType,
-				DocID:    doc.ID,
-				Title:    doc.Title,
-				Desc:     doc.Summary,
-				Status:   model.DocStatusPendingExport,
-				ParentID: msg.FolderID,
-			}
-			err = k.repoDoc.Create(ctx, &newDoc)
-			if err != nil {
-				logger.WithErr(err).With("anydoc_doc_id", doc.ID).Warn("create doc failed")
-				return err
-			}
-
-			dbDoc.id = newDoc.ID
-		}
-
-		_, err = k.doc.SpaceExport(ctx, folder.Platform, svc.SpaceExportReq{
+		taskID, err := k.doc.SpaceExport(ctx, folder.Platform, svc.SpaceExportReq{
 			BaseExportReq: svc.BaseExportReq{
 				DBDoc: svc.BaseDBDoc{
 					ID:       dbDoc.id,
@@ -313,24 +250,7 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 			FileType: doc.FileType,
 		})
 		if err != nil {
-			logger.WithErr(err).With("export_doc_id", doc.ID).Warn("export space doc failed")
-
-			err = k.repoDoc.CreateOnIDConflict(ctx, &model.KBDocument{
-				Base: model.Base{
-					ID: dbDoc.id,
-				},
-				KBID:     msg.KBID,
-				Platform: folder.Platform,
-				DocType:  folder.DocType,
-				DocID:    doc.ID,
-				Title:    doc.Title,
-				Desc:     doc.Summary,
-				Status:   model.DocStatusExportFailed,
-				ParentID: msg.FolderID,
-			}, false)
-			if err != nil {
-				logger.WithErr(err).With("export_doc_id", doc.ID).Warn("update doc staus failed")
-			}
+			logger.WithErr(err).With("export_task_id", taskID).With("export_doc_id", doc.ID).Warn("export space doc failed")
 		}
 	}
 

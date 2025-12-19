@@ -95,12 +95,6 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 		return nil
 	}
 
-	go func() {
-		if disc.Type != model.DiscussionTypeQA || comment.ParentID == 0 {
-			d.disc.IncrementComment(disc.UUID, !data.NotUpdateDisc)
-		}
-	}()
-
 	forum, err := d.forum.GetByID(ctx, disc.ForumID)
 	if err != nil {
 		logger.WithErr(err).Warn("get forum failed")
@@ -153,13 +147,14 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 		return nil
 	}
 
-	question, prompt, err := d.prompt.GenerateAnswerPrompt(ctx, data.DiscID, data.CommID)
+	question, groups, prompt, err := d.prompt.GenerateAnswerPrompt(ctx, data.DiscID, data.CommID)
 	if err != nil {
 		logger.WithErr(err).Error("generate prompt failed")
 		return nil
 	}
 	llmRes, answered, err := d.llm.Answer(ctx, svc.GenerateReq{
 		Question:      question,
+		Groups:        groups,
 		Prompt:        prompt,
 		DefaultAnswer: bot.UnknownPrompt,
 		NewCommentID:  data.CommID,
@@ -248,7 +243,6 @@ func (d *Comment) handleUpdate(ctx context.Context, data topic.MsgCommentChange)
 }
 
 func (d *Comment) handleDelete(ctx context.Context, data topic.MsgCommentChange) error {
-	go d.disc.DecrementComment(data.DiscUUID)
 	logger := d.logger.WithContext(ctx).With("comment_id", data.CommID)
 	logger.Info("handle delete comment")
 	ragContent, err := d.prompt.GenerateContentForRetrieval(ctx, data.DiscID)

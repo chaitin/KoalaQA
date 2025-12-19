@@ -1,10 +1,8 @@
-import { AnydocListRes, TopicTaskStatus } from '@/api';
-import { TaskType } from '@/hooks/useExportDoc';
-import { Ellipsis, Icon } from '@ctzhian/ui';
+import { AnydocListRes } from '@/api';
+import { Ellipsis } from '@ctzhian/ui';
 import { KeyboardArrowDown, KeyboardArrowRight } from '@mui/icons-material';
 import {
   Box,
-  Button,
   Checkbox,
   CircularProgress,
   Collapse,
@@ -18,10 +16,7 @@ interface ImportDocProps {
   setSelectIds: Dispatch<SetStateAction<string[]>>;
   items: AnydocListRes[];
   loading: boolean;
-  taskIds: TaskType[];
-  handleImport: (selectIds: string[], items: AnydocListRes[]) => Promise<void>;
   showSelectAll?: boolean;
-  isCompleted?: boolean;
 }
 
 const SELECT_KEY_SEP = '::';
@@ -32,10 +27,8 @@ const getDocKey = (uuid?: string, docId?: string, docIdx?: number) =>
 const Doc2Ai = ({
   selectIds,
   setSelectIds,
-  taskIds,
   items,
   loading,
-  handleImport,
   showSelectAll,
 }: ImportDocProps) => {
   const [openMap, setOpenMap] = useState<Record<string, boolean>>({});
@@ -47,14 +40,6 @@ const Doc2Ai = ({
     });
   };
 
-  const taskByDocId = useMemo(() => {
-    const map = new Map<string, TaskType>();
-    taskIds.forEach(t => {
-      if (t.docId) map.set(t.docId, t);
-    });
-    return map;
-  }, [taskIds]);
-
   const getSelectableKeys = useMemo(() => {
     return (items || []).flatMap(item => {
       const uuid = item.uuid || '';
@@ -64,15 +49,15 @@ const Doc2Ai = ({
       if (docs.length === 1) {
         const docId = docs[0]?.id || '';
         if (!docId) return [];
-        return taskByDocId.has(docId) ? [] : [getDocKey(uuid, docId, 0)];
+        return [getDocKey(uuid, docId, 0)];
       }
       return docs
         .map((d, docIdx) => ({ d, docIdx }))
-        .filter(({ d }) => d?.id && !taskByDocId.has(d.id))
+        .filter(({ d }) => d?.id)
         .map(({ d, docIdx }) => getDocKey(uuid, d.id, docIdx))
         .filter(Boolean);
     });
-  }, [items, taskByDocId]);
+  }, [items]);
 
   // 用“全部 doc(含不可选)”来决定顶部全选的展示状态，避免“只选了部分可选项”却显示成全选
   const allKeys = useMemo(() => {
@@ -135,10 +120,9 @@ const Doc2Ai = ({
       <Stack>
         {(() => {
           const filteredItems = items.filter(item => {
-            // 如果显示选择框，显示所有文档；否则只显示有任务的文档
+            // 如果显示选择框，显示所有文档；否则不显示文档
             if (showSelectAll) return true;
-            const docs = item.docs || [];
-            return docs.some(d => d?.id && taskByDocId.has(d.id));
+            return false;
           });
           return filteredItems.map((item, idx) => {
           const uuid = item.uuid || '';
@@ -148,7 +132,7 @@ const Doc2Ai = ({
           const selectableChildKeys = hasChildren
             ? docs
                 .map((d, docIdx) => ({ d, docIdx }))
-                .filter(({ d }) => d?.id && !taskByDocId.has(d.id))
+                .filter(({ d }) => d?.id)
                 .map(({ d, docIdx }) => getDocKey(uuid, d.id, docIdx))
                 .filter(Boolean)
             : [];
@@ -173,28 +157,11 @@ const Doc2Ai = ({
           const parentIndeterminate =
             hasChildren && selectedSelectableChildCount > 0 && !parentChecked;
 
-          const docTasks = docs
-            .map(d => (d?.id ? taskByDocId.get(d.id) : undefined))
-            .filter(Boolean) as TaskType[];
-          const anyInProgress = docTasks.some(t =>
-            [TopicTaskStatus.TaskStatusInProgress, TopicTaskStatus.TaskStatusPending].includes(
-              t.status as TopicTaskStatus
-            )
-          );
-          const anyFailed = docTasks.some(t =>
-            [TopicTaskStatus.TaskStatusFailed, TopicTaskStatus.TaskStatusTimeout].includes(
-              t.status as TopicTaskStatus
-            )
-          );
-          const allCompleted =
-            docTasks.length > 0 &&
-            docTasks.every(t => t.status === TopicTaskStatus.TaskStatusCompleted);
 
           // docs.length === 1：保持兼容，仍然以 uuid 作为选择键
           const singleDocId = docs.length === 1 ? docs[0]?.id || '' : '';
-          const singleTask = singleDocId ? taskByDocId.get(singleDocId) : undefined;
           const singleKey = singleDocId ? getDocKey(uuid, singleDocId, 0) : '';
-          const singleSelectable = !!(showSelectAll && uuid && singleDocId && !singleTask);
+          const singleSelectable = !!(showSelectAll && uuid && singleDocId);
 
           return (
             <Box key={uuid || idx}>
@@ -249,34 +216,6 @@ const Doc2Ai = ({
                         });
                       }}
                     />
-                  ) : anyInProgress ||
-                    (loading && selectableChildKeys.some(key => selectIds.includes(key))) ? (
-                    <Icon
-                      type="icon-shuaxin"
-                      sx={{
-                        fontSize: 18,
-                        color: 'text.auxiliary',
-                        animation: 'loadingRotate 1s linear infinite',
-                      }}
-                    />
-                  ) : docTasks.length > 0 ? (
-                    <Stack
-                      direction={'row'}
-                      justifyContent={'center'}
-                      alignItems={'center'}
-                      sx={{ flexShrink: 0, width: 20, height: 20 }}
-                    >
-                      {anyFailed ? (
-                        <Icon
-                          type="icon-icon_tool_close"
-                          sx={{ fontSize: 18, color: 'error.main' }}
-                        />
-                      ) : allCompleted ? (
-                        <Icon type="icon-duihao" sx={{ fontSize: 18, color: 'success.main' }} />
-                      ) : (
-                        <Icon type="icon-duihao" sx={{ fontSize: 18, color: 'success.main' }} />
-                      )}
-                    </Stack>
                   ) : null
                 ) : singleSelectable ? (
                   <Checkbox
@@ -300,36 +239,6 @@ const Doc2Ai = ({
                       },
                     }}
                   />
-                ) : [
-                    TopicTaskStatus.TaskStatusInProgress,
-                    TopicTaskStatus.TaskStatusPending,
-                  ].includes(singleTask?.status as TopicTaskStatus) ? (
-                  <Icon
-                    type="icon-shuaxin"
-                    sx={{
-                      fontSize: 18,
-                      color: 'text.auxiliary',
-                      animation: 'loadingRotate 1s linear infinite',
-                    }}
-                  />
-                ) : singleTask ? (
-                  <Stack
-                    direction={'row'}
-                    justifyContent={'center'}
-                    alignItems={'center'}
-                    sx={{ flexShrink: 0, width: 20, height: 20 }}
-                  >
-                    {[TopicTaskStatus.TaskStatusFailed, TopicTaskStatus.TaskStatusTimeout].includes(
-                      singleTask.status as TopicTaskStatus
-                    ) ? (
-                      <Icon
-                        type="icon-icon_tool_close"
-                        sx={{ fontSize: 18, color: 'error.main' }}
-                      />
-                    ) : (
-                      <Icon type="icon-duihao" sx={{ fontSize: 18, color: 'success.main' }} />
-                    )}
-                  </Stack>
                 ) : null}
 
                 <Box
@@ -360,22 +269,6 @@ const Doc2Ai = ({
                   )}
                 </Box>
 
-                {!hasChildren &&
-                  singleTask &&
-                  [TopicTaskStatus.TaskStatusFailed, TopicTaskStatus.TaskStatusTimeout].includes(
-                    singleTask.status as TopicTaskStatus
-                  ) && (
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() => {
-                        if (!uuid || !singleDocId) return;
-                        handleImport([singleKey], items);
-                      }}
-                    >
-                      重新导入
-                    </Button>
-                  )}
               </Stack>
 
               {hasChildren && (
@@ -383,9 +276,8 @@ const Doc2Ai = ({
                   <Stack sx={{ pb: 0.5 }}>
                     {docs.map((doc, docIdx) => {
                       const docId = doc?.id || '';
-                      const task = docId ? taskByDocId.get(docId) : undefined;
                       const docKey = getDocKey(uuid, docId, docIdx);
-                      const selectable = !!(showSelectAll && uuid && docId && !task);
+                      const selectable = !!(showSelectAll && uuid && docId);
                       return (
                         <Stack
                           key={docId || docIdx}
@@ -427,40 +319,6 @@ const Doc2Ai = ({
                                 },
                               }}
                             />
-                          ) : [
-                              TopicTaskStatus.TaskStatusInProgress,
-                              TopicTaskStatus.TaskStatusPending,
-                            ].includes(task?.status as TopicTaskStatus) ? (
-                            <Icon
-                              type="icon-shuaxin"
-                              sx={{
-                                fontSize: 18,
-                                color: 'text.auxiliary',
-                                animation: 'loadingRotate 1s linear infinite',
-                              }}
-                            />
-                          ) : task ? (
-                            <Stack
-                              direction={'row'}
-                              justifyContent={'center'}
-                              alignItems={'center'}
-                              sx={{ flexShrink: 0, width: 20, height: 20 }}
-                            >
-                              {[
-                                TopicTaskStatus.TaskStatusFailed,
-                                TopicTaskStatus.TaskStatusTimeout,
-                              ].includes(task.status as TopicTaskStatus) ? (
-                                <Icon
-                                  type="icon-icon_tool_close"
-                                  sx={{ fontSize: 18, color: 'error.main' }}
-                                />
-                              ) : (
-                                <Icon
-                                  type="icon-duihao"
-                                  sx={{ fontSize: 18, color: 'success.main' }}
-                                />
-                              )}
-                            </Stack>
                           ) : null}
 
                           <Box sx={{ flexGrow: 1, cursor: 'pointer', width: 0 }}>
@@ -472,23 +330,6 @@ const Doc2Ai = ({
                             )}
                           </Box>
 
-                          {task &&
-                            [
-                              TopicTaskStatus.TaskStatusFailed,
-                              TopicTaskStatus.TaskStatusTimeout,
-                            ].includes(task.status as TopicTaskStatus) && (
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  if (!uuid || !docId) return;
-                                  handleImport([docKey], items);
-                                }}
-                              >
-                                重新导入
-                              </Button>
-                            )}
                         </Stack>
                       );
                     })}

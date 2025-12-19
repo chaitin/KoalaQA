@@ -31,14 +31,20 @@ func (d *KBDocument) GetByRagIDs(ctx context.Context, ids []string) ([]model.KBD
 	return docs, nil
 }
 
-func (d *KBDocument) CreateOnIDConflict(ctx context.Context, res *model.KBDocument, updateWithDocInfo bool) error {
-	columns := []string{"status", "message"}
-	if updateWithDocInfo {
-		columns = append(columns, "title", "desc", "platform_opt", "export_opt", "file_type", "markdown", "json")
+func (d *KBDocument) GetByTaskID(ctx context.Context, taskID string) (*model.KBDocument, error) {
+	var doc model.KBDocument
+	err := d.model(ctx).Where("export_task_id = ?", taskID).First(&doc).Error
+	if err != nil {
+		return nil, err
 	}
+
+	return &doc, nil
+}
+
+func (d *KBDocument) CreateOnIDConflict(ctx context.Context, res *model.KBDocument) error {
 	return d.model(ctx).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},
-		DoUpdates: clause.AssignmentColumns(columns),
+		DoUpdates: clause.AssignmentColumns([]string{"export_task_id", "status", "message", "title", "desc", "export_opt"}),
 	}).Create(res).Error
 }
 

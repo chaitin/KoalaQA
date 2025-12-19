@@ -167,31 +167,6 @@ func (d *kbDocument) SitemapExport(ctx *context.Context) {
 	ctx.Success(res)
 }
 
-// Task
-// @Summary get task info
-// @Tags document
-// @Param req body svc.TaskReq true "request params"
-// @Produce json
-// @Success 200 {object} context.Response{data=[]topic.TaskMeta}
-// @Router /admin/kb/document/task [post]
-func (d *kbDocument) Task(ctx *context.Context) {
-	var req svc.TaskReq
-
-	err := ctx.ShouldBindJSON(&req)
-	if err != nil {
-		ctx.BadRequest(err)
-		return
-	}
-
-	res, err := d.svcDoc.Task(ctx, req)
-	if err != nil {
-		ctx.InternalError(err, "find task failed")
-		return
-	}
-
-	ctx.Success(res)
-}
-
 // List
 // @Summary list kb document
 // @Tags document
@@ -306,8 +281,6 @@ func (d *kbDocument) Route(e server.Handler) {
 
 		g.POST("/sitemap/list", d.SitemapList)
 		g.POST("/sitemap/export", d.SitemapExport)
-
-		g.POST("/task", d.Task)
 	}
 
 }

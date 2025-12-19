@@ -695,51 +695,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/kb/document/task": {
-            "post": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "document"
-                ],
-                "summary": "get task info",
-                "parameters": [
-                    {
-                        "description": "request params",
-                        "name": "req",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/svc.TaskReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/context.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/topic.TaskMeta"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
         "/admin/kb/document/url/export": {
             "post": {
                 "consumes": [
@@ -7421,17 +7376,6 @@ const docTemplate = `{
                 "DocTypeWeb"
             ]
         },
-        "model.ExportOpt": {
-            "type": "object",
-            "properties": {
-                "file_type": {
-                    "type": "string"
-                },
-                "space_id": {
-                    "type": "string"
-                }
-            }
-        },
         "model.FileType": {
             "type": "integer",
             "enum": [
@@ -7611,6 +7555,9 @@ const docTemplate = `{
                 },
                 "export_opt": {
                     "$ref": "#/definitions/model.JSONB-model_ExportOpt"
+                },
+                "export_task_id": {
+                    "type": "string"
                 },
                 "file_type": {
                     "$ref": "#/definitions/model.FileType"
@@ -8701,12 +8648,6 @@ const docTemplate = `{
                 "summary": {
                     "type": "string"
                 },
-                "tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
                 "title": {
                     "type": "string"
                 },
@@ -9129,6 +9070,9 @@ const docTemplate = `{
                 },
                 "desc": {
                     "type": "string"
+                },
+                "file_type": {
+                    "$ref": "#/definitions/model.FileType"
                 },
                 "id": {
                     "type": "integer"
@@ -9575,20 +9519,6 @@ const docTemplate = `{
                 }
             }
         },
-        "svc.TaskReq": {
-            "type": "object",
-            "required": [
-                "ids"
-            ],
-            "properties": {
-                "ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
         "svc.URLExportReq": {
             "type": "object",
             "required": [
@@ -9935,85 +9865,6 @@ const docTemplate = `{
                 "KBSpaceUpdateTypeAll",
                 "KBSpaceUpdateTypeIncr",
                 "KBSpaceUpdateTypeFailed"
-            ]
-        },
-        "topic.TaskMeta": {
-            "type": "object",
-            "properties": {
-                "access_token": {
-                    "type": "string"
-                },
-                "app_id": {
-                    "type": "string"
-                },
-                "dbdocID": {
-                    "type": "integer"
-                },
-                "desc": {
-                    "type": "string"
-                },
-                "docType": {
-                    "$ref": "#/definitions/model.DocType"
-                },
-                "doc_id": {
-                    "type": "string"
-                },
-                "doc_type": {
-                    "$ref": "#/definitions/model.FileType"
-                },
-                "err": {
-                    "type": "string"
-                },
-                "exportOpt": {
-                    "$ref": "#/definitions/model.ExportOpt"
-                },
-                "kbid": {
-                    "type": "integer"
-                },
-                "parentID": {
-                    "type": "integer"
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "platform": {
-                    "$ref": "#/definitions/platform.PlatformType"
-                },
-                "platform_id": {
-                    "type": "string"
-                },
-                "secret": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/topic.TaskStatus"
-                },
-                "task_id": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "url": {
-                    "type": "string"
-                }
-            }
-        },
-        "topic.TaskStatus": {
-            "type": "string",
-            "enum": [
-                "pending",
-                "in_process",
-                "completed",
-                "failed",
-                "timeout"
-            ],
-            "x-enum-varnames": [
-                "TaskStatusPending",
-                "TaskStatusInProgress",
-                "TaskStatusCompleted",
-                "TaskStatusFailed",
-                "TaskStatusTimeout"
             ]
         }
     }

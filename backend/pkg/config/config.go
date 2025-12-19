@@ -1,6 +1,9 @@
 package config
 
 import (
+	"io"
+	"log"
+
 	"github.com/caarlos0/env/v11"
 )
 
@@ -73,6 +76,8 @@ type API struct {
 
 func newConfig() (Config, error) {
 	var cfg Config
+
+	log.SetOutput(io.Discard)
 
 	err := env.Parse(&cfg)
 	return cfg, err

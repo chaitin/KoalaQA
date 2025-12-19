@@ -1,8 +1,13 @@
 package assets
 
-import _ "embed"
+import (
+	"embed"
+)
 
 var (
 	//go:embed image.png
 	BotAvatar []byte
+
+	//go:embed blog
+	Blog embed.FS
 )

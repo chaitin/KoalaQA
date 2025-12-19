@@ -15,11 +15,9 @@ import (
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/anydoc/platform"
-	"github.com/chaitin/koalaqa/pkg/cache"
 	"github.com/chaitin/koalaqa/pkg/config"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/oss"
-	"github.com/chaitin/koalaqa/pkg/topic"
 	"github.com/chaitin/koalaqa/pkg/trace"
 	"github.com/chaitin/koalaqa/pkg/tree"
 	"github.com/chaitin/koalaqa/pkg/util"
@@ -132,7 +130,6 @@ type Anydoc interface {
 
 type anydoc struct {
 	oc       oss.Client
-	cache    cache.Cache[topic.TaskMeta]
 	address  string
 	platform map[platform.PlatformType]platform.Platform
 	logger   *glog.Logger
@@ -353,7 +350,6 @@ type in struct {
 	fx.In
 
 	OC        oss.Client
-	Cache     cache.Cache[topic.TaskMeta]
 	Cfg       config.Config
 	Platforms []platform.Platform `group:"anydoc_platforms"`
 }
@@ -381,7 +377,6 @@ func newAnydoc(i in) (Anydoc, error) {
 
 	return &anydoc{
 		oc:       i.OC,
-		cache:    i.Cache,
 		address:  strings.TrimSuffix(i.Cfg.Anydoc.Address, "/"),
 		platform: platformM,
 		logger:   glog.Module("anydoc"),

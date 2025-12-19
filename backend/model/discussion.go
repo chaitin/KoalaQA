@@ -143,6 +143,15 @@ type DiscussionDetail struct {
 	Alert         bool                `json:"alert"`
 }
 
+func (d *DiscussionDetail) GroupStrs() []string {
+	res := make([]string, len(d.Groups))
+	for i := range d.Groups {
+		res[i] = d.Groups[i].Name
+	}
+
+	return res
+}
+
 type DiscussHeader struct {
 	ForumID        uint           `gorm:"column:forum_id" json:"forum_id"`
 	DiscussID      uint           `gorm:"column:discussion_id" json:"discuss_id"`

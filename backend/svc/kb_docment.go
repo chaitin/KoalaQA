@@ -14,7 +14,6 @@ import (
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/anydoc"
 	"github.com/chaitin/koalaqa/pkg/anydoc/platform"
-	"github.com/chaitin/koalaqa/pkg/cache"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/oss"
@@ -45,7 +44,6 @@ type KBDocument struct {
 	repoDisc      *repo.Discussion
 	repoRank      *repo.Rank
 	repoDoc       *repo.KBDocument
-	cache         cache.Cache[topic.TaskMeta]
 	svcPublicAddr *PublicAddress
 	anydoc        anydoc.Anydoc
 	pub           mq.Publisher
@@ -77,7 +75,7 @@ type SpaceExportReq struct {
 
 func (d *KBDocument) SpaceExport(ctx context.Context, plat platform.PlatformType, req SpaceExportReq) (string, error) {
 	req.BaseExportReq.DBDoc.Type = model.DocTypeSpace
-	return d.exportWithCache(ctx, plat, req.BaseExportReq, anydoc.ExportWithSpaceID(req.SpaceID), anydoc.ExportWithFileType(req.FileType))
+	return d.export(ctx, plat, req.BaseExportReq, anydoc.ExportWithSpaceID(req.SpaceID), anydoc.ExportWithFileType(req.FileType))
 }
 
 type YueQueListReq struct {
@@ -98,7 +96,7 @@ type YuQueExportReq struct {
 
 func (d *KBDocument) YuQueExport(ctx context.Context, req YuQueExportReq) (string, error) {
 	req.BaseExportReq.DBDoc.Type = model.DocTypeSpace
-	return d.exportWithCache(ctx, platform.PlatformYuQue, req.BaseExportReq)
+	return d.export(ctx, platform.PlatformYuQue, req.BaseExportReq)
 }
 
 type FileListReq struct {
@@ -117,7 +115,7 @@ type FileExportReq struct {
 
 func (d *KBDocument) FileExport(ctx context.Context, req FileExportReq) (string, error) {
 	req.BaseExportReq.DBDoc.Type = model.DocTypeDocument
-	return d.exportWithCache(ctx, platform.PlatformFile, req.BaseExportReq)
+	return d.export(ctx, platform.PlatformFile, req.BaseExportReq)
 }
 
 type URLListReq struct {
@@ -136,7 +134,7 @@ type URLExportReq struct {
 
 func (d *KBDocument) URLExport(ctx context.Context, req URLExportReq) (string, error) {
 	req.BaseExportReq.DBDoc.Type = model.DocTypeWeb
-	return d.exportWithCache(ctx, platform.PlatformURL, req.BaseExportReq)
+	return d.export(ctx, platform.PlatformURL, req.BaseExportReq)
 }
 
 type SitemapListReq struct {
@@ -155,55 +153,40 @@ type SitemapExportReq struct {
 
 func (d *KBDocument) SitemapExport(ctx context.Context, req SitemapExportReq) (string, error) {
 	req.BaseExportReq.DBDoc.Type = model.DocTypeWeb
-	return d.exportWithCache(ctx, platform.PlatformSitemap, req.BaseExportReq)
+	return d.export(ctx, platform.PlatformSitemap, req.BaseExportReq)
 }
 
-type TaskReq struct {
-	IDs []string `json:"ids" binding:"required"`
-}
-
-func (d *KBDocument) Task(ctx context.Context, req TaskReq) ([]topic.TaskMeta, error) {
-	res := make([]topic.TaskMeta, len(req.IDs))
-	for i, id := range req.IDs {
-		meta, ok := d.cache.Get(id)
-		if !ok {
-			res[i] = topic.TaskMeta{
-				TaskHead: topic.TaskHead{
-					TaskID: id,
-					Status: topic.TaskStatusTimeout,
-					Err:    "task not found",
-				},
-			}
-		}
-
-		res[i] = meta
+func (d *KBDocument) export(ctx context.Context, platform platform.PlatformType, baseInfo BaseExportReq, optFuncs ...anydoc.ExportFunc) (string, error) {
+	o := anydoc.GetExportOpt(optFuncs...)
+	var (
+		status = model.DocStatusPendingExport
+		msg    string
+	)
+	taskID, err := d.anydoc.Export(ctx, platform, baseInfo.UUID, baseInfo.DocID, anydoc.ExportWithOpt(o))
+	if err != nil {
+		status = model.DocStatusExportFailed
+		msg = err.Error()
 	}
 
-	return res, nil
-}
-
-func (d *KBDocument) exportWithCache(ctx context.Context, platform platform.PlatformType, baseInfo BaseExportReq, optFuncs ...anydoc.ExportFunc) (string, error) {
-	o := anydoc.GetExportOpt(optFuncs...)
-	taskID, err := d.anydoc.Export(ctx, platform, baseInfo.UUID, baseInfo.DocID, anydoc.ExportWithOpt(o))
+	err = d.repoDoc.CreateOnIDConflict(ctx, &model.KBDocument{
+		Base: model.Base{
+			ID: baseInfo.DBDoc.ID,
+		},
+		KBID:         baseInfo.KBID,
+		Platform:     platform,
+		ExportOpt:    model.NewJSONB(o),
+		ExportTaskID: taskID,
+		DocID:        baseInfo.DocID,
+		Title:        baseInfo.Title,
+		Desc:         baseInfo.Desc,
+		DocType:      baseInfo.DBDoc.Type,
+		Status:       status,
+		ParentID:     baseInfo.DBDoc.ParentID,
+		Message:      msg,
+	})
 	if err != nil {
 		return "", err
 	}
-
-	d.cache.Set(taskID, topic.TaskMeta{
-		DBDocID:   baseInfo.DBDoc.ID,
-		KBID:      baseInfo.KBID,
-		Title:     baseInfo.Title,
-		Platform:  platform,
-		Desc:      baseInfo.Desc,
-		ParentID:  baseInfo.DBDoc.ParentID,
-		DocType:   baseInfo.DBDoc.Type,
-		ExportOpt: o,
-		TaskHead: topic.TaskHead{
-			TaskID: taskID,
-			DocID:  baseInfo.DocID,
-			Status: topic.TaskStatusInProgress,
-		},
-	})
 
 	return taskID, nil
 }
@@ -402,7 +385,7 @@ func (d *KBDocument) UpdateByPlatform(ctx context.Context, kbID uint, docID uint
 		doc.Desc = listDoc.FileType
 	}
 
-	return d.exportWithCache(ctx, doc.Platform, BaseExportReq{
+	return d.export(ctx, doc.Platform, BaseExportReq{
 		DBDoc: BaseDBDoc{
 			ID:       doc.ID,
 			ParentID: doc.ParentID,
@@ -968,9 +951,10 @@ func (d *KBDocument) DeleteSpaceFolder(ctx context.Context, kbID uint, folderID 
 type ListWebItem struct {
 	model.Base
 
-	Title  string          `json:"title"`
-	Desc   string          `json:"desc"`
-	Status model.DocStatus `json:"status"`
+	Title    string          `json:"title"`
+	Desc     string          `json:"desc"`
+	FileType model.FileType  `json:"file_type"`
+	Status   model.DocStatus `json:"status"`
 }
 
 type ListWebReq struct {
@@ -1057,14 +1041,13 @@ func (d *KBDocument) Review(ctx context.Context, req ReviewReq) error {
 	return nil
 }
 
-func newDocument(repoDoc *repo.KBDocument, c cache.Cache[topic.TaskMeta], rank *repo.Rank, disc *repo.Discussion,
+func newDocument(repoDoc *repo.KBDocument, rank *repo.Rank, disc *repo.Discussion,
 	doc anydoc.Anydoc, pub mq.Publisher, oc oss.Client, pa *PublicAddress, kb *repo.KnowledgeBase) *KBDocument {
 	return &KBDocument{
 		repoRank:      rank,
 		repoKB:        kb,
 		repoDisc:      disc,
 		repoDoc:       repoDoc,
-		cache:         c,
 		anydoc:        doc,
 		pub:           pub,
 		oc:            oc,

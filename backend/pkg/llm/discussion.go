@@ -44,6 +44,9 @@ const discussionPostTemplate = `
 ### 内容：{{.Discussion.Content}}
 ### 发帖人：{{.Discussion.UserName}}
 ### 时间：{{formatTime .Discussion.CreatedAt}}
+{{- if .Discussion.Groups}}
+### 分组：{{renderGroups .Discussion.Groups}}
+{{- end}}
 {{- if .Discussion.Tags}}
 ### 标签：{{join .Discussion.Tags ", "}}
 {{- end}}
@@ -64,6 +67,9 @@ const discussionFullTemplate = `
 帖子内容：{{.Discussion.Content}}
 发帖人：{{.Discussion.UserName}}
 发帖时间：{{formatTime .Discussion.CreatedAt}}
+{{- if .Discussion.Groups}}
+帖子分组：{{renderGroups .Discussion.Groups}}
+{{- end}}
 {{- if .Discussion.Tags}}
 帖子标签：{{join .Discussion.Tags ", "}}
 {{- end}}
@@ -91,6 +97,9 @@ const discussionsFullTemplateStr = `
 帖子内容：{{$disc.Discussion.Content}}
 发帖人：{{$disc.Discussion.UserName}}
 发帖时间：{{formatTime $disc.Discussion.CreatedAt}}
+{{- if .Discussion.Groups}}
+帖子分组：{{renderGroups .Discussion.Groups}}
+{{- end}}
 {{- if $disc.Discussion.Tags}}
 帖子标签：{{join $disc.Discussion.Tags ", "}}
 {{- end}}
@@ -114,6 +123,7 @@ func init() {
 	var err error
 	discussionsFullTemplate, err = discussionsFullTemplate.Funcs(template.FuncMap{
 		"formatTime":    formatTime,
+		"renderGroups":  renderGroups,
 		"join":          strings.Join,
 		"add":           func(a, b int) int { return a + b },
 		"renderComment": renderComment,
@@ -222,6 +232,7 @@ func (t *DiscussionPromptTemplate) initPostTemplate() error {
 		"formatTime":      formatTime,
 		"join":            strings.Join,
 		"add":             add,
+		"renderGroups":    renderGroups,
 		"renderComment":   renderComment,
 		"findCommentByID": t.findCommentByID,
 		"isReplyToBot":    t.isReplyToBot,
@@ -243,6 +254,7 @@ func (t *DiscussionPromptTemplate) initFullTemplate() error {
 		"formatTime":      formatTime,
 		"join":            strings.Join,
 		"add":             add,
+		"renderGroups":    renderGroups,
 		"renderComment":   renderComment,
 		"findCommentByID": t.findCommentByID,
 		"isReplyToBot":    t.isReplyToBot,
