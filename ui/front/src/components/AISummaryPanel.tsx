@@ -282,7 +282,7 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
               textAlign: 'center',
             }}
           >
-            <Typography variant='body2' sx={{ color: 'error.main' }}>
+            <Typography variant='body2' sx={{ color: 'text.secondary', fontSize: '12px !important' }}>
               {error}
             </Typography>
           </Box>
