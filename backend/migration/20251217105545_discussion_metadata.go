@@ -32,7 +32,7 @@ func (m *discussionMetadata) Migrate(tx *gorm.DB) error {
 		forumDatasetID[forum.ID] = forum.DatasetID
 	}
 
-	err = m.repoDisc.BatchProcess(context.Background(), 200, func(d []*model.Discussion) error {
+	go m.repoDisc.BatchProcess(context.Background(), 200, func(d []*model.Discussion) error {
 		for _, disc := range d {
 			datasetID, ok := forumDatasetID[disc.ForumID]
 			if !ok {
@@ -48,9 +48,6 @@ func (m *discussionMetadata) Migrate(tx *gorm.DB) error {
 		}
 		return nil
 	})
-	if err != nil {
-		return err
-	}
 
 	return nil
 }
