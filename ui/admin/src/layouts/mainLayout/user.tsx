@@ -46,7 +46,9 @@ const MainLayout = () => {
       // 检查知识库
       const kbList = kbRes.items || [];
       // 如果有知识库且当前没有设置或者设置的kb_id无效，设置第一个知识库
-      if (kbList.length > 0 && kbList[0]?.id) {
+      // 使用 getState() 获取最新的 kb_id，避免依赖项变化导致的无限循环
+      const currentKbId = useConfigStore.getState().kb_id;
+      if (kbList.length > 0 && kbList[0]?.id && currentKbId !== kbList[0].id) {
         setKbId(kbList[0].id);
       }
 

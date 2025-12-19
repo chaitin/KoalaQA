@@ -121,7 +121,8 @@ const EditorContent: React.FC<MarkDownProps> = (props) => {
         sx={{
           width: '100%',
           padding: 2,
-          color: 'error.main',
+          color: 'text.secondary',
+          fontSize: '0.675rem',
           ...sx,
         }}
       >
