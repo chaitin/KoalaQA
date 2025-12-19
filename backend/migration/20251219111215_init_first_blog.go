@@ -144,7 +144,7 @@ func (m *initFirstBlog) Migrate(tx *gorm.DB) error {
 			continue
 		}
 
-		data, err := assets.Blog.ReadFile(entry.Name())
+		data, err := assets.Blog.ReadFile(path.Join("blog", entry.Name()))
 		if err != nil {
 			return err
 		}
