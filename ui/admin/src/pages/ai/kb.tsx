@@ -223,7 +223,7 @@ const KnowledgeBasePage = () => {
         spaceId: selectedSpaceId,
         folderId: String(folder.id),
         page: 1,
-        size: 2000,
+        size: 9999999,
       });
     },
     { manual: true }
