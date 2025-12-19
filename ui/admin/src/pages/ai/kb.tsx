@@ -65,7 +65,7 @@ import {
 } from '@mui/material';
 import { useRequest } from 'ahooks';
 import dayjs from 'dayjs';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useSearchParams } from 'react-router-dom';
 import z from 'zod';
@@ -97,6 +97,10 @@ const KnowledgeBasePage = () => {
     {}
   );
   const [editSpace, setEditSpace] = useState<SvcListSpaceItem | null>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingFolderRef = useRef<SvcListSpaceFolderItem | null>(null);
+  const pollingSpaceIdRef = useRef<number | null>(null);
+  const lastFolderDocDataRef = useRef<any>(null);
   const [selectedFolders, setSelectedFolders] = useState<string[]>([]);
   const [expandedDocs, setExpandedDocs] = useState<Set<string>>(new Set());
   const [docDetails, setDocDetails] = useState<Record<string, SvcListSpaceKBItem[]>>({});
@@ -197,6 +201,13 @@ const KnowledgeBasePage = () => {
   const spaces = spacesData?.items || [];
   const folders = foldersData?.items || [];
 
+  // 组件卸载时清理轮询定时器
+  useEffect(() => {
+    return () => {
+      stopPolling();
+    };
+  }, []);
+
   const getDocSyncState = (status?: ModelDocStatus) => {
     if (status === ModelDocStatus.DocStatusApplySuccess) {
       return 'success' as const;
@@ -216,8 +227,22 @@ const KnowledgeBasePage = () => {
     loading: folderDocListLoading,
   } = useRequest(
     (folder?: SvcListSpaceFolderItem | null) => {
-      if (!selectedSpaceId) return Promise.resolve(null);
-      if (!folder?.id) return Promise.resolve(null);
+      console.log('API调用开始，folder:', folder, 'selectedSpaceId:', selectedSpaceId);
+      if (!selectedSpaceId) {
+        console.log('selectedSpaceId为空，跳过API调用');
+        return Promise.resolve(null);
+      }
+      if (!folder?.id) {
+        console.log('folder.id为空，跳过API调用');
+        return Promise.resolve(null);
+      }
+      console.log('执行API调用:', {
+        kbId: kb_id,
+        spaceId: selectedSpaceId,
+        folderId: String(folder.id),
+        page: 1,
+        size: 9999999,
+      });
       return getAdminKbKbIdSpaceSpaceIdFolderFolderIdDoc({
         kbId: kb_id,
         spaceId: selectedSpaceId,
@@ -226,20 +251,74 @@ const KnowledgeBasePage = () => {
         size: 9999999,
       });
     },
-    { manual: true }
+    {
+      manual: true,
+      onSuccess: (response: any) => {
+        // 比较新旧数据，只有数据真正变化时才更新
+        if (
+          lastFolderDocDataRef.current &&
+          response &&
+          JSON.stringify(lastFolderDocDataRef.current) === JSON.stringify(response)
+        ) {
+          console.log('数据未变化，跳过状态更新');
+          return;
+        }
+        console.log('数据发生变化，更新状态');
+        lastFolderDocDataRef.current = response;
+      },
+    }
   );
 
   const folderDocs: SvcDocListItem[] = folderDocListData?.items || [];
 
+  // 启动轮询
+  const startPolling = () => {
+    console.log('启动轮询');
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+    }
+    pollingIntervalRef.current = setInterval(() => {
+      console.log(
+        '轮询执行中，pollingFolderRef:',
+        pollingFolderRef.current,
+        'pollingSpaceIdRef:',
+        pollingSpaceIdRef.current
+      );
+      if (pollingFolderRef.current && pollingSpaceIdRef.current) {
+        console.log('执行轮询获取数据');
+        fetchFolderDocList(pollingFolderRef.current);
+      } else {
+        console.log('轮询条件不满足，跳过');
+      }
+    }, 5000); // 每5秒轮询一次
+  };
+
+  // 停止轮询
+  const stopPolling = () => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+  };
+
   const openDocStatusModal = (folder: SvcListSpaceFolderItem) => {
+    console.log('打开文档状态弹窗，folder:', folder);
     setDocStatusFolder(folder);
+    pollingFolderRef.current = folder;
+    pollingSpaceIdRef.current = selectedSpaceId;
     setDocStatusSearch('');
     setDocStatusTab('all');
     setShowDocStatusModal(true);
+    // 初始加载数据
     fetchFolderDocList(folder);
+    startPolling();
   };
 
   const closeDocStatusModal = () => {
+    stopPolling();
+    pollingFolderRef.current = null;
+    pollingSpaceIdRef.current = null;
+    lastFolderDocDataRef.current = null;
     setShowDocStatusModal(false);
     setDocStatusFolder(null);
     setDocStatusSearch('');
@@ -1615,13 +1694,7 @@ const KnowledgeBasePage = () => {
               <Divider />
 
               <Box sx={{ maxHeight: 420, overflow: 'auto' }}>
-                {folderDocListLoading ? (
-                  <Box sx={{ py: 6, textAlign: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">
-                      加载中...
-                    </Typography>
-                  </Box>
-                ) : docsAfterFilter.length === 0 ? (
+                {docsAfterFilter.length === 0 ? (
                   <Box sx={{ py: 6, textAlign: 'center' }}>
                     <Typography variant="body2" color="text.secondary">
                       暂无文档

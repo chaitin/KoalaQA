@@ -62,10 +62,9 @@ const OfflineFileImport = ({
   const [isUploading, setIsUploading] = useState(UploadStatus.uploading);
   const [currentFileIndex, setCurrentFileIndex] = useState(0);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const { taskIds, handleImport } = useExportDoc({
+  const { handleImport } = useExportDoc({
     onFinished: () => {
-      setStep('done');
-      setLoading(false);
+      handleCancel()
     },
     setLoading: (loading: boolean) => {
       setLoading(loading);
@@ -122,10 +121,6 @@ const OfflineFileImport = ({
         },
       }
     );
-  };
-  const fileReImport = (ids: string[], items: AnydocListRes[]) => {
-    setLoading(true);
-    return handleImport(ids, postAdminKbDocumentFileExport, items);
   };
   const handleFile = async () => {
     if (isUploading === 1) return;
@@ -269,10 +264,8 @@ const OfflineFileImport = ({
       )}
       {step !== 'upload' && (
         <Doc2Ai
-          handleImport={fileReImport}
           selectIds={selectIds}
           setSelectIds={setSelectIds}
-          taskIds={taskIds}
           items={items}
           loading={loading}
           showSelectAll={['pull-done', 'import'].includes(step)}

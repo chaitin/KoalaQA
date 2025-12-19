@@ -19,19 +19,15 @@ const SitemapImport = ({ open, refresh, onCancel }: ImportDocProps) => {
   const [selectIds, setSelectIds] = useState<string[]>([]);
   const [requestQueue, setRequestQueue] = useState<(() => Promise<any>)[]>([]);
   const [isCancelled, setIsCancelled] = useState(false);
-  const { taskIds, handleImport } = useExportDoc({
+
+  const { handleImport } = useExportDoc({
     onFinished: () => {
-      setStep('done');
-      setLoading(false);
+      handleCancel()
     },
     setLoading: (loading: boolean) => {
       setLoading(loading);
     },
   });
-  const fileReImport = (ids: string[], items: AnydocListRes[]) => {
-    setLoading(true);
-    return handleImport(ids, postAdminKbDocumentSitemapExport, items);
-  };
 
   const handleCancel = () => {
     setIsCancelled(true);
@@ -72,12 +68,10 @@ const SitemapImport = ({ open, refresh, onCancel }: ImportDocProps) => {
   const handleOk = async () => {
     if (step === 'done') {
       handleCancel();
-      refresh?.({});
     } else if (step === 'upload') {
       setIsCancelled(false);
       await handleURL();
     } else if (step === 'import') {
-      setLoading(true);
       handleImport(selectIds, postAdminKbDocumentSitemapExport, items);
     }
   };
@@ -144,10 +138,8 @@ const SitemapImport = ({ open, refresh, onCancel }: ImportDocProps) => {
       )}
       {step !== 'upload' && (
         <Doc2Ai
-          handleImport={fileReImport}
           selectIds={selectIds}
           setSelectIds={setSelectIds}
-          taskIds={taskIds}
           items={items}
           loading={loading}
           showSelectAll={['pull-done', 'import'].includes(step)}
