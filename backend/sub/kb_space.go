@@ -227,7 +227,7 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 			delete(exist, doc.ID)
 
 			if msg.UpdateType == topic.KBSpaceUpdateTypeIncr && doc.UpdatedAt > 0 && doc.UpdatedAt < dbDoc.updatedAt &&
-				!slices.Contains([]model.DocStatus{model.DocStatusApplyFailed, model.DocStatusApplyFailed}, dbDoc.status) {
+				!slices.Contains([]model.DocStatus{model.DocStatusExportFailed, model.DocStatusApplyFailed}, dbDoc.status) {
 				logger.With("doc_id", doc.ID).With("anydoc_updated", doc.UpdatedAt).With("dbdoc_updated", dbDoc.updatedAt).Info("incr update ignore doc")
 				continue
 			}
