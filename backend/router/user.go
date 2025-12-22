@@ -145,6 +145,7 @@ func (u *user) loginThirdCallback(ctx *context.Context, typ model.AuthType) {
 		return
 	}
 	session.Delete(stateKey)
+	session.Save()
 
 	token, err := u.svcU.LoginThirdCallback(ctx, typ, req)
 	if err != nil {

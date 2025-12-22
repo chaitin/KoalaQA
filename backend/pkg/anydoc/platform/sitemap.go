@@ -22,6 +22,14 @@ func (s *sitemap) ExportURL() string {
 	return s.prefix + "/export"
 }
 
+func (s *sitemap) AuthURL() string {
+	return s.prefix + "/auth_url"
+}
+
+func (s *sitemap) UserInfoURL() string {
+	return s.prefix + "/user"
+}
+
 func newSitemap() Platform {
 	return &sitemap{prefix: "/api/docs/sitemap"}
 }

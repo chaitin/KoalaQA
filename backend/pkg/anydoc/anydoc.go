@@ -123,9 +123,33 @@ func ExportWithOpt(o model.ExportOpt) ExportFunc {
 	}
 }
 
+type AuthURLReq struct {
+	ClientID    string `json:"client_id" binding:"required"`
+	Scope       string `json:"scope" binding:"required"`
+	State       string `json:"state"`
+	RedirectURL string `json:"redirect_url" binding:"required"`
+}
+
+type UserInfoReq struct {
+	AppID     string `json:"app_id" binding:"required"`
+	AppSecret string `json:"app_secret" binding:"required"`
+	Code      string `json:"code" binding:"required"`
+}
+
+type UserInfoRes struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
 type Anydoc interface {
 	List(ctx context.Context, platform platform.PlatformType, optFuncs ...listOptFunc) (*ListRes, error)
 	Export(ctx context.Context, platform platform.PlatformType, id string, docID string, optFuncs ...ExportFunc) (string, error)
+	AuthURL(ctx context.Context, platform platform.PlatformType, req AuthURLReq) (string, error)
+	UserInfo(ctx context.Context, platform platform.PlatformType, req UserInfoReq) (*UserInfoRes, error)
 }
 
 type anydoc struct {
@@ -344,6 +368,78 @@ func (a *anydoc) Export(ctx context.Context, platform platform.PlatformType, id 
 	}
 
 	return res.Data, nil
+}
+
+func (a *anydoc) AuthURL(ctx context.Context, plat platform.PlatformType, reqData AuthURLReq) (string, error) {
+	p, ok := a.platform[plat]
+	if !ok {
+		return "", errors.New("platform not supported")
+	}
+
+	reqBytes, err := json.Marshal(reqData)
+	if err != nil {
+		return "", err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s%s", a.address, p.ExportURL()), bytes.NewReader(reqBytes))
+	if err != nil {
+		return "", err
+	}
+	req.Header["X-Trace-ID"] = trace.TraceID(ctx)
+
+	resp, err := util.HTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	var res anydocRes[string]
+	err = json.NewDecoder(resp.Body).Decode(&res)
+	if err != nil {
+		return "", err
+	}
+
+	err = res.Error()
+	if err != nil {
+		return "", err
+	}
+
+	return res.Data, nil
+}
+
+func (a *anydoc) UserInfo(ctx context.Context, plat platform.PlatformType, reqData UserInfoReq) (*UserInfoRes, error) {
+	p, ok := a.platform[plat]
+	if !ok {
+		return nil, errors.New("platform not supported")
+	}
+
+	reqBytes, err := json.Marshal(reqData)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s%s", a.address, p.ExportURL()), bytes.NewReader(reqBytes))
+	if err != nil {
+		return nil, err
+	}
+	req.Header["X-Trace-ID"] = trace.TraceID(ctx)
+
+	resp, err := util.HTTPClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var res anydocRes[UserInfoRes]
+	err = json.NewDecoder(resp.Body).Decode(&res)
+	if err != nil {
+		return nil, err
+	}
+
+	err = res.Error()
+	if err != nil {
+		return nil, err
+	}
+
+	return &res.Data, nil
 }
 
 type in struct {

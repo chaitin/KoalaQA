@@ -67,6 +67,30 @@ func (d *KBDocument) FeishuList(ctx context.Context, req FeishuListReq) (*anydoc
 	)
 }
 
+type FeishuAuthURLReq struct {
+	ID           uint   `json:"id"`
+	ClientID     string `json:"client_id" binding:"required"`
+	ClientSecret string `json:"client_secret" binding:"required"`
+}
+
+func (d *KBDocument) FeishuAuthURL(ctx context.Context, state string, req FeishuAuthURLReq) (string, error) {
+	publicAddr, err := d.svcPublicAddr.Get(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return d.anydoc.AuthURL(ctx, platform.PlatformFeishu, anydoc.AuthURLReq{
+		ClientID:    req.ClientID,
+		State:       state,
+		RedirectURL: publicAddr.FullURL("/api/admin/kb/document/feishu/callback"),
+		Scope:       "contact:user.id:readonly docs:document.content:read docs:event.document_edited:read docx:document docx:document:readonly space:document:retrieve tenant:tenant.domain:read tenant:tenant:readonly wiki:wiki wiki:wiki:readonly drive:drive base:app:read bitable:app docs:event.document_edited:read offline_access",
+	})
+}
+
+func (d *KBDocument) FeishuUserInfo(ctx context.Context, req anydoc.UserInfoReq) (*anydoc.UserInfoRes, error) {
+	return d.anydoc.UserInfo(ctx, platform.PlatformFeishu, req)
+}
+
 type SpaceExportReq struct {
 	BaseExportReq
 	FileType string `json:"file_type" binding:"required"`

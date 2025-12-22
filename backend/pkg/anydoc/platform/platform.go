@@ -21,4 +21,6 @@ type Platform interface {
 	ListURL() string
 	ListMethod() string
 	ExportURL() string
+	AuthURL() string
+	UserInfoURL() string
 }

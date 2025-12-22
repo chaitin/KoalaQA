@@ -22,6 +22,14 @@ func (s *dingtalk) ExportURL() string {
 	return s.prefix + "/export"
 }
 
+func (s *dingtalk) AuthURL() string {
+	return s.prefix + "/auth_url"
+}
+
+func (s *dingtalk) UserInfoURL() string {
+	return s.prefix + "/user"
+}
+
 func newDingtalk() Platform {
 	return &dingtalk{prefix: "/api/docs/dingtalk"}
 }
