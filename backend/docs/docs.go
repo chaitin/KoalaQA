@@ -4537,9 +4537,6 @@ const docTemplate = `{
         "/discussion/{disc_id}": {
             "get": {
                 "description": "detail discussion",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -4548,6 +4545,11 @@ const docTemplate = `{
                 ],
                 "summary": "detail discussion",
                 "parameters": [
+                    {
+                        "type": "boolean",
+                        "name": "no_view",
+                        "in": "query"
+                    },
                     {
                         "type": "string",
                         "description": "disc_id",

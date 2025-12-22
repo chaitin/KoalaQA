@@ -132,13 +132,20 @@ func (d *discussion) ListSimilarity(ctx *context.Context) {
 // @Summary detail discussion
 // @Description detail discussion
 // @Tags discussion
-// @Accept json
 // @Produce json
+// @Param req query svc.DetailByUUIDReq false "req params"
 // @Param disc_id path string true "disc_id"
 // @Success 200 {object} context.Response{data=model.DiscussionDetail}
 // @Router /discussion/{disc_id} [get]
 func (d *discussion) Detail(ctx *context.Context) {
-	res, err := d.disc.DetailByUUID(ctx, ctx.GetUser().UID, ctx.Param("disc_id"))
+	var req svc.DetailByUUIDReq
+	err := ctx.ShouldBindQuery(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	res, err := d.disc.DetailByUUID(ctx, ctx.GetUser().UID, ctx.Param("disc_id"), req)
 	if err != nil {
 		ctx.InternalError(err, "failed to detail discussion")
 		return
