@@ -36,7 +36,7 @@ export async function generateMetadata(props: {
 // 数据获取函数
 async function fetchDiscussionDetail(discId: string, noView?: boolean) {
   try {
-    const discussion = await getDiscussionDiscId({ discId, no_view: true })
+    const discussion = await getDiscussionDiscId({ discId, no_view: noView })
     return { success: true, data: discussion, error: null }
   } catch (error) {
     console.error('Failed to fetch discussion detail:', error)
@@ -59,10 +59,6 @@ const DiscussDetailPage = async (props: {
   const searchParams = await props.searchParams
   // 如果是刷新操作（通过 searchParams.refresh 标记），则不增加浏览次数
   const isRefresh = searchParams.refresh === 'true'
-
-  // 获取讨论详情
-  // 注意：根据后端逻辑，no_view=true 时会增加浏览次数，no_view=false 或不传时不增加
-  // 首次加载时应该增加浏览次数（no_view=true），刷新时不增加（no_view=false）
   const result = await fetchDiscussionDetailCached(id, isRefresh)
   // 处理错误情况
   if (!result.success) {
