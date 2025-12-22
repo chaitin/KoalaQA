@@ -166,7 +166,7 @@ services:
 
   raglite:
     container_name: koala-qa-raglite
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/raglite:v2.6.0
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/raglite:v2.6.2
     restart: always
     environment:
       - TZ=${TIMEZONE:-Asia/Shanghai}
