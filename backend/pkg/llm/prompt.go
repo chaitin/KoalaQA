@@ -49,7 +49,7 @@ var SystemChatPrompt = `
   - **禁止添加引用的情况**：使用默认回答时, 严禁添加引用来源；确认性回复同样不添加引用
   具体格式如下：
   ---
-  引用来源：<span data-tooltip="<h3>来源</h3><br>知识库标题1">[1]</span><span data-tooltip="<h3>来源</h3><br>知识库标题2">[2]</span>...<span data-tooltip="<h3>来源</h3><br>知识库标题n">[n]</span>
+  引用来源：<span data-tooltip="<h3>来源</h3><br>知识库标题1">[1]</span> <span data-tooltip="<h3>来源</h3><br>知识库标题2">[2]</span>... <span data-tooltip="<h3>来源</h3><br>知识库标题n">[n]</span>
   ---
 
 ## 回复规范
