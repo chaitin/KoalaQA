@@ -186,7 +186,7 @@ func (d *Disc) handleUpdate(ctx context.Context, data topic.MsgDiscChange) error
 		return nil
 	}
 
-	question, prompt, err := d.prompt.GeneratePostPrompt(ctx, data.DiscID)
+	question, prompt, groups, err := d.prompt.GeneratePostPrompt(ctx, data.DiscID)
 	if err != nil {
 		logger.WithErr(err).Error("generate prompt failed")
 		return nil
@@ -196,6 +196,7 @@ func (d *Disc) handleUpdate(ctx context.Context, data topic.MsgDiscChange) error
 		Prompt:        prompt,
 		DefaultAnswer: bot.UnknownPrompt,
 		NewCommentID:  0,
+		Groups:        groups,
 	})
 	if err != nil {
 		logger.WithErr(err).Error("answer failed")
