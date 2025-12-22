@@ -189,6 +189,7 @@ func (u *User) CreateThird(ctx context.Context, orgID uint, user *third_auth.Use
 				LastLogin: model.Timestamp(time.Now().Unix()),
 				Key:       uuid.NewString(),
 				OrgIDs:    model.Int64Array{int64(orgID)},
+				WebNotify: true,
 			}
 			txErr = u.createUser(tx, &dbUser)
 			if txErr != nil {

@@ -3768,6 +3768,27 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "enum": [
+                            0,
+                            1,
+                            2,
+                            3,
+                            4,
+                            5
+                        ],
+                        "type": "integer",
+                        "x-enum-varnames": [
+                            "UserRoleUnknown",
+                            "UserRoleAdmin",
+                            "UserRoleOperator",
+                            "UserRoleUser",
+                            "UserRoleGuest",
+                            "UserRoleMax"
+                        ],
+                        "name": "role",
+                        "in": "query"
+                    },
+                    {
                         "minimum": 1,
                         "type": "integer",
                         "name": "size",
