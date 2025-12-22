@@ -231,6 +231,8 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 				logger.With("doc_id", doc.ID).With("anydoc_updated", doc.UpdatedAt).With("dbdoc_updated", dbDoc.updatedAt).Info("incr update ignore doc")
 				continue
 			}
+		} else if msg.UpdateType == topic.KBSpaceUpdateTypeFailed {
+			continue
 		}
 
 		taskID, err := k.doc.SpaceExport(ctx, folder.Platform, svc.SpaceExportReq{
