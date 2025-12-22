@@ -9,8 +9,8 @@ import Toc from '@/components/Toc'
 import Modal from '@/components/modal'
 import SSEClient from '@/utils/fetch'
 import { Box, Button, Stack, TextField, Typography } from '@mui/material'
-import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
+import { useEffect, useRef, useState, useCallback } from 'react'
 
 const OutlineSidebar = ({
   discussion,
@@ -31,6 +31,14 @@ const OutlineSidebar = ({
 }) => {
   const [headings, setHeadings] = useState<any[]>([])
   const router = useRouter()
+  const pathname = usePathname()
+  
+  // 刷新页面但不增加浏览次数
+  const refreshWithoutView = useCallback(() => {
+    const url = new URL(pathname, window.location.origin)
+    url.searchParams.set('refresh', 'true')
+    router.replace(url.pathname + url.search)
+  }, [pathname, router])
 
   const [localSummary, setLocalSummary] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -199,7 +207,7 @@ const OutlineSidebar = ({
 
     setLocalSummary(next.trim())
     try {
-      router.refresh()
+      refreshWithoutView()
     } catch {}
 
     setModalOpen(false)

@@ -233,7 +233,7 @@ export default function NotificationCenter() {
           全部已读
         </Button>
 
-        <Stack direction='row' alignItems='center' spacing={0.5} sx={{ ml: 'auto' }}>
+        {/* <Stack direction='row' alignItems='center' spacing={0.5} sx={{ ml: 'auto' }}>
           <FormControlLabel
             disabled={!isNotificationSupported}
             control={
@@ -274,7 +274,7 @@ export default function NotificationCenter() {
               <HelpOutlineIcon sx={{ fontSize: '16px' }} />
             </IconButton>
           </Tooltip>
-        </Stack>
+        </Stack> */}
       </Stack>
 
       {/* 通知列表 */}

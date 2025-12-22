@@ -416,7 +416,9 @@ export class HttpClient<SecurityDataType = unknown> {
             if (Alert?.error) {
               try {
                 // 打印完整的请求内容
-                Alert.error(`请求出错，状态码: ${error?.response?.status ?? '未知'}`);
+                Alert.error(
+                  `请求出错，状态码: ${error?.response?.status ?? "未知"}`,
+                );
               } catch (e) {
                 // 如果 Alert.error 调用失败，至少输出到控制台
                 console.error("Failed to show alert:", e);

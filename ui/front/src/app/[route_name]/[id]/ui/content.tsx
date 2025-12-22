@@ -43,7 +43,7 @@ import {
   Typography,
 } from '@mui/material'
 import Link from 'next/link'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, usePathname } from 'next/navigation'
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import EditCommentModal from './editCommentModal'
 import DuplicateAnswerModal from './DuplicateAnswerModal'
@@ -60,6 +60,14 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const { data } = props
   const { id }: { id: string } = useParams() || { id: '' }
   const router = useRouter()
+  const pathname = usePathname()
+  
+  // 刷新页面但不增加浏览次数
+  const refreshWithoutView = useCallback(() => {
+    const url = new URL(pathname, window.location.origin)
+    url.searchParams.set('refresh', 'true')
+    router.replace(url.pathname + url.search)
+  }, [pathname, router])
   const { user } = useContext(AuthContext)
   const { checkAuth } = useAuthCheck()
   const [commentIndex, setCommentIndex] = useState<ModelDiscussionComment | ModelDiscussionReply | null>(null)
@@ -116,7 +124,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         content: comment,
       },
     ).then(() => {
-      router.refresh()
+      refreshWithoutView()
       setEditCommentModalVisible(false)
     })
   }
@@ -136,7 +144,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         // 清除讨论详情的缓存
         const cacheKey = generateCacheKey(`/discussion/${data.uuid}`, {})
         clearCache(cacheKey)
-        router.refresh()
+        refreshWithoutView()
       },
     })
   }
@@ -211,7 +219,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         // 清除讨论详情的缓存
         const cacheKey = generateCacheKey(`/discussion/${data.uuid}`, {})
         clearCache(cacheKey)
-        router.refresh()
+        refreshWithoutView()
       },
     })
   }
@@ -233,7 +241,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         // 清除讨论详情的缓存
         const cacheKey = generateCacheKey(`/discussion/${data.uuid}`, {})
         clearCache(cacheKey)
-        router.refresh()
+        refreshWithoutView()
       },
     })
   }
@@ -278,7 +286,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
       setHasAnswerContent(false)
       const cacheKey = generateCacheKey(`/discussion/${id}`, {})
       clearCache(cacheKey)
-      router.refresh()
+      refreshWithoutView()
     })
   }
 
@@ -292,7 +300,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
       setCommentEditorKeys((prev) => ({ ...prev, [answerId]: (prev[answerId] || 0) + 1 }))
       const cacheKey = generateCacheKey(`/discussion/${id}`, {})
       clearCache(cacheKey)
-      router.refresh()
+      refreshWithoutView()
     })
   }
 
@@ -302,7 +310,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
     showPointNotification(PointActionType.ACCEPT_ANSWER)
     const cacheKey = generateCacheKey(`/discussion/${data.uuid}`, {})
     clearCache(cacheKey)
-    router.refresh()
+    refreshWithoutView()
   }
 
   const handleReplyInputClick = useCallback(
@@ -347,7 +355,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
       }
       const cacheKey = generateCacheKey(`/discussion/${id}`, {})
       clearCache(cacheKey)
-      router.refresh()
+      refreshWithoutView()
     })
   }
 

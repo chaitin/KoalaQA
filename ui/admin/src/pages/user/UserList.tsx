@@ -77,6 +77,9 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
   const [orgIdFilter, setOrgIdFilter] = useState<number | undefined>(
     query.org_id ? Number(query.org_id) : undefined
   );
+  const [roleFilter, setRoleFilter] = useState<ModelUserRole | undefined>(
+    query.role ? Number(query.role) as ModelUserRole : undefined
+  );
   const [editItem, setEditItem] = useState<UserListItemWithOrgs | null>(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [joinOrgModalOpen, setJoinOrgModalOpen] = useState(false);
@@ -125,14 +128,19 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
     if (newEmail !== email) {
       setEmail(newEmail);
     }
-  }, [query.org_id, query.name, query.email]); // eslint-disable-line react-hooks/exhaustive-deps
+    const newRoleFilter = query.role ? Number(query.role) as ModelUserRole : undefined;
+    if (newRoleFilter !== roleFilter) {
+      setRoleFilter(newRoleFilter);
+    }
+  }, [query.org_id, query.name, query.email, query.role]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchData({
       ...query,
       org_id: orgIdFilter,
+      role: roleFilter,
     });
-  }, [query, orgIdFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [query, orgIdFilter, roleFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const deleteUser = (item: SvcUserListItem) => {
     Modal.confirm({
@@ -186,6 +194,7 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
           fetchData({
             ...query,
             org_id: orgIdFilter,
+            role: roleFilter,
           });
           cancelEdit();
         })
@@ -218,6 +227,7 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
         fetchData({
           ...query,
           org_id: orgIdFilter,
+          role: roleFilter,
         });
       })
       .catch(err => {
@@ -359,6 +369,7 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
                   name,
                   email,
                   org_id: orgIdFilter,
+                  role: roleFilter,
                 });
               }
             }}
@@ -374,6 +385,7 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
                   name,
                   email,
                   org_id: orgIdFilter,
+                  role: roleFilter,
                 });
               }
             }}
@@ -391,6 +403,7 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
                   name,
                   email,
                   org_id: value,
+                  role: roleFilter,
                 });
               }}
             >
@@ -400,6 +413,33 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
                   {org.name}
                 </MenuItem>
               ))}
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 150 }}>
+            <InputLabel id="role-filter-label">角色</InputLabel>
+            <Select
+              labelId="role-filter-label"
+              label="角色"
+              value={roleFilter !== undefined ? String(roleFilter) : ''}
+              onChange={e => {
+                const value = e.target.value === '' ? undefined : Number(e.target.value) as ModelUserRole;
+                setRoleFilter(value);
+                setSearch({
+                  name,
+                  email,
+                  org_id: orgIdFilter,
+                  role: value,
+                });
+              }}
+            >
+              <MenuItem value="">全部</MenuItem>
+              {Object.entries(transRole)
+                .slice(1, -1)
+                .map(([key, value]) => (
+                  <MenuItem key={key} value={key}>
+                    {value}
+                  </MenuItem>
+                ))}
             </Select>
           </FormControl>
         </Stack>

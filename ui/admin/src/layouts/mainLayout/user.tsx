@@ -8,7 +8,7 @@ import Access from '@/pages/settings/component/Access';
 import ModelManagementModal from '@/pages/settings/component/ModelManagementModal';
 import { Box, Button, Link, Modal, Stack, Typography } from '@mui/material';
 import LaunchIcon from '@mui/icons-material/Launch';
-import { useCallback, useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useState, startTransition } from 'react';
 import { Outlet } from 'react-router-dom';
 
 const MainLayout = () => {
@@ -22,65 +22,61 @@ const MainLayout = () => {
 
   useEffect(() => {
     refreshForums();
-  }, [refreshForums]);
+  }, []);
 
-  const checkNecessaryConfigurations = useCallback(async () => {
-    try {
-      const [models, addr, kbRes] = await Promise.all([
-        getAdminModelList(),
-        getAdminSystemPublicAddress(),
-        getAdminKb(),
-      ]);
+  const checkNecessaryConfigurations = useCallback(
+    async (first_mount: boolean) => {
+      try {
+        const [models, addr, kbRes] = await Promise.all([
+          getAdminModelList(),
+          getAdminSystemPublicAddress(),
+          getAdminKb(),
+        ]);
 
-      const requiredModelTypes = [
-        ModelLLMType.LLMTypeChat,
-        ModelLLMType.LLMTypeEmbedding,
-        ModelLLMType.LLMTypeRerank,
-      ];
-      const modelList = Array.isArray(models) ? models : [];
-      const lackModel = requiredModelTypes.some(
-        type => !modelList.some(model => model?.type === type)
-      );
-      const lackAddr = !addr || !addr.address || addr.address.trim() === '';
+        const requiredModelTypes = [
+          ModelLLMType.LLMTypeChat,
+          ModelLLMType.LLMTypeEmbedding,
+          ModelLLMType.LLMTypeRerank,
+        ];
+        const modelList = Array.isArray(models) ? models : [];
+        const lackModel = requiredModelTypes.some(
+          type => !modelList.some(model => model?.type === type)
+        );
+        const lackAddr = !addr || !addr.address || addr.address.trim() === '';
 
-      // 检查知识库
-      const kbList = kbRes.items || [];
-      // 如果有知识库且当前没有设置或者设置的kb_id无效，设置第一个知识库
-      // 使用 getState() 获取最新的 kb_id，避免依赖项变化导致的无限循环
-      const currentKbId = useConfigStore.getState().kb_id;
-      if (kbList.length > 0 && kbList[0]?.id && currentKbId !== kbList[0].id) {
-        setKbId(kbList[0].id);
+        // 检查知识库
+        const kbList = kbRes.items || [];
+        // 如果有知识库且当前没有设置或者设置的kb_id无效，设置第一个知识库
+        // 使用 getState() 获取最新的 kb_id，避免依赖项变化导致的无限循环
+        const currentKbId = useConfigStore.getState().kb_id;
+        if (kbList.length > 0 && kbList[0]?.id && currentKbId !== kbList[0].id) {
+          setKbId(kbList[0].id);
+        }
+
+        setNeedModel(lackModel);
+        setNeedAddress(lackAddr);
+        const _showGuide = lackModel || lackAddr || kbList.length === 0;
+        setShowGuide(_showGuide);
+        if (!_showGuide && !first_mount) {
+          window.location.reload();
+        }
+        // 返回检查结果
+        return { lackModel, lackAddr };
+      } catch {
+        // 网络或接口异常时，强制进入引导
+        setNeedModel(true);
+        setNeedAddress(true);
+        setShowGuide(true);
+        return { lackModel: true, lackAddr: true };
       }
-
-      setNeedModel(lackModel);
-      setNeedAddress(lackAddr);
-      setShowGuide(lackModel || lackAddr || kbList.length === 0);
-      // 返回检查结果
-      return { lackModel, lackAddr };
-    } catch {
-      // 网络或接口异常时，强制进入引导
-      setNeedModel(true);
-      setNeedAddress(true);
-      setShowGuide(true);
-      return { lackModel: true, lackAddr: true };
-    }
-  }, [setKbId]);
-
+    },
+    [setKbId]
+  );
   useEffect(() => {
-    if (user?.uid) {
-      // 触发登录后的配置检查（异步状态更新），跳过此行的 effect-setState 规则
-      // eslint-disable-next-line
-      checkNecessaryConfigurations();
-    }
-  }, [user, checkNecessaryConfigurations]);
-
-  const tryCloseGuide = () => {
-    // 只有当两者都已配置时，才可关闭
-    if (!needModel && !needAddress) {
-      setShowGuide(false);
-    }
-  };
-
+    startTransition(() => {
+      checkNecessaryConfigurations(true);
+    });
+  }, [checkNecessaryConfigurations]);
   // 如果还在检查认证状态，显示加载状态
   if (isAuthenticated === null) {
     return (
@@ -158,14 +154,7 @@ const MainLayout = () => {
           <Stack spacing={2}>
             <Box>
               <Box sx={{ fontSize: 16, fontWeight: 600, mb: 2 }}>社区基础配置</Box>
-              <Access
-                // 在保存成功后，仅更新地址配置状态，不自动关闭弹窗
-                onSaved={() => {
-                  // 重新检查配置状态，仅更新状态，不关闭弹窗
-                  // 弹窗只有在两个配置都完成时，通过【完成】按钮才能关闭
-                  checkNecessaryConfigurations();
-                }}
-              />
+              <Access />
             </Box>
             <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
               <Stack direction="row" alignItems="center" spacing={1}>
@@ -181,21 +170,13 @@ const MainLayout = () => {
                   <LaunchIcon sx={{ fontSize: 14, ml: 0.5 }} />
                 </Link>
               </Stack>
-              <ModelManagementModal
-                open={true}
-                mandatory={true}
-                onConfigured={() => {
-                  // 重新检查配置状态，仅更新状态，不关闭弹窗
-                  // 弹窗只有在两个配置都完成时，通过【完成】按钮才能关闭
-                  checkNecessaryConfigurations();
-                }}
-              />
+              <ModelManagementModal open={true} mandatory={true} />
             </Card>
           </Stack>
           <Button
             variant="outlined"
             disabled={needAddress || needModel}
-            onClick={tryCloseGuide}
+            onClick={() => checkNecessaryConfigurations(false)}
             sx={{ ml: 'auto', mt: 2 }}
           >
             完成

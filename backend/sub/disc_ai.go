@@ -186,7 +186,7 @@ func (d *Disc) handleUpdate(ctx context.Context, data topic.MsgDiscChange) error
 		return nil
 	}
 
-	question, prompt, err := d.prompt.GeneratePostPrompt(ctx, data.DiscID)
+	question, prompt, groups, err := d.prompt.GeneratePostPrompt(ctx, data.DiscID)
 	if err != nil {
 		logger.WithErr(err).Error("generate prompt failed")
 		return nil
@@ -196,6 +196,7 @@ func (d *Disc) handleUpdate(ctx context.Context, data topic.MsgDiscChange) error
 		Prompt:        prompt,
 		DefaultAnswer: bot.UnknownPrompt,
 		NewCommentID:  0,
+		Groups:        groups,
 	})
 	if err != nil {
 		logger.WithErr(err).Error("answer failed")
@@ -220,7 +221,7 @@ func (d *Disc) handleUpdate(ctx context.Context, data topic.MsgDiscChange) error
 		return err
 	}
 
-	if !answered && (disc.BotUnknown || bot.UnknownPrompt == "") {
+	if !answered && bot.UnknownPrompt == "" {
 		logger.Info("ai can not answer, skip")
 		if !disc.BotUnknown {
 			err = d.disc.SetBotUnknown(ctx, disc.ID, true)
@@ -267,8 +268,8 @@ func (d *Disc) handleUpdate(ctx context.Context, data topic.MsgDiscChange) error
 		}
 	}
 
-	if disc.BotUnknown {
-		err = d.disc.SetBotUnknown(ctx, disc.ID, false)
+	if disc.BotUnknown == answered {
+		err = d.disc.SetBotUnknown(ctx, disc.ID, !disc.BotUnknown)
 		if err != nil {
 			logger.WithErr(err).Warn("set bot unknown failed")
 		}

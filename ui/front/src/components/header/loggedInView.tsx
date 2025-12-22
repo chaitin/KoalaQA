@@ -318,7 +318,6 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
   const user = propUser || contextUser
   const [notifications, setNotifications] = useState<MessageNotifyInfo[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
-  const [webNotifyEnabled, setWebNotifyEnabled] = useState(false)
   const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null)
   const [profileAnchorEl, setProfileAnchorEl] = useState<null | HTMLElement>(null)
   const router = useRouterWithRouteName()
@@ -334,9 +333,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
     const loadWebNotifyStatus = async () => {
       try {
         const enabled = user.notify_web
-        console.log('加载网页通知状态:', enabled)
         if (typeof enabled === 'boolean') {
-          setWebNotifyEnabled(enabled)
           // 如果启用了网页通知，请求浏览器通知权限
           if (enabled && isNotificationSupported()) {
             console.log('请求浏览器通知权限')

@@ -127,6 +127,8 @@ func (k *kbSpace) handleInsert(ctx context.Context, logger *glog.Logger, msg top
 	}
 	defer k.done(msg.FolderID)
 
+	logger.Info("begin insert kb_space")
+
 	folder, err := k.getFolder(ctx, msg.KBID, msg.FolderID)
 	if err != nil {
 		logger.WithErr(err).Warn("get folder failed")
@@ -184,6 +186,8 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 	}
 	defer k.done(msg.FolderID)
 
+	logger.Info("begin update kb_space")
+
 	folder, err := k.getFolder(ctx, msg.KBID, msg.FolderID)
 	if err != nil {
 		logger.WithErr(err).Warn("get folder failed")
@@ -231,6 +235,8 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 				logger.With("doc_id", doc.ID).With("anydoc_updated", doc.UpdatedAt).With("dbdoc_updated", dbDoc.updatedAt).Info("incr update ignore doc")
 				continue
 			}
+		} else if msg.UpdateType == topic.KBSpaceUpdateTypeFailed {
+			continue
 		}
 
 		taskID, err := k.doc.SpaceExport(ctx, folder.Platform, svc.SpaceExportReq{

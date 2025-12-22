@@ -1,6 +1,7 @@
 import { getDiscussionDiscId } from '@/api'
 import { Alert, Box, Stack, Typography } from '@mui/material'
 import { Metadata } from 'next'
+import { headers } from 'next/headers'
 import { cache, Suspense } from 'react'
 import Content from './ui/content'
 import TitleCard from './ui/titleCard'
@@ -15,7 +16,8 @@ export async function generateMetadata(props: {
 }): Promise<Metadata> {
   const { id } = await props.params
   try {
-    const result = await fetchDiscussionDetailCached(id)
+    // metadata 生成时不增加浏览量
+    const result = await fetchDiscussionDetailCached(id, true)
     if (result.success && result.data?.title) {
       return {
         title: result.data.title,
@@ -32,9 +34,9 @@ export async function generateMetadata(props: {
 }
 
 // 数据获取函数
-async function fetchDiscussionDetail(discId: string) {
+async function fetchDiscussionDetail(discId: string, noView?: boolean) {
   try {
-    const discussion = await getDiscussionDiscId({ discId })
+    const discussion = await getDiscussionDiscId({ discId, no_view: noView })
     return { success: true, data: discussion, error: null }
   } catch (error) {
     console.error('Failed to fetch discussion detail:', error)
@@ -49,11 +51,15 @@ async function fetchDiscussionDetail(discId: string) {
 // 避免同一请求周期内重复拉取
 const fetchDiscussionDetailCached = cache(fetchDiscussionDetail)
 
-const DiscussDetailPage = async (props: { params: Promise<{ route_name: string; id: string }> }) => {
+const DiscussDetailPage = async (props: {
+  params: Promise<{ route_name: string; id: string }>
+  searchParams: Promise<{ refresh?: string }>
+}) => {
   const { id } = await props.params
-
-  // 获取讨论详情
-  const result = await fetchDiscussionDetailCached(id)
+  const searchParams = await props.searchParams
+  // 如果是刷新操作（通过 searchParams.refresh 标记），则不增加浏览次数
+  const isRefresh = searchParams.refresh === 'true'
+  const result = await fetchDiscussionDetailCached(id, isRefresh)
   // 处理错误情况
   if (!result.success) {
     return (

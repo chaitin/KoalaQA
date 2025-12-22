@@ -100,14 +100,14 @@ func (p *Prompt) GenerateContentForRetrieval(ctx context.Context, discID uint) (
 }
 
 // GeneratePostPrompt 生成帖子提示词
-func (p *Prompt) GeneratePostPrompt(ctx context.Context, discID uint) (string, string, error) {
+func (p *Prompt) GeneratePostPrompt(ctx context.Context, discID uint) (string, string, []string, error) {
 	logger := p.logger.WithContext(ctx).With("discussion_id", discID)
 	logger.Debug("start generate prompt")
 
 	// 1. 获取讨论详情
 	discussion, err := p.disc.Detail(ctx, 0, discID)
 	if err != nil {
-		return "", "", fmt.Errorf("get discussion detail failed: %w", err)
+		return "", "", nil, fmt.Errorf("get discussion detail failed: %w", err)
 	}
 
 	// 2. 创建提示词模版并生成
@@ -115,9 +115,9 @@ func (p *Prompt) GeneratePostPrompt(ctx context.Context, discID uint) (string, s
 
 	prompt, err := template.BuildPostPrompt()
 	if err != nil {
-		return "", "", fmt.Errorf("generate prompt failed: %w", err)
+		return "", "", nil, fmt.Errorf("generate prompt failed: %w", err)
 	}
 
 	logger.With("prompt", prompt).Debug("generate prompt success")
-	return template.Question(), prompt, nil
+	return template.Question(), prompt, discussion.GroupStrs(), nil
 }

@@ -41,10 +41,11 @@ type User struct {
 type UserListReq struct {
 	model.Pagination
 
-	OrgID   *uint   `form:"org_id"`
-	OrgName *string `form:"org_name"`
-	Name    *string `form:"name"`
-	Email   *string `form:"email"`
+	OrgID   *uint           `form:"org_id"`
+	OrgName *string         `form:"org_name"`
+	Name    *string         `form:"name"`
+	Email   *string         `form:"email"`
+	Role    *model.UserRole `form:"role"`
 }
 
 type UserListItem struct {
@@ -70,6 +71,7 @@ func (u *User) List(ctx context.Context, req UserListReq) (*model.ListRes[UserLi
 		repo.QueryWithEqual("invisible", false),
 		repo.QueryWithEqual("org_ids", req.OrgID, repo.EqualOPValIn),
 		repo.QueryWithILike("email", req.Email),
+		repo.QueryWithEqual("role", req.Role),
 	)
 	if err != nil {
 		return nil, err
@@ -80,6 +82,7 @@ func (u *User) List(ctx context.Context, req UserListReq) (*model.ListRes[UserLi
 		repo.QueryWithEqual("invisible", false),
 		repo.QueryWithEqual("org_ids", req.OrgID, repo.EqualOPValIn),
 		repo.QueryWithILike("email", req.Email),
+		repo.QueryWithEqual("role", req.Role),
 	)
 	if err != nil {
 		return nil, err
@@ -508,13 +511,14 @@ func (u *User) Register(ctx context.Context, req UserRegisterReq) error {
 	}
 
 	user := model.User{
-		Name:     req.Name,
-		Email:    req.Email,
-		Builtin:  false,
-		Password: hashPass,
-		Role:     model.UserRoleUser,
-		Key:      uuid.NewString(),
-		OrgIDs:   model.Int64Array{int64(org.ID)},
+		Name:      req.Name,
+		Email:     req.Email,
+		Builtin:   false,
+		Password:  hashPass,
+		Role:      model.UserRoleUser,
+		Key:       uuid.NewString(),
+		OrgIDs:    model.Int64Array{int64(org.ID)},
+		WebNotify: true,
 	}
 
 	if auth.NeedReview {

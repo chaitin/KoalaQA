@@ -42,8 +42,8 @@ import {
 } from '@mui/material'
 import { useBoolean } from 'ahooks'
 import Link from 'next/link'
-import { useParams, useRouter } from 'next/navigation'
-import { useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { useParams, useRouter, usePathname } from 'next/navigation'
+import { useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react'
 
 // 添加CSS动画样式
 const animationStyles = `
@@ -82,10 +82,18 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const [isHoveringFollow, setIsHoveringFollow] = useState(false)
   const { clearCache } = useListPageCache()
   const router = useRouter()
+  const pathname = usePathname()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const forums = useForumStore((s) => s.forums)
   const { id, route_name }: { id: string; route_name?: string } = (useParams() as any) || { id: '' }
+  
+  // 刷新页面但不增加浏览次数
+  const refreshWithoutView = useCallback(() => {
+    const url = new URL(pathname, window.location.origin)
+    url.searchParams.set('refresh', 'true')
+    router.replace(url.pathname + url.search)
+  }, [pathname, router])
   const tagNames = useMemo(() => {
     if (!data.tag_ids || !tags.length) return []
     return tags.filter((tag) => data.tag_ids?.includes(tag.id || 0)).map((tag) => tag.name) as string[]
@@ -160,7 +168,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
             resolve: ModelDiscussionState.DiscussionStateInProgress,
           },
         ).then(() => {
-          router.refresh()
+          refreshWithoutView()
         })
       },
     })
@@ -178,7 +186,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
             resolve: ModelDiscussionState.DiscussionStateResolved,
           },
         ).then(() => {
-          router.refresh()
+          refreshWithoutView()
         })
       },
     })
@@ -192,7 +200,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
       okButtonProps: { color: 'warning' },
       onOk: async () => {
         await putDiscussionDiscIdClose({ discId: data.uuid + '' }).then(() => {
-          router.refresh()
+          refreshWithoutView()
         })
       },
     })
@@ -212,7 +220,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           // 注意：点赞别人的文章不给自己加积分，只给被点赞者加积分
           // 如果当前用户是文章作者，会收到通知，这里不显示积分提示
         }
-        router.refresh()
+        refreshWithoutView()
       } catch (error) {
         console.error('点赞操作失败:', error)
       }
@@ -242,7 +250,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                 follower: followData.follower,
               })
             }
-            router.refresh()
+            refreshWithoutView()
           } catch (error) {
             console.error('关注操作失败:', error)
           }
@@ -267,7 +275,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
           discId: data.uuid || '',
         })
         Message.success('加入 AI 学习成功')
-        router.refresh()
+        refreshWithoutView()
       },
     })
   }
@@ -294,7 +302,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
         questionData={data}
         forumInfo={forumInfo}
         onSuccess={() => {
-          router.refresh()
+          refreshWithoutView()
         }}
       />
       <Menu

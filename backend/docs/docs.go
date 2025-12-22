@@ -3768,6 +3768,27 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "enum": [
+                            0,
+                            1,
+                            2,
+                            3,
+                            4,
+                            5
+                        ],
+                        "type": "integer",
+                        "x-enum-varnames": [
+                            "UserRoleUnknown",
+                            "UserRoleAdmin",
+                            "UserRoleOperator",
+                            "UserRoleUser",
+                            "UserRoleGuest",
+                            "UserRoleMax"
+                        ],
+                        "name": "role",
+                        "in": "query"
+                    },
+                    {
                         "minimum": 1,
                         "type": "integer",
                         "name": "size",
@@ -4516,9 +4537,6 @@ const docTemplate = `{
         "/discussion/{disc_id}": {
             "get": {
                 "description": "detail discussion",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -4527,6 +4545,11 @@ const docTemplate = `{
                 ],
                 "summary": "detail discussion",
                 "parameters": [
+                    {
+                        "type": "boolean",
+                        "name": "no_view",
+                        "in": "query"
+                    },
                     {
                         "type": "string",
                         "description": "disc_id",

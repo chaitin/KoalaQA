@@ -101,6 +101,13 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 		err = t.pub.Publish(ctx, topic.TopicKBDocumentRag, pubMsg)
 		if err != nil {
 			logger.WithErr(err).With("pub_msg", pubMsg).Error("pub msg failed")
+			e := t.repoDoc.Update(ctx, map[string]any{
+				"status":  model.DocStatusExportFailed,
+				"message": err.Error(),
+			}, repo.QueryWithEqual("id", dbDoc.ID))
+			if e != nil {
+				logger.WithErr(err).Warn("update task status failed")
+			}
 			return err
 		}
 
@@ -108,7 +115,7 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 		logger.Warn("doc export task failed")
 
 		err = t.repoDoc.Update(ctx, map[string]any{
-			"status":       model.DocStatusExportSuccess,
+			"status":       model.DocStatusExportFailed,
 			"message":      taskInfo.Err,
 			"platform_opt": model.NewJSONB(taskInfo.PlatformOpt),
 			"file_type":    taskInfo.DocType,

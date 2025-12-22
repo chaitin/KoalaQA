@@ -85,7 +85,7 @@ func (a *Blog) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 		}
 	}
 
-	_, prompt, err := a.prompt.GeneratePostPrompt(ctx, data.DiscID)
+	_, prompt, _, err := a.prompt.GeneratePostPrompt(ctx, data.DiscID)
 	if err != nil {
 		logger.WithErr(err).Error("generate post prompt failed")
 		return nil

@@ -658,7 +658,11 @@ func (d *Discussion) KeywordAnswer(ctx context.Context, req DiscussionKeywordAns
 	return content, nil
 }
 
-func (d *Discussion) DetailByUUID(ctx context.Context, uid uint, uuid string) (*model.DiscussionDetail, error) {
+type DetailByUUIDReq struct {
+	NoView bool `form:"no_view"`
+}
+
+func (d *Discussion) DetailByUUID(ctx context.Context, uid uint, uuid string, req DetailByUUIDReq) (*model.DiscussionDetail, error) {
 	discussion, err := d.in.DiscRepo.DetailByUUID(ctx, uid, uuid)
 	if err != nil {
 		return nil, err
@@ -713,7 +717,10 @@ func (d *Discussion) DetailByUUID(ctx context.Context, uid uint, uuid string) (*
 		}
 	}
 
-	go d.IncrementView(uuid)
+	if !req.NoView {
+		go d.IncrementView(uuid)
+	}
+
 	return discussion, nil
 }
 

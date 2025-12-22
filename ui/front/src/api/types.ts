@@ -10,12 +10,10 @@
  * ---------------------------------------------------------------
  */
 
-export enum TopicTaskStatus {
-  TaskStatusPending = "pending",
-  TaskStatusInProgress = "in_process",
-  TaskStatusCompleted = "completed",
-  TaskStatusFailed = "failed",
-  TaskStatusTimeout = "timeout",
+export enum TopicKBSpaceUpdateType {
+  KBSpaceUpdateTypeAll = 0,
+  KBSpaceUpdateTypeIncr = 1,
+  KBSpaceUpdateTypeFailed = 2,
 }
 
 export enum SvcDiscussionListFilter {
@@ -391,11 +389,6 @@ export interface ModelDiscussionTag {
   updated_at?: number;
 }
 
-export interface ModelExportOpt {
-  file_type?: string;
-  space_id?: string;
-}
-
 export interface ModelForumGroups {
   group_ids?: number[];
   type?: ModelDiscussionType;
@@ -439,6 +432,7 @@ export interface ModelKBDocumentDetail {
   doc_id?: string;
   doc_type?: ModelDocType;
   export_opt?: ModelJSONBModelExportOpt;
+  export_task_id?: string;
   file_type?: ModelFileType;
   id?: number;
   json?: string;
@@ -767,7 +761,6 @@ export interface SvcDiscussionCreateReq {
   forum_id?: number;
   group_ids?: number[];
   summary?: string;
-  tags?: string[];
   title: string;
   type?: ModelDiscussionType;
 }
@@ -890,9 +883,9 @@ export interface SvcListSpaceFolderItem {
   doc_id?: string;
   failed?: number;
   id?: number;
-  pending?: number;
   rag_id?: string;
   status?: ModelDocStatus;
+  success?: number;
   title?: string;
   total?: number;
   updated_at?: number;
@@ -917,6 +910,7 @@ export interface SvcListSpaceKBItem {
 export interface SvcListWebItem {
   created_at?: number;
   desc?: string;
+  file_type?: ModelFileType;
   id?: number;
   status?: ModelDocStatus;
   title?: string;
@@ -1058,10 +1052,6 @@ export interface SvcStatVisitRes {
   uv?: number;
 }
 
-export interface SvcTaskReq {
-  ids: string[];
-}
-
 export interface SvcURLExportReq {
   desc?: string;
   doc_id: string;
@@ -1079,7 +1069,7 @@ export interface SvcUpdatePromptReq {
 }
 
 export interface SvcUpdateSpaceFolderReq {
-  doc_id?: number;
+  update_type?: TopicKBSpaceUpdateType;
 }
 
 export interface SvcUpdateSpaceReq {
@@ -1186,28 +1176,6 @@ export interface SvcWebhookUpdateReq {
    */
   type: ModelWebhookType;
   url: string;
-}
-
-export interface TopicTaskMeta {
-  access_token?: string;
-  app_id?: string;
-  dbdocID?: number;
-  desc?: string;
-  docType?: ModelDocType;
-  doc_id?: string;
-  doc_type?: ModelFileType;
-  err?: string;
-  exportOpt?: ModelExportOpt;
-  kbid?: number;
-  parentID?: number;
-  phone?: string;
-  platform?: PlatformPlatformType;
-  platform_id?: string;
-  secret?: string;
-  status?: TopicTaskStatus;
-  task_id?: string;
-  title?: string;
-  url?: string;
 }
 
 export interface PutAdminBotPayload {
@@ -1450,6 +1418,7 @@ export interface GetAdminKbKbIdSpaceSpaceIdFolderFolderIdDocParams {
   page?: number;
   /** @min 1 */
   size?: number;
+  status?: (0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8)[];
   title?: string;
   /** kb_id */
   kbId: number;
@@ -1565,6 +1534,7 @@ export interface GetAdminUserParams {
   org_name?: string;
   /** @min 1 */
   page?: number;
+  role?: 0 | 1 | 2 | 3 | 4 | 5;
   /** @min 1 */
   size?: number;
 }
@@ -1636,6 +1606,7 @@ export interface PostDiscussionUploadPayload {
 }
 
 export interface GetDiscussionDiscIdParams {
+  no_view?: boolean;
   /** disc_id */
   discId: string;
 }
