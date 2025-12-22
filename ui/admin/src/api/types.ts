@@ -10,14 +10,6 @@
  * ---------------------------------------------------------------
  */
 
-export enum TopicTaskStatus {
-  TaskStatusPending = "pending",
-  TaskStatusInProgress = "in_process",
-  TaskStatusCompleted = "completed",
-  TaskStatusFailed = "failed",
-  TaskStatusTimeout = "timeout",
-}
-
 export enum TopicKBSpaceUpdateType {
   KBSpaceUpdateTypeAll = 0,
   KBSpaceUpdateTypeIncr = 1,
@@ -293,7 +285,7 @@ export interface ModelDiscussionComment {
 }
 
 export interface ModelDiscussionDetail {
-  alter?: boolean;
+  alert?: boolean;
   associate?: ModelDiscussionListItem;
   associate_id?: number;
   bot_unknown?: boolean;
@@ -397,11 +389,6 @@ export interface ModelDiscussionTag {
   updated_at?: number;
 }
 
-export interface ModelExportOpt {
-  file_type?: string;
-  space_id?: string;
-}
-
 export interface ModelForumGroups {
   group_ids?: number[];
   type?: ModelDiscussionType;
@@ -445,6 +432,7 @@ export interface ModelKBDocumentDetail {
   doc_id?: string;
   doc_type?: ModelDocType;
   export_opt?: ModelJSONBModelExportOpt;
+  export_task_id?: string;
   file_type?: ModelFileType;
   id?: number;
   json?: string;
@@ -773,7 +761,6 @@ export interface SvcDiscussionCreateReq {
   forum_id?: number;
   group_ids?: number[];
   summary?: string;
-  tags?: string[];
   title: string;
   type?: ModelDiscussionType;
 }
@@ -923,6 +910,7 @@ export interface SvcListSpaceKBItem {
 export interface SvcListWebItem {
   created_at?: number;
   desc?: string;
+  file_type?: ModelFileType;
   id?: number;
   status?: ModelDocStatus;
   title?: string;
@@ -1064,10 +1052,6 @@ export interface SvcStatVisitRes {
   uv?: number;
 }
 
-export interface SvcTaskReq {
-  ids: string[];
-}
-
 export interface SvcURLExportReq {
   desc?: string;
   doc_id: string;
@@ -1192,28 +1176,6 @@ export interface SvcWebhookUpdateReq {
    */
   type: ModelWebhookType;
   url: string;
-}
-
-export interface TopicTaskMeta {
-  access_token?: string;
-  app_id?: string;
-  dbdocID?: number;
-  desc?: string;
-  docType?: ModelDocType;
-  doc_id?: string;
-  doc_type?: ModelFileType;
-  err?: string;
-  exportOpt?: ModelExportOpt;
-  kbid?: number;
-  parentID?: number;
-  phone?: string;
-  platform?: PlatformPlatformType;
-  platform_id?: string;
-  secret?: string;
-  status?: TopicTaskStatus;
-  task_id?: string;
-  title?: string;
-  url?: string;
 }
 
 export interface PutAdminBotPayload {
@@ -1572,6 +1534,7 @@ export interface GetAdminUserParams {
   org_name?: string;
   /** @min 1 */
   page?: number;
+  role?: 0 | 1 | 2 | 3 | 4 | 5;
   /** @min 1 */
   size?: number;
 }
@@ -1643,6 +1606,7 @@ export interface PostDiscussionUploadPayload {
 }
 
 export interface GetDiscussionDiscIdParams {
+  no_view?: boolean;
   /** disc_id */
   discId: string;
 }

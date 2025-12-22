@@ -316,7 +316,7 @@ export const getDiscussionDiscId = (
   >({
     path: `/discussion/${discId}`,
     method: "GET",
-    type: ContentType.Json,
+    query: query,
     format: "json",
     ...params,
   });

@@ -24,10 +24,8 @@ import {
   SvcFileExportReq,
   SvcSitemapExportReq,
   SvcSitemapListReq,
-  SvcTaskReq,
   SvcURLExportReq,
   SvcURLListReq,
-  TopicTaskMeta,
 } from "./types";
 
 /**
@@ -143,36 +141,6 @@ export const postAdminKbDocumentSitemapList = (
     }
   >({
     path: `/admin/kb/document/sitemap/list`,
-    method: "POST",
-    body: req,
-    type: ContentType.Json,
-    format: "json",
-    ...params,
-  });
-
-/**
- * No description
- *
- * @tags document
- * @name PostAdminKbDocumentTask
- * @summary get task info
- * @request POST:/admin/kb/document/task
- * @response `200` `(ContextResponse & {
-    data?: (TopicTaskMeta)[],
-
-})` OK
- */
-
-export const postAdminKbDocumentTask = (
-  req: SvcTaskReq,
-  params: RequestParams = {},
-) =>
-  request<
-    ContextResponse & {
-      data?: TopicTaskMeta[];
-    }
-  >({
-    path: `/admin/kb/document/task`,
     method: "POST",
     body: req,
     type: ContentType.Json,
