@@ -717,7 +717,7 @@ func (d *Discussion) DetailByUUID(ctx context.Context, uid uint, uuid string, re
 		}
 	}
 
-	if req.NoView {
+	if !req.NoView {
 		go d.IncrementView(uuid)
 	}
 
