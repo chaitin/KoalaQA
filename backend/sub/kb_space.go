@@ -127,6 +127,8 @@ func (k *kbSpace) handleInsert(ctx context.Context, logger *glog.Logger, msg top
 	}
 	defer k.done(msg.FolderID)
 
+	logger.Info("begin insert kb_space")
+
 	folder, err := k.getFolder(ctx, msg.KBID, msg.FolderID)
 	if err != nil {
 		logger.WithErr(err).Warn("get folder failed")
@@ -183,6 +185,8 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 		return nil
 	}
 	defer k.done(msg.FolderID)
+
+	logger.Info("begin update kb_space")
 
 	folder, err := k.getFolder(ctx, msg.KBID, msg.FolderID)
 	if err != nil {
