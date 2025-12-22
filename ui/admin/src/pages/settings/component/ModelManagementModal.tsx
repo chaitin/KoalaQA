@@ -76,22 +76,22 @@ const ModelManagementModal = ({
     return configs;
   }, [modelList]);
 
-  const getModel = useCallback(() => {
-    getAdminModelList().then(res => {
-      const filteredModels = res.filter(item => model.includes(item.type as any));
-      setModelList(filteredModels);
-      // 如果已经有配置的模型，且是强制模式，则调用onConfigured回调
-      if (mandatory && filteredModels.length > 0 && onConfigured) {
-        onConfigured();
-      }
-    });
-  }, [mandatory, onConfigured]);
+  const getModel = useCallback(async () => {
+    const res = await getAdminModelList();
+    const filteredModels = res.filter(item => model.includes(item.type as any));
+    setModelList(filteredModels);
+  }, []);
 
   useEffect(() => {
     getModel();
   }, [getModel]);
-  const handleRefresh = () => {
-    getModel();
+  
+  const handleRefresh = async () => {
+    await getModel();
+    // 保存模型后，通知父组件更新配置状态
+    if (onConfigured) {
+      onConfigured();
+    }
   };
 
   if (!open) return null;

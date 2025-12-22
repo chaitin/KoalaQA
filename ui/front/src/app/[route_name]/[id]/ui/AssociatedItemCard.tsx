@@ -89,9 +89,20 @@ const AssociatedItemCard = ({ item, routeName, statusChip }: AssociatedItemCardP
                   fontSize: '12px',
                   color: 'rgba(33, 34, 45, 0.50)',
                   fontWeight: 400,
+                  mx: 0.5,
                 }}
               >
-                · 发布于
+                ·
+              </Typography>
+              <Typography
+                variant='caption'
+                sx={{
+                  fontSize: '12px',
+                  color: 'rgba(33, 34, 45, 0.50)',
+                  fontWeight: 400,
+                }}
+              >
+                发布于
               </Typography>
               <TimeDisplay
                 timestamp={item.created_at || item.updated_at || 0}

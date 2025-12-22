@@ -117,9 +117,9 @@ const AdminDocument = () => {
       title: '类型',
       dataIndex: 'file_type',
       render: (_, record) => {
-        return record?.file_type !== undefined
-          ? fileType[record.file_type as keyof typeof fileType] || record?.file_type
-          : '-';
+        return !record?.file_type 
+          ? '-'
+          : fileType[record.file_type as keyof typeof fileType] || record?.file_type;
       },
     },
     {
