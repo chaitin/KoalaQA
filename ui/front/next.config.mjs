@@ -23,6 +23,15 @@ const nextConfig = {
     NEXT_PUBLIC_GIT_SHA: process.env.NEXT_PUBLIC_GIT_SHA || GIT_SHA || 'dev',
   },
 
+  // 服务器组件外部包配置：告诉 Next.js 这些包不应该在服务器端被打包
+  // 这对于包含客户端专用依赖（如 jsdom）的包非常重要
+  // 注意：Turbopack 可能不完全支持此配置，如果问题持续，考虑禁用 --turbo 标志
+  serverComponentsExternalPackages: [
+    'jsdom',
+    'html-to-image',
+    '@ctzhian/tiptap', // 这个包可能间接依赖 jsdom
+  ],
+
   // 生产环境使用 standalone 输出
   output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
 
@@ -126,6 +135,9 @@ const nextConfig = {
   // 配置需要转译的外部包
   transpilePackages: ['@ctzhian/tiptap', '@ctzhian/ui'],
 
+  // 注意：Turbopack 不支持 webpack 配置
+  // 使用 serverComponentsExternalPackages 来排除服务器端不需要的包
+  // 如果需要使用 webpack 配置，请禁用 Turbopack（移除 --turbo 标志或设置环境变量）
   
   // 性能日志
   logging: {

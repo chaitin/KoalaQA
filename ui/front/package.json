@@ -4,7 +4,8 @@
   "private": true,
   "license": "AGPL-3.0",
   "scripts": {
-    "dev": "next dev --turbo",
+    "dev": "next dev",
+    "dev:turbo": "next dev --turbo",
     "build": "next build",
     "start": "next start",
     "start:debugger": "NODE_OPTIONS=--inspect next start",
@@ -15,7 +16,7 @@
     "icon": "node ./script/downLoadIcon.js"
   },
   "dependencies": {
-    "@ctzhian/tiptap": "^2.9.4",
+    "@ctzhian/tiptap": "^2.9.5",
     "@ctzhian/ui": "^7.0.5",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
