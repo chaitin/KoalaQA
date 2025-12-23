@@ -73,7 +73,7 @@ type KBDocument struct {
 	Platform     platform.PlatformType `json:"platform" gorm:"column:platform"`
 	PlatformOpt  JSONB[PlatformOpt]    `json:"platform_opt" gorm:"column:platform_opt;type:jsonb"`
 	ExportOpt    JSONB[ExportOpt]      `json:"export_opt" gorm:"column:export_opt;type:jsonb"`
-	ExportTaskID string                `json:"export_task_id" gorm:"column:export_task_id;type:text;uniqueIndex"`
+	ExportTaskID string                `json:"export_task_id" gorm:"column:export_task_id;type:text;uniqueIndex;default:null"`
 	DocID        string                `json:"doc_id" gorm:"column:doc_id;type:text"`
 	Title        string                `json:"title" gorm:"column:title;type:text"`
 	Desc         string                `json:"desc" gorm:"column:desc;type:text"`
