@@ -90,8 +90,9 @@ type AuthConfigOauth struct {
 }
 
 type SystemBrand struct {
-	Logo string `json:"logo"`
-	Text string `json:"text"`
+	Logo  string `json:"logo"`
+	Text  string `json:"text"`
+	Theme string `json:"theme"`
 }
 
 type SystemDiscussion struct {

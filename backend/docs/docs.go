@@ -8096,6 +8096,9 @@ const docTemplate = `{
                 },
                 "text": {
                     "type": "string"
+                },
+                "theme": {
+                    "type": "string"
                 }
             }
         },
