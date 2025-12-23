@@ -380,7 +380,7 @@ func (a *anydoc) AuthURL(ctx context.Context, plat platform.PlatformType, reqDat
 	if err != nil {
 		return "", err
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s%s", a.address, p.ExportURL()), bytes.NewReader(reqBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s%s", a.address, p.AuthURL()), bytes.NewReader(reqBytes))
 	if err != nil {
 		return "", err
 	}
@@ -416,7 +416,7 @@ func (a *anydoc) UserInfo(ctx context.Context, plat platform.PlatformType, reqDa
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s%s", a.address, p.ExportURL()), bytes.NewReader(reqBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s%s", a.address, p.UserInfoURL()), bytes.NewReader(reqBytes))
 	if err != nil {
 		return nil, err
 	}
