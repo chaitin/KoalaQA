@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"encoding/gob"
 	"errors"
 	"net/http"
 
@@ -189,6 +190,11 @@ type docUserRes struct {
 	docStateSession
 
 	UserInfo *anydoc.UserInfoRes
+}
+
+func init() {
+	gob.Register(docStateSession{})
+	gob.Register(docUserRes{})
 }
 
 // FeishuAuthURL
