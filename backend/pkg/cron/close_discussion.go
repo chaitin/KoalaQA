@@ -47,6 +47,7 @@ func (c *closeDiscussion) Run() {
 		"resolved_at": time.Now(),
 	}, repo.QueryWithEqual("resolved", model.DiscussionStateNone),
 		repo.QueryWithEqual("created_at", util.DayTrunc(time.Now().AddDate(0, 0, -intAutoClose)), repo.EqualOPLT),
+		repo.QueryWithEqual("type", model.DiscussionTypeQA),
 	)
 	if err != nil {
 		c.logger.WithErr(err).With("day_before", sysDisc.AutoClose).Warn("close disc failed")
