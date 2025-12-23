@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
@@ -94,6 +95,9 @@ func (u *UserPointRecord) CreateRecord(ctx context.Context, record model.UserPoi
 			var lastRecord model.UserPointRecord
 			err := tx.Model(&model.UserPointRecord{}).Where("user_id = ? AND type = ? AND foreign_id = ? AND from_id = ?", record.UserID, record.Type, record.ForeignID, record.FromID).Order("created_at DESC").First(&lastRecord).Error
 			if err != nil {
+				if errors.Is(err, database.ErrRecordNotFound) {
+					return nil
+				}
 				return err
 			}
 
