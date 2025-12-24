@@ -614,7 +614,7 @@ const Article = ({
                 </MenuItem>
                 <MenuItem
                   onClick={() => {
-                    handleFilterChange('resolved', resolved === '0' ? null : 0)
+                    handleFilterChange('resolved', resolved === '1' ? null : 1)
                   }}
                   selected={resolved === '1'}
                   sx={{
