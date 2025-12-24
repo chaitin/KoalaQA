@@ -122,6 +122,11 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 
 		if mq.MessageMetadata(ctx).NumDelivered == mq.MessageMaxDeliver {
 			logger.Info("ai answer error, notify admin")
+			d.batcher.Send(model.StatInfo{
+				Type: model.StatTypeBotUnknown,
+				Ts:   util.HourTrunc(disc.CreatedAt.Time()).Unix(),
+				Key:  data.DiscUUID,
+			})
 			d.pub.Publish(ctx, topic.TopicMessageNotify, topic.MsgMessageNotify{
 				DiscussHeader: disc.Header(),
 				Type:          model.MsgNotifyTypeBotUnknown,
@@ -168,11 +173,6 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 			Ts:   util.HourTrunc(disc.CreatedAt.Time()).Unix(),
 			Key:  data.DiscUUID,
 		})
-		disc, err := d.disc.GetByID(ctx, data.DiscID)
-		if err != nil {
-			logger.WithErr(err).Error("get discussion failed")
-			return nil
-		}
 		d.pub.Publish(ctx, topic.TopicMessageNotify, topic.MsgMessageNotify{
 			DiscussHeader: disc.Header(),
 			Type:          model.MsgNotifyTypeBotUnknown,
