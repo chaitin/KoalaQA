@@ -332,7 +332,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
     if (!user.web_notify) return
     const loadWebNotifyStatus = async () => {
       try {
-        const enabled = user.notify_web
+        const enabled = user.web_notify
         if (typeof enabled === 'boolean') {
           // 如果启用了网页通知，请求浏览器通知权限
           if (enabled && isNotificationSupported()) {
