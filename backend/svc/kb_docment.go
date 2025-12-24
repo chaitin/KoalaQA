@@ -51,22 +51,6 @@ type KBDocument struct {
 	logger        *glog.Logger
 }
 
-type FeishuListReq struct {
-	UUID        string `json:"uuid"`
-	AppID       string `json:"app_id"`
-	AppSecret   string `json:"app_secret"`
-	AccessToken string `json:"access_token"`
-	SpaceID     string `json:"space_id"`
-}
-
-func (d *KBDocument) FeishuList(ctx context.Context, req FeishuListReq) (*anydoc.ListRes, error) {
-	return d.anydoc.List(ctx, platform.PlatformFeishu,
-		anydoc.ListWithUUID(req.UUID),
-		anydoc.ListWithAppInfo(req.AppID, req.AppSecret, req.AccessToken),
-		anydoc.ListWithSpaceID(req.SpaceID),
-	)
-}
-
 type FeishuAuthURLReq struct {
 	ID           uint   `json:"id"`
 	ClientID     string `json:"client_id" binding:"required"`
@@ -587,7 +571,7 @@ func (d *KBDocument) checkPlatformOpt(p platform.PlatformType, opt model.Platfor
 			return errors.New("empty access token")
 		}
 	case platform.PlatformFeishu:
-		if opt.AppID == "" || opt.Secret == "" || opt.AccessToken == "" {
+		if opt.AppID == "" || opt.Secret == "" || (opt.RefreshToken == "" && opt.AccessToken == "") {
 			return errors.New("empty cerd data")
 		}
 	case platform.PlatformDingtalk:

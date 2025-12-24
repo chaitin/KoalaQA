@@ -26,12 +26,13 @@ import (
 )
 
 type listOpt struct {
-	uuid        string
-	appID       string
-	appSecret   string
-	accessToken string
-	phone       string
-	spaceID     string
+	uuid         string
+	appID        string
+	appSecret    string
+	accessToken  string
+	refreshToken string
+	phone        string
+	spaceID      string
 
 	url string
 
@@ -39,14 +40,6 @@ type listOpt struct {
 }
 
 type listOptFunc func(o *listOpt)
-
-func ListWithAppInfo(appID, appSecret, accessToken string) listOptFunc {
-	return func(o *listOpt) {
-		o.appID = appID
-		o.appSecret = appSecret
-		o.accessToken = accessToken
-	}
-}
 
 func ListWithSpaceID(spaceID string) listOptFunc {
 	return func(o *listOpt) {
@@ -78,6 +71,7 @@ func ListWithPlatformOpt(p model.PlatformOpt) listOptFunc {
 		o.appID = p.AppID
 		o.appSecret = p.Secret
 		o.accessToken = p.AccessToken
+		o.refreshToken = p.RefreshToken
 		o.phone = p.Phone
 	}
 }
@@ -203,6 +197,7 @@ func (a *anydoc) List(ctx context.Context, plat platform.PlatformType, optFuncs 
 		query.Set("app_id", o.appID)
 		query.Set("app_secret", o.appSecret)
 		query.Set("access_token", o.accessToken)
+		query.Set("refresh_token", o.refreshToken)
 		query.Set("space_id", o.spaceID)
 		query.Set("url", o.url)
 		query.Set("phone", o.phone)
@@ -231,14 +226,15 @@ func (a *anydoc) List(ctx context.Context, plat platform.PlatformType, optFuncs 
 		}
 
 		m := map[string]any{
-			"uuid":         o.uuid,
-			"app_id":       o.appID,
-			"app_secret":   o.appSecret,
-			"access_token": o.accessToken,
-			"space_id":     o.spaceID,
-			"filename":     filename,
-			"url":          o.url,
-			"phone":        o.phone,
+			"uuid":          o.uuid,
+			"app_id":        o.appID,
+			"app_secret":    o.appSecret,
+			"access_token":  o.accessToken,
+			"refresh_token": o.refreshToken,
+			"space_id":      o.spaceID,
+			"filename":      filename,
+			"url":           o.url,
+			"phone":         o.phone,
 		}
 
 		if plat == platform.PlatformDingtalk {
