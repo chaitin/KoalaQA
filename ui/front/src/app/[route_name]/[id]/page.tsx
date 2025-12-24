@@ -1,7 +1,6 @@
 import { getDiscussionDiscId } from '@/api'
 import { Alert, Box, Stack, Typography } from '@mui/material'
 import { Metadata } from 'next'
-import { headers } from 'next/headers'
 import { cache, Suspense } from 'react'
 import Content from './ui/content'
 import TitleCard from './ui/titleCard'
@@ -9,6 +8,7 @@ import DetailSidebarWrapper from './ui/DetailSidebarWrapper'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import ScrollReset from '@/components/ScrollReset'
 import DiscussionAlert from './ui/DiscussionAlert'
+import { getServerGroup } from '@/utils/serverGroupCache'
 
 // 动态生成 metadata
 export async function generateMetadata(props: {
@@ -60,7 +60,7 @@ const DiscussDetailPage = async (props: {
   // 如果是刷新操作（通过 searchParams.refresh 标记），则不增加浏览次数
   const isRefresh = searchParams.refresh === 'true'
   const result = await fetchDiscussionDetailCached(id, isRefresh)
-  // 处理错误情况
+
   if (!result.success) {
     return (
       <Box
@@ -82,7 +82,6 @@ const DiscussDetailPage = async (props: {
       </Box>
     )
   }
-
   const discussion = result.data
   const shouldShowAlert = Boolean(discussion?.alert ?? (discussion as any)?.alter)
 
@@ -102,7 +101,10 @@ const DiscussDetailPage = async (props: {
       </Box>
     )
   }
-
+  const groups = await getServerGroup(result.data?.forum_id)
+  discussion.groups = discussion.groups?.filter(({ id }) =>
+    groups?.items?.some((group) => group.items?.some((item) => item.id === id)),
+  )
   return (
     <>
       <ScrollReset />

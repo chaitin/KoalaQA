@@ -196,7 +196,7 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 		d.pub.Publish(ctx, topic.TopicMessageNotify, notifyMsg)
 		d.batcher.Send(model.StatInfo{
 			Type: model.StatTypeBotUnknownComment,
-			Ts:   util.HourTrunc(time.Now()).Unix(),
+			Ts:   util.HourTrunc(disc.CreatedAt.Time()).Unix(),
 			Key:  disc.UUID,
 		})
 	}

@@ -7146,6 +7146,9 @@ const docTemplate = `{
         "model.DiscussionGroup": {
             "type": "object",
             "properties": {
+                "group_id": {
+                    "type": "integer"
+                },
                 "id": {
                     "type": "integer"
                 },

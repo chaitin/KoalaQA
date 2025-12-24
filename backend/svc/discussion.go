@@ -202,7 +202,7 @@ func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req Discus
 	if ok {
 		d.in.Batcher.Send(model.StatInfo{
 			Type: statType,
-			Ts:   util.HourTrunc(time.Now()).Unix(),
+			Ts:   util.HourTrunc(disc.CreatedAt.Time()).Unix(),
 			Key:  disc.UUID,
 		})
 	}
@@ -1397,7 +1397,7 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 	if comment.Bot {
 		d.in.Batcher.Send(model.StatInfo{
 			Type: model.StatTypeBotAccept,
-			Ts:   util.HourTrunc(now).Unix(),
+			Ts:   util.HourTrunc(disc.CreatedAt.Time()).Unix(),
 			Key:  discUUID,
 		})
 	}
@@ -1405,7 +1405,7 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 	if disc.Resolved == model.DiscussionStateNone {
 		if err := d.in.DiscRepo.Update(ctx, map[string]any{
 			"resolved":    model.DiscussionStateResolved,
-			"resolved_at": model.Timestamp(time.Now().Unix()),
+			"resolved_at": model.Timestamp(now.Unix()),
 		}, repo.QueryWithEqual("id", disc.ID)); err != nil {
 			return err
 		}

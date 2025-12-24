@@ -143,6 +143,8 @@ services:
       - OSS_MINIO_SECRET_KEY=${OSS_SECRET_KEY}
       - OSS_MINIO_ENDPOINT=koala-qa-oss:9000
       - CRAWLER_AUTO_INSTALL=true
+    volumes:
+      - ./data/anydoc:/data
     networks:
       koala:
         ipv4_address: "${SUBNET_PREFIX:-169.254.15}.16"
@@ -166,7 +168,7 @@ services:
 
   raglite:
     container_name: koala-qa-raglite
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/raglite:v2.6.4
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/raglite:v2.7.1
     restart: always
     environment:
       - TZ=${TIMEZONE:-Asia/Shanghai}

@@ -2,7 +2,7 @@
 
 import { getDiscussionDiscId, ModelDiscussionType } from '@/api'
 import { postDiscussion, putDiscussionDiscId } from '@/api/Discussion'
-import { ModelDiscussionDetail, ModelGroupItemInfo, SvcDiscussionCreateReq, SvcDiscussionUpdateReq } from '@/api/types'
+import { ModelGroupItemInfo, SvcDiscussionCreateReq, SvcDiscussionUpdateReq } from '@/api/types'
 import { Card } from '@/components'
 import EditorWrap, { EditorWrapRef } from '@/components/editor'
 import Modal from '@/components/modal'
@@ -24,12 +24,12 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
+import { useRequest } from 'ahooks'
 import { useParams, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import z from 'zod'
 import DetailSidebarWrapper from '../[id]/ui/DetailSidebarWrapper'
-import { useRequest } from 'ahooks'
 
 // 确保每个分类下至少选择一个子选项（无分类数据时跳过）
 function validateGroupSelection(
@@ -88,7 +88,6 @@ export default function EditPage() {
   const urlType = params.get('type')
   const urlTitle = params.get('title')
   const editorRef = useRef<EditorWrapRef>(null)
-  const titleInitializedRef = useRef(false)
   const { getFilteredGroups } = useGroupData()
   const [summaryModalOpen, setSummaryModalOpen] = useState(false)
   const [summaryDraft, setSummaryDraft] = useState('')
@@ -136,9 +135,12 @@ export default function EditPage() {
     resolver: zodResolver(schema),
     mode: 'onBlur',
     defaultValues: {
-      title: '',
+      title: urlTitle ? decodeURIComponent(urlTitle) : discussion?.title || '',
       summary: '',
-      content: '',
+      content:
+        urlType === ModelDiscussionType.DiscussionTypeQA && !queryId && systemConfig?.content_placeholder
+          ? systemConfig.content_placeholder
+          : '',
       group_ids: [],
       type: ModelDiscussionType.DiscussionTypeBlog,
     },
@@ -188,20 +190,7 @@ export default function EditPage() {
   useEffect(() => {
     if (!queryId) return
     run()
-    // editorRef.current?.setContent(`<span data-tooltip='tip'>text2dsds</span>`)
   }, [queryId, run])
-
-  // 从 URL 参数读取 type 和 title（仅在新建时）
-  useEffect(() => {
-    if (!queryId && !titleInitializedRef.current) {
-      // 设置标题（如果 URL 中有）
-      setValue('type', urlType as any, { shouldDirty: true })
-      if (urlTitle) {
-        setValue('title', decodeURIComponent(urlTitle), { shouldDirty: true, shouldValidate: true })
-        titleInitializedRef.current = true
-      }
-    }
-  }, [queryId, urlType, urlTitle, setValue])
 
   // 当systemConfig加载完成时，如果是新建Q&A帖子且内容为空，则设置默认内容
   useEffect(() => {

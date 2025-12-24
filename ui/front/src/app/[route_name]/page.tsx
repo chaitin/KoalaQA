@@ -58,7 +58,7 @@ async function fetchForumData(route_name: string, searchParams: any) {
       discussionParams.only_mine = true
     }
     if (resolved !== undefined && resolved !== null) {
-      discussionParams.resolved = 0
+      discussionParams.resolved = 1
     }
 
     const groupParams = {

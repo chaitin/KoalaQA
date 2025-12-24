@@ -104,7 +104,10 @@ const KnowledgeBasePage = () => {
   const [selectedFolders, setSelectedFolders] = useState<string[]>([]);
   const [expandedDocs, setExpandedDocs] = useState<Set<string>>(new Set());
   const [docDetails, setDocDetails] = useState<Record<string, SvcListSpaceKBItem[]>>({});
-  const [selectedPlatform, setSelectedPlatform] = useState<number>(9);
+  const [selectedPlatform, setSelectedPlatform] = useState<number>(
+    PlatformPlatformType.PlatformPandawiki
+  );
+
   const [dingtalkStep, setDingtalkStep] = useState<number>(0);
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
   const [previewImageSrc, setPreviewImageSrc] = useState('');
@@ -221,11 +224,7 @@ const KnowledgeBasePage = () => {
     return 'syncing' as const;
   };
 
-  const {
-    data: folderDocListData,
-    run: fetchFolderDocList,
-    loading: folderDocListLoading,
-  } = useRequest(
+  const { data: folderDocListData, run: fetchFolderDocList } = useRequest(
     (folder?: SvcListSpaceFolderItem | null) => {
       console.log('API调用开始，folder:', folder, 'selectedSpaceId:', selectedSpaceId);
       if (!selectedSpaceId) {
@@ -236,13 +235,6 @@ const KnowledgeBasePage = () => {
         console.log('folder.id为空，跳过API调用');
         return Promise.resolve(null);
       }
-      console.log('执行API调用:', {
-        kbId: kb_id,
-        spaceId: selectedSpaceId,
-        folderId: String(folder.id),
-        page: 1,
-        size: 9999999,
-      });
       return getAdminKbKbIdSpaceSpaceIdFolderFolderIdDoc({
         kbId: kb_id,
         spaceId: selectedSpaceId,
@@ -382,7 +374,7 @@ const KnowledgeBasePage = () => {
     setCreateMenuAnchorEl(null);
   };
 
-  const handleCreateSpace = (platform: number = 9) => {
+  const handleCreateSpace = (platform: PlatformPlatformType) => {
     setSelectedPlatform(platform);
     setShowCreateModal(true);
     setEditSpace(null);
@@ -391,7 +383,7 @@ const KnowledgeBasePage = () => {
   };
 
   const handleCreatePandaWiki = () => {
-    handleCreateSpace(9); // PandaWiki platform type
+    handleCreateSpace(PlatformPlatformType.PlatformPandawiki); // PandaWiki platform type
   };
 
   const handleCreateDingTalk = () => {
@@ -420,6 +412,10 @@ const KnowledgeBasePage = () => {
     if (currentSpace) {
       setEditSpace(currentSpace);
       setDingtalkStep(1); // 编辑时只显示第一步
+      // 先设置平台类型，避免异步加载时的时序问题
+      if (currentSpace.platform !== undefined) {
+        setSelectedPlatform(currentSpace.platform);
+      }
       setShowCreateModal(true);
       // 获取完整的知识库详情以填充表单
       fetchSpaceDetail(currentSpace.id || 0);
@@ -587,7 +583,8 @@ const KnowledgeBasePage = () => {
   const handleModalCancel = () => {
     setShowCreateModal(false);
     setEditSpace(null);
-    setDingtalkStep(1);
+    setDingtalkStep(0);
+    setSelectedPlatform(PlatformPlatformType.PlatformPandawiki); // 重置为默认平台
     reset(spaceSchema.parse({}));
   };
 
@@ -1555,8 +1552,15 @@ const KnowledgeBasePage = () => {
         width={620}
       >
         {(() => {
-          const failed = docStatusFolder?.failed || 0;
-          const success = docStatusFolder?.success || 0;
+          // 根据 folderDocs 计算成功和失败的数量
+          const success = folderDocs.filter(
+            d => d.status === ModelDocStatus.DocStatusApplySuccess
+          ).length;
+          const failed = folderDocs.filter(
+            d =>
+              d.status === ModelDocStatus.DocStatusApplyFailed ||
+              d.status === ModelDocStatus.DocStatusExportFailed
+          ).length;
 
           const q = docStatusSearch.trim().toLowerCase();
           const docsAfterSearch = folderDocs.filter(d => (d.title || '').toLowerCase().includes(q));

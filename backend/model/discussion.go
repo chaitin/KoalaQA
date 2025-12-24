@@ -126,8 +126,9 @@ type DiscussionComment struct {
 }
 
 type DiscussionGroup struct {
-	ID   uint   `json:"id"`
-	Name string `json:"name"`
+	ID      uint   `json:"id"`
+	GroupID uint   `json:"group_id"`
+	Name    string `json:"name"`
 }
 type DiscussionDetail struct {
 	Discussion
