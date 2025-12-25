@@ -272,24 +272,6 @@ func (l *LLM) discussionPromptTemplate(ctx context.Context, discID uint, commID 
 	return llm.NewDiscussionPromptTemplate(discussion, allComments, newComment), nil
 }
 
-func (l *LLM) GenerateChatPrompt(ctx context.Context, discID uint, commID uint) (string, string, error) {
-	logger := l.logger.WithContext(ctx).With("discussion_id", discID, "comment_id", commID)
-	logger.Debug("start generate prompt")
-
-	template, err := l.discussionPromptTemplate(ctx, discID, commID)
-	if err != nil {
-		return "", "", err
-	}
-
-	prompt, err := template.BuildFullPrompt()
-	if err != nil {
-		return "", "", fmt.Errorf("generate prompt failed: %w", err)
-	}
-
-	logger.With("prompt", prompt).Debug("generate prompt success")
-	return template.Question(), prompt, nil
-}
-
 func (l *LLM) GeneratePostPrompt(ctx context.Context, discID uint) (string, string, error) {
 	logger := l.logger.WithContext(ctx).With("discussion_id", discID)
 	logger.Debug("start generate prompt")
