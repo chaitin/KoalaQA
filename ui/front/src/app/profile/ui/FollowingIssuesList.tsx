@@ -166,178 +166,168 @@ export default function FollowingIssuesList() {
   }
 
   return (
-    <Box
-      sx={{
-        borderRadius: 2,
-        pt: 3,
-        pb: 3,
-      }}
-    >
-      <Stack spacing={0}>
-        {error && (
-          <Card variant='outlined' sx={{ borderRadius: 2, p: 3, borderColor: 'error.light', mb: 2 }}>
-            <Typography variant='body2' color='error'>
-              {error}
-            </Typography>
-          </Card>
-        )}
+    <Stack spacing={0} sx={{ pt: 2 }}>
+      {error && (
+        <Card variant='outlined' sx={{ borderRadius: 2, p: 3, borderColor: 'error.light', mb: 2 }}>
+          <Typography variant='body2' color='error'>
+            {error}
+          </Typography>
+        </Card>
+      )}
 
-        {issues.map((issue) => {
-          const groupNames = getGroupNames(issue.group_ids)
-          const allTags = groupNames
-          const isIssuePost = issue.type === ModelDiscussionType.DiscussionTypeIssue
-          const postStatus = getPostStatus(issue)
+      {issues.map((issue) => {
+        const groupNames = getGroupNames(issue.group_ids)
+        const allTags = groupNames
+        const isIssuePost = issue.type === ModelDiscussionType.DiscussionTypeIssue
+        const postStatus = getPostStatus(issue)
 
-          return (
-            <Link
-              key={issue.id}
-              href={`/${params?.route_name as string}/${issue.uuid}`}
-              style={{ textDecoration: 'none', color: 'inherit' }}
+        return (
+          <Link
+            key={issue.id}
+            href={`/${params?.route_name as string}/${issue.uuid}`}
+            style={{ textDecoration: 'none', color: 'inherit' }}
+          >
+            <Box
+              sx={{
+                borderBottom: '1px solid #f3f4f6',
+                transition: 'all 0.2s',
+                cursor: 'pointer',
+                '&:hover': {
+                  bgcolor: theme=>theme.palette.primaryAlpha?.[3],
+                },
+                p: 2,
+              }}
             >
               <Box
                 sx={{
-                  borderBottom: '1px solid #f3f4f6',
-                  transition: 'all 0.2s',
-                  cursor: 'pointer',
-                  '&:hover': {
-                    bgcolor: 'rgba(0,99,151,0.03)',
-                  },
-                  p: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  mb: 2,
+                  gap: 1,
                 }}
               >
-                <Box
+                <DiscussionTypeChip size='small' type={issue.type} variant='default' />
+                <Ellipsis
                   sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    mb: 2,
-                    gap: 1,
+                    fontWeight: 700,
+                    color: '#111827',
+                    letterSpacing: '-0.01em',
+                    fontSize: '16px',
+                    lineHeight: '24px',
+                    '&:hover': { color: '#000000' },
+                    flex: 1,
                   }}
                 >
-                  <DiscussionTypeChip size='small' type={issue.type} variant='default' />
-                  <Ellipsis
-                    sx={{
-                      fontWeight: 700,
-                      color: '#111827',
-                      letterSpacing: '-0.01em',
-                      fontSize: '16px',
-                      lineHeight: '24px',
-                      '&:hover': { color: '#000000' },
-                      flex: 1,
-                    }}
-                  >
-                    {issue.title}
-                  </Ellipsis>
-                </Box>
+                  {issue.title}
+                </Ellipsis>
+              </Box>
 
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-                    {/* Issue 类型使用 IssueStatusChip 显示所有状态 */}
-                    {isIssuePost && shouldShowStatus(issue) && (
-                      <IssueStatusChip resolved={issue.resolved} size='small' />
-                    )}
-                    {/* 非 Issue 类型显示已解决/已关闭状态 */}
-                    {!isIssuePost && shouldShowStatus(issue) && (
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                  {/* Issue 类型使用 IssueStatusChip 显示所有状态 */}
+                  {isIssuePost && shouldShowStatus(issue) && <IssueStatusChip resolved={issue.resolved} size='small' />}
+                  {/* 非 Issue 类型显示已解决/已关闭状态 */}
+                  {!isIssuePost && shouldShowStatus(issue) && (
+                    <Chip
+                      icon={
+                        postStatus === 'answered' || postStatus === 'closed' ? (
+                          <CheckCircleOutlineIcon
+                            sx={{
+                              width: 15,
+                              height: 15,
+                              color: '#fff !important',
+                            }}
+                          />
+                        ) : undefined
+                      }
+                      label={getStatusLabel(postStatus)}
+                      size='small'
+                      sx={{
+                        bgcolor: getStatusColor(postStatus),
+                        color: '#fff !important',
+                        height: 20,
+                        fontWeight: 600,
+                        fontSize: '12px',
+                        border: `1px solid ${getStatusColor(postStatus)}30`,
+                      }}
+                    />
+                  )}
+                  {allTags.map((tag, index) => {
+                    const isCategory = isCategoryTag(tag, groups.flat)
+                    return (
                       <Chip
-                        icon={
-                          postStatus === 'answered' || postStatus === 'closed' ? (
-                            <CheckCircleOutlineIcon
-                              sx={{
-                                width: 15,
-                                height: 15,
-                                color: '#fff !important',
-                              }}
-                            />
-                          ) : undefined
-                        }
-                        label={getStatusLabel(postStatus)}
+                        key={`${tag}-${isCategory ? 'category' : 'tag'}-${index}`}
+                        label={tag}
                         size='small'
                         sx={{
-                          bgcolor: getStatusColor(postStatus),
-                          color: '#fff !important',
+                          bgcolor: 'rgba(233, 236, 239, 1)',
+                          color: 'rgba(33, 34, 45, 1)',
                           height: 20,
-                          fontWeight: 600,
                           fontSize: '12px',
-                          border: `1px solid ${getStatusColor(postStatus)}30`,
+                          lineHeight: '22px',
+                          borderRadius: '3px',
+                          cursor: 'default',
+                          pointerEvents: 'none',
                         }}
                       />
-                    )}
-                    {allTags.map((tag, index) => {
-                      const isCategory = isCategoryTag(tag, groups.flat)
-                      return (
-                        <Chip
-                          key={`${tag}-${isCategory ? 'category' : 'tag'}-${index}`}
-                          label={tag}
-                          size='small'
-                          sx={{
-                            bgcolor: 'rgba(233, 236, 239, 1)',
-                            color: 'rgba(33, 34, 45, 1)',
-                            height: 20,
-                            fontSize: '12px',
-                            lineHeight: '22px',
-                            borderRadius: '3px',
-                            cursor: 'default',
-                            pointerEvents: 'none',
-                          }}
-                        />
-                      )
-                    })}
-                  </Box>
+                    )
+                  })}
+                </Box>
 
-                  <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'center' }}>
-                    {(issue.type === ModelDiscussionType.DiscussionTypeBlog ||
-                      issue.type === ModelDiscussionType.DiscussionTypeIssue) && (
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 0.5,
-                          background: 'rgba(0,99,151,0.06)',
-                          color: 'primary.main',
-                          px: 1,
-                          borderRadius: 0.5,
-                        }}
-                      >
-                        <Icon type='icon-dianzan1' sx={{ fontSize: 12 }} />
-                        <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
-                          {(issue.like || 0) - (issue.dislike || 0)}
-                        </Typography>
-                      </Box>
-                    )}
-                  </Box>
+                <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'center' }}>
+                  {(issue.type === ModelDiscussionType.DiscussionTypeBlog ||
+                    issue.type === ModelDiscussionType.DiscussionTypeIssue) && (
+                    <Box
+                      sx={(theme) => ({
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        background: theme.palette.primaryAlpha?.[6],
+                        color: 'primary.main',
+                        px: 1,
+                        borderRadius: 0.5,
+                      })}
+                    >
+                      <Icon type='icon-dianzan1' sx={{ fontSize: 12 }} />
+                      <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
+                        {(issue.like || 0) - (issue.dislike || 0)}
+                      </Typography>
+                    </Box>
+                  )}
                 </Box>
               </Box>
-            </Link>
-          )
-        })}
+            </Box>
+          </Link>
+        )
+      })}
 
-        {/* 滚动加载指示器 */}
-        <Box
-          ref={observerTarget}
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            py: 2,
-            minHeight: '60px',
-            alignItems: 'center',
-          }}
-        >
-          {((hasMore && isLoadingMore) || (loading && issues.length > 0)) && (
-            <Stack direction='row' alignItems='center' spacing={1}>
-              <CircularProgress size={20} thickness={4} />
-              <Typography variant='body2' sx={{ color: '#6b7280' }}>
-                加载更多...
-              </Typography>
-            </Stack>
-          )}
-        </Box>
-
-        {/* 初始加载状态 */}
-        {loading && issues.length === 0 && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-            <CircularProgress size={28} />
-          </Box>
+      {/* 滚动加载指示器 */}
+      <Box
+        ref={observerTarget}
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          py: 2,
+          minHeight: '60px',
+          alignItems: 'center',
+        }}
+      >
+        {((hasMore && isLoadingMore) || (loading && issues.length > 0)) && (
+          <Stack direction='row' alignItems='center' spacing={1}>
+            <CircularProgress size={20} thickness={4} />
+            <Typography variant='body2' sx={{ color: '#6b7280' }}>
+              加载更多...
+            </Typography>
+          </Stack>
         )}
-      </Stack>
-    </Box>
+      </Box>
+
+      {/* 初始加载状态 */}
+      {loading && issues.length === 0 && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+          <CircularProgress size={28} />
+        </Box>
+      )}
+    </Stack>
   )
 }

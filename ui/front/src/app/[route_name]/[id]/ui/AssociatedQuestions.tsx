@@ -1,9 +1,9 @@
 'use client'
 import { getDiscussionDiscIdAssociate, ModelDiscussionListItem } from '@/api'
 import { DiscussionStatusChip } from '@/components'
-import { Box, Paper, Skeleton, Stack, Typography } from '@mui/material'
+import { Box, Divider, Paper, Skeleton, Stack, Typography } from '@mui/material'
 import { useParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import AssociatedItemCard from './AssociatedItemCard'
 
 interface AssociatedQuestionsProps {
@@ -51,21 +51,33 @@ const AssociatedQuestions = ({ discId }: AssociatedQuestionsProps) => {
   }
 
   return (
-    <Box>
+    <Paper elevation={0} sx={{ p: 2, border: '1px solid', borderColor: 'border' }}>
       <Typography variant='subtitle2' sx={{ mb: 1.5, fontWeight: 600 }}>
         关联问题
       </Typography>
-      <Stack spacing={1}>
+      <Divider sx={{ mb: 0 }} />
+      <Stack
+        sx={{
+          bgcolor: 'background.paper',
+          borderRadius: 1,
+          '& > div': {
+            border: 'none',
+          },
+        }}
+      >
         {questions.map((question) => (
-          <AssociatedItemCard
-            key={question.id}
-            item={question}
-            routeName={routeName}
-            statusChip={<DiscussionStatusChip item={question} size='small' />}
-          />
+          <Fragment key={question.id}>
+            <AssociatedItemCard
+              key={question.id}
+              item={question}
+              routeName={routeName}
+              statusChip={<DiscussionStatusChip item={question} size='small' />}
+            />
+            <Divider />
+          </Fragment>
         ))}
       </Stack>
-    </Box>
+    </Paper>
   )
 }
 

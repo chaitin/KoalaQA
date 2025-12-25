@@ -1,21 +1,21 @@
 import { getForum, getSystemBrand, getSystemSeo, getUser, getUserLoginMethod } from '@/api'
+import { getThemeColor } from '@/api/Theme'
 import '@/asset/styles/common.css'
 import '@/asset/styles/markdown.css'
 // import 'react-photo-view/dist/react-photo-view.css';
 import { AuthProvider, CommonProvider, GuestActivationProvider } from '@/components'
+import ThemeProviderWrapper from '@/components/ThemeProviderWrapper'
 import ClientInit from '@/components/ClientInit'
 import ServerErrorBoundary from '@/components/ServerErrorBoundary'
 import { AuthConfigProvider } from '@/contexts/AuthConfigContext'
 import { GroupDataProvider } from '@/contexts/GroupDataContext'
 import { SystemDiscussionProvider } from '@/contexts/SystemDiscussionContext'
 import { safeLogError } from '@/lib/error-utils'
-import theme from '@/theme'
 import '@ctzhian/tiptap/dist/index.css'
 // 初始化 dayjs 中文配置
 import '@/lib/dayjs'
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v14-appRouter'
 import CssBaseline from '@mui/material/CssBaseline'
-import { ThemeProvider } from '@mui/material/styles'
 import { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
 import { cookies } from 'next/headers'
@@ -25,6 +25,7 @@ import * as React from 'react'
 import PageViewTracker from '@/components/PageViewTracker'
 import Header from '../components/header'
 import Scroll from './scroll'
+import { Box } from '@mui/material'
 
 export const dynamic = 'force-dynamic'
 
@@ -153,15 +154,19 @@ async function getAuthConfigData() {
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
   // 首先获取认证配置和用户数据，因为论坛数据依赖这些信息
-  const [brandResponse, seoResponse, authConfig, user] = await Promise.all([
+  const [brandResponse, seoResponse, authConfig, user, themeColorResponse] = await Promise.all([
     getSystemBrand(),
     getSystemSeo(),
     getAuthConfigData(),
     getUserData(),
+    getThemeColor().catch(() => ({ primaryColor: '#EA4C89' })), // 如果获取失败，使用回退主题色
   ])
 
   // 基于认证状态和公共访问配置获取论坛数据
   const forums = await getForumData(authConfig, user)
+  
+  // 获取主题色，如果未获取到则使用回退主题色
+  const primaryColor = themeColorResponse?.primaryColor || '#EA4C89'
 
   const brand = brandResponse || null
   const description = seoResponse?.desc || '一个专业的技术讨论和知识分享社区'
@@ -197,17 +202,17 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
                 <GroupDataProvider>
                   <SystemDiscussionProvider>
                     <AppRouterCacheProvider>
-                      <ThemeProvider theme={theme}>
+                      <ThemeProviderWrapper primaryColor={primaryColor}>
                         <CssBaseline />
                         <GuestActivationProvider>
                           <PageViewTracker />
                           <Header brandConfig={brand} initialForums={forums} />
-                          <main id='main-content' style={{ backgroundColor: '#ffffff', flex: 1, overflow: 'auto' }}>
+                          <Box component='main' id='main-content' sx={{ backgroundColor: 'background.default', flex: 1, overflow: 'auto' }}>
                             {props.children}
-                          </main>
+                          </Box>
                           <Scroll />
                         </GuestActivationProvider>
-                      </ThemeProvider>
+                      </ThemeProviderWrapper>
                     </AppRouterCacheProvider>
                   </SystemDiscussionProvider>
                 </GroupDataProvider>

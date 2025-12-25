@@ -8,7 +8,7 @@ import EditorContent from '@/components/EditorContent'
 import Toc from '@/components/Toc'
 import Modal from '@/components/modal'
 import SSEClient from '@/utils/fetch'
-import { Box, Button, Stack, TextField, Typography } from '@mui/material'
+import { Box, Button, Divider, Paper, Stack, TextField, Typography } from '@mui/material'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useRef, useState, useCallback } from 'react'
 
@@ -32,7 +32,7 @@ const OutlineSidebar = ({
   const [headings, setHeadings] = useState<any[]>([])
   const router = useRouter()
   const pathname = usePathname()
-  
+
   // 刷新页面但不增加浏览次数
   const refreshWithoutView = useCallback(() => {
     const url = new URL(pathname, window.location.origin)
@@ -163,7 +163,8 @@ const OutlineSidebar = ({
         if (typeof data === 'string') {
           textToAdd = data
         } else if (data && typeof data === 'object') {
-          textToAdd = data.content || data.text || data.data || data.chunk || data.message || data.result || data.summary || ''
+          textToAdd =
+            data.content || data.text || data.data || data.chunk || data.message || data.result || data.summary || ''
         }
 
         if (textToAdd) {
@@ -215,10 +216,12 @@ const OutlineSidebar = ({
 
   return (
     <Stack spacing={3} sx={{ display: { xs: 'none', sm: 'none', md: 'none', lg: 'block' } }}>
-      <Card
+      <Paper
+        elevation={0}
         sx={{
+          p: 2,
           overflowY: 'auto',
-          border: '1px solid #D9DEE2',
+          border: (theme) => `1px solid ${theme.palette.mode === 'light' ? '#EAECF0' : '#393939'}`,
           flexShrink: 0,
           '& .editor-container p': {
             fontSize: '13px',
@@ -246,7 +249,7 @@ const OutlineSidebar = ({
             </Button>
           )}
         </Box>
-
+        <Divider sx={{ mb: 2 }} />
         {localSummary ? (
           isFormMode ? (
             <Typography variant='body2' sx={{ fontSize: '12px', whiteSpace: 'pre-wrap' }}>
@@ -269,15 +272,17 @@ const OutlineSidebar = ({
             {'暂无概览'}
           </Typography>
         )}
-      </Card>
-      <Card
+      </Paper>
+      <Paper
+        elevation={0}
         sx={{
+          p: 2,
           flexShrink: 0,
-          border: '1px solid #D9DEE2',
+          border: (theme) => `1px solid ${theme.palette.mode === 'light' ? '#EAECF0' : '#393939'}`,
         }}
       >
         <Toc headings={headings} />
-      </Card>
+      </Paper>
 
       <Modal
         title='文章概览'

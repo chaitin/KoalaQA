@@ -29,6 +29,7 @@ import { Ellipsis, Icon } from '@ctzhian/ui'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import {
   Box,
+  Button,
   Chip,
   Divider,
   IconButton,
@@ -87,7 +88,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const forums = useForumStore((s) => s.forums)
   const { id, route_name }: { id: string; route_name?: string } = (useParams() as any) || { id: '' }
-  
+
   // 刷新页面但不增加浏览次数
   const refreshWithoutView = useCallback(() => {
     const url = new URL(pathname, window.location.origin)
@@ -376,346 +377,380 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
       </Menu>
 
       {/* Post header */}
-      <Paper
-        elevation={0}
-        sx={{
-          bgcolor: '#ffffff',
-          borderRadius: '6px',
-        }}
-      >
-        {/* 第一行：类型标签、标题、点赞数和更多选项 */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, gap: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, minWidth: 0 }}>
-            {/* 类型标签 */}
-            <DiscussionTypeChip type={data.type} variant='default' />
-            {/* 标题 */}
-            <Ellipsis
-              sx={{
-                fontWeight: 700,
-                color: 'RGBA(33, 34, 45, 1)',
-                lineHeight: 1.3,
-                flex: 1,
-                fontSize: '1.25rem',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-              }}
-            >
-              {data.title}
-            </Ellipsis>
-          </Box>
-          {/* 右侧：关注、点赞数和更多选项 */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
-            {/* Issue 类型显示关注按钮 */}
-            {isIssuePost && !isClosed && (
-              <Box
-                onClick={handleFollow}
-                onMouseEnter={() => setIsHoveringFollow(true)}
-                onMouseLeave={() => setIsHoveringFollow(false)}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 0.5,
-                  background: followInfo.followed ? 'rgba(233, 236, 239, 1)' : 'rgba(0,99,151,0.06)',
-                  color: followInfo.followed ? 'text.secondary' : 'primary.main',
-                  minWidth: '70px',
-                  lineHeight: '22px',
-                  height: '22px',
-                  borderRadius: 0.5,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  '&:hover': {
-                    background: followInfo.followed ? 'rgba(220, 224, 228, 1)' : 'rgba(0,99,151,0.12)',
-                  },
-                }}
-              >
-                <Typography
-                  variant='body2'
-                  sx={{
-                    fontWeight: followInfo.followed ? 400 : 500,
-                    fontSize: '12px',
-                    color: 'inherit',
-                    transition: 'color 0.2s',
-                  }}
-                >
-                  {followInfo.followed ? (isHoveringFollow ? '取消关注' : '已关注') : '关注 Issue'}
-                </Typography>
-              </Box>
-            )}
-            {/* 文章类型和 Issue 类型显示点赞数 - 已关闭帖子不显示 */}
-            {(isArticlePost || isIssuePost) && !isClosed && (
-              <Box
-                onClick={handleLike}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 0.5,
-                  background: 'rgba(0,99,151,0.06)',
-                  color: 'primary.main',
-                  px: 1,
-                  borderRadius: 0.5,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  height: '22px',
-                  '&:hover': {
-                    color: '#000000',
-                    background: 'rgba(0,99,151,0.1)',
-                  },
-                }}
-              >
-                <Icon type='icon-dianzan1' sx={{ fontSize: 12 }} />
-                <Typography
-                  variant='caption'
-                  sx={{ fontWeight: 600, fontFamily: 'Gilroy', fontSize: '14px', lineHeight: 1 }}
-                >
-                  {formatNumber((data.like || 0) - (data.dislike || 0))}
-                </Typography>
-              </Box>
-            )}
-            {(data.user_id === user.uid ||
-              [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
-                user.role || ModelUserRole.UserRoleUnknown,
-              )) && (
-              <IconButton
-                disableRipple
-                size='small'
-                ref={anchorElRef}
-                onClick={menuOpen}
-                sx={{
-                  color: '#6b7280',
-                  transition: 'all 0.15s ease-in-out',
-                  '&:hover': { color: '#000000', bgcolor: '#f3f4f6' },
-                }}
-              >
-                <MoreVertIcon />
-              </IconButton>
-            )}
-          </Box>
-        </Box>
-
-        {/* 第二行：标签和作者信息 */}
-        <Stack
-          direction='row'
-          flexWrap='wrap'
-          sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 2 }}
-          gap={2}
-        >
-          {/* 左侧：所有标签（分组标签、状态标签、普通标签） */}
-          <Stack direction='row' flexWrap='wrap' sx={{ gap: 1, alignItems: 'center' }}>
-            {/* 使用通用状态标签组件 */}
-            <DiscussionStatusChip item={data} size='medium' />
-            {data.groups?.map((item) => {
-              return (
-                <Chip
-                  key={item.id}
-                  label={item.name}
-                  size='small'
-                  sx={{
-                    bgcolor: 'rgba(233, 236, 239, 1)',
-                    color: 'rgba(33, 34, 45, 1)',
-                    height: 22,
-                    lineHeight: '22px',
-                    fontWeight: 400,
-                    fontSize: '12px',
-                    borderRadius: '3px',
-                    cursor: 'default',
-                    pointerEvents: 'none',
-                  }}
-                />
-              )
-            })}
-          </Stack>
-          {/* 作者信息和时间 */}
-          <Box
+      {/* 第一行：类型标签、标题、点赞数和更多选项 */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, gap: 2, px: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, minWidth: 0 }}>
+          {/* 类型标签 */}
+          <DiscussionTypeChip type={data.type} variant='default' />
+          {/* 标题 */}
+          <Ellipsis
             sx={{
-              display: 'flex',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              flexShrink: 0,
-              fontSize: { xs: '13px', sm: '14px' },
-              gap: { xs: 0.5, sm: 0 },
-              rowGap: { xs: 0.5, sm: 0 },
+              fontWeight: 700,
+              color: 'RGBA(33, 34, 45, 1)',
+              lineHeight: 1,
+              flex: 1,
+              fontSize: { xs: '16px', lg: '18px' },
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
             }}
           >
+            {data.title}
+          </Ellipsis>
+        </Box>
+        {/* 右侧：关注、点赞数和更多选项 */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+          {/* Issue 类型显示关注按钮 */}
+          {isIssuePost && !isClosed && (
             <Box
-              tabIndex={0}
-              sx={{
-                outline: 'none',
+              onClick={handleFollow}
+              onMouseEnter={() => setIsHoveringFollow(true)}
+              onMouseLeave={() => setIsHoveringFollow(false)}
+              sx={(theme) => ({
                 display: 'flex',
                 alignItems: 'center',
-                borderRadius: 1,
-                transition: 'box-shadow 0.2s, border-color 0.2s, background 0.2s',
-                color: 'text.primary',
-                '&:focus-within, &:hover ': {
-                  color: 'primary.main',
+                justifyContent: 'center',
+                gap: 0.5,
+                background: followInfo.followed ? 'rgba(233, 236, 239, 1)' : theme.palette.primaryAlpha?.[6],
+                color: followInfo.followed ? 'text.secondary' : 'primary.main',
+                minWidth: '70px',
+                lineHeight: '22px',
+                height: '22px',
+                borderRadius: 0.5,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                '&:hover': {
+                  background: followInfo.followed ? 'rgba(220, 224, 228, 1)' : theme.palette.primaryAlpha?.[12],
                 },
-                my: '-2px',
-                ml: { xs: 0, sm: '-4px' },
-                flexShrink: 0,
-              }}
+              })}
             >
-              {profileHref ? (
-                <Link href={profileHref} style={{ display: 'inline-flex', marginRight: '8px' }} tabIndex={-1}>
-                  <CommonAvatar src={data.user_avatar} name={data.user_name} />
-                </Link>
-              ) : (
-                <CommonAvatar src={data.user_avatar} name={data.user_name} />
-              )}
-              {profileHref ? (
-                <Link
-                  href={profileHref}
-                  style={{ color: 'inherit', fontWeight: 500, textDecoration: 'none' }}
-                  tabIndex={-1}
-                >
-                  {data.user_name || '未知用户'}
-                </Link>
-              ) : (
-                <Typography variant='body2' sx={{ color: 'inherit', fontWeight: 500 }}>
-                  {data.user_name || '未知用户'}
-                </Typography>
-              )}
+              <Typography
+                variant='body2'
+                sx={{
+                  fontWeight: followInfo.followed ? 400 : 500,
+                  fontSize: '12px',
+                  color: 'inherit',
+                  transition: 'color 0.2s',
+                }}
+              >
+                {followInfo.followed ? (isHoveringFollow ? '取消关注' : '已关注') : '关注 Issue'}
+              </Typography>
             </Box>
-            <Typography
-              variant='body2'
-              sx={{
-                color: 'RGBA(33, 34, 45, 1)',
-                px: { xs: 0.5, sm: 1 },
-                flexShrink: 0,
-              }}
+          )}
+          {/* 文章类型和 Issue 类型显示点赞数 - 已关闭帖子不显示 */}
+          {(isArticlePost || isIssuePost) && !isClosed && (
+            <Stack
+              component={Button}
+              direction='row'
+              alignItems='center'
+              gap={1}
+              sx={(theme) => ({
+                background: data.user_like ? theme.palette.primaryAlpha?.[6] : '#F2F3F5',
+                borderRadius: 0.5,
+                px: '0px!important',
+                minWidth: '50px',
+                py: '1px',
+                cursor: 'pointer',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                transform: 'scale(1)',
+                '&:hover': {
+                  background: data.user_like ? theme.palette.primaryAlpha?.[10] : 'rgba(0, 0, 0, 0.12)',
+                },
+                '&:active': {
+                  transform: 'scale(0.95)',
+                  transition: 'transform 0.1s ease-out',
+                },
+              })}
+              onClick={handleLike}
             >
-              ·
-            </Typography>
-            <Typography
-              variant='body2'
-              sx={{
-                color: 'rgba(33, 34, 45, 0.50)',
-                flexShrink: 0,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              发布于{' '}
-              <TimeDisplayWithTag
-                timestamp={data.created_at!}
-                title={dayjs.unix(data.created_at!).format('YYYY-MM-DD HH:mm:ss')}
+              <Icon
+                type='icon-dianzan1'
+                sx={{
+                  color: data.user_like ? 'info.main' : 'rgba(0,0,0,0.5)',
+                  fontSize: 14,
+                }}
               />
-            </Typography>
-            {data.updated_at && data.updated_at !== 0 && data.updated_at !== data.created_at && !isMobile && (
-              <>
-                <Typography
-                  variant='body2'
-                  sx={{
-                    color: 'rgba(33, 34, 45, 0.50)',
-                    pr: { xs: 0.5, sm: 1 },
-                    flexShrink: 0,
-                  }}
-                >
-                  ,
-                </Typography>
-                <Typography
-                  variant='body2'
-                  sx={{
-                    color: 'rgba(33, 34, 45, 0.50)',
-                    flexShrink: 0,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  更新于{' '}
-                  <TimeDisplayWithTag
-                    timestamp={data.updated_at}
-                    title={dayjs.unix(data.updated_at).format('YYYY-MM-DD HH:mm:ss')}
-                  />
-                </Typography>
-              </>
+              <Typography
+                variant='body2'
+                sx={{
+                  fontSize: 14,
+                  color: data.user_like ? 'info.main' : 'rgba(0,0,0,0.5)',
+                  lineHeight: '20px',
+                }}
+              >
+                {formatNumber((data.like || 0) - (data.dislike || 0))}
+              </Typography>
+            </Stack>
+            // <Button
+            //   onClick={handleLike}
+            //   sx={{
+            //     display: 'flex',
+            //     alignItems: 'center',
+            //     justifyContent: 'center',
+            //     gap: 0.5,
+            //     background: data.user_like ? theme.palette.primaryAlpha?.[6] : '#F2F3F5',
+            //     color: data.user_like ? 'primary.main' : 'text.secondary',
+            //     px: 1,
+            //     minWidth: '0px',
+            //     borderRadius: 0.5,
+            //     cursor: 'pointer',
+            //     transition: 'all 0.2s',
+            //     height: '22px',
+            //   }}
+            // >
+            //   <Icon type='icon-dianzan1' sx={{ fontSize: 12 }} />
+            //   <Typography
+            //     variant='caption'
+            //     sx={{ fontWeight: 600, fontFamily: 'Gilroy', fontSize: '14px', lineHeight: 1 }}
+            //   >
+            //     {formatNumber((data.like || 0) - (data.dislike || 0))}
+            //   </Typography>
+            // </Button>
+          )}
+          {(data.user_id === user.uid ||
+            [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
+              user.role || ModelUserRole.UserRoleUnknown,
+            )) && (
+            <IconButton
+              disableRipple
+              size='small'
+              ref={anchorElRef}
+              onClick={menuOpen}
+              sx={{
+                p: 0,
+                color: '#6b7280',
+                transition: 'all 0.15s ease-in-out',
+                '&:hover': { color: '#000000', bgcolor: '#f3f4f6' },
+              }}
+            >
+              <MoreVertIcon />
+            </IconButton>
+          )}
+        </Box>
+      </Box>
+
+      {/* 第二行：标签和作者信息 */}
+      <Stack
+        direction='row'
+        flexWrap='wrap'
+        sx={{ alignItems: 'center', justifyContent: 'space-between', px: 1 }}
+        gap={2}
+      >
+        {/* 左侧：所有标签（分组标签、状态标签、普通标签） */}
+        <Stack direction='row' flexWrap='wrap' sx={{ gap: 1, alignItems: 'center' }}>
+          {/* 使用通用状态标签组件 */}
+          <DiscussionStatusChip item={data} size='medium' />
+          {data.groups?.map((item) => {
+            return (
+              <Chip
+                key={item.id}
+                label={item.name}
+                size='small'
+                sx={{
+                  bgcolor: 'rgba(233, 236, 239, 1)',
+                  color: 'rgba(33, 34, 45, 1)',
+                  height: 22,
+                  lineHeight: '22px',
+                  fontWeight: 400,
+                  fontSize: '12px',
+                  borderRadius: '3px',
+                  cursor: 'default',
+                  pointerEvents: 'none',
+                }}
+              />
+            )
+          })}
+        </Stack>
+        {/* 作者信息和时间 */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            flexShrink: 0,
+            fontSize: { xs: '13px', sm: '14px' },
+            gap: { xs: 0.5, sm: 0 },
+            rowGap: { xs: 0.5, sm: 0 },
+          }}
+        >
+          <Box
+            tabIndex={0}
+            sx={{
+              outline: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              borderRadius: 1,
+              transition: 'box-shadow 0.2s, border-color 0.2s, background 0.2s',
+              color: 'text.primary',
+              '&:focus-within, &:hover ': {
+                color: 'primary.main',
+              },
+              my: '-2px',
+              ml: { xs: 0, sm: '-4px' },
+              flexShrink: 0,
+            }}
+          >
+            {profileHref ? (
+              <Link href={profileHref} style={{ display: 'inline-flex', marginRight: '8px' }} tabIndex={-1}>
+                <CommonAvatar src={data.user_avatar} name={data.user_name} />
+              </Link>
+            ) : (
+              <CommonAvatar src={data.user_avatar} name={data.user_name} />
             )}
-            {/* Issue 类型显示关注数 */}
-            {isIssuePost && followInfo.follower !== undefined && (
-              <>
-                <Typography
-                  variant='body2'
-                  sx={{
-                    color: 'rgba(33, 34, 45, 0.50)',
-                    px: { xs: 0.5, sm: 1 },
-                    flexShrink: 0,
-                  }}
-                >
-                  ·
-                </Typography>
-                <Typography
-                  variant='body2'
-                  sx={{
-                    color: 'rgba(33, 34, 45, 0.50)',
-                    flexShrink: 0,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {followInfo.follower || 0}关注
-                </Typography>
-              </>
-            )}
-            {/* 显示浏览量 */}
-            {data.view !== undefined && data.view !== null && (
-              <>
-                <Typography
-                  variant='body2'
-                  sx={{
-                    color: 'rgba(33, 34, 45, 0.50)',
-                    px: { xs: 0.5, sm: 1 },
-                    flexShrink: 0,
-                  }}
-                >
-                  ·
-                </Typography>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    flexShrink: 0,
-                    color: 'rgba(33, 34, 45, 0.50)',
-                  }}
-                >
-                  <Typography
-                    variant='body2'
-                    sx={{
-                      color: 'rgba(33, 34, 45, 0.50)',
-                      flexShrink: 0,
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {formatNumber(data.view || 0)}
-                  </Typography>
-                  <Typography
-                    variant='body2'
-                    sx={{
-                      color: 'rgba(33, 34, 45, 0.50)',
-                      flexShrink: 0,
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    次浏览
-                  </Typography>
-                </Box>
-              </>
+            {profileHref ? (
+              <Link
+                href={profileHref}
+                style={{ color: 'inherit', fontWeight: 500, textDecoration: 'none' }}
+                tabIndex={-1}
+              >
+                {data.user_name || '未知用户'}
+              </Link>
+            ) : (
+              <Typography variant='body2' sx={{ color: 'inherit', fontWeight: 500 }}>
+                {data.user_name || '未知用户'}
+              </Typography>
             )}
           </Box>
-        </Stack>
+          <Typography
+            variant='body2'
+            sx={{
+              color: 'RGBA(33, 34, 45, 1)',
+              px: { xs: 0.5, sm: 1 },
+              flexShrink: 0,
+            }}
+          >
+            ·
+          </Typography>
+          <Typography
+            variant='body2'
+            sx={{
+              color: 'rgba(33, 34, 45, 0.50)',
+              flexShrink: 0,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            发布于{' '}
+            <TimeDisplayWithTag
+              timestamp={data.created_at!}
+              title={dayjs.unix(data.created_at!).format('YYYY-MM-DD HH:mm:ss')}
+            />
+          </Typography>
+          {data.updated_at && data.updated_at !== 0 && data.updated_at !== data.created_at && !isMobile && (
+            <>
+              <Typography
+                variant='body2'
+                sx={{
+                  color: 'rgba(33, 34, 45, 0.50)',
+                  pr: { xs: 0.5, sm: 1 },
+                  flexShrink: 0,
+                }}
+              >
+                ,
+              </Typography>
+              <Typography
+                variant='body2'
+                sx={{
+                  color: 'rgba(33, 34, 45, 0.50)',
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                更新于{' '}
+                <TimeDisplayWithTag
+                  timestamp={data.updated_at}
+                  title={dayjs.unix(data.updated_at).format('YYYY-MM-DD HH:mm:ss')}
+                />
+              </Typography>
+            </>
+          )}
+          {/* Issue 类型显示关注数 */}
+          {isIssuePost && followInfo.follower !== undefined && (
+            <>
+              <Typography
+                variant='body2'
+                sx={{
+                  color: 'rgba(33, 34, 45, 0.50)',
+                  px: { xs: 0.5, sm: 1 },
+                  flexShrink: 0,
+                }}
+              >
+                ·
+              </Typography>
+              <Typography
+                variant='body2'
+                sx={{
+                  color: 'rgba(33, 34, 45, 0.50)',
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {followInfo.follower || 0}关注
+              </Typography>
+            </>
+          )}
+          {/* 显示浏览量 */}
+          {data.view !== undefined && data.view !== null && (
+            <>
+              <Typography
+                variant='body2'
+                sx={{
+                  color: 'rgba(33, 34, 45, 0.50)',
+                  px: { xs: 0.5, sm: 1 },
+                  flexShrink: 0,
+                }}
+              >
+                ·
+              </Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  flexShrink: 0,
+                  color: 'rgba(33, 34, 45, 0.50)',
+                }}
+              >
+                <Typography
+                  variant='body2'
+                  sx={{
+                    color: 'rgba(33, 34, 45, 0.50)',
+                    flexShrink: 0,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {formatNumber(data.view || 0)}
+                </Typography>
+                <Typography
+                  variant='body2'
+                  sx={{
+                    color: 'rgba(33, 34, 45, 0.50)',
+                    flexShrink: 0,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  次浏览
+                </Typography>
+              </Box>
+            </>
+          )}
+        </Box>
+      </Stack>
 
-        {data.content && String(data.content).trim() && (
-          <>
-            <Divider sx={{ mb: '10px' }} />
+      {data.content && String(data.content).trim() && (
+        <>
+          <Divider sx={{ my: { xs: 2, lg: 3 } }} />
+          <Box sx={{ px: 1 }}>
             <EditorContent content={data.content} onTocUpdate={true} />
-          </>
-        )}
-        <Divider sx={{ my: 2 }} />
-        {!!tagNames.length && (
-          <Stack direction='row' flexWrap='wrap' sx={{ gap: 1, alignItems: 'center', mt: 1, mb: 2 }}>
-            {tagNames.map((tag, index) => {
-              return <TagFilterChip key={index} id={index} name={tag} selected={false} />
-            })}
-          </Stack>
-        )}
-      </Paper>
+          </Box>
+        </>
+      )}
+      <Divider sx={{ my: 2 }} />
+      {!!tagNames.length && (
+        <Stack direction='row' flexWrap='wrap' sx={{ gap: 1, alignItems: 'center', mt: 1, mb: 2 }}>
+          {tagNames.map((tag, index) => {
+            return <TagFilterChip key={index} id={index} name={tag} selected={false} />
+          })}
+        </Stack>
+      )}
     </>
   )
 }

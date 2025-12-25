@@ -45,7 +45,7 @@ export const useForumStore = create<ForumState>((set, get) => ({
       // 并行请求所有标签
       const tagPromises = tagsToFetch.map(async (forumId) => {
         try {
-          const data = await getAdminForumForumIdTags({ forumId, page: 1, size: 99999 })
+          const data = await getAdminForumForumIdTags({ forumId, page: 1, size: 100 })
           let items: TagOption[] = []
 
           // 后端实际返回：model.ListRes{ items: [] }（对象）

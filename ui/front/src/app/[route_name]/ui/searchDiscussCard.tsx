@@ -55,7 +55,7 @@ const SearchDiscussCard = ({
         transition: 'all 0.2s',
         cursor: 'pointer',
         '&:hover': {
-          bgcolor: 'rgba(0,99,151,0.03)',
+          bgcolor: theme => theme.palette.primaryAlpha?.[3],
         },
         p: 2,
         ...sx,

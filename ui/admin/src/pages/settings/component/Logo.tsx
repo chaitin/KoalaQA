@@ -1,12 +1,92 @@
 import { getAdminSystemBrand, putAdminSystemBrand } from '@/api';
 import Card from '@/components/card';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Avatar, Box, Button, Stack, TextField, Typography } from '@mui/material';
+import {
+  Avatar,
+  Box,
+  Button,
+  Stack,
+  TextField,
+  Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  IconButton,
+} from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
-import React, { useEffect } from 'react';
+import CloseIcon from '@mui/icons-material/Close';
+import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { message } from '@ctzhian/ui';
+
+// 配色方案类型
+type ThemeColorScheme = 'deep-blue' | 'blue' | 'green'; // 'orange' | 'pink' | 'dark-purple';
+
+// 配色方案配置
+const themeColorSchemes: Record<
+  ThemeColorScheme,
+  {
+    name: string;
+    primaryColor: string;
+    previewColors: { header: string; sidebar: string; content: string };
+  }
+> = {
+  'deep-blue': {
+    name: '深蓝风格',
+    primaryColor: '#006397',
+    previewColors: {
+      header: '#006397',
+      sidebar: '#1a1a1a',
+      content: '#ffffff',
+    },
+  },
+  blue: {
+    name: '蓝色风格',
+    primaryColor: '#3248F2',
+    previewColors: {
+      header: '#3248F2',
+      sidebar: '#f5f5f5',
+      content: '#ffffff',
+    },
+  },
+  green: {
+    name: '绿色风格',
+    primaryColor: '#27AE60',
+    previewColors: {
+      header: '#27AE60',
+      sidebar: '#f5f5f5',
+      content: '#ffffff',
+    },
+  },
+  // 'orange': {
+  //   name: '橙色风格',
+  //   primaryColor: '#FFA500',
+  //   previewColors: {
+  //     header: '#FFA500',
+  //     sidebar: '#f5f5f5',
+  //     content: '#ffffff',
+  //   },
+  // },
+  // 'pink': {
+  //   name: '粉红风格',
+  //   primaryColor: '#E91E63',
+  //   previewColors: {
+  //     header: '#E91E63',
+  //     sidebar: '#f5f5f5',
+  //     content: '#ffffff',
+  //   },
+  // },
+  // 'dark-purple': {
+  //   name: '暗夜紫风格',
+  //   primaryColor: '#7B2CBF',
+  //   previewColors: {
+  //     header: '#7B2CBF',
+  //     sidebar: '#1a1a1a',
+  //     content: '#2a2a2a',
+  //   },
+  // },
+};
 
 // 将文件转换为 base64
 const fileToBase64 = (file: File): Promise<string> => {
@@ -18,7 +98,7 @@ const fileToBase64 = (file: File): Promise<string> => {
       // 保留完整的 data URL 格式，包含 MIME 类型信息
       resolve(result);
     };
-    reader.onerror = (error) => reject(error);
+    reader.onerror = error => reject(error);
   });
 };
 
@@ -26,9 +106,9 @@ const formSchema = z.object({
   logo: z.union([
     z.string(),
     z.instanceof(File).refine(
-      (file) => file.size <= 1024 * 1024, // 1MB = 1024 * 1024 bytes
+      file => file.size <= 1024 * 1024, // 1MB = 1024 * 1024 bytes
       '文件大小不能超过1MB'
-    )
+    ),
   ]),
   text: z.string().min(1, '品牌文字不能为空').max(50, '品牌文字不能超过50个字符'),
 });
@@ -36,6 +116,10 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 const Logo: React.FC = () => {
+  const [themeColorScheme, setThemeColorScheme] = useState<ThemeColorScheme>('deep-blue');
+  const [openThemeDialog, setOpenThemeDialog] = useState(false);
+  const [tempSelectedTheme, setTempSelectedTheme] = useState<ThemeColorScheme>('deep-blue');
+
   const {
     register,
     handleSubmit,
@@ -50,6 +134,25 @@ const Logo: React.FC = () => {
       text: '',
     },
   });
+
+  // 打开配色选择对话框
+  const handleOpenThemeDialog = () => {
+    setTempSelectedTheme(themeColorScheme);
+    setOpenThemeDialog(true);
+  };
+
+  // 关闭配色选择对话框
+  const handleCloseThemeDialog = () => {
+    setOpenThemeDialog(false);
+  };
+
+  // 确认选择配色方案
+  const handleConfirmTheme = () => {
+    setThemeColorScheme(tempSelectedTheme);
+    setOpenThemeDialog(false);
+    
+    // TODO: 这里可以调用 API 保存配色方案
+  };
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -66,7 +169,7 @@ const Logo: React.FC = () => {
         } else if (typeof data.logo === 'string') {
           logoBase64 = data.logo;
         }
-        
+
         await putAdminSystemBrand({
           logo: logoBase64,
           text: data.text,
@@ -137,8 +240,8 @@ const Logo: React.FC = () => {
                     typeof field.value === 'string'
                       ? field.value
                       : field.value
-                      ? URL.createObjectURL(field.value)
-                      : ''
+                        ? URL.createObjectURL(field.value)
+                        : ''
                   }
                   sx={{
                     width: 78,
@@ -211,7 +314,187 @@ const Logo: React.FC = () => {
             }}
           />
         </Stack>
+
+        {/* 主题配色区域 */}
+        {/* <Stack direction="row" sx={{ mb: 2 }} alignItems="center">
+          <Typography variant="subtitle2" sx={{ minWidth: '24%' }}>
+            主题配色
+          </Typography>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              {themeColorSchemes[themeColorScheme].name}
+            </Typography>
+            <Button variant="outlined" onClick={handleOpenThemeDialog} sx={{ borderRadius: '6px' }}>
+              定制社区配色
+            </Button>
+          </Box>
+        </Stack> */}
       </Box>
+
+      {/* 配色选择对话框 */}
+      <Dialog
+        open={openThemeDialog}
+        onClose={handleCloseThemeDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '8px',
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            pb: 2,
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+          }}
+        >
+          <Typography variant="h6">自定义配色</Typography>
+          <IconButton onClick={handleCloseThemeDialog} sx={{ color: 'text.secondary' }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: 2,
+              py: 3,
+            }}
+          >
+            {(Object.keys(themeColorSchemes) as ThemeColorScheme[]).map(schemeKey => {
+              const scheme = themeColorSchemes[schemeKey];
+              const isSelected = tempSelectedTheme === schemeKey;
+              return (
+                <Box
+                  key={schemeKey}
+                  onClick={() => setTempSelectedTheme(schemeKey)}
+                  sx={{
+                    cursor: 'pointer',
+                    border: isSelected ? '2px solid' : '1px solid',
+                    borderColor: isSelected ? 'primary.main' : 'divider',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      transform: 'translateY(-2px)',
+                      boxShadow: 2,
+                    },
+                  }}
+                >
+                  {/* 预览区域 */}
+                  <Box
+                    sx={{
+                      height: 80,
+                      position: 'relative',
+                      background: `linear-gradient(135deg, ${scheme.previewColors.header} 0%, ${scheme.previewColors.sidebar} 100%)`,
+                    }}
+                  >
+                    {/* 模拟头部 */}
+                    <Box
+                      sx={{
+                        height: '30%',
+                        bgcolor: scheme.previewColors.header,
+                        display: 'flex',
+                        alignItems: 'center',
+                        px: 1,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          bgcolor: scheme.previewColors.content,
+                          opacity: 0.3,
+                          mr: 0.5,
+                        }}
+                      />
+                      <Box
+                        sx={{
+                          width: 20,
+                          height: 4,
+                          borderRadius: '2px',
+                          bgcolor: scheme.previewColors.content,
+                          opacity: 0.3,
+                        }}
+                      />
+                    </Box>
+                    {/* 模拟内容区域 */}
+                    <Box
+                      sx={{
+                        height: '70%',
+                        bgcolor: scheme.previewColors.content,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 0.5,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: 4,
+                          height: 4,
+                          borderRadius: '50%',
+                          bgcolor: scheme.previewColors.header,
+                          opacity: 0.5,
+                        }}
+                      />
+                      <Box
+                        sx={{
+                          width: 12,
+                          height: 4,
+                          borderRadius: '2px',
+                          bgcolor: scheme.previewColors.header,
+                          opacity: 0.3,
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                  {/* 标签 */}
+                  <Box
+                    sx={{
+                      p: 1,
+                      textAlign: 'center',
+                      bgcolor: 'background.paper',
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ color: 'text.primary' }}>
+                      {scheme.name}
+                    </Typography>
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
+
+          {/* 操作按钮 */}
+          <Stack
+            direction="row"
+            justifyContent="flex-end"
+            spacing={2}
+            sx={{ mt: 3, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}
+          >
+            <Button
+              onClick={handleCloseThemeDialog}
+              variant="outlined"
+              sx={{ borderRadius: '6px' }}
+            >
+              取消
+            </Button>
+            <Button onClick={handleConfirmTheme} variant="contained" sx={{ borderRadius: '6px' }}>
+              确定
+            </Button>
+          </Stack>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

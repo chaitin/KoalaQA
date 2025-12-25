@@ -280,6 +280,7 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
               justifyContent: 'center',
               minHeight: 100,
               textAlign: 'center',
+              fontSize: '12px !important',
             }}
           >
             <Typography variant='body2' sx={{ color: 'text.secondary', fontSize: '12px !important' }}>

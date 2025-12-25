@@ -2,7 +2,7 @@
 import { ModelDiscussionListItem, ModelDiscussionType } from '@/api'
 import { DiscussionTypeChip, IssueStatusChip, MarkDown } from '@/components'
 import { Ellipsis } from '@ctzhian/ui'
-import { Box, Stack } from '@mui/material'
+import { Box, Divider, Stack } from '@mui/material'
 
 interface SimilarContentItemProps {
   data: ModelDiscussionListItem
@@ -36,8 +36,6 @@ const SimilarContentItem = ({ data }: SimilarContentItemProps) => {
   return (
     <Box
       sx={{
-        py: 1,
-        px: 2,
       }}
       className='similar-item'
     >

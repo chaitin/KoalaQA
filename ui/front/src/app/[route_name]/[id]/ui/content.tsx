@@ -61,13 +61,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const { id }: { id: string } = useParams() || { id: '' }
   const router = useRouter()
   const pathname = usePathname()
-  
-  // 刷新页面但不增加浏览次数
-  const refreshWithoutView = useCallback(() => {
-    const url = new URL(pathname, window.location.origin)
-    url.searchParams.set('refresh', 'true')
-    router.replace(url.pathname + url.search)
-  }, [pathname, router])
+
   const { user } = useContext(AuthContext)
   const { checkAuth } = useAuthCheck()
   const [commentIndex, setCommentIndex] = useState<ModelDiscussionComment | ModelDiscussionReply | null>(null)
@@ -124,7 +118,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         content: comment,
       },
     ).then(() => {
-      refreshWithoutView()
+      router.refresh()
       setEditCommentModalVisible(false)
     })
   }
@@ -144,7 +138,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         // 清除讨论详情的缓存
         const cacheKey = generateCacheKey(`/discussion/${data.uuid}`, {})
         clearCache(cacheKey)
-        refreshWithoutView()
+        router.refresh()
       },
     })
   }
@@ -219,7 +213,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         // 清除讨论详情的缓存
         const cacheKey = generateCacheKey(`/discussion/${data.uuid}`, {})
         clearCache(cacheKey)
-        refreshWithoutView()
+        router.refresh()
       },
     })
   }
@@ -241,7 +235,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         // 清除讨论详情的缓存
         const cacheKey = generateCacheKey(`/discussion/${data.uuid}`, {})
         clearCache(cacheKey)
-        refreshWithoutView()
+        router.refresh()
       },
     })
   }
@@ -286,7 +280,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
       setHasAnswerContent(false)
       const cacheKey = generateCacheKey(`/discussion/${id}`, {})
       clearCache(cacheKey)
-      refreshWithoutView()
+      router.refresh()
     })
   }
 
@@ -300,7 +294,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
       setCommentEditorKeys((prev) => ({ ...prev, [answerId]: (prev[answerId] || 0) + 1 }))
       const cacheKey = generateCacheKey(`/discussion/${id}`, {})
       clearCache(cacheKey)
-      refreshWithoutView()
+      router.refresh()
     })
   }
 
@@ -310,7 +304,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
     showPointNotification(PointActionType.ACCEPT_ANSWER)
     const cacheKey = generateCacheKey(`/discussion/${data.uuid}`, {})
     clearCache(cacheKey)
-    refreshWithoutView()
+    router.refresh()
   }
 
   const handleReplyInputClick = useCallback(
@@ -355,7 +349,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
       }
       const cacheKey = generateCacheKey(`/discussion/${id}`, {})
       clearCache(cacheKey)
-      refreshWithoutView()
+      router.refresh()
     })
   }
 
@@ -364,35 +358,51 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   }
 
   // 检查是否有可用的菜单项
-  const hasMenuItems = useCallback((item: ModelDiscussionComment | ModelDiscussionReply) => {
-    const isReply = !('replies' in item)
-    let hasItems = false
+  const hasMenuItems = useCallback(
+    (item: ModelDiscussionComment | ModelDiscussionReply) => {
+      const isReply = !('replies' in item)
+      let hasItems = false
 
-    // 采纳选项（仅主评论）
-    if (!isReply && isQAPost && canAcceptAnswer && !item.accepted && hasAcceptedComment && !isClosedPost) {
-      hasItems = true
-    }
+      // 采纳选项（仅主评论）
+      if (!isReply && isQAPost && canAcceptAnswer && !item.accepted && hasAcceptedComment && !isClosedPost) {
+        hasItems = true
+      }
 
-    // 取消采纳选项（仅主评论）
-    if (!isReply && !isArticlePost && data.type === ModelDiscussionType.DiscussionTypeQA && canAcceptAnswer && item.accepted) {
-      hasItems = true
-    }
+      // 取消采纳选项（仅主评论）
+      if (
+        !isReply &&
+        !isArticlePost &&
+        data.type === ModelDiscussionType.DiscussionTypeQA &&
+        canAcceptAnswer &&
+        item.accepted
+      ) {
+        hasItems = true
+      }
 
-    // 编辑选项
-    if ((item.user_id === (user?.uid || 0) ||
-         [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(user?.role || ModelUserRole.UserRoleUnknown)) &&
-        !item.bot) {
-      hasItems = true
-    }
+      // 编辑选项
+      if (
+        (item.user_id === (user?.uid || 0) ||
+          [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
+            user?.role || ModelUserRole.UserRoleUnknown,
+          )) &&
+        !item.bot
+      ) {
+        hasItems = true
+      }
 
-    // 删除选项
-    if ((isAdminRole(user?.role || ModelUserRole.UserRoleUnknown) ||
-         (item.user_id === (user?.uid || 0) && (!isReply || !item.accepted))) && !item.bot) {
-      hasItems = true
-    }
+      // 删除选项
+      if (
+        (isAdminRole(user?.role || ModelUserRole.UserRoleUnknown) ||
+          (item.user_id === (user?.uid || 0) && (!isReply || !item.accepted))) &&
+        !item.bot
+      ) {
+        hasItems = true
+      }
 
-    return hasItems
-  }, [isQAPost, canAcceptAnswer, hasAcceptedComment, isClosedPost, isArticlePost, data.type, user?.uid, user?.role])
+      return hasItems
+    },
+    [isQAPost, canAcceptAnswer, hasAcceptedComment, isClosedPost, isArticlePost, data.type, user?.uid, user?.role],
+  )
 
   const sortedComments =
     data.comments?.sort((a, b) => {
@@ -421,15 +431,17 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         {(commentIndex?.user_id == (user?.uid || 0) ||
           [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
             user?.role || ModelUserRole.UserRoleUnknown,
-          )) && !commentIndex?.bot && <MenuItem onClick={handleEditComment}>编辑</MenuItem>}
+          )) &&
+          !commentIndex?.bot && <MenuItem onClick={handleEditComment}>编辑</MenuItem>}
 
         {/* 已采纳的回答不允许普通用户删除，但管理者和运营者可以删除。AI回答不支持删除 */}
         {(isAdminRole(user?.role || ModelUserRole.UserRoleUnknown) ||
-          (commentIndex?.user_id == (user?.uid || 0) && !commentIndex?.accepted)) && !commentIndex?.bot && (
-          <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
-            删除
-          </MenuItem>
-        )}
+          (commentIndex?.user_id == (user?.uid || 0) && !commentIndex?.accepted)) &&
+          !commentIndex?.bot && (
+            <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
+              删除
+            </MenuItem>
+          )}
       </Menu>
       <EditCommentModal
         open={editCommentModalVisible}
@@ -446,6 +458,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
       />
       <Stack
         sx={{
+          px: 1,
           flex: !isQAPost ? 'unset' : 1,
           '& .md-container .MuiIconButton-root + *': {
             display: 'none',
@@ -599,19 +612,19 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                     {answer.bot && (
                       <Chip
                         label='AI'
-                        sx={{
+                        sx={(theme) => ({
                           width: 28,
                           height: 22,
-                          background: 'rgba(0,99,151,0.06)',
+                          background: theme.palette.primaryAlpha?.[6],
                           color: 'primary.main',
                           borderRadius: '4px',
-                          border: '1px solid rgba(0,99,151,0.1)',
+                          border: `1px solid ${theme.palette.primaryAlpha?.[10]}`,
                           fontSize: '0.75rem',
                           fontWeight: 500,
                           '& .MuiChip-label': {
                             px: 0.5,
                           },
-                        }}
+                        })}
                       />
                     )}
                     <RoleChip role={answer.user_role} />
@@ -647,12 +660,12 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                       !isClosedPost && (
                         <Box
                           onClick={() => handleAcceptAnswer(answer.id!)}
-                          sx={{
+                          sx={(theme) => ({
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: 0.5,
-                            background: 'rgba(0,99,151,0.06)',
+                            background: theme.palette.primaryAlpha?.[3] || 'rgba(0,99,151,0.06)',
                             color: 'primary.main',
                             px: 1.5,
                             lineHeight: '22px',
@@ -661,15 +674,15 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                             cursor: 'pointer',
                             transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                             transform: 'scale(1)',
-                            border: '1px solid rgba(0,99,151,0.1)',
+                            border: `1px solid ${theme.palette.primaryAlpha?.[10] || 'rgba(0,99,151,0.1)'}`,
                             '&:hover': {
-                              background: 'rgba(0,99,151,0.12)',
+                              background: theme.palette.primaryAlpha?.[6] || 'rgba(0,99,151,0.12)',
                             },
                             '&:active': {
                               transform: 'scale(0.95)',
                               transition: 'transform 0.1s ease-out',
                             },
-                          }}
+                          })}
                         >
                           <Typography
                             variant='body2'
@@ -718,8 +731,8 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                           direction='row'
                           alignItems='center'
                           gap={1}
-                          sx={{
-                            background: isLiked ? 'rgba(32,108,255,0.1)' : '#F2F3F5',
+                          sx={(theme) => ({
+                            background: isLiked ? theme.palette.primaryAlpha?.[6] : '#F2F3F5',
                             borderRadius: 0.5,
                             px: '0px!important',
                             minWidth: '50px',
@@ -728,13 +741,13 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                             transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                             transform: 'scale(1)',
                             '&:hover': {
-                              background: isLiked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
+                              background: isLiked ? theme.palette.primaryAlpha?.[10] : 'rgba(0, 0, 0, 0.12)',
                             },
                             '&:active': {
                               transform: 'scale(0.95)',
                               transition: 'transform 0.1s ease-out',
                             },
-                          }}
+                          })}
                           onClick={() => handleVote(answer.id!, 'up')}
                         >
                           <Icon
@@ -762,7 +775,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                           alignItems='center'
                           gap={1}
                           sx={{
-                            background: isDisliked ? 'rgba(32,108,255,0.1)' : '#F2F3F5',
+                            background: (theme) => (isDisliked ? theme.palette.primaryAlpha?.[6] : '#F2F3F5'),
                             borderRadius: 0.5,
                             px: '0px!important',
                             minWidth: '50px',
@@ -771,7 +784,8 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                             transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                             transform: 'scale(1)',
                             '&:hover': {
-                              background: isDisliked ? 'rgba(32,108,255,0.2)' : 'rgba(0, 0, 0, 0.12)',
+                              background: (theme) =>
+                                isDisliked ? theme.palette.primaryAlpha?.[10] : 'rgba(0, 0, 0, 0.12)',
                             },
                             '&:active': {
                               transform: 'scale(0.95)',
@@ -877,7 +891,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                               mb: 2,
                               pb: 2,
                               p: 2,
-                              background: 'rgba(0,99,151,0.03)',
+                              background: '#fafbfc',
                               borderRadius: '8px',
                               border: '1px solid #D9DEE2',
                               '&:last-child': { mb: 0, pb: 0 },
@@ -918,19 +932,19 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                 {reply.bot && (
                                   <Chip
                                     label='AI'
-                                    sx={{
+                                    sx={theme=>({
                                       width: 28,
                                       height: 24,
-                                      background: 'rgba(0,99,151,0.06)',
+                                      background: theme.palette.primaryAlpha?.[6],
                                       color: 'primary.main',
                                       borderRadius: '4px',
-                                      border: '1px solid rgba(0,99,151,0.1)',
+                                      border: `1px solid ${theme.palette.primaryAlpha?.[10]}`,
                                       fontSize: '0.75rem',
                                       fontWeight: 500,
                                       '& .MuiChip-label': {
                                         px: 0.5,
                                       },
-                                    }}
+                                    })}
                                   />
                                 )}
                                 <RoleChip role={reply.user_role} />
@@ -1003,8 +1017,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                 bgcolor: '#fafbfc',
                                 fontSize: '0.875rem',
                                 cursor: 'pointer',
-                                '& fieldset': { borderColor: '#e5e7eb' },
-                                '&:hover fieldset': { borderColor: '#d1d5db' },
+                                '& fieldset': { borderColor: '#D9DEE2' },
                                 '& input': {
                                   cursor: 'pointer',
                                 },
@@ -1123,11 +1136,11 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
           <Paper
             elevation={0}
             sx={{
-              position: !isQAPost ? 'unset' : { xs: 'fixed', sm: 'sticky' },
+              position: !isQAPost ? 'relative' : { xs: 'relative', sm: 'sticky' },
               bottom: !isQAPost ? 'unset' : { xs: 0, sm: 0 },
               left: !isQAPost ? 'unset' : { xs: 0, sm: 'unset' },
               right: !isQAPost ? 'unset' : { xs: 0, sm: 'unset' },
-              pb: !isQAPost ? 3 : { xs: 'calc(24px + env(safe-area-inset-bottom, 0))', sm: 3 },
+              pb: !isQAPost ? 2 : { xs: 'calc(env(safe-area-inset-bottom, 0))', sm: 2 },
               width: '100%',
               maxWidth: { lg: '750px' },
               mx: { xs: 0, sm: 'auto' },
@@ -1147,24 +1160,30 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                   maxWidth: '100%',
                 },
               }),
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: '-38px',
-                left: '-1px',
-                right: '-1px',
-                height: '40px',
-                background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, #FFFFFF 100%)',
-                pointerEvents: 'none',
-                zIndex: -2,
-                // 移动端隐藏渐变，因为使用 fixed 定位
-                '@media (max-width: 600px)': {
-                  display: 'none',
-                },
-              },
             }}
           >
-            <Box sx={{ p: 1, border: '1px solid rgba(33, 34, 45, 1)', borderRadius: 1 }}>
+            <Box
+              sx={{
+                p: 1,
+                border: '1px solid rgba(33, 34, 45, 1)',
+                borderRadius: 1,
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: '-38px',
+                  left: '-1px',
+                  right: '-1px',
+                  height: '40px',
+                  background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, #FFFFFF 100%)',
+                  pointerEvents: 'none',
+                  zIndex: -2,
+                  // 移动端隐藏渐变，因为使用 fixed 定位
+                  '@media (max-width: 600px)': {
+                    display: 'none',
+                  },
+                },
+              }}
+            >
               {!isQAPost && !showAnswerEditor ? (
                 <OutlinedInput
                   fullWidth

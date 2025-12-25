@@ -158,7 +158,7 @@ export default function UserPointList({ userId }: UserPointListProps) {
     <Box
       sx={{
         borderRadius: 2,
-        pt: 3,
+        pt: 2,
         pb: 3,
       }}
     >
@@ -182,8 +182,9 @@ export default function UserPointList({ userId }: UserPointListProps) {
               sx={{
                 borderRadius: 1,
                 p: 2,
-                bgcolor: 'rgba(0,99,151,0.03)',
-                border: '1px solid #D9DEE2',
+                bgcolor: '#fafbfc',
+                border: '1px solid',
+                borderColor: 'border',
                 fontSize: 14,
                 transition: 'all 0.2s ease',
               }}

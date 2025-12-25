@@ -76,14 +76,14 @@ const BrandAttribution = ({ inSidebar = false, sidebarRef }: BrandAttributionPro
     >
       本网站由
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img 
-        src={'/inverse_logo-text.png'} 
-        alt='KoalaQA' 
-        width={60} 
+      <img
+        src={'/inverse_logo-text.png'}
+        alt='KoalaQA'
+        width={60}
         height={9}
-        style={{ 
+        style={{
           filter: 'brightness(0.45)',
-          transition: 'filter 0.2s ease'
+          transition: 'filter 0.2s ease',
         }}
       />
       提供技术支持
@@ -93,9 +93,9 @@ const BrandAttribution = ({ inSidebar = false, sidebarRef }: BrandAttributionPro
   // 在侧边栏中使用，支持智能定位
   if (inSidebar) {
     return (
-      <Box 
-        ref={containerRef} 
-        sx={{ 
+      <Box
+        ref={containerRef}
+        sx={{
           mt: '10px!important',
           position: isFixed ? 'sticky' : 'relative',
           bottom: isFixed ? 0 : 'auto',
@@ -104,18 +104,7 @@ const BrandAttribution = ({ inSidebar = false, sidebarRef }: BrandAttributionPro
           width: '100%',
         }}
       >
-        <Paper
-          elevation={0}
-          sx={{
-            bgcolor: '#ffffff',
-            borderRadius: 1,
-            // border: '1px solid #D9DEE2',
-            transition: 'all 0.2s ease',
-            pl: 0
-          }}
-        >
-          {content}
-        </Paper>
+        {content}
       </Box>
     )
   }
@@ -157,4 +146,3 @@ const BrandAttribution = ({ inSidebar = false, sidebarRef }: BrandAttributionPro
 }
 
 export default BrandAttribution
-

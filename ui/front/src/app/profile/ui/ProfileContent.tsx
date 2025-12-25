@@ -12,9 +12,11 @@ import {
   Box,
   Button,
   Card,
+  Divider,
   IconButton,
   Stack,
   TextField,
+  Theme,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
@@ -83,10 +85,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
     [initialUser?.role, user?.role],
   )
   // 判断是否是当前用户（只能查看自己的积分明细）
-  const isCurrentUser = useMemo(
-    () => user?.uid === initialUser?.uid,
-    [user?.uid, initialUser?.uid],
-  )
+  const isCurrentUser = useMemo(() => user?.uid === initialUser?.uid, [user?.uid, initialUser?.uid])
   const isAdmin = isAdminRole(user.role || ModelUserRole.UserRoleGuest)
   // 计算积分明细 tab 的索引
   const metrics = useMemo(
@@ -174,8 +173,8 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
     whiteSpace: 'nowrap',
     flex: { xs: '0 1 auto', sm: 'none' },
     '&.Mui-selected': {
-      bgcolor: 'rgba(0,99,151,0.06)',
-      border: '1px solid rgba(0,99,151,0.1)',
+      bgcolor: (theme: Theme) => theme.palette.primaryAlpha?.[6],
+      border: (theme: Theme) => `1px solid ${theme.palette.primaryAlpha?.[10]}`,
       color: 'primary.main',
       '&.Mui-focusVisible': {
         bgcolor: '#000000',
@@ -209,7 +208,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
       await putUser({ intro: editBio || '暂无个人介绍' })
       setUser({ ...user, intro: editBio || '暂无个人介绍' })
       setIsEditingBio(false)
-      
+
       // 刷新统计信息以更新积分显示（如果后端给了完善个人介绍的积分奖励，会在这里显示）
       const response = await getUserUserId({ userId: user?.uid || initialUser?.uid || 0 })
       const oldPoint = statistics?.point || 0
@@ -251,7 +250,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
 
       // 头像上传成功后，重新获取用户信息以获取最新的头像URL
       await fetchUser()
-      
+
       // 刷新统计信息以更新积分显示（如果后端给了完善头像的积分奖励，会在这里显示）
       const response = await getUserUserId({ userId: user?.uid || initialUser?.uid || 0 })
       const newPoint = response?.point || 0
@@ -279,7 +278,16 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
   }
 
   return (
-    <Box sx={{ maxWidth: 748, margin: '0 auto' }}>
+    <Box
+      sx={{
+        maxWidth: 780,
+        mx: 'auto',
+        mt: 3,
+        bgcolor: 'background.paper',
+        borderRadius: 1,
+        border: (theme) => `1px solid ${theme.palette.mode === 'light' ? '#EAECF0' : '#393939'}`,
+      }}
+    >
       {/* 头部背景区域 */}
       <ProfileHeroCard
         role={user.role || ModelUserRole.UserRoleGuest}
@@ -300,8 +308,8 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
               <UserAvatar
                 user={user}
                 sx={{
-                  width: 96,
-                  height: 96,
+                  width: '100%',
+                  height: '100%',
                 }}
               />
             </Box>
@@ -309,15 +317,12 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
               component='label'
               sx={{
                 position: 'absolute',
-                bottom: -5,
-                right: -5,
+                bottom: 0,
+                right: 0,
                 backgroundColor: 'primary.main',
-                color: '#fff',
+                color: 'primary.contrastText',
                 width: 32,
                 height: 32,
-                '&:hover': {
-                  backgroundColor: 'white',
-                },
               }}
               disabled={isUploading}
             >
@@ -331,274 +336,280 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
       />
 
       {/* 标签页 */}
-      <Card sx={{ borderRadius: 2, boxShadow: 'none' }}>
-        <Box sx={{ p: { xs: 2, sm: 3 } }}>
-          <ToggleButtonGroup
-            value={tabValue.toString()}
-            onChange={handleTabChange}
-            exclusive
-            aria-label='个人中心标签页'
-            sx={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: { xs: 0.5, sm: 1 },
-              '& .MuiToggleButtonGroup-grouped': {
-                borderRadius: '6px !important',
-                mr: 0,
-                whiteSpace: 'nowrap',
-              },
-            }}
-          >
-            <ToggleButton value='0' sx={toggleButtonSx}>
-              动态
-            </ToggleButton>
-            <ToggleButton value='1' sx={toggleButtonSx}>
-              基本信息
-            </ToggleButton>
-            {isAdminRole(user.role || ModelUserRole.UserRoleGuest) && (
-              <ToggleButton value='2' sx={toggleButtonSx}>
-                客服配置
-              </ToggleButton>
-            )}
-            <ToggleButton value={isAdminRole(user.role || ModelUserRole.UserRoleGuest) ? '3' : '2'} sx={toggleButtonSx}>
-              正在关注
-            </ToggleButton>
-            <ToggleButton value={isAdminRole(user.role || ModelUserRole.UserRoleGuest) ? '4' : '3'} sx={toggleButtonSx}>
-              通知中心
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </Box>
-        {/* 子元素 role=tabpanel 的加个 border */}
-        <Box
+      <Box sx={{ px: { xs: 2, sm: 3 }, pb: { xs: 2, sm: 3 } }}>
+        <Divider sx={{ mb: 3 }} />
+        <ToggleButtonGroup
+          value={tabValue.toString()}
+          onChange={handleTabChange}
+          exclusive
+          aria-label='个人中心标签页'
           sx={{
-            '& > [role=tabpanel]': {
-              border: '1px solid #eee',
-              borderRadius: 1,
-              mb: 2,
-              mt: 0,
-              p: 0,
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: { xs: 0, sm: 1 },
+            '& .MuiToggleButtonGroup-grouped': {
+              borderRadius: '6px !important',
+              mr: 0,
+              whiteSpace: 'nowrap',
+              '&.Mui-selected': {
+                bgcolor: 'primary.main',
+                color: (theme) => theme.palette.primary.contrastText,
+                '&:hover':{
+                  bgcolor: 'primary.dark',
+                }
+              },
             },
           }}
         >
-          <TabPanel value={tabValue} index={0}>
-            {isGuestUser ? (
-              <Stack
-                direction={{ xs: 'column', sm: 'row' }}
-                sx={{ height: '300px', color: 'text.secondary' }}
-                alignItems='center'
-                justifyContent='center'
-              >
-                <Typography variant='body1' fontWeight={400}>
-                  您的账号未激活，请点击
-                </Typography>
-                <Typography
-                  variant='body1'
-                  sx={{ cursor: 'pointer' }}
-                  color='primary.main'
-                  fontWeight={500}
-                  onClick={openModal}
-                >
-                  提交申请
-                </Typography>
-              </Stack>
-            ) : (
-              <UserTrendList
-                userId={user?.uid || initialUser?.uid || 0}
-                ownerName={user?.username || initialUser?.username}
-              />
-            )}
-          </TabPanel>
-          <TabPanel value={tabValue} index={1}>
-            <Stack
-              sx={{
-                '& > div': {
-                  minHeight: '60px',
-                  alignItems: 'center',
-                  borderBottom: '1px solid',
-                  borderColor: 'divider',
-                  '&:last-child': {
-                    borderBottom: 'none',
-                  },
-                },
-              }}
-            >
-              <Stack direction='row' alignItems='center'>
-                <Typography variant='body2' sx={{ width: '26%', color: '#666' }}>
-                  昵称
-                </Typography>
-                {isEditingName ? (
-                  <>
-                    <TextField
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      size='small'
-                      slotProps={{
-                        input: { sx: { fontSize: '13px' } },
-                      }}
-                      sx={{ flex: 1, maxWidth: 300, ml: 'auto!important', py: 0 }}
-                    />
-                    <Button onClick={handleSaveName} variant='text' size='small'>
-                      保存
-                    </Button>
-                    <Button
-                      onClick={handleCancelEdit}
-                      sx={{ color: 'rgba(33, 34, 45, 1)' }}
-                      variant='text'
-                      size='small'
-                    >
-                      取消
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Typography sx={{ flex: 1 }} variant='body2'>
-                      {user?.username || '-'}
-                    </Typography>
-                    <Button onClick={() => setIsEditingName(true)} size='small' sx={{ minWidth: 60 }}>
-                      修改
-                    </Button>
-                  </>
-                )}
-              </Stack>
-
-              <Stack direction='row' alignItems='center'>
-                <Typography variant='body2' sx={{ width: '26%', color: '#666' }}>
-                  介绍
-                </Typography>
-                {isEditingBio ? (
-                  <>
-                    <TextField
-                      value={editBio}
-                      onChange={(e) => setEditBio(e.target.value)}
-                      size='small'
-                      slotProps={{
-                        input: { sx: { fontSize: '13px' } },
-                      }}
-                      sx={{ flex: 1, ml: 'auto!important', py: 0 }}
-                    />
-                    <Button onClick={handleSaveBio} variant='text' size='small'>
-                      保存
-                    </Button>
-                    <Button
-                      onClick={handleCancelEditBio}
-                      sx={{ color: 'rgba(33, 34, 45, 1)' }}
-                      variant='text'
-                      size='small'
-                    >
-                      取消
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Ellipsis sx={{ flex: 1, fontSize: '14px', color: 'text.primary' }}>
-                      {user?.intro || initialUser?.intro || '暂无个人介绍'}
-                    </Ellipsis>
-                    <Button onClick={() => setIsEditingBio(true)} size='small' sx={{ minWidth: 60 }}>
-                      修改
-                    </Button>
-                  </>
-                )}
-              </Stack>
-
-              <Stack direction='row' alignItems='center'>
-                <Typography variant='body2' sx={{ width: '26%', color: '#666' }}>
-                  邮箱
-                </Typography>
-                <Typography sx={{ flex: 1 }} variant='body2'>
-                  {user?.email || '未绑定'}
-                </Typography>
-                {!user?.email ? (
-                  <Button size='small' sx={{ minWidth: 60 }} onClick={() => setBindEmailModalOpen(true)}>
-                    绑定
-                  </Button>
-                ) : (
-                  <Button
-                    size='small'
-                    disabled
-                    sx={{
-                      minWidth: 60,
-                      color: '#999',
-                    }}
-                    title='不支持修改已绑定的邮箱'
-                  >
-                    修改
-                  </Button>
-                )}
-              </Stack>
-
-              <Stack direction='row' alignItems='center'>
-                <Typography variant='body2' sx={{ width: '26%', color: '#666' }}>
-                  用户角色
-                </Typography>
-                <Typography variant='body2' sx={{ flex: 1 }}>
-                  {roleConfig[user?.role || ModelUserRole.UserRoleUnknown].name}
-                </Typography>
-              </Stack>
-
-              <Stack direction='row' alignItems='center'>
-                <Typography variant='body2' sx={{ width: '26%', color: '#666' }}>
-                  账号密码
-                </Typography>
-                <Typography sx={{ flex: 1, color: '#999' }}>••••••••</Typography>
-                {user?.builtin ? (
-                  <Button
-                    size='small'
-                    disabled
-                    sx={{
-                      color: '#999',
-                    }}
-                    title='内置用户不允许修改密码'
-                  >
-                    修改
-                  </Button>
-                ) : (
-                  <Button onClick={handleChangePasswordClick} size='small'>
-                    修改
-                  </Button>
-                )}
-              </Stack>
-            </Stack>
-          </TabPanel>
+          <ToggleButton value='0' sx={toggleButtonSx}>
+            动态
+          </ToggleButton>
+          <ToggleButton value='1' sx={toggleButtonSx}>
+            基本信息
+          </ToggleButton>
           {isAdminRole(user.role || ModelUserRole.UserRoleGuest) && (
-            <TabPanel value={tabValue} index={2}>
-              <QuickReplyList />
-            </TabPanel>
+            <ToggleButton value='2' sx={toggleButtonSx}>
+              客服配置
+            </ToggleButton>
           )}
-          <TabPanel value={tabValue} index={isAdminRole(user.role || ModelUserRole.UserRoleGuest) ? 3 : 2}>
-            {isGuestUser ? (
-              <Stack
-                direction={{ xs: 'column', sm: 'row' }}
-                sx={{ height: '300px', color: 'text.secondary' }}
-                alignItems='center'
-                justifyContent='center'
+          <ToggleButton value={isAdminRole(user.role || ModelUserRole.UserRoleGuest) ? '3' : '2'} sx={toggleButtonSx}>
+            正在关注
+          </ToggleButton>
+          <ToggleButton value={isAdminRole(user.role || ModelUserRole.UserRoleGuest) ? '4' : '3'} sx={toggleButtonSx}>
+            通知中心
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
+      {/* 子元素 role=tabpanel 的加个 border */}
+      <Box
+        sx={{
+          px: 3,
+          '& > [role=tabpanel]': {
+            mb: 2,
+            mt: 0,
+            borderRadius: 1,
+            border: (theme) => `1px solid ${theme.palette.mode === 'light' ? '#EAECF0' : '#393939'}`,
+            p: 2,
+            pt: 0,
+            '& > div': {
+              p: 0,
+            },
+          },
+        }}
+      >
+        <TabPanel value={tabValue} index={0}>
+          {isGuestUser ? (
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              sx={{ height: '300px', color: 'text.secondary' }}
+              alignItems='center'
+              justifyContent='center'
+            >
+              <Typography variant='body1' fontWeight={400}>
+                您的账号未激活，请点击
+              </Typography>
+              <Typography
+                variant='body1'
+                sx={{ cursor: 'pointer' }}
+                color='primary.main'
+                fontWeight={500}
+                onClick={openModal}
               >
-                <Typography variant='body1' fontWeight={400}>
-                  您的账号未激活，请点击
-                </Typography>
-                <Typography
-                  variant='body1'
-                  sx={{ cursor: 'pointer' }}
-                  color='primary.main'
-                  fontWeight={500}
-                  onClick={openModal}
-                >
-                  提交申请
-                </Typography>
-              </Stack>
-            ) : (
-              <FollowingIssuesList />
-            )}
-          </TabPanel>
-          <TabPanel value={tabValue} index={isAdminRole(user.role || ModelUserRole.UserRoleGuest) ? 4 : 3}>
-            <NotificationCenter />
-          </TabPanel>
-          {isCurrentUser && (
-            <TabPanel value={tabValue} index={5}>
-              <UserPointList userId={user?.uid || initialUser?.uid || 0} />
-            </TabPanel>
+                提交申请
+              </Typography>
+            </Stack>
+          ) : (
+            <UserTrendList
+              userId={user?.uid || initialUser?.uid || 0}
+              ownerName={user?.username || initialUser?.username}
+            />
           )}
-        </Box>
-      </Card>
+        </TabPanel>
+        <TabPanel value={tabValue} index={1}>
+          <Stack
+            sx={{
+              '& > div': {
+                minHeight: '60px',
+                alignItems: 'center',
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+                '&:last-child': {
+                  borderBottom: 'none',
+                },
+              },
+            }}
+          >
+            <Stack direction='row' alignItems='center'>
+              <Typography variant='body2' sx={{ width: '26%', color: '#666' }}>
+                昵称
+              </Typography>
+              {isEditingName ? (
+                <>
+                  <TextField
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    size='small'
+                    slotProps={{
+                      input: { sx: { fontSize: '13px' } },
+                    }}
+                    sx={{ flex: 1, maxWidth: 300, ml: 'auto!important', py: 0 }}
+                  />
+                  <Button onClick={handleSaveName} variant='text' size='small'>
+                    保存
+                  </Button>
+                  <Button onClick={handleCancelEdit} sx={{ color: 'rgba(33, 34, 45, 1)' }} variant='text' size='small'>
+                    取消
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Typography sx={{ flex: 1 }} variant='body2'>
+                    {user?.username || '-'}
+                  </Typography>
+                  <Button onClick={() => setIsEditingName(true)} size='small' sx={{ minWidth: 60 }}>
+                    修改
+                  </Button>
+                </>
+              )}
+            </Stack>
+
+            <Stack direction='row' alignItems='center'>
+              <Typography variant='body2' sx={{ width: '26%', color: '#666' }}>
+                介绍
+              </Typography>
+              {isEditingBio ? (
+                <>
+                  <TextField
+                    value={editBio}
+                    onChange={(e) => setEditBio(e.target.value)}
+                    size='small'
+                    slotProps={{
+                      input: { sx: { fontSize: '13px' } },
+                    }}
+                    sx={{ flex: 1, ml: 'auto!important', py: 0 }}
+                  />
+                  <Button onClick={handleSaveBio} variant='text' size='small'>
+                    保存
+                  </Button>
+                  <Button
+                    onClick={handleCancelEditBio}
+                    sx={{ color: 'rgba(33, 34, 45, 1)' }}
+                    variant='text'
+                    size='small'
+                  >
+                    取消
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Ellipsis sx={{ flex: 1, fontSize: '14px', color: 'text.primary' }}>
+                    {user?.intro || initialUser?.intro || '暂无个人介绍'}
+                  </Ellipsis>
+                  <Button onClick={() => setIsEditingBio(true)} size='small' sx={{ minWidth: 60 }}>
+                    修改
+                  </Button>
+                </>
+              )}
+            </Stack>
+
+            <Stack direction='row' alignItems='center'>
+              <Typography variant='body2' sx={{ width: '26%', color: '#666' }}>
+                邮箱
+              </Typography>
+              <Typography sx={{ flex: 1 }} variant='body2'>
+                {user?.email || '未绑定'}
+              </Typography>
+              {!user?.email ? (
+                <Button size='small' sx={{ minWidth: 60 }} onClick={() => setBindEmailModalOpen(true)}>
+                  绑定
+                </Button>
+              ) : (
+                <Button
+                  size='small'
+                  disabled
+                  sx={{
+                    minWidth: 60,
+                    color: '#999',
+                  }}
+                  title='不支持修改已绑定的邮箱'
+                >
+                  修改
+                </Button>
+              )}
+            </Stack>
+
+            <Stack direction='row' alignItems='center'>
+              <Typography variant='body2' sx={{ width: '26%', color: '#666' }}>
+                用户角色
+              </Typography>
+              <Typography variant='body2' sx={{ flex: 1 }}>
+                {roleConfig[user?.role || ModelUserRole.UserRoleUnknown].name}
+              </Typography>
+            </Stack>
+
+            <Stack direction='row' alignItems='center'>
+              <Typography variant='body2' sx={{ width: '26%', color: '#666' }}>
+                账号密码
+              </Typography>
+              <Typography sx={{ flex: 1, color: '#999' }}>••••••••</Typography>
+              {user?.builtin ? (
+                <Button
+                  size='small'
+                  disabled
+                  sx={{
+                    color: '#999',
+                  }}
+                  title='内置用户不允许修改密码'
+                >
+                  修改
+                </Button>
+              ) : (
+                <Button onClick={handleChangePasswordClick} size='small'>
+                  修改
+                </Button>
+              )}
+            </Stack>
+          </Stack>
+        </TabPanel>
+        {isAdminRole(user.role || ModelUserRole.UserRoleGuest) && (
+          <TabPanel value={tabValue} index={2}>
+            <QuickReplyList />
+          </TabPanel>
+        )}
+        <TabPanel value={tabValue} index={isAdminRole(user.role || ModelUserRole.UserRoleGuest) ? 3 : 2}>
+          {isGuestUser ? (
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              sx={{ height: '300px', color: 'text.secondary' }}
+              alignItems='center'
+              justifyContent='center'
+            >
+              <Typography variant='body1' fontWeight={400}>
+                您的账号未激活，请点击
+              </Typography>
+              <Typography
+                variant='body1'
+                sx={{ cursor: 'pointer' }}
+                color='primary.main'
+                fontWeight={500}
+                onClick={openModal}
+              >
+                提交申请
+              </Typography>
+            </Stack>
+          ) : (
+            <FollowingIssuesList />
+          )}
+        </TabPanel>
+        <TabPanel value={tabValue} index={isAdminRole(user.role || ModelUserRole.UserRoleGuest) ? 4 : 3}>
+          <NotificationCenter />
+        </TabPanel>
+        {isCurrentUser && (
+          <TabPanel value={tabValue} index={5}>
+            <UserPointList userId={user?.uid || initialUser?.uid || 0} />
+          </TabPanel>
+        )}
+      </Box>
 
       {/* 修改密码模态框 */}
       <ChangePasswordModal

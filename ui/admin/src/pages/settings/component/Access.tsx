@@ -30,7 +30,7 @@ const Access = ({ onSaved }: AccessProps) => {
   });
 
   // 获取当前配置
-  const { data } = useRequest(getAdminSystemPublicAddress, {
+  useRequest(getAdminSystemPublicAddress, {
     onSuccess: res => {
       reset({
         address: res.address,

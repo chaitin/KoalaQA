@@ -18,30 +18,35 @@ export default function TagFilterChip({ id, name, selected, onClick, sx }: TagFi
       key={id}
       label={
         <Stack direction='row' alignItems='center' gap={0.5}>
-          <Icon type='icon-biaoqian1' sx={{ color: selected ? '#fff' : 'rgba(0, 99, 151, 0.30)' }} />
+          <Icon
+            type='icon-biaoqian1'
+            sx={(theme) => ({ color: selected ? '#fff' : theme.palette.primaryAlpha?.[30] })}
+          />
           {name ?? ''}
         </Stack>
       }
       size='small'
       onClick={onClick}
-      sx={{
-        bgcolor: selected ? 'primary.main' : 'rgba(0,99,151,0.06)',
-        color: selected ? '#ffffff' : 'text.primary',
-        fontSize: '0.75rem',
-        fontWeight: 400,
-        height: 26,
-        borderRadius: '8px',
-        border: selected ? 'none' : '1px solid rgba(0,99,151,0.1)',
-        transition: 'all 0.15s ease-in-out',
-        '&:hover': {
-          bgcolor: selected ? 'primary.main' : 'rgba(0,99,151,0.06)',
-          color: selected ? '#ffffff' : '#6b7280',
-          boxShadow: 'none',
-        },
-        ...sx,
-      }}
+      sx={
+        [
+          (theme) => ({
+            bgcolor: selected ? 'primary.main' : theme.palette.primaryAlpha?.[6] || 'rgba(0,99,151,0.06)',
+            color: selected ? '#ffffff' : 'text.primary',
+            fontSize: '0.75rem',
+            fontWeight: 400,
+            height: 26,
+            borderRadius: '8px',
+            border: selected ? 'none' : `1px solid ${theme.palette.primaryAlpha?.[10] || 'rgba(0,99,151,0.1)'}`,
+            transition: 'all 0.15s ease-in-out',
+            '&:hover': {
+              bgcolor: selected ? 'primary.dark' : theme.palette.primaryAlpha?.[6] || '',
+              color: selected ? '#ffffff' : '',
+              boxShadow: 'none',
+            },
+          }),
+          ...(sx ? [sx] : []),
+        ] as SxProps<Theme>
+      }
     />
   )
 }
-
-
