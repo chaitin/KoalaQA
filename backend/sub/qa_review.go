@@ -121,7 +121,7 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 	_, chunks, err := q.rag.QueryRecords(ctx, rag.QueryRecordsReq{
 		DatasetID:           q.dataset.GetBackendID(ctx),
 		Query:               data.DiscussTitle,
-		TopK:                1000,
+		TopK:                100,
 		SimilarityThreshold: 0.5,
 	})
 	if err != nil {
