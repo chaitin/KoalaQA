@@ -1,27 +1,24 @@
 'use client'
 
 import { ModelUserQuickReply } from '@/api'
-import DragHandleIcon from '@mui/icons-material/DragHandle'
-import CancelIcon from '@mui/icons-material/Cancel'
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
-import { Box, Button, IconButton, Stack, Typography, Card, CircularProgress } from '@mui/material'
-import { useEffect, useState } from 'react'
+import Modal from '@/components/modal'
+import { useQuickReplyStore } from '@/store/quickReplyStore'
 import {
-  DndContext,
   closestCenter,
+  DndContext,
+  DragEndEvent,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent,
 } from '@dnd-kit/core'
-import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useSortable } from '@dnd-kit/sortable'
+import CancelIcon from '@mui/icons-material/Cancel'
+import DragHandleIcon from '@mui/icons-material/DragHandle'
+import { Box, Button, CircularProgress, IconButton, Stack, Typography } from '@mui/material'
+import { useState } from 'react'
 import QuickReplyEditModal from './QuickReplyEditModal'
-import Modal from '@/components/modal'
-import { useQuickReplyStore } from '@/store/quickReplyStore'
-import { Message } from '@/components'
 
 interface SortableItemProps {
   id: string | number

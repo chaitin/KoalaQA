@@ -189,13 +189,12 @@ export default function UserTrendList({ userId, ownerName }: UserTrendListProps)
     <Box
       sx={{
         borderRadius: 2,
-        pt: 3,
-        pb: 3,
+        pt: 2,
       }}
     >
       <Stack spacing={2}>
         {error && (
-          <Card variant='outlined' sx={{ borderRadius: 2, p: 3, borderColor: 'error.light' }}>
+          <Card variant='outlined'>
             <Typography variant='body2' color='error'>
               {error}
             </Typography>
@@ -210,10 +209,10 @@ export default function UserTrendList({ userId, ownerName }: UserTrendListProps)
             <Link key={trend.id} href={href} style={{ textDecoration: 'none', color: 'inherit' }}>
               <Card
                 variant='outlined'
-                sx={{
+                sx={theme=>({
                   borderRadius: 1,
                   p: 2,
-                  bgcolor: 'rgba(0,99,151,0.03)',
+                  bgcolor: '#fafbfc',
                   border: '1px solid #D9DEE2',
                   cursor: 'pointer',
                   '&:hover': {
@@ -221,7 +220,7 @@ export default function UserTrendList({ userId, ownerName }: UserTrendListProps)
                   },
                   fontSize: 14,
                   transition: 'all 0.2s ease',
-                }}
+                })}
               >
                 <Stack direction='row' justifyContent='space-between' alignItems='center' spacing={2}>
                   <Box sx={{ flex: 1, minWidth: 0 }}>

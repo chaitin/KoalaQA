@@ -1,5 +1,5 @@
 import { getDiscussionDiscId } from '@/api'
-import { Alert, Box, Stack, Typography } from '@mui/material'
+import { Alert, Box, Paper, Stack, Typography } from '@mui/material'
 import { Metadata } from 'next'
 import { cache, Suspense } from 'react'
 import Content from './ui/content'
@@ -9,6 +9,7 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import ScrollReset from '@/components/ScrollReset'
 import DiscussionAlert from './ui/DiscussionAlert'
 import { getServerGroup } from '@/utils/serverGroupCache'
+import AddRefreshParam from './ui/AddRefreshParam'
 
 // 动态生成 metadata
 export async function generateMetadata(props: {
@@ -108,22 +109,33 @@ const DiscussDetailPage = async (props: {
   return (
     <>
       <ScrollReset />
+      <AddRefreshParam />
       <Box
         sx={{
           display: 'flex',
           gap: { xs: 0, lg: 3 },
           justifyContent: { lg: 'center' },
           alignItems: { lg: 'flex-start' },
-          minHeight: '100vh',
+          pb: 2,
+          minHeight: 'calc(100vh - 90px)',
         }}
       >
         {/* 主内容区域 */}
         <Stack
+          component={Paper}
+          elevation={0}
           sx={{
             flex: 1,
             minWidth: 0,
             alignSelf: 'stretch',
-            width: { xs: '100%', lg: '750px' },
+            width: { xs: '100%', lg: '780px' },
+            border: `1px solid`,
+            borderColor: { xs: 'transparent', lg: 'border' },
+            boxShadow: 'none',
+            borderRadius: { xs: 0, lg: 1 },
+            pt: { xs: 1, lg: 3 },
+            px: { xs: 1, lg: 2 },
+            pb: 0,
             position: 'relative',
           }}
         >

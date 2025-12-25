@@ -28,9 +28,8 @@ const AssociatedItemCard = ({ item, routeName, statusChip }: AssociatedItemCardP
         overflow: 'hidden',
         boxShadow: 'none',
         '&:hover': {
-          bgcolor: '#f3f4f6',
+          bgcolor: theme => theme.palette.primaryAlpha?.[3],
         },
-        bgcolor: 'rgba(0,99,151,0.03)',
       }}
     >
       <Link

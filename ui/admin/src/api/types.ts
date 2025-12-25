@@ -326,6 +326,7 @@ export interface ModelDiscussionDetail {
 }
 
 export interface ModelDiscussionGroup {
+  group_id?: number;
   id?: number;
   name?: string;
 }

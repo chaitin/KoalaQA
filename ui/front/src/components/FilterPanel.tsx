@@ -37,7 +37,7 @@ type TagWithId = {
 }
 
 const postTypes = [
-  { id: 'all', name: '全部', icon: <Icon type='icon-quanbu' sx={{ fontSize: 20 }} /> },
+  { id: 'all', name: '全部', icon: <Icon type='icon-quanbu' sx={{ fontSize: 20, color: 'primary.main' }} /> },
   { id: 'qa', name: '问题', icon: <Image width={20} height={20} src='/qa.svg' alt='问题' /> },
   { id: 'issue', name: 'Issue', icon: <Icon type='icon-issue' sx={{ fontSize: 20 }} /> },
   { id: 'blog', name: '文章', icon: <Image width={20} height={20} src='/blog.svg' alt='文章' /> },
@@ -288,7 +288,6 @@ export default function FilterPanel() {
   // 更新 URL 参数的函数
   const updateUrlParams = (newTopics: number[], newType?: string | null, newTags?: number[]) => {
     const params = new URLSearchParams(searchParams?.toString())
-
     // 更新类型参数
     // 约定：type=all 表示“全部”（后端查询时需要映射为不传 type）
     // 如果newType为null或undefined，删除type参数（兼容旧链接）
@@ -357,17 +356,14 @@ export default function FilterPanel() {
       updateUrlParams(urlTopics, 'all', selectedTags)
       return
     }
-    // 已经选中时不再“切回全部”，保持当前选中（需要全部请点“全部”）
-    if (urlType === typeId) return
+    if (pathname === `/${routeName}` && urlType === typeId) return
     updateUrlParams(urlTopics, typeId, selectedTags)
   }
 
   return (
     <Stack
       sx={{
-        bgcolor: 'rgba(0,99,151,0.03)',
-        borderRadius: '8px',
-        border: '1px solid rgba(0,99,151,0.1)',
+        bgcolor: 'background.paper',
         p: 2,
         width: {
           xs: '100%', // 移动端使用全宽
@@ -376,8 +372,8 @@ export default function FilterPanel() {
         },
         height: {
           xs: 'auto', // 移动端使用自动高度
-          md: 'calc(100vh - 110px)', // 平板使用较小的偏移
-          lg: 'calc(100vh - 110px)', // 桌面端使用原始值
+          md: 'calc(100vh - 64px)', // 平板使用较小的偏移
+          lg: 'calc(100vh - 64px)', // 桌面端使用原始值
         },
         overflowY: 'auto',
         position: {
@@ -386,8 +382,8 @@ export default function FilterPanel() {
         },
         top: {
           xs: 'auto',
-          md: 88,
-          lg: 88,
+          md: 64,
+          lg: 64,
         },
         '&::-webkit-scrollbar': {
           width: '6px',
@@ -423,21 +419,21 @@ export default function FilterPanel() {
                   disableRipple
                   selected={isSelected}
                   onClick={() => handlePostTypeClick(type.id)}
-                  sx={{
+                  sx={(theme) => ({
                     py: 0.75,
                     px: 1.5,
                     border: '1px solid transparent',
                     mb: 0.5,
                     borderRadius: '8px',
                     '&.Mui-selected': {
-                      background: 'rgba(0,99,151,0.06)',
+                      background: theme.palette.primaryAlpha?.[6] || 'rgba(0,99,151,0.06)',
                       color: 'primary.main',
-                      borderColor: 'rgba(0,99,151,0.1)',
+                      borderColor: theme.palette.primaryAlpha?.[10] || 'rgba(0,99,151,0.1)',
                     },
-                    '&:hover': { bgcolor: '#f3f4f6', color: '#000000' },
-                  }}
+                    '&:hover': { bgcolor: '#f3f4f6' },
+                  })}
                 >
-                  <ListItemIcon sx={{ minWidth: 28, color: isSelected ? '#111827' : '#6b7280' }}>
+                  <ListItemIcon sx={{ minWidth: 28, color: (theme) => (isSelected ? 'primary.main' : '#6b7280') }}>
                     {type.icon}
                   </ListItemIcon>
                   <ListItemText
@@ -459,7 +455,7 @@ export default function FilterPanel() {
         </List>
       </Box>
 
-      <Divider sx={{ mb: 2 }} />
+      <Divider sx={{ mb: 3 }} />
 
       <Box sx={{ mb: 2 }}>
         {categoryGroups.map((group) => {
@@ -507,13 +503,13 @@ export default function FilterPanel() {
                   const firstLabel = firstOption?.name ?? ''
 
                   if (selectedCount === 1) {
-                    return <Chip size='small' label={firstLabel} sx={{ maxWidth: '100%', fontSize: '0.75rem' }} />
+                    return <Chip size='small' label={firstLabel} sx={{ maxWidth: '100%', fontSize: '0.75rem', borderRadius: 1, }} />
                   }
 
                   return (
                     <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
-                      <Chip size='small' label={firstLabel} sx={{ fontSize: '0.75rem' }} />
-                      <Chip size='small' label={`+${selectedCount - 1}`} sx={{ fontSize: '0.75rem' }} />
+                      <Chip size='small' label={firstLabel} sx={{ fontSize: '0.75rem', borderRadius: 1, }} />
+                      <Chip size='small' label={`+${selectedCount - 1}`} sx={{ fontSize: '0.75rem', borderRadius: 1, }} />
                     </Box>
                   )
                 }}
@@ -529,7 +525,7 @@ export default function FilterPanel() {
                     borderColor: '#d1d5db',
                   },
                   '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                    borderColor: 'rgba(0,99,151,0.5)',
+                    borderColor: (theme) => theme.palette.primaryAlpha?.[50] || 'rgba(0,99,151,0.5)',
                     borderWidth: '1px',
                   },
                   '& .MuiSelect-select': {
@@ -589,7 +585,7 @@ export default function FilterPanel() {
         })}
       </Box>
 
-      <Divider sx={{ mb: 2 }} />
+      <Divider sx={{ mb: 3}} />
 
       <Box>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>

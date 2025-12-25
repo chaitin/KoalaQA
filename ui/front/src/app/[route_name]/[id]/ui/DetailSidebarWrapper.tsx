@@ -40,7 +40,7 @@ const DetailSidebarWrapper = ({
       ref={sidebarRef}
       sx={{
         position: 'sticky',
-        top: 26,
+        top: 24,
         width: 300,
         flexShrink: 0,
         display: { xs: 'none', lg: 'block' },

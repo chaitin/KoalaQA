@@ -2,36 +2,22 @@
 
 import {
   getUserNotifyList,
-  postUserNotifyRead,
   getUserNotifyUnread,
-  postUserNotifyWeb,
   ModelMessageNotify,
   ModelMsgNotifyType,
+  postUserNotifyRead,
 } from '@/api'
-import {
-  Box,
-  Stack,
-  Typography,
-  Checkbox,
-  FormControlLabel,
-  Tooltip,
-  IconButton,
-  Button,
-  Card,
-  SelectChangeEvent,
-} from '@mui/material'
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
-import { useEffect, useState, useCallback, useContext } from 'react'
-import { useRequest } from 'ahooks'
-import dayjs from '@/lib/dayjs'
 import { MarkDown, Message } from '@/components'
+import { getNotificationTextForExport } from '@/components/header/loggedInView'
 import Modal from '@/components/modal'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
+import dayjs from '@/lib/dayjs'
 import { useForumStore } from '@/store'
-import { getNotificationTextForExport, splitNotificationText } from '@/components/header/loggedInView'
-import { AuthContext } from '@/components/authProvider'
 import { Ellipsis, Pagination } from '@ctzhian/ui'
+import { Box, Button, Card, SelectChangeEvent, Stack, Typography } from '@mui/material'
+import { useRequest } from 'ahooks'
 import Image from 'next/image'
+import { useCallback, useEffect, useState } from 'react'
 
 export default function NotificationCenter() {
   const routerWithRouteName = useRouterWithRouteName()
@@ -39,20 +25,6 @@ export default function NotificationCenter() {
   const [notifyPage, setNotifyPage] = useState(1)
   const [notifyPageSize, setNotifyPageSize] = useState(10)
   const [unreadCount, setUnreadCount] = useState(0)
-  const [isNotificationSupported, setIsNotificationSupported] = useState(false)
-  const { user, fetchUser } = useContext(AuthContext)
-
-  // 检查是否支持浏览器通知（需要 HTTPS 或 localhost）
-  // 使用 useEffect 确保只在客户端执行，避免 hydration 不匹配
-  useEffect(() => {
-    setIsNotificationSupported(
-      typeof window !== 'undefined' &&
-        'Notification' in window &&
-        (window.location.protocol === 'https:' ||
-          window.location.hostname === 'localhost' ||
-          window.location.hostname === '127.0.0.1'),
-    )
-  }, [])
   // 使用 useRequest 加载通知列表
   const {
     data: notifyData,
@@ -89,37 +61,6 @@ export default function NotificationCenter() {
       // 不显示错误提示，避免干扰用户体验
     }
   }, [])
-
-  // 处理网页通知开关变化
-  const handleWebNotifyChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const checked = event.target.checked
-    try {
-      await postUserNotifyWeb({ enable: checked })
-      await fetchUser()
-
-      // 如果启用了网页通知，请求浏览器通知权限
-      if (checked && typeof window !== 'undefined' && 'Notification' in window) {
-        if (Notification.permission === 'default') {
-          // 权限还未请求，现在请求
-          const permission = await Notification.requestPermission()
-          if (permission === 'granted') {
-            Message.success('已启用网页通知，浏览器通知权限已授予')
-          } else if (permission === 'denied') {
-            Message.warning('浏览器通知权限被拒绝，请在浏览器设置中允许通知')
-          }
-        } else if (Notification.permission === 'granted') {
-          Message.success('已启用网页通知')
-        } else {
-          Message.warning('浏览器通知权限被拒绝，请在浏览器设置中允许通知')
-        }
-      } else {
-        Message.success(checked ? '已启用网页通知' : '已关闭网页通知')
-      }
-    } catch (error) {
-      console.error('更新网页通知状态失败:', error)
-      Message.error('更新网页通知状态失败')
-    }
-  }
 
   // 加载通知列表和未读数量
   useEffect(() => {
@@ -221,7 +162,7 @@ export default function NotificationCenter() {
           onClick={handleMarkAllRead}
           sx={{
             fontSize: '14px',
-            color: '#006397',
+            color: 'primary.main',
             textTransform: 'none',
             padding: '4px 12px',
             minWidth: 'auto',
@@ -243,7 +184,7 @@ export default function NotificationCenter() {
                 sx={{
                   color: '#21222D',
                   '&.Mui-checked': {
-                    color: '#006397',
+                    color: 'primary.main',
                   },
                 }}
               />
@@ -316,11 +257,11 @@ export default function NotificationCenter() {
                   boxShadow: 'none',
                   p: 2,
                   cursor: 'pointer',
-                  backgroundColor: 'rgba(0,99,151,0.03)',
+                  backgroundColor: '#fafbfc',
                   border: '1px solid #e0e0e0',
                   borderRadius: '8px',
                   '&:hover': {
-                    backgroundColor: 'rgba(0,99,151,0.05)',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
                   },
                 }}
               >
@@ -421,12 +362,7 @@ export default function NotificationCenter() {
       {/* 分页器 */}
       {notifyTotal > notifyPageSize && (
         <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
-          <Pagination
-            total={notifyTotal}
-            page={notifyPage}
-            pageSize={notifyPageSize}
-            onChange={handlePageChange}
-          />
+          <Pagination total={notifyTotal} page={notifyPage} pageSize={notifyPageSize} onChange={handlePageChange} />
         </Box>
       )}
     </Box>

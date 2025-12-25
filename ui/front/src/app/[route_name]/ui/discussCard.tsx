@@ -33,9 +33,8 @@ const DiscussCard = ({
   filter?: 'hot' | 'new' | 'publish'
 }) => {
   const it = data
-  const { groups, tags } = useContext(CommonContext)
+  const { groups } = useContext(CommonContext)
   const params = useParams()
-  const router = useRouterWithRouteName()
   const profileHref = it.user_id ? `/profile/${it.user_id}` : undefined
 
   // 使用 useMemo 优化分组名称计算，避免重复查找
@@ -58,9 +57,11 @@ const DiscussCard = ({
         transition: 'all 0.2s',
         cursor: 'pointer',
         '&:hover': {
-          bgcolor: 'rgba(0,99,151,0.03)',
+          bgcolor: (theme) => theme.palette.primaryAlpha?.[3] || 'rgba(0,99,151,0.03)',
         },
-        p: 2,
+        pt: 1.8,
+        pb: 2.5,
+        px: 1,
         ...sx,
       }}
     >
@@ -207,7 +208,7 @@ const DiscussCard = ({
                   display: 'flex',
                   alignItems: 'center',
                   gap: 0.5,
-                  background: 'rgba(0,99,151,0.06)',
+                  background: (theme) => theme.palette.primaryAlpha?.[6] || 'rgba(0,99,151,0.06)',
                   color: 'primary.main',
                   px: 1,
                   height: '22px',
@@ -226,7 +227,7 @@ const DiscussCard = ({
                   display: 'flex',
                   alignItems: 'center',
                   gap: 0.5,
-                  background: 'rgba(0,99,151,0.06)',
+                  background: (theme) => theme.palette.primaryAlpha?.[6] || 'rgba(0,99,151,0.06)',
                   color: 'primary.main',
                   px: 1,
                   height: '22px',

@@ -13,8 +13,6 @@ import { Outlet } from 'react-router-dom';
 
 const MainLayout = () => {
   const [showGuide, setShowGuide] = useState(false);
-  const [needModel, setNeedModel] = useState(false);
-  const [needAddress, setNeedAddress] = useState(false);
   const [user] = useContext(AuthContext);
   const { setKbId } = useConfigStore();
   const { refreshForums } = useForumStore();
@@ -53,21 +51,14 @@ const MainLayout = () => {
           setKbId(kbList[0].id);
         }
 
-        setNeedModel(lackModel);
-        setNeedAddress(lackAddr);
         const _showGuide = lackModel || lackAddr || kbList.length === 0;
         setShowGuide(_showGuide);
         if (!_showGuide && !first_mount) {
           window.location.reload();
         }
-        // 返回检查结果
-        return { lackModel, lackAddr };
       } catch {
         // 网络或接口异常时，强制进入引导
-        setNeedModel(true);
-        setNeedAddress(true);
         setShowGuide(true);
-        return { lackModel: true, lackAddr: true };
       }
     },
     [setKbId]
@@ -175,7 +166,6 @@ const MainLayout = () => {
           </Stack>
           <Button
             variant="outlined"
-            disabled={needAddress || needModel}
             onClick={() => checkNecessaryConfigurations(false)}
             sx={{ ml: 'auto', mt: 2 }}
           >

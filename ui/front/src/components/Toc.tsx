@@ -1,7 +1,7 @@
 'use client'
 import { TocList } from '@ctzhian/tiptap'
 import { Ellipsis } from '@ctzhian/ui'
-import { Box, Stack, Typography } from '@mui/material'
+import { Box, Divider, Stack, Typography } from '@mui/material'
 import { useMemo } from 'react'
 
 interface TocProps {
@@ -39,10 +39,11 @@ const Toc = ({ headings }: TocProps) => {
           pb: 0,
         }}
       >
-        <Typography variant='subtitle2' sx={{ fontWeight: 700, color: '#111827', fontSize: '14px', mb: 2 }}>
+        <Typography variant='subtitle2' sx={{ fontWeight: 700, color: '#111827', fontSize: '14px', mb: 1 }}>
           内容大纲
         </Typography>
       </Stack>
+      <Divider sx={{ mb: 2 }} />
       <Stack
         gap={1}
         sx={{

@@ -5,17 +5,10 @@ import dynamic from 'next/dynamic'
 import { forwardRef } from 'react'
 
 // 动态导入编辑器组件，禁用 SSR 以避免服务器端加载 jsdom
-const EditorWrapInternal = dynamic(
-  () => import('./EditorWrapInternal'),
-  {
-    ssr: false,
-    loading: () => (
-      <Box sx={{ minHeight: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        加载编辑器...
-      </Box>
-    ),
-  }
-)
+const EditorWrapInternal = dynamic(() => import('./EditorWrapInternal'), {
+  ssr: false,
+  loading: () => <Box sx={{ minHeight: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}></Box>,
+})
 
 interface WrapProps {
   aiWriting?: boolean
@@ -37,11 +30,9 @@ export interface EditorWrapRef {
 }
 
 // 包装组件，转发 ref
-const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
-  (props, ref) => {
-    return <EditorWrapInternal {...props} ref={ref} />
-  }
-)
+const EditorWrap = forwardRef<EditorWrapRef, WrapProps>((props, ref) => {
+  return <EditorWrapInternal {...props} ref={ref} />
+})
 
 EditorWrap.displayName = 'EditorWrap'
 

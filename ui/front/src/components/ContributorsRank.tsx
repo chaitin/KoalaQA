@@ -3,7 +3,7 @@ import { getRankContribute } from '@/api'
 import { SvcRankContributeItem } from '@/api/types'
 import CommonAvatar from '@/components/CommonAvatar'
 import { Ellipsis } from '@ctzhian/ui'
-import { Box, Paper, Stack, Typography } from '@mui/material'
+import { Box, Divider, Paper, Stack, Typography } from '@mui/material'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
@@ -62,14 +62,13 @@ export default function ContributorsRank() {
       sx={{
         bgcolor: '#ffffff',
         borderRadius: 1,
-        border: '1px solid #D9DEE2',
+        border: (theme) => `1px solid ${theme.palette.mode === 'light' ? '#EAECF0' : '#393939'}`,
         p: 2,
         mb: 2,
       }}
     >
       <Stack direction='row' alignItems='center' justifyContent={'space-between'} sx={{ mb: 2 }}>
         <Stack direction='row' alignItems='center' gap={1}>
-          <Image alt='crown' width={20} height={20} src='/crown.svg' style={{ position: 'relative', top: '-0.5px' }} />
           <Typography variant='subtitle2' sx={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>
             贡献达人
           </Typography>
@@ -114,8 +113,8 @@ export default function ContributorsRank() {
           </Stack>
         </Stack>
       </Stack>
-
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+      <Divider />
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, pt: 1 }}>
         {contributorsLoading ? null : contributors.length === 0 ? (
           <Typography
             variant='caption'

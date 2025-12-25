@@ -19,6 +19,7 @@ import {
   FormHelperText,
   InputLabel,
   MenuItem,
+  Paper,
   Select,
   Stack,
   TextField,
@@ -142,7 +143,7 @@ export default function EditPage() {
           ? systemConfig.content_placeholder
           : '',
       group_ids: [],
-      type: ModelDiscussionType.DiscussionTypeBlog,
+      type: (urlType as ModelDiscussionType) || ModelDiscussionType.DiscussionTypeQA,
     },
   })
 
@@ -261,16 +262,20 @@ export default function EditPage() {
         gap: { xs: 0, lg: 3 },
         justifyContent: { lg: 'center' },
         alignItems: { lg: 'flex-start' },
+        pb: 3,
       }}
     >
       {/* 主内容区域 */}
-      <Card
+      <Paper
+        elevation={0}
         sx={{
           flex: 1,
-          pt: 0,
           minWidth: 0,
-          width: { xs: '100%', lg: 798 },
-          px: 0,
+          border: `1px solid`,
+          borderColor: { xs: 'transparent', lg: 'border' },
+          borderRadius: { xs: 0, lg: 1 },
+          width: { xs: '100%', lg: 780 },
+          p: 3,
         }}
       >
         <h1 style={{ display: 'none' }}>编辑讨论</h1>
@@ -404,7 +409,7 @@ export default function EditPage() {
                 display: 'none',
               },
               '& .tiptap': {
-                minHeight: 'calc(100vh - 424px)',
+                minHeight: 'calc(100vh - 476px)',
               },
               '& .editor-toolbar': {
                 borderBottom: '1px solid #D9DEE2',
@@ -447,7 +452,7 @@ export default function EditPage() {
             </Button>
           </Stack>
         </Stack>
-      </Card>
+      </Paper>
 
       {/* 右侧边栏 - 仅在桌面端显示 */}
       <DetailSidebarWrapper

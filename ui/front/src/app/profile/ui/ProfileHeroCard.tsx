@@ -40,8 +40,7 @@ export default function ProfileHeroCard({
         background: '#fff',
         color: '#1f2937',
         boxShadow: 'none',
-        borderRadius: 'unset',
-        borderBottom: '1px solid #D9DEE2',
+        borderRadius: 1,
         ...sx,
       }}
     >
@@ -62,16 +61,21 @@ export default function ProfileHeroCard({
         </Box>
 
         <Stack sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-          <Stack direction='row' alignItems='center' spacing={1} sx={{ textAlign: { xs: 'center', md: 'left' }, minWidth: 0 }}>
+          <Stack
+            direction='row'
+            alignItems='center'
+            spacing={1}
+            sx={{ textAlign: { xs: 'center', md: 'left' }, minWidth: 0 }}
+          >
             {title && (
-              <Typography 
-                variant='h6' 
-                sx={{ 
+              <Typography
+                variant='h6'
+                sx={{
                   fontWeight: 700,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
-                  minWidth: 0
+                  minWidth: 0,
                 }}
               >
                 {title}
@@ -100,17 +104,18 @@ export default function ProfileHeroCard({
               justifyContent: { xs: 'center', md: 'flex-end' },
             }}
           >
-            {metrics!.map((item) => (
+            {metrics!.map((item, index) => (
               <Box
                 key={item.label}
                 sx={{
                   textAlign: 'center',
                   cursor: item.onClick ? 'pointer' : 'default',
+                  pr: { xs: 0, md: index === metrics!.length - 1 ? 3 : 0 },
                   '&:hover': item.onClick
                     ? {
                         '& h6': {
                           color: 'primary.main',
-                        }
+                        },
                       }
                     : {},
                 }}
@@ -119,7 +124,10 @@ export default function ProfileHeroCard({
                 <Typography variant='h6' sx={{ fontWeight: 700 }}>
                   {item.value}
                 </Typography>
-                <Typography variant='body2' sx={{ fontSize: '16px', color: 'rgba(31,35,41,0.5)', whiteSpace: 'nowrap' }}>
+                <Typography
+                  variant='body2'
+                  sx={{ fontSize: '16px', color: 'rgba(31,35,41,0.5)', whiteSpace: 'nowrap' }}
+                >
                   {item.label}
                 </Typography>
               </Box>

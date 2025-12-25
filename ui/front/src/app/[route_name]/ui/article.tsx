@@ -18,7 +18,6 @@ import { useAuthCheck } from '@/hooks/useAuthCheck'
 import { useListPageCache } from '@/hooks/useListPageCache'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import { isAdminRole } from '@/lib/utils'
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import FilterListIcon from '@mui/icons-material/FilterList'
 import SearchIcon from '@mui/icons-material/Search'
 import {
@@ -30,6 +29,7 @@ import {
   InputAdornment,
   Menu,
   MenuItem,
+  Paper,
   Stack,
   TextField,
   ToggleButton,
@@ -40,7 +40,7 @@ import {
 } from '@mui/material'
 import { useBoolean, useInViewport } from 'ahooks'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import React, { Fragment, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import DiscussCard from './discussCard'
 
 export type Status = 'hot' | 'new' | 'publish'
@@ -347,20 +347,27 @@ const Article = ({
           display: 'flex',
           gap: 3,
           mx: 'auto',
-          px: { xs: 2, lg: 3 },
+          px: { xs: 0, lg: 3 },
+          pb: { xs: 2, lg: 3 },
         }}
       >
         {/* 主内容区域 */}
         <Box
-          sx={{
+          sx={(theme) => ({
             flex: 1,
             minWidth: 0,
-            width: { xs: '100%', lg: '750px' },
-            pt: 0,
-          }}
+            width: { xs: '100%', lg: '780px' },
+            p: 2,
+            border: {
+              xs: 'none',
+              md: `1px solid ${theme.palette.mode === 'light' ? '#EAECF0' : '#393939'}`,
+            },
+            borderRadius: 1,
+            bgcolor: 'background.paper',
+          })}
         >
           {/* 搜索和发帖按钮 */}
-          <Box id='article-search-box' sx={{ display: 'flex', gap: 3, mb: 2, alignItems: 'center' }}>
+          <Box id='article-search-box' sx={{ display: 'flex', gap: 3, mb: { xs: 2, lg: 3 }, alignItems: 'center' }}>
             <TextField
               fullWidth
               placeholder={searchPlaceholder}
@@ -380,6 +387,9 @@ const Article = ({
                   borderRadius: '6px',
                   fontSize: '0.875rem',
                   height: '40px',
+                },
+                '& fieldset': {
+                  borderColor: 'text.primary',
                 },
               }}
             />
@@ -428,44 +438,39 @@ const Article = ({
                   },
                 }}
               >
-                <MenuItem
-                  onClick={() => handlePublishTypeSelect(ModelDiscussionType.DiscussionTypeQA)}
-                  sx={{
-                    fontSize: '14px',
-                    py: 1,
-                    '&:hover': {
-                      bgcolor: 'rgba(0,99,151,0.06)',
-                    },
-                  }}
-                >
-                  问题
-                </MenuItem>
-                <MenuItem
-                  onClick={() => handlePublishTypeSelect(ModelDiscussionType.DiscussionTypeBlog)}
-                  sx={{
-                    fontSize: '14px',
-                    py: 1,
-                    '&:hover': {
-                      bgcolor: 'rgba(0,99,151,0.06)',
-                    },
-                  }}
-                >
-                  文章
-                </MenuItem>
-                {isAdminRole(user?.role || ModelUserRole.UserRoleUnknown) && (
-                  <MenuItem
-                    onClick={() => handlePublishTypeSelect(ModelDiscussionType.DiscussionTypeIssue)}
-                    sx={{
-                      fontSize: '14px',
-                      py: 1,
-                      '&:hover': {
-                        bgcolor: 'rgba(0,99,151,0.06)',
-                      },
-                    }}
-                  >
-                    Issue
-                  </MenuItem>
-                )}
+                {[
+                  {
+                    type: ModelDiscussionType.DiscussionTypeQA,
+                    label: '问题',
+                    visible: true,
+                  },
+                  {
+                    type: ModelDiscussionType.DiscussionTypeBlog,
+                    label: '文章',
+                    visible: true,
+                  },
+                  {
+                    type: ModelDiscussionType.DiscussionTypeIssue,
+                    label: 'Issue',
+                    visible: isAdminRole(user?.role || ModelUserRole.UserRoleUnknown),
+                  },
+                ]
+                  .filter((item) => item.visible)
+                  .map((item) => (
+                    <MenuItem
+                      key={item.type}
+                      onClick={() => handlePublishTypeSelect(item.type)}
+                      sx={{
+                        fontSize: '14px',
+                        py: 1,
+                        '&:hover': {
+                          bgcolor: (theme) => theme.palette.primaryAlpha?.[6],
+                        },
+                      }}
+                    >
+                      {item.label}
+                    </MenuItem>
+                  ))}
               </Menu>
             </Box>
           </Box>
@@ -478,7 +483,7 @@ const Article = ({
           )}
 
           {/* 排序选项 */}
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: { xs: 2, lg: 3 } }}>
             <ToggleButtonGroup
               value={status}
               exclusive
@@ -489,11 +494,14 @@ const Article = ({
                 }
               }}
               sx={{
+                borderRadius: 1,
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                px: 0.5,
+                gap: 0.5,
                 '& .MuiToggleButtonGroup-grouped': {
-                  border: 0,
                   borderRadius: '6px !important',
-                  mr: 1,
                   my: 0.5,
+                  mx: 0,
                 },
               }}
             >
@@ -501,29 +509,22 @@ const Article = ({
                 <ToggleButton
                   key={option.value}
                   value={option.value}
-                  sx={{
+                  sx={(theme) => ({
                     height: 30,
                     fontWeight: 500,
                     fontSize: '14px',
                     color: '#21222D',
                     border: '1px solid transparent',
                     '&.Mui-selected': {
-                      bgcolor: 'rgba(0,99,151,0.06)',
-                      border: '1px solid rgba(0,99,151,0.1)',
-                      color: 'primary.main',
-                      '&.Mui-focusVisible': {
-                        bgcolor: '#000000',
-                        color: '#ffffff',
-                        outline: '2px solid #000000',
-                        outlineOffset: '2px',
-                      },
+                      bgcolor: 'primary.main',
+                      color: theme.palette.primary.contrastText,
                       '&:hover': {
-                        bgcolor:
-                          'rgba(var(--mui-palette-primary-mainChannel) / calc(var(--mui-palette-action-selectedOpacity) + var(--mui-palette-action-hoverOpacity)))',
+                        bgcolor: theme.palette.primary.dark,
+                        color: theme.palette.primary.contrastText,
                       },
                     },
                     '&:hover': { bgcolor: '#f3f4f6', color: '#000000' },
-                  }}
+                  })}
                 >
                   {option.label}
                 </ToggleButton>
@@ -557,15 +558,11 @@ const Article = ({
                     height: 30,
                     px: 1.5,
                     borderRadius: '6px',
-                    bgcolor: onlyMine || resolved !== null ? 'rgba(0,99,151,0.06)' : 'transparent',
+                    bgcolor: onlyMine || resolved !== null ? (theme) => theme.palette.primaryAlpha?.[6] : 'transparent',
                     color: onlyMine || resolved !== null ? 'primary.main' : '#21222D',
                     fontSize: '14px',
                     fontWeight: 500,
                     textTransform: 'none',
-                    '&:hover': {
-                      bgcolor: '#f3f4f6',
-                      borderColor: '#d1d5db',
-                    },
                   }}
                 >
                   筛选
@@ -599,16 +596,16 @@ const Article = ({
                 <MenuItem
                   onClick={() => handleFilterChange('only_mine', !onlyMine)}
                   selected={onlyMine}
-                  sx={{
+                  sx={(theme) => ({
                     fontSize: '14px',
                     py: 1,
                     '&.Mui-selected': {
-                      bgcolor: 'rgba(0,99,151,0.06)',
+                      bgcolor: theme.palette.primaryAlpha?.[6],
                       '&:hover': {
-                        bgcolor: 'rgba(0,99,151,0.1)',
+                        bgcolor: theme.palette.primaryAlpha?.[10],
                       },
                     },
-                  }}
+                  })}
                 >
                   我参与的
                 </MenuItem>
@@ -617,16 +614,16 @@ const Article = ({
                     handleFilterChange('resolved', resolved === '1' ? null : 1)
                   }}
                   selected={resolved === '1'}
-                  sx={{
+                  sx={(theme) => ({
                     fontSize: '14px',
                     py: 1,
                     '&.Mui-selected': {
-                      bgcolor: 'rgba(0,99,151,0.06)',
+                      bgcolor: theme.palette.primaryAlpha?.[6],
                       '&:hover': {
-                        bgcolor: 'rgba(0,99,151,0.1)',
+                        bgcolor: theme.palette.primaryAlpha?.[10],
                       },
                     },
-                  }}
+                  })}
                 >
                   未解决的
                 </MenuItem>
@@ -696,11 +693,28 @@ const Article = ({
             scrollbarWidth: 'none',
           }}
         >
-          {/* 公告 */}
-          {announcements.map((announcement) => (
-            <AnnouncementCard key={announcement.uuid} announcement={announcement} routeName={routeName} />
-          ))}
-
+          {announcements.length > 0 && (
+            <Paper
+              elevation={0}
+              sx={{
+                borderRadius: 1,
+                p: 2,
+                border: (theme) => `1px solid ${theme.palette.mode === 'light' ? '#EAECF0' : '#393939'}`,
+              }}
+            >
+              <Typography variant='subtitle2' sx={{ fontSize: '14px', fontWeight: 700, color: '#111827', mb: 1 }}>
+                公告
+              </Typography>
+              <Divider sx={{ mt: 2 }} />
+              {announcements.length > 0 &&
+                announcements.map((announcement, index) => (
+                  <Fragment key={announcement.uuid}>
+                    <AnnouncementCard key={announcement.uuid} announcement={announcement} routeName={routeName} />
+                    {announcements.length - 1 !== index && <Divider />}
+                  </Fragment>
+                ))}
+            </Paper>
+          )}
           {/* 贡献达人 */}
           <ContributorsRank />
 

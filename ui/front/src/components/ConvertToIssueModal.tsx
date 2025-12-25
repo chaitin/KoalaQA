@@ -160,9 +160,9 @@ const ConvertToIssueModal = ({ open, onClose, questionData, onSuccess, forumInfo
       try {
         const result = await getDiscussion({
           forum_id: forumId,
-          keyword: keyword.trim(),
           size: 5,
           type: ModelDiscussionType.DiscussionTypeIssue,
+          keyword: keyword.trim(),
         })
         const items = result.items || []
         setSimilarIssues(items)

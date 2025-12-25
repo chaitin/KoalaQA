@@ -1,37 +1,15 @@
 'use client'
 
-import { useMemo } from 'react'
-import { Box, Card, ToggleButton, ToggleButtonGroup } from '@mui/material'
+import { ModelUserRole, SvcUserStatisticsRes } from '@/api/types'
 import CommonAvatar from '@/components/CommonAvatar'
-import UserTrendList from './UserTrendList'
-import { SvcUserStatisticsRes, ModelUserRole } from '@/api/types'
+import { Box, Card, Divider } from '@mui/material'
+import { useMemo } from 'react'
 import ProfileHeroCard from './ProfileHeroCard'
+import UserTrendList from './UserTrendList'
 
 interface PublicProfileContentProps {
   userId: number
   statistics?: SvcUserStatisticsRes | null
-}
-
-interface TabPanelProps {
-  children?: React.ReactNode
-  index: number
-  value: number
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props
-
-  return (
-    <div
-      role='tabpanel'
-      hidden={value !== index}
-      id={`profile-tabpanel-${index}`}
-      aria-labelledby={`profile-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ px: 3, pb: 0 }}>{children}</Box>}
-    </div>
-  )
 }
 
 const metricItems = (stats?: SvcUserStatisticsRes | null): Array<{ label: string; value: number }> => [
@@ -65,7 +43,18 @@ export default function PublicProfileContent({ userId, statistics }: PublicProfi
   const metrics = useMemo(() => metricItems(statistics), [statistics])
 
   return (
-    <Box sx={{ maxWidth: 748, margin: '0 auto' }}>
+    <Box
+      sx={{
+        maxWidth: 748,
+        mx: 'auto',
+        mt: {xs: 0, lg: 3},
+        bgcolor: 'background.paper',
+        px: 1,
+        borderRadius: {xs: 0, lg: 1},
+        border:  {xs: 0, lg: '1px solid'},
+        borderColor: {xs: 'transparent', lg: 'border'},
+      }}
+    >
       {/* 头部背景区域 */}
       <ProfileHeroCard
         role={statistics?.role || ModelUserRole.UserRoleGuest}
@@ -85,19 +74,22 @@ export default function PublicProfileContent({ userId, statistics }: PublicProfi
             <CommonAvatar
               src={statistics?.avatar}
               name={statistics?.name}
-              sx={{ width: 96, height: 96, fontSize: 32, bgcolor: '#4b5563' }}
+              sx={{
+                width: '100%',
+                height: '100%',
+              }}
             />
           </Box>
         }
         title={statistics?.name || '匿名用户'}
         metrics={metrics}
       />
-
+      <Divider sx={{ mb: 2, mx: 3 }} />
       {/* 标签页 */}
-      <Card sx={{ borderRadius: 2, boxShadow: 'none' }}>
-        {/* 子元素 role=tabpanel 的加个 border */}
+      {/* 子元素 role=tabpanel 的加个 border */}
+      <Box sx={{ px: 3 }}>
         <UserTrendList userId={userId} ownerName={statistics?.name} />
-      </Card>
+      </Box>
     </Box>
   )
 }

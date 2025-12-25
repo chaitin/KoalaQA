@@ -513,11 +513,11 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
         disableRipple
         onClick={handleNotificationMenuOpen}
         sx={{
-          color: 'common.white',
+          color: 'primary.main',
           transition: 'all 0.15s ease-in-out',
           mx: 2,
           '&:hover': {
-            color: 'common.white',
+            color: 'primary.main',
             bgcolor: 'rgba(255, 255, 255, 0.1)',
             transform: 'scale(1.05)',
           },
@@ -572,7 +572,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
           },
         }}
       >
-        <Stack spacing={1}>
+        <Stack spacing={1} sx={{ maxWidth: '300px' }}>
           <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
             {notifications.length === 0 ? (
               <Box sx={{ p: 2, textAlign: 'center', color: 'text.secondary', fontSize: '14px' }}>暂无通知</Box>
@@ -582,38 +582,26 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
                 const isUserReview = notification.type === MsgNotifyType.MsgNotifyTypeUserReview
                 const isUserPoint = notification.type === MsgNotifyType.MsgNotifyTypeUserPoint
                 return (
-                <Stack
-                  key={index}
-                  sx={{
-                    py: 1,
-                    px: 2,
-                    cursor: 'pointer',
-                    '&:hover': {
-                      bgcolor: 'action.hover',
-                    },
-                    borderRadius: 1,
-                  }}
-                >
-                  <Box
-                    onClick={() => {
-                      handleNotificationMenuClose()
-                      handleNotificationClick(notification)
+                  <Stack
+                    key={index}
+                    sx={{
+                      py: 1,
+                      px: 2,
+                      cursor: 'pointer',
+                      '&:hover': {
+                        bgcolor: 'action.hover',
+                      },
+                      borderRadius: 1,
                     }}
                   >
-                    <Stack direction='row' spacing={1} alignItems='center' sx={{ mb: 0.5 }}>
-                      {isUserReview || isUserPoint ? (
-                        <Typography
-                          variant='body2'
-                          sx={{
-                            fontWeight: 500,
-                            color: '#333',
-                            fontSize: '14px',
-                          }}
-                        >
-                          {notificationText}
-                        </Typography>
-                      ) : (
-                        <>
+                    <Box
+                      onClick={() => {
+                        handleNotificationMenuClose()
+                        handleNotificationClick(notification)
+                      }}
+                    >
+                      <Stack direction='row' spacing={1} alignItems='center' sx={{ mb: 0.5 }}>
+                        {isUserReview || isUserPoint ? (
                           <Typography
                             variant='body2'
                             sx={{
@@ -622,43 +610,56 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
                               fontSize: '14px',
                             }}
                           >
-                            {notification.from_name || '未知用户'}
+                            {notificationText}
                           </Typography>
-                          {notificationText && (
+                        ) : (
+                          <>
                             <Typography
                               variant='body2'
                               sx={{
-                                color: '#666',
-                                fontSize: '13px',
+                                fontWeight: 500,
+                                color: '#333',
+                                fontSize: '14px',
                               }}
                             >
-                              {notificationText}
+                              {notification.from_name || '未知用户'}
                             </Typography>
-                          )}
-                        </>
-                      )}
-                    </Stack>
-                    {!isUserReview && !isUserPoint &&
-                      (notification.type === MsgNotifyType.MsgNotifyTypeReplyComment ? (
-                        <MarkDown
-                          content={notification.parent_comment}
-                          truncateLength={10}
-                          sx={{ bgcolor: 'transparent', color: 'text.auxiliary' }}
-                        />
-                      ) : (
-                        <Ellipsis
-                          sx={{
-                            fontWeight: 500,
-                            color: 'text.auxiliary',
-                            fontSize: '14px',
-                          }}
-                        >
-                          {notification.discuss_title || '无标题'}
-                        </Ellipsis>
-                      ))}
-                  </Box>
-                </Stack>
-              )
+                            {notificationText && (
+                              <Typography
+                                variant='body2'
+                                sx={{
+                                  color: '#666',
+                                  fontSize: '13px',
+                                }}
+                              >
+                                {notificationText}
+                              </Typography>
+                            )}
+                          </>
+                        )}
+                      </Stack>
+                      {!isUserReview &&
+                        !isUserPoint &&
+                        (notification.type === MsgNotifyType.MsgNotifyTypeReplyComment ? (
+                          <MarkDown
+                            content={notification.parent_comment}
+                            truncateLength={10}
+                            sx={{ bgcolor: 'transparent', color: 'text.auxiliary' }}
+                          />
+                        ) : (
+                          <Ellipsis
+                            sx={{
+                              fontWeight: 500,
+                              color: 'text.auxiliary',
+                              fontSize: '14px',
+                            }}
+                          >
+                            {notification.discuss_title || '无标题'}
+                          </Ellipsis>
+                        ))}
+                    </Box>
+                  </Stack>
+                )
               })
             )}
           </Box>
@@ -688,10 +689,10 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
         disableRipple
         onClick={handleProfileMenuOpen}
         sx={{
-          color: 'common.white',
+          color: 'primary.main',
           transition: 'all 0.15s ease-in-out',
           '&:hover': {
-            color: 'common.white',
+            color: 'primary.main',
             bgcolor: 'rgba(255, 255, 255, 0.1)',
             transform: 'scale(1.05)',
           },

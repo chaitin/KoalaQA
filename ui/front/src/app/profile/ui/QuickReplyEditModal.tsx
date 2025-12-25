@@ -1,10 +1,10 @@
 'use client'
 
-import { ModelUserQuickReply, putUserQuickReplyQuickReplyId } from '@/api'
+import { ModelUserQuickReply } from '@/api'
 import EditorWrap from '@/components/editor'
 import Modal from '@/components/modal'
-import { Button, TextField, Stack, Box } from '@mui/material'
-import { useState, useEffect } from 'react'
+import { Box, Stack, TextField } from '@mui/material'
+import { useEffect, useState } from 'react'
 
 interface QuickReplyEditModalProps {
   open: boolean
@@ -86,7 +86,7 @@ export default function QuickReplyEditModal({ open, onClose, onSave, editingItem
       width='md'
       title={editingItem ? '编辑快捷回复' : '创建快捷回复'}
     >
-      <Stack spacing={2} sx={{ pt: 1 }}>
+      <Stack spacing={2} sx={{ pt: 1,width: '400px' }}>
         <TextField
           fullWidth
           label='标题'

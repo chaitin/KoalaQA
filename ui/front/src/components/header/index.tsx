@@ -256,21 +256,22 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
       <AppBar
         position='fixed'
         elevation={0}
-        sx={{
-          bgcolor: 'primary.main',
-          color: 'common.white',
+        sx={(theme) => ({
+          bgcolor: 'background.paper',
+          color: 'text.primary',
           backdropFilter: 'blur(12px)',
           display: { xs: 'none', sm: 'block' },
-        }}
+          boxShadow: `0px 1px 0px 0px ${theme.palette.divider}`,
+        })}
       >
-        <Toolbar sx={{ py: '0!important', px: '20px!important', color: 'common.white' }}>
+        <Toolbar sx={{ py: '0!important', px: '20px!important', color: 'text.primary' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1 }}>
             {brandConfig?.logo && brandConfig?.text ? (
               <Stack
                 direction='row'
                 alignItems='center'
                 gap={1.5}
-                sx={{ cursor: 'pointer', color: 'common.white' }}
+                sx={{ cursor: 'pointer', color: 'text.primary', minWidth: '192px' }}
                 onClick={handleLogoClick}
               >
                 <Box
@@ -281,7 +282,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                     justifyContent: 'center',
                     fontWeight: 700,
                     fontSize: '1.25rem',
-                    color: 'common.white',
+                    color: 'text.primary',
                   }}
                 >
                   <Image
@@ -301,7 +302,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                     component='div'
                     sx={{
                       fontWeight: 700,
-                      color: 'common.white',
+                      color: 'text.primary',
                       fontSize: { xs: '1rem', md: '1.25rem' },
                       letterSpacing: '-0.02em',
                     }}
@@ -319,8 +320,9 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                   justifyContent: 'center',
                   fontWeight: 700,
                   fontSize: '1.25rem',
-                  color: 'common.white',
+                  color: 'text.primary',
                   cursor: 'pointer',
+                  minWidth: '192px',
                 }}
                 onClick={handleLogoClick}
               >
@@ -348,36 +350,30 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                 onKeyDown={onInputSearch}
                 sx={{
                   width: 300,
-                  color: 'common.white',
+                  color: 'text.primary',
                   transition: 'box-shadow 0.2s, background 0.2s',
                   boxShadow: 'none',
-                  '& fieldset': { borderColor: 'rgba(255, 255, 255,0.3)!important', transition: 'border-width 0.2s' },
+                  '& fieldset': { borderColor: 'text.secondary', transition: 'border-width 0.2s' },
                   '& .MuiOutlinedInput-root': {
                     bgcolor: 'rgba(255, 255, 255, 0.1)',
                     borderRadius: '6px',
                     fontSize: '0.875rem',
                     height: '36px',
-                    color: 'common.white',
+                    color: 'text.primary',
                     transition: 'background 0.2s, box-shadow 0.2s',
                     '&': {
                       bgcolor: 'rgba(255, 255, 255, 0.22)',
                       boxShadow: '0 0 0 2px #fff',
                     },
                     '& input': {
-                      color: 'common.white',
+                      color: 'text.primary',
                       fontSize: '0.875rem',
                     },
                   },
-                  '& input::placeholder': {
-                    color: 'rgba(255, 255, 255, 0.7)',
-                    opacity: 1,
-                    fontSize: '13px!important',
-                  },
-                  '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#fff!important' },
                 }}
                 startAdornment={
                   <InputAdornment position='start'>
-                    <SearchIcon sx={{ color: 'common.white', fontSize: 18, sition: 'font-size 0.2s' }} />
+                    <SearchIcon sx={{ color: 'text.primary', fontSize: 18, sition: 'font-size 0.2s' }} />
                   </InputAdornment>
                 }
               />
@@ -397,8 +393,6 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                     px: 2,
                     fontSize: 14,
                     textTransform: 'none',
-                    bgcolor: '#fff',
-                    color: 'primary.main',
                     boxShadow: 'none',
                     '&:hover': {
                       boxShadow: 'none',
@@ -422,20 +416,21 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
         position='fixed'
         elevation={0}
         sx={{
-          bgcolor: 'primary.main',
-          color: 'common.white',
+          bgcolor: 'background.paper',
+          color: 'text.primary',
           backdropFilter: 'blur(12px)',
           display: { xs: 'block', sm: 'none' },
+          borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
         }}
       >
-        <Toolbar sx={{ py: 1, px: 1, color: 'common.white' }}>
+        <Toolbar sx={{ py: 1, px: 1, color: 'text.primary' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
             {/* Menu button */}
             <IconButton
               size='small'
               onClick={openMobileMenu}
               sx={{
-                color: 'common.white',
+                color: 'text.primary',
                 '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
               }}
             >
@@ -491,11 +486,11 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                 }
               }}
               sx={{
-                color: 'common.white',
+                color: 'primary.main',
                 '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
               }}
             >
-              <SearchIcon sx={{ fontSize: 24 }} />
+              <SearchIcon sx={{ fontSize: 24, color: 'primary.main' }} />
             </IconButton>
 
             {user?.uid ? (
@@ -505,11 +500,11 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                 size='small'
                 onClick={() => plainRouter.push('/login')}
                 sx={{
-                  color: 'common.white',
+                  color: 'primary.main',
                   '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
                 }}
               >
-                <AccountCircleIcon sx={{ fontSize: 20 }} />
+                <AccountCircleIcon sx={{ fontSize: 20, color: 'primary.main' }} />
               </IconButton>
             )}
           </Box>

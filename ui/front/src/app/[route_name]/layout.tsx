@@ -27,8 +27,6 @@ export default function RouteLayout({ children }: { children: React.ReactNode })
             width: isMobile ? '100%' : 240,
             flexShrink: 0,
             display: { xs: 'none', sm: 'block' },
-            pl: { xs: 2, lg: 3 },
-            py: { xs: 2, lg: 3 },
           }}
         >
           <FilterPanel />
@@ -41,7 +39,7 @@ export default function RouteLayout({ children }: { children: React.ReactNode })
         sx={{
           flex: 1,
           minWidth: 0,
-          pt: { xs: 0, sm: 3 },
+          p: { xs: 0, sm: 3 },
           alignSelf: 'stretch',
           display: { xs: 'block', lg: 'flex' },
           gap: { xs: 0, lg: 3 },
