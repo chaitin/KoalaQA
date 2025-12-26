@@ -3,7 +3,10 @@ package admin
 import (
 	"encoding/gob"
 	"errors"
+	"fmt"
 	"net/http"
+	"net/url"
+	"strconv"
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/anydoc"
@@ -181,6 +184,7 @@ const (
 
 type docStateSession struct {
 	ID           uint   `json:"id"`
+	KBID         uint   `json:"kb_id"`
 	ClientID     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
 	State        string `json:"-"`
@@ -224,6 +228,7 @@ func (d *kbDocument) FeishuAuthURL(ctx *context.Context) {
 	session := sessions.Default(ctx.Context)
 	session.Set(docStateKey, docStateSession{
 		ID:           req.ID,
+		KBID:         req.KBID,
 		ClientID:     req.ClientID,
 		ClientSecret: req.ClientSecret,
 		State:        state,
@@ -246,33 +251,35 @@ func (d *kbDocument) FeishuUserInfoCallback(ctx *context.Context) {
 		return
 	}
 
+	query := make(url.Values)
+
 	session := sessions.Default(ctx.Context)
 	stateI := session.Get(docStateKey)
 	docState, ok := stateI.(docStateSession)
 	if !ok || docState.State != req.State {
-		ctx.BadRequest(errors.New("invalid state"))
-		return
+		query.Set("error", "invalid state")
+	} else {
+		query.Set("id", strconv.FormatUint(uint64(docState.KBID), 10))
+
+		session.Delete(docStateKey)
+
+		res, err := d.svcDoc.FeishuUserInfo(ctx, anydoc.UserInfoReq{
+			AppID:     docState.ClientID,
+			AppSecret: docState.ClientSecret,
+			Code:      req.Code,
+		})
+		if err != nil {
+			query.Set("error", fmt.Sprintf("get user info failed: %s", err.Error()))
+		} else {
+			session.Set(docUserKey, docUserRes{
+				docStateSession: docState,
+				UserInfo:        res,
+			})
+			session.Save()
+		}
 	}
 
-	session.Delete(docStateKey)
-
-	res, err := d.svcDoc.FeishuUserInfo(ctx, anydoc.UserInfoReq{
-		AppID:     docState.ClientID,
-		AppSecret: docState.ClientSecret,
-		Code:      req.Code,
-	})
-	if err != nil {
-		ctx.InternalError(err, "get user info failed")
-		return
-	}
-
-	session.Set(docUserKey, docUserRes{
-		docStateSession: docState,
-		UserInfo:        res,
-	})
-	session.Save()
-
-	ctx.Redirect(http.StatusFound, "/admin/feishu")
+	ctx.Redirect(http.StatusFound, "/admin/ai/kb?"+query.Encode())
 }
 
 // FeishuUserInfo

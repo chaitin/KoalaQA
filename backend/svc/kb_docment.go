@@ -53,6 +53,7 @@ type KBDocument struct {
 
 type FeishuAuthURLReq struct {
 	ID           uint   `json:"id"`
+	KBID         uint   `json:"kb_id" binding:"required"`
 	ClientID     string `json:"client_id" binding:"required"`
 	ClientSecret string `json:"client_secret" binding:"required"`
 }
