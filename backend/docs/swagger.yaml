@@ -1,0 +1,6326 @@
+basePath: /api
+definitions:
+  admin.docUserRes:
+    properties:
+      client_id:
+        type: string
+      client_secret:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      userInfo:
+        $ref: '#/definitions/anydoc.UserInfoRes'
+    type: object
+  anydoc.ListDoc:
+    properties:
+      file:
+        type: boolean
+      file_type:
+        type: string
+      id:
+        type: string
+      summary:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: integer
+    type: object
+  anydoc.ListRes:
+    properties:
+      docs:
+        items:
+          $ref: '#/definitions/anydoc.ListDoc'
+        type: array
+      uuid:
+        type: string
+    type: object
+  anydoc.UserInfoRes:
+    properties:
+      access_token:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  context.Response:
+    properties:
+      data: {}
+      err:
+        type: string
+      msg:
+        type: string
+      success:
+        type: boolean
+      trace_id:
+        type: string
+    type: object
+  model.Auth:
+    properties:
+      auth_infos:
+        items:
+          $ref: '#/definitions/model.AuthInfo'
+        type: array
+      enable_register:
+        type: boolean
+      need_review:
+        type: boolean
+      prompt:
+        type: string
+      public_access:
+        type: boolean
+      public_forum_ids:
+        description: 'Deprecated: only use in migration'
+        items:
+          type: integer
+        type: array
+    type: object
+  model.AuthConfig:
+    properties:
+      oauth:
+        $ref: '#/definitions/model.AuthConfigOauth'
+    type: object
+  model.AuthConfigOauth:
+    properties:
+      client_id:
+        type: string
+      client_secret:
+        type: string
+      corp_id:
+        type: string
+      url:
+        type: string
+    type: object
+  model.AuthInfo:
+    properties:
+      button_desc:
+        type: string
+      config:
+        $ref: '#/definitions/model.AuthConfig'
+      type:
+        maximum: 4
+        minimum: 1
+        type: integer
+    type: object
+  model.CommentLikeState:
+    enum:
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - CommentLikeStateLike
+    - CommentLikeStateDislike
+  model.Discussion:
+    properties:
+      associate_id:
+        type: integer
+      bot_unknown:
+        type: boolean
+      comment:
+        type: integer
+      content:
+        type: string
+      created_at:
+        type: integer
+      dislike:
+        type: integer
+      forum_id:
+        type: integer
+      group_ids:
+        items:
+          type: integer
+        type: array
+      hot:
+        type: integer
+      id:
+        type: integer
+      last_visited:
+        description: 发帖人上次访问时间
+        type: integer
+      like:
+        type: integer
+      members:
+        items:
+          type: integer
+        type: array
+      rag_id:
+        type: string
+      resolved:
+        $ref: '#/definitions/model.DiscussionState'
+      resolved_at:
+        type: integer
+      summary:
+        type: string
+      tag_ids:
+        items:
+          type: integer
+        type: array
+      tags:
+        description: Deprecated
+        items:
+          type: string
+        type: array
+      title:
+        type: string
+      type:
+        $ref: '#/definitions/model.DiscussionType'
+      updated_at:
+        type: integer
+      user_id:
+        type: integer
+      uuid:
+        type: string
+      view:
+        type: integer
+      visit:
+        description: 发帖人访问次数
+        type: integer
+    type: object
+  model.DiscussionComment:
+    properties:
+      accepted:
+        type: boolean
+      bot:
+        type: boolean
+      content:
+        type: string
+      created_at:
+        type: integer
+      dislike:
+        type: integer
+      id:
+        type: integer
+      like:
+        type: integer
+      replies:
+        items:
+          $ref: '#/definitions/model.DiscussionReply'
+        type: array
+      updated_at:
+        type: integer
+      user_avatar:
+        type: string
+      user_id:
+        type: integer
+      user_like_state:
+        $ref: '#/definitions/model.CommentLikeState'
+      user_name:
+        type: string
+      user_role:
+        $ref: '#/definitions/model.UserRole'
+    type: object
+  model.DiscussionDetail:
+    properties:
+      alert:
+        type: boolean
+      associate:
+        $ref: '#/definitions/model.DiscussionListItem'
+      associate_id:
+        type: integer
+      bot_unknown:
+        type: boolean
+      comment:
+        type: integer
+      comments:
+        items:
+          $ref: '#/definitions/model.DiscussionComment'
+        type: array
+      content:
+        type: string
+      created_at:
+        type: integer
+      current_user_id:
+        type: integer
+      dislike:
+        type: integer
+      forum_id:
+        type: integer
+      group_ids:
+        items:
+          type: integer
+        type: array
+      groups:
+        items:
+          $ref: '#/definitions/model.DiscussionGroup'
+        type: array
+      hot:
+        type: integer
+      id:
+        type: integer
+      last_visited:
+        description: 发帖人上次访问时间
+        type: integer
+      like:
+        type: integer
+      members:
+        items:
+          type: integer
+        type: array
+      rag_id:
+        type: string
+      resolved:
+        $ref: '#/definitions/model.DiscussionState'
+      resolved_at:
+        type: integer
+      summary:
+        type: string
+      tag_ids:
+        items:
+          type: integer
+        type: array
+      tags:
+        description: Deprecated
+        items:
+          type: string
+        type: array
+      title:
+        type: string
+      type:
+        $ref: '#/definitions/model.DiscussionType'
+      updated_at:
+        type: integer
+      user_avatar:
+        type: string
+      user_id:
+        type: integer
+      user_like:
+        type: boolean
+      user_name:
+        type: string
+      user_role:
+        $ref: '#/definitions/model.UserRole'
+      uuid:
+        type: string
+      view:
+        type: integer
+      visit:
+        description: 发帖人访问次数
+        type: integer
+    type: object
+  model.DiscussionGroup:
+    properties:
+      group_id:
+        type: integer
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  model.DiscussionListItem:
+    properties:
+      associate_id:
+        type: integer
+      bot_unknown:
+        type: boolean
+      comment:
+        type: integer
+      content:
+        type: string
+      created_at:
+        type: integer
+      dislike:
+        type: integer
+      forum_id:
+        type: integer
+      group_ids:
+        items:
+          type: integer
+        type: array
+      hot:
+        type: integer
+      id:
+        type: integer
+      last_visited:
+        description: 发帖人上次访问时间
+        type: integer
+      like:
+        type: integer
+      members:
+        items:
+          type: integer
+        type: array
+      rag_id:
+        type: string
+      resolved:
+        $ref: '#/definitions/model.DiscussionState'
+      resolved_at:
+        type: integer
+      summary:
+        type: string
+      tag_ids:
+        items:
+          type: integer
+        type: array
+      tags:
+        description: Deprecated
+        items:
+          type: string
+        type: array
+      title:
+        type: string
+      type:
+        $ref: '#/definitions/model.DiscussionType'
+      updated_at:
+        type: integer
+      user_avatar:
+        type: string
+      user_id:
+        type: integer
+      user_name:
+        type: string
+      uuid:
+        type: string
+      view:
+        type: integer
+      visit:
+        description: 发帖人访问次数
+        type: integer
+    type: object
+  model.DiscussionReply:
+    properties:
+      accepted:
+        type: boolean
+      bot:
+        type: boolean
+      content:
+        type: string
+      created_at:
+        type: integer
+      dislike:
+        type: integer
+      id:
+        type: integer
+      like:
+        type: integer
+      updated_at:
+        type: integer
+      user_avatar:
+        type: string
+      user_id:
+        type: integer
+      user_like_state:
+        $ref: '#/definitions/model.CommentLikeState'
+      user_name:
+        type: string
+      user_role:
+        $ref: '#/definitions/model.UserRole'
+    type: object
+  model.DiscussionState:
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    type: integer
+    x-enum-varnames:
+    - DiscussionStateUnknown
+    - DiscussionStateNone
+    - DiscussionStateResolved
+    - DiscussionStateClosed
+    - DiscussionStateInProgress
+  model.DiscussionTag:
+    properties:
+      count:
+        type: integer
+      created_at:
+        type: integer
+      forum_id:
+        type: integer
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: integer
+    type: object
+  model.DiscussionType:
+    enum:
+    - qa
+    - feedback
+    - blog
+    - issue
+    type: string
+    x-enum-varnames:
+    - DiscussionTypeQA
+    - DiscussionTypeFeedback
+    - DiscussionTypeBlog
+    - DiscussionTypeIssue
+  model.DocStatus:
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    type: integer
+    x-enum-varnames:
+    - DocStatusUnknown
+    - DocStatusApplySuccess
+    - DocStatusPendingReview
+    - DocStatusPendingApply
+    - DocStatusApplyFailed
+    - DocStatusAppling
+    - DocStatusPendingExport
+    - DocStatusExportSuccess
+    - DocStatusExportFailed
+  model.DocType:
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    type: integer
+    x-enum-varnames:
+    - DocTypeUnknown
+    - DocTypeQuestion
+    - DocTypeDocument
+    - DocTypeSpace
+    - DocTypeWeb
+  model.FileType:
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    - 13
+    - 14
+    - 15
+    - 16
+    - 17
+    - 18
+    type: integer
+    x-enum-comments:
+      FileTypeFile: 未知文件类型
+      FileTypeFolder: 文件夹
+    x-enum-descriptions:
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - ""
+    - 文件夹
+    - 未知文件类型
+    - ""
+    x-enum-varnames:
+    - FileTypeUnknown
+    - FileTypeMarkdown
+    - FileTypeHTML
+    - FileTypeJSON
+    - FileTypeURL
+    - FileTypeDOCX
+    - FileTypeDOC
+    - FileTypePPTX
+    - FileTypeXLSX
+    - FileTypeXLS
+    - FileTypePDF
+    - FileTypeImage
+    - FileTypeCSV
+    - FileTypeXML
+    - FileTypeZIP
+    - FileTypeEPub
+    - FileTypeFolder
+    - FileTypeFile
+    - FileTypeMax
+  model.ForumGroups:
+    properties:
+      group_ids:
+        items:
+          type: integer
+        type: array
+      type:
+        $ref: '#/definitions/model.DiscussionType'
+    type: object
+  model.ForumInfo:
+    properties:
+      blog_ids:
+        items:
+          type: integer
+        type: array
+      groups:
+        $ref: '#/definitions/model.JSONB-array_model_ForumGroups'
+      id:
+        type: integer
+      index:
+        type: integer
+      name:
+        type: string
+      route_name:
+        type: string
+      tag_ids:
+        items:
+          type: integer
+        type: array
+    required:
+    - name
+    type: object
+  model.GroupItemInfo:
+    properties:
+      id:
+        type: integer
+      index:
+        type: integer
+      name:
+        type: string
+    type: object
+  model.GroupWithItem:
+    properties:
+      id:
+        type: integer
+      index:
+        type: integer
+      name:
+        type: string
+    type: object
+  model.JSONB-array_model_ForumGroups:
+    type: object
+  model.JSONB-array_model_RankTimeGroupItem:
+    type: object
+  model.JSONB-array_model_StatTrendItem:
+    type: object
+  model.JSONB-model_ExportOpt:
+    type: object
+  model.JSONB-model_PlatformOpt:
+    type: object
+  model.KBDocumentDetail:
+    properties:
+      created_at:
+        type: integer
+      desc:
+        type: string
+      doc_id:
+        type: string
+      doc_type:
+        $ref: '#/definitions/model.DocType'
+      export_opt:
+        $ref: '#/definitions/model.JSONB-model_ExportOpt'
+      export_task_id:
+        type: string
+      file_type:
+        $ref: '#/definitions/model.FileType'
+      id:
+        type: integer
+      json:
+        type: string
+      kb_id:
+        type: integer
+      markdown:
+        type: string
+      message:
+        type: string
+      parent_id:
+        type: integer
+      platform:
+        $ref: '#/definitions/platform.PlatformType'
+      platform_opt:
+        $ref: '#/definitions/model.JSONB-model_PlatformOpt'
+      rag_id:
+        type: string
+      similar_id:
+        type: integer
+      status:
+        $ref: '#/definitions/model.DocStatus'
+      title:
+        type: string
+      updated_at:
+        type: integer
+    type: object
+  model.LLM:
+    properties:
+      api_header:
+        type: string
+      api_key:
+        type: string
+      api_version:
+        type: string
+      base_url:
+        type: string
+      completion_tokens:
+        type: integer
+      created_at:
+        type: integer
+      id:
+        type: integer
+      is_active:
+        type: boolean
+      model:
+        type: string
+      parameters:
+        $ref: '#/definitions/model.LLMModelParam'
+      prompt_tokens:
+        type: integer
+      provider:
+        type: string
+      rag_id:
+        type: string
+      show_name:
+        type: string
+      total_tokens:
+        type: integer
+      type:
+        $ref: '#/definitions/model.LLMType'
+      updated_at:
+        type: integer
+    type: object
+  model.LLMModelParam:
+    properties:
+      context_window:
+        type: integer
+      max_tokens:
+        type: integer
+      r1_enabled:
+        type: boolean
+      support_computer_use:
+        type: boolean
+      support_images:
+        type: boolean
+      support_prompt_cache:
+        type: boolean
+    type: object
+  model.LLMType:
+    enum:
+    - chat
+    - embedding
+    - rerank
+    - analysis
+    - analysis-vl
+    type: string
+    x-enum-varnames:
+    - LLMTypeChat
+    - LLMTypeEmbedding
+    - LLMTypeRerank
+    - LLMTypeAnalysis
+    - LLMTypeAnalysisVL
+  model.ListRes:
+    properties:
+      total:
+        type: integer
+    type: object
+  model.MessageNotify:
+    properties:
+      created_at:
+        type: integer
+      discuss_id:
+        type: integer
+      discuss_title:
+        type: string
+      discuss_uuid:
+        type: string
+      discussion_type:
+        $ref: '#/definitions/model.DiscussionType'
+      forum_id:
+        type: integer
+      from_bot:
+        type: boolean
+      from_id:
+        type: integer
+      from_name:
+        type: string
+      id:
+        type: integer
+      parent_comment:
+        type: string
+      read:
+        type: boolean
+      review_id:
+        type: integer
+      review_status:
+        type: integer
+      review_type:
+        type: integer
+      to_bot:
+        type: boolean
+      to_id:
+        type: integer
+      to_name:
+        type: string
+      type:
+        $ref: '#/definitions/model.MsgNotifyType'
+      updated_at:
+        type: integer
+      user_id:
+        description: 通知到谁，除了发给机器人的信息，user_id 与 to_id 相同
+        type: integer
+      user_point:
+        type: integer
+    type: object
+  model.MsgNotifyType:
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    - 13
+    - 14
+    type: integer
+    x-enum-varnames:
+    - MsgNotifyTypeUnknown
+    - MsgNotifyTypeReplyDiscuss
+    - MsgNotifyTypeReplyComment
+    - MsgNotifyTypeApplyComment
+    - MsgNotifyTypeLikeComment
+    - MsgNotifyTypeDislikeComment
+    - MsgNotifyTypeBotUnknown
+    - MsgNotifyTypeLikeDiscussion
+    - MsgNotifyTypeUserReview
+    - MsgNotifyTypeResolveByAdmin
+    - MsgNotifyTypeCloseDiscussion
+    - MsgNotifyTypeAssociateIssue
+    - MsgNotifyTypeIssueInProgress
+    - MsgNotifyTypeIssueResolved
+    - MsgNotifyTypeUserPoint
+  model.OrgType:
+    enum:
+    - 0
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - OrgTypeNormal
+    - OrgTypeDefault
+    - OrgTypeAdmin
+  model.PlatformOpt:
+    properties:
+      access_token:
+        type: string
+      app_id:
+        type: string
+      phone:
+        type: string
+      refresh_token:
+        type: string
+      secret:
+        type: string
+      url:
+        type: string
+      user_third_id:
+        type: string
+      username:
+        type: string
+    type: object
+  model.PublicAddress:
+    properties:
+      address:
+        type: string
+    required:
+    - address
+    type: object
+  model.RankTimeGroup:
+    properties:
+      items:
+        $ref: '#/definitions/model.JSONB-array_model_RankTimeGroupItem'
+      time:
+        type: integer
+    type: object
+  model.RankTimeGroupItem:
+    properties:
+      associate_id:
+        type: integer
+      extra:
+        type: string
+      foreign_id:
+        type: integer
+      id:
+        type: integer
+      score_id:
+        type: string
+    type: object
+  model.RankType:
+    enum:
+    - 1
+    - 2
+    - 3
+    type: integer
+    x-enum-varnames:
+    - RankTypeContribute
+    - RankTypeAIInsight
+    - RankTypeAllContribute
+  model.StatTrend:
+    properties:
+      items:
+        $ref: '#/definitions/model.JSONB-array_model_StatTrendItem'
+      ts:
+        type: integer
+    type: object
+  model.StatTrendItem:
+    properties:
+      count:
+        type: integer
+      type:
+        $ref: '#/definitions/model.StatType'
+    type: object
+  model.StatType:
+    enum:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    type: integer
+    x-enum-varnames:
+    - StatTypeVisit
+    - StatTypeSearch
+    - StatTypeBotUnknown
+    - StatTypeBotAccept
+    - StatTypeDiscussionQA
+    - StatTypeDiscussionBlog
+    - StatTypeDiscussionIssue
+    - StatTypeBotUnknownComment
+  model.SystemBrand:
+    properties:
+      logo:
+        type: string
+      text:
+        type: string
+      theme:
+        type: string
+    type: object
+  model.SystemDiscussion:
+    properties:
+      auto_close:
+        type: integer
+      content_placeholder:
+        type: string
+    type: object
+  model.SystemSEO:
+    properties:
+      desc:
+        type: string
+      keywords:
+        items:
+          type: string
+        type: array
+    type: object
+  model.Trend:
+    properties:
+      created_at:
+        type: integer
+      discuss_id:
+        type: integer
+      discuss_title:
+        type: string
+      discuss_uuid:
+        type: string
+      discussion_type:
+        $ref: '#/definitions/model.DiscussionType'
+      forum_id:
+        type: integer
+      id:
+        type: integer
+      trend_type:
+        type: integer
+      updated_at:
+        type: integer
+      user_id:
+        description: 谁的行为
+        type: integer
+    type: object
+  model.User:
+    properties:
+      avatar:
+        type: string
+      builtin:
+        type: boolean
+      created_at:
+        type: integer
+      email:
+        type: string
+      id:
+        type: integer
+      intro:
+        type: string
+      invisible:
+        type: boolean
+      key:
+        type: string
+      last_login:
+        type: integer
+      name:
+        type: string
+      org_ids:
+        items:
+          type: integer
+        type: array
+      password:
+        type: string
+      point:
+        type: integer
+      role:
+        $ref: '#/definitions/model.UserRole'
+      updated_at:
+        type: integer
+      web_notify:
+        type: boolean
+    type: object
+  model.UserInfo:
+    properties:
+      auth_type:
+        type: integer
+      avatar:
+        type: string
+      builtin:
+        type: boolean
+      email:
+        type: string
+      intro:
+        type: string
+      key:
+        type: string
+      no_password:
+        type: boolean
+      org_ids:
+        items:
+          type: integer
+        type: array
+      point:
+        type: integer
+      role:
+        $ref: '#/definitions/model.UserRole'
+      uid:
+        type: integer
+      username:
+        type: string
+      web_notify:
+        type: boolean
+    type: object
+  model.UserPointRecord:
+    properties:
+      created_at:
+        type: integer
+      foreign:
+        type: integer
+      from_id:
+        type: integer
+      id:
+        type: integer
+      point:
+        type: integer
+      revoke_id:
+        type: integer
+      type:
+        $ref: '#/definitions/model.UserPointType'
+      updated_at:
+        type: integer
+      user_id:
+        type: integer
+    type: object
+  model.UserPointType:
+    enum:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+    type: integer
+    x-enum-comments:
+      UserPointTypeAcceptAnswer: 采纳别人回答
+      UserPointTypeAnswerAccepted: 回答被采纳
+      UserPointTypeAnswerDisliked: 回答被点踩
+      UserPointTypeDislikeAnswer: 点踩别人回答
+    x-enum-descriptions:
+    - ""
+    - 回答被采纳
+    - ""
+    - ""
+    - ""
+    - 采纳别人回答
+    - ""
+    - 回答被点踩
+    - 点踩别人回答
+    - ""
+    - ""
+    - ""
+    x-enum-varnames:
+    - UserPointTypeCreateBlog
+    - UserPointTypeAnswerAccepted
+    - UserPointTypeLikeBlog
+    - UserPointTypeAnswerLiked
+    - UserPointTypeAssociateIssue
+    - UserPointTypeAcceptAnswer
+    - UserPointTypeAnswerQA
+    - UserPointTypeAnswerDisliked
+    - UserPointTypeDislikeAnswer
+    - UserPointTypeUserRole
+    - UserPointTypeUserAvatar
+    - UserPointTypeUserIntro
+  model.UserQuickReply:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: integer
+      id:
+        type: integer
+      index:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: integer
+      user_id:
+        type: integer
+    type: object
+  model.UserReviewWithUser:
+    properties:
+      auth_type:
+        type: integer
+      created_at:
+        type: integer
+      id:
+        type: integer
+      reason:
+        type: string
+      state:
+        type: integer
+      type:
+        type: integer
+      updated_at:
+        type: integer
+      user_avatar:
+        type: string
+      user_email:
+        type: string
+      user_id:
+        type: integer
+      user_name:
+        type: string
+    type: object
+  model.UserRole:
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    type: integer
+    x-enum-varnames:
+    - UserRoleUnknown
+    - UserRoleAdmin
+    - UserRoleOperator
+    - UserRoleUser
+    - UserRoleGuest
+    - UserRoleMax
+  model.Webhook:
+    properties:
+      created_at:
+        type: integer
+      id:
+        type: integer
+      msg_types:
+        items:
+          type: integer
+        type: array
+      name:
+        type: string
+      sign:
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/model.WebhookType'
+        maximum: 2
+        minimum: 1
+      updated_at:
+        type: integer
+      url:
+        type: string
+    required:
+    - type
+    - url
+    type: object
+  model.WebhookConfig:
+    properties:
+      msg_types:
+        items:
+          type: integer
+        type: array
+      sign:
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/model.WebhookType'
+        maximum: 2
+        minimum: 1
+      url:
+        type: string
+    required:
+    - type
+    - url
+    type: object
+  model.WebhookType:
+    enum:
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - WebhookTypeDingtalk
+    - WebhookTypeHTTP
+  platform.PlatformType:
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    type: integer
+    x-enum-varnames:
+    - PlatformUnknown
+    - PlatformConfluence
+    - PlatformFeishu
+    - PlatformFile
+    - PlatformNotion
+    - PlatformSitemap
+    - PlatformURL
+    - PlatformWikiJS
+    - PlatformYuQue
+    - PlatformPandawiki
+    - PlatformDingtalk
+  router.SystemInfoRes:
+    properties:
+      version:
+        type: string
+    type: object
+  svc.AIInsightDiscussionItem:
+    properties:
+      created_at:
+        type: integer
+      deleted:
+        type: boolean
+      discussion_id:
+        type: string
+      id:
+        type: integer
+      rank_id:
+        type: integer
+      title:
+        type: string
+      updated_at:
+        type: integer
+    type: object
+  svc.ActiveModelReq:
+    properties:
+      active:
+        type: boolean
+    type: object
+  svc.AssociateDiscussionReq:
+    properties:
+      content:
+        type: string
+      group_ids:
+        items:
+          type: integer
+        type: array
+      issue_uuid:
+        type: string
+      title:
+        type: string
+    type: object
+  svc.AuthFrontendGetAuth:
+    properties:
+      button_desc:
+        type: string
+      type:
+        type: integer
+    type: object
+  svc.AuthFrontendGetRes:
+    properties:
+      auth_types:
+        items:
+          $ref: '#/definitions/svc.AuthFrontendGetAuth'
+        type: array
+      enable_register:
+        type: boolean
+      prompt:
+        type: string
+      public_access:
+        type: boolean
+    type: object
+  svc.BotGetRes:
+    properties:
+      avatar:
+        type: string
+      name:
+        type: string
+      unknown_prompt:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  svc.CheckModelRes:
+    properties:
+      content:
+        type: string
+      error:
+        type: string
+    type: object
+  svc.CommentCreateReq:
+    properties:
+      comment_id:
+        type: integer
+      content:
+        type: string
+    required:
+    - content
+    type: object
+  svc.CommentUpdateReq:
+    properties:
+      content:
+        type: string
+    required:
+    - content
+    type: object
+  svc.CreateSpaceFolderReq:
+    properties:
+      docs:
+        items:
+          $ref: '#/definitions/svc.CreateSpaceForlderItem'
+        type: array
+    required:
+    - docs
+    type: object
+  svc.CreateSpaceForlderItem:
+    properties:
+      doc_id:
+        type: string
+      title:
+        type: string
+    required:
+    - doc_id
+    type: object
+  svc.CreateSpaceReq:
+    properties:
+      opt:
+        $ref: '#/definitions/model.PlatformOpt'
+      platform:
+        $ref: '#/definitions/platform.PlatformType'
+      title:
+        type: string
+    required:
+    - title
+    type: object
+  svc.DiscussUploadFileReq:
+    properties:
+      uuid:
+        type: string
+    type: object
+  svc.DiscussionCompeletReq:
+    properties:
+      prefix:
+        type: string
+      suffix:
+        type: string
+    type: object
+  svc.DiscussionContentSummaryReq:
+    properties:
+      content:
+        type: string
+      title:
+        type: string
+    required:
+    - content
+    - title
+    type: object
+  svc.DiscussionCreateReq:
+    properties:
+      content:
+        type: string
+      forum_id:
+        type: integer
+      group_ids:
+        items:
+          type: integer
+        type: array
+      summary:
+        type: string
+      title:
+        type: string
+      type:
+        $ref: '#/definitions/model.DiscussionType'
+    required:
+    - title
+    type: object
+  svc.DiscussionListFilter:
+    enum:
+    - hot
+    - new
+    - publish
+    type: string
+    x-enum-varnames:
+    - DiscussionListFilterHot
+    - DiscussionListFilterNew
+    - DiscussionListFilterPublish
+  svc.DiscussionListFollowRes:
+    properties:
+      followed:
+        type: boolean
+      follower:
+        type: integer
+    type: object
+  svc.DiscussionUpdateReq:
+    properties:
+      content:
+        type: string
+      group_ids:
+        items:
+          type: integer
+        type: array
+      summary:
+        type: string
+      title:
+        type: string
+    type: object
+  svc.DocCreateQAReq:
+    properties:
+      ai_insight_id:
+        type: integer
+      desc:
+        type: string
+      markdown:
+        type: string
+      title:
+        type: string
+    required:
+    - markdown
+    - title
+    type: object
+  svc.DocListItem:
+    properties:
+      created_at:
+        type: integer
+      desc:
+        type: string
+      doc_id:
+        type: string
+      file_type:
+        $ref: '#/definitions/model.FileType'
+      id:
+        type: integer
+      platform:
+        $ref: '#/definitions/platform.PlatformType'
+      similar_id:
+        type: integer
+      status:
+        $ref: '#/definitions/model.DocStatus'
+      title:
+        type: string
+      updated_at:
+        type: integer
+    type: object
+  svc.DocUpdateReq:
+    properties:
+      desc:
+        type: string
+      markdown:
+        type: string
+      title:
+        type: string
+    required:
+    - title
+    type: object
+  svc.FeishuAuthURLReq:
+    properties:
+      client_id:
+        type: string
+      client_secret:
+        type: string
+      id:
+        type: integer
+      kb_id:
+        type: integer
+      name:
+        type: string
+    required:
+    - client_id
+    - client_secret
+    - kb_id
+    - name
+    type: object
+  svc.FileExportReq:
+    properties:
+      desc:
+        type: string
+      doc_id:
+        type: string
+      kb_id:
+        type: integer
+      title:
+        type: string
+      uuid:
+        type: string
+    required:
+    - doc_id
+    - kb_id
+    - title
+    - uuid
+    type: object
+  svc.ForumBlog:
+    properties:
+      id:
+        type: integer
+      title:
+        type: string
+    type: object
+  svc.ForumRes:
+    properties:
+      blog_ids:
+        items:
+          type: integer
+        type: array
+      blogs:
+        items:
+          $ref: '#/definitions/svc.ForumBlog'
+        type: array
+      groups:
+        $ref: '#/definitions/model.JSONB-array_model_ForumGroups'
+      id:
+        type: integer
+      index:
+        type: integer
+      name:
+        type: string
+      route_name:
+        type: string
+      tag_ids:
+        items:
+          type: integer
+        type: array
+      tags:
+        items:
+          $ref: '#/definitions/svc.ForumTag'
+        type: array
+    required:
+    - name
+    type: object
+  svc.ForumTag:
+    properties:
+      count:
+        type: integer
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  svc.ForumUpdateReq:
+    properties:
+      forums:
+        items:
+          $ref: '#/definitions/model.ForumInfo'
+        type: array
+    type: object
+  svc.GetSpaceRes:
+    properties:
+      created_at:
+        type: integer
+      id:
+        type: integer
+      platform:
+        $ref: '#/definitions/platform.PlatformType'
+      title:
+        type: string
+      updated_at:
+        type: integer
+    type: object
+  svc.GroupUpdateReq:
+    properties:
+      groups:
+        items:
+          $ref: '#/definitions/model.GroupWithItem'
+        type: array
+    type: object
+  svc.KBCreateReq:
+    properties:
+      desc:
+        type: string
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  svc.KBListItem:
+    properties:
+      created_at:
+        type: integer
+      desc:
+        type: string
+      doc_count:
+        type: integer
+      id:
+        type: integer
+      name:
+        type: string
+      qa_count:
+        type: integer
+      space_count:
+        type: integer
+      updated_at:
+        type: integer
+      web_count:
+        type: integer
+    type: object
+  svc.KBUpdateReq:
+    properties:
+      desc:
+        type: string
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  svc.ListRemoteReq:
+    properties:
+      opt:
+        $ref: '#/definitions/model.PlatformOpt'
+      platform:
+        $ref: '#/definitions/platform.PlatformType'
+      remote_folder_id:
+        type: string
+    type: object
+  svc.ListSpaceFolderItem:
+    properties:
+      created_at:
+        type: integer
+      doc_id:
+        type: string
+      failed:
+        type: integer
+      id:
+        type: integer
+      rag_id:
+        type: string
+      status:
+        $ref: '#/definitions/model.DocStatus'
+      success:
+        type: integer
+      title:
+        type: string
+      total:
+        type: integer
+      updated_at:
+        type: integer
+    type: object
+  svc.ListSpaceItem:
+    properties:
+      created_at:
+        type: integer
+      id:
+        type: integer
+      platform:
+        $ref: '#/definitions/platform.PlatformType'
+      title:
+        type: string
+      total:
+        type: integer
+      updated_at:
+        type: integer
+    type: object
+  svc.ListSpaceKBItem:
+    properties:
+      desc:
+        type: string
+      doc_id:
+        type: string
+      file_type:
+        $ref: '#/definitions/model.FileType'
+      title:
+        type: string
+    type: object
+  svc.ListWebItem:
+    properties:
+      created_at:
+        type: integer
+      desc:
+        type: string
+      file_type:
+        $ref: '#/definitions/model.FileType'
+      id:
+        type: integer
+      status:
+        $ref: '#/definitions/model.DocStatus'
+      title:
+        type: string
+      updated_at:
+        type: integer
+    type: object
+  svc.MKCreateReq:
+    properties:
+      api_header:
+        type: string
+      api_key:
+        type: string
+      api_version:
+        description: for azure openai
+        type: string
+      base_url:
+        type: string
+      model:
+        type: string
+      param:
+        $ref: '#/definitions/model.LLMModelParam'
+      provider:
+        type: string
+      show_name:
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/model.LLMType'
+        enum:
+        - chat
+        - embedding
+        - rerank
+        - analysis
+        - analysis-vl
+    required:
+    - base_url
+    - model
+    - provider
+    - type
+    type: object
+  svc.MKModelItem:
+    properties:
+      model:
+        type: string
+    type: object
+  svc.MKSupportedReq:
+    properties:
+      api_header:
+        type: string
+      api_key:
+        type: string
+      base_url:
+        type: string
+      provider:
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/model.LLMType'
+        enum:
+        - chat
+        - embedding
+        - rerank
+        - analysis
+        - analysis-vl
+    required:
+    - base_url
+    - provider
+    - type
+    type: object
+  svc.MKSupportedRes:
+    properties:
+      error:
+        type: string
+      models:
+        items:
+          $ref: '#/definitions/svc.MKModelItem'
+        type: array
+    type: object
+  svc.MKUpdateReq:
+    properties:
+      api_header:
+        type: string
+      api_key:
+        type: string
+      api_version:
+        description: for azure openai
+        type: string
+      base_url:
+        type: string
+      model:
+        type: string
+      param:
+        $ref: '#/definitions/model.LLMModelParam'
+      provider:
+        type: string
+      show_name:
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/model.LLMType'
+        enum:
+        - chat
+        - embedding
+        - rerank
+        - analysis
+        - analysis-vl
+    required:
+    - base_url
+    - model
+    - provider
+    - type
+    type: object
+  svc.ModelKitCheckReq:
+    properties:
+      api_header:
+        type: string
+      api_key:
+        type: string
+      api_version:
+        description: for azure openai
+        type: string
+      base_url:
+        type: string
+      model:
+        type: string
+      provider:
+        type: string
+      show_name:
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/model.LLMType'
+        enum:
+        - chat
+        - embedding
+        - rerank
+        - analysis
+        - analysis-vl
+    required:
+    - base_url
+    - model
+    - provider
+    - type
+    type: object
+  svc.NotifyReadReq:
+    properties:
+      id:
+        type: integer
+    type: object
+  svc.OrgListItem:
+    properties:
+      builtin:
+        type: boolean
+      count:
+        type: integer
+      created_at:
+        type: integer
+      forum_ids:
+        items:
+          type: integer
+        type: array
+      forum_names:
+        items:
+          type: string
+        type: array
+      id:
+        type: integer
+      name:
+        type: string
+      type:
+        $ref: '#/definitions/model.OrgType'
+      updated_at:
+        type: integer
+    type: object
+  svc.OrgUpsertReq:
+    properties:
+      forum_ids:
+        items:
+          type: integer
+        type: array
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  svc.PolishReq:
+    properties:
+      text:
+        type: string
+    type: object
+  svc.QuickReplyReindexReq:
+    properties:
+      ids:
+        items:
+          type: integer
+        type: array
+    required:
+    - ids
+    type: object
+  svc.RankContributeItem:
+    properties:
+      avatar:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      score:
+        type: number
+    type: object
+  svc.ResolveFeedbackReq:
+    properties:
+      resolve:
+        allOf:
+        - $ref: '#/definitions/model.DiscussionState'
+        maximum: 3
+    type: object
+  svc.ResolveIssueReq:
+    properties:
+      resolve:
+        allOf:
+        - $ref: '#/definitions/model.DiscussionState'
+        enum:
+        - 2
+        - 4
+    type: object
+  svc.ReviewReq:
+    properties:
+      add_new:
+        type: boolean
+      content:
+        type: string
+      title:
+        type: string
+    required:
+    - add_new
+    - content
+    - title
+    type: object
+  svc.SitemapExportReq:
+    properties:
+      desc:
+        type: string
+      doc_id:
+        type: string
+      kb_id:
+        type: integer
+      title:
+        type: string
+      uuid:
+        type: string
+    required:
+    - doc_id
+    - kb_id
+    - title
+    - uuid
+    type: object
+  svc.SitemapListReq:
+    properties:
+      url:
+        type: string
+    required:
+    - url
+    type: object
+  svc.StatDiscussionItem:
+    properties:
+      count:
+        type: integer
+      key:
+        $ref: '#/definitions/model.DiscussionType'
+    type: object
+  svc.StatDiscussionRes:
+    properties:
+      accept:
+        type: integer
+      bot_accept:
+        type: integer
+      bot_unknown:
+        type: integer
+      human_resp_time:
+        type: integer
+    type: object
+  svc.StatVisitRes:
+    properties:
+      pv:
+        type: integer
+      uv:
+        type: integer
+    type: object
+  svc.URLExportReq:
+    properties:
+      desc:
+        type: string
+      doc_id:
+        type: string
+      kb_id:
+        type: integer
+      title:
+        type: string
+      uuid:
+        type: string
+    required:
+    - doc_id
+    - kb_id
+    - title
+    - uuid
+    type: object
+  svc.URLListReq:
+    properties:
+      url:
+        type: string
+    required:
+    - url
+    type: object
+  svc.UpdatePromptReq:
+    properties:
+      prompt:
+        type: string
+    type: object
+  svc.UpdateSpaceFolderReq:
+    properties:
+      update_type:
+        $ref: '#/definitions/topic.KBSpaceUpdateType'
+    type: object
+  svc.UpdateSpaceReq:
+    properties:
+      opt:
+        $ref: '#/definitions/model.PlatformOpt'
+      title:
+        type: string
+    type: object
+  svc.UpdateWebNotifyReq:
+    properties:
+      enable:
+        type: boolean
+    type: object
+  svc.UserJoinOrgReq:
+    properties:
+      org_ids:
+        items:
+          type: integer
+        minItems: 1
+        type: array
+      user_ids:
+        items:
+          type: integer
+        minItems: 1
+        type: array
+    type: object
+  svc.UserListItem:
+    properties:
+      avatar:
+        type: string
+      builtin:
+        type: boolean
+      created_at:
+        type: integer
+      email:
+        type: string
+      id:
+        type: integer
+      last_login:
+        type: integer
+      name:
+        type: string
+      org_ids:
+        items:
+          type: integer
+        type: array
+      org_names:
+        items:
+          type: string
+        type: array
+      role:
+        $ref: '#/definitions/model.UserRole'
+      updated_at:
+        type: integer
+    type: object
+  svc.UserLoginReq:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  svc.UserQuickReplyReq:
+    properties:
+      content:
+        type: string
+      name:
+        maxLength: 10
+        type: string
+    required:
+    - content
+    - name
+    type: object
+  svc.UserRegisterReq:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  svc.UserReviewGuestCreateReq:
+    properties:
+      reason:
+        type: string
+    required:
+    - reason
+    type: object
+  svc.UserReviewUpdateReq:
+    properties:
+      state:
+        maximum: 2
+        minimum: 1
+        type: integer
+    required:
+    - state
+    type: object
+  svc.UserStatisticsRes:
+    properties:
+      answer_count:
+        type: integer
+      avatar:
+        type: string
+      blog_count:
+        type: integer
+      intro:
+        type: string
+      name:
+        type: string
+      point:
+        type: integer
+      qa_count:
+        type: integer
+      role:
+        $ref: '#/definitions/model.UserRole'
+    type: object
+  svc.UserUpdateReq:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      org_ids:
+        items:
+          type: integer
+        type: array
+      password:
+        type: string
+      role:
+        allOf:
+        - $ref: '#/definitions/model.UserRole'
+        maximum: 4
+        minimum: 1
+    type: object
+  svc.WebhookCreateReq:
+    properties:
+      msg_types:
+        items:
+          type: integer
+        type: array
+      name:
+        type: string
+      sign:
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/model.WebhookType'
+        maximum: 2
+        minimum: 1
+      url:
+        type: string
+    required:
+    - name
+    - type
+    - url
+    type: object
+  svc.WebhookUpdateReq:
+    properties:
+      msg_types:
+        items:
+          type: integer
+        type: array
+      name:
+        type: string
+      sign:
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/model.WebhookType'
+        maximum: 2
+        minimum: 1
+      url:
+        type: string
+    required:
+    - name
+    - type
+    - url
+    type: object
+  topic.KBSpaceUpdateType:
+    enum:
+    - 0
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - KBSpaceUpdateTypeAll
+    - KBSpaceUpdateTypeIncr
+    - KBSpaceUpdateTypeFailed
+info:
+  contact: {}
+  description: KoalaQA API swagger document.
+  title: KoalaQA API
+  version: "2.0"
+paths:
+  /admin/bot:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/svc.BotGetRes'
+              type: object
+      summary: get bot info
+      tags:
+      - bot
+    put:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: upload avatar
+        in: formData
+        name: avatar
+        type: file
+      - in: formData
+        name: name
+        required: true
+        type: string
+      - in: formData
+        name: unknown_prompt
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: set bot info
+      tags:
+      - bot
+  /admin/discussion:
+    get:
+      description: backend list discussions
+      parameters:
+      - in: query
+        name: forum_id
+        required: true
+        type: integer
+      - in: query
+        name: keyword
+        type: string
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - in: query
+        minimum: 1
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/model.DiscussionListItem'
+                        type: array
+                    type: object
+              type: object
+      summary: backend list discussions
+      tags:
+      - discussion
+  /admin/forum:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - $ref: '#/definitions/svc.ForumRes'
+                    - properties:
+                        groups:
+                          items:
+                            $ref: '#/definitions/model.ForumGroups'
+                          type: array
+                      type: object
+                  type: array
+              type: object
+      summary: list forum
+      tags:
+      - forum
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          allOf:
+          - $ref: '#/definitions/svc.ForumUpdateReq'
+          - properties:
+              forums:
+                items:
+                  allOf:
+                  - $ref: '#/definitions/model.ForumInfo'
+                  - properties:
+                      groups:
+                        items:
+                          $ref: '#/definitions/model.ForumGroups'
+                        type: array
+                    type: object
+                type: array
+            type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update forum
+      tags:
+      - forum
+  /admin/forum/{forum_id}/tags:
+    get:
+      parameters:
+      - description: forum id
+        in: path
+        name: forum_id
+        type: integer
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - in: query
+        minimum: 1
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - $ref: '#/definitions/model.ListRes'
+                    - properties:
+                        items:
+                          items:
+                            $ref: '#/definitions/model.DiscussionTag'
+                          type: array
+                      type: object
+                  type: array
+              type: object
+      summary: list forum all tag
+      tags:
+      - forum
+  /admin/group:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          allOf:
+                          - $ref: '#/definitions/model.GroupWithItem'
+                          - properties:
+                              items:
+                                items:
+                                  $ref: '#/definitions/model.GroupItemInfo'
+                                type: array
+                            type: object
+                        type: array
+                    type: object
+              type: object
+      summary: list group
+      tags:
+      - group
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.GroupUpdateReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update group
+      tags:
+      - group
+  /admin/kb:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/svc.KBListItem'
+                        type: array
+                    type: object
+              type: object
+      summary: list kb
+      tags:
+      - knowledge_base
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.KBCreateReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: integer
+              type: object
+      summary: create kb
+      tags:
+      - knowledge_base
+  /admin/kb/{kb_id}:
+    delete:
+      parameters:
+      - description: kb id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: delete kb
+      tags:
+      - knowledge_base
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: kb id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.KBUpdateReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update kb
+      tags:
+      - knowledge_base
+  /admin/kb/{kb_id}/document:
+    get:
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
+        - 15
+        - 16
+        - 17
+        - 18
+        in: query
+        name: file_type
+        type: integer
+        x-enum-comments:
+          FileTypeFile: 未知文件类型
+          FileTypeFolder: 文件夹
+        x-enum-descriptions:
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - 文件夹
+        - 未知文件类型
+        - ""
+        x-enum-varnames:
+        - FileTypeUnknown
+        - FileTypeMarkdown
+        - FileTypeHTML
+        - FileTypeJSON
+        - FileTypeURL
+        - FileTypeDOCX
+        - FileTypeDOC
+        - FileTypePPTX
+        - FileTypeXLSX
+        - FileTypeXLS
+        - FileTypePDF
+        - FileTypeImage
+        - FileTypeCSV
+        - FileTypeXML
+        - FileTypeZIP
+        - FileTypeEPub
+        - FileTypeFolder
+        - FileTypeFile
+        - FileTypeMax
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - in: query
+        minimum: 1
+        name: size
+        type: integer
+      - enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        in: query
+        name: status
+        type: integer
+        x-enum-varnames:
+        - DocStatusUnknown
+        - DocStatusApplySuccess
+        - DocStatusPendingReview
+        - DocStatusPendingApply
+        - DocStatusApplyFailed
+        - DocStatusAppling
+        - DocStatusPendingExport
+        - DocStatusExportSuccess
+        - DocStatusExportFailed
+      - in: query
+        name: title
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/svc.DocListItem'
+                        type: array
+                    type: object
+              type: object
+      summary: list kb document
+      tags:
+      - document
+  /admin/kb/{kb_id}/document/{doc_id}:
+    delete:
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: doc_id
+        in: path
+        name: doc_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: delete kb document
+      tags:
+      - document
+    get:
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: doc_id
+        in: path
+        name: doc_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.KBDocumentDetail'
+              type: object
+      summary: get kb document detail
+      tags:
+      - document
+  /admin/kb/{kb_id}/question:
+    get:
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
+        - 15
+        - 16
+        - 17
+        - 18
+        in: query
+        name: file_type
+        type: integer
+        x-enum-comments:
+          FileTypeFile: 未知文件类型
+          FileTypeFolder: 文件夹
+        x-enum-descriptions:
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - ""
+        - 文件夹
+        - 未知文件类型
+        - ""
+        x-enum-varnames:
+        - FileTypeUnknown
+        - FileTypeMarkdown
+        - FileTypeHTML
+        - FileTypeJSON
+        - FileTypeURL
+        - FileTypeDOCX
+        - FileTypeDOC
+        - FileTypePPTX
+        - FileTypeXLSX
+        - FileTypeXLS
+        - FileTypePDF
+        - FileTypeImage
+        - FileTypeCSV
+        - FileTypeXML
+        - FileTypeZIP
+        - FileTypeEPub
+        - FileTypeFolder
+        - FileTypeFile
+        - FileTypeMax
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - in: query
+        minimum: 1
+        name: size
+        type: integer
+      - enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        in: query
+        name: status
+        type: integer
+        x-enum-varnames:
+        - DocStatusUnknown
+        - DocStatusApplySuccess
+        - DocStatusPendingReview
+        - DocStatusPendingApply
+        - DocStatusApplyFailed
+        - DocStatusAppling
+        - DocStatusPendingExport
+        - DocStatusExportSuccess
+        - DocStatusExportFailed
+      - in: query
+        name: title
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/svc.DocListItem'
+                        type: array
+                    type: object
+              type: object
+      summary: list kb question
+      tags:
+      - question
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.DocCreateQAReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: integer
+              type: object
+      summary: create kb question
+      tags:
+      - question
+  /admin/kb/{kb_id}/question/{qa_id}:
+    delete:
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: qa_id
+        in: path
+        name: qa_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: delete kb question
+      tags:
+      - question
+    get:
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: qa_id
+        in: path
+        name: qa_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.KBDocumentDetail'
+              type: object
+      summary: kb question detail
+      tags:
+      - question
+    put:
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: qa_id
+        in: path
+        name: qa_id
+        required: true
+        type: integer
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.DocUpdateReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update kb question
+      tags:
+      - question
+  /admin/kb/{kb_id}/question/{qa_id}/review:
+    post:
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: qa_id
+        in: path
+        name: qa_id
+        required: true
+        type: integer
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.ReviewReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: review kb question
+      tags:
+      - question
+  /admin/kb/{kb_id}/question/file:
+    post:
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: upload file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: upload kb question assets
+      tags:
+      - question
+  /admin/kb/{kb_id}/space:
+    get:
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/svc.ListSpaceItem'
+                        type: array
+                    type: object
+              type: object
+      summary: list kb space
+      tags:
+      - space
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: request param
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.CreateSpaceReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: integer
+              type: object
+      summary: create kb space
+      tags:
+      - space
+  /admin/kb/{kb_id}/space/{space_id}:
+    delete:
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: space_id
+        in: path
+        name: space_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: delete kb space
+      tags:
+      - space
+    get:
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: space_id
+        in: path
+        name: space_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/svc.GetSpaceRes'
+                  - properties:
+                      platform_opt:
+                        $ref: '#/definitions/model.PlatformOpt'
+                    type: object
+              type: object
+      summary: get kb space detail
+      tags:
+      - space
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: space_id
+        in: path
+        name: space_id
+        required: true
+        type: integer
+      - description: request param
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.UpdateSpaceReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update kb space
+      tags:
+      - space
+  /admin/kb/{kb_id}/space/{space_id}/folder:
+    get:
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: space_id
+        in: path
+        name: space_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/svc.ListSpaceFolderItem'
+                        type: array
+                    type: object
+              type: object
+      summary: list kb space folder
+      tags:
+      - space
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: space_id
+        in: path
+        name: space_id
+        required: true
+        type: integer
+      - description: req param
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.CreateSpaceFolderReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: create kb space folder
+      tags:
+      - space
+  /admin/kb/{kb_id}/space/{space_id}/folder/{folder_id}:
+    delete:
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: space_id
+        in: path
+        name: space_id
+        required: true
+        type: integer
+      - description: folder_id
+        in: path
+        name: folder_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: delete kb space folder
+      tags:
+      - space
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: space_id
+        in: path
+        name: space_id
+        required: true
+        type: integer
+      - description: folder_id
+        in: path
+        name: folder_id
+        required: true
+        type: integer
+      - description: req params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.UpdateSpaceFolderReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update kb space folder
+      tags:
+      - space
+  /admin/kb/{kb_id}/space/{space_id}/folder/{folder_id}/doc:
+    get:
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: space_id
+        in: path
+        name: space_id
+        required: true
+        type: integer
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - in: query
+        minimum: 1
+        name: size
+        type: integer
+      - collectionFormat: csv
+        in: query
+        items:
+          enum:
+          - 0
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          - 7
+          - 8
+          type: integer
+        name: status
+        type: array
+      - in: query
+        name: title
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/svc.DocListItem'
+                        type: array
+                    type: object
+              type: object
+      summary: list kb space folder doc
+      tags:
+      - space
+  /admin/kb/{kb_id}/space/{space_id}/refresh:
+    put:
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: space_id
+        in: path
+        name: space_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update kb space all folder
+      tags:
+      - space
+  /admin/kb/{kb_id}/space/{space_id}/remote:
+    get:
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: space_id
+        in: path
+        name: space_id
+        required: true
+        type: integer
+      - in: query
+        name: remote_folder_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/svc.ListSpaceKBItem'
+                        type: array
+                    type: object
+              type: object
+      summary: list kb space remote doc
+      tags:
+      - space
+  /admin/kb/{kb_id}/web:
+    get:
+      parameters:
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - in: query
+        minimum: 1
+        name: size
+        type: integer
+      - in: query
+        name: title
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/svc.ListWebItem'
+                        type: array
+                    type: object
+              type: object
+      summary: list kb web
+      tags:
+      - web
+  /admin/kb/{kb_id}/web/{doc_id}:
+    delete:
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: doc_id
+        in: path
+        name: doc_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: delete kb web
+      tags:
+      - web
+    put:
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: doc_id
+        in: path
+        name: doc_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: update kb web
+      tags:
+      - web
+  /admin/kb/document/feishu/auth_url:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.FeishuAuthURLReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: feishu auth url
+      tags:
+      - document
+  /admin/kb/document/feishu/user:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/admin.docUserRes'
+              type: object
+      summary: feishu user
+      tags:
+      - document
+  /admin/kb/document/file/export:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.FileExportReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: export file document
+      tags:
+      - document
+  /admin/kb/document/file/list:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: upload file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/anydoc.ListRes'
+              type: object
+      summary: list file documents
+      tags:
+      - document
+  /admin/kb/document/sitemap/export:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.SitemapExportReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: export sitemap document
+      tags:
+      - document
+  /admin/kb/document/sitemap/list:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.SitemapListReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/anydoc.ListRes'
+              type: object
+      summary: list sitemap documents
+      tags:
+      - document
+  /admin/kb/document/url/export:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.URLExportReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: export url document
+      tags:
+      - document
+  /admin/kb/document/url/list:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.URLListReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/anydoc.ListRes'
+              type: object
+      summary: list url documents
+      tags:
+      - document
+  /admin/kb/space/remote:
+    post:
+      parameters:
+      - description: req param
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.ListRemoteReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/svc.ListSpaceKBItem'
+                        type: array
+                    type: object
+              type: object
+      summary: list remote doc
+      tags:
+      - space
+  /admin/llm/polish:
+    post:
+      consumes:
+      - application/json
+      description: polish text
+      parameters:
+      - description: polish text
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.PolishReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: polish text
+          schema:
+            type: string
+      summary: polish text
+      tags:
+      - llm
+  /admin/llm/system-prompt:
+    get:
+      consumes:
+      - application/json
+      description: get system chat prompt
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: system chat prompt
+          schema:
+            type: string
+      summary: get system chat prompt
+      tags:
+      - llm
+    put:
+      consumes:
+      - application/json
+      description: update system chat prompt
+      parameters:
+      - description: update prompt
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.UpdatePromptReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: success
+          schema:
+            type: string
+      summary: update system chat prompt
+      tags:
+      - llm
+  /admin/model:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.MKCreateReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: integer
+              type: object
+      summary: create model
+      tags:
+      - modelkit
+  /admin/model/{id}:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: model_id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.MKUpdateReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+      summary: update model
+      tags:
+      - modelkit
+  /admin/model/{id}/active:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: req params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.ActiveModelReq'
+      - description: model_id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: object
+              type: object
+      summary: active model
+      tags:
+      - modelkit
+  /admin/model/check:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.ModelKitCheckReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/svc.CheckModelRes'
+              type: object
+      summary: check model
+      tags:
+      - modelkit
+  /admin/model/list:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.LLM'
+                  type: array
+              type: object
+      summary: list model
+      tags:
+      - modelkit
+  /admin/model/provider/supported:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.MKSupportedReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/svc.MKSupportedRes'
+              type: object
+      summary: list model provider supported
+      tags:
+      - modelkit
+  /admin/org:
+    get:
+      parameters:
+      - in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/svc.OrgListItem'
+                        type: array
+                    type: object
+              type: object
+      summary: list org
+      tags:
+      - org
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.OrgUpsertReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: integer
+              type: object
+      summary: create org
+      tags:
+      - org
+  /admin/org/{org_id}:
+    delete:
+      parameters:
+      - description: org id
+        in: path
+        name: org_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: delete org
+      tags:
+      - org
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: org id
+        in: path
+        name: org_id
+        required: true
+        type: integer
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.OrgUpsertReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update org
+      tags:
+      - org
+  /admin/rank/ai_insight:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - $ref: '#/definitions/model.RankTimeGroup'
+                    - properties:
+                        items:
+                          items:
+                            $ref: '#/definitions/model.RankTimeGroupItem'
+                          type: array
+                      type: object
+                  type: array
+              type: object
+      summary: ai insight rank
+      tags:
+      - rank
+  /admin/rank/ai_insight/{ai_insight_id}/discussion:
+    get:
+      parameters:
+      - description: ai_insight_id
+        in: path
+        name: ai_insight_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/svc.AIInsightDiscussionItem'
+                        type: array
+                    type: object
+              type: object
+      summary: list ai insight discussion
+      tags:
+      - rank
+  /admin/stat/discussion:
+    get:
+      parameters:
+      - in: query
+        name: begin
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/svc.StatDiscussionRes'
+                  - properties:
+                      discussions:
+                        items:
+                          $ref: '#/definitions/svc.StatDiscussionItem'
+                        type: array
+                    type: object
+              type: object
+      summary: stat discussion
+      tags:
+      - stat
+  /admin/stat/search:
+    get:
+      parameters:
+      - in: query
+        name: begin
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: integer
+              type: object
+      summary: stat search count
+      tags:
+      - stat
+  /admin/stat/trend:
+    get:
+      parameters:
+      - in: query
+        name: begin
+        required: true
+        type: integer
+      - in: query
+        name: stat_group
+        required: true
+        type: integer
+      - collectionFormat: csv
+        in: query
+        items:
+          enum:
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          - 7
+          - 8
+          type: integer
+        name: stat_types
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          allOf:
+                          - $ref: '#/definitions/model.StatTrend'
+                          - properties:
+                              items:
+                                items:
+                                  $ref: '#/definitions/model.StatTrendItem'
+                                type: array
+                            type: object
+                        type: array
+                    type: object
+              type: object
+      summary: stat trend
+      tags:
+      - stat
+  /admin/stat/visit:
+    get:
+      parameters:
+      - in: query
+        name: begin
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/svc.StatVisitRes'
+              type: object
+      summary: stat visit
+      tags:
+      - stat
+  /admin/system/brand:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.SystemBrand'
+              type: object
+      summary: brand detail
+      tags:
+      - brand
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/model.SystemBrand'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update brand config
+      tags:
+      - brand
+  /admin/system/discussion:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.SystemDiscussion'
+              type: object
+      summary: system discussion detail
+      tags:
+      - system_discussion
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/model.SystemDiscussion'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update system discussion config
+      tags:
+      - system_discussion
+  /admin/system/login_method:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.Auth'
+              type: object
+      summary: login_method detail
+      tags:
+      - login_method
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/model.Auth'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update login_method config
+      tags:
+      - login_method
+  /admin/system/public_address:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.PublicAddress'
+              type: object
+      summary: public_address detail
+      tags:
+      - public_address
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/model.PublicAddress'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update public_address config
+      tags:
+      - public_address
+  /admin/system/seo:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.SystemSEO'
+              type: object
+      summary: set config detail
+      tags:
+      - seo
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/model.SystemSEO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update seo config
+      tags:
+      - seo
+  /admin/system/webhook:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/model.Webhook'
+                        type: array
+                    type: object
+              type: object
+      summary: list webhook
+      tags:
+      - webhook
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.WebhookCreateReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: integer
+              type: object
+      summary: create webhook
+      tags:
+      - webhook
+  /admin/system/webhook/{webhook_id}:
+    delete:
+      parameters:
+      - description: wenhook id
+        in: path
+        name: webhook_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: delete webhook
+      tags:
+      - webhook
+    get:
+      parameters:
+      - description: wenhook id
+        in: path
+        name: webhook_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.WebhookConfig'
+              type: object
+      summary: webhook detail
+      tags:
+      - webhook
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: wenhook id
+        in: path
+        name: webhook_id
+        required: true
+        type: integer
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.WebhookUpdateReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update webhook config
+      tags:
+      - webhook
+  /admin/user:
+    get:
+      parameters:
+      - in: query
+        name: email
+        type: string
+      - in: query
+        name: name
+        type: string
+      - in: query
+        name: org_id
+        type: integer
+      - in: query
+        name: org_name
+        type: string
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        in: query
+        name: role
+        type: integer
+        x-enum-varnames:
+        - UserRoleUnknown
+        - UserRoleAdmin
+        - UserRoleOperator
+        - UserRoleUser
+        - UserRoleGuest
+        - UserRoleMax
+      - in: query
+        minimum: 1
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/svc.UserListItem'
+                        type: array
+                    type: object
+              type: object
+      summary: list user
+      tags:
+      - user
+  /admin/user/{user_id}:
+    delete:
+      parameters:
+      - description: user id
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: delete user
+      tags:
+      - user
+    get:
+      parameters:
+      - description: user id
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.User'
+              type: object
+      summary: user detail
+      tags:
+      - user
+    put:
+      parameters:
+      - description: user id
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.UserUpdateReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update user
+      tags:
+      - user
+  /admin/user/join_org:
+    post:
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.UserJoinOrgReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: user join org
+      tags:
+      - user
+  /admin/user/review:
+    get:
+      description: list user review
+      parameters:
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - in: query
+        minimum: 1
+        name: size
+        type: integer
+      - collectionFormat: csv
+        in: query
+        items:
+          type: integer
+        name: state
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/model.UserReviewWithUser'
+                        type: array
+                    type: object
+              type: object
+      summary: list user review
+      tags:
+      - user_review
+  /admin/user/review/{review_id}:
+    put:
+      consumes:
+      - application/json
+      description: update user review
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.UserReviewUpdateReq'
+      - description: review id
+        in: path
+        name: review_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update user review
+      tags:
+      - user_review
+  /csrf:
+    get:
+      description: get csrf
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: get csrf
+      tags:
+      - csrf
+  /discussion:
+    get:
+      description: list discussions
+      parameters:
+      - collectionFormat: csv
+        in: query
+        items:
+          type: integer
+        name: discussion_ids
+        type: array
+      - enum:
+        - hot
+        - new
+        - publish
+        in: query
+        name: filter
+        type: string
+        x-enum-varnames:
+        - DiscussionListFilterHot
+        - DiscussionListFilterNew
+        - DiscussionListFilterPublish
+      - in: query
+        name: forum_id
+        type: integer
+      - collectionFormat: csv
+        in: query
+        items:
+          type: integer
+        name: group_ids
+        type: array
+      - in: query
+        name: keyword
+        type: string
+      - in: query
+        name: only_mine
+        type: boolean
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - enum:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        in: query
+        name: resolved
+        type: integer
+        x-enum-varnames:
+        - DiscussionStateUnknown
+        - DiscussionStateNone
+        - DiscussionStateResolved
+        - DiscussionStateClosed
+        - DiscussionStateInProgress
+      - in: query
+        minimum: 1
+        name: size
+        type: integer
+      - in: query
+        name: stat
+        type: boolean
+      - collectionFormat: csv
+        in: query
+        items:
+          type: integer
+        name: tag_ids
+        type: array
+      - enum:
+        - qa
+        - feedback
+        - blog
+        - issue
+        in: query
+        name: type
+        type: string
+        x-enum-varnames:
+        - DiscussionTypeQA
+        - DiscussionTypeFeedback
+        - DiscussionTypeBlog
+        - DiscussionTypeIssue
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/model.DiscussionListItem'
+                        type: array
+                    type: object
+              type: object
+      summary: list discussions
+      tags:
+      - discussion
+    post:
+      consumes:
+      - application/json
+      description: create discussion
+      parameters:
+      - description: discussion
+        in: body
+        name: discussion
+        required: true
+        schema:
+          $ref: '#/definitions/svc.DiscussionCreateReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: create discussion
+      tags:
+      - discussion
+  /discussion/{disc_id}:
+    delete:
+      consumes:
+      - application/json
+      description: delete discussion
+      parameters:
+      - description: disc_id
+        in: path
+        name: disc_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data: {}
+              type: object
+      summary: delete discussion
+      tags:
+      - discussion
+    get:
+      description: detail discussion
+      parameters:
+      - in: query
+        name: no_view
+        type: boolean
+      - description: disc_id
+        in: path
+        name: disc_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.DiscussionDetail'
+              type: object
+      summary: detail discussion
+      tags:
+      - discussion
+    put:
+      consumes:
+      - application/json
+      description: update discussion
+      parameters:
+      - description: disc_id
+        in: path
+        name: disc_id
+        required: true
+        type: string
+      - description: discussion
+        in: body
+        name: discussion
+        required: true
+        schema:
+          $ref: '#/definitions/svc.DiscussionUpdateReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data: {}
+              type: object
+      summary: update discussion
+      tags:
+      - discussion
+  /discussion/{disc_id}/ai_learn:
+    post:
+      description: discussion ai learn
+      parameters:
+      - description: disc_id
+        in: path
+        name: disc_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: discussion ai learn
+      tags:
+      - discussion
+  /discussion/{disc_id}/associate:
+    get:
+      description: list associate discussion
+      parameters:
+      - description: disc_id
+        in: path
+        name: disc_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/model.DiscussionListItem'
+                        type: array
+                    type: object
+              type: object
+      summary: list associate discussion
+      tags:
+      - discussion
+    post:
+      consumes:
+      - application/json
+      description: associate discussion
+      parameters:
+      - description: disc_id
+        in: path
+        name: disc_id
+        required: true
+        type: string
+      - description: discussion
+        in: body
+        name: discussion
+        required: true
+        schema:
+          $ref: '#/definitions/svc.AssociateDiscussionReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: associate discussion
+      tags:
+      - discussion
+  /discussion/{disc_id}/close:
+    put:
+      description: close discussion
+      parameters:
+      - description: disc_id
+        in: path
+        name: disc_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: close discussion
+      tags:
+      - discussion
+  /discussion/{disc_id}/comment:
+    post:
+      consumes:
+      - application/json
+      description: create comment
+      parameters:
+      - description: disc_id
+        in: path
+        name: disc_id
+        required: true
+        type: string
+      - description: comment
+        in: body
+        name: comment
+        required: true
+        schema:
+          $ref: '#/definitions/svc.CommentCreateReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: integer
+              type: object
+      summary: create comment
+      tags:
+      - discussion
+  /discussion/{disc_id}/comment/{comment_id}:
+    delete:
+      consumes:
+      - application/json
+      description: delete comment
+      parameters:
+      - description: disc_id
+        in: path
+        name: disc_id
+        required: true
+        type: string
+      - description: comment_id
+        in: path
+        name: comment_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data: {}
+              type: object
+      summary: delete comment
+      tags:
+      - discussion
+    put:
+      consumes:
+      - application/json
+      description: update comment
+      parameters:
+      - description: disc_id
+        in: path
+        name: disc_id
+        required: true
+        type: string
+      - description: comment_id
+        in: path
+        name: comment_id
+        required: true
+        type: number
+      - description: comment
+        in: body
+        name: comment
+        required: true
+        schema:
+          $ref: '#/definitions/svc.CommentUpdateReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data: {}
+              type: object
+      summary: update comment
+      tags:
+      - discussion
+  /discussion/{disc_id}/comment/{comment_id}/accept:
+    post:
+      consumes:
+      - application/json
+      description: accept comment
+      parameters:
+      - description: disc_id
+        in: path
+        name: disc_id
+        required: true
+        type: string
+      - description: comment_id
+        in: path
+        name: comment_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data: {}
+              type: object
+      summary: accept comment
+      tags:
+      - discussion
+  /discussion/{disc_id}/comment/{comment_id}/dislike:
+    post:
+      consumes:
+      - application/json
+      description: dislike comment
+      parameters:
+      - description: disc_id
+        in: path
+        name: disc_id
+        required: true
+        type: string
+      - description: comment_id
+        in: path
+        name: comment_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: dislike comment
+      tags:
+      - discussion
+  /discussion/{disc_id}/comment/{comment_id}/like:
+    post:
+      consumes:
+      - application/json
+      description: like comment
+      parameters:
+      - description: disc_id
+        in: path
+        name: disc_id
+        required: true
+        type: string
+      - description: comment_id
+        in: path
+        name: comment_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: like comment
+      tags:
+      - discussion
+  /discussion/{disc_id}/comment/{comment_id}/revoke_like:
+    post:
+      consumes:
+      - application/json
+      description: revoke comment like
+      parameters:
+      - description: disc_id
+        in: path
+        name: disc_id
+        required: true
+        type: string
+      - description: comment_id
+        in: path
+        name: comment_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: revoke comment like
+      tags:
+      - discussion
+  /discussion/{disc_id}/follow:
+    delete:
+      consumes:
+      - application/json
+      description: unfollow discussion
+      parameters:
+      - description: disc_id
+        in: path
+        name: disc_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: unfollow discussion
+      tags:
+      - discussion
+    get:
+      consumes:
+      - application/json
+      description: get discussion follow info
+      parameters:
+      - description: disc_id
+        in: path
+        name: disc_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/svc.DiscussionListFollowRes'
+              type: object
+      summary: get discussion follow info
+      tags:
+      - discussion
+    post:
+      consumes:
+      - application/json
+      description: follow discussion
+      parameters:
+      - description: disc_id
+        in: path
+        name: disc_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: integer
+              type: object
+      summary: follow discussion
+      tags:
+      - discussion
+  /discussion/{disc_id}/like:
+    post:
+      consumes:
+      - application/json
+      description: like discussion
+      parameters:
+      - description: disc_id
+        in: path
+        name: disc_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data: {}
+              type: object
+      summary: like discussion
+      tags:
+      - discussion
+  /discussion/{disc_id}/requirement:
+    post:
+      consumes:
+      - application/json
+      description: discussion requirement
+      parameters:
+      - description: disc_id
+        in: path
+        name: disc_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: discussion requirement
+      tags:
+      - discussion
+  /discussion/{disc_id}/resolve:
+    post:
+      consumes:
+      - application/json
+      description: resolve feedback
+      parameters:
+      - description: req params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.ResolveFeedbackReq'
+      - description: disc_id
+        in: path
+        name: disc_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: resolve feedback
+      tags:
+      - discussion
+  /discussion/{disc_id}/resolve_issue:
+    post:
+      consumes:
+      - application/json
+      description: resolve issue
+      parameters:
+      - description: req params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.ResolveIssueReq'
+      - description: disc_id
+        in: path
+        name: disc_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: resolve issue
+      tags:
+      - discussion
+  /discussion/{disc_id}/revoke_like:
+    post:
+      consumes:
+      - application/json
+      description: revoke like discussion
+      parameters:
+      - description: disc_id
+        in: path
+        name: disc_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data: {}
+              type: object
+      summary: revoke like discussion
+      tags:
+      - discussion
+  /discussion/{disc_id}/similarity:
+    get:
+      consumes:
+      - application/json
+      description: list similarity discussion
+      parameters:
+      - description: disc_id
+        in: path
+        name: disc_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/model.DiscussionListItem'
+                        type: array
+                    type: object
+              type: object
+      summary: list similarity discussion
+      tags:
+      - discussion
+  /discussion/complete:
+    post:
+      consumes:
+      - application/json
+      description: tab complete
+      parameters:
+      - description: req params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.DiscussionCompeletReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: tab complete
+      tags:
+      - discussion
+  /discussion/content_summary:
+    post:
+      consumes:
+      - application/json
+      description: discussion content summary
+      parameters:
+      - description: req params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.DiscussionContentSummaryReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: discussion content summary
+      tags:
+      - discussion
+  /discussion/follow:
+    get:
+      description: list follow discussions
+      parameters:
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - in: query
+        minimum: 1
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/model.Discussion'
+                        type: array
+                    type: object
+              type: object
+      summary: list follow discussions
+      tags:
+      - discussion
+  /discussion/summary:
+    post:
+      description: discussions summary
+      parameters:
+      - in: query
+        name: keyword
+        required: true
+        type: string
+      - collectionFormat: csv
+        in: query
+        items:
+          type: string
+        name: uuids
+        required: true
+        type: array
+      produces:
+      - text/event-stream
+      responses: {}
+      summary: discussions summary
+      tags:
+      - discussion
+  /discussion/upload:
+    post:
+      consumes:
+      - multipart/formdata
+      description: discussion upload file
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.DiscussUploadFileReq'
+      - description: upload file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: discussion upload file
+      tags:
+      - discussion
+  /forum:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/svc.ForumRes'
+                  type: array
+              type: object
+      summary: list forums
+      tags:
+      - forum
+  /forum/{forum_id}/tags:
+    get:
+      parameters:
+      - description: forum id
+        in: path
+        name: forum_id
+        type: integer
+      - enum:
+        - qa
+        - feedback
+        - blog
+        - issue
+        in: query
+        name: type
+        type: string
+        x-enum-varnames:
+        - DiscussionTypeQA
+        - DiscussionTypeFeedback
+        - DiscussionTypeBlog
+        - DiscussionTypeIssue
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - $ref: '#/definitions/model.ListRes'
+                    - properties:
+                        items:
+                          items:
+                            $ref: '#/definitions/model.DiscussionTag'
+                          type: array
+                      type: object
+                  type: array
+              type: object
+      summary: list forum tags
+      tags:
+      - forum
+  /group:
+    get:
+      parameters:
+      - description: forum id
+        in: query
+        name: forum_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          allOf:
+                          - $ref: '#/definitions/model.GroupWithItem'
+                          - properties:
+                              items:
+                                items:
+                                  $ref: '#/definitions/model.GroupItemInfo'
+                                type: array
+                            type: object
+                        type: array
+                    type: object
+              type: object
+      summary: frontend list group
+      tags:
+      - group_frontend
+  /rank/contribute:
+    get:
+      parameters:
+      - enum:
+        - 1
+        - 2
+        - 3
+        in: query
+        name: type
+        required: true
+        type: integer
+        x-enum-varnames:
+        - RankTypeContribute
+        - RankTypeAIInsight
+        - RankTypeAllContribute
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/svc.RankContributeItem'
+                        type: array
+                    type: object
+              type: object
+      summary: contribyte rank
+      tags:
+      - rank
+  /stat:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: stat
+      tags:
+      - stat
+  /system/brand:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.SystemBrand'
+              type: object
+      summary: brand detail
+      tags:
+      - brand
+  /system/discussion:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.SystemDiscussion'
+              type: object
+      summary: system discussion detail
+      tags:
+      - system
+  /system/info:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/router.SystemInfoRes'
+              type: object
+      summary: get system info
+      tags:
+      - system
+  /system/seo:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.SystemSEO'
+              type: object
+      summary: set config detail
+      tags:
+      - seo
+  /user:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.UserInfo'
+              type: object
+      summary: user detail
+      tags:
+      - user
+    put:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: avatar
+        in: formData
+        name: avatar
+        type: file
+      - in: formData
+        name: email
+        type: string
+      - in: formData
+        name: intro
+        type: string
+      - in: formData
+        name: name
+        type: string
+      - in: formData
+        name: old_password
+        type: string
+      - in: formData
+        name: password
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update user
+      tags:
+      - user
+  /user/{user_id}:
+    get:
+      parameters:
+      - description: user id
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/svc.UserStatisticsRes'
+              type: object
+      summary: stat user info
+      tags:
+      - user
+  /user/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.UserLoginReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: user login
+      tags:
+      - user
+  /user/login/third:
+    get:
+      parameters:
+      - in: query
+        name: app
+        type: boolean
+      - in: query
+        name: redirect
+        type: string
+      - in: query
+        name: type
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: get user third login url
+      tags:
+      - user
+  /user/login_method:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/svc.AuthFrontendGetRes'
+              type: object
+      summary: login_method detail
+      tags:
+      - user
+  /user/logout:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: user logout
+      tags:
+      - user
+  /user/notify/list:
+    get:
+      parameters:
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - in: query
+        name: read
+        type: boolean
+      - in: query
+        minimum: 1
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/model.MessageNotify'
+                        type: array
+                    type: object
+              type: object
+      summary: list notify message
+      tags:
+      - user
+  /user/notify/read:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: req params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.NotifyReadReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: read notify message
+      tags:
+      - user
+  /user/notify/unread:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: integer
+              type: object
+      summary: get notify message unread num
+      tags:
+      - user
+  /user/notify/web:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: req params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.UpdateWebNotifyReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update notify web switch
+      tags:
+      - user
+  /user/point:
+    get:
+      parameters:
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - in: query
+        minimum: 1
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/model.UserPointRecord'
+                        type: array
+                    type: object
+              type: object
+      summary: list user point
+      tags:
+      - user
+  /user/quick_reply:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/model.UserQuickReply'
+                        type: array
+                    type: object
+              type: object
+      summary: list user quick reply
+      tags:
+      - user_quick_reply
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: req params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.UserQuickReplyReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: integer
+              type: object
+      summary: create user quick reply
+      tags:
+      - user_quick_reply
+  /user/quick_reply/{quick_reply_id}:
+    delete:
+      parameters:
+      - description: quick_reply_id
+        in: path
+        name: quick_reply_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: delete user quick reply
+      tags:
+      - user_quick_reply
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: req params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.UserQuickReplyReq'
+      - description: quick_reply_id
+        in: path
+        name: quick_reply_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update user quick reply
+      tags:
+      - user_quick_reply
+  /user/quick_reply/reindex:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: req params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.QuickReplyReindexReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: reindex user quick reply
+      tags:
+      - user_quick_reply
+  /user/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.UserRegisterReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: register user
+      tags:
+      - user
+  /user/review/guest:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.UserReviewGuestCreateReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: create guest review
+      tags:
+      - user_review
+  /user/trend:
+    get:
+      parameters:
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - in: query
+        minimum: 1
+        name: size
+        type: integer
+      - in: query
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/model.Trend'
+                        type: array
+                    type: object
+              type: object
+      summary: list user trend
+      tags:
+      - user
+swagger: "2.0"

@@ -186,6 +186,7 @@ const (
 type docStateSession struct {
 	ID           uint   `json:"id"`
 	KBID         uint   `json:"-"`
+	Name         string `json:"name"`
 	ClientID     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
 	RedirectURL  string `json:"-"`
@@ -237,6 +238,7 @@ func (d *kbDocument) FeishuAuthURL(ctx *context.Context) {
 	session.Set(docStateKey, docStateSession{
 		ID:           req.ID,
 		KBID:         req.KBID,
+		Name:         req.Name,
 		ClientID:     req.ClientID,
 		ClientSecret: req.ClientSecret,
 		RedirectURL:  authU.Query().Get("redirect_uri"),
