@@ -283,6 +283,7 @@ func (d *kbDocument) FeishuUserInfoCallback(ctx *context.Context) {
 		if err != nil {
 			query.Set("error", fmt.Sprintf("get user info failed: %s", err.Error()))
 		} else {
+			query.Set("error", "nil")
 			session.Set(docUserKey, docUserRes{
 				docStateSession: docState,
 				UserInfo:        res,
