@@ -191,7 +191,10 @@ func (d *Discussion) LikeDiscussion(ctx context.Context, discUUID string, uid ui
 		if err != nil {
 			return err
 		}
-		err = tx.Create(&model.DiscLike{
+		err = tx.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "uuid"}, {Name: "user_id"}},
+			DoNothing: true,
+		}).Create(&model.DiscLike{
 			UUID:   discUUID,
 			UserID: uid,
 		}).Error

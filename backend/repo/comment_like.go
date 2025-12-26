@@ -8,13 +8,14 @@ import (
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/database"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type CommentLike struct {
 	base[*model.CommentLike]
 }
 
-func (c *CommentLike) Like(ctx context.Context, uid, discID, commentID uint, state model.CommentLikeState) (bool, bool, error) {
+func (c *CommentLike) Like(ctx context.Context, discUUID string, uid, discID, commentID uint, state model.CommentLikeState) (bool, bool, error) {
 	updated := false
 	stateChanged := false
 	e := c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -22,9 +23,11 @@ func (c *CommentLike) Like(ctx context.Context, uid, discID, commentID uint, sta
 			"updated_at": time.Now(),
 		}
 
+		createDiscLike := false
 		switch state {
 		case model.CommentLikeStateLike:
 			updateM["like"] = gorm.Expr(`"like" + 1`)
+			createDiscLike = true
 		case model.CommentLikeStateDislike:
 			updateM["dislike"] = gorm.Expr("dislike + 1")
 		default:
@@ -85,6 +88,21 @@ func (c *CommentLike) Like(ctx context.Context, uid, discID, commentID uint, sta
 		}
 
 		err = tx.Model(&model.Discussion{}).Where("id = ?", commentLike.DiscussionID).Updates(updateM).Error
+		if err != nil {
+			return err
+		}
+
+		if createDiscLike {
+			err = tx.Clauses(clause.OnConflict{
+				Columns:   []clause.Column{{Name: "uuid"}, {Name: "user_id"}},
+				DoNothing: true,
+			}).Create(&model.DiscLike{
+				UUID:   discUUID,
+				UserID: uid,
+			}).Error
+		} else {
+			err = tx.Model(&model.DiscLike{}).Where("uuid = ? AND user_id = ?", discUUID, uid).Delete(nil).Error
+		}
 		if err != nil {
 			return err
 		}
