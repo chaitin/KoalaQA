@@ -303,7 +303,7 @@ func (d *kbDocument) FeishuUserInfoCallback(ctx *context.Context) {
 func (d *kbDocument) FeishuUserInfo(ctx *context.Context) {
 	session := sessions.Default(ctx.Context)
 	userI := session.Get(docUserKey)
-	user, ok := userI.(*anydoc.UserInfoRes)
+	user, ok := userI.(docUserRes)
 	if !ok {
 		ctx.BadRequest(errors.New("user info not found"))
 		return
