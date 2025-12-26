@@ -11,6 +11,7 @@ import (
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/anydoc"
 	"github.com/chaitin/koalaqa/pkg/context"
+	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/server"
 	"github.com/chaitin/koalaqa/svc"
 	"github.com/gin-contrib/sessions"
@@ -184,9 +185,10 @@ const (
 
 type docStateSession struct {
 	ID           uint   `json:"id"`
-	KBID         uint   `json:"kb_id"`
+	KBID         uint   `json:"-"`
 	ClientID     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
+	RedirectURL  string `json:"-"`
 	State        string `json:"-"`
 }
 
@@ -225,12 +227,19 @@ func (d *kbDocument) FeishuAuthURL(ctx *context.Context) {
 		return
 	}
 
+	authU, err := util.ParseHTTP(authURL)
+	if err != nil {
+		ctx.InternalError(err, "parse auth url failed")
+		return
+	}
+
 	session := sessions.Default(ctx.Context)
 	session.Set(docStateKey, docStateSession{
 		ID:           req.ID,
 		KBID:         req.KBID,
 		ClientID:     req.ClientID,
 		ClientSecret: req.ClientSecret,
+		RedirectURL:  authU.Query().Get("redirect_uri"),
 		State:        state,
 	})
 	session.Save()
@@ -264,9 +273,10 @@ func (d *kbDocument) FeishuUserInfoCallback(ctx *context.Context) {
 		session.Delete(docStateKey)
 
 		res, err := d.svcDoc.FeishuUserInfo(ctx, anydoc.UserInfoReq{
-			AppID:     docState.ClientID,
-			AppSecret: docState.ClientSecret,
-			Code:      req.Code,
+			AppID:       docState.ClientID,
+			AppSecret:   docState.ClientSecret,
+			Code:        req.Code,
+			RedirectURL: docState.RedirectURL,
 		})
 		if err != nil {
 			query.Set("error", fmt.Sprintf("get user info failed: %s", err.Error()))

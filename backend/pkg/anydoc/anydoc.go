@@ -125,9 +125,10 @@ type AuthURLReq struct {
 }
 
 type UserInfoReq struct {
-	AppID     string `json:"app_id" binding:"required"`
-	AppSecret string `json:"app_secret" binding:"required"`
-	Code      string `json:"code" binding:"required"`
+	AppID       string `json:"app_id" binding:"required"`
+	AppSecret   string `json:"app_secret" binding:"required"`
+	Code        string `json:"code" binding:"required"`
+	RedirectURL string `json:"redirect_url"`
 }
 
 type UserInfoRes struct {
