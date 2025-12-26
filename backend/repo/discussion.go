@@ -227,7 +227,7 @@ func (d *Discussion) RevokeLikeDiscussion(ctx context.Context, discUUID string, 
 			return err
 		}
 		err = tx.Model(&model.Discussion{}).Where("uuid = ?", discUUID).Updates(map[string]any{
-			"like":       gorm.Expr(`"like" - 1`),
+			"like":       gorm.Expr(`GREATEST("like" - 1,0)`),
 			"updated_at": gorm.Expr("updated_at"),
 		}).Error
 		if err != nil {
