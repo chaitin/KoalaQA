@@ -477,7 +477,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                   lineHeight: '20px',
                 }}
               >
-                {formatNumber((data.like || 0) - (data.dislike || 0))}
+                {formatNumber((data.like || 0))}
               </Typography>
             </Stack>
             // <Button
