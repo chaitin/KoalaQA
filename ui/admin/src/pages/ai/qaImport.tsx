@@ -24,9 +24,13 @@ import { useSearchParams } from 'react-router-dom';
 import z from 'zod';
 import LoadingBtn from '@/components/LoadingButton';
 
+const requiredString = z
+  .string()
+  .refine(value => value.trim().length > 0, { message: '必填' });
+
 const schema = z.object({
-  title: z.string().trim().min(1, '必填'),
-  markdown: z.string().trim().min(1, '必填'),
+  title: requiredString,
+  markdown: requiredString,
   id: z.number().optional(),
 });
 
