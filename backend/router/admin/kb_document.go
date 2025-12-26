@@ -183,7 +183,7 @@ const (
 	docUserKey  = "doc_user"
 )
 
-type docStateSession struct {
+type DocStateSession struct {
 	ID           uint   `json:"id"`
 	KBID         uint   `json:"-"`
 	Name         string `json:"name"`
@@ -194,13 +194,13 @@ type docStateSession struct {
 }
 
 type docUserRes struct {
-	docStateSession
+	DocStateSession
 
 	UserInfo *anydoc.UserInfoRes
 }
 
 func init() {
-	gob.Register(docStateSession{})
+	gob.Register(DocStateSession{})
 	gob.Register(docUserRes{})
 }
 
@@ -235,7 +235,7 @@ func (d *kbDocument) FeishuAuthURL(ctx *context.Context) {
 	}
 
 	session := sessions.Default(ctx.Context)
-	session.Set(docStateKey, docStateSession{
+	session.Set(docStateKey, DocStateSession{
 		ID:           req.ID,
 		KBID:         req.KBID,
 		Name:         req.Name,
@@ -266,7 +266,7 @@ func (d *kbDocument) FeishuUserInfoCallback(ctx *context.Context) {
 
 	session := sessions.Default(ctx.Context)
 	stateI := session.Get(docStateKey)
-	docState, ok := stateI.(docStateSession)
+	docState, ok := stateI.(DocStateSession)
 	if !ok || docState.State != req.State {
 		query.Set("error", "invalid state")
 	} else {
@@ -285,7 +285,7 @@ func (d *kbDocument) FeishuUserInfoCallback(ctx *context.Context) {
 		} else {
 			query.Set("error", "nil")
 			session.Set(docUserKey, docUserRes{
-				docStateSession: docState,
+				DocStateSession: docState,
 				UserInfo:        res,
 			})
 			session.Save()
