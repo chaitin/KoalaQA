@@ -23,7 +23,7 @@ import blue from '@/assets/images/blue.png';
 import green from '@/assets/images/green.png';
 
 // 配色方案类型
-type ThemeColorScheme = '#006397' | '#006FFF' | '#50A892'; // 'orange' | 'pink' | 'dark-purple';
+type ThemeColorScheme = '#006397' | '#4285F4' | '#50A892'; // 'orange' | 'pink' | 'dark-purple';
 
 // 配色方案配置
 const themeColorSchemes: Record<
@@ -45,11 +45,11 @@ const themeColorSchemes: Record<
     },
     img: deepBlue,
   },
-  '#006FFF': {
+  '#4285F4': {
     name: '蓝色风格',
-    primaryColor: '#006FFF',
+    primaryColor: '#4285F4',
     previewColors: {
-      header: '#006FFF',
+      header: '#4285F4',
       sidebar: '#f5f5f5',
       content: '#ffffff',
     },
@@ -341,11 +341,15 @@ const Logo: React.FC = () => {
           </Typography>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            <Button
+              variant="contained"
+              onClick={handleOpenThemeDialog}
+              sx={{
+                borderRadius: '6px',
+                bgcolor: themeColorSchemes[themeColorScheme].primaryColor,
+              }}
+            >
               {themeColorSchemes[themeColorScheme].name}
-            </Typography>
-            <Button variant="outlined" onClick={handleOpenThemeDialog} sx={{ borderRadius: '6px' }}>
-              定制社区配色
             </Button>
           </Box>
         </Stack>
@@ -389,7 +393,7 @@ const Logo: React.FC = () => {
                   sx={{
                     color: 'text.secondary',
                     position: 'absolute',
-                    bottom: '4px',
+                    bottom: '6px',
                     left: 0,
                     right: 0,
                     textAlign: 'center',

@@ -24,9 +24,7 @@ import { useSearchParams } from 'react-router-dom';
 import z from 'zod';
 import LoadingBtn from '@/components/LoadingButton';
 
-const requiredString = z
-  .string()
-  .refine(value => value.trim().length > 0, { message: '必填' });
+const requiredString = z.string().refine(value => value.trim().length > 0, { message: '必填' });
 
 const schema = z.object({
   title: requiredString,
@@ -58,7 +56,17 @@ const QaImport = (props: {
   const [showReview, setShowReview] = useState(false);
   const [originalText, setOriginalText] = useState('');
   const [isPolishing, setIsPolishing] = useState(false);
-  const { register, formState, handleSubmit, reset, control, watch, setValue } = useForm<z.infer<typeof schema>>({
+  const {
+    register,
+    formState,
+    handleSubmit,
+    reset,
+    control,
+    watch,
+    setValue,
+    setError,
+    clearErrors,
+  } = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues,
   });
@@ -162,28 +170,33 @@ const QaImport = (props: {
     }
   };
   const handleEdit = async (data: z.infer<typeof schema>) => {
-    const content = data.markdown.trim();
-    await putAdminKbKbIdQuestionQaId(
+    return putAdminKbKbIdQuestionQaId(
       { kbId: kb_id, qaId: data.id! },
       {
         title: data.title.trim(),
-        markdown: content,
+        markdown: data.markdown,
       }
-    );
-    setEditItem(null);
-    setShowCreate(false);
+    ).then(() => {
+      setEditItem(null);
+      setShowCreate(false);
+      message.success('保存成功');
+      refresh({});
+    });
   };
-
   const handleOk = (data: z.infer<typeof schema>) => {
-    const content = data.markdown.trim();
-    postAdminKbKbIdQuestion(
+    return postAdminKbKbIdQuestion(
       { kbId: kb_id },
-      { ...data, title: data.title.trim(), markdown: content }
+      { ...data, title: data.title.trim(), markdown: data.markdown }
     ).then(() => {
       handleCancel();
       message.success('保存成功');
       refresh({});
     });
+  };
+  const handleConfirm = () => {
+    const content = editorRef.current?.getContent() || '';
+    setValue('markdown', content);
+    return handleSubmit(editItem ? handleEdit : handleOk)();
   };
   useEffect(() => {
     if (editItem) {
@@ -280,9 +293,6 @@ const QaImport = (props: {
                   key={editItem ? `edit-${editItem.id}` : 'create'}
                   ref={editorRef}
                   value={field.value ?? ''}
-                  onChange={value => {
-                    field.onChange(value);
-                  }}
                   placeholder="请输入回答内容..."
                   mode="advanced"
                 />
@@ -348,11 +358,7 @@ const QaImport = (props: {
             <Button size="small" variant="text" onClick={handleCancel}>
               取消
             </Button>
-            <LoadingBtn
-              size="small"
-              variant="contained"
-              onClick={handleSubmit(editItem ? handleEdit : handleOk)}
-            >
+            <LoadingBtn size="small" variant="contained" onClick={handleConfirm}>
               确认
             </LoadingBtn>
           </Stack>

@@ -18,18 +18,21 @@ import { useCallback, useEffect, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { eventManager, EVENTS } from '@/utils/eventManager';
 import { useGroupData } from '@/context/GroupDataContext';
-import Item from './Item';
 import SortableItem from './SortableItem';
+import EditDialog from './EditDialog';
 
 const DragBrand = () => {
   const { groups, refresh } = useGroupData();
   const [isEdit, setIsEdit] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [editingGroupIndex, setEditingGroupIndex] = useState<number | null>(null);
   const sensors = useSensors(useSensor(MouseSensor), useSensor(TouchSensor));
   const {
     control,
     handleSubmit,
     reset,
+    getValues,
+    trigger,
     formState: { errors },
   } = useForm<{
     brand_groups: {
@@ -93,12 +96,23 @@ const DragBrand = () => {
   );
 
   const handleAddBrandGroup = () => {
+    const newIndex = brandGroupFields.length;
     appendBrandGroup({
       name: '',
       id: 0,
       links: [{ name: '', id: 0 }],
     });
     setIsEdit(true);
+    // 新增后自动打开编辑弹窗
+    setEditingGroupIndex(newIndex);
+  };
+
+  const handleEditGroup = (groupIndex: number) => {
+    setEditingGroupIndex(groupIndex);
+  };
+
+  const handleCloseEditDialog = () => {
+    setEditingGroupIndex(null);
   };
 
   const onSubmit = handleSubmit(async data => {
@@ -114,8 +128,9 @@ const DragBrand = () => {
     // 刷新分组数据
     await refresh();
     // 触发分类更新事件，通知其他组件
+    const getTimestamp = () => Date.now();
     eventManager.emit(EVENTS.CATEGORY_UPDATED, {
-      timestamp: Date.now(),
+      timestamp: getTimestamp(),
       message: '分类信息已更新',
     });
   });
@@ -159,26 +174,35 @@ const DragBrand = () => {
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 {brandGroupFields.map((group, groupIndex) => (
                   <SortableItem
-                    key={group.id}
+                    key={group.id || groupIndex}
                     id={`group-${groupIndex}`}
                     groupIndex={groupIndex}
                     control={control}
                     errors={errors}
                     setIsEdit={setIsEdit}
                     handleRemove={() => handleRemove(groupIndex)}
+                    onEdit={() => handleEditGroup(groupIndex)}
                   />
                 ))}
               </Box>
             </SortableContext>
             <DragOverlay adjustScale style={{ transformOrigin: '0 0' }}>
               {activeId ? (
-                <Item
-                  isDragging
-                  groupIndex={parseInt(activeId.split('-')[1])}
-                  control={control}
-                  errors={errors}
-                  setIsEdit={setIsEdit}
-                />
+                <Box
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                    p: 2,
+                    backgroundColor: 'background.paper',
+                    boxShadow: 3,
+                    minWidth: 200,
+                  }}
+                >
+                  <Typography variant="body2">
+                    {brandGroupFields[parseInt(activeId.split('-')[1])]?.name || '分类'}
+                  </Typography>
+                </Box>
               ) : null}
             </DragOverlay>
           </DndContext>
@@ -186,6 +210,19 @@ const DragBrand = () => {
             新增一个分类
           </Button>
         </>
+      )}
+
+      {/* 编辑弹窗 */}
+      {editingGroupIndex !== null && (
+        <EditDialog
+          open={editingGroupIndex !== null}
+          onClose={handleCloseEditDialog}
+          groupIndex={editingGroupIndex}
+          control={control}
+          getValues={getValues}
+          trigger={trigger}
+          setIsEdit={setIsEdit}
+        />
       )}
     </Card>
   );

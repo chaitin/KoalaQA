@@ -257,7 +257,7 @@ export function createAppTheme(primaryColor?: string, backgroundColor?: string):
   if (primaryColor) {
     const backgroundMap: Record<string, string> = {
       '#EA4C89': '#F3F3F6',
-      '#006FFF': '#F1F5F9',
+      '#4285F4': '#F5F7F9',
       '#50A892': '#F8F8FA',
       '#FE662A': '#F7F7F7',
       '#006397': '#f6f7f9',
