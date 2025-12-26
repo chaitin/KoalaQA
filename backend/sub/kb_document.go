@@ -56,7 +56,7 @@ func (k *KBDoc) Concurrent() uint {
 
 func (k *KBDoc) Handle(ctx context.Context, msg mq.Message) error {
 	docMsg := msg.(topic.MsgKBDocument)
-	k.logger.WithContext(ctx).With("doc_id", docMsg.DocID).Debug("receive doc msg")
+	k.logger.WithContext(ctx).With("doc_id", docMsg.DocID).Info("receive doc msg")
 	switch docMsg.OP {
 	case topic.OPInsert, topic.OPUpdate:
 		return k.handleInsert(ctx, docMsg.KBID, docMsg.DocID)
