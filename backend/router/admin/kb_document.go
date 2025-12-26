@@ -196,7 +196,7 @@ type DocStateSession struct {
 type docUserRes struct {
 	DocStateSession
 
-	UserInfo *anydoc.UserInfoRes
+	UserInfo *anydoc.UserInfoRes `json:"user_info"`
 }
 
 func init() {

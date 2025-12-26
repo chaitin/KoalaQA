@@ -10,7 +10,7 @@ definitions:
         type: integer
       name:
         type: string
-      userInfo:
+      user_info:
         $ref: '#/definitions/anydoc.UserInfoRes'
     type: object
   anydoc.ListDoc:

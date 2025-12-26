@@ -6818,7 +6818,7 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "userInfo": {
+                "user_info": {
                     "$ref": "#/definitions/anydoc.UserInfoRes"
                 }
             }
