@@ -69,7 +69,7 @@ func (d *KBDocument) FeishuAuthURL(ctx context.Context, state string, req Feishu
 		ClientID:    req.ClientID,
 		State:       state,
 		RedirectURL: publicAddr.FullURL("/api/admin/kb/document/feishu/callback"),
-		Scope:       "drive:export:readonly, docs:document:export contact:user.id:readonly docs:document.content:read docx:document:readonly space:document:retrieve wiki:wiki:readonly drive:drive base:app:read bitable:app offline_access",
+		Scope:       "drive:export:readonly docs:document:export contact:user.id:readonly docs:document.content:read docx:document:readonly space:document:retrieve wiki:wiki:readonly drive:drive base:app:read bitable:app offline_access",
 	})
 }
 
