@@ -15,7 +15,7 @@ type CommentLike struct {
 	base[*model.CommentLike]
 }
 
-func (c *CommentLike) Like(ctx context.Context, discUUID string, uid, discID, commentID uint, state model.CommentLikeState) (bool, bool, error) {
+func (c *CommentLike) Like(ctx context.Context, discUUID string, discType model.DiscussionType, uid, discID, commentID uint, state model.CommentLikeState) (bool, bool, error) {
 	updated := false
 	stateChanged := false
 	e := c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -87,24 +87,26 @@ func (c *CommentLike) Like(ctx context.Context, discUUID string, uid, discID, co
 			return err
 		}
 
-		err = tx.Model(&model.Discussion{}).Where("id = ?", commentLike.DiscussionID).Updates(updateM).Error
-		if err != nil {
-			return err
-		}
+		if discType == model.DiscussionTypeQA {
+			err = tx.Model(&model.Discussion{}).Where("id = ?", commentLike.DiscussionID).Updates(updateM).Error
+			if err != nil {
+				return err
+			}
 
-		if createDiscLike {
-			err = tx.Clauses(clause.OnConflict{
-				Columns:   []clause.Column{{Name: "uuid"}, {Name: "user_id"}},
-				DoNothing: true,
-			}).Create(&model.DiscLike{
-				UUID:   discUUID,
-				UserID: uid,
-			}).Error
-		} else {
-			err = tx.Model(&model.DiscLike{}).Where("uuid = ? AND user_id = ?", discUUID, uid).Delete(nil).Error
-		}
-		if err != nil {
-			return err
+			if createDiscLike {
+				err = tx.Clauses(clause.OnConflict{
+					Columns:   []clause.Column{{Name: "uuid"}, {Name: "user_id"}},
+					DoNothing: true,
+				}).Create(&model.DiscLike{
+					UUID:   discUUID,
+					UserID: uid,
+				}).Error
+			} else {
+				err = tx.Model(&model.DiscLike{}).Where("uuid = ? AND user_id = ?", discUUID, uid).Delete(nil).Error
+			}
+			if err != nil {
+				return err
+			}
 		}
 
 		updated = true
