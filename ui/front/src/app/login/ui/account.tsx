@@ -17,12 +17,23 @@ const schema = z.object({
   password: z.string().min(5, '密码不能少于 5 位').default(''),
 })
 
+const getSafeRedirectUrl = (redirectUrl?: string | null) => {
+  if (!redirectUrl) return null
+
+  // 仅允许形如 /xxx 的站内路径，阻止 https:// 或 // 等跨站跳转
+  if (!redirectUrl.startsWith('/') || redirectUrl.startsWith('//')) {
+    return null
+  }
+
+  return redirectUrl
+}
+
 const Account = ({ isChecked, passwordConfig }: { isChecked: boolean; passwordConfig?: SvcAuthFrontendGetAuth }) => {
   const { user, loading, fetchUser } = useContext(AuthContext)
   const refreshForums = useForumStore((s) => s.refreshForums)
   const searchParams = useSearchParams()
   const router = useRouter()
-  const redirectUrl = searchParams?.get('redirect')
+  const redirectUrl = getSafeRedirectUrl(searchParams?.get('redirect'))
 
   const {
     register,
