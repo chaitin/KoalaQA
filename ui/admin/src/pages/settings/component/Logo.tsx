@@ -8,7 +8,6 @@ import {
   Stack,
   TextField,
   Typography,
-  Dialog,
   DialogTitle,
   DialogContent,
   IconButton,
@@ -18,7 +17,10 @@ import CloseIcon from '@mui/icons-material/Close';
 import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { message } from '@ctzhian/ui';
+import { message, Modal } from '@ctzhian/ui';
+import deepBlue from '@/assets/images/deep_blue.png';
+import blue from '@/assets/images/blue.png';
+import green from '@/assets/images/green.png';
 
 // 配色方案类型
 type ThemeColorScheme = '#006397' | '#006FFF' | '#50A892'; // 'orange' | 'pink' | 'dark-purple';
@@ -30,6 +32,7 @@ const themeColorSchemes: Record<
     name: string;
     primaryColor: string;
     previewColors: { header: string; sidebar: string; content: string };
+    img: string;
   }
 > = {
   '#006397': {
@@ -40,6 +43,7 @@ const themeColorSchemes: Record<
       sidebar: '#1a1a1a',
       content: '#ffffff',
     },
+    img: deepBlue,
   },
   '#006FFF': {
     name: '蓝色风格',
@@ -49,6 +53,7 @@ const themeColorSchemes: Record<
       sidebar: '#f5f5f5',
       content: '#ffffff',
     },
+    img: blue,
   },
   '#50A892': {
     name: '绿色风格',
@@ -58,6 +63,7 @@ const themeColorSchemes: Record<
       sidebar: '#f5f5f5',
       content: '#ffffff',
     },
+    img: green,
   },
   // 'orange': {
   //   name: '橙色风格',
@@ -346,168 +352,56 @@ const Logo: React.FC = () => {
       </Box>
 
       {/* 配色选择对话框 */}
-      <Dialog
+      <Modal
         open={openThemeDialog}
         onClose={handleCloseThemeDialog}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: '8px',
-          },
-        }}
+        onCancel={handleCloseThemeDialog}
+        onOk={handleConfirmTheme}
+        width={700}
+        title="自定义配色"
       >
-        <DialogTitle
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            pb: 2,
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-          }}
-        >
-          <Typography variant="h6" component="span">自定义配色</Typography>
-          <IconButton onClick={handleCloseThemeDialog} sx={{ color: 'text.secondary' }}>
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent sx={{ pt: 3 }}>
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: 2,
-              py: 3,
-            }}
-          >
-            {(Object.keys(themeColorSchemes) as ThemeColorScheme[]).map(schemeKey => {
-              const scheme = themeColorSchemes[schemeKey];
-              const isSelected = tempSelectedTheme === schemeKey;
-              return (
-                <Box
-                  key={schemeKey}
-                  onClick={() => setTempSelectedTheme(schemeKey)}
+        <Stack direction="row" spacing={2}>
+          {(Object.keys(themeColorSchemes) as ThemeColorScheme[]).map(schemeKey => {
+            const scheme = themeColorSchemes[schemeKey];
+            const isSelected = tempSelectedTheme === schemeKey;
+            return (
+              <Box
+                key={schemeKey}
+                onClick={() => setTempSelectedTheme(schemeKey)}
+                sx={{
+                  cursor: 'pointer',
+                  border: isSelected ? '1px solid' : '1px solid',
+                  borderColor: isSelected ? 'primary.main' : 'divider',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  transition: 'all 0.2s',
+                  position: 'relative',
+                  '&:hover': {
+                    borderColor: 'primary.main',
+                    transform: 'translateY(-2px)',
+                    boxShadow: 2,
+                  },
+                }}
+              >
+                <img src={scheme.img} alt={scheme.name} />
+                <Typography
+                  variant="body2"
                   sx={{
-                    cursor: 'pointer',
-                    border: isSelected ? '2px solid' : '1px solid',
-                    borderColor: isSelected ? 'primary.main' : 'divider',
-                    borderRadius: '8px',
-                    overflow: 'hidden',
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                      borderColor: 'primary.main',
-                      transform: 'translateY(-2px)',
-                      boxShadow: 2,
-                    },
+                    color: 'text.secondary',
+                    position: 'absolute',
+                    bottom: '4px',
+                    left: 0,
+                    right: 0,
+                    textAlign: 'center',
                   }}
                 >
-                  {/* 预览区域 */}
-                  <Box
-                    sx={{
-                      height: 80,
-                      position: 'relative',
-                      background: `linear-gradient(135deg, ${scheme.previewColors.header} 0%, ${scheme.previewColors.sidebar} 100%)`,
-                    }}
-                  >
-                    {/* 模拟头部 */}
-                    <Box
-                      sx={{
-                        height: '30%',
-                        bgcolor: scheme.previewColors.header,
-                        display: 'flex',
-                        alignItems: 'center',
-                        px: 1,
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: '50%',
-                          bgcolor: scheme.previewColors.content,
-                          opacity: 0.3,
-                          mr: 0.5,
-                        }}
-                      />
-                      <Box
-                        sx={{
-                          width: 20,
-                          height: 4,
-                          borderRadius: '2px',
-                          bgcolor: scheme.previewColors.content,
-                          opacity: 0.3,
-                        }}
-                      />
-                    </Box>
-                    {/* 模拟内容区域 */}
-                    <Box
-                      sx={{
-                        height: '70%',
-                        bgcolor: scheme.previewColors.content,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 0.5,
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: 4,
-                          height: 4,
-                          borderRadius: '50%',
-                          bgcolor: scheme.previewColors.header,
-                          opacity: 0.5,
-                        }}
-                      />
-                      <Box
-                        sx={{
-                          width: 12,
-                          height: 4,
-                          borderRadius: '2px',
-                          bgcolor: scheme.previewColors.header,
-                          opacity: 0.3,
-                        }}
-                      />
-                    </Box>
-                  </Box>
-                  {/* 标签 */}
-                  <Box
-                    sx={{
-                      p: 1,
-                      textAlign: 'center',
-                      bgcolor: 'background.paper',
-                    }}
-                  >
-                    <Typography variant="caption" sx={{ color: 'text.primary' }}>
-                      {scheme.name}
-                    </Typography>
-                  </Box>
-                </Box>
-              );
-            })}
-          </Box>
-
-          {/* 操作按钮 */}
-          <Stack
-            direction="row"
-            justifyContent="flex-end"
-            spacing={2}
-            sx={{ mt: 3, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}
-          >
-            <Button
-              onClick={handleCloseThemeDialog}
-              variant="outlined"
-              sx={{ borderRadius: '6px' }}
-            >
-              取消
-            </Button>
-            <Button onClick={handleConfirmTheme} variant="contained" sx={{ borderRadius: '6px' }}>
-              确定
-            </Button>
-          </Stack>
-        </DialogContent>
-      </Dialog>
+                  {scheme.name}
+                </Typography>
+              </Box>
+            );
+          })}
+        </Stack>
+      </Modal>
     </Card>
   );
 };
