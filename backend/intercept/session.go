@@ -4,7 +4,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/context"
 	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
+	"github.com/gin-contrib/sessions/memstore"
 	"github.com/gin-gonic/gin"
 )
 
@@ -13,7 +13,7 @@ type session struct {
 }
 
 func newSession() Interceptor {
-	store := cookie.NewStore([]byte(util.RandomString(16)))
+	store := memstore.NewStore([]byte(util.RandomString(16)))
 	store.Options(sessions.Options{
 		Path:     "/",
 		MaxAge:   86400,
