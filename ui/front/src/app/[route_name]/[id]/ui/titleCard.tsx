@@ -295,6 +295,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
     return data.comments?.some((comment) => comment.accepted) || false
   }, [isQAPost, data.comments])
 
+  console.log(data)
   return (
     <>
       <ConvertToIssueModal

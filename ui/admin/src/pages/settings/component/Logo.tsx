@@ -21,7 +21,7 @@ import { z } from 'zod';
 import { message } from '@ctzhian/ui';
 
 // 配色方案类型
-type ThemeColorScheme = 'deep-blue' | 'blue' | 'green'; // 'orange' | 'pink' | 'dark-purple';
+type ThemeColorScheme = '#006397' | '#006FFF' | '#50A892'; // 'orange' | 'pink' | 'dark-purple';
 
 // 配色方案配置
 const themeColorSchemes: Record<
@@ -32,7 +32,7 @@ const themeColorSchemes: Record<
     previewColors: { header: string; sidebar: string; content: string };
   }
 > = {
-  'deep-blue': {
+  '#006397': {
     name: '深蓝风格',
     primaryColor: '#006397',
     previewColors: {
@@ -41,38 +41,38 @@ const themeColorSchemes: Record<
       content: '#ffffff',
     },
   },
-  blue: {
+  '#006FFF': {
     name: '蓝色风格',
-    primaryColor: '#3248F2',
+    primaryColor: '#006FFF',
     previewColors: {
-      header: '#3248F2',
+      header: '#006FFF',
       sidebar: '#f5f5f5',
       content: '#ffffff',
     },
   },
-  green: {
+  '#50A892': {
     name: '绿色风格',
-    primaryColor: '#27AE60',
+    primaryColor: '#50A892',
     previewColors: {
-      header: '#27AE60',
+      header: '#50A892',
       sidebar: '#f5f5f5',
       content: '#ffffff',
     },
   },
   // 'orange': {
   //   name: '橙色风格',
-  //   primaryColor: '#FFA500',
+  //   primaryColor: '#FE662A',
   //   previewColors: {
-  //     header: '#FFA500',
+  //     header: '#FE662A',
   //     sidebar: '#f5f5f5',
   //     content: '#ffffff',
   //   },
   // },
   // 'pink': {
   //   name: '粉红风格',
-  //   primaryColor: '#E91E63',
+  //   primaryColor: '#EA4C89',
   //   previewColors: {
-  //     header: '#E91E63',
+  //     header: '#EA4C89',
   //     sidebar: '#f5f5f5',
   //     content: '#ffffff',
   //   },
@@ -111,20 +111,22 @@ const formSchema = z.object({
     ),
   ]),
   text: z.string().min(1, '品牌文字不能为空').max(50, '品牌文字不能超过50个字符'),
+  theme: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
 
 const Logo: React.FC = () => {
-  const [themeColorScheme, setThemeColorScheme] = useState<ThemeColorScheme>('deep-blue');
+  const [themeColorScheme, setThemeColorScheme] = useState<ThemeColorScheme>('#006397');
   const [openThemeDialog, setOpenThemeDialog] = useState(false);
-  const [tempSelectedTheme, setTempSelectedTheme] = useState<ThemeColorScheme>('deep-blue');
+  const [tempSelectedTheme, setTempSelectedTheme] = useState<ThemeColorScheme>('#006397');
 
   const {
     register,
     handleSubmit,
     control,
-    watch,
+    getValues,
+    setValue,
     formState: { errors, isDirty, dirtyFields },
     reset,
   } = useForm<FormData>({
@@ -132,12 +134,14 @@ const Logo: React.FC = () => {
     defaultValues: {
       logo: '',
       text: '',
+      theme: '#006397',
     },
   });
 
   // 打开配色选择对话框
   const handleOpenThemeDialog = () => {
-    setTempSelectedTheme(themeColorScheme);
+    const currentTheme = getValues('theme') as ThemeColorScheme;
+    setTempSelectedTheme(currentTheme || themeColorScheme);
     setOpenThemeDialog(true);
   };
 
@@ -149,18 +153,24 @@ const Logo: React.FC = () => {
   // 确认选择配色方案
   const handleConfirmTheme = () => {
     setThemeColorScheme(tempSelectedTheme);
+    setValue('theme', tempSelectedTheme, { shouldDirty: true });
     setOpenThemeDialog(false);
-    
-    // TODO: 这里可以调用 API 保存配色方案
   };
 
   const onSubmit = async (data: FormData) => {
     try {
+      const updateData: { logo?: string; text: string; theme?: string } = {
+        text: data.text,
+      };
+
+      // 如果主题色有变化，添加到更新数据中
+      if (dirtyFields.theme && data.theme) {
+        updateData.theme = data.theme;
+      }
+
       if (!dirtyFields.logo) {
-        // 没有上传新 logo，只更新文字
-        await putAdminSystemBrand({
-          text: data.text,
-        });
+        // 没有上传新 logo，只更新文字和主题
+        await putAdminSystemBrand(updateData);
       } else {
         // 上传了新 logo，需要转换为 base64
         let logoBase64 = '';
@@ -171,8 +181,8 @@ const Logo: React.FC = () => {
         }
 
         await putAdminSystemBrand({
+          ...updateData,
           logo: logoBase64,
-          text: data.text,
         });
       }
       message.success('保存成功');
@@ -186,6 +196,15 @@ const Logo: React.FC = () => {
   useEffect(() => {
     getAdminSystemBrand().then(res => {
       reset(res);
+      // 同步主题色状态
+      if (
+        res.theme &&
+        (Object.keys(themeColorSchemes) as ThemeColorScheme[]).includes(
+          res.theme as ThemeColorScheme
+        )
+      ) {
+        setThemeColorScheme(res.theme as ThemeColorScheme);
+      }
     });
   }, [reset]);
 
@@ -306,17 +325,11 @@ const Logo: React.FC = () => {
             fullWidth
             error={!!errors.text}
             helperText={errors.text?.message}
-            slotProps={{
-              inputLabel: {
-                shrink: !!watch('text') || undefined,
-                sx: { display: 'none' },
-              },
-            }}
           />
         </Stack>
 
         {/* 主题配色区域 */}
-        {/* <Stack direction="row" sx={{ mb: 2 }} alignItems="center">
+        <Stack direction="row" sx={{ mb: 2 }} alignItems="center">
           <Typography variant="subtitle2" sx={{ minWidth: '24%' }}>
             主题配色
           </Typography>
@@ -329,7 +342,7 @@ const Logo: React.FC = () => {
               定制社区配色
             </Button>
           </Box>
-        </Stack> */}
+        </Stack>
       </Box>
 
       {/* 配色选择对话框 */}
@@ -354,7 +367,7 @@ const Logo: React.FC = () => {
             borderColor: 'divider',
           }}
         >
-          <Typography variant="h6">自定义配色</Typography>
+          <Typography variant="h6" component="span">自定义配色</Typography>
           <IconButton onClick={handleCloseThemeDialog} sx={{ color: 'text.secondary' }}>
             <CloseIcon />
           </IconButton>

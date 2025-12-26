@@ -279,7 +279,6 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                     width: 36,
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
                     fontWeight: 700,
                     fontSize: '1.25rem',
                     color: 'text.primary',
@@ -317,7 +316,6 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                   borderRadius: 2,
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
                   fontWeight: 700,
                   fontSize: '1.25rem',
                   color: 'text.primary',
@@ -327,7 +325,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                 onClick={handleLogoClick}
               >
                 <Image
-                  src='/inverse_logo-text.png'
+                  src='/logo-text.png'
                   alt='Koala QA Logo'
                   width={100}
                   height={24}

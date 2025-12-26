@@ -12,6 +12,7 @@
 
 import request, { ContentType, RequestParams } from "./httpClient";
 import {
+  AdminDocUserRes,
   AnydocListRes,
   ContextResponse,
   DeleteAdminKbKbIdDocumentDocIdParams,
@@ -21,12 +22,68 @@ import {
   ModelListRes,
   PostAdminKbDocumentFileListPayload,
   SvcDocListItem,
+  SvcFeishuAuthURLReq,
   SvcFileExportReq,
   SvcSitemapExportReq,
   SvcSitemapListReq,
   SvcURLExportReq,
   SvcURLListReq,
 } from "./types";
+
+/**
+ * No description
+ *
+ * @tags document
+ * @name PostAdminKbDocumentFeishuAuthUrl
+ * @summary feishu auth url
+ * @request POST:/admin/kb/document/feishu/auth_url
+ * @response `200` `(ContextResponse & {
+    data?: string,
+
+})` OK
+ */
+
+export const postAdminKbDocumentFeishuAuthUrl = (
+  req: SvcFeishuAuthURLReq,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: string;
+    }
+  >({
+    path: `/admin/kb/document/feishu/auth_url`,
+    method: "POST",
+    body: req,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags document
+ * @name GetAdminKbDocumentFeishuUser
+ * @summary feishu user
+ * @request GET:/admin/kb/document/feishu/user
+ * @response `200` `(ContextResponse & {
+    data?: AdminDocUserRes,
+
+})` OK
+ */
+
+export const getAdminKbDocumentFeishuUser = (params: RequestParams = {}) =>
+  request<
+    ContextResponse & {
+      data?: AdminDocUserRes;
+    }
+  >({
+    path: `/admin/kb/document/feishu/user`,
+    method: "GET",
+    format: "json",
+    ...params,
+  });
 
 /**
  * No description
