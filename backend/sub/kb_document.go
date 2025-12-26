@@ -2,11 +2,13 @@ package sub
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
+	"github.com/chaitin/koalaqa/pkg/database"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/oss"
@@ -68,8 +70,12 @@ func (k *KBDoc) handleInsert(ctx context.Context, kbID uint, docID uint) error {
 	logger := k.logger.WithContext(ctx).With("kb_id", kbID).With("doc_id", docID)
 	doc, err := k.doc.GetByID(ctx, kbID, docID)
 	if err != nil {
-		logger.WithErr(err).Error("doc not found")
-		return nil
+		if errors.Is(err, database.ErrRecordNotFound) {
+			return nil
+		}
+
+		logger.WithErr(err).Error("get doc failed")
+		return err
 	}
 	var content string
 	switch doc.DocType {
