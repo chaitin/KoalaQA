@@ -4,7 +4,6 @@ __debug*
 
 *.glog
 
-backend/docs/*
 backend/deploy/data
 **/node_modules/
 

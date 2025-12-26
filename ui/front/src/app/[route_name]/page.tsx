@@ -3,6 +3,7 @@ import { safeApiCall, safeLogError } from '@/lib/error-utils'
 import { findForumIdByRouteName, findForumInfoByRouteName } from '@/lib/forum-server-utils'
 import { Metadata } from 'next'
 import ForumPageContent from './ui/ForumPageContent'
+import { getSortedGroupsInDiscussionList } from '@/constant'
 
 // 强制动态渲染，因为 API 调用可能使用 cookies
 export const dynamic = 'force-dynamic'
@@ -75,7 +76,7 @@ async function fetchForumData(route_name: string, searchParams: any) {
 
     // 并行获取数据
     const [discussions, groups, announcements] = await Promise.all([
-      safeApiCall(() => getDiscussion(discussionParams), { items: [], total: 0 }),
+      safeApiCall(() => getSortedGroupsInDiscussionList(discussionParams), { items: [], total: 0 }),
       safeApiCall(() => getGroup(groupParams), { items: [] }),
       safeApiCall(
         () => forumInfo?.blog_ids == null 

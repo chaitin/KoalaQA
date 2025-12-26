@@ -44,6 +44,7 @@ interface LinkItemProps extends HTMLAttributes<HTMLDivElement> {
 const LinkItem = forwardRef<HTMLDivElement, LinkItemProps>(
   (
     {
+      linkId,
       linkIndex,
       groupIndex,
       control,

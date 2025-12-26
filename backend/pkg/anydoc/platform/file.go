@@ -22,6 +22,14 @@ func (f *file) ExportURL() string {
 	return f.prefix + "/export"
 }
 
+func (f *file) AuthURL() string {
+	return f.prefix + "/auth_url"
+}
+
+func (f *file) UserInfoURL() string {
+	return f.prefix + "/user"
+}
+
 func newFile() Platform {
 	return &file{prefix: "/api/docs/file"}
 }

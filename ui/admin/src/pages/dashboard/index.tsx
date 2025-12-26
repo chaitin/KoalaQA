@@ -7,7 +7,7 @@ import {
   Description,
   Notifications,
   People,
-  Search
+  Search,
 } from '@mui/icons-material';
 import {
   Alert,
@@ -20,10 +20,8 @@ import {
   Grid,
   Paper,
   Stack,
-  ToggleButton,
-  ToggleButtonGroup,
   Typography,
-  useTheme
+  useTheme,
 } from '@mui/material';
 import dayjs from 'dayjs';
 import React, { ReactNode, useEffect, useMemo, useState } from 'react';
@@ -35,14 +33,14 @@ import {
   LineChart,
   ResponsiveContainer,
   Tooltip,
-  XAxis
+  XAxis,
 } from 'recharts';
 import {
   getAdminRankAiInsight,
   getAdminStatDiscussion,
   getAdminStatSearch,
   getAdminStatTrend,
-  getAdminStatVisit
+  getAdminStatVisit,
 } from '../../api';
 import {
   ModelRankTimeGroup,
@@ -55,6 +53,7 @@ import {
   SvcStatVisitRes,
 } from '../../api/types';
 import AIInsightDetailModal from '../../components/AIInsightDetailModal';
+import CusTabs from '../../components/CusTabs';
 
 // --- 类型定义 ---
 
@@ -567,48 +566,24 @@ const TopFilter: React.FC<{
   value: TimeRange;
   onChange: (event: React.MouseEvent<HTMLElement>, timeRange: TimeRange | null) => void;
 }> = ({ value, onChange }) => {
+  const handleChange = (newValue: string | number) => {
+    // CusTabs 的 onChange 只接收 value，需要适配原来的 onChange 签名
+    onChange({} as React.MouseEvent<HTMLElement>, newValue as TimeRange);
+  };
+
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        p: 0.5,
-        mb: 3,
-        borderRadius: 2,
-        width: 'fit-content',
-        border: '1px solid',
-        borderColor: 'divider',
-      }}
-    >
-      <ToggleButtonGroup
+    <Box sx={{ mb: 3 }}>
+      <CusTabs
+        list={[
+          { label: '今日', value: 'today' },
+          { label: '本周', value: 'week' },
+          { label: '本月', value: 'month' },
+        ]}
         value={value}
-        exclusive
-        onChange={onChange}
-        aria-label="time range"
+        onChange={handleChange}
         size="small"
-        sx={{
-          '& .MuiToggleButton-root': {
-            border: 'none',
-            borderRadius: '6px !important',
-            px: 3,
-            py: 0.5,
-            fontSize: '0.875rem',
-            fontWeight: 500,
-            color: 'text.secondary',
-            '&.Mui-selected': {
-              bgcolor: 'primary.main',
-              color: 'white',
-              '&:hover': {
-                bgcolor: 'primary.dark',
-              },
-            },
-          },
-        }}
-      >
-        <ToggleButton value="today">今日</ToggleButton>
-        <ToggleButton value="week">本周</ToggleButton>
-        <ToggleButton value="month">本月</ToggleButton>
-      </ToggleButtonGroup>
-    </Paper>
+      />
+    </Box>
   );
 };
 
@@ -672,7 +647,7 @@ const ChartSection: React.FC<ChartSectionProps> = ({ title, children, showTime =
       sx={{
         p: 2,
         borderRadius: 3,
-        height: '35vh',
+        height: 'calc(35vh - 21px)',
         display: 'flex',
         flexDirection: 'column',
         border: '1px solid',
@@ -704,10 +679,8 @@ const MainDashboardCard: React.FC<MainDashboardCardProps> = ({ children, sx = {}
     <Card
       elevation={0}
       sx={{
-        p: 1.5,
+        p: 2,
         borderRadius: 3,
-        border: '1px solid',
-        borderColor: 'divider',
         height: 'fit-content',
         ...sx,
       }}
@@ -851,12 +824,12 @@ const Dashboard: React.FC = () => {
       if (!prev) return prev;
       return {
         ...prev,
-        questions: prev.questions.map(q => 
+        questions: prev.questions.map(q =>
           q.id === questionId ? { ...q, associate_id: associateId } : q
         ),
       };
     });
-    
+
     // 同时更新 data.aiInsights 中的对应数据
     setData(prev => {
       if (!prev.aiInsights) return prev;
@@ -864,9 +837,10 @@ const Dashboard: React.FC = () => {
         ...prev,
         aiInsights: prev.aiInsights.map(group => ({
           ...group,
-          items: group.items?.map((item: ModelRankTimeGroupItem) => 
-            item.id === questionId ? { ...item, associate_id: associateId } : item
-          ) || [],
+          items:
+            group.items?.map((item: ModelRankTimeGroupItem) =>
+              item.id === questionId ? { ...item, associate_id: associateId } : item
+            ) || [],
         })),
       };
     });
@@ -1314,17 +1288,29 @@ const Dashboard: React.FC = () => {
                                             boxShadow: theme.shadows[3],
                                           }}
                                         >
-                                          <Typography variant="body2" sx={{ mb: 1, fontWeight: 400 }}>
+                                          <Typography
+                                            variant="body2"
+                                            sx={{ mb: 1, fontWeight: 400 }}
+                                          >
                                             {payload[0].payload.name}
                                           </Typography>
                                           <Stack spacing={0.5}>
-                                            <Typography variant="body2" sx={{ color: 'rgba(99, 103, 233, 1)' }}>
+                                            <Typography
+                                              variant="body2"
+                                              sx={{ color: 'rgba(99, 103, 233, 1)' }}
+                                            >
                                               问题：{data.qa || 0}
                                             </Typography>
-                                            <Typography variant="body2" sx={{ color: 'rgba(99, 103, 233, 1)' }}>
+                                            <Typography
+                                              variant="body2"
+                                              sx={{ color: 'rgba(99, 103, 233, 1)' }}
+                                            >
                                               issue：{data.issue || 0}
                                             </Typography>
-                                            <Typography variant="body2" sx={{ color: 'rgba(99, 103, 233, 1)' }}>
+                                            <Typography
+                                              variant="body2"
+                                              sx={{ color: 'rgba(99, 103, 233, 1)' }}
+                                            >
                                               文章：{data.blog || 0}
                                             </Typography>
                                           </Stack>
@@ -1355,7 +1341,17 @@ const Dashboard: React.FC = () => {
                 </Grid>
 
                 {/* 右侧 AI 洞察卡片 */}
-                <Grid size={{ xs: 12, lg: 3 }} sx={{ overflow: 'auto', scrollbarWidth: 'thin', '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-track': { background: '#f1f1f1' }, '&::-webkit-scrollbar-thumb': { background: '#c1c1c1', borderRadius: '3px' }, '&::-webkit-scrollbar-thumb:hover': { background: '#a8a8a8' } }}>
+                <Grid
+                  size={{ xs: 12, lg: 3 }}
+                  sx={{
+                    overflow: 'auto',
+                    scrollbarWidth: 'thin',
+                    '&::-webkit-scrollbar': { width: '6px' },
+                    '&::-webkit-scrollbar-track': { background: '#f1f1f1' },
+                    '&::-webkit-scrollbar-thumb': { background: '#c1c1c1', borderRadius: '3px' },
+                    '&::-webkit-scrollbar-thumb:hover': { background: '#a8a8a8' },
+                  }}
+                >
                   <Card
                     elevation={0}
                     sx={{
@@ -1368,7 +1364,12 @@ const Dashboard: React.FC = () => {
                       flexDirection: 'column',
                     }}
                   >
-                    <Typography variant="h6" fontWeight={700} gutterBottom sx={{ mb: 1 }}>
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight={700}
+                      color="text.primary"
+                      sx={{ mb: 1 }}
+                    >
                       AI 洞察
                     </Typography>
                     <Stack

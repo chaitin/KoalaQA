@@ -51,20 +51,30 @@ type KBDocument struct {
 	logger        *glog.Logger
 }
 
-type FeishuListReq struct {
-	UUID        string `json:"uuid"`
-	AppID       string `json:"app_id"`
-	AppSecret   string `json:"app_secret"`
-	AccessToken string `json:"access_token"`
-	SpaceID     string `json:"space_id"`
+type FeishuAuthURLReq struct {
+	ID           uint   `json:"id"`
+	KBID         uint   `json:"kb_id" binding:"required"`
+	Name         string `json:"name" binding:"required"`
+	ClientID     string `json:"client_id" binding:"required"`
+	ClientSecret string `json:"client_secret" binding:"required"`
 }
 
-func (d *KBDocument) FeishuList(ctx context.Context, req FeishuListReq) (*anydoc.ListRes, error) {
-	return d.anydoc.List(ctx, platform.PlatformFeishu,
-		anydoc.ListWithUUID(req.UUID),
-		anydoc.ListWithAppInfo(req.AppID, req.AppSecret, req.AccessToken),
-		anydoc.ListWithSpaceID(req.SpaceID),
-	)
+func (d *KBDocument) FeishuAuthURL(ctx context.Context, state string, req FeishuAuthURLReq) (string, error) {
+	publicAddr, err := d.svcPublicAddr.Get(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return d.anydoc.AuthURL(ctx, platform.PlatformFeishu, anydoc.AuthURLReq{
+		ClientID:    req.ClientID,
+		State:       state,
+		RedirectURL: publicAddr.FullURL("/api/admin/kb/document/feishu/callback"),
+		Scope:       "drive:export:readonly docs:document:export contact:user.id:readonly docs:document.content:read docx:document:readonly space:document:retrieve wiki:wiki:readonly drive:drive base:app:read bitable:app offline_access",
+	})
+}
+
+func (d *KBDocument) FeishuUserInfo(ctx context.Context, req anydoc.UserInfoReq) (*anydoc.UserInfoRes, error) {
+	return d.anydoc.UserInfo(ctx, platform.PlatformFeishu, req)
 }
 
 type SpaceExportReq struct {
@@ -563,7 +573,7 @@ func (d *KBDocument) checkPlatformOpt(p platform.PlatformType, opt model.Platfor
 			return errors.New("empty access token")
 		}
 	case platform.PlatformFeishu:
-		if opt.AppID == "" || opt.Secret == "" || opt.AccessToken == "" {
+		if opt.AppID == "" || opt.Secret == "" || (opt.RefreshToken == "" && opt.AccessToken == "") {
 			return errors.New("empty cerd data")
 		}
 	case platform.PlatformDingtalk:

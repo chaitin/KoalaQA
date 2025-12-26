@@ -295,6 +295,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
     return data.comments?.some((comment) => comment.accepted) || false
   }, [isQAPost, data.comments])
 
+  console.log(data)
   return (
     <>
       <ConvertToIssueModal
@@ -477,7 +478,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                   lineHeight: '20px',
                 }}
               >
-                {formatNumber((data.like || 0) - (data.dislike || 0))}
+                {formatNumber((data.like || 0))}
               </Typography>
             </Stack>
             // <Button

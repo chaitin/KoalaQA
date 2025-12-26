@@ -1,5 +1,4 @@
 import { getForum, getSystemBrand, getSystemSeo, getUser, getUserLoginMethod } from '@/api'
-import { getThemeColor } from '@/api/Theme'
 import '@/asset/styles/common.css'
 import '@/asset/styles/markdown.css'
 // import 'react-photo-view/dist/react-photo-view.css';
@@ -154,19 +153,18 @@ async function getAuthConfigData() {
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
   // 首先获取认证配置和用户数据，因为论坛数据依赖这些信息
-  const [brandResponse, seoResponse, authConfig, user, themeColorResponse] = await Promise.all([
+  const [brandResponse, seoResponse, authConfig, user] = await Promise.all([
     getSystemBrand(),
     getSystemSeo(),
     getAuthConfigData(),
     getUserData(),
-    getThemeColor().catch(() => ({ primaryColor: '#EA4C89' })), // 如果获取失败，使用回退主题色
   ])
 
   // 基于认证状态和公共访问配置获取论坛数据
   const forums = await getForumData(authConfig, user)
   
   // 获取主题色，如果未获取到则使用回退主题色
-  const primaryColor = themeColorResponse?.primaryColor || '#EA4C89'
+  const primaryColor = brandResponse?.theme || '#006397'
 
   const brand = brandResponse || null
   const description = seoResponse?.desc || '一个专业的技术讨论和知识分享社区'

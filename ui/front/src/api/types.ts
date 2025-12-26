@@ -182,6 +182,13 @@ export enum ModelCommentLikeState {
   CommentLikeStateDislike = 2,
 }
 
+export interface AdminDocUserRes {
+  client_id?: string;
+  client_secret?: string;
+  id?: number;
+  userInfo?: AnydocUserInfoRes;
+}
+
 export interface AnydocListDoc {
   file?: boolean;
   file_type?: string;
@@ -194,6 +201,14 @@ export interface AnydocListDoc {
 export interface AnydocListRes {
   docs?: AnydocListDoc[];
   uuid?: string;
+}
+
+export interface AnydocUserInfoRes {
+  access_token?: string;
+  email?: string;
+  id?: string;
+  name?: string;
+  refresh_token?: string;
 }
 
 export interface ContextResponse {
@@ -326,6 +341,7 @@ export interface ModelDiscussionDetail {
 }
 
 export interface ModelDiscussionGroup {
+  group_id?: number;
   id?: number;
   name?: string;
 }
@@ -546,6 +562,7 @@ export interface ModelStatTrendItem {
 export interface ModelSystemBrand {
   logo?: string;
   text?: string;
+  theme?: string;
 }
 
 export interface ModelSystemDiscussion {
@@ -801,6 +818,12 @@ export interface SvcDocUpdateReq {
   desc?: string;
   markdown?: string;
   title: string;
+}
+
+export interface SvcFeishuAuthURLReq {
+  client_id: string;
+  client_secret: string;
+  id?: number;
 }
 
 export interface SvcFileExportReq {

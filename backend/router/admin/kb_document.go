@@ -1,10 +1,21 @@
 package admin
 
 import (
+	"encoding/gob"
+	"errors"
+	"fmt"
+	"net/http"
+	"net/url"
+	"strconv"
+
 	"github.com/chaitin/koalaqa/model"
+	"github.com/chaitin/koalaqa/pkg/anydoc"
 	"github.com/chaitin/koalaqa/pkg/context"
+	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/server"
 	"github.com/chaitin/koalaqa/svc"
+	"github.com/gin-contrib/sessions"
+	"github.com/google/uuid"
 )
 
 type kbDocument struct {
@@ -167,6 +178,144 @@ func (d *kbDocument) SitemapExport(ctx *context.Context) {
 	ctx.Success(res)
 }
 
+const (
+	docStateKey = "doc_auth_state"
+	docUserKey  = "doc_user"
+)
+
+type DocStateSession struct {
+	ID           uint   `json:"id"`
+	KBID         uint   `json:"-"`
+	Name         string `json:"name"`
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+	RedirectURL  string `json:"-"`
+	State        string `json:"-"`
+}
+
+type docUserRes struct {
+	DocStateSession
+
+	UserInfo *anydoc.UserInfoRes `json:"user_info"`
+}
+
+func init() {
+	gob.Register(DocStateSession{})
+	gob.Register(docUserRes{})
+}
+
+// FeishuAuthURL
+// @Summary feishu auth url
+// @Tags document
+// @Accept json
+// @Param req body svc.FeishuAuthURLReq true "request params"
+// @Produce json
+// @Success 200 {object} context.Response{data=string}
+// @Router /admin/kb/document/feishu/auth_url [post]
+func (d *kbDocument) FeishuAuthURL(ctx *context.Context) {
+	var req svc.FeishuAuthURLReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	state := uuid.NewString()
+
+	authURL, err := d.svcDoc.FeishuAuthURL(ctx, state, req)
+	if err != nil {
+		ctx.InternalError(err, "get feishu auth url failed")
+		return
+	}
+
+	authU, err := util.ParseHTTP(authURL)
+	if err != nil {
+		ctx.InternalError(err, "parse auth url failed")
+		return
+	}
+
+	session := sessions.Default(ctx.Context)
+	session.Set(docStateKey, DocStateSession{
+		ID:           req.ID,
+		KBID:         req.KBID,
+		Name:         req.Name,
+		ClientID:     req.ClientID,
+		ClientSecret: req.ClientSecret,
+		RedirectURL:  authU.Query().Get("redirect_uri"),
+		State:        state,
+	})
+	session.Save()
+
+	ctx.Success(authURL)
+}
+
+type userInfoReq struct {
+	State string `form:"state" binding:"required"`
+	Code  string `form:"code" binding:"required"`
+}
+
+func (d *kbDocument) FeishuUserInfoCallback(ctx *context.Context) {
+	var req userInfoReq
+	err := ctx.ShouldBindQuery(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	query := make(url.Values)
+
+	session := sessions.Default(ctx.Context)
+	stateI := session.Get(docStateKey)
+	docState, ok := stateI.(DocStateSession)
+	if !ok || docState.State != req.State {
+		query.Set("error", "invalid state")
+	} else {
+		query.Set("id", strconv.FormatUint(uint64(docState.KBID), 10))
+
+		session.Delete(docStateKey)
+
+		res, err := d.svcDoc.FeishuUserInfo(ctx, anydoc.UserInfoReq{
+			AppID:       docState.ClientID,
+			AppSecret:   docState.ClientSecret,
+			Code:        req.Code,
+			RedirectURL: docState.RedirectURL,
+		})
+		if err != nil {
+			query.Set("error", fmt.Sprintf("get user info failed: %s", err.Error()))
+		} else {
+			query.Set("error", "nil")
+			session.Set(docUserKey, docUserRes{
+				DocStateSession: docState,
+				UserInfo:        res,
+			})
+			session.Save()
+		}
+	}
+
+	ctx.Redirect(http.StatusFound, "/admin/ai/kb?"+query.Encode())
+}
+
+// FeishuUserInfo
+// @Summary feishu user
+// @Tags document
+// @Produce json
+// @Success 200 {object} context.Response{data=docUserRes}
+// @Router /admin/kb/document/feishu/user [get]
+func (d *kbDocument) FeishuUserInfo(ctx *context.Context) {
+	session := sessions.Default(ctx.Context)
+	userI := session.Get(docUserKey)
+	user, ok := userI.(docUserRes)
+	if !ok {
+		ctx.BadRequest(errors.New("user info not found"))
+		return
+	}
+
+	session.Delete(docUserKey)
+	session.Save()
+
+	ctx.Success(user)
+}
+
 // List
 // @Summary list kb document
 // @Tags document
@@ -281,6 +430,10 @@ func (d *kbDocument) Route(e server.Handler) {
 
 		g.POST("/sitemap/list", d.SitemapList)
 		g.POST("/sitemap/export", d.SitemapExport)
+
+		g.POST("/feishu/auth_url", d.FeishuAuthURL)
+		g.GET("/feishu/callback", d.FeishuUserInfoCallback)
+		g.GET("/feishu/user", d.FeishuUserInfo)
 	}
 
 }

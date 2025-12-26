@@ -22,6 +22,14 @@ func (s *feishu) ExportURL() string {
 	return s.prefix + "/export"
 }
 
+func (s *feishu) AuthURL() string {
+	return s.prefix + "/auth_url"
+}
+
+func (s *feishu) UserInfoURL() string {
+	return s.prefix + "/user"
+}
+
 func newFeishu() Platform {
 	return &feishu{prefix: "/api/docs/feishu"}
 }

@@ -1,47 +1,119 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { FC } from 'react';
-import { Control, FieldErrors } from 'react-hook-form';
-import Item, { ItemProps } from './Item';
+import { Control, FieldErrors, useWatch } from 'react-hook-form';
+import { Box, Button, Chip, IconButton, Stack, Typography } from '@mui/material';
+import { Icon } from '@ctzhian/ui';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 
-type SortableItemProps = Omit<
-  ItemProps,
-  'withOpacity' | 'isDragging' | 'dragHandleProps'
-> & {
+type SortableItemProps = {
   id: string;
   groupIndex: number;
   control: Control<any>;
   errors: FieldErrors<any>;
-  setIsEdit: (value: boolean) => void;
   handleRemove: () => void;
+  onEdit: () => void;
 };
 
-const SortableItem: FC<SortableItemProps> = ({ id, ...rest }) => {
-  const {
-    isDragging,
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-  } = useSortable({ id });
+const SortableItem: FC<SortableItemProps> = ({ id, groupIndex, control, handleRemove, onEdit }) => {
+  const { isDragging, attributes, listeners, setNodeRef, transform, transition } = useSortable({
+    id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition: transition || undefined,
   };
 
+  const groupName = useWatch({
+    control,
+    name: `brand_groups.${groupIndex}.name`,
+  }) as string;
+
+  const links = useWatch({
+    control,
+    name: `brand_groups.${groupIndex}.links`,
+  }) as { name: string; id: number }[];
+
+  const optionCount = links?.length || 0;
+
   return (
-    <Item
+    <Box
       ref={setNodeRef}
       style={style}
-      withOpacity={isDragging}
-      dragHandleProps={{
-        ...attributes,
-        ...listeners,
+      sx={{
+        opacity: isDragging ? 0.5 : 1,
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 1,
+        p: 2,
+        mb: 2,
+        backgroundColor: 'background.default',
       }}
-      {...rest}
-    />
+    >
+      <Stack direction="row" alignItems="center">
+        <IconButton
+          size="small"
+          sx={{
+            cursor: 'grab',
+            color: 'text.secondary',
+            '&:hover': { color: 'primary.main' },
+            flexShrink: 0,
+          }}
+          {...attributes}
+          {...listeners}
+        >
+          <DragIndicatorIcon />
+        </IconButton>
+
+        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: 120 }}>
+          {groupName || '未命名分类'}
+        </Typography>
+        {optionCount > 0 && (
+          <Box
+            sx={{
+              backgroundColor: '#f5f5f5',
+              border: '1px solid #d0d0d0',
+              borderRadius: '16px',
+              padding: '4px 12px',
+              fontSize: '12px',
+              color: '#333333',
+            }}
+          >
+            {optionCount}个选项
+          </Box>
+        )}
+
+        <Button
+          size="small"
+          variant="outlined"
+          onClick={onEdit}
+          sx={{
+            ml: 'auto',
+            mr: 1,
+            color: 'text.primary',
+            '&:hover': {
+              backgroundColor: 'action.hover',
+            },
+          }}
+        >
+          编辑
+        </Button>
+
+        <IconButton
+          size="small"
+          onClick={handleRemove}
+          sx={{
+            color: 'text.tertiary',
+            '&:hover': {
+              color: 'error.main',
+            },
+          }}
+        >
+          <Icon type="icon-guanbi-fill" />
+        </IconButton>
+      </Stack>
+    </Box>
   );
 };
 

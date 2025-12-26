@@ -53,11 +53,14 @@ const (
 )
 
 type PlatformOpt struct {
-	URL         string `json:"url,omitempty"`
-	AppID       string `json:"app_id,omitempty"`
-	Secret      string `json:"secret,omitempty"`
-	AccessToken string `json:"access_token,omitempty"`
-	Phone       string `json:"phone,omitempty"`
+	URL          string `json:"url,omitempty"`
+	AppID        string `json:"app_id,omitempty"`
+	Secret       string `json:"secret,omitempty"`
+	AccessToken  string `json:"access_token,omitempty"`
+	RefreshToken string `json:"refresh_token"`
+	Username     string `json:"username"`
+	UserThirdID  string `json:"user_third_id"`
+	Phone        string `json:"phone,omitempty"`
 }
 
 type ExportOpt struct {

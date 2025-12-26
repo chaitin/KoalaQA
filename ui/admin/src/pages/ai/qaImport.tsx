@@ -24,11 +24,19 @@ import { useSearchParams } from 'react-router-dom';
 import z from 'zod';
 import LoadingBtn from '@/components/LoadingButton';
 
+const requiredString = z.string().refine(value => value.trim().length > 0, { message: '必填' });
+
 const schema = z.object({
-  title: z.string().min(1, '必填').default(''),
-  markdown: z.string().default(''),
+  title: requiredString,
+  markdown: requiredString,
   id: z.number().optional(),
 });
+
+const defaultValues: z.infer<typeof schema> = {
+  title: '',
+  markdown: '',
+  id: undefined,
+};
 
 const QaImport = (props: {
   refresh: (params: any) => void;
@@ -48,8 +56,19 @@ const QaImport = (props: {
   const [showReview, setShowReview] = useState(false);
   const [originalText, setOriginalText] = useState('');
   const [isPolishing, setIsPolishing] = useState(false);
-  const { register, formState, handleSubmit, reset, control, watch } = useForm({
+  const {
+    register,
+    formState,
+    handleSubmit,
+    reset,
+    control,
+    watch,
+    setValue,
+    setError,
+    clearErrors,
+  } = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
+    defaultValues,
   });
   const creat = () => {
     setEditItem(null);
@@ -57,14 +76,14 @@ const QaImport = (props: {
     setShowCreate(true);
     // 延迟重置，确保编辑器已经初始化
     setTimeout(() => {
-      reset(schema.parse({}));
+      reset(defaultValues);
     }, 50);
   };
   const handleCancel = () => {
     setShowCreate(false);
     setEditItem(null);
     setOriginalText('');
-    reset(schema.parse({}));
+    reset(defaultValues);
   };
 
   // AI文本润色功能
@@ -75,6 +94,7 @@ const QaImport = (props: {
       onSuccess: result => {
         // 直接设置编辑器内容
         editorRef.current?.setContent(result);
+        setValue('markdown', result, { shouldValidate: true });
         message.success('文本润色完成');
         setIsPolishing(false);
       },
@@ -99,6 +119,7 @@ const QaImport = (props: {
   const handleRevert = () => {
     if (originalText) {
       editorRef.current?.setContent(originalText);
+      setValue('markdown', originalText, { shouldValidate: true });
       message.success('已恢复原文');
     }
   };
@@ -149,38 +170,41 @@ const QaImport = (props: {
     }
   };
   const handleEdit = async (data: z.infer<typeof schema>) => {
-    const content = editorRef.current?.getContent() || '';
-    if (!content.trim()) {
-      message.warning('请输入回答内容');
-      return;
-    }
-    await putAdminKbKbIdQuestionQaId(
+    return putAdminKbKbIdQuestionQaId(
       { kbId: kb_id, qaId: data.id! },
       {
-        title: data.title || '',
-        markdown: content,
+        title: data.title.trim(),
+        markdown: data.markdown,
       }
-    );
-    setEditItem(null);
-    setShowCreate(false);
+    ).then(() => {
+      setEditItem(null);
+      setShowCreate(false);
+      message.success('保存成功');
+      refresh({});
+    });
   };
-
   const handleOk = (data: z.infer<typeof schema>) => {
-    const content = editorRef.current?.getContent() || '';
-    if (!content.trim()) {
-      message.warning('请输入回答内容');
-      return;
-    }
-    postAdminKbKbIdQuestion({ kbId: kb_id }, { ...data, markdown: content }).then(() => {
+    return postAdminKbKbIdQuestion(
+      { kbId: kb_id },
+      { ...data, title: data.title.trim(), markdown: data.markdown }
+    ).then(() => {
       handleCancel();
       message.success('保存成功');
       refresh({});
     });
   };
+  const handleConfirm = () => {
+    const content = editorRef.current?.getContent() || '';
+    setValue('markdown', content);
+    return handleSubmit(editItem ? handleEdit : handleOk)();
+  };
   useEffect(() => {
-    console.log(editItem)
     if (editItem) {
-      reset(editItem);
+      reset({
+        id: editItem.id,
+        title: editItem.title ?? '',
+        markdown: editItem.markdown ?? '',
+      });
       // 如果是待审核状态，显示审核弹窗
       if (editItem.status === ModelDocStatus.DocStatusPendingReview) {
         setShowReview(true);
@@ -247,19 +271,20 @@ const QaImport = (props: {
           <Controller
             name="markdown"
             control={control}
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
               <Box
                 sx={{
                   position: 'relative',
                   border: '1px solid #e0e0e0',
                   borderRadius: 1,
                   px: 2,
+                  pb: fieldState.error ? 3 : 0,
                   '& .editor-toolbar + div': {
                     overflow: 'auto',
                     minHeight: '320px!important',
                     maxHeight: '340px!important',
                   },
-                  '& .tiptap':{
+                  '& .tiptap': {
                     minHeight: { xs: '150px', sm: '300px' },
                   },
                 }}
@@ -271,6 +296,19 @@ const QaImport = (props: {
                   placeholder="请输入回答内容..."
                   mode="advanced"
                 />
+                {fieldState.error?.message && (
+                  <Box
+                    sx={{
+                      fontSize: 12,
+                      color: 'error.main',
+                      position: 'absolute',
+                      bottom: -20,
+                      left: 0,
+                    }}
+                  >
+                    {fieldState.error.message}
+                  </Box>
+                )}
                 <Box
                   sx={{
                     position: 'absolute',
@@ -320,11 +358,7 @@ const QaImport = (props: {
             <Button size="small" variant="text" onClick={handleCancel}>
               取消
             </Button>
-            <LoadingBtn
-              size="small"
-              variant="contained"
-              onClick={handleSubmit(editItem ? handleEdit : handleOk)}
-            >
+            <LoadingBtn size="small" variant="contained" onClick={handleConfirm}>
               确认
             </LoadingBtn>
           </Stack>

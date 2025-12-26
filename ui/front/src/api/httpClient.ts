@@ -415,7 +415,11 @@ export class HttpClient<SecurityDataType = unknown> {
             const errorMsg = this.translateErrorMessage(msg);
             if (Alert?.error) {
               try {
-                // 打印完整的请求内容
+                const statusCode = error?.response?.status ?? "未知";
+                const alertMessage =
+                  errorMsg && errorMsg !== "未知错误"
+                    ? `请求出错，状态码: ${statusCode}\n${errorMsg}`
+                    : `请求出错，状态码: ${statusCode}`;
                 Alert.error(
                   `请求出错，状态码: ${error?.response?.status ?? "未知"}`,
                 );

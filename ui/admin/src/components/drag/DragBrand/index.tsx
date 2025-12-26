@@ -1,6 +1,5 @@
 import { putAdminGroup } from '@/api';
 import Card from '@/components/card';
-import LoadingButton from '@/components/LoadingButton';
 import {
   closestCenter,
   DndContext,
@@ -14,22 +13,27 @@ import {
 } from '@dnd-kit/core';
 import { rectSortingStrategy, SortableContext } from '@dnd-kit/sortable';
 import { Box, Button, Stack, Typography } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { message } from '@ctzhian/ui';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { eventManager, EVENTS } from '@/utils/eventManager';
 import { useGroupData } from '@/context/GroupDataContext';
-import Item from './Item';
 import SortableItem from './SortableItem';
+import EditDialog from './EditDialog';
 
 const DragBrand = () => {
   const { groups, refresh } = useGroupData();
-  const [isEdit, setIsEdit] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [editingGroupIndex, setEditingGroupIndex] = useState<number | null>(null);
+  const groupSnapshotRef = useRef<{ name: string; links: { name: string; id: number }[] } | null>(null);
   const sensors = useSensors(useSensor(MouseSensor), useSensor(TouchSensor));
   const {
     control,
     handleSubmit,
     reset,
+    getValues,
+    trigger,
+    setValue,
     formState: { errors },
   } = useForm<{
     brand_groups: {
@@ -67,17 +71,42 @@ const DragBrand = () => {
     });
   }, [groups, reset]);
   const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
+    async (event: DragEndEvent) => {
       const { active, over } = event;
       if (active.id !== over?.id) {
         const oldIndex = brandGroupFields.findIndex((_, index) => `group-${index}` === active.id);
         const newIndex = brandGroupFields.findIndex((_, index) => `group-${index}` === over!.id);
         move(oldIndex, newIndex);
-        setIsEdit(true);
+        
+        // 排序成功后自动保存
+        try {
+          const currentData = getValues('brand_groups');
+          await putAdminGroup({
+            groups: currentData.map((item, index) => ({
+              name: item.name,
+              id: item.id,
+              index,
+              items: item.links.map((link, i) => ({ ...link, index: i })),
+            })),
+          });
+          // 刷新分组数据
+          await refresh();
+          // 显示成功提示
+          message.success('排序调整成功');
+          // 触发分类更新事件，通知其他组件
+          const getTimestamp = () => Date.now();
+          eventManager.emit(EVENTS.CATEGORY_UPDATED, {
+            timestamp: getTimestamp(),
+            message: '分类信息已更新',
+          });
+        } catch (error) {
+          console.error('保存排序失败:', error);
+          message.error('保存排序失败');
+        }
       }
       setActiveId(null);
     },
-    [brandGroupFields, move, setIsEdit]
+    [brandGroupFields, move, getValues, refresh]
   );
 
   const handleDragCancel = useCallback(() => {
@@ -87,18 +116,46 @@ const DragBrand = () => {
   const handleRemove = useCallback(
     (index: number) => {
       removeBrandGroup(index);
-      setIsEdit(true);
     },
-    [removeBrandGroup, setIsEdit]
+    [removeBrandGroup]
   );
 
   const handleAddBrandGroup = () => {
+    const newIndex = brandGroupFields.length;
     appendBrandGroup({
       name: '',
       id: 0,
       links: [{ name: '', id: 0 }],
     });
-    setIsEdit(true);
+    // 新增后自动打开编辑弹窗
+    setEditingGroupIndex(newIndex);
+  };
+
+  const handleEditGroup = (groupIndex: number) => {
+    // 保存打开弹窗时的初始值快照
+    const currentGroup = getValues(`brand_groups.${groupIndex}`);
+    groupSnapshotRef.current = {
+      name: currentGroup?.name || '',
+      links: currentGroup?.links ? JSON.parse(JSON.stringify(currentGroup.links)) : [],
+    };
+    setEditingGroupIndex(groupIndex);
+  };
+
+  const handleCloseEditDialog = (shouldRestore: boolean = false) => {
+    if (editingGroupIndex !== null) {
+      // 如果取消且没有快照（说明是新增的），删除新增的分类
+      if (shouldRestore && !groupSnapshotRef.current) {
+        removeBrandGroup(editingGroupIndex);
+      }
+      // 如果有快照（说明是编辑），恢复初始值
+      else if (shouldRestore && groupSnapshotRef.current) {
+        const snapshot = groupSnapshotRef.current;
+        setValue(`brand_groups.${editingGroupIndex}.name`, snapshot.name);
+        setValue(`brand_groups.${editingGroupIndex}.links`, snapshot.links);
+      }
+    }
+    groupSnapshotRef.current = null;
+    setEditingGroupIndex(null);
   };
 
   const onSubmit = handleSubmit(async data => {
@@ -110,12 +167,12 @@ const DragBrand = () => {
         items: item.links.map((link, i) => ({ ...link, index: i })),
       })),
     });
-    setIsEdit(false);
     // 刷新分组数据
     await refresh();
     // 触发分类更新事件，通知其他组件
+    const getTimestamp = () => Date.now();
     eventManager.emit(EVENTS.CATEGORY_UPDATED, {
-      timestamp: Date.now(),
+      timestamp: getTimestamp(),
       message: '分类信息已更新',
     });
   });
@@ -133,11 +190,9 @@ const DragBrand = () => {
         >
           分类管理
         </Typography>
-        {isEdit && (
-          <LoadingButton variant="contained" size="small" onClick={onSubmit}>
-            保存
-          </LoadingButton>
-        )}
+        <Button variant="text" color="info" onClick={handleAddBrandGroup}>
+          新增一个分类
+        </Button>
       </Stack>
       {brandGroupFields.length === 0 ? (
         <Button size="small" variant="text" color="info" onClick={handleAddBrandGroup}>
@@ -156,36 +211,55 @@ const DragBrand = () => {
               items={brandGroupFields.map((_, index) => `group-${index}`)}
               strategy={rectSortingStrategy}
             >
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column',}}>
                 {brandGroupFields.map((group, groupIndex) => (
                   <SortableItem
-                    key={group.id}
+                    key={group.id || groupIndex}
                     id={`group-${groupIndex}`}
                     groupIndex={groupIndex}
                     control={control}
                     errors={errors}
-                    setIsEdit={setIsEdit}
                     handleRemove={() => handleRemove(groupIndex)}
+                    onEdit={() => handleEditGroup(groupIndex)}
                   />
                 ))}
               </Box>
             </SortableContext>
             <DragOverlay adjustScale style={{ transformOrigin: '0 0' }}>
               {activeId ? (
-                <Item
-                  isDragging
-                  groupIndex={parseInt(activeId.split('-')[1])}
-                  control={control}
-                  errors={errors}
-                  setIsEdit={setIsEdit}
-                />
+                <Box
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                    p: 2,
+                    backgroundColor: 'background.paper',
+                    boxShadow: 3,
+                    minWidth: 200,
+                  }}
+                >
+                  <Typography variant="body2">
+                    {brandGroupFields[parseInt(activeId.split('-')[1])]?.name || '分类'}
+                  </Typography>
+                </Box>
               ) : null}
             </DragOverlay>
           </DndContext>
-          <Button size="small" variant="text" color="info" onClick={handleAddBrandGroup}>
-            新增一个分类
-          </Button>
         </>
+      )}
+
+      {/* 编辑弹窗 */}
+      {editingGroupIndex !== null && (
+        <EditDialog
+          open={editingGroupIndex !== null}
+          onClose={() => handleCloseEditDialog(false)}
+          onCancel={() => handleCloseEditDialog(true)}
+          groupIndex={editingGroupIndex}
+          control={control}
+          getValues={getValues}
+          trigger={trigger}
+          onSave={onSubmit}
+        />
       )}
     </Card>
   );

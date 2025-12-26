@@ -1,4 +1,4 @@
-import { ModelUserRole } from '@/api'
+import { getDiscussion, ModelUserRole } from '@/api'
 
 export const roleConfig = {
   [ModelUserRole.UserRoleUnknown]: {
@@ -31,4 +31,16 @@ export const roleConfig = {
     description: '',
     color: 'default' as const,
   },
+}
+
+export const getSortedGroupsInDiscussionList = async (...args: Parameters<typeof getDiscussion>) => {
+  const result = await getDiscussion(...args)
+  if (Array.isArray(result?.items)) {
+    result.items.forEach((item) => {
+      if (Array.isArray(item.group_ids)) {
+        item.group_ids.sort((a, b) => a - b)
+      }
+    })
+  }
+  return result
 }

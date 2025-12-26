@@ -22,6 +22,14 @@ func (s *pandawiki) ExportURL() string {
 	return s.prefix + "/export"
 }
 
+func (s *pandawiki) AuthURL() string {
+	return s.prefix + "/auth_url"
+}
+
+func (s *pandawiki) UserInfoURL() string {
+	return s.prefix + "/user"
+}
+
 func newPandawiki() Platform {
 	return &pandawiki{prefix: "/api/docs/pandawiki"}
 }

@@ -122,7 +122,7 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
         opacity: isDragging ? 0.5 : 1,
         border: '1px solid',
         borderColor: 'divider',
-        borderRadius: 2,
+        borderRadius: 1,
         p: 2,
         mb: 2,
       }}

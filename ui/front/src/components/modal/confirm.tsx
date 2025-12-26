@@ -19,7 +19,7 @@ export function reactRender(
 import React from 'react';
 import { ThemeProvider } from '@mui/material/styles';
 import { createAppTheme } from '@/theme';
-import { getThemeColor } from '@/api/Theme';
+import { getSystemBrand } from '@/api';
 import ConfirmDialog, { type ConfirmDialogProps } from './ConfirmDialog';
 
 type ConfigUpdate =
@@ -43,9 +43,9 @@ function getCachedThemeColor(): Promise<string> {
   }
   
   // 发起新的请求
-  themeColorPromise = getThemeColor()
+  themeColorPromise = getSystemBrand()
     .then((response) => {
-      const newThemeColor = response?.primaryColor || '#EA4C89';
+      const newThemeColor = response?.theme || '#006397';
       cachedThemeColor = newThemeColor;
       themeColorPromise = null; // 清除 Promise，允许后续重新请求
       return newThemeColor;

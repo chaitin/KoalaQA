@@ -78,7 +78,7 @@ const RelatedContent = ({ discId }: { discId: string }) => {
             </Box>
           ))
         ) : (
-          <Typography sx={{ borderLeft: '1px solid #e5e7eb', p: 2 }} variant='body2' color='text.secondary'>
+          <Typography sx={{ p: 2 }} variant='body2' color='text.secondary'>
             暂无推荐
           </Typography>
         )}

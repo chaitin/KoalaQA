@@ -1498,7 +1498,7 @@ func (d *Discussion) LikeComment(ctx context.Context, userInfo model.UserInfo, d
 		return err
 	}
 
-	updated, stateChanged, err := d.in.CommLikeRepo.Like(ctx, userInfo.UID, disc.ID, commentID, model.CommentLikeStateLike)
+	updated, stateChanged, err := d.in.CommLikeRepo.Like(ctx, disc.UUID, disc.Type, userInfo.UID, disc.ID, commentID, model.CommentLikeStateLike)
 	if err != nil {
 		return err
 	}
@@ -1585,7 +1585,7 @@ func (d *Discussion) DislikeComment(ctx context.Context, userInfo model.UserInfo
 		return err
 	}
 
-	updated, stateChanged, err := d.in.CommLikeRepo.Like(ctx, userInfo.UID, disc.ID, commentID, model.CommentLikeStateDislike)
+	updated, stateChanged, err := d.in.CommLikeRepo.Like(ctx, disc.UUID, disc.Type, userInfo.UID, disc.ID, commentID, model.CommentLikeStateDislike)
 	if err != nil {
 		return err
 	}

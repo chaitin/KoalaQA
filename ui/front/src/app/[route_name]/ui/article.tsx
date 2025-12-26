@@ -1,5 +1,4 @@
 'use client'
-import { getDiscussion } from '@/api'
 import {
   GetDiscussionParams,
   ModelDiscussionListItem,
@@ -14,6 +13,7 @@ import { AuthContext } from '@/components/authProvider'
 import BrandAttribution from '@/components/BrandAttribution'
 import ContributorsRank from '@/components/ContributorsRank'
 import SearchResultModal from '@/components/SearchResultModal'
+import { getSortedGroupsInDiscussionList } from '@/constant'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
 import { useListPageCache } from '@/hooks/useListPageCache'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
@@ -42,7 +42,6 @@ import { useBoolean, useInViewport } from 'ahooks'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import React, { Fragment, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import DiscussCard from './discussCard'
-
 export type Status = 'hot' | 'new' | 'publish'
 
 const Article = ({
@@ -159,7 +158,7 @@ const Article = ({
       }
     }
 
-    getDiscussion(params)
+    getSortedGroupsInDiscussionList(params)
       .then((res) => {
         if (res) {
           setArticleData((pre) => ({

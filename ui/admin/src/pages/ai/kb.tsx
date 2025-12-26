@@ -24,6 +24,8 @@ import {
   SvcUpdateSpaceReq,
   TopicKBSpaceUpdateType,
 } from '@/api';
+import { getAdminKbDocumentFeishuUser, postAdminKbDocumentFeishuAuthUrl } from '@/api/Document';
+import { AdminDocUserRes } from '@/api/types';
 import dingtalk_screen_1 from '@/assets/images/dingtalk_1.png';
 import dingtalk_screen_2 from '@/assets/images/dingtalk_2.png';
 import LoadingButton from '@/components/LoadingButton';
@@ -78,6 +80,8 @@ const spaceSchema = z.object({
   secret: z.string().optional(),
   phone: z.string().optional(),
   identifier_type: z.enum(['unionid', 'phone']).default('unionid'),
+  user_third_id: z.string().optional(),
+  username: z.string().optional(),
 });
 
 const KnowledgeBasePage = () => {
@@ -112,6 +116,10 @@ const KnowledgeBasePage = () => {
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
   const [previewImageSrc, setPreviewImageSrc] = useState('');
   const [previewImageAlt, setPreviewImageAlt] = useState('');
+  const [feishuBoundUser, setFeishuBoundUser] = useState<AdminDocUserRes | null>(null);
+  const [needsRebind, setNeedsRebind] = useState(false); // 标记是否需要重新绑定
+  const originalAppIdRef = useRef<string>(''); // 保存原始的 app_id
+  const originalSecretRef = useRef<string>(''); // 保存原始的 secret
   const [searchParams] = useSearchParams();
   const kb_id = +searchParams.get('id')!;
 
@@ -187,6 +195,10 @@ const KnowledgeBasePage = () => {
           const spaceDetail = data;
           const platformOpt = spaceDetail.platform_opt as any;
           setSelectedPlatform(spaceDetail.platform || 0);
+          console.log(spaceDetail);
+          // 保存原始的 app_id 和 secret
+          originalAppIdRef.current = platformOpt?.app_id || '';
+          originalSecretRef.current = platformOpt?.secret || '';
           reset({
             title: spaceDetail.title || '',
             url: platformOpt?.url || '',
@@ -195,11 +207,119 @@ const KnowledgeBasePage = () => {
             secret: platformOpt?.secret || '',
             phone: platformOpt?.phone || '',
             identifier_type: platformOpt?.identifier_type || 'unionid',
+            user_third_id: platformOpt?.user_third_id || '',
+            username: platformOpt?.username || '',
           });
         }
       },
     }
   );
+
+  // 处理URL参数中的error=nil，打开飞书知识库弹窗并填充表单
+  useEffect(() => {
+    const handleErrorParam = async () => {
+      // 直接从URL获取error参数
+      const urlParams = new URLSearchParams(window.location.search);
+      const errorParam = urlParams.get('error');
+
+      // 如果error=nil，打开飞书创建弹窗并填充表单
+      if (errorParam === 'nil') {
+        try {
+          // 打开飞书创建弹窗
+          setSelectedPlatform(PlatformPlatformType.PlatformFeishu);
+          setShowCreateModal(true);
+          setEditSpace(null);
+          setFeishuBoundUser(null);
+
+          // 调用checkFeishuBoundUser获取用户信息
+          const response = await getAdminKbDocumentFeishuUser();
+          if (response) {
+            setFeishuBoundUser(response);
+
+            // 保存原始的 app_id 和 secret
+            originalAppIdRef.current = response.client_id || '';
+            originalSecretRef.current = response.client_secret || '';
+
+            // 将返回值填充到表单
+            reset({
+              title: response?.name || '',
+              url: '',
+              access_token: response.user_info?.access_token || '',
+              app_id: response.client_id || '',
+              secret: response.client_secret || '',
+              phone: '',
+              identifier_type: 'unionid',
+              user_third_id: response.user_info?.id || '',
+              username: response.user_info?.name || '',
+            });
+          }
+
+          // 清除URL中的error参数
+          urlParams.delete('error');
+          const newUrl = `${window.location.pathname}${urlParams.toString() ? `?${urlParams.toString()}` : ''}`;
+          window.history.replaceState({}, '', newUrl);
+        } catch (error) {
+          console.error('处理error参数失败:', error);
+        }
+      } else if (errorParam) {
+        message.error(errorParam, 6000);
+      }
+    };
+
+    handleErrorParam();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 绑定飞书账号
+  const handleBindFeishuAccount = async () => {
+    const appId = watch('app_id');
+    const secret = watch('secret');
+    const name = watch('title');
+
+    if (!appId || !secret) {
+      message.warning('请先填写 Client ID 和 Client Secret');
+      return;
+    }
+
+    // 在绑定前保存原始的 app_id 和 secret
+    originalAppIdRef.current = appId;
+    originalSecretRef.current = secret;
+    setNeedsRebind(false); // 重置重新绑定标记
+
+    try {
+      const response = await postAdminKbDocumentFeishuAuthUrl({
+        name: name || '',
+        client_id: appId,
+        client_secret: secret,
+        id: editSpace?.id,
+        kb_id,
+      });
+
+      if (response) {
+        // 跳转到授权页面
+        window.location.href = response;
+      }
+    } catch (error) {
+      console.error('获取授权URL失败:', error);
+      message.error('获取授权URL失败，请检查配置是否正确');
+    }
+  };
+
+  // 解除绑定飞书账号
+  const handleUnbindFeishuAccount = () => {
+    if (editSpace?.id) {
+      setFeishuBoundUser(null);
+      setValue('user_third_id', '');
+      setValue('username', '');
+    } else {
+      setFeishuBoundUser(null);
+      message.success('已解除绑定，保存时需要重新绑定账号');
+    }
+    // 清除原始值和重新绑定标记
+    originalAppIdRef.current = '';
+    originalSecretRef.current = '';
+    setNeedsRebind(false);
+  };
 
   const spaces = spacesData?.items || [];
   const folders = foldersData?.items || [];
@@ -344,6 +464,23 @@ const KnowledgeBasePage = () => {
   });
 
   const identifierType = watch('identifier_type');
+  const appId = watch('app_id');
+  const secret = watch('secret');
+
+  // 监听 client_id 和 client_secret 的变化
+  useEffect(() => {
+    if (selectedPlatform === PlatformPlatformType.PlatformFeishu && watch('user_third_id')) {
+      // 如果已绑定账号，检查 app_id 或 secret 是否与原始值不同
+      const hasChanged = Boolean(
+        (originalAppIdRef.current && appId !== originalAppIdRef.current) ||
+        (originalSecretRef.current && secret !== originalSecretRef.current)
+      );
+      setNeedsRebind(hasChanged);
+    } else {
+      setNeedsRebind(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appId, secret, selectedPlatform]);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>, space: SvcListSpaceItem) => {
     event.stopPropagation();
@@ -378,6 +515,7 @@ const KnowledgeBasePage = () => {
     setSelectedPlatform(platform);
     setShowCreateModal(true);
     setEditSpace(null);
+    setFeishuBoundUser(null); // 重置绑定状态
     reset(spaceSchema.parse({}));
     handleCreateMenuClose();
   };
@@ -585,6 +723,10 @@ const KnowledgeBasePage = () => {
     setEditSpace(null);
     setDingtalkStep(0);
     setSelectedPlatform(PlatformPlatformType.PlatformPandawiki); // 重置为默认平台
+    setFeishuBoundUser(null); // 清除绑定状态
+    setNeedsRebind(false); // 清除重新绑定标记
+    originalAppIdRef.current = ''; // 清除原始值
+    originalSecretRef.current = ''; // 清除原始值
     reset(spaceSchema.parse({}));
   };
 
@@ -629,6 +771,25 @@ const KnowledgeBasePage = () => {
 
   const handleModalOk = async (data: any) => {
     try {
+      // 飞书平台需要验证是否已绑定账号
+      if (selectedPlatform === PlatformPlatformType.PlatformFeishu) {
+        // 检查是否需要重新绑定
+        if (needsRebind) {
+          message.warning('信息已变更，请先解除绑定后重新绑定账号');
+          return;
+        }
+        if (!editSpace && !feishuBoundUser?.user_info) {
+          message.warning('请先绑定账号');
+          return;
+        }
+        // 将绑定的access_token和refresh_token添加到配置中
+        if (feishuBoundUser?.user_info?.access_token) {
+          data.access_token = feishuBoundUser.user_info.access_token;
+        }
+        if (feishuBoundUser?.user_info?.refresh_token) {
+          data.refresh_token = feishuBoundUser.user_info.refresh_token;
+        }
+      }
       const platformOpt = {
         url: data.url,
         access_token: data.access_token,
@@ -640,15 +801,18 @@ const KnowledgeBasePage = () => {
           unionid: data.unionid,
           phone: data.phone,
           identifier_type: data.identifier_type,
+          refresh_token: data.refresh_token,
+          user_third_id: data.user_third_id,
+          username: data.username,
         }),
       };
 
-      if (editSpace) {
+      if (editSpace || feishuBoundUser?.id) {
         const updateData: SvcUpdateSpaceReq = {
           title: data.title,
           opt: platformOpt,
         };
-        await putAdminKbKbIdSpaceSpaceId({ kbId: kb_id, spaceId: editSpace.id || 0 }, updateData);
+        await putAdminKbKbIdSpaceSpaceId({ kbId: kb_id, spaceId: editSpace?.id || feishuBoundUser?.id || 0 }, updateData);
         message.success('修改成功');
       } else {
         const spaceData: SvcCreateSpaceReq = {
@@ -1239,15 +1403,84 @@ const KnowledgeBasePage = () => {
                   </Stack>
                 )}
                 {selectedPlatform === PlatformPlatformType.PlatformFeishu && (
-                  <TextField
-                    {...register('access_token')}
-                    label="Access Token"
-                    fullWidth
-                    placeholder="请输入access_token"
-                    error={Boolean(formState.errors.access_token?.message)}
-                    helperText={formState.errors.access_token?.message}
-                    InputLabelProps={{ shrink: true }}
-                  />
+                  <>
+                    <Divider sx={{ my: 1 }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 500, mb: 1 }}>
+                      绑定账号
+                    </Typography>
+                    {watch('user_third_id') ? (
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          p: 2,
+                          border: '1px solid',
+                          borderColor: needsRebind ? 'error.main' : 'divider',
+                          borderRadius: 1,
+                          bgcolor: needsRebind ? 'error.lighter' : 'grey.50',
+                        }}
+                      >
+                        <Stack direction="row" alignItems="center" spacing={1.5}>
+                          <Box
+                            sx={{
+                              width: 32,
+                              height: 32,
+                              borderRadius: '50%',
+                              bgcolor: needsRebind ? 'error.main' : 'primary.main',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: 'white',
+                              fontSize: '14px',
+                              fontWeight: 500,
+                            }}
+                          >
+                            {watch('username')?.[0]?.toUpperCase() || 'U'}
+                          </Box>
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            {watch('username') || '未知用户'}
+                          </Typography>
+                          <Chip
+                            label={needsRebind ? '信息已变更，请重新绑定' : '已绑定'}
+                            size="small"
+                            color={needsRebind ? 'error' : 'success'}
+                            sx={{
+                              height: 20,
+                              fontSize: '12px',
+                              '& .MuiChip-label': {
+                                px: 1,
+                              },
+                            }}
+                          />
+                        </Stack>
+                        <Tooltip title="解除绑定" arrow>
+                          <IconButton
+                            size="small"
+                            onClick={handleUnbindFeishuAccount}
+                            sx={{
+                              color: 'text.secondary',
+                              '&:hover': {
+                                color: 'error.main',
+                                bgcolor: 'error.lighter',
+                              },
+                            }}
+                          >
+                            <CancelIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    ) : (
+                      <Button
+                        variant="outlined"
+                        onClick={handleBindFeishuAccount}
+                        disabled={!watch('app_id') || !watch('secret')}
+                        sx={{ width: '100%' }}
+                      >
+                        绑定账号
+                      </Button>
+                    )}
+                  </>
                 )}
               </>
             ) : selectedPlatform === PlatformPlatformType.PlatformDingtalk ? (
