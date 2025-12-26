@@ -11,27 +11,14 @@ type SortableItemProps = {
   groupIndex: number;
   control: Control<any>;
   errors: FieldErrors<any>;
-  setIsEdit: (value: boolean) => void;
   handleRemove: () => void;
   onEdit: () => void;
 };
 
-const SortableItem: FC<SortableItemProps> = ({
-  id,
-  groupIndex,
-  control,
-  handleRemove,
-  onEdit,
-  ...rest
-}) => {
-  const {
-    isDragging,
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-  } = useSortable({ id });
+const SortableItem: FC<SortableItemProps> = ({ id, groupIndex, control, handleRemove, onEdit }) => {
+  const { isDragging, attributes, listeners, setNodeRef, transform, transition } = useSortable({
+    id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -58,13 +45,13 @@ const SortableItem: FC<SortableItemProps> = ({
         opacity: isDragging ? 0.5 : 1,
         border: '1px solid',
         borderColor: 'divider',
-        borderRadius: 2,
+        borderRadius: 1,
         p: 2,
         mb: 2,
         backgroundColor: 'background.default',
       }}
     >
-      <Stack direction="row" alignItems="center" spacing={1}>
+      <Stack direction="row" alignItems="center">
         <IconButton
           size="small"
           sx={{
@@ -79,41 +66,31 @@ const SortableItem: FC<SortableItemProps> = ({
           <DragIndicatorIcon />
         </IconButton>
 
-        <Typography
-          variant="body1"
-          sx={{
-            fontSize: 14,
-            fontWeight: 500,
-            flex: 1,
-          }}
-        >
+        <Typography variant="body2" sx={{ fontWeight: 500, minWidth: 120 }}>
           {groupName || '未命名分类'}
         </Typography>
-
         {optionCount > 0 && (
-          <Chip
-            label={`${optionCount}个选项`}
-            size="small"
+          <Box
             sx={{
-              height: 24,
-              fontSize: 12,
-              backgroundColor: '#F8F9FA',
-              color: 'text.secondary',
-              '& .MuiChip-label': {
-                px: 1,
-              },
+              backgroundColor: '#f5f5f5',
+              border: '1px solid #d0d0d0',
+              borderRadius: '16px',
+              padding: '4px 12px',
+              fontSize: '12px',
+              color: '#333333',
             }}
-          />
+          >
+            {optionCount}个选项
+          </Box>
         )}
 
         <Button
           size="small"
-          variant="text"
+          variant="outlined"
           onClick={onEdit}
           sx={{
-            minWidth: 'auto',
-            px: 1.5,
-            fontSize: 14,
+            ml: 'auto',
+            mr: 1,
             color: 'text.primary',
             '&:hover': {
               backgroundColor: 'action.hover',

@@ -215,7 +215,7 @@ const Logo: React.FC = () => {
   }, [reset]);
 
   return (
-    <Card sx={{ border: '1px solid', borderColor: 'divider', overflow: 'hidden' }}>
+    <Card sx={{ overflow: 'hidden' }}>
       <Stack
         direction="row"
         alignItems="center"

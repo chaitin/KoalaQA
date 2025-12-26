@@ -236,7 +236,7 @@ const DiscussCard = ({
               >
                 <Icon type='icon-dianzan1' sx={{ fontSize: 12 }} />
                 <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
-                  {(it.like || 0) - (it.dislike || 0)}
+                  {(it.like || 0)}
                 </Typography>
               </Box>
             )}

@@ -11,18 +11,17 @@ import {
 } from '@dnd-kit/core';
 import { rectSortingStrategy, SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import {
-  Box,
-  Button,
-  IconButton,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Box, Button, IconButton, Stack, TextField, Typography } from '@mui/material';
 import { Icon, Modal } from '@ctzhian/ui';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { CSSProperties, forwardRef, useCallback, useState } from 'react';
-import { Control, Controller, useFieldArray, UseFormGetValues, UseFormTrigger } from 'react-hook-form';
+import {
+  Control,
+  Controller,
+  useFieldArray,
+  UseFormGetValues,
+  UseFormTrigger,
+} from 'react-hook-form';
 
 const commonFieldSx = {
   '& .MuiInputLabel-root': { color: 'text.secondary' },
@@ -43,7 +42,6 @@ interface LinkItemProps {
   linkIndex: number;
   groupIndex: number;
   control: Control<any>;
-  setIsEdit: (value: boolean) => void;
   onRemove: () => void;
   withOpacity?: boolean;
   isDragging?: boolean;
@@ -59,7 +57,6 @@ const LinkItem = forwardRef<HTMLDivElement, LinkItemProps>(
       linkIndex,
       groupIndex,
       control,
-      setIsEdit,
       onRemove,
       withOpacity,
       isDragging,
@@ -86,7 +83,7 @@ const LinkItem = forwardRef<HTMLDivElement, LinkItemProps>(
             borderColor: 'divider',
             borderRadius: 1,
             p: 1.5,
-            backgroundColor: 'background.paper',
+            backgroundColor: 'background.default',
           }}
         >
           <IconButton
@@ -126,7 +123,6 @@ const LinkItem = forwardRef<HTMLDivElement, LinkItemProps>(
                 helperText={error?.message}
                 onChange={e => {
                   field.onChange(e.target.value);
-                  setIsEdit(true);
                 }}
                 sx={commonFieldSx}
               />
@@ -181,21 +177,23 @@ const SortableLinkItem: React.FC<LinkItemProps> = ({ linkId, ...rest }) => {
 interface EditDialogProps {
   open: boolean;
   onClose: () => void;
+  onCancel: () => void;
   groupIndex: number;
   control: Control<any>;
   getValues: UseFormGetValues<any>;
   trigger: UseFormTrigger<any>;
-  setIsEdit: (value: boolean) => void;
+  onSave: () => void | Promise<void>;
 }
 
 const EditDialog: React.FC<EditDialogProps> = ({
   open,
   onClose,
+  onCancel,
   groupIndex,
   control,
   getValues,
   trigger,
-  setIsEdit,
+  onSave,
 }) => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(useSensor(MouseSensor), useSensor(TouchSensor));
@@ -226,12 +224,11 @@ const EditDialog: React.FC<EditDialogProps> = ({
         );
         if (oldIndex !== -1 && newIndex !== -1) {
           moveLink(oldIndex, newIndex);
-          setIsEdit(true);
         }
       }
       setActiveId(null);
     },
-    [linkFields, moveLink, setIsEdit, groupIndex]
+    [linkFields, moveLink, groupIndex]
   );
 
   const handleLinkDragCancel = useCallback(() => {
@@ -240,12 +237,10 @@ const EditDialog: React.FC<EditDialogProps> = ({
 
   const handleAddLink = () => {
     appendLink({ name: '', id: 0 });
-    setIsEdit(true);
   };
 
   const handleRemoveLink = (linkIndex: number) => {
     removeLink(linkIndex);
-    setIsEdit(true);
   };
 
   // 处理确定按钮点击
@@ -253,13 +248,13 @@ const EditDialog: React.FC<EditDialogProps> = ({
     // 触发表单验证
     const nameField = `brand_groups.${groupIndex}.name` as const;
     const linksField = `brand_groups.${groupIndex}.links` as const;
-    
+
     // 验证分类名称
     const isNameValid = await trigger(nameField);
     if (!isNameValid) {
       return;
     }
-    
+
     // 获取当前表单值
     const links = getValues(linksField) || [];
 
@@ -278,16 +273,17 @@ const EditDialog: React.FC<EditDialogProps> = ({
       }
     }
 
-    // 如果所有验证都通过，关闭弹窗
+    // 如果所有验证都通过，保存并关闭弹窗（不需要恢复）
     if (allLinksValid) {
+      await onSave();
       onClose();
     }
-  }, [groupIndex, getValues, trigger, onClose]);
+  }, [groupIndex, getValues, trigger, onClose, onSave]);
 
   return (
     <Modal
       open={open}
-      onCancel={onClose}
+      onCancel={onCancel}
       title="编辑分类"
       onOk={handleOk}
       sx={{
@@ -325,7 +321,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
                 sx={commonFieldSx}
                 onChange={e => {
                   field.onChange(e.target.value);
-                  setIsEdit(true);
                 }}
               />
             )}
@@ -373,7 +368,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
                       linkIndex={linkIndex}
                       groupIndex={groupIndex}
                       control={control}
-                      setIsEdit={setIsEdit}
                       onRemove={() => handleRemoveLink(linkIndex)}
                     />
                   ))}
@@ -387,7 +381,6 @@ const EditDialog: React.FC<EditDialogProps> = ({
                     linkIndex={parseInt(activeId.split('-')[2])}
                     groupIndex={groupIndex}
                     control={control}
-                    setIsEdit={setIsEdit}
                     onRemove={() => {}}
                   />
                 ) : null}
@@ -415,4 +408,3 @@ const EditDialog: React.FC<EditDialogProps> = ({
 };
 
 export default EditDialog;
-

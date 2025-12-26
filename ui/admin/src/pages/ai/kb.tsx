@@ -117,6 +117,9 @@ const KnowledgeBasePage = () => {
   const [previewImageSrc, setPreviewImageSrc] = useState('');
   const [previewImageAlt, setPreviewImageAlt] = useState('');
   const [feishuBoundUser, setFeishuBoundUser] = useState<AdminDocUserRes | null>(null);
+  const [needsRebind, setNeedsRebind] = useState(false); // 标记是否需要重新绑定
+  const originalAppIdRef = useRef<string>(''); // 保存原始的 app_id
+  const originalSecretRef = useRef<string>(''); // 保存原始的 secret
   const [searchParams] = useSearchParams();
   const kb_id = +searchParams.get('id')!;
 
@@ -193,6 +196,9 @@ const KnowledgeBasePage = () => {
           const platformOpt = spaceDetail.platform_opt as any;
           setSelectedPlatform(spaceDetail.platform || 0);
           console.log(spaceDetail);
+          // 保存原始的 app_id 和 secret
+          originalAppIdRef.current = platformOpt?.app_id || '';
+          originalSecretRef.current = platformOpt?.secret || '';
           reset({
             title: spaceDetail.title || '',
             url: platformOpt?.url || '',
@@ -229,6 +235,10 @@ const KnowledgeBasePage = () => {
           const response = await getAdminKbDocumentFeishuUser();
           if (response) {
             setFeishuBoundUser(response);
+
+            // 保存原始的 app_id 和 secret
+            originalAppIdRef.current = response.client_id || '';
+            originalSecretRef.current = response.client_secret || '';
 
             // 将返回值填充到表单
             reset({
@@ -271,6 +281,11 @@ const KnowledgeBasePage = () => {
       return;
     }
 
+    // 在绑定前保存原始的 app_id 和 secret
+    originalAppIdRef.current = appId;
+    originalSecretRef.current = secret;
+    setNeedsRebind(false); // 重置重新绑定标记
+
     try {
       const response = await postAdminKbDocumentFeishuAuthUrl({
         name: name || '',
@@ -300,6 +315,10 @@ const KnowledgeBasePage = () => {
       setFeishuBoundUser(null);
       message.success('已解除绑定，保存时需要重新绑定账号');
     }
+    // 清除原始值和重新绑定标记
+    originalAppIdRef.current = '';
+    originalSecretRef.current = '';
+    setNeedsRebind(false);
   };
 
   const spaces = spacesData?.items || [];
@@ -445,6 +464,23 @@ const KnowledgeBasePage = () => {
   });
 
   const identifierType = watch('identifier_type');
+  const appId = watch('app_id');
+  const secret = watch('secret');
+
+  // 监听 client_id 和 client_secret 的变化
+  useEffect(() => {
+    if (selectedPlatform === PlatformPlatformType.PlatformFeishu && watch('user_third_id')) {
+      // 如果已绑定账号，检查 app_id 或 secret 是否与原始值不同
+      const hasChanged = Boolean(
+        (originalAppIdRef.current && appId !== originalAppIdRef.current) ||
+        (originalSecretRef.current && secret !== originalSecretRef.current)
+      );
+      setNeedsRebind(hasChanged);
+    } else {
+      setNeedsRebind(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appId, secret, selectedPlatform]);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>, space: SvcListSpaceItem) => {
     event.stopPropagation();
@@ -688,6 +724,9 @@ const KnowledgeBasePage = () => {
     setDingtalkStep(0);
     setSelectedPlatform(PlatformPlatformType.PlatformPandawiki); // 重置为默认平台
     setFeishuBoundUser(null); // 清除绑定状态
+    setNeedsRebind(false); // 清除重新绑定标记
+    originalAppIdRef.current = ''; // 清除原始值
+    originalSecretRef.current = ''; // 清除原始值
     reset(spaceSchema.parse({}));
   };
 
@@ -734,15 +773,20 @@ const KnowledgeBasePage = () => {
     try {
       // 飞书平台需要验证是否已绑定账号
       if (selectedPlatform === PlatformPlatformType.PlatformFeishu) {
-        if (!feishuBoundUser?.user_info) {
+        // 检查是否需要重新绑定
+        if (needsRebind) {
+          message.warning('信息已变更，请先解除绑定后重新绑定账号');
+          return;
+        }
+        if (!editSpace && !feishuBoundUser?.user_info) {
           message.warning('请先绑定账号');
           return;
         }
         // 将绑定的access_token和refresh_token添加到配置中
-        if (feishuBoundUser.user_info.access_token) {
+        if (feishuBoundUser?.user_info?.access_token) {
           data.access_token = feishuBoundUser.user_info.access_token;
         }
-        if (feishuBoundUser.user_info.refresh_token) {
+        if (feishuBoundUser?.user_info?.refresh_token) {
           data.refresh_token = feishuBoundUser.user_info.refresh_token;
         }
       }
@@ -1372,9 +1416,9 @@ const KnowledgeBasePage = () => {
                           justifyContent: 'space-between',
                           p: 2,
                           border: '1px solid',
-                          borderColor: 'divider',
+                          borderColor: needsRebind ? 'error.main' : 'divider',
                           borderRadius: 1,
-                          bgcolor: 'grey.50',
+                          bgcolor: needsRebind ? 'error.lighter' : 'grey.50',
                         }}
                       >
                         <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -1383,7 +1427,7 @@ const KnowledgeBasePage = () => {
                               width: 32,
                               height: 32,
                               borderRadius: '50%',
-                              bgcolor: 'primary.main',
+                              bgcolor: needsRebind ? 'error.main' : 'primary.main',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -1398,9 +1442,9 @@ const KnowledgeBasePage = () => {
                             {watch('username') || '未知用户'}
                           </Typography>
                           <Chip
-                            label="已绑定"
+                            label={needsRebind ? '信息已变更，请重新绑定' : '已绑定'}
                             size="small"
-                            color="success"
+                            color={needsRebind ? 'error' : 'success'}
                             sx={{
                               height: 20,
                               fontSize: '12px',
