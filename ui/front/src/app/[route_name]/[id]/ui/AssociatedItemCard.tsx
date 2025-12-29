@@ -28,7 +28,7 @@ const AssociatedItemCard = ({ item, routeName, statusChip }: AssociatedItemCardP
         overflow: 'hidden',
         boxShadow: 'none',
         '&:hover': {
-          bgcolor: theme => theme.palette.primaryAlpha?.[3],
+          bgcolor: (theme) => theme.palette.primaryAlpha?.[3],
         },
       }}
     >
@@ -103,9 +103,10 @@ const AssociatedItemCard = ({ item, routeName, statusChip }: AssociatedItemCardP
               >
                 发布于
               </Typography>
-              <TimeDisplay
+              <Box
+                component={TimeDisplay}
                 timestamp={item.created_at || item.updated_at || 0}
-                style={{ color: 'rgba(33, 34, 45, 0.50)', fontSize: '12px' }}
+                sx={{ color: 'rgba(33, 34, 45, 0.50)', fontSize: '12px', pl: 0.5 }}
               />
             </Stack>
           </Stack>

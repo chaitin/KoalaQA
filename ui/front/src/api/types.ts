@@ -186,10 +186,12 @@ export interface AdminDocUserRes {
   client_id?: string;
   client_secret?: string;
   id?: number;
-  userInfo?: AnydocUserInfoRes;
+  name?: string;
+  user_info?: AnydocUserInfoRes;
 }
 
 export interface AnydocListDoc {
+  error?: string;
   file?: boolean;
   file_type?: string;
   id?: string;
@@ -528,8 +530,11 @@ export interface ModelPlatformOpt {
   access_token?: string;
   app_id?: string;
   phone?: string;
+  refresh_token?: string;
   secret?: string;
   url?: string;
+  user_third_id?: string;
+  username?: string;
 }
 
 export interface ModelPublicAddress {
@@ -687,6 +692,7 @@ export interface ModelWebhookConfig {
 }
 
 export interface RouterSystemInfoRes {
+  latest_version?: string;
   version?: string;
 }
 
@@ -824,6 +830,8 @@ export interface SvcFeishuAuthURLReq {
   client_id: string;
   client_secret: string;
   id?: number;
+  kb_id: number;
+  name: string;
 }
 
 export interface SvcFileExportReq {

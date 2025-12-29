@@ -48,8 +48,8 @@ const lightTheme = createTheme(
         contrastText: '#000',
       },
       background: {
-        default: '#fff',
-        paper: '#F1F2F8',
+        default: '#F1F2F8',
+        paper: '#fff',
       },
 
       text: {

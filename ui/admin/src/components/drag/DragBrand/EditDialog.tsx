@@ -83,7 +83,7 @@ const LinkItem = forwardRef<HTMLDivElement, LinkItemProps>(
             borderColor: 'divider',
             borderRadius: 1,
             p: 1.5,
-            backgroundColor: 'background.default',
+            backgroundColor: 'background.paper',
           }}
         >
           <IconButton

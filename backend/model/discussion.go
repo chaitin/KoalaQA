@@ -102,8 +102,9 @@ type DiscussionUser struct {
 
 type DiscussionListItem struct {
 	Discussion
-	UserName   string `json:"user_name"`
-	UserAvatar string `json:"user_avatar"`
+	UserName   string  `json:"user_name"`
+	UserAvatar string  `json:"user_avatar"`
+	Similarity float64 `json:"similarity"`
 }
 
 type DiscussionReply struct {

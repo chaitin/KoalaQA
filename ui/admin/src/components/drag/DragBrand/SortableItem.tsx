@@ -48,7 +48,7 @@ const SortableItem: FC<SortableItemProps> = ({ id, groupIndex, control, handleRe
         borderRadius: 1,
         p: 2,
         mb: 2,
-        backgroundColor: 'background.default',
+        backgroundColor: 'background.paper',
       }}
     >
       <Stack direction="row" alignItems="center">

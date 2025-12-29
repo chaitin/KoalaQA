@@ -2,7 +2,7 @@
 import { postUserLogout } from '@/api'
 import { clearAuthData } from '@/api/httpClient'
 import { ModelUserRole } from '@/api/types'
-import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Stack } from '@mui/material'
+import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Stack, useMediaQuery, useTheme } from '@mui/material'
 import { useRouter } from 'next/navigation'
 import { useContext } from 'react'
 import { AuthContext } from '../authProvider'
@@ -18,6 +18,8 @@ interface ProfilePanelProps {
 const ProfilePanel: React.FC<ProfilePanelProps> = ({ onClose, adminHref }) => {
   const { user } = useContext(AuthContext)
   const router = useRouter()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
   const isAdmin = user?.role === ModelUserRole.UserRoleAdmin
 
@@ -54,14 +56,18 @@ const ProfilePanel: React.FC<ProfilePanelProps> = ({ onClose, adminHref }) => {
   return (
     <InfoCard>
       <IdCard>
-        <IdInfo>
-          <UserAvatar user={user} sx={{ width: 40, height: 40 }} />
+        <IdInfo
+          sx={{
+            pl: isMobile ? 1 : 0,
+          }}
+        >
+          <UserAvatar user={user} sx={{ width: isMobile ? 32 : 40, height: isMobile ? 32 : 40 }} />
           <Stack>
             <Box
               sx={{
-                fontSize: '14px',
+                fontSize: isMobile ? '12px' : '14px',
                 textOverflow: 'ellipsis',
-                maxWidth: '10rem',
+                maxWidth: isMobile ? '6rem' : '10rem',
                 overflow: 'hidden',
                 whiteSpace: 'nowrap',
                 fontWeight: 700,
@@ -75,7 +81,7 @@ const ProfilePanel: React.FC<ProfilePanelProps> = ({ onClose, adminHref }) => {
         </IdInfo>
       </IdCard>
 
-      <Box sx={{ borderBottom: '1px dashed #EEEEEE', my: 2.5 }}></Box>
+      <Box sx={{ borderBottom: '1px dashed #EEEEEE', my: isMobile ? 1.5 : 2.5 }}></Box>
 
       <List
         sx={{
@@ -89,7 +95,7 @@ const ProfilePanel: React.FC<ProfilePanelProps> = ({ onClose, adminHref }) => {
           key={'个人中心'}
           disablePadding
           sx={{
-            height: 40,
+            height: isMobile ? 32 : 40,
             borderRadius: '4px',
             marginBottom: '4px',
             transition: 'background 0.3s',
@@ -108,13 +114,17 @@ const ProfilePanel: React.FC<ProfilePanelProps> = ({ onClose, adminHref }) => {
               '&:hover, &:focus': {
                 background: 'transparent',
               },
+              py: isMobile ? 0.5 : 1,
             }}
             dense
           >
-            <ListItemIcon sx={{ minWidth: 34 }}>
-              <Icon type='icon-iconfontgerenzhongxin' sx={{ fontSize: 16 }} />
+            <ListItemIcon sx={{ minWidth: isMobile ? 28 : 34 }}>
+              <Icon type='icon-iconfontgerenzhongxin' sx={{ fontSize: isMobile ? 14 : 16 }} />
             </ListItemIcon>
-            <ListItemText sx={{ color: '#000' }} primary='个人中心' />
+            <ListItemText
+              sx={{ color: '#000', '& .MuiListItemText-primary': { fontSize: isMobile ? '12px' : '14px' } }}
+              primary='个人中心'
+            />
           </ListItemButton>
         </ListItem>
 
@@ -122,7 +132,7 @@ const ProfilePanel: React.FC<ProfilePanelProps> = ({ onClose, adminHref }) => {
           <ListItem
             disablePadding
             sx={{
-              height: 40,
+              height: isMobile ? 32 : 40,
               borderRadius: '4px',
               marginBottom: '4px',
               transition: 'background 0.3s',
@@ -141,13 +151,17 @@ const ProfilePanel: React.FC<ProfilePanelProps> = ({ onClose, adminHref }) => {
                 '&:hover, &:focus': {
                   background: 'transparent',
                 },
+                py: isMobile ? 0.5 : 1,
               }}
               dense
             >
-              <ListItemIcon sx={{ minWidth: 34 }}>
-                <SettingsIcon sx={{ fontSize: 18, color: 'text.primary' }} />
+              <ListItemIcon sx={{ minWidth: isMobile ? 28 : 34 }}>
+                <SettingsIcon sx={{ fontSize: isMobile ? 16 : 18, color: 'text.primary' }} />
               </ListItemIcon>
-              <ListItemText sx={{ color: '#000' }} primary='后台管理' />
+              <ListItemText
+                sx={{ color: '#000', '& .MuiListItemText-primary': { fontSize: isMobile ? '12px' : '14px' } }}
+                primary='后台管理'
+              />
             </ListItemButton>
           </ListItem>
         )}
@@ -155,7 +169,7 @@ const ProfilePanel: React.FC<ProfilePanelProps> = ({ onClose, adminHref }) => {
         <ListItem
           disablePadding
           sx={{
-            height: 40,
+            height: isMobile ? 32 : 40,
             borderRadius: '4px',
             marginBottom: '4px',
             transition: 'background 0.3s',
@@ -174,12 +188,16 @@ const ProfilePanel: React.FC<ProfilePanelProps> = ({ onClose, adminHref }) => {
               '&:hover': {
                 background: 'transparent',
               },
+              py: isMobile ? 0.5 : 1,
             }}
           >
-            <ListItemIcon sx={{ minWidth: 34 }}>
-              <Icon type={'icon-tuichu'} sx={{ fontSize: 16, color: 'error.main' }} />
+            <ListItemIcon sx={{ minWidth: isMobile ? 28 : 34 }}>
+              <Icon type={'icon-tuichu'} sx={{ fontSize: isMobile ? 14 : 16, color: 'error.main' }} />
             </ListItemIcon>
-            <ListItemText sx={{ color: 'error.main' }} primary='退出' />
+            <ListItemText
+              sx={{ color: 'error.main', '& .MuiListItemText-primary': { fontSize: isMobile ? '12px' : '14px' } }}
+              primary='退出'
+            />
           </ListItemButton>
         </ListItem>
       </List>

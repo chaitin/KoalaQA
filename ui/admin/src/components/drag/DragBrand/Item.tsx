@@ -229,6 +229,7 @@ const Item = forwardRef<HTMLDivElement, ItemProps>(
             py: 3,
             mb: 1,
             pb: 1,
+            backgroundColor: 'background.paper',
           }}
         >
           <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 2 }}>

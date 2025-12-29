@@ -1,7 +1,7 @@
 'use client'
 import { AuthContext } from '@/components/authProvider'
 import { useForumStore } from '@/store'
-import { Badge, Box, Button, IconButton, Menu, Stack, Typography } from '@mui/material'
+import { Badge, Box, Button, IconButton, Menu, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import ProfilePanel from './profilePanel'
@@ -316,6 +316,8 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
   const { user: contextUser } = useContext(AuthContext)
   const forums = useForumStore((s) => s.forums)
   const user = propUser || contextUser
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [notifications, setNotifications] = useState<MessageNotifyInfo[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null)
@@ -511,11 +513,12 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
     <>
       <IconButton
         disableRipple
+        size={isMobile ? 'small' : 'medium'}
         onClick={handleNotificationMenuOpen}
         sx={{
           color: 'primary.main',
           transition: 'all 0.15s ease-in-out',
-          mx: 2,
+          mx: isMobile ? 0 : 2,
           '&:hover': {
             color: 'primary.main',
             bgcolor: 'rgba(255, 255, 255, 0.1)',
@@ -562,8 +565,9 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
           sx: {
             backgroundColor: '#fff',
             boxShadow: '0px 20px 40px 0px rgba(0,28,85,0.06)',
-            minWidth: '300px',
-            padding: '20px',
+            minWidth: isMobile ? '50vw' : '300px',
+            maxWidth: isMobile ? '70vw' : 'none',
+            padding: isMobile ? '12px' : '20px',
             pb: 1,
             borderRadius: '8px',
             color: 'primary.main',
@@ -572,7 +576,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
           },
         }}
       >
-        <Stack spacing={1} sx={{ maxWidth: '300px' }}>
+        <Stack spacing={1} sx={{ maxWidth: isMobile ? '280px' : '300px' }}>
           <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
             {notifications.length === 0 ? (
               <Box sx={{ p: 2, textAlign: 'center', color: 'text.secondary', fontSize: '14px' }}>暂无通知</Box>
@@ -607,7 +611,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
                             sx={{
                               fontWeight: 500,
                               color: '#333',
-                              fontSize: '14px',
+                              fontSize: '12px',
                             }}
                           >
                             {notificationText}
@@ -619,7 +623,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
                               sx={{
                                 fontWeight: 500,
                                 color: '#333',
-                                fontSize: '14px',
+                                fontSize: '12px',
                               }}
                             >
                               {notification.from_name || '未知用户'}
@@ -629,7 +633,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
                                 variant='body2'
                                 sx={{
                                   color: '#666',
-                                  fontSize: '13px',
+                                  fontSize: '12px',
                                 }}
                               >
                                 {notificationText}
@@ -650,8 +654,8 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
                           <Ellipsis
                             sx={{
                               fontWeight: 500,
-                              color: 'text.auxiliary',
-                              fontSize: '14px',
+                              color: '#333',
+                              fontSize: '12px',
                             }}
                           >
                             {notification.discuss_title || '无标题'}
@@ -687,6 +691,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
       </Menu>
       <IconButton
         disableRipple
+        size={isMobile ? 'small' : 'medium'}
         onClick={handleProfileMenuOpen}
         sx={{
           color: 'primary.main',
@@ -717,10 +722,15 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
           sx: {
             backgroundColor: '#fff',
             boxShadow: '0px 20px 40px 0px rgba(0,28,85,0.06)',
-            minWidth: '300px',
-            padding: '20px',
+            minWidth: isMobile ? '130px' : '200px',
+            maxWidth: isMobile ? '180px' : 'none',
+            padding: isMobile ? '4px' : '12px',
             borderRadius: '8px',
-            mt: 1,
+            mt: isMobile ? 0.25 : 1,
+            ...(isMobile && {
+              marginRight: '-4px',
+              marginTop: '2px',
+            }),
           },
         }}
       >

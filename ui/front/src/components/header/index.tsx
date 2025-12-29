@@ -8,6 +8,7 @@ import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import { isAdminRole } from '@/lib/utils'
 import { useForumStore, useQuickReplyStore } from '@/store'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
+import AddIcon from '@mui/icons-material/Add'
 import MenuIcon from '@mui/icons-material/Menu'
 import SearchIcon from '@mui/icons-material/Search'
 import {
@@ -17,6 +18,8 @@ import {
   Drawer,
   IconButton,
   InputAdornment,
+  Menu,
+  MenuItem,
   OutlinedInput,
   Stack,
   Toolbar,
@@ -58,6 +61,8 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
   const [mobileMenuOpen, { setTrue: openMobileMenu, setFalse: closeMobileMenu }] = useBoolean(false)
   const [searchInputValue, setSearchInputValue] = useState('')
   const [isMounted, setIsMounted] = useState(false)
+  const [publishAnchorEl, setPublishAnchorEl] = useState<null | HTMLElement>(null)
+  const publishMenuOpen = Boolean(publishAnchorEl)
   const { fetchQuickReplies } = useQuickReplyStore()
 
   // 将服务端传下来的 initialForums 同步到 zustand store（如果已经迁移到 useForumStore）
@@ -243,12 +248,26 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
 
   const handlePublish = useCallback(
     (type: string, query?: string) => {
-      console.log(query)
       handleCloseSearchModal()
       router.push(`/${route_name}/edit?type=${type}&${query ? `title=${encodeURIComponent(query)}` : ''}`)
     },
     [handleCloseSearchModal, route_name, forums, router],
   )
+
+  // 处理发布菜单
+  const handlePublishMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setPublishAnchorEl(event.currentTarget)
+  }
+
+  const handlePublishMenuClose = () => {
+    setPublishAnchorEl(null)
+  }
+
+  const handlePublishTypeSelect = (publishType: ModelDiscussionType) => {
+    handlePublishMenuClose()
+    const routeName = (route_name as string) || ''
+    router.push(`/${routeName}/edit?type=${publishType}`)
+  }
 
   return (
     <>
@@ -266,73 +285,47 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
       >
         <Toolbar sx={{ py: '0!important', px: '20px!important', color: 'text.primary' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1 }}>
-            {brandConfig?.logo && brandConfig?.text ? (
-              <Stack
-                direction='row'
-                alignItems='center'
-                gap={1.5}
-                sx={{ cursor: 'pointer', color: 'text.primary', minWidth: '192px' }}
-                onClick={handleLogoClick}
-              >
-                <Box
-                  sx={{
-                    width: 36,
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontWeight: 700,
-                    fontSize: '1.25rem',
-                    color: 'text.primary',
-                  }}
-                >
-                  <Image
-                    src={brandConfig.logo}
-                    alt='Logo'
-                    width={24}
-                    height={24}
-                    style={{
-                      objectFit: 'contain',
-                    }}
-                    unoptimized={true}
-                  />
-                </Box>
-                {brandConfig.text && (
-                  <Typography
-                    variant='h6'
-                    component='div'
-                    sx={{
-                      fontWeight: 700,
-                      color: 'text.primary',
-                      fontSize: { xs: '1rem', md: '1.25rem' },
-                      letterSpacing: '-0.02em',
-                    }}
-                  >
-                    {brandConfig.text}
-                  </Typography>
-                )}
-              </Stack>
-            ) : (
+            <Stack
+              direction='row'
+              alignItems='center'
+              gap={1.5}
+              sx={{ cursor: 'pointer', color: 'text.primary', minWidth: '192px' }}
+              onClick={handleLogoClick}
+            >
               <Box
                 sx={{
-                  borderRadius: 2,
+                  width: 36,
                   display: 'flex',
                   alignItems: 'center',
                   fontWeight: 700,
                   fontSize: '1.25rem',
                   color: 'text.primary',
-                  cursor: 'pointer',
-                  minWidth: '192px',
                 }}
-                onClick={handleLogoClick}
               >
                 <Image
-                  src='/logo-text.png'
-                  alt='Koala QA Logo'
-                  width={100}
+                  src={brandConfig.logo || '/logo.png'}
+                  alt='Logo'
+                  width={24}
                   height={24}
-                  style={{ objectFit: 'contain' }}
+                  style={{
+                    objectFit: 'contain',
+                  }}
+                  unoptimized={true}
                 />
               </Box>
-            )}
+              <Typography
+                variant='h6'
+                component='div'
+                sx={{
+                  fontWeight: 700,
+                  color: 'text.primary',
+                  fontSize: { xs: '1rem', md: '1.25rem' },
+                  letterSpacing: '-0.02em',
+                }}
+              >
+                {brandConfig.text || 'Koala QA'}
+              </Typography>
+            </Stack>
             {/* Forum切换tab */}
             {forums && forums.length > 1 && <ForumSelector forums={forums} selectedForumId={currentForumId} />}
           </Box>
@@ -423,17 +416,19 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
       >
         <Toolbar sx={{ py: 1, px: 1, color: 'text.primary' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
-            {/* Menu button */}
-            <IconButton
-              size='small'
-              onClick={openMobileMenu}
-              sx={{
-                color: 'text.primary',
-                '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
-              }}
-            >
-              <MenuIcon />
-            </IconButton>
+            {/* Menu button - 只在有多个板块时显示 */}
+            {forums && forums.length > 1 && (
+              <IconButton
+                size='small'
+                onClick={openMobileMenu}
+                sx={{
+                  color: 'text.primary',
+                  '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
+                }}
+              >
+                <MenuIcon />
+              </IconButton>
+            )}
 
             {/* Logo */}
             <Box
@@ -468,7 +463,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
           </Box>
 
           {/* Right side actions */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {/* Search button */}
             <IconButton
               size='small'
@@ -491,6 +486,79 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
               <SearchIcon sx={{ fontSize: 24, color: 'primary.main' }} />
             </IconButton>
 
+            {/* 发帖按钮 - 只在列表页显示 */}
+            {isPostListPage && user?.uid && (
+              <>
+                <IconButton
+                  size='small'
+                  onClick={handlePublishMenuOpen}
+                  sx={{
+                    color: 'primary.main',
+                    '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
+                  }}
+                >
+                  <AddIcon sx={{ fontSize: 24, color: 'primary.main' }} />
+                </IconButton>
+                <Menu
+                  anchorEl={publishAnchorEl}
+                  open={publishMenuOpen}
+                  onClose={handlePublishMenuClose}
+                  anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                  }}
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                  slotProps={{
+                    paper: {
+                      sx: {
+                        mt: 0.5,
+                        minWidth: 150,
+                        borderRadius: '6px',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                      },
+                    },
+                  }}
+                >
+                  {[
+                    {
+                      type: ModelDiscussionType.DiscussionTypeQA,
+                      label: '问题',
+                      visible: true,
+                    },
+                    {
+                      type: ModelDiscussionType.DiscussionTypeBlog,
+                      label: '文章',
+                      visible: true,
+                    },
+                    {
+                      type: ModelDiscussionType.DiscussionTypeIssue,
+                      label: 'Issue',
+                      visible: isAdminRole(user?.role || ModelUserRole.UserRoleUnknown),
+                    },
+                  ]
+                    .filter((item) => item.visible)
+                    .map((item) => (
+                      <MenuItem
+                        key={item.type}
+                        onClick={() => handlePublishTypeSelect(item.type)}
+                        sx={{
+                          fontSize: '14px',
+                          py: 1,
+                          '&:hover': {
+                            bgcolor: (theme) => theme.palette.primaryAlpha?.[6],
+                          },
+                        }}
+                      >
+                        {item.label}
+                      </MenuItem>
+                    ))}
+                </Menu>
+              </>
+            )}
+
             {user?.uid ? (
               <LoggedInView user={user} adminHref={backHref} />
             ) : (
@@ -502,7 +570,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                   '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
                 }}
               >
-                <AccountCircleIcon sx={{ fontSize: 20, color: 'primary.main' }} />
+                <AccountCircleIcon sx={{ fontSize: 24, color: 'primary.main' }} />
               </IconButton>
             )}
           </Box>
@@ -555,7 +623,6 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
               })}
             </Box>
           )}
-          <FilterPanel />
         </Stack>
       </Drawer>
 

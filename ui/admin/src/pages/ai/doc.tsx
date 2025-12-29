@@ -110,7 +110,7 @@ const AdminDocument = () => {
       title: '类型',
       dataIndex: 'file_type',
       render: (_, record) => {
-        if (record?.file_type === undefined) return '-';
+        if (!record?.file_type) return '-';
         return fileType[record.file_type as keyof typeof fileType] || record.file_type;
       },
     },

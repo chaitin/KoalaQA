@@ -3,7 +3,8 @@ import { useAuthContext } from '@/hooks/context';
 import { ModelUserRole } from '@/api/types';
 import { getSystemInfo } from '@/api/System';
 import { Icon, Modal } from '@ctzhian/ui';
-import { Box, Button, Divider, Stack, styled, Typography } from '@mui/material';
+import { Box, Button, Divider, Stack, styled, Tooltip, Typography } from '@mui/material';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import { useRequest } from 'ahooks';
 import { useMemo, useState } from 'react';
 import logoText from '@/assets/images/logo-text.png';
@@ -211,8 +212,22 @@ const Sidebar = () => {
 
       {/* 版本号显示 */}
       {systemInfo?.version && (
-        <Box sx={{ mt: 2, textAlign: 'center', fontSize: '12px' }}>
-          版本号
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 0.5,
+            height: '30px',
+            cursor: 'pointer',
+          }}
+          onClick={() => {
+            window.open(
+              'https://koalaqa.docs.baizhi.cloud/node/01994cff-1079-7d34-b29d-040e63a8e9f2',
+              '_blank'
+            );
+          }}
+        >
           <Typography
             variant="caption"
             sx={{
@@ -222,8 +237,20 @@ const Sidebar = () => {
               opacity: 0.7,
             }}
           >
-            {systemInfo.version}
+            版本号 {systemInfo.version}
           </Typography>
+          {systemInfo.latest_version && systemInfo.latest_version !== systemInfo.version && (
+            <Tooltip title={'当前版本过低，需要升级'}>
+              <Icon
+                type="icon-tanhao3"
+                sx={{
+                  fontSize: '14px',
+                  color: 'warning.main',
+                  ml: 0.5,
+                }}
+              />
+            </Tooltip>
+          )}
         </Box>
       )}
 

@@ -2,24 +2,26 @@
 
 import { ModelDiscussionListItem } from '@/api/types'
 import { Ellipsis } from '@ctzhian/ui'
-import { Box, Paper } from '@mui/material'
+import { Box } from '@mui/material'
 import Link from 'next/link'
 
 interface AnnouncementCardProps {
-  announcement: ModelDiscussionListItem
-  routeName: string
+  readonly announcement: ModelDiscussionListItem
+  readonly routeName: string
 }
 
 export default function AnnouncementCard({ announcement, routeName }: AnnouncementCardProps) {
   return (
     <Link href={`/${routeName}/${announcement.uuid}`} style={{ textDecoration: 'none' }}>
       <Box
-        sx={theme=>({
+        sx={(theme) => ({
           display: 'flex',
           flexDirection: 'column',
           gap: 1,
           p: 1,
           outline: 'none',
+          border: {xs: `1px solid ${theme.palette.divider}`,lg: 'none'},
+          borderRadius: '6px',
           '&:focus-within, &:hover': {
             backgroundColor: theme.palette.primaryAlpha?.[3] || 'rgba(32,108,255,0.04)',
           },

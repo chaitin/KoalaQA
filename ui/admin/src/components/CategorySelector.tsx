@@ -109,8 +109,7 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
         renderInput={params => (
           <TextField
             {...params}
-            label={label}
-            placeholder={placeholder}
+            placeholder={value && value.length > 0 ? '' : placeholder}
             error={error}
             helperText={helperText}
             sx={textFieldSx}

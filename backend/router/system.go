@@ -23,7 +23,8 @@ func newSystem(info *version.Info, sysDisc *svc.SystemDiscussion) server.Router 
 }
 
 type SystemInfoRes struct {
-	Version string `json:"version"`
+	Version       string `json:"version"`
+	LatestVersion string `json:"latest_version"`
 }
 
 // SystemInfo
@@ -34,7 +35,8 @@ type SystemInfoRes struct {
 // @Router /system/info [get]
 func (s *system) SystemInfo(ctx *context.Context) {
 	ctx.Success(SystemInfoRes{
-		Version: s.info.Version(),
+		Version:       s.info.Version(),
+		LatestVersion: s.info.LatestVersion(),
 	})
 }
 

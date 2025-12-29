@@ -48,12 +48,13 @@ const Doc2Ai = ({
       if (docs.length === 0) return [];
       if (docs.length === 1) {
         const docId = docs[0]?.id || '';
-        if (!docId) return [];
+        const hasError = !!docs[0]?.error;
+        if (!docId || hasError) return [];
         return [getDocKey(uuid, docId, 0)];
       }
       return docs
         .map((d, docIdx) => ({ d, docIdx }))
-        .filter(({ d }) => d?.id)
+        .filter(({ d }) => d?.id && !d?.error)
         .map(({ d, docIdx }) => getDocKey(uuid, d.id, docIdx))
         .filter(Boolean);
     });
@@ -132,7 +133,7 @@ const Doc2Ai = ({
           const selectableChildKeys = hasChildren
             ? docs
                 .map((d, docIdx) => ({ d, docIdx }))
-                .filter(({ d }) => d?.id)
+                .filter(({ d }) => d?.id && !d?.error)
                 .map(({ d, docIdx }) => getDocKey(uuid, d.id, docIdx))
                 .filter(Boolean)
             : [];
@@ -160,8 +161,9 @@ const Doc2Ai = ({
 
           // docs.length === 1：保持兼容，仍然以 uuid 作为选择键
           const singleDocId = docs.length === 1 ? docs[0]?.id || '' : '';
+          const singleDocError = docs.length === 1 ? docs[0]?.error : undefined;
           const singleKey = singleDocId ? getDocKey(uuid, singleDocId, 0) : '';
-          const singleSelectable = !!(showSelectAll && uuid && singleDocId);
+          const singleSelectable = !!(showSelectAll && uuid && singleDocId && !singleDocError);
 
           return (
             <Box key={uuid || idx}>
@@ -222,7 +224,7 @@ const Doc2Ai = ({
                     size="small"
                     sx={{ flexShrink: 0, p: 0, m: 0 }}
                     checked={selectIds.includes(singleKey)}
-                    disabled={loading}
+                    disabled={loading || !!singleDocError}
                     onChange={e => {
                       e.stopPropagation();
                       toggleKey(singleKey);
@@ -253,7 +255,7 @@ const Doc2Ai = ({
                       return;
                     }
                     // docs.length === 1 且可选：点击标题也切换勾选
-                    if (!hasChildren && singleSelectable && !loading) {
+                    if (!hasChildren && singleSelectable && !loading && !singleDocError) {
                       toggleKey(singleKey);
                     }
                   }}
@@ -267,6 +269,11 @@ const Doc2Ai = ({
                       {docs?.[0]?.summary}
                     </Ellipsis>
                   )}
+                  {singleDocError && (
+                    <Box sx={{ fontSize: 12, color: 'error.main', mt: 0.5 }}>
+                      {singleDocError}
+                    </Box>
+                  )}
                 </Box>
 
               </Stack>
@@ -276,8 +283,9 @@ const Doc2Ai = ({
                   <Stack sx={{ pb: 0.5 }}>
                     {docs.map((doc, docIdx) => {
                       const docId = doc?.id || '';
+                      const docError = doc?.error;
                       const docKey = getDocKey(uuid, docId, docIdx);
-                      const selectable = !!(showSelectAll && uuid && docId);
+                      const selectable = !!(showSelectAll && uuid && docId && !docError);
                       return (
                         <Stack
                           key={docId || docIdx}
@@ -294,7 +302,7 @@ const Doc2Ai = ({
                             },
                           }}
                           onClick={() => {
-                            if (selectable && !loading) toggleKey(docKey);
+                            if (selectable && !loading && !docError) toggleKey(docKey);
                           }}
                         >
                           {selectable ? (
@@ -302,7 +310,7 @@ const Doc2Ai = ({
                               size="small"
                               sx={{ flexShrink: 0, p: 0, m: 0 }}
                               checked={selectIds.includes(docKey)}
-                              disabled={loading}
+                              disabled={loading || !!docError}
                               onChange={e => {
                                 e.stopPropagation();
                                 toggleKey(docKey);
@@ -327,6 +335,11 @@ const Doc2Ai = ({
                               <Ellipsis sx={{ fontSize: 12, color: 'text.auxiliary' }}>
                                 {doc.summary}
                               </Ellipsis>
+                            )}
+                            {docError && (
+                              <Box sx={{ fontSize: 12, color: 'error.main', mt: 0.5 }}>
+                                {docError}
+                              </Box>
                             )}
                           </Box>
 
