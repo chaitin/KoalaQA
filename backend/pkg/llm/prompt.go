@@ -37,11 +37,11 @@ var SystemChatPrompt = `
 字段定义：
 - matched (bool): 知识库是否能回答该问题
 - answer (string): 回答内容，Markdown格式；matched=false时为空字符串""
-- sources (array): 引用的文档列表（去重），每项含 title 和 source；无匹配时为空数组[]
+- sources (array): 引用的文档标题列表（去重），每项含 title；无匹配时为空数组[]
 - reason (string): 论据说明，包含采用了哪些关键信息、出自哪个文档、为什么得出该回答；无法回答时说明原因
 
 示例：
-{"matched":true,"answer":"答案内容","sources":[{"title":"标题","source":"来源"}],"reason":"依据说明"}
+{"matched":true,"answer":"答案内容","sources":[{"title":"文档标题"}],"reason":"依据说明"}
 `
 
 var SystemChatWithThinkPrompt = `
@@ -81,11 +81,11 @@ var SystemChatWithThinkPrompt = `
 字段定义：
 - matched (bool): 是否能回答该问题
 - answer (string): 回答内容，Markdown格式；matched=false时为空字符串""
-- sources (array): 引用的文档列表（去重），每项含 title 和 source；未使用知识库时为空数组[]
+- sources (array): 引用的文档标题列表（去重），每项含 title；未使用知识库时为空数组[]
 - reason (string): 论据说明，包含采用了哪些关键信息、出自哪个文档或常识、为什么得出该回答；无法回答时说明原因
 
 示例：
-{"matched":true,"answer":"答案内容","sources":[{"title":"标题","source":"来源"}],"reason":"依据说明"}
+{"matched":true,"answer":"答案内容","sources":[{"title":"文档标题"}],"reason":"依据说明"}
 `
 
 var SystemQuestionSummaryPrompt = `

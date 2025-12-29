@@ -80,8 +80,19 @@ func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (st
 		l.logger.WithContext(ctx).WithErr(err).With("raw", res).Error("llm response parse failed")
 		return "", false, err
 	}
-	l.logger.WithContext(ctx).With("matched", resp.Matched, "reason", resp.Reason).Debug("llm response parsed")
-
+	l.logger.WithContext(ctx).
+		With("matched", resp.Matched).
+		With("reason", resp.Reason).
+		Info("llm response parsed")
+	if !resp.Matched {
+		return req.DefaultAnswer, false, nil
+	}
+	if len(resp.Sources) > 0 {
+		resp.Answer += "\n\n---\n\n" + "引用来源: "
+		for i, source := range resp.Sources {
+			resp.Answer += fmt.Sprintf(`<span data-tooltip="<h3>来源</h3><br>%s">[%d]</span> `, source.Title, i+1)
+		}
+	}
 	return resp.Answer, resp.Matched, nil
 }
 
