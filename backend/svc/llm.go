@@ -84,7 +84,7 @@ func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (st
 		With("matched", resp.Matched).
 		With("reason", resp.Reason).
 		Info("llm response parsed")
-	if !resp.Matched {
+	if !resp.Matched || resp.Answer == "" {
 		return req.DefaultAnswer, false, nil
 	}
 	if len(resp.Sources) > 0 {
@@ -93,7 +93,7 @@ func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (st
 			resp.Answer += fmt.Sprintf(`<span data-tooltip="<h3>来源</h3><br>%s">[%d]</span> `, source.Title, i+1)
 		}
 	}
-	return resp.Answer, resp.Matched, nil
+	return resp.Answer, true, nil
 }
 
 func (l *LLM) Answer(ctx context.Context, req GenerateReq) (string, bool, error) {
