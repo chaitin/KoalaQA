@@ -691,6 +691,7 @@ export interface ModelWebhookConfig {
 }
 
 export interface RouterSystemInfoRes {
+  latest_version?: string;
   version?: string;
 }
 
