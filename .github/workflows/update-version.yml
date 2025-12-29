@@ -4,9 +4,11 @@ permissions:
   contents: write
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_run:
+    workflows:
+      - Update Docker Compose
+    types:
+      - completed
 
 env:
   API_URL: https://baizhi.cloud:9443/api/open/site/1/static
@@ -14,6 +16,7 @@ env:
 
 jobs:
   sync-version:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -24,22 +27,35 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.repository.default_branch }}
 
-      - name: Update version file from tag
+      - name: Determine version tag
         id: version_info
         run: |
           set -euo pipefail
 
-          VERSION="${GITHUB_REF_NAME:-}"
-          if [ -z "$VERSION" ]; then
-            if [ -n "${GITHUB_REF:-}" ]; then
-              VERSION="${GITHUB_REF##*/}"
-            fi
+          TARGET_SHA="${{ github.event.workflow_run.head_sha }}"
+          VERSION="${{ github.event.workflow_run.head_branch }}"
+
+          if [ -n "$VERSION" ] && [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
+          git fetch --tags --force --prune
+          VERSION=$(git tag --points-at "$TARGET_SHA" | grep '^v' | head -n1 || true)
+
           if [ -z "$VERSION" ]; then
-            echo "Unable to determine version from ref."
-            exit 1
+            echo "No matching version tag found; skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Update version.json
+        if: steps.version_info.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.version_info.outputs.version }}"
 
           jq -n --arg version "$VERSION" '{"version": $version}' > version.json
 
@@ -53,9 +69,8 @@ jobs:
             git push
           fi
 
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
       - name: Encode version.json to base64
+        if: steps.version_info.outputs.skip != 'true'
         id: encode_version
         run: |
           ENCODED_CONTENT=$(base64 -w 0 version.json)
@@ -63,7 +78,9 @@ jobs:
           echo "Content encoded successfully (length: ${#ENCODED_CONTENT})"
 
       - name: Push version.json via API
+        if: steps.version_info.outputs.skip != 'true'
         run: |
+          VERSION="${{ steps.version_info.outputs.version }}"
           RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}" \
             '${{ env.API_URL }}' \
             -H 'sec-ch-ua-platform: "Linux"' \
@@ -87,7 +104,7 @@ jobs:
 
           if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
             echo "✅ Successfully pushed version.json via API"
-            echo "📦 Version: ${{ steps.version_info.outputs.version }}"
+            echo "📦 Version: $VERSION"
           else
             echo "❌ API request failed with HTTP code: $HTTP_CODE"
             echo "Response: $RESPONSE_BODY"
