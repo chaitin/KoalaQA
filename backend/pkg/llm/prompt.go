@@ -6,7 +6,7 @@ var SystemChatPrompt = `
 <knowledge_base>
 {{- if .KnowledgeDocuments}}
 {{- range $i, $doc := .KnowledgeDocuments}}
-<doc id="{{$i}}" title="{{$doc.Title}}" source="{{$doc.Source}}">
+<doc id="{{$i}}" title="{{$doc.Title}}">
 {{$doc.Content}}
 </doc>
 {{- end}}
@@ -38,7 +38,7 @@ var SystemChatPrompt = `
 - matched (bool): 知识库是否能回答该问题
 - answer (string): 回答内容，Markdown格式；matched=false时为空字符串""
 - sources (array): 引用的文档标题列表（去重），每项含 title；无匹配时为空数组[]
-- reason (string): 论据说明，包含采用了哪些关键信息、出自哪个文档、为什么得出该回答；无法回答时说明原因
+- reason (string): 论据说明，包含采用了哪些关键信息、出自哪个文档标题、为什么得出该回答；无法回答时说明原因
 
 示例：
 {"matched":true,"answer":"答案内容","sources":[{"title":"文档标题"}],"reason":"依据说明"}
@@ -50,7 +50,7 @@ var SystemChatWithThinkPrompt = `
 <knowledge_base>
 {{- if .KnowledgeDocuments}}
 {{- range $i, $doc := .KnowledgeDocuments}}
-<doc id="{{$i}}" title="{{$doc.Title}}" source="{{$doc.Source}}">
+<doc id="{{$i}}" title="{{$doc.Title}}">
 {{$doc.Content}}
 </doc>
 {{- end}}
@@ -81,11 +81,10 @@ var SystemChatWithThinkPrompt = `
 字段定义：
 - matched (bool): 是否能回答该问题
 - answer (string): 回答内容，Markdown格式；matched=false时为空字符串""
-- sources (array): 引用的文档标题列表（去重），每项含 title；未使用知识库时为空数组[]
 - reason (string): 论据说明，包含采用了哪些关键信息、出自哪个文档或常识、为什么得出该回答；无法回答时说明原因
 
 示例：
-{"matched":true,"answer":"答案内容","sources":[{"title":"文档标题"}],"reason":"依据说明"}
+{"matched":true,"answer":"答案内容","reason":"依据说明"}
 `
 
 var SystemQuestionSummaryPrompt = `
