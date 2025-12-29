@@ -46,6 +46,14 @@ func (b *Brand) Update(ctx context.Context, req model.SystemBrand) error {
 		return err
 	}
 
+	if req.Theme == "" {
+		req.Theme = brand.Theme
+	}
+
+	if req.Text == "" {
+		req.Text = brand.Text
+	}
+
 	if req.Logo != "" {
 		dataURL, err := dataurl.DecodeString(req.Logo)
 		if err != nil {
@@ -76,6 +84,8 @@ func (b *Brand) Update(ctx context.Context, req model.SystemBrand) error {
 				b.logger.WithContext(ctx).WithErr(err).With("logo", brand.Logo).Warn("remove oss logo failed")
 			}
 		}
+	} else {
+		req.Logo = brand.Logo
 	}
 
 	err = b.repoSys.Create(ctx, &model.System[any]{
