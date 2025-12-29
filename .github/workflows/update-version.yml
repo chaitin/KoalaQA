@@ -32,6 +32,7 @@ jobs:
       - name: Determine version and update file when tagging
         id: version_info
         run: |
+          set -euo pipefail
           EVENT_NAME="${{ github.event_name }}"
           VERSION=""
 
@@ -48,14 +49,10 @@ jobs:
               exit 1
             fi
 
-            cat <<JSON > version.json
-{
-  "version": "$VERSION"
-}
-JSON
+            jq -n --arg version "$VERSION" '{"version": $version}' > version.json
 
-            if git diff --quiet version.json; then
-              echo "version.json already set to $VERSION." 
+            if git diff --quiet -- version.json; then
+              echo "version.json already set to $VERSION."
             else
               git config --local user.email "action@github.com"
               git config --local user.name "GitHub Action"
