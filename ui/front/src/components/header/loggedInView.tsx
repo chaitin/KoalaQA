@@ -1,7 +1,7 @@
 'use client'
 import { AuthContext } from '@/components/authProvider'
 import { useForumStore } from '@/store'
-import { Badge, Box, Button, IconButton, Menu, Stack, Typography } from '@mui/material'
+import { Badge, Box, Button, IconButton, Menu, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import ProfilePanel from './profilePanel'
@@ -316,6 +316,8 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
   const { user: contextUser } = useContext(AuthContext)
   const forums = useForumStore((s) => s.forums)
   const user = propUser || contextUser
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const [notifications, setNotifications] = useState<MessageNotifyInfo[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null)
@@ -717,10 +719,15 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
           sx: {
             backgroundColor: '#fff',
             boxShadow: '0px 20px 40px 0px rgba(0,28,85,0.06)',
-            minWidth: '300px',
-            padding: '20px',
+            minWidth: isMobile ? '130px' : '200px',
+            maxWidth: isMobile ? '180px' : 'none',
+            padding: isMobile ? '4px' : '12px',
             borderRadius: '8px',
-            mt: 1,
+            mt: isMobile ? 0.25 : 1,
+            ...(isMobile && {
+              marginRight: '-4px',
+              marginTop: '2px',
+            }),
           },
         }}
       >

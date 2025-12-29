@@ -213,11 +213,11 @@ export default function AnnouncementCarousel({ announcements, routeName }: Annou
         </>
       )}
 
-      {/* 指示器 */}
+      {/* 指示器 - 移动端隐藏，桌面端显示 */}
       {announcements.length > 1 && (
         <Box
           sx={{
-            display: 'flex',
+            display: { xs: 'none', sm: 'flex' },
             justifyContent: 'center',
             gap: 1,
             position: 'relative',

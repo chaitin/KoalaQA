@@ -14,12 +14,14 @@ export default function AnnouncementCard({ announcement, routeName }: Announceme
   return (
     <Link href={`/${routeName}/${announcement.uuid}`} style={{ textDecoration: 'none' }}>
       <Box
-        sx={theme=>({
+        sx={(theme) => ({
           display: 'flex',
           flexDirection: 'column',
           gap: 1,
           p: 1,
           outline: 'none',
+          border: `1px solid ${theme.palette.divider}`,
+          borderRadius: '6px',
           '&:focus-within, &:hover': {
             backgroundColor: theme.palette.primaryAlpha?.[3] || 'rgba(32,108,255,0.04)',
           },

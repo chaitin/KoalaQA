@@ -20,16 +20,26 @@ import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import { isAdminRole } from '@/lib/utils'
 import FilterListIcon from '@mui/icons-material/FilterList'
 import SearchIcon from '@mui/icons-material/Search'
+import SortIcon from '@mui/icons-material/Sort'
+import TuneIcon from '@mui/icons-material/Tune'
+import SwapVertIcon from '@mui/icons-material/SwapVert'
 import {
   Box,
   Button,
+  Checkbox,
+  Chip,
   CircularProgress,
   Divider,
+  FormControl,
   IconButton,
   InputAdornment,
+  InputLabel,
+  ListItemText,
   Menu,
   MenuItem,
+  OutlinedInput,
   Paper,
+  Select,
   Stack,
   TextField,
   ToggleButton,
@@ -41,6 +51,9 @@ import {
 import { useBoolean, useInViewport } from 'ahooks'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import React, { Fragment, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { CommonContext } from '@/components/commonProvider'
+import Image from 'next/image'
+import { Icon } from '@ctzhian/ui'
 import DiscussCard from './discussCard'
 export type Status = 'hot' | 'new' | 'publish'
 
@@ -68,6 +81,7 @@ const Article = ({
   const nextRouter = useRouter()
   const { checkAuth } = useAuthCheck()
   const { user } = useContext(AuthContext)
+  const { groups, tags: availableTags } = useContext(CommonContext)
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const { saveState, restoreState, restoreScrollPosition, clearCache } = useListPageCache()
@@ -103,9 +117,17 @@ const Article = ({
   const onlyMine = searchParams?.get('only_mine') === 'true'
   const resolved = searchParams?.get('resolved')
 
+  // 排序下拉菜单相关状态
+  const [sortAnchorEl, setSortAnchorEl] = useState<null | HTMLElement>(null)
+  const sortMenuOpen = Boolean(sortAnchorEl)
+
   // 发布类型下拉菜单相关状态
   const [publishAnchorEl, setPublishAnchorEl] = useState<null | HTMLElement>(null)
   const publishMenuOpen = Boolean(publishAnchorEl)
+
+  // 帖子类型相关状态
+  const urlType = searchParams?.get('type')
+  const currentPostType = urlType || 'all'
 
   // 搜索弹窗相关状态
   const [searchModalOpen, { setTrue: openSearchModal, setFalse: closeSearchModal }] = useBoolean(false)
@@ -317,6 +339,44 @@ const Article = ({
     setFilterAnchorEl(null)
   }
 
+  // 监听openReleaseModal事件
+  useEffect(() => {
+    const handleOpenReleaseModal = (event: CustomEvent<{ type?: ModelDiscussionType }>) => {
+      handlePublishMenuOpen(event as any)
+    }
+    window.addEventListener('openReleaseModal', handleOpenReleaseModal as EventListener)
+    return () => {
+      window.removeEventListener('openReleaseModal', handleOpenReleaseModal as EventListener)
+    }
+  }, [])
+
+  // 处理帖子类型切换
+  const handlePostTypeChange = (newType: string) => {
+    const params = new URLSearchParams(searchParams?.toString())
+    if (newType === 'all') {
+      params.delete('type')
+    } else {
+      params.set('type', newType)
+    }
+    router.replace(`/${routeName}?${params.toString()}`)
+  }
+
+  // 处理排序菜单
+  const handleSortMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setSortAnchorEl(event.currentTarget)
+  }
+
+  const handleSortMenuClose = () => {
+    setSortAnchorEl(null)
+  }
+
+  const handleSortChange = (newSort: string) => {
+    const params = new URLSearchParams(searchParams?.toString())
+    params.set('sort', newSort)
+    router.replace(`/${routeName}?${params.toString()}`)
+    handleSortMenuClose()
+  }
+
   const handleFilterChange = (filterType: 'only_mine' | 'resolved', value: boolean | number | null) => {
     const params = new URLSearchParams(searchParams?.toString())
 
@@ -337,6 +397,68 @@ const Article = ({
     router.replace(`/${routeName}?${params.toString()}`)
     handleFilterMenuClose()
   }
+
+  // 处理分类选择
+  const handleCategoryChange = (categoryIds: number[]) => {
+    const params = new URLSearchParams(searchParams?.toString())
+    if (categoryIds.length > 0) {
+      params.set('tps', categoryIds.join(','))
+    } else {
+      params.delete('tps')
+    }
+    router.replace(`/${routeName}?${params.toString()}`)
+  }
+
+  // 处理标签选择
+  const handleTagChange = (tagIds: number[]) => {
+    const params = new URLSearchParams(searchParams?.toString())
+    if (tagIds.length > 0) {
+      params.set('tags', tagIds.join(','))
+    } else {
+      params.delete('tags')
+    }
+    router.replace(`/${routeName}?${params.toString()}`)
+  }
+
+  // 帖子类型配置
+  const postTypes = [
+    { id: 'all', name: '全部', icon: <Icon type='icon-quanbu' sx={{ fontSize: 20, color: 'primary.main' }} /> },
+    { id: 'qa', name: '问题', icon: <Image width={20} height={20} src='/qa.svg' alt='问题' /> },
+    { id: 'issue', name: 'Issue', icon: <Icon type='icon-issue' sx={{ fontSize: 20 }} /> },
+    { id: 'blog', name: '文章', icon: <Image width={20} height={20} src='/blog.svg' alt='文章' /> },
+  ]
+
+  // 获取当前类型对应的分类
+  const filteredGroups = useMemo(() => {
+    if (!forumInfo) return groups
+    const typeForFilter = currentPostType === 'all' ? null : currentPostType
+    if (!typeForFilter) return groups
+
+    let forumGroupIds: number[] = []
+    if (forumInfo.groups) {
+      const groupsArray = Array.isArray(forumInfo.groups) ? forumInfo.groups : Object.values(forumInfo.groups)
+      const matchedGroup = groupsArray.find((g: any) => g?.type === typeForFilter)
+      forumGroupIds = matchedGroup?.group_ids || []
+    }
+
+    if (forumGroupIds.length === 0) return groups
+
+    const filteredOrigin = groups.origin.filter((group) => {
+      return forumGroupIds.includes(group.id || -1)
+    })
+
+    const filteredFlat = filteredOrigin.reduce((acc, group) => {
+      if (group.items && group.items.length > 0) {
+        acc.push(...group.items)
+      }
+      return acc
+    }, [] as any[])
+
+    return {
+      origin: filteredOrigin,
+      flat: filteredFlat,
+    }
+  }, [groups, forumInfo, currentPostType])
 
   return (
     <>
@@ -365,8 +487,16 @@ const Article = ({
             bgcolor: 'background.paper',
           })}
         >
-          {/* 搜索和发帖按钮 */}
-          <Box id='article-search-box' sx={{ display: 'flex', gap: 3, mb: { xs: 2, lg: 3 }, alignItems: 'center' }}>
+          {/* 搜索和发帖按钮 - 移动端隐藏，桌面端显示 */}
+          <Box
+            id='article-search-box'
+            sx={{
+              display: { xs: 'none', lg: 'flex' },
+              gap: 3,
+              mb: { xs: 2, lg: 3 },
+              alignItems: 'center',
+            }}
+          >
             <TextField
               fullWidth
               placeholder={searchPlaceholder}
@@ -392,86 +522,84 @@ const Article = ({
                 },
               }}
             />
-            <Box>
-              <Button
-                variant='contained'
-                onClick={handlePublishMenuOpen}
-                // endIcon={<ArrowDropDownIcon sx={{ fontSize: 20 }} />}
-                sx={{
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  px: 3,
-                  py: 0.75,
-                  borderRadius: '6px',
-                  fontSize: '0.875rem',
-                  whiteSpace: 'nowrap',
-                  height: '40px',
+            <Button
+              variant='contained'
+              onClick={handlePublishMenuOpen}
+              // endIcon={<ArrowDropDownIcon sx={{ fontSize: 20 }} />}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 3,
+                py: 0.75,
+                borderRadius: '6px',
+                fontSize: '0.875rem',
+                whiteSpace: 'nowrap',
+                height: '40px',
+                boxShadow: 'none',
+                '&:hover': {
                   boxShadow: 'none',
-                  '&:hover': {
-                    boxShadow: 'none',
+                },
+              }}
+            >
+              发布内容
+            </Button>
+            <Menu
+              anchorEl={publishAnchorEl}
+              open={publishMenuOpen}
+              onClose={handlePublishMenuClose}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'left',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'left',
+              }}
+              slotProps={{
+                paper: {
+                  sx: {
+                    mt: 0.5,
+                    minWidth: 150,
+                    borderRadius: '6px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
                   },
-                }}
-              >
-                发布内容
-              </Button>
-              <Menu
-                anchorEl={publishAnchorEl}
-                open={publishMenuOpen}
-                onClose={handlePublishMenuClose}
-                anchorOrigin={{
-                  vertical: 'bottom',
-                  horizontal: 'left',
-                }}
-                transformOrigin={{
-                  vertical: 'top',
-                  horizontal: 'left',
-                }}
-                slotProps={{
-                  paper: {
-                    sx: {
-                      mt: 0.5,
-                      minWidth: 150,
-                      borderRadius: '6px',
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                    },
-                  },
-                }}
-              >
-                {[
-                  {
-                    type: ModelDiscussionType.DiscussionTypeQA,
-                    label: '问题',
-                    visible: true,
-                  },
-                  {
-                    type: ModelDiscussionType.DiscussionTypeBlog,
-                    label: '文章',
-                    visible: true,
-                  },
-                  {
-                    type: ModelDiscussionType.DiscussionTypeIssue,
-                    label: 'Issue',
-                    visible: isAdminRole(user?.role || ModelUserRole.UserRoleUnknown),
-                  },
-                ]
-                  .filter((item) => item.visible)
-                  .map((item) => (
-                    <MenuItem
-                      key={item.type}
-                      onClick={() => handlePublishTypeSelect(item.type)}
-                      sx={{
-                        fontSize: '14px',
-                        py: 1,
-                        '&:hover': {
-                          bgcolor: (theme) => theme.palette.primaryAlpha?.[6],
-                        },
-                      }}
-                    >
-                      {item.label}
-                    </MenuItem>
-                  ))}
-              </Menu>
-            </Box>
+                },
+              }}
+            >
+              {[
+                {
+                  type: ModelDiscussionType.DiscussionTypeQA,
+                  label: '问题',
+                  visible: true,
+                },
+                {
+                  type: ModelDiscussionType.DiscussionTypeBlog,
+                  label: '文章',
+                  visible: true,
+                },
+                {
+                  type: ModelDiscussionType.DiscussionTypeIssue,
+                  label: 'Issue',
+                  visible: isAdminRole(user?.role || ModelUserRole.UserRoleUnknown),
+                },
+              ]
+                .filter((item) => item.visible)
+                .map((item) => (
+                  <MenuItem
+                    key={item.type}
+                    onClick={() => handlePublishTypeSelect(item.type)}
+                    sx={{
+                      fontSize: '14px',
+                      py: 1,
+                      '&:hover': {
+                        bgcolor: (theme) => theme.palette.primaryAlpha?.[6],
+                      },
+                    }}
+                  >
+                    {item.label}
+                  </MenuItem>
+                ))}
+            </Menu>
           </Box>
 
           {/* 手机端公告轮播 */}
@@ -481,75 +609,144 @@ const Article = ({
             </Box>
           )}
 
-          {/* 排序选项 */}
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: { xs: 2, lg: 3 } }}>
-            <ToggleButtonGroup
-              value={status}
-              exclusive
-              onChange={(e, newValue) => {
-                if (newValue !== null && newValue !== status) {
-                  const query = createQueryString('sort', newValue)
-                  router.replace(`/${routeName}?${query}`)
-                }
-              }}
-              sx={{
-                borderRadius: 1,
-                border: (theme) => `1px solid ${theme.palette.divider}`,
-                px: 0.5,
-                gap: 0.5,
-                '& .MuiToggleButtonGroup-grouped': {
-                  borderRadius: '6px !important',
-                  my: 0.5,
-                  mx: 0,
-                },
-              }}
-            >
-              {currentSortOptions.map((option) => (
-                <ToggleButton
-                  key={option.value}
-                  value={option.value}
-                  sx={(theme) => ({
-                    height: 30,
-                    fontWeight: 500,
-                    fontSize: '14px',
-                    color: '#21222D',
-                    border: '1px solid transparent',
-                    '&.Mui-selected': {
-                      bgcolor: 'primary.main',
-                      color: theme.palette.primary.contrastText,
-                      '&:hover': {
-                        bgcolor: theme.palette.primary.dark,
-                        color: theme.palette.primary.contrastText,
-                      },
-                    },
-                    '&:hover': { bgcolor: '#f3f4f6', color: '#000000' },
-                  })}
-                >
-                  {option.label}
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box
-                component='span'
+          {/* 移动端：帖子类型选择 */}
+          {isMobile && (
+            <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <ToggleButtonGroup
+                value={currentPostType}
+                exclusive
+                onChange={(e, newValue) => {
+                  if (newValue !== null) {
+                    handlePostTypeChange(newValue)
+                  }
+                }}
                 sx={{
-                  fontSize: '14px',
-                  color: '#9ca3af',
-                  fontWeight: 500,
+                  flex: 1,
+                  borderRadius: 1,
+                  border: (theme) => `1px solid ${theme.palette.divider}`,
+                  px: 0.5,
+                  gap: 0.5,
+                  '& .MuiToggleButtonGroup-grouped': {
+                    borderRadius: '6px !important',
+                    my: 0.5,
+                    mx: 0,
+                    flex: 1,
+                  },
                 }}
               >
-                共{' '}
-                <Box component='span' sx={{ display: 'inline-block', color: '#000000', fontWeight: 500 }}>
-                  {articleData.total || 0}
-                </Box>{' '}
-                个帖子
-              </Box>
-              {/* 下拉筛选按钮 */}
-              {isMobile ? (
-                <IconButton onClick={handleFilterMenuOpen}>
-                  <FilterListIcon sx={{ fontSize: 18 }} />
+                {postTypes.map((postType) => (
+                  <ToggleButton
+                    key={postType.id}
+                    value={postType.id}
+                    sx={(theme) => ({
+                      height: 36,
+                      fontWeight: 500,
+                      fontSize: '14px',
+                      color: '#21222D',
+                      border: '1px solid transparent',
+                      '&.Mui-selected': {
+                        bgcolor: 'primary.main',
+                        color: theme.palette.primary.contrastText,
+                        '&:hover': {
+                          bgcolor: theme.palette.primary.dark,
+                          color: theme.palette.primary.contrastText,
+                        },
+                      },
+                      '&:hover': { bgcolor: '#f3f4f6', color: '#000000' },
+                    })}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>{postType.icon}</Box>
+                      {postType.name}
+                    </Box>
+                  </ToggleButton>
+                ))}
+              </ToggleButtonGroup>
+              {/* 筛选和排序图标 */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
+                <IconButton
+                  size='small'
+                  onClick={handleFilterMenuOpen}
+                  sx={{
+                    color:
+                      onlyMine || resolved !== null || topics.length > 0 || tagIds.length > 0
+                        ? 'primary.main'
+                        : 'text.secondary',
+                  }}
+                >
+                  <TuneIcon sx={{ fontSize: 20 }} />
                 </IconButton>
-              ) : (
+                <IconButton size='small' onClick={handleSortMenuOpen} sx={{ color: 'text.secondary' }}>
+                  <SwapVertIcon sx={{ fontSize: 20 }} />
+                </IconButton>
+              </Box>
+            </Box>
+          )}
+
+          {/* 桌面端：排序选项 */}
+          {!isMobile && (
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: { xs: 2, lg: 3 } }}>
+              <ToggleButtonGroup
+                value={status}
+                exclusive
+                onChange={(e, newValue) => {
+                  if (newValue !== null && newValue !== status) {
+                    const query = createQueryString('sort', newValue)
+                    router.replace(`/${routeName}?${query}`)
+                  }
+                }}
+                sx={{
+                  borderRadius: 1,
+                  border: (theme) => `1px solid ${theme.palette.divider}`,
+                  px: 0.5,
+                  gap: 0.5,
+                  '& .MuiToggleButtonGroup-grouped': {
+                    borderRadius: '6px !important',
+                    my: 0.5,
+                    mx: 0,
+                  },
+                }}
+              >
+                {currentSortOptions.map((option) => (
+                  <ToggleButton
+                    key={option.value}
+                    value={option.value}
+                    sx={(theme) => ({
+                      height: 30,
+                      fontWeight: 500,
+                      fontSize: '14px',
+                      color: '#21222D',
+                      border: '1px solid transparent',
+                      '&.Mui-selected': {
+                        bgcolor: 'primary.main',
+                        color: theme.palette.primary.contrastText,
+                        '&:hover': {
+                          bgcolor: theme.palette.primary.dark,
+                          color: theme.palette.primary.contrastText,
+                        },
+                      },
+                      '&:hover': { bgcolor: '#f3f4f6', color: '#000000' },
+                    })}
+                  >
+                    {option.label}
+                  </ToggleButton>
+                ))}
+              </ToggleButtonGroup>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box
+                  component='span'
+                  sx={{
+                    fontSize: '14px',
+                    color: '#9ca3af',
+                    fontWeight: 500,
+                  }}
+                >
+                  共{' '}
+                  <Box component='span' sx={{ display: 'inline-block', color: '#000000', fontWeight: 500 }}>
+                    {articleData.total || 0}
+                  </Box>{' '}
+                  个帖子
+                </Box>
                 <Button
                   onClick={handleFilterMenuOpen}
                   startIcon={<FilterListIcon sx={{ fontSize: 18 }} />}
@@ -566,69 +763,221 @@ const Article = ({
                 >
                   筛选
                 </Button>
-              )}
-
-              {/* 下拉筛选菜单 */}
-              <Menu
-                anchorEl={filterAnchorEl}
-                open={filterMenuOpen}
-                onClose={handleFilterMenuClose}
-                anchorOrigin={{
-                  vertical: 'bottom',
-                  horizontal: 'left',
-                }}
-                transformOrigin={{
-                  vertical: 'top',
-                  horizontal: 'left',
-                }}
-                slotProps={{
-                  paper: {
-                    sx: {
-                      mt: 0.5,
-                      minWidth: 150,
-                      borderRadius: '6px',
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                    },
-                  },
-                }}
-              >
-                <MenuItem
-                  onClick={() => handleFilterChange('only_mine', !onlyMine)}
-                  selected={onlyMine}
-                  sx={(theme) => ({
-                    fontSize: '14px',
-                    py: 1,
-                    '&.Mui-selected': {
-                      bgcolor: theme.palette.primaryAlpha?.[6],
-                      '&:hover': {
-                        bgcolor: theme.palette.primaryAlpha?.[10],
-                      },
-                    },
-                  })}
-                >
-                  我参与的
-                </MenuItem>
-                <MenuItem
-                  onClick={() => {
-                    handleFilterChange('resolved', resolved === '1' ? null : 1)
-                  }}
-                  selected={resolved === '1'}
-                  sx={(theme) => ({
-                    fontSize: '14px',
-                    py: 1,
-                    '&.Mui-selected': {
-                      bgcolor: theme.palette.primaryAlpha?.[6],
-                      '&:hover': {
-                        bgcolor: theme.palette.primaryAlpha?.[10],
-                      },
-                    },
-                  })}
-                >
-                  未解决的
-                </MenuItem>
-              </Menu>
+              </Box>
             </Box>
-          </Box>
+          )}
+
+          {/* 移动端排序下拉菜单 */}
+          {isMobile && (
+            <Menu
+              anchorEl={sortAnchorEl}
+              open={sortMenuOpen}
+              onClose={handleSortMenuClose}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+              slotProps={{
+                paper: {
+                  sx: {
+                    mt: 0.5,
+                    minWidth: 150,
+                    borderRadius: '6px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  },
+                },
+              }}
+            >
+              {currentSortOptions.map((option) => (
+                <MenuItem
+                  key={option.value}
+                  onClick={() => handleSortChange(option.value)}
+                  selected={status === option.value}
+                  sx={(theme) => ({
+                    fontSize: '14px',
+                    py: 1,
+                    '&.Mui-selected': {
+                      bgcolor: theme.palette.primaryAlpha?.[6],
+                      '&:hover': {
+                        bgcolor: theme.palette.primaryAlpha?.[10],
+                      },
+                    },
+                  })}
+                >
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Menu>
+          )}
+
+          {/* 筛选菜单 - 移动端和桌面端共用，但移动端包含更多选项 */}
+          <Menu
+            anchorEl={filterAnchorEl}
+            open={filterMenuOpen}
+            onClose={handleFilterMenuClose}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: isMobile ? 'right' : 'left',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: isMobile ? 'right' : 'left',
+            }}
+            slotProps={{
+              paper: {
+                sx: {
+                  mt: 0.5,
+                  minWidth: isMobile ? 280 : 150,
+                  maxWidth: isMobile ? '90vw' : 300,
+                  maxHeight: isMobile ? '80vh' : 'auto',
+                  borderRadius: '6px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  overflowY: 'auto',
+                },
+              },
+            }}
+          >
+            {/* 我参与的 */}
+            <MenuItem
+              onClick={() => handleFilterChange('only_mine', !onlyMine)}
+              selected={onlyMine}
+              sx={(theme) => ({
+                fontSize: '14px',
+                py: 1,
+                '&.Mui-selected': {
+                  bgcolor: theme.palette.primaryAlpha?.[6],
+                  '&:hover': {
+                    bgcolor: theme.palette.primaryAlpha?.[10],
+                  },
+                },
+              })}
+            >
+              <Checkbox checked={onlyMine} size='small' sx={{ p: 0, mr: 1.5 }} />
+              我参与的
+            </MenuItem>
+            {/* 是否解决 */}
+            <MenuItem
+              onClick={() => {
+                handleFilterChange('resolved', resolved === '1' ? null : 1)
+              }}
+              selected={resolved === '1'}
+              sx={(theme) => ({
+                fontSize: '14px',
+                py: 1,
+                '&.Mui-selected': {
+                  bgcolor: theme.palette.primaryAlpha?.[6],
+                  '&:hover': {
+                    bgcolor: theme.palette.primaryAlpha?.[10],
+                  },
+                },
+              })}
+            >
+              <Checkbox checked={resolved === '1'} size='small' sx={{ p: 0, mr: 1.5 }} />
+              未解决的
+            </MenuItem>
+            {/* 移动端：分类选择 */}
+            {isMobile && filteredGroups.origin.length > 0 && (
+              <>
+                <Divider sx={{ my: 1 }} />
+                <Box sx={{ px: 2, py: 1 }}>
+                  <Typography
+                    variant='subtitle2'
+                    sx={{ fontSize: '12px', fontWeight: 600, color: 'text.secondary', mb: 1 }}
+                  >
+                    分类
+                  </Typography>
+                  {filteredGroups.origin.map((group) => {
+                    const selectedItems = topics.filter((topicId) => group.items?.some((item) => item.id === topicId))
+                    return (
+                      <FormControl key={group.id} fullWidth sx={{ mb: 1.5 }}>
+                        <InputLabel sx={{ fontSize: '12px' }}>{group.name}</InputLabel>
+                        <Select
+                          multiple
+                          value={selectedItems.map(String)}
+                          onChange={(e) => {
+                            const newSelected = (
+                              typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value
+                            ).map(Number)
+                            const otherTopics = topics.filter((id) => !group.items?.some((item) => item.id === id))
+                            handleCategoryChange([...otherTopics, ...newSelected])
+                          }}
+                          input={<OutlinedInput label={group.name} />}
+                          renderValue={(selected) => {
+                            const selectedIds = selected as string[]
+                            if (selectedIds.length === 0) {
+                              return (
+                                <Typography sx={{ color: 'rgba(0,0,0,0.3)', fontSize: '0.8125rem' }}>全部</Typography>
+                              )
+                            }
+                            if (selectedIds.length === 1) {
+                              const item = group.items?.find((i) => String(i.id) === selectedIds[0])
+                              return <Chip size='small' label={item?.name || ''} sx={{ fontSize: '0.75rem' }} />
+                            }
+                            return (
+                              <Chip size='small' label={`已选${selectedIds.length}项`} sx={{ fontSize: '0.75rem' }} />
+                            )
+                          }}
+                          sx={{ fontSize: '0.8125rem' }}
+                        >
+                          {group.items?.map((item) => (
+                            <MenuItem key={item.id} value={String(item.id)}>
+                              <Checkbox checked={selectedItems.includes(item.id || -1)} />
+                              <ListItemText primary={item.name} />
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    )
+                  })}
+                </Box>
+              </>
+            )}
+            {/* 移动端：标签选择 */}
+            {isMobile && availableTags && availableTags.length > 0 && (
+              <>
+                <Divider sx={{ my: 1 }} />
+                <Box sx={{ px: 2, py: 1 }}>
+                  <Typography
+                    variant='subtitle2'
+                    sx={{ fontSize: '12px', fontWeight: 600, color: 'text.secondary', mb: 1 }}
+                  >
+                    标签
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {availableTags.map((tag: any) => {
+                      const isSelected = tagIds.includes(tag.id || -1)
+                      return (
+                        <Chip
+                          key={tag.id}
+                          label={tag.name}
+                          size='small'
+                          onClick={() => {
+                            const newTagIds = isSelected
+                              ? tagIds.filter((id) => id !== tag.id)
+                              : [...tagIds, tag.id || -1]
+                            handleTagChange(newTagIds)
+                          }}
+                          sx={{
+                            fontSize: '0.75rem',
+                            bgcolor: isSelected ? 'primary.main' : 'transparent',
+                            color: isSelected ? 'primary.contrastText' : 'text.primary',
+                            border: `1px solid ${isSelected ? 'primary.main' : 'divider'}`,
+                            '&:hover': {
+                              bgcolor: isSelected ? 'primary.dark' : 'action.hover',
+                            },
+                          }}
+                        />
+                      )
+                    })}
+                  </Box>
+                </Box>
+              </>
+            )}
+          </Menu>
           <Divider />
           {/* 帖子列表 */}
           <Box sx={{ bgcolor: '#ffffff', overflow: 'hidden' }}>
