@@ -154,6 +154,7 @@ type SitemapListReq struct {
 func (d *KBDocument) SitemapList(ctx context.Context, req SitemapListReq) (*anydoc.ListRes, error) {
 	return d.anydoc.List(ctx, platform.PlatformSitemap,
 		anydoc.ListWithURL(req.URL),
+		anydoc.ListWithErrContinue(),
 	)
 }
 

@@ -6826,6 +6826,9 @@ const docTemplate = `{
         "anydoc.ListDoc": {
             "type": "object",
             "properties": {
+                "error": {
+                    "type": "string"
+                },
                 "file": {
                     "type": "boolean"
                 },
@@ -7330,6 +7333,9 @@ const docTemplate = `{
                 },
                 "resolved_at": {
                     "type": "integer"
+                },
+                "similarity": {
+                    "type": "number"
                 },
                 "summary": {
                     "type": "string"

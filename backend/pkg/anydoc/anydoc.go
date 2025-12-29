@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/chaitin/koalaqa/model"
@@ -37,6 +38,8 @@ type listOpt struct {
 	url string
 
 	reader *multipart.FileHeader
+
+	errContinue bool
 }
 
 type listOptFunc func(o *listOpt)
@@ -65,6 +68,12 @@ func ListWithURL(u string) listOptFunc {
 	}
 }
 
+func ListWithErrContinue() listOptFunc {
+	return func(o *listOpt) {
+		o.errContinue = true
+	}
+}
+
 func ListWithPlatformOpt(p model.PlatformOpt) listOptFunc {
 	return func(o *listOpt) {
 		o.url = p.URL
@@ -88,6 +97,7 @@ type ListDoc struct {
 	Title     string `json:"title"`
 	Summary   string `json:"summary"`
 	UpdatedAt int64  `json:"updated_at"`
+	Error     string `json:"error"`
 }
 
 type ExportFunc func(o *model.ExportOpt)
@@ -202,6 +212,7 @@ func (a *anydoc) List(ctx context.Context, plat platform.PlatformType, optFuncs 
 		query.Set("space_id", o.spaceID)
 		query.Set("url", o.url)
 		query.Set("phone", o.phone)
+		query.Set("err_continue", strconv.FormatBool(o.errContinue))
 
 		u.RawQuery = query.Encode()
 	case http.MethodPost:
@@ -236,6 +247,7 @@ func (a *anydoc) List(ctx context.Context, plat platform.PlatformType, optFuncs 
 			"filename":      filename,
 			"url":           o.url,
 			"phone":         o.phone,
+			"err_continue":  o.errContinue,
 		}
 
 		if plat == platform.PlatformDingtalk {

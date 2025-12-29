@@ -15,6 +15,8 @@ definitions:
     type: object
   anydoc.ListDoc:
     properties:
+      error:
+        type: string
       file:
         type: boolean
       file_type:
@@ -352,6 +354,8 @@ definitions:
         $ref: '#/definitions/model.DiscussionState'
       resolved_at:
         type: integer
+      similarity:
+        type: number
       summary:
         type: string
       tag_ids:
