@@ -4,14 +4,9 @@ permissions:
   contents: write
 
 on:
-  create:
+  push:
     tags:
       - 'v*'
-  push:
-    branches:
-      - main
-    paths:
-      - version.json
 
 env:
   API_URL: https://baizhi.cloud:9443/api/open/site/1/static
@@ -29,43 +24,33 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.repository.default_branch }}
 
-      - name: Determine version and update file when tagging
+      - name: Update version file from tag
         id: version_info
         run: |
           set -euo pipefail
-          EVENT_NAME="${{ github.event_name }}"
-          VERSION=""
 
-          if [ "$EVENT_NAME" = "create" ]; then
-            REF_TYPE=$(jq -r '.ref_type' "$GITHUB_EVENT_PATH")
-            if [ "$REF_TYPE" != "tag" ]; then
-              echo "Create event is not for a tag, nothing to do."
-              exit 0
+          VERSION="${GITHUB_REF_NAME:-}"
+          if [ -z "$VERSION" ]; then
+            if [ -n "${GITHUB_REF:-}" ]; then
+              VERSION="${GITHUB_REF##*/}"
             fi
+          fi
 
-            VERSION=$(jq -r '.ref' "$GITHUB_EVENT_PATH")
-            if [ -z "$VERSION" ]; then
-              echo "Failed to extract tag name from event payload."
-              exit 1
-            fi
+          if [ -z "$VERSION" ]; then
+            echo "Unable to determine version from ref."
+            exit 1
+          fi
 
-            jq -n --arg version "$VERSION" '{"version": $version}' > version.json
+          jq -n --arg version "$VERSION" '{"version": $version}' > version.json
 
-            if git diff --quiet -- version.json; then
-              echo "version.json already set to $VERSION."
-            else
-              git config --local user.email "action@github.com"
-              git config --local user.name "GitHub Action"
-              git add version.json
-              git commit -m "chore: update version.json to $VERSION"
-              git push
-            fi
+          if git diff --quiet -- version.json; then
+            echo "version.json already set to $VERSION."
           else
-            VERSION=$(jq -r '.version' version.json)
-            if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
-              echo "version.json does not contain a version field."
-              exit 1
-            fi
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add version.json
+            git commit -m "chore: update version.json to $VERSION"
+            git push
           fi
 
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
