@@ -56,7 +56,11 @@ const ProfilePanel: React.FC<ProfilePanelProps> = ({ onClose, adminHref }) => {
   return (
     <InfoCard>
       <IdCard>
-        <IdInfo>
+        <IdInfo
+          sx={{
+            pl: isMobile ? 1 : 0,
+          }}
+        >
           <UserAvatar user={user} sx={{ width: isMobile ? 32 : 40, height: isMobile ? 32 : 40 }} />
           <Stack>
             <Box

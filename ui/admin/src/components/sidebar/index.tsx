@@ -240,7 +240,7 @@ const Sidebar = () => {
             版本号 {systemInfo.version}
           </Typography>
           {systemInfo.latest_version && systemInfo.latest_version !== systemInfo.version && (
-            <Tooltip title={'当前雷池版本过低，需要升级'}>
+            <Tooltip title={'当前版本过低，需要升级'}>
               <Icon
                 type="icon-tanhao3"
                 sx={{

@@ -191,6 +191,7 @@ export interface AdminDocUserRes {
 }
 
 export interface AnydocListDoc {
+  error?: string;
   file?: boolean;
   file_type?: string;
   id?: string;

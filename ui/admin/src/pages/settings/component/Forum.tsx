@@ -14,7 +14,6 @@ import {
   DialogActions,
   Alert,
   Autocomplete,
-  Chip,
   Menu,
   MenuItem,
   alpha,
@@ -197,7 +196,7 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
         borderRadius: 1,
         p: 2,
         mb: 2,
-        backgroundColor: 'background.default',
+        backgroundColor: 'background.paper',
       }}
     >
       <Stack spacing={2}>
@@ -277,41 +276,51 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
                     isOptionEqualToValue={(option, value) => (option.id || 0) === (value.id || 0)}
                     disabled={!forumId || forumId <= 0}
                     renderTags={(value, getTagProps) =>
-                      value.map((option, idx) => (
-                        <Chip
-                          {...getTagProps({ index: idx })}
-                          key={option.id}
-                          label={option.name || ''}
-                          size="small"
-                          sx={{
-                            height: 24,
-                            fontSize: 12,
-                            '& .MuiChip-label': { fontSize: 12, px: 0.5 },
-                          }}
-                        />
-                      ))
+                      value.map((option, idx) => {
+                        const { key, ...tagProps } = getTagProps({ index: idx });
+                        return (
+                          <Box
+                            key={key ?? option.id}
+                            {...tagProps}
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 0.5,
+                              backgroundColor: '#FFFFFF',
+                              borderRadius: '16px',
+                              padding: '2px 8px',
+                              fontSize: '12px',
+                              color: '#333333',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <Typography
+                              variant="body2"
+                              sx={{ fontSize: '12px', lineHeight: 'normal' }}
+                            >
+                              {option.name}
+                            </Typography>
+                          </Box>
+                        );
+                      })
                     }
                     renderInput={params => (
                       <TextField
                         {...params}
                         placeholder={
-                          forumId && forumId > 0 ? '选择标签' : '新增板块暂不支持选择标签'
+                          selectedTags.length > 0
+                            ? ''
+                            : forumId && forumId > 0
+                              ? '选择标签'
+                              : '新增板块暂不支持选择标签'
                         }
                         error={false}
                         sx={{
                           '& .MuiOutlinedInput-root': {
-                            backgroundColor: 'transparent',
+                            backgroundColor: '#F8F9FA',
+                            borderRadius: '10px',
                             '& fieldset': {
-                              borderStyle: 'dashed',
-                              borderColor: 'divider',
-                            },
-                            '&:hover fieldset': {
-                              borderStyle: 'dashed',
-                              borderColor: 'divider',
-                            },
-                            '&.Mui-focused fieldset': {
-                              borderStyle: 'dashed',
-                              borderColor: 'divider',
+                              borderStyle: 'solid',
                             },
                           },
                         }}
@@ -339,23 +348,17 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
                   onChange={articleIds => {
                     field.onChange(articleIds);
                   }}
-                  placeholder="选择公告 (最多3个)"
+                  placeholder={
+                    (field.value || []).length > 0 ? '' : '选择公告 (最多3个)'
+                  }
                   forumId={forumId}
                   maxSelection={3}
                   textFieldSx={{
                     '& .MuiOutlinedInput-root': {
-                      backgroundColor: 'transparent',
+                      backgroundColor: '#F8F9FA',
+                      borderRadius: '10px',
                       '& fieldset': {
-                        borderStyle: 'dashed',
-                        borderColor: 'divider',
-                      },
-                      '&:hover fieldset': {
-                        borderStyle: 'dashed',
-                        borderColor: 'divider',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderStyle: 'dashed',
-                        borderColor: 'divider',
+                        borderStyle: 'solid',
                       },
                     },
                     '& .MuiInputLabel-root': {
@@ -1076,47 +1079,65 @@ const Forum: React.FC = () => {
         }
       >
         <Stack spacing={3} sx={{ py: 2 }}>
-          <Controller
-            control={categoryControl}
-            name="qa_group_ids"
-            render={({ field }) => (
-              <CategorySelector
-                value={field.value || []}
-                onChange={field.onChange}
-                placeholder="请选择问题分类"
-                label="问题分类"
-                textFieldSx={commonFieldSx}
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Typography variant="body2" sx={{ minWidth: 80, fontSize: 14 }}>
+              问题分类
+            </Typography>
+            <Box sx={{ flex: 1 }}>
+              <Controller
+                control={categoryControl}
+                name="qa_group_ids"
+                render={({ field }) => (
+                  <CategorySelector
+                    value={field.value || []}
+                    onChange={field.onChange}
+                    placeholder="请选择问题分类"
+                    textFieldSx={commonFieldSx}
+                  />
+                )}
               />
-            )}
-          />
+            </Box>
+          </Stack>
 
-          <Controller
-            control={categoryControl}
-            name="issue_group_ids"
-            render={({ field }) => (
-              <CategorySelector
-                value={field.value || []}
-                onChange={field.onChange}
-                placeholder="请选择 Issue 分类"
-                label="Issue 类型"
-                textFieldSx={commonFieldSx}
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Typography variant="body2" sx={{ minWidth: 80, fontSize: 14 }}>
+              Issue 类型
+            </Typography>
+            <Box sx={{ flex: 1 }}>
+              <Controller
+                control={categoryControl}
+                name="issue_group_ids"
+                render={({ field }) => (
+                  <CategorySelector
+                    value={field.value || []}
+                    onChange={field.onChange}
+                    placeholder="请选择 Issue 分类"
+                    textFieldSx={commonFieldSx}
+                  />
+                )}
               />
-            )}
-          />
+            </Box>
+          </Stack>
 
-          <Controller
-            control={categoryControl}
-            name="blog_group_ids"
-            render={({ field }) => (
-              <CategorySelector
-                value={field.value || []}
-                onChange={field.onChange}
-                placeholder="请选择文章分类"
-                label="文章分类"
-                textFieldSx={commonFieldSx}
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Typography variant="body2" sx={{ minWidth: 80, fontSize: 14 }}>
+              文章分类
+            </Typography>
+            <Box sx={{ flex: 1 }}>
+              <Controller
+                control={categoryControl}
+                name="blog_group_ids"
+                render={({ field }) => (
+                  <CategorySelector
+                    value={field.value || []}
+                    onChange={field.onChange}
+                    placeholder="请选择文章分类"
+                    textFieldSx={commonFieldSx}
+                  />
+                )}
               />
-            )}
-          />
+            </Box>
+          </Stack>
         </Stack>
       </Modal>
 

@@ -7,7 +7,6 @@ import {
   CircularProgress,
   SxProps,
   Theme,
-  Chip,
 } from '@mui/material';
 import { message } from '@ctzhian/ui';
 import { getAdminDiscussion } from '@/api/Discussion';
@@ -324,34 +323,45 @@ const ArticleSelector: React.FC<ArticleSelectorProps> = ({
         isOptionEqualToValue={(option, value) => option.id === value.id}
         loading={loading}
         renderTags={(value, getTagProps) =>
-          value.map((option, index) => (
-            <Chip
-              {...getTagProps({ index })}
-              key={option.id}
-              label={option.title}
-              size="small"
-              sx={{
-                height: 24,
-                fontSize: 12,
-                '& .MuiChip-label': { fontSize: 12, px: 0.5 },
-              }}
-            />
-          ))
+          value.map((option, index) => {
+            const { key, ...tagProps } = getTagProps({ index });
+            return (
+              <Box
+                key={key ?? option.id}
+                {...tagProps}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: '16px',
+                  padding: '2px 8px',
+                  fontSize: '12px',
+                  color: '#333333',
+                  cursor: 'pointer',
+                }}
+              >
+                <Typography
+                  variant="body2"
+                  sx={{ fontSize: '12px', lineHeight: 'normal' }}
+                >
+                  {option.title}
+                </Typography>
+              </Box>
+            );
+          })
         }
         // filterOptions={(options) => options} // 禁用客户端过滤，使用服务端搜索
         renderInput={params => (
           <TextField
             {...params}
-            label={label}
             placeholder={!forumId ? '请先保存版块后再选择公告内容' : placeholder}
             error={error}
             helperText={
               helperText ||
               (!forumId
                 ? '新建版块需要先保存后才能选择公告内容'
-                : value.length > 0
-                  ? `已选择 ${value.length}/${maxSelection} 个文章`
-                  : `最多可选择 ${maxSelection} 个文章`)
+                : '')
             }
             sx={textFieldSx}
             InputProps={{

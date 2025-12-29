@@ -463,7 +463,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
           </Box>
 
           {/* Right side actions */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             {/* Search button */}
             <IconButton
               size='small'
@@ -570,7 +570,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                   '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
                 }}
               >
-                <AccountCircleIcon sx={{ fontSize: 20, color: 'primary.main' }} />
+                <AccountCircleIcon sx={{ fontSize: 24, color: 'primary.main' }} />
               </IconButton>
             )}
           </Box>

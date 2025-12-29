@@ -20,26 +20,20 @@ import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import { isAdminRole } from '@/lib/utils'
 import FilterListIcon from '@mui/icons-material/FilterList'
 import SearchIcon from '@mui/icons-material/Search'
-import SortIcon from '@mui/icons-material/Sort'
 import TuneIcon from '@mui/icons-material/Tune'
 import SwapVertIcon from '@mui/icons-material/SwapVert'
 import {
   Box,
   Button,
   Checkbox,
-  Chip,
   CircularProgress,
   Divider,
-  FormControl,
+  Drawer,
   IconButton,
   InputAdornment,
-  InputLabel,
-  ListItemText,
   Menu,
   MenuItem,
-  OutlinedInput,
   Paper,
-  Select,
   Stack,
   TextField,
   ToggleButton,
@@ -114,8 +108,25 @@ const Article = ({
   // 下拉筛选相关状态
   const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null)
   const filterMenuOpen = Boolean(filterAnchorEl)
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false)
   const onlyMine = searchParams?.get('only_mine') === 'true'
   const resolved = searchParams?.get('resolved')
+  
+  // 临时筛选状态（用于弹窗中的选择，点击应用后才真正应用）
+  const [tempOnlyMine, setTempOnlyMine] = useState(onlyMine)
+  const [tempResolved, setTempResolved] = useState(resolved === '1')
+  const [tempTopics, setTempTopics] = useState<number[]>(topics)
+  const [tempTagIds, setTempTagIds] = useState<number[]>(tagIds)
+  
+  // 当弹窗打开时，初始化临时状态
+  useEffect(() => {
+    if (filterDialogOpen) {
+      setTempOnlyMine(onlyMine)
+      setTempResolved(resolved === '1')
+      setTempTopics(topics)
+      setTempTagIds(tagIds)
+    }
+  }, [filterDialogOpen, onlyMine, resolved, topics, tagIds])
 
   // 排序下拉菜单相关状态
   const [sortAnchorEl, setSortAnchorEl] = useState<null | HTMLElement>(null)
@@ -332,11 +343,63 @@ const Article = ({
 
   // 处理下拉筛选菜单
   const handleFilterMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setFilterAnchorEl(event.currentTarget)
+    if (isMobile) {
+      setFilterDialogOpen(true)
+    } else {
+      setFilterAnchorEl(event.currentTarget)
+    }
   }
 
   const handleFilterMenuClose = () => {
     setFilterAnchorEl(null)
+  }
+  
+  const handleFilterDialogClose = () => {
+    setFilterDialogOpen(false)
+  }
+  
+  // 应用筛选（移动端弹窗）
+  const handleApplyFilter = () => {
+    const params = new URLSearchParams(searchParams?.toString())
+    
+    // 应用"我参与的"
+    if (tempOnlyMine) {
+      params.set('only_mine', 'true')
+    } else {
+      params.delete('only_mine')
+    }
+    
+    // 应用"未解决的"
+    if (tempResolved) {
+      params.set('resolved', '1')
+    } else {
+      params.delete('resolved')
+    }
+    
+    // 应用分类
+    if (tempTopics.length > 0) {
+      params.set('tps', tempTopics.join(','))
+    } else {
+      params.delete('tps')
+    }
+    
+    // 应用标签
+    if (tempTagIds.length > 0) {
+      params.set('tags', tempTagIds.join(','))
+    } else {
+      params.delete('tags')
+    }
+    
+    router.replace(`/${routeName}?${params.toString()}`)
+    setFilterDialogOpen(false)
+  }
+  
+  // 清除筛选（移动端弹窗）
+  const handleClearFilter = () => {
+    setTempOnlyMine(false)
+    setTempResolved(false)
+    setTempTopics([])
+    setTempTagIds([])
   }
 
   // 监听openReleaseModal事件
@@ -610,162 +673,172 @@ const Article = ({
           )}
 
           {/* 移动端：帖子类型选择 */}
-          {isMobile && (
-            <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <ToggleButtonGroup
-                value={currentPostType}
-                exclusive
-                onChange={(e, newValue) => {
-                  if (newValue !== null) {
-                    handlePostTypeChange(newValue)
-                  }
-                }}
-                sx={{
+          <Box
+            sx={{
+              mb: 2,
+              display: { xs: 'flex', sm: 'none' },
+              alignItems: 'center',
+              gap: 1,
+            }}
+          >
+            <ToggleButtonGroup
+              value={currentPostType}
+              exclusive
+              onChange={(e, newValue) => {
+                if (newValue !== null) {
+                  handlePostTypeChange(newValue)
+                }
+              }}
+              sx={{
+                flex: 1,
+                borderRadius: 1,
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                px: 0.5,
+                gap: 0.5,
+                '& .MuiToggleButtonGroup-grouped': {
+                  borderRadius: '6px !important',
+                  my: 0.5,
+                  mx: 0,
                   flex: 1,
-                  borderRadius: 1,
-                  border: (theme) => `1px solid ${theme.palette.divider}`,
-                  px: 0.5,
-                  gap: 0.5,
-                  '& .MuiToggleButtonGroup-grouped': {
-                    borderRadius: '6px !important',
-                    my: 0.5,
-                    mx: 0,
-                    flex: 1,
-                  },
+                },
+              }}
+            >
+              {postTypes.map((postType) => (
+                <ToggleButton
+                  key={postType.id}
+                  value={postType.id}
+                  sx={(theme) => ({
+                    height: 36,
+                    fontWeight: 500,
+                    fontSize: '14px',
+                    color: '#21222D',
+                    border: '1px solid transparent',
+                    '&.Mui-selected': {
+                      bgcolor: 'primary.main',
+                      color: theme.palette.primary.contrastText,
+                      '&:hover': {
+                        bgcolor: theme.palette.primary.dark,
+                        color: theme.palette.primary.contrastText,
+                      },
+                    },
+                    '&:hover': { bgcolor: '#f3f4f6', color: '#000000' },
+                  })}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box sx={{ display: { xs: 'none', sm: 'block' } }}>{postType.icon}</Box>
+                    {postType.name}
+                  </Box>
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+            {/* 筛选和排序图标 */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
+              <IconButton
+                size='small'
+                onClick={handleFilterMenuOpen}
+                sx={{
+                  color:
+                    onlyMine || resolved !== null || topics.length > 0 || tagIds.length > 0
+                      ? 'primary.main'
+                      : 'text.secondary',
                 }}
               >
-                {postTypes.map((postType) => (
-                  <ToggleButton
-                    key={postType.id}
-                    value={postType.id}
-                    sx={(theme) => ({
-                      height: 36,
-                      fontWeight: 500,
-                      fontSize: '14px',
-                      color: '#21222D',
-                      border: '1px solid transparent',
-                      '&.Mui-selected': {
-                        bgcolor: 'primary.main',
-                        color: theme.palette.primary.contrastText,
-                        '&:hover': {
-                          bgcolor: theme.palette.primary.dark,
-                          color: theme.palette.primary.contrastText,
-                        },
-                      },
-                      '&:hover': { bgcolor: '#f3f4f6', color: '#000000' },
-                    })}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>{postType.icon}</Box>
-                      {postType.name}
-                    </Box>
-                  </ToggleButton>
-                ))}
-              </ToggleButtonGroup>
-              {/* 筛选和排序图标 */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
-                <IconButton
-                  size='small'
-                  onClick={handleFilterMenuOpen}
-                  sx={{
-                    color:
-                      onlyMine || resolved !== null || topics.length > 0 || tagIds.length > 0
-                        ? 'primary.main'
-                        : 'text.secondary',
-                  }}
-                >
-                  <TuneIcon sx={{ fontSize: 20 }} />
-                </IconButton>
-                <IconButton size='small' onClick={handleSortMenuOpen} sx={{ color: 'text.secondary' }}>
-                  <SwapVertIcon sx={{ fontSize: 20 }} />
-                </IconButton>
-              </Box>
+                <TuneIcon sx={{ fontSize: 20 }} />
+              </IconButton>
+              <IconButton size='small' onClick={handleSortMenuOpen} sx={{ color: 'text.secondary' }}>
+                <SwapVertIcon sx={{ fontSize: 20 }} />
+              </IconButton>
             </Box>
-          )}
+          </Box>
 
           {/* 桌面端：排序选项 */}
-          {!isMobile && (
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: { xs: 2, lg: 3 } }}>
-              <ToggleButtonGroup
-                value={status}
-                exclusive
-                onChange={(e, newValue) => {
-                  if (newValue !== null && newValue !== status) {
-                    const query = createQueryString('sort', newValue)
-                    router.replace(`/${routeName}?${query}`)
-                  }
-                }}
+          <Box
+            sx={{
+              display: { xs: 'none', sm: 'flex' },
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              mb: { xs: 2, lg: 3 },
+            }}
+          >
+            <ToggleButtonGroup
+              value={status}
+              exclusive
+              onChange={(e, newValue) => {
+                if (newValue !== null && newValue !== status) {
+                  const query = createQueryString('sort', newValue)
+                  router.replace(`/${routeName}?${query}`)
+                }
+              }}
+              sx={{
+                borderRadius: 1,
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                px: 0.5,
+                gap: 0.5,
+                '& .MuiToggleButtonGroup-grouped': {
+                  borderRadius: '6px !important',
+                  my: 0.5,
+                  mx: 0,
+                },
+              }}
+            >
+              {currentSortOptions.map((option) => (
+                <ToggleButton
+                  key={option.value}
+                  value={option.value}
+                  sx={(theme) => ({
+                    height: 30,
+                    fontWeight: 500,
+                    fontSize: '14px',
+                    color: '#21222D',
+                    border: '1px solid transparent',
+                    '&.Mui-selected': {
+                      bgcolor: 'primary.main',
+                      color: theme.palette.primary.contrastText,
+                      '&:hover': {
+                        bgcolor: theme.palette.primary.dark,
+                        color: theme.palette.primary.contrastText,
+                      },
+                    },
+                    '&:hover': { bgcolor: '#f3f4f6', color: '#000000' },
+                  })}
+                >
+                  {option.label}
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box
+                component='span'
                 sx={{
-                  borderRadius: 1,
-                  border: (theme) => `1px solid ${theme.palette.divider}`,
-                  px: 0.5,
-                  gap: 0.5,
-                  '& .MuiToggleButtonGroup-grouped': {
-                    borderRadius: '6px !important',
-                    my: 0.5,
-                    mx: 0,
-                  },
+                  fontSize: '14px',
+                  color: '#9ca3af',
+                  fontWeight: 500,
                 }}
               >
-                {currentSortOptions.map((option) => (
-                  <ToggleButton
-                    key={option.value}
-                    value={option.value}
-                    sx={(theme) => ({
-                      height: 30,
-                      fontWeight: 500,
-                      fontSize: '14px',
-                      color: '#21222D',
-                      border: '1px solid transparent',
-                      '&.Mui-selected': {
-                        bgcolor: 'primary.main',
-                        color: theme.palette.primary.contrastText,
-                        '&:hover': {
-                          bgcolor: theme.palette.primary.dark,
-                          color: theme.palette.primary.contrastText,
-                        },
-                      },
-                      '&:hover': { bgcolor: '#f3f4f6', color: '#000000' },
-                    })}
-                  >
-                    {option.label}
-                  </ToggleButton>
-                ))}
-              </ToggleButtonGroup>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Box
-                  component='span'
-                  sx={{
-                    fontSize: '14px',
-                    color: '#9ca3af',
-                    fontWeight: 500,
-                  }}
-                >
-                  共{' '}
-                  <Box component='span' sx={{ display: 'inline-block', color: '#000000', fontWeight: 500 }}>
-                    {articleData.total || 0}
-                  </Box>{' '}
-                  个帖子
-                </Box>
-                <Button
-                  onClick={handleFilterMenuOpen}
-                  startIcon={<FilterListIcon sx={{ fontSize: 18 }} />}
-                  sx={{
-                    height: 30,
-                    px: 1.5,
-                    borderRadius: '6px',
-                    bgcolor: onlyMine || resolved !== null ? (theme) => theme.palette.primaryAlpha?.[6] : 'transparent',
-                    color: onlyMine || resolved !== null ? 'primary.main' : '#21222D',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    textTransform: 'none',
-                  }}
-                >
-                  筛选
-                </Button>
+                共{' '}
+                <Box component='span' sx={{ display: 'inline-block', color: '#000000', fontWeight: 500 }}>
+                  {articleData.total || 0}
+                </Box>{' '}
+                个帖子
               </Box>
+              <Button
+                onClick={handleFilterMenuOpen}
+                startIcon={<FilterListIcon sx={{ fontSize: 18 }} />}
+                sx={{
+                  height: 30,
+                  px: 1.5,
+                  borderRadius: '6px',
+                  bgcolor: onlyMine || resolved !== null ? (theme) => theme.palette.primaryAlpha?.[6] : 'transparent',
+                  color: onlyMine || resolved !== null ? 'primary.main' : '#21222D',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  textTransform: 'none',
+                }}
+              >
+                筛选
+              </Button>
             </Box>
-          )}
+          </Box>
 
           {/* 移动端排序下拉菜单 */}
           {isMobile && (
@@ -814,170 +887,291 @@ const Article = ({
             </Menu>
           )}
 
-          {/* 筛选菜单 - 移动端和桌面端共用，但移动端包含更多选项 */}
-          <Menu
-            anchorEl={filterAnchorEl}
-            open={filterMenuOpen}
-            onClose={handleFilterMenuClose}
-            anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: isMobile ? 'right' : 'left',
-            }}
-            transformOrigin={{
-              vertical: 'top',
-              horizontal: isMobile ? 'right' : 'left',
-            }}
-            slotProps={{
-              paper: {
-                sx: {
-                  mt: 0.5,
-                  minWidth: isMobile ? 280 : 150,
-                  maxWidth: isMobile ? '90vw' : 300,
-                  maxHeight: isMobile ? '80vh' : 'auto',
-                  borderRadius: '6px',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                  overflowY: 'auto',
+          {/* 桌面端筛选菜单 */}
+          {!isMobile && (
+            <Menu
+              anchorEl={filterAnchorEl}
+              open={filterMenuOpen}
+              onClose={handleFilterMenuClose}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'left',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'left',
+              }}
+              slotProps={{
+                paper: {
+                  sx: {
+                    mt: 0.5,
+                    minWidth: 150,
+                    borderRadius: '6px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  },
                 },
+              }}
+            >
+              {/* 我参与的 */}
+              <MenuItem
+                onClick={() => handleFilterChange('only_mine', !onlyMine)}
+                selected={onlyMine}
+                sx={(theme) => ({
+                  fontSize: '14px',
+                  py: 1,
+                  '&.Mui-selected': {
+                    bgcolor: theme.palette.primaryAlpha?.[6],
+                    '&:hover': {
+                      bgcolor: theme.palette.primaryAlpha?.[10],
+                    },
+                  },
+                })}
+              >
+                <Checkbox checked={onlyMine} size='small' sx={{ p: 0, mr: 1.5 }} />
+                我参与的
+              </MenuItem>
+              {/* 是否解决 */}
+              <MenuItem
+                onClick={() => {
+                  handleFilterChange('resolved', resolved === '1' ? null : 1)
+                }}
+                selected={resolved === '1'}
+                sx={(theme) => ({
+                  fontSize: '14px',
+                  py: 1,
+                  '&.Mui-selected': {
+                    bgcolor: theme.palette.primaryAlpha?.[6],
+                    '&:hover': {
+                      bgcolor: theme.palette.primaryAlpha?.[10],
+                    },
+                  },
+                })}
+              >
+                <Checkbox checked={resolved === '1'} size='small' sx={{ p: 0, mr: 1.5 }} />
+                未解决的
+              </MenuItem>
+            </Menu>
+          )}
+
+          {/* 移动端筛选抽屉 */}
+          <Drawer
+            anchor='bottom'
+            open={filterDialogOpen}
+            onClose={handleFilterDialogClose}
+            PaperProps={{
+              sx: {
+                borderTopLeftRadius: '16px',
+                borderTopRightRadius: '16px',
+                maxHeight: '85vh',
+                display: 'flex',
+                flexDirection: 'column',
               },
             }}
           >
-            {/* 我参与的 */}
-            <MenuItem
-              onClick={() => handleFilterChange('only_mine', !onlyMine)}
-              selected={onlyMine}
-              sx={(theme) => ({
-                fontSize: '14px',
-                py: 1,
-                '&.Mui-selected': {
-                  bgcolor: theme.palette.primaryAlpha?.[6],
-                  '&:hover': {
-                    bgcolor: theme.palette.primaryAlpha?.[10],
-                  },
-                },
-              })}
-            >
-              <Checkbox checked={onlyMine} size='small' sx={{ p: 0, mr: 1.5 }} />
-              我参与的
-            </MenuItem>
-            {/* 是否解决 */}
-            <MenuItem
-              onClick={() => {
-                handleFilterChange('resolved', resolved === '1' ? null : 1)
-              }}
-              selected={resolved === '1'}
-              sx={(theme) => ({
-                fontSize: '14px',
-                py: 1,
-                '&.Mui-selected': {
-                  bgcolor: theme.palette.primaryAlpha?.[6],
-                  '&:hover': {
-                    bgcolor: theme.palette.primaryAlpha?.[10],
-                  },
-                },
-              })}
-            >
-              <Checkbox checked={resolved === '1'} size='small' sx={{ p: 0, mr: 1.5 }} />
-              未解决的
-            </MenuItem>
-            {/* 移动端：分类选择 */}
-            {isMobile && filteredGroups.origin.length > 0 && (
-              <>
-                <Divider sx={{ my: 1 }} />
-                <Box sx={{ px: 2, py: 1 }}>
-                  <Typography
-                    variant='subtitle2'
-                    sx={{ fontSize: '12px', fontWeight: 600, color: 'text.secondary', mb: 1 }}
-                  >
-                    分类
-                  </Typography>
-                  {filteredGroups.origin.map((group) => {
-                    const selectedItems = topics.filter((topicId) => group.items?.some((item) => item.id === topicId))
-                    return (
-                      <FormControl key={group.id} fullWidth sx={{ mb: 1.5 }}>
-                        <InputLabel sx={{ fontSize: '12px' }}>{group.name}</InputLabel>
-                        <Select
-                          multiple
-                          value={selectedItems.map(String)}
-                          onChange={(e) => {
-                            const newSelected = (
-                              typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value
-                            ).map(Number)
-                            const otherTopics = topics.filter((id) => !group.items?.some((item) => item.id === id))
-                            handleCategoryChange([...otherTopics, ...newSelected])
-                          }}
-                          input={<OutlinedInput label={group.name} />}
-                          renderValue={(selected) => {
-                            const selectedIds = selected as string[]
-                            if (selectedIds.length === 0) {
-                              return (
-                                <Typography sx={{ color: 'rgba(0,0,0,0.3)', fontSize: '0.8125rem' }}>全部</Typography>
-                              )
-                            }
-                            if (selectedIds.length === 1) {
-                              const item = group.items?.find((i) => String(i.id) === selectedIds[0])
-                              return <Chip size='small' label={item?.name || ''} sx={{ fontSize: '0.75rem' }} />
-                            }
-                            return (
-                              <Chip size='small' label={`已选${selectedIds.length}项`} sx={{ fontSize: '0.75rem' }} />
-                            )
-                          }}
-                          sx={{ fontSize: '0.8125rem' }}
-                        >
-                          {group.items?.map((item) => (
-                            <MenuItem key={item.id} value={String(item.id)}>
-                              <Checkbox checked={selectedItems.includes(item.id || -1)} />
-                              <ListItemText primary={item.name} />
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    )
-                  })}
-                </Box>
-              </>
-            )}
-            {/* 移动端：标签选择 */}
-            {isMobile && availableTags && availableTags.length > 0 && (
-              <>
-                <Divider sx={{ my: 1 }} />
-                <Box sx={{ px: 2, py: 1 }}>
-                  <Typography
-                    variant='subtitle2'
-                    sx={{ fontSize: '12px', fontWeight: 600, color: 'text.secondary', mb: 1 }}
-                  >
-                    标签
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {availableTags.map((tag: any) => {
-                      const isSelected = tagIds.includes(tag.id || -1)
-                      return (
-                        <Chip
-                          key={tag.id}
-                          label={tag.name}
-                          size='small'
-                          onClick={() => {
-                            const newTagIds = isSelected
-                              ? tagIds.filter((id) => id !== tag.id)
-                              : [...tagIds, tag.id || -1]
-                            handleTagChange(newTagIds)
-                          }}
-                          sx={{
-                            fontSize: '0.75rem',
-                            bgcolor: isSelected ? 'primary.main' : 'transparent',
-                            color: isSelected ? 'primary.contrastText' : 'text.primary',
-                            border: `1px solid ${isSelected ? 'primary.main' : 'divider'}`,
-                            '&:hover': {
-                              bgcolor: isSelected ? 'primary.dark' : 'action.hover',
-                            },
-                          }}
-                        />
-                      )
-                    })}
+            <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', maxHeight: '85vh' }}>
+              {/* 标题栏 */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  p: 2,
+                  pb: 1.5,
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  flexShrink: 0,
+                  position: 'sticky',
+                  top: 0,
+                  bgcolor: 'background.paper',
+                  zIndex: 1,
+                }}
+              >
+                <Typography variant='h6' sx={{ fontSize: '18px', fontWeight: 600 }}>
+                  筛选
+                </Typography>
+                <IconButton
+                  size='small'
+                  onClick={handleFilterDialogClose}
+                  sx={{
+                    color: 'text.secondary',
+                  }}
+                >
+                  <Icon type='icon-guanbi-fill' />
+                </IconButton>
+              </Box>
+
+              {/* 内容区域 */}
+              <Box
+                sx={{
+                  flex: 1,
+                  overflowY: 'auto',
+                  overflowX: 'hidden',
+                  p: 2,
+                  minHeight: 0,
+                }}
+              >
+                <Stack spacing={3}>
+                  {/* 只看 */}
+                  <Box>
+                    <Typography
+                      variant='subtitle2'
+                      sx={{ fontSize: '14px', fontWeight: 600, color: 'text.primary', mb: 1.5 }}
+                    >
+                      只看
+                    </Typography>
+                    <Stack spacing={1}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          cursor: 'pointer',
+                          py: 0.5,
+                        }}
+                        onClick={() => setTempOnlyMine(!tempOnlyMine)}
+                      >
+                        <Checkbox checked={tempOnlyMine} size='small' sx={{ p: 0, mr: 1.5 }} />
+                        <Typography sx={{ fontSize: '14px' }}>我参与的</Typography>
+                      </Box>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          cursor: 'pointer',
+                          py: 0.5,
+                        }}
+                        onClick={() => setTempResolved(!tempResolved)}
+                      >
+                        <Checkbox checked={tempResolved} size='small' sx={{ p: 0, mr: 1.5 }} />
+                        <Typography sx={{ fontSize: '14px' }}>未解决的</Typography>
+                      </Box>
+                    </Stack>
                   </Box>
-                </Box>
-              </>
-            )}
-          </Menu>
+
+                  {/* 分类 */}
+                  {filteredGroups.origin.length > 0 && (
+                    <>
+                      {filteredGroups.origin.map((group) => {
+                        const selectedItems = tempTopics.filter((topicId) =>
+                          group.items?.some((item) => item.id === topicId)
+                        )
+                        return (
+                          <Box key={group.id}>
+                            <Typography
+                              variant='subtitle2'
+                              sx={{ fontSize: '14px', fontWeight: 600, color: 'text.primary', mb: 1.5 }}
+                            >
+                              {group.name}
+                            </Typography>
+                            <Stack spacing={1}>
+                              {group.items?.map((item) => {
+                                const isSelected = selectedItems.includes(item.id || -1)
+                                return (
+                                  <Box
+                                    key={item.id}
+                                    sx={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      cursor: 'pointer',
+                                      py: 0.5,
+                                    }}
+                                    onClick={() => {
+                                      if (isSelected) {
+                                        setTempTopics(tempTopics.filter((id) => id !== item.id))
+                                      } else {
+                                        setTempTopics([...tempTopics, item.id || -1])
+                                      }
+                                    }}
+                                  >
+                                    <Checkbox checked={isSelected} size='small' sx={{ p: 0, mr: 1.5 }} />
+                                    <Typography sx={{ fontSize: '14px' }}>{item.name}</Typography>
+                                  </Box>
+                                )
+                              })}
+                            </Stack>
+                          </Box>
+                        )
+                      })}
+                    </>
+                  )}
+
+                  {/* 标签 */}
+                  {availableTags && availableTags.length > 0 && (
+                    <Box>
+                      <Typography
+                        variant='subtitle2'
+                        sx={{ fontSize: '14px', fontWeight: 600, color: 'text.primary', mb: 1.5 }}
+                      >
+                        标签
+                      </Typography>
+                      <Stack spacing={1}>
+                        {availableTags.map((tag: any) => {
+                          const isSelected = tempTagIds.includes(tag.id || -1)
+                          return (
+                            <Box
+                              key={tag.id}
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                cursor: 'pointer',
+                                py: 0.5,
+                              }}
+                              onClick={() => {
+                                if (isSelected) {
+                                  setTempTagIds(tempTagIds.filter((id) => id !== tag.id))
+                                } else {
+                                  setTempTagIds([...tempTagIds, tag.id || -1])
+                                }
+                              }}
+                            >
+                              <Checkbox checked={isSelected} size='small' sx={{ p: 0, mr: 1.5 }} />
+                              <Typography sx={{ fontSize: '14px' }}>{tag.name}</Typography>
+                            </Box>
+                          )
+                        })}
+                      </Stack>
+                    </Box>
+                  )}
+                </Stack>
+              </Box>
+
+              {/* 底部按钮 */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 2,
+                  p: 2,
+                  borderTop: '1px solid',
+                  borderColor: 'divider',
+                  flexShrink: 0,
+                  position: 'sticky',
+                  bottom: 0,
+                  bgcolor: 'background.paper',
+                  zIndex: 1,
+                }}
+              >
+                <Button
+                  variant='text'
+                  onClick={handleClearFilter}
+                  sx={{
+                    flexShrink: 0,
+                  }}
+                >
+                  清除筛选
+                </Button>
+                <Button
+                  variant='contained'
+                  fullWidth
+                  onClick={handleApplyFilter}
+                  sx={{
+                    borderRadius: '6px',
+                    textTransform: 'none',
+                  }}
+                >
+                  应用筛选
+                </Button>
+              </Box>
+            </Box>
+          </Drawer>
           <Divider />
           {/* 帖子列表 */}
           <Box sx={{ bgcolor: '#ffffff', overflow: 'hidden' }}>

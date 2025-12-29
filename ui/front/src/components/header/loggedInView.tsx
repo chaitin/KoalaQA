@@ -513,11 +513,12 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
     <>
       <IconButton
         disableRipple
+        size={isMobile ? 'small' : 'medium'}
         onClick={handleNotificationMenuOpen}
         sx={{
           color: 'primary.main',
           transition: 'all 0.15s ease-in-out',
-          mx: 2,
+          mx: isMobile ? 0 : 2,
           '&:hover': {
             color: 'primary.main',
             bgcolor: 'rgba(255, 255, 255, 0.1)',
@@ -564,8 +565,9 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
           sx: {
             backgroundColor: '#fff',
             boxShadow: '0px 20px 40px 0px rgba(0,28,85,0.06)',
-            minWidth: '300px',
-            padding: '20px',
+            minWidth: isMobile ? '50vw' : '300px',
+            maxWidth: isMobile ? '70vw' : 'none',
+            padding: isMobile ? '12px' : '20px',
             pb: 1,
             borderRadius: '8px',
             color: 'primary.main',
@@ -574,7 +576,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
           },
         }}
       >
-        <Stack spacing={1} sx={{ maxWidth: '300px' }}>
+        <Stack spacing={1} sx={{ maxWidth: isMobile ? '280px' : '300px' }}>
           <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
             {notifications.length === 0 ? (
               <Box sx={{ p: 2, textAlign: 'center', color: 'text.secondary', fontSize: '14px' }}>暂无通知</Box>
@@ -689,6 +691,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
       </Menu>
       <IconButton
         disableRipple
+        size={isMobile ? 'small' : 'medium'}
         onClick={handleProfileMenuOpen}
         sx={{
           color: 'primary.main',
