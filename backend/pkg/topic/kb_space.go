@@ -15,4 +15,5 @@ type MsgKBSpace struct {
 	KBID       uint              `json:"kb_id"`
 	FolderID   uint              `json:"doc_id"`
 	UpdateType KBSpaceUpdateType `json:"update_type"`
+	DocID      uint              `json:"folder_doc_id"`
 }

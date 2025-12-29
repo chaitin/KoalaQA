@@ -863,6 +863,7 @@ func (d *KBDocument) ListSpaceFolder(ctx context.Context, kbID uint, parentID ui
 
 type UpdateSpaceFolderReq struct {
 	UpdateType topic.KBSpaceUpdateType `json:"update_type"`
+	DocID      uint                    `json:"doc_id"`
 }
 
 func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID uint, req UpdateSpaceFolderReq) error {
@@ -887,6 +888,7 @@ func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID 
 		KBID:       kbID,
 		FolderID:   folderID,
 		UpdateType: req.UpdateType,
+		DocID:      req.DocID,
 	})
 	if err != nil {
 		d.logger.WithContext(ctx).WithErr(err).With("kb_id", kbID).With("folder_id", folderID).Warn("pub update msg failed")
