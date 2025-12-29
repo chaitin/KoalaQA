@@ -12,7 +12,6 @@ import (
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/llm"
 	"github.com/chaitin/koalaqa/pkg/rag"
-	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/repo"
 	"github.com/cloudwego/eino/components/prompt"
 	"github.com/cloudwego/eino/schema"
@@ -55,12 +54,6 @@ type GenerateReq struct {
 }
 
 func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (string, bool, error) {
-	defaultAnswer := req.DefaultAnswer
-
-	if defaultAnswer == "" {
-		defaultAnswer = "无法回答问题"
-	}
-
 	query := req.Question
 
 	if len(req.Groups) > 0 {
@@ -73,19 +66,23 @@ func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (st
 	}
 	res, err := l.Chat(ctx, sysPrompt, req.Prompt, map[string]any{
 		"Question":           rewrittenQuery,
-		"DefaultAnswer":      defaultAnswer,
 		"NewCommentID":       req.NewCommentID,
 		"CurrentDate":        time.Now().Format("2006-01-02"),
 		"KnowledgeDocuments": knowledgeDocuments,
-		"AI_DEBUG":           l.cfg.RAG.DEBUG,
 	})
 	if err != nil {
 		return "", false, err
 	}
-	if util.NormalizeString(res) == util.NormalizeString(defaultAnswer) {
-		return req.DefaultAnswer, false, nil
+
+	// 解析 JSON 响应
+	resp, err := llm.ParseChatResponse(res)
+	if err != nil {
+		l.logger.WithContext(ctx).WithErr(err).With("raw", res).Error("llm response parse failed")
+		return "", false, err
 	}
-	return res, true, nil
+	l.logger.WithContext(ctx).With("matched", resp.Matched, "reason", resp.Reason).Debug("llm response parsed")
+
+	return resp.Answer, resp.Matched, nil
 }
 
 func (l *LLM) Answer(ctx context.Context, req GenerateReq) (string, bool, error) {
