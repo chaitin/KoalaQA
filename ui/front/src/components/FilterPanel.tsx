@@ -1,6 +1,6 @@
 'use client'
 
-import { getDiscussion, ModelDiscussionType, ModelGroupItemInfo } from '@/api'
+import { getDiscussion, ModelDiscussionType, ModelGroupItemInfo, ModelGroupWithItem } from '@/api'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import {
   Box,
@@ -134,8 +134,10 @@ export default function FilterPanel() {
         origin: [],
         flat: [],
       } as {
-        origin: ModelGroupItemInfo[]
-        flat: ModelGroupItemInfo[]
+        origin: (ModelGroupWithItem & {
+          items?: ModelGroupItemInfo[];
+        })[];
+        flat: ModelGroupItemInfo[];
       }
     }
 
