@@ -1,6 +1,6 @@
 'use client'
 
-import { getDiscussion, ModelDiscussionType } from '@/api'
+import { getDiscussion, ModelDiscussionType, ModelGroupItemInfo } from '@/api'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import {
   Box,
@@ -28,7 +28,6 @@ import { Icon } from '@ctzhian/ui'
 import TagFilterChip from './TagFilterChip'
 import { useForumId } from '@/hooks/useForumId'
 import { useForumStore } from '@/store'
-import { useGroupDataStore } from '@/store/groupDataStore'
 
 type TagWithId = {
   id: number
@@ -52,7 +51,6 @@ export default function FilterPanel() {
   const routeName = params?.route_name as string
   const forumId = useForumId()
   const forums = useForumStore((s) => s.forums)
-  const filterGroupsByForumAndType = useGroupDataStore((s) => s.filterGroupsByForumAndType)
   const [selectedTags, setSelectedTags] = useState<number[]>([])
 
   const popularTags = useMemo(() => (tags || []).filter((tag): tag is TagWithId => typeof tag?.id === 'number'), [tags])
@@ -109,10 +107,61 @@ export default function FilterPanel() {
 
   // 根据论坛配置 + 当前 type 过滤分类组（只展示该类型允许的分类）
   const filteredGroups = useMemo(() => {
-    if (!typeForFilter) return groups
-    // groupDataStore 的入参类型比较窄，这里用 any 兼容 issue/feedback 等类型
-    return filterGroupsByForumAndType(groups, forumInfo as any, typeForFilter as any)
-  }, [groups, forumInfo, typeForFilter, filterGroupsByForumAndType])
+    // 如果没有论坛信息，直接返回原始数据
+    if (!forumInfo) return groups
+
+    // 获取论坛配置的所有类型的 group_ids
+    let forumGroupIds: number[] = []
+    if (forumInfo.groups) {
+      const groupsArray = Array.isArray(forumInfo.groups) ? forumInfo.groups : Object.values(forumInfo.groups)
+
+      if (typeForFilter) {
+        // 有类型时，只获取该类型的 group_ids
+        const matchedGroup = groupsArray.find((g: any) => g?.type === typeForFilter)
+        forumGroupIds = matchedGroup?.group_ids || []
+      } else {
+        // "全部"类型时，获取所有类型的 group_ids 的并集
+        const allGroupIds = new Set<number>()
+        groupsArray.forEach((g: any) => {
+          if (g?.group_ids && Array.isArray(g.group_ids)) {
+            g.group_ids.forEach((id: number) => allGroupIds.add(id))
+          }
+        })
+        forumGroupIds = Array.from(allGroupIds)
+      }
+    } else {
+      return {
+        origin: [],
+        flat: [],
+      } as {
+        origin: ModelGroupItemInfo[]
+        flat: ModelGroupItemInfo[]
+      }
+    }
+
+    // 如果论坛没有配置 group_ids，返回原始数据（后端已经按 forum_id 过滤了）
+    if (forumGroupIds.length === 0) {
+      return groups
+    }
+
+    // 根据 group_ids 过滤分类组
+    const filteredOrigin = groups.origin.filter((group) => {
+      return forumGroupIds.includes(group.id || -1)
+    })
+
+    // 根据筛选后的 origin 重新计算 flat
+    const filteredFlat = filteredOrigin.reduce((acc, group) => {
+      if (group.items && group.items.length > 0) {
+        acc.push(...group.items)
+      }
+      return acc
+    }, [] as ModelGroupItemInfo[])
+
+    return {
+      origin: filteredOrigin,
+      flat: filteredFlat,
+    }
+  }, [groups, forumInfo, typeForFilter])
 
   // 根据当前 type（可选：叠加当前分类筛选）聚合出“正在使用”的标签 id，用于过滤标签列表展示
   const [usedTagIdSet, setUsedTagIdSet] = useState<Set<number> | null>(null)
@@ -503,13 +552,23 @@ export default function FilterPanel() {
                   const firstLabel = firstOption?.name ?? ''
 
                   if (selectedCount === 1) {
-                    return <Chip size='small' label={firstLabel} sx={{ maxWidth: '100%', fontSize: '0.75rem', borderRadius: 1, }} />
+                    return (
+                      <Chip
+                        size='small'
+                        label={firstLabel}
+                        sx={{ maxWidth: '100%', fontSize: '0.75rem', borderRadius: 1 }}
+                      />
+                    )
                   }
 
                   return (
                     <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
-                      <Chip size='small' label={firstLabel} sx={{ fontSize: '0.75rem', borderRadius: 1, }} />
-                      <Chip size='small' label={`+${selectedCount - 1}`} sx={{ fontSize: '0.75rem', borderRadius: 1, }} />
+                      <Chip size='small' label={firstLabel} sx={{ fontSize: '0.75rem', borderRadius: 1 }} />
+                      <Chip
+                        size='small'
+                        label={`+${selectedCount - 1}`}
+                        sx={{ fontSize: '0.75rem', borderRadius: 1 }}
+                      />
                     </Box>
                   )
                 }}
@@ -585,7 +644,7 @@ export default function FilterPanel() {
         })}
       </Box>
 
-      <Divider sx={{ mb: 3}} />
+      <Divider sx={{ mb: 3 }} />
 
       <Box>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>

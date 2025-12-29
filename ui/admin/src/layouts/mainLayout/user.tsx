@@ -92,7 +92,7 @@ const MainLayout = () => {
           height: '100vh',
           minHeight: '680px',
           fontSize: '16px',
-          bgcolor: 'background.paper',
+          bgcolor: 'background.default',
         }}
       >
         <Sidebar />

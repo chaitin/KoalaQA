@@ -879,7 +879,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
 
                 <Box>
                   <Collapse in={!collapsedComments[answer.id!]}>
-                    <Box sx={{ mt: 2 }}>
+                    <Stack sx={{ mt: 2 }} spacing={2}>
                       {answer.replies?.map((reply) => {
                         const replyProfileHref = reply.user_id ? `/profile/${reply.user_id}` : undefined
                         const replyCreatedAt = (reply as ModelDiscussionReply & { created_at?: number }).created_at
@@ -888,13 +888,10 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                           <Box
                             key={reply.id}
                             sx={{
-                              mb: 2,
-                              pb: 2,
                               p: 2,
                               background: '#fafbfc',
                               borderRadius: '8px',
                               border: '1px solid #D9DEE2',
-                              '&:last-child': { mb: 0, pb: 0 },
                             }}
                           >
                             <Stack direction='row' flexWrap='wrap' sx={{ alignItems: 'center', mb: 1.5, gap: 1.5 }}>
@@ -1114,7 +1111,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                           )}
                         </Box>
                       )}
-                    </Box>
+                    </Stack>
                   </Collapse>
                 </Box>
               </Paper>

@@ -2,7 +2,7 @@
 
 import { postDiscussionComplete, postDiscussionUpload } from '@/api'
 import { Editor, EditorThemeProvider, EditorToolbar, useTiptap } from '@ctzhian/tiptap'
-import { Box } from '@mui/material'
+import { Box, Stack } from '@mui/material'
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
 
 // 扩展 useTiptap 选项类型，添加 tableOfContentsOptions
@@ -113,7 +113,6 @@ const EditorWrapInternal = forwardRef<EditorWrapRef, WrapProps>(
         ? (toc: any) => {
             try {
               if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
-                console.log(toc)
                 if (Array.isArray(toc) && toc.length > 0) {
                   ;(window as any).__lastToc = toc
                 }
@@ -256,12 +255,10 @@ const EditorWrapInternal = forwardRef<EditorWrapRef, WrapProps>(
     // 客户端渲染的完整编辑器
     return (
       <EditorThemeProvider mode='light'>
-        <Box
+        <Stack
           className='editor-wrap'
           sx={{
             height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
             borderRadius: 3,
             transition: 'all 0.3s ease',
             '.editor-toolbar + div': {
@@ -273,6 +270,9 @@ const EditorWrapInternal = forwardRef<EditorWrapRef, WrapProps>(
             },
             '& .editor-toolbar > div': {
               flexWrap: 'wrap',
+            },
+            '& .editor-toolbar': {
+              pb: 0.5,
             },
           }}
         >
@@ -286,7 +286,7 @@ const EditorWrapInternal = forwardRef<EditorWrapRef, WrapProps>(
               )}
             </>
           )}
-        </Box>
+        </Stack>
       </EditorThemeProvider>
     )
   },
@@ -295,4 +295,3 @@ const EditorWrapInternal = forwardRef<EditorWrapRef, WrapProps>(
 EditorWrapInternal.displayName = 'EditorWrapInternal'
 
 export default EditorWrapInternal
-

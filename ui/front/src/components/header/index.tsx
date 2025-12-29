@@ -243,7 +243,6 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
 
   const handlePublish = useCallback(
     (type: string, query?: string) => {
-      console.log(query)
       handleCloseSearchModal()
       router.push(`/${route_name}/edit?type=${type}&${query ? `title=${encodeURIComponent(query)}` : ''}`)
     },
@@ -266,73 +265,47 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
       >
         <Toolbar sx={{ py: '0!important', px: '20px!important', color: 'text.primary' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexGrow: 1 }}>
-            {brandConfig?.logo && brandConfig?.text ? (
-              <Stack
-                direction='row'
-                alignItems='center'
-                gap={1.5}
-                sx={{ cursor: 'pointer', color: 'text.primary', minWidth: '192px' }}
-                onClick={handleLogoClick}
-              >
-                <Box
-                  sx={{
-                    width: 36,
-                    display: 'flex',
-                    alignItems: 'center',
-                    fontWeight: 700,
-                    fontSize: '1.25rem',
-                    color: 'text.primary',
-                  }}
-                >
-                  <Image
-                    src={brandConfig.logo}
-                    alt='Logo'
-                    width={24}
-                    height={24}
-                    style={{
-                      objectFit: 'contain',
-                    }}
-                    unoptimized={true}
-                  />
-                </Box>
-                {brandConfig.text && (
-                  <Typography
-                    variant='h6'
-                    component='div'
-                    sx={{
-                      fontWeight: 700,
-                      color: 'text.primary',
-                      fontSize: { xs: '1rem', md: '1.25rem' },
-                      letterSpacing: '-0.02em',
-                    }}
-                  >
-                    {brandConfig.text}
-                  </Typography>
-                )}
-              </Stack>
-            ) : (
+            <Stack
+              direction='row'
+              alignItems='center'
+              gap={1.5}
+              sx={{ cursor: 'pointer', color: 'text.primary', minWidth: '192px' }}
+              onClick={handleLogoClick}
+            >
               <Box
                 sx={{
-                  borderRadius: 2,
+                  width: 36,
                   display: 'flex',
                   alignItems: 'center',
                   fontWeight: 700,
                   fontSize: '1.25rem',
                   color: 'text.primary',
-                  cursor: 'pointer',
-                  minWidth: '192px',
                 }}
-                onClick={handleLogoClick}
               >
                 <Image
-                  src='/logo-text.png'
-                  alt='Koala QA Logo'
-                  width={100}
+                  src={brandConfig.logo || '/logo.png'}
+                  alt='Logo'
+                  width={24}
                   height={24}
-                  style={{ objectFit: 'contain' }}
+                  style={{
+                    objectFit: 'contain',
+                  }}
+                  unoptimized={true}
                 />
               </Box>
-            )}
+              <Typography
+                variant='h6'
+                component='div'
+                sx={{
+                  fontWeight: 700,
+                  color: 'text.primary',
+                  fontSize: { xs: '1rem', md: '1.25rem' },
+                  letterSpacing: '-0.02em',
+                }}
+              >
+                {brandConfig.text || 'Koala QA'}
+              </Typography>
+            </Stack>
             {/* Forum切换tab */}
             {forums && forums.length > 1 && <ForumSelector forums={forums} selectedForumId={currentForumId} />}
           </Box>

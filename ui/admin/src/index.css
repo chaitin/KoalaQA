@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 /* ---break---*/
 @custom-variant dark (&:is(.dark *));
 
@@ -9,7 +9,7 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
-@layer base{
+@layer base {
   * {
     box-sizing: border-box;
     margin: 0;
@@ -71,10 +71,17 @@ html {
   --ds-shadow-border-medium: var(--ds-shadow-border), var(--ds-shadow-medium);
   --ds-shadow-large: 0px 2px 2px rgba(0, 0, 0, 0.04), 0px 8px 16px -4px rgba(0, 0, 0, 0.04);
   --ds-shadow-border-large: var(--ds-shadow-border), var(--ds-shadow-large);
-  --ds-shadow-tooltip: var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 4px 8px rgba(0, 0, 0, 0.04);
-  --ds-shadow-menu: var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 4px 8px -4px rgba(0, 0, 0, 0.04), 0px 16px 24px -8px rgba(0, 0, 0, 0.06);
-  --ds-shadow-modal: var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 8px 16px -4px rgba(0, 0, 0, 0.04), 0px 24px 32px -8px rgba(0, 0, 0, 0.06);
-  --ds-shadow-fullscreen: var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 8px 16px -4px rgba(0, 0, 0, 0.04), 0px 24px 32px -8px rgba(0, 0, 0, 0.06);
+  --ds-shadow-tooltip:
+    var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 4px 8px rgba(0, 0, 0, 0.04);
+  --ds-shadow-menu:
+    var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 4px 8px -4px rgba(0, 0, 0, 0.04),
+    0px 16px 24px -8px rgba(0, 0, 0, 0.06);
+  --ds-shadow-modal:
+    var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 8px 16px -4px rgba(0, 0, 0, 0.04),
+    0px 24px 32px -8px rgba(0, 0, 0, 0.06);
+  --ds-shadow-fullscreen:
+    var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 8px 16px -4px rgba(0, 0, 0, 0.04),
+    0px 24px 32px -8px rgba(0, 0, 0, 0.06);
   --ds-red-800: oklch(58.19% 0.2482 25.15);
   --ds-blue-700: oklch(57.61% 0.2508 258.23);
   --ds-amber-800: oklch(77.21% 0.1991 64.28);
@@ -92,22 +99,24 @@ html {
   --ds-gray-alpha-600: hsla(0, 0%, 0%, 0.34);
   --ds-background-200: hsla(0, 0%, 98%, 1);
   --geist-foreground: #000;
-  --ds-input-ring: 0 0 0 1px var(--ds-gray-alpha-600), 0 0 0 4px rgba(0, 0, 0, .16);
+  --ds-input-ring: 0 0 0 1px var(--ds-gray-alpha-600), 0 0 0 4px rgba(0, 0, 0, 0.16);
   --ds-input-error-ring: 0 0 0 1px var(--ds-red-900), 0 0 0 4px var(--ds-red-300);
   --ds-input-error-hover-ring: 0 0 0 1px var(--ds-red-900), 0 0 0 4px var(--ds-red-500);
-  --ds-red-900-alpha-160: hsla(358,66%,48%,.16);
+  --ds-red-900-alpha-160: hsla(358, 66%, 48%, 0.16);
   --geist-error: #ee0000;
   --ds-gray-200: hsla(0, 0%, 92%, 1);
   --ds-gray-alpha-100: rgba(0, 0, 0, 0.05);
   --ds-gray-alpha-300: hsla(0, 0%, 0%, 0.1);
   --accents-2: #eaeaea;
-  --ds-focus-calendar-date-ring: 0 0 0 1px var(--ds-background-100), 0 0 0 2.5px var(--ds-gray-1000);
+  --ds-focus-calendar-date-ring:
+    0 0 0 1px var(--ds-background-100), 0 0 0 2.5px var(--ds-gray-1000);
 }
 
 body {
   margin: 0;
-  font-family: var(--font-gilory), var(--font-HarmonyOS), 'PingFang SC',
-    'Roboto', 'Helvetica', 'Arial', sans-serif;
+  font-family:
+    var(--font-gilory), var(--font-HarmonyOS), 'PingFang SC', 'Roboto', 'Helvetica', 'Arial',
+    sans-serif;
   color: var(--mui-palette-text-primary);
   font-weight: 400;
   line-height: 1.5;
@@ -291,11 +300,11 @@ select:-webkit-autofill {
   --color-ds-blue-900: var(----ds-blue-900);
   --color-ds-blue-100: var(----ds-blue-100);
   @keyframes fade-spin {
-  0% {
-    opacity: 0.15;
+    0% {
+      opacity: 0.15;
     }
-  100% {
-    opacity: 1;
+    100% {
+      opacity: 1;
     }
   }
 }
@@ -344,19 +353,28 @@ select:-webkit-autofill {
   --ds-gray-100: hsla(0, 0%, 10%, 1);
   --ds-gray-1000: hsla(0, 0%, 93%, 1);
   --ds-gray-alpha-400: hsla(0, 0%, 100%, 0.14);
-  --ds-background-100: hsla(0,0%,4%, 1);
+  --ds-background-100: hsla(0, 0%, 4%, 1);
   --color-red-900: oklch(69.96% 0.2136 22.03);
   --ds-shadow-border: 0 0 0 1px rgba(255, 255, 255, 0.145);
   --ds-shadow-small: 0px 1px 2px rgba(0, 0, 0, 0.16);
   --ds-shadow-border-small: var(--ds-shadow-border), 0px 1px 2px rgba(0, 0, 0, 0.16);
   --ds-shadow-medium: 0px 2px 2px rgba(0, 0, 0, 0.32), 0px 8px 8px -8px rgba(0, 0, 0, 0.16);
-  --ds-shadow-border-medium: var(--ds-shadow-border), 0px 2px 2px rgba(0, 0, 0, 0.32), 0px 8px 8px -8px rgba(0, 0, 0, 0.16);
+  --ds-shadow-border-medium:
+    var(--ds-shadow-border), 0px 2px 2px rgba(0, 0, 0, 0.32), 0px 8px 8px -8px rgba(0, 0, 0, 0.16);
   --ds-shadow-large: 0px 2px 2px rgba(0, 0, 0, 0.04), 0px 8px 16px -4px rgba(0, 0, 0, 0.04);
-  --ds-shadow-border-large: var(--ds-shadow-border), 0px 2px 2px rgba(0, 0, 0, 0.04), 0px 8px 16px -4px rgba(0, 0, 0, 0.04);
-  --ds-shadow-tooltip: var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 4px 8px rgba(0, 0, 0, 0.04);
-  --ds-shadow-menu: var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 4px 8px -4px rgba(0, 0, 0, 0.04), 0px 16px 24px -8px rgba(0, 0, 0, 0.06);
-  --ds-shadow-modal: var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 8px 16px -4px rgba(0, 0, 0, 0.04), 0px 24px 32px -8px rgba(0, 0, 0, 0.06);
-  --ds-shadow-fullscreen: var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 8px 16px -4px rgba(0, 0, 0, 0.04), 0px 24px 32px -8px rgba(0, 0, 0, 0.06);
+  --ds-shadow-border-large:
+    var(--ds-shadow-border), 0px 2px 2px rgba(0, 0, 0, 0.04), 0px 8px 16px -4px rgba(0, 0, 0, 0.04);
+  --ds-shadow-tooltip:
+    var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 4px 8px rgba(0, 0, 0, 0.04);
+  --ds-shadow-menu:
+    var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 4px 8px -4px rgba(0, 0, 0, 0.04),
+    0px 16px 24px -8px rgba(0, 0, 0, 0.06);
+  --ds-shadow-modal:
+    var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 8px 16px -4px rgba(0, 0, 0, 0.04),
+    0px 24px 32px -8px rgba(0, 0, 0, 0.06);
+  --ds-shadow-fullscreen:
+    var(--ds-shadow-border), 0px 1px 1px rgba(0, 0, 0, 0.02), 0px 8px 16px -4px rgba(0, 0, 0, 0.04),
+    0px 24px 32px -8px rgba(0, 0, 0, 0.06);
   --ds-red-800: oklch(58.01% 0.227 25.12);
   --ds-blue-700: oklch(57.61% 0.2321 258.23);
   --ds-amber-800: oklch(77.21% 0.1991 64.28);
@@ -371,8 +389,8 @@ select:-webkit-autofill {
   --ds-gray-alpha-600: hsla(0, 0%, 100%, 0.51);
   --ds-background-200: hsla(0, 0%, 0%, 1);
   --geist-foreground: #fff;
-  --ds-input-ring: 0 0 0 1px var(--ds-gray-alpha-600), 0 0 0 4px rgba(255, 255, 255, .24);
-  --ds-red-900-alpha-160: hsla(358,100%,69%,.16);
+  --ds-input-ring: 0 0 0 1px var(--ds-gray-alpha-600), 0 0 0 4px rgba(255, 255, 255, 0.24);
+  --ds-red-900-alpha-160: hsla(358, 100%, 69%, 0.16);
   --geist-error: #ff0000;
   --ds-gray-200: hsla(0, 0%, 12%, 1);
   --ds-gray-alpha-100: rgba(255, 255, 255, 0.06);
@@ -395,9 +413,9 @@ select:-webkit-autofill {
     --mui-palette-background-paper: transparent;
   }
 }
-.tiptap .MuiSelect-root{
-  background-color: unset!important;
+.tiptap .MuiSelect-root {
+  background-color: unset !important;
 }
 .MuiPaper-root {
-  background-color: #fff!important;
+  background-color: #fff;
 }

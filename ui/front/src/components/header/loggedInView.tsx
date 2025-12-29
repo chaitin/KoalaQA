@@ -607,7 +607,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
                             sx={{
                               fontWeight: 500,
                               color: '#333',
-                              fontSize: '14px',
+                              fontSize: '12px',
                             }}
                           >
                             {notificationText}
@@ -619,7 +619,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
                               sx={{
                                 fontWeight: 500,
                                 color: '#333',
-                                fontSize: '14px',
+                                fontSize: '12px',
                               }}
                             >
                               {notification.from_name || '未知用户'}
@@ -629,7 +629,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
                                 variant='body2'
                                 sx={{
                                   color: '#666',
-                                  fontSize: '13px',
+                                  fontSize: '12px',
                                 }}
                               >
                                 {notificationText}
@@ -650,8 +650,8 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
                           <Ellipsis
                             sx={{
                               fontWeight: 500,
-                              color: 'text.auxiliary',
-                              fontSize: '14px',
+                              color: '#333',
+                              fontSize: '12px',
                             }}
                           >
                             {notification.discuss_title || '无标题'}

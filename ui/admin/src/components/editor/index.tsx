@@ -253,6 +253,9 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
             '& .editor-toolbar > div': {
               flexWrap: 'wrap',
             },
+            '& .editor-toolbar': {
+              pb: 1,
+            },
           }}
         >
           {editorRef.editor && (
