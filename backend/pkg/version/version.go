@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/chaitin/koalaqa/pkg/glog"
@@ -16,6 +17,7 @@ var (
 	GitCommit            = "dev"
 	latestVersion        = "v0.0.0"
 	lastVersionCheckedAt time.Time
+	tz                   = "Asia/Shanghai"
 )
 
 type Info struct{}
@@ -42,6 +44,10 @@ func (v *Info) GitCommit() string {
 	return GitCommit
 }
 
+func (v *Info) TZ() string {
+	return tz
+}
+
 func (v *Info) LatestVersion() string {
 	now := time.Now()
 	if lastVersionCheckedAt.Add(time.Hour).Before(now) {
@@ -61,7 +67,7 @@ func (v *Info) SetLatestVersion(newVersion string) {
 }
 
 func (v *Info) updateLatestVersion() error {
-	body, err := util.HTTPGet("address")
+	body, err := util.HTTPGet("https://release.baizhi.cloud/koala-qa/version.json")
 	if err != nil {
 		return err
 	}
@@ -81,4 +87,13 @@ func (v *Info) updateLatestVersion() error {
 
 	latestVersion = res.Version
 	return nil
+}
+
+func init() {
+	tmpTZ := os.Getenv("TZ")
+	if tmpTZ != "" {
+		tz = tmpTZ
+	}
+
+	glog.With("tz", tz).Info("current tz")
 }

@@ -8,12 +8,14 @@ import (
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/database"
 	"github.com/chaitin/koalaqa/pkg/util"
+	"github.com/chaitin/koalaqa/pkg/version"
 	"gorm.io/gorm"
 )
 
 type Rank struct {
 	base[*model.Rank]
 
+	info    *version.Info
 	repoBot *Bot
 }
 
@@ -68,7 +70,7 @@ func (r *Rank) GroupByTime(ctx context.Context, rankLimit int, queryFuncs ...Que
 	opt := getQueryOpt(queryFuncs...)
 
 	err = r.db.WithContext(ctx).Table("(?) AS group_rank", r.model(ctx).
-		Select("id, score_id, foreign_id, associate_id, extra, DATE_TRUNC('week',created_at) AS time, RANK() OVER ( PARTITION BY DATE_TRUNC('week',created_at) order by score*log(2, 1+hit) DESC, id ASC) AS rank").
+		Select("id, score_id, foreign_id, associate_id, extra, DATE_TRUNC('week',created_at, '?') AS time, RANK() OVER ( PARTITION BY DATE_TRUNC('week',created_at, '?') order by score*log(2, 1+hit) DESC, id ASC) AS rank", r.info.TZ(), r.info.TZ()).
 		Scopes(opt.Scopes()...),
 	).
 		Select("time, JSONB_AGG(jsonb_build_object('id', id,'score_id',score_id, 'foreign_id', foreign_id, 'associate_id', associate_id, 'extra', extra)) AS items").
@@ -155,8 +157,8 @@ func (r *Rank) ClearExpireAIInsight(ctx context.Context, before time.Time) error
 	return nil
 }
 
-func newRank(db *database.DB, bot *Bot) *Rank {
-	return &Rank{base: base[*model.Rank]{db: db, m: &model.Rank{}}, repoBot: bot}
+func newRank(db *database.DB, bot *Bot, info *version.Info) *Rank {
+	return &Rank{base: base[*model.Rank]{db: db, m: &model.Rank{}}, repoBot: bot, info: info}
 }
 
 func init() {

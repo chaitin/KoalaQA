@@ -353,7 +353,7 @@ func (d *Discussion) ListSimilarity(ctx context.Context, discUUID string) (*mode
 	}
 
 	var res model.ListRes[*model.DiscussionListItem]
-	discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: disc.Title, ForumID: disc.ForumID, SimilarityThreshold: 0.2, MaxChunksPerDoc: 1})
+	discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: disc.Title, ForumID: disc.ForumID, SimilarityThreshold: 0.4, MaxChunksPerDoc: 1})
 	if err != nil {
 		return nil, err
 	}
@@ -902,10 +902,10 @@ func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*mo
 		return []*model.DiscussionListItem{}, nil
 	}
 	var ragIDs []string
-	ragIDM := make(map[string]struct{})
+	ragIDM := make(map[string]float64)
 	for _, record := range records {
 		ragIDs = append(ragIDs, record.DocID)
-		ragIDM[record.DocID] = struct{}{}
+		ragIDM[record.DocID] = record.Similarity
 	}
 	var discussions []*model.DiscussionListItem
 	err = d.in.DiscRepo.List(ctx, &discussions, repo.QueryWithEqual("rag_id", ragIDs, repo.EqualOPIn))
@@ -913,6 +913,8 @@ func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*mo
 		return nil, err
 	}
 	for _, disc := range discussions {
+		disc.Similarity = ragIDM[disc.RagID]
+
 		delete(ragIDM, disc.RagID)
 	}
 
