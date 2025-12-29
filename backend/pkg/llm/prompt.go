@@ -6,7 +6,7 @@ var SystemChatPrompt = `
 <knowledge_base>
 {{- if .KnowledgeDocuments}}
 {{- range $i, $doc := .KnowledgeDocuments}}
-<doc id="{{$i}}" title="{{$doc.Title}}">
+<doc title="{{$doc.Title}}">
 {{$doc.Content}}
 </doc>
 {{- end}}
@@ -50,7 +50,7 @@ var SystemChatWithThinkPrompt = `
 <knowledge_base>
 {{- if .KnowledgeDocuments}}
 {{- range $i, $doc := .KnowledgeDocuments}}
-<doc id="{{$i}}" title="{{$doc.Title}}">
+<doc title="{{$doc.Title}}">
 {{$doc.Content}}
 </doc>
 {{- end}}
