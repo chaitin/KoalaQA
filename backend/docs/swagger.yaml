@@ -1234,6 +1234,8 @@ definitions:
     - PlatformDingtalk
   router.SystemInfoRes:
     properties:
+      latest_version:
+        type: string
       version:
         type: string
     type: object

@@ -8559,6 +8559,9 @@ const docTemplate = `{
         "router.SystemInfoRes": {
             "type": "object",
             "properties": {
+                "latest_version": {
+                    "type": "string"
+                },
                 "version": {
                     "type": "string"
                 }
