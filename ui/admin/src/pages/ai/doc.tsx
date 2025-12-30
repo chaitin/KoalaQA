@@ -2,16 +2,30 @@ import {
   deleteAdminKbKbIdDocumentDocId,
   getAdminKbKbIdDocument,
   getAdminKbKbIdDocumentDocId,
+  ModelDocType,
   ModelFileType,
   ModelKBDocumentDetail,
   SvcDocListItem,
 } from '@/api';
 import Card from '@/components/card';
+import CategoryDisplay from '@/components/CategoryDisplay';
+import CategoryItemSelector from '@/components/CategoryItemSelector';
 import { fileType } from '@/components/ImportDoc/const';
 import StatusBadge from '@/components/StatusBadge';
 import { useListQueryParams } from '@/hooks/useListQueryParams';
+import { useCategoryEdit } from '@/hooks/useCategoryEdit';
 import { Ellipsis, message, Modal, Table } from '@ctzhian/ui';
-import { Box, Button, FormControl, InputLabel, MenuItem, Select, Stack, TextField, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { useRequest } from 'ahooks';
 import { ColumnsType } from '@ctzhian/ui/dist/Table';
 import dayjs from 'dayjs';
@@ -39,6 +53,16 @@ const AdminDocument = () => {
   const [file_type, setFile_type] = useState<ModelFileType | ''>(() => {
     if (query.file_type === undefined || query.file_type === '') return '';
     return Number(query.file_type) as ModelFileType;
+  });
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  
+  // 使用分类编辑hook
+  const categoryEdit = useCategoryEdit({
+    kbId: kb_id,
+    docType: ModelDocType.DocTypeDocument,
+    onSuccess: () => {
+      fetchData({ page: 1 });
+    },
   });
   const {
     data,
@@ -86,6 +110,61 @@ const AdminDocument = () => {
       },
     });
   };
+
+  // 批量编辑分类
+  const handleBatchEditCategory = () => {
+    categoryEdit.handleBatchEditCategory(selectedRowKeys);
+  };
+
+  // 确认批量编辑分类
+  const handleConfirmBatchEditCategory = async () => {
+    await categoryEdit.handleConfirmBatchEditCategory(selectedRowKeys);
+    setSelectedRowKeys([]);
+  };
+
+  // 批量删除
+  const handleBatchDelete = () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning('请先选择要删除的项目');
+      return;
+    }
+    Modal.confirm({
+      title: '提示',
+      okText: '删除',
+      okButtonProps: {
+        color: 'error',
+      },
+      content: `确定要删除选中的 ${selectedRowKeys.length} 个项目吗？`,
+      onOk: () => {
+        Promise.all(
+          selectedRowKeys.map(key =>
+            deleteAdminKbKbIdDocumentDocId({ kbId: kb_id, docId: Number(key) })
+          )
+        )
+          .then(() => {
+            message.success('批量删除成功');
+            setSelectedRowKeys([]);
+            fetchData({
+              page: 1,
+            });
+          })
+          .catch(() => {
+            message.error('批量删除失败');
+          });
+      },
+    });
+  };
+
+  // 编辑单个项目的分类
+  const handleEditCategory = (item: SvcDocListItem) => {
+    categoryEdit.handleEditCategory(item);
+  };
+
+  // 确认编辑单个项目的分类
+  const handleConfirmEditCategory = async () => {
+    await categoryEdit.handleConfirmEditCategory();
+  };
+
   const columns: ColumnsType<SvcDocListItem> = [
     {
       title: '标题',
@@ -95,6 +174,19 @@ const AdminDocument = () => {
           <Ellipsis sx={{ cursor: 'pointer' }} onClick={() => viewDetail(record)}>
             {record?.title || '-'}
           </Ellipsis>
+        );
+      },
+    },
+    {
+      title: '分类',
+      dataIndex: 'group_ids',
+      render: (_, record) => {
+        // 注意：后端返回的group_ids字段实际存储的是item_ids（子类id）
+        return (
+          <CategoryDisplay
+            itemIds={record.group_ids || []}
+            onClick={() => handleEditCategory(record)}
+          />
         );
       },
     },
@@ -191,6 +283,16 @@ const AdminDocument = () => {
               ))}
             </Select>
           </FormControl>
+          {selectedRowKeys.length > 0 && (
+            <>
+              <Button variant="contained" size="small" onClick={handleBatchEditCategory}>
+                批量编辑分类 ({selectedRowKeys.length})
+              </Button>
+              <Button variant="contained" size="small" color="error" onClick={handleBatchDelete}>
+                批量删除 ({selectedRowKeys.length})
+              </Button>
+            </>
+          )}
         </Stack>
         <DocImport refresh={fetchData} allowedImportTypes={['OfflineFile']} />
       </Stack>
@@ -206,6 +308,10 @@ const AdminDocument = () => {
         columns={columns}
         dataSource={data?.items || []}
         rowKey="id"
+        rowSelection={{
+          selectedRowKeys,
+          onChange: setSelectedRowKeys,
+        }}
         pagination={{
           page,
           pageSize: size,
@@ -239,6 +345,39 @@ const AdminDocument = () => {
             <Typography sx={{ color: 'text.secondary' }}>无可显示内容</Typography>
           )}
         </Box>
+      </Modal>
+      {/* 批量编辑分类弹窗 */}
+      <Modal
+        open={categoryEdit.batchEditModalOpen}
+        onCancel={categoryEdit.handleCloseBatchEditModal}
+        title="批量编辑分类"
+        onOk={handleConfirmBatchEditCategory}
+      >
+        <CategoryItemSelector
+          selectedItemIds={categoryEdit.batchCategorySelection.selectedItemIds}
+          onChange={(itemIds, groupIds) => {
+            categoryEdit.batchCategorySelection.setSelectedItemIds(itemIds);
+            categoryEdit.batchCategorySelection.setSelectedGroupIds(groupIds);
+          }}
+          showSelectedCount
+          selectedCount={selectedRowKeys.length}
+        />
+      </Modal>
+      {/* 编辑单个项目分类弹窗 */}
+      <Modal
+        open={!!categoryEdit.editingCategoryItem}
+        onCancel={categoryEdit.handleCloseEditModal}
+        title="编辑分类"
+        onOk={handleConfirmEditCategory}
+      >
+        <CategoryItemSelector
+          selectedItemIds={categoryEdit.editCategorySelection.selectedItemIds}
+          onChange={(itemIds, groupIds) => {
+            // 使用函数式更新确保状态正确更新
+            categoryEdit.editCategorySelection.setSelectedItemIds(itemIds);
+            categoryEdit.editCategorySelection.setSelectedGroupIds(groupIds);
+          }}
+        />
       </Modal>
     </Stack>
   );

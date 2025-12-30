@@ -1,13 +1,12 @@
+import { getSystemInfo } from '@/api/System';
+import { ModelUserRole } from '@/api/types';
+import logoText from '@/assets/images/logo-text.png';
 import Qrcode from '@/assets/images/qrcode.png';
 import { useAuthContext } from '@/hooks/context';
-import { ModelUserRole } from '@/api/types';
-import { getSystemInfo } from '@/api/System';
 import { Icon, Modal } from '@ctzhian/ui';
 import { Box, Button, Divider, Stack, styled, Tooltip, Typography } from '@mui/material';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import { useRequest } from 'ahooks';
 import { useMemo, useState } from 'react';
-import logoText from '@/assets/images/logo-text.png';
 import { NavLink, useLocation } from 'react-router-dom';
 
 interface AdminMenuItem {
