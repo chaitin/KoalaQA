@@ -80,11 +80,17 @@ func (c *CTRag) QueryRecords(ctx context.Context, req QueryRecordsReq) (string, 
 	if req.TopK == 0 {
 		req.TopK = 10
 	}
+
+	var metadata map[string]any
+	if req.Metadata != nil {
+		metadata = req.Metadata.Map()
+	}
+
 	res, err := c.client.Search.Retrieve(ctx, &raglite.RetrieveRequest{
 		DatasetID:           req.DatasetID,
 		Query:               req.Query,
 		TopK:                req.TopK,
-		Metadata:            req.Metadata.Map(),
+		Metadata:            metadata,
 		Tags:                req.Tags,
 		SimilarityThreshold: req.SimilarityThreshold,
 		MaxChunksPerDoc:     req.MaxChunksPerDoc,
