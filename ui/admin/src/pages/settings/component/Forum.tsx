@@ -220,7 +220,17 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
           <Typography variant="subtitle2" sx={{ flex: 1, fontSize: 14, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <span>{blockName || '未命名板块'}</span>
             <Box component="span" sx={{ color: 'text.secondary' }}> / </Box>
-            <Box component="span" sx={{ color: 'text.secondary' }}>{blockRouteName || '未设置路由'}</Box>
+            <Box
+              component="span"
+              sx={{
+                color: theme =>
+                  theme.palette.mode === 'light'
+                    ? theme.palette.grey[400]
+                    : theme.palette.grey[500],
+              }}
+            >
+              {blockRouteName || '未设置路由'}
+            </Box>
           </Typography>
 
           {/* 更多菜单 */}

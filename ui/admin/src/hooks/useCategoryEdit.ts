@@ -47,12 +47,12 @@ export const useCategoryEdit = ({ kbId, docType, onSuccess }: UseCategoryEditOpt
           group_ids: batchCategorySelection.selectedItemIds,
         }
       );
-      message.success('批量编辑分类成功');
+      message.success('批量编辑标签成功');
       setBatchEditModalOpen(false);
       batchCategorySelection.reset();
       onSuccess?.();
     } catch {
-      message.error('批量编辑分类失败');
+      message.error('批量编辑标签失败');
     }
   }, [kbId, docType, batchCategorySelection, onSuccess]);
 
@@ -95,12 +95,12 @@ export const useCategoryEdit = ({ kbId, docType, onSuccess }: UseCategoryEditOpt
           group_ids: editCategorySelection.selectedItemIds,
         }
       );
-      message.success('编辑分类成功');
+      message.success('编辑标签成功');
       setEditingCategoryItem(null);
       editCategorySelection.reset();
       onSuccess?.();
     } catch {
-      message.error('编辑分类失败');
+      message.error('编辑标签失败');
     }
   }, [kbId, docType, editingCategoryItem, editCategorySelection, onSuccess]);
 

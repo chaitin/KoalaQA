@@ -8,6 +8,7 @@ import {
   getAdminKbKbIdSpaceSpaceIdFolderFolderIdDoc,
   getAdminKbKbIdSpaceSpaceIdRemote,
   ModelDocStatus,
+  ModelDocType,
   PlatformPlatformType,
   postAdminKbKbIdSpace,
   postAdminKbKbIdSpaceSpaceIdFolder,
@@ -28,9 +29,13 @@ import { getAdminKbDocumentFeishuUser, postAdminKbDocumentFeishuAuthUrl } from '
 import { AdminDocUserRes } from '@/api/types';
 import dingtalk_screen_1 from '@/assets/images/dingtalk_1.png';
 import dingtalk_screen_2 from '@/assets/images/dingtalk_2.png';
+import CategoryDisplay from '@/components/CategoryDisplay';
+import CategoryItemSelector from '@/components/CategoryItemSelector';
 import LoadingButton from '@/components/LoadingButton';
 import StatusBadge from '@/components/StatusBadge';
-import { Card, Icon, message, Modal } from '@ctzhian/ui';
+import { useCategoryEdit } from '@/hooks/useCategoryEdit';
+import { Card, Icon, message, Modal, Table } from '@ctzhian/ui';
+import { ColumnsType } from '@ctzhian/ui/dist/Table';
 import { zodResolver } from '@hookform/resolvers/zod';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -69,7 +74,7 @@ import { useRequest } from 'ahooks';
 import dayjs from 'dayjs';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useSearchParams } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import z from 'zod';
 
 const spaceSchema = z.object({
@@ -121,13 +126,41 @@ const KnowledgeBasePage = () => {
   const originalAppIdRef = useRef<string>(''); // 保存原始的 app_id
   const originalSecretRef = useRef<string>(''); // 保存原始的 secret
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const location = useLocation();
   const kb_id = +searchParams.get('id')!;
+  
+  // 从 URL 参数中恢复选中的 spaceId（用于刷新页面时保持选中状态）
+  const urlSpaceId = searchParams.get('spaceId');
+  
+  // 使用分类编辑hook
+  const categoryEdit = useCategoryEdit({
+    kbId: kb_id,
+    docType: ModelDocType.DocTypeDocument,
+    onSuccess: () => {
+      if (docStatusFolder) {
+        fetchFolderDocList(docStatusFolder);
+      }
+    },
+  });
 
   // 获取知识库空间列表
   const { data: spacesData, refresh: refreshSpaces } = useRequest(
     () => getAdminKbKbIdSpace({ kbId: kb_id }),
     {
       onSuccess: data => {
+        // 如果 URL 中有 spaceId，优先使用 URL 中的值
+        if (urlSpaceId) {
+          const spaceIdFromUrl = Number(urlSpaceId);
+          if (!Number.isNaN(spaceIdFromUrl) && spaceIdFromUrl > 0) {
+            // 验证 spaceId 是否存在于列表中
+            const spaceExists = data?.items?.some(space => space.id === spaceIdFromUrl);
+            if (spaceExists && selectedSpaceId !== spaceIdFromUrl) {
+              setSelectedSpaceId(spaceIdFromUrl);
+              return;
+            }
+          }
+        }
         // 如果当前没有选中任何知识源，且有知识源数据，则默认选中第一个
         if (
           selectedSpaceId === null &&
@@ -140,6 +173,21 @@ const KnowledgeBasePage = () => {
       },
     }
   );
+  
+  // 当 URL 中的 spaceId 变化时，更新选中状态
+  useEffect(() => {
+    if (urlSpaceId) {
+      const spaceIdFromUrl = Number(urlSpaceId);
+      if (!Number.isNaN(spaceIdFromUrl) && spaceIdFromUrl > 0 && selectedSpaceId !== spaceIdFromUrl) {
+        // 验证 spaceId 是否存在于列表中
+        const spaceExists = spacesData?.items?.some(space => space.id === spaceIdFromUrl);
+        if (spaceExists) {
+          setSelectedSpaceId(spaceIdFromUrl);
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlSpaceId, spacesData]);
 
   // 获取选中空间的文件夹列表
   const {
@@ -413,18 +461,6 @@ const KnowledgeBasePage = () => {
     }
   };
 
-  const openDocStatusModal = (folder: SvcListSpaceFolderItem) => {
-    console.log('打开文档状态弹窗，folder:', folder);
-    setDocStatusFolder(folder);
-    pollingFolderRef.current = folder;
-    pollingSpaceIdRef.current = selectedSpaceId;
-    setDocStatusSearch('');
-    setDocStatusTab('all');
-    setShowDocStatusModal(true);
-    // 初始加载数据
-    fetchFolderDocList(folder);
-    startPolling();
-  };
 
   const closeDocStatusModal = () => {
     stopPolling();
@@ -624,6 +660,11 @@ const KnowledgeBasePage = () => {
     } catch {
       message.error('重试同步失败');
     }
+  };
+
+  // 确认编辑单个项目的分类
+  const handleConfirmEditCategory = async () => {
+    await categoryEdit.handleConfirmEditCategory();
   };
 
   const handleDeleteFolder = async () => {
@@ -840,6 +881,11 @@ const KnowledgeBasePage = () => {
 
   const handleSpaceClick = (space: SvcListSpaceItem) => {
     setSelectedSpaceId(space.id || null);
+    // 如果当前在详情页，点击知识库时返回列表页
+    if (location.pathname.includes('/kb/detail')) {
+      // 导航回列表页，保留 id 参数
+      navigate(`/admin/ai/kb?id=${kb_id}`);
+    }
   };
 
   const handleFolderToggle = (folderId?: string) => {
@@ -1060,19 +1106,23 @@ const KnowledgeBasePage = () => {
           </Card>
         </Grid>
 
-        {/* 右侧知识库详细列表 */}
+        {/* 右侧内容区域 */}
         <Grid size={{ xs: 12 }} sx={{ height: '100%', flex: 1, minWidth: 0 }}>
-          <Card
-            sx={{ height: '100%', display: 'flex', flexDirection: 'column', boxShadow: 'none' }}
-          >
-            <Typography variant="body1" sx={{ mb: 3, fontWeight: 500, fontSize: '16px' }}>
-              知识库列表
-            </Typography>
+          {/* 如果有子路由，使用 Outlet 渲染；否则显示文件夹列表 */}
+          {location.pathname.includes('/kb/detail') ? (
+            <Outlet />
+          ) : (
+            <Card
+              sx={{ height: '100%', display: 'flex', flexDirection: 'column', boxShadow: 'none' }}
+            >
+              <Typography variant="body1" sx={{ mb: 3, fontWeight: 500, fontSize: '16px' }}>
+                知识库列表
+              </Typography>
 
-            {selectedSpaceId ? (
-              <Stack spacing={2} sx={{ flex: 1, overflow: 'auto' }}>
-                {folders.map(folder => (
-                  <Stack
+              {selectedSpaceId ? (
+                <Stack spacing={2} sx={{ flex: 1, overflow: 'auto' }}>
+                  {folders.map(folder => (
+                    <Stack
                     direction="row"
                     alignItems="center"
                     spacing={2}
@@ -1102,26 +1152,44 @@ const KnowledgeBasePage = () => {
                       >
                         {folder.title}
                       </Typography>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{
-                          fontSize: '12px',
-                          mb: 0.5,
-                          '& b': { color: 'text.primary' },
-                          cursor: 'pointer',
-                          userSelect: 'none',
-                          '&:hover': { color: 'text.primary' },
-                        }}
-                        onClick={() => openDocStatusModal(folder)}
-                      >
-                        同步成功 <b>{folder.success || 0}</b> 个
-                        {(folder.failed || 0) > 0 && (
-                          <>
-                            ，同步失败 <b>{folder.failed || 0}</b> 个
-                          </>
-                        )}
-                      </Typography>
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{
+                            fontSize: '12px',
+                            mb: 0.5,
+                            '& b': { color: 'text.primary' },
+                          }}
+                        >
+                          同步成功 <b>{folder.success || 0}</b> 个
+                          {(folder.failed || 0) > 0 && (
+                            <>
+                              ，同步失败 <b>{folder.failed || 0}</b> 个
+                            </>
+                          )}
+                        </Typography>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() => {
+                            // 使用相对路径导航，确保保留父路由的 id 参数
+                            const currentSearch = searchParams.toString();
+                            const newSearch = new URLSearchParams(currentSearch);
+                            newSearch.set('spaceId', String(selectedSpaceId));
+                            newSearch.set('folderId', String(folder.id));
+                            newSearch.set('folderTitle', folder.title || '');
+                            // 确保 id 参数存在
+                            if (!newSearch.get('id')) {
+                              newSearch.set('id', String(kb_id));
+                            }
+                            navigate(`detail?${newSearch.toString()}`);
+                          }}
+                          sx={{ minWidth: 'auto', px: 1.5, py: 0.25, fontSize: '12px' }}
+                        >
+                          查看
+                        </Button>
+                      </Stack>
                     </Stack>
                     <Box sx={{ width: '100px', flexShrink: 0 }}>
                       <StatusBadge status={folder.status} />
@@ -1186,7 +1254,8 @@ const KnowledgeBasePage = () => {
                 </Typography>
               </Box>
             )}
-          </Card>
+            </Card>
+          )}
         </Grid>
       </Grid>
 
@@ -1782,7 +1851,7 @@ const KnowledgeBasePage = () => {
         okText="关闭"
         cancelText="取消"
         title="查看知识库"
-        width={620}
+        width={900}
       >
         {(() => {
           // 根据 folderDocs 计算成功和失败的数量
@@ -1808,6 +1877,7 @@ const KnowledgeBasePage = () => {
                         ModelDocStatus.DocStatusExportFailed,
                       ].includes(d.status!);
                 });
+          
           const renderStatusIcon = (doc: SvcDocListItem) => {
             const state = getDocSyncState(doc.status);
             const iconBoxSx = { width: 24, height: 24, display: 'flex', alignItems: 'center' };
@@ -1864,6 +1934,49 @@ const KnowledgeBasePage = () => {
               </Box>
             );
           };
+
+          // 编辑单个项目的分类
+          const handleEditCategory = (item: SvcDocListItem) => {
+            categoryEdit.handleEditCategory(item);
+          };
+
+          const columns: ColumnsType<SvcDocListItem> = [
+            {
+              title: '状态',
+              dataIndex: 'status',
+              width: 80,
+              render: (_, record) => {
+                return renderStatusIcon(record);
+              },
+            },
+            {
+              title: '标题',
+              dataIndex: 'title',
+              render: (_, record) => {
+                return <Typography variant="body2">{record?.title || '-'}</Typography>;
+              },
+            },
+            {
+              title: '标签',
+              dataIndex: 'group_ids',
+              render: (_, record) => {
+                return (
+                  <CategoryDisplay
+                    itemIds={record.group_ids || []}
+                    onClick={() => handleEditCategory(record)}
+                  />
+                );
+              },
+            },
+            {
+              title: '更新时间',
+              dataIndex: 'updated_at',
+              width: 180,
+              render: (_, record) => {
+                return record.updated_at ? formatDate(record.updated_at) : '-';
+              },
+            },
+          ];
 
           return (
             <Stack spacing={2}>
@@ -1930,44 +2043,32 @@ const KnowledgeBasePage = () => {
 
               <Divider />
 
-              <Box sx={{ maxHeight: 420, overflow: 'auto' }}>
-                {docsAfterFilter.length === 0 ? (
-                  <Box sx={{ py: 6, textAlign: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">
-                      暂无文档
-                    </Typography>
-                  </Box>
-                ) : (
-                  <List dense>
-                    {docsAfterFilter.map(doc => (
-                      <ListItem key={doc.id || doc.doc_id} sx={{ px: 0 }}>
-                        <ListItemIcon sx={{ minWidth: 36 }}>{renderStatusIcon(doc)}</ListItemIcon>
-                        <ListItemText
-                          primary={
-                            <Typography
-                              variant="body2"
-                              sx={{ fontWeight: 500, color: 'text.primary' }}
-                              noWrap
-                            >
-                              {doc.title || '-'}
-                            </Typography>
-                          }
-                          secondary={
-                            doc.updated_at ? (
-                              <Typography variant="caption" color="text.secondary">
-                                更新于 {formatDate(doc.updated_at)}
-                              </Typography>
-                            ) : null
-                          }
-                        />
-                      </ListItem>
-                    ))}
-                  </List>
-                )}
-              </Box>
+              <Table
+                columns={columns}
+                dataSource={docsAfterFilter.map((doc, index) => ({ ...doc, _rowKey: doc.id || doc.doc_id || `row-${index}` }))}
+                rowKey="_rowKey"
+                pagination={false}
+                loading={false}
+              />
             </Stack>
           );
         })()}
+      </Modal>
+      
+      {/* 编辑单个项目分类弹窗 */}
+      <Modal
+        open={!!categoryEdit.editingCategoryItem}
+        onCancel={categoryEdit.handleCloseEditModal}
+        title="编辑分类"
+        onOk={handleConfirmEditCategory}
+      >
+        <CategoryItemSelector
+          selectedItemIds={categoryEdit.editCategorySelection.selectedItemIds}
+          onChange={(itemIds, groupIds) => {
+            categoryEdit.editCategorySelection.setSelectedItemIds(itemIds);
+            categoryEdit.editCategorySelection.setSelectedGroupIds(groupIds);
+          }}
+        />
       </Modal>
 
       {/* 图片预览弹窗 */}

@@ -65,9 +65,6 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
   const publishMenuOpen = Boolean(publishAnchorEl)
   const { fetchQuickReplies } = useQuickReplyStore()
 
-  // 注意：initialForums 的同步由 ClientInit 组件处理，这里不再重复处理
-  // 避免在 useEffect 中调用 hooks 导致错误
-
   useEffect(() => {
     if (isAdminRole(user.role || ModelUserRole.UserRoleGuest)) fetchQuickReplies()
   }, [user.role])
@@ -179,12 +176,10 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
   // 统一的 logo 点击处理函数
   const handleLogoClick = () => {
     if (isAuthPage && forums.length > 0) {
-      // 如果在登录/注册页面，跳转到第一个论坛
       const firstForum = forums[0]
       const routePath = firstForum.route_name ? `/${firstForum.route_name}` : `/${firstForum.id}`
       router.push(routePath)
     } else if (forums && forums.length > 0) {
-      // 如果有论坛数据，跳转到当前论坛或第一个论坛
       if (forum_id) {
         const forumId = Array.isArray(forum_id) ? forum_id[0] : forum_id
         const currentForum = forums.find((f) => f.id === parseInt(forumId))
@@ -202,10 +197,8 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
         router.push(routePath)
       }
     } else if (user?.uid) {
-      // 如果用户已登录但没有论坛数据，跳转到首页让fallback组件处理
       plainRouter.push('/')
     } else {
-      // 如果用户未登录且没有论坛数据，跳转到登录页面
       plainRouter.push('/login')
     }
   }
@@ -214,7 +207,6 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
   const handleSearch = useCallback(() => {
     const trimmedSearch = searchInputValue && searchInputValue.trim() ? searchInputValue.trim() : ''
     if (trimmedSearch) {
-      // 打开搜索弹窗，SearchResultModal 会自动执行搜索
       openSearchModal()
     }
   }, [searchInputValue, openSearchModal])
@@ -247,6 +239,17 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
     handlePublishMenuClose()
     const routeName = (route_name as string) || ''
     router.push(`/${routeName}/edit?type=${publishType}`)
+  }
+
+  // 新增: 移动端未登录时也展示发帖按钮，点击跳转至登录页
+  const handleMobilePostClick = () => {
+    if (user?.uid) {
+      // 已登录，和原来一样弹出菜单
+      handlePublishMenuOpen({} as React.MouseEvent<HTMLElement>)
+    } else {
+      // 未登录跳转登录页
+      plainRouter.push('/login')
+    }
   }
 
   return (
@@ -462,9 +465,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                 if (searchInputValue.trim()) {
                   openSearchModal()
                 } else {
-                  // If no search input, just focus to allow typing
                   setSearchInputValue('')
-                  // Trigger search modal with empty input to show search interface
                   setTimeout(() => openSearchModal(), 0)
                 }
               }}
@@ -476,12 +477,12 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
               <SearchIcon sx={{ fontSize: 24, color: 'primary.main' }} />
             </IconButton>
 
-            {/* 发帖按钮 - 只在列表页显示 */}
-            {isPostListPage && (user?.uid ?? 0) > 0 && (
+            {/* 修改发帖按钮逻辑：移动端未登录也展示，未登录点击跳转到登录页 */}
+            {isPostListPage && (
               <>
                 <IconButton
                   size='small'
-                  onClick={handlePublishMenuOpen}
+                  onClick={handleMobilePostClick}
                   sx={{
                     color: 'primary.main',
                     '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
@@ -489,63 +490,66 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                 >
                   <AddIcon sx={{ fontSize: 24, color: 'primary.main' }} />
                 </IconButton>
-                <Menu
-                  anchorEl={publishAnchorEl}
-                  open={publishMenuOpen}
-                  onClose={handlePublishMenuClose}
-                  anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'right',
-                  }}
-                  transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'right',
-                  }}
-                  slotProps={{
-                    paper: {
-                      sx: {
-                        mt: 0.5,
-                        minWidth: 150,
-                        borderRadius: '6px',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                {/* 只有已登录时才弹出选择菜单 */}
+                {!!user?.uid && (
+                  <Menu
+                    anchorEl={publishAnchorEl}
+                    open={publishMenuOpen}
+                    onClose={handlePublishMenuClose}
+                    anchorOrigin={{
+                      vertical: 'bottom',
+                      horizontal: 'right',
+                    }}
+                    transformOrigin={{
+                      vertical: 'top',
+                      horizontal: 'right',
+                    }}
+                    slotProps={{
+                      paper: {
+                        sx: {
+                          mt: 0.5,
+                          minWidth: 150,
+                          borderRadius: '6px',
+                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                        },
                       },
-                    },
-                  }}
-                >
-                  {[
-                    {
-                      type: ModelDiscussionType.DiscussionTypeQA,
-                      label: '问题',
-                      visible: true,
-                    },
-                    {
-                      type: ModelDiscussionType.DiscussionTypeBlog,
-                      label: '文章',
-                      visible: true,
-                    },
-                    {
-                      type: ModelDiscussionType.DiscussionTypeIssue,
-                      label: 'Issue',
-                      visible: isAdminRole(user?.role || ModelUserRole.UserRoleUnknown),
-                    },
-                  ]
-                    .filter((item) => item.visible)
-                    .map((item) => (
-                      <MenuItem
-                        key={item.type}
-                        onClick={() => handlePublishTypeSelect(item.type)}
-                        sx={{
-                          fontSize: '14px',
-                          py: 1,
-                          '&:hover': {
-                            bgcolor: (theme) => theme.palette.primaryAlpha?.[6],
-                          },
-                        }}
-                      >
-                        {item.label}
-                      </MenuItem>
-                    ))}
-                </Menu>
+                    }}
+                  >
+                    {[
+                      {
+                        type: ModelDiscussionType.DiscussionTypeQA,
+                        label: '问题',
+                        visible: true,
+                      },
+                      {
+                        type: ModelDiscussionType.DiscussionTypeBlog,
+                        label: '文章',
+                        visible: true,
+                      },
+                      {
+                        type: ModelDiscussionType.DiscussionTypeIssue,
+                        label: 'Issue',
+                        visible: isAdminRole(user?.role || ModelUserRole.UserRoleUnknown),
+                      },
+                    ]
+                      .filter((item) => item.visible)
+                      .map((item) => (
+                        <MenuItem
+                          key={item.type}
+                          onClick={() => handlePublishTypeSelect(item.type)}
+                          sx={{
+                            fontSize: '14px',
+                            py: 1,
+                            '&:hover': {
+                              bgcolor: (theme) => theme.palette.primaryAlpha?.[6],
+                            },
+                          }}
+                        >
+                          {item.label}
+                        </MenuItem>
+                      ))}
+                  </Menu>
+                )}
               </>
             )}
 

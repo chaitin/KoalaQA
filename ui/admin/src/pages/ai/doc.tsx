@@ -10,10 +10,12 @@ import {
 import Card from '@/components/card';
 import CategoryDisplay from '@/components/CategoryDisplay';
 import CategoryItemSelector from '@/components/CategoryItemSelector';
+import { BatchEditCategoryButtons } from '@/components/BatchEditCategoryButtons';
 import { fileType } from '@/components/ImportDoc/const';
 import StatusBadge from '@/components/StatusBadge';
 import { useListQueryParams } from '@/hooks/useListQueryParams';
 import { useCategoryEdit } from '@/hooks/useCategoryEdit';
+import LoadingBtn from '@/components/LoadingButton';
 import { Ellipsis, message, Modal, Table } from '@ctzhian/ui';
 import {
   Box,
@@ -111,16 +113,6 @@ const AdminDocument = () => {
     });
   };
 
-  // 批量编辑分类
-  const handleBatchEditCategory = () => {
-    categoryEdit.handleBatchEditCategory(selectedRowKeys);
-  };
-
-  // 确认批量编辑分类
-  const handleConfirmBatchEditCategory = async () => {
-    await categoryEdit.handleConfirmBatchEditCategory(selectedRowKeys);
-    setSelectedRowKeys([]);
-  };
 
   // 批量删除
   const handleBatchDelete = () => {
@@ -170,24 +162,7 @@ const AdminDocument = () => {
       title: '标题',
       dataIndex: 'title',
       render: (_, record) => {
-        return (
-          <Ellipsis sx={{ cursor: 'pointer' }} onClick={() => viewDetail(record)}>
-            {record?.title || '-'}
-          </Ellipsis>
-        );
-      },
-    },
-    {
-      title: '分类',
-      dataIndex: 'group_ids',
-      render: (_, record) => {
-        // 注意：后端返回的group_ids字段实际存储的是item_ids（子类id）
-        return (
-          <CategoryDisplay
-            itemIds={record.group_ids || []}
-            onClick={() => handleEditCategory(record)}
-          />
-        );
+        return <Ellipsis>{record?.title || '-'}</Ellipsis>;
       },
     },
     {
@@ -207,6 +182,19 @@ const AdminDocument = () => {
       },
     },
     {
+      title: '分类',
+      dataIndex: 'group_ids',
+      render: (_, record) => {
+        // 注意：后端返回的group_ids字段实际存储的是item_ids（子类id）
+        return (
+          <CategoryDisplay
+            itemIds={record.group_ids || []}
+            onClick={() => handleEditCategory(record)}
+          />
+        );
+      },
+    },
+    {
       title: '更新时间',
       dataIndex: 'updated_at',
       // width: 120,
@@ -221,6 +209,14 @@ const AdminDocument = () => {
       render: (_, record) => {
         return (
           <Stack direction="row" alignItems="center" spacing={1}>
+            <LoadingBtn
+              variant="text"
+              size="small"
+              color="primary"
+              onClick={() => viewDetail(record)}
+            >
+              查看
+            </LoadingBtn>
             <Button variant="text" size="small" color="error" onClick={() => deleteDoc(record)}>
               删除
             </Button>
@@ -283,21 +279,25 @@ const AdminDocument = () => {
               ))}
             </Select>
           </FormControl>
-          {selectedRowKeys.length > 0 && (
-            <>
-              <Button variant="contained" size="small" onClick={handleBatchEditCategory}>
-                批量编辑分类 ({selectedRowKeys.length})
-              </Button>
-              <Button variant="contained" size="small" color="error" onClick={handleBatchDelete}>
-                批量删除 ({selectedRowKeys.length})
-              </Button>
-            </>
-          )}
         </Stack>
-        <DocImport refresh={fetchData} allowedImportTypes={['OfflineFile']} />
+        {selectedRowKeys.length > 0 ? (
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <BatchEditCategoryButtons
+              categoryEdit={categoryEdit}
+              selectedRowKeys={selectedRowKeys}
+              onBatchEditComplete={() => setSelectedRowKeys([])}
+              label="分类"
+            />
+            <Button variant="text" size="small" color="error" onClick={handleBatchDelete}>
+              批量删除 ({selectedRowKeys.length})
+            </Button>
+          </Stack>
+        ) : (
+          <DocImport refresh={fetchData} allowedImportTypes={['OfflineFile']} />
+        )}
       </Stack>
       <Table
-        sx={{ mx: -2, flex: 1, overflow: 'auto' }}
+        sx={{ mx: -2, flex: 1, height: '0' }}
         PaginationProps={{
           sx: {
             pt: 2,
@@ -345,23 +345,6 @@ const AdminDocument = () => {
             <Typography sx={{ color: 'text.secondary' }}>无可显示内容</Typography>
           )}
         </Box>
-      </Modal>
-      {/* 批量编辑分类弹窗 */}
-      <Modal
-        open={categoryEdit.batchEditModalOpen}
-        onCancel={categoryEdit.handleCloseBatchEditModal}
-        title="批量编辑分类"
-        onOk={handleConfirmBatchEditCategory}
-      >
-        <CategoryItemSelector
-          selectedItemIds={categoryEdit.batchCategorySelection.selectedItemIds}
-          onChange={(itemIds, groupIds) => {
-            categoryEdit.batchCategorySelection.setSelectedItemIds(itemIds);
-            categoryEdit.batchCategorySelection.setSelectedGroupIds(groupIds);
-          }}
-          showSelectedCount
-          selectedCount={selectedRowKeys.length}
-        />
       </Modal>
       {/* 编辑单个项目分类弹窗 */}
       <Modal

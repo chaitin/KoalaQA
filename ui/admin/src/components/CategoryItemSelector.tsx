@@ -88,6 +88,7 @@ const CategoryItemSelector: React.FC<CategoryItemSelectorProps> = ({
                       <Checkbox
                         checked={selectedItemIds.includes(item.id || 0)}
                         size="small"
+                        onChange={() => handleItemToggle(item.id || 0)}
                         onClick={e => e.stopPropagation()}
                       />
                       <Typography variant="body2" sx={{ ml: 1 }}>
