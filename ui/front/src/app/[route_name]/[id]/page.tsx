@@ -102,11 +102,11 @@ const DiscussDetailPage = async (props: {
       </Box>
     )
   }
-  const groups =
-    (await getServerGroup(result.data?.forum_id))?.items?.flatMap(
-      (group) => group?.items?.map((item) => item.id) ?? [],
-    ) || []
-  discussion.groups = discussion.groups?.filter(({ id }) => groups?.includes(id))
+  // const groups =
+  //   (await getServerGroup(result.data?.forum_id))?.items?.flatMap(
+  //     (group) => group?.items?.map((item) => item.id) ?? [],
+  //   ) || []
+  // discussion.groups = discussion.groups?.filter(({ id }) => groups?.includes(id))
   return (
     <>
       <ScrollReset />
