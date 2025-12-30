@@ -380,8 +380,6 @@ export function createAppTheme(primaryColor?: string, backgroundColor?: string):
     },
     typography: {
       fontFamily: [
-        'Glibory',
-        'Gilroy',
         'PingFang SC',
         'Hiragino Sans GB',
         'STHeiti',

@@ -241,8 +241,8 @@ export default function ContributorsRank() {
                     <Typography
                       variant='caption'
                       sx={{
-                        fontFamily: 'Gilroy, Gilroy',
-                        fontWeight: 500,
+                        fontFamily: 'Gilroy',
+                        fontWeight: 700,
                         fontSize: '14px',
                         color: 'rgba(33, 34, 45, 1)',
                         lineHeight: '24px',

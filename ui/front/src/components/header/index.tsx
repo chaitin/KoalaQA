@@ -65,29 +65,9 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
   const publishMenuOpen = Boolean(publishAnchorEl)
   const { fetchQuickReplies } = useQuickReplyStore()
 
-  // 将服务端传下来的 initialForums 同步到 zustand store（如果已经迁移到 useForumStore）
-  // 这样使用新 store 的组件可以立即拿到 forum 数据
-  // 动态导入 store 以避免非客户端执行的问题
-  useEffect(() => {
-    if (!initialForums || initialForums.length === 0) return
-    // 延迟导入以确保在客户端环境
-    import('@/store')
-      .then((mod) => {
-        try {
-          const m: any = mod
-          // 优先使用 hook 方式获取 setter，保证与 zustand 用法一致
-          if (typeof m.useForumStore === 'function') {
-            const setter = m.useForumStore((s: any) => s.setForums)
-            if (typeof setter === 'function') setter(initialForums)
-          }
-        } catch (e) {
-          // 忽略同步失败，不影响 header 渲染
-          // 在调试时可以查看控制台
-          console.warn('Failed to sync initialForums to useForumStore', e)
-        }
-      })
-      .catch(() => {})
-  }, [initialForums])
+  // 注意：initialForums 的同步由 ClientInit 组件处理，这里不再重复处理
+  // 避免在 useEffect 中调用 hooks 导致错误
+
   useEffect(() => {
     if (isAdminRole(user.role || ModelUserRole.UserRoleGuest)) fetchQuickReplies()
   }, [user.role])
