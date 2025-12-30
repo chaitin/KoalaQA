@@ -7710,6 +7710,12 @@ const docTemplate = `{
                 "file_type": {
                     "$ref": "#/definitions/model.FileType"
                 },
+                "group_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "id": {
                     "type": "integer"
                 },
@@ -8899,6 +8905,12 @@ const docTemplate = `{
                 "file_type": {
                     "$ref": "#/definitions/model.FileType"
                 },
+                "group_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "id": {
                     "type": "integer"
                 },
@@ -9262,6 +9274,12 @@ const docTemplate = `{
                 },
                 "file_type": {
                     "$ref": "#/definitions/model.FileType"
+                },
+                "group_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "id": {
                     "type": "integer"
@@ -9756,6 +9774,9 @@ const docTemplate = `{
         "svc.UpdateSpaceFolderReq": {
             "type": "object",
             "properties": {
+                "doc_id": {
+                    "type": "integer"
+                },
                 "update_type": {
                     "$ref": "#/definitions/topic.KBSpaceUpdateType"
                 }

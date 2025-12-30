@@ -21,6 +21,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/repo"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type BaseDBDoc struct {
@@ -44,6 +45,7 @@ type KBDocument struct {
 	repoDisc      *repo.Discussion
 	repoRank      *repo.Rank
 	repoDoc       *repo.KBDocument
+	repoGroupItem *repo.GroupItem
 	svcPublicAddr *PublicAddress
 	anydoc        anydoc.Anydoc
 	pub           mq.Publisher
@@ -220,6 +222,7 @@ type DocListItem struct {
 	FileType  model.FileType        `json:"file_type"`
 	Status    model.DocStatus       `json:"status"`
 	SimilarID uint                  `json:"similar_id"`
+	GroupIDs  model.Int64Array      `json:"group_ids"`
 }
 
 func (d *KBDocument) List(ctx context.Context, kbID uint, docType model.DocType, req DocListReq) (*model.ListRes[DocListItem], error) {
@@ -964,10 +967,11 @@ func (d *KBDocument) DeleteSpaceFolder(ctx context.Context, kbID uint, folderID 
 type ListWebItem struct {
 	model.Base
 
-	Title    string          `json:"title"`
-	Desc     string          `json:"desc"`
-	FileType model.FileType  `json:"file_type"`
-	Status   model.DocStatus `json:"status"`
+	Title    string           `json:"title"`
+	Desc     string           `json:"desc"`
+	FileType model.FileType   `json:"file_type"`
+	Status   model.DocStatus  `json:"status"`
+	GroupIDs model.Int64Array `json:"group_ids"`
 }
 
 type ListWebReq struct {
@@ -1054,13 +1058,49 @@ func (d *KBDocument) Review(ctx context.Context, req ReviewReq) error {
 	return nil
 }
 
-func newDocument(repoDoc *repo.KBDocument, rank *repo.Rank, disc *repo.Discussion,
+type UpdateGroupIDsReq struct {
+	Type     model.DocType    `json:"type" binding:"required"`
+	IDs      model.Int64Array `json:"ids" binding:"required"`
+	GroupIDs model.Int64Array `json:"group_ids"`
+}
+
+func (d *KBDocument) UpdateGroupIDs(ctx context.Context, req UpdateGroupIDsReq) error {
+	if len(req.GroupIDs) > 0 {
+		err := d.repoGroupItem.FilterIDs(ctx, &req.GroupIDs)
+		if err != nil {
+			return err
+		}
+	}
+
+	err := d.repoDoc.Update(ctx, map[string]any{
+		"group_ids":  req.GroupIDs,
+		"updated_at": gorm.Expr("updated_at"),
+	},
+		repo.QueryWithEqual("doc_type", req.Type),
+		repo.QueryWithEqual("id", req.IDs, repo.EqualOPEqAny))
+	if err != nil {
+		return err
+	}
+
+	err = d.pub.Publish(ctx, topic.TopicDocMetadata, topic.MsgDocMetadata{
+		Type: req.Type,
+		IDs:  req.IDs,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func newDocument(repoDoc *repo.KBDocument, rank *repo.Rank, disc *repo.Discussion, groupItem *repo.GroupItem,
 	doc anydoc.Anydoc, pub mq.Publisher, oc oss.Client, pa *PublicAddress, kb *repo.KnowledgeBase) *KBDocument {
 	return &KBDocument{
 		repoRank:      rank,
 		repoKB:        kb,
 		repoDisc:      disc,
 		repoDoc:       repoDoc,
+		repoGroupItem: groupItem,
 		anydoc:        doc,
 		pub:           pub,
 		oc:            oc,

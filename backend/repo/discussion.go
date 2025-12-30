@@ -352,9 +352,7 @@ func (d *Discussion) UpdateTagsByRagID(ctx context.Context, ragID string, tags [
 
 		disc.TagIDs = newTagIDs
 
-		err = d.rag.UpdateDocumentMetadata(ctx, forum.DatasetID, ragID, rag.Metadata{
-			DiscMetadata: disc.Metadata(),
-		})
+		err = d.rag.UpdateDocumentMetadata(ctx, forum.DatasetID, ragID, disc.Metadata())
 		if err != nil {
 			return err
 		}

@@ -60,6 +60,25 @@ type DiscMetadata struct {
 	TagIDs       Int64Array      `json:"tag_ids,omitempty"`
 }
 
+func (d DiscMetadata) Map() map[string]any {
+	result := make(map[string]any)
+	// 避免写个 null 进去
+	if d.GroupIDs != nil {
+		result["group_ids"] = d.GroupIDs
+	}
+	if d.TagIDs != nil {
+		result["tag_ids"] = d.TagIDs
+	}
+	if d.DiscussType != "" {
+		result["discuss_type"] = d.DiscussType
+	}
+	if d.DiscussState != DiscussionStateUnknown {
+		result["discuss_state"] = d.DiscussState
+	}
+
+	return result
+}
+
 func (d *Discussion) Metadata() DiscMetadata {
 	if d.GroupIDs == nil {
 		d.GroupIDs = make(Int64Array, 0)
