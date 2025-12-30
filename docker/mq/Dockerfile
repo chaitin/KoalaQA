@@ -1,4 +1,3 @@
-# 第一阶段：下载 natscli
 FROM nats:2.11.8-alpine3.22
 ARG NATS_CLI_VERSION=0.3.0
 ARG TARGETARCH
