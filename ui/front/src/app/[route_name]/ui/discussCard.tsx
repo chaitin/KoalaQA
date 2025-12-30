@@ -230,12 +230,11 @@ const DiscussCard = ({
                   background: (theme) => theme.palette.primaryAlpha?.[6] || 'rgba(0,99,151,0.06)',
                   color: 'primary.main',
                   px: 1,
-                  height: '22px',
                   borderRadius: 0.5,
                 }}
               >
-                <Icon type='icon-dianzan1' sx={{ fontSize: 12 }} />
-                <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
+                <Icon type='icon-dianzan1' sx={{ fontSize: '12px' }} />
+                <Typography variant='caption' sx={{fontSize: '14px'}}>
                   {(it.like || 0)}
                 </Typography>
               </Box>

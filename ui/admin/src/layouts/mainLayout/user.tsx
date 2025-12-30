@@ -10,6 +10,7 @@ import { Box, Button, Link, Modal, Stack, Typography } from '@mui/material';
 import LaunchIcon from '@mui/icons-material/Launch';
 import { useCallback, useContext, useEffect, useState, startTransition } from 'react';
 import { Outlet } from 'react-router-dom';
+import { GroupDataProvider } from '@/context/GroupDataContext';
 
 const MainLayout = () => {
   const [showGuide, setShowGuide] = useState(false);
@@ -84,7 +85,7 @@ const MainLayout = () => {
     );
   }
   return (
-    <>
+    <GroupDataProvider>
       <Stack
         direction="row"
         sx={{
@@ -173,7 +174,7 @@ const MainLayout = () => {
           </Button>
         </Stack>
       </Modal>
-    </>
+    </GroupDataProvider>
   );
 };
 

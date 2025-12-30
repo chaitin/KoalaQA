@@ -88,9 +88,7 @@ func (d *DiscRag) handleInsert(ctx context.Context, data topic.MsgDiscChange) er
 		DocumentID:      data.RagID,
 		Content:         ragContent,
 		ExtractKeywords: true,
-		Metadata: rag.Metadata{
-			DiscMetadata: disc.Metadata(),
-		},
+		Metadata:        disc.Metadata(),
 	})
 	if err != nil {
 		return err

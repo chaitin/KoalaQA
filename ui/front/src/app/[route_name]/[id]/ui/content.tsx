@@ -621,6 +621,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                           border: `1px solid ${theme.palette.primaryAlpha?.[10]}`,
                           fontSize: '0.75rem',
                           fontWeight: 500,
+                          fontFamily: 'Gilroy Bold',
                           '& .MuiChip-label': {
                             px: 0.5,
                           },
@@ -763,6 +764,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                               fontSize: 14,
                               color: isLiked ? 'info.main' : 'rgba(0,0,0,0.5)',
                               lineHeight: '20px',
+                              fontFamily: 'Gilroy',
                             }}
                           >
                             {formatNumber(answer.like || 0)}
@@ -807,6 +809,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                               fontSize: 14,
                               lineHeight: '20px',
                               color: isDisliked ? 'info.main' : 'rgba(0,0,0,0.5)',
+                              fontFamily: 'Gilroy',
                             }}
                           >
                             {formatNumber(answer.dislike || 0)}
@@ -938,6 +941,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                       border: `1px solid ${theme.palette.primaryAlpha?.[10]}`,
                                       fontSize: '0.75rem',
                                       fontWeight: 500,
+                                      fontFamily: 'Gilroy Bold',
                                       '& .MuiChip-label': {
                                         px: 0.5,
                                       },

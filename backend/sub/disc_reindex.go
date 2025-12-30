@@ -75,9 +75,7 @@ func (d *DiscReindex) Handle(ctx context.Context, msg mq.Message) error {
 		DatasetID:  forum.DatasetID,
 		DocumentID: data.RagID,
 		Content:    ragContent,
-		Metadata: rag.Metadata{
-			DiscMetadata: disc.Metadata(),
-		},
+		Metadata:   disc.Metadata(),
 	})
 	if err != nil {
 		return err

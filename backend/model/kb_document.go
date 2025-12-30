@@ -57,9 +57,9 @@ type PlatformOpt struct {
 	AppID        string `json:"app_id,omitempty"`
 	Secret       string `json:"secret,omitempty"`
 	AccessToken  string `json:"access_token,omitempty"`
-	RefreshToken string `json:"refresh_token"`
-	Username     string `json:"username"`
-	UserThirdID  string `json:"user_third_id"`
+	RefreshToken string `json:"refresh_token,omitempty"`
+	Username     string `json:"username,omitempty"`
+	UserThirdID  string `json:"user_third_id,omitempty"`
 	Phone        string `json:"phone,omitempty"`
 }
 
@@ -88,6 +88,45 @@ type KBDocument struct {
 	ParentID     uint                  `json:"parent_id" gorm:"column:parent_id;type:bigint;default:0"`
 	SimilarID    uint                  `json:"similar_id" gorm:"column:similar_id;type:bigint;default:0"`
 	Message      string                `json:"message" gorm:"column:message;type:text"`
+	GroupIDs     Int64Array            `json:"group_ids" gorm:"column:group_ids;type:bigint[]"`
+}
+
+func (d *KBDocument) Metadata() KBDocMetadata {
+	return KBDocMetadata{
+		DocType:  d.DocType,
+		Platform: d.Platform,
+		FileType: d.FileType,
+		GroupIDs: d.GroupIDs,
+	}
+}
+
+type KBDocMetadata struct {
+	DocType  DocType               `json:"doc_type,omitempty"`
+	Platform platform.PlatformType `json:"platform,omitempty"`
+	FileType FileType              `json:"file_type,omitempty"`
+	GroupIDs Int64Array            `json:"group_ids,omitempty"`
+}
+
+func (d KBDocMetadata) Map() map[string]any {
+	result := make(map[string]any)
+
+	if d.DocType != DocTypeUnknown {
+		result["doc_type"] = d.DocType
+	}
+
+	if d.FileType != FileTypeUnknown {
+		result["file_type"] = d.FileType
+	}
+
+	if d.Platform != platform.PlatformUnknown {
+		result["platform"] = d.Platform
+	}
+
+	if len(d.GroupIDs) > 0 {
+		result["group_ids"] = d.GroupIDs
+	}
+
+	return result
 }
 
 type KBDocumentDetail struct {

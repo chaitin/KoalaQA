@@ -2,18 +2,30 @@ import {
   deleteAdminKbKbIdDocumentDocId,
   getAdminKbKbIdDocumentDocId,
   getAdminKbKbIdWeb,
+  ModelDocType,
   ModelKBDocumentDetail,
   PlatformPlatformType,
   putAdminKbKbIdWebDocId,
   SvcDocListItem,
 } from '@/api';
 import Card from '@/components/card';
+import CategoryDisplay from '@/components/CategoryDisplay';
+import CategoryItemSelector from '@/components/CategoryItemSelector';
+import { BatchEditCategoryButtons } from '@/components/BatchEditCategoryButtons';
 import { fileType } from '@/components/ImportDoc/const';
 import MarkDown from '@/components/markDown';
 import StatusBadge from '@/components/StatusBadge';
 import { useListQueryParams } from '@/hooks/useListQueryParams';
+import { useCategoryEdit } from '@/hooks/useCategoryEdit';
+import LoadingBtn from '@/components/LoadingButton';
 import { Ellipsis, message, Modal, Table } from '@ctzhian/ui';
-import { Box, Button, Stack, TextField, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 import { useRequest } from 'ahooks';
 import { ColumnsType } from '@ctzhian/ui/dist/Table';
 import dayjs from 'dayjs';
@@ -37,6 +49,16 @@ const AdminDocument = () => {
   const [searchParams] = useSearchParams();
   const kb_id = +searchParams.get('id')!;
   const [title, setTitle] = useState(query.title);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  
+  // 使用分类编辑hook
+  const categoryEdit = useCategoryEdit({
+    kbId: kb_id,
+    docType: ModelDocType.DocTypeWeb,
+    onSuccess: () => {
+      fetchData({ page: 1 });
+    },
+  });
   const {
     data,
     loading,
@@ -93,21 +115,63 @@ const AdminDocument = () => {
       },
     });
   };
+
+
+  // 批量删除
+  const handleBatchDelete = () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning('请先选择要删除的项目');
+      return;
+    }
+    Modal.confirm({
+      title: '提示',
+      okText: '删除',
+      okButtonProps: {
+        color: 'error',
+      },
+      content: `确定要删除选中的 ${selectedRowKeys.length} 个项目吗？`,
+      onOk: () => {
+        Promise.all(
+          selectedRowKeys.map(key =>
+            deleteAdminKbKbIdDocumentDocId({ kbId: kb_id, docId: Number(key) })
+          )
+        )
+          .then(() => {
+            message.success('批量删除成功');
+            setSelectedRowKeys([]);
+            fetchData({
+              page: 1,
+            });
+          })
+          .catch(() => {
+            message.error('批量删除失败');
+          });
+      },
+    });
+  };
+
+  // 编辑单个项目的分类
+  const handleEditCategory = (item: SvcDocListItem) => {
+    categoryEdit.handleEditCategory(item);
+  };
+
+  // 确认编辑单个项目的分类
+  const handleConfirmEditCategory = async () => {
+    await categoryEdit.handleConfirmEditCategory();
+  };
+
   const columns: ColumnsType<SvcDocListItem> = [
     {
       title: '标题',
       dataIndex: 'title',
       render: (_, record) => {
-        return (
-          <Ellipsis sx={{ cursor: 'pointer' }} onClick={() => viewDetail(record)}>
-            {record?.title || '-'}
-          </Ellipsis>
-        );
+        return <Ellipsis>{record?.title || '-'}</Ellipsis>;
       },
     },
     {
       title: '状态',
       dataIndex: 'status',
+      width: 160,
       render: (_, record) => {
         if (!record?.status) return '-';
         return <StatusBadge status={record.status} />;
@@ -116,10 +180,25 @@ const AdminDocument = () => {
     {
       title: '类型',
       dataIndex: 'file_type',
+      width: 100,
       render: (_, record) => {
         return !record?.file_type 
           ? '-'
           : fileType[record.file_type as keyof typeof fileType] || record?.file_type;
+      },
+    },
+    {
+      title: '标签',
+      dataIndex: 'group_ids',
+      render: (_, record) => {
+        // 注意：后端返回的group_ids字段实际存储的是item_ids（子类id）
+        // 注意：后端返回的group_ids字段实际存储的是item_ids（子类id）
+        return (
+          <CategoryDisplay
+            itemIds={record.group_ids || []}
+            onClick={() => handleEditCategory(record)}
+          />
+        );
       },
     },
     {
@@ -137,6 +216,14 @@ const AdminDocument = () => {
       render: (_, record) => {
         return (
           <Stack direction="row" alignItems="center" spacing={1}>
+            <LoadingBtn
+              variant="text"
+              size="small"
+              color="primary"
+              onClick={() => viewDetail(record)}
+            >
+              查看
+            </LoadingBtn>
             <Button
               variant="text"
               size="small"
@@ -186,10 +273,23 @@ const AdminDocument = () => {
             }}
           />
         </Stack>
-        <DocImport refresh={fetchData} allowedImportTypes={['Sitemap', 'URL']} />
+        {selectedRowKeys.length > 0 ? (
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <BatchEditCategoryButtons
+              categoryEdit={categoryEdit}
+              selectedRowKeys={selectedRowKeys}
+              onBatchEditComplete={() => setSelectedRowKeys([])}
+            />
+            <Button variant="text" size="small" color="error" onClick={handleBatchDelete}>
+              批量删除 ({selectedRowKeys.length})
+            </Button>
+          </Stack>
+        ) : (
+          <DocImport refresh={fetchData} allowedImportTypes={['Sitemap', 'URL']} />
+        )}
       </Stack>
       <Table
-        sx={{ mx: -2, flex: 1, overflow: 'auto' }}
+        sx={{ mx: -2, flex: 1, height: '0' }}
         PaginationProps={{
           sx: {
             pt: 2,
@@ -200,6 +300,10 @@ const AdminDocument = () => {
         columns={columns}
         dataSource={data?.items || []}
         rowKey="id"
+        rowSelection={{
+          selectedRowKeys,
+          onChange: setSelectedRowKeys,
+        }}
         pagination={{
           page,
           pageSize: size,
@@ -228,6 +332,22 @@ const AdminDocument = () => {
         ) : (
           <Typography sx={{ color: 'text.secondary' }}>无可显示内容</Typography>
         )}
+      </Modal>
+      {/* 编辑单个项目分类弹窗 */}
+      <Modal
+        open={!!categoryEdit.editingCategoryItem}
+        onCancel={categoryEdit.handleCloseEditModal}
+        title="编辑分类"
+        onOk={handleConfirmEditCategory}
+      >
+        <CategoryItemSelector
+          selectedItemIds={categoryEdit.editCategorySelection.selectedItemIds}
+          onChange={(itemIds, groupIds) => {
+            // 使用函数式更新确保状态正确更新
+            categoryEdit.editCategorySelection.setSelectedItemIds(itemIds);
+            categoryEdit.editCategorySelection.setSelectedGroupIds(groupIds);
+          }}
+        />
       </Modal>
     </Stack>
   );

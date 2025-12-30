@@ -65,29 +65,6 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
   const publishMenuOpen = Boolean(publishAnchorEl)
   const { fetchQuickReplies } = useQuickReplyStore()
 
-  // 将服务端传下来的 initialForums 同步到 zustand store（如果已经迁移到 useForumStore）
-  // 这样使用新 store 的组件可以立即拿到 forum 数据
-  // 动态导入 store 以避免非客户端执行的问题
-  useEffect(() => {
-    if (!initialForums || initialForums.length === 0) return
-    // 延迟导入以确保在客户端环境
-    import('@/store')
-      .then((mod) => {
-        try {
-          const m: any = mod
-          // 优先使用 hook 方式获取 setter，保证与 zustand 用法一致
-          if (typeof m.useForumStore === 'function') {
-            const setter = m.useForumStore((s: any) => s.setForums)
-            if (typeof setter === 'function') setter(initialForums)
-          }
-        } catch (e) {
-          // 忽略同步失败，不影响 header 渲染
-          // 在调试时可以查看控制台
-          console.warn('Failed to sync initialForums to useForumStore', e)
-        }
-      })
-      .catch(() => {})
-  }, [initialForums])
   useEffect(() => {
     if (isAdminRole(user.role || ModelUserRole.UserRoleGuest)) fetchQuickReplies()
   }, [user.role])
@@ -199,12 +176,10 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
   // 统一的 logo 点击处理函数
   const handleLogoClick = () => {
     if (isAuthPage && forums.length > 0) {
-      // 如果在登录/注册页面，跳转到第一个论坛
       const firstForum = forums[0]
       const routePath = firstForum.route_name ? `/${firstForum.route_name}` : `/${firstForum.id}`
       router.push(routePath)
     } else if (forums && forums.length > 0) {
-      // 如果有论坛数据，跳转到当前论坛或第一个论坛
       if (forum_id) {
         const forumId = Array.isArray(forum_id) ? forum_id[0] : forum_id
         const currentForum = forums.find((f) => f.id === parseInt(forumId))
@@ -222,10 +197,8 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
         router.push(routePath)
       }
     } else if (user?.uid) {
-      // 如果用户已登录但没有论坛数据，跳转到首页让fallback组件处理
       plainRouter.push('/')
     } else {
-      // 如果用户未登录且没有论坛数据，跳转到登录页面
       plainRouter.push('/login')
     }
   }
@@ -234,7 +207,6 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
   const handleSearch = useCallback(() => {
     const trimmedSearch = searchInputValue && searchInputValue.trim() ? searchInputValue.trim() : ''
     if (trimmedSearch) {
-      // 打开搜索弹窗，SearchResultModal 会自动执行搜索
       openSearchModal()
     }
   }, [searchInputValue, openSearchModal])
@@ -269,6 +241,17 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
     router.push(`/${routeName}/edit?type=${publishType}`)
   }
 
+  // 新增: 移动端未登录时也展示发帖按钮，点击跳转至登录页
+  const handleMobilePostClick = () => {
+    if (user?.uid) {
+      // 已登录，和原来一样弹出菜单
+      handlePublishMenuOpen({} as React.MouseEvent<HTMLElement>)
+    } else {
+      // 未登录跳转登录页
+      plainRouter.push('/login')
+    }
+  }
+
   return (
     <>
       {/* Desktop Header */}
@@ -294,20 +277,27 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
             >
               <Box
                 sx={{
-                  width: 36,
+                  height: { xs: 32, sm: 36, md: 40 },
+                  maxWidth: { xs: 160, sm: 200, md: 240 },
                   display: 'flex',
                   alignItems: 'center',
-                  fontWeight: 700,
-                  fontSize: '1.25rem',
-                  color: 'text.primary',
+                  '& img': {
+                    height: '100%',
+                    width: 'auto',
+                    maxWidth: '100%',
+                    objectFit: 'contain',
+                  },
                 }}
               >
                 <Image
                   src={brandConfig.logo || '/logo.png'}
                   alt='Logo'
-                  width={24}
-                  height={24}
+                  width={0}
+                  height={0}
+                  sizes='(max-width: 600px) 160px, 240px'
                   style={{
+                    width: 'auto',
+                    height: '100%',
                     objectFit: 'contain',
                   }}
                   unoptimized={true}
@@ -438,27 +428,30 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                 alignItems: 'center',
                 flexGrow: 1,
                 minWidth: 0,
+                height: 32,
+                maxWidth: 160,
+                '& img': {
+                  height: '100%',
+                  width: 'auto',
+                  maxWidth: '100%',
+                  objectFit: 'contain',
+                },
               }}
               onClick={handleLogoClick}
             >
-              {brandConfig?.logo ? (
-                <Image
-                  src={brandConfig.logo}
-                  alt='Logo'
-                  width={24}
-                  height={24}
-                  style={{ objectFit: 'contain' }}
-                  unoptimized={true}
-                />
-              ) : (
-                <Image
-                  src='/inverse_logo-text.png'
-                  alt='Koala QA Logo'
-                  width={80}
-                  height={20}
-                  style={{ objectFit: 'contain' }}
-                />
-              )}
+              <Image
+                src={brandConfig.logo || '/logo.png'}
+                alt='Logo'
+                width={0}
+                height={0}
+                sizes='160px'
+                style={{
+                  width: 'auto',
+                  height: '100%',
+                  objectFit: 'contain',
+                }}
+                unoptimized={true}
+              />
             </Box>
           </Box>
 
@@ -472,9 +465,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                 if (searchInputValue.trim()) {
                   openSearchModal()
                 } else {
-                  // If no search input, just focus to allow typing
                   setSearchInputValue('')
-                  // Trigger search modal with empty input to show search interface
                   setTimeout(() => openSearchModal(), 0)
                 }
               }}
@@ -486,12 +477,12 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
               <SearchIcon sx={{ fontSize: 24, color: 'primary.main' }} />
             </IconButton>
 
-            {/* 发帖按钮 - 只在列表页显示 */}
-            {isPostListPage && user?.uid && (
+            {/* 修改发帖按钮逻辑：移动端未登录也展示，未登录点击跳转到登录页 */}
+            {isPostListPage && (
               <>
                 <IconButton
                   size='small'
-                  onClick={handlePublishMenuOpen}
+                  onClick={handleMobilePostClick}
                   sx={{
                     color: 'primary.main',
                     '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
@@ -499,63 +490,66 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                 >
                   <AddIcon sx={{ fontSize: 24, color: 'primary.main' }} />
                 </IconButton>
-                <Menu
-                  anchorEl={publishAnchorEl}
-                  open={publishMenuOpen}
-                  onClose={handlePublishMenuClose}
-                  anchorOrigin={{
-                    vertical: 'bottom',
-                    horizontal: 'right',
-                  }}
-                  transformOrigin={{
-                    vertical: 'top',
-                    horizontal: 'right',
-                  }}
-                  slotProps={{
-                    paper: {
-                      sx: {
-                        mt: 0.5,
-                        minWidth: 150,
-                        borderRadius: '6px',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                {/* 只有已登录时才弹出选择菜单 */}
+                {!!user?.uid && (
+                  <Menu
+                    anchorEl={publishAnchorEl}
+                    open={publishMenuOpen}
+                    onClose={handlePublishMenuClose}
+                    anchorOrigin={{
+                      vertical: 'bottom',
+                      horizontal: 'right',
+                    }}
+                    transformOrigin={{
+                      vertical: 'top',
+                      horizontal: 'right',
+                    }}
+                    slotProps={{
+                      paper: {
+                        sx: {
+                          mt: 0.5,
+                          minWidth: 150,
+                          borderRadius: '6px',
+                          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                        },
                       },
-                    },
-                  }}
-                >
-                  {[
-                    {
-                      type: ModelDiscussionType.DiscussionTypeQA,
-                      label: '问题',
-                      visible: true,
-                    },
-                    {
-                      type: ModelDiscussionType.DiscussionTypeBlog,
-                      label: '文章',
-                      visible: true,
-                    },
-                    {
-                      type: ModelDiscussionType.DiscussionTypeIssue,
-                      label: 'Issue',
-                      visible: isAdminRole(user?.role || ModelUserRole.UserRoleUnknown),
-                    },
-                  ]
-                    .filter((item) => item.visible)
-                    .map((item) => (
-                      <MenuItem
-                        key={item.type}
-                        onClick={() => handlePublishTypeSelect(item.type)}
-                        sx={{
-                          fontSize: '14px',
-                          py: 1,
-                          '&:hover': {
-                            bgcolor: (theme) => theme.palette.primaryAlpha?.[6],
-                          },
-                        }}
-                      >
-                        {item.label}
-                      </MenuItem>
-                    ))}
-                </Menu>
+                    }}
+                  >
+                    {[
+                      {
+                        type: ModelDiscussionType.DiscussionTypeQA,
+                        label: '问题',
+                        visible: true,
+                      },
+                      {
+                        type: ModelDiscussionType.DiscussionTypeBlog,
+                        label: '文章',
+                        visible: true,
+                      },
+                      {
+                        type: ModelDiscussionType.DiscussionTypeIssue,
+                        label: 'Issue',
+                        visible: isAdminRole(user?.role || ModelUserRole.UserRoleUnknown),
+                      },
+                    ]
+                      .filter((item) => item.visible)
+                      .map((item) => (
+                        <MenuItem
+                          key={item.type}
+                          onClick={() => handlePublishTypeSelect(item.type)}
+                          sx={{
+                            fontSize: '14px',
+                            py: 1,
+                            '&:hover': {
+                              bgcolor: (theme) => theme.palette.primaryAlpha?.[6],
+                            },
+                          }}
+                        >
+                          {item.label}
+                        </MenuItem>
+                      ))}
+                  </Menu>
+                )}
               </>
             )}
 

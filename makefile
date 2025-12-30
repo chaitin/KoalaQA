@@ -31,7 +31,7 @@ image.db:
 
 image.raglite:
 	cd docker/raglite && DOCKER_BUILDKIT=1 docker build \
-		-t chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/raglite:v2.7.7 .
+		-t chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/raglite:v2.8.3 .
 
 image.nginx:
 	cd docker/nginx && DOCKER_BUILDKIT=1 docker build \
@@ -40,6 +40,10 @@ image.nginx:
 image.anydoc:
 	cd docker/anydoc && DOCKER_BUILDKIT=1 docker build \
 		-t chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/anydoc:v0.7.6 .
+
+image.mq:
+	cd docker/mq && DOCKER_BUILDKIT=1 docker build \
+		-t chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/mq:2.11.8-alpine3.22 .
 
 run: image.app image.api
 	docker compose up -d

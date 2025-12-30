@@ -1155,6 +1155,46 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/kb/{kb_id}/document/group_ids": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "document"
+                ],
+                "summary": "update doc group_ids",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "kb_id",
+                        "name": "kb_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "request params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.UpdateGroupIDsReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/kb/{kb_id}/document/{doc_id}": {
             "get": {
                 "produces": [
@@ -7710,6 +7750,12 @@ const docTemplate = `{
                 "file_type": {
                     "$ref": "#/definitions/model.FileType"
                 },
+                "group_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "id": {
                     "type": "integer"
                 },
@@ -8899,6 +8945,12 @@ const docTemplate = `{
                 "file_type": {
                     "$ref": "#/definitions/model.FileType"
                 },
+                "group_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "id": {
                     "type": "integer"
                 },
@@ -9262,6 +9314,12 @@ const docTemplate = `{
                 },
                 "file_type": {
                     "$ref": "#/definitions/model.FileType"
+                },
+                "group_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "id": {
                     "type": "integer"
@@ -9745,6 +9803,30 @@ const docTemplate = `{
                 }
             }
         },
+        "svc.UpdateGroupIDsReq": {
+            "type": "object",
+            "required": [
+                "ids",
+                "type"
+            ],
+            "properties": {
+                "group_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "type": {
+                    "$ref": "#/definitions/model.DocType"
+                }
+            }
+        },
         "svc.UpdatePromptReq": {
             "type": "object",
             "properties": {
@@ -9756,6 +9838,9 @@ const docTemplate = `{
         "svc.UpdateSpaceFolderReq": {
             "type": "object",
             "properties": {
+                "doc_id": {
+                    "type": "integer"
+                },
                 "update_type": {
                     "$ref": "#/definitions/topic.KBSpaceUpdateType"
                 }

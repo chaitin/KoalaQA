@@ -111,9 +111,7 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 		DocumentID:      disc.RagID,
 		Content:         ragContent,
 		ExtractKeywords: true,
-		Metadata: rag.Metadata{
-			DiscMetadata: disc.Metadata(),
-		},
+		Metadata:        disc.Metadata(),
 	})
 	if err != nil {
 		return err
@@ -226,9 +224,7 @@ func (d *Comment) handleUpdate(ctx context.Context, data topic.MsgCommentChange)
 		DocumentID:      disc.RagID,
 		Content:         ragContent,
 		ExtractKeywords: true,
-		Metadata: rag.Metadata{
-			DiscMetadata: disc.Metadata(),
-		},
+		Metadata:        disc.Metadata(),
 	})
 	if err != nil {
 		logger.WithErr(err).Error("update rag failed")
@@ -265,9 +261,7 @@ func (d *Comment) handleDelete(ctx context.Context, data topic.MsgCommentChange)
 		DocumentID:      disc.RagID,
 		Content:         ragContent,
 		ExtractKeywords: true,
-		Metadata: rag.Metadata{
-			DiscMetadata: disc.Metadata(),
-		},
+		Metadata:        disc.Metadata(),
 	})
 	if err != nil {
 		logger.WithErr(err).Error("update rag failed")

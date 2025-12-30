@@ -103,6 +103,7 @@ func (k *KBDoc) handleInsert(ctx context.Context, kbID uint, docID uint) error {
 		DatasetID:  k.dataset.GetBackendID(ctx),
 		DocumentID: doc.RagID,
 		Content:    content,
+		Metadata:   doc.Metadata(),
 	})
 	if err != nil {
 		return err

@@ -238,17 +238,29 @@ a {
       format('woff2');
 }
 
-/* Gilroy 字体 - ExtraBold (免费版本) */
-/* 优先使用本地字体文件，如果不存在则使用 CDN */
+/* Gilroy 字体 - Regular (免费版本) */
 @font-face {
   font-family: 'Gilroy';
+  font-display: swap;
+  font-weight: 400;
+  font-style: normal;
+  src:
+    local('Gilroy Regular'),
+    local('Gilroy-Regular'),
+    url('../font/Gilroy-Regular.ttf') format('truetype');
+}
+
+/* Gilroy 字体 - ExtraBold (免费版本) */
+/* 仅使用本地已安装的字体，如果没有安装则回退到字体栈中的其他字体 */
+@font-face {
+  font-family: 'Gilroy Bold';
   font-display: swap;
   font-weight: 800;
   font-style: normal;
   src:
     local('Gilroy ExtraBold'),
     local('Gilroy-ExtraBold'),
-    url('../font/Gilroy-ExtraBold.woff2') format('woff2'),
+    url('../font/Gilroy-ExtraBold.ttf') format('truetype');
 }
 
 .rmel-icon-keyboard:before {

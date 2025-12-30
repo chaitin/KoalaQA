@@ -23,27 +23,8 @@ type UpdateDatasetReq struct {
 type ParserConfig struct {
 }
 
-type Metadata struct {
-	model.DiscMetadata
-}
-
-func (m *Metadata) Map() map[string]interface{} {
-	var result = make(map[string]interface{})
-	// 避免写个 null 进去
-	if m.GroupIDs != nil {
-		result["group_ids"] = m.GroupIDs
-	}
-	if m.TagIDs != nil {
-		result["tag_ids"] = m.TagIDs
-	}
-	if m.DiscussType != "" {
-		result["discuss_type"] = m.DiscussType
-	}
-	if m.DiscussState != model.DiscussionStateUnknown {
-		result["discuss_state"] = m.DiscussState
-	}
-
-	return result
+type Metadata interface {
+	Map() map[string]any
 }
 
 type UpsertRecordsReq struct {

@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  ReactNode,
+} from 'react';
 import { getAdminGroup } from '@/api';
 import { ModelGroupWithItem, ModelGroupItemInfo } from '@/api/types';
 
@@ -29,23 +36,17 @@ interface GroupDataProviderProps {
 }
 
 export const GroupDataProvider: React.FC<GroupDataProviderProps> = ({ children }) => {
-  const [groups, setGroups] = useState<(ModelGroupWithItem & { items?: ModelGroupItemInfo[] })[]>([]);
+  const [groups, setGroups] = useState<(ModelGroupWithItem & { items?: ModelGroupItemInfo[] })[]>(
+    []
+  );
   const [loading, setLoading] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
       const response = await getAdminGroup();
-      // 根据 API 类型定义：ContextResponse & { data?: ModelListRes & { items?: ... } }
-      // 根据实际使用（DragBrand中使用 res.items），httpClient 可能已经解包了 data
-      // 为了兼容，同时检查两种情况
-      const items = 
-        (response as any).items || 
-        (response as any).data?.items || 
-        [];
-      setGroups(items);
+      setGroups(response.items || []);
     } catch (error) {
-      console.error('获取分组数据失败:', error);
       setGroups([]);
     } finally {
       setLoading(false);
@@ -62,4 +63,3 @@ export const GroupDataProvider: React.FC<GroupDataProviderProps> = ({ children }
     </GroupDataContext.Provider>
   );
 };
-

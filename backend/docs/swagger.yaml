@@ -634,6 +634,10 @@ definitions:
         type: string
       file_type:
         $ref: '#/definitions/model.FileType'
+      group_ids:
+        items:
+          type: integer
+        type: array
       id:
         type: integer
       json:
@@ -1456,6 +1460,10 @@ definitions:
         type: string
       file_type:
         $ref: '#/definitions/model.FileType'
+      group_ids:
+        items:
+          type: integer
+        type: array
       id:
         type: integer
       platform:
@@ -1695,6 +1703,10 @@ definitions:
         type: string
       file_type:
         $ref: '#/definitions/model.FileType'
+      group_ids:
+        items:
+          type: integer
+        type: array
       id:
         type: integer
       status:
@@ -2012,6 +2024,22 @@ definitions:
     required:
     - url
     type: object
+  svc.UpdateGroupIDsReq:
+    properties:
+      group_ids:
+        items:
+          type: integer
+        type: array
+      ids:
+        items:
+          type: integer
+        type: array
+      type:
+        $ref: '#/definitions/model.DocType'
+    required:
+    - ids
+    - type
+    type: object
   svc.UpdatePromptReq:
     properties:
       prompt:
@@ -2019,6 +2047,8 @@ definitions:
     type: object
   svc.UpdateSpaceFolderReq:
     properties:
+      doc_id:
+        type: integer
       update_type:
         $ref: '#/definitions/topic.KBSpaceUpdateType'
     type: object
@@ -2726,6 +2756,32 @@ paths:
                   $ref: '#/definitions/model.KBDocumentDetail'
               type: object
       summary: get kb document detail
+      tags:
+      - document
+  /admin/kb/{kb_id}/document/group_ids:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.UpdateGroupIDsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update doc group_ids
       tags:
       - document
   /admin/kb/{kb_id}/question:

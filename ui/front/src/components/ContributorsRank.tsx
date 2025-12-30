@@ -4,7 +4,6 @@ import { SvcRankContributeItem } from '@/api/types'
 import CommonAvatar from '@/components/CommonAvatar'
 import { Ellipsis } from '@ctzhian/ui'
 import { Box, Divider, Paper, Stack, Typography } from '@mui/material'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 
@@ -241,8 +240,8 @@ export default function ContributorsRank() {
                     <Typography
                       variant='caption'
                       sx={{
-                        fontFamily: 'Gilroy, Gilroy',
-                        fontWeight: 500,
+                        fontFamily: 'Gilroy',
+                        fontWeight: 700,
                         fontSize: '14px',
                         color: 'rgba(33, 34, 45, 1)',
                         lineHeight: '24px',

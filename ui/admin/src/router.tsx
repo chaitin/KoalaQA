@@ -31,6 +31,7 @@ const LazyLoadable = (
 const GeneralSetting = LazyLoadable(lazy(() => import('@/pages/settings')));
 const AdminKnowledge = LazyLoadable(lazy(() => import('@/pages/ai')));
 const AdminKnowledgeDetail = LazyLoadable(lazy(() => import('@/pages/ai/detail')));
+const KnowledgeBaseDetail = LazyLoadable(lazy(() => import('@/pages/ai/kbDetail')));
 const User = LazyLoadable(lazy(() => import('@/pages/user')));
 const UserReviewList = LazyLoadable(lazy(() => import('@/pages/user/UserReviewList')));
 const Dashboard = LazyLoadable(lazy(() => import('@/pages/dashboard')));
@@ -63,6 +64,12 @@ const routerConfig = [
       {
         path: 'ai/:id?/kb',
         element: <AdminKnowledgeDetail tab="kb" />,
+        children: [
+          {
+            path: 'detail',
+            element: <KnowledgeBaseDetail />,
+          },
+        ],
       },
       {
         path: 'dashboard',
