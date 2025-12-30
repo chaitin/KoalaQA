@@ -46,21 +46,34 @@ func init() {
 }
 
 type GenerateReq struct {
-	Question      string   `json:"question"`
-	Groups        []string `json:"groups"`
-	Prompt        string   `json:"prompt"`
-	DefaultAnswer string   `json:"default_answer"`
-	NewCommentID  uint     `json:"new_comment_id"`
+	Question      string                `json:"question"`
+	Groups        []model.GroupItemInfo `json:"groups"`
+	Prompt        string                `json:"prompt"`
+	DefaultAnswer string                `json:"default_answer"`
+	NewCommentID  uint                  `json:"new_comment_id"`
+}
+
+func (g *GenerateReq) GroupInfo() (ids model.Int64Array, names []string) {
+	for _, item := range g.Groups {
+		ids = append(ids, int64(item.ID))
+		names = append(names, item.Name)
+	}
+
+	return
 }
 
 func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (string, bool, error) {
 	query := req.Question
 
-	if len(req.Groups) > 0 {
-		query += "\n" + strings.Join(req.Groups, ",")
+	groupIDs, groupNames := req.GroupInfo()
+
+	if len(groupNames) > 0 {
+		query += "\n" + strings.Join(groupNames, ",")
 	}
 
-	rewrittenQuery, knowledgeDocuments, err := l.queryKnowledgeDocuments(ctx, query)
+	rewrittenQuery, knowledgeDocuments, err := l.queryKnowledgeDocuments(ctx, query, model.KBDocMetadata{
+		GroupIDs: groupIDs,
+	})
 	if err != nil {
 		return "", false, err
 	}
@@ -314,7 +327,7 @@ func (l *LLM) GeneratePostPrompt(ctx context.Context, discID uint) (string, stri
 }
 
 // queryKnowledgeDocuments 查询相关知识文档
-func (l *LLM) queryKnowledgeDocuments(ctx context.Context, query string) (string, []llm.KnowledgeDocument, error) {
+func (l *LLM) queryKnowledgeDocuments(ctx context.Context, query string, metadata rag.Metadata) (string, []llm.KnowledgeDocument, error) {
 	logger := l.logger.WithContext(ctx)
 
 	logger.With("query", query).Debug("query knowledge documents")
@@ -323,6 +336,7 @@ func (l *LLM) queryKnowledgeDocuments(ctx context.Context, query string) (string
 	rewrittenQuery, records, err := l.rag.QueryRecords(ctx, rag.QueryRecordsReq{
 		DatasetID: l.dataset.GetBackendID(ctx),
 		Query:     query,
+		Metadata:  metadata,
 	})
 	if err != nil {
 		return "", nil, fmt.Errorf("RAG query failed: %w", err)

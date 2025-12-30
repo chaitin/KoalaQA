@@ -164,10 +164,13 @@ type DiscussionDetail struct {
 	Alert         bool                `json:"alert"`
 }
 
-func (d *DiscussionDetail) GroupStrs() []string {
-	res := make([]string, len(d.Groups))
-	for i := range d.Groups {
-		res[i] = d.Groups[i].Name
+func (d *DiscussionDetail) GroupInfo() []GroupItemInfo {
+	res := make([]GroupItemInfo, len(d.Groups))
+	for i, group := range d.Groups {
+		res[i] = GroupItemInfo{
+			ID:   group.ID,
+			Name: group.Name,
+		}
 	}
 
 	return res

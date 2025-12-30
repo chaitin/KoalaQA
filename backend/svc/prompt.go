@@ -29,7 +29,7 @@ func init() {
 }
 
 // GenerateAnswerPrompt 生成回复帖子的提示词
-func (p *Prompt) GenerateAnswerPrompt(ctx context.Context, discID uint, commID uint) (string, []string, string, error) {
+func (p *Prompt) GenerateAnswerPrompt(ctx context.Context, discID uint, commID uint) (string, []model.GroupItemInfo, string, error) {
 	logger := p.logger.WithContext(ctx).With("discussion_id", discID, "comment_id", commID)
 	logger.Debug("start generate prompt")
 
@@ -67,7 +67,7 @@ func (p *Prompt) GenerateAnswerPrompt(ctx context.Context, discID uint, commID u
 	}
 
 	logger.With("prompt", prompt).Debug("generate prompt success")
-	return template.Question(), discussion.GroupStrs(), prompt, nil
+	return template.Question(), discussion.GroupInfo(), prompt, nil
 }
 
 // GenerateContentForRetrieval 生成用于检索的纯内容文本
@@ -100,7 +100,7 @@ func (p *Prompt) GenerateContentForRetrieval(ctx context.Context, discID uint) (
 }
 
 // GeneratePostPrompt 生成帖子提示词
-func (p *Prompt) GeneratePostPrompt(ctx context.Context, discID uint) (string, string, []string, error) {
+func (p *Prompt) GeneratePostPrompt(ctx context.Context, discID uint) (string, string, []model.GroupItemInfo, error) {
 	logger := p.logger.WithContext(ctx).With("discussion_id", discID)
 	logger.Debug("start generate prompt")
 
@@ -119,5 +119,5 @@ func (p *Prompt) GeneratePostPrompt(ctx context.Context, discID uint) (string, s
 	}
 
 	logger.With("prompt", prompt).Debug("generate prompt success")
-	return template.Question(), prompt, discussion.GroupStrs(), nil
+	return template.Question(), prompt, discussion.GroupInfo(), nil
 }
