@@ -2758,6 +2758,32 @@ paths:
       summary: get kb document detail
       tags:
       - document
+  /admin/kb/{kb_id}/document/group_ids:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.UpdateGroupIDsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update doc group_ids
+      tags:
+      - document
   /admin/kb/{kb_id}/question:
     get:
       parameters:
@@ -3622,27 +3648,6 @@ paths:
                   $ref: '#/definitions/anydoc.ListRes'
               type: object
       summary: list file documents
-      tags:
-      - document
-  /admin/kb/document/group_ids:
-    put:
-      consumes:
-      - application/json
-      parameters:
-      - description: request params
-        in: body
-        name: req
-        required: true
-        schema:
-          $ref: '#/definitions/svc.UpdateGroupIDsReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/context.Response'
-      summary: update doc group_ids
       tags:
       - document
   /admin/kb/document/sitemap/export:

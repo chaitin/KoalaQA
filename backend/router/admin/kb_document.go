@@ -410,10 +410,11 @@ func (d *kbDocument) Delete(ctx *context.Context) {
 // @Summary update doc group_ids
 // @Tags document
 // @Accept json
+// @Param kb_id path uint true "kb_id"
 // @Param req body svc.UpdateGroupIDsReq true "request params"
 // @Produce json
 // @Success 200 {object} context.Response
-// @Router /admin/kb/document/group_ids [put]
+// @Router /admin/kb/{kb_id}/document/group_ids [put]
 func (d *kbDocument) UpdateGroupIDs(ctx *context.Context) {
 	var req svc.UpdateGroupIDsReq
 	err := ctx.ShouldBindJSON(&req)
