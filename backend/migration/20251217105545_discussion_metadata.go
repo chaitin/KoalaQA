@@ -39,9 +39,7 @@ func (m *discussionMetadata) Migrate(tx *gorm.DB) error {
 				continue
 			}
 
-			err := m.rag.UpdateDocumentMetadata(context.TODO(), datasetID, disc.RagID, rag.Metadata{
-				DiscMetadata: disc.Metadata(),
-			})
+			err := m.rag.UpdateDocumentMetadata(context.TODO(), datasetID, disc.RagID, disc.Metadata())
 			if err != nil {
 				continue
 			}

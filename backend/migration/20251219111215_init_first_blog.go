@@ -233,9 +233,7 @@ func (m *initFirstBlog) Migrate(tx *gorm.DB) error {
 		DatasetID:       forum.DatasetID,
 		Content:         blogContent,
 		ExtractKeywords: false,
-		Metadata: rag.Metadata{
-			DiscMetadata: blog.Metadata(),
-		},
+		Metadata:        blog.Metadata(),
 	})
 	if err != nil {
 		return err

@@ -455,10 +455,8 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 			discType = *req.Type
 		}
 
-		discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: req.Keyword, ForumID: req.ForumID, SimilarityThreshold: 0.2, MaxChunksPerDoc: 1, Metadata: rag.Metadata{
-			DiscMetadata: model.DiscMetadata{
-				DiscussType: discType,
-			},
+		discs, err := d.Search(ctx, DiscussionSearchReq{Keyword: req.Keyword, ForumID: req.ForumID, SimilarityThreshold: 0.2, MaxChunksPerDoc: 1, Metadata: model.DiscMetadata{
+			DiscussType: discType,
 		}})
 		if err != nil {
 			return nil, err
@@ -975,9 +973,7 @@ func (d *Discussion) Close(ctx context.Context, user model.UserInfo, discUUID st
 		return err
 	}
 
-	err = d.in.Rag.UpdateDocumentMetadata(ctx, forum.DatasetID, disc.RagID, rag.Metadata{
-		DiscMetadata: disc.Metadata(),
-	})
+	err = d.in.Rag.UpdateDocumentMetadata(ctx, forum.DatasetID, disc.RagID, disc.Metadata())
 	if err != nil {
 		d.logger.WithContext(ctx).WithErr(err).With("disc_id", disc.ID).Warn("update rag metadata failed")
 	}
@@ -1318,9 +1314,7 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 		}
 
 		disc.Resolved = model.DiscussionStateNone
-		err = d.in.Rag.UpdateDocumentMetadata(ctx, forum.DatasetID, disc.RagID, rag.Metadata{
-			DiscMetadata: disc.Metadata(),
-		})
+		err = d.in.Rag.UpdateDocumentMetadata(ctx, forum.DatasetID, disc.RagID, disc.Metadata())
 		if err != nil {
 			return err
 		}
@@ -1413,9 +1407,7 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 		}
 
 		disc.Resolved = model.DiscussionStateResolved
-		err = d.in.Rag.UpdateDocumentMetadata(ctx, forum.DatasetID, disc.RagID, rag.Metadata{
-			DiscMetadata: disc.Metadata(),
-		})
+		err = d.in.Rag.UpdateDocumentMetadata(ctx, forum.DatasetID, disc.RagID, disc.Metadata())
 		if err != nil {
 			return err
 		}
@@ -1811,9 +1803,7 @@ func (d *Discussion) ResolveIssue(ctx context.Context, user model.UserInfo, disc
 		return err
 	}
 
-	err = d.in.Rag.UpdateDocumentMetadata(ctx, forum.DatasetID, disc.RagID, rag.Metadata{
-		DiscMetadata: disc.Metadata(),
-	})
+	err = d.in.Rag.UpdateDocumentMetadata(ctx, forum.DatasetID, disc.RagID, disc.Metadata())
 	if err != nil {
 		return err
 	}
@@ -1925,9 +1915,7 @@ func (d *Discussion) AssociateDiscussion(ctx context.Context, user model.UserInf
 	if err != nil {
 		return err
 	}
-	err = d.in.Rag.UpdateDocumentMetadata(ctx, forum.DatasetID, disc.RagID, rag.Metadata{
-		DiscMetadata: disc.Metadata(),
-	})
+	err = d.in.Rag.UpdateDocumentMetadata(ctx, forum.DatasetID, disc.RagID, disc.Metadata())
 	if err != nil {
 		d.logger.WithContext(ctx).WithErr(err).With("disc_id", disc.ID).Warn("update disc rag metadata failed")
 	}
