@@ -66,7 +66,7 @@ services:
 
   mq:
     container_name: koala-qa-mq
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/mq:3.22
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/mq:2.11.8-alpine3.22
     restart: always
     environment:
       - TZ=${TIMEZONE:-Asia/Shanghai}
