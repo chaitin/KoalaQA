@@ -41,6 +41,10 @@ image.anydoc:
 	cd docker/anydoc && DOCKER_BUILDKIT=1 docker build \
 		-t chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/anydoc:v0.7.6 .
 
+image.mq:
+	cd docker/mq && DOCKER_BUILDKIT=1 docker build \
+		-t chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/mq:2.11.8-alpine3.22 .
+
 run: image.app image.api
 	docker compose up -d
 
