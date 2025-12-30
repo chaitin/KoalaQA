@@ -274,20 +274,27 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
             >
               <Box
                 sx={{
-                  width: 36,
+                  height: { xs: 32, sm: 36, md: 40 },
+                  maxWidth: { xs: 160, sm: 200, md: 240 },
                   display: 'flex',
                   alignItems: 'center',
-                  fontWeight: 700,
-                  fontSize: '1.25rem',
-                  color: 'text.primary',
+                  '& img': {
+                    height: '100%',
+                    width: 'auto',
+                    maxWidth: '100%',
+                    objectFit: 'contain',
+                  },
                 }}
               >
                 <Image
                   src={brandConfig.logo || '/logo.png'}
                   alt='Logo'
-                  width={24}
-                  height={24}
+                  width={0}
+                  height={0}
+                  sizes='(max-width: 600px) 160px, 240px'
                   style={{
+                    width: 'auto',
+                    height: '100%',
                     objectFit: 'contain',
                   }}
                   unoptimized={true}
@@ -418,27 +425,30 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
                 alignItems: 'center',
                 flexGrow: 1,
                 minWidth: 0,
+                height: 32,
+                maxWidth: 160,
+                '& img': {
+                  height: '100%',
+                  width: 'auto',
+                  maxWidth: '100%',
+                  objectFit: 'contain',
+                },
               }}
               onClick={handleLogoClick}
             >
-              {brandConfig?.logo ? (
-                <Image
-                  src={brandConfig.logo}
-                  alt='Logo'
-                  width={24}
-                  height={24}
-                  style={{ objectFit: 'contain' }}
-                  unoptimized={true}
-                />
-              ) : (
-                <Image
-                  src='/inverse_logo-text.png'
-                  alt='Koala QA Logo'
-                  width={80}
-                  height={20}
-                  style={{ objectFit: 'contain' }}
-                />
-              )}
+              <Image
+                src={brandConfig.logo || '/logo.png'}
+                alt='Logo'
+                width={0}
+                height={0}
+                sizes='160px'
+                style={{
+                  width: 'auto',
+                  height: '100%',
+                  objectFit: 'contain',
+                }}
+                unoptimized={true}
+              />
             </Box>
           </Box>
 
@@ -467,7 +477,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
             </IconButton>
 
             {/* 发帖按钮 - 只在列表页显示 */}
-            {isPostListPage && user?.uid && (
+            {isPostListPage && (user?.uid ?? 0) > 0 && (
               <>
                 <IconButton
                   size='small'
