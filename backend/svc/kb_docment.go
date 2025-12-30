@@ -222,7 +222,7 @@ type DocListItem struct {
 	FileType  model.FileType        `json:"file_type"`
 	Status    model.DocStatus       `json:"status"`
 	SimilarID uint                  `json:"similar_id"`
-	GroupIDs  model.Int64Array      `json:"group_ids"`
+	GroupIDs  model.Int64Array      `json:"group_ids" gorm:"type:bigint[]"`
 }
 
 func (d *KBDocument) List(ctx context.Context, kbID uint, docType model.DocType, req DocListReq) (*model.ListRes[DocListItem], error) {
@@ -971,7 +971,7 @@ type ListWebItem struct {
 	Desc     string           `json:"desc"`
 	FileType model.FileType   `json:"file_type"`
 	Status   model.DocStatus  `json:"status"`
-	GroupIDs model.Int64Array `json:"group_ids"`
+	GroupIDs model.Int64Array `json:"group_ids" gorm:"type:bigint[]"`
 }
 
 type ListWebReq struct {
