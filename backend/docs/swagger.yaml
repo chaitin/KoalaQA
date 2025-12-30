@@ -2024,6 +2024,22 @@ definitions:
     required:
     - url
     type: object
+  svc.UpdateGroupIDsReq:
+    properties:
+      group_ids:
+        items:
+          type: integer
+        type: array
+      ids:
+        items:
+          type: integer
+        type: array
+      type:
+        $ref: '#/definitions/model.DocType'
+    required:
+    - ids
+    - type
+    type: object
   svc.UpdatePromptReq:
     properties:
       prompt:
@@ -3606,6 +3622,27 @@ paths:
                   $ref: '#/definitions/anydoc.ListRes'
               type: object
       summary: list file documents
+      tags:
+      - document
+  /admin/kb/document/group_ids:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.UpdateGroupIDsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update doc group_ids
       tags:
       - document
   /admin/kb/document/sitemap/export:

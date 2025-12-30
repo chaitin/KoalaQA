@@ -681,6 +681,39 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/kb/document/group_ids": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "document"
+                ],
+                "summary": "update doc group_ids",
+                "parameters": [
+                    {
+                        "description": "request params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.UpdateGroupIDsReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/kb/document/sitemap/export": {
             "post": {
                 "consumes": [
@@ -9760,6 +9793,30 @@ const docTemplate = `{
             "properties": {
                 "url": {
                     "type": "string"
+                }
+            }
+        },
+        "svc.UpdateGroupIDsReq": {
+            "type": "object",
+            "required": [
+                "ids",
+                "type"
+            ],
+            "properties": {
+                "group_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "type": {
+                    "$ref": "#/definitions/model.DocType"
                 }
             }
         },

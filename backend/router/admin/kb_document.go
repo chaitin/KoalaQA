@@ -406,6 +406,31 @@ func (d *kbDocument) Delete(ctx *context.Context) {
 	ctx.Success(nil)
 }
 
+// UpdateGroupIDs
+// @Summary update doc group_ids
+// @Tags document
+// @Accept json
+// @Param req body svc.UpdateGroupIDsReq true "request params"
+// @Produce json
+// @Success 200 {object} context.Response
+// @Router /admin/kb/document/group_ids [put]
+func (d *kbDocument) UpdateGroupIDs(ctx *context.Context) {
+	var req svc.UpdateGroupIDsReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	err = d.svcDoc.UpdateGroupIDs(ctx, req)
+	if err != nil {
+		ctx.InternalError(err, "set doc group id failed")
+		return
+	}
+
+	ctx.Success(nil)
+}
+
 func newDocument(d *svc.KBDocument) server.Router {
 	return &kbDocument{
 		svcDoc: d,
@@ -418,6 +443,7 @@ func (d *kbDocument) Route(e server.Handler) {
 		pageG.GET("", d.List)
 		pageG.GET("/:doc_id", d.Detail)
 		pageG.DELETE("/:doc_id", d.Delete)
+		pageG.PUT("/group_ids", d.UpdateGroupIDs)
 	}
 
 	{
