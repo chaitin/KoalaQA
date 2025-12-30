@@ -916,7 +916,7 @@ func (d *KBDocument) ListSpaceFolderDoc(ctx context.Context, kbID uint, folderID
 		repo.QueryWithEqual("doc_type", model.DocTypeSpace),
 		repo.QueryWithILike("title", req.Title),
 		repo.QueryWithPagination(req.Pagination),
-		repo.QueryWithOrderBy("created_at DESC"),
+		repo.QueryWithOrderBy("created_at DESC, id ASC"),
 		repo.QueryWithEqual("status", req.Status, repo.EqualOPIn),
 	)
 	if err != nil {
