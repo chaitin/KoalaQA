@@ -4,7 +4,6 @@ import { SvcRankContributeItem } from '@/api/types'
 import CommonAvatar from '@/components/CommonAvatar'
 import { Ellipsis } from '@ctzhian/ui'
 import { Box, Divider, Paper, Stack, Typography } from '@mui/material'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 
