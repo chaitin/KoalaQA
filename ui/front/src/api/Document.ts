@@ -21,6 +21,7 @@ import {
   ModelKBDocumentDetail,
   ModelListRes,
   PostAdminKbDocumentFileListPayload,
+  PutAdminKbKbIdDocumentGroupIdsParams,
   SvcDocListItem,
   SvcFeishuAuthURLReq,
   SvcFileExportReq,
@@ -28,6 +29,7 @@ import {
   SvcSitemapListReq,
   SvcURLExportReq,
   SvcURLListReq,
+  SvcUpdateGroupIDsReq,
 } from "./types";
 
 /**
@@ -295,6 +297,30 @@ export const getAdminKbKbIdDocument = (
     path: `/admin/kb/${kbId}/document`,
     method: "GET",
     query: query,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags document
+ * @name PutAdminKbKbIdDocumentGroupIds
+ * @summary update doc group_ids
+ * @request PUT:/admin/kb/{kb_id}/document/group_ids
+ * @response `200` `ContextResponse` OK
+ */
+
+export const putAdminKbKbIdDocumentGroupIds = (
+  { kbId, ...query }: PutAdminKbKbIdDocumentGroupIdsParams,
+  req: SvcUpdateGroupIDsReq,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/admin/kb/${kbId}/document/group_ids`,
+    method: "PUT",
+    body: req,
+    type: ContentType.Json,
     format: "json",
     ...params,
   });

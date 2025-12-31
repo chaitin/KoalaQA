@@ -420,9 +420,7 @@ export class HttpClient<SecurityDataType = unknown> {
                   errorMsg && errorMsg !== "未知错误"
                     ? `请求出错，状态码: ${statusCode}\n${errorMsg}`
                     : `请求出错，状态码: ${statusCode}`;
-                Alert.error(
-                  `请求出错，状态码: ${error?.response?.status ?? "未知"}`,
-                );
+                Alert.error(alertMessage);
               } catch (e) {
                 // 如果 Alert.error 调用失败，至少输出到控制台
                 console.error("Failed to show alert:", e);

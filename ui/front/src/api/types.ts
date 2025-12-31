@@ -366,6 +366,7 @@ export interface ModelDiscussionListItem {
   rag_id?: string;
   resolved?: ModelDiscussionState;
   resolved_at?: number;
+  similarity?: number;
   summary?: string;
   tag_ids?: number[];
   /** Deprecated */
@@ -452,6 +453,7 @@ export interface ModelKBDocumentDetail {
   export_opt?: ModelJSONBModelExportOpt;
   export_task_id?: string;
   file_type?: ModelFileType;
+  group_ids?: number[];
   id?: number;
   json?: string;
   kb_id?: number;
@@ -755,6 +757,7 @@ export interface SvcCreateSpaceFolderReq {
 }
 
 export interface SvcCreateSpaceForlderItem {
+  child_doc_ids?: string[];
   doc_id: string;
   title?: string;
 }
@@ -812,6 +815,7 @@ export interface SvcDocListItem {
   desc?: string;
   doc_id?: string;
   file_type?: ModelFileType;
+  group_ids?: number[];
   id?: number;
   platform?: PlatformPlatformType;
   similar_id?: number;
@@ -942,6 +946,7 @@ export interface SvcListWebItem {
   created_at?: number;
   desc?: string;
   file_type?: ModelFileType;
+  group_ids?: number[];
   id?: number;
   status?: ModelDocStatus;
   title?: string;
@@ -1095,11 +1100,18 @@ export interface SvcURLListReq {
   url: string;
 }
 
+export interface SvcUpdateGroupIDsReq {
+  group_ids?: number[];
+  ids: number[];
+  type: ModelDocType;
+}
+
 export interface SvcUpdatePromptReq {
   prompt?: string;
 }
 
 export interface SvcUpdateSpaceFolderReq {
+  doc_id?: number;
   update_type?: TopicKBSpaceUpdateType;
 }
 
@@ -1289,6 +1301,11 @@ export interface GetAdminKbKbIdDocumentParams {
   size?: number;
   status?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
   title?: string;
+  /** kb_id */
+  kbId: number;
+}
+
+export interface PutAdminKbKbIdDocumentGroupIdsParams {
   /** kb_id */
   kbId: number;
 }
