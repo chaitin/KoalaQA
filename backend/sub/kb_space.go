@@ -240,6 +240,11 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 		}
 	}
 
+	needExportDocIDs := make(map[string]bool)
+	for _, docID := range folder.ExportOpt.Inner().DocIDs {
+		needExportDocIDs[docID] = true
+	}
+
 	list, err := k.anydoc.List(ctx, folder.Platform,
 		anydoc.ListWithSpaceID(folder.DocID),
 		anydoc.ListWithPlatformOpt(folder.PlatformOpt.Inner()),
@@ -270,6 +275,10 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 	}
 
 	for _, doc := range list.Docs {
+		if len(needExportDocIDs) > 0 && !needExportDocIDs[doc.ID] {
+			continue
+		}
+
 		dbDoc, ok := exist[doc.ID]
 		if ok {
 			delete(exist, doc.ID)

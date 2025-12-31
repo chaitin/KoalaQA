@@ -762,8 +762,9 @@ func (d *KBDocument) ListSpaceRemote(ctx context.Context, kbID uint, docID uint,
 }
 
 type CreateSpaceForlderItem struct {
-	DocID string `json:"doc_id" binding:"required"`
-	Title string `json:"title"`
+	DocID       string   `json:"doc_id" binding:"required"`
+	ChildDocIDs []string `json:"child_doc_ids"`
+	Title       string   `json:"title"`
 }
 type CreateSpaceFolderReq struct {
 	Items []CreateSpaceForlderItem `json:"docs" binding:"required,dive"`
@@ -801,6 +802,9 @@ func (d *KBDocument) CreateSpaceFolder(ctx context.Context, kbID uint, parentID 
 			KBID:     kbID,
 			Title:    item.Title,
 			Platform: parentDoc.Platform,
+			ExportOpt: model.NewJSONB(model.ExportOpt{
+				DocIDs: item.ChildDocIDs,
+			}),
 			FileType: model.FileTypeFolder,
 			Status:   model.DocStatusApplySuccess,
 			DocType:  model.DocTypeSpace,

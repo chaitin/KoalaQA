@@ -8777,6 +8777,12 @@ const docTemplate = `{
                 "doc_id"
             ],
             "properties": {
+                "child_doc_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "doc_id": {
                     "type": "string"
                 },
