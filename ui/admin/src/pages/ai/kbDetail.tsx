@@ -36,15 +36,15 @@ const KnowledgeBaseDetailPage = () => {
   const [searchParams] = useSearchParams();
   const params = useParams();
   const navigate = useNavigate();
-  
+
   // 优先从路由参数获取，如果没有则从查询参数获取
   const kb_id_from_params = params.id ? Number(params.id) : 0;
   const kb_id_from_query = searchParams.get('id') ? Number(searchParams.get('id')) : 0;
   const kb_id = kb_id_from_params || kb_id_from_query;
-  
+
   const spaceId = +searchParams.get('spaceId')!;
   const folderId = +searchParams.get('folderId')!;
-  
+
   // 所有 Hooks 必须在早期返回之前调用
   const [docStatusSearch, setDocStatusSearch] = useState('');
   const [docStatusTab, setDocStatusTab] = useState<'all' | 'success' | 'failed' | 'syncing'>('all');
@@ -325,24 +325,24 @@ const KnowledgeBaseDetailPage = () => {
     docStatusTab === 'all'
       ? docsAfterSearch
       : docsAfterSearch.filter(d => {
-          if (docStatusTab === 'success') {
-            return ModelDocStatus.DocStatusApplySuccess === d.status;
-          }
-          if (docStatusTab === 'failed') {
-            return [
-              ModelDocStatus.DocStatusApplyFailed,
-              ModelDocStatus.DocStatusExportFailed,
-            ].includes(d.status!);
-          }
-          if (docStatusTab === 'syncing') {
-            return (
-              d.status !== ModelDocStatus.DocStatusApplySuccess &&
-              d.status !== ModelDocStatus.DocStatusApplyFailed &&
-              d.status !== ModelDocStatus.DocStatusExportFailed
-            );
-          }
-          return true;
-        });
+        if (docStatusTab === 'success') {
+          return ModelDocStatus.DocStatusApplySuccess === d.status;
+        }
+        if (docStatusTab === 'failed') {
+          return [
+            ModelDocStatus.DocStatusApplyFailed,
+            ModelDocStatus.DocStatusExportFailed,
+          ].includes(d.status!);
+        }
+        if (docStatusTab === 'syncing') {
+          return (
+            d.status !== ModelDocStatus.DocStatusApplySuccess &&
+            d.status !== ModelDocStatus.DocStatusApplyFailed &&
+            d.status !== ModelDocStatus.DocStatusExportFailed
+          );
+        }
+        return true;
+      });
 
   const columns: ColumnsType<SvcDocListItem> = [
     {
@@ -440,6 +440,8 @@ const KnowledgeBaseDetailPage = () => {
               }}
             />
           )}
+        </Stack>
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ flex: 1, justifyContent: 'flex-end' }}>
           {docStatusTab === 'failed' && failed > 0 && (
             <Button
               size="small"
@@ -452,12 +454,11 @@ const KnowledgeBaseDetailPage = () => {
                     .filter((id): id is number => id !== undefined) || []
                 )
               }
+              sx={{ flexShrink: 0 }}
             >
               重试
             </Button>
           )}
-        </Stack>
-        <Stack direction="row" spacing={2} alignItems="center" sx={{ flex: 1, justifyContent: 'flex-end' }}>
           <TextField
             size="small"
             placeholder="搜索文档..."
