@@ -17,16 +17,7 @@ import AutorenewIcon from '@mui/icons-material/Autorenew';
 import CancelIcon from '@mui/icons-material/Cancel';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import DescriptionIcon from '@mui/icons-material/Description';
-import {
-  Box,
-  Button,
-  Chip,
-  Divider,
-  Stack,
-  TextField,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Box, Button, Chip, Divider, Stack, TextField, Tooltip, Typography } from '@mui/material';
 import { useRequest } from 'ahooks';
 import dayjs from 'dayjs';
 import { useEffect, useRef, useState } from 'react';
@@ -36,15 +27,15 @@ const KnowledgeBaseDetailPage = () => {
   const [searchParams] = useSearchParams();
   const params = useParams();
   const navigate = useNavigate();
-  
+
   // 优先从路由参数获取，如果没有则从查询参数获取
   const kb_id_from_params = params.id ? Number(params.id) : 0;
   const kb_id_from_query = searchParams.get('id') ? Number(searchParams.get('id')) : 0;
   const kb_id = kb_id_from_params || kb_id_from_query;
-  
+
   const spaceId = +searchParams.get('spaceId')!;
   const folderId = +searchParams.get('folderId')!;
-  
+
   // 所有 Hooks 必须在早期返回之前调用
   const [docStatusSearch, setDocStatusSearch] = useState('');
   const [docStatusTab, setDocStatusTab] = useState<'all' | 'success' | 'failed' | 'syncing'>('all');
@@ -53,8 +44,11 @@ const KnowledgeBaseDetailPage = () => {
     {}
   );
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastFolderDocDataRef = useRef<any>(null);
+  const searchDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // 使用分类编辑hook
   const categoryEdit = useCategoryEdit({
@@ -65,7 +59,28 @@ const KnowledgeBaseDetailPage = () => {
     },
   });
 
-  // 获取文件夹文档列表
+  // 将状态筛选转换为 API 参数
+  const getStatusFilter = (): (0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8)[] | undefined => {
+    if (docStatusTab === 'success') {
+      return [ModelDocStatus.DocStatusApplySuccess];
+    }
+    if (docStatusTab === 'failed') {
+      return [ModelDocStatus.DocStatusApplyFailed, ModelDocStatus.DocStatusExportFailed];
+    }
+    if (docStatusTab === 'syncing') {
+      return [
+        ModelDocStatus.DocStatusUnknown,
+        ModelDocStatus.DocStatusPendingReview,
+        ModelDocStatus.DocStatusPendingApply,
+        ModelDocStatus.DocStatusAppling,
+        ModelDocStatus.DocStatusPendingExport,
+        ModelDocStatus.DocStatusExportSuccess,
+      ];
+    }
+    return undefined; // 'all' 时不传 status 参数
+  };
+
+  // 获取文件夹文档列表（分页）
   const {
     data: folderDocListData,
     run: fetchFolderDocList,
@@ -75,12 +90,15 @@ const KnowledgeBaseDetailPage = () => {
       if (!spaceId || !folderId || !kb_id) {
         return Promise.resolve(null);
       }
+      const statusFilter = getStatusFilter();
       return getAdminKbKbIdSpaceSpaceIdFolderFolderIdDoc({
         kbId: kb_id,
         spaceId: spaceId,
         folderId: String(folderId),
-        page: 1,
-        size: 9999999,
+        page: currentPage,
+        size: pageSize,
+        status: statusFilter,
+        title: docStatusSearch.trim() || undefined,
       });
     },
     {
@@ -99,7 +117,31 @@ const KnowledgeBaseDetailPage = () => {
     }
   );
 
+  // 获取统计信息（全量数据，不传筛选条件）
+  const {
+    data: statsData,
+    run: fetchStats,
+  } = useRequest(
+    () => {
+      if (!spaceId || !folderId || !kb_id) {
+        return Promise.resolve(null);
+      }
+      return getAdminKbKbIdSpaceSpaceIdFolderFolderIdDoc({
+        kbId: kb_id,
+        spaceId: spaceId,
+        folderId: String(folderId),
+        page: 1,
+        size: 9999999,
+      });
+    },
+    {
+      manual: true,
+    }
+  );
+
   const folderDocs: SvcDocListItem[] = folderDocListData?.items || [];
+  const totalDocs: SvcDocListItem[] = statsData?.items || [];
+  const total = folderDocListData?.total || 0;
 
   // 启动轮询
   const startPolling = () => {
@@ -109,6 +151,7 @@ const KnowledgeBaseDetailPage = () => {
     pollingIntervalRef.current = setInterval(() => {
       if (spaceId && folderId && kb_id) {
         fetchFolderDocList();
+        fetchStats(); // 同时更新统计信息
       } else {
         stopPolling();
       }
@@ -123,10 +166,10 @@ const KnowledgeBaseDetailPage = () => {
     }
   };
 
-  // 检查是否有同步中的文档
+  // 检查是否有同步中的文档（使用全量数据判断）
   useEffect(() => {
     if (!kb_id) return;
-    const hasSyncing = folderDocs.some(
+    const hasSyncing = totalDocs.some(
       doc =>
         doc.status !== ModelDocStatus.DocStatusApplySuccess &&
         doc.status !== ModelDocStatus.DocStatusApplyFailed &&
@@ -141,7 +184,7 @@ const KnowledgeBaseDetailPage = () => {
       stopPolling();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [folderDocs.length, folderDocListData, kb_id]);
+  }, [totalDocs.length, statsData, kb_id]);
 
   // 组件卸载时清理轮询定时器
   useEffect(() => {
@@ -154,14 +197,61 @@ const KnowledgeBaseDetailPage = () => {
   useEffect(() => {
     if (spaceId && folderId && kb_id) {
       fetchFolderDocList();
+      fetchStats();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spaceId, folderId, kb_id]);
 
+  // 当筛选条件变化时，重新获取数据（重置到第一页）
+  useEffect(() => {
+    if (spaceId && folderId && kb_id) {
+      setCurrentPage(1);
+      fetchFolderDocList();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docStatusTab]);
+
+  // 搜索条件变化时，使用防抖延迟请求
+  useEffect(() => {
+    if (spaceId && folderId && kb_id) {
+      // 清除之前的定时器
+      if (searchDebounceTimerRef.current) {
+        clearTimeout(searchDebounceTimerRef.current);
+      }
+      // 设置新的防抖定时器
+      searchDebounceTimerRef.current = setTimeout(() => {
+        setCurrentPage(1);
+        fetchFolderDocList();
+      }, 500); // 500ms 防抖
+    }
+    return () => {
+      if (searchDebounceTimerRef.current) {
+        clearTimeout(searchDebounceTimerRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docStatusSearch]);
+
+  // 当分页参数变化时，重新获取数据
+  useEffect(() => {
+    if (spaceId && folderId && kb_id) {
+      fetchFolderDocList();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, pageSize]);
+
   // 如果 kb_id 无效，返回错误提示（在所有 Hooks 调用之后）
   if (!kb_id || kb_id <= 0 || Number.isNaN(kb_id)) {
     return (
-      <Card sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}>
+      <Card
+        sx={{
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 3,
+        }}
+      >
         <Stack spacing={2} alignItems="center">
           <Typography variant="h6" color="error">
             知识库ID无效
@@ -266,12 +356,7 @@ const KnowledgeBaseDetailPage = () => {
             : '悬停查看失败原因';
       return (
         <Box sx={iconBoxSx}>
-          <Tooltip
-            title={title}
-            arrow
-            onOpen={() => ensureDocFailReason(id)}
-            placement="top"
-          >
+          <Tooltip title={title} arrow onOpen={() => ensureDocFailReason(id)} placement="top">
             <Box component="span" sx={{ display: 'inline-flex' }}>
               <CancelIcon fontSize="small" color="error" />
             </Box>
@@ -303,46 +388,22 @@ const KnowledgeBaseDetailPage = () => {
     );
   };
 
-  // 根据 folderDocs 计算成功、失败和同步中的数量
-  const success = folderDocs.filter(
-    d => d.status === ModelDocStatus.DocStatusApplySuccess
-  ).length;
-  const failed = folderDocs.filter(
+  // 根据全量数据计算成功、失败和同步中的数量（用于统计显示）
+  const success = totalDocs.filter(d => d.status === ModelDocStatus.DocStatusApplySuccess).length;
+  const failed = totalDocs.filter(
     d =>
       d.status === ModelDocStatus.DocStatusApplyFailed ||
       d.status === ModelDocStatus.DocStatusExportFailed
   ).length;
-  const syncing = folderDocs.filter(
+  const syncing = totalDocs.filter(
     d =>
       d.status !== ModelDocStatus.DocStatusApplySuccess &&
       d.status !== ModelDocStatus.DocStatusApplyFailed &&
       d.status !== ModelDocStatus.DocStatusExportFailed
   ).length;
 
-  const q = docStatusSearch.trim().toLowerCase();
-  const docsAfterSearch = folderDocs.filter(d => (d.title || '').toLowerCase().includes(q));
-  const docsAfterFilter =
-    docStatusTab === 'all'
-      ? docsAfterSearch
-      : docsAfterSearch.filter(d => {
-          if (docStatusTab === 'success') {
-            return ModelDocStatus.DocStatusApplySuccess === d.status;
-          }
-          if (docStatusTab === 'failed') {
-            return [
-              ModelDocStatus.DocStatusApplyFailed,
-              ModelDocStatus.DocStatusExportFailed,
-            ].includes(d.status!);
-          }
-          if (docStatusTab === 'syncing') {
-            return (
-              d.status !== ModelDocStatus.DocStatusApplySuccess &&
-              d.status !== ModelDocStatus.DocStatusApplyFailed &&
-              d.status !== ModelDocStatus.DocStatusExportFailed
-            );
-          }
-          return true;
-        });
+  // 搜索和筛选已通过 API 参数处理，直接使用返回的数据
+  const docsAfterFilter = folderDocs;
 
   const columns: ColumnsType<SvcDocListItem> = [
     {
@@ -393,7 +454,13 @@ const KnowledgeBaseDetailPage = () => {
       </Typography>
 
       {/* 状态摘要、搜索框和批量操作 */}
-      <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+      <Stack
+        direction="row"
+        spacing={2}
+        alignItems="center"
+        justifyContent="space-between"
+        sx={{ mb: 2 }}
+      >
         <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
           {success > 0 && (
             <Chip
@@ -401,7 +468,11 @@ const KnowledgeBaseDetailPage = () => {
               color="success"
               variant={docStatusTab === 'success' ? 'filled' : 'outlined'}
               label={`同步成功: ${success}`}
-              onClick={() => setDocStatusTab(docStatusTab === 'success' ? 'all' : 'success')}
+              onClick={() => {
+                const newTab = docStatusTab === 'success' ? 'all' : 'success';
+                setDocStatusTab(newTab);
+                setCurrentPage(1);
+              }}
               sx={{
                 cursor: 'pointer',
                 '&:hover': {
@@ -416,7 +487,11 @@ const KnowledgeBaseDetailPage = () => {
               color="warning"
               variant={docStatusTab === 'syncing' ? 'filled' : 'outlined'}
               label={`同步中: ${syncing}`}
-              onClick={() => setDocStatusTab(docStatusTab === 'syncing' ? 'all' : 'syncing')}
+              onClick={() => {
+                const newTab = docStatusTab === 'syncing' ? 'all' : 'syncing';
+                setDocStatusTab(newTab);
+                setCurrentPage(1);
+              }}
               sx={{
                 cursor: 'pointer',
                 '&:hover': {
@@ -431,7 +506,11 @@ const KnowledgeBaseDetailPage = () => {
               color="error"
               variant={docStatusTab === 'failed' ? 'filled' : 'outlined'}
               label={`同步失败: ${failed}`}
-              onClick={() => setDocStatusTab(docStatusTab === 'failed' ? 'all' : 'failed')}
+              onClick={() => {
+                const newTab = docStatusTab === 'failed' ? 'all' : 'failed';
+                setDocStatusTab(newTab);
+                setCurrentPage(1);
+              }}
               sx={{
                 cursor: 'pointer',
                 '&:hover': {
@@ -440,6 +519,13 @@ const KnowledgeBaseDetailPage = () => {
               }}
             />
           )}
+        </Stack>
+        <Stack
+          direction="row"
+          spacing={2}
+          alignItems="center"
+          sx={{ flex: 1, justifyContent: 'flex-end' }}
+        >
           {docStatusTab === 'failed' && failed > 0 && (
             <Button
               size="small"
@@ -447,24 +533,15 @@ const KnowledgeBaseDetailPage = () => {
               color="primary"
               onClick={() =>
                 handleRetryFailedDocs(
-                  docsAfterFilter
-                    ?.map(i => i?.id)
-                    .filter((id): id is number => id !== undefined) || []
+                  docsAfterFilter?.map(i => i?.id).filter((id): id is number => id !== undefined) ||
+                    []
                 )
               }
+              sx={{ flexShrink: 0 }}
             >
               重试
             </Button>
           )}
-        </Stack>
-        <Stack direction="row" spacing={2} alignItems="center" sx={{ flex: 1, justifyContent: 'flex-end' }}>
-          <TextField
-            size="small"
-            placeholder="搜索文档..."
-            value={docStatusSearch}
-            onChange={e => setDocStatusSearch(e.target.value)}
-            sx={{ maxWidth: 300 }}
-          />
           {selectedRowKeys.length > 0 && (
             <BatchEditCategoryButtons
               categoryEdit={categoryEdit}
@@ -473,6 +550,15 @@ const KnowledgeBaseDetailPage = () => {
               label="标签"
             />
           )}
+          <TextField
+            size="small"
+            placeholder="搜索文档..."
+            value={docStatusSearch}
+            onChange={e => {
+              setDocStatusSearch(e.target.value);
+            }}
+            sx={{ maxWidth: 300 }}
+          />
         </Stack>
       </Stack>
 
@@ -487,7 +573,15 @@ const KnowledgeBaseDetailPage = () => {
             _rowKey: doc.id || doc.doc_id || `row-${index}`,
           }))}
           rowKey="_rowKey"
-          pagination={false}
+          pagination={{
+            page: currentPage,
+            pageSize: pageSize,
+            total: total,
+            onChange: (page: number, size: number) => {
+              setCurrentPage(page);
+              setPageSize(size);
+            },
+          }}
           loading={folderDocListLoading}
           rowSelection={{
             selectedRowKeys,
@@ -516,4 +610,3 @@ const KnowledgeBaseDetailPage = () => {
 };
 
 export default KnowledgeBaseDetailPage;
-

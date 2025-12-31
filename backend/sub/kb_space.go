@@ -150,7 +150,16 @@ func (k *kbSpace) handleInsert(ctx context.Context, logger *glog.Logger, msg top
 		return nil
 	}
 
+	needExportDocIDs := make(map[string]bool)
+	for _, docID := range folder.ExportOpt.Inner().DocIDs {
+		needExportDocIDs[docID] = true
+	}
+
 	for _, doc := range list.Docs {
+		if len(needExportDocIDs) > 0 && !needExportDocIDs[doc.ID] {
+			continue
+		}
+
 		taskID, err := k.doc.SpaceExport(ctx, folder.Platform, svc.SpaceExportReq{
 			BaseExportReq: svc.BaseExportReq{
 				DBDoc: svc.BaseDBDoc{
@@ -240,16 +249,45 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 		}
 	}
 
+	needExportDocIDs := make(map[string]bool)
+	for _, docID := range folder.ExportOpt.Inner().DocIDs {
+		needExportDocIDs[docID] = true
+	}
+
 	list, err := k.anydoc.List(ctx, folder.Platform,
 		anydoc.ListWithSpaceID(folder.DocID),
 		anydoc.ListWithPlatformOpt(folder.PlatformOpt.Inner()),
 	)
 	if err != nil {
 		logger.WithErr(err).Warn("list doc failed")
+
+		query := []repo.QueryOptFunc{
+			repo.QueryWithEqual("kb_id", msg.KBID),
+			repo.QueryWithEqual("parent_id", msg.FolderID),
+			repo.QueryWithEqual("doc_type", model.DocTypeSpace),
+		}
+
+		if msg.DocID > 0 {
+			query = append(query, repo.QueryWithEqual("id", msg.DocID))
+		} else if msg.UpdateType == topic.KBSpaceUpdateTypeFailed {
+			query = append(query, repo.QueryWithEqual("status", []model.DocStatus{model.DocStatusApplyFailed, model.DocStatusExportFailed}, repo.EqualOPIn))
+		}
+
+		e := k.repoDoc.Update(ctx, map[string]any{
+			"status":  model.DocStatusExportFailed,
+			"message": err.Error(),
+		}, query...)
+		if e != nil {
+			logger.WithErr(e).Warn("set doc export failed error")
+		}
 		return nil
 	}
 
 	for _, doc := range list.Docs {
+		if len(needExportDocIDs) > 0 && !needExportDocIDs[doc.ID] {
+			continue
+		}
+
 		dbDoc, ok := exist[doc.ID]
 		if ok {
 			delete(exist, doc.ID)

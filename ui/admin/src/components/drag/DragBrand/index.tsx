@@ -16,16 +16,45 @@ import { Box, Button, Stack, Typography } from '@mui/material';
 import { message } from '@ctzhian/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { eventManager, EVENTS } from '@/utils/eventManager';
 import { useGroupData } from '@/context/GroupDataContext';
 import SortableItem from './SortableItem';
 import EditDialog from './EditDialog';
 
+const formSchema = z.object({
+  brand_groups: z.array(
+    z.object({
+      name: z
+        .string()
+        .refine(val => val.trim().length > 0, {
+          message: '分类名称不能为空',
+        }),
+      id: z.number(),
+      links: z.array(
+        z.object({
+          name: z
+            .string()
+            .refine(val => val.trim().length > 0, {
+              message: '选项名称不能为空',
+            }),
+          id: z.number(),
+        })
+      ),
+    })
+  ),
+});
+
+type FormData = z.infer<typeof formSchema>;
+
 const DragBrand = () => {
   const { groups, refresh } = useGroupData();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [editingGroupIndex, setEditingGroupIndex] = useState<number | null>(null);
-  const groupSnapshotRef = useRef<{ name: string; links: { name: string; id: number }[] } | null>(null);
+  const groupSnapshotRef = useRef<{ name: string; links: { name: string; id: number }[] } | null>(
+    null
+  );
   const sensors = useSensors(useSensor(MouseSensor), useSensor(TouchSensor));
   const {
     control,
@@ -35,13 +64,8 @@ const DragBrand = () => {
     trigger,
     setValue,
     formState: { errors },
-  } = useForm<{
-    brand_groups: {
-      name: string;
-      id: number;
-      links: { name: string; id: number }[];
-    }[];
-  }>({
+  } = useForm<FormData>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       brand_groups: [],
     },
@@ -77,7 +101,7 @@ const DragBrand = () => {
         const oldIndex = brandGroupFields.findIndex((_, index) => `group-${index}` === active.id);
         const newIndex = brandGroupFields.findIndex((_, index) => `group-${index}` === over!.id);
         move(oldIndex, newIndex);
-        
+
         // 排序成功后自动保存
         try {
           const currentData = getValues('brand_groups');
@@ -199,53 +223,51 @@ const DragBrand = () => {
           新增一个分类
         </Button>
       ) : (
-        <>
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-            onDragCancel={handleDragCancel}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
+          <SortableContext
+            items={brandGroupFields.map((_, index) => `group-${index}`)}
+            strategy={rectSortingStrategy}
           >
-            <SortableContext
-              items={brandGroupFields.map((_, index) => `group-${index}`)}
-              strategy={rectSortingStrategy}
-            >
-              <Box sx={{ display: 'flex', flexDirection: 'column',}}>
-                {brandGroupFields.map((group, groupIndex) => (
-                  <SortableItem
-                    key={group.id || groupIndex}
-                    id={`group-${groupIndex}`}
-                    groupIndex={groupIndex}
-                    control={control}
-                    errors={errors}
-                    handleRemove={() => handleRemove(groupIndex)}
-                    onEdit={() => handleEditGroup(groupIndex)}
-                  />
-                ))}
+            <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+              {brandGroupFields.map((group, groupIndex) => (
+                <SortableItem
+                  key={group.id || groupIndex}
+                  id={`group-${groupIndex}`}
+                  groupIndex={groupIndex}
+                  control={control}
+                  errors={errors}
+                  handleRemove={() => handleRemove(groupIndex)}
+                  onEdit={() => handleEditGroup(groupIndex)}
+                />
+              ))}
+            </Box>
+          </SortableContext>
+          <DragOverlay adjustScale style={{ transformOrigin: '0 0' }}>
+            {activeId ? (
+              <Box
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 2,
+                  p: 2,
+                  backgroundColor: 'background.paper',
+                  boxShadow: 3,
+                  minWidth: 200,
+                }}
+              >
+                <Typography variant="body2">
+                  {brandGroupFields[parseInt(activeId.split('-')[1])]?.name || '分类'}
+                </Typography>
               </Box>
-            </SortableContext>
-            <DragOverlay adjustScale style={{ transformOrigin: '0 0' }}>
-              {activeId ? (
-                <Box
-                  sx={{
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: 2,
-                    p: 2,
-                    backgroundColor: 'background.paper',
-                    boxShadow: 3,
-                    minWidth: 200,
-                  }}
-                >
-                  <Typography variant="body2">
-                    {brandGroupFields[parseInt(activeId.split('-')[1])]?.name || '分类'}
-                  </Typography>
-                </Box>
-              ) : null}
-            </DragOverlay>
-          </DndContext>
-        </>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       )}
 
       {/* 编辑弹窗 */}

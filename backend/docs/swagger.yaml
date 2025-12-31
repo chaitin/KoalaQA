@@ -1347,6 +1347,10 @@ definitions:
     type: object
   svc.CreateSpaceForlderItem:
     properties:
+      child_doc_ids:
+        items:
+          type: string
+        type: array
       doc_id:
         type: string
       title:

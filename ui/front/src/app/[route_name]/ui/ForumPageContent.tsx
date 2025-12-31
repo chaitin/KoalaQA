@@ -6,13 +6,13 @@ import {
   ModelForumInfo,
   ModelGroupItemInfo,
   ModelGroupWithItem,
+  SvcRankContributeItem,
 } from '@/api/types'
 import GroupsInitializer from '@/components/groupsInitializer'
 import { Button, Stack } from '@mui/material'
 import Link from 'next/link'
-import { Suspense, useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
 import ArticleCard from './article'
-import { useEffect } from 'react'
 import { useForumStore } from '@/store'
 
 interface ForumPageContentProps {
@@ -31,12 +31,16 @@ interface ForumPageContentProps {
     announcements: ModelDiscussionListItem[]
     discussions: { items: ModelDiscussionListItem[]; total: number }
     groups: { items: (ModelGroupWithItem & { items?: ModelGroupItemInfo[] })[] }
+    contributors: {
+      lastWeek: SvcRankContributeItem[]
+      total: SvcRankContributeItem[]
+    }
   }
 }
 
 const ForumPageContent = ({ route_name, searchParams, initialData }: ForumPageContentProps) => {
   const { tps, type, tags } = searchParams
-  const { forumId, forumInfo, discussions, groups, announcements } = initialData
+  const { forumId, forumInfo, discussions, groups, announcements, contributors } = initialData
   const setRouteName = useForumStore((s) => s.setRouteName)
 
   // type=all / 未传 type 都表示“全部”（不传给后端）
@@ -68,6 +72,7 @@ const ForumPageContent = ({ route_name, searchParams, initialData }: ForumPageCo
   }
 
   return (
+    <GroupsInitializer groupsData={groups}>
       <ArticleCard
         data={discussions}
         announcements={announcements}
@@ -75,7 +80,9 @@ const ForumPageContent = ({ route_name, searchParams, initialData }: ForumPageCo
         tags={tags || ''}
         type={normalizedType}
         forumInfo={forumInfo}
+        contributors={contributors}
       />
+    </GroupsInitializer>
   )
 }
 

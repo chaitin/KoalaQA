@@ -16,6 +16,7 @@ import {
   putAdminKbKbIdSpaceSpaceId,
   putAdminKbKbIdSpaceSpaceIdFolderFolderId,
   putAdminKbKbIdSpaceSpaceIdRefresh,
+  SvcCreateSpaceForlderItem,
   SvcCreateSpaceReq,
   SvcDocListItem,
   SvcListRemoteReq,
@@ -111,6 +112,7 @@ const KnowledgeBasePage = () => {
   const pollingSpaceIdRef = useRef<number | null>(null);
   const lastFolderDocDataRef = useRef<any>(null);
   const [selectedFolders, setSelectedFolders] = useState<string[]>([]);
+  const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set()); // 选中的具体文档 doc_id
   const [expandedDocs, setExpandedDocs] = useState<Set<string>>(new Set());
   const [docDetails, setDocDetails] = useState<Record<string, SvcListSpaceKBItem[]>>({});
   const [selectedPlatform, setSelectedPlatform] = useState<number>(
@@ -890,40 +892,196 @@ const KnowledgeBasePage = () => {
 
   const handleFolderToggle = (folderId?: string) => {
     if (!folderId) return;
-    setSelectedFolders(prev =>
-      prev.includes(folderId) ? prev.filter(id => id !== folderId) : [...prev, folderId]
-    );
+    const isSelected = selectedFolders.includes(folderId);
+    
+    if (isSelected) {
+      // 取消选择文件夹时，同时取消选择该文件夹下的所有子文档
+      setSelectedFolders(prev => prev.filter(id => id !== folderId));
+      const folderDocs = docDetails[folderId] || [];
+      setSelectedDocs(prev => {
+        const newSet = new Set(prev);
+        folderDocs.forEach(doc => {
+          if (doc.doc_id) {
+            newSet.delete(doc.doc_id);
+          }
+        });
+        return newSet;
+      });
+    } else {
+      // 选择文件夹时，同时选择该文件夹下的所有子文档
+      setSelectedFolders(prev => [...prev, folderId]);
+      const folderDocs = docDetails[folderId] || [];
+      setSelectedDocs(prev => {
+        const newSet = new Set(prev);
+        folderDocs.forEach(doc => {
+          if (doc.doc_id) {
+            newSet.add(doc.doc_id);
+          }
+        });
+        return newSet;
+      });
+    }
+  };
+
+  // 切换文档选择状态
+  const handleDocToggle = (docId?: string, folderId?: string) => {
+    if (!docId) return;
+    
+    const isSelected = selectedDocs.has(docId);
+    
+    if (isSelected) {
+      // 取消选择文档
+      setSelectedDocs(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(docId);
+        return newSet;
+      });
+      
+      // 如果该文件夹下的所有文档都被取消选择，则取消选择文件夹
+      if (folderId) {
+        const folderDocs = docDetails[folderId] || [];
+        const remainingSelected = folderDocs.filter(
+          doc => doc.doc_id && doc.doc_id !== docId && selectedDocs.has(doc.doc_id)
+        );
+        if (remainingSelected.length === 0 && selectedFolders.includes(folderId)) {
+          setSelectedFolders(prev => prev.filter(id => id !== folderId));
+        }
+      }
+    } else {
+      // 选择文档
+      setSelectedDocs(prev => {
+        const newSet = new Set(prev);
+        newSet.add(docId);
+        return newSet;
+      });
+      
+      // 如果该文件夹下的所有文档都被选择，则自动选择文件夹
+      if (folderId) {
+        const folderDocs = docDetails[folderId] || [];
+        const allDocsSelected = folderDocs.every(
+          doc => !doc.doc_id || doc.doc_id === docId || selectedDocs.has(doc.doc_id)
+        );
+        if (allDocsSelected && !selectedFolders.includes(folderId)) {
+          setSelectedFolders(prev => [...prev, folderId]);
+        }
+      }
+    }
   };
 
   const handleSelectAll = () => {
     const allFolderIds: string[] = [];
+    const allDocIds: string[] = [];
 
-    // 只收集 folder 级别的文档 ID（不包含子文档）
+    // 收集所有文件夹和文档的 ID
     remoteData?.items?.forEach(folder => {
       if (folder.doc_id) {
         allFolderIds.push(folder.doc_id);
+        // 收集该文件夹下的所有文档
+        const folderDocs = docDetails[folder.doc_id] || [];
+        folderDocs.forEach(doc => {
+          if (doc.doc_id) {
+            allDocIds.push(doc.doc_id);
+          }
+        });
       }
     });
 
-    if (selectedFolders.length === allFolderIds.length) {
+    const allSelected = 
+      selectedFolders.length === allFolderIds.length && 
+      selectedDocs.size === allDocIds.length &&
+      (allFolderIds.length > 0 || allDocIds.length > 0);
+
+    if (allSelected) {
+      // 取消全选
       setSelectedFolders([]);
+      setSelectedDocs(new Set());
     } else {
+      // 全选
       setSelectedFolders(allFolderIds);
+      setSelectedDocs(new Set(allDocIds));
     }
   };
 
   const handleImportFolders = async () => {
     if (!selectedSpaceId) return;
-    if (selectedFolders.length === 0) {
+    
+    // 收集要导入的文档
+    const docsToImport: SvcCreateSpaceForlderItem[] = [];
+    
+    // 遍历所有文件夹（包括选中的和包含选中文档的）
+    remoteData?.items?.forEach(folder => {
+      if (!folder.doc_id) return;
+      
+      // 获取该文件夹下的所有文档
+      const folderDocs = docDetails[folder.doc_id] || [];
+      
+      // 收集该文件夹下被选中的文档 ID
+      const selectedChildDocIds: string[] = [];
+      folderDocs.forEach(doc => {
+        if (doc.doc_id && selectedDocs.has(doc.doc_id)) {
+          selectedChildDocIds.push(doc.doc_id);
+        }
+      });
+      
+      const isFolderSelected = selectedFolders.includes(folder.doc_id);
+      const hasSelectedDocs = selectedChildDocIds.length > 0;
+      
+      // 如果文件夹被选中，或者文件夹下有文档被选中
+      if (isFolderSelected || hasSelectedDocs) {
+        if (hasSelectedDocs) {
+          // 如果文件夹下有文档被单独选中，使用 child_doc_ids
+          docsToImport.push({
+            doc_id: folder.doc_id,
+            title: folder.title,
+            child_doc_ids: selectedChildDocIds,
+          });
+        } else if (isFolderSelected) {
+          // 如果文件夹被选中但没有文档被单独选中，则导入整个文件夹（不使用 child_doc_ids）
+          docsToImport.push({
+            doc_id: folder.doc_id,
+            title: folder.title,
+          });
+        }
+      }
+    });
+    
+    // 添加单独选中的文档（这些文档的父文件夹可能没有被选中，或者父文件夹被选中但文档被单独选择）
+    remoteData?.items?.forEach(folder => {
+      if (folder.doc_id) {
+        const folderDocs = docDetails[folder.doc_id] || [];
+        folderDocs.forEach(doc => {
+          const docId = doc.doc_id;
+          if (docId && selectedDocs.has(docId)) {
+            // 检查该文档的父文件夹是否已经被导入（作为整个文件夹）
+            const parentFolderImported = docsToImport.some(d => d.doc_id === folder.doc_id && !d.child_doc_ids);
+            // 如果父文件夹没有被导入，则单独导入这个文档
+            if (!parentFolderImported) {
+              // 检查是否已经通过 child_doc_ids 导入了
+              const parentFolderImportedWithChildren = docsToImport.some(
+                d => d.doc_id === folder.doc_id && d.child_doc_ids?.includes(docId)
+              );
+              if (!parentFolderImportedWithChildren) {
+                docsToImport.push({
+                  doc_id: docId,
+                  title: doc.title,
+                });
+              }
+            }
+          }
+        });
+      }
+    });
+    
+    if (docsToImport.length === 0) {
       message.warning('请选择要导入的文档');
       return;
     }
+    
     try {
       await postAdminKbKbIdSpaceSpaceIdFolder(
         { kbId: kb_id, spaceId: selectedSpaceId },
         {
-          docs: (remoteData?.items?.filter(i => i.doc_id && selectedFolders.includes(i.doc_id)) ||
-            []) as any,
+          docs: docsToImport as any,
         }
       );
       // 刷新文件夹列表
@@ -936,6 +1094,7 @@ const KnowledgeBasePage = () => {
     message.success('导入学习已开始');
     setShowImportModal(false);
     setSelectedFolders([]);
+    setSelectedDocs(new Set());
   };
 
   // 获取文档详情
@@ -950,7 +1109,7 @@ const KnowledgeBasePage = () => {
         remote_folder_id: spaceId,
       });
 
-      if (response?.items && spaceId) {
+      if (spaceId) {
         setDocDetails(prev => ({
           ...prev,
           [spaceId]: response.items || [],
@@ -1722,17 +1881,39 @@ const KnowledgeBasePage = () => {
               <Checkbox
                 checked={(() => {
                   const allFolderIds: string[] = [];
+                  const allDocIds: string[] = [];
                   remoteData?.items?.forEach(folder => {
-                    if (folder.doc_id) allFolderIds.push(folder.doc_id);
+                    if (folder.doc_id) {
+                      allFolderIds.push(folder.doc_id);
+                      const folderDocs = docDetails[folder.doc_id] || [];
+                      folderDocs.forEach(doc => {
+                        if (doc.doc_id) allDocIds.push(doc.doc_id);
+                      });
+                    }
                   });
-                  return selectedFolders.length === allFolderIds.length && allFolderIds.length > 0;
+                  return (
+                    selectedFolders.length === allFolderIds.length && 
+                    selectedDocs.size === allDocIds.length &&
+                    (allFolderIds.length > 0 || allDocIds.length > 0)
+                  );
                 })()}
                 indeterminate={(() => {
                   const allFolderIds: string[] = [];
+                  const allDocIds: string[] = [];
                   remoteData?.items?.forEach(folder => {
-                    if (folder.doc_id) allFolderIds.push(folder.doc_id);
+                    if (folder.doc_id) {
+                      allFolderIds.push(folder.doc_id);
+                      const folderDocs = docDetails[folder.doc_id] || [];
+                      folderDocs.forEach(doc => {
+                        if (doc.doc_id) allDocIds.push(doc.doc_id);
+                      });
+                    }
                   });
-                  return selectedFolders.length > 0 && selectedFolders.length < allFolderIds.length;
+                  const hasSelectedFolders = selectedFolders.length > 0;
+                  const hasSelectedDocs = selectedDocs.size > 0;
+                  const allFoldersSelected = selectedFolders.length === allFolderIds.length && allFolderIds.length > 0;
+                  const allDocsSelected = allDocIds.length > 0 && allDocIds.every(id => selectedDocs.has(id));
+                  return (hasSelectedFolders || hasSelectedDocs) && !(allFoldersSelected && allDocsSelected);
                 })()}
                 onChange={handleSelectAll}
               />
@@ -1748,17 +1929,37 @@ const KnowledgeBasePage = () => {
                       <ListItemIcon>
                         <Checkbox
                           checked={selectedFolders.includes(folder.doc_id)}
+                          indeterminate={
+                            folder.doc_id &&
+                            expandedDocs.has(folder.doc_id) &&
+                            docDetails[folder.doc_id]
+                              ? docDetails[folder.doc_id].some(
+                                  doc => doc.doc_id && selectedDocs.has(doc.doc_id)
+                                ) &&
+                                !docDetails[folder.doc_id].every(
+                                  doc => !doc.doc_id || selectedDocs.has(doc.doc_id)
+                                )
+                              : false
+                          }
                           onChange={() => handleFolderToggle(folder.doc_id)}
                         />
                       </ListItemIcon>
                       <ListItemText
                         primary={folder.title}
                         secondary={
-                          folder.doc_id &&
-                          expandedDocs.has(folder.doc_id) &&
-                          docDetails[folder.doc_id]
-                            ? `${docDetails[folder.doc_id].length} 个文档`
-                            : ''
+                          folder.doc_id && expandedDocs.has(folder.doc_id) && docDetails[folder.doc_id]
+                            ? `${docDetails[folder.doc_id].length} 个文档${
+                                Array.from(docDetails[folder.doc_id]).some(
+                                  doc => doc.doc_id && selectedDocs.has(doc.doc_id)
+                                )
+                                  ? ` (已选择 ${Array.from(docDetails[folder.doc_id]).filter(
+                                      doc => doc.doc_id && selectedDocs.has(doc.doc_id)
+                                    ).length} 个)`
+                                  : ''
+                              }`
+                            : folder.doc_id && docDetails[folder.doc_id]
+                              ? `${docDetails[folder.doc_id].length} 个文档（点击获取文档查看）`
+                              : ''
                         }
                       />
                       {expandedDocs.has(folder.doc_id) ? (
@@ -1803,7 +2004,29 @@ const KnowledgeBasePage = () => {
                       expandedDocs.has(folder.doc_id) &&
                       docDetails[folder.doc_id] && (
                         <Box sx={{ ml: 4, mb: 2 }}>
-                          {folder.doc_id &&
+                          {folder.doc_id && docDetails[folder.doc_id].length === 0 ? (
+                            <Box
+                              sx={{
+                                p: 2,
+                                border: '1px dashed',
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                                bgcolor: 'grey.50',
+                                textAlign: 'center',
+                              }}
+                            >
+                              <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
+                                <DescriptionIcon
+                                  fontSize="small"
+                                  sx={{ color: 'text.disabled', fontSize: 18 }}
+                                />
+                                <Typography variant="body2" color="text.disabled" sx={{ fontSize: '13px' }}>
+                                  暂无文档
+                                </Typography>
+                              </Stack>
+                            </Box>
+                          ) : (
+                            folder.doc_id &&
                             docDetails[folder.doc_id].map(doc => (
                               <Box
                                 key={doc.doc_id}
@@ -1811,12 +2034,21 @@ const KnowledgeBasePage = () => {
                                   p: 1.5,
                                   mb: 1,
                                   border: '1px solid',
-                                  borderColor: 'divider',
+                                  borderColor: doc.doc_id && selectedDocs.has(doc.doc_id) ? 'primary.main' : 'divider',
                                   borderRadius: 1,
-                                  bgcolor: 'grey.50',
+                                  bgcolor: doc.doc_id && selectedDocs.has(doc.doc_id) ? 'primary.lighter' : 'grey.50',
+                                  transition: 'all 0.2s ease',
+                                  '&:hover': {
+                                    borderColor: 'primary.main',
+                                  },
                                 }}
                               >
                                 <Stack direction="row" alignItems="center" spacing={2}>
+                                  <Checkbox
+                                    checked={doc.doc_id ? selectedDocs.has(doc.doc_id) : false}
+                                    onChange={() => handleDocToggle(doc.doc_id, folder.doc_id)}
+                                    size="small"
+                                  />
                                   <DescriptionIcon
                                     fontSize="small"
                                     sx={{ color: 'text.secondary' }}
@@ -1833,7 +2065,8 @@ const KnowledgeBasePage = () => {
                                   </Stack>
                                 </Stack>
                               </Box>
-                            ))}
+                            ))
+                          )}
                         </Box>
                       )}
                   </Box>

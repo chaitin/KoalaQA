@@ -140,11 +140,15 @@ func (l *LLM) Chat(ctx context.Context, sMsg string, uMsg string, params map[str
 }
 
 func (l *LLM) msgs(ctx context.Context, sMsg string, uMsg string, params map[string]any) ([]*schema.Message, error) {
+	if params == nil {
+		params = make(map[string]any)
+	}
 	templates := []schema.MessagesTemplate{
 		schema.SystemMessage(sMsg),
 	}
 	if uMsg != "" {
-		templates = append(templates, schema.UserMessage(uMsg))
+		params["Context"] = uMsg
+		templates = append(templates, schema.UserMessage(llm.UserMsgFormat))
 	}
 	template := prompt.FromMessages(schema.GoTemplate, templates...)
 	msgs, err := template.Format(ctx, params)

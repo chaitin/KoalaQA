@@ -175,3 +175,7 @@ var SystemBlogSummaryPrompt = `
 - 使用简洁的文字描述，无需 Markdown 格式
 - 字数控制在 100-150 字以内
 `
+
+var UserMsgFormat = `
+{{.Context}}
+`

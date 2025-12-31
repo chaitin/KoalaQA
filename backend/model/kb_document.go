@@ -66,6 +66,9 @@ type PlatformOpt struct {
 type ExportOpt struct {
 	SpaceID  string `json:"space_id,omitempty"`
 	FileType string `json:"file_type,omitempty"`
+
+	// 需要导出的文档 id
+	DocIDs []string `json:"doc_ids,omitempty"`
 }
 
 type KBDocument struct {

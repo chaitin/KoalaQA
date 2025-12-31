@@ -280,10 +280,6 @@ func (a *anydoc) List(ctx context.Context, plat platform.PlatformType, optFuncs 
 
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("anydoc list status code: %d", resp.StatusCode)
-	}
-
 	var (
 		docRes anydocRes[struct {
 			Docs *tree.Node[ListDoc] `json:"docs"`
@@ -300,6 +296,10 @@ func (a *anydoc) List(ctx context.Context, plat platform.PlatformType, optFuncs 
 	err = docRes.Error()
 	if err != nil {
 		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("anydoc list status code: %d", resp.StatusCode)
 	}
 
 	docRes.Data.Docs.Range(func(value ListDoc) {
@@ -376,6 +376,10 @@ func (a *anydoc) Export(ctx context.Context, platform platform.PlatformType, id 
 		return "", err
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("anydoc export status code: %d", resp.StatusCode)
+	}
+
 	return res.Data, nil
 }
 
@@ -412,6 +416,10 @@ func (a *anydoc) AuthURL(ctx context.Context, plat platform.PlatformType, reqDat
 		return "", err
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("anydoc get auth_url status code: %d", resp.StatusCode)
+	}
+
 	return res.Data, nil
 }
 
@@ -446,6 +454,10 @@ func (a *anydoc) UserInfo(ctx context.Context, plat platform.PlatformType, reqDa
 	err = res.Error()
 	if err != nil {
 		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("anydoc get user info status code: %d", resp.StatusCode)
 	}
 
 	return &res.Data, nil
