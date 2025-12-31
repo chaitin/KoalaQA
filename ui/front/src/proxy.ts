@@ -199,7 +199,9 @@ async function isProtectedPageAsync(pathname: string): Promise<boolean> {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const searchParams = request.nextUrl.search;
   const baseURL = process.env.TARGET || request.nextUrl.origin;
+  
   // 获取认证 token
   const authToken = request.cookies.get('auth_token')?.value;
   let shouldClearAuthCookie = false;
@@ -234,6 +236,12 @@ export async function proxy(request: NextRequest) {
   ) {
     return finalizeResponse(NextResponse.next());
   }
+  
+  // 为所有请求设置 URL 参数 headers（在 request headers 中，供服务端组件读取）
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-pathname', pathname);
+  requestHeaders.set('x-url', `${pathname}${searchParams}`);
+  requestHeaders.set('x-search-params', searchParams);
 
   // 处理认证路由（已登录用户重定向到首页）
   if (matchRoute(pathname, AUTH_ROUTES)) {
@@ -282,7 +290,12 @@ export async function proxy(request: NextRequest) {
   if (shouldProtect) {
     // 如果用户已登录，直接允许访问
     if (isAuthenticated) {
-      return finalizeResponse(NextResponse.next());
+      const response = NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      });
+      return finalizeResponse(response);
     }
 
     // 如果用户未登录，检查public_access状态
@@ -293,7 +306,8 @@ export async function proxy(request: NextRequest) {
       if (!publicAccess) {
         const loginUrl = new URL('/login', request.url);
         loginUrl.searchParams.set('redirect', pathname);
-        return finalizeResponse(NextResponse.redirect(loginUrl));
+        const response = NextResponse.redirect(loginUrl);
+        return finalizeResponse(response);
       }
       
       // 如果public_access为true，对于单段路径需要验证是否为有效论坛路由
@@ -303,7 +317,12 @@ export async function proxy(request: NextRequest) {
         const isValidForum = await isValidForumRoute(pathname);
         if (!isValidForum) {
           // 允许访问，让Next.js处理404页面
-          return finalizeResponse(NextResponse.next());
+          const response = NextResponse.next({
+            request: {
+              headers: requestHeaders,
+            },
+          });
+          return finalizeResponse(response);
         }
       }
     } catch (error) {
@@ -311,7 +330,8 @@ export async function proxy(request: NextRequest) {
       // 出错时默认要求登录
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
-      return finalizeResponse(NextResponse.redirect(loginUrl));
+      const response = NextResponse.redirect(loginUrl);
+      return finalizeResponse(response);
     }
   }
 
@@ -320,12 +340,17 @@ export async function proxy(request: NextRequest) {
     if (!isAuthenticated) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
-      return finalizeResponse(NextResponse.redirect(loginUrl));
+      const response = NextResponse.redirect(loginUrl);
+      return finalizeResponse(response);
     }
   }
 
-  // 添加安全 headers
-  const response = NextResponse.next();
+  // 创建 response 并传递自定义 request headers
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
   
   // 安全 Headers
   response.headers.set('X-Frame-Options', 'DENY');

@@ -1,59 +1,29 @@
 'use client'
-import { getRankContribute } from '@/api'
 import { SvcRankContributeItem } from '@/api/types'
 import CommonAvatar from '@/components/CommonAvatar'
 import { Ellipsis } from '@ctzhian/ui'
 import { Box, Divider, Paper, Stack, Typography } from '@mui/material'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 
 type RankType = 1 | 3 // 1: 上周, 3: 总榜
 
-export default function ContributorsRank() {
+interface ContributorsRankProps {
+  contributors: {
+    lastWeek: SvcRankContributeItem[]
+    total: SvcRankContributeItem[]
+  }
+}
+
+export default function ContributorsRank({ contributors }: ContributorsRankProps) {
   const [rankType, setRankType] = useState<RankType>(1) // 默认显示上周
-  // 存储两种类型的数据
-  const [contributorsData, setContributorsData] = useState<{
-    1: SvcRankContributeItem[]
-    3: SvcRankContributeItem[]
-  }>({
-    1: [],
-    3: [],
-  })
-  const [contributorsLoading, setContributorsLoading] = useState(false)
 
   // 获取当前选中类型的数据
-  const contributors = contributorsData[rankType]
-
-  // 获取指定类型的数据
-  const fetchContributorsByType = useCallback(async (type: RankType) => {
-    try {
-      const response = await getRankContribute({ type })
-      setContributorsData((prev) => ({
-        ...prev,
-        [type]: response?.items || [],
-      }))
-    } catch (error) {
-      console.error(`Failed to fetch contributors (type ${type}):`, error)
-    }
-  }, [])
-
-  // 获取所有类型的数据
-  const fetchAllContributors = useCallback(async () => {
-    try {
-      setContributorsLoading(true)
-      // 同时请求两种类型的数据
-      await Promise.all([fetchContributorsByType(1), fetchContributorsByType(3)])
-    } catch (error) {
-      console.error('Failed to fetch all contributors:', error)
-    } finally {
-      setContributorsLoading(false)
-    }
-  }, [fetchContributorsByType])
-
-  // 初始加载时获取所有数据
-  useEffect(() => {
-    fetchAllContributors()
-  }, [fetchAllContributors])
+  const contributorsData = {
+    1: contributors.lastWeek,
+    3: contributors.total,
+  }
+  const currentContributors = contributorsData[rankType]
 
   return (
     <Paper
@@ -114,7 +84,7 @@ export default function ContributorsRank() {
       </Stack>
       <Divider />
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, pt: 1 }}>
-        {contributorsLoading ? null : contributors.length === 0 ? (
+        {currentContributors.length === 0 ? (
           <Typography
             variant='caption'
             sx={{
@@ -126,7 +96,7 @@ export default function ContributorsRank() {
             暂无数据
           </Typography>
         ) : (
-          contributors.map((contributor, index) => {
+          currentContributors.map((contributor, index) => {
             const contributorProfileHref = contributor.id ? `/profile/${contributor.id}` : undefined
             return (
               <Box

@@ -6,6 +6,7 @@ import {
   ModelForumInfo,
   ModelListRes,
   ModelUserRole,
+  SvcRankContributeItem,
 } from '@/api/types'
 import AnnouncementCard from '@/components/AnnouncementCard'
 import AnnouncementCarousel from '@/components/AnnouncementCarousel'
@@ -58,6 +59,7 @@ const Article = ({
   tags,
   forumInfo,
   announcements,
+  contributors,
 }: {
   data: ModelListRes & {
     items?: ModelDiscussionListItem[]
@@ -67,6 +69,10 @@ const Article = ({
   tags?: string
   forumInfo?: ModelForumInfo | null
   announcements: ModelDiscussionListItem[]
+  contributors: {
+    lastWeek: SvcRankContributeItem[]
+    total: SvcRankContributeItem[]
+  }
 }) => {
   const searchParams = useSearchParams()
   const params = useParams()
@@ -1258,7 +1264,7 @@ const Article = ({
             </Paper>
           )}
           {/* 贡献达人 */}
-          <ContributorsRank />
+          <ContributorsRank contributors={contributors} />
 
           {/* 品牌声明 */}
           <BrandAttribution inSidebar={true} sidebarRef={sidebarRef as React.RefObject<HTMLElement>} />

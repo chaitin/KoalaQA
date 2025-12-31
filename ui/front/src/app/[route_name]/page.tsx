@@ -1,4 +1,5 @@
-import { getDiscussion, GetDiscussionParams, getForum, getGroup, ModelDiscussionListItem } from '@/api'
+import { getDiscussion, GetDiscussionParams, getForum, getGroup, getRankContribute, ModelDiscussionListItem } from '@/api'
+import { SvcRankContributeItem } from '@/api/types'
 import { safeApiCall, safeLogError } from '@/lib/error-utils'
 import { findForumIdByRouteName, findForumInfoByRouteName } from '@/lib/forum-server-utils'
 import { Metadata } from 'next'
@@ -28,6 +29,10 @@ async function fetchForumData(route_name: string, searchParams: any) {
         announcements: [] as ModelDiscussionListItem[],
         discussions: { items: [], total: 0 },
         groups: { items: [] },
+        contributors: {
+          lastWeek: [] as SvcRankContributeItem[],
+          total: [] as SvcRankContributeItem[],
+        },
       }
     }
 
@@ -40,7 +45,7 @@ async function fetchForumData(route_name: string, searchParams: any) {
     const normalizedType = !type || type === 'all' ? undefined : type
 
     const discussionParams: any = {
-      page: parseInt(page, 10),
+      page: Number.parseInt(page, 10),
       size: 10,
       keyword: search,
       forum_id: forumId,
@@ -75,7 +80,7 @@ async function fetchForumData(route_name: string, searchParams: any) {
     }
 
     // 并行获取数据
-    const [discussions, groups, announcements] = await Promise.all([
+    const [discussions, groups, announcements, contributorsLastWeek, contributorsTotal] = await Promise.all([
       safeApiCall(() => getSortedGroupsInDiscussionList(discussionParams), { items: [], total: 0 }),
       safeApiCall(() => getGroup(groupParams), { items: [] }),
       safeApiCall(
@@ -83,6 +88,24 @@ async function fetchForumData(route_name: string, searchParams: any) {
           ? Promise.resolve([]) 
           : getDiscussion(params).then(r => r.items), 
         []
+      ),
+      // 获取贡献达人数据：上周
+      safeApiCall(
+        async () => {
+          const response = await getRankContribute({ type: 1 })
+          // httpClient 已经返回了 res.data，所以直接访问 items
+          return (response as { items?: SvcRankContributeItem[] })?.items || []
+        },
+        [] as SvcRankContributeItem[]
+      ),
+      // 获取贡献达人数据：总榜
+      safeApiCall(
+        async () => {
+          const response = await getRankContribute({ type: 3 })
+          // httpClient 已经返回了 res.data，所以直接访问 items
+          return (response as { items?: SvcRankContributeItem[] })?.items || []
+        },
+        [] as SvcRankContributeItem[]
       ),
     ])
     
@@ -97,6 +120,10 @@ async function fetchForumData(route_name: string, searchParams: any) {
       groups: {
         items: groups?.items || [],
       },
+      contributors: {
+        lastWeek: contributorsLastWeek || [],
+        total: contributorsTotal || [],
+      },
     }
   } catch (error) {
     safeLogError('Failed to fetch forum data in server', error)
@@ -106,6 +133,10 @@ async function fetchForumData(route_name: string, searchParams: any) {
       announcements: [] as ModelDiscussionListItem[],
       discussions: { items: [], total: 0 },
       groups: { items: [] },
+      contributors: {
+        lastWeek: [] as SvcRankContributeItem[],
+        total: [] as SvcRankContributeItem[],
+      },
     }
   }
 }
