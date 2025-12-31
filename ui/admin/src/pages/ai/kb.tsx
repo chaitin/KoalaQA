@@ -1109,7 +1109,7 @@ const KnowledgeBasePage = () => {
         remote_folder_id: spaceId,
       });
 
-      if (response?.items && spaceId) {
+      if (spaceId) {
         setDocDetails(prev => ({
           ...prev,
           [spaceId]: response.items || [],
@@ -2004,7 +2004,29 @@ const KnowledgeBasePage = () => {
                       expandedDocs.has(folder.doc_id) &&
                       docDetails[folder.doc_id] && (
                         <Box sx={{ ml: 4, mb: 2 }}>
-                          {folder.doc_id &&
+                          {folder.doc_id && docDetails[folder.doc_id].length === 0 ? (
+                            <Box
+                              sx={{
+                                p: 2,
+                                border: '1px dashed',
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                                bgcolor: 'grey.50',
+                                textAlign: 'center',
+                              }}
+                            >
+                              <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
+                                <DescriptionIcon
+                                  fontSize="small"
+                                  sx={{ color: 'text.disabled', fontSize: 18 }}
+                                />
+                                <Typography variant="body2" color="text.disabled" sx={{ fontSize: '13px' }}>
+                                  暂无文档
+                                </Typography>
+                              </Stack>
+                            </Box>
+                          ) : (
+                            folder.doc_id &&
                             docDetails[folder.doc_id].map(doc => (
                               <Box
                                 key={doc.doc_id}
@@ -2043,7 +2065,8 @@ const KnowledgeBasePage = () => {
                                   </Stack>
                                 </Stack>
                               </Box>
-                            ))}
+                            ))
+                          )}
                         </Box>
                       )}
                   </Box>
