@@ -219,7 +219,7 @@ const Article = ({
           })
         })
       })
-  }, [articleData.total, page, status, search, topics, type, loadingMore, onlyMine, resolved, forumInfo?.id])
+  }, [articleData.total, page, status, search, topics, tagIds, type, loadingMore, onlyMine, resolved, forumInfo?.id])
 
   const createQueryString = (name: string, value: string) => {
     const params = new URLSearchParams(searchParams?.toString())
@@ -282,7 +282,9 @@ const Article = ({
     if (cached && cached.searchParams === currentSearchParams) {
       restoreScrollPosition(cached.scrollPosition)
     } else {
+      // 筛选条件改变时，重置分页状态和数据
       setArticleData(data)
+      setPage(1) // 重置页码为 1
       const mainContent = document.getElementById('main-content')
       if (mainContent) mainContent.scrollTop = 0
     }
