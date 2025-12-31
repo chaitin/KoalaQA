@@ -1669,7 +1669,7 @@ func (d *Discussion) RevokeLike(ctx context.Context, uid uint, discUUID string, 
 		return err
 	}
 
-	commentLike, err := d.in.CommLikeRepo.RevokeLike(ctx, uid, commentID)
+	commentLike, err := d.in.CommLikeRepo.RevokeLike(ctx, disc.UUID, disc.Type, uid, commentID)
 	if err != nil {
 		return err
 	}
