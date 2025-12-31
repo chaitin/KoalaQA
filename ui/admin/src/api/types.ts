@@ -757,6 +757,7 @@ export interface SvcCreateSpaceFolderReq {
 }
 
 export interface SvcCreateSpaceForlderItem {
+  child_doc_ids?: string[];
   doc_id: string;
   title?: string;
 }

@@ -18,7 +18,7 @@ a {
 
 #SM_BTN_1 {
   width: auto !important;
-  background-color: #21222D !important;
+  background-color: #21222d !important;
   border-radius: 4px;
   text-align: center;
 }
@@ -101,10 +101,8 @@ a {
   font-family: 'Monoid';
   font-display: swap;
   src:
-    url('//cdn.jsdelivr.net/npm/@typopro/web-monoid@3.7.5/TypoPRO-Monoid-Regular.woff2')
-      format('woff2'),
-    url('//cdn.jsdelivr.net/npm/@typopro/web-monoid@3.7.5/TypoPRO-Monoid-Regular.woff')
-      format('woff');
+    url('//cdn.jsdelivr.net/npm/@typopro/web-monoid@3.7.5/TypoPRO-Monoid-Regular.woff2') format('woff2'),
+    url('//cdn.jsdelivr.net/npm/@typopro/web-monoid@3.7.5/TypoPRO-Monoid-Regular.woff') format('woff');
 }
 
 @font-face {
@@ -121,30 +119,24 @@ a {
   font-family: 'Hack';
   font-display: swap;
   src:
-    url('//cdn.jsdelivr.net/font-hack/2.020/fonts/woff2/hack-regular-webfont.woff2?v=2.020')
-      format('woff2'),
-    url('//cdn.jsdelivr.net/font-hack/2.020/fonts/woff/hack-regular-webfont.woff?v=2.020')
-      format('woff');
+    url('//cdn.jsdelivr.net/font-hack/2.020/fonts/woff2/hack-regular-webfont.woff2?v=2.020') format('woff2'),
+    url('//cdn.jsdelivr.net/font-hack/2.020/fonts/woff/hack-regular-webfont.woff?v=2.020') format('woff');
 }
 
 @font-face {
   font-family: 'Fira Code';
   font-display: swap;
   src:
-    url('//cdn.jsdelivr.net/npm/firacode@latest/distr/woff2/FiraCode-Regular.woff2')
-      format('woff2'),
-    url('//cdn.jsdelivr.net/npm/firacode@latest/distr/woff/FiraCode-Regular.woff')
-      format('woff');
+    url('//cdn.jsdelivr.net/npm/firacode@latest/distr/woff2/FiraCode-Regular.woff2') format('woff2'),
+    url('//cdn.jsdelivr.net/npm/firacode@latest/distr/woff/FiraCode-Regular.woff') format('woff');
 }
 
 @font-face {
   font-family: 'JetBrains Mono';
   font-display: swap;
   src:
-    url('//cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff2/JetBrainsMono-Regular.woff2')
-      format('woff2'),
-    url('//cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff/JetBrainsMono-Regular.woff')
-      format('woff');
+    url('//cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff2/JetBrainsMono-Regular.woff2') format('woff2'),
+    url('//cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff/JetBrainsMono-Regular.woff') format('woff');
 }
 
 @font-face {
@@ -179,8 +171,7 @@ a {
   src:
     local('Anonymous Pro Regular'),
     local('AnonymousPro-Regular'),
-    url(//fonts.gstatic.com/s/anonymouspro/v11/Zhfjj_gat3waL4JSju74E3n3cbdKJftHIk87C9ihfO8.woff2)
-      format('woff2');
+    url(//fonts.gstatic.com/s/anonymouspro/v11/Zhfjj_gat3waL4JSju74E3n3cbdKJftHIk87C9ihfO8.woff2) format('woff2');
 }
 
 /* latin */
@@ -190,8 +181,7 @@ a {
   src:
     local('Droid Sans Mono Regular'),
     local('DroidSansMono-Regular'),
-    url(//fonts.gstatic.com/s/droidsansmono/v9/ns-m2xQYezAtqh7ai59hJVlgUn8GogvcKKzoM9Dh-4E.woff2)
-      format('woff2');
+    url(//fonts.gstatic.com/s/droidsansmono/v9/ns-m2xQYezAtqh7ai59hJVlgUn8GogvcKKzoM9Dh-4E.woff2) format('woff2');
 }
 
 /* latin */
@@ -201,8 +191,7 @@ a {
   src:
     local('Inconsolata Regular'),
     local('Inconsolata-Regular'),
-    url(//fonts.gstatic.com/s/inconsolata/v16/BjAYBlHtW3CJxDcjzrnZCIgp9Q8gbYrhqGlRav_IXfk.woff2)
-      format('woff2');
+    url(//fonts.gstatic.com/s/inconsolata/v16/BjAYBlHtW3CJxDcjzrnZCIgp9Q8gbYrhqGlRav_IXfk.woff2) format('woff2');
 }
 
 /* latin */
@@ -212,8 +201,7 @@ a {
   src:
     local('Source Code Pro'),
     local('SourceCodePro-Regular'),
-    url(//fonts.gstatic.com/s/sourcecodepro/v7/mrl8jkM18OlOQN8JLgasD5bPFduIYtoLzwST68uhz_Y.woff2)
-      format('woff2');
+    url(//fonts.gstatic.com/s/sourcecodepro/v7/mrl8jkM18OlOQN8JLgasD5bPFduIYtoLzwST68uhz_Y.woff2) format('woff2');
 }
 
 /* latin */
@@ -223,8 +211,7 @@ a {
   src:
     local('Ubuntu Mono'),
     local('UbuntuMono-Regular'),
-    url(//fonts.gstatic.com/s/ubuntumono/v7/ViZhet7Ak-LRXZMXzuAfkYgp9Q8gbYrhqGlRav_IXfk.woff2)
-      format('woff2');
+    url(//fonts.gstatic.com/s/ubuntumono/v7/ViZhet7Ak-LRXZMXzuAfkYgp9Q8gbYrhqGlRav_IXfk.woff2) format('woff2');
 }
 
 /* latin */
@@ -234,8 +221,7 @@ a {
   src:
     local('Space Mono'),
     local('SpaceMono-Regular'),
-    url(https://fonts.gstatic.com/s/spacemono/v2/i7dPIFZifjKcF5UAWdDRYEF8RQ.woff2)
-      format('woff2');
+    url(https://fonts.gstatic.com/s/spacemono/v2/i7dPIFZifjKcF5UAWdDRYEF8RQ.woff2) format('woff2');
 }
 
 /* Gilroy 字体 - Regular (免费版本) */
@@ -325,8 +311,8 @@ a {
   z-index: 1500 !important;
 }
 
-.tiptap + .ProseMirror .MuiSelect-root{
-  background-color: unset!important;
+.tiptap + .ProseMirror .MuiSelect-root {
+  background-color: unset !important;
 }
 
 @layer editor {
@@ -347,9 +333,9 @@ html,
 body {
   font-family: 'Glibory', 'Gilroy', 'PingFang SC', 'Hiragino Sans GB', 'STHeiti', 'Microsoft YaHei', sans-serif;
 }
-body{
+body {
   padding-top: 64px;
-  background: #ffffff!important;
+  background: #ffffff !important;
   display: flex;
   overflow: hidden;
   flex-direction: column;
@@ -392,4 +378,22 @@ img {
 .icon img {
   object-fit: contain;
   object-position: center;
+}
+
+.node-video {
+  margin-bottom: 0 !important;
+}
+
+/* 如果 node-video 的父元素是 p 标签，则将该 p 的 line-height 设为 0 */
+.node-video:has(*) {
+} /* 兼容性提示，仅在支持 :has 的浏览器生效 */
+p > .node-video {
+  /* 此规则用于选中 .node-video 直接作为 p 子元素的情况 */
+}
+/* 实现要求：将 p 设置 line-height 为 0 当含有 .node-video 子元素时 */
+p > .node-video {
+  /* 为了准确性，可在 p 上设置 line-height，但要避免影响所有 p： */
+}
+p:has(> .node-video) {
+  line-height: 0;
 }
