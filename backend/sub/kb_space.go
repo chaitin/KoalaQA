@@ -150,7 +150,16 @@ func (k *kbSpace) handleInsert(ctx context.Context, logger *glog.Logger, msg top
 		return nil
 	}
 
+	needExportDocIDs := make(map[string]bool)
+	for _, docID := range folder.ExportOpt.Inner().DocIDs {
+		needExportDocIDs[docID] = true
+	}
+
 	for _, doc := range list.Docs {
+		if len(needExportDocIDs) > 0 && !needExportDocIDs[doc.ID] {
+			continue
+		}
+
 		taskID, err := k.doc.SpaceExport(ctx, folder.Platform, svc.SpaceExportReq{
 			BaseExportReq: svc.BaseExportReq{
 				DBDoc: svc.BaseDBDoc{
