@@ -246,6 +246,26 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 	)
 	if err != nil {
 		logger.WithErr(err).Warn("list doc failed")
+
+		query := []repo.QueryOptFunc{
+			repo.QueryWithEqual("kb_id", msg.KBID),
+			repo.QueryWithEqual("parent_id", msg.FolderID),
+			repo.QueryWithEqual("doc_type", model.DocTypeSpace),
+		}
+
+		if msg.DocID > 0 {
+			query = append(query, repo.QueryWithEqual("id", msg.DocID))
+		} else if msg.UpdateType == topic.KBSpaceUpdateTypeFailed {
+			query = append(query, repo.QueryWithEqual("status", []model.DocStatus{model.DocStatusApplyFailed, model.DocStatusExportFailed}, repo.EqualOPIn))
+		}
+
+		e := k.repoDoc.Update(ctx, map[string]any{
+			"status":  model.DocStatusExportFailed,
+			"message": err.Error(),
+		}, query...)
+		if e != nil {
+			logger.WithErr(e).Warn("set doc export failed error")
+		}
 		return nil
 	}
 
