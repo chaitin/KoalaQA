@@ -53,7 +53,6 @@ func (c *CommentLike) Like(ctx context.Context, discUUID string, discType model.
 				if err != nil {
 					return err
 				}
-
 			} else {
 				return err
 			}
@@ -74,17 +73,17 @@ func (c *CommentLike) Like(ctx context.Context, discUUID string, discType model.
 
 			switch state {
 			case model.CommentLikeStateLike:
-				updateM["dislike"] = gorm.Expr("dislike - 1")
+				updateM["dislike"] = gorm.Expr("GREATEST(dislike - 1, 0)")
 			case model.CommentLikeStateDislike:
-				updateM["like"] = gorm.Expr(`"like" - 1`)
+				updateM["like"] = gorm.Expr(`GREATEST("like" - 1, 0)`)
 			default:
 				return nil
 			}
-		}
 
-		err = tx.Model(&model.Comment{}).Where("id = ?", commentLike.CommentID).Updates(updateM).Error
-		if err != nil {
-			return err
+			err = tx.Model(&model.Comment{}).Where("id = ?", commentLike.CommentID).Updates(updateM).Error
+			if err != nil {
+				return err
+			}
 		}
 
 		if discType == model.DiscussionTypeQA {
@@ -116,7 +115,7 @@ func (c *CommentLike) Like(ctx context.Context, discUUID string, discType model.
 	return updated, stateChanged, e
 }
 
-func (c *CommentLike) RevokeLike(ctx context.Context, uid, commentID uint) (model.CommentLike, error) {
+func (c *CommentLike) RevokeLike(ctx context.Context, discUUID string, discType model.DiscussionType, uid, commentID uint) (model.CommentLike, error) {
 	var commentLike model.CommentLike
 	txErr := c.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		err := tx.Exec(`SELECT pg_advisory_xact_lock(?)`, uid).Error
@@ -135,9 +134,9 @@ func (c *CommentLike) RevokeLike(ctx context.Context, uid, commentID uint) (mode
 
 		switch commentLike.State {
 		case model.CommentLikeStateLike:
-			updateM["like"] = gorm.Expr(`"like" - 1`)
+			updateM["like"] = gorm.Expr(`GREATEST("like" - 1, 0)`)
 		case model.CommentLikeStateDislike:
-			updateM["dislike"] = gorm.Expr("dislike - 1")
+			updateM["dislike"] = gorm.Expr("GREATEST(dislike - 1, 0)")
 		default:
 			return nil
 		}
@@ -152,9 +151,18 @@ func (c *CommentLike) RevokeLike(ctx context.Context, uid, commentID uint) (mode
 			return err
 		}
 
-		err = tx.Model(&model.Discussion{}).Where("id = ?", commentLike.DiscussionID).Updates(updateM).Error
-		if err != nil {
-			return err
+		if discType == model.DiscussionTypeQA {
+			err = tx.Model(&model.Discussion{}).Where("id = ?", commentLike.DiscussionID).Updates(updateM).Error
+			if err != nil {
+				return err
+			}
+
+			if commentLike.State == model.CommentLikeStateLike {
+				err = tx.Model(&model.DiscLike{}).Where("uuid = ? AND user_id = ?", discUUID, uid).Delete(nil).Error
+				if err != nil {
+					return err
+				}
+			}
 		}
 
 		return nil
