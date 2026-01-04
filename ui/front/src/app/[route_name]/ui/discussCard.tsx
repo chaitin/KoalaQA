@@ -201,7 +201,7 @@ const DiscussCard = ({
             })}
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'center', fontFamily: 'Gilroy' }}>
             {isQAPost && (
               <Box
                 sx={{
@@ -216,9 +216,7 @@ const DiscussCard = ({
                 }}
               >
                 <Icon type='icon-wendapinglun' sx={{ fontSize: 12 }} />
-                <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
-                  {it.comment || 0}
-                </Typography>
+                <Box sx={{ fontSize: '12px' }}>{it.comment || 0}</Box>
               </Box>
             )}
             {(isArticlePost || isIssuePost) && (
@@ -234,9 +232,7 @@ const DiscussCard = ({
                 }}
               >
                 <Icon type='icon-dianzan1' sx={{ fontSize: '12px' }} />
-                <Typography variant='caption' sx={{fontSize: '14px'}}>
-                  {(it.like || 0)}
-                </Typography>
+                <Box sx={{ fontSize: '12px' }}>{it.like || 0}</Box>
               </Box>
             )}
           </Box>

@@ -469,28 +469,6 @@ const Article = ({
     handleFilterMenuClose()
   }
 
-  // 处理分类选择
-  const handleCategoryChange = (categoryIds: number[]) => {
-    const params = new URLSearchParams(searchParams?.toString())
-    if (categoryIds.length > 0) {
-      params.set('tps', categoryIds.join(','))
-    } else {
-      params.delete('tps')
-    }
-    router.replace(`/${routeName}?${params.toString()}`)
-  }
-
-  // 处理标签选择
-  const handleTagChange = (tagIds: number[]) => {
-    const params = new URLSearchParams(searchParams?.toString())
-    if (tagIds.length > 0) {
-      params.set('tags', tagIds.join(','))
-    } else {
-      params.delete('tags')
-    }
-    router.replace(`/${routeName}?${params.toString()}`)
-  }
-
   // 帖子类型配置
   const postTypes = [
     { id: 'all', name: '全部', icon: <Icon type='icon-quanbu' sx={{ fontSize: 20, color: 'primary.main' }} /> },
