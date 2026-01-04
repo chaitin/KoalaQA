@@ -751,6 +751,36 @@ func (u *User) ListPoint(ctx context.Context, uid uint, req UserListPointReq) (*
 	return &res, nil
 }
 
+type ListSearchHistoryReq struct {
+	*model.Pagination
+
+	Keyword  *string `form:"keyword"`
+	Username *string `form:"username"`
+}
+
+func (u *User) ListSearchHistory(ctx context.Context, req ListSearchHistoryReq) (*model.ListRes[model.UserSearchHistory], error) {
+	var res model.ListRes[model.UserSearchHistory]
+	err := u.repoUser.ListSearchHistory(ctx, &res.Items,
+		repo.QueryWithILike("keyword", req.Keyword),
+		repo.QueryWithILike("username", req.Username),
+		repo.QueryWithOrderBy("created_at DESC, id ASC"),
+		repo.QueryWithPagination(req.Pagination),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	err = u.repoUser.CountSearchHistory(ctx, &res.Total,
+		repo.QueryWithILike("keyword", req.Keyword),
+		repo.QueryWithILike("username", req.Username),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
 func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth,
 	authMgmt *third_auth.Manager, oc oss.Client, org *repo.Org, userPoint *repo.UserPointRecord,
 	disc *repo.Discussion, comm *repo.Comment, review *repo.UserReview, pub mq.Publisher) *User {
