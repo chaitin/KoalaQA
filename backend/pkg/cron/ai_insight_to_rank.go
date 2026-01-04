@@ -196,22 +196,29 @@ func (i *aiInsight2Rank) calcScore(ctx context.Context, data model.AIInsight) (f
 		ForumID:             data.ForumID,
 		Keyword:             data.Keyword,
 		SimilarityThreshold: 0.8,
+		Metadata: model.DiscMetadata{
+			DiscussType: model.DiscussionTypeQA,
+		},
 	})
 	if err != nil {
 		logger.WithErr(err).Warn("search disc failed")
 		return 0, nil, err
 	}
 
-	discUUIDs := make(model.StringArray, len(discs))
-	discIDs := make(model.Int64Array, len(discs))
-	discAIInsights := make([]model.DiscussionAIInsight, len(discs))
-	for i, disc := range discs {
-		discUUIDs[i] = disc.UUID
-		discIDs[i] = int64(disc.ID)
-		discAIInsights[i] = model.DiscussionAIInsight{
+	discUUIDs := make(model.StringArray, 0, len(discs))
+	discIDs := make(model.Int64Array, 0, len(discs))
+	discAIInsights := make([]model.DiscussionAIInsight, 0, len(discs))
+	for _, disc := range discs {
+		if disc.Type != model.DiscussionTypeQA {
+			continue
+		}
+
+		discUUIDs = append(discUUIDs, disc.UUID)
+		discIDs = append(discIDs, int64(disc.ID))
+		discAIInsights = append(discAIInsights, model.DiscussionAIInsight{
 			DiscussionUUID: disc.UUID,
 			Title:          disc.Title,
-		}
+		})
 	}
 
 	if len(discIDs) == 0 {
