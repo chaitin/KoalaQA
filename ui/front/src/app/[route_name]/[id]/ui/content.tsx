@@ -764,7 +764,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                               fontSize: 14,
                               color: isLiked ? 'info.main' : 'rgba(0,0,0,0.5)',
                               lineHeight: '20px',
-                              fontFamily: 'Gilroy',
                             }}
                           >
                             {formatNumber(answer.like || 0)}
@@ -809,7 +808,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                               fontSize: 14,
                               lineHeight: '20px',
                               color: isDisliked ? 'info.main' : 'rgba(0,0,0,0.5)',
-                              fontFamily: 'Gilroy',
                             }}
                           >
                             {formatNumber(answer.dislike || 0)}
