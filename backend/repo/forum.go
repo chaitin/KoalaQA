@@ -131,7 +131,9 @@ func (f *Forum) UpdateWithGroup(ctx context.Context, forums []model.ForumInfo) e
 				BlogIDs:          forum.BlogIDs,
 				DatasetID:        datasetID,
 				InsightDatasetID: insightDatasetID,
+				TagEnabled:       forum.TagEnabled,
 				TagIDs:           forum.TagIDs,
+				Links:            forum.Links,
 			})
 		}
 

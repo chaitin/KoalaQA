@@ -579,10 +579,14 @@ definitions:
         type: integer
       index:
         type: integer
+      links:
+        $ref: '#/definitions/model.JSONB-model_ForumLinks'
       name:
         type: string
       route_name:
         type: string
+      tag_enabled:
+        type: boolean
       tag_ids:
         items:
           type: integer
@@ -615,6 +619,8 @@ definitions:
   model.JSONB-array_model_StatTrendItem:
     type: object
   model.JSONB-model_ExportOpt:
+    type: object
+  model.JSONB-model_ForumLinks:
     type: object
   model.JSONB-model_PlatformOpt:
     type: object
@@ -1568,10 +1574,14 @@ definitions:
         type: integer
       index:
         type: integer
+      links:
+        $ref: '#/definitions/model.JSONB-model_ForumLinks'
       name:
         type: string
       route_name:
         type: string
+      tag_enabled:
+        type: boolean
       tag_ids:
         items:
           type: integer

@@ -7739,11 +7739,17 @@ const docTemplate = `{
                 "index": {
                     "type": "integer"
                 },
+                "links": {
+                    "$ref": "#/definitions/model.JSONB-model_ForumLinks"
+                },
                 "name": {
                     "type": "string"
                 },
                 "route_name": {
                     "type": "string"
+                },
+                "tag_enabled": {
+                    "type": "boolean"
                 },
                 "tag_ids": {
                     "type": "array",
@@ -7791,6 +7797,9 @@ const docTemplate = `{
             "type": "object"
         },
         "model.JSONB-model_ExportOpt": {
+            "type": "object"
+        },
+        "model.JSONB-model_ForumLinks": {
             "type": "object"
         },
         "model.JSONB-model_PlatformOpt": {
@@ -9180,11 +9189,17 @@ const docTemplate = `{
                 "index": {
                     "type": "integer"
                 },
+                "links": {
+                    "$ref": "#/definitions/model.JSONB-model_ForumLinks"
+                },
                 "name": {
                     "type": "string"
                 },
                 "route_name": {
                     "type": "string"
+                },
+                "tag_enabled": {
+                    "type": "boolean"
                 },
                 "tag_ids": {
                     "type": "array",
