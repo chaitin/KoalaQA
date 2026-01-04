@@ -665,7 +665,9 @@ func (d *KBDocument) UpdateSpaceAllFolder(ctx context.Context, kbID uint, docID 
 	}
 
 	for _, item := range listRes.Items {
-		err = d.UpdateSpaceFolder(ctx, kbID, item.ID, UpdateSpaceFolderReq{})
+		err = d.UpdateSpaceFolder(ctx, kbID, item.ID, UpdateSpaceFolderReq{
+			UpdateType: topic.KBSpaceUpdateTypeIncr,
+		})
 		if err != nil {
 			d.logger.WithContext(ctx).WithErr(err).With("folder_id", item.ID).Warn("update folder failed")
 		}

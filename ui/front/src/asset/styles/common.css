@@ -224,20 +224,8 @@ a {
     url(https://fonts.gstatic.com/s/spacemono/v2/i7dPIFZifjKcF5UAWdDRYEF8RQ.woff2) format('woff2');
 }
 
-/* Gilroy 字体 - Regular (免费版本) */
-@font-face {
-  font-family: 'Gilroy';
-  font-display: swap;
-  font-weight: 400;
-  font-style: normal;
-  src:
-    local('Gilroy Regular'),
-    local('Gilroy-Regular'),
-    url('../font/Gilroy-Regular.ttf') format('truetype');
-}
 
-/* Gilroy 字体 - ExtraBold (免费版本) */
-/* 仅使用本地已安装的字体，如果没有安装则回退到字体栈中的其他字体 */
+
 @font-face {
   font-family: 'Gilroy Bold';
   font-display: swap;
@@ -331,7 +319,7 @@ html {
 /* 全局字体设置 - 英文和数字使用 Glibory，中文使用苹果字体 */
 html,
 body {
-  font-family: 'Glibory', 'Gilroy', 'PingFang SC', 'Hiragino Sans GB', 'STHeiti', 'Microsoft YaHei', sans-serif;
+  font-family: 'PingFang SC', 'Hiragino Sans GB', 'STHeiti', 'Microsoft YaHei', sans-serif;
 }
 body {
   padding-top: 64px;

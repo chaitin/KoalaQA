@@ -475,7 +475,6 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
                   fontSize: 14,
                   color: data.user_like ? 'info.main' : 'rgba(0,0,0,0.5)',
                   lineHeight: '20px',
-                  fontFamily: 'Gilroy',
                 }}
               >
                 {formatNumber(data.like || 0)}
@@ -599,7 +598,7 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
             )}
             <Link
               href={profileHref || 'javascript:void(0)'}
-              style={{ color: 'inherit', fontWeight: 500, textDecoration: 'none', fontFamily: 'Gilroy' }}
+              style={{ color: 'inherit', fontWeight: 500, textDecoration: 'none' }}
               tabIndex={-1}
             >
               {data.user_name || '未知用户'}

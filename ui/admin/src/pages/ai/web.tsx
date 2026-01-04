@@ -56,7 +56,7 @@ const AdminDocument = () => {
     kbId: kb_id,
     docType: ModelDocType.DocTypeWeb,
     onSuccess: () => {
-      fetchData({ page: 1 });
+      setParams({ page: 1 });
     },
   });
   const {
@@ -84,9 +84,7 @@ const AdminDocument = () => {
   const updateDoc = (item: SvcDocListItem) => {
     putAdminKbKbIdWebDocId({ kbId: kb_id, docId: item.id! }).then(() => {
       message.success('更新成功');
-      fetchData({
-        page: 1,
-      });
+      setParams({ page: 1 });
     });
   };
   const deleteDoc = (item: SvcDocListItem) => {
@@ -108,9 +106,7 @@ const AdminDocument = () => {
       onOk: () => {
         deleteAdminKbKbIdDocumentDocId({ kbId: kb_id, docId: item.id! }).then(() => {
           message.success('删除成功');
-          fetchData({
-            page: 1,
-          });
+          setParams({ page: 1 });
         });
       },
     });
@@ -139,9 +135,7 @@ const AdminDocument = () => {
           .then(() => {
             message.success('批量删除成功');
             setSelectedRowKeys([]);
-            fetchData({
-              page: 1,
-            });
+            setParams({ page: 1 });
           })
           .catch(() => {
             message.error('批量删除失败');
@@ -249,7 +243,7 @@ const AdminDocument = () => {
   }, [query, fetchData]);
 
   return (
-    <Stack component={Card} sx={{ height: '100%', pt: 0 }}>
+    <Stack sx={{ height: '100%', pt: 0 }}>
       <Stack
         direction="row"
         alignItems="center"

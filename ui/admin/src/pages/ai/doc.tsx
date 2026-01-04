@@ -7,16 +7,17 @@ import {
   ModelKBDocumentDetail,
   SvcDocListItem,
 } from '@/api';
-import Card from '@/components/card';
+import { BatchEditCategoryButtons } from '@/components/BatchEditCategoryButtons';
 import CategoryDisplay from '@/components/CategoryDisplay';
 import CategoryItemSelector from '@/components/CategoryItemSelector';
-import { BatchEditCategoryButtons } from '@/components/BatchEditCategoryButtons';
+import EditorContent from '@/components/EditorContent';
 import { fileType } from '@/components/ImportDoc/const';
-import StatusBadge from '@/components/StatusBadge';
-import { useListQueryParams } from '@/hooks/useListQueryParams';
-import { useCategoryEdit } from '@/hooks/useCategoryEdit';
 import LoadingBtn from '@/components/LoadingButton';
+import StatusBadge from '@/components/StatusBadge';
+import { useCategoryEdit } from '@/hooks/useCategoryEdit';
+import { useListQueryParams } from '@/hooks/useListQueryParams';
 import { Ellipsis, message, Modal, Table } from '@ctzhian/ui';
+import { ColumnsType } from '@ctzhian/ui/dist/Table';
 import {
   Box,
   Button,
@@ -29,12 +30,10 @@ import {
   Typography,
 } from '@mui/material';
 import { useRequest } from 'ahooks';
-import { ColumnsType } from '@ctzhian/ui/dist/Table';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
-import DocImport from './docImport';
 import { useSearchParams } from 'react-router-dom';
-import EditorContent from '@/components/EditorContent';
+import DocImport from './docImport';
 
 // 新增：用于请求 markdown 内容
 const fetchMarkdownContent = async (url: string): Promise<string> => {
@@ -57,13 +56,13 @@ const AdminDocument = () => {
     return Number(query.file_type) as ModelFileType;
   });
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-  
+
   // 使用分类编辑hook
   const categoryEdit = useCategoryEdit({
     kbId: kb_id,
     docType: ModelDocType.DocTypeDocument,
     onSuccess: () => {
-      fetchData({ page: 1 });
+      setParams({ page: 1 });
     },
   });
   const {
@@ -105,14 +104,11 @@ const AdminDocument = () => {
       onOk: () => {
         deleteAdminKbKbIdDocumentDocId({ kbId: kb_id, docId: item.id! }).then(() => {
           message.success('删除成功');
-          fetchData({
-            page: 1,
-          });
+          setParams({ page: 1 });
         });
       },
     });
   };
-
 
   // 批量删除
   const handleBatchDelete = () => {
@@ -136,9 +132,7 @@ const AdminDocument = () => {
           .then(() => {
             message.success('批量删除成功');
             setSelectedRowKeys([]);
-            fetchData({
-              page: 1,
-            });
+            setParams({ page: 1 });
           })
           .catch(() => {
             message.error('批量删除失败');
@@ -233,7 +227,7 @@ const AdminDocument = () => {
   }, [query, fetchData]);
 
   return (
-    <Stack component={Card} sx={{ height: '100%', pt: 0 }}>
+    <Stack sx={{ height: '100%', pt: 0 }}>
       <Stack
         direction="row"
         alignItems="center"

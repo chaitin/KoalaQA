@@ -667,6 +667,16 @@ export interface ModelUserReviewWithUser {
   user_name?: string;
 }
 
+export interface ModelUserSearchHistory {
+  created_at?: number;
+  id?: number;
+  keyword?: string;
+  updated_at?: number;
+  user_id?: number;
+  user_role?: ModelUserRole;
+  username?: string;
+}
+
 export interface ModelWebhook {
   created_at?: number;
   id?: number;
@@ -1585,6 +1595,15 @@ export interface GetAdminUserParams {
   role?: 0 | 1 | 2 | 3 | 4 | 5;
   /** @min 1 */
   size?: number;
+}
+
+export interface GetAdminUserHistorySearchParams {
+  keyword?: string;
+  /** @min 1 */
+  page?: number;
+  /** @min 1 */
+  size?: number;
+  username?: string;
 }
 
 export interface GetAdminUserReviewParams {

@@ -123,7 +123,6 @@ export default function ContributorsRank({ contributors }: ContributorsRankProps
                     fontSize: '0.8rem',
                     fontWeight: 800,
                     flexShrink: 0,
-                    fontFamily: 'Gilroy',
                     fontStyle: 'italic',
                     letterSpacing: '-0.02em',
                     textRendering: 'optimizeLegibility',
@@ -210,7 +209,6 @@ export default function ContributorsRank({ contributors }: ContributorsRankProps
                     <Typography
                       variant='caption'
                       sx={{
-                        fontFamily: 'Gilroy',
                         fontWeight: 700,
                         fontSize: '14px',
                         color: 'rgba(33, 34, 45, 1)',

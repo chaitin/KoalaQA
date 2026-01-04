@@ -430,8 +430,8 @@ type DiscussionListReq struct {
 	TagIDs        model.Int64Array       `json:"tag_ids" form:"tag_ids"`
 }
 
-func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, req DiscussionListReq) (*model.ListRes[*model.DiscussionListItem], error) {
-	ok, err := d.in.UserRepo.HasForumPermission(ctx, userID, req.ForumID)
+func (d *Discussion) List(ctx context.Context, sessionUUID string, userInfo model.UserInfo, req DiscussionListReq) (*model.ListRes[*model.DiscussionListItem], error) {
+	ok, err := d.in.UserRepo.HasForumPermission(ctx, userInfo.UID, req.ForumID)
 	if err != nil {
 		return nil, err
 	}
@@ -448,6 +448,21 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 				Ts:   util.TodayTrunc().Unix(),
 				Key:  sessionUUID,
 			})
+
+			username := userInfo.Username
+			if userInfo.UID == 0 {
+				username = "匿名游客"
+			}
+
+			err = d.in.UserRepo.CreateSearchHistory(ctx, &model.UserSearchHistory{
+				UserID:   userInfo.UID,
+				Username: username,
+				UserRole: userInfo.Role,
+				Keyword:  req.Keyword,
+			})
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		var discType model.DiscussionType
@@ -487,7 +502,7 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userID uint, 
 		repo.QueryWithEqual("discussions.tag_ids", req.TagIDs, repo.EqualOPContainAny),
 	)
 	if req.OnlyMine {
-		query = append(query, repo.QueryWithEqual("members", userID, repo.EqualOPValIn))
+		query = append(query, repo.QueryWithEqual("members", userInfo.UID, repo.EqualOPValIn))
 	}
 	if req.Resolved != nil {
 		query = append(query, repo.QueryWithEqual("type", model.DiscussionTypeBlog, repo.EqualOPNE))

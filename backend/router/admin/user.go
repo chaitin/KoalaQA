@@ -136,10 +136,35 @@ func (u *user) JoinOrg(ctx *context.Context) {
 	ctx.Success(nil)
 }
 
+// ListSearchHistory
+// @Summary list user search history
+// @Tags user
+// @Param req query svc.ListSearchHistoryReq true "request params"
+// @Produce json
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]model.UserSearchHistory}}
+// @Router /admin/user/history/search [get]
+func (u *user) ListSearchHistory(ctx *context.Context) {
+	var req svc.ListSearchHistoryReq
+	err := ctx.ShouldBindQuery(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	res, err := u.svcUser.ListSearchHistory(ctx, req)
+	if err != nil {
+		ctx.InternalError(err, "list search history failed")
+		return
+	}
+
+	ctx.Success(res)
+}
+
 func (u *user) Route(h server.Handler) {
 	{
 		g := h.Group("/user")
 		g.GET("", u.List)
+		g.GET("/history/search", u.ListSearchHistory)
 		g.POST("/join_org", u.JoinOrg)
 		{
 			userG := g.Group("/:user_id")

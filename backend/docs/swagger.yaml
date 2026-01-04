@@ -579,10 +579,14 @@ definitions:
         type: integer
       index:
         type: integer
+      links:
+        $ref: '#/definitions/model.JSONB-model_ForumLinks'
       name:
         type: string
       route_name:
         type: string
+      tag_enabled:
+        type: boolean
       tag_ids:
         items:
           type: integer
@@ -615,6 +619,8 @@ definitions:
   model.JSONB-array_model_StatTrendItem:
     type: object
   model.JSONB-model_ExportOpt:
+    type: object
+  model.JSONB-model_ForumLinks:
     type: object
   model.JSONB-model_PlatformOpt:
     type: object
@@ -1160,6 +1166,23 @@ definitions:
     - UserRoleUser
     - UserRoleGuest
     - UserRoleMax
+  model.UserSearchHistory:
+    properties:
+      created_at:
+        type: integer
+      id:
+        type: integer
+      keyword:
+        type: string
+      updated_at:
+        type: integer
+      user_id:
+        type: integer
+      user_role:
+        $ref: '#/definitions/model.UserRole'
+      username:
+        type: string
+    type: object
   model.Webhook:
     properties:
       created_at:
@@ -1551,10 +1574,14 @@ definitions:
         type: integer
       index:
         type: integer
+      links:
+        $ref: '#/definitions/model.JSONB-model_ForumLinks'
       name:
         type: string
       route_name:
         type: string
+      tag_enabled:
+        type: boolean
       tag_ids:
         items:
           type: integer
@@ -4711,6 +4738,45 @@ paths:
           schema:
             $ref: '#/definitions/context.Response'
       summary: update user
+      tags:
+      - user
+  /admin/user/history/search:
+    get:
+      parameters:
+      - in: query
+        name: keyword
+        type: string
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - in: query
+        minimum: 1
+        name: size
+        type: integer
+      - in: query
+        name: username
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/model.UserSearchHistory'
+                        type: array
+                    type: object
+              type: object
+      summary: list user search history
       tags:
       - user
   /admin/user/join_org:

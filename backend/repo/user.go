@@ -275,6 +275,24 @@ func (u *User) Create(ctx context.Context, user *model.User) error {
 	})
 }
 
+func (u *User) CreateSearchHistory(ctx context.Context, searchHistory *model.UserSearchHistory) error {
+	return u.db.WithContext(ctx).Create(searchHistory).Error
+}
+
+func (u *User) ListSearchHistory(ctx context.Context, res any, queryFuncs ...QueryOptFunc) error {
+	opt := getQueryOpt(queryFuncs...)
+	return u.db.Model(&model.UserSearchHistory{}).
+		Scopes(opt.Scopes()...).
+		Find(res).Error
+}
+
+func (u *User) CountSearchHistory(ctx context.Context, cnt *int64, queryFuncs ...QueryOptFunc) error {
+	opt := getQueryOpt(queryFuncs...)
+	return u.db.Model(&model.UserSearchHistory{}).
+		Scopes(opt.Scopes()...).
+		Count(cnt).Error
+}
+
 func newUser(db *database.DB, org *Org, oc oss.Client) *User {
 	return &User{
 		base: base[*model.User]{
