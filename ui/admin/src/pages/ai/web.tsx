@@ -243,7 +243,7 @@ const AdminDocument = () => {
   }, [query, fetchData]);
 
   return (
-    <Stack component={Card} sx={{ height: '100%', pt: 0 }}>
+    <Stack sx={{ height: '100%', pt: 0 }}>
       <Stack
         direction="row"
         alignItems="center"

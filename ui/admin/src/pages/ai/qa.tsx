@@ -45,7 +45,7 @@ const AdminDocument = () => {
     return Number(query.status) as ModelDocStatus;
   });
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-  
+
   // 使用分类编辑hook
   const categoryEdit = useCategoryEdit({
     kbId: kb_id,
@@ -54,7 +54,7 @@ const AdminDocument = () => {
       setParams({ page: 1 });
     },
   });
-  
+
   const statusOptions = [
     { value: ModelDocStatus.DocStatusPendingReview, label: '待审核' },
     { value: ModelDocStatus.DocStatusApplySuccess, label: '应用中' },
@@ -241,7 +241,7 @@ const AdminDocument = () => {
   }, [query]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <Stack component={Card} sx={{ height: '100%', pt: 0 }}>
+    <Stack sx={{ height: '100%', pt: 0 }}>
       <Stack
         direction="row"
         alignItems="center"

@@ -131,10 +131,10 @@ const KnowledgeBasePage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const kb_id = +searchParams.get('id')!;
-  
+
   // 从 URL 参数中恢复选中的 spaceId（用于刷新页面时保持选中状态）
   const urlSpaceId = searchParams.get('spaceId');
-  
+
   // 使用分类编辑hook
   const categoryEdit = useCategoryEdit({
     kbId: kb_id,
@@ -175,12 +175,16 @@ const KnowledgeBasePage = () => {
       },
     }
   );
-  
+
   // 当 URL 中的 spaceId 变化时，更新选中状态
   useEffect(() => {
     if (urlSpaceId) {
       const spaceIdFromUrl = Number(urlSpaceId);
-      if (!Number.isNaN(spaceIdFromUrl) && spaceIdFromUrl > 0 && selectedSpaceId !== spaceIdFromUrl) {
+      if (
+        !Number.isNaN(spaceIdFromUrl) &&
+        spaceIdFromUrl > 0 &&
+        selectedSpaceId !== spaceIdFromUrl
+      ) {
         // 验证 spaceId 是否存在于列表中
         const spaceExists = spacesData?.items?.some(space => space.id === spaceIdFromUrl);
         if (spaceExists) {
@@ -463,7 +467,6 @@ const KnowledgeBasePage = () => {
     }
   };
 
-
   const closeDocStatusModal = () => {
     stopPolling();
     pollingFolderRef.current = null;
@@ -511,7 +514,7 @@ const KnowledgeBasePage = () => {
       // 如果已绑定账号，检查 app_id 或 secret 是否与原始值不同
       const hasChanged = Boolean(
         (originalAppIdRef.current && appId !== originalAppIdRef.current) ||
-        (originalSecretRef.current && secret !== originalSecretRef.current)
+          (originalSecretRef.current && secret !== originalSecretRef.current)
       );
       setNeedsRebind(hasChanged);
     } else {
@@ -855,7 +858,10 @@ const KnowledgeBasePage = () => {
           title: data.title,
           opt: platformOpt,
         };
-        await putAdminKbKbIdSpaceSpaceId({ kbId: kb_id, spaceId: editSpace?.id || feishuBoundUser?.id || 0 }, updateData);
+        await putAdminKbKbIdSpaceSpaceId(
+          { kbId: kb_id, spaceId: editSpace?.id || feishuBoundUser?.id || 0 },
+          updateData
+        );
         message.success('修改成功');
       } else {
         const spaceData: SvcCreateSpaceReq = {
@@ -893,7 +899,7 @@ const KnowledgeBasePage = () => {
   const handleFolderToggle = (folderId?: string) => {
     if (!folderId) return;
     const isSelected = selectedFolders.includes(folderId);
-    
+
     if (isSelected) {
       // 取消选择文件夹时，同时取消选择该文件夹下的所有子文档
       setSelectedFolders(prev => prev.filter(id => id !== folderId));
@@ -926,9 +932,9 @@ const KnowledgeBasePage = () => {
   // 切换文档选择状态
   const handleDocToggle = (docId?: string, folderId?: string) => {
     if (!docId) return;
-    
+
     const isSelected = selectedDocs.has(docId);
-    
+
     if (isSelected) {
       // 取消选择文档
       setSelectedDocs(prev => {
@@ -936,7 +942,7 @@ const KnowledgeBasePage = () => {
         newSet.delete(docId);
         return newSet;
       });
-      
+
       // 如果该文件夹下的所有文档都被取消选择，则取消选择文件夹
       if (folderId) {
         const folderDocs = docDetails[folderId] || [];
@@ -954,7 +960,7 @@ const KnowledgeBasePage = () => {
         newSet.add(docId);
         return newSet;
       });
-      
+
       // 如果该文件夹下的所有文档都被选择，则自动选择文件夹
       if (folderId) {
         const folderDocs = docDetails[folderId] || [];
@@ -986,8 +992,8 @@ const KnowledgeBasePage = () => {
       }
     });
 
-    const allSelected = 
-      selectedFolders.length === allFolderIds.length && 
+    const allSelected =
+      selectedFolders.length === allFolderIds.length &&
       selectedDocs.size === allDocIds.length &&
       (allFolderIds.length > 0 || allDocIds.length > 0);
 
@@ -1004,17 +1010,17 @@ const KnowledgeBasePage = () => {
 
   const handleImportFolders = async () => {
     if (!selectedSpaceId) return;
-    
+
     // 收集要导入的文档
     const docsToImport: SvcCreateSpaceForlderItem[] = [];
-    
+
     // 遍历所有文件夹（包括选中的和包含选中文档的）
     remoteData?.items?.forEach(folder => {
       if (!folder.doc_id) return;
-      
+
       // 获取该文件夹下的所有文档
       const folderDocs = docDetails[folder.doc_id] || [];
-      
+
       // 收集该文件夹下被选中的文档 ID
       const selectedChildDocIds: string[] = [];
       folderDocs.forEach(doc => {
@@ -1022,10 +1028,10 @@ const KnowledgeBasePage = () => {
           selectedChildDocIds.push(doc.doc_id);
         }
       });
-      
+
       const isFolderSelected = selectedFolders.includes(folder.doc_id);
       const hasSelectedDocs = selectedChildDocIds.length > 0;
-      
+
       // 如果文件夹被选中，或者文件夹下有文档被选中
       if (isFolderSelected || hasSelectedDocs) {
         if (hasSelectedDocs) {
@@ -1044,7 +1050,7 @@ const KnowledgeBasePage = () => {
         }
       }
     });
-    
+
     // 添加单独选中的文档（这些文档的父文件夹可能没有被选中，或者父文件夹被选中但文档被单独选择）
     remoteData?.items?.forEach(folder => {
       if (folder.doc_id) {
@@ -1053,7 +1059,9 @@ const KnowledgeBasePage = () => {
           const docId = doc.doc_id;
           if (docId && selectedDocs.has(docId)) {
             // 检查该文档的父文件夹是否已经被导入（作为整个文件夹）
-            const parentFolderImported = docsToImport.some(d => d.doc_id === folder.doc_id && !d.child_doc_ids);
+            const parentFolderImported = docsToImport.some(
+              d => d.doc_id === folder.doc_id && !d.child_doc_ids
+            );
             // 如果父文件夹没有被导入，则单独导入这个文档
             if (!parentFolderImported) {
               // 检查是否已经通过 child_doc_ids 导入了
@@ -1071,12 +1079,12 @@ const KnowledgeBasePage = () => {
         });
       }
     });
-    
+
     if (docsToImport.length === 0) {
       message.warning('请选择要导入的文档');
       return;
     }
-    
+
     try {
       await postAdminKbKbIdSpaceSpaceIdFolder(
         { kbId: kb_id, spaceId: selectedSpaceId },
@@ -1282,55 +1290,39 @@ const KnowledgeBasePage = () => {
                 <Stack spacing={2} sx={{ flex: 1, overflow: 'auto' }}>
                   {folders.map(folder => (
                     <Stack
-                    direction="row"
-                    alignItems="center"
-                    spacing={2}
-                    key={folder.id}
-                    sx={{
-                      pl: 3,
-                      pr: 2,
-                      py: 2,
-                      border: '1px solid #e0e0e0',
-                      borderRadius: '8px',
-                      backgroundColor: 'white',
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        backgroundColor: '#f8f9fa',
-                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
-                      },
-                    }}
-                  >
-                    <Icon
-                      type="icon-tongyongwendang-moren"
-                      sx={{ color: 'text.secondary', fontSize: 20, flexShrink: 0 }}
-                    />
-                    <Stack sx={{ width: '35%', minWidth: 0 }}>
-                      <Typography
-                        variant="subtitle2"
-                        sx={{ fontWeight: 500, fontSize: '14px', mb: 0.5 }}
-                      >
-                        {folder.title}
-                      </Typography>
-                      <Stack direction="row" alignItems="center" spacing={1}>
+                      direction="row"
+                      alignItems="center"
+                      spacing={2}
+                      key={folder.id}
+                      sx={{
+                        pl: 3,
+                        pr: 2,
+                        py: 2,
+                        border: '1px solid #e0e0e0',
+                        borderRadius: '8px',
+                        backgroundColor: 'white',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          backgroundColor: '#f8f9fa',
+                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                        },
+                      }}
+                    >
+                      <Icon
+                        type="icon-tongyongwendang-moren"
+                        sx={{ color: 'text.secondary', fontSize: 20, flexShrink: 0 }}
+                      />
+                      <Stack sx={{ width: '35%', minWidth: 0 }}>
                         <Typography
-                          variant="caption"
-                          color="text.secondary"
+                          variant="subtitle2"
                           sx={{
-                            fontSize: '12px',
+                            fontWeight: 500,
+                            fontSize: '14px',
                             mb: 0.5,
-                            '& b': { color: 'text.primary' },
+                            cursor: 'pointer',
+                            transition: 'color 0.2s ease',
+                            '&:hover': { color: '#1976d2' },
                           }}
-                        >
-                          同步成功 <b>{folder.success || 0}</b> 个
-                          {(folder.failed || 0) > 0 && (
-                            <>
-                              ，同步失败 <b>{folder.failed || 0}</b> 个
-                            </>
-                          )}
-                        </Typography>
-                        <Button
-                          variant="outlined"
-                          size="small"
                           onClick={() => {
                             // 使用相对路径导航，确保保留父路由的 id 参数
                             const currentSearch = searchParams.toString();
@@ -1344,75 +1336,93 @@ const KnowledgeBasePage = () => {
                             }
                             navigate(`detail?${newSearch.toString()}`);
                           }}
-                          sx={{ minWidth: 'auto', px: 1.5, py: 0.25, fontSize: '12px' }}
                         >
-                          查看
-                        </Button>
+                          {folder.title}
+                        </Typography>
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{
+                              fontSize: '12px',
+                              mb: 0.5,
+                              '& b': { color: 'text.primary' },
+                            }}
+                          >
+                            同步成功 <b>{folder.success || 0}</b> 个
+                            {(folder.failed || 0) > 0 && (
+                              <>
+                                ，同步失败 <b>{folder.failed || 0}</b> 个
+                              </>
+                            )}
+                          </Typography>
+                        </Stack>
+                      </Stack>
+                      <Box sx={{ width: '100px', flexShrink: 0 }}>
+                        <StatusBadge status={folder.status} />
+                      </Box>
+                      <Box sx={{ flex: 1 }} />
+                      <Stack alignItems="flex-end" spacing={1} sx={{ flexShrink: 0 }}>
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          <IconButton
+                            size="small"
+                            onClick={e => handleFolderMenuClick(e, folder)}
+                            sx={{
+                              color: 'text.secondary',
+                              '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
+                            }}
+                          >
+                            <MoreVertIcon fontSize="small" />
+                          </IconButton>
+                        </Stack>
+                        <Stack direction="row" alignItems="center" spacing={2} sx={{ pr: 1 }}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ fontSize: '12px', display: 'block' }}
+                          >
+                            更新于 {dayjs((folder.updated_at || 0) * 1000).fromNow()}{' '}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ fontSize: '12px', display: 'block' }}
+                          >
+                            {formatDate(folder.updated_at)}
+                          </Typography>
+                        </Stack>
                       </Stack>
                     </Stack>
-                    <Box sx={{ width: '100px', flexShrink: 0 }}>
-                      <StatusBadge status={folder.status} />
+                  ))}
+                  {folders.length === 0 && !foldersLoading && (
+                    <Box sx={{ textAlign: 'center', py: 8 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        该知识库暂无文档
+                      </Typography>
                     </Box>
-                    <Box sx={{ flex: 1 }} />
-                    <Stack alignItems="flex-end" spacing={1} sx={{ flexShrink: 0 }}>
-                      <IconButton
-                        size="small"
-                        onClick={e => handleFolderMenuClick(e, folder)}
-                        sx={{
-                          color: 'text.secondary',
-                          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' },
-                        }}
-                      >
-                        <MoreVertIcon fontSize="small" />
-                      </IconButton>
-                      <Stack direction="row" alignItems="center" spacing={2} sx={{ pr: 1 }}>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ fontSize: '12px', display: 'block' }}
-                        >
-                          更新于 {dayjs((folder.updated_at || 0) * 1000).fromNow()}{' '}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ fontSize: '12px', display: 'block' }}
-                        >
-                          {formatDate(folder.updated_at)}
-                        </Typography>
-                      </Stack>
-                    </Stack>
-                  </Stack>
-                ))}
-                {folders.length === 0 && !foldersLoading && (
-                  <Box sx={{ textAlign: 'center', py: 8 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      该知识库暂无文档
-                    </Typography>
-                  </Box>
-                )}
-              </Stack>
-            ) : (
-              <Box
-                sx={{
-                  textAlign: 'center',
-                  py: 8,
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <FolderIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
-                  请选择知识库
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  从左侧列表中选择一个知识库查看其文档
-                </Typography>
-              </Box>
-            )}
+                  )}
+                </Stack>
+              ) : (
+                <Box
+                  sx={{
+                    textAlign: 'center',
+                    py: 8,
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  <FolderIcon sx={{ fontSize: 64, color: 'text.disabled', mb: 2 }} />
+                  <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+                    请选择知识库
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    从左侧列表中选择一个知识库查看其文档
+                  </Typography>
+                </Box>
+              )}
             </Card>
           )}
         </Grid>
@@ -1892,7 +1902,7 @@ const KnowledgeBasePage = () => {
                     }
                   });
                   return (
-                    selectedFolders.length === allFolderIds.length && 
+                    selectedFolders.length === allFolderIds.length &&
                     selectedDocs.size === allDocIds.length &&
                     (allFolderIds.length > 0 || allDocIds.length > 0)
                   );
@@ -1911,9 +1921,14 @@ const KnowledgeBasePage = () => {
                   });
                   const hasSelectedFolders = selectedFolders.length > 0;
                   const hasSelectedDocs = selectedDocs.size > 0;
-                  const allFoldersSelected = selectedFolders.length === allFolderIds.length && allFolderIds.length > 0;
-                  const allDocsSelected = allDocIds.length > 0 && allDocIds.every(id => selectedDocs.has(id));
-                  return (hasSelectedFolders || hasSelectedDocs) && !(allFoldersSelected && allDocsSelected);
+                  const allFoldersSelected =
+                    selectedFolders.length === allFolderIds.length && allFolderIds.length > 0;
+                  const allDocsSelected =
+                    allDocIds.length > 0 && allDocIds.every(id => selectedDocs.has(id));
+                  return (
+                    (hasSelectedFolders || hasSelectedDocs) &&
+                    !(allFoldersSelected && allDocsSelected)
+                  );
                 })()}
                 onChange={handleSelectAll}
               />
@@ -1947,14 +1962,18 @@ const KnowledgeBasePage = () => {
                       <ListItemText
                         primary={folder.title}
                         secondary={
-                          folder.doc_id && expandedDocs.has(folder.doc_id) && docDetails[folder.doc_id]
+                          folder.doc_id &&
+                          expandedDocs.has(folder.doc_id) &&
+                          docDetails[folder.doc_id]
                             ? `${docDetails[folder.doc_id].length} 个文档${
                                 Array.from(docDetails[folder.doc_id]).some(
                                   doc => doc.doc_id && selectedDocs.has(doc.doc_id)
                                 )
-                                  ? ` (已选择 ${Array.from(docDetails[folder.doc_id]).filter(
-                                      doc => doc.doc_id && selectedDocs.has(doc.doc_id)
-                                    ).length} 个)`
+                                  ? ` (已选择 ${
+                                      Array.from(docDetails[folder.doc_id]).filter(
+                                        doc => doc.doc_id && selectedDocs.has(doc.doc_id)
+                                      ).length
+                                    } 个)`
                                   : ''
                               }`
                             : folder.doc_id && docDetails[folder.doc_id]
@@ -2015,12 +2034,21 @@ const KnowledgeBasePage = () => {
                                 textAlign: 'center',
                               }}
                             >
-                              <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
+                              <Stack
+                                direction="row"
+                                alignItems="center"
+                                justifyContent="center"
+                                spacing={1}
+                              >
                                 <DescriptionIcon
                                   fontSize="small"
                                   sx={{ color: 'text.disabled', fontSize: 18 }}
                                 />
-                                <Typography variant="body2" color="text.disabled" sx={{ fontSize: '13px' }}>
+                                <Typography
+                                  variant="body2"
+                                  color="text.disabled"
+                                  sx={{ fontSize: '13px' }}
+                                >
                                   暂无文档
                                 </Typography>
                               </Stack>
@@ -2034,9 +2062,15 @@ const KnowledgeBasePage = () => {
                                   p: 1.5,
                                   mb: 1,
                                   border: '1px solid',
-                                  borderColor: doc.doc_id && selectedDocs.has(doc.doc_id) ? 'primary.main' : 'divider',
+                                  borderColor:
+                                    doc.doc_id && selectedDocs.has(doc.doc_id)
+                                      ? 'primary.main'
+                                      : 'divider',
                                   borderRadius: 1,
-                                  bgcolor: doc.doc_id && selectedDocs.has(doc.doc_id) ? 'primary.lighter' : 'grey.50',
+                                  bgcolor:
+                                    doc.doc_id && selectedDocs.has(doc.doc_id)
+                                      ? 'primary.lighter'
+                                      : 'grey.50',
                                   transition: 'all 0.2s ease',
                                   '&:hover': {
                                     borderColor: 'primary.main',
@@ -2110,7 +2144,7 @@ const KnowledgeBasePage = () => {
                         ModelDocStatus.DocStatusExportFailed,
                       ].includes(d.status!);
                 });
-          
+
           const renderStatusIcon = (doc: SvcDocListItem) => {
             const state = getDocSyncState(doc.status);
             const iconBoxSx = { width: 24, height: 24, display: 'flex', alignItems: 'center' };
@@ -2278,7 +2312,10 @@ const KnowledgeBasePage = () => {
 
               <Table
                 columns={columns}
-                dataSource={docsAfterFilter.map((doc, index) => ({ ...doc, _rowKey: doc.id || doc.doc_id || `row-${index}` }))}
+                dataSource={docsAfterFilter.map((doc, index) => ({
+                  ...doc,
+                  _rowKey: doc.id || doc.doc_id || `row-${index}`,
+                }))}
                 rowKey="_rowKey"
                 pagination={false}
                 loading={false}
@@ -2287,7 +2324,7 @@ const KnowledgeBasePage = () => {
           );
         })()}
       </Modal>
-      
+
       {/* 编辑单个项目分类弹窗 */}
       <Modal
         open={!!categoryEdit.editingCategoryItem}

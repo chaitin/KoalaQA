@@ -30,6 +30,15 @@ export const ADMIN_MENUS: AdminMenuItem[] = [
     roles: [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator],
   },
   {
+    label: '查询历史',
+    value: '/admin/search-history',
+    pathname: '/admin/search-history',
+    icon: 'icon-sousuo',
+    show: true,
+    disabled: false,
+    roles: [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator],
+  },
+  {
     label: '用户管理',
     value: '/admin/users',
     pathname: '/admin/users',

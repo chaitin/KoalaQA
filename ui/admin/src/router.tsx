@@ -35,6 +35,7 @@ const KnowledgeBaseDetail = LazyLoadable(lazy(() => import('@/pages/ai/kbDetail'
 const User = LazyLoadable(lazy(() => import('@/pages/user')));
 const UserReviewList = LazyLoadable(lazy(() => import('@/pages/user/UserReviewList')));
 const Dashboard = LazyLoadable(lazy(() => import('@/pages/dashboard')));
+const SearchHistory = LazyLoadable(lazy(() => import('@/pages/searchHistory')));
 
 const routerConfig = [
   {
@@ -74,6 +75,10 @@ const routerConfig = [
       {
         path: 'dashboard',
         element: <Dashboard />,
+      },
+      {
+        path: 'search-history',
+        element: <SearchHistory />,
       },
       {
         path: 'users',
