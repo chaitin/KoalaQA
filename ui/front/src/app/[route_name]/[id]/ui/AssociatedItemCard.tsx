@@ -62,37 +62,6 @@ const AssociatedItemCard = ({ item, routeName, statusChip }: AssociatedItemCardP
           <Stack direction='row' alignItems='center'>
             {statusChip}
             <Stack direction='row' alignItems='center' sx={{ ml: 'auto' }}>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  color: 'rgba(33, 34, 45, 0.60)',
-                  fontSize: '13px',
-                }}
-              >
-                <Typography
-                  variant='caption'
-                  sx={{
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    color: 'rgba(33, 34, 45, 1)',
-                  }}
-                >
-                  {item.user_name || ''}
-                </Typography>
-              </Box>
-              <Typography
-                variant='caption'
-                sx={{
-                  fontSize: '12px',
-                  color: 'rgba(33, 34, 45, 0.50)',
-                  fontWeight: 400,
-                  mx: 0.5,
-                }}
-              >
-                ·
-              </Typography>
               <Typography
                 variant='caption'
                 sx={{
