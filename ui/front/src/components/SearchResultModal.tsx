@@ -67,21 +67,6 @@ export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialQuery])
 
-  // 当搜索内容改变时的处理函数
-  useEffect(() => {
-    // 只在弹窗打开且搜索内容变化时进行处理
-    if (open) {
-      const timer = setTimeout(() => {
-        // 只有当搜索内容与初始查询不同时才触发自动搜索
-        if (searchQuery.trim() && searchQuery !== initialQuery) {
-          performSearch(searchQuery.trim())
-        }
-      }, 500) // 500ms 防抖，给用户更多时间输入
-
-      return () => clearTimeout(timer)
-    }
-  }, [searchQuery, open, initialQuery])
-
   // 执行搜索的函数
   const performSearch = useCallback(
     async (query: string) => {
@@ -157,7 +142,7 @@ export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish 
             value={searchQuery}
             onChange={handleSearchInputChange}
             onKeyDown={handleKeyDown}
-            placeholder='输入任意内容，使用 AI 搜索'
+            placeholder='输入任意内容，按回车搜索'
             startAdornment={
               <InputAdornment position='start'>
                 <SearchIcon sx={{ color: 'rgba(0,0,0,0.4)', mr: 1 }} />

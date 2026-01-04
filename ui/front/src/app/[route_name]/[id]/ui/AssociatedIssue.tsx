@@ -34,7 +34,7 @@ const AssociatedIssue = ({ associate }: AssociatedIssueProps) => {
       }}
     >
       <Typography variant='subtitle2' sx={{ mb: 1.5, fontWeight: 600 }}>
-        关联问题
+        关联 Issue
       </Typography>
       <Divider sx={{ mb: 0 }} />
       <AssociatedItemCard
