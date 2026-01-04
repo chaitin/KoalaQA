@@ -79,11 +79,11 @@ func (c *CommentLike) Like(ctx context.Context, discUUID string, discType model.
 			default:
 				return nil
 			}
+		}
 
-			err = tx.Model(&model.Comment{}).Where("id = ?", commentLike.CommentID).Updates(updateM).Error
-			if err != nil {
-				return err
-			}
+		err = tx.Model(&model.Comment{}).Where("id = ?", commentLike.CommentID).Updates(updateM).Error
+		if err != nil {
+			return err
 		}
 
 		if discType == model.DiscussionTypeQA {
