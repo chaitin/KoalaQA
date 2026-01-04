@@ -51,7 +51,7 @@ const AdminDocument = () => {
     kbId: kb_id,
     docType: ModelDocType.DocTypeQuestion,
     onSuccess: () => {
-      fetchData({ page: 1 });
+      setParams({ page: 1 });
     },
   });
   
@@ -87,9 +87,7 @@ const AdminDocument = () => {
       onOk: () => {
         deleteAdminKbKbIdQuestionQaId({ kbId: kb_id, qaId: item.id! }).then(() => {
           message.success('删除成功');
-          fetchData({
-            page: 1,
-          });
+          setParams({ page: 1 });
         });
       },
     });
@@ -129,9 +127,7 @@ const AdminDocument = () => {
           .then(() => {
             message.success('批量删除成功');
             setSelectedRowKeys([]);
-            fetchData({
-              page: 1,
-            });
+            setParams({ page: 1 });
           })
           .catch(() => {
             message.error('批量删除失败');

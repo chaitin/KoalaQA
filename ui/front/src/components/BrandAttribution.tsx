@@ -58,6 +58,7 @@ const BrandAttribution = ({ inSidebar = false, sidebarRef }: BrandAttributionPro
     <Stack
       direction={'row'}
       alignItems={'center'}
+      justifyContent='center'
       onClick={handleLogoClick}
       sx={{
         fontSize: '12px',
@@ -118,7 +119,6 @@ const BrandAttribution = ({ inSidebar = false, sidebarRef }: BrandAttributionPro
         right: 16,
         zIndex: 1000,
         pointerEvents: 'auto',
-        display: { xs: 'block', sm: 'block' },
       }}
     >
       <Box

@@ -162,9 +162,7 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
         deleteAdminUserUserId({ userId: item.id! }).then(() => {
           message.success('删除成功');
           fetchOrgList();
-          fetchData({
-            page: 1,
-          });
+          setParams({ page: 1 });
         });
       },
     });
