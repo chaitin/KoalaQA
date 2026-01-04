@@ -449,9 +449,14 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userInfo mode
 				Key:  sessionUUID,
 			})
 
+			username := userInfo.Username
+			if userInfo.UID == 0 {
+				username = "匿名游客"
+			}
+
 			err = d.in.UserRepo.CreateSearchHistory(ctx, &model.UserSearchHistory{
 				UserID:   userInfo.UID,
-				Username: userInfo.Username,
+				Username: username,
 				UserRole: userInfo.Role,
 				Keyword:  req.Keyword,
 			})
