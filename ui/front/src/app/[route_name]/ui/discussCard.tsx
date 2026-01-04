@@ -201,39 +201,29 @@ const DiscussCard = ({
             })}
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'center', fontFamily: 'Gilroy' }}>
-            {isQAPost && (
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  background: (theme) => theme.palette.primaryAlpha?.[6] || 'rgba(0,99,151,0.06)',
-                  color: 'primary.main',
-                  px: 1,
-                  height: '22px',
-                  borderRadius: 0.5,
-                }}
-              >
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              background: (theme) => theme.palette.primaryAlpha?.[6] || 'rgba(0,99,151,0.06)',
+              color: 'primary.main',
+              px: 1,
+              fontSize: '12px',
+              fontWeight: 'bold',
+              borderRadius: 0.5,
+            }}
+          >
+            {isQAPost ? (
+              <>
                 <Icon type='icon-wendapinglun' sx={{ fontSize: 12 }} />
-                <Box sx={{ fontSize: '12px' }}>{it.comment || 0}</Box>
-              </Box>
-            )}
-            {(isArticlePost || isIssuePost) && (
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  background: (theme) => theme.palette.primaryAlpha?.[6] || 'rgba(0,99,151,0.06)',
-                  color: 'primary.main',
-                  px: 1,
-                  borderRadius: 0.5,
-                }}
-              >
+                <Box>{it.comment || 0}</Box>
+              </>
+            ) : (
+              <>
                 <Icon type='icon-dianzan1' sx={{ fontSize: '12px' }} />
-                <Box sx={{ fontSize: '12px' }}>{it.like || 0}</Box>
-              </Box>
+                <Box>{it.like || 0}</Box>
+              </>
             )}
           </Box>
         </Box>
