@@ -56,7 +56,7 @@ func (k *KBDoc) Concurrent() uint {
 
 func (k *KBDoc) Handle(ctx context.Context, msg mq.Message) error {
 	docMsg := msg.(topic.MsgKBDocument)
-	k.logger.WithContext(ctx).With("doc_id", docMsg.DocID).Info("receive doc msg")
+	k.logger.WithContext(ctx).With("msg", docMsg).Info("receive doc msg")
 	switch docMsg.OP {
 	case topic.OPInsert, topic.OPUpdate:
 		return k.handleInsert(ctx, docMsg.KBID, docMsg.DocID)
@@ -77,6 +77,19 @@ func (k *KBDoc) handleInsert(ctx context.Context, kbID uint, docID uint) error {
 		logger.WithErr(err).Error("get doc failed")
 		return err
 	}
+
+	errMsg := ""
+	defer func() {
+		if errMsg == "" {
+			return
+		}
+
+		e := k.doc.UpdateDocStatus(ctx, doc.KBID, doc.ID, model.DocStatusApplyFailed, errMsg)
+		if e != nil {
+			logger.WithErr(e).Warn("update db rag failed")
+		}
+	}()
+
 	var content string
 	switch doc.DocType {
 	case model.DocTypeQuestion:
@@ -86,17 +99,20 @@ func (k *KBDoc) handleInsert(ctx context.Context, kbID uint, docID uint) error {
 		r, err := oss.Download(ctx, url, oss.WithBucket("anydoc"))
 		if err != nil {
 			logger.With("url", url).WithErr(err).Error("download markdown failed")
+			errMsg = err.Error()
 			return nil
 		}
 		defer r.Close()
 		raw, err := io.ReadAll(r)
 		if err != nil {
 			logger.With("url", url).WithErr(err).Error("read markdown failed")
+			errMsg = err.Error()
 			return nil
 		}
 		content = string(raw)
 	default:
 		logger.With("doc_type", doc.DocType).Error("doc type not support")
+		errMsg = "doc type not support"
 		return nil
 	}
 	ragID, err := k.rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
@@ -106,10 +122,13 @@ func (k *KBDoc) handleInsert(ctx context.Context, kbID uint, docID uint) error {
 		Metadata:   doc.Metadata(),
 	})
 	if err != nil {
-		return err
+		logger.WithErr(err).Warn("upsert rag records failed")
+		errMsg = err.Error()
+		return nil
 	}
 	err = k.doc.UpdateRagID(ctx, doc.KBID, doc.ID, ragID, model.DocStatusPendingApply)
 	if err != nil {
+		logger.WithErr(err).Warn("update db rag failed")
 		return err
 	}
 	return nil
