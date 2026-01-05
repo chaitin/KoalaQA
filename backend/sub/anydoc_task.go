@@ -45,7 +45,7 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 	taskInfo := msg.(topic.TaskInfo)
 	logger := t.logger.WithContext(ctx).With("task_info", taskInfo)
 
-	logger.Debug("receive task result")
+	logger.Info("receive task result")
 	dbDoc, err := t.repoDoc.GetByTaskID(ctx, taskInfo.TaskID)
 	if err != nil {
 		if errors.Is(err, database.ErrRecordNotFound) {
