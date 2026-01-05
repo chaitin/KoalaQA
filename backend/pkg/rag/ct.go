@@ -59,12 +59,16 @@ func (c *CTRag) UpdateDataset(ctx context.Context, datasetID string, req UpdateD
 func (c *CTRag) UpsertRecords(ctx context.Context, req UpsertRecordsReq) (string, error) {
 	logger := c.logger.WithContext(ctx).With("dataset_id", req.DatasetID).With("rag_id", req.DocumentID)
 	logger.Debug("upsert records")
+	var metadata map[string]any
+	if req.Metadata != nil {
+		metadata = req.Metadata.Map()
+	}
 	data := &raglite.UploadDocumentRequest{
 		DatasetID:       req.DatasetID,
 		DocumentID:      req.DocumentID,
 		File:            strings.NewReader(req.Content),
 		Filename:        fmt.Sprintf("%s.md", uuid.NewString()),
-		Metadata:        req.Metadata.Map(),
+		Metadata:        metadata,
 		Tags:            req.Tags,
 		ExtractKeywords: req.ExtractKeywords,
 	}
