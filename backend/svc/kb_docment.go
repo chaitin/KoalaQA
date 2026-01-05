@@ -500,6 +500,13 @@ func (d *KBDocument) UpdateRagID(ctx context.Context, kbID uint, docID uint, rag
 	}, repo.QueryWithEqual("id", docID), repo.QueryWithEqual("kb_id", kbID))
 }
 
+func (d *KBDocument) UpdateDocStatus(ctx context.Context, kbID uint, docID uint, status model.DocStatus, msg string) error {
+	return d.repoDoc.Update(ctx, map[string]any{
+		"status":  status,
+		"message": msg,
+	}, repo.QueryWithEqual("id", docID), repo.QueryWithEqual("kb_id", kbID))
+}
+
 type UploadFileReq struct {
 	File *multipart.FileHeader `form:"file" binding:"required"`
 }
