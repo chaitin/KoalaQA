@@ -41,9 +41,9 @@ func (i *aiInsightAnswer) Run() {
 	for _, group := range groups {
 		for _, item := range group.Items.Inner() {
 			i.logger.With("item", item).Info("generate ai insight answer")
-			content, err := i.svcDisc.KeywordAnswer(ctx, svc.DiscussionKeywordAnswerReq{
-				ForumID: item.ForeignID,
-				Keyword: item.SocreID,
+			content, err := i.svcDisc.AIInsightAnswer(ctx, svc.DiscussionKeywordAnswerReq{
+				AIInsightID: item.ID,
+				Keyword:     item.SocreID,
 			})
 			if err != nil {
 				i.logger.WithErr(err).Warn("ai keyword answer failed")
