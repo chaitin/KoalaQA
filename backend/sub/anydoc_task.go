@@ -49,12 +49,16 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 	dbDoc, err := t.repoDoc.GetByTaskID(ctx, taskInfo.TaskID)
 	if err != nil {
 		if errors.Is(err, database.ErrRecordNotFound) {
+			logger.Info("db_doc not found, skip update")
 			return nil
 		}
 
 		logger.WithErr(err).Warn("get doc by task id failed")
 		return err
 	}
+
+	logger = logger.With("kb_id", dbDoc.KBID).With("db_doc_id", dbDoc.ID).With("db_doc_markdown", string(dbDoc.Markdown))
+	logger.Info("update doc status")
 
 	switch taskInfo.Status {
 	case topic.TaskStatusCompleted:
@@ -98,6 +102,7 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 			KBID:  dbDoc.KBID,
 			DocID: dbDoc.ID,
 		}
+		logger.Info("notify rag analyze")
 		err = t.pub.Publish(ctx, topic.TopicKBDocumentRag, pubMsg)
 		if err != nil {
 			logger.WithErr(err).With("pub_msg", pubMsg).Error("pub msg failed")
