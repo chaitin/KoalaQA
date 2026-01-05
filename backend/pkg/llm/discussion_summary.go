@@ -88,7 +88,7 @@ const discussionSummaryUserTplStr = `
 {{- if $disc.Tags}}
 #### 帖子标签：{{join $disc.Tags ", "}}
 {{- end}}
-{{if eq $disc.Type "qa"}}#### 帖子状态：{{getDiscState $disc.Resolved}}{{end}}
+{{if ne $disc.Type "blog"}}#### 帖子状态：{{getDiscState $disc.Resolved}}{{end}}
 {{- end}}
 `
 

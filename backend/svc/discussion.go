@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
@@ -33,6 +34,7 @@ type discussionIn struct {
 	DiscRepo       *repo.Discussion
 	DiscFollowRepo *repo.DiscussionFollow
 	DiscTagRepo    *repo.DiscussionTag
+	DiscAIInsight  *repo.DiscussionAIInsight
 	CommRepo       *repo.Comment
 	CommLikeRepo   *repo.CommentLike
 	UserRepo       *repo.User
@@ -627,20 +629,32 @@ func (d *Discussion) DiscussionRequirement(ctx context.Context, user model.UserI
 }
 
 type DiscussionKeywordAnswerReq struct {
-	ForumID uint
-	Keyword string
+	AIInsightID uint
+	Keyword     string
 }
 
-func (d *Discussion) KeywordAnswer(ctx context.Context, req DiscussionKeywordAnswerReq) (string, error) {
-	logger := d.logger.WithContext(ctx).With("forum_id", req.ForumID).With("keyword", req.Keyword)
-	discs, err := d.Search(ctx, DiscussionSearchReq{
-		ForumID:             req.ForumID,
-		Keyword:             req.Keyword,
-		SimilarityThreshold: 0.8,
-	})
+func (d *Discussion) AIInsightAnswer(ctx context.Context, req DiscussionKeywordAnswerReq) (string, error) {
+	logger := d.logger.WithContext(ctx).With("param", req)
+
+	var discs []model.Discussion
+	err := d.in.DiscAIInsight.ListDiscByRank(ctx, &discs, req.AIInsightID,
+		repo.QueryWithSelectColumn("discussions.id", "discussions.resolved"),
+	)
 	if err != nil {
 		return "", err
 	}
+
+	sort.Slice(discs, func(i, j int) bool {
+		if discs[i].Resolved == model.DiscussionStateResolved && discs[j].Resolved == model.DiscussionStateResolved {
+			return discs[i].ID > discs[j].ID
+		} else if discs[i].Resolved == model.DiscussionStateResolved {
+			return true
+		} else if discs[j].Resolved == model.DiscussionStateResolved {
+			return false
+		}
+
+		return discs[i].ID > discs[j].ID
+	})
 
 	discIDs := make([]uint, 0, len(discs))
 	for _, disc := range discs {
@@ -649,26 +663,32 @@ func (d *Discussion) KeywordAnswer(ctx context.Context, req DiscussionKeywordAns
 
 	logger.With("disc_ids", discIDs).Info("ai keyword answer get discs")
 
-	prompt, err := d.in.LLM.GenerateDiscussionPrompt(ctx, discIDs...)
-	if err != nil {
-		return "", err
-	}
+	for {
+		prompt, err := d.in.LLM.GenerateDiscussionPrompt(ctx, discIDs...)
+		if err != nil {
+			return "", err
+		}
 
-	content, answer, err := d.in.LLM.AnswerWithThink(ctx, GenerateReq{
-		Question:      req.Keyword,
-		Prompt:        prompt,
-		DefaultAnswer: "无法回答问题",
-	})
-	if err != nil {
-		return "", err
-	}
+		content, answer, err := d.in.LLM.AnswerWithThink(ctx, GenerateReq{
+			Question:      req.Keyword,
+			Prompt:        prompt,
+			DefaultAnswer: "无法回答问题",
+		})
+		if err != nil {
+			if len(discIDs) > 0 && d.in.LLM.IsTokenLimitError(err) {
+				discIDs = discIDs[:len(discIDs)/2]
+				continue
+			}
+			return "", err
+		}
 
-	if !answer {
-		logger.Info("ai can not answer with think")
-		return "", nil
-	}
+		if !answer {
+			logger.Info("ai can not answer with think")
+			return "", nil
+		}
 
-	return content, nil
+		return content, nil
+	}
 }
 
 type DetailByUUIDReq struct {

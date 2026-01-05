@@ -55,7 +55,7 @@ func (a *Blog) Handle(ctx context.Context, msg mq.Message) error {
 	data := msg.(topic.MsgDiscChange)
 
 	switch data.Type {
-	case model.DiscussionTypeQA, model.DiscussionTypeBlog:
+	case model.DiscussionTypeQA, model.DiscussionTypeBlog, model.DiscussionTypeIssue:
 	default:
 		a.logger.WithContext(ctx).With("data", data).Debug("ignore disc summary update")
 		return nil

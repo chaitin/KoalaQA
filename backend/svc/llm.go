@@ -12,6 +12,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/llm"
 	"github.com/chaitin/koalaqa/pkg/rag"
+	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/repo"
 	"github.com/cloudwego/eino/components/prompt"
 	"github.com/cloudwego/eino/schema"
@@ -115,6 +116,27 @@ func (l *LLM) Answer(ctx context.Context, req GenerateReq) (string, bool, error)
 
 func (l *LLM) AnswerWithThink(ctx context.Context, req GenerateReq) (string, bool, error) {
 	return l.answer(ctx, llm.SystemChatWithThinkPrompt, req)
+}
+
+var tokenLimitKeywords = []string{
+	"reduce the length",
+	"must have less than",
+	"token limit",
+	"tokens exceeded",
+	"context length",
+	"maximum context",
+	"too many tokens",
+	"input is too long",
+	"exceeds the maximum",
+	"max_tokens is invalid",
+}
+
+func (l *LLM) IsTokenLimitError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	return util.StringContainsAny(err.Error(), tokenLimitKeywords)
 }
 
 func (l *LLM) Chat(ctx context.Context, sMsg string, uMsg string, params map[string]any) (string, error) {

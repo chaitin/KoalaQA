@@ -1,5 +1,7 @@
 package util
 
+import "strings"
+
 func RemoveDuplicate[T comparable](s []T) []T {
 	m := make(map[T]struct{})
 
@@ -31,4 +33,14 @@ func Intersect[T comparable](a, b []T) []T {
 	}
 
 	return res
+}
+
+func StringContainsAny(src string, dst []string) bool {
+	for _, d := range dst {
+		if strings.Contains(src, d) {
+			return true
+		}
+	}
+
+	return false
 }
