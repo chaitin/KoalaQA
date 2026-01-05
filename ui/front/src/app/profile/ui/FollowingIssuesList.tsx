@@ -19,7 +19,7 @@ const PAGE_SIZE = 10
 
 // 状态相关辅助函数
 const getStatusColor = (status: string) => {
-  if (status === 'answered' || status === 'closed') return 'rgba(25, 135, 84, 1)'
+  if (status === 'answered' || status === 'closed') return '#1AA086'
   if (status === 'in-progress') return '#3b82f6'
   if (status === 'planned') return '#f59e0b'
   return '#6b7280'

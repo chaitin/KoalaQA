@@ -34,10 +34,10 @@ const postTypes = [
   { id: 'blog', name: '文章', icon: <Image width={20} height={20} src='/blog.svg' alt='文章' /> },
 ]
 
-export default function FilterPanel({ 
-  groups, 
-  forumId, 
-  forumInfo, 
+export default function FilterPanel({
+  groups,
+  forumId,
+  forumInfo,
   tags = [],
   initialRouteName,
   initialPathname,
@@ -47,33 +47,35 @@ export default function FilterPanel({
   const params = useParams()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  
+
   // 跟踪是否已经 mounted（客户端）
   const [isMounted, setIsMounted] = useState(false)
-  
+
   useEffect(() => {
     setIsMounted(true)
   }, [])
-  
+
   // 完全依赖服务端传入的值，确保首次渲染和刷新后的一致性
   const routeName = initialRouteName
   const currentPathname = initialPathname
-  
+
   // 解析 URL 参数 - 首次渲染使用服务端值，之后响应客户端 URL 变化
   // 这确保了服务端和客户端的一致性，避免 hydration 不匹配
   const { urlType, urlTopics, urlTags, isDetailPage, typeForUrl, typeForFilter } = useMemo(() => {
     // 首次渲染（未 mounted）使用服务端传入的 initialSearchParams
     // mounted 后使用客户端 searchParams（响应 URL 变化）
-    const searchParamsObj = isMounted ? {
-      type: searchParams?.get('type') ?? null,
-      tps: searchParams?.get('tps') ?? null,
-      tags: searchParams?.get('tags') ?? null,
-    } : {
-      type: initialSearchParams.type ?? null,
-      tps: initialSearchParams.tps ?? null,
-      tags: initialSearchParams.tags ?? null,
-    }
-    
+    const searchParamsObj = isMounted
+      ? {
+          type: searchParams?.get('type') ?? null,
+          tps: searchParams?.get('tps') ?? null,
+          tags: searchParams?.get('tags') ?? null,
+        }
+      : {
+          type: initialSearchParams.type ?? null,
+          tps: initialSearchParams.tps ?? null,
+          tags: initialSearchParams.tags ?? null,
+        }
+
     // 判断是否在详情页（路径包含 /[id]，但不是 /edit）
     const isDetail = (() => {
       if (!currentPathname || !routeName) return false
@@ -186,7 +188,7 @@ export default function FilterPanel({
       })),
     }))
   }, [filteredGroups])
-  
+
   // 获取每个分类组中选中的选项
   // 使用 useMemo 确保选中状态计算是同步的
   const selectedCategories = useMemo(() => {
@@ -194,9 +196,7 @@ export default function FilterPanel({
     categoryGroups.forEach((group) => {
       // 提取选项 ID 集合以减少嵌套
       const optionIds = new Set(group.options.map((opt) => Number(opt.id)))
-      const selected = urlTopics
-        .filter((topicId: number) => optionIds.has(topicId))
-        .map(String)
+      const selected = urlTopics.filter((topicId: number) => optionIds.has(topicId)).map(String)
       if (selected.length > 0) {
         result[group.id] = selected
       }
@@ -224,30 +224,30 @@ export default function FilterPanel({
   const router = useRouterWithRouteName()
   const handleUrlSync = useCallback(() => {
     if (isDetailPage) return
-    
+
     // 基于当前的 initialSearchParams 构建 URL 参数
     const urlParams = new URLSearchParams()
-    
+
     // 清理无效的分类 - 提取到辅助函数以减少嵌套
     const validTopicIds = new Set(filteredGroups.flat.map((g) => g.id))
     const currentTopics = urlTopics.filter((id) => validTopicIds.has(id))
-    
+
     if (currentTopics.length > 0) {
       urlParams.set('tps', currentTopics.join(','))
     }
-    
+
     // 保持其他参数
     if (typeForUrl) {
       urlParams.set('type', typeForUrl)
     }
-    
+
     if (urlTags.length > 0) {
       urlParams.set('tags', urlTags.join(','))
     }
-    
+
     const queryString = urlParams.toString()
     const newPath = `/${routeName}${queryString ? `?${queryString}` : ''}`
-    
+
     // 使用 replace 避免在历史记录中留下无效的 URL
     router.replace(newPath)
   }, [isDetailPage, routeName, urlTopics, urlTags, typeForUrl, filteredGroups.flat, router])
@@ -265,28 +265,23 @@ export default function FilterPanel({
       />
       <Stack
         sx={{
-          bgcolor: 'background.paper',
-          p: 2,
-          width: {
-            xs: '100%',
-            md: '240px',
-            lg: '240px',
-          },
+          width: 240,
+          flexShrink: 0,
+          display: { xs: 'none', sm: 'block' },
+          position: 'sticky',
+          top: 25,
+          alignSelf: 'flex-start',
           height: {
+            xs: 'auto',
+            md: 'fit-content',
+            lg: 'fit-content',
+          },
+          maxHeight: {
             xs: 'auto',
             md: 'calc(100vh - 64px)',
             lg: 'calc(100vh - 64px)',
           },
           overflowY: 'auto',
-          position: {
-            xs: 'relative',
-            md: 'fixed',
-          },
-          top: {
-            xs: 'auto',
-            md: 64,
-            lg: 64,
-          },
           '&::-webkit-scrollbar': {
             width: '6px',
           },

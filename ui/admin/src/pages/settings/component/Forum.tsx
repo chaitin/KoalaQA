@@ -312,10 +312,38 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
                             >
                               {option.name}
                             </Typography>
+                            {option.count !== undefined && option.count !== null && (
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  fontSize: '11px',
+                                  lineHeight: 'normal',
+                                  color: 'text.secondary',
+                                  ml: 0.5,
+                                }}
+                              >
+                                ({option.count})
+                              </Typography>
+                            )}
                           </Box>
                         );
                       })
                     }
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props} key={option.id}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                          <Typography variant="body2">{option.name || ''}</Typography>
+                          {option.count !== undefined && option.count !== null && (
+                            <Typography
+                              variant="body2"
+                              sx={{ fontSize: '12px', color: 'text.secondary', ml: 1 }}
+                            >
+                              {option.count}
+                            </Typography>
+                          )}
+                        </Box>
+                      </Box>
+                    )}
                     renderInput={params => (
                       <TextField
                         {...params}

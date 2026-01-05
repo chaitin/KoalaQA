@@ -117,13 +117,13 @@ const Article = ({
   const [filterDialogOpen, setFilterDialogOpen] = useState(false)
   const onlyMine = searchParams?.get('only_mine') === 'true'
   const resolved = searchParams?.get('resolved')
-  
+
   // 临时筛选状态（用于弹窗中的选择，点击应用后才真正应用）
   const [tempOnlyMine, setTempOnlyMine] = useState(onlyMine)
   const [tempResolved, setTempResolved] = useState(resolved === '1')
   const [tempTopics, setTempTopics] = useState<number[]>(topics)
   const [tempTagIds, setTempTagIds] = useState<number[]>(tagIds)
-  
+
   // 当弹窗打开时，初始化临时状态
   useEffect(() => {
     if (filterDialogOpen) {
@@ -258,6 +258,43 @@ const Article = ({
     fetchMoreList()
   }, [isLoadMoreInView, loadingMore, fetchMoreList])
 
+  // 在加载时保持右侧边栏的位置，避免跳回顶部
+  const sidebarPositionRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (!sidebarRef.current) {
+      return
+    }
+
+    const sidebar = sidebarRef.current
+
+    if (loadingMore) {
+      // 加载开始时，保存当前右侧边栏相对于视口的位置
+      const rect = sidebar.getBoundingClientRect()
+      sidebarPositionRef.current = rect.top
+    } else if (sidebarPositionRef.current !== null) {
+      // 加载完成时，恢复位置
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const currentRect = sidebar.getBoundingClientRect()
+          const savedTop = sidebarPositionRef.current
+
+          // 如果位置发生了变化（跳到了顶部），恢复到之前的位置
+          if (savedTop !== null && currentRect.top < savedTop - 10) {
+            // 计算需要滚动的距离
+            const scrollOffset = savedTop - currentRect.top
+            const mainContent = document.getElementById('main-content')
+            if (mainContent) {
+              mainContent.scrollTop += scrollOffset
+            }
+          }
+
+          sidebarPositionRef.current = null
+        })
+      })
+    }
+  }, [loadingMore])
+
   // 监听路由变化，检测是否从详情页返回
   useEffect(() => {
     const currentPath = window.location.pathname
@@ -361,47 +398,47 @@ const Article = ({
   const handleFilterMenuClose = () => {
     setFilterAnchorEl(null)
   }
-  
+
   const handleFilterDialogClose = () => {
     setFilterDialogOpen(false)
   }
-  
+
   // 应用筛选（移动端弹窗）
   const handleApplyFilter = () => {
     const params = new URLSearchParams(searchParams?.toString())
-    
+
     // 应用"我参与的"
     if (tempOnlyMine) {
       params.set('only_mine', 'true')
     } else {
       params.delete('only_mine')
     }
-    
+
     // 应用"未解决的"
     if (tempResolved) {
       params.set('resolved', '1')
     } else {
       params.delete('resolved')
     }
-    
+
     // 应用分类
     if (tempTopics.length > 0) {
       params.set('tps', tempTopics.join(','))
     } else {
       params.delete('tps')
     }
-    
+
     // 应用标签
     if (tempTagIds.length > 0) {
       params.set('tags', tempTagIds.join(','))
     } else {
       params.delete('tags')
     }
-    
+
     router.replace(`/${routeName}?${params.toString()}`)
     setFilterDialogOpen(false)
   }
-  
+
   // 清除筛选（移动端弹窗）
   const handleClearFilter = () => {
     setTempOnlyMine(false)
@@ -517,7 +554,6 @@ const Article = ({
           display: 'flex',
           gap: 3,
           mx: 'auto',
-          px: { xs: 0, lg: 3 },
           pb: { xs: 2, lg: 3 },
         }}
       >
@@ -757,9 +793,9 @@ const Article = ({
               }}
               sx={{
                 borderRadius: 1,
-                border: (theme) => `1px solid ${theme.palette.divider}`,
                 px: 0.5,
                 gap: 0.5,
+                bgcolor: 'background.default',
                 '& .MuiToggleButtonGroup-grouped': {
                   borderRadius: '6px !important',
                   my: 0.5,
@@ -773,16 +809,17 @@ const Article = ({
                   value={option.value}
                   sx={(theme) => ({
                     height: 30,
-                    fontWeight: 500,
+                    fontWeight: 400,
                     fontSize: '14px',
                     color: '#21222D',
                     border: '1px solid transparent',
                     '&.Mui-selected': {
-                      bgcolor: 'primary.main',
-                      color: theme.palette.primary.contrastText,
+                      bgcolor: '#fff',
+                      color: theme.palette.primary.main,
+                      fontWeight: 600,
                       '&:hover': {
-                        bgcolor: theme.palette.primary.dark,
-                        color: theme.palette.primary.contrastText,
+                        bgcolor: '#fff',
+                        color: theme.palette.primary.main,
                       },
                     },
                     '&:hover': { bgcolor: '#f3f4f6', color: '#000000' },
@@ -1038,7 +1075,7 @@ const Article = ({
                     <>
                       {filteredGroups.origin.map((group) => {
                         const selectedItems = tempTopics.filter((topicId) =>
-                          group.items?.some((item) => item.id === topicId)
+                          group.items?.some((item) => item.id === topicId),
                         )
                         return (
                           <Box key={group.id}>
@@ -1176,15 +1213,17 @@ const Article = ({
           </Box>
 
           {/* 加载更多 */}
-          <Box sx={{ width: '100%', textAlign: 'center', mt: 3 }}>
+          <Box sx={{ width: '100%', textAlign: 'center', mt: 3, minHeight: '60px' }}>
             {page * 10 < (articleData.total || 0) ? (
               <>
-                {loadingMore && (
-                  <Stack direction='row' alignItems='center' justifyContent='center' gap={1} sx={{ py: 1.5 }}>
-                    <CircularProgress size={16} sx={{ color: '#206CFF' }} />
-                    <Typography>加载中...</Typography>
-                  </Stack>
-                )}
+                <Box sx={{ minHeight: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {loadingMore && (
+                    <Stack direction='row' alignItems='center' justifyContent='center' gap={1} sx={{ py: 1.5 }}>
+                      <CircularProgress size={16} sx={{ color: '#206CFF' }} />
+                      <Typography>加载中...</Typography>
+                    </Stack>
+                  )}
+                </Box>
                 <Box ref={loadMoreTriggerRef} sx={{ width: '100%', height: '1px' }} />
               </>
             ) : (
@@ -1202,12 +1241,11 @@ const Article = ({
           ref={sidebarRef}
           spacing={3}
           sx={{
-            width: 300,
+            width: 276,
             flexShrink: 0,
             display: { xs: 'none', lg: 'block' },
             pt: 0,
-            pb: 3,
-            pr: 3,
+            pb: 0,
             scrollbarGutter: 'stable',
             // 保持在视口内滚动时固定（避免使用 fixed）
             position: 'sticky',
@@ -1215,6 +1253,8 @@ const Article = ({
             alignSelf: 'flex-start',
             maxHeight: 'calc(100vh - 100px)',
             overflowY: 'auto',
+            // 优化性能，避免加载时重新布局
+            willChange: 'transform',
             // 隐藏滚动条
             '&::-webkit-scrollbar': { display: 'none' },
             msOverflowStyle: 'none',

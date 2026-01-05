@@ -1,14 +1,13 @@
 'use client'
 import { ModelDiscussionListItem, ModelDiscussionState, ModelDiscussionType } from '@/api/types'
+import { CheckCircleOutline as CheckCircleOutlineIcon } from '@mui/icons-material'
+import { alpha, Chip } from '@mui/material'
 import IssueStatusChip from './IssueStatusChip'
 import QaUnresolvedChip from './QaUnresolvedChip'
-import { CheckCircleOutline as CheckCircleOutlineIcon } from '@mui/icons-material'
-import { Chip } from '@mui/material'
-import { Fragment } from 'react'
 
 // 状态相关辅助函数
 const getStatusColor = (status: string) => {
-  if (status === 'answered' || status === 'closed') return 'rgba(25, 135, 84, 1)'
+  if (status === 'answered' || status === 'closed') return '#1AA086'
   if (status === 'in-progress') return '#3b82f6'
   if (status === 'planned') return '#f59e0b'
   return '#6b7280'
@@ -50,10 +49,10 @@ const DiscussionStatusChip = ({ item, size = 'small' }: DiscussionStatusChipProp
   const status = getPostStatus(item)
 
   return (
-    <Fragment>
+    <>
       {/* Issue 类型使用 IssueStatusChip 显示所有状态 */}
       {isIssuePost && <IssueStatusChip resolved={item.resolved} size={size} />}
-      
+
       {/* 非 Issue 类型且非文章类型，显示已解决/已关闭状态 */}
       {!isIssuePost && (status === 'answered' || status === 'closed') && !isArticlePost && (
         <Chip
@@ -62,30 +61,30 @@ const DiscussionStatusChip = ({ item, size = 'small' }: DiscussionStatusChipProp
               sx={{
                 width: size === 'small' ? 16 : 18,
                 height: size === 'small' ? 16 : 18,
-                color: '#fff !important',
+                color: `${getStatusColor(status)}!important`,
+                ml: '8px!important',
               }}
             />
           }
           label={getStatusLabel(status)}
           size='small'
           sx={{
-            bgcolor: getStatusColor(status),
-            color: '#fff !important',
+            // bgcolor: alpha(getStatusColor(status), 0.10),
+            bgcolor: alpha(getStatusColor(status), 0.10),
+            color: getStatusColor(status),
             height: size === 'small' ? 20 : 22,
             lineHeight: size === 'small' ? '20px' : '22px',
             fontWeight: 600,
             fontSize: '12px',
-            border: `1px solid ${getStatusColor(status)}30`,
             fontFamily: 'Glibory, "PingFang SC", "Hiragino Sans GB", "STHeiti", "Microsoft YaHei", sans-serif',
           }}
         />
       )}
-      
+
       {/* QA 类型显示未解决状态 */}
       <QaUnresolvedChip type={item.type} resolved={item.resolved} size={size} />
-    </Fragment>
+    </>
   )
 }
 
 export default DiscussionStatusChip
-

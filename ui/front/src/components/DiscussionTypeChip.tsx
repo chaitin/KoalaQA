@@ -30,37 +30,31 @@ const DiscussionTypeChip: React.FC<DiscussionTypeChipProps> = ({
 
   // 获取类型样式
   const getTypeStyle = (): SxProps<Theme> => {
-    const isArticlePost = type === ModelDiscussionType.DiscussionTypeBlog
-    const isIssuePost = type === ModelDiscussionType.DiscussionTypeIssue
-
-    const baseStyle: SxProps<Theme> = {
-      bgcolor: isArticlePost ? 'rgba(255,119,68,0.1)' : isIssuePost ? 'rgba(0,99,151,0.1)' : 'rgba(26,160,134,0.1)',
-      color: isArticlePost ? '#FF7744' : isIssuePost ? '#006397' : '#1AA086',
-      border: `1px solid ${
-        isArticlePost ? 'rgba(255,119,68,0.1)' : isIssuePost ? 'rgba(0,99,151,0.1)' : 'rgba(26, 160, 134, 0.10)'
-      }`,
-      flexShrink: 0,
-    }
-
     // 根据 variant 设置不同的样式
     if (variant === 'compact') {
-      return {
-        ...baseStyle,
+      return (theme: Theme) => ({
+        bgcolor: theme.palette.primaryAlpha?.[10] || 'rgba(0,99,151,0.1)',
+        color: theme.palette.primary.main,
+        border: `1px solid ${theme.palette.primaryAlpha?.[10] || 'rgba(0,99,151,0.1)'}`,
+        flexShrink: 0,
         height: size === 'small' ? 20 : 24,
         fontSize: size === 'small' ? '12px' : '14px',
         fontWeight: 600,
         borderRadius: '3px',
-      }
+      })
     }
 
     // default variant
-    return {
-      ...baseStyle,
+    return (theme: Theme) => ({
+      bgcolor: theme.palette.primaryAlpha?.[10] || 'rgba(0,99,151,0.1)',
+      color: theme.palette.primary.main,
+      border: `1px solid ${theme.palette.primaryAlpha?.[10] || 'rgba(0,99,151,0.1)'}`,
+      flexShrink: 0,
       height: size === 'small' ? 20 : 24,
       fontWeight: 400,
       fontSize: size === 'small' ? '12px' : '14px',
       borderRadius: '4px',
-    }
+    })
   }
 
   const label = getTypeLabel()

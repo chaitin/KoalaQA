@@ -1,4 +1,4 @@
-import { Chip, ChipProps } from '@mui/material'
+import { alpha, Chip, ChipProps } from '@mui/material'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 import { ModelDiscussionType, ModelDiscussionState } from '@/api/types'
 
@@ -20,23 +20,25 @@ const QaUnresolvedChip: React.FC<QaUnresolvedChipProps> = ({ type, resolved, sx,
         <HelpOutlineIcon
           sx={{
             width: 16,
+            ml: '0!important',
             height: 16,
-            color: '#fff !important',
+            color: 'rgba(255, 119, 68, 1) !important',
           }}
         />
       }
-      {...restProps}
       sx={[
         {
-          bgcolor: 'rgba(255, 119, 68, 1)',
-          color: '#fff',
+          bgcolor: alpha('rgba(255, 119, 68, 1)', 0.1),
+          color: 'rgba(255, 119, 68, 1)',
           height: size === 'small' ? 20 : 22,
           fontWeight: 600,
           fontSize: '12px',
           borderRadius: '12px',
+          pl: 1,
         },
         ...(Array.isArray(sx) ? sx : [sx]),
       ]}
+      {...restProps}
     />
   )
 }

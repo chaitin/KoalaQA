@@ -1321,7 +1321,7 @@ const KnowledgeBasePage = () => {
                             mb: 0.5,
                             cursor: 'pointer',
                             transition: 'color 0.2s ease',
-                            '&:hover': { color: '#1976d2' },
+                            '&:hover': { color: 'info.main' },
                           }}
                           onClick={() => {
                             // 使用相对路径导航，确保保留父路由的 id 参数
