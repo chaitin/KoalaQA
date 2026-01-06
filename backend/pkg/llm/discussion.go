@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	"github.com/chaitin/koalaqa/model"
+	"github.com/chaitin/koalaqa/pkg/util"
 )
 
 // DiscussionPromptTemplate 论坛智能回帖提示词模版
@@ -161,6 +162,13 @@ func (t *DiscussionPromptTemplate) BuildPostPrompt() (string, error) {
 		return "", fmt.Errorf("初始化帖子模版失败: %w", err)
 	}
 
+	// 清理帖子内容中的无意义内容（base64图片、冗长日志等），避免 token 超限
+	// maxLen=8000 约为 ~3000-4000 tokens，为知识库检索和回复留出空间
+	t.Discussion.Content = util.CleanContentForLLM(t.Discussion.Content, 8000)
+	if t.NewComment != nil {
+		t.NewComment.Content = util.CleanContentForLLM(t.NewComment.Content, 1000)
+	}
+
 	// 构建评论树
 	t.CommentTree = t.buildCommentTree()
 
@@ -176,6 +184,13 @@ func (t *DiscussionPromptTemplate) BuildPostPrompt() (string, error) {
 func (t *DiscussionPromptTemplate) BuildFullPrompt() (string, error) {
 	if err := t.initFullTemplate(); err != nil {
 		return "", fmt.Errorf("初始化完整模版失败: %w", err)
+	}
+
+	// 清理帖子内容中的无意义内容（base64图片、冗长日志等），避免 token 超限
+	// maxLen=8000 约为 ~3000-4000 tokens，为知识库检索和回复留出空间
+	t.Discussion.Content = util.CleanContentForLLM(t.Discussion.Content, 8000)
+	if t.NewComment != nil {
+		t.NewComment.Content = util.CleanContentForLLM(t.NewComment.Content, 1000)
 	}
 
 	// 构建评论树
@@ -216,14 +231,6 @@ func (t *DiscussionPromptTemplate) BuildContentForRetrieval() string {
 	}
 
 	return strings.TrimSpace(builder.String())
-}
-
-// initTemplate 初始化模版（兼容性方法，根据是否有新评论选择模版）
-func (t *DiscussionPromptTemplate) initTemplate() error {
-	if t.NewComment != nil {
-		return t.initFullTemplate()
-	}
-	return t.initPostTemplate()
 }
 
 // initPostTemplate 初始化帖子模版
@@ -282,6 +289,7 @@ func (t *DiscussionPromptTemplate) buildCommentTree() []*CommentNode {
 
 	// 创建所有节点
 	for _, comment := range t.AllComments {
+		comment.Content = util.CleanContentForLLM(comment.Content, 1000)
 		node := &CommentNode{
 			Comment: comment,
 			IsNew:   t.NewComment != nil && comment.ID == t.NewComment.ID,
