@@ -311,7 +311,7 @@ const TitleCard = ({ data, menuAnchorEl, onMenuClose }: TitleCardProps) => {
       {/* 第二行：标签和作者信息 */}
       <Stack direction='row' flexWrap='wrap' sx={{ alignItems: 'center', px: 1 }} gap={1}>
         {/* 类型标签 */}
-        <DiscussionTypeChip size='small' type={data.type} variant='default' />
+        <DiscussionTypeChip sx={{ height: 22 }} type={data.type} variant='default' />
         {/* 左侧：所有标签（分组标签、状态标签、普通标签） */}
         <Stack direction='row' flexWrap='wrap' sx={{ gap: 1, alignItems: 'center', mr: 'auto' }}>
           {/* 使用通用状态标签组件 */}

@@ -105,7 +105,7 @@ export function TypeButton({
             sx={{
               fontSize: '0.8125rem',
               fontWeight: isSelected ? 600 : 500,
-              color: isSelected ? 'primary.main' : alpha('#21222D', 0.5),
+              color: isSelected ? 'primary.main' : '#21222D',
             }}
           >
             {name}

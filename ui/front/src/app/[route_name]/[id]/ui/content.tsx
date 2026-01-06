@@ -719,7 +719,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                           height: 22,
                           fontWeight: 600,
                           pl: 0.5,
-                          borderRadius: 0.5,
+                          borderRadius: 1,
                           fontSize: '12px',
                           border: (theme) => `1px solid ${alpha(theme.palette.success.main, 0.03)}`,
                           fontFamily:

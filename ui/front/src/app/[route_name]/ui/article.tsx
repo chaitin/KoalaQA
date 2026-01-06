@@ -1200,7 +1200,7 @@ const Article = ({
           <Box sx={{ bgcolor: '#ffffff', overflow: 'hidden' }}>
             {articleData.items?.map((it, index) => (
               <DiscussCard
-                key={it.uuid}
+                key={`discussion-${it.uuid}`}
                 data={it}
                 keywords={search}
                 onNavigate={onNavigate}
@@ -1276,8 +1276,8 @@ const Article = ({
               <Divider sx={{ mt: 2 }} />
               {announcements.length > 0 &&
                 announcements.map((announcement, index) => (
-                  <Fragment key={announcement.uuid}>
-                    <AnnouncementCard key={announcement.uuid} announcement={announcement} routeName={routeName} />
+                  <Fragment key={`announcement-${announcement.uuid}`}>
+                    <AnnouncementCard announcement={announcement} routeName={routeName} />
                     {announcements.length - 1 !== index && <Divider />}
                   </Fragment>
                 ))}

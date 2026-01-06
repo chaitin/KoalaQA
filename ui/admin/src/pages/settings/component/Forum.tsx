@@ -583,8 +583,99 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
   );
 };
 
+// 可拖拽的链接项组件
+interface SortableLinkItemProps {
+  index: number;
+  control: any;
+  onRemove: () => void;
+}
+
+const SortableLinkItem: React.FC<SortableLinkItemProps> = ({ index, control, onRemove }) => {
+  const { isDragging, attributes, listeners, setNodeRef, transform, transition } = useSortable({
+    id: `link-${index}`,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition: transition || undefined,
+  };
+
+  return (
+    <Box
+      ref={setNodeRef}
+      style={style}
+      sx={{
+        opacity: isDragging ? 0.5 : 1,
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 1,
+        p: 2,
+        backgroundColor: 'background.paper',
+      }}
+    >
+      <Stack spacing={2}>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <IconButton
+            size="small"
+            sx={{
+              cursor: 'grab',
+              color: 'text.secondary',
+              '&:hover': { color: 'primary.main' },
+              flexShrink: 0,
+            }}
+            {...attributes}
+            {...listeners}
+          >
+            <DragIndicatorIcon />
+          </IconButton>
+          <Controller
+            control={control}
+            name={`links.${index}.name`}
+            render={({ field: nameField }) => (
+              <TextField
+                {...nameField}
+                fullWidth
+                size="small"
+                placeholder="链接名称"
+                sx={commonFieldSx}
+                InputProps={{
+                  endAdornment: (
+                    <IconButton
+                      size="small"
+                      onClick={onRemove}
+                      sx={{ mr: -1 }}
+                    >
+                      <Box component="span" sx={{ fontSize: 18, lineHeight: 1 }}>
+                        ×
+                      </Box>
+                    </IconButton>
+                  ),
+                }}
+              />
+            )}
+          />
+        </Stack>
+        <Controller
+          control={control}
+          name={`links.${index}.address`}
+          render={({ field: addressField }) => (
+            <TextField
+              {...addressField}
+              fullWidth
+              size="small"
+              placeholder="链接地址"
+              sx={commonFieldSx}
+            />
+          )}
+        />
+      </Stack>
+    </Box>
+  );
+};
+
 const Forum: React.FC = () => {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeLinkId, setActiveLinkId] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [blockToDelete, setBlockToDelete] = useState<number | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
@@ -657,6 +748,7 @@ const Forum: React.FC = () => {
     fields: linkFields,
     append: appendLink,
     remove: removeLink,
+    move: moveLink,
   } = useFieldArray({
     control: linksControl,
     name: 'links',
@@ -997,6 +1089,29 @@ const Forum: React.FC = () => {
     setLinksBlockIndex(index);
     setShowLinksDialog(true);
   };
+
+  const handleLinkDragStart = useCallback((event: DragStartEvent) => {
+    setActiveLinkId(event.active.id as string);
+  }, []);
+
+  const handleLinkDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (active.id !== over?.id) {
+        const oldIndex = linkFields.findIndex((_, index) => `link-${index}` === active.id);
+        const newIndex = linkFields.findIndex((_, index) => `link-${index}` === over!.id);
+        if (oldIndex !== -1 && newIndex !== -1) {
+          moveLink(oldIndex, newIndex);
+        }
+      }
+      setActiveLinkId(null);
+    },
+    [linkFields, moveLink]
+  );
+
+  const handleLinkDragCancel = useCallback(() => {
+    setActiveLinkId(null);
+  }, []);
 
   const handleLinksSubmit = handleLinksSubmitForm(async data => {
     if (linksBlockIndex === null) return;
@@ -1522,86 +1637,57 @@ const Forum: React.FC = () => {
             </Button>
           </Stack>
 
-          <Stack spacing={2}>
-            {linkFields.map((link, linkIndex) => (
-              <Box
-                key={link.id || linkIndex}
-                sx={{
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  borderRadius: 1,
-                  p: 2,
-                  backgroundColor: 'background.paper',
-                }}
-              >
-                <Stack spacing={2}>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <IconButton
-                      size="small"
-                      sx={{
-                        cursor: 'grab',
-                        color: 'text.secondary',
-                        '&:hover': { color: 'primary.main' },
-                        flexShrink: 0,
-                      }}
-                    >
-                      <DragIndicatorIcon />
-                    </IconButton>
-                    <Controller
-                      control={linksControl}
-                      name={`links.${linkIndex}.name`}
-                      render={({ field: nameField }) => (
-                        <TextField
-                          {...nameField}
-                          fullWidth
-                          size="small"
-                          placeholder="链接名称"
-                          sx={commonFieldSx}
-                          InputProps={{
-                            endAdornment: (
-                              <IconButton
-                                size="small"
-                                onClick={() => {
-                                  removeLink(linkIndex);
-                                }}
-                                sx={{ mr: -1 }}
-                              >
-                                <Box component="span" sx={{ fontSize: 18, lineHeight: 1 }}>
-                                  ×
-                                </Box>
-                              </IconButton>
-                            ),
-                          }}
-                        />
-                      )}
-                    />
-                  </Stack>
-                  <Controller
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleLinkDragStart}
+            onDragEnd={handleLinkDragEnd}
+            onDragCancel={handleLinkDragCancel}
+          >
+            <SortableContext
+              items={linkFields.map((_, index) => `link-${index}`)}
+              strategy={rectSortingStrategy}
+            >
+              <Stack spacing={2}>
+                {linkFields.map((link, linkIndex) => (
+                  <SortableLinkItem
+                    key={link.id || linkIndex}
+                    index={linkIndex}
                     control={linksControl}
-                    name={`links.${linkIndex}.address`}
-                    render={({ field: addressField }) => (
-                      <TextField
-                        {...addressField}
-                        fullWidth
-                        size="small"
-                        placeholder="链接地址"
-                        sx={commonFieldSx}
-                      />
-                    )}
+                    onRemove={() => removeLink(linkIndex)}
                   />
-                </Stack>
-              </Box>
-            ))}
-            {linkFields.length === 0 && (
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ textAlign: 'center', py: 2 }}
-              >
-                暂无链接，点击"添加链接"添加
-              </Typography>
-            )}
-          </Stack>
+                ))}
+                {linkFields.length === 0 && (
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ textAlign: 'center', py: 2 }}
+                  >
+                    暂无链接，点击"添加链接"添加
+                  </Typography>
+                )}
+              </Stack>
+            </SortableContext>
+
+            <DragOverlay adjustScale style={{ transformOrigin: '0 0' }}>
+              {activeLinkId ? (
+                <Box
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 1,
+                    p: 2,
+                    backgroundColor: 'background.paper',
+                    boxShadow: 3,
+                  }}
+                >
+                  <Typography variant="body2">
+                    {linkFields[Number.parseInt(activeLinkId.split('-')[1])]?.name || '链接'}
+                  </Typography>
+                </Box>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
         </Stack>
       </Modal>
     </Card>

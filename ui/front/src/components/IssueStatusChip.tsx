@@ -21,7 +21,7 @@ const IssueStatusChip: React.FC<IssueStatusChipProps> = ({ resolved, size = 'med
   const getStatusColor = (): string => {
     if (resolved === ModelDiscussionState.DiscussionStateNone) return '#f97316' // 橙色 - 待处理
     if (resolved === ModelDiscussionState.DiscussionStateInProgress) return '#006397' // 深蓝色 - 进行中
-    if (resolved === ModelDiscussionState.DiscussionStateResolved) return 'rgba(25, 135, 84, 1)' // 绿色 - 已完成
+    if (resolved === ModelDiscussionState.DiscussionStateResolved) return '#1AA086' // 绿色 - 已完成
     return '#f97316'
   }
 
@@ -70,7 +70,9 @@ const IssueStatusChip: React.FC<IssueStatusChipProps> = ({ resolved, size = 'med
         {
           pl: 0.5,
           color: getStatusColor(),
+          borderRadius: 0.5,
           bgcolor: alpha(getStatusColor(), 0.1),
+          border: `1px solid ${alpha(getStatusColor(), 0.03)}`,
           ...getSizeStyles(),
         },
         {

@@ -187,7 +187,7 @@ const DiscussCard = ({
                   size='small'
                   sx={{
                     bgcolor: 'rgba(233, 236, 239, 1)',
-                    color: 'rgba(33, 34, 45, 1)',
+                    color: '#21222D',
                     height: size === 'small' ? 20 : 22,
                     fontSize: size === 'small' ? '12px' : '12px',
                     lineHeight: '22px',

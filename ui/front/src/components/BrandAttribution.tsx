@@ -75,19 +75,7 @@ const BrandAttribution = ({ inSidebar = false, sidebarRef }: BrandAttributionPro
       }}
       gap={0.5}
     >
-      本网站由
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={'/inverse_logo-text.png'}
-        alt='KoalaQA'
-        width={60}
-        height={9}
-        style={{
-          filter: 'brightness(0.45)',
-          transition: 'filter 0.2s ease',
-        }}
-      />
-      提供技术支持
+      本网站由<Box sx={{ fontWeight: 'bold', color: 'rgb(0, 0, 0)' }}>KoalaQA</Box>提供技术支持
     </Stack>
   )
 

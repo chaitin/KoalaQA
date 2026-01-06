@@ -394,7 +394,7 @@ export default function FilterPanel({
             {/* 常用链接 */}
             <List disablePadding>
               {forumInfo.links.links.map((link, linkIndex) => (
-                <ListItem key={`link-${linkIndex}-${link.name || linkIndex}`} disablePadding sx={{ mb: 1 }}>
+                <ListItem key={`link-${linkIndex}-${link.name || linkIndex}`} disablePadding sx={{ mb: 2 }}>
                   <MuiLink
                     href={link.address || '#'}
                     target='_blank'
@@ -406,6 +406,7 @@ export default function FilterPanel({
                       color: 'text.primary',
                       textDecoration: 'none',
                       fontSize: '14px',
+                      pl: 1.5,
                       width: '100%',
                       '&:hover': {
                         color: 'primary.main',
@@ -417,6 +418,7 @@ export default function FilterPanel({
                         fontSize: 16,
                         color: 'text.secondary',
                         flexShrink: 0,
+                        mr: 0.8,
                       }}
                     />
                     <Typography variant='body2' sx={{ fontSize: '14px' }}>
