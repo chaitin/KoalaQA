@@ -115,32 +115,33 @@ const DiscussDetailPage = async (props: {
           justifyContent: 'center',
           pb: 2,
           minHeight: 'calc(100vh - 90px)',
+          position: 'relative',
         }}
       >
-        {/* 内容容器 - 固定宽度居中 */}
+        {/* 主内容区域 - 居中 */}
         <Box
           sx={{
-            display: 'flex',
-            gap: { xs: 0, lg: 3 },
-            width: { xs: '100%', lg: '1080px' }, // 780px 主内容 + 300px 侧边栏 + 24px gap
-            maxWidth: { xs: '100%', lg: '1080px' },
+            width: { xs: '100%', lg: '780px' },
+            mx: { xs: 0, lg: 'auto' },
           }}
         >
-          {/* 主内容区域 - 固定宽度 */}
-          <Box
-            sx={{
-              width: { xs: '100%', lg: '780px' },
-              flexShrink: 0,
-            }}
-          >
-            {shouldShowAlert && <DiscussionAlert defaultOpen />}
-            <h1 style={{ display: 'none' }}>讨论详情</h1>
-            <Suspense fallback={<LoadingSpinner />}>
-              <DetailContent discussion={discussion} />
-            </Suspense>
-          </Box>
+          {shouldShowAlert && <DiscussionAlert defaultOpen />}
+          <h1 style={{ display: 'none' }}>讨论详情</h1>
+          <Suspense fallback={<LoadingSpinner />}>
+            <DetailContent discussion={discussion} />
+          </Suspense>
+        </Box>
 
-          {/* 右侧边栏 - 仅在桌面端显示 */}
+        {/* 右侧边栏 - 独立定位，不参与居中计算 */}
+        <Box
+          sx={{
+            display: { xs: 'none', lg: 'block' },
+            position: 'absolute',
+            left: { lg: 'calc(50% + 414px)' }, // 50% + 780px/2 + 24px = 50% + 390px + 24px = 50% + 414px
+            top: 0,
+            width: '300px',
+          }}
+        >
           <DetailSidebarWrapper type={discussion.type} discussion={discussion} discId={discussion.uuid || id} />
         </Box>
       </Box>
