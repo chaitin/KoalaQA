@@ -29,6 +29,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import MoreVertIcon from '@mui/icons-material/MoreVert'
 import {
+  alpha,
   Box,
   Button,
   Chip,
@@ -506,12 +507,12 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                 key={answer.id}
                 data-answer-id={answer.id}
                 elevation={0}
-                sx={{
+                sx={(theme) => ({
                   bgcolor: answer.accepted ? '#ffffff' : '#ffffff',
                   p: '20px',
                   mb: 2,
                   border: answer.accepted
-                    ? '2px solid rgba(25, 135, 84, 1) !important'
+                    ? `2px solid ${theme.palette.success.main}!important`
                     : '1px solid rgba(217, 222, 226, 1)!important',
                   position: 'relative',
                   transition: 'all 0.3s ease',
@@ -519,7 +520,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                     border: '2px solid rgba(0, 99, 151, 1) !important',
                     boxShadow: '0 0 0 4px rgba(0, 99, 151, 0.1)',
                   },
-                }}
+                })}
               >
                 {answer.accepted && (
                   <Box
@@ -529,7 +530,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                       left: '-2px',
                       width: '20px',
                       height: '20px',
-                      bgcolor: 'rgba(25, 135, 84, 1)',
+                      bgcolor: (theme) => `${theme.palette.success.main}!important`,
                       borderTopLeftRadius: '10px',
                       borderTopRightRadius: '0px',
                       borderBottomLeftRadius: '0px',
@@ -706,19 +707,21 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                             sx={{
                               width: 15,
                               height: 15,
-                              color: '#fff !important',
+                              color: (theme) => `${theme.palette.success.main}!important`,
                             }}
                           />
                         }
                         label='已采纳'
                         size='small'
                         sx={{
-                          bgcolor: 'rgba(25, 135, 84, 1)',
-                          color: '#fff !important',
+                          color: 'success.main',
+                          bgcolor: (theme) => `${alpha(theme.palette.success.main, 0.1)}!important`,
                           height: 22,
                           fontWeight: 600,
+                          pl: 0.5,
+                          borderRadius: 0.5,
                           fontSize: '12px',
-                          border: '1px solid rgba(25, 135, 84, 0.3)',
+                          border: (theme) => `1px solid ${alpha(theme.palette.success.main, 0.03)}`,
                           fontFamily:
                             'Glibory, "PingFang SC", "Hiragino Sans GB", "STHeiti", "Microsoft YaHei", sans-serif',
                         }}
@@ -930,7 +933,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                                 {reply.bot && (
                                   <Chip
                                     label='AI'
-                                    sx={theme=>({
+                                    sx={(theme) => ({
                                       width: 28,
                                       height: 24,
                                       background: theme.palette.primaryAlpha?.[6],
@@ -1169,10 +1172,10 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                 '&::before': {
                   content: '""',
                   position: 'absolute',
-                  top: '-38px',
+                  top: '-18px',
                   left: '-1px',
                   right: '-1px',
-                  height: '40px',
+                  height: '20px',
                   background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, #FFFFFF 100%)',
                   pointerEvents: 'none',
                   zIndex: -2,

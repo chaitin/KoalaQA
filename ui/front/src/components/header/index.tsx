@@ -10,6 +10,7 @@ import { useForumStore, useQuickReplyStore } from '@/store'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import AddIcon from '@mui/icons-material/Add'
 import MenuIcon from '@mui/icons-material/Menu'
+import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import SearchIcon from '@mui/icons-material/Search'
 import {
   AppBar,
@@ -18,12 +19,16 @@ import {
   Drawer,
   IconButton,
   InputAdornment,
+  Link as MuiLink,
+  List,
+  ListItem,
   Menu,
   MenuItem,
   OutlinedInput,
   Stack,
   Toolbar,
   Typography,
+  Divider,
 } from '@mui/material'
 import { useBoolean } from 'ahooks'
 import Image from 'next/image'
@@ -407,7 +412,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
         <Toolbar sx={{ py: 1, px: 1, color: 'text.primary' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
             {/* Menu button - 只在有多个板块时显示 */}
-            {forums && forums.length > 1 && (
+            {forums && !!forums.length && (
               <IconButton
                 size='small'
                 onClick={openMobileMenu}
@@ -617,6 +622,52 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
               })}
             </Box>
           )}
+
+          {/* 常用链接 */}
+          {currentForumInfo?.links?.enabled && currentForumInfo?.links?.links && currentForumInfo.links.links.length > 0 && (
+            <Box>
+              <Divider sx={{ my: 2 }} />
+              <List disablePadding>
+                {currentForumInfo.links.links.map((link, linkIndex) => (
+                  <ListItem key={`link-${linkIndex}-${link.name || linkIndex}`} disablePadding sx={{ mb: 1 }}>
+                    <MuiLink
+                      href={link.address || '#'}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        color: 'text.primary',
+                        textDecoration: 'none',
+                        fontSize: '14px',
+                        width: '100%',
+                        py: 0.5,
+                        px: 1,
+                        borderRadius: '4px',
+                        '&:hover': {
+                          color: 'primary.main',
+                          bgcolor: 'action.hover',
+                        },
+                      }}
+                    >
+                      <OpenInNewIcon
+                        sx={{
+                          fontSize: 16,
+                          color: 'text.secondary',
+                          flexShrink: 0,
+                        }}
+                      />
+                      <Typography variant='body2' sx={{ fontSize: '14px' }}>
+                        {link.name}
+                      </Typography>
+                    </MuiLink>
+                  </ListItem>
+                ))}
+              </List>
+            </Box>
+          )}
+          
         </Stack>
       </Drawer>
 

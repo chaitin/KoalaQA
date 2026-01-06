@@ -84,9 +84,9 @@ const SECONDARY_DARK = '#D7E9F4' // 更深的浅蓝色
 const SECONDARY_CONTRAST = DEFAULT_PRIMARY_MAIN // 深蓝色文字，与浅色背景形成对比
 
 // 成功色 - Success (#27AE60)
-const SUCCESS_MAIN = '#27AE60'
-const SUCCESS_LIGHT = '#4EC97F' // 更浅的绿色
-const SUCCESS_DARK = '#1E8A4A' // 更深的绿色
+const SUCCESS_MAIN = '#1AA086'
+const SUCCESS_LIGHT = '#50B89C' // 更浅的绿色
+const SUCCESS_DARK = '#359B7C' // 更深的绿色
 const SUCCESS_CONTRAST = '#FFFFFF'
 
 // 警告色 - Warning (#FFBF00)

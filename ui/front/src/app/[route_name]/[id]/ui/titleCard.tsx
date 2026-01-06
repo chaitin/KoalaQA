@@ -11,6 +11,7 @@ import { AuthContext } from '@/components/authProvider'
 import CommonAvatar from '@/components/CommonAvatar'
 import { CommonContext } from '@/components/commonProvider'
 import ConvertToIssueModal from '@/components/ConvertToIssueModal'
+import EditorContent from '@/components/EditorContent'
 import Modal from '@/components/modal'
 import { TimeDisplayWithTag } from '@/components/TimeDisplay'
 import { useListPageCache } from '@/hooks/useListPageCache'
@@ -18,16 +19,7 @@ import dayjs from '@/lib/dayjs'
 import { formatNumber, isAdminRole } from '@/lib/utils'
 import { useForumStore } from '@/store'
 import { PointActionType, showPointNotification } from '@/utils/pointNotification'
-import {
-  Box,
-  Chip,
-  Menu,
-  MenuItem,
-  Stack,
-  Typography,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material'
+import { Box, Chip, Menu, MenuItem, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
 import { useBoolean } from 'ahooks'
 import Link from 'next/link'
 import { useParams, useRouter, usePathname } from 'next/navigation'
@@ -112,7 +104,6 @@ const TitleCard = ({ data, menuAnchorEl, onMenuClose }: TitleCardProps) => {
       }
     }
   }, [])
-
 
   const handleDelete = () => {
     menuClose()
@@ -302,8 +293,6 @@ const TitleCard = ({ data, menuAnchorEl, onMenuClose }: TitleCardProps) => {
       {/* Post header */}
       {/* 第一行：类型标签和标题 */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', mb: 2, px: 1 }}>
-        {/* 类型标签 */}
-        <DiscussionTypeChip type={data.type} variant='default' />
         {/* 标题 - 完整展示，去掉行数限制 */}
         <Typography
           sx={{
@@ -312,6 +301,7 @@ const TitleCard = ({ data, menuAnchorEl, onMenuClose }: TitleCardProps) => {
             lineHeight: 1.4,
             flex: 1,
             fontSize: { xs: '16px', lg: '18px' },
+            whiteSpace: 'wrap',
           }}
         >
           {data.title}
@@ -319,14 +309,11 @@ const TitleCard = ({ data, menuAnchorEl, onMenuClose }: TitleCardProps) => {
       </Box>
 
       {/* 第二行：标签和作者信息 */}
-      <Stack
-        direction='row'
-        flexWrap='wrap'
-        sx={{ alignItems: 'center', justifyContent: 'space-between', px: 1 }}
-        gap={2}
-      >
+      <Stack direction='row' flexWrap='wrap' sx={{ alignItems: 'center', px: 1 }} gap={1}>
+        {/* 类型标签 */}
+        <DiscussionTypeChip size='small' type={data.type} variant='default' />
         {/* 左侧：所有标签（分组标签、状态标签、普通标签） */}
-        <Stack direction='row' flexWrap='wrap' sx={{ gap: 1, alignItems: 'center' }}>
+        <Stack direction='row' flexWrap='wrap' sx={{ gap: 1, alignItems: 'center', mr: 'auto' }}>
           {/* 使用通用状态标签组件 */}
           <DiscussionStatusChip item={data} size='medium' />
           {data.groups?.map((item) => {
@@ -446,61 +433,55 @@ const TitleCard = ({ data, menuAnchorEl, onMenuClose }: TitleCardProps) => {
               </Typography>
             </>
           )}
-          {/* 显示浏览量 */}
-          {data.view !== undefined && data.view !== null && (
-            <>
-              <Typography
-                variant='body2'
-                sx={{
-                  color: 'rgba(33, 34, 45, 0.50)',
-                  px: { xs: 0.5, sm: 1 },
-                  flexShrink: 0,
-                }}
-              >
-                ·
-              </Typography>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  flexShrink: 0,
-                  color: 'rgba(33, 34, 45, 0.50)',
-                }}
-              >
-                <Typography
-                  variant='body2'
-                  sx={{
-                    color: 'rgba(33, 34, 45, 0.50)',
-                    flexShrink: 0,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {formatNumber(data.view || 0)}
-                </Typography>
-                <Typography
-                  variant='body2'
-                  sx={{
-                    color: 'rgba(33, 34, 45, 0.50)',
-                    flexShrink: 0,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  次浏览
-                </Typography>
-              </Box>
-            </>
-          )}
         </Box>
       </Stack>
-
-      {!!tagNames.length && (
-        <Stack direction='row' flexWrap='wrap' sx={{ gap: 1, alignItems: 'center', mt: 1, mb: 2, px: 1 }}>
-          {tagNames.map((tag, index) => {
-            return <TagFilterChip key={`tag-${tag}-${index}`} id={index} name={tag} selected={false} />
-          })}
-        </Stack>
+      {data.content && String(data.content).trim() && (
+        <Box sx={{ px: 1, pt: 1.2, mt: 2, borderTop: '1px solid', borderColor: 'border' }}>
+          <EditorContent content={data.content} onTocUpdate={true} />
+        </Box>
       )}
+      <Stack direction={'row'} alignItems={'center'} justifyContent={'space-between'} sx={{ mt: 2 }}>
+        {!!tagNames.length && (
+          <Stack direction='row' flexWrap='wrap' sx={{ gap: 1, alignItems: 'center', px: 1 }}>
+            {tagNames.map((tag, index) => {
+              return <TagFilterChip key={`tag-${tag}-${index}`} id={index} name={tag} selected={false} />
+            })}
+          </Stack>
+        )}
+        {/* 显示浏览量 */}
+        {data.view !== undefined && data.view !== null && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              flexShrink: 0,
+              color: 'rgba(33, 34, 45, 0.50)',
+            }}
+          >
+            <Typography
+              variant='body2'
+              sx={{
+                color: 'rgba(33, 34, 45, 0.50)',
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {formatNumber(data.view || 0)}
+            </Typography>
+            <Typography
+              variant='body2'
+              sx={{
+                color: 'rgba(33, 34, 45, 0.50)',
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              次浏览
+            </Typography>
+          </Box>
+        )}
+      </Stack>
     </>
   )
 }

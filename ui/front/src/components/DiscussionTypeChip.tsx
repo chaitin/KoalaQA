@@ -48,7 +48,7 @@ const DiscussionTypeChip: React.FC<DiscussionTypeChipProps> = ({
     return (theme: Theme) => ({
       bgcolor: theme.palette.primaryAlpha?.[10] || 'rgba(0,99,151,0.1)',
       color: theme.palette.primary.main,
-      border: `1px solid ${theme.palette.primaryAlpha?.[10] || 'rgba(0,99,151,0.1)'}`,
+      border: `1px solid ${theme.palette.primaryAlpha?.[3] || 'rgba(0,99,151,0.1)'}`,
       flexShrink: 0,
       height: size === 'small' ? 20 : 24,
       fontWeight: 400,

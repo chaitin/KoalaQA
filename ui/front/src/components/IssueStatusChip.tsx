@@ -1,4 +1,4 @@
-import { Chip, SxProps, Theme } from '@mui/material'
+import { alpha, Chip, SxProps, Theme } from '@mui/material'
 import { ModelDiscussionState } from '@/api/types'
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import AutorenewIcon from '@mui/icons-material/Autorenew'
@@ -29,7 +29,7 @@ const IssueStatusChip: React.FC<IssueStatusChipProps> = ({ resolved, size = 'med
     const iconStyle = {
       width: 16,
       height: 16,
-      color: '#fff !important',
+      color: `${getStatusColor()} !important`,
     }
 
     if (resolved === ModelDiscussionState.DiscussionStateResolved) {
@@ -47,7 +47,7 @@ const IssueStatusChip: React.FC<IssueStatusChipProps> = ({ resolved, size = 'med
         fontSize: '12px',
         height: 20,
         fontWeight: 600,
-        border: `1px solid ${getStatusColor()}30`,
+        border: `1px solid ${alpha(getStatusColor(), 0.03)}`,
         fontFamily: 'Glibory, "PingFang SC", "Hiragino Sans GB", "STHeiti", "Microsoft YaHei", sans-serif',
       }
     }
@@ -56,7 +56,7 @@ const IssueStatusChip: React.FC<IssueStatusChipProps> = ({ resolved, size = 'med
       fontSize: '12px',
       height: 22,
       fontWeight: 600,
-      border: `1px solid ${getStatusColor()}30`,
+      border: `1px solid ${alpha(getStatusColor(), 0.03)}`,
       fontFamily: 'Glibory, "PingFang SC", "Hiragino Sans GB", "STHeiti", "Microsoft YaHei", sans-serif',
     }
   }
@@ -68,8 +68,9 @@ const IssueStatusChip: React.FC<IssueStatusChipProps> = ({ resolved, size = 'med
       size={size}
       sx={[
         {
-          bgcolor: getStatusColor(),
-          color: '#fff !important',
+          pl: 0.5,
+          color: getStatusColor(),
+          bgcolor: alpha(getStatusColor(), 0.1),
           ...getSizeStyles(),
         },
         {

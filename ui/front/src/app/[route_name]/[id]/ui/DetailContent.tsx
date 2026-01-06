@@ -58,7 +58,7 @@ const DetailContent = ({ discussion }: DetailContentProps) => {
         </Paper>
 
         {/* 帖子内容卡片 */}
-        {discussion.content && String(discussion.content).trim() && (
+        {/* {discussion.content && String(discussion.content).trim() && (
           <Paper
             elevation={0}
             sx={{
@@ -69,9 +69,9 @@ const DetailContent = ({ discussion }: DetailContentProps) => {
               p: { xs: 2, lg: 3 },
             }}
           >
-            <EditorContent content={discussion.content} onTocUpdate={true} />
+            
           </Paper>
-        )}
+        )} */}
 
         {/* 回答/评论卡片 */}
         <Paper

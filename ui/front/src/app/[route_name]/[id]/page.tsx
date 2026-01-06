@@ -112,31 +112,37 @@ const DiscussDetailPage = async (props: {
       <Box
         sx={{
           display: 'flex',
-          gap: { xs: 0, lg: 3 },
-          justifyContent: { lg: 'center' },
-          alignItems: { lg: 'flex-start' },
+          justifyContent: 'center',
           pb: 2,
           minHeight: 'calc(100vh - 90px)',
         }}
       >
-        {/* 主内容区域 */}
+        {/* 内容容器 - 固定宽度居中 */}
         <Box
           sx={{
-            flex: 1,
-            minWidth: 0,
-            alignSelf: 'stretch',
-            width: { xs: '100%', lg: '780px' },
+            display: 'flex',
+            gap: { xs: 0, lg: 3 },
+            width: { xs: '100%', lg: '1080px' }, // 780px 主内容 + 300px 侧边栏 + 24px gap
+            maxWidth: { xs: '100%', lg: '1080px' },
           }}
         >
-          {shouldShowAlert && <DiscussionAlert defaultOpen />}
-          <h1 style={{ display: 'none' }}>讨论详情</h1>
-          <Suspense fallback={<LoadingSpinner />}>
-            <DetailContent discussion={discussion} />
-          </Suspense>
-        </Box>
+          {/* 主内容区域 - 固定宽度 */}
+          <Box
+            sx={{
+              width: { xs: '100%', lg: '780px' },
+              flexShrink: 0,
+            }}
+          >
+            {shouldShowAlert && <DiscussionAlert defaultOpen />}
+            <h1 style={{ display: 'none' }}>讨论详情</h1>
+            <Suspense fallback={<LoadingSpinner />}>
+              <DetailContent discussion={discussion} />
+            </Suspense>
+          </Box>
 
-        {/* 右侧边栏 - 仅在桌面端显示 */}
-        <DetailSidebarWrapper type={discussion.type} discussion={discussion} discId={discussion.uuid || id} />
+          {/* 右侧边栏 - 仅在桌面端显示 */}
+          <DetailSidebarWrapper type={discussion.type} discussion={discussion} discId={discussion.uuid || id} />
+        </Box>
       </Box>
     </>
   )

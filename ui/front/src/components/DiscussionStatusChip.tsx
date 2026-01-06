@@ -69,13 +69,14 @@ const DiscussionStatusChip = ({ item, size = 'small' }: DiscussionStatusChipProp
           label={getStatusLabel(status)}
           size='small'
           sx={{
-            // bgcolor: alpha(getStatusColor(status), 0.10),
-            bgcolor: alpha(getStatusColor(status), 0.10),
+            bgcolor: alpha(getStatusColor(status), 0.1),
             color: getStatusColor(status),
             height: size === 'small' ? 20 : 22,
             lineHeight: size === 'small' ? '20px' : '22px',
             fontWeight: 600,
             fontSize: '12px',
+            borderRadius: 0.5,
+            border: (theme) => `1px solid ${alpha(getStatusColor(status), 0.03)}`,
             fontFamily: 'Glibory, "PingFang SC", "Hiragino Sans GB", "STHeiti", "Microsoft YaHei", sans-serif',
           }}
         />
