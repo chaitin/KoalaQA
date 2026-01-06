@@ -43,6 +43,8 @@ export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish 
 
   // 内部状态管理
   const [searchQuery, setSearchQuery] = useState(initialQuery)
+  // 仅在用户真正执行搜索（回车/初始自动搜索）后记录的查询，用于 AI 总结
+  const [lastSearchedQuery, setLastSearchedQuery] = useState(initialQuery.trim())
   const [searchResults, setSearchResults] = useState<ModelDiscussionListItem[]>([])
   const [loading, setLoading] = useState(false)
 
@@ -50,6 +52,7 @@ export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish 
   useEffect(() => {
     if (open) {
       setSearchQuery(initialQuery)
+      setLastSearchedQuery(initialQuery.trim())
       if (searchInputRef.current) {
         setTimeout(() => {
           searchInputRef.current?.focus()
@@ -63,6 +66,7 @@ export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish 
       // 关闭时清空状态
       setSearchQuery('')
       setSearchResults([])
+      setLastSearchedQuery('')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialQuery])
@@ -81,6 +85,7 @@ export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish 
         }
 
         const result = await getDiscussion(params)
+        setLastSearchedQuery(query.trim())
         setSearchResults(result.items || [])
       } catch (error) {
         console.error('搜索失败:', error)
@@ -102,6 +107,7 @@ export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish 
   const handleClearSearch = useCallback(() => {
     setSearchQuery('')
     setSearchResults([])
+    setLastSearchedQuery('')
     searchInputRef.current?.focus()
   }, [])
 
@@ -347,8 +353,9 @@ export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish 
           {!isMobile && (
             <AISummaryPanel
               searchResults={searchResults}
-              searchQuery={searchQuery}
+              searchQuery={lastSearchedQuery}
               visible={!loading && searchResults.length > 0}
+              shouldSummarize={searchQuery === lastSearchedQuery && lastSearchedQuery.trim().length > 0}
             />
           )}
         </Box>
