@@ -79,7 +79,7 @@ const TitleCard = ({ data, menuAnchorEl, onMenuClose }: TitleCardProps) => {
   const router = useRouter()
   const pathname = usePathname()
   const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  const isMobile = useMediaQuery(theme.breakpoints.down('lg'))
   const forums = useForumStore((s) => s.forums)
   const { route_name }: { route_name?: string } = (useParams() as any) || {}
 

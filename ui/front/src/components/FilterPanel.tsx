@@ -3,8 +3,19 @@
 import { ModelGroupItemInfo, ModelGroupWithItem, ModelForumInfo, ModelDiscussionTag } from '@/api'
 import FilterPanelClient from './FilterPanelClient'
 import { FilterPanelActions } from './FilterPanelActions'
-import { Box, Divider, FormControl, InputLabel, List, ListItem, Stack, Typography } from '@mui/material'
+import {
+  Box,
+  Divider,
+  FormControl,
+  InputLabel,
+  List,
+  ListItem,
+  Stack,
+  Typography,
+  Link as MuiLink,
+} from '@mui/material'
 import { Icon } from '@ctzhian/ui'
+import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import Image from 'next/image'
 import { useParams, usePathname, useSearchParams } from 'next/navigation'
 import { useMemo, useCallback, useEffect, useState } from 'react'
@@ -267,7 +278,7 @@ export default function FilterPanel({
         sx={{
           width: 240,
           flexShrink: 0,
-          display: { xs: 'none', sm: 'block' },
+          display: { xs: 'none', lg: 'block' },
           position: 'sticky',
           top: 25,
           alignSelf: 'flex-start',
@@ -357,20 +368,66 @@ export default function FilterPanel({
           })}
         </Box>
 
-        <Divider sx={{ mb: 3 }} />
+        {forumInfo?.tag_enabled && (
+          <>
+            <Divider sx={{ mb: 3 }} />
 
-        {/* 标签 */}
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-          <FilterPanelActions.Tags
-            popularTags={popularTags}
-            urlTags={urlTags}
-            typeForFilter={typeForFilter}
-            urlTopics={urlTopics}
-            typeForUrl={typeForUrl}
-            forumId={forumId}
-            isDetailPage={isDetailPage}
-          />
-        </Box>
+            {/* 标签 */}
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              <FilterPanelActions.Tags
+                popularTags={popularTags}
+                urlTags={urlTags}
+                typeForFilter={typeForFilter}
+                urlTopics={urlTopics}
+                typeForUrl={typeForUrl}
+                forumId={forumId}
+                isDetailPage={isDetailPage}
+              />
+            </Box>
+          </>
+        )}
+
+        {forumInfo?.links?.enabled && forumInfo?.links?.links && forumInfo.links.links.length > 0 && (
+          <>
+            <Divider sx={{ my: 3 }} />
+
+            {/* 常用链接 */}
+            <List disablePadding>
+              {forumInfo.links.links.map((link, linkIndex) => (
+                <ListItem key={`link-${linkIndex}-${link.name || linkIndex}`} disablePadding sx={{ mb: 1 }}>
+                  <MuiLink
+                    href={link.address || '#'}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      color: 'text.primary',
+                      textDecoration: 'none',
+                      fontSize: '14px',
+                      width: '100%',
+                      '&:hover': {
+                        color: 'primary.main',
+                      },
+                    }}
+                  >
+                    <OpenInNewIcon
+                      sx={{
+                        fontSize: 16,
+                        color: 'text.secondary',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <Typography variant='body2' sx={{ fontSize: '14px' }}>
+                      {link.name}
+                    </Typography>
+                  </MuiLink>
+                </ListItem>
+              ))}
+            </List>
+          </>
+        )}
       </Stack>
     </>
   )

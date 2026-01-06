@@ -34,7 +34,7 @@ interface SearchResultModalProps {
 
 export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish }: SearchResultModalProps) => {
   const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  const isMobile = useMediaQuery(theme.breakpoints.down('lg'))
   const searchInputRef = useRef<HTMLInputElement>(null)
   const { user } = useContext(AuthContext)
 

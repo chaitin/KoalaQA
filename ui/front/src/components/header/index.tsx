@@ -262,7 +262,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
           bgcolor: 'background.paper',
           color: 'text.primary',
           backdropFilter: 'blur(12px)',
-          display: { xs: 'none', sm: 'block' },
+          display: { xs: 'none', lg: 'block' },
           boxShadow: `0px 1px 0px 0px ${theme.palette.divider}`,
         })}
       >
@@ -400,7 +400,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
           bgcolor: 'background.paper',
           color: 'text.primary',
           backdropFilter: 'blur(12px)',
-          display: { xs: 'block', sm: 'none' },
+          display: { xs: 'block', lg: 'none' },
           borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
         }}
       >

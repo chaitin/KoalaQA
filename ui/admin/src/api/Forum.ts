@@ -17,6 +17,7 @@ import {
   GetForumForumIdTagsParams,
   ModelDiscussionTag,
   ModelForumGroups,
+  ModelForumLinks,
   ModelListRes,
   PutAdminForumPayload,
   SvcForumRes,
@@ -32,6 +33,7 @@ import {
  * @response `200` `(ContextResponse & {
     data?: ((SvcForumRes & {
     groups?: (ModelForumGroups)[],
+    links?: ModelForumLinks,
 
 }))[],
 
@@ -43,6 +45,7 @@ export const getAdminForum = (params: RequestParams = {}) =>
     ContextResponse & {
       data?: (SvcForumRes & {
         groups?: ModelForumGroups[];
+        links?: ModelForumLinks;
       })[];
     }
   >({

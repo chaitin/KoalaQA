@@ -17,6 +17,10 @@ import {
   Menu,
   MenuItem,
   alpha,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  FormControl,
 } from '@mui/material';
 import {
   closestCenter,
@@ -43,6 +47,16 @@ import { ModelForumInfo, ModelForumGroups, ModelDiscussionType, SvcForumBlog } f
 
 import type { ForumItem } from '@/store/slices/forum';
 
+interface ForumLink {
+  name: string;
+  address: string;
+}
+
+interface ForumLinks {
+  enabled: boolean;
+  links: ForumLink[];
+}
+
 interface ForumFormData {
   blocks: (ModelForumInfo & {
     qa_group_ids?: number[];
@@ -52,6 +66,8 @@ interface ForumFormData {
     blog_ids?: number[];
     blogs?: SvcForumBlog[];
     tag_ids?: number[];
+    tag_enabled?: boolean;
+    links?: ForumLinks;
   })[];
 }
 
@@ -76,11 +92,14 @@ interface SortableBlockItemProps {
   onRemove: () => void;
   onEdit: () => void;
   onEditCategories: () => void;
+  onEditLinks: () => void;
   onSave: () => void;
   forumId?: number;
   isSaving?: boolean;
   originalTagIds?: number[];
   originalBlogIds?: number[];
+  originalTagEnabled?: boolean;
+  originalLinks?: ForumLinks;
 }
 
 const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
@@ -89,11 +108,14 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
   onRemove,
   onEdit,
   onEditCategories,
+  onEditLinks,
   onSave,
   forumId,
   isSaving = false,
   originalTagIds = [],
   originalBlogIds = [],
+  originalTagEnabled = false,
+  originalLinks = { enabled: false, links: [] },
 }) => {
   const blogOptions = useWatch({
     control,
@@ -123,6 +145,24 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
     defaultValue: [],
   }) as number[];
 
+  const tagEnabled = useWatch({
+    control,
+    name: `blocks.${index}.tag_enabled`,
+    defaultValue: false,
+  }) as boolean;
+
+  const linksEnabled = useWatch({
+    control,
+    name: `blocks.${index}.links.enabled`,
+    defaultValue: false,
+  }) as boolean;
+
+  const currentLinks = useWatch({
+    control,
+    name: `blocks.${index}.links`,
+    defaultValue: { enabled: false, links: [] },
+  }) as ForumLinks;
+
   // 比较数组是否相同（排序后比较）
   const arraysEqual = (a: number[], b: number[]) => {
     if (a.length !== b.length) return false;
@@ -131,12 +171,36 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
     return sortedA.every((val, idx) => val === sortedB[idx]);
   };
 
+  // 比较链接是否相同
+  const linksEqual = (a: ForumLinks, b: ForumLinks) => {
+    if (a.enabled !== b.enabled) return false;
+    if (a.links.length !== b.links.length) return false;
+    return a.links.every((linkA, idx) => {
+      const linkB = b.links[idx];
+      return linkA.name === linkB.name && linkA.address === linkB.address;
+    });
+  };
+
   // 检查是否有未保存的更改
   const hasUnsavedChanges = useMemo(() => {
     const tagIdsChanged = !arraysEqual(currentTagIds || [], originalTagIds || []);
     const blogIdsChanged = !arraysEqual(currentBlogIds || [], originalBlogIds || []);
-    return tagIdsChanged || blogIdsChanged;
-  }, [currentTagIds, currentBlogIds, originalTagIds, originalBlogIds]);
+    const tagEnabledChanged = tagEnabled !== originalTagEnabled;
+    const linksChanged = !linksEqual(
+      currentLinks || { enabled: false, links: [] },
+      originalLinks || { enabled: false, links: [] }
+    );
+    return tagIdsChanged || blogIdsChanged || tagEnabledChanged || linksChanged;
+  }, [
+    currentTagIds,
+    currentBlogIds,
+    originalTagIds,
+    originalBlogIds,
+    tagEnabled,
+    originalTagEnabled,
+    currentLinks,
+    originalLinks,
+  ]);
 
   // 从 store 获取标签
   const tags = useForumStore(state => state.tags);
@@ -217,9 +281,22 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
           </IconButton>
 
           {/* 只读显示板块名称和路由 */}
-          <Typography variant="subtitle2" sx={{ flex: 1, fontSize: 14, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Typography
+            variant="subtitle2"
+            sx={{
+              flex: 1,
+              fontSize: 14,
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+            }}
+          >
             <span>{blockName || '未命名板块'}</span>
-            <Box component="span" sx={{ color: 'text.secondary' }}> / </Box>
+            <Box component="span" sx={{ color: 'text.secondary' }}>
+              {' '}
+              /{' '}
+            </Box>
             <Box
               component="span"
               sx={{
@@ -255,6 +332,48 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
           </Button>
         </Stack>
 
+        {/* 公告内容选择 */}
+        <Stack direction="row" alignItems="flex-start" spacing={2}>
+          <Typography variant="body2" sx={{ minWidth: 80, fontSize: 14, pt: 1 }}>
+            公告
+          </Typography>
+          <Box sx={{ flex: 1 }}>
+            <Controller
+              control={control}
+              name={`blocks.${index}.blog_ids`}
+              render={({ field }) => (
+                <ArticleSelector
+                  value={field.value || []}
+                  onChange={articleIds => {
+                    field.onChange(articleIds);
+                  }}
+                  placeholder={(field.value || []).length > 0 ? '' : '选择公告 (最多3个)'}
+                  forumId={forumId}
+                  maxSelection={3}
+                  textFieldSx={{
+                    '& .MuiOutlinedInput-root': {
+                      backgroundColor: '#F8F9FA',
+                      borderRadius: '10px',
+                      '& fieldset': {
+                        borderStyle: 'solid',
+                      },
+                    },
+                    '& .MuiInputLabel-root': {
+                      display: 'none',
+                    },
+                  }}
+                  initialOptions={(blogOptions || [])
+                    .filter(blog => blog?.id != null)
+                    .map(blog => ({
+                      id: blog.id || 0,
+                      title: blog.title || '',
+                    }))}
+                />
+              )}
+            />
+          </Box>
+        </Stack>
+
         {/* 标签选择 */}
         <Stack direction="row" alignItems="flex-start" spacing={2}>
           <Typography variant="body2" sx={{ minWidth: 80, fontSize: 14, pt: 1 }}>
@@ -263,8 +382,37 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
           <Box sx={{ flex: 1 }}>
             <Controller
               control={control}
+              name={`blocks.${index}.tag_enabled`}
+              defaultValue={false}
+              render={({ field }) => (
+                <FormControl>
+                  <RadioGroup
+                    row
+                    value={field.value ? 'enabled' : 'disabled'}
+                    onChange={e => field.onChange(e.target.value === 'enabled')}
+                  >
+                    <FormControlLabel
+                      value="disabled"
+                      control={<Radio size="small" />}
+                      label="禁用"
+                    />
+                    <FormControlLabel
+                      value="enabled"
+                      control={<Radio size="small" />}
+                      label="启用"
+                    />
+                  </RadioGroup>
+                </FormControl>
+              )}
+            />
+            <Controller
+              control={control}
               name={`blocks.${index}.tag_ids`}
               render={({ field }) => {
+                if (!tagEnabled) {
+                  return <Box />;
+                }
+
                 const selectedTags = tagOptions.filter(tag =>
                   (field.value || []).includes(tag.id || 0)
                 );
@@ -331,7 +479,14 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
                     }
                     renderOption={(props, option) => (
                       <Box component="li" {...props} key={option.id}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            width: '100%',
+                          }}
+                        >
                           <Typography variant="body2">{option.name || ''}</Typography>
                           {option.count !== undefined && option.count !== null && (
                             <Typography
@@ -356,6 +511,7 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
                         }
                         error={false}
                         sx={{
+                          mt: 1,
                           '& .MuiOutlinedInput-root': {
                             backgroundColor: '#F8F9FA',
                             borderRadius: '10px',
@@ -373,47 +529,44 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
           </Box>
         </Stack>
 
-        {/* 公告内容选择 */}
+        {/* 常用链接 */}
         <Stack direction="row" alignItems="flex-start" spacing={2}>
           <Typography variant="body2" sx={{ minWidth: 80, fontSize: 14, pt: 1 }}>
-            公告
+            常用链接
           </Typography>
           <Box sx={{ flex: 1 }}>
             <Controller
               control={control}
-              name={`blocks.${index}.blog_ids`}
+              name={`blocks.${index}.links.enabled`}
+              defaultValue={false}
               render={({ field }) => (
-                <ArticleSelector
-                  value={field.value || []}
-                  onChange={articleIds => {
-                    field.onChange(articleIds);
-                  }}
-                  placeholder={
-                    (field.value || []).length > 0 ? '' : '选择公告 (最多3个)'
-                  }
-                  forumId={forumId}
-                  maxSelection={3}
-                  textFieldSx={{
-                    '& .MuiOutlinedInput-root': {
-                      backgroundColor: '#F8F9FA',
-                      borderRadius: '10px',
-                      '& fieldset': {
-                        borderStyle: 'solid',
-                      },
-                    },
-                    '& .MuiInputLabel-root': {
-                      display: 'none',
-                    },
-                  }}
-                  initialOptions={(blogOptions || [])
-                    .filter(blog => blog?.id != null)
-                    .map(blog => ({
-                      id: blog.id || 0,
-                      title: blog.title || '',
-                    }))}
-                />
+                <FormControl>
+                  <RadioGroup
+                    row
+                    value={field.value ? 'enabled' : 'disabled'}
+                    onChange={e => field.onChange(e.target.value === 'enabled')}
+                  >
+                    <FormControlLabel
+                      value="disabled"
+                      control={<Radio size="small" />}
+                      label="禁用"
+                    />
+                    <FormControlLabel
+                      value="enabled"
+                      control={<Radio size="small" />}
+                      label="启用"
+                    />
+                  </RadioGroup>
+                </FormControl>
               )}
             />
+            {linksEnabled && (
+              <Stack direction="row" alignItems="flex-start" sx={{mt: 1,}}>
+                <Button variant="outlined" size="small" onClick={onEditLinks}>
+                  编辑常用链接
+                </Button>
+              </Stack>
+            )}
           </Box>
         </Stack>
 
@@ -440,6 +593,8 @@ const Forum: React.FC = () => {
   const [editingBlockIndex, setEditingBlockIndex] = useState<number | null>(null);
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
   const [categoryBlockIndex, setCategoryBlockIndex] = useState<number | null>(null);
+  const [showLinksDialog, setShowLinksDialog] = useState(false);
+  const [linksBlockIndex, setLinksBlockIndex] = useState<number | null>(null);
   const [savingBlockIndex, setSavingBlockIndex] = useState<number | null>(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const { refreshForums } = useForumStore();
@@ -485,6 +640,28 @@ const Forum: React.FC = () => {
     },
   });
 
+  // 用于常用链接编辑的独立表单
+  const {
+    control: linksControl,
+    handleSubmit: handleLinksSubmitForm,
+    reset: resetLinksForm,
+  } = useForm<{
+    links: ForumLink[];
+  }>({
+    defaultValues: {
+      links: [],
+    },
+  });
+
+  const {
+    fields: linkFields,
+    append: appendLink,
+    remove: removeLink,
+  } = useFieldArray({
+    control: linksControl,
+    name: 'links',
+  });
+
   const {
     fields: blockFields,
     append: appendBlock,
@@ -509,6 +686,17 @@ const Forum: React.FC = () => {
       const issueGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeIssue);
       const blogGroups = groupsArray.find(g => g.type === ModelDiscussionType.DiscussionTypeBlog);
 
+      // 解析 links 数据
+      let linksData: ForumLinks = { enabled: false, links: [] };
+      if (block.links) {
+        if (typeof block.links === 'object' && 'enabled' in block.links) {
+          linksData = {
+            enabled: (block.links as any).enabled || false,
+            links: (block.links as any).links || [],
+          };
+        }
+      }
+
       return {
         ...block,
         qa_group_ids: qaGroups?.group_ids || [],
@@ -518,6 +706,8 @@ const Forum: React.FC = () => {
         blog_ids: block.blog_ids || [],
         blogs: block.blogs || [],
         tag_ids: (block as any).tag_ids || [],
+        tag_enabled: (block as any).tag_enabled || false,
+        links: linksData,
       };
     });
   }, []);
@@ -597,6 +787,10 @@ const Forum: React.FC = () => {
           });
         }
 
+        // 直接从表单读取 links.enabled 的值，确保获取最新值
+        const linksEnabled = getValues(`blocks.${index}.links.enabled`) ?? false;
+        const linksList = block.links?.links ?? [];
+
         return {
           id: block.id,
           name: block.name?.trim() || '',
@@ -604,7 +798,12 @@ const Forum: React.FC = () => {
           index: index + 1,
           groups: groups.length > 0 ? groups : undefined,
           tag_ids: block.tag_ids && block.tag_ids.length > 0 ? block.tag_ids : undefined,
+          tag_enabled: block.tag_enabled ?? false,
           blog_ids: block.blog_ids && block.blog_ids.length > 0 ? block.blog_ids : undefined,
+          links: {
+            enabled: linksEnabled,
+            links: linksList,
+          },
         };
       });
 
@@ -672,6 +871,8 @@ const Forum: React.FC = () => {
       blog_ids: [],
       blogs: [],
       tag_ids: [],
+      tag_enabled: false,
+      links: { enabled: false, links: [] },
     });
     setShowAddDialog(false);
 
@@ -787,6 +988,36 @@ const Forum: React.FC = () => {
     await handleSaveAll();
   });
 
+  const handleEditLinks = (index: number) => {
+    const block = blockFields[index];
+    const links = block.links?.links || [];
+    resetLinksForm({
+      links: links.length > 0 ? links : [],
+    });
+    setLinksBlockIndex(index);
+    setShowLinksDialog(true);
+  };
+
+  const handleLinksSubmit = handleLinksSubmitForm(async data => {
+    if (linksBlockIndex === null) return;
+
+    const currentBlock = blockFields[linksBlockIndex];
+    const currentLinks = currentBlock.links || { enabled: false, links: [] };
+
+    updateBlock(linksBlockIndex, {
+      ...currentBlock,
+      links: {
+        ...currentLinks,
+        links: data.links.filter(link => link.name.trim() && link.address.trim()),
+      },
+    });
+    setShowLinksDialog(false);
+    setLinksBlockIndex(null);
+    message.success('常用链接更新成功');
+    // 保存所有板块
+    await handleSaveAll();
+  });
+
   // 保存单个板块（只保存标签和公告）
   const handleSaveBlock = async (index: number) => {
     if (!blockFields[index]?.id) {
@@ -821,6 +1052,10 @@ const Forum: React.FC = () => {
           });
         }
 
+        // 直接从表单读取 links.enabled 的值，确保获取最新值
+        const linksEnabled = getValues(`blocks.${idx}.links.enabled`) ?? false;
+        const linksList = b.links?.links ?? [];
+
         return {
           id: b.id,
           name: b.name?.trim() || '',
@@ -828,7 +1063,12 @@ const Forum: React.FC = () => {
           index: idx + 1,
           groups: groups.length > 0 ? groups : undefined,
           tag_ids: b.tag_ids && b.tag_ids.length > 0 ? b.tag_ids : undefined,
+          tag_enabled: b.tag_enabled ?? false,
           blog_ids: b.blog_ids && b.blog_ids.length > 0 ? b.blog_ids : undefined,
+          links: {
+            enabled: linksEnabled,
+            links: linksList,
+          },
         };
       });
 
@@ -900,11 +1140,14 @@ const Forum: React.FC = () => {
                 onRemove={() => handleRemoveBlock(index)}
                 onEdit={() => handleEditBlock(index)}
                 onEditCategories={() => handleEditCategories(index)}
+                onEditLinks={() => handleEditLinks(index)}
                 onSave={() => handleSaveBlock(index)}
                 forumId={block.id}
                 isSaving={savingBlockIndex === index}
                 originalTagIds={block.tag_ids}
                 originalBlogIds={block.blog_ids}
+                originalTagEnabled={block.tag_enabled}
+                originalLinks={block.links}
               />
             ))}
           </SortableContext>
@@ -1199,7 +1442,7 @@ const Forum: React.FC = () => {
             sx={theme => ({
               mb: 2,
               bgcolor: alpha(theme.palette.error.main, 0.1),
-              color: theme.palette.error.main
+              color: theme.palette.error.main,
             })}
           >
             <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
@@ -1235,6 +1478,132 @@ const Forum: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* 常用链接编辑对话框 */}
+      <Modal
+        open={showLinksDialog}
+        onCancel={() => {
+          setShowLinksDialog(false);
+          setLinksBlockIndex(null);
+        }}
+        title="常用链接"
+        footer={
+          <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ px: 3, py: 2 }}>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                setShowLinksDialog(false);
+                setLinksBlockIndex(null);
+              }}
+            >
+              取消
+            </Button>
+            <Button variant="contained" onClick={handleLinksSubmit}>
+              确定
+            </Button>
+          </Stack>
+        }
+      >
+        <Stack spacing={2} sx={{ py: 2 }}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Typography variant="body2" sx={{ fontSize: 14 }}>
+              链接
+            </Typography>
+            <Button
+              variant="text"
+              color="info"
+              size="small"
+              startIcon={<Box component="span">+</Box>}
+              onClick={() => {
+                appendLink({ name: '', address: '' });
+              }}
+            >
+              添加链接
+            </Button>
+          </Stack>
+
+          <Stack spacing={2}>
+            {linkFields.map((link, linkIndex) => (
+              <Box
+                key={link.id || linkIndex}
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 1,
+                  p: 2,
+                  backgroundColor: 'background.paper',
+                }}
+              >
+                <Stack spacing={2}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <IconButton
+                      size="small"
+                      sx={{
+                        cursor: 'grab',
+                        color: 'text.secondary',
+                        '&:hover': { color: 'primary.main' },
+                        flexShrink: 0,
+                      }}
+                    >
+                      <DragIndicatorIcon />
+                    </IconButton>
+                    <Controller
+                      control={linksControl}
+                      name={`links.${linkIndex}.name`}
+                      render={({ field: nameField }) => (
+                        <TextField
+                          {...nameField}
+                          fullWidth
+                          size="small"
+                          placeholder="链接名称"
+                          sx={commonFieldSx}
+                          InputProps={{
+                            endAdornment: (
+                              <IconButton
+                                size="small"
+                                onClick={() => {
+                                  removeLink(linkIndex);
+                                }}
+                                sx={{ mr: -1 }}
+                              >
+                                <Box component="span" sx={{ fontSize: 18, lineHeight: 1 }}>
+                                  ×
+                                </Box>
+                              </IconButton>
+                            ),
+                          }}
+                        />
+                      )}
+                    />
+                  </Stack>
+                  <Controller
+                    control={linksControl}
+                    name={`links.${linkIndex}.address`}
+                    render={({ field: addressField }) => (
+                      <TextField
+                        {...addressField}
+                        fullWidth
+                        size="small"
+                        placeholder="链接地址"
+                        sx={commonFieldSx}
+                      />
+                    )}
+                  />
+                </Stack>
+              </Box>
+            ))}
+            {linkFields.length === 0 && (
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ textAlign: 'center', py: 2 }}
+              >
+                暂无链接，点击"添加链接"添加
+              </Typography>
+            )}
+          </Stack>
+        </Stack>
+      </Modal>
     </Card>
   );
 };

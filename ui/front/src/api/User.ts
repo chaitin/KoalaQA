@@ -14,6 +14,7 @@ import request, { ContentType, RequestParams } from "./httpClient";
 import {
   ContextResponse,
   DeleteAdminUserUserIdParams,
+  GetAdminUserHistorySearchParams,
   GetAdminUserParams,
   GetAdminUserUserIdParams,
   GetUserLoginThirdParams,
@@ -27,6 +28,7 @@ import {
   ModelUser,
   ModelUserInfo,
   ModelUserPointRecord,
+  ModelUserSearchHistory,
   PutAdminUserUserIdParams,
   PutUserPayload,
   SvcAuthFrontendGetRes,
@@ -68,6 +70,40 @@ export const getAdminUser = (
     }
   >({
     path: `/admin/user`,
+    method: "GET",
+    query: query,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name GetAdminUserHistorySearch
+ * @summary list user search history
+ * @request GET:/admin/user/history/search
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (ModelUserSearchHistory)[],
+
+}),
+
+})` OK
+ */
+
+export const getAdminUserHistorySearch = (
+  query: GetAdminUserHistorySearchParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: ModelUserSearchHistory[];
+      };
+    }
+  >({
+    path: `/admin/user/history/search`,
     method: "GET",
     query: query,
     format: "json",

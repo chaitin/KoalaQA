@@ -317,7 +317,7 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
   const forums = useForumStore((s) => s.forums)
   const user = propUser || contextUser
   const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  const isMobile = useMediaQuery(theme.breakpoints.down('lg'))
   const [notifications, setNotifications] = useState<MessageNotifyInfo[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null)

@@ -83,7 +83,7 @@ const Article = ({
   const { user } = useContext(AuthContext)
   const { groups, tags: availableTags } = useContext(CommonContext)
   const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  const isMobile = useMediaQuery(theme.breakpoints.down('lg'))
   const { saveState, restoreState, restoreScrollPosition, clearCache } = useListPageCache()
   const cached = restoreState()
   const topics = useMemo(() => {
@@ -566,7 +566,7 @@ const Article = ({
             p: 2,
             border: {
               xs: 'none',
-              md: `1px solid ${theme.palette.mode === 'light' ? '#EAECF0' : '#393939'}`,
+              lg: `1px solid ${theme.palette.mode === 'light' ? '#EAECF0' : '#393939'}`,
             },
             borderRadius: 1,
             bgcolor: 'background.paper',
@@ -698,7 +698,7 @@ const Article = ({
           <Box
             sx={{
               mb: 2,
-              display: { xs: 'flex', sm: 'none' },
+              display: { xs: 'flex', lg: 'none' },
               alignItems: 'center',
               gap: 1,
             }}
@@ -776,7 +776,7 @@ const Article = ({
           {/* 桌面端：排序选项 */}
           <Box
             sx={{
-              display: { xs: 'none', sm: 'flex' },
+              display: { xs: 'none', lg: 'flex' },
               alignItems: 'center',
               justifyContent: 'space-between',
               mb: { xs: 2, lg: 3 },

@@ -19,7 +19,7 @@ const ProfilePanel: React.FC<ProfilePanelProps> = ({ onClose, adminHref }) => {
   const { user } = useContext(AuthContext)
   const router = useRouter()
   const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  const isMobile = useMediaQuery(theme.breakpoints.down('lg'))
 
   const isAdmin = user?.role === ModelUserRole.UserRoleAdmin
 
