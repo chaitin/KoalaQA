@@ -129,6 +129,7 @@ var tokenLimitKeywords = []string{
 	"input is too long",
 	"exceeds the maximum",
 	"max_tokens is invalid",
+	"prompt_tokens is invalid",
 }
 
 func (l *LLM) IsTokenLimitError(err error) bool {

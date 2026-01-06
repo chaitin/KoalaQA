@@ -13,13 +13,15 @@ import Modal from '@/components/modal'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import dayjs from '@/lib/dayjs'
 import { useForumStore } from '@/store'
-import { Ellipsis, Pagination } from '@ctzhian/ui'
-import { Box, Button, Card, SelectChangeEvent, Stack, Typography } from '@mui/material'
+import { Ellipsis } from '@ctzhian/ui'
+import { Box, Button, Card, Pagination, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
 import { useRequest } from 'ahooks'
 import Image from 'next/image'
 import { useCallback, useEffect, useState } from 'react'
 
 export default function NotificationCenter() {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const routerWithRouteName = useRouterWithRouteName()
   const forums = useForumStore((s) => s.forums)
   const [notifyPage, setNotifyPage] = useState(1)
@@ -131,14 +133,9 @@ export default function NotificationCenter() {
   }
 
   // 处理分页变化
-  const handlePageChange = useCallback((_event: unknown, newPage: number) => {
-    setNotifyPage(newPage)
-  }, [])
-
-  // 处理每页条数变化
-  const handleRowsPerPageChange = useCallback((event: SelectChangeEvent<number>) => {
-    setNotifyPageSize(+event.target.value)
-    setNotifyPage(1) // 重置到第一页
+  // MUI Pagination 组件的 onChange 传递的是 (event: React.ChangeEvent<unknown>, page: number)
+  const handlePageChange = useCallback((_event: React.ChangeEvent<unknown>, page: number) => {
+    setNotifyPage(page)
   }, [])
 
   // 格式化通知文本（使用 loggedInView 中的逻辑）
@@ -277,70 +274,96 @@ export default function NotificationCenter() {
                     }}
                   />
 
-                  {/* 通知内容 */}
-                  <Box sx={{ flex: 1, minWidth: 0, textWrap: 'nowrap' }}>
-                    {notification.type === ModelMsgNotifyType.MsgNotifyTypeUserReview ||
-                    notification.type === ModelMsgNotifyType.MsgNotifyTypeUserPoint ? (
-                      <Typography
-                        variant='body2'
-                        sx={{
-                          color: 'rgba(33, 34, 45, 1)',
-                          fontWeight: 500,
-                          fontSize: '14px',
-                        }}
-                      >
-                        {notificationText}
-                      </Typography>
-                    ) : (
-                      <Stack direction='row' spacing={0.5} alignItems='center'>
+                  {/* 通知内容和时间戳容器 */}
+                  <Box sx={{ flex: 1, minWidth: 0, width: '100%' }}>
+                    {/* 通知内容 */}
+                    <Box sx={{ overflow: 'hidden', mb: { xs: 0.5, sm: 0 } }}>
+                      {notification.type === ModelMsgNotifyType.MsgNotifyTypeUserReview ||
+                      notification.type === ModelMsgNotifyType.MsgNotifyTypeUserPoint ? (
                         <Typography
                           variant='body2'
                           sx={{
-                            color: 'rgba(33, 34, 45, 0.70)',
+                            color: 'rgba(33, 34, 45, 1)',
+                            fontWeight: 500,
                             fontSize: '14px',
-                            fontWeight: 400,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            pr: { xs: 0, sm: 2 },
                           }}
                         >
-                          {notification.from_name || '未知用户'}
+                          {notificationText}
                         </Typography>
-                        {notificationText && (
+                      ) : (
+                        <Stack
+                          direction='row'
+                          spacing={0.5}
+                          alignItems='center'
+                          sx={{
+                            flexWrap: { xs: 'wrap', sm: 'nowrap' },
+                            gap: { xs: 0.5, sm: 0 },
+                            pr: { xs: 0, sm: 2 },
+                          }}
+                        >
                           <Typography
                             variant='body2'
-                            sx={{
-                              color: 'rgba(33, 34, 45, 1)',
-                              fontWeight: '500',
-                              fontSize: '14px',
-                            }}
-                          >
-                            {notificationText}
-                          </Typography>
-                        )}
-                        {notification.type === ModelMsgNotifyType.MsgNotifyTypeReplyComment ? (
-                          <>
-                            {" '"}
-                            <MarkDown
-                              content={notification.parent_comment}
-                              truncateLength={10}
-                              sx={{ bgcolor: 'transparent', color: 'rgba(33, 34, 45, 0.70)', fontWeight: 400 }}
-                            />
-                            {"'"}
-                          </>
-                        ) : (
-                          <Ellipsis
                             sx={{
                               color: 'rgba(33, 34, 45, 0.70)',
                               fontSize: '14px',
                               fontWeight: 400,
+                              flexShrink: 0,
                             }}
                           >
-                            "{notification.discuss_title}"
-                          </Ellipsis>
-                        )}
-                      </Stack>
-                    )}
+                            {notification.from_name || '未知用户'}
+                          </Typography>
+                          {notificationText && (
+                            <Typography
+                              variant='body2'
+                              sx={{
+                                color: 'rgba(33, 34, 45, 1)',
+                                fontWeight: '500',
+                                fontSize: '14px',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                minWidth: 0,
+                              }}
+                            >
+                              {notificationText}
+                            </Typography>
+                          )}
+                          <Box sx={{ ml: 0.5 }}>'</Box>
+                          <MarkDown
+                            content={
+                              notification.type === ModelMsgNotifyType.MsgNotifyTypeReplyComment
+                                ? notification.parent_comment
+                                : notification.discuss_title
+                            }
+                            truncateLength={10}
+                            sx={{ bgcolor: 'transparent', color: 'rgba(33, 34, 45, 0.70)', fontWeight: 400 }}
+                          />
+                          '
+                        </Stack>
+                      )}
+                    </Box>
+
+                    {/* 时间戳 - 在手机端显示在内容下方 */}
+                    <Typography
+                      variant='caption'
+                      sx={{
+                        color: '#999',
+                        fontSize: '12px',
+                        whiteSpace: 'nowrap',
+                        display: { xs: 'block', sm: 'none' },
+                      }}
+                    >
+                      {notification.created_at
+                        ? dayjs(notification.created_at * 1000).format('YYYY/MM/DD HH:mm:ss')
+                        : ''}
+                    </Typography>
                   </Box>
 
-                  {/* 时间戳 */}
+                  {/* 时间戳 - 在桌面端显示在右侧 */}
                   <Typography
                     variant='caption'
                     sx={{
@@ -348,6 +371,8 @@ export default function NotificationCenter() {
                       fontSize: '12px',
                       whiteSpace: 'nowrap',
                       flexShrink: 0,
+                      display: { xs: 'none', sm: 'block' },
+                      alignSelf: 'center',
                     }}
                   >
                     {notification.created_at ? dayjs(notification.created_at * 1000).format('YYYY/MM/DD HH:mm:ss') : ''}
@@ -361,8 +386,37 @@ export default function NotificationCenter() {
 
       {/* 分页器 */}
       {notifyTotal > notifyPageSize && (
-        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
-          <Pagination total={notifyTotal} page={notifyPage} pageSize={notifyPageSize} onChange={handlePageChange} />
+        <Box
+          sx={{
+            mt: 3,
+            display: 'flex',
+            justifyContent: 'center',
+            width: '100%',
+            px: { xs: 1, sm: 0 },
+          }}
+        >
+          <Pagination
+            count={Math.ceil(notifyTotal / notifyPageSize)}
+            page={notifyPage}
+            onChange={handlePageChange}
+            color='primary'
+            size={isMobile ? 'small' : 'medium'}
+            showFirstButton={!isMobile}
+            showLastButton={!isMobile}
+            sx={{
+              '& .MuiPagination-ul': {
+                flexWrap: 'wrap',
+                justifyContent: 'center',
+                gap: isMobile ? 0.5 : 1,
+              },
+              '& .MuiPaginationItem-root': {
+                fontSize: isMobile ? '0.75rem' : '0.875rem',
+                minWidth: isMobile ? 32 : 40,
+                height: isMobile ? 32 : 40,
+                margin: isMobile ? '0 2px' : '0 4px',
+              },
+            }}
+          />
         </Box>
       )}
     </Box>

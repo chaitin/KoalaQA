@@ -1,10 +1,23 @@
-import { getDiscussion, GetDiscussionParams, getForum, getGroup, getRankContribute, ModelDiscussionListItem } from '@/api'
+import {
+  getDiscussion,
+  GetDiscussionParams,
+  getForum,
+  getGroup,
+  getRankContribute,
+  getForumForumIdTags,
+  ModelDiscussionListItem,
+  ModelGroupWithItem,
+  ModelGroupItemInfo,
+  ModelDiscussionTag,
+} from '@/api'
 import { SvcRankContributeItem } from '@/api/types'
 import { safeApiCall, safeLogError } from '@/lib/error-utils'
 import { findForumIdByRouteName, findForumInfoByRouteName } from '@/lib/forum-server-utils'
 import { Metadata } from 'next'
 import ForumPageContent from './ui/ForumPageContent'
 import { getSortedGroupsInDiscussionList } from '@/constant'
+import FilterPanel from '@/components/FilterPanel'
+import { headers } from 'next/headers'
 
 // 强制动态渲染，因为 API 调用可能使用 cookies
 export const dynamic = 'force-dynamic'
@@ -84,31 +97,23 @@ async function fetchForumData(route_name: string, searchParams: any) {
       safeApiCall(() => getSortedGroupsInDiscussionList(discussionParams), { items: [], total: 0 }),
       safeApiCall(() => getGroup(groupParams), { items: [] }),
       safeApiCall(
-        () => forumInfo?.blog_ids == null 
-          ? Promise.resolve([]) 
-          : getDiscussion(params).then(r => r.items), 
-        []
+        () => (forumInfo?.blog_ids == null ? Promise.resolve([]) : getDiscussion(params).then((r) => r.items)),
+        [],
       ),
       // 获取贡献达人数据：上周
-      safeApiCall(
-        async () => {
-          const response = await getRankContribute({ type: 1 })
-          // httpClient 已经返回了 res.data，所以直接访问 items
-          return (response as { items?: SvcRankContributeItem[] })?.items || []
-        },
-        [] as SvcRankContributeItem[]
-      ),
+      safeApiCall(async () => {
+        const response = await getRankContribute({ type: 1 })
+        // httpClient 已经返回了 res.data，所以直接访问 items
+        return (response as { items?: SvcRankContributeItem[] })?.items || []
+      }, [] as SvcRankContributeItem[]),
       // 获取贡献达人数据：总榜
-      safeApiCall(
-        async () => {
-          const response = await getRankContribute({ type: 3 })
-          // httpClient 已经返回了 res.data，所以直接访问 items
-          return (response as { items?: SvcRankContributeItem[] })?.items || []
-        },
-        [] as SvcRankContributeItem[]
-      ),
+      safeApiCall(async () => {
+        const response = await getRankContribute({ type: 3 })
+        // httpClient 已经返回了 res.data，所以直接访问 items
+        return (response as { items?: SvcRankContributeItem[] })?.items || []
+      }, [] as SvcRankContributeItem[]),
     ])
-    
+
     return {
       forumId,
       forumInfo,
@@ -151,14 +156,80 @@ const Page = async (props: {
     type?: string
     only_mine?: string
     resolved?: string
+    tags?: string
   }>
 }) => {
   const { route_name } = await props.params
   const searchParams = await props.searchParams
+  const headersList = await headers()
+  const searchParamsStr = headersList.get('x-search-params') || ''
+  const pathname = headersList.get('x-pathname') || ''
+  
   // 在服务端获取所有数据
   const forumData = await fetchForumData(route_name, searchParams)
+  const { forumId, forumInfo, groups } = forumData
 
-  return <ForumPageContent route_name={route_name} searchParams={searchParams} initialData={forumData} />
+  // 解析 searchParams
+  let initialSearchParams: { type?: string | null; tps?: string | null; tags?: string | null } = {}
+  let initialPathname: string | undefined = undefined
+
+  try {
+    if (searchParamsStr) {
+      const searchParamsObj = new URLSearchParams(searchParamsStr)
+      initialSearchParams = {
+        type: searchParamsObj.get('type'),
+        tps: searchParamsObj.get('tps'),
+        tags: searchParamsObj.get('tags'),
+      }
+    }
+    if (pathname) {
+      initialPathname = pathname
+    }
+  } catch (e) {
+    // 如果解析失败，使用空值
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Failed to parse searchParams in page:', e)
+    }
+  }
+
+  // 获取标签数据
+  const tagsResponse = forumId
+    ? await safeApiCall(() => getForumForumIdTags({ forumId }), [], 'Failed to fetch tags in page')
+    : []
+
+  // 处理 groups 数据格式
+  const processedGroups = {
+    origin: (groups?.items || []) as (ModelGroupWithItem & { items?: ModelGroupItemInfo[] })[],
+    flat: ((groups?.items || []).filter((i) => !!i.items) || []).reduce((acc, item) => {
+      acc.push(...(item.items || []))
+      return acc
+    }, [] as ModelGroupItemInfo[]),
+  }
+
+  // 处理 tags 数据格式
+  const tags = (() => {
+    const items = (Array.isArray(tagsResponse) ? tagsResponse?.[0]?.items : (tagsResponse as any)?.items) as
+      | ModelDiscussionTag[]
+      | undefined
+    return (items ?? []).filter((tag) => typeof tag?.id === 'number')
+  })()
+
+  return (
+    <>
+      {/* 左侧过滤面板 */}
+      <FilterPanel
+        key={`${route_name}-${searchParamsStr}`}
+        groups={processedGroups}
+        forumId={forumId}
+        forumInfo={forumInfo}
+        tags={tags}
+        initialRouteName={route_name}
+        initialPathname={initialPathname || `/${route_name}`}
+        initialSearchParams={initialSearchParams}
+      />
+      <ForumPageContent route_name={route_name} searchParams={searchParams} initialData={forumData} />
+    </>
+  )
 }
 
 export default Page

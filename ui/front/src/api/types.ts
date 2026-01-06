@@ -413,6 +413,16 @@ export interface ModelForumGroups {
   type?: ModelDiscussionType;
 }
 
+export interface ModelForumLink {
+  name?: string;
+  address?: string;
+}
+
+export interface ModelForumLinks {
+  enabled?: boolean;
+  links?: ModelForumLink[];
+}
+
 export interface ModelForumInfo {
   blog_ids?: number[];
   groups?: ModelJSONBArrayModelForumGroups;
@@ -421,6 +431,8 @@ export interface ModelForumInfo {
   name: string;
   route_name?: string;
   tag_ids?: number[];
+  tag_enabled?: boolean;
+  links?: ModelForumLinks;
 }
 
 export interface ModelGroupItemInfo {

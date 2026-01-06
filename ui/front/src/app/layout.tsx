@@ -205,7 +205,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
                         <GuestActivationProvider>
                           <PageViewTracker />
                           <Header brandConfig={brand} initialForums={forums} />
-                          <Box component='main' id='main-content' sx={{ backgroundColor: 'background.default', flex: 1, overflow: 'auto' }}>
+                          <Box component='main' id='main-content' sx={{ backgroundColor: 'background.default', flex: 1, overflow: 'auto', height: 'calc(100vh - 64px)' }}>
                             {props.children}
                           </Box>
                           <Scroll />

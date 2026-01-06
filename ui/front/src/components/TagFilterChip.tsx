@@ -35,7 +35,7 @@ export default function TagFilterChip({ id, name, selected, onClick, sx }: TagFi
             fontSize: '0.75rem',
             fontWeight: 400,
             height: 26,
-            borderRadius: '8px',
+            borderRadius: 0.5,
             border: selected ? 'none' : `1px solid ${theme.palette.primaryAlpha?.[10] || 'rgba(0,99,151,0.1)'}`,
             transition: 'all 0.15s ease-in-out',
             '&:hover': {

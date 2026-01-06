@@ -1,13 +1,12 @@
 'use client'
 
-import { ModelDiscussionListItem, ModelDiscussionTag, ModelDiscussionType } from '@/api/types'
+import { ModelDiscussionListItem, ModelDiscussionType } from '@/api/types'
 import { DiscussionStatusChip, DiscussionTypeChip, MarkDown } from '@/components'
 import CommonAvatar from '@/components/CommonAvatar'
 import { CommonContext } from '@/components/commonProvider'
 import { TimeDisplay } from '@/components/TimeDisplay'
-import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import { Ellipsis, Icon } from '@ctzhian/ui'
-import { Box, Chip, Stack, SxProps, Typography } from '@mui/material'
+import { Box, Chip, Stack, SxProps } from '@mui/material'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { memo, useContext, useMemo } from 'react'
@@ -188,7 +187,7 @@ const DiscussCard = ({
                   size='small'
                   sx={{
                     bgcolor: 'rgba(233, 236, 239, 1)',
-                    color: 'rgba(33, 34, 45, 1)',
+                    color: '#21222D',
                     height: size === 'small' ? 20 : 22,
                     fontSize: size === 'small' ? '12px' : '12px',
                     lineHeight: '22px',
@@ -206,9 +205,11 @@ const DiscussCard = ({
               display: 'flex',
               alignItems: 'center',
               gap: 0.5,
-              background: (theme) => theme.palette.primaryAlpha?.[6] || 'rgba(0,99,151,0.06)',
-              color: 'primary.main',
+              background: '#E9ECEF',
+              color: '#21222D',
               px: 1,
+              lineHeight: '22px',
+              height: '22px',
               fontSize: '12px',
               fontWeight: 'bold',
               borderRadius: 0.5,

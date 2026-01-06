@@ -1,10 +1,12 @@
 import {
   getAdminKbKbIdDocumentDocId,
+  getAdminKbKbIdSpaceSpaceIdFolder,
   getAdminKbKbIdSpaceSpaceIdFolderFolderIdDoc,
   ModelDocStatus,
   ModelDocType,
   putAdminKbKbIdSpaceSpaceIdFolderFolderId,
   SvcDocListItem,
+  SvcListSpaceFolderItem,
   TopicKBSpaceUpdateType,
 } from '@/api';
 import CategoryDisplay from '@/components/CategoryDisplay';
@@ -117,21 +119,18 @@ const KnowledgeBaseDetailPage = () => {
     }
   );
 
-  // 获取统计信息（全量数据，不传筛选条件）
+  // 获取文件夹统计信息（使用文件夹列表接口，更轻量）
   const {
-    data: statsData,
+    data: folderListData,
     run: fetchStats,
   } = useRequest(
     () => {
-      if (!spaceId || !folderId || !kb_id) {
+      if (!spaceId || !kb_id) {
         return Promise.resolve(null);
       }
-      return getAdminKbKbIdSpaceSpaceIdFolderFolderIdDoc({
+      return getAdminKbKbIdSpaceSpaceIdFolder({
         kbId: kb_id,
         spaceId: spaceId,
-        folderId: String(folderId),
-        page: 1,
-        size: 9999999,
       });
     },
     {
@@ -140,8 +139,18 @@ const KnowledgeBaseDetailPage = () => {
   );
 
   const folderDocs: SvcDocListItem[] = folderDocListData?.items || [];
-  const totalDocs: SvcDocListItem[] = statsData?.items || [];
   const total = folderDocListData?.total || 0;
+
+  // 从文件夹列表中获取当前文件夹的统计信息
+  const currentFolder: SvcListSpaceFolderItem | undefined = folderListData?.items?.find(
+    folder => folder.id === folderId
+  );
+  
+  // 从文件夹数据中获取统计信息
+  const success = currentFolder?.success || 0;
+  const failed = currentFolder?.failed || 0;
+  const totalDocs = currentFolder?.total || 0;
+  const syncing = totalDocs - success - failed;
 
   // 启动轮询
   const startPolling = () => {
@@ -166,16 +175,20 @@ const KnowledgeBaseDetailPage = () => {
     }
   };
 
-  // 检查是否有同步中的文档（使用全量数据判断）
+  // 检查是否有同步中的文档（使用文件夹状态判断）
   useEffect(() => {
     if (!kb_id) return;
-    const hasSyncing = totalDocs.some(
-      doc =>
-        doc.status !== ModelDocStatus.DocStatusApplySuccess &&
-        doc.status !== ModelDocStatus.DocStatusApplyFailed &&
-        doc.status !== ModelDocStatus.DocStatusExportFailed
-    );
-    if (hasSyncing) {
+    // 如果文件夹状态不是成功或失败，说明有同步中的文档
+    const hasSyncing =
+      currentFolder?.status !== undefined &&
+      currentFolder.status !== ModelDocStatus.DocStatusApplySuccess &&
+      currentFolder.status !== ModelDocStatus.DocStatusApplyFailed &&
+      currentFolder.status !== ModelDocStatus.DocStatusExportFailed;
+    
+    // 或者通过统计数量判断
+    const hasSyncingByCount = syncing > 0;
+    
+    if (hasSyncing || hasSyncingByCount) {
       startPolling();
     } else {
       stopPolling();
@@ -184,7 +197,7 @@ const KnowledgeBaseDetailPage = () => {
       stopPolling();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [totalDocs.length, statsData, kb_id]);
+  }, [currentFolder?.status, syncing, kb_id]);
 
   // 组件卸载时清理轮询定时器
   useEffect(() => {
@@ -197,7 +210,7 @@ const KnowledgeBaseDetailPage = () => {
   useEffect(() => {
     if (spaceId && folderId && kb_id) {
       fetchFolderDocList();
-      fetchStats();
+      fetchStats(); // 同时获取统计信息
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spaceId, folderId, kb_id]);
@@ -388,19 +401,6 @@ const KnowledgeBaseDetailPage = () => {
     );
   };
 
-  // 根据全量数据计算成功、失败和同步中的数量（用于统计显示）
-  const success = totalDocs.filter(d => d.status === ModelDocStatus.DocStatusApplySuccess).length;
-  const failed = totalDocs.filter(
-    d =>
-      d.status === ModelDocStatus.DocStatusApplyFailed ||
-      d.status === ModelDocStatus.DocStatusExportFailed
-  ).length;
-  const syncing = totalDocs.filter(
-    d =>
-      d.status !== ModelDocStatus.DocStatusApplySuccess &&
-      d.status !== ModelDocStatus.DocStatusApplyFailed &&
-      d.status !== ModelDocStatus.DocStatusExportFailed
-  ).length;
 
   // 搜索和筛选已通过 API 参数处理，直接使用返回的数据
   const docsAfterFilter = folderDocs;
@@ -582,7 +582,6 @@ const KnowledgeBaseDetailPage = () => {
               setPageSize(size);
             },
           }}
-          loading={folderDocListLoading}
           rowSelection={{
             selectedRowKeys,
             onChange: setSelectedRowKeys,

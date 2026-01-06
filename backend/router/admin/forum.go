@@ -29,7 +29,7 @@ func init() {
 // @Summary list forum
 // @Tags forum
 // @Produce json
-// @Success 200 {object} context.Response{data=[]svc.ForumRes{groups=[]model.ForumGroups}}
+// @Success 200 {object} context.Response{data=[]svc.ForumRes{groups=[]model.ForumGroups,links=model.ForumLinks}}
 // @Router /admin/forum [get]
 func (f *forum) List(ctx *context.Context) {
 	res, err := f.svcForum.List(ctx, ctx.GetUser(), false)
@@ -44,7 +44,7 @@ func (f *forum) List(ctx *context.Context) {
 // @Summary update forum
 // @Tags forum
 // @Accept json
-// @Param req body svc.ForumUpdateReq{forums=[]model.ForumInfo{groups=[]model.ForumGroups}} true "request params"
+// @Param req body svc.ForumUpdateReq{forums=[]model.ForumInfo{groups=[]model.ForumGroups,links=model.ForumLinks}} true "request params"
 // @Produce json
 // @Success 200 {object} context.Response
 // @Router /admin/forum [put]

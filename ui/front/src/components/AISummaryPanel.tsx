@@ -10,9 +10,16 @@ interface AISummaryPanelProps {
   searchResults: ModelDiscussionListItem[]
   searchQuery: string
   visible: boolean
+  // 控制是否触发自动总结（用于输入过程中禁用自动请求）
+  shouldSummarize?: boolean
 }
 
-export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummaryPanelProps) => {
+export const AISummaryPanel = ({
+  searchResults,
+  searchQuery,
+  visible,
+  shouldSummarize = true,
+}: AISummaryPanelProps) => {
   const [summary, setSummary] = useState('')
   const [isSummarizing, setIsSummarizing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -194,7 +201,7 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
       sseClientRef.current = null
     }
 
-    if (visible && searchQuery.trim() && searchResults.length > 0) {
+    if (visible && shouldSummarize && searchQuery.trim() && searchResults.length > 0) {
       // 延迟一点开始总结，让用户先看到搜索结果
       const timer = setTimeout(() => {
         startSummary()
@@ -211,7 +218,7 @@ export const AISummaryPanel = ({ searchResults, searchQuery, visible }: AISummar
         sseClientRef.current = null
       }
     }
-  }, [visible, searchQuery, searchResults, startSummary])
+  }, [visible, shouldSummarize, searchQuery, searchResults, startSummary])
 
   if (!visible) {
     return null

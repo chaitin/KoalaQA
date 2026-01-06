@@ -2,6 +2,7 @@
 
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import {
+  alpha,
   Box,
   Checkbox,
   Chip,
@@ -95,7 +96,7 @@ export function TypeButton({
         '&:hover': { bgcolor: '#f3f4f6' },
       })}
     >
-      <ListItemIcon sx={{ minWidth: 28, color: (theme) => (isSelected ? 'primary.main' : '#6b7280') }}>
+      <ListItemIcon sx={{ minWidth: 28, color: (theme) => (isSelected ? 'primary.main' : alpha('#21222D', 0.5)) }}>
         {icon}
       </ListItemIcon>
       <ListItemText
@@ -104,6 +105,7 @@ export function TypeButton({
             sx={{
               fontSize: '0.8125rem',
               fontWeight: isSelected ? 600 : 500,
+              color: isSelected ? 'primary.main' : '#21222D',
             }}
           >
             {name}
@@ -209,22 +211,14 @@ export function CategorySelect({
 
         if (selectedCount === 1) {
           return (
-            <Chip
-              size='small'
-              label={firstLabel}
-              sx={{ maxWidth: '100%', fontSize: '0.75rem', borderRadius: 1 }}
-            />
+            <Chip size='small' label={firstLabel} sx={{ maxWidth: '100%', fontSize: '0.75rem', borderRadius: 1 }} />
           )
         }
 
         return (
           <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', flexWrap: 'wrap' }}>
             <Chip size='small' label={firstLabel} sx={{ fontSize: '0.75rem', borderRadius: 1 }} />
-            <Chip
-              size='small'
-              label={`+${selectedCount - 1}`}
-              sx={{ fontSize: '0.75rem', borderRadius: 1 }}
-            />
+            <Chip size='small' label={`+${selectedCount - 1}`} sx={{ fontSize: '0.75rem', borderRadius: 1 }} />
           </Box>
         )
       }}
@@ -468,4 +462,3 @@ export const FilterPanelActions = {
   CategorySelect,
   Tags,
 }
-

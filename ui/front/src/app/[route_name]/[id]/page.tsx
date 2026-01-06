@@ -1,15 +1,13 @@
 import { getDiscussionDiscId } from '@/api'
-import { Alert, Box, Paper, Stack, Typography } from '@mui/material'
+import { Alert, Box, Typography } from '@mui/material'
 import { Metadata } from 'next'
 import { cache, Suspense } from 'react'
-import Content from './ui/content'
-import TitleCard from './ui/titleCard'
 import DetailSidebarWrapper from './ui/DetailSidebarWrapper'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import ScrollReset from '@/components/ScrollReset'
 import DiscussionAlert from './ui/DiscussionAlert'
-import { getServerGroup } from '@/utils/serverGroupCache'
 import AddRefreshParam from './ui/AddRefreshParam'
+import DetailContent from './ui/DetailContent'
 
 // 动态生成 metadata
 export async function generateMetadata(props: {
@@ -114,42 +112,38 @@ const DiscussDetailPage = async (props: {
       <Box
         sx={{
           display: 'flex',
-          gap: { xs: 0, lg: 3 },
-          justifyContent: { lg: 'center' },
-          alignItems: { lg: 'flex-start' },
+          justifyContent: 'center',
           pb: 2,
           minHeight: 'calc(100vh - 90px)',
+          position: 'relative',
         }}
       >
-        {/* 主内容区域 */}
-        <Stack
-          component={Paper}
-          elevation={0}
+        {/* 主内容区域 - 居中 */}
+        <Box
           sx={{
-            flex: 1,
-            minWidth: 0,
-            alignSelf: 'stretch',
             width: { xs: '100%', lg: '780px' },
-            border: `1px solid`,
-            borderColor: { xs: 'transparent', lg: 'border' },
-            boxShadow: 'none',
-            borderRadius: { xs: 0, lg: 1 },
-            pt: { xs: 1, lg: 3 },
-            px: { xs: 1, lg: 2 },
-            pb: 0,
-            position: 'relative',
+            mx: { xs: 0, lg: 'auto' },
           }}
         >
           {shouldShowAlert && <DiscussionAlert defaultOpen />}
           <h1 style={{ display: 'none' }}>讨论详情</h1>
           <Suspense fallback={<LoadingSpinner />}>
-            <TitleCard data={discussion} />
-            <Content data={discussion} />
+            <DetailContent discussion={discussion} />
           </Suspense>
-        </Stack>
+        </Box>
 
-        {/* 右侧边栏 - 仅在桌面端显示 */}
-        <DetailSidebarWrapper type={discussion.type} discussion={discussion} discId={discussion.uuid || id} />
+        {/* 右侧边栏 - 独立定位，不参与居中计算 */}
+        <Box
+          sx={{
+            display: { xs: 'none', lg: 'block' },
+            position: 'absolute',
+            left: { lg: 'calc(50% + 414px)' }, // 50% + 780px/2 + 24px = 50% + 390px + 24px = 50% + 414px
+            top: 0,
+            width: '300px',
+          }}
+        >
+          <DetailSidebarWrapper type={discussion.type} discussion={discussion} discId={discussion.uuid || id} />
+        </Box>
       </Box>
     </>
   )

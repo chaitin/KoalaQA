@@ -1,9 +1,16 @@
 // 此文件由 script/downLoadIcon.js 自动生成
 export const ICON_TYPES = [
+  "icon-issue",
+  "icon-wenzhang",
+  "icon-wenti",
+  "icon-gengduo",
+  "icon-dianzan",
+  "icon-pinglun1",
+  "icon-guanzhu",
+  "icon-tanhao3",
   "icon-quanbu",
   "icon-tishi",
   "icon-biaoqian1",
-  "icon-issue",
   "icon-xingxingzuhe",
   "icon-dianzan1",
   "icon-diancai",

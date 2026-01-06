@@ -1,13 +1,8 @@
 'use client'
 import {
   deleteDiscussionDiscId,
-  deleteDiscussionDiscIdFollow,
-  getDiscussionDiscIdFollow,
   postDiscussionDiscIdAiLearn,
-  postDiscussionDiscIdFollow,
-  postDiscussionDiscIdLike,
   postDiscussionDiscIdResolveIssue,
-  postDiscussionDiscIdRevokeLike,
   putDiscussionDiscIdClose,
 } from '@/api'
 import { ModelDiscussionDetail, ModelDiscussionState, ModelDiscussionType, ModelUserRole } from '@/api/types'
@@ -19,32 +14,16 @@ import ConvertToIssueModal from '@/components/ConvertToIssueModal'
 import EditorContent from '@/components/EditorContent'
 import Modal from '@/components/modal'
 import { TimeDisplayWithTag } from '@/components/TimeDisplay'
-import { useAuthCheck } from '@/hooks/useAuthCheck'
 import { useListPageCache } from '@/hooks/useListPageCache'
 import dayjs from '@/lib/dayjs'
 import { formatNumber, isAdminRole } from '@/lib/utils'
 import { useForumStore } from '@/store'
 import { PointActionType, showPointNotification } from '@/utils/pointNotification'
-import { Ellipsis, Icon } from '@ctzhian/ui'
-import MoreVertIcon from '@mui/icons-material/MoreVert'
-import {
-  Box,
-  Button,
-  Chip,
-  Divider,
-  IconButton,
-  Menu,
-  MenuItem,
-  Paper,
-  Stack,
-  Typography,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material'
+import { Box, Chip, Menu, MenuItem, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
 import { useBoolean } from 'ahooks'
 import Link from 'next/link'
 import { useParams, useRouter, usePathname } from 'next/navigation'
-import { useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { useContext, useEffect, useMemo, useCallback } from 'react'
 
 // 添加CSS动画样式
 const animationStyles = `
@@ -74,24 +53,31 @@ const animationStyles = `
 
 // 样式注入逻辑将在组件内部通过useEffect处理
 
-const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
-  const [menuVisible, { setFalse: menuClose, setTrue: menuOpen }] = useBoolean(false)
+interface TitleCardProps {
+  data: ModelDiscussionDetail
+  menuAnchorEl?: HTMLElement | null
+  onMenuClose?: () => void
+}
+
+const TitleCard = ({ data, menuAnchorEl, onMenuClose }: TitleCardProps) => {
+  const menuOpen = Boolean(menuAnchorEl)
+  const menuClose = () => {
+    onMenuClose?.()
+  }
   const { user } = useContext(AuthContext)
   const { tags } = useContext(CommonContext)
   const [convertToIssueVisible, { setFalse: convertToIssueClose, setTrue: convertToIssueOpen }] = useBoolean(false)
-  const [followInfo, setFollowInfo] = useState<{ followed?: boolean; follower?: number }>({})
-  const [isHoveringFollow, setIsHoveringFollow] = useState(false)
   const { clearCache } = useListPageCache()
   const router = useRouter()
   const pathname = usePathname()
   const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  const isMobile = useMediaQuery(theme.breakpoints.down('lg'))
   const forums = useForumStore((s) => s.forums)
-  const { id, route_name }: { id: string; route_name?: string } = (useParams() as any) || { id: '' }
+  const { route_name }: { route_name?: string } = (useParams() as any) || {}
 
   // 刷新页面但不增加浏览次数
   const refreshWithoutView = useCallback(() => {
-    const url = new URL(pathname, window.location.origin)
+    const url = new URL(pathname, globalThis.location.origin)
     url.searchParams.set('refresh', 'true')
     router.replace(url.pathname + url.search)
   }, [pathname, router])
@@ -118,26 +104,6 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
       }
     }
   }, [])
-
-  // 获取关注信息
-  useEffect(() => {
-    const fetchFollowInfo = async () => {
-      try {
-        const followData = await getDiscussionDiscIdFollow({ discId: id })
-        if (followData) {
-          setFollowInfo({
-            followed: followData.followed,
-            follower: followData.follower,
-          })
-        }
-      } catch (error) {
-        console.error('Failed to fetch follow info:', error)
-      }
-    }
-    fetchFollowInfo()
-  }, [id])
-  const { checkAuth } = useAuthCheck()
-  const anchorElRef = useRef(null)
 
   const handleDelete = () => {
     menuClose()
@@ -207,58 +173,6 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
     })
   }
 
-  const handleLike = async () => {
-    return checkAuth(async () => {
-      try {
-        if (data.user_like) {
-          // 已点赞，取消点赞
-          await postDiscussionDiscIdRevokeLike({ discId: id })
-          // 显示积分提示：取消点赞 -5（被点赞者）
-          showPointNotification(PointActionType.REVOKE_LIKE)
-        } else {
-          // 未点赞，点赞
-          await postDiscussionDiscIdLike({ discId: id })
-          // 注意：点赞别人的文章不给自己加积分，只给被点赞者加积分
-          // 如果当前用户是文章作者，会收到通知，这里不显示积分提示
-        }
-        refreshWithoutView()
-      } catch (error) {
-        console.error('点赞操作失败:', error)
-      }
-    })
-  }
-
-  const handleFollow = async () => {
-    return checkAuth(async () => {
-      const isFollowed = followInfo.followed
-      Modal.confirm({
-        title: isFollowed ? '确定要取消关注此帖子吗？' : '确定要关注此帖子吗？',
-        content: isFollowed ? '取消关注后将不再收到该帖子的更新通知。' : '关注后将收到该帖子的更新通知。',
-        onOk: async () => {
-          try {
-            if (isFollowed) {
-              // 取消关注
-              await deleteDiscussionDiscIdFollow({ discId: id })
-            } else {
-              // 关注
-              await postDiscussionDiscIdFollow({ discId: id })
-            }
-            // 刷新关注信息
-            const followData = await getDiscussionDiscIdFollow({ discId: id })
-            if (followData) {
-              setFollowInfo({
-                followed: followData.followed,
-                follower: followData.follower,
-              })
-            }
-            refreshWithoutView()
-          } catch (error) {
-            console.error('关注操作失败:', error)
-          }
-        },
-      })
-    })
-  }
   const isArticlePost = data.type === ModelDiscussionType.DiscussionTypeBlog
   const isQAPost = data.type === ModelDiscussionType.DiscussionTypeQA
   const isIssuePost = data.type === ModelDiscussionType.DiscussionTypeIssue
@@ -308,8 +222,8 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
       />
       <Menu
         id='basic-menu'
-        anchorEl={anchorElRef.current}
-        open={menuVisible}
+        anchorEl={menuAnchorEl}
+        open={menuOpen}
         onClose={menuClose}
         MenuListProps={{
           'aria-labelledby': 'basic-button',
@@ -377,166 +291,29 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
       </Menu>
 
       {/* Post header */}
-      {/* 第一行：类型标签、标题、点赞数和更多选项 */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, gap: 2, px: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, minWidth: 0 }}>
-          {/* 类型标签 */}
-          <DiscussionTypeChip type={data.type} variant='default' />
-          {/* 标题 */}
-          <Ellipsis
-            sx={{
-              fontWeight: 700,
-              color: 'RGBA(33, 34, 45, 1)',
-              lineHeight: 1,
-              flex: 1,
-              fontSize: { xs: '16px', lg: '18px' },
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-            }}
-          >
-            {data.title}
-          </Ellipsis>
-        </Box>
-        {/* 右侧：关注、点赞数和更多选项 */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
-          {/* Issue 类型显示关注按钮 */}
-          {isIssuePost && !isClosed && (
-            <Box
-              onClick={handleFollow}
-              onMouseEnter={() => setIsHoveringFollow(true)}
-              onMouseLeave={() => setIsHoveringFollow(false)}
-              sx={(theme) => ({
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 0.5,
-                background: followInfo.followed ? 'rgba(233, 236, 239, 1)' : theme.palette.primaryAlpha?.[6],
-                color: followInfo.followed ? 'text.secondary' : 'primary.main',
-                minWidth: '70px',
-                lineHeight: '22px',
-                height: '22px',
-                borderRadius: 0.5,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                '&:hover': {
-                  background: followInfo.followed ? 'rgba(220, 224, 228, 1)' : theme.palette.primaryAlpha?.[12],
-                },
-              })}
-            >
-              <Typography
-                variant='body2'
-                sx={{
-                  fontWeight: followInfo.followed ? 400 : 500,
-                  fontSize: '12px',
-                  color: 'inherit',
-                  transition: 'color 0.2s',
-                }}
-              >
-                {followInfo.followed ? (isHoveringFollow ? '取消关注' : '已关注') : '关注 Issue'}
-              </Typography>
-            </Box>
-          )}
-          {/* 文章类型和 Issue 类型显示点赞数 - 已关闭帖子不显示 */}
-          {(isArticlePost || isIssuePost) && !isClosed && (
-            <Stack
-              component={Button}
-              direction='row'
-              alignItems='center'
-              gap={1}
-              sx={(theme) => ({
-                background: data.user_like ? theme.palette.primaryAlpha?.[6] : '#F2F3F5',
-                borderRadius: 0.5,
-                px: '0px!important',
-                minWidth: '50px',
-                py: '1px',
-                cursor: 'pointer',
-                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                transform: 'scale(1)',
-                '&:hover': {
-                  background: data.user_like ? theme.palette.primaryAlpha?.[10] : 'rgba(0, 0, 0, 0.12)',
-                },
-                '&:active': {
-                  transform: 'scale(0.95)',
-                  transition: 'transform 0.1s ease-out',
-                },
-              })}
-              onClick={handleLike}
-            >
-              <Icon
-                type='icon-dianzan1'
-                sx={{
-                  color: data.user_like ? 'info.main' : 'rgba(0,0,0,0.5)',
-                  fontSize: 14,
-                }}
-              />
-              <Typography
-                variant='body2'
-                sx={{
-                  fontSize: 14,
-                  color: data.user_like ? 'info.main' : 'rgba(0,0,0,0.5)',
-                  lineHeight: '20px',
-                }}
-              >
-                {formatNumber(data.like || 0)}
-              </Typography>
-            </Stack>
-            // <Button
-            //   onClick={handleLike}
-            //   sx={{
-            //     display: 'flex',
-            //     alignItems: 'center',
-            //     justifyContent: 'center',
-            //     gap: 0.5,
-            //     background: data.user_like ? theme.palette.primaryAlpha?.[6] : '#F2F3F5',
-            //     color: data.user_like ? 'primary.main' : 'text.secondary',
-            //     px: 1,
-            //     minWidth: '0px',
-            //     borderRadius: 0.5,
-            //     cursor: 'pointer',
-            //     transition: 'all 0.2s',
-            //     height: '22px',
-            //   }}
-            // >
-            //   <Icon type='icon-dianzan1' sx={{ fontSize: 12 }} />
-            //   <Typography
-            //     variant='caption'
-            //     sx={{ fontWeight: 600, fontFamily: 'Gilroy', fontSize: '14px', lineHeight: 1 }}
-            //   >
-            //     {formatNumber((data.like || 0) - (data.dislike || 0))}
-            //   </Typography>
-            // </Button>
-          )}
-          {(data.user_id === user.uid ||
-            [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
-              user.role || ModelUserRole.UserRoleUnknown,
-            )) && (
-            <IconButton
-              disableRipple
-              size='small'
-              ref={anchorElRef}
-              onClick={menuOpen}
-              sx={{
-                p: 0,
-                color: '#6b7280',
-                transition: 'all 0.15s ease-in-out',
-                '&:hover': { color: '#000000', bgcolor: '#f3f4f6' },
-              }}
-            >
-              <MoreVertIcon />
-            </IconButton>
-          )}
-        </Box>
+      {/* 第一行：类型标签和标题 */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', mb: 2, px: 1 }}>
+        {/* 标题 - 完整展示，去掉行数限制 */}
+        <Typography
+          sx={{
+            fontWeight: 700,
+            color: 'RGBA(33, 34, 45, 1)',
+            lineHeight: 1.4,
+            flex: 1,
+            fontSize: { xs: '16px', lg: '18px' },
+            whiteSpace: 'wrap',
+          }}
+        >
+          {data.title}
+        </Typography>
       </Box>
 
       {/* 第二行：标签和作者信息 */}
-      <Stack
-        direction='row'
-        flexWrap='wrap'
-        sx={{ alignItems: 'center', justifyContent: 'space-between', px: 1 }}
-        gap={2}
-      >
+      <Stack direction='row' flexWrap='wrap' sx={{ alignItems: 'center', px: 1 }} gap={1}>
+        {/* 类型标签 */}
+        <DiscussionTypeChip sx={{ height: 22 }} type={data.type} variant='default' />
         {/* 左侧：所有标签（分组标签、状态标签、普通标签） */}
-        <Stack direction='row' flexWrap='wrap' sx={{ gap: 1, alignItems: 'center' }}>
+        <Stack direction='row' flexWrap='wrap' sx={{ gap: 1, alignItems: 'center', mr: 'auto' }}>
           {/* 使用通用状态标签组件 */}
           <DiscussionStatusChip item={data} size='medium' />
           {data.groups?.map((item) => {
@@ -656,95 +433,55 @@ const TitleCard = ({ data }: { data: ModelDiscussionDetail }) => {
               </Typography>
             </>
           )}
-          {/* Issue 类型显示关注数 */}
-          {isIssuePost && followInfo.follower !== undefined && (
-            <>
-              <Typography
-                variant='body2'
-                sx={{
-                  color: 'rgba(33, 34, 45, 0.50)',
-                  px: { xs: 0.5, sm: 1 },
-                  flexShrink: 0,
-                }}
-              >
-                ·
-              </Typography>
-              <Typography
-                variant='body2'
-                sx={{
-                  color: 'rgba(33, 34, 45, 0.50)',
-                  flexShrink: 0,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {followInfo.follower || 0}关注
-              </Typography>
-            </>
-          )}
-          {/* 显示浏览量 */}
-          {data.view !== undefined && data.view !== null && (
-            <>
-              <Typography
-                variant='body2'
-                sx={{
-                  color: 'rgba(33, 34, 45, 0.50)',
-                  px: { xs: 0.5, sm: 1 },
-                  flexShrink: 0,
-                }}
-              >
-                ·
-              </Typography>
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  flexShrink: 0,
-                  color: 'rgba(33, 34, 45, 0.50)',
-                }}
-              >
-                <Typography
-                  variant='body2'
-                  sx={{
-                    color: 'rgba(33, 34, 45, 0.50)',
-                    flexShrink: 0,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {formatNumber(data.view || 0)}
-                </Typography>
-                <Typography
-                  variant='body2'
-                  sx={{
-                    color: 'rgba(33, 34, 45, 0.50)',
-                    flexShrink: 0,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  次浏览
-                </Typography>
-              </Box>
-            </>
-          )}
         </Box>
       </Stack>
-
       {data.content && String(data.content).trim() && (
-        <>
-          <Divider sx={{ my: { xs: 2, lg: 3 } }} />
-          <Box sx={{ px: 1 }}>
-            <EditorContent content={data.content} onTocUpdate={true} />
+        <Box sx={{ px: 1, pt: 1.2, mt: 2, borderTop: '1px solid', borderColor: 'border' }}>
+          <EditorContent content={data.content} onTocUpdate={true} />
+        </Box>
+      )}
+      <Stack direction={'row'} alignItems={'center'} justifyContent={'space-between'} sx={{ mt: 2 }}>
+        {!!tagNames.length && (
+          <Stack direction='row' flexWrap='wrap' sx={{ gap: 1, alignItems: 'center', px: 1 }}>
+            {tagNames.map((tag, index) => {
+              return <TagFilterChip key={`tag-${tag}-${index}`} id={index} name={tag} selected={false} />
+            })}
+          </Stack>
+        )}
+        {/* 显示浏览量 */}
+        {data.view !== undefined && data.view !== null && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              flexShrink: 0,
+              color: 'rgba(33, 34, 45, 0.50)',
+            }}
+          >
+            <Typography
+              variant='body2'
+              sx={{
+                color: 'rgba(33, 34, 45, 0.50)',
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {formatNumber(data.view || 0)}
+            </Typography>
+            <Typography
+              variant='body2'
+              sx={{
+                color: 'rgba(33, 34, 45, 0.50)',
+                flexShrink: 0,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              次浏览
+            </Typography>
           </Box>
-        </>
-      )}
-      <Divider sx={{ my: 2 }} />
-      {!!tagNames.length && (
-        <Stack direction='row' flexWrap='wrap' sx={{ gap: 1, alignItems: 'center', mt: 1, mb: 2 }}>
-          {tagNames.map((tag, index) => {
-            return <TagFilterChip key={index} id={index} name={tag} selected={false} />
-          })}
-        </Stack>
-      )}
+        )}
+      </Stack>
     </>
   )
 }

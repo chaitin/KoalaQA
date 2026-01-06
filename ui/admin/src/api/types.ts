@@ -418,9 +418,21 @@ export interface ModelForumInfo {
   groups?: ModelJSONBArrayModelForumGroups;
   id?: number;
   index?: number;
+  links?: ModelJSONBModelForumLinks;
   name: string;
   route_name?: string;
+  tag_enabled?: boolean;
   tag_ids?: number[];
+}
+
+export interface ModelForumLink {
+  address?: string;
+  name?: string;
+}
+
+export interface ModelForumLinks {
+  enabled?: boolean;
+  links?: ModelForumLink[];
 }
 
 export interface ModelGroupItemInfo {
@@ -442,6 +454,8 @@ export type ModelJSONBArrayModelRankTimeGroupItem = Record<string, any>;
 export type ModelJSONBArrayModelStatTrendItem = Record<string, any>;
 
 export type ModelJSONBModelExportOpt = Record<string, any>;
+
+export type ModelJSONBModelForumLinks = Record<string, any>;
 
 export type ModelJSONBModelPlatformOpt = Record<string, any>;
 
@@ -867,8 +881,10 @@ export interface SvcForumRes {
   groups?: ModelJSONBArrayModelForumGroups;
   id?: number;
   index?: number;
+  links?: ModelJSONBModelForumLinks;
   name: string;
   route_name?: string;
+  tag_enabled?: boolean;
   tag_ids?: number[];
   tags?: SvcForumTag[];
 }
@@ -1254,6 +1270,7 @@ export interface GetAdminDiscussionParams {
 export type PutAdminForumPayload = SvcForumUpdateReq & {
   forums?: (ModelForumInfo & {
     groups?: ModelForumGroups[];
+    links?: ModelForumLinks;
   })[];
 };
 
