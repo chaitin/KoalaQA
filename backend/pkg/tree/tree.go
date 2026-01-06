@@ -6,16 +6,24 @@ type Node[T any] struct {
 	Children []*Node[T] `json:"children"`
 }
 
-func (n *Node[T]) Range(f func(value T)) {
+func (n *Node[T]) Range(parent T, f func(parent, value T) error) error {
 	if n == nil {
-		return
+		return nil
 	}
 
-	f(n.Value)
+	err := f(parent, n.Value)
+	if err != nil {
+		return err
+	}
 
 	for _, child := range n.Children {
-		child.Range(f)
+		err = child.Range(n.Value, f)
+		if err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 func (n *Node[T]) AddChild(value T) {

@@ -30,15 +30,6 @@ definitions:
       updated_at:
         type: integer
     type: object
-  anydoc.ListRes:
-    properties:
-      docs:
-        items:
-          $ref: '#/definitions/anydoc.ListDoc'
-        type: array
-      uuid:
-        type: string
-    type: object
   anydoc.UserInfoRes:
     properties:
       access_token:
@@ -119,6 +110,21 @@ definitions:
     x-enum-varnames:
     - CommentLikeStateLike
     - CommentLikeStateDislike
+  model.CreateSpaceFolderInfo:
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/model.CreateSpaceFolderInfo'
+        type: array
+      doc_id:
+        type: string
+      file:
+        type: boolean
+      file_type:
+        type: string
+      title:
+        type: string
+    type: object
   model.Discussion:
     properties:
       associate_id:
@@ -678,6 +684,8 @@ definitions:
         $ref: '#/definitions/model.JSONB-model_PlatformOpt'
       rag_id:
         type: string
+      root_parent_id:
+        type: integer
       similar_id:
         type: integer
       status:
@@ -1308,6 +1316,15 @@ definitions:
       active:
         type: boolean
     type: object
+  svc.AnydocListRes:
+    properties:
+      docs:
+        items:
+          $ref: '#/definitions/anydoc.ListDoc'
+        type: array
+      uuid:
+        type: string
+    type: object
   svc.AssociateDiscussionReq:
     properties:
       content:
@@ -1386,12 +1403,10 @@ definitions:
     type: object
   svc.CreateSpaceForlderItem:
     properties:
-      child_doc_ids:
-        items:
-          type: string
-        type: array
       doc_id:
         type: string
+      folders:
+        $ref: '#/definitions/model.CreateSpaceFolderInfo'
       title:
         type: string
     required:
@@ -1508,6 +1523,8 @@ definitions:
           type: integer
         type: array
       id:
+        type: integer
+      parent_id:
         type: integer
       platform:
         $ref: '#/definitions/platform.PlatformType'
@@ -1684,6 +1701,15 @@ definitions:
     required:
     - name
     type: object
+  svc.ListAnydocNode:
+    properties:
+      children:
+        items:
+          $ref: '#/definitions/svc.ListAnydocNode'
+        type: array
+      value:
+        $ref: '#/definitions/anydoc.ListDoc'
+    type: object
   svc.ListRemoteReq:
     properties:
       opt:
@@ -1692,6 +1718,10 @@ definitions:
         $ref: '#/definitions/platform.PlatformType'
       remote_folder_id:
         type: string
+      remote_sub_folder_id:
+        type: string
+      shallow:
+        type: boolean
     type: object
   svc.ListSpaceFolderItem:
     properties:
@@ -1730,17 +1760,6 @@ definitions:
         type: integer
       updated_at:
         type: integer
-    type: object
-  svc.ListSpaceKBItem:
-    properties:
-      desc:
-        type: string
-      doc_id:
-        type: string
-      file_type:
-        $ref: '#/definitions/model.FileType'
-      title:
-        type: string
     type: object
   svc.ListWebItem:
     properties:
@@ -2094,8 +2113,6 @@ definitions:
     type: object
   svc.UpdateSpaceFolderReq:
     properties:
-      doc_id:
-        type: integer
       update_type:
         $ref: '#/definitions/topic.KBSpaceUpdateType'
     type: object
@@ -3416,6 +3433,10 @@ paths:
         name: page
         type: integer
       - in: query
+        name: parent_id
+        required: true
+        type: integer
+      - in: query
         minimum: 1
         name: size
         type: integer
@@ -3499,6 +3520,12 @@ paths:
       - in: query
         name: remote_folder_id
         type: string
+      - in: query
+        name: remote_sub_folder_id
+        type: string
+      - in: query
+        name: shallow
+        type: boolean
       produces:
       - application/json
       responses:
@@ -3509,14 +3536,7 @@ paths:
             - $ref: '#/definitions/context.Response'
             - properties:
                 data:
-                  allOf:
-                  - $ref: '#/definitions/model.ListRes'
-                  - properties:
-                      items:
-                        items:
-                          $ref: '#/definitions/svc.ListSpaceKBItem'
-                        type: array
-                    type: object
+                  $ref: '#/definitions/svc.ListAnydocNode'
               type: object
       summary: list kb space remote doc
       tags:
@@ -3696,7 +3716,7 @@ paths:
             - $ref: '#/definitions/context.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/anydoc.ListRes'
+                  $ref: '#/definitions/svc.AnydocListRes'
               type: object
       summary: list file documents
       tags:
@@ -3748,7 +3768,7 @@ paths:
             - $ref: '#/definitions/context.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/anydoc.ListRes'
+                  $ref: '#/definitions/svc.AnydocListRes'
               type: object
       summary: list sitemap documents
       tags:
@@ -3800,7 +3820,7 @@ paths:
             - $ref: '#/definitions/context.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/anydoc.ListRes'
+                  $ref: '#/definitions/svc.AnydocListRes'
               type: object
       summary: list url documents
       tags:
@@ -3824,14 +3844,7 @@ paths:
             - $ref: '#/definitions/context.Response'
             - properties:
                 data:
-                  allOf:
-                  - $ref: '#/definitions/model.ListRes'
-                  - properties:
-                      items:
-                        items:
-                          $ref: '#/definitions/svc.ListSpaceKBItem'
-                        type: array
-                    type: object
+                  $ref: '#/definitions/svc.ListAnydocNode'
               type: object
       summary: list remote doc
       tags:

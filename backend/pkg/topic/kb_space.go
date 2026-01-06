@@ -11,9 +11,9 @@ const (
 )
 
 type MsgKBSpace struct {
-	OP         OP                `json:"op"`
-	KBID       uint              `json:"kb_id"`
-	FolderID   uint              `json:"doc_id"`
-	UpdateType KBSpaceUpdateType `json:"update_type"`
-	DocID      uint              `json:"folder_doc_id"`
+	OP          OP                `json:"op"`
+	KBID        uint              `json:"kb_id"`
+	FolderID    uint              `json:"doc_id"`
+	UpdateType  KBSpaceUpdateType `json:"update_type"`
+	SubFolderID uint              `json:"sub_folder_id"`
 }

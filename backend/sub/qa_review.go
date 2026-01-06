@@ -16,6 +16,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/webhook/message"
 	"github.com/chaitin/koalaqa/repo"
 	"github.com/chaitin/koalaqa/svc"
+	"golang.org/x/sync/singleflight"
 )
 
 type QA struct {
@@ -35,6 +36,8 @@ type QAReview struct {
 	prompt  *svc.Prompt
 	disc    *svc.Discussion
 	pub     mq.Publisher
+
+	sf singleflight.Group
 }
 
 func NewQA(repo *repo.KBDocument, comm *repo.Comment, kb *repo.KnowledgeBase, rag rag.Service, dataset *repo.Dataset, llm *svc.LLM, prompt *svc.Prompt, disc *svc.Discussion, pub mq.Publisher) *QAReview {
@@ -65,7 +68,7 @@ func (q *QAReview) Group() string {
 }
 
 func (q *QAReview) AckWait() time.Duration {
-	return time.Minute * 2
+	return time.Minute * 10
 }
 
 func (q *QAReview) Concurrent() uint {
@@ -76,10 +79,11 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 	data := msg.(topic.MsgMessageNotify)
 
 	logger := q.logger.WithContext(ctx).With("msg", data)
-	logger.Info("handle qa review")
-	if data.Type != model.MsgNotifyTypeApplyComment {
+	logger.Info("receive qa review msg")
+	if data.Type != model.MsgNotifyTypeApplyComment || data.DiscussionType != model.DiscussionTypeQA {
 		return nil
 	}
+	logger.Info("handle qa review")
 	discussion, err := q.disc.GetByID(ctx, data.DiscussID)
 	if err != nil {
 		logger.WithErr(err).Warn("get discussion failed")

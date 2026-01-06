@@ -24,7 +24,7 @@ func (s *kbSpace) ListSpace(ctx *context.Context) {
 		return
 	}
 
-	res, err := s.svcDoc.ListSpace(ctx, kbID)
+	res, err := s.svcDoc.ListSpace(ctx, kbID, false)
 	if err != nil {
 		ctx.InternalError(err, "list space failed")
 		return
@@ -201,7 +201,7 @@ func (s *kbSpace) GetSpace(ctx *context.Context) {
 // @Param space_id path uint true "space_id"
 // @Param req query svc.ListRemoteSpaceFolderReq true "req param"
 // @Produce json
-// @Success 200 {object} context.Response{data=model.ListRes{items=[]svc.ListSpaceKBItem}}
+// @Success 200 {object} context.Response{data=svc.ListAnydocNode}
 // @Router /admin/kb/{kb_id}/space/{space_id}/remote [get]
 func (s *kbSpace) ListSpaceFolderRemote(ctx *context.Context) {
 	kbID, err := ctx.ParamUint("kb_id")
@@ -237,7 +237,7 @@ func (s *kbSpace) ListSpaceFolderRemote(ctx *context.Context) {
 // @Tags space
 // @Param req body svc.ListRemoteReq true "req param"
 // @Produce json
-// @Success 200 {object} context.Response{data=model.ListRes{items=[]svc.ListSpaceKBItem}}
+// @Success 200 {object} context.Response{data=svc.ListAnydocNode}
 // @Router /admin/kb/space/remote [post]
 func (s *kbSpace) ListRemote(ctx *context.Context) {
 	var req svc.ListRemoteReq
