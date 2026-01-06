@@ -192,6 +192,9 @@ const docTemplate = `{
                                                                 "items": {
                                                                     "$ref": "#/definitions/model.ForumGroups"
                                                                 }
+                                                            },
+                                                            "links": {
+                                                                "$ref": "#/definitions/model.ForumLinks"
                                                             }
                                                         }
                                                     }
@@ -245,6 +248,9 @@ const docTemplate = `{
                                                                 "items": {
                                                                     "$ref": "#/definitions/model.ForumGroups"
                                                                 }
+                                                            },
+                                                            "links": {
+                                                                "$ref": "#/definitions/model.ForumLinks"
                                                             }
                                                         }
                                                     }
@@ -7755,6 +7761,31 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "integer"
+                    }
+                }
+            }
+        },
+        "model.ForumLink": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ForumLinks": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ForumLink"
                     }
                 }
             }
