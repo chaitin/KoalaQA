@@ -211,29 +211,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
                             sx={{ 
                               backgroundColor: 'background.default', 
                               flex: 1, 
-                              overflow: 'auto', 
-                              height: 'calc(100vh - 64px)',
-                              // 让滚动条不占用空间（覆盖模式）
-                              scrollbarWidth: 'thin', // Firefox 细滚动条
-                              scrollbarGutter: 'auto', // 不预留滚动条空间
-                              // 使用负 margin 补偿滚动条宽度，实现覆盖效果
-                              marginRight: '-6px',
-                              paddingRight: '6px',
-                              // Webkit 浏览器自定义滚动条样式
-                              '&::-webkit-scrollbar': {
-                                width: '6px',
-                                height: '6px',
-                              },
-                              '&::-webkit-scrollbar-track': {
-                                background: 'transparent',
-                              },
-                              '&::-webkit-scrollbar-thumb': {
-                                backgroundColor: 'rgba(0, 0, 0, 0.2)',
-                                borderRadius: '3px',
-                                '&:hover': {
-                                  backgroundColor: 'rgba(0, 0, 0, 0.35)',
-                                },
-                              },
+                              overflow: 'scroll', 
                             }}
                           >
                             {props.children}
