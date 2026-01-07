@@ -42,22 +42,13 @@ const IssueStatusChip: React.FC<IssueStatusChipProps> = ({ resolved, size = 'med
   }
 
   const getSizeStyles = (): SxProps<Theme> => {
-    if (size === 'small') {
-      return {
-        fontSize: '12px',
-        height: 20,
-        fontWeight: 600,
-        border: `1px solid ${alpha(getStatusColor(), 0.03)}`,
-        fontFamily: 'Glibory, "PingFang SC", "Hiragino Sans GB", "STHeiti", "Microsoft YaHei", sans-serif',
-      }
-    }
-    // medium
     return {
       fontSize: '12px',
       height: 22,
       fontWeight: 600,
       border: `1px solid ${alpha(getStatusColor(), 0.03)}`,
       fontFamily: 'Glibory, "PingFang SC", "Hiragino Sans GB", "STHeiti", "Microsoft YaHei", sans-serif',
+      minWidth: 70,
     }
   }
 

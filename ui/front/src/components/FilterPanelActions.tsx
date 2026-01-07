@@ -96,9 +96,7 @@ export function TypeButton({
         '&:hover': { bgcolor: '#f3f4f6' },
       })}
     >
-      <ListItemIcon sx={{ minWidth: 28, color: (theme) => (isSelected ? 'primary.main' : alpha('#21222D', 0.5)) }}>
-        {icon}
-      </ListItemIcon>
+      <ListItemIcon sx={{ minWidth: 28, color: isSelected ? 'primary.main' : '#21222D' }}>{icon}</ListItemIcon>
       <ListItemText
         primary={
           <Typography

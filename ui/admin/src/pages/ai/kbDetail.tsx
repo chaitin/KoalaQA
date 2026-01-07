@@ -22,7 +22,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import { Box, Button, Chip, Divider, Stack, TextField, Tooltip, Typography } from '@mui/material';
 import { useRequest } from 'ahooks';
 import dayjs from 'dayjs';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 const KnowledgeBaseDetailPage = () => {
@@ -51,6 +51,10 @@ const KnowledgeBaseDetailPage = () => {
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastFolderDocDataRef = useRef<any>(null);
   const searchDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const prevParamsRef = useRef<{ spaceId: number; folderId: number; kb_id: number } | null>(null);
+  const prevDocStatusTabRef = useRef<'all' | 'success' | 'failed' | 'syncing'>('all');
+  const prevPageRef = useRef<{ page: number; size: number } | null>(null);
+  const prevDocStatusSearchRef = useRef<string>('');
 
   // 使用分类编辑hook
   const categoryEdit = useCategoryEdit({
@@ -206,37 +210,86 @@ const KnowledgeBaseDetailPage = () => {
     };
   }, []);
 
-  // 初始加载
+  // 统一处理数据获取：路由参数变化、筛选/分页变化
   useEffect(() => {
-    if (spaceId && folderId && kb_id) {
-      fetchFolderDocList();
-      fetchStats(); // 同时获取统计信息
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spaceId, folderId, kb_id]);
+    if (!spaceId || !folderId || !kb_id) return;
 
-  // 当筛选条件变化时，重新获取数据（重置到第一页）
-  useEffect(() => {
-    if (spaceId && folderId && kb_id) {
-      setCurrentPage(1);
+    const current = { spaceId, folderId, kb_id };
+    const prev = prevParamsRef.current;
+    const isRouteParamsChanged = !prev || 
+      prev.spaceId !== current.spaceId || 
+      prev.folderId !== current.folderId || 
+      prev.kb_id !== current.kb_id;
+
+    // 路由参数变化时（包括首次加载），重置页码并获取数据
+    if (isRouteParamsChanged) {
+      // 如果页码不是1，先重置页码，不更新 ref，让下次 useEffect 执行时再获取数据
+      if (currentPage !== 1) {
+        setCurrentPage(1);
+        return;
+      }
+      
+      // 页码已经是1，更新所有 ref 并获取数据
+      prevParamsRef.current = current;
+      prevDocStatusTabRef.current = docStatusTab;
+      prevPageRef.current = { page: 1, size: pageSize };
+      prevDocStatusSearchRef.current = docStatusSearch; // 重置搜索状态
+      fetchFolderDocList();
+      fetchStats();
+      return;
+    }
+
+    // 筛选条件变化时，重置页码
+    const isStatusTabChanged = prevDocStatusTabRef.current !== docStatusTab;
+    if (isStatusTabChanged) {
+      // 如果页码不是1，先重置页码，不更新 ref，让下次 useEffect 执行时再获取数据
+      if (currentPage !== 1) {
+        setCurrentPage(1);
+        return;
+      }
+      
+      // 页码已经是1，更新 ref 并获取数据
+      prevDocStatusTabRef.current = docStatusTab;
+      prevPageRef.current = { page: 1, size: pageSize };
+      fetchFolderDocList();
+      return;
+    }
+
+    // 检查分页是否真正变化
+    const prevPage = prevPageRef.current;
+    const isPageChanged = !prevPage || 
+      prevPage.page !== currentPage || 
+      prevPage.size !== pageSize;
+    
+    // 只有当分页真正变化时才获取数据
+    if (isPageChanged) {
+      prevPageRef.current = { page: currentPage, size: pageSize };
       fetchFolderDocList();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [docStatusTab]);
+  }, [spaceId, folderId, kb_id, currentPage, pageSize, docStatusTab]);
 
   // 搜索条件变化时，使用防抖延迟请求
   useEffect(() => {
-    if (spaceId && folderId && kb_id) {
-      // 清除之前的定时器
-      if (searchDebounceTimerRef.current) {
-        clearTimeout(searchDebounceTimerRef.current);
-      }
-      // 设置新的防抖定时器
-      searchDebounceTimerRef.current = setTimeout(() => {
-        setCurrentPage(1);
-        fetchFolderDocList();
-      }, 500); // 500ms 防抖
+    if (!spaceId || !folderId || !kb_id) return;
+    
+    // 检查搜索值是否真正变化（跳过首次加载时的执行）
+    if (prevDocStatusSearchRef.current === docStatusSearch) return;
+    
+    // 清除之前的定时器
+    if (searchDebounceTimerRef.current) {
+      clearTimeout(searchDebounceTimerRef.current);
     }
+    
+    // 更新 ref
+    prevDocStatusSearchRef.current = docStatusSearch;
+    
+    // 设置新的防抖定时器
+    searchDebounceTimerRef.current = setTimeout(() => {
+      setCurrentPage(1);
+      fetchFolderDocList();
+    }, 500); // 500ms 防抖
+
     return () => {
       if (searchDebounceTimerRef.current) {
         clearTimeout(searchDebounceTimerRef.current);
@@ -244,14 +297,6 @@ const KnowledgeBaseDetailPage = () => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docStatusSearch]);
-
-  // 当分页参数变化时，重新获取数据
-  useEffect(() => {
-    if (spaceId && folderId && kb_id) {
-      fetchFolderDocList();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, pageSize]);
 
   // 如果 kb_id 无效，返回错误提示（在所有 Hooks 调用之后）
   if (!kb_id || kb_id <= 0 || Number.isNaN(kb_id)) {

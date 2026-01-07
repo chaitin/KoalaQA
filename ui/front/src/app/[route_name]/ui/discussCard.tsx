@@ -46,6 +46,9 @@ const DiscussCard = ({
     return it.group_ids.map((groupId) => groupMap.get(groupId)).filter(Boolean) as string[]
   }, [it.group_ids, groups.flat])
 
+  // 确保 route_name 在服务器端和客户端一致，避免 hydration 错误
+  const routeName = (params?.route_name as string) || ''
+
   const isQAPost = it.type === ModelDiscussionType.DiscussionTypeQA
   const isArticlePost = it.type === ModelDiscussionType.DiscussionTypeBlog
   const isIssuePost = it.type === ModelDiscussionType.DiscussionTypeIssue
@@ -130,7 +133,7 @@ const DiscussCard = ({
           />
         </Box>
       </Stack>
-      <Link href={`/${params?.route_name as string}/${it.uuid}`} key={it.id} onClick={onNavigate}>
+      <Link href={`/${routeName}/${it.uuid}`} key={it.id} onClick={onNavigate}>
         <Box
           sx={{
             display: 'flex',

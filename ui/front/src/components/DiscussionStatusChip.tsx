@@ -59,8 +59,8 @@ const DiscussionStatusChip = ({ item, size = 'small' }: DiscussionStatusChipProp
           icon={
             <CheckCircleOutlineIcon
               sx={{
-                width: size === 'small' ? 16 : 18,
-                height: size === 'small' ? 16 : 18,
+                width: 16,
+                height: 16,
                 color: `${getStatusColor(status)}!important`,
                 ml: '8px!important',
               }}
@@ -71,13 +71,14 @@ const DiscussionStatusChip = ({ item, size = 'small' }: DiscussionStatusChipProp
           sx={{
             bgcolor: alpha(getStatusColor(status), 0.1),
             color: getStatusColor(status),
-            height: size === 'small' ? 20 : 22,
-            lineHeight: size === 'small' ? '20px' : '22px',
+            height: 22,
+            lineHeight: '22px',
             fontWeight: 600,
             fontSize: '12px',
             borderRadius: 0.5,
             border: (theme) => `1px solid ${alpha(getStatusColor(status), 0.03)}`,
             fontFamily: 'Glibory, "PingFang SC", "Hiragino Sans GB", "STHeiti", "Microsoft YaHei", sans-serif',
+            minWidth: 70,
           }}
         />
       )}

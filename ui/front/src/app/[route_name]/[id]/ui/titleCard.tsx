@@ -455,6 +455,7 @@ const TitleCard = ({ data, menuAnchorEl, onMenuClose }: TitleCardProps) => {
               display: 'flex',
               alignItems: 'center',
               gap: 0.5,
+              ml: 'auto',
               flexShrink: 0,
               color: 'rgba(33, 34, 45, 0.50)',
             }}

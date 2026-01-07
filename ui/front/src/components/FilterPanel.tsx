@@ -405,9 +405,10 @@ export default function FilterPanel({
                       gap: 1,
                       color: 'text.primary',
                       textDecoration: 'none',
-                      fontSize: '14px',
                       pl: 1.5,
                       width: '100%',
+                      fontSize: '13px',
+                      fontWeight: 600,
                       '&:hover': {
                         color: 'primary.main',
                       },
@@ -416,14 +417,11 @@ export default function FilterPanel({
                     <OpenInNewIcon
                       sx={{
                         fontSize: 16,
-                        color: 'text.secondary',
                         flexShrink: 0,
                         mr: 0.8,
                       }}
                     />
-                    <Typography variant='body2' sx={{ fontSize: '14px' }}>
-                      {link.name}
-                    </Typography>
+                    <Box>{link.name}</Box>
                   </MuiLink>
                 </ListItem>
               ))}

@@ -38,7 +38,7 @@ const DetailContent = ({ discussion }: DetailContentProps) => {
         sx={{
           flex: 1,
           minWidth: 0,
-          gap: 2,
+          gap: 3,
         }}
       >
         {/* 标题卡片 */}
