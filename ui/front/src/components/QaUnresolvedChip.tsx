@@ -30,11 +30,12 @@ const QaUnresolvedChip: React.FC<QaUnresolvedChipProps> = ({ type, resolved, sx,
         {
           bgcolor: alpha('rgba(255, 119, 68, 1)', 0.1),
           color: 'rgba(255, 119, 68, 1)',
-          height: size === 'small' ? 20 : 22,
+          height: 22,
           fontWeight: 600,
           fontSize: '12px',
           borderRadius: 0.5,
           pl: 1,
+          minWidth: 70,
         },
         ...(Array.isArray(sx) ? sx : [sx]),
       ]}

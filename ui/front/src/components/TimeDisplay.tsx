@@ -68,8 +68,9 @@ export const TimeDisplay = ({
 
   // 默认显示相对时间
   // 服务器端始终显示绝对时间，客户端显示相对时间
+  // 使用 suppressHydrationWarning 避免 hydration 警告，因为内容在客户端挂载后会更新
   return (
-    <span className={className} style={style}>
+    <span className={className} style={style} suppressHydrationWarning>
       {isClient ? relativeTime : absoluteTime}
     </span>
   )
@@ -122,12 +123,14 @@ export const TimeDisplayWithTag = ({
 
   // 默认显示相对时间
   // 服务器端始终显示绝对时间，客户端显示相对时间
+  // 使用 suppressHydrationWarning 避免 hydration 警告，因为内容在客户端挂载后会更新
   return (
     <time 
       dateTime={dayjs.unix(timestamp).format()} 
       title={title || dayjs.unix(timestamp).format('YYYY-MM-DD HH:mm:ss')}
       className={className} 
       style={style}
+      suppressHydrationWarning
     >
       {isClient ? relativeTime : absoluteTime}
     </time>

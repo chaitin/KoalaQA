@@ -340,7 +340,13 @@ export default function NotificationCenter() {
                                 : notification.discuss_title
                             }
                             truncateLength={10}
-                            sx={{ bgcolor: 'transparent', color: 'rgba(33, 34, 45, 0.70)', fontWeight: 400 }}
+                            sx={{
+                              ml: '0!important',
+                              bgcolor: 'transparent',
+                              color: 'rgba(33, 34, 45, 0.70)',
+                              fontWeight: 400,
+                              fontSize: '14px',
+                            }}
                           />
                           '
                         </Stack>

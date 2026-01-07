@@ -881,244 +881,242 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                   </Button>
                 </Box>
 
-                <Box>
-                  <Collapse in={!collapsedComments[answer.id!]}>
-                    <Stack sx={{ mt: 2 }} spacing={2}>
-                      {answer.replies?.map((reply) => {
-                        const replyProfileHref = reply.user_id ? `/profile/${reply.user_id}` : undefined
-                        const replyCreatedAt = (reply as ModelDiscussionReply & { created_at?: number }).created_at
-                        const displayReplyCreatedAt = replyCreatedAt || reply.updated_at
-                        return (
-                          <Box
-                            key={reply.id}
-                            sx={{
-                              p: 2,
-                              background: '#fafbfc',
-                              borderRadius: '8px',
-                              border: '1px solid #D9DEE2',
-                            }}
-                          >
-                            <Stack direction='row' flexWrap='wrap' sx={{ alignItems: 'center', mb: 1.5, gap: 1.5 }}>
-                              <Stack direction={'row'} spacing={1} alignItems='center'>
-                                {/* 用户名区域 */}
-                                {replyProfileHref ? (
-                                  <Link href={replyProfileHref} style={{ display: 'inline-flex' }} tabIndex={-1}>
-                                    <CommonAvatar src={reply.user_avatar} name={reply.user_name} />
-                                  </Link>
-                                ) : (
+                <Collapse in={!collapsedComments[answer.id!]}>
+                  <Stack sx={{ mt: 2 }} spacing={2}>
+                    {answer.replies?.map((reply) => {
+                      const replyProfileHref = reply.user_id ? `/profile/${reply.user_id}` : undefined
+                      const replyCreatedAt = (reply as ModelDiscussionReply & { created_at?: number }).created_at
+                      const displayReplyCreatedAt = replyCreatedAt || reply.updated_at
+                      return (
+                        <Box
+                          key={reply.id}
+                          sx={{
+                            p: 2,
+                            background: '#fafbfc',
+                            borderRadius: '8px',
+                            border: '1px solid #D9DEE2',
+                          }}
+                        >
+                          <Stack direction='row' flexWrap='wrap' sx={{ alignItems: 'center', mb: 1.5, gap: 1.5 }}>
+                            <Stack direction={'row'} spacing={1} alignItems='center'>
+                              {/* 用户名区域 */}
+                              {replyProfileHref ? (
+                                <Link href={replyProfileHref} style={{ display: 'inline-flex' }} tabIndex={-1}>
                                   <CommonAvatar src={reply.user_avatar} name={reply.user_name} />
-                                )}
-                                <Link
-                                  href={replyProfileHref || 'javascript:void(0)'}
-                                  style={{
-                                    fontWeight: 500,
-                                    color: 'inherit',
-                                    fontSize: '14px',
-                                    textDecoration: 'none',
-                                  }}
-                                  tabIndex={-1}
-                                >
-                                  <Box
-                                    sx={{
-                                      '&:hover': {
-                                        color: 'primary.main',
-                                      },
-                                    }}
-                                  >
-                                    {reply.user_name || '未知用户'}
-                                  </Box>
                                 </Link>
-
-                                {/* AI标签 - 已整合到用户名区域 */}
-                                {reply.bot && (
-                                  <Chip
-                                    label='AI'
-                                    sx={(theme) => ({
-                                      width: 28,
-                                      height: 24,
-                                      background: theme.palette.primaryAlpha?.[6],
-                                      color: 'primary.main',
-                                      borderRadius: '4px',
-                                      border: `1px solid ${theme.palette.primaryAlpha?.[10]}`,
-                                      fontSize: '0.75rem',
-                                      fontWeight: 500,
-                                      fontFamily: 'Gilroy Bold',
-                                      '& .MuiChip-label': {
-                                        px: 0.5,
-                                      },
-                                    })}
-                                  />
-                                )}
-                                <RoleChip role={reply.user_role} />
-                              </Stack>
-
-                              {/* 时间显示 - 已整合到同一区域 */}
-                              {displayReplyCreatedAt && (
-                                <Stack direction='row' alignItems='center' sx={{ fontSize: '14px', color: '#9ca3af' }}>
-                                  <Typography variant='body2'>
-                                    发布于 <TimeDisplayWithTag timestamp={displayReplyCreatedAt} />
-                                  </Typography>
-                                  {reply.updated_at && replyCreatedAt && reply.updated_at !== replyCreatedAt && (
-                                    <>
-                                      <Typography variant='body2'>,</Typography>
-                                      <Typography variant='body2'>
-                                        更新于 <TimeDisplayWithTag timestamp={reply.updated_at} />
-                                      </Typography>
-                                    </>
-                                  )}
-                                </Stack>
+                              ) : (
+                                <CommonAvatar src={reply.user_avatar} name={reply.user_name} />
                               )}
+                              <Link
+                                href={replyProfileHref || 'javascript:void(0)'}
+                                style={{
+                                  fontWeight: 500,
+                                  color: 'inherit',
+                                  fontSize: '14px',
+                                  textDecoration: 'none',
+                                }}
+                                tabIndex={-1}
+                              >
+                                <Box
+                                  sx={{
+                                    '&:hover': {
+                                      color: 'primary.main',
+                                    },
+                                  }}
+                                >
+                                  {reply.user_name || '未知用户'}
+                                </Box>
+                              </Link>
 
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>
-                                {/* 回复的更多操作按钮 - 作者或管理员可见 */}
-                                {hasMenuItems(reply) && (
-                                  <IconButton
-                                    disableRipple
-                                    disabled={isClosedQAPost}
-                                    size='small'
-                                    onClick={(e) => handleClick(e, reply.content || '', reply)}
-                                    sx={{
-                                      color: '#6b7280',
-                                      ml: 0.5,
-                                      backgroundColor: 'transparent',
-                                      transition: 'all 0.15s ease-in-out',
-                                      '&:hover': { color: '#000000', bgcolor: '#f3f4f6' },
-                                      '&:focus': {
-                                        backgroundColor: 'transparent',
-                                      },
-                                      '&.Mui-focusVisible': {
-                                        backgroundColor: 'transparent',
-                                      },
-                                    }}
-                                  >
-                                    <MoreVertIcon sx={{ fontSize: 18 }} />
-                                  </IconButton>
-                                )}
-                              </Box>
+                              {/* AI标签 - 已整合到用户名区域 */}
+                              {reply.bot && (
+                                <Chip
+                                  label='AI'
+                                  sx={(theme) => ({
+                                    width: 28,
+                                    height: 24,
+                                    background: theme.palette.primaryAlpha?.[6],
+                                    color: 'primary.main',
+                                    borderRadius: '4px',
+                                    border: `1px solid ${theme.palette.primaryAlpha?.[10]}`,
+                                    fontSize: '0.75rem',
+                                    fontWeight: 500,
+                                    fontFamily: 'Gilroy Bold',
+                                    '& .MuiChip-label': {
+                                      px: 0.5,
+                                    },
+                                  })}
+                                />
+                              )}
+                              <RoleChip role={reply.user_role} />
                             </Stack>
-                            <EditorContent
-                              content={reply.content}
-                              sx={{
-                                color: '#374151',
-                                fontSize: '0.875rem',
-                                lineHeight: 1.6,
-                              }}
-                            />
-                          </Box>
-                        )
-                      })}
-                      {!isClosedPost && (
-                        <Box sx={{ mt: (answer.replies?.length || 0) > 0 ? 2 : 0 }}>
-                          {!showCommentEditors[answer.id!] ? (
-                            <OutlinedInput
-                              fullWidth
-                              size='small'
-                              placeholder={isQAPost ? '添加评论...' : '回复评论...'}
-                              onClick={() => handleReplyInputClick(answer.id!)}
-                              sx={{
-                                bgcolor: '#fafbfc',
-                                fontSize: '0.875rem',
+
+                            {/* 时间显示 - 已整合到同一区域 */}
+                            {displayReplyCreatedAt && (
+                              <Stack direction='row' alignItems='center' sx={{ fontSize: '14px', color: '#9ca3af' }}>
+                                <Typography variant='body2'>
+                                  发布于 <TimeDisplayWithTag timestamp={displayReplyCreatedAt} />
+                                </Typography>
+                                {reply.updated_at && replyCreatedAt && reply.updated_at !== replyCreatedAt && (
+                                  <>
+                                    <Typography variant='body2'>,</Typography>
+                                    <Typography variant='body2'>
+                                      更新于 <TimeDisplayWithTag timestamp={reply.updated_at} />
+                                    </Typography>
+                                  </>
+                                )}
+                              </Stack>
+                            )}
+
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>
+                              {/* 回复的更多操作按钮 - 作者或管理员可见 */}
+                              {hasMenuItems(reply) && (
+                                <IconButton
+                                  disableRipple
+                                  disabled={isClosedQAPost}
+                                  size='small'
+                                  onClick={(e) => handleClick(e, reply.content || '', reply)}
+                                  sx={{
+                                    color: '#6b7280',
+                                    ml: 0.5,
+                                    backgroundColor: 'transparent',
+                                    transition: 'all 0.15s ease-in-out',
+                                    '&:hover': { color: '#000000', bgcolor: '#f3f4f6' },
+                                    '&:focus': {
+                                      backgroundColor: 'transparent',
+                                    },
+                                    '&.Mui-focusVisible': {
+                                      backgroundColor: 'transparent',
+                                    },
+                                  }}
+                                >
+                                  <MoreVertIcon sx={{ fontSize: 18 }} />
+                                </IconButton>
+                              )}
+                            </Box>
+                          </Stack>
+                          <EditorContent
+                            content={reply.content}
+                            sx={{
+                              color: '#374151',
+                              fontSize: '0.875rem',
+                              lineHeight: 1.6,
+                            }}
+                          />
+                        </Box>
+                      )
+                    })}
+                    {!isClosedPost && (
+                      <Box sx={{ mt: (answer.replies?.length || 0) > 0 ? 2 : 0 }}>
+                        {!showCommentEditors[answer.id!] ? (
+                          <OutlinedInput
+                            fullWidth
+                            size='small'
+                            placeholder={isQAPost ? '添加评论...' : '回复评论...'}
+                            onClick={() => handleReplyInputClick(answer.id!)}
+                            sx={{
+                              bgcolor: '#fafbfc',
+                              fontSize: '0.875rem',
+                              cursor: 'pointer',
+                              '& fieldset': { borderColor: '#D9DEE2' },
+                              '& input': {
                                 cursor: 'pointer',
-                                '& fieldset': { borderColor: '#D9DEE2' },
-                                '& input': {
-                                  cursor: 'pointer',
-                                },
+                              },
+                            }}
+                            endAdornment={
+                              <InputAdornment position='end'>
+                                <ArrowForwardIcon sx={{ fontSize: 16, color: '#9ca3af' }} />
+                              </InputAdornment>
+                            }
+                          />
+                        ) : (
+                          <>
+                            <Box
+                              sx={{
+                                mb: 3,
+                                borderRadius: 1,
+                                overflow: 'hidden',
+                                border: '1px solid #000000',
+                                px: 1,
+                                minHeight: '120px',
                               }}
-                              endAdornment={
-                                <InputAdornment position='end'>
-                                  <ArrowForwardIcon sx={{ fontSize: 16, color: '#9ca3af' }} />
-                                </InputAdornment>
-                              }
-                            />
-                          ) : (
-                            <>
-                              <Box
+                            >
+                              <EditorWrap
+                                key={commentEditorKeys[answer.id!] || 0}
+                                ref={(ref) => {
+                                  if (ref) {
+                                    commentEditorRefs.current[answer.id!] = ref
+                                  }
+                                }}
+                                value=''
+                              />
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, alignItems: 'center' }}>
+                              {/* 快捷回复选择器（管理员/运营可见） */}
+                              {isAdmin && !isArticlePost && (
+                                <Box sx={{ mr: 'auto', display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                  {quickReplies.map((qr) => (
+                                    <Button
+                                      variant='outlined'
+                                      key={qr.id}
+                                      size='small'
+                                      sx={{ color: 'text.primary', borderColor: 'text.disabled' }}
+                                      onClick={() => {
+                                        const ref = commentEditorRefs.current[answer.id!]
+                                        if (ref && typeof ref.setContent === 'function') {
+                                          ref.setContent(qr.content || '')
+                                        }
+                                      }}
+                                    >
+                                      {'# ' + qr.name}
+                                    </Button>
+                                  ))}
+                                </Box>
+                              )}
+                              <Button
+                                disableRipple
+                                onClick={() => {
+                                  setShowCommentEditors((prev) => ({ ...prev, [answer.id!]: false }))
+                                  setCommentEditorKeys((prev) => ({
+                                    ...prev,
+                                    [answer.id!]: (prev[answer.id!] || 0) + 1,
+                                  }))
+                                }}
                                 sx={{
-                                  mb: 3,
-                                  borderRadius: 1,
-                                  overflow: 'hidden',
-                                  border: '1px solid #000000',
-                                  px: 1,
-                                  minHeight: '120px',
+                                  textTransform: 'none',
+                                  color: '#6b7280',
+                                  fontWeight: 600,
+                                  fontSize: '0.875rem',
+                                  transition: 'all 0.15s ease-in-out',
                                 }}
                               >
-                                <EditorWrap
-                                  key={commentEditorKeys[answer.id!] || 0}
-                                  ref={(ref) => {
-                                    if (ref) {
-                                      commentEditorRefs.current[answer.id!] = ref
-                                    }
-                                  }}
-                                  value=''
-                                />
-                              </Box>
-                              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, alignItems: 'center' }}>
-                                {/* 快捷回复选择器（管理员/运营可见） */}
-                                {isAdmin && !isArticlePost && (
-                                  <Box sx={{ mr: 'auto', display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                    {quickReplies.map((qr) => (
-                                      <Button
-                                        variant='outlined'
-                                        key={qr.id}
-                                        size='small'
-                                        sx={{ color: 'text.primary', borderColor: 'text.disabled' }}
-                                        onClick={() => {
-                                          const ref = commentEditorRefs.current[answer.id!]
-                                          if (ref && typeof ref.setContent === 'function') {
-                                            ref.setContent(qr.content || '')
-                                          }
-                                        }}
-                                      >
-                                        {'# ' + qr.name}
-                                      </Button>
-                                    ))}
-                                  </Box>
-                                )}
-                                <Button
-                                  disableRipple
-                                  onClick={() => {
-                                    setShowCommentEditors((prev) => ({ ...prev, [answer.id!]: false }))
-                                    setCommentEditorKeys((prev) => ({
-                                      ...prev,
-                                      [answer.id!]: (prev[answer.id!] || 0) + 1,
-                                    }))
-                                  }}
-                                  sx={{
-                                    textTransform: 'none',
-                                    color: '#6b7280',
-                                    fontWeight: 600,
-                                    fontSize: '0.875rem',
-                                    transition: 'all 0.15s ease-in-out',
-                                  }}
-                                >
-                                  取消
-                                </Button>
-                                <Button
-                                  disableRipple
-                                  variant='contained'
-                                  onClick={() => handleSubmitComment(answer.id!)}
-                                  sx={{
-                                    color: '#ffffff',
-                                    textTransform: 'none',
-                                    fontWeight: 600,
-                                    px: 2,
-                                    py: 0.5,
-                                    borderRadius: 1,
-                                    fontSize: '0.875rem',
-                                    transition: 'all 0.15s ease-in-out',
-                                    '&:active': { transform: 'translateY(0) scale(0.98)' },
-                                  }}
-                                >
-                                  {isQAPost ? '提交评论' : '提交回复'}
-                                </Button>
-                              </Box>
-                            </>
-                          )}
-                        </Box>
-                      )}
-                    </Stack>
-                  </Collapse>
-                </Box>
+                                取消
+                              </Button>
+                              <Button
+                                disableRipple
+                                variant='contained'
+                                onClick={() => handleSubmitComment(answer.id!)}
+                                sx={{
+                                  color: '#ffffff',
+                                  textTransform: 'none',
+                                  fontWeight: 600,
+                                  px: 2,
+                                  py: 0.5,
+                                  borderRadius: 1,
+                                  fontSize: '0.875rem',
+                                  transition: 'all 0.15s ease-in-out',
+                                  '&:active': { transform: 'translateY(0) scale(0.98)' },
+                                }}
+                              >
+                                {isQAPost ? '提交评论' : '提交回复'}
+                              </Button>
+                            </Box>
+                          </>
+                        )}
+                      </Box>
+                    )}
+                  </Stack>
+                </Collapse>
               </Paper>
             )
           })}
