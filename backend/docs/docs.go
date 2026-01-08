@@ -1930,60 +1930,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/kb/{kb_id}/space/{space_id}/doc/{third_doc_id}": {
-            "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "space"
-                ],
-                "summary": "get kb space doc",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "kb_id",
-                        "name": "kb_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "space_id",
-                        "name": "space_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "third_doc_id",
-                        "name": "third_doc_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/context.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/model.KBDocument"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
         "/admin/kb/{kb_id}/space/{space_id}/folder": {
             "get": {
                 "produces": [
@@ -2031,7 +1977,19 @@ const docTemplate = `{
                                                         "items": {
                                                             "type": "array",
                                                             "items": {
-                                                                "$ref": "#/definitions/svc.ListSpaceFolderItem"
+                                                                "allOf": [
+                                                                    {
+                                                                        "$ref": "#/definitions/svc.ListSpaceFolderItem"
+                                                                    },
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "export_opt": {
+                                                                                "$ref": "#/definitions/model.ExportOpt"
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                ]
                                                             }
                                                         }
                                                     }
@@ -7689,6 +7647,38 @@ const docTemplate = `{
                 "DocTypeWeb"
             ]
         },
+        "model.ExportFolder": {
+            "type": "object",
+            "properties": {
+                "doc_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "folder_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ExportOpt": {
+            "type": "object",
+            "properties": {
+                "file_type": {
+                    "type": "string"
+                },
+                "folders": {
+                    "description": "需要导出的文档",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ExportFolder"
+                    }
+                },
+                "space_id": {
+                    "type": "string"
+                }
+            }
+        },
         "model.FileType": {
             "type": "integer",
             "enum": [
@@ -7884,86 +7874,6 @@ const docTemplate = `{
         },
         "model.JSONB-model_PlatformOpt": {
             "type": "object"
-        },
-        "model.KBDocument": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "integer"
-                },
-                "desc": {
-                    "type": "string"
-                },
-                "doc_id": {
-                    "type": "string"
-                },
-                "doc_type": {
-                    "$ref": "#/definitions/model.DocType"
-                },
-                "export_opt": {
-                    "$ref": "#/definitions/model.JSONB-model_ExportOpt"
-                },
-                "export_task_id": {
-                    "type": "string"
-                },
-                "file_type": {
-                    "$ref": "#/definitions/model.FileType"
-                },
-                "group_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "json": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "kb_id": {
-                    "type": "integer"
-                },
-                "markdown": {
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                },
-                "parent_id": {
-                    "type": "integer"
-                },
-                "platform": {
-                    "$ref": "#/definitions/platform.PlatformType"
-                },
-                "platform_opt": {
-                    "$ref": "#/definitions/model.JSONB-model_PlatformOpt"
-                },
-                "rag_id": {
-                    "type": "string"
-                },
-                "root_parent_id": {
-                    "type": "integer"
-                },
-                "similar_id": {
-                    "type": "integer"
-                },
-                "status": {
-                    "$ref": "#/definitions/model.DocStatus"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "integer"
-                }
-            }
         },
         "model.KBDocumentDetail": {
             "type": "object",

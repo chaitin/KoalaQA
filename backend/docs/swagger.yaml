@@ -499,6 +499,27 @@ definitions:
     - DocTypeDocument
     - DocTypeSpace
     - DocTypeWeb
+  model.ExportFolder:
+    properties:
+      doc_ids:
+        items:
+          type: string
+        type: array
+      folder_id:
+        type: string
+    type: object
+  model.ExportOpt:
+    properties:
+      file_type:
+        type: string
+      folders:
+        description: 需要导出的文档
+        items:
+          $ref: '#/definitions/model.ExportFolder'
+        type: array
+      space_id:
+        type: string
+    type: object
   model.FileType:
     enum:
     - 0
@@ -645,59 +666,6 @@ definitions:
   model.JSONB-model_ForumLinks:
     type: object
   model.JSONB-model_PlatformOpt:
-    type: object
-  model.KBDocument:
-    properties:
-      created_at:
-        type: integer
-      desc:
-        type: string
-      doc_id:
-        type: string
-      doc_type:
-        $ref: '#/definitions/model.DocType'
-      export_opt:
-        $ref: '#/definitions/model.JSONB-model_ExportOpt'
-      export_task_id:
-        type: string
-      file_type:
-        $ref: '#/definitions/model.FileType'
-      group_ids:
-        items:
-          type: integer
-        type: array
-      id:
-        type: integer
-      json:
-        items:
-          type: integer
-        type: array
-      kb_id:
-        type: integer
-      markdown:
-        items:
-          type: integer
-        type: array
-      message:
-        type: string
-      parent_id:
-        type: integer
-      platform:
-        $ref: '#/definitions/platform.PlatformType'
-      platform_opt:
-        $ref: '#/definitions/model.JSONB-model_PlatformOpt'
-      rag_id:
-        type: string
-      root_parent_id:
-        type: integer
-      similar_id:
-        type: integer
-      status:
-        $ref: '#/definitions/model.DocStatus'
-      title:
-        type: string
-      updated_at:
-        type: integer
     type: object
   model.KBDocumentDetail:
     properties:
@@ -3340,39 +3308,6 @@ paths:
       summary: update kb space
       tags:
       - space
-  /admin/kb/{kb_id}/space/{space_id}/doc/{third_doc_id}:
-    get:
-      parameters:
-      - description: kb_id
-        in: path
-        name: kb_id
-        required: true
-        type: integer
-      - description: space_id
-        in: path
-        name: space_id
-        required: true
-        type: integer
-      - description: third_doc_id
-        in: path
-        name: third_doc_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/context.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/model.KBDocument'
-              type: object
-      summary: get kb space doc
-      tags:
-      - space
   /admin/kb/{kb_id}/space/{space_id}/folder:
     get:
       parameters:
@@ -3401,7 +3336,12 @@ paths:
                   - properties:
                       items:
                         items:
-                          $ref: '#/definitions/svc.ListSpaceFolderItem'
+                          allOf:
+                          - $ref: '#/definitions/svc.ListSpaceFolderItem'
+                          - properties:
+                              export_opt:
+                                $ref: '#/definitions/model.ExportOpt'
+                            type: object
                         type: array
                     type: object
               type: object

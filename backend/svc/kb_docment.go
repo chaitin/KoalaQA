@@ -525,10 +525,6 @@ func (d *KBDocument) Delete(ctx context.Context, kbID uint, docID uint) error {
 	return nil
 }
 
-func (d *KBDocument) SpaceDoc(ctx context.Context, kbID uint, spaceID uint, thirdDocID string) (*model.KBDocument, error) {
-	return d.repoDoc.GetSpaceDoc(ctx, kbID, spaceID, thirdDocID)
-}
-
 func (d *KBDocument) Detail(ctx context.Context, kbID uint, docID uint) (*model.KBDocumentDetail, error) {
 	var doc model.KBDocumentDetail
 	err := d.repoDoc.GetByID(ctx, &doc, kbID, docID)
@@ -875,7 +871,7 @@ func (d *KBDocument) CreateSpaceFolder(ctx context.Context, kbID uint, spaceID u
 		exportFolderM := make(map[string]*model.ExportFolder)
 		item.Folders.Range(item.DocID, func(parentID string, csfi *model.CreateSpaceFolderInfo) error {
 			csfi.DocID = strings.TrimSpace(csfi.DocID)
-			if csfi.DocID == "" || len(csfi.Children) > 0 {
+			if csfi.DocID == "" || len(csfi.Children) > 0 || parentID == item.DocID {
 				return nil
 			}
 
@@ -1053,13 +1049,14 @@ type CreateSpaceDocReq struct {
 type ListSpaceFolderItem struct {
 	model.Base
 
-	RagID   string          `json:"rag_id"`
-	DocID   string          `json:"doc_id"`
-	Title   string          `json:"title"`
-	Status  model.DocStatus `json:"status"`
-	Total   int64           `json:"total"`
-	Success int64           `json:"success"`
-	Failed  int64           `json:"failed"`
+	RagID     string                       `json:"rag_id"`
+	DocID     string                       `json:"doc_id"`
+	Title     string                       `json:"title"`
+	Status    model.DocStatus              `json:"status"`
+	Total     int64                        `json:"total"`
+	Success   int64                        `json:"success"`
+	Failed    int64                        `json:"failed"`
+	ExportOpt model.JSONB[model.ExportOpt] `json:"export_opt" swaggerignore:"true"`
 }
 
 func (d *KBDocument) ListSpaceFolder(ctx context.Context, kbID uint, parentID uint) (*model.ListRes[ListSpaceFolderItem], error) {

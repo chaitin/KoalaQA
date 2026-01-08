@@ -262,7 +262,7 @@ func (s *kbSpace) ListRemote(ctx *context.Context) {
 // @Param kb_id path uint true "kb_id"
 // @Param space_id path uint true "space_id"
 // @Produce json
-// @Success 200 {object} context.Response{data=model.ListRes{items=[]svc.ListSpaceFolderItem}}
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]svc.ListSpaceFolderItem{export_opt=model.ExportOpt}}}
 // @Router /admin/kb/{kb_id}/space/{space_id}/folder [get]
 func (s *kbSpace) ListSpaceFolder(ctx *context.Context) {
 	kbID, err := ctx.ParamUint("kb_id")
@@ -280,37 +280,6 @@ func (s *kbSpace) ListSpaceFolder(ctx *context.Context) {
 	res, err := s.svcDoc.ListSpaceFolder(ctx, kbID, spaceID)
 	if err != nil {
 		ctx.InternalError(err, "list space folder failed")
-		return
-	}
-
-	ctx.Success(res)
-}
-
-// GetSpaceDoc
-// @Summary get kb space doc
-// @Tags space
-// @Param kb_id path uint true "kb_id"
-// @Param space_id path uint true "space_id"
-// @Param third_doc_id path string true "third_doc_id"
-// @Produce json
-// @Success 200 {object} context.Response{data=model.KBDocument}
-// @Router /admin/kb/{kb_id}/space/{space_id}/doc/{third_doc_id} [get]
-func (s *kbSpace) GetSpaceDoc(ctx *context.Context) {
-	kbID, err := ctx.ParamUint("kb_id")
-	if err != nil {
-		ctx.BadRequest(err)
-		return
-	}
-
-	spaceID, err := ctx.ParamUint("space_id")
-	if err != nil {
-		ctx.BadRequest(err)
-		return
-	}
-
-	res, err := s.svcDoc.SpaceDoc(ctx, kbID, spaceID, ctx.Param("third_doc_id"))
-	if err != nil {
-		ctx.InternalError(err, "get doc failed")
 		return
 	}
 
@@ -478,7 +447,6 @@ func (s *kbSpace) Route(h server.Handler) {
 		detailG.GET("", s.GetSpace)
 		detailG.PUT("", s.UpdateSpace)
 		detailG.DELETE("", s.DeleteSpace)
-		detailG.GET("/doc/:third_doc_id", s.GetSpaceDoc)
 		{
 			spaceFolderG := detailG.Group("/folder")
 			spaceFolderG.GET("", s.ListSpaceFolder)
