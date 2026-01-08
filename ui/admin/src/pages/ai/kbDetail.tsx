@@ -782,18 +782,6 @@ const KnowledgeBaseDetailPage = () => {
                 </Button>
               </Box>
             )}
-
-            {/* 加载中指示器 */}
-            {loading && (nodeState?.page ?? 0) > 0 && (
-              <Box
-                sx={{ ml: (level + 1) * 3, mt: 1, mb: 1, display: 'flex', alignItems: 'center' }}
-              >
-                <CircularProgress size={16} sx={{ mr: 1 }} />
-                <Typography variant="body2" color="text.secondary">
-                  加载中...
-                </Typography>
-              </Box>
-            )}
           </Box>
         )}
       </Box>
@@ -977,11 +965,6 @@ const KnowledgeBaseDetailPage = () => {
         >
           <Box sx={{ width: 40 }}>{/* 展开按钮列 */}</Box>
           <Box sx={{ width: 32 }}>{/* 文件夹图标列 */}</Box>
-          <Box sx={{ width: 40, mr: 2 }}>
-            <Typography variant="body2" fontWeight={500}>
-              状态
-            </Typography>
-          </Box>
           <Typography variant="body2" fontWeight={500} sx={{ flex: 1 }}>
             文档名称
           </Typography>

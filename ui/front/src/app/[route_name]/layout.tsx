@@ -1,4 +1,4 @@
-import { Container } from '@mui/material'
+import { Box, Container } from '@mui/material'
 import { headers } from 'next/headers'
 
 export default async function RouteLayout({
@@ -40,7 +40,7 @@ export default async function RouteLayout({
   }
 
   return (
-    <Container
+    <Box
       className='forum_main'
       sx={{
         minWidth: 0,
@@ -55,6 +55,6 @@ export default async function RouteLayout({
       }}
     >
       {children}
-    </Container>
+    </Box>
   )
 }

@@ -123,7 +123,7 @@ const DiscussDetailPage = async (props: {
           sx={{
             width: { xs: '100%', lg: '836px' },
             mx: { xs: 0, lg: 'auto' },
-            transform: { lg: 'translateX(-44px)' },
+            transform: { lg: 'translateX(-74px)' },
             flexShrink: 0,
           }}
         >
@@ -139,7 +139,7 @@ const DiscussDetailPage = async (props: {
           sx={{
             display: { xs: 'none', lg: 'block' },
             position: 'absolute',
-            left: { lg: 'calc(50% + 396px)' }, // 50% + 780px/2 + 24px = 50% + 390px + 24px = 50% + 414px
+            left: { lg: 'calc(50% + 368px)' }, // 50% + 780px/2 + 24px = 50% + 390px + 24px = 50% + 414px
             top: 0,
             width: '300px',
           }}

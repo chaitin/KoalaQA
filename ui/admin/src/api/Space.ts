@@ -16,10 +16,12 @@ import {
   DeleteAdminKbKbIdSpaceSpaceIdFolderFolderIdParams,
   DeleteAdminKbKbIdSpaceSpaceIdParams,
   GetAdminKbKbIdSpaceParams,
+  GetAdminKbKbIdSpaceSpaceIdDocThirdDocIdParams,
   GetAdminKbKbIdSpaceSpaceIdFolderFolderIdDocParams,
   GetAdminKbKbIdSpaceSpaceIdFolderParams,
   GetAdminKbKbIdSpaceSpaceIdParams,
   GetAdminKbKbIdSpaceSpaceIdRemoteParams,
+  ModelKBDocument,
   ModelListRes,
   ModelPlatformOpt,
   PostAdminKbKbIdSpaceParams,
@@ -207,6 +209,39 @@ export const deleteAdminKbKbIdSpaceSpaceId = (
   request<ContextResponse>({
     path: `/admin/kb/${kbId}/space/${spaceId}`,
     method: "DELETE",
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags space
+ * @name GetAdminKbKbIdSpaceSpaceIdDocThirdDocId
+ * @summary get kb space doc
+ * @request GET:/admin/kb/{kb_id}/space/{space_id}/doc/{third_doc_id}
+ * @response `200` `(ContextResponse & {
+    data?: ModelKBDocument,
+
+})` OK
+ */
+
+export const getAdminKbKbIdSpaceSpaceIdDocThirdDocId = (
+  {
+    kbId,
+    spaceId,
+    thirdDocId,
+    ...query
+  }: GetAdminKbKbIdSpaceSpaceIdDocThirdDocIdParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelKBDocument;
+    }
+  >({
+    path: `/admin/kb/${kbId}/space/${spaceId}/doc/${thirdDocId}`,
+    method: "GET",
     format: "json",
     ...params,
   });

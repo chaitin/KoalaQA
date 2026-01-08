@@ -462,6 +462,31 @@ export type ModelJSONBModelForumLinks = Record<string, any>;
 
 export type ModelJSONBModelPlatformOpt = Record<string, any>;
 
+export interface ModelKBDocument {
+  created_at?: number;
+  desc?: string;
+  doc_id?: string;
+  doc_type?: ModelDocType;
+  export_opt?: ModelJSONBModelExportOpt;
+  export_task_id?: string;
+  file_type?: ModelFileType;
+  group_ids?: number[];
+  id?: number;
+  json?: number[];
+  kb_id?: number;
+  markdown?: number[];
+  message?: string;
+  parent_id?: number;
+  platform?: PlatformPlatformType;
+  platform_opt?: ModelJSONBModelPlatformOpt;
+  rag_id?: string;
+  root_parent_id?: number;
+  similar_id?: number;
+  status?: ModelDocStatus;
+  title?: string;
+  updated_at?: number;
+}
+
 export interface ModelKBDocumentDetail {
   created_at?: number;
   desc?: string;
@@ -1463,6 +1488,15 @@ export interface DeleteAdminKbKbIdSpaceSpaceIdParams {
   kbId: number;
   /** space_id */
   spaceId: number;
+}
+
+export interface GetAdminKbKbIdSpaceSpaceIdDocThirdDocIdParams {
+  /** kb_id */
+  kbId: number;
+  /** space_id */
+  spaceId: number;
+  /** third_doc_id */
+  thirdDocId: string;
 }
 
 export interface GetAdminKbKbIdSpaceSpaceIdFolderParams {
