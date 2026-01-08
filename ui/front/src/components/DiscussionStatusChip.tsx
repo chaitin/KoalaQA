@@ -1,7 +1,6 @@
 'use client'
 import { ModelDiscussionListItem, ModelDiscussionState, ModelDiscussionType } from '@/api/types'
-import { CheckCircleOutline as CheckCircleOutlineIcon } from '@mui/icons-material'
-import { alpha, Chip } from '@mui/material'
+import { Box, Chip } from '@mui/material'
 import IssueStatusChip from './IssueStatusChip'
 import QaUnresolvedChip from './QaUnresolvedChip'
 
@@ -57,26 +56,26 @@ const DiscussionStatusChip = ({ item, size = 'small' }: DiscussionStatusChipProp
       {!isIssuePost && (status === 'answered' || status === 'closed') && !isArticlePost && (
         <Chip
           icon={
-            <CheckCircleOutlineIcon
+            <Box
               sx={{
-                width: 16,
-                height: 16,
-                color: `${getStatusColor(status)}!important`,
-                ml: '8px!important',
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                bgcolor: '#fff',
               }}
             />
           }
           label={getStatusLabel(status)}
           size='small'
           sx={{
-            bgcolor: alpha(getStatusColor(status), 0.1),
-            color: getStatusColor(status),
+            bgcolor: getStatusColor(status),
+            color: '#fff',
             height: 22,
             lineHeight: '22px',
             fontWeight: 600,
             fontSize: '12px',
             borderRadius: 0.5,
-            border: (theme) => `1px solid ${alpha(getStatusColor(status), 0.03)}`,
+            border: 'none',
             fontFamily: 'Glibory, "PingFang SC", "Hiragino Sans GB", "STHeiti", "Microsoft YaHei", sans-serif',
             minWidth: 70,
           }}
