@@ -116,14 +116,13 @@ const DiscussDetailPage = async (props: {
           pb: 2,
           minHeight: 'calc(100vh - 90px)',
           position: 'relative',
+          gap: 3,
         }}
       >
         {/* 主内容区域 - 居中 */}
         <Box
           sx={{
-            width: { xs: '100%', lg: '836px' },
-            mx: { xs: 0, lg: 'auto' },
-            transform: { lg: 'translateX(-44px)' },
+            width: { xs: '100%', lg: '1044px' },
             flexShrink: 0,
           }}
         >
@@ -138,9 +137,6 @@ const DiscussDetailPage = async (props: {
         <Box
           sx={{
             display: { xs: 'none', lg: 'block' },
-            position: 'absolute',
-            left: { lg: 'calc(50% + 396px)' }, // 50% + 780px/2 + 24px = 50% + 390px + 24px = 50% + 414px
-            top: 0,
             width: '300px',
           }}
         >

@@ -18,16 +18,17 @@ import (
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/oss"
 	"github.com/chaitin/koalaqa/pkg/topic"
+	"github.com/chaitin/koalaqa/pkg/tree"
 	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/repo"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type BaseDBDoc struct {
-	ID       uint
-	Type     model.DocType
-	ParentID uint
+	ID           uint
+	Type         model.DocType
+	ParentID     uint
+	RootParentID uint
 }
 
 type BaseExportReq struct {
@@ -115,10 +116,33 @@ type FileListReq struct {
 	File *multipart.FileHeader `form:"file" swaggerignore:"true"`
 }
 
-func (d *KBDocument) FileList(ctx context.Context, req FileListReq) (*anydoc.ListRes, error) {
-	return d.anydoc.List(ctx, platform.PlatformFile,
+type AnydocListItem struct {
+}
+type AnydocListRes struct {
+	UUID string           `json:"uuid"`
+	Docs []anydoc.ListDoc `json:"docs"`
+}
+
+func (d *KBDocument) FileList(ctx context.Context, req FileListReq) (*AnydocListRes, error) {
+	list, err := d.anydoc.List(ctx, platform.PlatformFile,
 		anydoc.ListWithReader(req.File),
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	res := AnydocListRes{
+		UUID: list.UUID,
+	}
+
+	list.Docs.Range(anydoc.ListDoc{}, func(parent, value anydoc.ListDoc) error {
+		if value.File {
+			res.Docs = append(res.Docs, value)
+		}
+		return nil
+	})
+
+	return &res, nil
 }
 
 type FileExportReq struct {
@@ -134,10 +158,26 @@ type URLListReq struct {
 	URL string `json:"url" binding:"required"`
 }
 
-func (d *KBDocument) URLList(ctx context.Context, req URLListReq) (*anydoc.ListRes, error) {
-	return d.anydoc.List(ctx, platform.PlatformURL,
+func (d *KBDocument) URLList(ctx context.Context, req URLListReq) (*AnydocListRes, error) {
+	list, err := d.anydoc.List(ctx, platform.PlatformURL,
 		anydoc.ListWithURL(req.URL),
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	res := AnydocListRes{
+		UUID: list.UUID,
+	}
+
+	list.Docs.Range(anydoc.ListDoc{}, func(parent, value anydoc.ListDoc) error {
+		if value.File {
+			res.Docs = append(res.Docs, value)
+		}
+		return nil
+	})
+
+	return &res, nil
 }
 
 type URLExportReq struct {
@@ -153,11 +193,27 @@ type SitemapListReq struct {
 	URL string `json:"url" binding:"required"`
 }
 
-func (d *KBDocument) SitemapList(ctx context.Context, req SitemapListReq) (*anydoc.ListRes, error) {
-	return d.anydoc.List(ctx, platform.PlatformSitemap,
+func (d *KBDocument) SitemapList(ctx context.Context, req SitemapListReq) (*AnydocListRes, error) {
+	list, err := d.anydoc.List(ctx, platform.PlatformSitemap,
 		anydoc.ListWithURL(req.URL),
 		anydoc.ListWithErrContinue(),
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	res := AnydocListRes{
+		UUID: list.UUID,
+	}
+
+	list.Docs.Range(anydoc.ListDoc{}, func(parent, value anydoc.ListDoc) error {
+		if value.File {
+			res.Docs = append(res.Docs, value)
+		}
+		return nil
+	})
+
+	return &res, nil
 }
 
 type SitemapExportReq struct {
@@ -195,6 +251,7 @@ func (d *KBDocument) export(ctx context.Context, platform platform.PlatformType,
 		DocType:      baseInfo.DBDoc.Type,
 		Status:       status,
 		ParentID:     baseInfo.DBDoc.ParentID,
+		RootParentID: baseInfo.DBDoc.RootParentID,
 		Message:      msg,
 	})
 	if err != nil {
@@ -223,6 +280,7 @@ type DocListItem struct {
 	Status    model.DocStatus       `json:"status"`
 	SimilarID uint                  `json:"similar_id"`
 	GroupIDs  model.Int64Array      `json:"group_ids" gorm:"type:bigint[]"`
+	ParentID  uint                  `json:"parent_id"`
 }
 
 func (d *KBDocument) List(ctx context.Context, kbID uint, docType model.DocType, req DocListReq) (*model.ListRes[DocListItem], error) {
@@ -390,14 +448,20 @@ func (d *KBDocument) UpdateByPlatform(ctx context.Context, kbID uint, docID uint
 		return "", err
 	}
 
-	for _, listDoc := range listRes.Docs {
-		if listDoc.ID != doc.DocID {
-			continue
+	listRes.Docs.Range(anydoc.ListDoc{}, func(parent, value anydoc.ListDoc) error {
+		if !value.File {
+			return nil
 		}
 
-		doc.Title = listDoc.Title
-		doc.Desc = listDoc.FileType
-	}
+		if value.ID != doc.DocID {
+			return nil
+		}
+
+		doc.Title = value.Title
+		doc.Desc = value.Summary
+
+		return errors.New("done")
+	})
 
 	return d.export(ctx, doc.Platform, BaseExportReq{
 		DBDoc: BaseDBDoc{
@@ -447,14 +511,17 @@ func (d *KBDocument) Delete(ctx context.Context, kbID uint, docID uint) error {
 		}
 	}
 
-	if err := d.pub.Publish(ctx, topic.TopicKBDocumentRag, topic.MsgKBDocument{
-		OP:    topic.OPDelete,
-		KBID:  kbID,
-		DocID: docID,
-		RagID: doc.RagID,
-	}); err != nil {
-		return err
+	if doc.RagID != "" {
+		if err := d.pub.Publish(ctx, topic.TopicKBDocumentRag, topic.MsgKBDocument{
+			OP:    topic.OPDelete,
+			KBID:  kbID,
+			DocID: docID,
+			RagID: doc.RagID,
+		}); err != nil {
+			return err
+		}
 	}
+
 	return nil
 }
 
@@ -534,10 +601,11 @@ type ListSpaceItem struct {
 	Total    int64                 `json:"total"`
 }
 
-func (d *KBDocument) ListSpace(ctx context.Context, kbID uint) (*model.ListRes[ListSpaceItem], error) {
+func (d *KBDocument) ListSpace(ctx context.Context, kbID uint, folderFilter bool) (*model.ListRes[ListSpaceItem], error) {
 	var res model.ListRes[ListSpaceItem]
-	err := d.repoDoc.ListSpace(ctx, &res.Items, kbID,
+	err := d.repoDoc.ListSpace(ctx, &res.Items, kbID, folderFilter,
 		repo.QueryWithEqual("kb_documents.parent_id", 0),
+		repo.QueryWithOrderBy("created_at DESC, id ASC"),
 	)
 	if err != nil {
 		return nil, err
@@ -709,12 +777,14 @@ func (d *KBDocument) DeleteSpace(ctx context.Context, kbID uint, docID uint) err
 }
 
 type ListRemoteReq struct {
-	Platform       platform.PlatformType `json:"platform"`
-	RemoteFolderID string                `json:"remote_folder_id"`
-	Opt            model.PlatformOpt     `json:"opt"`
+	Platform          platform.PlatformType `json:"platform"`
+	RemoteFolderID    string                `json:"remote_folder_id"`
+	Opt               model.PlatformOpt     `json:"opt"`
+	RemoteSubFolderID string                `json:"remote_sub_folder_id"`
+	Shallow           bool                  `json:"shallow"`
 }
 
-func (d *KBDocument) ListRemote(ctx context.Context, req ListRemoteReq) (*model.ListRes[ListSpaceKBItem], error) {
+func (d *KBDocument) ListRemote(ctx context.Context, req ListRemoteReq) (*tree.Node[anydoc.ListDoc], error) {
 	err := d.checkPlatformOpt(req.Platform, req.Opt)
 	if err != nil {
 		return nil, err
@@ -723,64 +793,54 @@ func (d *KBDocument) ListRemote(ctx context.Context, req ListRemoteReq) (*model.
 	listRes, err := d.anydoc.List(ctx, req.Platform,
 		anydoc.ListWithSpaceID(req.RemoteFolderID),
 		anydoc.ListWithPlatformOpt(req.Opt),
+		anydoc.ListWithFolderID(req.RemoteSubFolderID),
+		anydoc.ListWithShallow(req.Shallow),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	fileType := model.FileTypeFolder
-	if req.RemoteFolderID != "" {
-		fileType = model.FileTypeFile
-	}
-
-	var res model.ListRes[ListSpaceKBItem]
-	for _, listDoc := range listRes.Docs {
-		res.Items = append(res.Items, ListSpaceKBItem{
-			DocID:    listDoc.ID,
-			Title:    listDoc.Title,
-			Desc:     listDoc.Summary,
-			FileType: fileType,
-		})
-	}
-
-	return &res, nil
+	return listRes.Docs, nil
 }
 
 type ListRemoteSpaceFolderReq struct {
-	RemoteFolderID string `form:"remote_folder_id"`
+	RemoteFolderID    string `form:"remote_folder_id"`
+	RemoteSubFolderID string `json:"remote_sub_folder_id"`
+	Shallow           bool   `json:"shallow"`
 }
 
-type ListSpaceKBItem struct {
-	DocID    string         `json:"doc_id"`
-	Title    string         `json:"title"`
-	FileType model.FileType `json:"file_type"`
-	Desc     string         `json:"desc"`
+// ListAnydocNode: only user in swagger
+type ListAnydocNode struct {
+	Value    anydoc.ListDoc    `json:"value"`
+	Children []*ListAnydocNode `json:"children"`
 }
 
-func (d *KBDocument) ListSpaceRemote(ctx context.Context, kbID uint, docID uint, req ListRemoteSpaceFolderReq) (*model.ListRes[ListSpaceKBItem], error) {
+func (d *KBDocument) ListSpaceRemote(ctx context.Context, kbID uint, docID uint, req ListRemoteSpaceFolderReq) (*tree.Node[anydoc.ListDoc], error) {
 	doc, err := d.GetByID(ctx, kbID, docID)
 	if err != nil {
 		return nil, err
 	}
 
 	return d.ListRemote(ctx, ListRemoteReq{
-		Platform:       doc.Platform,
-		RemoteFolderID: req.RemoteFolderID,
-		Opt:            doc.PlatformOpt.Inner(),
+		Platform:          doc.Platform,
+		RemoteFolderID:    req.RemoteFolderID,
+		Opt:               doc.PlatformOpt.Inner(),
+		RemoteSubFolderID: req.RemoteSubFolderID,
+		Shallow:           req.Shallow,
 	})
 }
 
 type CreateSpaceForlderItem struct {
-	DocID       string   `json:"doc_id" binding:"required"`
-	ChildDocIDs []string `json:"child_doc_ids"`
-	Title       string   `json:"title"`
+	DocID   string                       `json:"doc_id" binding:"required"`
+	Folders *model.CreateSpaceFolderInfo `json:"folders"`
+	Title   string                       `json:"title"`
 }
 type CreateSpaceFolderReq struct {
-	Items []CreateSpaceForlderItem `json:"docs" binding:"required,dive"`
+	Docs []CreateSpaceForlderItem `json:"docs" binding:"required,dive"`
 }
 
-func (d *KBDocument) CreateSpaceFolder(ctx context.Context, kbID uint, parentID uint, req CreateSpaceFolderReq) error {
-	parentDoc, err := d.GetByID(ctx, kbID, parentID)
+func (d *KBDocument) CreateSpaceFolder(ctx context.Context, kbID uint, spaceID uint, req CreateSpaceFolderReq) error {
+	parentDoc, err := d.GetByID(ctx, kbID, spaceID)
 	if err != nil {
 		return err
 	}
@@ -789,57 +849,191 @@ func (d *KBDocument) CreateSpaceFolder(ctx context.Context, kbID uint, parentID 
 		return errors.ErrUnsupported
 	}
 
-	docs := make([]model.KBDocument, 0)
-	exist := make(map[string]bool)
+	folderM := make(map[string]*ListSpaceFolderItem)
+	dup := make(map[string]bool)
 
-	existFolder, err := d.ListSpaceFolder(ctx, kbID, parentID)
+	existFolder, err := d.ListSpaceFolder(ctx, kbID, spaceID)
 	if err != nil {
 		return err
 	}
 
 	for _, folder := range existFolder.Items {
-		exist[folder.DocID] = true
+		folderM[folder.DocID] = &folder
 	}
 
-	for _, item := range req.Items {
-		if exist[item.DocID] {
+	for _, item := range req.Docs {
+		if dup[item.DocID] {
 			continue
 		}
 
-		docs = append(docs, model.KBDocument{
+		dup[item.DocID] = true
+
+		exportFolderM := make(map[string]*model.ExportFolder)
+		item.Folders.Range(item.DocID, func(parentID string, csfi *model.CreateSpaceFolderInfo) error {
+			csfi.DocID = strings.TrimSpace(csfi.DocID)
+			if csfi.DocID == "" || len(csfi.Children) > 0 || parentID == item.DocID {
+				return nil
+			}
+
+			if csfi.File {
+				f, ok := exportFolderM[parentID]
+				if !ok {
+					exportFolderM[parentID] = &model.ExportFolder{
+						FolderID: parentID,
+						DocIDs:   []string{csfi.DocID},
+					}
+				} else {
+					f.DocIDs = append(f.DocIDs, csfi.DocID)
+				}
+
+				return nil
+			}
+
+			exportFolderM[csfi.DocID] = &model.ExportFolder{
+				FolderID: csfi.DocID,
+			}
+
+			return nil
+		})
+
+		exportFolder := make([]model.ExportFolder, 0, len(exportFolderM))
+		for _, folder := range exportFolderM {
+			exportFolder = append(exportFolder, *folder)
+		}
+
+		dbFolder, ok := folderM[item.DocID]
+		if ok {
+			visited := make(map[string]bool)
+			parentIDM := map[string]uint{
+				dbFolder.DocID: dbFolder.ID,
+			}
+			existFolderM := make(map[string]map[string]uint)
+			existFileM := make(map[string]map[string]uint)
+			item.Folders.Range(item.DocID, func(parentDocID string, csfi *model.CreateSpaceFolderInfo) error {
+				parentDocID = strings.TrimSpace(parentDocID)
+				if parentDocID == "" {
+					parentDocID = item.DocID
+				}
+
+				if !visited[parentDocID] {
+					visited[parentDocID] = true
+					parentID, ok := parentIDM[parentDocID]
+					if ok {
+						var docs []model.KBDocument
+						err = d.repoDoc.List(ctx, &docs, repo.QueryWithEqual("parent_id", parentID))
+						if err != nil {
+							return err
+						}
+
+						for _, doc := range docs {
+							if doc.FileType == model.FileTypeFolder {
+								if existFolderM[parentDocID] == nil {
+									existFolderM[parentDocID] = make(map[string]uint)
+								}
+
+								existFolderM[parentDocID][doc.DocID] = doc.ID
+							} else {
+								if existFileM[parentDocID] == nil {
+									existFileM[parentDocID] = make(map[string]uint)
+								}
+
+								existFileM[parentDocID][doc.DocID] = doc.ID
+							}
+
+							parentIDM[doc.DocID] = doc.ID
+						}
+					}
+				}
+
+				if csfi.File {
+					delete(existFileM[parentDocID], csfi.DocID)
+				} else {
+					delete(existFolderM[parentDocID], csfi.DocID)
+				}
+
+				return nil
+			})
+
+			for _, folder := range existFolderM {
+				for folderDocID, folderID := range folder {
+					err = d.DeleteSpaceFolder(ctx, kbID, folderID)
+					if err != nil {
+						return err
+					}
+
+					delete(existFileM, folderDocID)
+				}
+			}
+
+			for _, doc := range existFileM {
+				for _, docID := range doc {
+					err = d.Delete(ctx, kbID, docID)
+					if err != nil {
+						return err
+					}
+				}
+			}
+
+			err = d.repoDoc.UpsertSpaceFolderTree(ctx, &model.KBDocument{
+				Base: model.Base{
+					ID: dbFolder.ID,
+				},
+				DocID:    item.DocID,
+				KBID:     kbID,
+				Title:    dbFolder.Title,
+				Platform: parentDoc.Platform,
+				ExportOpt: model.NewJSONB(model.ExportOpt{
+					Folders: exportFolder,
+				}),
+				FileType:     model.FileTypeFolder,
+				Status:       model.DocStatusApplySuccess,
+				DocType:      model.DocTypeSpace,
+				ParentID:     spaceID,
+				RootParentID: spaceID,
+			}, item.Folders)
+			if err != nil {
+				return err
+			}
+
+			err = d.pub.Publish(ctx, topic.TopicKBSpace, topic.MsgKBSpace{
+				OP:         topic.OPUpdate,
+				KBID:       kbID,
+				FolderID:   dbFolder.ID,
+				UpdateType: topic.KBSpaceUpdateTypeIncr,
+			})
+			if err != nil {
+				d.logger.WithContext(ctx).WithErr(err).With("kb_id", kbID).With("folder_id", dbFolder.ID).Warn("pub insert msg failed")
+			}
+			continue
+		}
+
+		folder := model.KBDocument{
 			DocID:    item.DocID,
 			KBID:     kbID,
 			Title:    item.Title,
 			Platform: parentDoc.Platform,
 			ExportOpt: model.NewJSONB(model.ExportOpt{
-				DocIDs: item.ChildDocIDs,
+				Folders: exportFolder,
 			}),
-			FileType: model.FileTypeFolder,
-			Status:   model.DocStatusApplySuccess,
-			DocType:  model.DocTypeSpace,
-			ParentID: parentID,
-		})
+			FileType:     model.FileTypeFolder,
+			Status:       model.DocStatusApplySuccess,
+			DocType:      model.DocTypeSpace,
+			ParentID:     spaceID,
+			RootParentID: spaceID,
+		}
 
-		exist[item.DocID] = true
-	}
+		err = d.repoDoc.UpsertSpaceFolderTree(ctx, &folder, item.Folders)
+		if err != nil {
+			return err
+		}
 
-	if len(docs) == 0 {
-		return nil
-	}
-
-	err = d.repoDoc.BatchCreate(ctx, &docs)
-	if err != nil {
-		return err
-	}
-
-	for _, doc := range docs {
 		err = d.pub.Publish(ctx, topic.TopicKBSpace, topic.MsgKBSpace{
 			OP:       topic.OPInsert,
 			KBID:     kbID,
-			FolderID: doc.ID,
+			FolderID: folder.ID,
 		})
 		if err != nil {
-			d.logger.WithContext(ctx).WithErr(err).With("kb_id", kbID).With("folder_id", doc.ID).Warn("pub insert msg failed")
+			d.logger.WithContext(ctx).WithErr(err).With("kb_id", kbID).With("folder_id", folder.ID).Warn("pub insert msg failed")
 		}
 	}
 
@@ -855,20 +1049,22 @@ type CreateSpaceDocReq struct {
 type ListSpaceFolderItem struct {
 	model.Base
 
-	RagID   string          `json:"rag_id"`
-	DocID   string          `json:"doc_id"`
-	Title   string          `json:"title"`
-	Status  model.DocStatus `json:"status"`
-	Total   int64           `json:"total"`
-	Success int64           `json:"success"`
-	Failed  int64           `json:"failed"`
+	RagID     string                       `json:"rag_id"`
+	DocID     string                       `json:"doc_id"`
+	Title     string                       `json:"title"`
+	Status    model.DocStatus              `json:"status"`
+	Total     int64                        `json:"total"`
+	Success   int64                        `json:"success"`
+	Failed    int64                        `json:"failed"`
+	ExportOpt model.JSONB[model.ExportOpt] `json:"export_opt" swaggerignore:"true"`
 }
 
 func (d *KBDocument) ListSpaceFolder(ctx context.Context, kbID uint, parentID uint) (*model.ListRes[ListSpaceFolderItem], error) {
 	var res model.ListRes[ListSpaceFolderItem]
-	err := d.repoDoc.ListSpace(ctx, &res.Items, kbID,
+	err := d.repoDoc.ListSpace(ctx, &res.Items, kbID, true,
 		repo.QueryWithEqual("kb_documents.parent_id", parentID),
 		repo.QueryWithEqual("file_type", model.FileTypeFolder),
+		repo.QueryWithOrderBy("created_at DESC, id ASC"),
 	)
 	if err != nil {
 		return nil, err
@@ -879,7 +1075,6 @@ func (d *KBDocument) ListSpaceFolder(ctx context.Context, kbID uint, parentID ui
 
 type UpdateSpaceFolderReq struct {
 	UpdateType topic.KBSpaceUpdateType `json:"update_type"`
-	DocID      uint                    `json:"doc_id"`
 }
 
 func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID uint, req UpdateSpaceFolderReq) error {
@@ -904,7 +1099,6 @@ func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID 
 		KBID:       kbID,
 		FolderID:   folderID,
 		UpdateType: req.UpdateType,
-		DocID:      req.DocID,
 	})
 	if err != nil {
 		d.logger.WithContext(ctx).WithErr(err).With("kb_id", kbID).With("folder_id", folderID).Warn("pub update msg failed")
@@ -916,21 +1110,23 @@ func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID 
 type ListSpaceFolderDocReq struct {
 	*model.Pagination
 
-	Title  *string           `form:"title"`
-	Status []model.DocStatus `form:"status"`
+	ParentID *uint             `form:"parent_id" binding:"required"`
+	Title    *string           `form:"title"`
+	Status   []model.DocStatus `form:"status"`
 }
 
-func (d *KBDocument) ListSpaceFolderDoc(ctx context.Context, kbID uint, folderID uint, req ListSpaceFolderDocReq) (*model.ListRes[DocListItem], error) {
+func (d *KBDocument) ListSpaceFolderDoc(ctx context.Context, kbID uint, rootParentID uint, req ListSpaceFolderDocReq) (*model.ListRes[DocListItem], error) {
 	var res model.ListRes[DocListItem]
 
 	err := d.repoDoc.List(ctx, &res.Items,
 		repo.QueryWithEqual("kb_id", kbID),
-		repo.QueryWithEqual("parent_id", folderID),
+		repo.QueryWithEqual("root_parent_id", rootParentID),
 		repo.QueryWithEqual("doc_type", model.DocTypeSpace),
 		repo.QueryWithILike("title", req.Title),
+		repo.QueryWithEqual("parent_id", req.ParentID),
 		repo.QueryWithPagination(req.Pagination),
 		repo.QueryWithOrderBy("created_at DESC, id ASC"),
-		repo.QueryWithEqual("status", req.Status, repo.EqualOPIn),
+		repo.QueryWithEqual("(file_type = 16 OR status IN (?))", req.Status, repo.EqualOPRaw),
 	)
 	if err != nil {
 		return nil, err
@@ -938,10 +1134,11 @@ func (d *KBDocument) ListSpaceFolderDoc(ctx context.Context, kbID uint, folderID
 
 	err = d.repoDoc.Count(ctx, &res.Total,
 		repo.QueryWithEqual("kb_id", kbID),
-		repo.QueryWithEqual("parent_id", folderID),
+		repo.QueryWithEqual("root_parent_id", rootParentID),
+		repo.QueryWithEqual("parent_id", req.ParentID),
 		repo.QueryWithEqual("doc_type", model.DocTypeSpace),
 		repo.QueryWithILike("title", req.Title),
-		repo.QueryWithEqual("status", req.Status, repo.EqualOPIn),
+		repo.QueryWithEqual("(file_type = 16 OR status IN (?))", req.Status, repo.EqualOPRaw),
 	)
 	if err != nil {
 		return nil, err
@@ -956,14 +1153,19 @@ func (d *KBDocument) DeleteSpaceFolder(ctx context.Context, kbID uint, folderID 
 		return nil
 	}
 
+	if doc.RootParentID == 0 {
+		doc.RootParentID = doc.ID
+	}
+
 	if doc.DocType != model.DocTypeSpace || doc.FileType != model.FileTypeFolder || doc.ParentID == 0 {
 		return errors.ErrUnsupported
 	}
 
 	err = d.pub.Publish(ctx, topic.TopicKBSpace, topic.MsgKBSpace{
-		OP:       topic.OPDelete,
-		KBID:     kbID,
-		FolderID: folderID,
+		OP:          topic.OPDelete,
+		KBID:        kbID,
+		FolderID:    doc.RootParentID,
+		SubFolderID: doc.ID,
 	})
 	if err != nil {
 		d.logger.WithContext(ctx).WithErr(err).With("kb_id", kbID).With("folder_id", folderID).Warn("pub delete msg failed")
@@ -1085,12 +1287,7 @@ func (d *KBDocument) UpdateGroupIDs(ctx context.Context, req UpdateGroupIDsReq) 
 		}
 	}
 
-	err := d.repoDoc.Update(ctx, map[string]any{
-		"group_ids":  req.GroupIDs,
-		"updated_at": gorm.Expr("updated_at"),
-	},
-		repo.QueryWithEqual("doc_type", req.Type),
-		repo.QueryWithEqual("id", req.IDs, repo.EqualOPEqAny))
+	err := d.repoDoc.UpdateSpaceFolderGroupIDs(ctx, req.IDs, req.GroupIDs)
 	if err != nil {
 		return err
 	}

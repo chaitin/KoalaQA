@@ -56,12 +56,9 @@ func (d *docMetadata) Handle(ctx context.Context, msg mq.Message) error {
 	logger.Info("receive doc metadata update msg")
 
 	var docs []model.KBDocument
-	err := d.doc.List(ctx, &docs, repo.QueryWithEqual("doc_type", data.Type),
-		repo.QueryWithEqual("id", data.IDs, repo.EqualOPEqAny),
-		repo.QueryWithSelectColumn("id", "rag_id", "group_ids", "platform", "doc_type", "file_type"),
-	)
+	docs, err := d.doc.ListSpaceFolderAllDoc(ctx, data.IDs)
 	if err != nil {
-		logger.WithErr(err).Warn("list doc failed")
+		logger.WithErr(err).Warn("list all doc failed")
 		return err
 	}
 

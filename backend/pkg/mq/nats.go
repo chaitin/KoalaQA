@@ -76,7 +76,7 @@ func (ns *natsSubscriber) Subscribe(ctx context.Context) error {
 				if !errors.Is(err, nats.ErrConsumerNotFound) {
 					return err
 				}
-			} else if info.Config.DeliverPolicy != nats.DeliverNewPolicy {
+			} else if info.Config.DeliverPolicy != nats.DeliverNewPolicy || info.Config.AckWait != h.AckWait() {
 				err = ns.in.JS.js.DeleteConsumer(stream, h.Group())
 				if err != nil {
 					return err

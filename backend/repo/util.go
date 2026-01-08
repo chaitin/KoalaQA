@@ -23,6 +23,7 @@ const (
 	EqualOPGT
 	EqualOPGTE
 	EqualOPNE
+	EqualOPRaw
 )
 
 type eqVal struct {
@@ -39,9 +40,10 @@ type queryOpt struct {
 	columns []string
 	page    *model.Pagination
 
-	equals  []kv
-	ilikes  map[string]string
-	orderBy []string
+	equals   []kv
+	ilikes   map[string]string
+	prefixes map[string]string
+	orderBy  []string
 }
 
 func (lo *queryOpt) Scopes() []database.Scope {
@@ -49,6 +51,7 @@ func (lo *queryOpt) Scopes() []database.Scope {
 		selectColumnScope(lo.columns),
 		paginationScope(lo.page),
 		ilikeScope(lo.ilikes),
+		prefixScope(lo.prefixes),
 		equalScope(lo.equals),
 		orderByScope(lo.orderBy),
 	}
@@ -65,6 +68,20 @@ func QueryWithPagination(page *model.Pagination) QueryOptFunc {
 func QueryWithSelectColumn(columns ...string) QueryOptFunc {
 	return func(lo *queryOpt) {
 		lo.columns = columns
+	}
+}
+
+func QueryWithPrefix(key string, val string) QueryOptFunc {
+	return func(qo *queryOpt) {
+		if val == "" {
+			return
+		}
+
+		if qo.prefixes == nil {
+			qo.prefixes = make(map[string]string)
+		}
+
+		qo.prefixes[key] = val
 	}
 }
 
@@ -154,6 +171,8 @@ func equalScope(kv []kv) database.Scope {
 				db = db.Where(data.key+" <= ?", data.value.v)
 			case EqualOPNE:
 				db = db.Where(data.key+" != ?", data.value.v)
+			case EqualOPRaw:
+				db = db.Where(data.key, data.value.v)
 			}
 		}
 
@@ -166,6 +185,18 @@ func ilikeScope(kv map[string]string) database.Scope {
 		for k, v := range kv {
 			db = db.Scopes(iLikeQuery(v).Scope(k))
 		}
+		return db
+	}
+}
+
+func prefixScope(kv map[string]string) database.Scope {
+	return func(db *database.DB) *database.DB {
+		for k, v := range kv {
+			data := util.EscapeLike(v) + "%"
+
+			db = db.Where(k+" LIKE ?", data)
+		}
+
 		return db
 	}
 }

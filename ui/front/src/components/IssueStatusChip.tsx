@@ -1,6 +1,5 @@
-import { alpha, Chip, SxProps, Theme } from '@mui/material'
+import { alpha, Box, Chip, SxProps, Theme } from '@mui/material'
 import { ModelDiscussionState } from '@/api/types'
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline'
 import AutorenewIcon from '@mui/icons-material/Autorenew'
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 
@@ -33,7 +32,16 @@ const IssueStatusChip: React.FC<IssueStatusChipProps> = ({ resolved, size = 'med
     }
 
     if (resolved === ModelDiscussionState.DiscussionStateResolved) {
-      return <CheckCircleOutlineIcon sx={iconStyle} />
+      return (
+        <Box
+          sx={{
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            bgcolor: '#fff',
+          }}
+        />
+      )
     }
     if (resolved === ModelDiscussionState.DiscussionStateInProgress) {
       return <AutorenewIcon sx={iconStyle} />
@@ -52,18 +60,34 @@ const IssueStatusChip: React.FC<IssueStatusChipProps> = ({ resolved, size = 'med
     }
   }
 
+  const isResolved = resolved === ModelDiscussionState.DiscussionStateResolved
+
   return (
     <Chip
-      icon={getStatusIcon()}
+      icon={
+        <Box
+          sx={{
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            bgcolor: '#fff',
+          }}
+        />
+      }
       label={getStatusLabel()}
       size={size}
       sx={[
         {
-          pl: 0.5,
-          color: getStatusColor(),
+          bgcolor: getStatusColor(),
+          color: '#fff',
+          height: 22,
+          lineHeight: '22px',
+          fontWeight: 600,
+          fontSize: '12px',
           borderRadius: 0.5,
-          bgcolor: alpha(getStatusColor(), 0.1),
-          border: `1px solid ${alpha(getStatusColor(), 0.03)}`,
+          border: 'none',
+          fontFamily: 'Glibory, "PingFang SC", "Hiragino Sans GB", "STHeiti", "Microsoft YaHei", sans-serif',
+          minWidth: 70,
           ...getSizeStyles(),
         },
         {

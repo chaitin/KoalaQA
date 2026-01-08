@@ -28,7 +28,7 @@ type kbDocument struct {
 // @Accept multipart/form-data
 // @Param file formData file true "upload file"
 // @Produce json
-// @Success 200 {object} context.Response{data=anydoc.ListRes}
+// @Success 200 {object} context.Response{data=svc.AnydocListRes}
 // @Router /admin/kb/document/file/list [post]
 func (d *kbDocument) FileList(ctx *context.Context) {
 	var req svc.FileListReq
@@ -80,7 +80,7 @@ func (d *kbDocument) FileExport(ctx *context.Context) {
 // @Accept json
 // @Param req body svc.URLListReq true "request params"
 // @Produce json
-// @Success 200 {object} context.Response{data=anydoc.ListRes}
+// @Success 200 {object} context.Response{data=svc.AnydocListRes}
 // @Router /admin/kb/document/url/list [post]
 func (d *kbDocument) URLList(ctx *context.Context) {
 	var req svc.URLListReq
@@ -132,7 +132,7 @@ func (d *kbDocument) URLExport(ctx *context.Context) {
 // @Accept json
 // @Param req body svc.SitemapListReq true "request params"
 // @Produce json
-// @Success 200 {object} context.Response{data=anydoc.ListRes}
+// @Success 200 {object} context.Response{data=svc.AnydocListRes}
 // @Router /admin/kb/document/sitemap/list [post]
 func (d *kbDocument) SitemapList(ctx *context.Context) {
 	var req svc.SitemapListReq

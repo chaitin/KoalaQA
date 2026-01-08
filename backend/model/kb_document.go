@@ -63,12 +63,17 @@ type PlatformOpt struct {
 	Phone        string `json:"phone,omitempty"`
 }
 
+type ExportFolder struct {
+	FolderID string   `json:"folder_id"`
+	DocIDs   []string `json:"doc_ids"`
+}
+
 type ExportOpt struct {
 	SpaceID  string `json:"space_id,omitempty"`
 	FileType string `json:"file_type,omitempty"`
 
-	// 需要导出的文档 id
-	DocIDs []string `json:"doc_ids,omitempty"`
+	// 需要导出的文档
+	Folders []ExportFolder `json:"folders,omitempty"`
 }
 
 type KBDocument struct {
@@ -89,6 +94,7 @@ type KBDocument struct {
 	DocType      DocType               `json:"doc_type" gorm:"column:doc_type"`
 	Status       DocStatus             `json:"status" gorm:"column:status"`
 	ParentID     uint                  `json:"parent_id" gorm:"column:parent_id;type:bigint;default:0"`
+	RootParentID uint                  `json:"root_parent_id" gorm:"column:root_parent_id;type:bigint;default:0"`
 	SimilarID    uint                  `json:"similar_id" gorm:"column:similar_id;type:bigint;default:0"`
 	Message      string                `json:"message" gorm:"column:message;type:text"`
 	GroupIDs     Int64Array            `json:"group_ids" gorm:"column:group_ids;type:bigint[]"`
@@ -130,6 +136,39 @@ func (d KBDocMetadata) Map() map[string]any {
 	}
 
 	return result
+}
+
+type CreateSpaceFolderInfo struct {
+	DocID    string                   `json:"doc_id"`
+	File     bool                     `json:"file"`
+	Title    string                   `json:"title"`
+	FileType string                   `json:"file_type"`
+	Children []*CreateSpaceFolderInfo `json:"children"`
+}
+
+func (c *CreateSpaceFolderInfo) Range(parentID string, f func(string, *CreateSpaceFolderInfo) error) error {
+	if c == nil {
+		return nil
+	}
+
+	err := f(parentID, c)
+	if err != nil {
+		return err
+	}
+
+	for _, child := range c.Children {
+		pID := c.DocID
+		if pID == "" {
+			pID = parentID
+		}
+
+		err = child.Range(pID, f)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 type KBDocumentDetail struct {

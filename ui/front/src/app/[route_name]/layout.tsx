@@ -1,15 +1,4 @@
-import {
-  getForum,
-  getGroup,
-  getForumForumIdTags,
-  ModelGroupItemInfo,
-  ModelGroupWithItem,
-  ModelDiscussionTag,
-} from '@/api'
-import { findForumIdByRouteName, findForumInfoByRouteName } from '@/lib/forum-server-utils'
-import { safeApiCall } from '@/lib/error-utils'
 import { Box, Container } from '@mui/material'
-import FilterPanel from '@/components/FilterPanel'
 import { headers } from 'next/headers'
 
 export default async function RouteLayout({
@@ -51,7 +40,7 @@ export default async function RouteLayout({
   }
 
   return (
-    <Container
+    <Box
       className='forum_main'
       sx={{
         minWidth: 0,
@@ -66,6 +55,6 @@ export default async function RouteLayout({
       }}
     >
       {children}
-    </Container>
+    </Box>
   )
 }

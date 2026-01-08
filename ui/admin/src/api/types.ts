@@ -200,11 +200,6 @@ export interface AnydocListDoc {
   updated_at?: number;
 }
 
-export interface AnydocListRes {
-  docs?: AnydocListDoc[];
-  uuid?: string;
-}
-
 export interface AnydocUserInfoRes {
   access_token?: string;
   email?: string;
@@ -250,6 +245,14 @@ export interface ModelAuthInfo {
    * @max 4
    */
   type?: number;
+}
+
+export interface ModelCreateSpaceFolderInfo {
+  children?: ModelCreateSpaceFolderInfo[];
+  doc_id?: string;
+  file?: boolean;
+  file_type?: string;
+  title?: string;
 }
 
 export interface ModelDiscussion {
@@ -459,6 +462,31 @@ export type ModelJSONBModelForumLinks = Record<string, any>;
 
 export type ModelJSONBModelPlatformOpt = Record<string, any>;
 
+export interface ModelKBDocument {
+  created_at?: number;
+  desc?: string;
+  doc_id?: string;
+  doc_type?: ModelDocType;
+  export_opt?: ModelJSONBModelExportOpt;
+  export_task_id?: string;
+  file_type?: ModelFileType;
+  group_ids?: number[];
+  id?: number;
+  json?: number[];
+  kb_id?: number;
+  markdown?: number[];
+  message?: string;
+  parent_id?: number;
+  platform?: PlatformPlatformType;
+  platform_opt?: ModelJSONBModelPlatformOpt;
+  rag_id?: string;
+  root_parent_id?: number;
+  similar_id?: number;
+  status?: ModelDocStatus;
+  title?: string;
+  updated_at?: number;
+}
+
 export interface ModelKBDocumentDetail {
   created_at?: number;
   desc?: string;
@@ -477,6 +505,7 @@ export interface ModelKBDocumentDetail {
   platform?: PlatformPlatformType;
   platform_opt?: ModelJSONBModelPlatformOpt;
   rag_id?: string;
+  root_parent_id?: number;
   similar_id?: number;
   status?: ModelDocStatus;
   title?: string;
@@ -736,6 +765,11 @@ export interface SvcActiveModelReq {
   active?: boolean;
 }
 
+export interface SvcAnydocListRes {
+  docs?: AnydocListDoc[];
+  uuid?: string;
+}
+
 export interface SvcAssociateDiscussionReq {
   content?: string;
   group_ids?: number[];
@@ -781,8 +815,8 @@ export interface SvcCreateSpaceFolderReq {
 }
 
 export interface SvcCreateSpaceForlderItem {
-  child_doc_ids?: string[];
   doc_id: string;
+  folders?: ModelCreateSpaceFolderInfo;
   title?: string;
 }
 
@@ -841,6 +875,7 @@ export interface SvcDocListItem {
   file_type?: ModelFileType;
   group_ids?: number[];
   id?: number;
+  parent_id?: number;
   platform?: PlatformPlatformType;
   similar_id?: number;
   status?: ModelDocStatus;
@@ -933,10 +968,17 @@ export interface SvcKBUpdateReq {
   name: string;
 }
 
+export interface SvcListAnydocNode {
+  children?: SvcListAnydocNode[];
+  value?: AnydocListDoc;
+}
+
 export interface SvcListRemoteReq {
   opt?: ModelPlatformOpt;
   platform?: PlatformPlatformType;
   remote_folder_id?: string;
+  remote_sub_folder_id?: string;
+  shallow?: boolean;
 }
 
 export interface SvcListSpaceFolderItem {
@@ -959,13 +1001,6 @@ export interface SvcListSpaceItem {
   title?: string;
   total?: number;
   updated_at?: number;
-}
-
-export interface SvcListSpaceKBItem {
-  desc?: string;
-  doc_id?: string;
-  file_type?: ModelFileType;
-  title?: string;
 }
 
 export interface SvcListWebItem {
@@ -1137,7 +1172,6 @@ export interface SvcUpdatePromptReq {
 }
 
 export interface SvcUpdateSpaceFolderReq {
-  doc_id?: number;
   update_type?: TopicKBSpaceUpdateType;
 }
 
@@ -1456,6 +1490,15 @@ export interface DeleteAdminKbKbIdSpaceSpaceIdParams {
   spaceId: number;
 }
 
+export interface GetAdminKbKbIdSpaceSpaceIdDocThirdDocIdParams {
+  /** kb_id */
+  kbId: number;
+  /** space_id */
+  spaceId: number;
+  /** third_doc_id */
+  thirdDocId: string;
+}
+
 export interface GetAdminKbKbIdSpaceSpaceIdFolderParams {
   /** kb_id */
   kbId: number;
@@ -1491,6 +1534,7 @@ export interface DeleteAdminKbKbIdSpaceSpaceIdFolderFolderIdParams {
 export interface GetAdminKbKbIdSpaceSpaceIdFolderFolderIdDocParams {
   /** @min 1 */
   page?: number;
+  parent_id: number;
   /** @min 1 */
   size?: number;
   status?: (0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8)[];
@@ -1511,6 +1555,8 @@ export interface PutAdminKbKbIdSpaceSpaceIdRefreshParams {
 
 export interface GetAdminKbKbIdSpaceSpaceIdRemoteParams {
   remote_folder_id?: string;
+  remote_sub_folder_id?: string;
+  shallow?: boolean;
   /** kb_id */
   kbId: number;
   /** space_id */

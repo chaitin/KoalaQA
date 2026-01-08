@@ -51,20 +51,31 @@ const AdminDocument = () => {
   const [title, setTitle] = useState(query.title);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   
-  // 使用分类编辑hook
-  const categoryEdit = useCategoryEdit({
-    kbId: kb_id,
-    docType: ModelDocType.DocTypeWeb,
-    onSuccess: () => {
-      setParams({ page: 1 });
-    },
-  });
   const {
     data,
     loading,
     run: fetchData,
+    mutate,
   } = useRequest(params => getAdminKbKbIdWeb({ page, size, ...params, kbId: kb_id }), {
     manual: true,
+  });
+  
+  // 使用分类编辑hook
+  const categoryEdit = useCategoryEdit({
+    kbId: kb_id,
+    docType: ModelDocType.DocTypeWeb,
+    onSuccess: (updatedIds, newGroupIds) => {
+      // 直接更新本地数据，不重新请求
+      if (data?.items) {
+        const newItems = data.items.map(item => {
+          if (updatedIds.includes(item.id!)) {
+            return { ...item, group_ids: newGroupIds };
+          }
+          return item;
+        });
+        mutate({ ...data, items: newItems });
+      }
+    },
   });
   const [detail, setDetail] = useState<ModelKBDocumentDetail | null>(null);
   const [markdownContent, setMarkdownContent] = useState<string>('');

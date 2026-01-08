@@ -677,7 +677,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/anydoc.ListRes"
+                                            "$ref": "#/definitions/svc.AnydocListRes"
                                         }
                                     }
                                 }
@@ -767,7 +767,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/anydoc.ListRes"
+                                            "$ref": "#/definitions/svc.AnydocListRes"
                                         }
                                     }
                                 }
@@ -857,7 +857,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/anydoc.ListRes"
+                                            "$ref": "#/definitions/svc.AnydocListRes"
                                         }
                                     }
                                 }
@@ -899,22 +899,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "allOf": [
-                                                {
-                                                    "$ref": "#/definitions/model.ListRes"
-                                                },
-                                                {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "items": {
-                                                            "type": "array",
-                                                            "items": {
-                                                                "$ref": "#/definitions/svc.ListSpaceKBItem"
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            ]
+                                            "$ref": "#/definitions/svc.ListAnydocNode"
                                         }
                                     }
                                 }
@@ -1992,7 +1977,19 @@ const docTemplate = `{
                                                         "items": {
                                                             "type": "array",
                                                             "items": {
-                                                                "$ref": "#/definitions/svc.ListSpaceFolderItem"
+                                                                "allOf": [
+                                                                    {
+                                                                        "$ref": "#/definitions/svc.ListSpaceFolderItem"
+                                                                    },
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "export_opt": {
+                                                                                "$ref": "#/definitions/model.ExportOpt"
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                ]
                                                             }
                                                         }
                                                     }
@@ -2177,6 +2174,12 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "integer",
+                        "name": "parent_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
                         "minimum": 1,
                         "type": "integer",
                         "name": "size",
@@ -2308,6 +2311,16 @@ const docTemplate = `{
                         "type": "string",
                         "name": "remote_folder_id",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "remote_sub_folder_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "name": "shallow",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -2322,22 +2335,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "allOf": [
-                                                {
-                                                    "$ref": "#/definitions/model.ListRes"
-                                                },
-                                                {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "items": {
-                                                            "type": "array",
-                                                            "items": {
-                                                                "$ref": "#/definitions/svc.ListSpaceKBItem"
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            ]
+                                            "$ref": "#/definitions/svc.ListAnydocNode"
                                         }
                                     }
                                 }
@@ -6965,20 +6963,6 @@ const docTemplate = `{
                 }
             }
         },
-        "anydoc.ListRes": {
-            "type": "object",
-            "properties": {
-                "docs": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/anydoc.ListDoc"
-                    }
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
         "anydoc.UserInfoRes": {
             "type": "object",
             "properties": {
@@ -7098,6 +7082,29 @@ const docTemplate = `{
                 "CommentLikeStateLike",
                 "CommentLikeStateDislike"
             ]
+        },
+        "model.CreateSpaceFolderInfo": {
+            "type": "object",
+            "properties": {
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.CreateSpaceFolderInfo"
+                    }
+                },
+                "doc_id": {
+                    "type": "string"
+                },
+                "file": {
+                    "type": "boolean"
+                },
+                "file_type": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
         },
         "model.Discussion": {
             "type": "object",
@@ -7640,6 +7647,38 @@ const docTemplate = `{
                 "DocTypeWeb"
             ]
         },
+        "model.ExportFolder": {
+            "type": "object",
+            "properties": {
+                "doc_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "folder_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ExportOpt": {
+            "type": "object",
+            "properties": {
+                "file_type": {
+                    "type": "string"
+                },
+                "folders": {
+                    "description": "需要导出的文档",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.ExportFolder"
+                    }
+                },
+                "space_id": {
+                    "type": "string"
+                }
+            }
+        },
         "model.FileType": {
             "type": "integer",
             "enum": [
@@ -7892,6 +7931,9 @@ const docTemplate = `{
                 },
                 "rag_id": {
                     "type": "string"
+                },
+                "root_parent_id": {
+                    "type": "integer"
                 },
                 "similar_id": {
                     "type": "integer"
@@ -8789,6 +8831,20 @@ const docTemplate = `{
                 }
             }
         },
+        "svc.AnydocListRes": {
+            "type": "object",
+            "properties": {
+                "docs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/anydoc.ListDoc"
+                    }
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
         "svc.AssociateDiscussionReq": {
             "type": "object",
             "properties": {
@@ -8913,14 +8969,11 @@ const docTemplate = `{
                 "doc_id"
             ],
             "properties": {
-                "child_doc_ids": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
                 "doc_id": {
                     "type": "string"
+                },
+                "folders": {
+                    "$ref": "#/definitions/model.CreateSpaceFolderInfo"
                 },
                 "title": {
                     "type": "string"
@@ -9094,6 +9147,9 @@ const docTemplate = `{
                     }
                 },
                 "id": {
+                    "type": "integer"
+                },
+                "parent_id": {
                     "type": "integer"
                 },
                 "platform": {
@@ -9362,6 +9418,20 @@ const docTemplate = `{
                 }
             }
         },
+        "svc.ListAnydocNode": {
+            "type": "object",
+            "properties": {
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/svc.ListAnydocNode"
+                    }
+                },
+                "value": {
+                    "$ref": "#/definitions/anydoc.ListDoc"
+                }
+            }
+        },
         "svc.ListRemoteReq": {
             "type": "object",
             "properties": {
@@ -9373,6 +9443,12 @@ const docTemplate = `{
                 },
                 "remote_folder_id": {
                     "type": "string"
+                },
+                "remote_sub_folder_id": {
+                    "type": "string"
+                },
+                "shallow": {
+                    "type": "boolean"
                 }
             }
         },
@@ -9431,23 +9507,6 @@ const docTemplate = `{
                 },
                 "updated_at": {
                     "type": "integer"
-                }
-            }
-        },
-        "svc.ListSpaceKBItem": {
-            "type": "object",
-            "properties": {
-                "desc": {
-                    "type": "string"
-                },
-                "doc_id": {
-                    "type": "string"
-                },
-                "file_type": {
-                    "$ref": "#/definitions/model.FileType"
-                },
-                "title": {
-                    "type": "string"
                 }
             }
         },
@@ -9986,9 +10045,6 @@ const docTemplate = `{
         "svc.UpdateSpaceFolderReq": {
             "type": "object",
             "properties": {
-                "doc_id": {
-                    "type": "integer"
-                },
                 "update_type": {
                     "$ref": "#/definitions/topic.KBSpaceUpdateType"
                 }

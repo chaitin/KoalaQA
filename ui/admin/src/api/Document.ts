@@ -13,7 +13,6 @@
 import request, { ContentType, RequestParams } from "./httpClient";
 import {
   AdminDocUserRes,
-  AnydocListRes,
   ContextResponse,
   DeleteAdminKbKbIdDocumentDocIdParams,
   GetAdminKbKbIdDocumentDocIdParams,
@@ -22,6 +21,7 @@ import {
   ModelListRes,
   PostAdminKbDocumentFileListPayload,
   PutAdminKbKbIdDocumentGroupIdsParams,
+  SvcAnydocListRes,
   SvcDocListItem,
   SvcFeishuAuthURLReq,
   SvcFileExportReq,
@@ -125,7 +125,7 @@ export const postAdminKbDocumentFileExport = (
  * @summary list file documents
  * @request POST:/admin/kb/document/file/list
  * @response `200` `(ContextResponse & {
-    data?: AnydocListRes,
+    data?: SvcAnydocListRes,
 
 })` OK
  */
@@ -136,7 +136,7 @@ export const postAdminKbDocumentFileList = (
 ) =>
   request<
     ContextResponse & {
-      data?: AnydocListRes;
+      data?: SvcAnydocListRes;
     }
   >({
     path: `/admin/kb/document/file/list`,
@@ -185,7 +185,7 @@ export const postAdminKbDocumentSitemapExport = (
  * @summary list sitemap documents
  * @request POST:/admin/kb/document/sitemap/list
  * @response `200` `(ContextResponse & {
-    data?: AnydocListRes,
+    data?: SvcAnydocListRes,
 
 })` OK
  */
@@ -196,7 +196,7 @@ export const postAdminKbDocumentSitemapList = (
 ) =>
   request<
     ContextResponse & {
-      data?: AnydocListRes;
+      data?: SvcAnydocListRes;
     }
   >({
     path: `/admin/kb/document/sitemap/list`,
@@ -245,7 +245,7 @@ export const postAdminKbDocumentUrlExport = (
  * @summary list url documents
  * @request POST:/admin/kb/document/url/list
  * @response `200` `(ContextResponse & {
-    data?: AnydocListRes,
+    data?: SvcAnydocListRes,
 
 })` OK
  */
@@ -256,7 +256,7 @@ export const postAdminKbDocumentUrlList = (
 ) =>
   request<
     ContextResponse & {
-      data?: AnydocListRes;
+      data?: SvcAnydocListRes;
     }
   >({
     path: `/admin/kb/document/url/list`,

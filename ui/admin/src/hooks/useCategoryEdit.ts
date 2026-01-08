@@ -7,7 +7,7 @@ import { useGroupData } from '@/context/GroupDataContext';
 interface UseCategoryEditOptions {
   kbId: number;
   docType: ModelDocType;
-  onSuccess?: () => void;
+  onSuccess?: (updatedIds: number[], newGroupIds: number[]) => void;
 }
 
 /**
@@ -39,18 +39,20 @@ export const useCategoryEdit = ({ kbId, docType, onSuccess }: UseCategoryEditOpt
   const handleConfirmBatchEditCategory = useCallback(async (selectedRowKeys: React.Key[]) => {
     if (selectedRowKeys.length === 0) return;
     try {
+      const updatedIds = selectedRowKeys.map(Number);
+      const newGroupIds = batchCategorySelection.selectedItemIds;
       await putAdminKbKbIdDocumentGroupIds(
         { kbId },
         {
-          ids: selectedRowKeys.map(Number),
+          ids: updatedIds,
           type: docType,
-          group_ids: batchCategorySelection.selectedItemIds,
+          group_ids: newGroupIds,
         }
       );
       message.success('批量编辑标签成功');
       setBatchEditModalOpen(false);
       batchCategorySelection.reset();
-      onSuccess?.();
+      onSuccess?.(updatedIds, newGroupIds);
     } catch {
       message.error('批量编辑标签失败');
     }
@@ -84,21 +86,23 @@ export const useCategoryEdit = ({ kbId, docType, onSuccess }: UseCategoryEditOpt
   const handleConfirmEditCategory = useCallback(async () => {
     if (!editingCategoryItem) return;
     try {
+      const updatedIds = [editingCategoryItem.id!];
+      const newGroupIds = editCategorySelection.selectedItemIds;
       // 注意：API需要的是group_ids，但实际存储的是item_ids
       // 所以我们需要提交item_ids，但字段名仍然是group_ids
       await putAdminKbKbIdDocumentGroupIds(
         { kbId },
         {
-          ids: [editingCategoryItem.id!],
+          ids: updatedIds,
           type: docType,
           // 后端实际存储的是item_ids，所以直接提交item_ids
-          group_ids: editCategorySelection.selectedItemIds,
+          group_ids: newGroupIds,
         }
       );
       message.success('编辑标签成功');
       setEditingCategoryItem(null);
       editCategorySelection.reset();
-      onSuccess?.();
+      onSuccess?.(updatedIds, newGroupIds);
     } catch {
       message.error('编辑标签失败');
     }

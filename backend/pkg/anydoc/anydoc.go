@@ -34,6 +34,8 @@ type listOpt struct {
 	refreshToken string
 	phone        string
 	spaceID      string
+	folderID     string
+	shallow      bool
 
 	url string
 
@@ -42,39 +44,51 @@ type listOpt struct {
 	errContinue bool
 }
 
-type listOptFunc func(o *listOpt)
+type ListOptFunc func(o *listOpt)
 
-func ListWithSpaceID(spaceID string) listOptFunc {
+func ListWithSpaceID(spaceID string) ListOptFunc {
 	return func(o *listOpt) {
 		o.spaceID = spaceID
 	}
 }
 
-func ListWithUUID(id string) listOptFunc {
+func ListWithFolderID(folderID string) ListOptFunc {
+	return func(opt *listOpt) {
+		opt.folderID = folderID
+	}
+}
+
+func ListWithShallow(shallow bool) ListOptFunc {
+	return func(opt *listOpt) {
+		opt.shallow = shallow
+	}
+}
+
+func ListWithUUID(id string) ListOptFunc {
 	return func(o *listOpt) {
 		o.uuid = id
 	}
 }
 
-func ListWithReader(r *multipart.FileHeader) listOptFunc {
+func ListWithReader(r *multipart.FileHeader) ListOptFunc {
 	return func(o *listOpt) {
 		o.reader = r
 	}
 }
 
-func ListWithURL(u string) listOptFunc {
+func ListWithURL(u string) ListOptFunc {
 	return func(o *listOpt) {
 		o.url = u
 	}
 }
 
-func ListWithErrContinue() listOptFunc {
+func ListWithErrContinue() ListOptFunc {
 	return func(o *listOpt) {
 		o.errContinue = true
 	}
 }
 
-func ListWithPlatformOpt(p model.PlatformOpt) listOptFunc {
+func ListWithPlatformOpt(p model.PlatformOpt) ListOptFunc {
 	return func(o *listOpt) {
 		o.url = p.URL
 		o.appID = p.AppID
@@ -86,8 +100,8 @@ func ListWithPlatformOpt(p model.PlatformOpt) listOptFunc {
 }
 
 type ListRes struct {
-	UUID string    `json:"uuid"`
-	Docs []ListDoc `json:"docs"`
+	UUID string              `json:"uuid"`
+	Docs *tree.Node[ListDoc] `json:"docs"`
 }
 
 type ListDoc struct {
@@ -151,7 +165,7 @@ type UserInfoRes struct {
 }
 
 type Anydoc interface {
-	List(ctx context.Context, platform platform.PlatformType, optFuncs ...listOptFunc) (*ListRes, error)
+	List(ctx context.Context, platform platform.PlatformType, optFuncs ...ListOptFunc) (*ListRes, error)
 	Export(ctx context.Context, platform platform.PlatformType, id string, docID string, optFuncs ...ExportFunc) (string, error)
 	AuthURL(ctx context.Context, platform platform.PlatformType, req AuthURLReq) (string, error)
 	UserInfo(ctx context.Context, platform platform.PlatformType, req UserInfoReq) (*UserInfoRes, error)
@@ -179,7 +193,7 @@ func (a *anydocRes[T]) Error() error {
 	return fmt.Errorf("anydoc failed, msg: %s, err: %s", a.Msg, a.Err)
 }
 
-func (a *anydoc) List(ctx context.Context, plat platform.PlatformType, optFuncs ...listOptFunc) (*ListRes, error) {
+func (a *anydoc) List(ctx context.Context, plat platform.PlatformType, optFuncs ...ListOptFunc) (*ListRes, error) {
 	var o listOpt
 	for _, f := range optFuncs {
 		f(&o)
@@ -213,6 +227,8 @@ func (a *anydoc) List(ctx context.Context, plat platform.PlatformType, optFuncs 
 		query.Set("url", o.url)
 		query.Set("phone", o.phone)
 		query.Set("err_continue", strconv.FormatBool(o.errContinue))
+		query.Set("folder_id", o.folderID)
+		query.Set("shallow", strconv.FormatBool(o.shallow))
 
 		u.RawQuery = query.Encode()
 	case http.MethodPost:
@@ -248,6 +264,8 @@ func (a *anydoc) List(ctx context.Context, plat platform.PlatformType, optFuncs 
 			"url":           o.url,
 			"phone":         o.phone,
 			"err_continue":  o.errContinue,
+			"folder_id":     o.folderID,
+			"shallow":       o.shallow,
 		}
 
 		if plat == platform.PlatformDingtalk {
@@ -301,24 +319,7 @@ func (a *anydoc) List(ctx context.Context, plat platform.PlatformType, optFuncs 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("anydoc list status code: %d", resp.StatusCode)
 	}
-
-	docRes.Data.Docs.Range(func(value ListDoc) {
-		if value.ID == "" {
-			return
-		}
-		switch plat {
-		case platform.PlatformDingtalk, platform.PlatformFeishu, platform.PlatformPandawiki:
-			if o.spaceID != "" && !value.File {
-				return
-			}
-		default:
-			if !value.File {
-				return
-			}
-		}
-
-		res.Docs = append(res.Docs, value)
-	})
+	res.Docs = docRes.Data.Docs
 
 	return &res, nil
 }

@@ -703,27 +703,29 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                     {answer.accepted && !isArticlePost && (
                       <Chip
                         icon={
-                          <CheckCircleOutlineIcon
+                          <Box
                             sx={{
-                              width: 15,
-                              height: 15,
-                              color: (theme) => `${theme.palette.success.main}!important`,
+                              width: 6,
+                              height: 6,
+                              borderRadius: '50%',
+                              bgcolor: '#fff',
                             }}
                           />
                         }
                         label='已采纳'
                         size='small'
                         sx={{
-                          color: 'success.main',
-                          bgcolor: (theme) => `${alpha(theme.palette.success.main, 0.1)}!important`,
+                          bgcolor: 'success.main',
+                          color: '#fff',
                           height: 22,
+                          lineHeight: '22px',
                           fontWeight: 600,
-                          pl: 0.5,
-                          borderRadius: 1,
                           fontSize: '12px',
-                          border: (theme) => `1px solid ${alpha(theme.palette.success.main, 0.03)}`,
+                          borderRadius: 0.5,
+                          border: 'none',
                           fontFamily:
                             'Glibory, "PingFang SC", "Hiragino Sans GB", "STHeiti", "Microsoft YaHei", sans-serif',
+                          minWidth: 70,
                         }}
                       />
                     )}
@@ -1142,7 +1144,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
               right: !isQAPost ? 'unset' : { xs: 0, sm: 'unset' },
               pb: !isQAPost ? 2 : { xs: 'calc(env(safe-area-inset-bottom, 0))', sm: 2 },
               width: '100%',
-              maxWidth: { lg: '750px' },
+              maxWidth: { lg: '958px' },
               mx: { xs: 0, sm: 'auto' },
               mt: !isQAPost ? 0 : 'auto',
               zIndex: 9,

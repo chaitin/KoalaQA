@@ -553,7 +553,7 @@ const Article = ({
         sx={{
           display: 'flex',
           gap: 3,
-          mx: 'auto',
+          mx: { xs: 'auto', lg: '0' },
           pb: { xs: 2, lg: 3 },
         }}
       >
