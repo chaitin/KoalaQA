@@ -525,6 +525,10 @@ func (d *KBDocument) Delete(ctx context.Context, kbID uint, docID uint) error {
 	return nil
 }
 
+func (d *KBDocument) SpaceDoc(ctx context.Context, kbID uint, spaceID uint, thirdDocID string) (*model.KBDocument, error) {
+	return d.repoDoc.GetSpaceDoc(ctx, kbID, spaceID, thirdDocID)
+}
+
 func (d *KBDocument) Detail(ctx context.Context, kbID uint, docID uint) (*model.KBDocumentDetail, error) {
 	var doc model.KBDocumentDetail
 	err := d.repoDoc.GetByID(ctx, &doc, kbID, docID)
