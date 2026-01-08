@@ -162,7 +162,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
 
   // 基于认证状态和公共访问配置获取论坛数据
   const forums = await getForumData(authConfig, user)
-  
+
   // 获取主题色，如果未获取到则使用回退主题色
   const primaryColor = brandResponse?.theme || '#006397'
 
@@ -205,13 +205,14 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
                         <GuestActivationProvider>
                           <PageViewTracker />
                           <Header brandConfig={brand} initialForums={forums} />
-                          <Box 
-                            component='main' 
-                            id='main-content' 
-                            sx={{ 
-                              backgroundColor: 'background.default', 
-                              flex: 1, 
-                              overflow: 'scroll', 
+                          <Box
+                            component='main'
+                            id='main-content'
+                            sx={{
+                              backgroundColor: 'background.default',
+                              flex: 1,
+                              overflow: 'overlay',
+                              height: 'calc(100vh - 64px)',
                             }}
                           >
                             {props.children}

@@ -1,15 +1,4 @@
-import {
-  getForum,
-  getGroup,
-  getForumForumIdTags,
-  ModelGroupItemInfo,
-  ModelGroupWithItem,
-  ModelDiscussionTag,
-} from '@/api'
-import { findForumIdByRouteName, findForumInfoByRouteName } from '@/lib/forum-server-utils'
-import { safeApiCall } from '@/lib/error-utils'
-import { Box, Container } from '@mui/material'
-import FilterPanel from '@/components/FilterPanel'
+import { Container } from '@mui/material'
 import { headers } from 'next/headers'
 
 export default async function RouteLayout({

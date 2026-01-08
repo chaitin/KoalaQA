@@ -31,10 +31,10 @@ import {
   SvcCreateSpaceReq,
   SvcDocListItem,
   SvcGetSpaceRes,
+  SvcListAnydocNode,
   SvcListRemoteReq,
   SvcListSpaceFolderItem,
   SvcListSpaceItem,
-  SvcListSpaceKBItem,
   SvcUpdateSpaceFolderReq,
   SvcUpdateSpaceReq,
 } from "./types";
@@ -47,10 +47,7 @@ import {
  * @summary list remote doc
  * @request POST:/admin/kb/space/remote
  * @response `200` `(ContextResponse & {
-    data?: (ModelListRes & {
-    items?: (SvcListSpaceKBItem)[],
-
-}),
+    data?: SvcListAnydocNode,
 
 })` OK
  */
@@ -61,9 +58,7 @@ export const postAdminKbSpaceRemote = (
 ) =>
   request<
     ContextResponse & {
-      data?: ModelListRes & {
-        items?: SvcListSpaceKBItem[];
-      };
+      data?: SvcListAnydocNode;
     }
   >({
     path: `/admin/kb/space/remote`,
@@ -396,10 +391,7 @@ export const putAdminKbKbIdSpaceSpaceIdRefresh = (
  * @summary list kb space remote doc
  * @request GET:/admin/kb/{kb_id}/space/{space_id}/remote
  * @response `200` `(ContextResponse & {
-    data?: (ModelListRes & {
-    items?: (SvcListSpaceKBItem)[],
-
-}),
+    data?: SvcListAnydocNode,
 
 })` OK
  */
@@ -410,9 +402,7 @@ export const getAdminKbKbIdSpaceSpaceIdRemote = (
 ) =>
   request<
     ContextResponse & {
-      data?: ModelListRes & {
-        items?: SvcListSpaceKBItem[];
-      };
+      data?: SvcListAnydocNode;
     }
   >({
     path: `/admin/kb/${kbId}/space/${spaceId}/remote`,

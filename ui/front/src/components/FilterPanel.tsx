@@ -276,7 +276,7 @@ export default function FilterPanel({
       />
       <Stack
         sx={{
-          width: 240,
+          width: 200,
           flexShrink: 0,
           display: { xs: 'none', lg: 'block' },
           position: 'sticky',

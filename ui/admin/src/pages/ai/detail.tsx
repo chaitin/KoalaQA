@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import Doc from './doc';
 import Qa from './qa';
 import Web from './web';
-import Kb from './kb';
+import Kb from './kb/index';
 
 const AdminDocument = ({ tab }: { tab: 'qa' | 'doc' | 'web' | 'kb' }) => {
   const { setPageName } = useBreadcrumbStore();

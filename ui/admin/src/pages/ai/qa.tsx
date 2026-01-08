@@ -50,8 +50,17 @@ const AdminDocument = () => {
   const categoryEdit = useCategoryEdit({
     kbId: kb_id,
     docType: ModelDocType.DocTypeQuestion,
-    onSuccess: () => {
-      setParams({ page: 1 });
+    onSuccess: (updatedIds, newGroupIds) => {
+      // 直接更新本地数据，不重新请求
+      if (data?.items) {
+        const newItems = data.items.map(item => {
+          if (updatedIds.includes(item.id!)) {
+            return { ...item, group_ids: newGroupIds };
+          }
+          return item;
+        });
+        mutate({ ...data, items: newItems });
+      }
     },
   });
 
@@ -65,6 +74,7 @@ const AdminDocument = () => {
     data,
     loading,
     run: fetchData,
+    mutate,
   } = useRequest(params => getAdminKbKbIdQuestion({ page, size, ...params, kbId: kb_id }), {
     manual: true,
   });
@@ -87,7 +97,8 @@ const AdminDocument = () => {
       onOk: () => {
         deleteAdminKbKbIdQuestionQaId({ kbId: kb_id, qaId: item.id! }).then(() => {
           message.success('删除成功');
-          setParams({ page: 1 });
+          // 直接刷新当前页数据，而不是设置页码（避免当前已在第1页时无法触发刷新）
+          fetchData(query);
         });
       },
     });
@@ -127,7 +138,8 @@ const AdminDocument = () => {
           .then(() => {
             message.success('批量删除成功');
             setSelectedRowKeys([]);
-            setParams({ page: 1 });
+            // 直接刷新当前页数据，而不是设置页码（避免当前已在第1页时无法触发刷新）
+            fetchData(query);
           })
           .catch(() => {
             message.error('批量删除失败');
