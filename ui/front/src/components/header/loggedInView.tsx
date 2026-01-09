@@ -19,7 +19,6 @@ import { Ellipsis } from '@ctzhian/ui'
 
 // 内容类型枚举
 enum ContentType {
-  FEEDBACK = 'feedback',
   QA = 'qa',
   BLOG = 'blog', // 新增文章类型
   ISSUE = 'issue', // 新增问题类型
@@ -68,17 +67,6 @@ interface ContentTypeConfig {
 
 // 内容类型配置映射
 const CONTENT_TYPE_CONFIGS: Record<ContentType, ContentTypeConfig> = {
-  [ContentType.FEEDBACK]: {
-    replyAction: '评论了你的反馈',
-    commentAction: '回复了你的评论',
-    applyAction: '采纳了你的评论',
-    likeAction: '点赞了你的评论',
-    dislikeAction: '不喜欢你的评论',
-    dislikeBotAction: '不喜欢机器人的评论',
-    botUnknownAction: '提出了机器人无法回答的问题',
-    likeFeedbackAction: '点赞了你的反馈',
-    adminMarkSolvedAction: '将你的反馈标记为已解决',
-  },
   [ContentType.QA]: {
     replyAction: '回答了你的问题',
     commentAction: '回复了你的回答',

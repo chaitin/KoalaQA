@@ -20,6 +20,7 @@ import {
   GetAdminKbKbIdSpaceSpaceIdFolderParams,
   GetAdminKbKbIdSpaceSpaceIdParams,
   GetAdminKbKbIdSpaceSpaceIdRemoteParams,
+  ModelExportOpt,
   ModelListRes,
   ModelPlatformOpt,
   PostAdminKbKbIdSpaceParams,
@@ -31,10 +32,10 @@ import {
   SvcCreateSpaceReq,
   SvcDocListItem,
   SvcGetSpaceRes,
+  SvcListAnydocNode,
   SvcListRemoteReq,
   SvcListSpaceFolderItem,
   SvcListSpaceItem,
-  SvcListSpaceKBItem,
   SvcUpdateSpaceFolderReq,
   SvcUpdateSpaceReq,
 } from "./types";
@@ -47,10 +48,7 @@ import {
  * @summary list remote doc
  * @request POST:/admin/kb/space/remote
  * @response `200` `(ContextResponse & {
-    data?: (ModelListRes & {
-    items?: (SvcListSpaceKBItem)[],
-
-}),
+    data?: SvcListAnydocNode,
 
 })` OK
  */
@@ -61,9 +59,7 @@ export const postAdminKbSpaceRemote = (
 ) =>
   request<
     ContextResponse & {
-      data?: ModelListRes & {
-        items?: SvcListSpaceKBItem[];
-      };
+      data?: SvcListAnydocNode;
     }
   >({
     path: `/admin/kb/space/remote`,
@@ -225,7 +221,10 @@ export const deleteAdminKbKbIdSpaceSpaceId = (
  * @request GET:/admin/kb/{kb_id}/space/{space_id}/folder
  * @response `200` `(ContextResponse & {
     data?: (ModelListRes & {
-    items?: (SvcListSpaceFolderItem)[],
+    items?: ((SvcListSpaceFolderItem & {
+    export_opt?: ModelExportOpt,
+
+}))[],
 
 }),
 
@@ -239,7 +238,9 @@ export const getAdminKbKbIdSpaceSpaceIdFolder = (
   request<
     ContextResponse & {
       data?: ModelListRes & {
-        items?: SvcListSpaceFolderItem[];
+        items?: (SvcListSpaceFolderItem & {
+          export_opt?: ModelExportOpt;
+        })[];
       };
     }
   >({
@@ -396,10 +397,7 @@ export const putAdminKbKbIdSpaceSpaceIdRefresh = (
  * @summary list kb space remote doc
  * @request GET:/admin/kb/{kb_id}/space/{space_id}/remote
  * @response `200` `(ContextResponse & {
-    data?: (ModelListRes & {
-    items?: (SvcListSpaceKBItem)[],
-
-}),
+    data?: SvcListAnydocNode,
 
 })` OK
  */
@@ -410,9 +408,7 @@ export const getAdminKbKbIdSpaceSpaceIdRemote = (
 ) =>
   request<
     ContextResponse & {
-      data?: ModelListRes & {
-        items?: SvcListSpaceKBItem[];
-      };
+      data?: SvcListAnydocNode;
     }
   >({
     path: `/admin/kb/${kbId}/space/${spaceId}/remote`,

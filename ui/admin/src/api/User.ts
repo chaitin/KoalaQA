@@ -19,6 +19,7 @@ import {
   GetAdminUserUserIdParams,
   GetUserLoginThirdParams,
   GetUserNotifyListParams,
+  GetUserNotifySubAuthUrlParams,
   GetUserPointParams,
   GetUserTrendParams,
   GetUserUserIdParams,
@@ -454,6 +455,35 @@ export const postUserNotifyWeb = (
     method: "POST",
     body: req,
     type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name GetUserNotifySubAuthUrl
+ * @summary get user notify sub bind url
+ * @request GET:/user/notify_sub/auth_url
+ * @response `200` `(ContextResponse & {
+    data?: string,
+
+})` OK
+ */
+
+export const getUserNotifySubAuthUrl = (
+  query: GetUserNotifySubAuthUrlParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: string;
+    }
+  >({
+    path: `/user/notify_sub/auth_url`,
+    method: "GET",
+    query: query,
     format: "json",
     ...params,
   });

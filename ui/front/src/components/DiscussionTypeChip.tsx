@@ -32,29 +32,29 @@ const DiscussionTypeChip: React.FC<DiscussionTypeChipProps> = ({
   const getTypeStyle = (): SxProps<Theme> => {
     // 根据 variant 设置不同的样式
     if (variant === 'compact') {
-      return (theme: Theme) => ({
-        bgcolor: theme.palette.primaryAlpha?.[10] || 'rgba(0,99,151,0.1)',
-        color: theme.palette.primary.main,
-        border: `1px solid ${theme.palette.primaryAlpha?.[10] || 'rgba(0,99,151,0.1)'}`,
+      return {
+        bgcolor: 'rgba(233, 236, 239, 1)',
+        color: 'rgba(33, 34, 45, 1)',
         flexShrink: 0,
         height: size === 'small' ? 20 : 24,
         fontSize: size === 'small' ? '12px' : '14px',
-        fontWeight: 600,
+        fontWeight: 400,
         borderRadius: '3px',
-      })
+        lineHeight: size === 'small' ? '20px' : '24px',
+      }
     }
 
     // default variant
-    return (theme: Theme) => ({
-      bgcolor: theme.palette.primaryAlpha?.[10] || 'rgba(0,99,151,0.1)',
-      color: theme.palette.primary.main,
-      border: `1px solid ${theme.palette.primaryAlpha?.[3] || 'rgba(0,99,151,0.1)'}`,
+    return {
+      bgcolor: 'rgba(233, 236, 239, 1)',
+      color: 'rgba(33, 34, 45, 1)',
       flexShrink: 0,
-      height: size === 'small' ? 20 : 24,
+      height: size === 'small' ? 20 : 22,
       fontWeight: 400,
-      fontSize: size === 'small' ? '12px' : '14px',
-      borderRadius: '4px',
-    })
+      fontSize: '12px',
+      borderRadius: '3px',
+      lineHeight: size === 'small' ? '20px' : '22px',
+    }
   }
 
   const label = getTypeLabel()

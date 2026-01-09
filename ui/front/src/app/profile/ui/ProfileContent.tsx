@@ -375,7 +375,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
           <ToggleButton value={isAdminRole(user.role || ModelUserRole.UserRoleGuest) ? '3' : '2'} sx={toggleButtonSx}>
             正在关注
           </ToggleButton>
-          <ToggleButton value={isAdminRole(user.role || ModelUserRole.UserRoleGuest) ? '4' : '3'} sx={toggleButtonSx}>
+          <ToggleButton value={'4'} sx={toggleButtonSx}>
             通知中心
           </ToggleButton>
         </ToggleButtonGroup>
@@ -601,7 +601,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
             <FollowingIssuesList />
           )}
         </TabPanel>
-        <TabPanel value={tabValue} index={isAdminRole(user.role || ModelUserRole.UserRoleGuest) ? 4 : 3}>
+        <TabPanel value={tabValue} index={4}>
           <NotificationCenter />
         </TabPanel>
         {isCurrentUser && (

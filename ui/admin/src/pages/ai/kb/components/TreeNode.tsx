@@ -12,6 +12,7 @@ interface TreeNodeProps {
   selectedDocs: Set<string>;
   expandedDocs: Set<string>;
   loadingFolderIds: Set<string>;
+  indeterminateFolders?: Set<string>;
   onFolderToggle: (folderId?: string) => void;
   onDocToggle: (docId?: string, folderId?: string) => void;
   onFolderExpand: (node: SvcListAnydocNode) => void;
@@ -25,6 +26,7 @@ export const TreeNode = ({
   selectedDocs,
   expandedDocs,
   loadingFolderIds,
+  indeterminateFolders = new Set(),
   onFolderToggle,
   onDocToggle,
   onFolderExpand,
@@ -43,6 +45,7 @@ export const TreeNode = ({
               selectedDocs={selectedDocs}
               expandedDocs={expandedDocs}
               loadingFolderIds={loadingFolderIds}
+              indeterminateFolders={indeterminateFolders}
               onFolderToggle={onFolderToggle}
               onDocToggle={onDocToggle}
               onFolderExpand={onFolderExpand}
@@ -77,6 +80,7 @@ export const TreeNode = ({
               selectedDocs={selectedDocs}
               expandedDocs={expandedDocs}
               loadingFolderIds={loadingFolderIds}
+              indeterminateFolders={indeterminateFolders}
               onFolderToggle={onFolderToggle}
               onDocToggle={onDocToggle}
               onFolderExpand={onFolderExpand}
@@ -132,6 +136,12 @@ export const TreeNode = ({
 
     const isLoading = loadingFolderIds.has(docId);
     const actionLabel = !hasChildren ? '获取文档' : isExpanded ? '收起' : '展开';
+    
+    // 判断是否为半选状态：
+    // 1. 如果文件夹在 indeterminateFolders 中（doc_ids 不为 null），则为半选
+    // 2. 或者文件夹下有部分文档被选中（但不是全部）
+    const isIndeterminate = indeterminateFolders.has(docId) || 
+      (folderSelectedDocsCount > 0 && folderSelectedDocsCount < allChildDocs);
 
     return (
       <Box key={docId} sx={{ mb: 1 }}>
@@ -147,9 +157,7 @@ export const TreeNode = ({
           <ListItemIcon>
             <Checkbox
               checked={selectedFolders.includes(docId)}
-              indeterminate={
-                folderSelectedDocsCount > 0 && folderSelectedDocsCount < allChildDocs
-              }
+              indeterminate={isIndeterminate}
               onChange={() => onFolderToggle(docId)}
             />
           </ListItemIcon>
@@ -210,6 +218,7 @@ export const TreeNode = ({
                     selectedDocs={selectedDocs}
                     expandedDocs={expandedDocs}
                     loadingFolderIds={loadingFolderIds}
+                    indeterminateFolders={indeterminateFolders}
                     onFolderToggle={onFolderToggle}
                     onDocToggle={onDocToggle}
                     onFolderExpand={onFolderExpand}

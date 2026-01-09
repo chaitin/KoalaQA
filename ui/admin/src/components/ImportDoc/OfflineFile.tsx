@@ -1,5 +1,5 @@
 import {
-  AnydocListRes,
+  SvcAnydocListRes,
   postAdminKbDocumentFileExport,
   postAdminKbDocumentFileList,
 } from '@/api';
@@ -54,7 +54,7 @@ const OfflineFileImport = ({
 }: ImportDocProps) => {
   const [step, setStep] = useState<keyof typeof StepText>('upload');
   const [loading, setLoading] = useState(false);
-  const [items, setItems] = useState<AnydocListRes[]>([]);
+  const [items, setItems] = useState<SvcAnydocListRes[]>([]);
   const [selectIds, setSelectIds] = useState<string[]>([]);
 
   const [acceptedFiles, setAcceptedFiles] = useState<File[]>([]);
@@ -126,7 +126,7 @@ const OfflineFileImport = ({
     if (isUploading === 1) return;
     setIsUploading(UploadStatus.success);
     setCurrentFileIndex(0);
-    const docs: AnydocListRes[] = [];
+    const docs: SvcAnydocListRes[] = [];
     const errorIdx: number[] = [];
     try {
       for (let i = 0; i < acceptedFiles.length; i++) {
@@ -187,7 +187,7 @@ const OfflineFileImport = ({
             onChange={(accept, reject) => onChangeFile(accept, reject)}
             type='drag'
             multiple={true}
-            accept={'.txt, .md, .xls, .xlsx, .docx, .pdf, .html, .pptx'}
+            accept={'.txt,.md,.html,.docx,.pptx,.xlsx,.xls,.pdf,.zip,.epub'}
           />
           {isUploading === 1 && (
             <Box sx={{ mt: 2 }}>

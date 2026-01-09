@@ -380,61 +380,62 @@ const ActionButtons = ({ data, menuAnchorEl, onMenuClick }: ActionButtonsProps) 
         )}
       </Stack>
 
-      {/* 移动端：悬浮球 */}
-      <Box
-        sx={{
-          display: { xs: 'block', lg: 'none' },
-          position: 'fixed',
-          bottom: 24,
-          right: 24,
-          zIndex: 1000,
-        }}
-      >
-        {/* 展开的菜单 */}
-        {mobileMenuOpen && (
-          <Backdrop
-            open={mobileMenuOpen}
-            onClick={handleMobileMenuToggle}
-            sx={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              bgcolor: 'rgba(0, 0, 0, 0.3)',
-              zIndex: 999,
-            }}
-          />
-        )}
-        <Stack
-          spacing={2}
+      {/* 移动端：悬浮球 - 仅在登录时显示 */}
+      {!!user.uid && (
+        <Box
           sx={{
-            position: 'absolute',
-            bottom: 72,
-            right: 0,
-            alignItems: 'center',
-            zIndex: 1001,
+            display: { xs: 'block', lg: 'none' },
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            zIndex: 1000,
           }}
         >
-          {/* 点赞 - 问题类型不显示 */}
-          {!isClosed &&
-            !isQAPost &&
-            renderCircularButton(
-              <Icon
-                type='icon-dianzan1'
-                sx={{
-                  color: data.user_like ? 'primary.main' : 'rgba(0,0,0,0.6)',
-                  fontSize: 24,
-                }}
-              />,
-              data.like || 0,
-              handleLike,
-              data.user_like,
-              0,
-            )}
+          {/* 展开的菜单 */}
+          {mobileMenuOpen && (
+            <Backdrop
+              open={mobileMenuOpen}
+              onClick={handleMobileMenuToggle}
+              sx={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                bgcolor: 'rgba(0, 0, 0, 0.3)',
+                zIndex: 999,
+              }}
+            />
+          )}
+          <Stack
+            spacing={2}
+            sx={{
+              position: 'absolute',
+              bottom: 72,
+              right: 0,
+              alignItems: 'center',
+              zIndex: 1001,
+            }}
+          >
+            {/* 点赞 - 问题类型不显示 */}
+            {!isClosed &&
+              !isQAPost &&
+              renderCircularButton(
+                <Icon
+                  type='icon-dianzan1'
+                  sx={{
+                    color: data.user_like ? 'primary.main' : 'rgba(0,0,0,0.6)',
+                    fontSize: 24,
+                  }}
+                />,
+                data.like || 0,
+                handleLike,
+                data.user_like,
+                0,
+              )}
 
-          {/* 评论数 */}
-          {/* {!isClosed &&
+            {/* 评论数 */}
+            {/* {!isClosed &&
             renderCircularButton(
               <Icon
                 type='icon-wendapinglun'
@@ -449,76 +450,77 @@ const ActionButtons = ({ data, menuAnchorEl, onMenuClick }: ActionButtonsProps) 
               1,
             )} */}
 
-          {/* 关注（Issue类型） */}
-          {isIssuePost &&
-            !isClosed &&
-            renderCircularButton(
-              <Icon
-                type='icon-guanzhu'
-                sx={{
-                  fontSize: 24,
-                  color: followInfo.followed ? 'primary.main' : 'rgba(0,0,0,0.6)',
-                }}
-              />,
-              followInfo.follower || 0,
-              handleFollow,
-              followInfo.followed,
-              2,
-            )}
+            {/* 关注（Issue类型） */}
+            {isIssuePost &&
+              !isClosed &&
+              renderCircularButton(
+                <Icon
+                  type='icon-guanzhu'
+                  sx={{
+                    fontSize: 24,
+                    color: followInfo.followed ? 'primary.main' : 'rgba(0,0,0,0.6)',
+                  }}
+                />,
+                followInfo.follower || 0,
+                handleFollow,
+                followInfo.followed,
+                2,
+              )}
 
-          {/* 更多操作 */}
-          {(data.user_id === user?.uid ||
-            [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
-              user?.role || ModelUserRole.UserRoleUnknown,
-            )) &&
-            renderCircularButton(
-              <MoreVertIcon sx={{ fontSize: 24, color: 'rgba(0,0,0,0.6)' }} />,
-              undefined,
-              () => {
-                setMobileMenuOpen(false)
-                // 使用实际的按钮元素来触发菜单
-                if (mobileMoreButtonRef.current) {
-                  const event = new MouseEvent('click', {
-                    bubbles: true,
-                    cancelable: true,
-                  })
-                  Object.defineProperty(event, 'currentTarget', {
-                    value: mobileMoreButtonRef.current,
-                    writable: false,
-                  })
-                  handleMenuClick(event as any)
-                }
+            {/* 更多操作 */}
+            {(data.user_id === user?.uid ||
+              [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
+                user?.role || ModelUserRole.UserRoleUnknown,
+              )) &&
+              renderCircularButton(
+                <MoreVertIcon sx={{ fontSize: 24, color: 'rgba(0,0,0,0.6)' }} />,
+                undefined,
+                () => {
+                  setMobileMenuOpen(false)
+                  // 使用实际的按钮元素来触发菜单
+                  if (mobileMoreButtonRef.current) {
+                    const event = new MouseEvent('click', {
+                      bubbles: true,
+                      cancelable: true,
+                    })
+                    Object.defineProperty(event, 'currentTarget', {
+                      value: mobileMoreButtonRef.current,
+                      writable: false,
+                    })
+                    handleMenuClick(event as any)
+                  }
+                },
+                false,
+                3,
+                undefined,
+                mobileMoreButtonRef,
+              )}
+          </Stack>
+
+          {/* 主悬浮按钮 */}
+          <Fab
+            onClick={handleMobileMenuToggle}
+            sx={{
+              width: 56,
+              height: 56,
+              bgcolor: mobileMenuOpen ? '#000000' : 'primary.main',
+              color: 'white',
+              boxShadow: mobileMenuOpen ? '0 8px 24px rgba(0, 0, 0, 0.3)' : '0 4px 12px rgba(0, 0, 0, 0.15)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              transform: mobileMenuOpen ? 'rotate(45deg)' : 'rotate(0deg)',
+              '&:hover': {
+                boxShadow: mobileMenuOpen ? '0 8px 24px rgba(0, 0, 0, 0.3)' : '0 6px 16px rgba(0, 0, 0, 0.2)',
+                transform: mobileMenuOpen ? 'rotate(45deg) scale(1.05)' : 'rotate(0deg) scale(1.05)',
               },
-              false,
-              3,
-              undefined,
-              mobileMoreButtonRef,
-            )}
-        </Stack>
-
-        {/* 主悬浮按钮 */}
-        <Fab
-          onClick={handleMobileMenuToggle}
-          sx={{
-            width: 56,
-            height: 56,
-            bgcolor: mobileMenuOpen ? '#000000' : 'primary.main',
-            color: 'white',
-            boxShadow: mobileMenuOpen ? '0 8px 24px rgba(0, 0, 0, 0.3)' : '0 4px 12px rgba(0, 0, 0, 0.15)',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            transform: mobileMenuOpen ? 'rotate(45deg)' : 'rotate(0deg)',
-            '&:hover': {
-              boxShadow: mobileMenuOpen ? '0 8px 24px rgba(0, 0, 0, 0.3)' : '0 6px 16px rgba(0, 0, 0, 0.2)',
-              transform: mobileMenuOpen ? 'rotate(45deg) scale(1.05)' : 'rotate(0deg) scale(1.05)',
-            },
-            '&:active': {
-              transform: mobileMenuOpen ? 'rotate(45deg) scale(0.95)' : 'rotate(0deg) scale(0.95)',
-            },
-          }}
-        >
-          {mobileMenuOpen ? <CloseIcon sx={{ fontSize: 24 }} /> : <MoreVertIcon sx={{ fontSize: 24 }} />}
-        </Fab>
-      </Box>
+              '&:active': {
+                transform: mobileMenuOpen ? 'rotate(45deg) scale(0.95)' : 'rotate(0deg) scale(0.95)',
+              },
+            }}
+          >
+            {mobileMenuOpen ? <CloseIcon sx={{ fontSize: 24 }} /> : <MoreVertIcon sx={{ fontSize: 24 }} />}
+          </Fab>
+        </Box>
+      )}
     </>
   )
 }

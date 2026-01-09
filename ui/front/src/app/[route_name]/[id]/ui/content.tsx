@@ -52,6 +52,7 @@ import DuplicateAnswerModal from './DuplicateAnswerModal'
 import RoleChip from '@/app/profile/ui/RoleChip'
 import EditorContent from '@/components/EditorContent'
 import Modal from '@/components/modal'
+import StatusChip from '@/components/StatusChip'
 import { formatNumber, isAdminRole } from '@/lib/utils'
 import { useQuickReplyStore } from '@/store'
 import { Icon } from '@ctzhian/ui'
@@ -701,33 +702,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                       )}
                     {/* 已采纳标签 - 文章类型不显示，放在点赞前面 */}
                     {answer.accepted && !isArticlePost && (
-                      <Chip
-                        icon={
-                          <Box
-                            sx={{
-                              width: 6,
-                              height: 6,
-                              borderRadius: '50%',
-                              bgcolor: '#fff',
-                            }}
-                          />
-                        }
-                        label='已采纳'
-                        size='small'
-                        sx={{
-                          bgcolor: 'success.main',
-                          color: '#fff',
-                          height: 22,
-                          lineHeight: '22px',
-                          fontWeight: 600,
-                          fontSize: '12px',
-                          borderRadius: 0.5,
-                          border: 'none',
-                          fontFamily:
-                            'Glibory, "PingFang SC", "Hiragino Sans GB", "STHeiti", "Microsoft YaHei", sans-serif',
-                          minWidth: 70,
-                        }}
-                      />
+                      <StatusChip accepted={true} size='small' />
                     )}
                     {/* 问答类型显示点赞/点踩按钮 - 已关闭帖子不显示 */}
                     {!isArticlePost && !isClosedQAPost && (

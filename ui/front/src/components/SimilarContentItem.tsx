@@ -1,6 +1,6 @@
 'use client'
 import { ModelDiscussionListItem, ModelDiscussionType } from '@/api'
-import { DiscussionTypeChip, IssueStatusChip, MarkDown } from '@/components'
+import { DiscussionTypeChip, StatusChip, MarkDown } from '@/components'
 import { Ellipsis } from '@ctzhian/ui'
 import { Box, Divider, Stack } from '@mui/material'
 

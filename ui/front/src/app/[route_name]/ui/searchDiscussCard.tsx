@@ -1,7 +1,7 @@
 'use client'
 
 import { ModelDiscussionListItem, ModelDiscussionType } from '@/api/types'
-import { DiscussionStatusChip, DiscussionTypeChip, MarkDown } from '@/components'
+import { StatusChip, DiscussionTypeChip, MarkDown } from '@/components'
 import { CommonContext } from '@/components/commonProvider'
 import { TimeDisplay } from '@/components/TimeDisplay'
 import { Ellipsis } from '@ctzhian/ui'
@@ -55,36 +55,27 @@ const SearchDiscussCard = ({
         transition: 'all 0.2s',
         cursor: 'pointer',
         '&:hover': {
-          bgcolor: theme => theme.palette.primaryAlpha?.[3],
+          bgcolor: (theme) => theme.palette.primaryAlpha?.[3],
         },
         p: 2,
         ...sx,
       }}
     >
       <Link href={`/${params?.route_name as string}/${it.uuid}`} key={it.id} onClick={onNavigate}>
-        <Box
+        <Ellipsis
           sx={{
-            display: 'flex',
-            alignItems: 'center',
             mb: 2,
-            gap: 1,
+            fontWeight: 700,
+            color: '#111827',
+            letterSpacing: '-0.01em',
+            fontSize: size === 'small' ? '16px' : '18px',
+            lineHeight: size === 'small' ? '24px' : 'normal',
+            '&:hover': { color: '#000000' },
+            flex: 1,
           }}
         >
-          <DiscussionTypeChip size={size} type={it.type} variant='default' />
-          <Ellipsis
-            sx={{
-              fontWeight: 700,
-              color: '#111827',
-              letterSpacing: '-0.01em',
-              fontSize: size === 'small' ? '16px' : '18px',
-              lineHeight: size === 'small' ? '24px' : 'normal',
-              '&:hover': { color: '#000000' },
-              flex: 1,
-            }}
-          >
-            {it.title}
-          </Ellipsis>
-        </Box>
+          {it.title}
+        </Ellipsis>
         <MarkDown
           content={(it.type === ModelDiscussionType.DiscussionTypeBlog ? it.summary : it.content) || ''}
           truncateLength={100}
@@ -126,7 +117,8 @@ const SearchDiscussCard = ({
             }}
           >
             {/* 使用通用状态标签组件 */}
-            <DiscussionStatusChip item={it} size={size} />
+            <StatusChip item={it} size='small' />
+            <DiscussionTypeChip size={size} type={it.type} variant='default' />
             {allTags.map((tag, index) => {
               const isCategory = isCategoryTag(tag, groups.flat)
               return (

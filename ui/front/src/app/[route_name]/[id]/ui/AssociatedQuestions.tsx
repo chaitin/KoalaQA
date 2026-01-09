@@ -1,6 +1,6 @@
 'use client'
 import { getDiscussionDiscIdAssociate, ModelDiscussionListItem } from '@/api'
-import { DiscussionStatusChip } from '@/components'
+import { StatusChip } from '@/components'
 import { Box, Divider, Paper, Skeleton, Stack, Typography } from '@mui/material'
 import { useParams } from 'next/navigation'
 import { Fragment, useEffect, useState } from 'react'
@@ -71,7 +71,7 @@ const AssociatedQuestions = ({ discId }: AssociatedQuestionsProps) => {
               key={question.id}
               item={question}
               routeName={routeName}
-              statusChip={<DiscussionStatusChip item={question} size='small' />}
+              statusChip={<StatusChip item={question} size='small' />}
             />
             <Divider />
           </Fragment>

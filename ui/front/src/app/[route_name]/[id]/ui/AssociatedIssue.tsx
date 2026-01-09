@@ -1,6 +1,6 @@
 'use client'
 import { ModelDiscussionListItem, ModelDiscussionType } from '@/api/types'
-import { IssueStatusChip } from '@/components'
+import { StatusChip } from '@/components'
 import { useParams } from 'next/navigation'
 import AssociatedItemCard from './AssociatedItemCard'
 import { Divider, Stack, Typography } from '@mui/material'
@@ -40,7 +40,7 @@ const AssociatedIssue = ({ associate }: AssociatedIssueProps) => {
       <AssociatedItemCard
         item={associate}
         routeName={routeName}
-        statusChip={<IssueStatusChip resolved={associate.resolved} size='small' />}
+        statusChip={<StatusChip type={associate.type} resolved={associate.resolved} size='small' />}
       />
     </Stack>
   )

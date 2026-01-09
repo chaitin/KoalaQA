@@ -1,11 +1,12 @@
 import { message, Modal } from '@ctzhian/ui';
 import { Box, Checkbox, FormControlLabel, List, Typography } from '@mui/material';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   SvcListAnydocNode,
   postAdminKbKbIdSpaceSpaceIdFolder,
   SvcCreateSpaceForlderItem,
   getAdminKbKbIdSpaceSpaceIdRemote,
+  getAdminKbKbIdSpaceSpaceIdFolder,
 } from '@/api';
 import { collectTreeIds, collectSelectedRoots, getFolderDocIds, getSubFolderIds } from '../utils';
 import { TreeNode } from './TreeNode';
@@ -16,7 +17,7 @@ interface ImportModalProps {
   kbId: number;
   selectedSpaceId: number | null;
   treeData: SvcListAnydocNode | null;
-  setTreeData: (data: SvcListAnydocNode | null) => void;
+  setTreeData: React.Dispatch<React.SetStateAction<SvcListAnydocNode | null>>;
   onSuccess: () => void;
 }
 
@@ -33,6 +34,132 @@ export const ImportModal = ({
   const [selectedDocs, setSelectedDocs] = useState<Set<string>>(new Set());
   const [expandedDocs, setExpandedDocs] = useState<Set<string>>(new Set());
   const [loadingFolderIds, setLoadingFolderIds] = useState<Set<string>>(new Set());
+  // 保存已同步的文件夹和文件映射关系：{ folder_id: [doc_ids] | null }
+  // null 表示整个文件夹被选中，数组表示只选中了部分文档（半选状态）
+  const [initialSyncedData, setInitialSyncedData] = useState<Record<string, string[] | null>>({});
+  // 保存半选状态的文件夹ID集合（doc_ids 不为 null 的文件夹）
+  const [indeterminateFolders, setIndeterminateFolders] = useState<Set<string>>(new Set());
+
+  // 递归收集需要标记的节点ID
+  // syncedData 格式：{ folder_id: [doc_ids] | null }
+  // null 表示整个文件夹被选中，数组表示只选中了部分文档（半选状态）
+  const collectSyncedNodeIds = useCallback((
+    node: SvcListAnydocNode, 
+    syncedData: Record<string, string[] | null>
+  ): { folders: string[]; docs: string[] } => {
+    const folders: string[] = [];
+    const docs: string[] = [];
+    
+    if (!node) return { folders, docs };
+    
+    const nodeId = node.value?.id;
+    const isFile = node.value?.file;
+    
+    // 如果当前节点是文件夹，检查是否在 syncedData 中
+    if (nodeId && !isFile) {
+      const syncedInfo = syncedData[nodeId];
+      if (syncedInfo === null) {
+        // doc_ids 为 null，表示整个文件夹被选中
+        folders.push(nodeId);
+        // 递归收集所有子文件夹和子文档（全选状态，不需要再检查 syncedData）
+        const collectAllChildren = (childNode: SvcListAnydocNode) => {
+          const childId = childNode.value?.id;
+          const childIsFile = childNode.value?.file;
+          if (childId) {
+            if (childIsFile) {
+              docs.push(childId);
+            } else {
+              folders.push(childId);
+            }
+          }
+          if (childNode.children) {
+            childNode.children.forEach(collectAllChildren);
+          }
+        };
+        if (node.children) {
+          node.children.forEach(collectAllChildren);
+        }
+        // 全选文件夹处理完毕，直接返回
+        return { folders, docs };
+      } else if (Array.isArray(syncedInfo) && syncedInfo.length > 0) {
+        // doc_ids 有值，表示半选状态，只选中特定的文档
+        // 不选中文件夹本身，只标记数组中的文档ID
+        syncedInfo.forEach(docId => {
+          docs.push(docId);
+        });
+      }
+    }
+    
+    // 如果当前节点是文件，检查它是否在任何文件夹的 doc_ids 中
+    if (nodeId && isFile) {
+      for (const docIds of Object.values(syncedData)) {
+        if (Array.isArray(docIds) && docIds.includes(nodeId)) {
+          docs.push(nodeId);
+          break;
+        }
+      }
+    }
+    
+    // 递归处理子节点（只有在不是全选文件夹的情况下才递归）
+    if (node.children) {
+      const currentNodeSyncedInfo = nodeId && !isFile ? syncedData[nodeId] : undefined;
+      // 如果当前文件夹是全选状态（null），已经在上面处理过了，不需要再递归
+      if (currentNodeSyncedInfo !== null) {
+        node.children.forEach(child => {
+          const childIds = collectSyncedNodeIds(child, syncedData);
+          folders.push(...childIds.folders);
+          docs.push(...childIds.docs);
+        });
+      }
+    }
+    
+    return { folders, docs };
+  }, []);
+
+  // 加载已同步的文件夹列表，并提取 export_opt 中的数据
+  const loadSyncedFolders = useCallback(async () => {
+    if (!kbId || !selectedSpaceId) return;
+    
+    try {
+      const response = await getAdminKbKbIdSpaceSpaceIdFolder({
+        kbId,
+        spaceId: selectedSpaceId,
+      });
+      
+      // 从 export_opt.folders 中提取文件夹和文件的映射关系
+      // null 表示整个文件夹被选中，数组表示只选中了部分文档（半选状态）
+      const syncedData: Record<string, string[] | null> = {};
+      const indeterminateFolderIds = new Set<string>();
+      
+      response?.items?.forEach((item: any) => {
+        const exportOpt = item.export_opt;
+        if (exportOpt?.folders) {
+          exportOpt.folders.forEach((folder: any) => {
+            if (folder.folder_id) {
+              // 如果 doc_ids 为 null，表示整个文件夹被选中
+              // 如果 doc_ids 有值（数组），表示只选中了部分文档（半选状态）
+              if (folder.doc_ids === null) {
+                syncedData[folder.folder_id] = null;
+              } else {
+                const docIds = folder.doc_ids || [];
+                syncedData[folder.folder_id] = docIds;
+                // 如果 doc_ids 有值，标记为半选状态
+                if (docIds.length > 0) {
+                  indeterminateFolderIds.add(folder.folder_id);
+                }
+              }
+            }
+          });
+        }
+      });
+      
+      setInitialSyncedData(syncedData);
+      setIndeterminateFolders(indeterminateFolderIds);
+    } catch (error) {
+      console.error('获取已同步文件夹失败:', error);
+      // 失败时不阻断流程，只是没有初始选中状态
+    }
+  }, [kbId, selectedSpaceId]);
 
   // 当弹窗打开/关闭时，初始化或清空状态
   useEffect(() => {
@@ -42,12 +169,41 @@ export const ImportModal = ({
       setSelectedDocs(new Set());
       setExpandedDocs(new Set());
       setLoadingFolderIds(new Set());
+      setInitialSyncedData({});
+      setIndeterminateFolders(new Set());
       return;
     }
 
-    // 弹窗打开时，不自动展开顶层文件夹
-    // 用户需要手动点击来触发数据加载
-  }, [open, treeData]);
+    // 弹窗打开时，加载已同步的文件夹
+    // 只有当弹窗打开且有必要的参数时才加载，避免依赖 loadSyncedFolders 导致循环
+    if (kbId && selectedSpaceId) {
+      loadSyncedFolders();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, kbId, selectedSpaceId]);
+
+  // 当树形数据和已同步的数据都加载完成后，标记已同步的节点
+  useEffect(() => {
+    if (!treeData || Object.keys(initialSyncedData).length === 0) return;
+    
+    // 收集需要标记的节点ID
+    const { folders, docs } = collectSyncedNodeIds(treeData, initialSyncedData);
+    
+    // 一次性更新选中状态
+    if (folders.length > 0) {
+      setSelectedFolders(prev => {
+        const newSet = new Set([...prev, ...folders]);
+        return Array.from(newSet);
+      });
+    }
+    
+    if (docs.length > 0) {
+      setSelectedDocs(prev => {
+        const newSet = new Set([...prev, ...docs]);
+        return newSet;
+      });
+    }
+  }, [treeData, initialSyncedData, collectSyncedNodeIds]);
 
   // 切换文件夹选择状态
   const handleFolderToggle = (folderId?: string) => {
@@ -229,6 +385,32 @@ export const ImportModal = ({
           newSet.add(docId);
           return newSet;
         });
+        
+        // 获取到新的子节点后，检查是否有已同步的节点并标记
+        if (response.children && Object.keys(initialSyncedData).length > 0) {
+          const allFolders: string[] = [];
+          const allDocs: string[] = [];
+          
+          response.children.forEach(child => {
+            const { folders, docs } = collectSyncedNodeIds(child, initialSyncedData);
+            allFolders.push(...folders);
+            allDocs.push(...docs);
+          });
+          
+          if (allFolders.length > 0) {
+            setSelectedFolders(prev => {
+              const newSet = new Set([...prev, ...allFolders]);
+              return Array.from(newSet);
+            });
+          }
+          
+          if (allDocs.length > 0) {
+            setSelectedDocs(prev => {
+              const newSet = new Set([...prev, ...allDocs]);
+              return newSet;
+            });
+          }
+        }
       }
     } catch (error) {
       console.error('获取文档失败:', error);
@@ -296,7 +478,7 @@ export const ImportModal = ({
       onOk={handleImport}
       width={800}
     >
-      <Box sx={{ maxHeight: '80vh', overflow: 'auto', pr: 2 }}>
+      <Box sx={{ maxHeight: '80vh', pr: 2 }}>
         <FormControlLabel
           control={
             <Checkbox
@@ -351,6 +533,7 @@ export const ImportModal = ({
                     selectedDocs={selectedDocs}
                     expandedDocs={expandedDocs}
                     loadingFolderIds={loadingFolderIds}
+                    indeterminateFolders={indeterminateFolders}
                     onFolderToggle={handleFolderToggle}
                     onDocToggle={handleDocToggle}
                     onFolderExpand={toggleFolderExpand}
@@ -379,6 +562,7 @@ export const ImportModal = ({
                           selectedDocs={selectedDocs}
                           expandedDocs={expandedDocs}
                           loadingFolderIds={loadingFolderIds}
+                          indeterminateFolders={indeterminateFolders}
                           onFolderToggle={handleFolderToggle}
                           onDocToggle={handleDocToggle}
                           onFolderExpand={toggleFolderExpand}
@@ -405,6 +589,7 @@ export const ImportModal = ({
                           selectedDocs={selectedDocs}
                           expandedDocs={expandedDocs}
                           loadingFolderIds={loadingFolderIds}
+                          indeterminateFolders={indeterminateFolders}
                           onFolderToggle={handleFolderToggle}
                           onDocToggle={handleDocToggle}
                           onFolderExpand={toggleFolderExpand}
