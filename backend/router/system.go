@@ -17,6 +17,7 @@ func (s *system) Route(h server.Handler) {
 	g := h.Group("/system")
 	g.GET("/info", s.SystemInfo)
 	g.GET("/discussion", s.Discussion)
+	g.GET("/notify_sub", s.ListNotifySub)
 }
 
 func newSystem(info *version.Info, sysDisc *svc.SystemDiscussion) server.Router {
