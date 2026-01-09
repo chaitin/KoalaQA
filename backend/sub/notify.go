@@ -35,6 +35,7 @@ type messageNotifyIn struct {
 	Pub        mq.Publisher `name:"memory_mq"`
 	NatsPub    mq.Publisher
 	Forum      *repo.Forum
+	NotifySub  *repo.MessageNotifySub
 }
 type messageNotify struct {
 	logger     *glog.Logger
@@ -63,6 +64,7 @@ func newMessageNotify(in messageNotifyIn) *messageNotify {
 		natsPub:    in.NatsPub,
 		discFollow: in.DiscFollow,
 		forum:      in.Forum,
+		notifySub:  in.NotifySub,
 		publicAddr: in.PublicAddr,
 	}
 }

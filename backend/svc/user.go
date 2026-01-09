@@ -882,7 +882,7 @@ func (u *User) ListSearchHistory(ctx context.Context, req ListSearchHistoryReq) 
 }
 
 func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth, notifySub *repo.MessageNotifySub,
-	authMgmt *third_auth.Manager, oc oss.Client, org *repo.Org, userPoint *repo.UserPointRecord,
+	authMgmt *third_auth.Manager, oc oss.Client, org *repo.Org, userPoint *repo.UserPointRecord, publicAddr *PublicAddress,
 	disc *repo.Discussion, comm *repo.Comment, review *repo.UserReview, pub mq.Publisher) *User {
 	return &User{
 		jwt:            genrator,
@@ -897,6 +897,7 @@ func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth, notifySub
 		repoUserReview: review,
 		pub:            pub,
 		repoUserPoint:  userPoint,
+		svcPublicAddr:  publicAddr,
 		logger:         glog.Module("svc", "user"),
 	}
 }
