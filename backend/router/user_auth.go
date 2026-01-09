@@ -562,6 +562,22 @@ func (u *userAuth) subBindCallback(ctx *context.Context, typ model.MessageNotify
 	}
 }
 
+// ListNotifySub
+// @Summary list notify sub
+// @Tags user
+// @Produce json
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]model.UserNotiySub}}
+// @Router /user/notify_sub/bind [get]
+func (u *userAuth) ListNotifySubBind(ctx *context.Context) {
+	res, err := u.in.SvcU.ListNotifySub(ctx, ctx.GetUser().UID)
+	if err != nil {
+		ctx.InternalError(err, "list notify sub failed")
+		return
+	}
+
+	ctx.Success(res)
+}
+
 func (u *userAuth) Route(h server.Handler) {
 	g := h.Group("/user")
 	g.POST("/logout", u.Logout)
@@ -582,6 +598,7 @@ func (u *userAuth) Route(h server.Handler) {
 		notifySubG := g.Group("/notify_sub")
 		notifySubG.GET("/auth_url", u.SubBindAuthURL)
 		notifySubG.GET("/callback/dingtalk", u.SubBindCallbackDingtalk)
+		notifySubG.GET("/bind", u.ListNotifySubBind)
 	}
 
 	{

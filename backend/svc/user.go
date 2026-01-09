@@ -706,6 +706,18 @@ func (u *User) SubBindCallback(ctx context.Context, uid uint, typ model.MessageN
 	})
 }
 
+func (u *User) ListNotifySub(ctx context.Context, uid uint) (*model.ListRes[model.UserNotiySub], error) {
+	var res model.ListRes[model.UserNotiySub]
+	var err error
+	res.Items, err = u.repoUser.ListNotifySub(ctx, uid)
+	if err != nil {
+		return nil, err
+	}
+
+	res.Total = int64(len(res.Items))
+	return &res, nil
+}
+
 type LoginThirdCallbackReq struct {
 	State string `form:"state" binding:"required"`
 	Code  string `form:"code" binding:"required"`

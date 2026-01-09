@@ -6694,6 +6694,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/notify_sub/bind": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "list notify sub",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/model.UserNotiySub"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/user/point": {
             "get": {
                 "produces": [
@@ -8723,6 +8769,29 @@ const docTemplate = `{
                 },
                 "web_notify": {
                     "type": "boolean"
+                }
+            }
+        },
+        "model.UserNotiySub": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "third_id": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.MessageNotifySubType"
+                },
+                "updated_at": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },

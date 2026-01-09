@@ -294,6 +294,11 @@ func (u *User) CountSearchHistory(ctx context.Context, cnt *int64, queryFuncs ..
 		Count(cnt).Error
 }
 
+func (u *User) ListNotifySub(ctx context.Context, uid uint) (res []model.UserNotiySub, err error) {
+	err = u.db.WithContext(ctx).Model(&model.UserNotiySub{}).Where("user_id = ?", uid).Find(&res).Error
+	return
+}
+
 func (u *User) BindNotifySub(ctx context.Context, userSub *model.UserNotiySub) error {
 	return u.db.WithContext(ctx).
 		Clauses(clause.OnConflict{
