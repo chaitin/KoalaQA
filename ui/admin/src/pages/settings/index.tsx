@@ -7,6 +7,7 @@ import Webhook from './component/Webhook';
 import LoginMethod from './component/LoginMethod';
 import Logo from './component/Logo';
 import Seo from './component/Seo.tsx';
+import UserNotificationSubscription from './component/UserNotificationSubscription';
 
 const Settings = () => {
   return (
@@ -28,6 +29,7 @@ const Settings = () => {
             <PostManagement />
             <Access />
             <Seo />
+            {/* <UserNotificationSubscription /> */}
             <Webhook />
           </Stack>
         </Grid>

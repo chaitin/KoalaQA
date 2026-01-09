@@ -13,6 +13,8 @@
 import request, { RequestParams } from "./httpClient";
 import {
   ContextResponse,
+  ModelListRes,
+  ModelMessageNotifySub,
   ModelSystemDiscussion,
   RouterSystemInfoRes,
 } from "./types";
@@ -62,6 +64,36 @@ export const getSystemInfo = (params: RequestParams = {}) =>
     }
   >({
     path: `/system/info`,
+    method: "GET",
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags system
+ * @name GetSystemNotifySub
+ * @summary list notify sub
+ * @request GET:/system/notify_sub
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (ModelMessageNotifySub)[],
+
+}),
+
+})` OK
+ */
+
+export const getSystemNotifySub = (params: RequestParams = {}) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: ModelMessageNotifySub[];
+      };
+    }
+  >({
+    path: `/system/notify_sub`,
     method: "GET",
     format: "json",
     ...params,

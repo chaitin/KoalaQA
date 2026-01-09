@@ -1,6 +1,6 @@
 'use client'
 
-import { ModelGroupItemInfo, ModelGroupWithItem, ModelForumInfo, ModelDiscussionTag } from '@/api'
+import { ModelGroupItemInfo, ModelGroupWithItem, ModelForumInfo, ModelDiscussionTag, ModelForumLink } from '@/api'
 import FilterPanelClient from './FilterPanelClient'
 import { FilterPanelActions } from './FilterPanelActions'
 import {
@@ -393,7 +393,7 @@ export default function FilterPanel({
 
             {/* 常用链接 */}
             <List disablePadding>
-              {forumInfo.links.links.map((link, linkIndex) => (
+              {forumInfo.links.links.map((link: ModelForumLink, linkIndex: number) => (
                 <ListItem key={`link-${linkIndex}-${link.name || linkIndex}`} disablePadding sx={{ mb: 2 }}>
                   <MuiLink
                     href={link.address || '#'}

@@ -110,6 +110,11 @@ export enum ModelMsgNotifyType {
   MsgNotifyTypeUserPoint = 14,
 }
 
+export enum ModelMessageNotifySubType {
+  MessageNotifySubTypeUnknown = 0,
+  MessageNotifySubTypeDingtalk = 1,
+}
+
 export enum ModelLLMType {
   LLMTypeChat = "chat",
   LLMTypeEmbedding = "embedding",
@@ -200,11 +205,6 @@ export interface AnydocListDoc {
   updated_at?: number;
 }
 
-export interface AnydocListRes {
-  docs?: AnydocListDoc[];
-  uuid?: string;
-}
-
 export interface AnydocUserInfoRes {
   access_token?: string;
   email?: string;
@@ -250,6 +250,14 @@ export interface ModelAuthInfo {
    * @max 4
    */
   type?: number;
+}
+
+export interface ModelCreateSpaceFolderInfo {
+  children?: ModelCreateSpaceFolderInfo[];
+  doc_id?: string;
+  file?: boolean;
+  file_type?: string;
+  title?: string;
 }
 
 export interface ModelDiscussion {
@@ -408,19 +416,21 @@ export interface ModelDiscussionTag {
   updated_at?: number;
 }
 
+export interface ModelExportFolder {
+  doc_ids?: string[];
+  folder_id?: string;
+}
+
+export interface ModelExportOpt {
+  file_type?: string;
+  /** 需要导出的文档 */
+  folders?: ModelExportFolder[];
+  space_id?: string;
+}
+
 export interface ModelForumGroups {
   group_ids?: number[];
   type?: ModelDiscussionType;
-}
-
-export interface ModelForumLink {
-  name?: string;
-  address?: string;
-}
-
-export interface ModelForumLinks {
-  enabled?: boolean;
-  links?: ModelForumLink[];
 }
 
 export interface ModelForumInfo {
@@ -428,11 +438,21 @@ export interface ModelForumInfo {
   groups?: ModelJSONBArrayModelForumGroups;
   id?: number;
   index?: number;
+  links?: ModelJSONBModelForumLinks;
   name: string;
   route_name?: string;
-  tag_ids?: number[];
   tag_enabled?: boolean;
-  links?: ModelForumLinks;
+  tag_ids?: number[];
+}
+
+export interface ModelForumLink {
+  address?: string;
+  name?: string;
+}
+
+export interface ModelForumLinks {
+  enabled?: boolean;
+  links?: ModelForumLink[];
 }
 
 export interface ModelGroupItemInfo {
@@ -455,6 +475,8 @@ export type ModelJSONBArrayModelStatTrendItem = Record<string, any>;
 
 export type ModelJSONBModelExportOpt = Record<string, any>;
 
+export type ModelJSONBModelForumLinks = Record<string, any>;
+
 export type ModelJSONBModelPlatformOpt = Record<string, any>;
 
 export interface ModelKBDocumentDetail {
@@ -475,6 +497,7 @@ export interface ModelKBDocumentDetail {
   platform?: PlatformPlatformType;
   platform_opt?: ModelJSONBModelPlatformOpt;
   rag_id?: string;
+  root_parent_id?: number;
   similar_id?: number;
   status?: ModelDocStatus;
   title?: string;
@@ -538,6 +561,20 @@ export interface ModelMessageNotify {
   /** 通知到谁，除了发给机器人的信息，user_id 与 to_id 相同 */
   user_id?: number;
   user_point?: number;
+}
+
+export interface ModelMessageNotifySub {
+  created_at?: number;
+  enabled?: boolean;
+  id?: number;
+  type?: ModelMessageNotifySubType;
+  updated_at?: number;
+}
+
+export interface ModelMessageNotifySubInfo {
+  client_id?: string;
+  client_secret?: string;
+  robot_code?: string;
 }
 
 export interface ModelPlatformOpt {
@@ -679,6 +716,16 @@ export interface ModelUserReviewWithUser {
   user_name?: string;
 }
 
+export interface ModelUserSearchHistory {
+  created_at?: number;
+  id?: number;
+  keyword?: string;
+  updated_at?: number;
+  user_id?: number;
+  user_role?: ModelUserRole;
+  username?: string;
+}
+
 export interface ModelWebhook {
   created_at?: number;
   id?: number;
@@ -722,6 +769,11 @@ export interface SvcAIInsightDiscussionItem {
 
 export interface SvcActiveModelReq {
   active?: boolean;
+}
+
+export interface SvcAnydocListRes {
+  docs?: AnydocListDoc[];
+  uuid?: string;
 }
 
 export interface SvcAssociateDiscussionReq {
@@ -769,8 +821,8 @@ export interface SvcCreateSpaceFolderReq {
 }
 
 export interface SvcCreateSpaceForlderItem {
-  child_doc_ids?: string[];
   doc_id: string;
+  folders?: ModelCreateSpaceFolderInfo;
   title?: string;
 }
 
@@ -829,6 +881,7 @@ export interface SvcDocListItem {
   file_type?: ModelFileType;
   group_ids?: number[];
   id?: number;
+  parent_id?: number;
   platform?: PlatformPlatformType;
   similar_id?: number;
   status?: ModelDocStatus;
@@ -869,8 +922,10 @@ export interface SvcForumRes {
   groups?: ModelJSONBArrayModelForumGroups;
   id?: number;
   index?: number;
+  links?: ModelJSONBModelForumLinks;
   name: string;
   route_name?: string;
+  tag_enabled?: boolean;
   tag_ids?: number[];
   tags?: SvcForumTag[];
 }
@@ -919,10 +974,17 @@ export interface SvcKBUpdateReq {
   name: string;
 }
 
+export interface SvcListAnydocNode {
+  children?: SvcListAnydocNode[];
+  value?: AnydocListDoc;
+}
+
 export interface SvcListRemoteReq {
   opt?: ModelPlatformOpt;
   platform?: PlatformPlatformType;
   remote_folder_id?: string;
+  remote_sub_folder_id?: string;
+  shallow?: boolean;
 }
 
 export interface SvcListSpaceFolderItem {
@@ -945,13 +1007,6 @@ export interface SvcListSpaceItem {
   title?: string;
   total?: number;
   updated_at?: number;
-}
-
-export interface SvcListSpaceKBItem {
-  desc?: string;
-  doc_id?: string;
-  file_type?: ModelFileType;
-  title?: string;
 }
 
 export interface SvcListWebItem {
@@ -1006,6 +1061,12 @@ export interface SvcMKUpdateReq {
   provider: string;
   show_name?: string;
   type: "chat" | "embedding" | "rerank" | "analysis" | "analysis-vl";
+}
+
+export interface SvcMessageNotifySubCreateReq {
+  enabled?: boolean;
+  info?: ModelMessageNotifySubInfo;
+  type: ModelMessageNotifySubType;
 }
 
 export interface SvcModelKitCheckReq {
@@ -1123,7 +1184,6 @@ export interface SvcUpdatePromptReq {
 }
 
 export interface SvcUpdateSpaceFolderReq {
-  doc_id?: number;
   update_type?: TopicKBSpaceUpdateType;
 }
 
@@ -1256,6 +1316,7 @@ export interface GetAdminDiscussionParams {
 export type PutAdminForumPayload = SvcForumUpdateReq & {
   forums?: (ModelForumInfo & {
     groups?: ModelForumGroups[];
+    links?: ModelForumLinks;
   })[];
 };
 
@@ -1476,6 +1537,7 @@ export interface DeleteAdminKbKbIdSpaceSpaceIdFolderFolderIdParams {
 export interface GetAdminKbKbIdSpaceSpaceIdFolderFolderIdDocParams {
   /** @min 1 */
   page?: number;
+  parent_id: number;
   /** @min 1 */
   size?: number;
   status?: (0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8)[];
@@ -1496,6 +1558,8 @@ export interface PutAdminKbKbIdSpaceSpaceIdRefreshParams {
 
 export interface GetAdminKbKbIdSpaceSpaceIdRemoteParams {
   remote_folder_id?: string;
+  remote_sub_folder_id?: string;
+  shallow?: boolean;
   /** kb_id */
   kbId: number;
   /** space_id */
@@ -1597,6 +1661,15 @@ export interface GetAdminUserParams {
   role?: 0 | 1 | 2 | 3 | 4 | 5;
   /** @min 1 */
   size?: number;
+}
+
+export interface GetAdminUserHistorySearchParams {
+  keyword?: string;
+  /** @min 1 */
+  page?: number;
+  /** @min 1 */
+  size?: number;
+  username?: string;
 }
 
 export interface GetAdminUserReviewParams {
@@ -1833,6 +1906,11 @@ export interface GetUserNotifyListParams {
   read?: boolean;
   /** @min 1 */
   size?: number;
+}
+
+export interface GetUserNotifySubAuthUrlParams {
+  app?: boolean;
+  type: 0 | 1;
 }
 
 export interface GetUserPointParams {

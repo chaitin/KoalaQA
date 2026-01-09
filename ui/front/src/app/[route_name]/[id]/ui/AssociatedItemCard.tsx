@@ -40,29 +40,27 @@ const AssociatedItemCard = ({ item, routeName, statusChip }: AssociatedItemCardP
           color: 'inherit',
         }}
       >
-        <Stack spacing={1.5}>
-          {/* 标题和类型标签 */}
-          <Stack direction='row' alignItems='center' spacing={1} sx={{ mb: 0.5 }}>
-            <DiscussionTypeChip size='small' type={item.type} variant='default' />
-            <Ellipsis
-              sx={{
-                fontWeight: 600,
-                fontSize: '15px',
-                color: '#111827',
-                lineHeight: 1.4,
-                flex: 1,
-                cursor: 'pointer',
-              }}
-            >
-              {item.title}
-            </Ellipsis>
-          </Stack>
+        {/* 标题和类型标签 */}
+        <Stack sx={{ gap: 1.5 }}>
+          <Ellipsis
+            sx={{
+              fontWeight: 600,
+              fontSize: '15px',
+              color: '#111827',
+              lineHeight: 1.4,
+              flex: 1,
+              cursor: 'pointer',
+            }}
+          >
+            {item.title}
+          </Ellipsis>
 
           {/* 状态标签和作者信息 */}
-          <Stack direction='row' alignItems='center'>
+          <Stack direction='row' alignItems='center' sx={{ gap: 1 }}>
             {statusChip}
+            <DiscussionTypeChip size='small' type={item.type} variant='default' />
             <Stack direction='row' alignItems='center' sx={{ ml: 'auto' }}>
-              <Typography
+              {/* <Typography
                 variant='caption'
                 sx={{
                   fontSize: '12px',
@@ -71,7 +69,7 @@ const AssociatedItemCard = ({ item, routeName, statusChip }: AssociatedItemCardP
                 }}
               >
                 发布于
-              </Typography>
+              </Typography> */}
               <Box
                 component={TimeDisplay}
                 timestamp={item.created_at || item.updated_at || 0}

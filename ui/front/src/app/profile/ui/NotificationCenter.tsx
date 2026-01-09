@@ -1,9 +1,12 @@
 'use client'
 
 import {
+  getSystemNotifySub,
   getUserNotifyList,
+  getUserNotifySubAuthUrl,
   getUserNotifyUnread,
   ModelMessageNotify,
+  ModelMessageNotifySubType,
   ModelMsgNotifyType,
   postUserNotifyRead,
 } from '@/api'
@@ -13,10 +16,11 @@ import Modal from '@/components/modal'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import dayjs from '@/lib/dayjs'
 import { useForumStore } from '@/store'
-import { Ellipsis } from '@ctzhian/ui'
-import { Box, Button, Card, Pagination, Stack, Typography, useMediaQuery, useTheme } from '@mui/material'
+import SettingsIcon from '@mui/icons-material/Settings'
+import { Box, Button, Card, Pagination, Stack, Typography, useMediaQuery, useTheme, IconButton } from '@mui/material'
 import { useRequest } from 'ahooks'
 import Image from 'next/image'
+import { useSearchParams, usePathname } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 
 export default function NotificationCenter() {
@@ -24,9 +28,14 @@ export default function NotificationCenter() {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const routerWithRouteName = useRouterWithRouteName()
   const forums = useForumStore((s) => s.forums)
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
   const [notifyPage, setNotifyPage] = useState(1)
   const [notifyPageSize, setNotifyPageSize] = useState(10)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [showChannelConfigModal, setShowChannelConfigModal] = useState(false)
+  const [dingtalkBound, setDingtalkBound] = useState(false)
+  const [showConfigButton, setShowConfigButton] = useState(false)
   // 使用 useRequest 加载通知列表
   const {
     data: notifyData,
@@ -64,6 +73,48 @@ export default function NotificationCenter() {
     }
   }, [])
 
+  // 检测是否在钉钉应用内打开
+  const isInDingtalkApp = useCallback((): boolean => {
+    if (typeof globalThis === 'undefined' || typeof navigator === 'undefined') return false
+
+    // 方法1: 检查钉钉 JS-SDK 注入的全局对象（最可靠）
+    // 钉钉会在 window 上注入 dd 对象
+    if ((globalThis as any).dd) {
+      return true
+    }
+
+    // 方法2: 检查 User-Agent（辅助判断）
+    const ua = navigator.userAgent.toLowerCase()
+    // 钉钉的 User-Agent 通常包含 DingTalk 或 AliApp
+    if (ua.includes('dingtalk') || ua.includes('aliapp')) {
+      return true
+    }
+
+    return false
+  }, [])
+
+  // 获取钉钉绑定状态（只在未绑定时调用接口）
+  const loadDingtalkBindStatus = useCallback(async () => {
+    // 如果已经绑定，不需要调用接口
+    if (dingtalkBound) {
+      return
+    }
+    try {
+      const url = await getUserNotifySubAuthUrl({
+        type: ModelMessageNotifySubType.MessageNotifySubTypeDingtalk,
+      })
+      // 如果返回空字符串或 null，表示已绑定；如果返回 URL，表示未绑定
+      if (url && url.trim() !== '') {
+        setDingtalkBound(false)
+      } else {
+        setDingtalkBound(true)
+      }
+    } catch (error) {
+      console.error('获取钉钉绑定状态失败:', error)
+      // 不显示错误提示，避免干扰用户体验
+    }
+  }, [dingtalkBound])
+
   // 加载通知列表和未读数量
   useEffect(() => {
     fetchNotifications({
@@ -75,6 +126,61 @@ export default function NotificationCenter() {
     // 因为它们应该是稳定的，避免重复调用
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notifyPage, notifyPageSize])
+
+  // 加载系统通知订阅配置，判断是否显示配置按钮
+  const loadSystemNotifySubConfig = useCallback(async () => {
+    try {
+      const res = await getSystemNotifySub()
+      const items = res?.items || []
+      // 查找钉钉类型的通知订阅配置
+      const dingtalkSub = items.find((item) => item.type === ModelMessageNotifySubType.MessageNotifySubTypeDingtalk)
+      // 只有当 enabled 为 true 时才显示配置按钮
+      setShowConfigButton(dingtalkSub?.enabled === true)
+    } catch (error) {
+      console.error('加载系统通知订阅配置失败:', error)
+      // 不显示错误提示，避免干扰用户体验
+      setShowConfigButton(false)
+    }
+  }, [])
+
+  // // 加载系统通知订阅配置
+  // useEffect(() => {
+  // loadSystemNotifySubConfig()
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [])
+
+  // 当弹窗打开时，只在未绑定时才调用接口获取绑定状态
+  // useEffect(() => {
+  //   if (showChannelConfigModal && !dingtalkBound) {
+  //     loadDingtalkBindStatus()
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [showChannelConfigModal, dingtalkBound])
+
+  // 处理从钉钉返回后的参数
+  useEffect(() => {
+    const notifySub = searchParams?.get('notify_sub')
+    const error = searchParams?.get('error')
+
+    if (notifySub === 'true') {
+      // 清除 URL 参数
+      const currentPath = pathname || '/profile'
+      routerWithRouteName.replace(currentPath)
+
+      // 只要 notify_sub=true 就打开弹窗
+      setShowChannelConfigModal(true)
+
+      if (error) {
+        // 如果有错误，显示错误提示，但状态不改为已绑定
+        Message.error(`绑定失败: ${error}`)
+      } else {
+        // 如果成功，设置为已绑定并显示成功提示
+        setDingtalkBound(true)
+        Message.success('绑定成功')
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   const handleNotificationClick = async (notification: ModelMessageNotify) => {
     const isUserReview = notification.type === ModelMsgNotifyType.MsgNotifyTypeUserReview
@@ -170,49 +276,22 @@ export default function NotificationCenter() {
         >
           全部已读
         </Button>
-
-        {/* <Stack direction='row' alignItems='center' spacing={0.5} sx={{ ml: 'auto' }}>
-          <FormControlLabel
-            disabled={!isNotificationSupported}
-            control={
-              <Checkbox
-                checked={user.web_notify ?? false}
-                onChange={handleWebNotifyChange}
-                sx={{
-                  color: '#21222D',
-                  '&.Mui-checked': {
-                    color: 'primary.main',
-                  },
-                }}
-              />
-            }
-            label='启用网页通知'
+        {showConfigButton && (
+          <IconButton
+            onClick={() => setShowChannelConfigModal(true)}
             sx={{
-              '& .MuiFormControlLabel-label': {
-                fontSize: '14px',
-                color: 'rgba(33, 34, 45, 1)',
+              ml: 'auto',
+              color: 'primary.main',
+              padding: '4px',
+              '&:hover': {
+                backgroundColor: 'transparent',
               },
             }}
-          />
-          <Tooltip
-            title='网页的 Notification 功能通常要求网站通过 HTTPS 协议提供服务。这是现代浏览器出于安全考虑而强制执行的一项重要安全措施。'
-            arrow
-            placement='top'
+            size='small'
           >
-            <IconButton
-              size='small'
-              sx={{
-                padding: '4px',
-                color: '#999',
-                '&:hover': {
-                  color: '#666',
-                },
-              }}
-            >
-              <HelpOutlineIcon sx={{ fontSize: '16px' }} />
-            </IconButton>
-          </Tooltip>
-        </Stack> */}
+            <SettingsIcon sx={{ fontSize: '18px' }} />
+          </IconButton>
+        )}
       </Stack>
 
       {/* 通知列表 */}
@@ -425,6 +504,178 @@ export default function NotificationCenter() {
           />
         </Box>
       )}
+
+      {/* 通知渠道配置弹窗 */}
+      <Modal
+        open={showChannelConfigModal}
+        onClose={() => setShowChannelConfigModal(false)}
+        onCancel={() => setShowChannelConfigModal(false)}
+        title='通知渠道配置'
+        width={520}
+        footer={null}
+      >
+        <Box>
+          <Typography
+            variant='body2'
+            sx={{
+              color: 'rgba(33, 34, 45, 0.70)',
+              fontSize: '14px',
+              mb: 3,
+            }}
+          >
+            绑定通知渠道后,您可以在对应平台接收消息通知
+          </Typography>
+
+          {/* 钉钉渠道卡片 */}
+          <Card
+            sx={{
+              p: 2.5,
+              border: '1px solid #e0e0e0',
+              borderRadius: '8px',
+              boxShadow: 'none',
+            }}
+          >
+            <Stack direction='row' alignItems='center' spacing={2}>
+              {/* 钉钉图标 */}
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  backgroundColor: '#1890ff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <Box
+                  component='svg'
+                  sx={{
+                    width: 20,
+                    height: 20,
+                    fill: 'white',
+                  }}
+                  viewBox='0 0 24 24'
+                >
+                  <path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5' />
+                </Box>
+              </Box>
+
+              {/* 渠道信息 */}
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography
+                  variant='body1'
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: '16px',
+                    color: 'rgba(33, 34, 45, 1)',
+                    mb: 0.5,
+                  }}
+                >
+                  钉钉
+                </Typography>
+                <Typography
+                  variant='body2'
+                  sx={{
+                    fontSize: '14px',
+                    color: 'rgba(33, 34, 45, 0.70)',
+                  }}
+                >
+                  绑定钉钉账号,接收钉钉消息通知
+                </Typography>
+              </Box>
+
+              {/* 绑定状态和操作按钮 */}
+              <Stack direction='row' alignItems='center' spacing={2}>
+                {dingtalkBound ? (
+                  <>
+                    <Stack direction='row' alignItems='center' spacing={1}>
+                      <Box
+                        sx={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          backgroundColor: '#52c41a',
+                        }}
+                      />
+                      <Typography
+                        variant='body2'
+                        sx={{
+                          fontSize: '14px',
+                          color: 'rgba(33, 34, 45, 0.70)',
+                        }}
+                      >
+                        已绑定
+                      </Typography>
+                    </Stack>
+                    <Button
+                      variant='outlined'
+                      color='error'
+                      size='small'
+                      onClick={() => {
+                        Modal.confirm({
+                          title: '确定要解除绑定吗？',
+                          content: '解除绑定后，您将无法在钉钉接收消息通知。',
+                          okButtonProps: { color: 'primary' },
+                          onOk: () => {
+                            // TODO: 调用解除绑定接口
+                            // 暂时重新加载状态
+                            loadDingtalkBindStatus()
+                            Message.success('已解除绑定')
+                          },
+                        })
+                      }}
+                      sx={{
+                        textTransform: 'none',
+                        fontSize: '14px',
+                        minWidth: 'auto',
+                        px: 2,
+                      }}
+                    >
+                      解除绑定
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant='contained'
+                    color='primary'
+                    size='small'
+                    onClick={async () => {
+                      try {
+                        // 点击绑定时，实时获取跳转链接
+                        const url = await getUserNotifySubAuthUrl({
+                          app: isInDingtalkApp(),
+                          type: ModelMessageNotifySubType.MessageNotifySubTypeDingtalk,
+                        })
+                        if (url && url.trim() !== '') {
+                          // 跳转到钉钉绑定页面
+                          if (typeof globalThis !== 'undefined' && globalThis.location) {
+                            globalThis.location.href = url
+                          }
+                        } else {
+                          Message.error('获取绑定链接失败，请稍后重试')
+                        }
+                      } catch (error) {
+                        console.error('获取绑定链接失败:', error)
+                        Message.error('获取绑定链接失败，请稍后重试')
+                      }
+                    }}
+                    sx={{
+                      textTransform: 'none',
+                      fontSize: '14px',
+                      minWidth: 'auto',
+                      px: 2,
+                    }}
+                  >
+                    立即绑定
+                  </Button>
+                )}
+              </Stack>
+            </Stack>
+          </Card>
+        </Box>
+      </Modal>
     </Box>
   )
 }

@@ -11,7 +11,7 @@ import {
   ModelGroupWithItem,
   ModelForumInfo,
 } from '@/api'
-import { Message, IssueStatusChip } from '@/components'
+import { Message, StatusChip } from '@/components'
 import EditorWrap, { EditorWrapRef } from '@/components/editor'
 import Modal from '@/components/modal'
 import { useGroupData } from '@/contexts/GroupDataContext'
@@ -395,7 +395,7 @@ const ConvertToIssueModal = ({ open, onClose, questionData, onSuccess, forumInfo
                             {issue.title}
                           </Typography>
                           <Stack direction='row' spacing={1} alignItems='center' flexWrap='wrap' gap={0.5}>
-                            <IssueStatusChip resolved={issue.resolved} size='small' />
+                            <StatusChip type={ModelDiscussionType.DiscussionTypeIssue} resolved={issue.resolved} size='small' />
                             {issue.group_ids?.map((groupId) => {
                               const groupName = getGroupName(groupId)
                               if (!groupName) return null

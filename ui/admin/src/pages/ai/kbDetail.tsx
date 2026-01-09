@@ -39,7 +39,7 @@ import {
 } from '@mui/material';
 import { useRequest } from 'ahooks';
 import dayjs from 'dayjs';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 const KnowledgeBaseDetailPage = () => {
@@ -79,7 +79,6 @@ const KnowledgeBaseDetailPage = () => {
   const [rootHasMore, setRootHasMore] = useState(true);
   const [rootLoading, setRootLoading] = useState(false);
 
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const searchDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const isFirstMountForSearchRef = useRef(true);
   const isFirstMountForTabRef = useRef(true);
@@ -302,13 +301,16 @@ const KnowledgeBaseDetailPage = () => {
   const syncing = totalDocs - success - failed;
 
   // 刷新所有已展开的节点
+  // 注意：会根据当前的 docStatusTab 筛选状态来刷新数据
   const refreshAllNodes = () => {
     if (!spaceId || !folderId || !kb_id) return;
 
     // 刷新根节点（不追加，直接替换）
+    // loadRootNodes 内部会调用 getStatusFilter() 根据 docStatusTab 筛选
     loadRootNodes(1, false);
 
     // 刷新所有已展开的节点
+    // loadChildNodes 内部会调用 getStatusFilter() 根据 docStatusTab 筛选
     treeNodeStates.forEach((state, parentId) => {
       if (state.expanded && state.page > 0) {
         loadChildNodes(parentId, 1, false);
@@ -319,58 +321,6 @@ const KnowledgeBaseDetailPage = () => {
     fetchStats();
   };
 
-  // 启动轮询
-  const startPolling = () => {
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-    }
-    pollingIntervalRef.current = setInterval(() => {
-      if (spaceId && folderId && kb_id) {
-        refreshAllNodes();
-      } else {
-        stopPolling();
-      }
-    }, 5000); // 每5秒轮询一次
-  };
-
-  // 停止轮询
-  const stopPolling = () => {
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-      pollingIntervalRef.current = null;
-    }
-  };
-
-  // 检查是否有同步中的文档（使用文件夹状态判断）
-  useEffect(() => {
-    if (!kb_id) return;
-    // 如果文件夹状态不是成功或失败，说明有同步中的文档
-    const hasSyncing =
-      currentFolder?.status !== undefined &&
-      currentFolder.status !== ModelDocStatus.DocStatusApplySuccess &&
-      currentFolder.status !== ModelDocStatus.DocStatusApplyFailed &&
-      currentFolder.status !== ModelDocStatus.DocStatusExportFailed;
-
-    // 或者通过统计数量判断
-    const hasSyncingByCount = syncing > 0;
-
-    if (hasSyncing || hasSyncingByCount) {
-      startPolling();
-    } else {
-      stopPolling();
-    }
-    return () => {
-      stopPolling();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentFolder?.status, syncing, kb_id]);
-
-  // 组件卸载时清理轮询定时器
-  useEffect(() => {
-    return () => {
-      stopPolling();
-    };
-  }, []);
 
   // 统一处理数据获取：路由参数变化、筛选/分页变化
   useEffect(() => {
@@ -390,10 +340,17 @@ const KnowledgeBaseDetailPage = () => {
     }
 
     if (spaceId && folderId && kb_id) {
+      // 先清空所有状态
       setRootNodes([]);
       setRootPage(1);
       setRootHasMore(true);
+      
+      // 清空所有树节点状态，确保已展开的节点也会被重置
+      // 这样所有已展开的节点都会变成收起状态，子节点数据也会被清空
+      // 使用函数式更新确保立即清空，避免 React 渲染延迟导致旧数据仍然显示
       setTreeNodeStates(new Map());
+      
+      // 重新加载根节点（会应用新的筛选条件）
       loadRootNodes(1, false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -725,6 +682,8 @@ const KnowledgeBaseDetailPage = () => {
             <Box sx={{ width: 32, mr: 1 }} />
           )}
 
+          {/* 状态图标 */}
+          <Box sx={{ mr: 2 }}>{!isFolder && renderStatusIcon(doc)}</Box>
           {/* 文件夹/文档图标 */}
           <Box sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
             {isFolder ? (
@@ -737,9 +696,6 @@ const KnowledgeBaseDetailPage = () => {
               <DescriptionIcon fontSize="small" sx={{ color: 'text.secondary' }} />
             )}
           </Box>
-
-          {/* 状态图标 */}
-          <Box sx={{ mr: 2 }}>{!isFolder && renderStatusIcon(doc)}</Box>
 
           {/* 文档名称 */}
           <Typography variant="body2" sx={{ flex: 1, fontWeight: level === 0 ? 500 : 400 }}>
@@ -842,9 +798,25 @@ const KnowledgeBaseDetailPage = () => {
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', boxShadow: 'none' }}>
       {/* 标题 */}
-      <Typography variant="body1" sx={{ mb: 3, fontWeight: 500, fontSize: '16px' }}>
-        {folderTitle}
-      </Typography>
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
+        <Typography variant="body1" sx={{ fontWeight: 500, fontSize: '16px' }}>
+          {folderTitle}
+        </Typography>
+        <Tooltip title="刷新数据">
+          <IconButton
+            size="small"
+            onClick={refreshAllNodes}
+            sx={{
+              color: 'text.secondary',
+              '&:hover': {
+                color: 'primary.main',
+              },
+            }}
+          >
+            <AutorenewIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Stack>
 
       {/* 状态摘要、搜索框和批量操作 */}
       <Stack
@@ -978,7 +950,7 @@ const KnowledgeBaseDetailPage = () => {
 
         {/* 根节点列表 */}
         {rootNodes.map(doc => (
-          <TreeNode key={doc.id} doc={doc} level={0} />
+          <TreeNode key={`${doc.id}-${docStatusTab}`} doc={doc} level={0} />
         ))}
 
         {/* 根节点加载更多 */}

@@ -1,7 +1,7 @@
 'use client'
 
 import { ModelSystemBrand } from '@/api'
-import { ModelDiscussionType, ModelForumInfo as ModelForum, ModelUserRole } from '@/api/types'
+import { ModelDiscussionType, ModelForumInfo as ModelForum, ModelForumLink, ModelUserRole } from '@/api/types'
 import { AuthContext } from '@/components/authProvider'
 import { useForumId } from '@/hooks/useForumId'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
@@ -628,7 +628,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
             <Box>
               <Divider sx={{ my: 2 }} />
               <List disablePadding>
-                {currentForumInfo.links.links.map((link, linkIndex) => (
+                {currentForumInfo.links.links.map((link: ModelForumLink, linkIndex: number) => (
                   <ListItem key={`link-${linkIndex}-${link.name || linkIndex}`} disablePadding sx={{ mb: 1 }}>
                     <MuiLink
                       href={link.address || '#'}

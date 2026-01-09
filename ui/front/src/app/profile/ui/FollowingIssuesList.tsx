@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { Box, Card, CircularProgress, Stack, Typography } from '@mui/material'
 import { getDiscussionFollow } from '@/api'
 import { ModelDiscussion, ModelDiscussionState, ModelDiscussionType, ModelListRes } from '@/api/types'
-import { DiscussionTypeChip, IssueStatusChip } from '@/components'
+import { DiscussionTypeChip, StatusChip } from '@/components'
 import { CommonContext } from '@/components/commonProvider'
 import { TimeDisplay } from '@/components/TimeDisplay'
 import { Ellipsis, Icon } from '@ctzhian/ui'
@@ -224,34 +224,8 @@ export default function FollowingIssuesList() {
 
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-                  {/* Issue 类型使用 IssueStatusChip 显示所有状态 */}
-                  {isIssuePost && shouldShowStatus(issue) && <IssueStatusChip resolved={issue.resolved} size='small' />}
-                  {/* 非 Issue 类型显示已解决/已关闭状态 */}
-                  {!isIssuePost && shouldShowStatus(issue) && (
-                    <Chip
-                      icon={
-                        postStatus === 'answered' || postStatus === 'closed' ? (
-                          <CheckCircleOutlineIcon
-                            sx={{
-                              width: 15,
-                              height: 15,
-                              color: '#fff !important',
-                            }}
-                          />
-                        ) : undefined
-                      }
-                      label={getStatusLabel(postStatus)}
-                      size='small'
-                      sx={{
-                        bgcolor: getStatusColor(postStatus),
-                        color: '#fff !important',
-                        height: 20,
-                        fontWeight: 600,
-                        fontSize: '12px',
-                        border: `1px solid ${getStatusColor(postStatus)}30`,
-                      }}
-                    />
-                  )}
+                  {/* 使用统一的 StatusChip 显示状态 */}
+                  {shouldShowStatus(issue) && <StatusChip item={issue} size='small' />}
                   {allTags.map((tag, index) => {
                     const isCategory = isCategoryTag(tag, groups.flat)
                     return (

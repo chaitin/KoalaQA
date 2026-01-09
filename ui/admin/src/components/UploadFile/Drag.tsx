@@ -85,6 +85,7 @@ const Upload = ({
             sx={{
               display: 'flex',
               alignItems: 'center',
+              fontSize: 13,
               justifyContent: 'center',
             }}
           >

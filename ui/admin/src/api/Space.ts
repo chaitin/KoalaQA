@@ -16,12 +16,11 @@ import {
   DeleteAdminKbKbIdSpaceSpaceIdFolderFolderIdParams,
   DeleteAdminKbKbIdSpaceSpaceIdParams,
   GetAdminKbKbIdSpaceParams,
-  GetAdminKbKbIdSpaceSpaceIdDocThirdDocIdParams,
   GetAdminKbKbIdSpaceSpaceIdFolderFolderIdDocParams,
   GetAdminKbKbIdSpaceSpaceIdFolderParams,
   GetAdminKbKbIdSpaceSpaceIdParams,
   GetAdminKbKbIdSpaceSpaceIdRemoteParams,
-  ModelKBDocument,
+  ModelExportOpt,
   ModelListRes,
   ModelPlatformOpt,
   PostAdminKbKbIdSpaceParams,
@@ -217,45 +216,15 @@ export const deleteAdminKbKbIdSpaceSpaceId = (
  * No description
  *
  * @tags space
- * @name GetAdminKbKbIdSpaceSpaceIdDocThirdDocId
- * @summary get kb space doc
- * @request GET:/admin/kb/{kb_id}/space/{space_id}/doc/{third_doc_id}
- * @response `200` `(ContextResponse & {
-    data?: ModelKBDocument,
-
-})` OK
- */
-
-export const getAdminKbKbIdSpaceSpaceIdDocThirdDocId = (
-  {
-    kbId,
-    spaceId,
-    thirdDocId,
-    ...query
-  }: GetAdminKbKbIdSpaceSpaceIdDocThirdDocIdParams,
-  params: RequestParams = {},
-) =>
-  request<
-    ContextResponse & {
-      data?: ModelKBDocument;
-    }
-  >({
-    path: `/admin/kb/${kbId}/space/${spaceId}/doc/${thirdDocId}`,
-    method: "GET",
-    format: "json",
-    ...params,
-  });
-
-/**
- * No description
- *
- * @tags space
  * @name GetAdminKbKbIdSpaceSpaceIdFolder
  * @summary list kb space folder
  * @request GET:/admin/kb/{kb_id}/space/{space_id}/folder
  * @response `200` `(ContextResponse & {
     data?: (ModelListRes & {
-    items?: (SvcListSpaceFolderItem)[],
+    items?: ((SvcListSpaceFolderItem & {
+    export_opt?: ModelExportOpt,
+
+}))[],
 
 }),
 
@@ -269,7 +238,9 @@ export const getAdminKbKbIdSpaceSpaceIdFolder = (
   request<
     ContextResponse & {
       data?: ModelListRes & {
-        items?: SvcListSpaceFolderItem[];
+        items?: (SvcListSpaceFolderItem & {
+          export_opt?: ModelExportOpt;
+        })[];
       };
     }
   >({

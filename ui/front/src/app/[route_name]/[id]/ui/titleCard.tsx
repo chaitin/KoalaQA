@@ -6,7 +6,7 @@ import {
   putDiscussionDiscIdClose,
 } from '@/api'
 import { ModelDiscussionDetail, ModelDiscussionState, ModelDiscussionType, ModelUserRole } from '@/api/types'
-import { DiscussionStatusChip, DiscussionTypeChip, Message, TagFilterChip } from '@/components'
+import { StatusChip, DiscussionTypeChip, Message, TagFilterChip } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import CommonAvatar from '@/components/CommonAvatar'
 import { CommonContext } from '@/components/commonProvider'
@@ -310,12 +310,10 @@ const TitleCard = ({ data, menuAnchorEl, onMenuClose }: TitleCardProps) => {
 
       {/* 第二行：标签和作者信息 */}
       <Stack direction='row' flexWrap='wrap' sx={{ alignItems: 'center', px: 1 }} gap={1}>
-        {/* 类型标签 */}
-        <DiscussionTypeChip sx={{ height: 22 }} type={data.type} variant='default' />
-        {/* 左侧：所有标签（分组标签、状态标签、普通标签） */}
         <Stack direction='row' flexWrap='wrap' sx={{ gap: 1, alignItems: 'center', mr: 'auto' }}>
-          {/* 使用通用状态标签组件 */}
-          <DiscussionStatusChip item={data} size='medium' />
+          {/* 类型标签 */}
+          <StatusChip item={data} size='medium' />
+          <DiscussionTypeChip sx={{ height: 22 }} type={data.type} variant='default' />
           {data.groups?.map((item) => {
             return (
               <Chip

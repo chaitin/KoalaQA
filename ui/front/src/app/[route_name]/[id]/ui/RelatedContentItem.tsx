@@ -1,7 +1,7 @@
 'use client'
 
 import { ModelDiscussionListItem } from '@/api'
-import { DiscussionStatusChip, DiscussionTypeChip } from '@/components'
+import { StatusChip, DiscussionTypeChip } from '@/components'
 import { Ellipsis } from '@ctzhian/ui'
 import { Box, Chip, Stack } from '@mui/material'
 import Link from 'next/link'
@@ -179,25 +179,24 @@ const RelatedContentItem = ({ routeName, relatedPost, groupNames }: RelatedConte
     >
       <Stack spacing={2}>
         {/* 标题和类型标签 */}
-        <Stack direction='row' alignItems='center' spacing={1} sx={{ mb: 0.5 }}>
-          <DiscussionTypeChip size='small' type={relatedPost.type} variant='default' />
-          <Ellipsis
-            sx={{
-              fontWeight: 600,
-              fontSize: '14px',
-              color: '#21222D',
-              lineHeight: '20px',
-              flex: 1,
-            }}
-            className='title'
-          >
-            {relatedPost.title}
-          </Ellipsis>
-        </Stack>
+
+        <Ellipsis
+          sx={{
+            fontWeight: 600,
+            fontSize: '14px',
+            color: '#21222D',
+            lineHeight: '20px',
+            flex: 1,
+          }}
+          className='title'
+        >
+          {relatedPost.title}
+        </Ellipsis>
 
         {/* 状态标签和作者信息 */}
         <Stack direction='row' alignItems='center' spacing={1} justifyContent='space-between'>
-          <DiscussionStatusChip item={relatedPost} size='small' />
+          <StatusChip item={relatedPost} size='small' />
+          <DiscussionTypeChip size='small' type={relatedPost.type} variant='default' />
           <GroupChips groupNames={groupNames} postId={relatedPost.id ?? 0} />
         </Stack>
       </Stack>
@@ -206,4 +205,3 @@ const RelatedContentItem = ({ routeName, relatedPost, groupNames }: RelatedConte
 }
 
 export default RelatedContentItem
-

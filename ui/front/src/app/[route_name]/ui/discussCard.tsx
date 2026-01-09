@@ -1,7 +1,7 @@
 'use client'
 
 import { ModelDiscussionListItem, ModelDiscussionType } from '@/api/types'
-import { DiscussionStatusChip, DiscussionTypeChip, MarkDown } from '@/components'
+import { StatusChip, DiscussionTypeChip, MarkDown } from '@/components'
 import CommonAvatar from '@/components/CommonAvatar'
 import { CommonContext } from '@/components/commonProvider'
 import { TimeDisplay } from '@/components/TimeDisplay'
@@ -134,29 +134,20 @@ const DiscussCard = ({
         </Box>
       </Stack>
       <Link href={`/${routeName}/${it.uuid}`} key={it.id} onClick={onNavigate}>
-        <Box
+        <Ellipsis
           sx={{
-            display: 'flex',
-            alignItems: 'center',
             mb: 2,
-            gap: 1,
+            fontWeight: 700,
+            color: '#111827',
+            letterSpacing: '-0.01em',
+            fontSize: size === 'small' ? '16px' : '18px',
+            lineHeight: size === 'small' ? '24px' : 'normal',
+            '&:hover': { color: '#000000' },
+            flex: 1,
           }}
         >
-          <DiscussionTypeChip size={size} type={it.type} variant='default' />
-          <Ellipsis
-            sx={{
-              fontWeight: 700,
-              color: '#111827',
-              letterSpacing: '-0.01em',
-              fontSize: size === 'small' ? '16px' : '18px',
-              lineHeight: size === 'small' ? '24px' : 'normal',
-              '&:hover': { color: '#000000' },
-              flex: 1,
-            }}
-          >
-            {it.title}
-          </Ellipsis>
-        </Box>
+          {it.title}
+        </Ellipsis>
         <MarkDown
           content={it.type === ModelDiscussionType.DiscussionTypeBlog ? it.summary : it.content}
           truncateLength={100}
@@ -179,8 +170,9 @@ const DiscussCard = ({
 
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+            <StatusChip item={it} size={size} />
+            <DiscussionTypeChip size={size} type={it.type} variant='default' />
             {/* 使用通用状态标签组件 */}
-            <DiscussionStatusChip item={it} size={size} />
             {groupNames.map((tag, index) => {
               const isCategory = isCategoryTag(tag, groups.flat)
               return (

@@ -110,6 +110,11 @@ export enum ModelMsgNotifyType {
   MsgNotifyTypeUserPoint = 14,
 }
 
+export enum ModelMessageNotifySubType {
+  MessageNotifySubTypeUnknown = 0,
+  MessageNotifySubTypeDingtalk = 1,
+}
+
 export enum ModelLLMType {
   LLMTypeChat = "chat",
   LLMTypeEmbedding = "embedding",
@@ -411,6 +416,18 @@ export interface ModelDiscussionTag {
   updated_at?: number;
 }
 
+export interface ModelExportFolder {
+  doc_ids?: string[];
+  folder_id?: string;
+}
+
+export interface ModelExportOpt {
+  file_type?: string;
+  /** 需要导出的文档 */
+  folders?: ModelExportFolder[];
+  space_id?: string;
+}
+
 export interface ModelForumGroups {
   group_ids?: number[];
   type?: ModelDiscussionType;
@@ -461,31 +478,6 @@ export type ModelJSONBModelExportOpt = Record<string, any>;
 export type ModelJSONBModelForumLinks = Record<string, any>;
 
 export type ModelJSONBModelPlatformOpt = Record<string, any>;
-
-export interface ModelKBDocument {
-  created_at?: number;
-  desc?: string;
-  doc_id?: string;
-  doc_type?: ModelDocType;
-  export_opt?: ModelJSONBModelExportOpt;
-  export_task_id?: string;
-  file_type?: ModelFileType;
-  group_ids?: number[];
-  id?: number;
-  json?: number[];
-  kb_id?: number;
-  markdown?: number[];
-  message?: string;
-  parent_id?: number;
-  platform?: PlatformPlatformType;
-  platform_opt?: ModelJSONBModelPlatformOpt;
-  rag_id?: string;
-  root_parent_id?: number;
-  similar_id?: number;
-  status?: ModelDocStatus;
-  title?: string;
-  updated_at?: number;
-}
 
 export interface ModelKBDocumentDetail {
   created_at?: number;
@@ -569,6 +561,20 @@ export interface ModelMessageNotify {
   /** 通知到谁，除了发给机器人的信息，user_id 与 to_id 相同 */
   user_id?: number;
   user_point?: number;
+}
+
+export interface ModelMessageNotifySub {
+  created_at?: number;
+  enabled?: boolean;
+  id?: number;
+  type?: ModelMessageNotifySubType;
+  updated_at?: number;
+}
+
+export interface ModelMessageNotifySubInfo {
+  client_id?: string;
+  client_secret?: string;
+  robot_code?: string;
 }
 
 export interface ModelPlatformOpt {
@@ -1057,6 +1063,12 @@ export interface SvcMKUpdateReq {
   type: "chat" | "embedding" | "rerank" | "analysis" | "analysis-vl";
 }
 
+export interface SvcMessageNotifySubCreateReq {
+  enabled?: boolean;
+  info?: ModelMessageNotifySubInfo;
+  type: ModelMessageNotifySubType;
+}
+
 export interface SvcModelKitCheckReq {
   api_header?: string;
   api_key?: string;
@@ -1490,15 +1502,6 @@ export interface DeleteAdminKbKbIdSpaceSpaceIdParams {
   spaceId: number;
 }
 
-export interface GetAdminKbKbIdSpaceSpaceIdDocThirdDocIdParams {
-  /** kb_id */
-  kbId: number;
-  /** space_id */
-  spaceId: number;
-  /** third_doc_id */
-  thirdDocId: string;
-}
-
 export interface GetAdminKbKbIdSpaceSpaceIdFolderParams {
   /** kb_id */
   kbId: number;
@@ -1903,6 +1906,11 @@ export interface GetUserNotifyListParams {
   read?: boolean;
   /** @min 1 */
   size?: number;
+}
+
+export interface GetUserNotifySubAuthUrlParams {
+  app?: boolean;
+  type: 0 | 1;
 }
 
 export interface GetUserPointParams {
