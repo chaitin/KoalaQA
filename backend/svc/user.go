@@ -694,7 +694,7 @@ func (u *User) SubBindCallback(ctx context.Context, uid uint, typ model.MessageN
 		return err
 	}
 
-	thirdUser, err := author.User(ctx, req.Code)
+	thirdUser, err := author.User(ctx, req.Code, third_auth.UserWithThirdIDKey(third_auth.ThirdIDKeyUserID))
 	if err != nil {
 		return err
 	}

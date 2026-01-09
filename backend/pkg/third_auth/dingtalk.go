@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/glog"
@@ -70,7 +71,88 @@ func (d *dingtalk) body(ctx context.Context, resp *http.Response) string {
 	return string(body)
 }
 
-func (d *dingtalk) User(ctx context.Context, code string) (*User, error) {
+func (d *dingtalk) getUserIDByUnionID(ctx context.Context, unionid string) (string, error) {
+	tokenQuery := make(url.Values)
+	tokenQuery.Set("appkey", d.cfg.ClientID)
+	tokenQuery.Set("appsecret", d.cfg.ClientSecret)
+
+	tokenReq, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://oapi.dingtalk.com/gettoken?"+tokenQuery.Encode(), nil)
+	if err != nil {
+		return "", err
+	}
+
+	tokenResp, err := util.HTTPClient.Do(tokenReq)
+	if err != nil {
+		return "", err
+	}
+	defer tokenResp.Body.Close()
+
+	if tokenResp.StatusCode != http.StatusOK {
+		d.logger.WithContext(ctx).With("body", d.body(ctx, tokenResp)).Error("get token failed")
+		return "", fmt.Errorf("unexpected token status code: %d", tokenResp.StatusCode)
+	}
+
+	var tokenData struct {
+		Errcode     int    `json:"errcode"`
+		AccessToken string `json:"access_token"`
+		Errmsg      string `json:"errmsg"`
+		ExpiresIn   int    `json:"expires_in"`
+	}
+	err = json.NewDecoder(tokenResp.Body).Decode(&tokenData)
+	if err != nil {
+		return "", err
+	}
+
+	if tokenData.Errcode != 0 {
+		return "", fmt.Errorf("get token failed:(%d) %s", tokenData.Errcode, tokenData.Errmsg)
+	}
+
+	reqBytes, err := json.Marshal(map[string]string{
+		"unionid": unionid,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://oapi.dingtalk.com/topapi/user/getbyunionid?access_token="+tokenData.AccessToken, bytes.NewReader(reqBytes))
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := util.HTTPClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		d.logger.WithContext(ctx).With("body", d.body(ctx, resp)).Error("get user_id failed")
+		return "", fmt.Errorf("unexpected user_id status code: %d", resp.StatusCode)
+	}
+
+	var resData struct {
+		Errcode   int    `json:"errcode"`
+		Errmsg    string `json:"errmsg"`
+		RequestID string `json:"request_id"`
+		Result    struct {
+			ContactType int    `json:"contact_type"`
+			UserID      string `json:"userid"`
+		} `json:"result"`
+	}
+	err = json.NewDecoder(resp.Body).Decode(&resData)
+	if err != nil {
+		return "", err
+	}
+
+	if resData.Errcode != 0 {
+		return "", fmt.Errorf("get user_id failed: %s (%d) %s", resData.RequestID, resData.Errcode, resData.Errmsg)
+	}
+
+	return resData.Result.UserID, nil
+}
+
+func (d *dingtalk) User(ctx context.Context, code string, optFuncs ...userOptFunc) (*User, error) {
+	opt := getUserOpt(optFuncs...)
 	byteAccessTokenData, err := json.Marshal(map[string]string{
 		"clientId":     d.cfg.ClientID,
 		"clientSecret": d.cfg.ClientSecret,
@@ -128,6 +210,7 @@ func (d *dingtalk) User(ctx context.Context, code string) (*User, error) {
 
 	var userInfo struct {
 		Nick      string `json:"nick"`
+		UnionID   string `json:"unionId"`
 		OpenID    string `json:"openId"`
 		Mobile    string `json:"mobile"`
 		Email     string `json:"email"`
@@ -139,8 +222,27 @@ func (d *dingtalk) User(ctx context.Context, code string) (*User, error) {
 		return nil, err
 	}
 
+	var thirdID string
+	switch opt.ThirdIDKey {
+	case ThirdIDKeyOpenID:
+		thirdID = userInfo.OpenID
+	case ThirdIDKeyUnionID:
+		thirdID = userInfo.UnionID
+	case ThirdIDKeyUserID:
+		thirdID, err = d.getUserIDByUnionID(ctx, userInfo.UnionID)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		thirdID = userInfo.OpenID
+	}
+
+	if thirdID == "" {
+		return nil, errors.New("empty third_id")
+	}
+
 	return &User{
-		ThirdID: userInfo.OpenID,
+		ThirdID: thirdID,
 		Name:    userInfo.Nick,
 		Type:    model.AuthTypeDingtalk,
 		Role:    model.UserRoleUser,

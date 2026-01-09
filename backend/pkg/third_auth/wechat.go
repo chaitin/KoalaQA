@@ -64,8 +64,10 @@ func (w *wechat) AuthURL(ctx context.Context, state string, optFuncs ...authURLO
 	return u.String(), nil
 }
 
-func (w *wechat) User(ctx context.Context, code string) (*User, error) {
+func (w *wechat) User(ctx context.Context, code string, optFuncs ...userOptFunc) (*User, error) {
 	logger := w.logger.WithContext(ctx).With("code", code)
+
+	opt := getUserOpt(optFuncs...)
 
 	reqInfo, err := w.getUserReqInfo(ctx, code)
 	if err != nil {
@@ -78,8 +80,22 @@ func (w *wechat) User(ctx context.Context, code string) (*User, error) {
 		return nil, err
 	}
 
+	var thirdID string
+	switch opt.ThirdIDKey {
+	case ThirdIDKeyOpenID:
+		thirdID = userInfo.OpenID
+	case ThirdIDKeyUnionID:
+		thirdID = userInfo.UnionID
+	default:
+		thirdID = userInfo.OpenID
+	}
+
+	if thirdID == "" {
+		return nil, errors.New("empty third id")
+	}
+
 	return &User{
-		ThirdID: userInfo.OpenID,
+		ThirdID: thirdID,
 		Name:    userInfo.Nickname,
 		Type:    model.AuthTypeWechat,
 		Role:    model.UserRoleUser,
@@ -159,6 +175,7 @@ func (w *wechat) getUserReqInfo(ctx context.Context, code string) (*userReqInfo,
 
 type userInfo struct {
 	OpenID     string `json:"openid"`
+	UnionID    string `json:"unionid"`
 	Nickname   string `json:"nickname"`
 	Headimgurl string `json:"headimgurl"`
 }

@@ -77,7 +77,7 @@ func (o *oidc) AuthURL(ctx context.Context, state string, optFuncs ...authURLOpt
 	}).AuthCodeURL(state), nil
 }
 
-func (o *oidc) User(ctx context.Context, code string) (*User, error) {
+func (o *oidc) User(ctx context.Context, code string, optFuncs ...userOptFunc) (*User, error) {
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, util.HTTPClient)
 
 	callbackURL, err := o.callbackURL(ctx, "/api/user/login/third/callback/oidc")

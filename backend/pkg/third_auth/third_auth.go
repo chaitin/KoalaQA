@@ -58,8 +58,37 @@ func getAuthURLOpt(funcs ...authURLOptFunc) authURLOpt {
 	return o
 }
 
+type ThirdIDKey uint
+
+const (
+	ThirdIDKeyOpenID ThirdIDKey = iota
+	ThirdIDKeyUnionID
+	ThirdIDKeyUserID
+)
+
+type userOpt struct {
+	ThirdIDKey ThirdIDKey
+}
+
+type userOptFunc func(o *userOpt)
+
+func UserWithThirdIDKey(key ThirdIDKey) userOptFunc {
+	return func(o *userOpt) {
+		o.ThirdIDKey = key
+	}
+}
+
+func getUserOpt(funcs ...userOptFunc) userOpt {
+	var o userOpt
+
+	for _, f := range funcs {
+		f(&o)
+	}
+	return o
+}
+
 type Author interface {
 	Check(ctx context.Context) error
 	AuthURL(ctx context.Context, state string, optFuncs ...authURLOptFunc) (string, error)
-	User(ctx context.Context, code string) (*User, error)
+	User(ctx context.Context, code string, optFuncs ...userOptFunc) (*User, error)
 }
