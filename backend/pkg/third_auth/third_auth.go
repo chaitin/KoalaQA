@@ -22,6 +22,7 @@ type User struct {
 	Type    model.AuthType
 	Name    string
 	Avatar  string
+	Mobile  string
 	Role    model.UserRole
 }
 
@@ -30,7 +31,8 @@ func (u *User) HashInt() int {
 }
 
 type authURLOpt struct {
-	APP bool
+	APP          bool
+	CallbackPath string
 }
 
 type authURLOptFunc func(o *authURLOpt)
@@ -38,6 +40,12 @@ type authURLOptFunc func(o *authURLOpt)
 func AuthURLInAPP(app bool) authURLOptFunc {
 	return func(o *authURLOpt) {
 		o.APP = app
+	}
+}
+
+func AuthURLCallbackPath(p string) authURLOptFunc {
+	return func(o *authURLOpt) {
+		o.CallbackPath = p
 	}
 }
 

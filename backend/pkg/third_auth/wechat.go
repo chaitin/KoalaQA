@@ -35,13 +35,18 @@ func (w *wechat) Check(ctx context.Context) error {
 }
 
 func (w *wechat) AuthURL(ctx context.Context, state string, optFuncs ...authURLOptFunc) (string, error) {
-	query := make(url.Values)
+	opt := getAuthURLOpt(optFuncs...)
 
-	callbackURL, err := w.callbackURL(ctx, "/api/user/login/third/callback/wechat")
+	if opt.CallbackPath == "" {
+		opt.CallbackPath = "/api/user/login/third/callback/wechat"
+	}
+
+	callbackURL, err := w.callbackURL(ctx, opt.CallbackPath)
 	if err != nil {
 		return "", err
 	}
 
+	query := make(url.Values)
 	query.Set("appid", w.cfg.ClientID)
 	query.Set("redirect_uri", callbackURL)
 	query.Set("response_type", "code")
@@ -79,6 +84,7 @@ func (w *wechat) User(ctx context.Context, code string) (*User, error) {
 		Type:    model.AuthTypeWechat,
 		Role:    model.UserRoleUser,
 		Email:   "",
+		Mobile:  "",
 		Avatar:  userInfo.Headimgurl,
 	}, nil
 }

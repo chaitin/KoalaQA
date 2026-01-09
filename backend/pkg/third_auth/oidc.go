@@ -6,7 +6,6 @@ import (
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/glog"
-	"github.com/chaitin/koalaqa/pkg/oss"
 	"github.com/chaitin/koalaqa/pkg/util"
 	oidcAuth "github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
@@ -15,7 +14,6 @@ import (
 type oidc struct {
 	cfg         model.AuthConfigOauth
 	callbackURL CallbackURLFunc
-	oc          oss.Client
 
 	logger *glog.Logger
 }
@@ -54,7 +52,13 @@ func (o *oidc) Check(ctx context.Context) error {
 func (o *oidc) AuthURL(ctx context.Context, state string, optFuncs ...authURLOptFunc) (string, error) {
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, util.HTTPClient)
 
-	callbackURL, err := o.callbackURL(ctx, "/api/user/login/third/callback/oidc")
+	opt := getAuthURLOpt(optFuncs...)
+
+	if opt.CallbackPath == "" {
+		opt.CallbackPath = "/api/user/login/third/callback/oidc"
+	}
+
+	callbackURL, err := o.callbackURL(ctx, opt.CallbackPath)
 	if err != nil {
 		return "", err
 	}
@@ -111,10 +115,12 @@ func (o *oidc) User(ctx context.Context, code string) (*User, error) {
 	}
 
 	var claims struct {
-		Name          string `json:"name"`
-		Picture       string `json:"picture"`
-		Email         string `json:"email"`
-		EmailVerified bool   `json:"email_verified"`
+		Name                string `json:"name"`
+		Picture             string `json:"picture"`
+		Email               string `json:"email"`
+		EmailVerified       bool   `json:"email_verified"`
+		PhoneNumber         string `json:"phone_number"`
+		PhoneNumberVerified bool   `json:"phone_number_verified"`
 	}
 	err = idToken.Claims(&claims)
 	if err != nil {
@@ -129,21 +135,25 @@ func (o *oidc) User(ctx context.Context, code string) (*User, error) {
 		claims.Email = ""
 	}
 
+	if !claims.PhoneNumberVerified {
+		claims.PhoneNumber = ""
+	}
+
 	return &User{
 		ThirdID: idToken.Subject,
 		Type:    model.AuthTypeOIDC,
 		Name:    claims.Name,
 		Email:   claims.Email,
 		Avatar:  claims.Picture,
+		Mobile:  claims.PhoneNumber,
 		Role:    model.UserRoleUser,
 	}, nil
 }
 
-func newOIDC(cfg Config, oc oss.Client) Author {
+func newOIDC(cfg Config) Author {
 	return &oidc{
 		logger:      glog.Module("third_auth", "oidc"),
 		cfg:         cfg.Config.Oauth,
 		callbackURL: cfg.CallbackURL,
-		oc:          oc,
 	}
 }

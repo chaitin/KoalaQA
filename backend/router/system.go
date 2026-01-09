@@ -8,8 +8,9 @@ import (
 )
 
 type system struct {
-	info       *version.Info
-	svcSysDisc *svc.SystemDiscussion
+	info         *version.Info
+	svcSysDisc   *svc.SystemDiscussion
+	svcNotifySub *svc.MessageNotifySub
 }
 
 func (s *system) Route(h server.Handler) {
@@ -50,6 +51,22 @@ func (s *system) Discussion(ctx *context.Context) {
 	res, err := s.svcSysDisc.Get(ctx)
 	if err != nil {
 		ctx.InternalError(err, "get system discussion failed")
+		return
+	}
+
+	ctx.Success(res)
+}
+
+// ListNotifySub
+// @Summary list notify sub
+// @Tags system
+// @Produce json
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]model.MessageNotifySub}}
+// @Router /system/notify_sub [get]
+func (s *system) ListNotifySub(ctx *context.Context) {
+	res, err := s.svcNotifySub.FrontendList(ctx)
+	if err != nil {
+		ctx.InternalError(err, "list notify sub failed")
 		return
 	}
 

@@ -26,11 +26,13 @@ import (
 type User struct {
 	jwt            *jwt.Generator
 	repoUser       *repo.User
+	repoNotifySub  *repo.MessageNotifySub
 	repoDisc       *repo.Discussion
 	repoUserPoint  *repo.UserPointRecord
 	repoComment    *repo.Comment
 	authMgmt       *third_auth.Manager
 	svcAuth        *Auth
+	svcPublicAddr  *PublicAddress
 	oc             oss.Client
 	repoOrg        *repo.Org
 	repoUserReview *repo.UserReview
@@ -618,6 +620,92 @@ func (u *User) LoginThirdURL(ctx context.Context, state string, req LoginThirdUR
 	return u.authMgmt.AuthURL(ctx, req.Type, state, third_auth.AuthURLInAPP(req.APP))
 }
 
+type NotifySubBindAuthURLReq struct {
+	APP  bool                       `form:"app"`
+	Type model.MessageNotifySubType `form:"type" binding:"required"`
+}
+
+var thirdAuthTypeM = map[model.MessageNotifySubType]model.AuthType{
+	model.MessageNotifySubTypeDingtalk: model.AuthTypeDingtalk,
+}
+
+func (u *User) callbackURL(ctx context.Context, urlPath string) (string, error) {
+	publicAddress, err := u.svcPublicAddr.Get(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return publicAddress.FullURL(urlPath), nil
+}
+
+func (u *User) SubBindAuthURL(ctx context.Context, state string, req NotifySubBindAuthURLReq) (string, error) {
+	var callbackPath string
+	switch req.Type {
+	case model.MessageNotifySubTypeDingtalk:
+		callbackPath = "/api/user/notify_sub/callback/dingtalk"
+	default:
+		return "", errors.ErrUnsupported
+	}
+
+	notifySub, err := u.repoNotifySub.GetByType(ctx, req.Type)
+	if err != nil {
+		return "", err
+	}
+	subInfo := notifySub.Info.Inner()
+
+	author, err := third_auth.New(thirdAuthTypeM[req.Type], third_auth.Config{
+		Config: model.AuthConfig{
+			Oauth: model.AuthConfigOauth{
+				ClientID:     subInfo.ClientID,
+				ClientSecret: subInfo.ClientSecret,
+			},
+		},
+		CallbackURL: u.callbackURL,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return author.AuthURL(ctx, state, third_auth.AuthURLCallbackPath(callbackPath))
+}
+
+type NotifySubBindCallbackReq struct {
+	State string `form:"state" binding:"required"`
+	Code  string `form:"code" binding:"required"`
+}
+
+func (u *User) SubBindCallback(ctx context.Context, uid uint, typ model.MessageNotifySubType, req NotifySubBindCallbackReq) error {
+	notifySub, err := u.repoNotifySub.GetByType(ctx, typ)
+	if err != nil {
+		return err
+	}
+	subInfo := notifySub.Info.Inner()
+
+	author, err := third_auth.New(thirdAuthTypeM[typ], third_auth.Config{
+		Config: model.AuthConfig{
+			Oauth: model.AuthConfigOauth{
+				ClientID:     subInfo.ClientID,
+				ClientSecret: subInfo.ClientSecret,
+			},
+		},
+		CallbackURL: u.callbackURL,
+	})
+	if err != nil {
+		return err
+	}
+
+	thirdUser, err := author.User(ctx, req.Code)
+	if err != nil {
+		return err
+	}
+
+	return u.repoUser.BindNotifySub(ctx, &model.UserNotiySub{
+		Type:    typ,
+		UserID:  uid,
+		ThirdID: thirdUser.ThirdID,
+	})
+}
+
 type LoginThirdCallbackReq struct {
 	State string `form:"state" binding:"required"`
 	Code  string `form:"code" binding:"required"`
@@ -781,12 +869,13 @@ func (u *User) ListSearchHistory(ctx context.Context, req ListSearchHistoryReq) 
 	return &res, nil
 }
 
-func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth,
+func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth, notifySub *repo.MessageNotifySub,
 	authMgmt *third_auth.Manager, oc oss.Client, org *repo.Org, userPoint *repo.UserPointRecord,
 	disc *repo.Discussion, comm *repo.Comment, review *repo.UserReview, pub mq.Publisher) *User {
 	return &User{
 		jwt:            genrator,
 		repoUser:       repoUser,
+		repoNotifySub:  notifySub,
 		svcAuth:        auth,
 		authMgmt:       authMgmt,
 		oc:             oc,

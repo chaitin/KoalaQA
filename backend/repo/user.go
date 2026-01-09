@@ -16,6 +16,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type User struct {
@@ -291,6 +292,19 @@ func (u *User) CountSearchHistory(ctx context.Context, cnt *int64, queryFuncs ..
 	return u.db.Model(&model.UserSearchHistory{}).
 		Scopes(opt.Scopes()...).
 		Count(cnt).Error
+}
+
+func (u *User) BindNotifySub(ctx context.Context, userSub *model.UserNotiySub) error {
+	return u.db.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "type"}, {Name: "user_id"}},
+			DoUpdates: clause.AssignmentColumns([]string{"third_id", "updated_at"}),
+		}).
+		Create(userSub).Error
+}
+
+func (u *User) UnbindNotifySub(ctx context.Context, uid uint, typ model.MessageNotifySubType) error {
+	return u.db.WithContext(ctx).Where("type = ? AND user_id = ?", typ, uid).Delete(nil).Error
 }
 
 func newUser(db *database.DB, org *Org, oc oss.Client) *User {

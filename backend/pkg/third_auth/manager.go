@@ -6,13 +6,11 @@ import (
 	"sync"
 
 	"github.com/chaitin/koalaqa/model"
-	"github.com/chaitin/koalaqa/pkg/oss"
 )
 
 type Manager struct {
 	lock    sync.Mutex
 	authors map[model.AuthType]Author
-	oc      oss.Client
 }
 
 func (m *Manager) author(t model.AuthType) (Author, bool) {
@@ -29,16 +27,9 @@ func (m *Manager) updateAuthor(t model.AuthType, author Author) {
 }
 
 func (m *Manager) Update(t model.AuthType, cfg Config, checkCfg bool) error {
-	var author Author
-	switch t {
-	case model.AuthTypeOIDC:
-		author = newOIDC(cfg, m.oc)
-	case model.AuthTypeWeCom:
-		author = newWeCom(cfg)
-	case model.AuthTypeWechat:
-		author = newWechat(cfg)
-	default:
-		return errors.ErrUnsupported
+	author, err := New(t, cfg)
+	if err != nil {
+		return err
 	}
 
 	if checkCfg {
@@ -71,7 +62,22 @@ func (o *Manager) User(ctx context.Context, t model.AuthType, code string) (*Use
 	return author.User(ctx, code)
 }
 
-func newManager(oc oss.Client) *Manager {
+func New(t model.AuthType, cfg Config) (Author, error) {
+	switch t {
+	case model.AuthTypeOIDC:
+		return newOIDC(cfg), nil
+	case model.AuthTypeWeCom:
+		return newWeCom(cfg), nil
+	case model.AuthTypeWechat:
+		return newWechat(cfg), nil
+	case model.AuthTypeDingtalk:
+		return newDingtalk(cfg), nil
+	default:
+		return nil, errors.ErrUnsupported
+	}
+}
+
+func newManager() *Manager {
 	return &Manager{
 		authors: make(map[model.AuthType]Author),
 	}

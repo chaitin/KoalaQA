@@ -40,7 +40,11 @@ func (w *weCom) Check(ctx context.Context) error {
 func (w *weCom) AuthURL(ctx context.Context, state string, optFuncs ...authURLOptFunc) (string, error) {
 	opt := getAuthURLOpt(optFuncs...)
 
-	callbackURL, err := w.callbackURL(ctx, "/api/user/login/third/callback/we_com")
+	if opt.CallbackPath == "" {
+		opt.CallbackPath = "/api/user/login/third/callback/we_com"
+	}
+
+	callbackURL, err := w.callbackURL(ctx, opt.CallbackPath)
 	if err != nil {
 		return "", err
 	}
@@ -104,6 +108,7 @@ func (w *weCom) User(ctx context.Context, code string) (*User, error) {
 
 		res.Email = user.Email
 		res.Avatar = user.Avatar
+		res.Mobile = user.Mobile
 	}
 
 	return res, nil

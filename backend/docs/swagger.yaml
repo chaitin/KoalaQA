@@ -835,6 +835,36 @@ definitions:
       user_point:
         type: integer
     type: object
+  model.MessageNotifySub:
+    properties:
+      created_at:
+        type: integer
+      enabled:
+        type: boolean
+      id:
+        type: integer
+      type:
+        $ref: '#/definitions/model.MessageNotifySubType'
+      updated_at:
+        type: integer
+    type: object
+  model.MessageNotifySubInfo:
+    properties:
+      client_id:
+        type: string
+      client_secret:
+        type: string
+      robot_code:
+        type: string
+    type: object
+  model.MessageNotifySubType:
+    enum:
+    - 0
+    - 1
+    type: integer
+    x-enum-varnames:
+    - MessageNotifySubTypeUnknown
+    - MessageNotifySubTypeDingtalk
   model.MsgNotifyType:
     enum:
     - 0
@@ -1907,6 +1937,17 @@ definitions:
     - base_url
     - model
     - provider
+    - type
+    type: object
+  svc.MessageNotifySubCreateReq:
+    properties:
+      enabled:
+        type: boolean
+      info:
+        $ref: '#/definitions/model.MessageNotifySubInfo'
+      type:
+        $ref: '#/definitions/model.MessageNotifySubType'
+    required:
     - type
     type: object
   svc.ModelKitCheckReq:
@@ -4486,6 +4527,60 @@ paths:
       summary: update login_method config
       tags:
       - login_method
+  /admin/system/notify_sub:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          allOf:
+                          - $ref: '#/definitions/model.MessageNotifySub'
+                          - properties:
+                              info:
+                                $ref: '#/definitions/model.MessageNotifySubInfo'
+                            type: object
+                        type: array
+                    type: object
+              type: object
+      summary: list message notify sub
+      tags:
+      - message_notify_sub
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.MessageNotifySubCreateReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: integer
+              type: object
+      summary: upsert message notify sub
+      tags:
+      - message_notify_sub
   /admin/system/public_address:
     get:
       produces:
@@ -6021,6 +6116,30 @@ paths:
       summary: get system info
       tags:
       - system
+  /system/notify_sub:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/model.MessageNotifySub'
+                        type: array
+                    type: object
+              type: object
+      summary: list notify sub
+      tags:
+      - system
   /system/seo:
     get:
       produces:
@@ -6287,6 +6406,37 @@ paths:
           schema:
             $ref: '#/definitions/context.Response'
       summary: update notify web switch
+      tags:
+      - user
+  /user/notify_sub/auth_url:
+    get:
+      parameters:
+      - in: query
+        name: app
+        type: boolean
+      - enum:
+        - 0
+        - 1
+        in: query
+        name: type
+        required: true
+        type: integer
+        x-enum-varnames:
+        - MessageNotifySubTypeUnknown
+        - MessageNotifySubTypeDingtalk
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: get user notify sub bind url
       tags:
       - user
   /user/point:
