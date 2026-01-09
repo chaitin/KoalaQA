@@ -39,6 +39,8 @@ export const ImportModal = ({
   const [initialSyncedData, setInitialSyncedData] = useState<Record<string, string[] | null>>({});
   // 保存半选状态的文件夹ID集合（doc_ids 不为 null 的文件夹）
   const [indeterminateFolders, setIndeterminateFolders] = useState<Set<string>>(new Set());
+  // 标记是否全选（当 export_opt 为空对象 {} 时，表示全选）
+  const [isFullSelected, setIsFullSelected] = useState<boolean>(false);
 
   // 递归收集需要标记的节点ID
   // syncedData 格式：{ folder_id: [doc_ids] | null }
@@ -127,27 +129,40 @@ export const ImportModal = ({
       });
       
       // 从 export_opt.folders 中提取文件夹和文件的映射关系
-      // null 表示整个文件夹被选中，数组表示只选中了部分文档（半选状态）
+      // 处理逻辑：
+      // 1. 如果 export_opt 为空对象 {}，表示全选所有
+      // 2. 如果 export_opt.folders 存在且有内容：
+      //    - 遍历 folders 中的每个 folder
+      //    - 对比 folder.folder_id 和树形结构中的所有文件夹
+      //    - 如果匹配到了：
+      //      * doc_ids === null：表示整个文件夹全选
+      //      * doc_ids 是数组且有值：表示半选（只选中了部分文档）
       const syncedData: Record<string, string[] | null> = {};
       const indeterminateFolderIds = new Set<string>();
+      let fullSelected = false;
       
       response?.items?.forEach((item: any) => {
         const exportOpt = item.export_opt;
-        if (exportOpt?.folders) {
+        // 如果 export_opt 为空对象 {}，表示全选所有
+        if (exportOpt && typeof exportOpt === 'object' && Object.keys(exportOpt).length === 0) {
+          fullSelected = true;
+          return;
+        }
+        
+        // 如果 export_opt.folders 存在且有内容，需要对比 folder_id 和当前所有选项
+        if (exportOpt?.folders && Array.isArray(exportOpt.folders) && exportOpt.folders.length > 0) {
           exportOpt.folders.forEach((folder: any) => {
             if (folder.folder_id) {
-              // 如果 doc_ids 为 null，表示整个文件夹被选中
-              // 如果 doc_ids 有值（数组），表示只选中了部分文档（半选状态）
+              // 对比 folder_id 和树形结构中的文件夹（在 collectSyncedNodeIds 中会进行匹配）
+              // 如果 doc_ids === null，表示整个文件夹全选
               if (folder.doc_ids === null) {
                 syncedData[folder.folder_id] = null;
-              } else {
-                const docIds = folder.doc_ids || [];
-                syncedData[folder.folder_id] = docIds;
-                // 如果 doc_ids 有值，标记为半选状态
-                if (docIds.length > 0) {
-                  indeterminateFolderIds.add(folder.folder_id);
-                }
+              } else if (Array.isArray(folder.doc_ids) && folder.doc_ids.length > 0) {
+                // 如果 doc_ids 是数组且有值，表示半选（只选中了部分文档）
+                syncedData[folder.folder_id] = folder.doc_ids;
+                indeterminateFolderIds.add(folder.folder_id);
               }
+              // 如果 doc_ids 是空数组，不进行任何标记（表示没有选中任何文档）
             }
           });
         }
@@ -155,6 +170,7 @@ export const ImportModal = ({
       
       setInitialSyncedData(syncedData);
       setIndeterminateFolders(indeterminateFolderIds);
+      setIsFullSelected(fullSelected);
     } catch (error) {
       console.error('获取已同步文件夹失败:', error);
       // 失败时不阻断流程，只是没有初始选中状态
@@ -171,6 +187,7 @@ export const ImportModal = ({
       setLoadingFolderIds(new Set());
       setInitialSyncedData({});
       setIndeterminateFolders(new Set());
+      setIsFullSelected(false);
       return;
     }
 
@@ -184,7 +201,18 @@ export const ImportModal = ({
 
   // 当树形数据和已同步的数据都加载完成后，标记已同步的节点
   useEffect(() => {
-    if (!treeData || Object.keys(initialSyncedData).length === 0) return;
+    if (!treeData) return;
+    
+    // 如果 export_opt 为空对象，表示全选
+    if (isFullSelected) {
+      const { folderIds, docIds } = collectTreeIds(treeData);
+      setSelectedFolders(folderIds);
+      setSelectedDocs(new Set(docIds));
+      return;
+    }
+    
+    // 如果没有已同步的数据，不进行标记
+    if (Object.keys(initialSyncedData).length === 0) return;
     
     // 收集需要标记的节点ID
     const { folders, docs } = collectSyncedNodeIds(treeData, initialSyncedData);
@@ -203,7 +231,7 @@ export const ImportModal = ({
         return newSet;
       });
     }
-  }, [treeData, initialSyncedData, collectSyncedNodeIds]);
+  }, [treeData, initialSyncedData, isFullSelected, collectSyncedNodeIds]);
 
   // 切换文件夹选择状态
   const handleFolderToggle = (folderId?: string) => {
@@ -387,28 +415,66 @@ export const ImportModal = ({
         });
         
         // 获取到新的子节点后，检查是否有已同步的节点并标记
-        if (response.children && Object.keys(initialSyncedData).length > 0) {
-          const allFolders: string[] = [];
-          const allDocs: string[] = [];
-          
-          response.children.forEach(child => {
-            const { folders, docs } = collectSyncedNodeIds(child, initialSyncedData);
-            allFolders.push(...folders);
-            allDocs.push(...docs);
-          });
-          
-          if (allFolders.length > 0) {
-            setSelectedFolders(prev => {
-              const newSet = new Set([...prev, ...allFolders]);
-              return Array.from(newSet);
+        if (response.children) {
+          // 如果 export_opt 为空对象，表示全选，直接全选所有新获取的子节点
+          if (isFullSelected) {
+            const allFolders: string[] = [];
+            const allDocs: string[] = [];
+            
+            const collectAllIds = (child: SvcListAnydocNode) => {
+              const childId = child.value?.id;
+              const childIsFile = child.value?.file;
+              if (childId) {
+                if (childIsFile) {
+                  allDocs.push(childId);
+                } else {
+                  allFolders.push(childId);
+                }
+              }
+              if (child.children) {
+                child.children.forEach(collectAllIds);
+              }
+            };
+            
+            response.children.forEach(collectAllIds);
+            
+            if (allFolders.length > 0) {
+              setSelectedFolders(prev => {
+                const newSet = new Set([...prev, ...allFolders]);
+                return Array.from(newSet);
+              });
+            }
+            
+            if (allDocs.length > 0) {
+              setSelectedDocs(prev => {
+                const newSet = new Set([...prev, ...allDocs]);
+                return newSet;
+              });
+            }
+          } else if (Object.keys(initialSyncedData).length > 0) {
+            // 否则，根据 initialSyncedData 标记已同步的节点
+            const allFolders: string[] = [];
+            const allDocs: string[] = [];
+            
+            response.children.forEach(child => {
+              const { folders, docs } = collectSyncedNodeIds(child, initialSyncedData);
+              allFolders.push(...folders);
+              allDocs.push(...docs);
             });
-          }
-          
-          if (allDocs.length > 0) {
-            setSelectedDocs(prev => {
-              const newSet = new Set([...prev, ...allDocs]);
-              return newSet;
-            });
+            
+            if (allFolders.length > 0) {
+              setSelectedFolders(prev => {
+                const newSet = new Set([...prev, ...allFolders]);
+                return Array.from(newSet);
+              });
+            }
+            
+            if (allDocs.length > 0) {
+              setSelectedDocs(prev => {
+                const newSet = new Set([...prev, ...allDocs]);
+                return newSet;
+              });
+            }
           }
         }
       }
