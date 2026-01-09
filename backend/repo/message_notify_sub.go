@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"errors"
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/database"
@@ -18,14 +19,16 @@ func (m *MessageNotifySub) Upsert(ctx context.Context, data *model.MessageNotify
 		var sub model.MessageNotifySub
 		err := tx.Model(&model.MessageNotifySub{}).Where("type = ?", data.Type).First(&sub).Error
 		if err != nil {
-			return err
-		}
-
-		if !sub.Info.Inner().Equal(data.Info.Inner()) {
+			if !errors.Is(err, database.ErrRecordNotFound) {
+				return err
+			}
+		} else if !sub.Info.Inner().Equal(data.Info.Inner()) {
 			err = tx.Model(&model.UserNotiySub{}).Where("type = ?", data.Type).Delete(nil).Error
 			if err != nil {
 				return err
 			}
+		} else {
+			return nil
 		}
 
 		return tx.Clauses(clause.OnConflict{

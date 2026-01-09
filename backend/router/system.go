@@ -20,8 +20,8 @@ func (s *system) Route(h server.Handler) {
 	g.GET("/notify_sub", s.ListNotifySub)
 }
 
-func newSystem(info *version.Info, sysDisc *svc.SystemDiscussion) server.Router {
-	return &system{info: info, svcSysDisc: sysDisc}
+func newSystem(info *version.Info, sysDisc *svc.SystemDiscussion, svcNotifySub *svc.MessageNotifySub) server.Router {
+	return &system{info: info, svcSysDisc: sysDisc, svcNotifySub: svcNotifySub}
 }
 
 type SystemInfoRes struct {
