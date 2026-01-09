@@ -854,8 +854,6 @@ definitions:
         type: string
       client_secret:
         type: string
-      robot_code:
-        type: string
     type: object
   model.MessageNotifySubType:
     enum:
@@ -6669,6 +6667,19 @@ paths:
   /user/trend:
     get:
       parameters:
+      - enum:
+        - qa
+        - feedback
+        - blog
+        - issue
+        in: query
+        name: discussion_type
+        type: string
+        x-enum-varnames:
+        - DiscussionTypeQA
+        - DiscussionTypeFeedback
+        - DiscussionTypeBlog
+        - DiscussionTypeIssue
       - in: query
         minimum: 1
         name: page

@@ -7065,6 +7065,23 @@ const docTemplate = `{
                 "summary": "list user trend",
                 "parameters": [
                     {
+                        "enum": [
+                            "qa",
+                            "feedback",
+                            "blog",
+                            "issue"
+                        ],
+                        "type": "string",
+                        "x-enum-varnames": [
+                            "DiscussionTypeQA",
+                            "DiscussionTypeFeedback",
+                            "DiscussionTypeBlog",
+                            "DiscussionTypeIssue"
+                        ],
+                        "name": "discussion_type",
+                        "in": "query"
+                    },
+                    {
                         "minimum": 1,
                         "type": "integer",
                         "name": "page",
@@ -8397,9 +8414,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "client_secret": {
-                    "type": "string"
-                },
-                "robot_code": {
                     "type": "string"
                 }
             }
