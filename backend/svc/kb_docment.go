@@ -871,7 +871,7 @@ func (d *KBDocument) CreateSpaceFolder(ctx context.Context, kbID uint, spaceID u
 		exportFolderM := make(map[string]*model.ExportFolder)
 		item.Folders.Range(item.DocID, func(parentID string, csfi *model.CreateSpaceFolderInfo) error {
 			csfi.DocID = strings.TrimSpace(csfi.DocID)
-			if csfi.DocID == "" || len(csfi.Children) > 0 || parentID == item.DocID {
+			if csfi.DocID == "" || len(csfi.Children) > 0 {
 				return nil
 			}
 
