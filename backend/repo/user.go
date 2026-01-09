@@ -294,8 +294,22 @@ func (u *User) CountSearchHistory(ctx context.Context, cnt *int64, queryFuncs ..
 		Count(cnt).Error
 }
 
-func (u *User) ListNotifySub(ctx context.Context, uid uint) (res []model.UserNotiySub, err error) {
-	err = u.db.WithContext(ctx).Model(&model.UserNotiySub{}).Where("user_id = ?", uid).Find(&res).Error
+func (u *User) NotifySubBatchProcess(ctx context.Context, batchSize int, processFn func([]model.UserNotiySub) error, queryFuncs ...QueryOptFunc) error {
+	if batchSize <= 0 {
+		batchSize = 100
+	}
+
+	o := getQueryOpt(queryFuncs...)
+	var results []model.UserNotiySub
+
+	return u.db.WithContext(ctx).Model(&model.UserNotiySub{}).Scopes(o.Scopes()...).FindInBatches(&results, batchSize, func(tx *gorm.DB, batch int) error {
+		return processFn(results)
+	}).Error
+}
+
+func (u *User) ListNotifySub(ctx context.Context, queryFuncs ...QueryOptFunc) (res []model.UserNotiySub, err error) {
+	opt := getQueryOpt(queryFuncs...)
+	err = u.db.WithContext(ctx).Model(&model.UserNotiySub{}).Scopes(opt.Scopes()...).Find(&res).Error
 	return
 }
 

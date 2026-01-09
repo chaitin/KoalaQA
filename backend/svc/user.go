@@ -709,7 +709,7 @@ func (u *User) SubBindCallback(ctx context.Context, uid uint, typ model.MessageN
 func (u *User) ListNotifySub(ctx context.Context, uid uint) (*model.ListRes[model.UserNotiySub], error) {
 	var res model.ListRes[model.UserNotiySub]
 	var err error
-	res.Items, err = u.repoUser.ListNotifySub(ctx, uid)
+	res.Items, err = u.repoUser.ListNotifySub(ctx, repo.QueryWithEqual("user_id", uid))
 	if err != nil {
 		return nil, err
 	}
