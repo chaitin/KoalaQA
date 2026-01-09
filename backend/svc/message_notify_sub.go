@@ -54,7 +54,7 @@ type MessageNotifySubCreateReq struct {
 func (m *MessageNotifySub) Upsert(ctx context.Context, req MessageNotifySubCreateReq) (uint, error) {
 	switch req.Type {
 	case model.MessageNotifySubTypeDingtalk:
-		if req.Info.ClientID == "" || req.Info.ClientSecret == "" || req.Info.RobotCode == "" {
+		if req.Info.ClientID == "" || req.Info.ClientSecret == "" {
 			return 0, errors.New("invalid cred")
 		}
 	default:

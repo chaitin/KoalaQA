@@ -358,7 +358,7 @@ func (mn *messageNotify) sendNotifySubDingtalk(ctx context.Context, logger *glog
 		}
 
 		reqBytes, err := json.Marshal(map[string]any{
-			"robotCode": subInfo.RobotCode,
+			"robotCode": subInfo.ClientID,
 			"userIds":   thirdIDs,
 			"msgKey":    "sampleActionCard",
 			"msgParam":  string(paramBytes),

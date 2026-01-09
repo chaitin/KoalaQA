@@ -10,11 +10,10 @@ const (
 type MessageNotifySubInfo struct {
 	ClientID     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
-	RobotCode    string `json:"robot_code"`
 }
 
 func (m MessageNotifySubInfo) Equal(d MessageNotifySubInfo) bool {
-	return m.ClientID == d.ClientID && m.ClientSecret == d.ClientSecret && m.RobotCode == d.RobotCode
+	return m.ClientID == d.ClientID && m.ClientSecret == d.ClientSecret
 }
 
 type MessageNotifySub struct {
