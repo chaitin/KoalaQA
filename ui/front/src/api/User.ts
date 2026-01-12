@@ -28,12 +28,14 @@ import {
   ModelTrend,
   ModelUser,
   ModelUserInfo,
+  ModelUserNotiySub,
   ModelUserPointRecord,
   ModelUserSearchHistory,
   PutAdminUserUserIdParams,
   PutUserPayload,
   SvcAuthFrontendGetRes,
   SvcNotifyReadReq,
+  SvcUnbindNotifySubReq,
   SvcUpdateWebNotifyReq,
   SvcUserJoinOrgReq,
   SvcUserListItem,
@@ -463,6 +465,29 @@ export const postUserNotifyWeb = (
  * No description
  *
  * @tags user
+ * @name DeleteUserNotifySub
+ * @summary unbind user notifu sub
+ * @request DELETE:/user/notify_sub
+ * @response `200` `ContextResponse` OK
+ */
+
+export const deleteUserNotifySub = (
+  req: SvcUnbindNotifySubReq,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/user/notify_sub`,
+    method: "DELETE",
+    body: req,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
  * @name GetUserNotifySubAuthUrl
  * @summary get user notify sub bind url
  * @request GET:/user/notify_sub/auth_url
@@ -484,6 +509,36 @@ export const getUserNotifySubAuthUrl = (
     path: `/user/notify_sub/auth_url`,
     method: "GET",
     query: query,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name GetUserNotifySubBind
+ * @summary list notify sub
+ * @request GET:/user/notify_sub/bind
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (ModelUserNotiySub)[],
+
+}),
+
+})` OK
+ */
+
+export const getUserNotifySubBind = (params: RequestParams = {}) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: ModelUserNotiySub[];
+      };
+    }
+  >({
+    path: `/user/notify_sub/bind`,
+    method: "GET",
     format: "json",
     ...params,
   });

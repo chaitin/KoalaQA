@@ -69,6 +69,12 @@ export enum ModelUserPointType {
   UserPointTypeUserIntro = 12,
 }
 
+export enum ModelTrendType {
+  TrendTypeCreateDiscuss = 1,
+  TrendTypeAnswerAccepted = 2,
+  TrendTypeAnswer = 3,
+}
+
 export enum ModelStatType {
   StatTypeVisit = 1,
   StatTypeSearch = 2,
@@ -574,7 +580,6 @@ export interface ModelMessageNotifySub {
 export interface ModelMessageNotifySubInfo {
   client_id?: string;
   client_secret?: string;
-  robot_code?: string;
 }
 
 export interface ModelPlatformOpt {
@@ -639,7 +644,7 @@ export interface ModelTrend {
   discussion_type?: ModelDiscussionType;
   forum_id?: number;
   id?: number;
-  trend_type?: number;
+  trend_type?: ModelTrendType;
   updated_at?: number;
   /** 谁的行为 */
   user_id?: number;
@@ -672,12 +677,22 @@ export interface ModelUserInfo {
   intro?: string;
   key?: string;
   no_password?: boolean;
+  only_get?: boolean;
   org_ids?: number[];
   point?: number;
   role?: ModelUserRole;
   uid?: number;
   username?: string;
   web_notify?: boolean;
+}
+
+export interface ModelUserNotiySub {
+  created_at?: number;
+  id?: number;
+  third_id?: string;
+  type?: ModelMessageNotifySubType;
+  updated_at?: number;
+  user_id?: number;
 }
 
 export interface ModelUserPointRecord {
@@ -1171,6 +1186,10 @@ export interface SvcURLExportReq {
 
 export interface SvcURLListReq {
   url: string;
+}
+
+export interface SvcUnbindNotifySubReq {
+  type?: ModelMessageNotifySubType;
 }
 
 export interface SvcUpdateGroupIDsReq {
@@ -1931,10 +1950,12 @@ export interface DeleteUserQuickReplyQuickReplyIdParams {
 }
 
 export interface GetUserTrendParams {
+  discussion_type?: "qa" | "feedback" | "blog" | "issue";
   /** @min 1 */
   page?: number;
   /** @min 1 */
   size?: number;
+  trend_type?: 1 | 2 | 3;
   user_id: number;
 }
 

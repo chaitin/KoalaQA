@@ -22,7 +22,7 @@ import {
   Typography,
 } from '@mui/material'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { useContext, useEffect, useMemo, useState } from 'react'
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import BindEmailModal from './BindEmailModal'
 import ChangePasswordModal from './ChangePasswordModal'
 import NotificationCenter from './NotificationCenter'
@@ -87,12 +87,39 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
   // 判断是否是当前用户（只能查看自己的积分明细）
   const isCurrentUser = useMemo(() => user?.uid === initialUser?.uid, [user?.uid, initialUser?.uid])
   const isAdmin = isAdminRole(user.role || ModelUserRole.UserRoleGuest)
+  
+  // 更新查询参数并切换到动态标签页
+  const updateQueryParams = useCallback(
+    (discussionType: string, trendType: string) => {
+      const params = new URLSearchParams(searchParams?.toString() || '')
+      params.set('tab', '0') // 切换到动态标签页
+      params.set('discussion_type', discussionType)
+      params.set('trend_type', trendType)
+      const queryString = params.toString()
+      const newUrl = queryString ? `${pathname}?${queryString}` : pathname
+      router.replace(newUrl)
+    },
+    [router, pathname, searchParams],
+  )
+
   // 计算积分明细 tab 的索引
   const metrics = useMemo(
     () => [
-      { label: '问答', value: statistics?.qa_count ?? 0 },
-      { label: '文章', value: statistics?.blog_count ?? 0 },
-      { label: '回答', value: statistics?.answer_count ?? 0 },
+      {
+        label: '问题',
+        value: statistics?.qa_count ?? 0,
+        onClick: () => updateQueryParams('qa', '1'),
+      },
+      {
+        label: '文章',
+        value: statistics?.blog_count ?? 0,
+        onClick: () => updateQueryParams('blog', '1'),
+      },
+      {
+        label: '回答',
+        value: statistics?.answer_count ?? 0,
+        onClick: () => updateQueryParams('qa', '3'),
+      },
       {
         label: '积分',
         value: statistics?.point ?? 0,
@@ -107,7 +134,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
           : undefined,
       },
     ],
-    [statistics, isCurrentUser, pathname, router, searchParams],
+    [statistics, isCurrentUser, pathname, router, searchParams, updateQueryParams],
   )
 
   useEffect(() => {
@@ -151,6 +178,9 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
     setTabValue(tabIndex)
     // 更新 URL 参数
     const params = new URLSearchParams(searchParams?.toString() || '')
+    // 切换 tab 时，清空 discussion_type 和 trend_type 参数
+    params.delete('discussion_type')
+    params.delete('trend_type')
     if (tabIndex === 0) {
       // 如果回到默认 tab，移除参数
       params.delete('tab')

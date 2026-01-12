@@ -107,6 +107,7 @@ export default function ProfileHeroCard({
             {metrics!.map((item, index) => (
               <Box
                 key={item.label}
+                
                 sx={{
                   textAlign: 'center',
                   cursor: item.onClick ? 'pointer' : 'default',

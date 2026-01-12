@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useSearchParams } from 'next/navigation'
 import { Box, Button, Card, CircularProgress, Stack, Typography } from '@mui/material'
 import { getUserTrend } from '@/api'
 import { ModelDiscussionType, ModelListRes, ModelTrend, ModelForumInfo } from '@/api/types'
@@ -75,6 +76,7 @@ const EmptyState = () => (
 )
 
 export default function UserTrendList({ userId, ownerName }: UserTrendListProps) {
+  const searchParams = useSearchParams()
   const forums = useForumStore((s) => s.forums)
   const forumMap = useMemo(() => {
     const map = new Map<number, { name?: string; route_name?: string }>()
@@ -96,6 +98,10 @@ export default function UserTrendList({ userId, ownerName }: UserTrendListProps)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const observerTarget = useRef<HTMLDivElement>(null)
 
+  // 从 URL 参数中读取过滤条件
+  const discussionType = searchParams?.get('discussion_type') as "qa" | "feedback" | "blog" | "issue" | null
+  const trendType = searchParams?.get('trend_type') ? Number(searchParams.get('trend_type')) as 1 | 2 | 3 | null : null
+
   const fetchTrend = useCallback(
     async (pageToFetch: number) => {
       if (!userId) {
@@ -106,7 +112,21 @@ export default function UserTrendList({ userId, ownerName }: UserTrendListProps)
       setError(null)
 
       try {
-        const response = await getUserTrend({ user_id: userId, page: pageToFetch, size: PAGE_SIZE })
+        const params: Parameters<typeof getUserTrend>[0] = {
+          user_id: userId,
+          page: pageToFetch,
+          size: PAGE_SIZE,
+        }
+        
+        if (discussionType) {
+          params.discussion_type = discussionType
+        }
+        
+        if (trendType) {
+          params.trend_type = trendType
+        }
+
+        const response = await getUserTrend(params)
         const listRes = (response as { data?: ModelListRes & { items?: ModelTrend[]; total?: number } })?.data
         const items = listRes?.items || (response as { items?: ModelTrend[] })?.items || []
 
@@ -115,12 +135,11 @@ export default function UserTrendList({ userId, ownerName }: UserTrendListProps)
         setPage(pageToFetch)
       } catch (e) {
         console.error('获取用户动态失败', e)
-        setError('获取动态失败，请稍后重试')
       } finally {
         setLoading(false)
       }
     },
-    [userId],
+    [userId, discussionType, trendType],
   )
 
   useEffect(() => {

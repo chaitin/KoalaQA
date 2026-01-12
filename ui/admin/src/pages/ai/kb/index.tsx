@@ -564,7 +564,12 @@ const KnowledgeBasePage = () => {
   const handleSpaceClick = (space: SvcListSpaceItem) => {
     setSelectedSpaceId(space.id || null);
     if (location.pathname.includes('/kb/detail')) {
-      navigate(`/admin/ai/kb?id=${kb_id}`);
+      navigate(`/admin/ai/kb?id=${kb_id}&spaceId=${space.id}`);
+    } else {
+      // 在列表页时也更新 URL 参数，确保状态同步
+      const newSearch = new URLSearchParams(searchParams.toString());
+      newSearch.set('spaceId', String(space.id));
+      navigate(`/admin/ai/kb?${newSearch.toString()}`);
     }
   };
 

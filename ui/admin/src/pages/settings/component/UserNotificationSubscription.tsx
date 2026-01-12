@@ -2,7 +2,7 @@ import {
   getAdminSystemNotifySub,
   ModelMessageNotifySubType,
   postAdminSystemNotifySub,
-  SvcMessageNotifySubCreateReq
+  SvcMessageNotifySubCreateReq,
 } from '@/api';
 import Card from '@/components/card';
 import { message } from '@ctzhian/ui';
@@ -28,7 +28,6 @@ const userNotificationSchema = z
     enabled: z.boolean(),
     client_id: z.string().optional(),
     client_secret: z.string().optional(),
-    robot_code: z.string().optional(),
   })
   .superRefine((data, ctx) => {
     // 当启用时，所有字段必填
@@ -47,13 +46,6 @@ const userNotificationSchema = z
           path: ['client_secret'],
         });
       }
-      if (!data.robot_code || data.robot_code.trim().length === 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: '启用钉钉机器人时，RobotCode 为必填项',
-          path: ['robot_code'],
-        });
-      }
     }
   });
 
@@ -61,7 +53,6 @@ type UserNotificationFormData = {
   enabled: boolean;
   client_id?: string;
   client_secret?: string;
-  robot_code?: string;
 };
 
 const UserNotificationSubscription = () => {
@@ -78,7 +69,6 @@ const UserNotificationSubscription = () => {
       enabled: false,
       client_id: '',
       client_secret: '',
-      robot_code: '',
     },
   });
 
@@ -96,14 +86,12 @@ const UserNotificationSubscription = () => {
           enabled: dingtalkSub.enabled || false,
           client_id: dingtalkSub.info?.client_id || '',
           client_secret: dingtalkSub.info?.client_secret || '',
-          robot_code: dingtalkSub.info?.robot_code || '',
         });
       } else {
         reset({
           enabled: false,
           client_id: '',
           client_secret: '',
-          robot_code: '',
         });
       }
     },
@@ -119,7 +107,6 @@ const UserNotificationSubscription = () => {
           ? {
               client_id: data.client_id,
               client_secret: data.client_secret,
-              robot_code: data.robot_code,
             }
           : undefined,
       };
@@ -170,11 +157,11 @@ const UserNotificationSubscription = () => {
         </Box>
       ) : (
         <Stack spacing={3}>
-          <Box>
-            <Typography variant="body2" sx={{ mb: 1 }}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Typography variant="body2" sx={{ minWidth: 140 }}>
               钉钉机器人
             </Typography>
-            <FormControl>
+            <FormControl fullWidth>
               <RadioGroup
                 row
                 value={enabled ? 'enabled' : 'disabled'}
@@ -189,7 +176,7 @@ const UserNotificationSubscription = () => {
                 <FormControlLabel value="enabled" control={<Radio />} label="启用" />
               </RadioGroup>
             </FormControl>
-          </Box>
+          </Stack>
 
           {enabled && (
             <>
@@ -221,20 +208,6 @@ const UserNotificationSubscription = () => {
                   type="password"
                 />
               </Box>
-
-              <Box display="flex" alignItems="center">
-                <Typography variant="body2" sx={{ mr: 2, minWidth: 120 }}>
-                  RobotCode
-                </Typography>
-                <TextField
-                  fullWidth
-                  {...register('robot_code')}
-                  required
-                  error={!!errors.robot_code}
-                  helperText={errors.robot_code?.message}
-                  placeholder="请输入 RobotCode"
-                />
-              </Box>
             </>
           )}
         </Stack>
@@ -244,4 +217,3 @@ const UserNotificationSubscription = () => {
 };
 
 export default UserNotificationSubscription;
-

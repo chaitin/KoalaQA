@@ -4,7 +4,6 @@ import { useState } from 'react'
 import ActionButtons from './ActionButtons'
 import TitleCard from './titleCard'
 import Content from './content'
-import EditorContent from '@/components/EditorContent'
 import { ModelDiscussionDetail } from '@/api/types'
 
 interface DetailContentProps {
@@ -26,7 +25,7 @@ const DetailContent = ({ discussion }: DetailContentProps) => {
     <Box
       sx={{
         display: 'flex',
-        gap: 2,
+        gap: 3,
         alignItems: 'flex-start',
       }}
     >

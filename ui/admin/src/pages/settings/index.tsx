@@ -29,7 +29,7 @@ const Settings = () => {
             <PostManagement />
             <Access />
             <Seo />
-            {/* <UserNotificationSubscription /> */}
+            <UserNotificationSubscription />
             <Webhook />
           </Stack>
         </Grid>

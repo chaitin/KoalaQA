@@ -234,3 +234,33 @@ export const countSelectedDocs = (node: SvcListAnydocNode, selectedDocs: Set<str
   return count;
 };
 
+// 查找某个节点的所有父文件夹ID（从根到该节点的路径上的所有文件夹）
+export const getParentFolderIds = (
+  root: SvcListAnydocNode | null,
+  targetId: string,
+  path: string[] = []
+): string[] => {
+  if (!root) return [];
+  
+  const currentId = root.value?.id;
+  const isFile = root.value?.file;
+  const currentPath = currentId && !isFile ? [...path, String(currentId)] : path;
+  
+  // 如果找到目标节点，返回路径（不包括目标节点本身，如果它是文件夹）
+  if (currentId && String(currentId) === targetId) {
+    return currentPath;
+  }
+  
+  // 递归查找子节点
+  if (root.children) {
+    for (const child of root.children) {
+      const result = getParentFolderIds(child, targetId, currentPath);
+      if (result.length > 0 || (child.value?.id && String(child.value.id) === targetId)) {
+        return result;
+      }
+    }
+  }
+  
+  return [];
+};
+

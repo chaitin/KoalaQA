@@ -1,9 +1,11 @@
 'use client'
 
 import {
+  deleteUserNotifySub,
   getSystemNotifySub,
   getUserNotifyList,
   getUserNotifySubAuthUrl,
+  getUserNotifySubBind,
   getUserNotifyUnread,
   ModelMessageNotify,
   ModelMessageNotifySubType,
@@ -16,6 +18,7 @@ import Modal from '@/components/modal'
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import dayjs from '@/lib/dayjs'
 import { useForumStore } from '@/store'
+import { Icon } from '@ctzhian/ui'
 import SettingsIcon from '@mui/icons-material/Settings'
 import { Box, Button, Card, Pagination, Stack, Typography, useMediaQuery, useTheme, IconButton } from '@mui/material'
 import { useRequest } from 'ahooks'
@@ -93,27 +96,23 @@ export default function NotificationCenter() {
     return false
   }, [])
 
-  // 获取钉钉绑定状态（只在未绑定时调用接口）
+  // 获取钉钉绑定状态
   const loadDingtalkBindStatus = useCallback(async () => {
-    // 如果已经绑定，不需要调用接口
-    if (dingtalkBound) {
-      return
-    }
     try {
-      const url = await getUserNotifySubAuthUrl({
-        type: ModelMessageNotifySubType.MessageNotifySubTypeDingtalk,
-      })
-      // 如果返回空字符串或 null，表示已绑定；如果返回 URL，表示未绑定
-      if (url && url.trim() !== '') {
-        setDingtalkBound(false)
-      } else {
-        setDingtalkBound(true)
-      }
+      const res = await getUserNotifySubBind()
+      const items = res?.items || []
+      // 查找钉钉类型的绑定记录
+      const dingtalkBind = items.find(
+        (item) => item.type === ModelMessageNotifySubType.MessageNotifySubTypeDingtalk,
+      )
+      // 如果找到了绑定记录，说明已绑定
+      setDingtalkBound(!!dingtalkBind)
     } catch (error) {
       console.error('获取钉钉绑定状态失败:', error)
       // 不显示错误提示，避免干扰用户体验
+      setDingtalkBound(false)
     }
-  }, [dingtalkBound])
+  }, [])
 
   // 加载通知列表和未读数量
   useEffect(() => {
@@ -143,19 +142,32 @@ export default function NotificationCenter() {
     }
   }, [])
 
-  // // 加载系统通知订阅配置
-  // useEffect(() => {
-  // loadSystemNotifySubConfig()
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [])
+  // 加载系统通知订阅配置
+  useEffect(() => {
+    loadSystemNotifySubConfig()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  // 当弹窗打开时，只在未绑定时才调用接口获取绑定状态
-  // useEffect(() => {
-  //   if (showChannelConfigModal && !dingtalkBound) {
-  //     loadDingtalkBindStatus()
-  //   }
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [showChannelConfigModal, dingtalkBound])
+  // 处理关闭弹窗并清除 URL 参数
+  const handleCloseModal = useCallback(() => {
+    setShowChannelConfigModal(false)
+    // 清除 URL 中的 notify_sub 和 error 参数
+    const currentPath = pathname || '/profile'
+    const params = new URLSearchParams(searchParams?.toString() || '')
+    params.delete('notify_sub')
+    params.delete('error')
+    const newSearch = params.toString()
+    const newUrl = newSearch ? `${currentPath}?${newSearch}` : currentPath
+    routerWithRouteName.replace(newUrl)
+  }, [pathname, searchParams, routerWithRouteName])
+
+  // 当弹窗打开时，调用接口获取绑定状态
+  useEffect(() => {
+    if (showChannelConfigModal) {
+      loadDingtalkBindStatus()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showChannelConfigModal])
 
   // 处理从钉钉返回后的参数
   useEffect(() => {
@@ -164,8 +176,8 @@ export default function NotificationCenter() {
 
     if (notifySub === 'true') {
       // 清除 URL 参数
-      const currentPath = pathname || '/profile'
-      routerWithRouteName.replace(currentPath)
+      // const currentPath = pathname || '/profile'
+      // routerWithRouteName.replace(currentPath)
 
       // 只要 notify_sub=true 就打开弹窗
       setShowChannelConfigModal(true)
@@ -173,10 +185,24 @@ export default function NotificationCenter() {
       if (error) {
         // 如果有错误，显示错误提示，但状态不改为已绑定
         Message.error(`绑定失败: ${error}`)
+        setDingtalkBound(false)
       } else {
-        // 如果成功，设置为已绑定并显示成功提示
-        setDingtalkBound(true)
-        Message.success('绑定成功')
+        // 如果成功，重新获取绑定状态
+        getUserNotifySubBind()
+          .then((res) => {
+            const items = res?.items || []
+            const dingtalkBind = items.find(
+              (item) => item.type === ModelMessageNotifySubType.MessageNotifySubTypeDingtalk,
+            )
+            setDingtalkBound(!!dingtalkBind)
+            if (dingtalkBind) {
+              Message.success('绑定成功')
+            }
+          })
+          .catch((err) => {
+            console.error('获取绑定状态失败:', err)
+            setDingtalkBound(false)
+          })
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -508,8 +534,8 @@ export default function NotificationCenter() {
       {/* 通知渠道配置弹窗 */}
       <Modal
         open={showChannelConfigModal}
-        onClose={() => setShowChannelConfigModal(false)}
-        onCancel={() => setShowChannelConfigModal(false)}
+        onClose={handleCloseModal}
+        onCancel={handleCloseModal}
         title='通知渠道配置'
         width={520}
         footer={null}
@@ -537,31 +563,7 @@ export default function NotificationCenter() {
           >
             <Stack direction='row' alignItems='center' spacing={2}>
               {/* 钉钉图标 */}
-              <Box
-                sx={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: '50%',
-                  backgroundColor: '#1890ff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <Box
-                  component='svg'
-                  sx={{
-                    width: 20,
-                    height: 20,
-                    fill: 'white',
-                  }}
-                  viewBox='0 0 24 24'
-                >
-                  <path d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5' />
-                </Box>
-              </Box>
-
+              <Icon type='icon-dingding' sx={{ fontSize: 40 }} />
               {/* 渠道信息 */}
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography
@@ -619,10 +621,19 @@ export default function NotificationCenter() {
                           content: '解除绑定后，您将无法在钉钉接收消息通知。',
                           okButtonProps: { color: 'primary' },
                           onOk: () => {
-                            // TODO: 调用解除绑定接口
-                            // 暂时重新加载状态
-                            loadDingtalkBindStatus()
-                            Message.success('已解除绑定')
+                            void deleteUserNotifySub({
+                              type: ModelMessageNotifySubType.MessageNotifySubTypeDingtalk,
+                            })
+                              .then(() => {
+                                return loadDingtalkBindStatus()
+                              })
+                              .then(() => {
+                                Message.success('已解除绑定')
+                              })
+                              .catch((error) => {
+                                console.error('解除绑定失败:', error)
+                                Message.error('解除绑定失败，请稍后重试')
+                              })
                           },
                         })
                       }}
