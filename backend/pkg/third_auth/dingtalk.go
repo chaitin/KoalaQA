@@ -20,7 +20,7 @@ type dingtalk struct {
 	logger *glog.Logger
 
 	cfg         model.AuthConfigOauth
-	callbackURL CallbackURLFunc
+	callbackURL model.AccessAddrCallback
 }
 
 func (d *dingtalk) Check(ctx context.Context) error {

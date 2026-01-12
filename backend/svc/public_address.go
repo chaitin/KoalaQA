@@ -34,6 +34,15 @@ func (p *PublicAddress) Update(ctx context.Context, publicAddress model.PublicAd
 	})
 }
 
+func (p *PublicAddress) Callback(ctx context.Context, path string) (string, error) {
+	publicAddr, err := p.Get(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	return publicAddr.FullURL(path), nil
+}
+
 func newPublicAddress(sys *repo.System) *PublicAddress {
 	return &PublicAddress{
 		repoSys: sys,

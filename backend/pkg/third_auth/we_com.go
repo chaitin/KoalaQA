@@ -16,7 +16,7 @@ import (
 type weCom struct {
 	logger      *glog.Logger
 	cfg         model.AuthConfigOauth
-	callbackURL CallbackURLFunc
+	callbackURL model.AccessAddrCallback
 }
 
 func (w *weCom) Check(ctx context.Context) error {

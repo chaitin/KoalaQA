@@ -3,18 +3,117 @@ package svc
 import (
 	"context"
 	"errors"
+	"sync"
 
 	"github.com/chaitin/koalaqa/model"
+	"github.com/chaitin/koalaqa/pkg/notify_sub"
 	"github.com/chaitin/koalaqa/repo"
+	"go.uber.org/fx"
 )
+
+type messageNotifySubManagerIn struct {
+	fx.In
+
+	Lc         fx.Lifecycle
+	PublicAddr *PublicAddress
+	NotifySub  *repo.MessageNotifySub
+	Forum      *repo.Forum
+	User       *repo.User
+}
+
+type messageNotifySubManager struct {
+	in messageNotifySubManagerIn
+
+	lock sync.Mutex
+	m    map[model.MessageNotifySubType]notify_sub.Sender
+}
+
+func (m *messageNotifySubManager) new(typ model.MessageNotifySubType, info model.MessageNotifySubInfo, pc model.AccessAddrCallback) (notify_sub.Sender, error) {
+	switch typ {
+	case model.MessageNotifySubTypeDingtalk:
+		return notify_sub.NewDingtalk(notify_sub.DingtalkIn{
+			Forum: m.in.Forum,
+			User:  m.in.User,
+		}, info, pc), nil
+	default:
+		return nil, errors.ErrUnsupported
+	}
+}
+
+func (m *messageNotifySubManager) Delete(typ model.MessageNotifySubType) {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	delete(m.m, typ)
+}
+
+func (m *messageNotifySubManager) Upsert(notifySub model.MessageNotifySub) error {
+	if !notifySub.Enabled {
+		m.Delete(notifySub.Type)
+		return nil
+	}
+
+	sender, err := m.new(notifySub.Type, notifySub.Info.Inner(), m.in.PublicAddr.Callback)
+	if err != nil {
+		return err
+	}
+
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	m.m[notifySub.Type] = sender
+	return nil
+}
+
+func (m *messageNotifySubManager) Send(ctx context.Context, userIDs model.Int64Array, notifyData model.MessageNotifyCommon) error {
+	m.lock.Lock()
+	defer m.lock.Unlock()
+
+	for _, sender := range m.m {
+		_ = sender.Send(ctx, userIDs, notifyData)
+	}
+
+	return nil
+}
+
+func (m *messageNotifySubManager) init(ctx context.Context) error {
+	var notifySubs []model.MessageNotifySub
+	err := m.in.NotifySub.List(ctx, &notifySubs, repo.QueryWithEqual("enabled", true))
+	if err != nil {
+		return err
+	}
+
+	for _, notifySub := range notifySubs {
+		err = m.Upsert(notifySub)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func newMessageNotifySubManager(in messageNotifySubManagerIn) *messageNotifySubManager {
+	mgr := messageNotifySubManager{
+		in:   in,
+		m:    map[model.MessageNotifySubType]notify_sub.Sender{},
+		lock: sync.Mutex{},
+	}
+
+	in.Lc.Append(fx.StartHook(mgr.init))
+
+	return &mgr
+}
 
 type MessageNotifySub struct {
 	repoNotifySub *repo.MessageNotifySub
+	NotifySubMgr  *messageNotifySubManager
 }
 
-func newMessageNotifySub(s *repo.MessageNotifySub) *MessageNotifySub {
+func newMessageNotifySub(s *repo.MessageNotifySub, notifySubMgr *messageNotifySubManager) *MessageNotifySub {
 	return &MessageNotifySub{
 		repoNotifySub: s,
+		NotifySubMgr:  notifySubMgr,
 	}
 }
 
@@ -70,9 +169,15 @@ func (m *MessageNotifySub) Upsert(ctx context.Context, req MessageNotifySubCreat
 		return 0, err
 	}
 
+	err = m.NotifySubMgr.Upsert(sub)
+	if err != nil {
+		return 0, err
+	}
+
 	return sub.ID, nil
 }
 
 func init() {
 	registerSvc(newMessageNotifySub)
+	registerSvc(newMessageNotifySubManager)
 }

@@ -629,15 +629,6 @@ var thirdAuthTypeM = map[model.MessageNotifySubType]model.AuthType{
 	model.MessageNotifySubTypeDingtalk: model.AuthTypeDingtalk,
 }
 
-func (u *User) callbackURL(ctx context.Context, urlPath string) (string, error) {
-	publicAddress, err := u.svcPublicAddr.Get(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	return publicAddress.FullURL(urlPath), nil
-}
-
 func (u *User) SubBindAuthURL(ctx context.Context, state string, req NotifySubBindAuthURLReq) (string, error) {
 	var callbackPath string
 	switch req.Type {
@@ -660,7 +651,7 @@ func (u *User) SubBindAuthURL(ctx context.Context, state string, req NotifySubBi
 				ClientSecret: subInfo.ClientSecret,
 			},
 		},
-		CallbackURL: u.callbackURL,
+		CallbackURL: u.svcPublicAddr.Callback,
 	})
 	if err != nil {
 		return "", err
@@ -688,7 +679,7 @@ func (u *User) SubBindCallback(ctx context.Context, uid uint, typ model.MessageN
 				ClientSecret: subInfo.ClientSecret,
 			},
 		},
-		CallbackURL: u.callbackURL,
+		CallbackURL: u.svcPublicAddr.Callback,
 	})
 	if err != nil {
 		return err

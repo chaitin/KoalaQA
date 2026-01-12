@@ -13,7 +13,7 @@ import (
 
 type oidc struct {
 	cfg         model.AuthConfigOauth
-	callbackURL CallbackURLFunc
+	callbackURL model.AccessAddrCallback
 
 	logger *glog.Logger
 }

@@ -16,7 +16,7 @@ import (
 type wechat struct {
 	logger      *glog.Logger
 	cfg         model.AuthConfigOauth
-	callbackURL CallbackURLFunc
+	callbackURL model.AccessAddrCallback
 }
 
 func (w *wechat) Check(ctx context.Context) error {

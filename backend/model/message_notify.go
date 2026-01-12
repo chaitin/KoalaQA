@@ -1,6 +1,7 @@
 package model
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -109,7 +110,9 @@ func (c *MessageNotifyCommon) operateText() string {
 	return "**" + c.FromName + "** " + text + " **" + c.DiscussTitle + "**"
 }
 
-func (c *MessageNotifyCommon) Dingtalk(publicAddr *PublicAddress, forum Forum) *MessageNotifyDingtalk {
+type AccessAddrCallback func(ctx context.Context, path string) (string, error)
+
+func (c *MessageNotifyCommon) Dingtalk(ctx context.Context, ac AccessAddrCallback, forum Forum) *MessageNotifyDingtalk {
 	title := ""
 	path := fmt.Sprintf("/%s/%s", forum.RouteName, c.DiscussUUID)
 	switch c.Type {
@@ -139,11 +142,13 @@ func (c *MessageNotifyCommon) Dingtalk(publicAddr *PublicAddress, forum Forum) *
 		return nil
 	}
 
+	publicAddr, _ := ac(ctx, path)
+
 	return &MessageNotifyDingtalk{
 		Title:       title,
-		Text:        operate,
+		Text:        "## " + title + "\n" + operate,
 		SingleTitle: "查看详情",
-		SingleURL:   publicAddr.FullURL(path),
+		SingleURL:   publicAddr,
 	}
 }
 
