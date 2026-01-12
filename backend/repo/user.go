@@ -328,7 +328,7 @@ func (u *User) BindNotifySub(ctx context.Context, userSub *model.UserNotiySub) e
 }
 
 func (u *User) UnbindNotifySub(ctx context.Context, uid uint, typ model.MessageNotifySubType) error {
-	return u.db.WithContext(ctx).Where("type = ? AND user_id = ?", typ, uid).Delete(nil).Error
+	return u.db.WithContext(ctx).Model(&model.UserNotiySub{}).Where("type = ? AND user_id = ?", typ, uid).Delete(nil).Error
 }
 
 func newUser(db *database.DB, org *Org, oc oss.Client) *User {
