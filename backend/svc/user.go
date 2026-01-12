@@ -709,6 +709,14 @@ func (u *User) ListNotifySub(ctx context.Context, uid uint) (*model.ListRes[mode
 	return &res, nil
 }
 
+type UnbindNotifySubReq struct {
+	Type model.MessageNotifySubType `json:"type" binding:"required"`
+}
+
+func (u *User) UnbindNotifySub(ctx context.Context, uid uint, req UnbindNotifySubReq) error {
+	return u.repoUser.UnbindNotifySub(ctx, uid, req.Type)
+}
+
 type LoginThirdCallbackReq struct {
 	State string `form:"state" binding:"required"`
 	Code  string `form:"code" binding:"required"`

@@ -6642,6 +6642,39 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/notify_sub": {
+            "delete": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "unbind user notifu sub",
+                "parameters": [
+                    {
+                        "description": "req params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.UnbindNotifySubReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/user/notify_sub/auth_url": {
             "get": {
                 "produces": [
@@ -8791,6 +8824,9 @@ const docTemplate = `{
                 "no_password": {
                     "type": "boolean"
                 },
+                "only_get": {
+                    "type": "boolean"
+                },
                 "org_ids": {
                     "type": "array",
                     "items": {
@@ -10379,6 +10415,17 @@ const docTemplate = `{
             "properties": {
                 "url": {
                     "type": "string"
+                }
+            }
+        },
+        "svc.UnbindNotifySubReq": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "type": {
+                    "$ref": "#/definitions/model.MessageNotifySubType"
                 }
             }
         },

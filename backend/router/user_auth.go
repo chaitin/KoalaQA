@@ -578,6 +578,31 @@ func (u *userAuth) ListNotifySubBind(ctx *context.Context) {
 	ctx.Success(res)
 }
 
+// NotifySubUnbind
+// @Summary unbind user notifu sub
+// @Tags user
+// @Produce json
+// @Accept json
+// @Param req body svc.UnbindNotifySubReq true "req params"
+// @Success 200 {object} context.Response
+// @Router /user/notify_sub [delete]
+func (u *userAuth) NotifySubUnbind(ctx *context.Context) {
+	var req svc.UnbindNotifySubReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	err = u.in.SvcU.UnbindNotifySub(ctx, ctx.GetUser().UID, req)
+	if err != nil {
+		ctx.InternalError(err, "unbind user notify sub failed")
+		return
+	}
+
+	ctx.Success(nil)
+}
+
 func (u *userAuth) Route(h server.Handler) {
 	g := h.Group("/user")
 	g.POST("/logout", u.Logout)
@@ -599,6 +624,7 @@ func (u *userAuth) Route(h server.Handler) {
 		notifySubG.GET("/auth_url", u.SubBindAuthURL)
 		notifySubG.GET("/callback/dingtalk", u.SubBindCallbackDingtalk)
 		notifySubG.GET("/bind", u.ListNotifySubBind)
+		notifySubG.DELETE("", u.NotifySubUnbind)
 	}
 
 	{

@@ -1109,6 +1109,8 @@ definitions:
         type: string
       no_password:
         type: boolean
+      only_get:
+        type: boolean
       org_ids:
         items:
           type: integer
@@ -2174,6 +2176,13 @@ definitions:
         type: string
     required:
     - url
+    type: object
+  svc.UnbindNotifySubReq:
+    properties:
+      type:
+        $ref: '#/definitions/model.MessageNotifySubType'
+    required:
+    - type
     type: object
   svc.UpdateGroupIDsReq:
     properties:
@@ -6429,6 +6438,27 @@ paths:
           schema:
             $ref: '#/definitions/context.Response'
       summary: update notify web switch
+      tags:
+      - user
+  /user/notify_sub:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: req params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.UnbindNotifySubReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: unbind user notifu sub
       tags:
       - user
   /user/notify_sub/auth_url:
