@@ -3,7 +3,7 @@ package model
 type TrendType uint
 
 const (
-	TrendTypeCreateDiscuss = iota + 1
+	TrendTypeCreateDiscuss TrendType = iota + 1
 	TrendTypeAnswerAccepted
 	TrendTypeAnswer
 )

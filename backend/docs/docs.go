@@ -7094,7 +7094,17 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "enum": [
+                            1,
+                            2,
+                            3
+                        ],
                         "type": "integer",
+                        "x-enum-varnames": [
+                            "TrendTypeCreateDiscuss",
+                            "TrendTypeAnswerAccepted",
+                            "TrendTypeAnswer"
+                        ],
                         "name": "trend_type",
                         "in": "query"
                     },
@@ -8677,7 +8687,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "trend_type": {
-                    "type": "integer"
+                    "$ref": "#/definitions/model.TrendType"
                 },
                 "updated_at": {
                     "type": "integer"
@@ -8687,6 +8697,19 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
+        },
+        "model.TrendType": {
+            "type": "integer",
+            "enum": [
+                1,
+                2,
+                3
+            ],
+            "x-enum-varnames": [
+                "TrendTypeCreateDiscuss",
+                "TrendTypeAnswerAccepted",
+                "TrendTypeAnswer"
+            ]
         },
         "model.User": {
             "type": "object",

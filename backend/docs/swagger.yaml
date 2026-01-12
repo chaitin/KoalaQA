@@ -1039,13 +1039,23 @@ definitions:
       id:
         type: integer
       trend_type:
-        type: integer
+        $ref: '#/definitions/model.TrendType'
       updated_at:
         type: integer
       user_id:
         description: 谁的行为
         type: integer
     type: object
+  model.TrendType:
+    enum:
+    - 1
+    - 2
+    - 3
+    type: integer
+    x-enum-varnames:
+    - TrendTypeCreateDiscuss
+    - TrendTypeAnswerAccepted
+    - TrendTypeAnswer
   model.User:
     properties:
       avatar:
@@ -6688,9 +6698,17 @@ paths:
         minimum: 1
         name: size
         type: integer
-      - in: query
+      - enum:
+        - 1
+        - 2
+        - 3
+        in: query
         name: trend_type
         type: integer
+        x-enum-varnames:
+        - TrendTypeCreateDiscuss
+        - TrendTypeAnswerAccepted
+        - TrendTypeAnswer
       - in: query
         name: user_id
         required: true
