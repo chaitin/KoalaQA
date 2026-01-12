@@ -6689,6 +6689,9 @@ paths:
         name: size
         type: integer
       - in: query
+        name: trend_type
+        type: integer
+      - in: query
         name: user_id
         required: true
         type: integer

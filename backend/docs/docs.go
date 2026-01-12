@@ -7095,6 +7095,11 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
+                        "name": "trend_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
                         "name": "user_id",
                         "in": "query",
                         "required": true
