@@ -35,7 +35,7 @@ func (t *Trend) List(ctx context.Context, curUserID uint, req TrendListReq) (*mo
 		repo.QueryWithPagination(req.Pagination),
 		repo.QueryWithEqual("forum_id", curUserForumIDs, repo.EqualOPEqAny),
 		repo.QueryWithEqual("discussion_type", req.DiscussionType),
-		repo.QueryWithEqual("type", req.TrendType),
+		repo.QueryWithEqual("trend_type", req.TrendType),
 		repo.QueryWithOrderBy("created_at DESC, id DESC"),
 	)
 	if err != nil {
@@ -46,7 +46,7 @@ func (t *Trend) List(ctx context.Context, curUserID uint, req TrendListReq) (*mo
 		repo.QueryWithEqual("user_id", req.UserID),
 		repo.QueryWithEqual("discussion_type", req.DiscussionType),
 		repo.QueryWithEqual("forum_id", curUserForumIDs, repo.EqualOPEqAny),
-		repo.QueryWithEqual("type", req.TrendType),
+		repo.QueryWithEqual("trend_type", req.TrendType),
 	)
 	if err != nil {
 		return nil, err
