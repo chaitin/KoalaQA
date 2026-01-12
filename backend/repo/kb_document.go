@@ -156,7 +156,7 @@ func (d *KBDocument) UpdateSpaceFolderAll(ctx context.Context, folderID uint, st
 	UNION ALL
 	SELECT d.id, d.parent_id FROM kb_documents d JOIN all_folder_doc ad ON d.parent_id = ad.id)
 	
-UPDATE kb_documents SET doc_status = ?, message = ? FROM all_folder_doc WHERE all_folder_doc.id = kb_documents.id AND kb_documents.doc_type = ?`
+UPDATE kb_documents SET status = ?, message = ? FROM all_folder_doc WHERE all_folder_doc.id = kb_documents.id AND kb_documents.doc_type = ?`
 	params := []interface{}{
 		folderID, docStatus, msg, model.DocTypeSpace,
 	}
