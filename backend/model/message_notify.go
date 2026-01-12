@@ -68,87 +68,92 @@ type MessageNotifyDingtalk struct {
 	SingleURL   string `json:"singleURL"`
 }
 
-var operateM = map[DiscussionType]map[MsgNotifyType]string{
-	DiscussionTypeQA: {
-		MsgNotifyTypeReplyDiscuss:    "回答了你的问题",
-		MsgNotifyTypeReplyComment:    "回复了你的回答",
-		MsgNotifyTypeResolveByAdmin:  "将你的问题标记为已解决",
-		MsgNotifyTypeCloseDiscussion: "关闭了你的帖子",
-		MsgNotifyTypeAssociateIssue:  "把你的问题关联到 Issue",
-	},
-	DiscussionTypeBlog: {
-		MsgNotifyTypeReplyDiscuss: "评论了你的文章",
-		MsgNotifyTypeReplyComment: "回复了你的评论",
-	},
-	DiscussionTypeIssue: {
-		MsgNotifyTypeReplyDiscuss:    "评论了你的问题",
-		MsgNotifyTypeReplyComment:    "回复了你的评论",
-		MsgNotifyTypeIssueInProgress: "将 Issue 状态变更为进行中",
-		MsgNotifyTypeIssueResolved:   "将 Issue 状态变更为已完成",
-	},
-}
+var (
+	titleOperateM = map[DiscussionType]map[MsgNotifyType][2]string{
+		DiscussionTypeQA: {
+			MsgNotifyTypeReplyDiscuss: {
+				"你有新的回答", "回答了你的问题",
+			},
+			MsgNotifyTypeReplyComment: {
+				"你有新的回复", "回复了你的回答",
+			},
+			MsgNotifyTypeResolveByAdmin: {
+				"你有新的帖子进展", "将你的问题标记为已解决",
+			},
+			MsgNotifyTypeCloseDiscussion: {
+				"你有新的帖子进展", "关闭了你的帖子",
+			},
+		},
+		DiscussionTypeBlog: {
+			MsgNotifyTypeReplyDiscuss: {
+				"你有新的评论", "评论了你的文章",
+			},
+			MsgNotifyTypeReplyComment: {
+				"你有新的回复", "回复了你的评论",
+			},
+		},
+		DiscussionTypeIssue: {
+			MsgNotifyTypeReplyDiscuss: {
+				"你有新的评论", "评论了你的问题",
+			},
+			MsgNotifyTypeReplyComment: {
+				"你有新的回复", "回复了你的评论",
+			},
+			MsgNotifyTypeAssociateIssue: {
+				"你有新的帖子进展", "把你的问题关联到 Issue",
+			},
+			MsgNotifyTypeIssueInProgress: {
+				"你有新的帖子进展", "将 Issue 状态变更为进行中",
+			},
+			MsgNotifyTypeIssueResolved: {
+				"你有新的帖子进展", "将 Issue 状态变更为已完成",
+			},
+		},
+	}
+)
 
-func (c *MessageNotifyCommon) operateText() string {
+func (c *MessageNotifyCommon) titleOperateText() (string, string) {
 	if c.Type == MsgNotifyTypeUserReview {
+		title := "账号激活反馈"
 		if c.ReviewState == UserReviewStatePass {
-			return "恭喜！管理员通过了您的账号激活申请"
+			return title, "恭喜！管理员通过了您的账号激活申请"
 		}
 
-		return "管理员拒绝了您的账号激活申请"
+		return title, "管理员拒绝了您的账号激活申请"
 	}
 
-	tOp, ok := operateM[c.DiscussionType]
+	tOp, ok := titleOperateM[c.DiscussionType]
 	if !ok {
-		return ""
+		return "", ""
 	}
 
 	text, ok := tOp[c.Type]
 	if !ok {
-		return ""
+		return "", ""
 	}
 
-	return "**" + c.FromName + "** " + text + " **" + c.DiscussTitle + "**"
+	return text[0], "**" + c.FromName + "** " + text[1] + " **" + c.DiscussTitle + "**"
 }
 
 type AccessAddrCallback func(ctx context.Context, path string) (string, error)
 
 func (c *MessageNotifyCommon) Dingtalk(ctx context.Context, ac AccessAddrCallback, forum Forum) *MessageNotifyDingtalk {
-	title := ""
+	title, operate := c.titleOperateText()
+	if title == "" {
+		return nil
+	}
 	path := fmt.Sprintf("/%s/%s", forum.RouteName, c.DiscussUUID)
-	switch c.Type {
-	case MsgNotifyTypeReplyDiscuss:
-		title = "你有新的回答"
-	case MsgNotifyTypeReplyComment:
-		title = "你有新的回复"
-	case MsgNotifyTypeUserReview:
-		title = "账号激活反馈"
-		path = ""
-	case MsgNotifyTypeResolveByAdmin:
-		title = "你有新的帖子进展 - 管理员完成帖子"
-	case MsgNotifyTypeCloseDiscussion:
-		title = "你有新的帖子进展 - 关闭帖子"
-	case MsgNotifyTypeAssociateIssue:
-		title = "你有新的帖子进展 - 关联 issue"
-	case MsgNotifyTypeIssueInProgress:
-		title = "你有新的帖子进展 - issue状态变动"
-	case MsgNotifyTypeIssueResolved:
-		title = "你有新的帖子进展 - issue状态变动"
-	default:
-		return nil
-	}
-
-	operate := c.operateText()
-	if operate == "" {
-		return nil
-	}
-
 	publicAddr, _ := ac(ctx, path)
 
 	return &MessageNotifyDingtalk{
-		Title:       title,
-		Text:        "## " + title + "\n" + operate,
-		SingleTitle: "查看详情",
-		SingleURL:   publicAddr,
+		Title: title,
+		Text: fmt.Sprintf(`## %s
+%s
+
+
+[查看详情](%s)`, title, operate, publicAddr),
+		// SingleTitle: "查看详情",
+		// SingleURL:   publicAddr,
 	}
 }
 

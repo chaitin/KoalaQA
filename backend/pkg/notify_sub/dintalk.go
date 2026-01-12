@@ -45,10 +45,12 @@ func (d *dingtalk) Send(ctx context.Context, userIDs model.Int64Array, notifyDat
 	logger.Info("send dingtalk notify_sub")
 
 	var forum model.Forum
-	err := d.in.Forum.GetByID(ctx, &forum, notifyData.ForumID)
-	if err != nil {
-		logger.WithErr(err).Warn("get forum failed")
-		return err
+	if notifyData.ForumID > 0 {
+		err := d.in.Forum.GetByID(ctx, &forum, notifyData.ForumID)
+		if err != nil {
+			logger.WithErr(err).Warn("get forum failed")
+			return err
+		}
 	}
 
 	data := notifyData.Dingtalk(ctx, d.pc, forum)
@@ -57,7 +59,7 @@ func (d *dingtalk) Send(ctx context.Context, userIDs model.Int64Array, notifyDat
 		return nil
 	}
 
-	err = d.send(ctx, logger, data, userIDs)
+	err := d.send(ctx, logger, data, userIDs)
 	if err != nil {
 		logger.WithErr(err).Warn("send notify failed")
 		return err
@@ -87,7 +89,7 @@ func (d *dingtalk) send(ctx context.Context, logger *glog.Logger, notifyData *mo
 		reqBytes, err := json.Marshal(map[string]any{
 			"robotCode": d.cfg.ClientID,
 			"userIds":   thirdIDs,
-			"msgKey":    "sampleActionCard",
+			"msgKey":    "sampleMarkdown",
 			"msgParam":  string(paramBytes),
 		})
 

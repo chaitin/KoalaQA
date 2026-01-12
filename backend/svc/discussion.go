@@ -1013,6 +1013,13 @@ func (d *Discussion) Close(ctx context.Context, user model.UserInfo, discUUID st
 		d.logger.WithContext(ctx).WithErr(err).With("disc_id", disc.ID).Warn("update rag metadata failed")
 	}
 
+	d.in.Pub.Publish(ctx, topic.TopicMessageNotify, topic.MsgMessageNotify{
+		DiscussHeader: disc.Header(),
+		Type:          model.MsgNotifyTypeCloseDiscussion,
+		FromID:        user.UID,
+		ToID:          disc.UserID,
+	})
+
 	return nil
 }
 
