@@ -69,6 +69,11 @@ func (u *User) DeleteByID(ctx context.Context, userID uint) error {
 			return err
 		}
 
+		err = tx.Model(&model.UserNotiySub{}).Where("user_id = ?", userID).Delete(nil).Error
+		if err != nil {
+			return err
+		}
+
 		return nil
 	})
 }
