@@ -106,11 +106,12 @@ func (d *dingtalk) send(ctx context.Context, logger *glog.Logger, notifyData *mo
 		}
 		defer resp.Body.Close()
 
-		io.Copy(io.Discard, resp.Body)
-
 		if resp.StatusCode != http.StatusOK {
-			logger.With("status_code", resp.StatusCode).Warn("send dingtalk notify sub status code abnormal")
+			reqBody, _ := io.ReadAll(resp.Body)
+			logger.With("status_code", resp.StatusCode).With("body", string(reqBody)).Warn("send dingtalk notify sub status code abnormal")
 			return nil
+		} else {
+			io.Copy(io.Discard, resp.Body)
 		}
 
 		return nil
