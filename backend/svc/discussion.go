@@ -192,7 +192,7 @@ func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req Discus
 	case model.DiscussionTypeBlog, model.DiscussionTypeIssue:
 		err = d.in.TrendSvc.Create(ctx, &model.Trend{
 			UserID:        disc.UserID,
-			Type:          model.TrendTypeCreateDiscuss,
+			TrendType:     model.TrendTypeCreateDiscuss,
 			DiscussHeader: disc.Header(),
 		})
 		if err != nil {
@@ -1013,6 +1013,13 @@ func (d *Discussion) Close(ctx context.Context, user model.UserInfo, discUUID st
 		d.logger.WithContext(ctx).WithErr(err).With("disc_id", disc.ID).Warn("update rag metadata failed")
 	}
 
+	d.in.Pub.Publish(ctx, topic.TopicMessageNotify, topic.MsgMessageNotify{
+		DiscussHeader: disc.Header(),
+		Type:          model.MsgNotifyTypeCloseDiscussion,
+		FromID:        user.UID,
+		ToID:          disc.UserID,
+	})
+
 	return nil
 }
 
@@ -1075,7 +1082,7 @@ func (d *Discussion) CreateComment(ctx context.Context, uid uint, discUUID strin
 		if !req.Bot {
 			err = d.in.TrendSvc.Create(ctx, &model.Trend{
 				UserID:        uid,
-				Type:          model.TrendTypeAnswer,
+				TrendType:     model.TrendTypeAnswer,
 				DiscussHeader: disc.Header(),
 			})
 			if err != nil {
@@ -1478,7 +1485,7 @@ func (d *Discussion) AcceptComment(ctx context.Context, user model.UserInfo, dis
 
 	err = d.in.TrendSvc.Create(ctx, &model.Trend{
 		UserID:        comment.UserID,
-		Type:          model.TrendTypeAnswerAccepted,
+		TrendType:     model.TrendTypeAnswerAccepted,
 		DiscussHeader: disc.Header(),
 	})
 	if err != nil {

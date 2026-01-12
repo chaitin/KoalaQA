@@ -21,6 +21,7 @@ type messageNotifyIn struct {
 
 	Bot        *svc.Bot
 	Disc       *svc.Discussion
+	NotifySub  *svc.MessageNotifySub
 	DiscFollow *repo.DiscussionFollow
 	User       *repo.User
 	Mn         *repo.MessageNotify
@@ -32,6 +33,7 @@ type messageNotify struct {
 	logger     *glog.Logger
 	bot        *svc.Bot
 	disc       *svc.Discussion
+	notifySub  *svc.MessageNotifySub
 	discFollow *repo.DiscussionFollow
 	user       *repo.User
 	comment    *repo.Comment
@@ -51,6 +53,7 @@ func newMessageNotify(in messageNotifyIn) *messageNotify {
 		pub:        in.Pub,
 		natsPub:    in.NatsPub,
 		discFollow: in.DiscFollow,
+		notifySub:  in.NotifySub,
 	}
 }
 
@@ -261,11 +264,18 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 		return nil
 	}
 
+	notifySubM := make(map[model.MsgNotifyType]model.Int64Array)
+	notifyTypeM := make(map[model.MsgNotifyType]model.MessageNotifyCommon)
 	for _, notify := range dbMessageNotify {
 		topic, ok := topics[notify.UserID]
 		if !ok {
 			logger.With("notify", notify.UserID).Warn("can not find topic to notify, skip")
 			continue
+		}
+
+		notifySubM[notify.Type] = append(notifySubM[notify.Type], int64(notify.UserID))
+		if _, ok := notifyTypeM[notify.Type]; !ok {
+			notifyTypeM[notify.Type] = notify.MessageNotifyCommon
 		}
 
 		err = mn.pub.Publish(ctx, topic, model.MessageNotifyInfo{
@@ -275,6 +285,10 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 		if err != nil {
 			logger.WithErr(err).With("topic", topic).Warn("publish msg failed")
 		}
+	}
+
+	for typ, userIDs := range notifySubM {
+		_ = mn.notifySub.NotifySubMgr.Send(ctx, userIDs, notifyTypeM[typ])
 	}
 
 	return nil

@@ -2,8 +2,9 @@
 
 import { ModelUserRole, SvcUserStatisticsRes } from '@/api/types'
 import CommonAvatar from '@/components/CommonAvatar'
-import { Box, Card, Divider } from '@mui/material'
-import { useMemo } from 'react'
+import { Box, Divider } from '@mui/material'
+import { useMemo, useCallback } from 'react'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import ProfileHeroCard from './ProfileHeroCard'
 import UserTrendList from './UserTrendList'
 
@@ -12,35 +13,42 @@ interface PublicProfileContentProps {
   statistics?: SvcUserStatisticsRes | null
 }
 
-const metricItems = (stats?: SvcUserStatisticsRes | null): Array<{ label: string; value: number }> => [
-  { label: '问答', value: stats?.qa_count ?? 0 },
-  { label: '文章', value: stats?.blog_count ?? 0 },
-  { label: '回答', value: stats?.answer_count ?? 0 },
-  { label: '积分', value: stats?.point ?? 0 },
-]
-
-const toggleButtonSx = {
-  height: 30,
-  fontWeight: 500,
-  fontSize: '14px',
-  color: '#21222D',
-  border: '1px solid transparent',
-  '&.Mui-selected': {
-    bgcolor: 'rgba(0,99,151,0.06)',
-    border: '1px solid rgba(0,99,151,0.1)',
-    color: 'primary.main',
-    '&.Mui-focusVisible': {
-      bgcolor: '#000000',
-      color: '#ffffff',
-      outline: '2px solid #000000',
-      outlineOffset: '2px',
-    },
-  },
-  '&:hover': { bgcolor: '#f3f4f6', color: '#000000' },
-}
-
 export default function PublicProfileContent({ userId, statistics }: PublicProfileContentProps) {
-  const metrics = useMemo(() => metricItems(statistics), [statistics])
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
+  const updateQueryParams = useCallback(
+    (discussionType: string, trendType: string) => {
+      const params = new URLSearchParams(searchParams?.toString())
+      params.set('discussion_type', discussionType)
+      params.set('trend_type', trendType)
+      router.replace(`${pathname}?${params.toString()}`)
+    },
+    [router, pathname, searchParams],
+  )
+
+  const metrics = useMemo(
+    () => [
+      {
+        label: '问题',
+        value: statistics?.qa_count ?? 0,
+        onClick: () => updateQueryParams('qa', '1'),
+      },
+      {
+        label: '文章',
+        value: statistics?.blog_count ?? 0,
+        onClick: () => updateQueryParams('blog', '1'),
+      },
+      {
+        label: '回答',
+        value: statistics?.answer_count ?? 0,
+        onClick: () => updateQueryParams('qa', '3'),
+      },
+      { label: '积分', value: statistics?.point ?? 0 },
+    ],
+    [statistics, updateQueryParams],
+  )
 
   return (
     <Box

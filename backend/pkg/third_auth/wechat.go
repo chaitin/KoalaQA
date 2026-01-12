@@ -16,7 +16,7 @@ import (
 type wechat struct {
 	logger      *glog.Logger
 	cfg         model.AuthConfigOauth
-	callbackURL CallbackURLFunc
+	callbackURL model.AccessAddrCallback
 }
 
 func (w *wechat) Check(ctx context.Context) error {
@@ -35,13 +35,18 @@ func (w *wechat) Check(ctx context.Context) error {
 }
 
 func (w *wechat) AuthURL(ctx context.Context, state string, optFuncs ...authURLOptFunc) (string, error) {
-	query := make(url.Values)
+	opt := getAuthURLOpt(optFuncs...)
 
-	callbackURL, err := w.callbackURL(ctx, "/api/user/login/third/callback/wechat")
+	if opt.CallbackPath == "" {
+		opt.CallbackPath = "/api/user/login/third/callback/wechat"
+	}
+
+	callbackURL, err := w.callbackURL(ctx, opt.CallbackPath)
 	if err != nil {
 		return "", err
 	}
 
+	query := make(url.Values)
 	query.Set("appid", w.cfg.ClientID)
 	query.Set("redirect_uri", callbackURL)
 	query.Set("response_type", "code")
@@ -59,8 +64,10 @@ func (w *wechat) AuthURL(ctx context.Context, state string, optFuncs ...authURLO
 	return u.String(), nil
 }
 
-func (w *wechat) User(ctx context.Context, code string) (*User, error) {
+func (w *wechat) User(ctx context.Context, code string, optFuncs ...userOptFunc) (*User, error) {
 	logger := w.logger.WithContext(ctx).With("code", code)
+
+	opt := getUserOpt(optFuncs...)
 
 	reqInfo, err := w.getUserReqInfo(ctx, code)
 	if err != nil {
@@ -73,12 +80,27 @@ func (w *wechat) User(ctx context.Context, code string) (*User, error) {
 		return nil, err
 	}
 
+	var thirdID string
+	switch opt.ThirdIDKey {
+	case ThirdIDKeyOpenID:
+		thirdID = userInfo.OpenID
+	case ThirdIDKeyUnionID:
+		thirdID = userInfo.UnionID
+	default:
+		thirdID = userInfo.OpenID
+	}
+
+	if thirdID == "" {
+		return nil, errors.New("empty third id")
+	}
+
 	return &User{
-		ThirdID: userInfo.OpenID,
+		ThirdID: thirdID,
 		Name:    userInfo.Nickname,
 		Type:    model.AuthTypeWechat,
 		Role:    model.UserRoleUser,
 		Email:   "",
+		Mobile:  "",
 		Avatar:  userInfo.Headimgurl,
 	}, nil
 }
@@ -153,6 +175,7 @@ func (w *wechat) getUserReqInfo(ctx context.Context, code string) (*userReqInfo,
 
 type userInfo struct {
 	OpenID     string `json:"openid"`
+	UnionID    string `json:"unionid"`
 	Nickname   string `json:"nickname"`
 	Headimgurl string `json:"headimgurl"`
 }

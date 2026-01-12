@@ -4,6 +4,7 @@ import (
 	goCtx "context"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
@@ -13,6 +14,8 @@ import (
 	"github.com/chaitin/koalaqa/pkg/topic"
 	"github.com/chaitin/koalaqa/server"
 	"github.com/chaitin/koalaqa/svc"
+	"github.com/gin-contrib/sessions"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"go.uber.org/fx"
 )
@@ -473,7 +476,7 @@ func (u *userAuth) QuickReplyDelete(ctx *context.Context) {
 // @Param req body svc.QuickReplyReindexReq true "req params"
 // @Success 200 {object} context.Response
 // @Router /user/quick_reply/reindex [put]
-func (u userAuth) QuickReplyReindex(ctx *context.Context) {
+func (u *userAuth) QuickReplyReindex(ctx *context.Context) {
 	var req svc.QuickReplyReindexReq
 	err := ctx.ShouldBindJSON(&req)
 	if err != nil {
@@ -484,6 +487,116 @@ func (u userAuth) QuickReplyReindex(ctx *context.Context) {
 	err = u.in.SvcUserQR.Reindex(ctx, ctx.GetUser(), req)
 	if err != nil {
 		ctx.InternalError(err, "reindex user quick reply failed")
+		return
+	}
+
+	ctx.Success(nil)
+}
+
+const notifySubStateKey = "user_notify_sub_state"
+
+// SubBindAuthURL
+// @Summary get user notify sub bind url
+// @Tags user
+// @Param req query svc.NotifySubBindAuthURLReq true "request params"
+// @Produce json
+// @Success 200 {object} context.Response{data=string}
+// @Router /user/notify_sub/auth_url [get]
+func (u *userAuth) SubBindAuthURL(ctx *context.Context) {
+	var req svc.NotifySubBindAuthURLReq
+	err := ctx.ShouldBindQuery(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	state := uuid.NewString()
+	res, err := u.in.SvcU.SubBindAuthURL(ctx, state, req)
+	if err != nil {
+		ctx.InternalError(err, "get sub bind auth url failed")
+		return
+	}
+
+	session := sessions.Default(ctx.Context)
+	session.Set(notifySubStateKey, state)
+	session.Save()
+
+	ctx.Success(res)
+}
+
+func (u *userAuth) SubBindCallbackDingtalk(ctx *context.Context) {
+	u.subBindCallback(ctx, model.MessageNotifySubTypeDingtalk)
+}
+
+func (u *userAuth) subBindCallback(ctx *context.Context, typ model.MessageNotifySubType) {
+	query := make(url.Values)
+	query.Set("tab", "4")
+	query.Set("notify_sub", "true")
+
+	defer func() {
+		ctx.Redirect(http.StatusFound, "/profile?"+query.Encode())
+	}()
+
+	var req svc.NotifySubBindCallbackReq
+	err := ctx.ShouldBindQuery(&req)
+	if err != nil {
+		query.Set("error", err.Error())
+		return
+	}
+
+	session := sessions.Default(ctx.Context)
+	stateI := session.Get(notifySubStateKey)
+	state, ok := stateI.(string)
+	if !ok || state != req.State {
+		query.Set("error", "invalid state")
+		return
+	}
+
+	session.Delete(stateKey)
+	session.Save()
+
+	err = u.in.SvcU.SubBindCallback(ctx, ctx.GetUser().UID, typ, req)
+	if err != nil {
+		query.Set("error", err.Error())
+		return
+	}
+}
+
+// ListNotifySub
+// @Summary list notify sub
+// @Tags user
+// @Produce json
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]model.UserNotiySub}}
+// @Router /user/notify_sub/bind [get]
+func (u *userAuth) ListNotifySubBind(ctx *context.Context) {
+	res, err := u.in.SvcU.ListNotifySub(ctx, ctx.GetUser().UID)
+	if err != nil {
+		ctx.InternalError(err, "list notify sub failed")
+		return
+	}
+
+	ctx.Success(res)
+}
+
+// NotifySubUnbind
+// @Summary unbind user notifu sub
+// @Tags user
+// @Produce json
+// @Accept json
+// @Param req body svc.UnbindNotifySubReq true "req params"
+// @Success 200 {object} context.Response
+// @Router /user/notify_sub [delete]
+func (u *userAuth) NotifySubUnbind(ctx *context.Context) {
+	var req svc.UnbindNotifySubReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	err = u.in.SvcU.UnbindNotifySub(ctx, ctx.GetUser().UID, req)
+	if err != nil {
+		ctx.InternalError(err, "unbind user notify sub failed")
 		return
 	}
 
@@ -504,6 +617,14 @@ func (u *userAuth) Route(h server.Handler) {
 		notifyG.POST("/read", u.NotifyRead)
 		notifyG.GET("/list", u.ListNotify)
 		notifyG.POST("/web", u.UpdateWeb)
+	}
+
+	{
+		notifySubG := g.Group("/notify_sub")
+		notifySubG.GET("/auth_url", u.SubBindAuthURL)
+		notifySubG.GET("/callback/dingtalk", u.SubBindCallbackDingtalk)
+		notifySubG.GET("/bind", u.ListNotifySubBind)
+		notifySubG.DELETE("", u.NotifySubUnbind)
 	}
 
 	{

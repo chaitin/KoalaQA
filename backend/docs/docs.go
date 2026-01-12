@@ -3534,6 +3534,107 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/system/notify_sub": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "message_notify_sub"
+                ],
+                "summary": "list message notify sub",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "allOf": [
+                                                                    {
+                                                                        "$ref": "#/definitions/model.MessageNotifySub"
+                                                                    },
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "info": {
+                                                                                "$ref": "#/definitions/model.MessageNotifySubInfo"
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                ]
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "message_notify_sub"
+                ],
+                "summary": "upsert message notify sub",
+                "parameters": [
+                    {
+                        "description": "request params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.MessageNotifySubCreateReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/admin/system/public_address": {
             "get": {
                 "produces": [
@@ -6074,6 +6175,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/system/notify_sub": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "system"
+                ],
+                "summary": "list notify sub",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/model.MessageNotifySub"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/system/seo": {
             "get": {
                 "produces": [
@@ -6495,6 +6642,137 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/notify_sub": {
+            "delete": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "unbind user notifu sub",
+                "parameters": [
+                    {
+                        "description": "req params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.UnbindNotifySubReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/notify_sub/auth_url": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "get user notify sub bind url",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "name": "app",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            0,
+                            1
+                        ],
+                        "type": "integer",
+                        "x-enum-varnames": [
+                            "MessageNotifySubTypeUnknown",
+                            "MessageNotifySubTypeDingtalk"
+                        ],
+                        "name": "type",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/user/notify_sub/bind": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "list notify sub",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/model.UserNotiySub"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/user/point": {
             "get": {
                 "produces": [
@@ -6820,6 +7098,23 @@ const docTemplate = `{
                 "summary": "list user trend",
                 "parameters": [
                     {
+                        "enum": [
+                            "qa",
+                            "feedback",
+                            "blog",
+                            "issue"
+                        ],
+                        "type": "string",
+                        "x-enum-varnames": [
+                            "DiscussionTypeQA",
+                            "DiscussionTypeFeedback",
+                            "DiscussionTypeBlog",
+                            "DiscussionTypeIssue"
+                        ],
+                        "name": "discussion_type",
+                        "in": "query"
+                    },
+                    {
                         "minimum": 1,
                         "type": "integer",
                         "name": "page",
@@ -6829,6 +7124,21 @@ const docTemplate = `{
                         "minimum": 1,
                         "type": "integer",
                         "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            1,
+                            2,
+                            3
+                        ],
+                        "type": "integer",
+                        "x-enum-varnames": [
+                            "TrendTypeCreateDiscuss",
+                            "TrendTypeAnswerAccepted",
+                            "TrendTypeAnswer"
+                        ],
+                        "name": "trend_type",
                         "in": "query"
                     },
                     {
@@ -8125,6 +8435,48 @@ const docTemplate = `{
                 }
             }
         },
+        "model.MessageNotifySub": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "integer"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.MessageNotifySubType"
+                },
+                "updated_at": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.MessageNotifySubInfo": {
+            "type": "object",
+            "properties": {
+                "client_id": {
+                    "type": "string"
+                },
+                "client_secret": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.MessageNotifySubType": {
+            "type": "integer",
+            "enum": [
+                0,
+                1
+            ],
+            "x-enum-varnames": [
+                "MessageNotifySubTypeUnknown",
+                "MessageNotifySubTypeDingtalk"
+            ]
+        },
         "model.MsgNotifyType": {
             "type": "integer",
             "enum": [
@@ -8368,7 +8720,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "trend_type": {
-                    "type": "integer"
+                    "$ref": "#/definitions/model.TrendType"
                 },
                 "updated_at": {
                     "type": "integer"
@@ -8378,6 +8730,19 @@ const docTemplate = `{
                     "type": "integer"
                 }
             }
+        },
+        "model.TrendType": {
+            "type": "integer",
+            "enum": [
+                1,
+                2,
+                3
+            ],
+            "x-enum-varnames": [
+                "TrendTypeCreateDiscuss",
+                "TrendTypeAnswerAccepted",
+                "TrendTypeAnswer"
+            ]
         },
         "model.User": {
             "type": "object",
@@ -8459,6 +8824,9 @@ const docTemplate = `{
                 "no_password": {
                     "type": "boolean"
                 },
+                "only_get": {
+                    "type": "boolean"
+                },
                 "org_ids": {
                     "type": "array",
                     "items": {
@@ -8479,6 +8847,29 @@ const docTemplate = `{
                 },
                 "web_notify": {
                     "type": "boolean"
+                }
+            }
+        },
+        "model.UserNotiySub": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "third_id": {
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.MessageNotifySubType"
+                },
+                "updated_at": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -9700,6 +10091,23 @@ const docTemplate = `{
                 }
             }
         },
+        "svc.MessageNotifySubCreateReq": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "info": {
+                    "$ref": "#/definitions/model.MessageNotifySubInfo"
+                },
+                "type": {
+                    "$ref": "#/definitions/model.MessageNotifySubType"
+                }
+            }
+        },
         "svc.ModelKitCheckReq": {
             "type": "object",
             "required": [
@@ -10007,6 +10415,17 @@ const docTemplate = `{
             "properties": {
                 "url": {
                     "type": "string"
+                }
+            }
+        },
+        "svc.UnbindNotifySubReq": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "type": {
+                    "$ref": "#/definitions/model.MessageNotifySubType"
                 }
             }
         },

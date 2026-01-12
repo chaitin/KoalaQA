@@ -16,6 +16,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type User struct {
@@ -64,6 +65,11 @@ func (u *User) DeleteByID(ctx context.Context, userID uint) error {
 		}
 
 		err = tx.Model(&model.UserThird{}).Where("user_id = ?", userID).Delete(nil).Error
+		if err != nil {
+			return err
+		}
+
+		err = tx.Model(&model.UserNotiySub{}).Where("user_id = ?", userID).Delete(nil).Error
 		if err != nil {
 			return err
 		}
@@ -291,6 +297,38 @@ func (u *User) CountSearchHistory(ctx context.Context, cnt *int64, queryFuncs ..
 	return u.db.Model(&model.UserSearchHistory{}).
 		Scopes(opt.Scopes()...).
 		Count(cnt).Error
+}
+
+func (u *User) NotifySubBatchProcess(ctx context.Context, batchSize int, processFn func([]model.UserNotiySub) error, queryFuncs ...QueryOptFunc) error {
+	if batchSize <= 0 {
+		batchSize = 100
+	}
+
+	o := getQueryOpt(queryFuncs...)
+	var results []model.UserNotiySub
+
+	return u.db.WithContext(ctx).Model(&model.UserNotiySub{}).Scopes(o.Scopes()...).FindInBatches(&results, batchSize, func(tx *gorm.DB, batch int) error {
+		return processFn(results)
+	}).Error
+}
+
+func (u *User) ListNotifySub(ctx context.Context, queryFuncs ...QueryOptFunc) (res []model.UserNotiySub, err error) {
+	opt := getQueryOpt(queryFuncs...)
+	err = u.db.WithContext(ctx).Model(&model.UserNotiySub{}).Scopes(opt.Scopes()...).Find(&res).Error
+	return
+}
+
+func (u *User) BindNotifySub(ctx context.Context, userSub *model.UserNotiySub) error {
+	return u.db.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "type"}, {Name: "user_id"}},
+			DoUpdates: clause.AssignmentColumns([]string{"third_id", "updated_at"}),
+		}).
+		Create(userSub).Error
+}
+
+func (u *User) UnbindNotifySub(ctx context.Context, uid uint, typ model.MessageNotifySubType) error {
+	return u.db.WithContext(ctx).Model(&model.UserNotiySub{}).Where("type = ? AND user_id = ?", typ, uid).Delete(nil).Error
 }
 
 func newUser(db *database.DB, org *Org, oc oss.Client) *User {

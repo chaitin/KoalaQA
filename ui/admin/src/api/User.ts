@@ -28,6 +28,7 @@ import {
   ModelTrend,
   ModelUser,
   ModelUserInfo,
+  ModelUserNotiySub,
   ModelUserPointRecord,
   ModelUserSearchHistory,
   PutAdminUserUserIdParams,
@@ -484,6 +485,36 @@ export const getUserNotifySubAuthUrl = (
     path: `/user/notify_sub/auth_url`,
     method: "GET",
     query: query,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name GetUserNotifySubBind
+ * @summary list notify sub
+ * @request GET:/user/notify_sub/bind
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (ModelUserNotiySub)[],
+
+}),
+
+})` OK
+ */
+
+export const getUserNotifySubBind = (params: RequestParams = {}) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: ModelUserNotiySub[];
+      };
+    }
+  >({
+    path: `/user/notify_sub/bind`,
+    method: "GET",
     format: "json",
     ...params,
   });

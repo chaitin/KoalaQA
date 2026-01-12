@@ -50,6 +50,7 @@ const (
 	AuthTypeOIDC
 	AuthTypeWeCom
 	AuthTypeWechat
+	AuthTypeDingtalk
 )
 
 type AuthInfo struct {

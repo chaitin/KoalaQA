@@ -26,11 +26,13 @@ import (
 type User struct {
 	jwt            *jwt.Generator
 	repoUser       *repo.User
+	repoNotifySub  *repo.MessageNotifySub
 	repoDisc       *repo.Discussion
 	repoUserPoint  *repo.UserPointRecord
 	repoComment    *repo.Comment
 	authMgmt       *third_auth.Manager
 	svcAuth        *Auth
+	svcPublicAddr  *PublicAddress
 	oc             oss.Client
 	repoOrg        *repo.Org
 	repoUserReview *repo.UserReview
@@ -618,6 +620,103 @@ func (u *User) LoginThirdURL(ctx context.Context, state string, req LoginThirdUR
 	return u.authMgmt.AuthURL(ctx, req.Type, state, third_auth.AuthURLInAPP(req.APP))
 }
 
+type NotifySubBindAuthURLReq struct {
+	APP  bool                       `form:"app"`
+	Type model.MessageNotifySubType `form:"type" binding:"required"`
+}
+
+var thirdAuthTypeM = map[model.MessageNotifySubType]model.AuthType{
+	model.MessageNotifySubTypeDingtalk: model.AuthTypeDingtalk,
+}
+
+func (u *User) SubBindAuthURL(ctx context.Context, state string, req NotifySubBindAuthURLReq) (string, error) {
+	var callbackPath string
+	switch req.Type {
+	case model.MessageNotifySubTypeDingtalk:
+		callbackPath = "/api/user/notify_sub/callback/dingtalk"
+	default:
+		return "", errors.ErrUnsupported
+	}
+
+	notifySub, err := u.repoNotifySub.GetByType(ctx, req.Type)
+	if err != nil {
+		return "", err
+	}
+	subInfo := notifySub.Info.Inner()
+
+	author, err := third_auth.New(thirdAuthTypeM[req.Type], third_auth.Config{
+		Config: model.AuthConfig{
+			Oauth: model.AuthConfigOauth{
+				ClientID:     subInfo.ClientID,
+				ClientSecret: subInfo.ClientSecret,
+			},
+		},
+		CallbackURL: u.svcPublicAddr.Callback,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return author.AuthURL(ctx, state, third_auth.AuthURLCallbackPath(callbackPath))
+}
+
+type NotifySubBindCallbackReq struct {
+	State string `form:"state" binding:"required"`
+	Code  string `form:"code" binding:"required"`
+}
+
+func (u *User) SubBindCallback(ctx context.Context, uid uint, typ model.MessageNotifySubType, req NotifySubBindCallbackReq) error {
+	notifySub, err := u.repoNotifySub.GetByType(ctx, typ)
+	if err != nil {
+		return err
+	}
+	subInfo := notifySub.Info.Inner()
+
+	author, err := third_auth.New(thirdAuthTypeM[typ], third_auth.Config{
+		Config: model.AuthConfig{
+			Oauth: model.AuthConfigOauth{
+				ClientID:     subInfo.ClientID,
+				ClientSecret: subInfo.ClientSecret,
+			},
+		},
+		CallbackURL: u.svcPublicAddr.Callback,
+	})
+	if err != nil {
+		return err
+	}
+
+	thirdUser, err := author.User(ctx, req.Code, third_auth.UserWithThirdIDKey(third_auth.ThirdIDKeyUserID))
+	if err != nil {
+		return err
+	}
+
+	return u.repoUser.BindNotifySub(ctx, &model.UserNotiySub{
+		Type:    typ,
+		UserID:  uid,
+		ThirdID: thirdUser.ThirdID,
+	})
+}
+
+func (u *User) ListNotifySub(ctx context.Context, uid uint) (*model.ListRes[model.UserNotiySub], error) {
+	var res model.ListRes[model.UserNotiySub]
+	var err error
+	res.Items, err = u.repoUser.ListNotifySub(ctx, repo.QueryWithEqual("user_id", uid))
+	if err != nil {
+		return nil, err
+	}
+
+	res.Total = int64(len(res.Items))
+	return &res, nil
+}
+
+type UnbindNotifySubReq struct {
+	Type model.MessageNotifySubType `json:"type" binding:"required"`
+}
+
+func (u *User) UnbindNotifySub(ctx context.Context, uid uint, req UnbindNotifySubReq) error {
+	return u.repoUser.UnbindNotifySub(ctx, uid, req.Type)
+}
+
 type LoginThirdCallbackReq struct {
 	State string `form:"state" binding:"required"`
 	Code  string `form:"code" binding:"required"`
@@ -781,12 +880,13 @@ func (u *User) ListSearchHistory(ctx context.Context, req ListSearchHistoryReq) 
 	return &res, nil
 }
 
-func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth,
-	authMgmt *third_auth.Manager, oc oss.Client, org *repo.Org, userPoint *repo.UserPointRecord,
+func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth, notifySub *repo.MessageNotifySub,
+	authMgmt *third_auth.Manager, oc oss.Client, org *repo.Org, userPoint *repo.UserPointRecord, publicAddr *PublicAddress,
 	disc *repo.Discussion, comm *repo.Comment, review *repo.UserReview, pub mq.Publisher) *User {
 	return &User{
 		jwt:            genrator,
 		repoUser:       repoUser,
+		repoNotifySub:  notifySub,
 		svcAuth:        auth,
 		authMgmt:       authMgmt,
 		oc:             oc,
@@ -796,6 +896,7 @@ func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth,
 		repoUserReview: review,
 		pub:            pub,
 		repoUserPoint:  userPoint,
+		svcPublicAddr:  publicAddr,
 		logger:         glog.Module("svc", "user"),
 	}
 }

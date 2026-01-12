@@ -75,15 +75,6 @@ func (l *Auth) FrontendGet(ctx context.Context) (*AuthFrontendGetRes, error) {
 	return &res, nil
 }
 
-func (l *Auth) callbackURL(ctx context.Context, urlPath string) (string, error) {
-	publicAddress, err := l.svcPublicAddr.Get(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	return publicAddress.FullURL(urlPath), nil
-}
-
 func (l *Auth) updateAuthMgmt(ctx context.Context, auth model.Auth, checkCfg bool) error {
 	for _, authInfo := range auth.AuthInfos {
 		if authInfo.Type == model.AuthTypePassword {
@@ -92,7 +83,7 @@ func (l *Auth) updateAuthMgmt(ctx context.Context, auth model.Auth, checkCfg boo
 
 		err := l.authMgmt.Update(authInfo.Type, third_auth.Config{
 			Config:      authInfo.Config,
-			CallbackURL: l.callbackURL,
+			CallbackURL: l.svcPublicAddr.Callback,
 		}, checkCfg)
 		if err != nil {
 			l.logger.WithContext(ctx).WithErr(err).With("config", authInfo.Config).Warn("update auth mgnt failed")

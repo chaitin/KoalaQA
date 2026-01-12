@@ -526,9 +526,6 @@ const EditorSection: React.FC<EditorSectionProps> = ({
             onClick={onSave}
             disabled={saving || !question}
             sx={{
-              backgroundColor: STYLES.selectedBorder,
-              '&:hover': { backgroundColor: '#4c5ab8' },
-              textTransform: 'none',
               fontSize: '14px',
               padding: '8px 24px',
               borderRadius: 1,

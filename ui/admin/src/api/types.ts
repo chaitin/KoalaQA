@@ -574,7 +574,6 @@ export interface ModelMessageNotifySub {
 export interface ModelMessageNotifySubInfo {
   client_id?: string;
   client_secret?: string;
-  robot_code?: string;
 }
 
 export interface ModelPlatformOpt {
@@ -678,6 +677,15 @@ export interface ModelUserInfo {
   uid?: number;
   username?: string;
   web_notify?: boolean;
+}
+
+export interface ModelUserNotiySub {
+  created_at?: number;
+  id?: number;
+  third_id?: string;
+  type?: ModelMessageNotifySubType;
+  updated_at?: number;
+  user_id?: number;
 }
 
 export interface ModelUserPointRecord {
