@@ -910,6 +910,10 @@ func (d *KBDocument) CreateSpaceFolder(ctx context.Context, kbID uint, spaceID u
 			existFolderM := make(map[string]map[string]uint)
 			existFileM := make(map[string]map[string]uint)
 			item.Folders.Range(item.DocID, func(parentDocID string, csfi *model.CreateSpaceFolderInfo) error {
+				if csfi.DocID == parentDocID {
+					return nil
+				}
+
 				parentDocID = strings.TrimSpace(parentDocID)
 				if parentDocID == "" {
 					parentDocID = item.DocID
