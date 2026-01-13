@@ -1221,11 +1221,7 @@ const Dashboard: React.FC = () => {
                                     boxShadow: theme.shadows[3],
                                   }}
                                   formatter={(value: any) => {
-                                    return [
-                                      <span
-                                        style={{ color: '#2E6AFE' }}
-                                      >{`访问量: ${value}`}</span>,
-                                    ];
+                                    return [<span>{`访问量: ${value}`}</span>];
                                   }}
                                   labelFormatter={label => {
                                     return `${label}`;
@@ -1295,22 +1291,13 @@ const Dashboard: React.FC = () => {
                                             {payload[0].payload.name}
                                           </Typography>
                                           <Stack spacing={0.5}>
-                                            <Typography
-                                              variant="body2"
-                                              sx={{ color: 'rgba(99, 103, 233, 1)' }}
-                                            >
+                                            <Typography variant="body2">
                                               问题：{data.qa || 0}
                                             </Typography>
-                                            <Typography
-                                              variant="body2"
-                                              sx={{ color: 'rgba(99, 103, 233, 1)' }}
-                                            >
+                                            <Typography variant="body2">
                                               issue：{data.issue || 0}
                                             </Typography>
-                                            <Typography
-                                              variant="body2"
-                                              sx={{ color: 'rgba(99, 103, 233, 1)' }}
-                                            >
+                                            <Typography variant="body2">
                                               文章：{data.blog || 0}
                                             </Typography>
                                           </Stack>
@@ -1465,10 +1452,7 @@ const Dashboard: React.FC = () => {
                                       boxShadow: theme.shadows[3],
                                     }}
                                   >
-                                    <Typography
-                                      variant="body2"
-                                      sx={{ mb: 1, fontWeight: 400 }}
-                                    >
+                                    <Typography variant="body2" sx={{ mb: 1, fontWeight: 400 }}>
                                       {name}
                                     </Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 400 }}>
@@ -1540,10 +1524,7 @@ const Dashboard: React.FC = () => {
                                       boxShadow: theme.shadows[3],
                                     }}
                                   >
-                                    <Typography
-                                      variant="body2"
-                                      sx={{ mb: 1, fontWeight: 400 }}
-                                    >
+                                    <Typography variant="body2" sx={{ mb: 1, fontWeight: 400 }}>
                                       {name}
                                     </Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 400 }}>
