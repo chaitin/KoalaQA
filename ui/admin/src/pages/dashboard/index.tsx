@@ -1221,10 +1221,12 @@ const Dashboard: React.FC = () => {
                                     boxShadow: theme.shadows[3],
                                   }}
                                   formatter={(value: any) => {
-                                    return [<span>{`访问量: ${value}`}</span>];
+                                    return [
+                                      <Box sx={{ fontSize: '13px' }}>{`访问量: ${value}`}</Box>,
+                                    ];
                                   }}
                                   labelFormatter={label => {
-                                    return `${label}`;
+                                    return <Box sx={{ fontSize: '13px' }}>{`${label}`}</Box>;
                                   }}
                                 />
                                 <Bar
@@ -1282,24 +1284,19 @@ const Dashboard: React.FC = () => {
                                             padding: 1.5,
                                             borderRadius: 1,
                                             boxShadow: theme.shadows[3],
+                                            fontSize: '13px',
                                           }}
                                         >
                                           <Typography
                                             variant="body2"
-                                            sx={{ mb: 1, fontWeight: 400 }}
+                                            sx={{ mb: 1, fontWeight: 400, fontSize: '13px' }}
                                           >
                                             {payload[0].payload.name}
                                           </Typography>
                                           <Stack spacing={0.5}>
-                                            <Typography variant="body2">
-                                              问题：{data.qa || 0}
-                                            </Typography>
-                                            <Typography variant="body2">
-                                              issue：{data.issue || 0}
-                                            </Typography>
-                                            <Typography variant="body2">
-                                              文章：{data.blog || 0}
-                                            </Typography>
+                                            <Box>问题：{data.qa || 0}</Box>
+                                            <Box>issue：{data.issue || 0}</Box>
+                                            <Box> 文章：{data.blog || 0}</Box>
                                           </Stack>
                                         </Box>
                                       );
@@ -1524,10 +1521,16 @@ const Dashboard: React.FC = () => {
                                       boxShadow: theme.shadows[3],
                                     }}
                                   >
-                                    <Typography variant="body2" sx={{ mb: 1, fontWeight: 400 }}>
+                                    <Typography
+                                      variant="body2"
+                                      sx={{ mb: 1, fontWeight: 400, fontSize: '13px' }}
+                                    >
                                       {name}
                                     </Typography>
-                                    <Typography variant="body2" sx={{ fontWeight: 400 }}>
+                                    <Typography
+                                      variant="body2"
+                                      sx={{ fontWeight: 400, fontSize: '13px' }}
+                                    >
                                       AI 解决率：{value.toFixed(1)}%
                                     </Typography>
                                   </Box>
