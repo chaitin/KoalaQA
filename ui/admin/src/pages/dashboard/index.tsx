@@ -1452,7 +1452,33 @@ const Dashboard: React.FC = () => {
                               border: 'none',
                               boxShadow: theme.shadows[3],
                             }}
-                            formatter={(value: number) => [`${value.toFixed(1)}%`, 'AI 应答率']}
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length > 0) {
+                                const value = payload[0].value as number;
+                                const name = payload[0].payload.name as string;
+                                return (
+                                  <Box
+                                    sx={{
+                                      backgroundColor: 'white',
+                                      padding: 1.5,
+                                      borderRadius: 1,
+                                      boxShadow: theme.shadows[3],
+                                    }}
+                                  >
+                                    <Typography
+                                      variant="body2"
+                                      sx={{ mb: 1, fontWeight: 400 }}
+                                    >
+                                      {name}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 400 }}>
+                                      AI 应答率：{value.toFixed(1)}%
+                                    </Typography>
+                                  </Box>
+                                );
+                              }
+                              return null;
+                            }}
                           />
                           <Area
                             type="monotone"
@@ -1501,7 +1527,33 @@ const Dashboard: React.FC = () => {
                               border: 'none',
                               boxShadow: theme.shadows[3],
                             }}
-                            formatter={(value: number) => [`${value.toFixed(1)}%`, 'AI 解决率']}
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length > 0) {
+                                const value = payload[0].value as number;
+                                const name = payload[0].payload.name as string;
+                                return (
+                                  <Box
+                                    sx={{
+                                      backgroundColor: 'white',
+                                      padding: 1.5,
+                                      borderRadius: 1,
+                                      boxShadow: theme.shadows[3],
+                                    }}
+                                  >
+                                    <Typography
+                                      variant="body2"
+                                      sx={{ mb: 1, fontWeight: 400 }}
+                                    >
+                                      {name}
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 400 }}>
+                                      AI 解决率：{value.toFixed(1)}%
+                                    </Typography>
+                                  </Box>
+                                );
+                              }
+                              return null;
+                            }}
                           />
                           <Area
                             type="monotone"
