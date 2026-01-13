@@ -614,7 +614,7 @@ func (d *Discussion) DiscussionRequirement(ctx context.Context, user model.UserI
 		return "", errors.New("invalid discussion")
 	}
 
-	_, prompt, err := d.in.LLM.GeneratePostPrompt(ctx, disc.ID)
+	_, prompt, _, err := d.in.LLM.GeneratePostPrompt(ctx, disc.ID)
 	if err != nil {
 		return "", err
 	}

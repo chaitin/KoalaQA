@@ -13,18 +13,18 @@ import (
 
 type DiscReindex struct {
 	disc   *svc.Discussion
-	prompt *svc.Prompt
 	forum  *svc.Forum
 	rag    rag.Service
+	llm    *svc.LLM
 	logger *glog.Logger
 }
 
-func NewDiscReindex(disc *svc.Discussion, prompt *svc.Prompt, forum *svc.Forum, rag rag.Service) *DiscReindex {
+func NewDiscReindex(disc *svc.Discussion, forum *svc.Forum, rag rag.Service, llm *svc.LLM) *DiscReindex {
 	return &DiscReindex{
 		disc:   disc,
-		prompt: prompt,
 		forum:  forum,
 		rag:    rag,
+		llm:    llm,
 		logger: glog.Module("sub.discussion.reindex"),
 	}
 }
@@ -54,7 +54,7 @@ func (d *DiscReindex) Handle(ctx context.Context, msg mq.Message) error {
 	logger := d.logger.WithContext(ctx).With("disc_id", data.DiscID)
 	logger.Debug("handle discussion reindex")
 
-	ragContent, err := d.prompt.GenerateContentForRetrieval(ctx, data.DiscID)
+	ragContent, err := d.llm.GenerateContentForRetrieval(ctx, data.DiscID)
 	if err != nil {
 		logger.WithErr(err).Error("generate content for retrieval failed")
 		return nil

@@ -18,17 +18,17 @@ type DiscRag struct {
 	logger  *glog.Logger
 	rag     rag.Service
 	forum   *svc.Forum
-	prompt  *svc.Prompt
+	llm     *svc.LLM
 }
 
-func NewDiscRag(disc *svc.Discussion, dataset *repo.Dataset, rag rag.Service, forum *svc.Forum, prompt *svc.Prompt) *DiscRag {
+func NewDiscRag(disc *svc.Discussion, dataset *repo.Dataset, rag rag.Service, forum *svc.Forum, llm *svc.LLM) *DiscRag {
 	return &DiscRag{
 		disc:    disc,
 		dataset: dataset,
 		rag:     rag,
 		logger:  glog.Module("sub.discussion.rag"),
 		forum:   forum,
-		prompt:  prompt,
+		llm:     llm,
 	}
 }
 
@@ -67,7 +67,7 @@ func (d *DiscRag) Handle(ctx context.Context, msg mq.Message) error {
 func (d *DiscRag) handleInsert(ctx context.Context, data topic.MsgDiscChange) error {
 	logger := d.logger.WithContext(ctx).With("data", data)
 	logger.Debug("handle insert discussion rag")
-	ragContent, err := d.prompt.GenerateContentForRetrieval(ctx, data.DiscID)
+	content, err := d.llm.GenerateContentForRetrieval(ctx, data.DiscID)
 	if err != nil {
 		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
 		return nil
@@ -84,16 +84,30 @@ func (d *DiscRag) handleInsert(ctx context.Context, data topic.MsgDiscChange) er
 	}
 
 	ragID, err := d.rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
-		DatasetID:       forum.DatasetID,
-		DocumentID:      data.RagID,
-		Content:         ragContent,
-		ExtractKeywords: true,
-		Metadata:        disc.Metadata(),
+		DatasetID:  forum.DatasetID,
+		DocumentID: data.RagID,
+		Content:    content,
+		Metadata:   disc.Metadata(),
 	})
 	if err != nil {
 		return err
 	}
 	err = d.disc.UpdateRagID(ctx, data.DiscID, ragID)
+	if err != nil {
+		return err
+	}
+	content, err = d.llm.GenerateContentForRetrievalWithoutComments(ctx, data.DiscID)
+	if err != nil {
+		logger.WithContext(ctx).WithErr(err).Error("generate content for retrieval without comments failed")
+		return nil
+	}
+	_, err = d.rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
+		DatasetID:        forum.DatasetID,
+		DocumentID:       ragID,
+		Content:          content,
+		Metadata:         disc.Metadata(),
+		KeywordsOnlyMode: true,
+	})
 	if err != nil {
 		return err
 	}

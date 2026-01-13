@@ -64,13 +64,14 @@ func (c *CTRag) UpsertRecords(ctx context.Context, req UpsertRecordsReq) (string
 		metadata = req.Metadata.Map()
 	}
 	data := &raglite.UploadDocumentRequest{
-		DatasetID:       req.DatasetID,
-		DocumentID:      req.DocumentID,
-		File:            strings.NewReader(req.Content),
-		Filename:        fmt.Sprintf("%s.md", uuid.NewString()),
-		Metadata:        metadata,
-		Tags:            req.Tags,
-		ExtractKeywords: req.ExtractKeywords,
+		DatasetID:        req.DatasetID,
+		DocumentID:       req.DocumentID,
+		File:             strings.NewReader(req.Content),
+		Filename:         fmt.Sprintf("%s.md", uuid.NewString()),
+		Metadata:         metadata,
+		Tags:             req.Tags,
+		ExtractKeywords:  req.ExtractKeywords,
+		KeywordsOnlyMode: req.KeywordsOnlyMode,
 	}
 	doc, err := c.client.Documents.Upload(ctx, data)
 	if err != nil {

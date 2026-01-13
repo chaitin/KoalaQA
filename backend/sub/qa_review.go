@@ -33,14 +33,13 @@ type QAReview struct {
 	rag     rag.Service
 	dataset *repo.Dataset
 	llm     *svc.LLM
-	prompt  *svc.Prompt
 	disc    *svc.Discussion
 	pub     mq.Publisher
 
 	sf singleflight.Group
 }
 
-func NewQA(repo *repo.KBDocument, comm *repo.Comment, kb *repo.KnowledgeBase, rag rag.Service, dataset *repo.Dataset, llm *svc.LLM, prompt *svc.Prompt, disc *svc.Discussion, pub mq.Publisher) *QAReview {
+func NewQA(repo *repo.KBDocument, comm *repo.Comment, kb *repo.KnowledgeBase, rag rag.Service, dataset *repo.Dataset, llm *svc.LLM, disc *svc.Discussion, pub mq.Publisher) *QAReview {
 	return &QAReview{
 		repo:    repo,
 		comm:    comm,
@@ -48,7 +47,6 @@ func NewQA(repo *repo.KBDocument, comm *repo.Comment, kb *repo.KnowledgeBase, ra
 		rag:     rag,
 		dataset: dataset,
 		llm:     llm,
-		prompt:  prompt,
 		disc:    disc,
 		pub:     pub,
 		logger:  glog.Module("sub.qa_review"),
@@ -94,7 +92,7 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 		logger.WithErr(err).Warn("summary discussion question failed")
 		return nil
 	}
-	_, _, answer, err := q.prompt.GenerateAnswerPrompt(ctx, data.DiscussID, 0)
+	_, _, answer, err := q.llm.GenerateAnswerPrompt(ctx, data.DiscussID, 0)
 	if err != nil {
 		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
 		return nil

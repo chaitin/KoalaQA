@@ -230,10 +230,9 @@ func (m *initFirstBlog) Migrate(tx *gorm.DB) error {
 	}
 
 	ragID, err := m.rag.UpsertRecords(context.Background(), rag.UpsertRecordsReq{
-		DatasetID:       forum.DatasetID,
-		Content:         blogContent,
-		ExtractKeywords: false,
-		Metadata:        blog.Metadata(),
+		DatasetID: forum.DatasetID,
+		Content:   blogContent,
+		Metadata:  blog.Metadata(),
 	})
 	if err != nil {
 		return err

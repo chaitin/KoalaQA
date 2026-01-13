@@ -18,7 +18,6 @@ import (
 type Comment struct {
 	logger  *glog.Logger
 	llm     *svc.LLM
-	prompt  *svc.Prompt
 	bot     *svc.Bot
 	trend   *svc.Trend
 	disc    *svc.Discussion
@@ -29,11 +28,10 @@ type Comment struct {
 	batcher batch.Batcher[model.StatInfo]
 }
 
-func NewComment(disc *svc.Discussion, bot *svc.Bot, llm *svc.LLM, prompt *svc.Prompt, batcher batch.Batcher[model.StatInfo],
+func NewComment(disc *svc.Discussion, bot *svc.Bot, llm *svc.LLM, batcher batch.Batcher[model.StatInfo],
 	pub mq.Publisher, rag rag.Service, forum *svc.Forum, trend *svc.Trend, stat *repo.Stat) *Comment {
 	return &Comment{
 		llm:     llm,
-		prompt:  prompt,
 		logger:  glog.Module("sub.comment"),
 		disc:    disc,
 		bot:     bot,
@@ -100,18 +98,17 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 		logger.WithErr(err).Warn("get forum failed")
 		return nil
 	}
-	ragContent, err := d.prompt.GenerateContentForRetrieval(ctx, data.DiscID)
+	ragContent, err := d.llm.GenerateContentForRetrieval(ctx, data.DiscID)
 	if err != nil {
 		logger.WithErr(err).Error("generate content for retrieval failed")
 		return nil
 	}
 	// record rag
 	ragID, err := d.rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
-		DatasetID:       forum.DatasetID,
-		DocumentID:      disc.RagID,
-		Content:         ragContent,
-		ExtractKeywords: true,
-		Metadata:        disc.Metadata(),
+		DatasetID:  forum.DatasetID,
+		DocumentID: disc.RagID,
+		Content:    ragContent,
+		Metadata:   disc.Metadata(),
 	})
 	if err != nil {
 		return err
@@ -145,7 +142,7 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 		return nil
 	}
 
-	question, groups, prompt, err := d.prompt.GenerateAnswerPrompt(ctx, data.DiscID, data.CommID)
+	question, groups, prompt, err := d.llm.GenerateAnswerPrompt(ctx, data.DiscID, data.CommID)
 	if err != nil {
 		logger.WithErr(err).Error("generate prompt failed")
 		return nil
@@ -204,7 +201,7 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 func (d *Comment) handleUpdate(ctx context.Context, data topic.MsgCommentChange) error {
 	logger := d.logger.WithContext(ctx).With("comment_id", data.CommID)
 	logger.Info("handle update comment")
-	ragContent, err := d.prompt.GenerateContentForRetrieval(ctx, data.DiscID)
+	ragContent, err := d.llm.GenerateContentForRetrieval(ctx, data.DiscID)
 	if err != nil {
 		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
 		return nil
@@ -220,11 +217,10 @@ func (d *Comment) handleUpdate(ctx context.Context, data topic.MsgCommentChange)
 		return nil
 	}
 	ragID, err := d.rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
-		DatasetID:       forum.DatasetID,
-		DocumentID:      disc.RagID,
-		Content:         ragContent,
-		ExtractKeywords: true,
-		Metadata:        disc.Metadata(),
+		DatasetID:  forum.DatasetID,
+		DocumentID: disc.RagID,
+		Content:    ragContent,
+		Metadata:   disc.Metadata(),
 	})
 	if err != nil {
 		logger.WithErr(err).Error("update rag failed")
@@ -241,7 +237,7 @@ func (d *Comment) handleUpdate(ctx context.Context, data topic.MsgCommentChange)
 func (d *Comment) handleDelete(ctx context.Context, data topic.MsgCommentChange) error {
 	logger := d.logger.WithContext(ctx).With("comment_id", data.CommID)
 	logger.Info("handle delete comment")
-	ragContent, err := d.prompt.GenerateContentForRetrieval(ctx, data.DiscID)
+	ragContent, err := d.llm.GenerateContentForRetrieval(ctx, data.DiscID)
 	if err != nil {
 		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
 		return nil
@@ -257,11 +253,10 @@ func (d *Comment) handleDelete(ctx context.Context, data topic.MsgCommentChange)
 		return nil
 	}
 	ragID, err := d.rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
-		DatasetID:       forum.DatasetID,
-		DocumentID:      disc.RagID,
-		Content:         ragContent,
-		ExtractKeywords: true,
-		Metadata:        disc.Metadata(),
+		DatasetID:  forum.DatasetID,
+		DocumentID: disc.RagID,
+		Content:    ragContent,
+		Metadata:   disc.Metadata(),
 	})
 	if err != nil {
 		logger.WithErr(err).Error("update rag failed")

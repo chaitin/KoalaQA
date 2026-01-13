@@ -21,20 +21,18 @@ type Disc struct {
 	trend   *svc.Trend
 	logger  *glog.Logger
 	llm     *svc.LLM
-	prompt  *svc.Prompt
 	bot     *svc.Bot
 	pub     mq.Publisher
 	stat    *repo.Stat
 	batcher batch.Batcher[model.StatInfo]
 }
 
-func NewDisc(disc *svc.Discussion, llm *svc.LLM, prompt *svc.Prompt, bot *svc.Bot, stat *repo.Stat,
+func NewDisc(disc *svc.Discussion, llm *svc.LLM, bot *svc.Bot, stat *repo.Stat,
 	pub mq.Publisher, trend *svc.Trend, batcher batch.Batcher[model.StatInfo]) *Disc {
 	return &Disc{
 		disc:    disc,
 		trend:   trend,
 		llm:     llm,
-		prompt:  prompt,
 		bot:     bot,
 		pub:     pub,
 		batcher: batcher,
@@ -105,7 +103,7 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 		return err
 	}
 
-	question, groups, prompt, err := d.prompt.GenerateAnswerPrompt(ctx, data.DiscID, 0)
+	question, groups, prompt, err := d.llm.GenerateAnswerPrompt(ctx, data.DiscID, 0)
 	if err != nil {
 		logger.WithErr(err).Error("generate prompt failed")
 		return nil
@@ -193,7 +191,7 @@ func (d *Disc) handleUpdate(ctx context.Context, data topic.MsgDiscChange) error
 		return nil
 	}
 
-	question, prompt, groups, err := d.prompt.GeneratePostPrompt(ctx, data.DiscID)
+	question, prompt, groups, err := d.llm.GeneratePostPrompt(ctx, data.DiscID)
 	if err != nil {
 		logger.WithErr(err).Error("generate prompt failed")
 		return nil

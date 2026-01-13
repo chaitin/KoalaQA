@@ -28,12 +28,13 @@ type Metadata interface {
 }
 
 type UpsertRecordsReq struct {
-	DatasetID       string   `json:"dataset_id,omitempty"`
-	DocumentID      string   `json:"document_id,omitempty"`
-	Content         string   `json:"content,omitempty"`
-	Metadata        Metadata `json:"metadata,omitempty"`
-	Tags            []string `json:"tags,omitempty"`
-	ExtractKeywords bool     `json:"extract_keywords,omitempty"`
+	DatasetID        string   `json:"dataset_id,omitempty"`
+	DocumentID       string   `json:"document_id,omitempty"`
+	Content          string   `json:"content,omitempty"`
+	Metadata         Metadata `json:"metadata,omitempty"`
+	Tags             []string `json:"tags,omitempty"`
+	ExtractKeywords  bool     `json:"extract_keywords,omitempty"`
+	KeywordsOnlyMode bool     `json:"keywords_only_mode,omitempty"`
 }
 
 type Service interface {
