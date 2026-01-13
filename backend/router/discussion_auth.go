@@ -31,6 +31,7 @@ func (d *discussionAuth) Route(h server.Handler) {
 	g.POST("/complete", d.Complete)
 	g.POST("/upload", d.UploadFile)
 	g.POST("/ask", d.Ask)
+	g.GET("/ask/:ask_session_id", d.AskHistory)
 	g.POST("/summary/content", d.SummaryByContent)
 
 	{
@@ -660,6 +661,24 @@ func (d *discussionAuth) Ask(ctx *context.Context) {
 		ctx.SSEvent("text", fmt.Sprintf("%q", content))
 		return true
 	})
+}
+
+// AskHistory
+// @Summary discussion ask history
+// @Description discussion ask history
+// @Tags discussion
+// @Produce json
+// @Param ask_session_id path string true "ask_session_id"
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]model.AskSession}}
+// @Router /discussion/ask/{ask_session_id} [post]
+func (d *discussionAuth) AskHistory(ctx *context.Context) {
+	res, err := d.disc.AskHistory(ctx, ctx.Param("ask_session_id"), ctx.GetUser().UID)
+	if err != nil {
+		ctx.InternalError(err, "list history failed")
+		return
+	}
+
+	ctx.Success(res)
 }
 
 // SummaryByContent

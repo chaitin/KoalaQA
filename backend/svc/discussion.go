@@ -2159,6 +2159,22 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 	return &wrapSteam, nil
 }
 
+func (d *Discussion) AskHistory(ctx context.Context, sessionID string, uid uint) (*model.ListRes[model.AskSession], error) {
+	var res model.ListRes[model.AskSession]
+
+	err := d.in.AskSessionRepo.List(ctx, &res.Items,
+		repo.QueryWithEqual("uuid", sessionID),
+		repo.QueryWithEqual("user_id", uid),
+		repo.QueryWithOrderBy("created_at ASC, id ASC"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	res.Total = int64(len(res.Items))
+	return &res, nil
+}
+
 type SummaryByContentReq struct {
 	ForumID  uint             `json:"forum_id" binding:"required"`
 	Content  string           `json:"content" binding:"required"`

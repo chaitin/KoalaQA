@@ -4698,6 +4698,62 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/discussion/ask/{ask_session_id}": {
+            "post": {
+                "description": "discussion ask history",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "discussion ask history",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ask_session_id",
+                        "name": "ask_session_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/model.AskSession"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/discussion/complete": {
             "post": {
                 "description": "tab complete",
@@ -7517,6 +7573,32 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "trace_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.AskSession": {
+            "type": "object",
+            "properties": {
+                "bot": {
+                    "type": "boolean"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "uuid": {
                     "type": "string"
                 }
             }

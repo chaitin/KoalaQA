@@ -55,6 +55,23 @@ definitions:
       trace_id:
         type: string
     type: object
+  model.AskSession:
+    properties:
+      bot:
+        type: boolean
+      content:
+        type: string
+      created_at:
+        type: integer
+      id:
+        type: integer
+      updated_at:
+        type: integer
+      user_id:
+        type: integer
+      uuid:
+        type: string
+    type: object
   model.Auth:
     properties:
       auth_infos:
@@ -5879,6 +5896,37 @@ paths:
       - text/event-stream
       responses: {}
       summary: user ask
+      tags:
+      - discussion
+  /discussion/ask/{ask_session_id}:
+    post:
+      description: discussion ask history
+      parameters:
+      - description: ask_session_id
+        in: path
+        name: ask_session_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/model.AskSession'
+                        type: array
+                    type: object
+              type: object
+      summary: discussion ask history
       tags:
       - discussion
   /discussion/complete:
