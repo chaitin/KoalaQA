@@ -1467,6 +1467,12 @@ const Dashboard: React.FC = () => {
                             fill="url(#aiResponseAreaGradient)"
                             stroke="none"
                           />
+                          <Area
+                            type="monotone"
+                            dataKey="value"
+                            fill="url(#aiResponseAreaGradient)"
+                            stroke="none"
+                          />
                           <Line
                             type="monotone"
                             dataKey="value"
@@ -1538,6 +1544,12 @@ const Dashboard: React.FC = () => {
                               }
                               return null;
                             }}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="value"
+                            fill="url(#aiResolveAreaGradient)"
+                            stroke="none"
                           />
                           <Area
                             type="monotone"
