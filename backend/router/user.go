@@ -197,8 +197,16 @@ func (u *user) loginThirdCallback(ctx *context.Context, typ model.AuthType) {
 	}
 
 	if state.Cors {
-		ctx.SetSameSite(http.SameSiteNoneMode)
-		ctx.SetCookie("koala_auth_token_cors", token, u.expire, "/", "", false, false)
+		parseRedirect, err := url.Parse(state.Redirect)
+		if err != nil {
+			ctx.InternalError(err, "parse redirect failed")
+			return
+		}
+
+		query := parseRedirect.Query()
+		query.Set("koala_cors_token", token)
+		parseRedirect.RawQuery = query.Encode()
+		state.Redirect = parseRedirect.String()
 	} else {
 		ctx.SetCookie("auth_token", token, u.expire, "/", "", false, true)
 	}

@@ -83,6 +83,7 @@ func (l *LLM) StreamAnswer(ctx context.Context, sysPrompt string, req GenerateRe
 		"Question":           rewrittenQuery,
 		"NewCommentID":       req.NewCommentID,
 		"CurrentDate":        time.Now().Format("2006-01-02"),
+		"DefaultAnswer":      req.DefaultAnswer,
 		"KnowledgeDocuments": knowledgeDocuments,
 	})
 }

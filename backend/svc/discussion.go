@@ -2069,16 +2069,12 @@ func (d *Discussion) Reindex(ctx context.Context, req ReindexReq) error {
 }
 
 type DiscussionAskReq struct {
-	Question string           `json:"question" binding:"required"`
-	GroupIDs model.Int64Array `json:"group_ids"`
+	SessionID string           `json:"session_id" binding:"required"`
+	Question  string           `json:"question" binding:"required"`
+	GroupIDs  model.Int64Array `json:"group_ids"`
 }
 
-func (d *Discussion) Ask(ctx context.Context, sessionUUID string, uid uint, req DiscussionAskReq) (*LLMStream, error) {
-	botUserID, err := d.in.BotSvc.GetUserID(ctx)
-	if err != nil {
-		return nil, err
-	}
-
+func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*LLMStream, error) {
 	var groups []model.GroupItemInfo
 	if len(req.GroupIDs) > 0 {
 		groupIDs, err := d.in.UserRepo.UserGroupIDs(ctx, uid)
@@ -2095,9 +2091,10 @@ func (d *Discussion) Ask(ctx context.Context, sessionUUID string, uid uint, req 
 	}
 
 	var askHistories llm.AskSessionsTemplate
-	err = d.in.AskSessionRepo.List(ctx, &askHistories,
-		repo.QueryWithOrderBy("created_at ASC"),
-		repo.QueryWithEqual("uuid", sessionUUID),
+	err := d.in.AskSessionRepo.List(ctx, &askHistories,
+		repo.QueryWithOrderBy("created_at ASC, id ASC"),
+		repo.QueryWithEqual("uuid", req.SessionID),
+		repo.QueryWithEqual("user_id", uid),
 	)
 	if err != nil {
 		return nil, err
@@ -2109,7 +2106,7 @@ func (d *Discussion) Ask(ctx context.Context, sessionUUID string, uid uint, req 
 	}
 
 	err = d.in.AskSessionRepo.Create(ctx, &model.AskSession{
-		UUID:    sessionUUID,
+		UUID:    req.SessionID,
 		UserID:  uid,
 		Bot:     false,
 		Content: req.Question,
@@ -2148,8 +2145,8 @@ func (d *Discussion) Ask(ctx context.Context, sessionUUID string, uid uint, req 
 		})
 
 		err := d.in.AskSessionRepo.Create(ctx, &model.AskSession{
-			UUID:    sessionUUID,
-			UserID:  botUserID,
+			UUID:    req.SessionID,
+			UserID:  uid,
 			Bot:     true,
 			Content: aiResBuilder.String(),
 		})
@@ -2160,6 +2157,27 @@ func (d *Discussion) Ask(ctx context.Context, sessionUUID string, uid uint, req 
 	}()
 
 	return &wrapSteam, nil
+}
+
+func (d *Discussion) AskHistory(ctx context.Context, sessionID string, uid uint) (*model.ListRes[model.AskSession], error) {
+	botUserID, err := d.in.BotSvc.GetUserID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var res model.ListRes[model.AskSession]
+	err = d.in.AskSessionRepo.List(ctx, &res.Items,
+		repo.QueryWithEqual("uuid", sessionID),
+		repo.QueryWithEqual("user_id", []uint{uid, botUserID}, repo.EqualOPIn),
+		repo.QueryWithOrderBy("created_at ASC, id ASC"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	res.Total = int64(len(res.Items))
+
+	return &res, nil
 }
 
 type SummaryByContentReq struct {

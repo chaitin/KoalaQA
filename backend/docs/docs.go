@@ -4687,59 +4687,15 @@ const docTemplate = `{
                         "name": "question",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "name": "session_id",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {}
-            }
-        },
-        "/discussion/ask/session": {
-            "get": {
-                "description": "get ask session",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "discussion"
-                ],
-                "summary": "get ask session",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/context.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "string"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "delete ask session",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "discussion"
-                ],
-                "summary": "delete ask session",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/context.Response"
-                        }
-                    }
-                }
             }
         },
         "/discussion/complete": {
