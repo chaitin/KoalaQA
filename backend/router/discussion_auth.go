@@ -1,12 +1,15 @@
 package router
 
 import (
+	"errors"
 	"fmt"
 	"io"
+	"net/http"
 
 	"github.com/chaitin/koalaqa/pkg/context"
 	"github.com/chaitin/koalaqa/server"
 	"github.com/chaitin/koalaqa/svc"
+	"github.com/google/uuid"
 )
 
 type discussionAuth struct {
@@ -30,6 +33,10 @@ func (d *discussionAuth) Route(h server.Handler) {
 	g.GET("/follow", d.ListFollow)
 	g.POST("/complete", d.Complete)
 	g.POST("/upload", d.UploadFile)
+	g.POST("/ask", d.Ask)
+	g.POST("/summary/content", d.SummaryByContent)
+	g.GET("/ask/session", d.AskSession)
+	g.POST("/ask/session", d.DeleteAskSession)
 
 	{
 		detailG := g.Group("/:disc_id")
@@ -624,6 +631,43 @@ func (d *discussionAuth) AILearn(ctx *context.Context) {
 	ctx.Success(nil)
 }
 
+const askSessionID = "koala_ask_session_id"
+
+// AskSession
+// @Summary get ask session
+// @Description get ask session
+// @Tags discussion
+// @Produce json
+// @Success 200 {object} context.Response{data=string}
+// @Router /discussion/ask/session [get]
+func (d *discussionAuth) AskSession(ctx *context.Context) {
+	sessionUUID := uuid.NewString()
+
+	str, err := ctx.Cookie(askSessionID)
+	if err != nil {
+		ctx.SetSameSite(http.SameSiteNoneMode)
+		ctx.SetCookie(askSessionID, sessionUUID, 86400, "/", "", false, true)
+	} else {
+		sessionUUID = str
+	}
+
+	ctx.Success(sessionUUID)
+}
+
+// DeleteAskSession
+// @Summary delete ask session
+// @Description delete ask session
+// @Tags discussion
+// @Produce json
+// @Success 200 {object} context.Response
+// @Router /discussion/ask/session [post]
+func (d *discussionAuth) DeleteAskSession(ctx *context.Context) {
+	ctx.SetSameSite(http.SameSiteNoneMode)
+	ctx.SetCookie(askSessionID, "", -1, "/", "", false, true)
+
+	ctx.Success(nil)
+}
+
 // Ask
 // @Summary user ask
 // @Description user ask
@@ -639,7 +683,13 @@ func (d *discussionAuth) Ask(ctx *context.Context) {
 		return
 	}
 
-	stream, err := d.disc.Ask(ctx, ctx.GetUser().UID, req)
+	seesionID, err := ctx.Cookie(askSessionID)
+	if err != nil || seesionID == "" {
+		ctx.BadRequest(errors.New("no session"))
+		return
+	}
+
+	stream, err := d.disc.Ask(ctx, seesionID, ctx.GetUser().UID, req)
 	if err != nil {
 		ctx.InternalError(err, "get ask stream failed")
 		return

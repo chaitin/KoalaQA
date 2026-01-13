@@ -17,6 +17,7 @@ func newCors() Interceptor {
 			"/api/user/login/cors",
 			"/api/discussion/ask",
 			"/api/discussion/summary/content",
+			"/api/discussion/ask/session",
 		},
 	}
 }

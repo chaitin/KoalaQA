@@ -5861,10 +5861,6 @@ paths:
     post:
       description: user ask
       parameters:
-      - in: query
-        name: content
-        required: true
-        type: string
       - collectionFormat: csv
         in: query
         items:
@@ -5873,11 +5869,42 @@ paths:
         type: array
       - in: query
         name: question
+        required: true
         type: string
       produces:
       - text/event-stream
       responses: {}
       summary: user ask
+      tags:
+      - discussion
+  /discussion/ask/session:
+    get:
+      description: get ask session
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: get ask session
+      tags:
+      - discussion
+    post:
+      description: delete ask session
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: delete ask session
       tags:
       - discussion
   /discussion/complete:

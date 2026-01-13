@@ -5,9 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"mime/multipart"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
@@ -40,6 +42,7 @@ type discussionIn struct {
 	UserRepo       *repo.User
 	GroupItemRepo  *repo.GroupItem
 	OrgRepo        *repo.Org
+	AskSessionRepo *repo.AskSession
 	BotSvc         *Bot
 	TrendSvc       *Trend
 	Pub            mq.Publisher
@@ -2066,12 +2069,16 @@ func (d *Discussion) Reindex(ctx context.Context, req ReindexReq) error {
 }
 
 type DiscussionAskReq struct {
-	Question string           `json:"question"`
-	Content  string           `json:"content" binding:"required"`
+	Question string           `json:"question" binding:"required"`
 	GroupIDs model.Int64Array `json:"group_ids"`
 }
 
-func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*LLMStream, error) {
+func (d *Discussion) Ask(ctx context.Context, sessionUUID string, uid uint, req DiscussionAskReq) (*LLMStream, error) {
+	botUserID, err := d.in.BotSvc.GetUserID(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	var groups []model.GroupItemInfo
 	if len(req.GroupIDs) > 0 {
 		groupIDs, err := d.in.UserRepo.UserGroupIDs(ctx, uid)
@@ -2087,13 +2094,72 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		}
 	}
 
-	return d.in.LLM.StreamAnswer(ctx, llm.SystemChatNoRefPrompt, GenerateReq{
+	var askHistories llm.AskSessionsTemplate
+	err = d.in.AskSessionRepo.List(ctx, &askHistories,
+		repo.QueryWithOrderBy("created_at ASC"),
+		repo.QueryWithEqual("uuid", sessionUUID),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	prompt, err := askHistories.BuildAskPrompt()
+	if err != nil {
+		return nil, err
+	}
+
+	err = d.in.AskSessionRepo.Create(ctx, &model.AskSession{
+		UUID:    sessionUUID,
+		UserID:  uid,
+		Bot:     false,
+		Content: req.Question,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	stream, err := d.in.LLM.StreamAnswer(ctx, llm.SystemChatNoRefPrompt, GenerateReq{
 		Question:      req.Question,
 		Groups:        groups,
-		Prompt:        req.Content,
+		Prompt:        prompt,
 		DefaultAnswer: "无法回答问题",
 		NewCommentID:  0,
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	wrapSteam := LLMStream{
+		c:    make(chan string, 8),
+		stop: make(chan struct{}),
+	}
+
+	go func() {
+		var aiResBuilder strings.Builder
+		wrapSteam.Recv(func() (string, error) {
+			text, ok := stream.Text(ctx)
+			if !ok {
+				return "", io.EOF
+			}
+
+			aiResBuilder.WriteString(text)
+
+			return text, nil
+		})
+
+		err := d.in.AskSessionRepo.Create(ctx, &model.AskSession{
+			UUID:    sessionUUID,
+			UserID:  botUserID,
+			Bot:     true,
+			Content: aiResBuilder.String(),
+		})
+		if err != nil {
+			d.logger.WithContext(ctx).Warn("create bot ask session failed")
+			return
+		}
+	}()
+
+	return &wrapSteam, nil
 }
 
 type SummaryByContentReq struct {
