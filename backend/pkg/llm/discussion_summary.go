@@ -91,6 +91,7 @@ var DiscussionSummarySystemPrompt = `
 var discissopmSummaryUserTpl = template.New("discussion_summary_user_prompt")
 
 const discussionSummaryUserTplStr = `
+{{- $urlPrefix := .URLPrefix -}}
 ## 帖子信息:
 {{- range $i, $disc := .Discussions}}
 ### 帖子{{add $i 1}}
@@ -98,8 +99,8 @@ const discussionSummaryUserTplStr = `
 #### 帖子类型：{{getDiscType $disc.Type}}
 #### 帖子标题：{{$disc.Title}}
 #### 帖子总结：{{ if eq $disc.Summary ""}} 无 {{- else}} {{- $disc.Summary}} {{- end}}
-{{- if ne .URLPrefix ""}}
-#### 帖子URL: {{.URLPrefix}}/{{$disc.UUID}}
+{{- if ne $urlPrefix ""}}
+#### 帖子URL: {{$urlPrefix}}/{{$disc.UUID}}
 {{- end}}
 #### 发帖人：{{$disc.UserName}}
 #### 发帖时间：{{formatTime $disc.CreatedAt}}
