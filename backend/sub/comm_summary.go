@@ -64,7 +64,7 @@ func (c *CommentSummary) Handle(ctx context.Context, msg mq.Message) error {
 		return nil
 	}
 
-	_, prompt, err := c.llm.GeneratePostPrompt(ctx, data.DiscID)
+	_, prompt, _, err := c.llm.GeneratePostPrompt(ctx, data.DiscID)
 	if err != nil {
 		logger.WithErr(err).Error("generate post prompt failed")
 		return nil

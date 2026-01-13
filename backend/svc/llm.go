@@ -272,6 +272,95 @@ func (l *LLM) StreamChat(ctx context.Context, sMsg string, uMsg string, params m
 	return &s, nil
 }
 
+// GenerateAnswerPrompt 生成回复帖子的提示词
+func (l *LLM) GenerateAnswerPrompt(ctx context.Context, discID uint, commID uint) (string, []model.GroupItemInfo, string, error) {
+	logger := l.logger.WithContext(ctx).With("discussion_id", discID, "comment_id", commID)
+	logger.Debug("start generate prompt")
+
+	// 1. 获取讨论详情
+	discussion, err := l.disc.Detail(ctx, 0, discID)
+	if err != nil {
+		return "", nil, "", fmt.Errorf("get discussion detail failed: %w", err)
+	}
+
+	// 2. 获取该讨论的所有评论
+	var allComments []model.CommentDetail
+	err = l.comm.List(ctx, &allComments,
+		repo.QueryWithEqual("discussion_id", discID),
+		repo.QueryWithOrderBy("created_at ASC"),
+	)
+	if err != nil {
+		return "", nil, "", fmt.Errorf("get discussion comments failed: %w", err)
+	}
+
+	// 3. 获取新评论详情
+	var newComment *model.CommentDetail
+	if commID > 0 {
+		newComment, err = l.comm.Detail(ctx, commID)
+		if err != nil {
+			return "", nil, "", fmt.Errorf("get new comment detail failed: %w", err)
+		}
+	}
+
+	// 4. 创建提示词模版并生成提示词
+	template := llm.NewDiscussionPromptTemplate(discussion, allComments, newComment)
+
+	prompt, err := template.BuildFullPrompt()
+	if err != nil {
+		return "", nil, "", fmt.Errorf("generate prompt failed: %w", err)
+	}
+
+	logger.With("prompt", prompt).Debug("generate prompt success")
+	return template.Question(), discussion.GroupInfo(), prompt, nil
+}
+
+// GenerateContentForRetrieval 生成用于检索的纯内容文本
+func (l *LLM) GenerateContentForRetrieval(ctx context.Context, discID uint) (string, error) {
+	logger := l.logger.WithContext(ctx).With("discussion_id", discID)
+	logger.Debug("start generate content for retrieval")
+
+	// 1. 获取讨论详情
+	discussion, err := l.disc.Detail(ctx, 0, discID)
+	if err != nil {
+		return "", fmt.Errorf("get discussion detail failed: %w", err)
+	}
+
+	// 2. 获取所有评论
+	var allComments []model.CommentDetail
+	err = l.comm.List(ctx, &allComments,
+		repo.QueryWithEqual("discussion_id", discID),
+		repo.QueryWithOrderBy("created_at ASC"),
+	)
+	if err != nil {
+		return "", fmt.Errorf("get discussion comments failed: %w", err)
+	}
+
+	// 3. 创建模版并生成纯内容
+	template := llm.NewDiscussionPromptTemplate(discussion, allComments, nil)
+	content := template.BuildContentForRetrieval()
+
+	logger.Debug("generate content for retrieval success")
+	return content, nil
+}
+
+// GenerateContentForRetrieval 生成用于检索的纯内容文本
+func (l *LLM) GenerateContentForRetrievalWithoutComments(ctx context.Context, discID uint) (string, error) {
+	logger := l.logger.WithContext(ctx).With("discussion_id", discID)
+	logger.Debug("start generate content for retrieval")
+
+	// 1. 获取讨论详情
+	discussion, err := l.disc.Detail(ctx, 0, discID)
+	if err != nil {
+		return "", fmt.Errorf("get discussion detail failed: %w", err)
+	}
+	// 2. 创建模版并生成纯内容
+	template := llm.NewDiscussionPromptTemplate(discussion, nil, nil)
+	content := template.BuildContentForRetrieval()
+
+	logger.Debug("generate content for retrieval success")
+	return content, nil
+}
+
 func (l *LLM) GenerateDiscussionPrompt(ctx context.Context, discIDs ...uint) (string, error) {
 	var discTemplates llm.DiscussionPromptTemplates
 	for _, discID := range discIDs {
@@ -320,14 +409,14 @@ func (l *LLM) discussionPromptTemplate(ctx context.Context, discID uint, commID 
 	return llm.NewDiscussionPromptTemplate(discussion, allComments, newComment), nil
 }
 
-func (l *LLM) GeneratePostPrompt(ctx context.Context, discID uint) (string, string, error) {
+func (l *LLM) GeneratePostPrompt(ctx context.Context, discID uint) (string, string, []model.GroupItemInfo, error) {
 	logger := l.logger.WithContext(ctx).With("discussion_id", discID)
 	logger.Debug("start generate prompt")
 
 	// 1. 获取讨论详情
 	discussion, err := l.disc.Detail(ctx, 0, discID)
 	if err != nil {
-		return "", "", fmt.Errorf("get discussion detail failed: %w", err)
+		return "", "", nil, fmt.Errorf("get discussion detail failed: %w", err)
 	}
 
 	// 2. 如果为问答，获取该讨论的所有评论
@@ -338,7 +427,7 @@ func (l *LLM) GeneratePostPrompt(ctx context.Context, discID uint) (string, stri
 			repo.QueryWithOrderBy("created_at ASC"),
 		)
 		if err != nil {
-			return "", "", fmt.Errorf("get discussion comments failed: %w", err)
+			return "", "", nil, fmt.Errorf("get discussion comments failed: %w", err)
 		}
 	}
 
@@ -346,11 +435,11 @@ func (l *LLM) GeneratePostPrompt(ctx context.Context, discID uint) (string, stri
 
 	prompt, err := template.BuildPostPrompt()
 	if err != nil {
-		return "", "", fmt.Errorf("generate prompt failed: %w", err)
+		return "", "", nil, fmt.Errorf("generate prompt failed: %w", err)
 	}
 
 	logger.With("prompt", prompt).Debug("generate prompt success")
-	return template.Question(), prompt, nil
+	return template.Question(), prompt, discussion.GroupInfo(), nil
 }
 
 // queryKnowledgeDocuments 查询相关知识文档
