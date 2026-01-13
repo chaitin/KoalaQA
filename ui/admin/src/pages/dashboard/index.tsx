@@ -26,11 +26,12 @@ import {
 import dayjs from 'dayjs';
 import React, { ReactNode, useEffect, useMemo, useState } from 'react';
 import {
+  Area,
   Bar,
   BarChart,
   CartesianGrid,
+  ComposedChart,
   Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -592,8 +593,8 @@ const StatCard: React.FC<StatCardProps> = ({ type, metrics }) => {
 
   // 定义样式变量
   const bgGradient = isBlue
-    ? 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' // Blue 50 -> Blue 100
-    : 'linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)'; // Purple 50 -> Purple 100
+    ? ' linear-gradient( 180deg, #E4ECFF 0.04%, #BED1FE 100%)' // Blue 50 -> Blue 100
+    : 'linear-gradient( 180deg, #EAE1FF 0.04%, #C9CAFF 100%)'; // Purple 50 -> Purple 100
 
   const textColor = isBlue ? '#1e3a8a' : '#581c87'; // Blue 900 / Purple 900
   const subColor = isBlue ? '#2563eb' : '#9333ea'; // Blue 600 / Purple 600
@@ -646,12 +647,11 @@ const ChartSection: React.FC<ChartSectionProps> = ({ title, children, showTime =
       elevation={0}
       sx={{
         p: 2,
-        borderRadius: 3,
+        borderRadius: 2,
         height: 'calc(35vh - 21px)',
         display: 'flex',
         flexDirection: 'column',
-        border: '1px solid',
-        borderColor: 'divider',
+        boxShadow: '0px 0px 10px 0px rgba(54,59,76,0.1), 0px 0px 1px 1px rgba(54,59,76,0.03)',
       }}
     >
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
@@ -680,7 +680,7 @@ const MainDashboardCard: React.FC<MainDashboardCardProps> = ({ children, sx = {}
       elevation={0}
       sx={{
         p: 2,
-        borderRadius: 3,
+        borderRadius: 2,
         height: 'fit-content',
         ...sx,
       }}
@@ -712,7 +712,7 @@ const InsightItem: React.FC<InsightItemProps> = ({ time, title, scoreIds, onQues
     <Box
       sx={{
         bgcolor: 'rgba(76, 165, 167, 0.08)',
-        borderRadius: 1,
+        borderRadius: 2,
         p: 1.5,
         transition: 'all 0.3s',
         cursor: onQuestionClick ? 'pointer' : 'default',
@@ -1356,9 +1356,7 @@ const Dashboard: React.FC = () => {
                     elevation={0}
                     sx={{
                       p: 2,
-                      borderRadius: 3,
-                      border: '1px solid',
-                      borderColor: 'divider',
+                      borderRadius: 2,
                       height: '100%',
                       display: 'flex',
                       flexDirection: 'column',
@@ -1430,10 +1428,16 @@ const Dashboard: React.FC = () => {
                   <ChartSection title="AI 应答率趋势">
                     <ResponsiveContainer width="100%" height="100%">
                       <div style={{ outline: 'none' }} onMouseDown={e => e.preventDefault()}>
-                        <LineChart
+                        <ComposedChart
                           data={aiResponseRateData}
                           margin={{ left: 20, right: 10, top: 10, bottom: 10 }}
                         >
+                          <defs>
+                            <linearGradient id="aiResponseAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#2dd4bf" stopOpacity={0.3} />
+                              <stop offset="100%" stopColor="#2dd4bf" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
                           <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f0f0f0" />
                           <XAxis
                             dataKey="name"
@@ -1450,15 +1454,21 @@ const Dashboard: React.FC = () => {
                             }}
                             formatter={(value: number) => [`${value.toFixed(1)}%`, 'AI 应答率']}
                           />
+                          <Area
+                            type="monotone"
+                            dataKey="value"
+                            fill="url(#aiResponseAreaGradient)"
+                            stroke="none"
+                          />
                           <Line
                             type="monotone"
                             dataKey="value"
-                            stroke="#2dd4bf"
+                            stroke="#1AA086"
                             strokeWidth={3}
                             dot={false}
-                            activeDot={false}
+                            activeDot={{ r: 4, fill: '#1AA086' }}
                           />
-                        </LineChart>
+                        </ComposedChart>
                       </div>
                     </ResponsiveContainer>
                   </ChartSection>
@@ -1467,10 +1477,16 @@ const Dashboard: React.FC = () => {
                   <ChartSection title="AI 解决率趋势">
                     <ResponsiveContainer width="100%" height="100%">
                       <div style={{ outline: 'none' }} onMouseDown={e => e.preventDefault()}>
-                        <LineChart
+                        <ComposedChart
                           data={aiResolveRateData}
                           margin={{ left: 20, right: 10, top: 10, bottom: 10 }}
                         >
+                          <defs>
+                            <linearGradient id="aiResolveAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#FE662A" stopOpacity={0.3} />
+                              <stop offset="100%" stopColor="#FE662A" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
                           <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f0f0f0" />
                           <XAxis
                             dataKey="name"
@@ -1487,15 +1503,21 @@ const Dashboard: React.FC = () => {
                             }}
                             formatter={(value: number) => [`${value.toFixed(1)}%`, 'AI 解决率']}
                           />
+                          <Area
+                            type="monotone"
+                            dataKey="value"
+                            fill="url(#aiResolveAreaGradient)"
+                            stroke="none"
+                          />
                           <Line
                             type="monotone"
                             dataKey="value"
-                            stroke="#f97316"
+                            stroke="#FE662A"
                             strokeWidth={3}
                             dot={false}
-                            activeDot={false}
+                            activeDot={{ r: 4, fill: '#FE662A' }}
                           />
-                        </LineChart>
+                        </ComposedChart>
                       </div>
                     </ResponsiveContainer>
                   </ChartSection>
