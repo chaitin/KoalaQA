@@ -1,6 +1,9 @@
 package router
 
 import (
+	"fmt"
+	"io"
+
 	"github.com/chaitin/koalaqa/pkg/context"
 	"github.com/chaitin/koalaqa/server"
 	"github.com/chaitin/koalaqa/svc"
@@ -619,4 +622,83 @@ func (d *discussionAuth) AILearn(ctx *context.Context) {
 	}
 
 	ctx.Success(nil)
+}
+
+// Ask
+// @Summary user ask
+// @Description user ask
+// @Tags discussion
+// @Produce text/event-stream
+// @Param req query svc.DiscussionAskReq false "req params"
+// @Router /discussion/ask [post]
+func (d *discussionAuth) Ask(ctx *context.Context) {
+	var req svc.DiscussionAskReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	stream, err := d.disc.Ask(ctx, ctx.GetUser().UID, req)
+	if err != nil {
+		ctx.InternalError(err, "get ask stream failed")
+		return
+	}
+	defer stream.Close()
+
+	ctx.Writer.Header().Set("X-Accel-Buffering", "no")
+
+	ctx.Stream(func(_ io.Writer) bool {
+		content, ok := stream.Text(ctx)
+		if !ok {
+			ctx.SSEvent("end", true)
+			return false
+		}
+
+		ctx.SSEvent("text", fmt.Sprintf("%q", content))
+		return true
+	})
+}
+
+// SummaryByContent
+// @Summary content summary
+// @Description content summary
+// @Tags discussion
+// @Produce text/event-stream
+// @Param req query svc.SummaryByContentReq false "req params"
+// @Router /discussion/summary/content [post]
+func (d *discussionAuth) SummaryByContent(ctx *context.Context) {
+	var req svc.SummaryByContentReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	stream, err := d.disc.SummaryByContent(ctx, ctx.GetUser().UID, req)
+	if err != nil {
+		ctx.InternalError(err, "summary failed")
+		return
+	}
+
+	ctx.Writer.Header().Set("X-Accel-Buffering", "no")
+	if stream != nil {
+		defer stream.Close()
+	}
+
+	ctx.Stream(func(_ io.Writer) bool {
+		if stream == nil {
+			ctx.SSEvent("no_disc", true)
+			return false
+		}
+
+		content, ok := stream.Text(ctx)
+		if !ok {
+			ctx.SSEvent("end", true)
+			return false
+		}
+
+		ctx.SSEvent("text", fmt.Sprintf("%q", content))
+		return true
+	})
 }

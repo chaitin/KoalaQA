@@ -882,17 +882,6 @@ func (u *User) ListSearchHistory(ctx context.Context, req ListSearchHistoryReq) 
 	return &res, nil
 }
 
-type UserChatReq struct {
-	Content string `json:"content" binding:"required"`
-}
-
-type UserChaRes struct {
-}
-
-func (u *User) Chat(ctx context.Context, uid uint, req UserChatReq) (*UserChaRes, error) {
-	return nil, errors.ErrUnsupported
-}
-
 func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth, notifySub *repo.MessageNotifySub,
 	authMgmt *third_auth.Manager, oc oss.Client, org *repo.Org, userPoint *repo.UserPointRecord, publicAddr *PublicAddress,
 	disc *repo.Discussion, comm *repo.Comment, review *repo.UserReview, pub mq.Publisher) *User {

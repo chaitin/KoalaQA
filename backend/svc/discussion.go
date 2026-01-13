@@ -51,6 +51,7 @@ type discussionIn struct {
 	LLM            *LLM
 	Batcher        batch.Batcher[model.StatInfo]
 	UserPoint      *UserPoint
+	PublicAddr     *PublicAddress
 }
 
 type Discussion struct {
@@ -540,7 +541,7 @@ type DiscussionSummaryReq struct {
 	UUIDs   model.StringArray `json:"uuids" binding:"required"`
 }
 
-func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummaryReq) (*LLMStream, error) {
+func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummaryReq, refer bool) (*LLMStream, error) {
 	var discs []model.DiscussionListItem
 	err := d.in.DiscRepo.List(ctx, &discs, repo.QueryWithEqual("uuid", req.UUIDs, repo.EqualOPEqAny))
 	if err != nil {
@@ -571,7 +572,22 @@ func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummar
 		}
 	}
 
-	userPrompt, err := llm.DiscussionSummaryUserPrompt(discs)
+	var urlPrefix string
+	if refer {
+		addr, err := d.in.PublicAddr.Get(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		var forum model.Forum
+		err = d.in.ForumRepo.GetByID(ctx, &forum, forumID)
+		if err != nil {
+			return nil, err
+		}
+		urlPrefix = addr.FullURL(forum.RouteName)
+	}
+
+	userPrompt, err := llm.DiscussionSummaryUserPrompt(urlPrefix, discs)
 	if err != nil {
 		return nil, err
 	}
@@ -580,6 +596,7 @@ func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummar
 		"CurrentDate": time.Now().Format("2006-01-02"),
 		"Question":    req.Keyword,
 		"Discussions": discs,
+		"Reference":   refer,
 	})
 }
 
@@ -2046,4 +2063,107 @@ func (d *Discussion) Reindex(ctx context.Context, req ReindexReq) error {
 		}
 		return nil
 	})
+}
+
+type DiscussionAskReq struct {
+	Question string           `json:"question"`
+	Content  string           `json:"content" binding:"required"`
+	GroupIDs model.Int64Array `json:"group_ids"`
+}
+
+func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*LLMStream, error) {
+	var groups []model.GroupItemInfo
+	if len(req.GroupIDs) > 0 {
+		groupIDs, err := d.in.UserRepo.UserGroupIDs(ctx, uid)
+		if err != nil {
+			return nil, err
+		}
+		err = d.in.GroupItemRepo.List(ctx, &groups,
+			repo.QueryWithEqual("group_id", groupIDs, repo.EqualOPEqAny),
+			repo.QueryWithEqual("id", req.GroupIDs, repo.EqualOPEqAny),
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return d.in.LLM.StreamAnswer(ctx, llm.SystemChatNoRefPrompt, GenerateReq{
+		Question:      req.Question,
+		Groups:        groups,
+		Prompt:        req.Content,
+		DefaultAnswer: "无法回答问题",
+		NewCommentID:  0,
+	})
+}
+
+type SummaryByContentReq struct {
+	ForumID  uint             `json:"forum_id" binding:"required"`
+	Content  string           `json:"content" binding:"required"`
+	GroupIDs model.Int64Array `json:"group_ids"`
+}
+
+func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req SummaryByContentReq) (*LLMStream, error) {
+	ok, err := d.in.UserRepo.HasForumPermission(ctx, uid, req.ForumID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, errPermission
+	}
+
+	if len(req.GroupIDs) > 0 {
+		var forum model.Forum
+		err := d.in.ForumRepo.GetByID(ctx, &forum, req.ForumID)
+		if err != nil {
+			return nil, err
+		}
+
+		visited := make(map[int64]bool)
+		groupIDs := make(model.Int64Array, 0)
+		for _, forumGroup := range forum.Groups.Inner() {
+			for _, groupID := range forumGroup.GroupIDs {
+				if visited[groupID] {
+					continue
+				}
+
+				groupIDs = append(groupIDs, groupID)
+				visited[groupID] = true
+			}
+		}
+		err = d.in.GroupItemRepo.FilterIDs(ctx, &req.GroupIDs, repo.QueryWithEqual("group_id", groupIDs, repo.EqualOPEqAny))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var metadata rag.Metadata
+	if len(req.GroupIDs) > 0 {
+		metadata = model.DiscMetadata{
+			GroupIDs: req.GroupIDs,
+		}
+	}
+	discs, err := d.Search(ctx, DiscussionSearchReq{
+		Keyword:             req.Content,
+		ForumID:             req.ForumID,
+		SimilarityThreshold: 0.4,
+		MaxChunksPerDoc:     1,
+		Metadata:            metadata,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(discs) == 0 {
+		return nil, nil
+	}
+
+	discUUIDs := make([]string, 0)
+	for _, disc := range discs {
+		discUUIDs = append(discUUIDs, disc.UUID)
+	}
+
+	return d.Summary(ctx, uid, DiscussionSummaryReq{
+		Keyword: req.Content,
+		UUIDs:   discUUIDs,
+	}, true)
 }

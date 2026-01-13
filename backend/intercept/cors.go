@@ -2,19 +2,28 @@ package intercept
 
 import (
 	"net/http"
+	"slices"
 
 	"github.com/chaitin/koalaqa/pkg/context"
 )
 
-type cors struct{}
+type cors struct {
+	postAllows []string
+}
 
 func newCors() Interceptor {
-	return &cors{}
+	return &cors{
+		postAllows: []string{
+			"/api/user/login/cors",
+			"/api/discussion/ask",
+			"/api/discussion/summary/content",
+		},
+	}
 }
 
 func (c *cors) Intercept(ctx *context.Context) {
 	if ctx.Request.Header.Get("Origin") != "" &&
-		(ctx.Request.Method == http.MethodGet || ctx.Request.Method == http.MethodPost && ctx.Request.RequestURI == "/api/user/login/cors") {
+		(ctx.Request.Method == http.MethodGet || ctx.Request.Method == http.MethodPost && slices.Contains(c.postAllows, ctx.Request.RequestURI)) {
 		ctx.Header("Access-Control-Allow-Origin", "*")
 		ctx.Header("Access-Control-Allow-Methods", "GET, POST")
 		ctx.Header("Access-Control-Allow-Headers", "*")

@@ -4662,6 +4662,41 @@ const docTemplate = `{
                 }
             }
         },
+        "/discussion/ask": {
+            "post": {
+                "description": "user ask",
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "user ask",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "content",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "group_ids",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "question",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/discussion/complete": {
             "post": {
                 "description": "tab complete",
@@ -4841,6 +4876,42 @@ const docTemplate = `{
                         "name": "uuids",
                         "in": "query",
                         "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/discussion/summary/content": {
+            "post": {
+                "description": "content summary",
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "content summary",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "content",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "name": "forum_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "group_ids",
+                        "in": "query"
                     }
                 ],
                 "responses": {}

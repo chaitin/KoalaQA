@@ -88,7 +88,7 @@ func (d *discussion) Summary(ctx *context.Context) {
 		return
 	}
 
-	stream, err := d.disc.Summary(ctx, ctx.GetUser().UID, req)
+	stream, err := d.disc.Summary(ctx, ctx.GetUser().UID, req, false)
 	if err != nil {
 		ctx.InternalError(err, "get summary stream failed")
 		return

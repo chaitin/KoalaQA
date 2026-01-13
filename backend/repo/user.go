@@ -53,6 +53,56 @@ func (u *User) HasForumPermission(ctx context.Context, userID, forumID uint) (bo
 	return exist, nil
 }
 
+func (u *User) UserGroupIDs(ctx context.Context, uid uint) (model.Int64Array, error) {
+	var forumIDs model.Int64Array
+	if uid == 0 {
+		org, err := u.org.GetDefaultOrg(ctx)
+		if err != nil {
+			return nil, err
+		}
+		forumIDs = org.ForumIDs
+	} else {
+		var user model.User
+		err := u.GetByID(ctx, &user, uid)
+		if err != nil {
+			return nil, err
+		}
+		forumIDs, err = u.org.ListForumIDs(ctx, user.OrgIDs...)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if len(forumIDs) == 0 {
+		return make(model.Int64Array, 0), nil
+	}
+
+	var forums []model.Forum
+	err := u.db.WithContext(ctx).Model(&model.Forum{}).Where("id =ANY(?)", forumIDs).Find(&forums).Error
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		visited  = make(map[int64]bool)
+		groupIDs model.Int64Array
+	)
+	for _, forum := range forums {
+		for _, forumGroups := range forum.Groups.Inner() {
+			for _, groupID := range forumGroups.GroupIDs {
+				if visited[groupID] {
+					continue
+				}
+
+				groupIDs = append(groupIDs, groupID)
+				visited[groupID] = true
+			}
+		}
+	}
+
+	return groupIDs, nil
+}
+
 func (u *User) GetByEmail(ctx context.Context, res any, email string) error {
 	return u.model(ctx).Where("email = ?", email).First(res).Error
 }

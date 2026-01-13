@@ -63,6 +63,30 @@ func (g *GenerateReq) GroupInfo() (ids model.Int64Array, names []string) {
 	return
 }
 
+func (l *LLM) StreamAnswer(ctx context.Context, sysPrompt string, req GenerateReq) (*LLMStream, error) {
+	query := req.Question
+
+	groupIDs, groupNames := req.GroupInfo()
+
+	if len(groupNames) > 0 {
+		query += "\n" + strings.Join(groupNames, ",")
+	}
+
+	rewrittenQuery, knowledgeDocuments, err := l.queryKnowledgeDocuments(ctx, query, model.KBDocMetadata{
+		GroupIDs: groupIDs,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return l.StreamChat(ctx, sysPrompt, req.Prompt, map[string]any{
+		"Question":           rewrittenQuery,
+		"NewCommentID":       req.NewCommentID,
+		"CurrentDate":        time.Now().Format("2006-01-02"),
+		"KnowledgeDocuments": knowledgeDocuments,
+	})
+}
+
 func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (string, bool, error) {
 	query := req.Question
 

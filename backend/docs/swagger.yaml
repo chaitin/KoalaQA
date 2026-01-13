@@ -5857,6 +5857,29 @@ paths:
       summary: list similarity discussion
       tags:
       - discussion
+  /discussion/ask:
+    post:
+      description: user ask
+      parameters:
+      - in: query
+        name: content
+        required: true
+        type: string
+      - collectionFormat: csv
+        in: query
+        items:
+          type: integer
+        name: group_ids
+        type: array
+      - in: query
+        name: question
+        type: string
+      produces:
+      - text/event-stream
+      responses: {}
+      summary: user ask
+      tags:
+      - discussion
   /discussion/complete:
     post:
       consumes:
@@ -5964,6 +5987,30 @@ paths:
       - text/event-stream
       responses: {}
       summary: discussions summary
+      tags:
+      - discussion
+  /discussion/summary/content:
+    post:
+      description: content summary
+      parameters:
+      - in: query
+        name: content
+        required: true
+        type: string
+      - in: query
+        name: forum_id
+        required: true
+        type: integer
+      - collectionFormat: csv
+        in: query
+        items:
+          type: integer
+        name: group_ids
+        type: array
+      produces:
+      - text/event-stream
+      responses: {}
+      summary: content summary
       tags:
       - discussion
   /discussion/upload:

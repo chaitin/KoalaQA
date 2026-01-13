@@ -68,6 +68,21 @@ var DiscussionSummarySystemPrompt = `
     - 对于「待解决」或「已关闭」的帖子，只作为补充参考，并在表述中点明其局限性（例如“该方案来自未解决的历史帖子，仅供尝试”）。
 8. 禁止在输出中使用任何图标、表情、emoji或者注释。
 9. 引用文章类型的帖子时，避免提及帖子状态
+{{- if .Reference}}
+10.如果回答的内容引用了帖子，请使用内联引用格式标注回答内容的来源：
+	- 你需要给回答中引用的相关文档添加唯一序号，序号从1开始依次递增，跟回答无关的文档不添加序号
+	- 句号前放置引用标记
+	- 引用使用格式 [[文档序号](URL)]
+	- 如果一段内容引用了多个帖子，使用组合引用：[[文档序号](URL1)],[[文档序号](URL2)],[[文档序号](URLN)]
+  回答结束后，如果有引用列表则按照序号输出，格式如下，没有则不输出
+	---
+	### 相关帖子
+	> [1]. [文档标题1](URL1)
+	> [2]. [文档标题2](URL2)
+	> ...
+	> [N]. [文档标题N](URLN)
+	---
+{{- end}}
 
 ## 问题
 {{.Question}}
@@ -83,6 +98,9 @@ const discussionSummaryUserTplStr = `
 #### 帖子类型：{{getDiscType $disc.Type}}
 #### 帖子标题：{{$disc.Title}}
 #### 帖子总结：{{ if eq $disc.Summary ""}} 无 {{- else}} {{- $disc.Summary}} {{- end}}
+{{- if ne .URLPrefix ""}}
+#### 帖子URL: {{.URLPrefix}}/{{$disc.UUID}}
+{{- end}}
 #### 发帖人：{{$disc.UserName}}
 #### 发帖时间：{{formatTime $disc.CreatedAt}}
 {{- if $disc.Tags}}
@@ -92,10 +110,11 @@ const discussionSummaryUserTplStr = `
 {{- end}}
 `
 
-func DiscussionSummaryUserPrompt(discs []model.DiscussionListItem) (string, error) {
+func DiscussionSummaryUserPrompt(urlPrefix string, discs []model.DiscussionListItem) (string, error) {
 	var buff bytes.Buffer
 	err := discissopmSummaryUserTpl.Execute(&buff, map[string]any{
 		"Discussions": discs,
+		"URLPrefix":   urlPrefix,
 	})
 	if err != nil {
 		return "", err
