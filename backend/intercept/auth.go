@@ -2,6 +2,7 @@ package intercept
 
 import (
 	"errors"
+	"net/http"
 	"strings"
 
 	"github.com/chaitin/koalaqa/model"
@@ -80,6 +81,11 @@ func authUser(ctx *context.Context, freeAuth bool, j *jwt.Generator, user *svc.U
 		userCore, err := j.Verify(token)
 		if err != nil {
 			return nil, err
+		}
+
+		if userCore.Cors && ctx.Request.Method != http.MethodGet &&
+			!(ctx.Request.Method == http.MethodPost && ctx.Request.RequestURI == "/api/user/login/cors") {
+			return nil, errors.New("request method permission deny")
 		}
 
 		item, err = user.Detail(ctx, userCore.UID)

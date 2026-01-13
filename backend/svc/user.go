@@ -553,7 +553,7 @@ func (u *User) LoginMethod(ctx context.Context) (*AuthFrontendGetRes, error) {
 	return u.svcAuth.FrontendGet(ctx)
 }
 
-func (u *User) Login(ctx context.Context, req UserLoginReq) (string, error) {
+func (u *User) Login(ctx context.Context, req UserLoginReq, cors bool) (string, error) {
 	ok, err := u.canAuth(ctx, model.AuthTypePassword)
 	if err != nil {
 		return "", err
@@ -577,6 +577,7 @@ func (u *User) Login(ctx context.Context, req UserLoginReq) (string, error) {
 	token, err := u.jwt.Gen(ctx, model.UserCore{
 		UID:      user.ID,
 		AuthType: model.AuthTypePassword,
+		Cors:     cors,
 		Key:      user.Key,
 	})
 	if err != nil {
@@ -722,7 +723,7 @@ type LoginThirdCallbackReq struct {
 	Code  string `form:"code" binding:"required"`
 }
 
-func (u *User) LoginThirdCallback(ctx context.Context, typ model.AuthType, req LoginThirdCallbackReq) (string, error) {
+func (u *User) LoginThirdCallback(ctx context.Context, typ model.AuthType, req LoginThirdCallbackReq, cors bool) (string, error) {
 	ok, err := u.canAuth(ctx, typ)
 	if err != nil {
 		return "", err
@@ -759,6 +760,7 @@ func (u *User) LoginThirdCallback(ctx context.Context, typ model.AuthType, req L
 	return u.jwt.Gen(ctx, model.UserCore{
 		UID:      dbUser.ID,
 		AuthType: typ,
+		Cors:     cors,
 		Key:      dbUser.Key,
 	})
 }
@@ -878,6 +880,17 @@ func (u *User) ListSearchHistory(ctx context.Context, req ListSearchHistoryReq) 
 	}
 
 	return &res, nil
+}
+
+type UserChatReq struct {
+	Content string `json:"content" binding:"required"`
+}
+
+type UserChaRes struct {
+}
+
+func (u *User) Chat(ctx context.Context, uid uint, req UserChatReq) (*UserChaRes, error) {
+	return nil, errors.ErrUnsupported
 }
 
 func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth, notifySub *repo.MessageNotifySub,

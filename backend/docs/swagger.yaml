@@ -1022,6 +1022,13 @@ definitions:
           type: string
         type: array
     type: object
+  model.SystemWebPlugin:
+    properties:
+      display:
+        type: boolean
+      enabled:
+        type: boolean
+    type: object
   model.Trend:
     properties:
       created_at:
@@ -1101,6 +1108,8 @@ definitions:
         type: string
       builtin:
         type: boolean
+      cors:
+        type: boolean
       email:
         type: string
       intro:
@@ -1108,8 +1117,6 @@ definitions:
       key:
         type: string
       no_password:
-        type: boolean
-      only_get:
         type: boolean
       org_ids:
         items:
@@ -4687,6 +4694,43 @@ paths:
       summary: update seo config
       tags:
       - seo
+  /admin/system/web_plugin:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.SystemWebPlugin'
+              type: object
+      summary: web plugin detail
+      tags:
+      - web_plugin
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/model.SystemWebPlugin'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update web plugin config
+      tags:
+      - web_plugin
   /admin/system/webhook:
     get:
       produces:
@@ -6189,6 +6233,23 @@ paths:
       summary: set config detail
       tags:
       - seo
+  /system/web_plugin:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.SystemWebPlugin'
+              type: object
+      summary: web plugin detail
+      tags:
+      - web_plugin
   /user:
     get:
       produces:
@@ -6286,6 +6347,32 @@ paths:
                   type: string
               type: object
       summary: user login
+      tags:
+      - user
+  /user/login/cors:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.UserLoginReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: user cors login
       tags:
       - user
   /user/login/third:

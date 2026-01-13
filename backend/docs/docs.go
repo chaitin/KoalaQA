@@ -3759,6 +3759,68 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/system/web_plugin": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "web_plugin"
+                ],
+                "summary": "web plugin detail",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.SystemWebPlugin"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "web_plugin"
+                ],
+                "summary": "update web plugin config",
+                "parameters": [
+                    {
+                        "description": "request params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.SystemWebPlugin"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/system/webhook": {
             "get": {
                 "produces": [
@@ -6252,6 +6314,37 @@ const docTemplate = `{
                 }
             }
         },
+        "/system/web_plugin": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "web_plugin"
+                ],
+                "summary": "web plugin detail",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.SystemWebPlugin"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/user": {
             "get": {
                 "produces": [
@@ -6348,6 +6441,51 @@ const docTemplate = `{
                     "user"
                 ],
                 "summary": "user login",
+                "parameters": [
+                    {
+                        "description": "request params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.UserLoginReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/user/login/cors": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "user cors login",
                 "parameters": [
                     {
                         "description": "request params",
@@ -8695,6 +8833,17 @@ const docTemplate = `{
                 }
             }
         },
+        "model.SystemWebPlugin": {
+            "type": "object",
+            "properties": {
+                "display": {
+                    "type": "boolean"
+                },
+                "enabled": {
+                    "type": "boolean"
+                }
+            }
+        },
         "model.Trend": {
             "type": "object",
             "properties": {
@@ -8812,6 +8961,9 @@ const docTemplate = `{
                 "builtin": {
                     "type": "boolean"
                 },
+                "cors": {
+                    "type": "boolean"
+                },
                 "email": {
                     "type": "string"
                 },
@@ -8822,9 +8974,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "no_password": {
-                    "type": "boolean"
-                },
-                "only_get": {
                     "type": "boolean"
                 },
                 "org_ids": {

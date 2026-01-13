@@ -4,6 +4,7 @@ import (
 	"encoding/gob"
 	"errors"
 	"net/http"
+	"net/url"
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/config"
@@ -77,9 +78,34 @@ func (u *user) Login(ctx *context.Context) {
 		return
 	}
 
-	token, err := u.svcU.Login(ctx, req)
+	token, err := u.svcU.Login(ctx, req, false)
 	if err != nil {
 		ctx.InternalError(err, "user login failed")
+		return
+	}
+
+	ctx.Success(token)
+}
+
+// LoginCors
+// @Summary user cors login
+// @Tags user
+// @Accept json
+// @Param req body svc.UserLoginReq true "request params"
+// @Produce json
+// @Success 200 {object} context.Response{data=string}
+// @Router /user/login/cors [post]
+func (u *user) LoginCors(ctx *context.Context) {
+	var req svc.UserLoginReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	token, err := u.svcU.Login(ctx, req, true)
+	if err != nil {
+		ctx.InternalError(err, "user login cors failed")
 		return
 	}
 
@@ -89,6 +115,7 @@ func (u *user) Login(ctx *context.Context) {
 const stateKey = "third_login_state"
 
 type stateCache struct {
+	Cors     bool
 	Value    string
 	Redirect string
 }
@@ -119,8 +146,20 @@ func (u *user) LoginThirdURL(ctx *context.Context) {
 		return
 	}
 
+	var cors bool
+	if req.Redirect != "" {
+		parseRedirect, err := url.Parse(req.Redirect)
+		if err != nil {
+			ctx.BadRequest(err)
+			return
+		}
+
+		cors = parseRedirect.Host != ""
+	}
+
 	session := sessions.Default(ctx.Context)
 	session.Set(stateKey, stateCache{
+		Cors:     cors,
 		Value:    state,
 		Redirect: req.Redirect,
 	})
@@ -147,7 +186,7 @@ func (u *user) loginThirdCallback(ctx *context.Context, typ model.AuthType) {
 	session.Delete(stateKey)
 	session.Save()
 
-	token, err := u.svcU.LoginThirdCallback(ctx, typ, req)
+	token, err := u.svcU.LoginThirdCallback(ctx, typ, req, state.Cors)
 	if err != nil {
 		ctx.InternalError(err, "callback failed")
 		return
@@ -157,7 +196,13 @@ func (u *user) loginThirdCallback(ctx *context.Context, typ model.AuthType) {
 		state.Redirect = "/"
 	}
 
-	ctx.SetCookie("auth_token", token, u.expire, "/", "", false, true)
+	if state.Cors {
+		ctx.SetSameSite(http.SameSiteNoneMode)
+		ctx.SetCookie("koala_auth_token_cors", token, u.expire, "/", "", false, false)
+	} else {
+		ctx.SetCookie("auth_token", token, u.expire, "/", "", false, true)
+	}
+
 	ctx.Redirect(http.StatusFound, state.Redirect)
 }
 

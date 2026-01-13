@@ -32,7 +32,7 @@ type User struct {
 type UserCore struct {
 	UID      uint     `json:"uid"`
 	AuthType AuthType `json:"auth_type"`
-	OnlyGet  bool     `json:"only_get"`
+	Cors     bool     `json:"cors"`
 	Key      string   `json:"key"`
 }
 
