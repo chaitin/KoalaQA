@@ -5101,6 +5101,12 @@ const docTemplate = `{
                         "collectionFormat": "csv",
                         "name": "group_ids",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "session_id",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {}

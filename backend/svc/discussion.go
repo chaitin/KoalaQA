@@ -2224,9 +2224,10 @@ func (d *Discussion) AskSession(ctx context.Context, req AskSessionReq) (*model.
 }
 
 type SummaryByContentReq struct {
-	ForumID  uint             `json:"forum_id" binding:"required"`
-	Content  string           `json:"content" binding:"required"`
-	GroupIDs model.Int64Array `json:"group_ids"`
+	SessoionID string           `json:"session_id" binding:"required,uuid"`
+	ForumID    uint             `json:"forum_id" binding:"required"`
+	Content    string           `json:"content" binding:"required"`
+	GroupIDs   model.Int64Array `json:"group_ids"`
 }
 
 func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req SummaryByContentReq) (*LLMStream, error) {
@@ -2289,8 +2290,48 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 		discUUIDs = append(discUUIDs, disc.UUID)
 	}
 
-	return d.Summary(ctx, uid, DiscussionSummaryReq{
+	stream, err := d.Summary(ctx, uid, DiscussionSummaryReq{
 		Keyword: req.Content,
 		UUIDs:   discUUIDs,
 	}, true)
+	if err != nil {
+		return nil, err
+	}
+	if stream == nil {
+		return nil, err
+	}
+
+	wrapSteam := LLMStream{
+		c:    make(chan string, 8),
+		stop: make(chan struct{}),
+	}
+
+	go func() {
+		defer stream.Close()
+
+		var aiResBuilder strings.Builder
+		wrapSteam.Recv(func() (string, error) {
+			text, ok := stream.Text(ctx)
+			if !ok {
+				return "", io.EOF
+			}
+
+			aiResBuilder.WriteString(text)
+
+			return text, nil
+		})
+
+		err := d.in.AskSessionRepo.Create(context.Background(), &model.AskSession{
+			UUID:    req.SessoionID,
+			UserID:  uid,
+			Bot:     true,
+			Content: aiResBuilder.String(),
+		})
+		if err != nil {
+			d.logger.WithContext(ctx).Warn("create bot ask session failed")
+			return
+		}
+	}()
+
+	return &wrapSteam, nil
 }

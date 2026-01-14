@@ -6134,6 +6134,10 @@ paths:
           type: integer
         name: group_ids
         type: array
+      - in: query
+        name: session_id
+        required: true
+        type: string
       produces:
       - text/event-stream
       responses: {}
