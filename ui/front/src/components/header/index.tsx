@@ -1,6 +1,6 @@
 'use client'
 
-import { ModelSystemBrand } from '@/api'
+import { ModelSystemBrand, getSystemWebPlugin } from '@/api'
 import { ModelDiscussionType, ModelForumInfo as ModelForum, ModelForumLink, ModelUserRole } from '@/api/types'
 import { AuthContext } from '@/components/authProvider'
 import { useForumId } from '@/hooks/useForumId'
@@ -9,6 +9,7 @@ import { isAdminRole } from '@/lib/utils'
 import { useForumStore, useQuickReplyStore } from '@/store'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import AddIcon from '@mui/icons-material/Add'
+import HeadsetMicIcon from '@mui/icons-material/HeadsetMic'
 import MenuIcon from '@mui/icons-material/Menu'
 import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import SearchIcon from '@mui/icons-material/Search'
@@ -69,10 +70,27 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
   const [publishAnchorEl, setPublishAnchorEl] = useState<null | HTMLElement>(null)
   const publishMenuOpen = Boolean(publishAnchorEl)
   const { fetchQuickReplies } = useQuickReplyStore()
+  const [showCustomerService, setShowCustomerService] = useState(false)
 
   useEffect(() => {
     if (isAdminRole(user.role || ModelUserRole.UserRoleGuest)) fetchQuickReplies()
   }, [user.role])
+
+  // 获取 web plugin 配置，决定是否显示客服智能对话入口
+  useEffect(() => {
+    const fetchWebPluginConfig = async () => {
+      try {
+        const config = await getSystemWebPlugin()
+        // 只有当 enabled 和 display 都为 true 时才显示
+        setShowCustomerService(config?.display === true)
+      } catch (error) {
+        console.error('获取 web plugin 配置失败:', error)
+        // 出错时默认不显示
+        setShowCustomerService(false)
+      }
+    }
+    fetchWebPluginConfig()
+  }, [])
   // 关闭搜索弹窗时清空输入框
   const handleCloseSearchModal = useCallback(() => {
     closeSearchModal()
@@ -365,8 +383,21 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
               />
             )}
 
-            {user?.uid ? (
+            {!!user?.uid ? (
               <>
+                {/* 客服智能对话入口 - 仅登录用户显示 */}
+                {showCustomerService && (
+                  <IconButton
+                    size='small'
+                    onClick={() => plainRouter.push('/customer-service')}
+                    sx={{
+                      color: 'text.primary',
+                      '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
+                    }}
+                  >
+                    <HeadsetMicIcon sx={{ fontSize: '20px', color: 'primary.main' }} />
+                  </IconButton>
+                )}
                 <LoggedInView user={user} adminHref={backHref} />
               </>
             ) : (
@@ -481,6 +512,20 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
             >
               <SearchIcon sx={{ fontSize: 24, color: 'primary.main' }} />
             </IconButton>
+
+            {/* 客服智能对话入口 */}
+            {!!user?.uid && showCustomerService && (
+              <IconButton
+                size='small'
+                onClick={() => plainRouter.push('/customer-service')}
+                sx={{
+                  color: 'primary.main',
+                  '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
+                }}
+              >
+                <HeadsetMicIcon sx={{ fontSize: 20, color: 'primary.main' }} />
+              </IconButton>
+            )}
 
             {/* 修改发帖按钮逻辑：移动端未登录也展示，未登录点击跳转到登录页 */}
             {isPostListPage && (
@@ -624,50 +669,51 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
           )}
 
           {/* 常用链接 */}
-          {currentForumInfo?.links?.enabled && currentForumInfo?.links?.links && currentForumInfo.links.links.length > 0 && (
-            <Box>
-              <Divider sx={{ my: 2 }} />
-              <List disablePadding>
-                {currentForumInfo.links.links.map((link: ModelForumLink, linkIndex: number) => (
-                  <ListItem key={`link-${linkIndex}-${link.name || linkIndex}`} disablePadding sx={{ mb: 1 }}>
-                    <MuiLink
-                      href={link.address || '#'}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1,
-                        color: 'text.primary',
-                        textDecoration: 'none',
-                        fontSize: '14px',
-                        width: '100%',
-                        py: 0.5,
-                        px: 1,
-                        borderRadius: '4px',
-                        '&:hover': {
-                          color: 'primary.main',
-                          bgcolor: 'action.hover',
-                        },
-                      }}
-                    >
-                      <OpenInNewIcon
+          {currentForumInfo?.links?.enabled &&
+            currentForumInfo?.links?.links &&
+            currentForumInfo.links.links.length > 0 && (
+              <Box>
+                <Divider sx={{ my: 2 }} />
+                <List disablePadding>
+                  {currentForumInfo.links.links.map((link: ModelForumLink, linkIndex: number) => (
+                    <ListItem key={`link-${linkIndex}-${link.name || linkIndex}`} disablePadding sx={{ mb: 1 }}>
+                      <MuiLink
+                        href={link.address || '#'}
+                        target='_blank'
+                        rel='noopener noreferrer'
                         sx={{
-                          fontSize: 16,
-                          color: 'text.secondary',
-                          flexShrink: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          color: 'text.primary',
+                          textDecoration: 'none',
+                          fontSize: '14px',
+                          width: '100%',
+                          py: 0.5,
+                          px: 1,
+                          borderRadius: '4px',
+                          '&:hover': {
+                            color: 'primary.main',
+                            bgcolor: 'action.hover',
+                          },
                         }}
-                      />
-                      <Typography variant='body2' sx={{ fontSize: '14px' }}>
-                        {link.name}
-                      </Typography>
-                    </MuiLink>
-                  </ListItem>
-                ))}
-              </List>
-            </Box>
-          )}
-          
+                      >
+                        <OpenInNewIcon
+                          sx={{
+                            fontSize: 16,
+                            color: 'text.secondary',
+                            flexShrink: 0,
+                          }}
+                        />
+                        <Typography variant='body2' sx={{ fontSize: '14px' }}>
+                          {link.name}
+                        </Typography>
+                      </MuiLink>
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
+            )}
         </Stack>
       </Drawer>
 

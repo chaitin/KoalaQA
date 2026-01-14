@@ -157,6 +157,138 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/discussion/ask": {
+            "get": {
+                "description": "backend ask session group",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "backend ask session group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "content",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "username",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/model.AskSession"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/discussion/ask/session": {
+            "get": {
+                "description": "backend ask session",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "backend ask session",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "session_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "name": "user_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/model.AskSession"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/admin/forum": {
             "get": {
                 "produces": [
@@ -3759,6 +3891,68 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/system/web_plugin": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "web_plugin"
+                ],
+                "summary": "web plugin detail",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.SystemWebPlugin"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "web_plugin"
+                ],
+                "summary": "update web plugin config",
+                "parameters": [
+                    {
+                        "description": "request params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.SystemWebPlugin"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/system/webhook": {
             "get": {
                 "produces": [
@@ -4365,6 +4559,37 @@ const docTemplate = `{
                 }
             }
         },
+        "/bot": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bot"
+                ],
+                "summary": "get bot info",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/svc.BotGetRes"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/csrf": {
             "get": {
                 "description": "get csrf",
@@ -4600,6 +4825,98 @@ const docTemplate = `{
                 }
             }
         },
+        "/discussion/ask": {
+            "post": {
+                "description": "user ask",
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "user ask",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "group_ids",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "question",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "name": "session_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/discussion/ask/{ask_session_id}": {
+            "get": {
+                "description": "discussion ask history",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "discussion ask history",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ask_session_id",
+                        "name": "ask_session_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/model.AskSession"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/discussion/complete": {
             "post": {
                 "description": "tab complete",
@@ -4777,6 +5094,48 @@ const docTemplate = `{
                         },
                         "collectionFormat": "csv",
                         "name": "uuids",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/discussion/summary/content": {
+            "post": {
+                "description": "content summary",
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "content summary",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "content",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "name": "forum_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "group_ids",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "session_id",
                         "in": "query",
                         "required": true
                     }
@@ -6252,6 +6611,37 @@ const docTemplate = `{
                 }
             }
         },
+        "/system/web_plugin": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "web_plugin"
+                ],
+                "summary": "web plugin detail",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.SystemWebPlugin"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/user": {
             "get": {
                 "produces": [
@@ -6348,6 +6738,51 @@ const docTemplate = `{
                     "user"
                 ],
                 "summary": "user login",
+                "parameters": [
+                    {
+                        "description": "request params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.UserLoginReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/user/login/cors": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "user cors login",
                 "parameters": [
                     {
                         "description": "request params",
@@ -7311,6 +7746,35 @@ const docTemplate = `{
                 }
             }
         },
+        "model.AskSession": {
+            "type": "object",
+            "properties": {
+                "bot": {
+                    "type": "boolean"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "boolean"
+                },
+                "updated_at": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
         "model.Auth": {
             "type": "object",
             "properties": {
@@ -8194,6 +8658,12 @@ const docTemplate = `{
                 "desc": {
                     "type": "string"
                 },
+                "disc_forum_id": {
+                    "type": "integer"
+                },
+                "disc_uuid": {
+                    "type": "string"
+                },
                 "doc_id": {
                     "type": "string"
                 },
@@ -8695,6 +9165,17 @@ const docTemplate = `{
                 }
             }
         },
+        "model.SystemWebPlugin": {
+            "type": "object",
+            "properties": {
+                "display": {
+                    "type": "boolean"
+                },
+                "enabled": {
+                    "type": "boolean"
+                }
+            }
+        },
         "model.Trend": {
             "type": "object",
             "properties": {
@@ -8812,6 +9293,9 @@ const docTemplate = `{
                 "builtin": {
                     "type": "boolean"
                 },
+                "cors": {
+                    "type": "boolean"
+                },
                 "email": {
                     "type": "string"
                 },
@@ -8822,9 +9306,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "no_password": {
-                    "type": "boolean"
-                },
-                "only_get": {
                     "type": "boolean"
                 },
                 "org_ids": {

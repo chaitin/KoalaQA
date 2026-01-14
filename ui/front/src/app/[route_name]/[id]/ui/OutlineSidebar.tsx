@@ -159,10 +159,25 @@ const OutlineSidebar = ({
       })
 
       sseClient.subscribe(requestBody, (data) => {
+        // 处理 SSE 事件格式: { event: 'text', data: ... } 或 { event: 'end', data: true }
+        if (data && typeof data === 'object' && (data as any).event) {
+          const eventType = (data as any).event
+          // 只处理 text 事件，跳过 end 等其他事件
+          if (eventType !== 'text') {
+            return
+          }
+          // 从 event 对象中提取实际数据
+          data = (data as any).data
+        }
+
         let textToAdd = ''
         if (typeof data === 'string') {
           textToAdd = data
         } else if (data && typeof data === 'object') {
+          // 跳过包含 event 字段的对象（这些是 SSE 事件，不是内容数据）
+          if ((data as any).event) {
+            return
+          }
           textToAdd =
             data.content || data.text || data.data || data.chunk || data.message || data.result || data.summary || ''
         }

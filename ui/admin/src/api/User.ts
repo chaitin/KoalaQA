@@ -35,6 +35,7 @@ import {
   PutUserPayload,
   SvcAuthFrontendGetRes,
   SvcNotifyReadReq,
+  SvcUnbindNotifySubReq,
   SvcUpdateWebNotifyReq,
   SvcUserJoinOrgReq,
   SvcUserListItem,
@@ -287,6 +288,36 @@ export const postUserLogin = (
  * No description
  *
  * @tags user
+ * @name PostUserLoginCors
+ * @summary user cors login
+ * @request POST:/user/login/cors
+ * @response `200` `(ContextResponse & {
+    data?: string,
+
+})` OK
+ */
+
+export const postUserLoginCors = (
+  req: SvcUserLoginReq,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: string;
+    }
+  >({
+    path: `/user/login/cors`,
+    method: "POST",
+    body: req,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
  * @name GetUserLoginThird
  * @summary get user third login url
  * @request GET:/user/login/third
@@ -454,6 +485,29 @@ export const postUserNotifyWeb = (
   request<ContextResponse>({
     path: `/user/notify/web`,
     method: "POST",
+    body: req,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name DeleteUserNotifySub
+ * @summary unbind user notifu sub
+ * @request DELETE:/user/notify_sub
+ * @response `200` `ContextResponse` OK
+ */
+
+export const deleteUserNotifySub = (
+  req: SvcUnbindNotifySubReq,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/user/notify_sub`,
+    method: "DELETE",
     body: req,
     type: ContentType.Json,
     format: "json",

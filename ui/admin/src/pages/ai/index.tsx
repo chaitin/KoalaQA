@@ -20,6 +20,7 @@ import z from 'zod';
 import Model from '../settings/component/Model';
 import LaunchIcon from '@mui/icons-material/Launch';
 import Bot from './bot';
+import ChatConfig from './ChatConfig';
 
 const schema = z.object({
   name: z.string().min(1, '必填').default(''),
@@ -98,6 +99,10 @@ const AdminDocument = () => {
     <Card sx={{ flex: 1, height: '100%', overflow: 'auto' }}>
       <Grid container spacing={2}>
         <Grid size={{ sm: 12, md: 6 }}>
+          <Bot />
+          <ChatConfig />
+        </Grid>
+        <Grid size={{ sm: 12, md: 6 }}>
           <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
             <Typography variant="subtitle2" sx={{ mb: 2 }}>
               知识学习
@@ -161,9 +166,6 @@ const AdminDocument = () => {
             )}
             {/* 移除原有的创建按钮 */}
           </Card>
-        </Grid>
-        <Grid size={{ sm: 12, md: 6 }}>
-          <Bot />
           <Card sx={{ border: '1px solid', borderColor: 'divider', mt: 2 }}>
             <Stack direction="row" alignItems="center" spacing={1}>
               <Typography variant="subtitle2" sx={{ mb: 0 }}>

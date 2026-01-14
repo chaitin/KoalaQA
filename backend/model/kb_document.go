@@ -1,6 +1,10 @@
 package model
 
 import (
+	"errors"
+	"strconv"
+	"strings"
+
 	"github.com/chaitin/koalaqa/pkg/anydoc/platform"
 )
 
@@ -100,6 +104,24 @@ type KBDocument struct {
 	GroupIDs     Int64Array            `json:"group_ids" gorm:"column:group_ids;type:bigint[]"`
 }
 
+func (d *KBDocument) QuestionDiscID() (uint, error) {
+	if d.DocType != DocTypeQuestion || d.Desc == "" {
+		return 0, nil
+	}
+
+	splitDesc := strings.Split(d.Desc, "/")
+	if len(splitDesc) != 2 {
+		return 0, errors.New("invalid desc format")
+	}
+
+	discID, err := strconv.ParseUint(splitDesc[0], 10, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	return uint(discID), nil
+}
+
 func (d *KBDocument) Metadata() KBDocMetadata {
 	return KBDocMetadata{
 		DocType:  d.DocType,
@@ -173,8 +195,10 @@ func (c *CreateSpaceFolderInfo) Range(parentID string, f func(string, *CreateSpa
 
 type KBDocumentDetail struct {
 	KBDocument
-	Markdown string `json:"markdown"`
-	JSON     string `json:"json"`
+	DiscForumID uint   `json:"disc_forum_id" gorm:"-"`
+	DiscUUID    string `json:"disc_uuid" gorm:"-"`
+	Markdown    string `json:"markdown"`
+	JSON        string `json:"json"`
 }
 
 func init() {

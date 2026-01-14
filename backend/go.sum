@@ -45,10 +45,6 @@ github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA
 github.com/certifi/gocertifi v0.0.0-20190105021004-abcd57078448/go.mod h1:GJKEexRPVJrBSOjoqN5VNOIKJ5Q3RViH6eu3puDRwx4=
 github.com/chaitin/ModelKit/v2 v2.9.1 h1:5Ns6dtJtXvVN1RDX4GfnP5xWnt1zcU+d/8vLMnRGspk=
 github.com/chaitin/ModelKit/v2 v2.9.1/go.mod h1:JgCZZlTCwNL+9aGbUFU9gkPYAEp32IJnTWEo+iIM/wk=
-github.com/chaitin/raglite-go-sdk v0.1.7 h1:XSmQj9MT4TyNsDtvd750Aiw1BvIIv8rWlzpGKfuQxJY=
-github.com/chaitin/raglite-go-sdk v0.1.7/go.mod h1:1klR7WqfFijmd4msUvhRHoGstteUfBsRuRdX4CIJ/so=
-github.com/chaitin/raglite-go-sdk v0.1.9 h1:QM0ws5KmZp3q77DF7XdK3Xxb29bMRN/jXHIGtNce3Fk=
-github.com/chaitin/raglite-go-sdk v0.1.9/go.mod h1:1klR7WqfFijmd4msUvhRHoGstteUfBsRuRdX4CIJ/so=
 github.com/chaitin/raglite-go-sdk v0.2.0 h1:0jYevPzT8zyrLftvUC4cMllDglAeyDchh/NuzyDJYYQ=
 github.com/chaitin/raglite-go-sdk v0.2.0/go.mod h1:1klR7WqfFijmd4msUvhRHoGstteUfBsRuRdX4CIJ/so=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=

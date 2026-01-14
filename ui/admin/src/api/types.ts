@@ -69,6 +69,12 @@ export enum ModelUserPointType {
   UserPointTypeUserIntro = 12,
 }
 
+export enum ModelTrendType {
+  TrendTypeCreateDiscuss = 1,
+  TrendTypeAnswerAccepted = 2,
+  TrendTypeAnswer = 3,
+}
+
 export enum ModelStatType {
   StatTypeVisit = 1,
   StatTypeSearch = 2,
@@ -219,6 +225,17 @@ export interface ContextResponse {
   msg?: string;
   success?: boolean;
   trace_id?: string;
+}
+
+export interface ModelAskSession {
+  bot?: boolean;
+  content?: string;
+  created_at?: number;
+  id?: number;
+  summary?: boolean;
+  updated_at?: number;
+  user_id?: number;
+  uuid?: string;
 }
 
 export interface ModelAuth {
@@ -482,6 +499,8 @@ export type ModelJSONBModelPlatformOpt = Record<string, any>;
 export interface ModelKBDocumentDetail {
   created_at?: number;
   desc?: string;
+  disc_forum_id?: number;
+  disc_uuid?: string;
   doc_id?: string;
   doc_type?: ModelDocType;
   export_opt?: ModelJSONBModelExportOpt;
@@ -630,6 +649,11 @@ export interface ModelSystemSEO {
   keywords?: string[];
 }
 
+export interface ModelSystemWebPlugin {
+  display?: boolean;
+  enabled?: boolean;
+}
+
 export interface ModelTrend {
   created_at?: number;
   discuss_id?: number;
@@ -638,7 +662,7 @@ export interface ModelTrend {
   discussion_type?: ModelDiscussionType;
   forum_id?: number;
   id?: number;
-  trend_type?: number;
+  trend_type?: ModelTrendType;
   updated_at?: number;
   /** 谁的行为 */
   user_id?: number;
@@ -667,6 +691,7 @@ export interface ModelUserInfo {
   auth_type?: number;
   avatar?: string;
   builtin?: boolean;
+  cors?: boolean;
   email?: string;
   intro?: string;
   key?: string;
@@ -1181,6 +1206,10 @@ export interface SvcURLListReq {
   url: string;
 }
 
+export interface SvcUnbindNotifySubReq {
+  type: ModelMessageNotifySubType;
+}
+
 export interface SvcUpdateGroupIDsReq {
   group_ids?: number[];
   ids: number[];
@@ -1318,6 +1347,20 @@ export interface GetAdminDiscussionParams {
   page?: number;
   /** @min 1 */
   size?: number;
+}
+
+export interface GetAdminDiscussionAskParams {
+  content?: string;
+  /** @min 1 */
+  page?: number;
+  /** @min 1 */
+  size?: number;
+  username?: string;
+}
+
+export interface GetAdminDiscussionAskSessionParams {
+  session_id: string;
+  user_id: number;
 }
 
 /** request params */
@@ -1725,6 +1768,17 @@ export interface GetDiscussionParams {
   type?: "qa" | "feedback" | "blog" | "issue";
 }
 
+export interface PostDiscussionAskParams {
+  group_ids?: number[];
+  question: string;
+  session_id: string;
+}
+
+export interface GetDiscussionAskAskSessionIdParams {
+  /** ask_session_id */
+  askSessionId: string;
+}
+
 export interface GetDiscussionFollowParams {
   /** @min 1 */
   page?: number;
@@ -1735,6 +1789,13 @@ export interface GetDiscussionFollowParams {
 export interface PostDiscussionSummaryParams {
   keyword: string;
   uuids: string[];
+}
+
+export interface PostDiscussionSummaryContentParams {
+  content: string;
+  forum_id: number;
+  group_ids?: number[];
+  session_id: string;
 }
 
 /** request params */
@@ -1939,10 +2000,12 @@ export interface DeleteUserQuickReplyQuickReplyIdParams {
 }
 
 export interface GetUserTrendParams {
+  discussion_type?: "qa" | "feedback" | "blog" | "issue";
   /** @min 1 */
   page?: number;
   /** @min 1 */
   size?: number;
+  trend_type?: 1 | 2 | 3;
   user_id: number;
 }
 

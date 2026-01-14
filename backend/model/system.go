@@ -26,6 +26,7 @@ const (
 	SystemKeyBrand         = "brand"
 	SystemKeyDiscussion    = "discussion"
 	SystemKeySEO           = "seo"
+	SystemKeyWebPlugin     = "web_plugin"
 )
 
 type PublicAddress struct {
@@ -104,4 +105,9 @@ type SystemDiscussion struct {
 type SystemSEO struct {
 	Desc     string   `json:"desc"`
 	Keywords []string `json:"keywords"`
+}
+
+type SystemWebPlugin struct {
+	Enabled bool `json:"enabled"`
+	Display bool `json:"display"`
 }

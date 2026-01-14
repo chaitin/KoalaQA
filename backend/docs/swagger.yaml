@@ -55,6 +55,25 @@ definitions:
       trace_id:
         type: string
     type: object
+  model.AskSession:
+    properties:
+      bot:
+        type: boolean
+      content:
+        type: string
+      created_at:
+        type: integer
+      id:
+        type: integer
+      summary:
+        type: boolean
+      updated_at:
+        type: integer
+      user_id:
+        type: integer
+      uuid:
+        type: string
+    type: object
   model.Auth:
     properties:
       auth_infos:
@@ -673,6 +692,10 @@ definitions:
         type: integer
       desc:
         type: string
+      disc_forum_id:
+        type: integer
+      disc_uuid:
+        type: string
       doc_id:
         type: string
       doc_type:
@@ -1022,6 +1045,13 @@ definitions:
           type: string
         type: array
     type: object
+  model.SystemWebPlugin:
+    properties:
+      display:
+        type: boolean
+      enabled:
+        type: boolean
+    type: object
   model.Trend:
     properties:
       created_at:
@@ -1101,6 +1131,8 @@ definitions:
         type: string
       builtin:
         type: boolean
+      cors:
+        type: boolean
       email:
         type: string
       intro:
@@ -1108,8 +1140,6 @@ definitions:
       key:
         type: string
       no_password:
-        type: boolean
-      only_get:
         type: boolean
       org_ids:
         items:
@@ -2492,6 +2522,80 @@ paths:
                     type: object
               type: object
       summary: backend list discussions
+      tags:
+      - discussion
+  /admin/discussion/ask:
+    get:
+      description: backend ask session group
+      parameters:
+      - in: query
+        name: content
+        type: string
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - in: query
+        minimum: 1
+        name: size
+        type: integer
+      - in: query
+        name: username
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/model.AskSession'
+                        type: array
+                    type: object
+              type: object
+      summary: backend ask session group
+      tags:
+      - discussion
+  /admin/discussion/ask/session:
+    get:
+      description: backend ask session
+      parameters:
+      - in: query
+        name: session_id
+        required: true
+        type: string
+      - in: query
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/model.AskSession'
+                        type: array
+                    type: object
+              type: object
+      summary: backend ask session
       tags:
       - discussion
   /admin/forum:
@@ -4687,6 +4791,43 @@ paths:
       summary: update seo config
       tags:
       - seo
+  /admin/system/web_plugin:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.SystemWebPlugin'
+              type: object
+      summary: web plugin detail
+      tags:
+      - web_plugin
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/model.SystemWebPlugin'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update web plugin config
+      tags:
+      - web_plugin
   /admin/system/webhook:
     get:
       produces:
@@ -5051,6 +5192,23 @@ paths:
       summary: update user review
       tags:
       - user_review
+  /bot:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/svc.BotGetRes'
+              type: object
+      summary: get bot info
+      tags:
+      - bot
   /csrf:
     get:
       description: get csrf
@@ -5813,6 +5971,61 @@ paths:
       summary: list similarity discussion
       tags:
       - discussion
+  /discussion/ask:
+    post:
+      description: user ask
+      parameters:
+      - collectionFormat: csv
+        in: query
+        items:
+          type: integer
+        name: group_ids
+        type: array
+      - in: query
+        name: question
+        required: true
+        type: string
+      - in: query
+        name: session_id
+        required: true
+        type: string
+      produces:
+      - text/event-stream
+      responses: {}
+      summary: user ask
+      tags:
+      - discussion
+  /discussion/ask/{ask_session_id}:
+    get:
+      description: discussion ask history
+      parameters:
+      - description: ask_session_id
+        in: path
+        name: ask_session_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/model.AskSession'
+                        type: array
+                    type: object
+              type: object
+      summary: discussion ask history
+      tags:
+      - discussion
   /discussion/complete:
     post:
       consumes:
@@ -5920,6 +6133,34 @@ paths:
       - text/event-stream
       responses: {}
       summary: discussions summary
+      tags:
+      - discussion
+  /discussion/summary/content:
+    post:
+      description: content summary
+      parameters:
+      - in: query
+        name: content
+        required: true
+        type: string
+      - in: query
+        name: forum_id
+        required: true
+        type: integer
+      - collectionFormat: csv
+        in: query
+        items:
+          type: integer
+        name: group_ids
+        type: array
+      - in: query
+        name: session_id
+        required: true
+        type: string
+      produces:
+      - text/event-stream
+      responses: {}
+      summary: content summary
       tags:
       - discussion
   /discussion/upload:
@@ -6189,6 +6430,23 @@ paths:
       summary: set config detail
       tags:
       - seo
+  /system/web_plugin:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.SystemWebPlugin'
+              type: object
+      summary: web plugin detail
+      tags:
+      - web_plugin
   /user:
     get:
       produces:
@@ -6286,6 +6544,32 @@ paths:
                   type: string
               type: object
       summary: user login
+      tags:
+      - user
+  /user/login/cors:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.UserLoginReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: user cors login
       tags:
       - user
   /user/login/third:

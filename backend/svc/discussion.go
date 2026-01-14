@@ -5,9 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"mime/multipart"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
@@ -40,6 +42,7 @@ type discussionIn struct {
 	UserRepo       *repo.User
 	GroupItemRepo  *repo.GroupItem
 	OrgRepo        *repo.Org
+	AskSessionRepo *repo.AskSession
 	BotSvc         *Bot
 	TrendSvc       *Trend
 	Pub            mq.Publisher
@@ -51,6 +54,7 @@ type discussionIn struct {
 	LLM            *LLM
 	Batcher        batch.Batcher[model.StatInfo]
 	UserPoint      *UserPoint
+	PublicAddr     *PublicAddress
 }
 
 type Discussion struct {
@@ -540,7 +544,7 @@ type DiscussionSummaryReq struct {
 	UUIDs   model.StringArray `json:"uuids" binding:"required"`
 }
 
-func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummaryReq) (*LLMStream, error) {
+func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummaryReq, refer bool) (*LLMStream, error) {
 	var discs []model.DiscussionListItem
 	err := d.in.DiscRepo.List(ctx, &discs, repo.QueryWithEqual("uuid", req.UUIDs, repo.EqualOPEqAny))
 	if err != nil {
@@ -571,7 +575,22 @@ func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummar
 		}
 	}
 
-	userPrompt, err := llm.DiscussionSummaryUserPrompt(discs)
+	var urlPrefix string
+	if refer {
+		addr, err := d.in.PublicAddr.Get(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		var forum model.Forum
+		err = d.in.ForumRepo.GetByID(ctx, &forum, forumID)
+		if err != nil {
+			return nil, err
+		}
+		urlPrefix = addr.FullURL(forum.RouteName)
+	}
+
+	userPrompt, err := llm.DiscussionSummaryUserPrompt(urlPrefix, discs)
 	if err != nil {
 		return nil, err
 	}
@@ -580,6 +599,7 @@ func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummar
 		"CurrentDate": time.Now().Format("2006-01-02"),
 		"Question":    req.Keyword,
 		"Discussions": discs,
+		"Reference":   refer,
 	})
 }
 
@@ -912,6 +932,7 @@ type DiscussionSearchReq struct {
 	SimilarityThreshold float64
 	MaxChunksPerDoc     int
 	Metadata            rag.Metadata
+	Histories           []string
 }
 
 func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*model.DiscussionListItem, error) {
@@ -927,6 +948,7 @@ func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*mo
 		SimilarityThreshold: req.SimilarityThreshold,
 		MaxChunksPerDoc:     req.MaxChunksPerDoc,
 		Metadata:            req.Metadata,
+		Histories:           req.Histories,
 	})
 	if err != nil {
 		return nil, err
@@ -2046,4 +2068,293 @@ func (d *Discussion) Reindex(ctx context.Context, req ReindexReq) error {
 		}
 		return nil
 	})
+}
+
+type DiscussionAskReq struct {
+	SessionID string           `json:"session_id" binding:"required,uuid"`
+	Question  string           `json:"question" binding:"required"`
+	GroupIDs  model.Int64Array `json:"group_ids"`
+}
+
+func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*LLMStream, error) {
+	var groups []model.GroupItemInfo
+	if len(req.GroupIDs) > 0 {
+		groupIDs, err := d.in.UserRepo.UserGroupIDs(ctx, uid)
+		if err != nil {
+			return nil, err
+		}
+		err = d.in.GroupItemRepo.List(ctx, &groups,
+			repo.QueryWithEqual("group_id", groupIDs, repo.EqualOPEqAny),
+			repo.QueryWithEqual("id", req.GroupIDs, repo.EqualOPEqAny),
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var askHistories []GenerateContextItem
+	err := d.in.AskSessionRepo.List(ctx, &askHistories,
+		repo.QueryWithOrderBy("created_at ASC, id ASC"),
+		repo.QueryWithEqual("uuid", req.SessionID),
+		repo.QueryWithEqual("user_id", uid),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	err = d.in.AskSessionRepo.Create(ctx, &model.AskSession{
+		UUID:    req.SessionID,
+		UserID:  uid,
+		Bot:     false,
+		Content: req.Question,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	stream, err := d.in.LLM.StreamAnswer(ctx, llm.SystemChatNoRefPrompt, GenerateReq{
+		Context:       askHistories,
+		Question:      req.Question,
+		Groups:        groups,
+		Prompt:        req.Question,
+		DefaultAnswer: "无法回答问题",
+		NewCommentID:  0,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	wrapSteam := LLMStream{
+		c:    make(chan string, 8),
+		stop: make(chan struct{}),
+	}
+
+	go func() {
+		defer stream.Close()
+
+		var aiResBuilder strings.Builder
+		wrapSteam.Recv(func() (string, error) {
+			text, ok := stream.Text(ctx)
+			if !ok {
+				return "", io.EOF
+			}
+
+			aiResBuilder.WriteString(text)
+
+			return text, nil
+		})
+
+		err := d.in.AskSessionRepo.Create(context.Background(), &model.AskSession{
+			UUID:    req.SessionID,
+			UserID:  uid,
+			Bot:     true,
+			Content: aiResBuilder.String(),
+		})
+		if err != nil {
+			d.logger.WithContext(ctx).Warn("create bot ask session failed")
+			return
+		}
+	}()
+
+	return &wrapSteam, nil
+}
+
+func (d *Discussion) AskHistory(ctx context.Context, sessionID string, uid uint) (*model.ListRes[model.AskSession], error) {
+	var res model.ListRes[model.AskSession]
+
+	err := d.in.AskSessionRepo.List(ctx, &res.Items,
+		repo.QueryWithEqual("uuid", sessionID),
+		repo.QueryWithEqual("user_id", uid),
+		repo.QueryWithOrderBy("created_at ASC, id ASC"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	res.Total = int64(len(res.Items))
+	return &res, nil
+}
+
+type ListAsksReq struct {
+	*model.Pagination
+
+	Username *string `form:"username"`
+	Content  *string `form:"content"`
+}
+
+func (d *Discussion) ListAsks(ctx context.Context, req ListAsksReq) (*model.ListRes[model.AskSession], error) {
+	var res model.ListRes[model.AskSession]
+	err := d.in.AskSessionRepo.ListSession(ctx, &res.Items,
+		repo.QueryWithILike("ask_sessions.content", req.Content),
+		repo.QueryWithEqual("users.name", req.Username),
+		repo.QueryWithOrderBy("ask_sessions.created_at DESC"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	err = d.in.AskSessionRepo.CountSession(ctx, &res.Total,
+		repo.QueryWithILike("ask_sessions.content", req.Content),
+		repo.QueryWithEqual("users.name", req.Username),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+type AskSessionReq struct {
+	SessionID string `form:"session_id" binding:"required"`
+	UserID    uint   `form:"user_id" binding:"required"`
+}
+
+func (d *Discussion) AskSession(ctx context.Context, req AskSessionReq) (*model.ListRes[model.AskSession], error) {
+	var res model.ListRes[model.AskSession]
+	err := d.in.AskSessionRepo.List(ctx, &res.Items,
+		repo.QueryWithEqual("uuid", req.SessionID),
+		repo.QueryWithEqual("user_id", req.UserID),
+		repo.QueryWithOrderBy("created_at ASC, id ASC"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	res.Total = int64(len(res.Items))
+
+	return &res, nil
+}
+
+type SummaryByContentReq struct {
+	SessoionID string           `json:"session_id" binding:"required,uuid"`
+	ForumID    uint             `json:"forum_id" binding:"required"`
+	Content    string           `json:"content" binding:"required"`
+	GroupIDs   model.Int64Array `json:"group_ids"`
+}
+
+func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req SummaryByContentReq) (*LLMStream, error) {
+	var chatHistories []model.AskSession
+	err := d.in.AskSessionRepo.List(ctx, &chatHistories,
+		repo.QueryWithEqual("uuid", req.SessoionID),
+		repo.QueryWithEqual("bot", false),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(chatHistories) == 0 {
+		return nil, errors.New("session not exist")
+	}
+
+	ok, err := d.in.UserRepo.HasForumPermission(ctx, uid, req.ForumID)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, errPermission
+	}
+
+	if len(req.GroupIDs) > 0 {
+		var forum model.Forum
+		err := d.in.ForumRepo.GetByID(ctx, &forum, req.ForumID)
+		if err != nil {
+			return nil, err
+		}
+
+		visited := make(map[int64]bool)
+		groupIDs := make(model.Int64Array, 0)
+		for _, forumGroup := range forum.Groups.Inner() {
+			for _, groupID := range forumGroup.GroupIDs {
+				if visited[groupID] {
+					continue
+				}
+
+				groupIDs = append(groupIDs, groupID)
+				visited[groupID] = true
+			}
+		}
+		err = d.in.GroupItemRepo.FilterIDs(ctx, &req.GroupIDs, repo.QueryWithEqual("group_id", groupIDs, repo.EqualOPEqAny))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var metadata rag.Metadata
+	if len(req.GroupIDs) > 0 {
+		metadata = model.DiscMetadata{
+			GroupIDs: req.GroupIDs,
+		}
+	}
+
+	histories := make([]string, len(chatHistories))
+	for i := range chatHistories {
+		histories[i] = chatHistories[i].Content
+	}
+
+	discs, err := d.Search(ctx, DiscussionSearchReq{
+		Keyword:             req.Content,
+		ForumID:             req.ForumID,
+		SimilarityThreshold: 0.4,
+		MaxChunksPerDoc:     1,
+		Metadata:            metadata,
+		Histories:           histories,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(discs) == 0 {
+		return nil, nil
+	}
+
+	discUUIDs := make([]string, 0)
+	for _, disc := range discs {
+		discUUIDs = append(discUUIDs, disc.UUID)
+	}
+
+	stream, err := d.Summary(ctx, uid, DiscussionSummaryReq{
+		Keyword: req.Content,
+		UUIDs:   discUUIDs,
+	}, true)
+	if err != nil {
+		return nil, err
+	}
+	if stream == nil {
+		return nil, err
+	}
+
+	wrapSteam := LLMStream{
+		c:    make(chan string, 8),
+		stop: make(chan struct{}),
+	}
+
+	go func() {
+		defer stream.Close()
+
+		var aiResBuilder strings.Builder
+		wrapSteam.Recv(func() (string, error) {
+			text, ok := stream.Text(ctx)
+			if !ok {
+				return "", io.EOF
+			}
+
+			aiResBuilder.WriteString(text)
+
+			return text, nil
+		})
+
+		err := d.in.AskSessionRepo.Create(context.Background(), &model.AskSession{
+			UUID:    req.SessoionID,
+			UserID:  uid,
+			Bot:     true,
+			Summary: true,
+			Content: aiResBuilder.String(),
+		})
+		if err != nil {
+			d.logger.WithContext(ctx).Warn("create bot ask session failed")
+			return
+		}
+	}()
+
+	return &wrapSteam, nil
 }

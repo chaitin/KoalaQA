@@ -14,6 +14,8 @@ func (d *discussion) Route(h server.Handler) {
 	g := h.Group("/discussion")
 	g.GET("", d.List)
 	g.POST("/reindex", d.Reindex)
+	g.GET("/ask", d.ListAsks)
+	g.GET("/ask/session", d.AskSession)
 }
 
 func newDiscussion(disc *svc.Discussion) server.Router {
@@ -64,4 +66,54 @@ func (d *discussion) Reindex(ctx *context.Context) {
 	}
 
 	ctx.Success(nil)
+}
+
+// ListAsks
+// @Summary backend ask session group
+// @Description backend ask session group
+// @Tags discussion
+// @Produce json
+// @Param req query svc.ListAsksReq false "req params"
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]model.AskSession}}
+// @Router /admin/discussion/ask [get]
+func (d *discussion) ListAsks(ctx *context.Context) {
+	var req svc.ListAsksReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	res, err := d.disc.ListAsks(ctx, req)
+	if err != nil {
+		ctx.InternalError(err, "list asks failed")
+		return
+	}
+
+	ctx.Success(res)
+}
+
+// AskSession
+// @Summary backend ask session
+// @Description backend ask session
+// @Tags discussion
+// @Produce json
+// @Param req query svc.AskSessionReq false "req params"
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]model.AskSession}}
+// @Router /admin/discussion/ask/session [get]
+func (d *discussion) AskSession(ctx *context.Context) {
+	var req svc.AskSessionReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	res, err := d.disc.AskSession(ctx, req)
+	if err != nil {
+		ctx.InternalError(err, "get ask session failed")
+		return
+	}
+
+	ctx.Success(res)
 }

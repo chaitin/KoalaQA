@@ -18,17 +18,20 @@ class SSEClient<T> {
   private reader: ReadableStreamDefaultReader<Uint8Array> | null
   private textDecoder: TextDecoder
   private buffer: string
+  private currentEvent: string | null = null // 保存当前事件类型，用于跨数据块保持状态
 
   constructor(private options: SSEClientOptions) {
     this.controller = new AbortController()
     this.reader = null
     this.textDecoder = new TextDecoder()
     this.buffer = ''
+    this.currentEvent = null
   }
 
   public subscribe(body: BodyInit, onMessage: SSECallback<T>) {
     this.controller.abort()
     this.controller = new AbortController()
+    this.currentEvent = null // 重置事件状态
     const { url, headers, onOpen, onError, onComplete, method = 'POST' } = this.options
 
     const timeoutDuration = 300000
@@ -110,8 +113,6 @@ class SSEClient<T> {
     const chunkText = this.textDecoder.decode(chunk, { stream: true })
     this.buffer += chunkText
 
-    // 添加时间戳调试信息
-    const timestamp = new Date().toISOString().split('T')[1].split('.')[0]
     if (this.options.streamMode) {
       // 流式模式：逐字符处理
       this.processStreamingData(callback)
@@ -188,18 +189,49 @@ class SSEClient<T> {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim()
 
-      if (line.startsWith('data:')) {
+      if (line.startsWith('event:')) {
+        // 处理 event: 或 event:（有无空格都支持）
+        this.currentEvent = line.startsWith('event: ') ? line.slice(7) : line.slice(6)
+      } else if (line.startsWith('data:')) {
         const dataContent = line.startsWith('data: ') ? line.slice(6) : line.slice(5)
 
         if (dataContent && dataContent !== 'csrf token mismatch') {
+          // 如果是 end 事件，不调用 callback，等待流结束时会触发 onComplete
+          if (this.currentEvent === 'end') {
+            this.currentEvent = null
+            continue
+          }
+
           try {
             // 尝试解析为JSON
             const parsedData = JSON.parse(dataContent)
-            callback(parsedData as T)
+            // 如果有 event，将其包含在数据对象中
+            if (this.currentEvent) {
+              const eventData = { event: this.currentEvent, data: parsedData } as T
+              callback(eventData)
+              
+              // 如果是 no_disc 事件且 data 为 true，表示结束
+              if (this.currentEvent === 'no_disc' && parsedData === true) {
+                this.currentEvent = null
+                // 调用 onComplete 并停止处理
+                this.options.onComplete?.()
+                this.unsubscribe()
+                return
+              }
+              
+              this.currentEvent = null // 处理完数据后清除事件
+            } else {
+              callback(parsedData as T)
+            }
           } catch (jsonError) {
             // 不是JSON，直接作为文本处理
             if (dataContent) {
-              callback(dataContent as any)
+              if (this.currentEvent) {
+                callback({ event: this.currentEvent, data: dataContent } as T)
+                this.currentEvent = null // 处理完数据后清除事件
+              } else {
+                callback(dataContent as any)
+              }
             }
           }
         }
@@ -211,6 +243,7 @@ class SSEClient<T> {
     // 标准SSE模式：按完整的SSE消息格式处理
     const lines = this.buffer.split('\n')
     let currentData = ''
+    let currentEvent: string | null = null
     let isDataLine = false
 
     for (let i = 0; i < lines.length; i++) {
@@ -232,14 +265,14 @@ class SSEClient<T> {
         const dataContent = line.slice(5)
         currentData += dataContent
         isDataLine = true
-      } else if (line.startsWith('event: ')) {
-        // 处理事件类型
-        const eventType = line.slice(7)
-        continue
+      } else if (line.startsWith('event:')) {
+        // 处理事件类型（支持有无空格）
+        currentEvent = line.startsWith('event: ') ? line.slice(7) : line.slice(6)
       } else if (line === '' || line === '\r') {
         if (isDataLine) {
-          this.processData(currentData, callback)
+          this.processData(currentData, callback, currentEvent)
           currentData = ''
+          currentEvent = null
           isDataLine = false
         }
       }
@@ -249,8 +282,13 @@ class SSEClient<T> {
     this.buffer = isDataLine ? currentData : ''
   }
 
-  private processData(rawData: string, callback: SSECallback<T>) {
+  private processData(rawData: string, callback: SSECallback<T>, event: string | null = null) {
     try {
+      // 如果是 end 事件，不调用 callback
+      if (event === 'end') {
+        return
+      }
+
       // 尝试解析为 JSON
       let data: T
       try {
@@ -258,7 +296,22 @@ class SSEClient<T> {
       } catch (jsonError) {
         data = { content: rawData } as T
       }
-      callback(data)
+      
+      // 如果有 event，将其包含在数据对象中
+      if (event) {
+        const eventData = { event, data } as T
+        callback(eventData)
+        
+        // 如果是 no_disc 事件且 data 为 true，表示结束
+        if (event === 'no_disc' && data === true) {
+          // 调用 onComplete 并停止处理
+          this.options.onComplete?.()
+          this.unsubscribe()
+          return
+        }
+      } else {
+        callback(data)
+      }
     } catch (error) {
       console.error('Error processing SSE data:', error)
       console.error('Raw data:', rawData)

@@ -9,6 +9,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/config"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	raglite "github.com/chaitin/raglite-go-sdk"
+	"github.com/cloudwego/eino/schema"
 	"github.com/google/uuid"
 )
 
@@ -91,6 +92,14 @@ func (c *CTRag) QueryRecords(ctx context.Context, req QueryRecordsReq) (string, 
 		metadata = req.Metadata.Map()
 	}
 
+	chatHistory := make([]raglite.ChatMessage, len(req.Histories))
+	for i := range req.Histories {
+		chatHistory[i] = raglite.ChatMessage{
+			Role:    string(schema.User),
+			Content: req.Histories[i],
+		}
+	}
+
 	res, err := c.client.Search.Retrieve(ctx, &raglite.RetrieveRequest{
 		DatasetID:           req.DatasetID,
 		Query:               req.Query,
@@ -99,6 +108,7 @@ func (c *CTRag) QueryRecords(ctx context.Context, req QueryRecordsReq) (string, 
 		Tags:                req.Tags,
 		SimilarityThreshold: req.SimilarityThreshold,
 		MaxChunksPerDoc:     req.MaxChunksPerDoc,
+		ChatHistory:         chatHistory,
 	})
 	if err != nil {
 		return "", nil, err

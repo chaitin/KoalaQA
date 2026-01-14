@@ -1,7 +1,6 @@
 import { postUserLogout } from '@/api';
 import { message } from '@ctzhian/ui';
 import LogoutIcon from '@mui/icons-material/Logout';
-import PublicIcon from '@mui/icons-material/Public';
 import { Button, IconButton, Stack, Tooltip } from '@mui/material';
 import Bread from './Bread';
 

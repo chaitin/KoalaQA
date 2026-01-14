@@ -67,6 +67,11 @@ func (r *ragDoc) updateDiscussion(ctx context.Context, data topic.MsgRagDocUpdat
 	logger := r.logger.WithContext(ctx).With("msg", data)
 	logger.Info("update discussion tags")
 
+	if data.Keywords == nil {
+		logger.Debug("nil keywords, skip update")
+		return nil
+	}
+
 	err := r.repoDisc.UpdateTagsByRagID(ctx, data.ID, data.Keywords)
 	if err != nil {
 		logger.WithErr(err).Warn("update discussion tags failed")

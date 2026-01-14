@@ -3,6 +3,7 @@ package svc
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -46,12 +47,34 @@ func init() {
 	registerSvc(newLLM)
 }
 
+type GenerateContextItem struct {
+	Bot     bool   `json:"bot"`
+	Content string `json:"content"`
+}
+
 type GenerateReq struct {
+	Context       []GenerateContextItem `json:"context"`
 	Question      string                `json:"question"`
 	Groups        []model.GroupItemInfo `json:"groups"`
 	Prompt        string                `json:"prompt"`
 	DefaultAnswer string                `json:"default_answer"`
 	NewCommentID  uint                  `json:"new_comment_id"`
+}
+
+func (g *GenerateReq) Histories() []*schema.Message {
+	res := make([]*schema.Message, len(g.Context))
+	for i := range g.Context {
+		role := schema.User
+		if g.Context[i].Bot {
+			role = schema.Assistant
+		}
+		res[i] = &schema.Message{
+			Role:    role,
+			Content: g.Context[i].Content,
+		}
+	}
+
+	return res
 }
 
 func (g *GenerateReq) GroupInfo() (ids model.Int64Array, names []string) {
@@ -61,6 +84,40 @@ func (g *GenerateReq) GroupInfo() (ids model.Int64Array, names []string) {
 	}
 
 	return
+}
+
+func (l *LLM) StreamAnswer(ctx context.Context, sysPrompt string, req GenerateReq) (*LLMStream, error) {
+	query := req.Question
+
+	groupIDs, groupNames := req.GroupInfo()
+
+	if len(groupNames) > 0 {
+		query += "\n" + strings.Join(groupNames, ",")
+	}
+
+	chatHistoies := make([]string, 0)
+	for _, v := range req.Context {
+		if v.Bot {
+			continue
+		}
+
+		chatHistoies = append(chatHistoies, v.Content)
+	}
+
+	rewrittenQuery, knowledgeDocuments, err := l.queryKnowledgeDocuments(ctx, query, model.KBDocMetadata{
+		GroupIDs: groupIDs,
+	}, chatHistoies...)
+	if err != nil {
+		return nil, err
+	}
+
+	return l.StreamChat(ctx, sysPrompt, req.Prompt, map[string]any{
+		"Question":           rewrittenQuery,
+		"NewCommentID":       req.NewCommentID,
+		"CurrentDate":        time.Now().Format("2006-01-02"),
+		"DefaultAnswer":      req.DefaultAnswer,
+		"KnowledgeDocuments": knowledgeDocuments,
+	}, req.Histories()...)
 }
 
 func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (string, bool, error) {
@@ -237,7 +294,7 @@ func (l *LLMStream) Text(ctx context.Context) (string, bool) {
 	}
 }
 
-func (l *LLM) StreamChat(ctx context.Context, sMsg string, uMsg string, params map[string]any) (*LLMStream, error) {
+func (l *LLM) StreamChat(ctx context.Context, sMsg string, uMsg string, params map[string]any, histories ...*schema.Message) (*LLMStream, error) {
 	cm, err := l.kit.GetChatModel(ctx)
 	if err != nil {
 		return nil, err
@@ -250,7 +307,7 @@ func (l *LLM) StreamChat(ctx context.Context, sMsg string, uMsg string, params m
 	}
 
 	logger.Debug("wait llm stream response")
-	reader, err := cm.Stream(ctx, msgs)
+	reader, err := cm.Stream(ctx, slices.Insert(msgs, 1, histories...))
 	if err != nil {
 		return nil, err
 	}
@@ -443,7 +500,7 @@ func (l *LLM) GeneratePostPrompt(ctx context.Context, discID uint) (string, stri
 }
 
 // queryKnowledgeDocuments 查询相关知识文档
-func (l *LLM) queryKnowledgeDocuments(ctx context.Context, query string, metadata rag.Metadata) (string, []llm.KnowledgeDocument, error) {
+func (l *LLM) queryKnowledgeDocuments(ctx context.Context, query string, metadata rag.Metadata, histories ...string) (string, []llm.KnowledgeDocument, error) {
 	logger := l.logger.WithContext(ctx)
 
 	logger.With("query", query).Debug("query knowledge documents")
@@ -453,6 +510,7 @@ func (l *LLM) queryKnowledgeDocuments(ctx context.Context, query string, metadat
 		DatasetID: l.dataset.GetBackendID(ctx),
 		Query:     query,
 		Metadata:  metadata,
+		Histories: histories,
 	})
 	if err != nil {
 		return "", nil, fmt.Errorf("RAG query failed: %w", err)
