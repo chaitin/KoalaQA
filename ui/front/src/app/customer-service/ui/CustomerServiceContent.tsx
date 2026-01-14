@@ -3,6 +3,7 @@
 import { getBot, getDiscussionAskAskSessionId } from '@/api'
 import { getCsrfToken } from '@/api/httpClient'
 import { ModelDiscussionListItem, ModelUserInfo } from '@/api/types'
+import { getSystemWebPlugin } from '@/api/WebPlugin'
 import { AuthContext } from '@/components/authProvider'
 import EditorContent from '@/components/EditorContent'
 import { useForumStore } from '@/store'
@@ -10,6 +11,7 @@ import SSEClient from '@/utils/fetch'
 import AddIcon from '@mui/icons-material/Add'
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import {
   alpha,
   Avatar,
@@ -62,6 +64,7 @@ export default function CustomerServiceContent({ initialUser }: CustomerServiceC
   const [isLoading, setIsLoading] = useState(false)
   const [isWaiting, setIsWaiting] = useState(false)
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
+  const [isServiceEnabled, setIsServiceEnabled] = useState<boolean | null>(null) // null表示正在加载
 
   // 生成 UUID 的工具函数
   const generateUuid = useCallback(() => {
@@ -215,6 +218,22 @@ export default function CustomerServiceContent({ initialUser }: CustomerServiceC
       loadHistory()
     }
   }, [user?.uid, botName])
+
+  // 检查智能客服是否开启
+  useEffect(() => {
+    const checkServiceEnabled = async () => {
+      try {
+        const response = await getSystemWebPlugin()
+        const isEnabled = response?.display !== false
+        setIsServiceEnabled(isEnabled)
+      } catch (error) {
+        console.error('获取智能客服配置失败:', error)
+        // 默认允许访问，避免因网络问题阻止用户
+        setIsServiceEnabled(true)
+      }
+    }
+    checkServiceEnabled()
+  }, [])
 
   // 获取机器人信息
   useEffect(() => {
@@ -700,6 +719,74 @@ export default function CustomerServiceContent({ initialUser }: CustomerServiceC
     setInputValue('')
   }, [generateUuid, botName, router])
 
+  // 如果正在检查服务状态，显示加载状态
+  if (isServiceEnabled === null) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          background: 'linear-gradient(to bottom, #f7f9fc 0%, #ffffff 100%)',
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    )
+  }
+
+  // 如果服务未开启，显示提示信息
+  if (isServiceEnabled === false) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          background: 'linear-gradient(to bottom, #f7f9fc 0%, #ffffff 100%)',
+          px: 3,
+        }}
+      >
+        <Paper
+          elevation={0}
+          sx={{
+            maxWidth: 500,
+            p: 4,
+            textAlign: 'center',
+            borderRadius: 3,
+            border: '1px solid',
+            borderColor: 'divider',
+            background: 'white',
+          }}
+        >
+          <Box
+            sx={{
+              width: 64,
+              height: 64,
+              borderRadius: '50%',
+              bgcolor: alpha(theme.palette.warning.main, 0.1),
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mx: 'auto',
+              mb: 2,
+            }}
+          >
+            <WarningAmberIcon sx={{ fontSize: 32, color: 'warning.main' }} />
+          </Box>
+          <Typography variant='h6' sx={{ fontWeight: 600, mb: 1.5, color: 'text.primary' }}>
+            智能客服暂未开启
+          </Typography>
+          <Typography variant='body2' sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
+            管理员未开启智能客服功能，请联系管理员后重试
+          </Typography>
+        </Paper>
+      </Box>
+    )
+  }
+
   return (
     <Box
       sx={{
@@ -713,7 +800,7 @@ export default function CustomerServiceContent({ initialUser }: CustomerServiceC
       {/* 顶部标题栏 - 现代化设计 */}
       <Box
         sx={{
-          background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+          background: `#000000e6`,
           backdropFilter: 'blur(10px)',
           borderBottom: 'none',
           px: { xs: 2, sm: 4 },
