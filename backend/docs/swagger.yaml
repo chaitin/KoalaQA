@@ -2522,6 +2522,80 @@ paths:
       summary: backend list discussions
       tags:
       - discussion
+  /admin/discussion/ask:
+    get:
+      description: backend ask session group
+      parameters:
+      - in: query
+        name: content
+        type: string
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - in: query
+        minimum: 1
+        name: size
+        type: integer
+      - in: query
+        name: username
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/model.AskSession'
+                        type: array
+                    type: object
+              type: object
+      summary: backend ask session group
+      tags:
+      - discussion
+  /admin/discussion/ask/session:
+    get:
+      description: backend ask session
+      parameters:
+      - in: query
+        name: session_id
+        required: true
+        type: string
+      - in: query
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/model.AskSession'
+                        type: array
+                    type: object
+              type: object
+      summary: backend ask session
+      tags:
+      - discussion
   /admin/forum:
     get:
       produces:

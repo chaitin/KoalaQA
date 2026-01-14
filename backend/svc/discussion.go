@@ -2175,6 +2175,56 @@ func (d *Discussion) AskHistory(ctx context.Context, sessionID string, uid uint)
 	return &res, nil
 }
 
+type ListAsksReq struct {
+	*model.Pagination
+
+	Username *string `form:"username"`
+	Content  *string `form:"content"`
+}
+
+func (d *Discussion) ListAsks(ctx context.Context, req ListAsksReq) (*model.ListRes[model.AskSession], error) {
+	var res model.ListRes[model.AskSession]
+	err := d.in.AskSessionRepo.ListSession(ctx, &res.Items,
+		repo.QueryWithILike("ask_sessions.content", req.Content),
+		repo.QueryWithEqual("users.name", req.Username),
+		repo.QueryWithOrderBy("ask_sessions.created_at DESC"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	err = d.in.AskSessionRepo.CountSession(ctx, &res.Total,
+		repo.QueryWithILike("ask_sessions.content", req.Content),
+		repo.QueryWithEqual("users.name", req.Username),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+type AskSessionReq struct {
+	SessionID string `form:"session_id" binding:"required"`
+	UserID    uint   `form:"user_id" binding:"required"`
+}
+
+func (d *Discussion) AskSession(ctx context.Context, req AskSessionReq) (*model.ListRes[model.AskSession], error) {
+	var res model.ListRes[model.AskSession]
+	err := d.in.AskSessionRepo.List(ctx, &res.Items,
+		repo.QueryWithEqual("uuid", req.SessionID),
+		repo.QueryWithEqual("user_id", req.UserID),
+		repo.QueryWithOrderBy("created_at ASC, id ASC"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	res.Total = int64(len(res.Items))
+
+	return &res, nil
+}
+
 type SummaryByContentReq struct {
 	ForumID  uint             `json:"forum_id" binding:"required"`
 	Content  string           `json:"content" binding:"required"`
