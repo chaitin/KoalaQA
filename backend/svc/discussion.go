@@ -2231,7 +2231,14 @@ type SummaryByContentReq struct {
 }
 
 func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req SummaryByContentReq) (*LLMStream, error) {
-	ok, err := d.in.UserRepo.HasForumPermission(ctx, uid, req.ForumID)
+	ok, err := d.in.AskSessionRepo.Exist(ctx, repo.QueryWithEqual("uuid", req.SessoionID))
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, errors.New("session not exist")
+	}
+	ok, err = d.in.UserRepo.HasForumPermission(ctx, uid, req.ForumID)
 	if err != nil {
 		return nil, err
 	}
@@ -2325,6 +2332,7 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 			UUID:    req.SessoionID,
 			UserID:  uid,
 			Bot:     true,
+			Summary: true,
 			Content: aiResBuilder.String(),
 		})
 		if err != nil {
