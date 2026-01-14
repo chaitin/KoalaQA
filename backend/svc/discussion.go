@@ -55,6 +55,7 @@ type discussionIn struct {
 	Batcher        batch.Batcher[model.StatInfo]
 	UserPoint      *UserPoint
 	PublicAddr     *PublicAddress
+	WebPlugin      *WebPlugin
 }
 
 type Discussion struct {
@@ -2077,6 +2078,15 @@ type DiscussionAskReq struct {
 }
 
 func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*LLMStream, error) {
+	webPlugin, err := d.in.WebPlugin.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if !webPlugin.Display {
+		return nil, errors.New("disabled")
+	}
+
 	var groups []model.GroupItemInfo
 	if len(req.GroupIDs) > 0 {
 		groupIDs, err := d.in.UserRepo.UserGroupIDs(ctx, uid)
@@ -2093,7 +2103,7 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 	}
 
 	var askHistories []GenerateContextItem
-	err := d.in.AskSessionRepo.List(ctx, &askHistories,
+	err = d.in.AskSessionRepo.List(ctx, &askHistories,
 		repo.QueryWithOrderBy("created_at ASC, id ASC"),
 		repo.QueryWithEqual("uuid", req.SessionID),
 		repo.QueryWithEqual("user_id", uid),
@@ -2233,8 +2243,17 @@ type SummaryByContentReq struct {
 }
 
 func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req SummaryByContentReq) (*LLMStream, error) {
+	webPlugin, err := d.in.WebPlugin.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if !webPlugin.Display {
+		return nil, errors.New("disabled")
+	}
+
 	var chatHistories []model.AskSession
-	err := d.in.AskSessionRepo.List(ctx, &chatHistories,
+	err = d.in.AskSessionRepo.List(ctx, &chatHistories,
 		repo.QueryWithEqual("uuid", req.SessoionID),
 		repo.QueryWithEqual("bot", false),
 	)
