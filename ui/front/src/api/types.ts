@@ -227,6 +227,17 @@ export interface ContextResponse {
   trace_id?: string;
 }
 
+export interface ModelAskSession {
+  bot?: boolean;
+  content?: string;
+  created_at?: number;
+  id?: number;
+  summary?: boolean;
+  updated_at?: number;
+  user_id?: number;
+  uuid?: string;
+}
+
 export interface ModelAuth {
   auth_infos?: ModelAuthInfo[];
   enable_register?: boolean;
@@ -488,6 +499,8 @@ export type ModelJSONBModelPlatformOpt = Record<string, any>;
 export interface ModelKBDocumentDetail {
   created_at?: number;
   desc?: string;
+  disc_forum_id?: number;
+  disc_uuid?: string;
   doc_id?: string;
   doc_type?: ModelDocType;
   export_opt?: ModelJSONBModelExportOpt;
@@ -636,6 +649,11 @@ export interface ModelSystemSEO {
   keywords?: string[];
 }
 
+export interface ModelSystemWebPlugin {
+  display?: boolean;
+  enabled?: boolean;
+}
+
 export interface ModelTrend {
   created_at?: number;
   discuss_id?: number;
@@ -673,11 +691,11 @@ export interface ModelUserInfo {
   auth_type?: number;
   avatar?: string;
   builtin?: boolean;
+  cors?: boolean;
   email?: string;
   intro?: string;
   key?: string;
   no_password?: boolean;
-  only_get?: boolean;
   org_ids?: number[];
   point?: number;
   role?: ModelUserRole;
@@ -1189,7 +1207,7 @@ export interface SvcURLListReq {
 }
 
 export interface SvcUnbindNotifySubReq {
-  type?: ModelMessageNotifySubType;
+  type: ModelMessageNotifySubType;
 }
 
 export interface SvcUpdateGroupIDsReq {
@@ -1329,6 +1347,20 @@ export interface GetAdminDiscussionParams {
   page?: number;
   /** @min 1 */
   size?: number;
+}
+
+export interface GetAdminDiscussionAskParams {
+  content?: string;
+  /** @min 1 */
+  page?: number;
+  /** @min 1 */
+  size?: number;
+  username?: string;
+}
+
+export interface GetAdminDiscussionAskSessionParams {
+  session_id: string;
+  user_id: number;
 }
 
 /** request params */
@@ -1736,6 +1768,17 @@ export interface GetDiscussionParams {
   type?: "qa" | "feedback" | "blog" | "issue";
 }
 
+export interface PostDiscussionAskParams {
+  group_ids?: number[];
+  question: string;
+  session_id: string;
+}
+
+export interface GetDiscussionAskAskSessionIdParams {
+  /** ask_session_id */
+  askSessionId: string;
+}
+
 export interface GetDiscussionFollowParams {
   /** @min 1 */
   page?: number;
@@ -1746,6 +1789,13 @@ export interface GetDiscussionFollowParams {
 export interface PostDiscussionSummaryParams {
   keyword: string;
   uuids: string[];
+}
+
+export interface PostDiscussionSummaryContentParams {
+  content: string;
+  forum_id: number;
+  group_ids?: number[];
+  session_id: string;
 }
 
 /** request params */

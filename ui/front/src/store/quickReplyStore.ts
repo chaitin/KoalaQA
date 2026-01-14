@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import {
   getUserQuickReply,
   ModelUserQuickReply,
+  ModelUserRole,
   postUserQuickReply,
   putUserQuickReplyReindex,
   putUserQuickReplyQuickReplyId,
@@ -10,10 +11,19 @@ import {
 import { Message } from '@/components'
 import { arrayMove } from '@dnd-kit/sortable'
 
+// 检查用户是否有权限操作快捷回复（仅管理员和运营人员）
+const hasQuickReplyPermission = (userRole?: ModelUserRole): boolean => {
+  return userRole === ModelUserRole.UserRoleAdmin || userRole === ModelUserRole.UserRoleOperator
+}
+
 interface QuickReplyStore {
   quickReplies: ModelUserQuickReply[]
   loading: boolean
   error: string | null
+  userRole?: ModelUserRole // 存储当前用户角色
+
+  // 设置用户角色
+  setUserRole: (role?: ModelUserRole) => void
 
   // 获取快捷回复列表
   fetchQuickReplies: () => Promise<void>
@@ -44,8 +54,21 @@ export const useQuickReplyStore = create<QuickReplyStore>((set, get) => ({
   quickReplies: [],
   loading: false,
   error: null,
+  userRole: undefined,
+
+  setUserRole: (role?: ModelUserRole) => {
+    set({ userRole: role })
+  },
 
   fetchQuickReplies: async () => {
+    const { userRole } = get()
+    
+    // 只有管理员和运营人员可以获取快捷回复
+    if (!hasQuickReplyPermission(userRole)) {
+      console.log('无权限获取快捷回复，仅管理员和运营人员可用')
+      return
+    }
+
     set({ loading: true })
     try {
       const res = await getUserQuickReply()
@@ -62,6 +85,14 @@ export const useQuickReplyStore = create<QuickReplyStore>((set, get) => ({
   },
 
   createQuickReply: async (name: string, content: string) => {
+    const { userRole } = get()
+    
+    // 只有管理员和运营人员可以创建快捷回复
+    if (!hasQuickReplyPermission(userRole)) {
+      Message.error('无权限操作，仅管理员和运营人员可用')
+      return
+    }
+
     try {
       await postUserQuickReply({ name, content })
       Message.success('保存成功')
@@ -76,6 +107,14 @@ export const useQuickReplyStore = create<QuickReplyStore>((set, get) => ({
   },
 
   updateQuickReply: async (id: number, name: string, content: string) => {
+    const { userRole } = get()
+    
+    // 只有管理员和运营人员可以编辑快捷回复
+    if (!hasQuickReplyPermission(userRole)) {
+      Message.error('无权限操作，仅管理员和运营人员可用')
+      return
+    }
+
     try {
       await putUserQuickReplyQuickReplyId({ quickReplyId: id }, { name, content })
       Message.success('更新成功')
@@ -90,6 +129,14 @@ export const useQuickReplyStore = create<QuickReplyStore>((set, get) => ({
   },
 
   deleteQuickReply: async (id: number) => {
+    const { userRole } = get()
+    
+    // 只有管理员和运营人员可以删除快捷回复
+    if (!hasQuickReplyPermission(userRole)) {
+      Message.error('无权限操作，仅管理员和运营人员可用')
+      return
+    }
+
     try {
       await deleteUserQuickReplyQuickReplyId({ quickReplyId: id })
       Message.success('删除成功')
@@ -105,6 +152,14 @@ export const useQuickReplyStore = create<QuickReplyStore>((set, get) => ({
   },
 
   reorderQuickReplies: async (ids: number[]) => {
+    const { userRole } = get()
+    
+    // 只有管理员和运营人员可以排序快捷回复
+    if (!hasQuickReplyPermission(userRole)) {
+      Message.error('无权限操作，仅管理员和运营人员可用')
+      return
+    }
+
     try {
       await putUserQuickReplyReindex({ ids })
     } catch (error) {
@@ -118,6 +173,14 @@ export const useQuickReplyStore = create<QuickReplyStore>((set, get) => ({
   },
 
   localReorderQuickReplies: (fromId: number, toId: number) => {
+    const { userRole } = get()
+    
+    // 只有管理员和运营人员可以排序快捷回复
+    if (!hasQuickReplyPermission(userRole)) {
+      Message.error('无权限操作，仅管理员和运营人员可用')
+      return
+    }
+
     set((state) => {
       const oldIndex = state.quickReplies.findIndex((item) => item.id === fromId)
       const newIndex = state.quickReplies.findIndex((item) => item.id === toId)

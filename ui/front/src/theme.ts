@@ -134,6 +134,7 @@ const createColors = (
 
   const divider = isDarkTheme ? '#404040' : '#D9DEE2'
   const border = isDarkTheme ? '#404040' : BORDER_COLOR
+  const tableCellBorder = isDarkTheme ? '#404040' : '#E0E0E0' // 表格单元格边框
   const actionActive = isDarkTheme ? 'rgba(255, 255, 255, 0.54)' : 'rgba(33, 34, 45, 0.54)'
   const actionHover = isDarkTheme ? 'rgba(255, 255, 255, 0.04)' : 'rgba(33, 34, 45, 0.04)'
   const actionSelected = isDarkTheme ? 'rgba(255, 255, 255, 0.08)' : 'rgba(33, 34, 45, 0.08)'
@@ -181,6 +182,7 @@ const createColors = (
     // 分割线和操作状态
     divider,
     border, // 边框颜色
+    tableCellBorder, // 表格单元格边框颜色
     actionActive,
     actionHover,
     actionSelected,
@@ -208,6 +210,7 @@ declare module '@mui/material/styles' {
       50: string // primary.main 的 50% 透明度 - 聚焦边框
     }
     border?: string // 边框颜色
+    tableCellBorder?: string // 表格单元格边框颜色
   }
 
   // allow configuration using `createTheme`
@@ -222,6 +225,7 @@ declare module '@mui/material/styles' {
       50?: string
     }
     border?: string // 边框颜色
+    tableCellBorder?: string // 表格单元格边框颜色
   }
 
   interface TypeBackground {
@@ -358,6 +362,12 @@ export function createAppTheme(primaryColor?: string, backgroundColor?: string):
       divider: themeColors.divider,
       // 边框颜色
       border: themeColors.border,
+      // 表格单元格边框颜色
+      table: {
+        cell: {
+          border: themeColors.tableCellBorder,
+        }
+      },
       // 操作状态颜色
       action: {
         active: themeColors.actionActive,

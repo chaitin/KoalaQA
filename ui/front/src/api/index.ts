@@ -24,6 +24,7 @@ export * from './User'
 export * from './UserQuickReply'
 export * from './UserReview'
 export * from './Web'
+export * from './WebPlugin'
 export * from './Webhook'
 export * from './types'
 

@@ -17,17 +17,20 @@ class SSEClient<T> {
   private reader: ReadableStreamDefaultReader<Uint8Array> | null;
   private textDecoder: TextDecoder;
   private buffer: string;
+  private currentEvent: string | null = null; // 保存当前事件类型，用于跨数据块保持状态
 
   constructor(private options: SSEClientOptions) {
     this.controller = new AbortController();
     this.reader = null;
     this.textDecoder = new TextDecoder();
     this.buffer = '';
+    this.currentEvent = null;
   }
 
   public subscribe(body: BodyInit, onMessage: SSECallback<T>) {
     this.controller.abort();
     this.controller = new AbortController();
+    this.currentEvent = null; // 重置事件状态
     const {
       url,
       headers,
@@ -105,7 +108,9 @@ class SSEClient<T> {
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
-      if (line.startsWith('data: ')) {
+      if (line.startsWith('event: ')) {
+        this.currentEvent = line.slice(7);
+      } else if (line.startsWith('data: ')) {
         if (isDataLine) {
           currentData += '\n';
         }
@@ -114,11 +119,22 @@ class SSEClient<T> {
       } else if (line === '') {
         if (isDataLine) {
           try {
-            const data = JSON.parse(currentData) as T;
-            callback(data);
+            const parsedData = JSON.parse(currentData);
+            // 如果有 event，将其包含在数据对象中
+            if (this.currentEvent) {
+              callback({ event: this.currentEvent, data: parsedData } as T);
+              this.currentEvent = null; // 处理完数据后清除事件
+            } else {
+              callback(parsedData as T);
+            }
           } catch (error) {
-            console.error(error);
-            this.options.onError?.(new Error('Failed to parse SSE data'));
+            // 不是JSON，直接作为文本处理
+            if (this.currentEvent) {
+              callback({ event: this.currentEvent, data: currentData } as T);
+              this.currentEvent = null;
+            } else {
+              callback(currentData as any);
+            }
           }
           currentData = '';
           isDataLine = false;

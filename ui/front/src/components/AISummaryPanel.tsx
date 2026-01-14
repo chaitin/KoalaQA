@@ -109,14 +109,41 @@ export const AISummaryPanel = ({
         // 发送 POST 请求并订阅 SSE 流
         const requestBody = JSON.stringify({ uuids, keyword: searchQuery })
         sseClient.subscribe(requestBody, (data) => {
+          // 处理 SSE 事件格式: { event: 'text', data: ... } 或 { event: 'end', data: true }
+          if (data && typeof data === 'object' && (data as any).event) {
+            const eventType = (data as any).event
+            // 只处理 text 事件，跳过 end 等其他事件
+            if (eventType !== 'text') {
+              return
+            }
+            // 从 event 对象中提取实际数据
+            data = (data as any).data
+          }
+
           // 检查是否是CSRF错误消息
-          if (data.data === 'csrf token mismatch' || data === 'csrf token mismatch') {
+          if (data && typeof data === 'object' && data.data === 'csrf token mismatch') {
             console.error('CSRF token mismatch detected in SSE data')
             if (retryCount < maxRetryCount) {
               console.log(`CSRF token error in SSE stream, retrying (${retryCount + 1}/${maxRetryCount})...`)
               // 断开当前连接
               sseClient.unsubscribe()
 
+              setTimeout(() => {
+                startSummary(retryCount + 1)
+              }, 1000)
+              return
+            } else {
+              setError('CSRF验证失败，请刷新页面重试')
+              setIsSummarizing(false)
+              return
+            }
+          }
+
+          if (data === 'csrf token mismatch') {
+            console.error('CSRF token mismatch detected in SSE data')
+            if (retryCount < maxRetryCount) {
+              console.log(`CSRF token error in SSE stream, retrying (${retryCount + 1}/${maxRetryCount})...`)
+              sseClient.unsubscribe()
               setTimeout(() => {
                 startSummary(retryCount + 1)
               }, 1000)
@@ -136,6 +163,10 @@ export const AISummaryPanel = ({
           if (typeof data === 'string') {
             textToAdd = data
           } else if (data && typeof data === 'object') {
+            // 跳过包含 event 字段的对象（这些是 SSE 事件，不是内容数据）
+            if ((data as any).event) {
+              return
+            }
             // 尝试从常见字段中提取文本
             textToAdd =
               data.content || data.text || data.data || data.chunk || data.message || data.result || data.summary || ''

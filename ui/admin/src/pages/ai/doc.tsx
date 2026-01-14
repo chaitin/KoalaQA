@@ -115,7 +115,10 @@ const AdminDocument = () => {
       onOk: () => {
         deleteAdminKbKbIdDocumentDocId({ kbId: kb_id, docId: item.id! }).then(() => {
           message.success('删除成功');
-          setParams({ page: 1 });
+          // 直接刷新当前页数据，而不是设置页码（避免当前已在第1页时无法触发刷新）
+          const _query = { ...query };
+          delete _query.name;
+          fetchData(_query);
         });
       },
     });
@@ -143,7 +146,10 @@ const AdminDocument = () => {
           .then(() => {
             message.success('批量删除成功');
             setSelectedRowKeys([]);
-            setParams({ page: 1 });
+            // 直接刷新当前页数据，而不是设置页码（避免当前已在第1页时无法触发刷新）
+            const _query = { ...query };
+            delete _query.name;
+            fetchData(_query);
           })
           .catch(() => {
             message.error('批量删除失败');

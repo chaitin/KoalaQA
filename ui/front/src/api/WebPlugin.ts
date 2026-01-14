@@ -11,28 +11,28 @@
  */
 
 import request, { ContentType, RequestParams } from "./httpClient";
-import { ContextResponse, PutAdminBotPayload, SvcBotGetRes } from "./types";
+import { ContextResponse, ModelSystemWebPlugin } from "./types";
 
 /**
  * No description
  *
- * @tags bot
- * @name GetAdminBot
- * @summary get bot info
- * @request GET:/admin/bot
+ * @tags web_plugin
+ * @name GetAdminSystemWebPlugin
+ * @summary web plugin detail
+ * @request GET:/admin/system/web_plugin
  * @response `200` `(ContextResponse & {
-    data?: SvcBotGetRes,
+    data?: ModelSystemWebPlugin,
 
 })` OK
  */
 
-export const getAdminBot = (params: RequestParams = {}) =>
+export const getAdminSystemWebPlugin = (params: RequestParams = {}) =>
   request<
     ContextResponse & {
-      data?: SvcBotGetRes;
+      data?: ModelSystemWebPlugin;
     }
   >({
-    path: `/admin/bot`,
+    path: `/admin/system/web_plugin`,
     method: "GET",
     format: "json",
     ...params,
@@ -41,22 +41,22 @@ export const getAdminBot = (params: RequestParams = {}) =>
 /**
  * No description
  *
- * @tags bot
- * @name PutAdminBot
- * @summary set bot info
- * @request PUT:/admin/bot
+ * @tags web_plugin
+ * @name PutAdminSystemWebPlugin
+ * @summary update web plugin config
+ * @request PUT:/admin/system/web_plugin
  * @response `200` `ContextResponse` OK
  */
 
-export const putAdminBot = (
-  data: PutAdminBotPayload,
+export const putAdminSystemWebPlugin = (
+  req: ModelSystemWebPlugin,
   params: RequestParams = {},
 ) =>
   request<ContextResponse>({
-    path: `/admin/bot`,
+    path: `/admin/system/web_plugin`,
     method: "PUT",
-    body: data,
-    type: ContentType.FormData,
+    body: req,
+    type: ContentType.Json,
     format: "json",
     ...params,
   });
@@ -64,23 +64,23 @@ export const putAdminBot = (
 /**
  * No description
  *
- * @tags bot
- * @name GetBot
- * @summary get bot info
- * @request GET:/bot
+ * @tags web_plugin
+ * @name GetSystemWebPlugin
+ * @summary web plugin detail
+ * @request GET:/system/web_plugin
  * @response `200` `(ContextResponse & {
-    data?: SvcBotGetRes,
+    data?: ModelSystemWebPlugin,
 
 })` OK
  */
 
-export const getBot = (params: RequestParams = {}) =>
+export const getSystemWebPlugin = (params: RequestParams = {}) =>
   request<
     ContextResponse & {
-      data?: SvcBotGetRes;
+      data?: ModelSystemWebPlugin;
     }
   >({
-    path: `/bot`,
+    path: `/system/web_plugin`,
     method: "GET",
     format: "json",
     ...params,

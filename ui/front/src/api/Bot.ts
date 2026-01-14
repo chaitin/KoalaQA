@@ -60,3 +60,28 @@ export const putAdminBot = (
     format: "json",
     ...params,
   });
+
+/**
+ * No description
+ *
+ * @tags bot
+ * @name GetBot
+ * @summary get bot info
+ * @request GET:/bot
+ * @response `200` `(ContextResponse & {
+    data?: SvcBotGetRes,
+
+})` OK
+ */
+
+export const getBot = (params: RequestParams = {}) =>
+  request<
+    ContextResponse & {
+      data?: SvcBotGetRes;
+    }
+  >({
+    path: `/bot`,
+    method: "GET",
+    format: "json",
+    ...params,
+  });

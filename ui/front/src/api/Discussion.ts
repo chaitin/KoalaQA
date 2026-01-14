@@ -16,17 +16,22 @@ import {
   DeleteDiscussionDiscIdCommentCommentIdParams,
   DeleteDiscussionDiscIdFollowParams,
   DeleteDiscussionDiscIdParams,
+  GetAdminDiscussionAskParams,
+  GetAdminDiscussionAskSessionParams,
   GetAdminDiscussionParams,
+  GetDiscussionAskAskSessionIdParams,
   GetDiscussionDiscIdAssociateParams,
   GetDiscussionDiscIdFollowParams,
   GetDiscussionDiscIdParams,
   GetDiscussionDiscIdSimilarityParams,
   GetDiscussionFollowParams,
   GetDiscussionParams,
+  ModelAskSession,
   ModelDiscussion,
   ModelDiscussionDetail,
   ModelDiscussionListItem,
   ModelListRes,
+  PostDiscussionAskParams,
   PostDiscussionDiscIdAiLearnParams,
   PostDiscussionDiscIdAssociateParams,
   PostDiscussionDiscIdCommentCommentIdAcceptParams,
@@ -40,6 +45,7 @@ import {
   PostDiscussionDiscIdResolveIssueParams,
   PostDiscussionDiscIdResolveParams,
   PostDiscussionDiscIdRevokeLikeParams,
+  PostDiscussionSummaryContentParams,
   PostDiscussionSummaryParams,
   PostDiscussionUploadPayload,
   PutDiscussionDiscIdCloseParams,
@@ -85,6 +91,74 @@ export const getAdminDiscussion = (
     }
   >({
     path: `/admin/discussion`,
+    method: "GET",
+    query: query,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description backend ask session group
+ *
+ * @tags discussion
+ * @name GetAdminDiscussionAsk
+ * @summary backend ask session group
+ * @request GET:/admin/discussion/ask
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (ModelAskSession)[],
+
+}),
+
+})` OK
+ */
+
+export const getAdminDiscussionAsk = (
+  query: GetAdminDiscussionAskParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: ModelAskSession[];
+      };
+    }
+  >({
+    path: `/admin/discussion/ask`,
+    method: "GET",
+    query: query,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description backend ask session
+ *
+ * @tags discussion
+ * @name GetAdminDiscussionAskSession
+ * @summary backend ask session
+ * @request GET:/admin/discussion/ask/session
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (ModelAskSession)[],
+
+}),
+
+})` OK
+ */
+
+export const getAdminDiscussionAskSession = (
+  query: GetAdminDiscussionAskSessionParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: ModelAskSession[];
+      };
+    }
+  >({
+    path: `/admin/discussion/ask/session`,
     method: "GET",
     query: query,
     format: "json",
@@ -151,6 +225,59 @@ export const postDiscussion = (
     method: "POST",
     body: discussion,
     type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description user ask
+ *
+ * @tags discussion
+ * @name PostDiscussionAsk
+ * @summary user ask
+ * @request POST:/discussion/ask
+ */
+
+export const postDiscussionAsk = (
+  query: PostDiscussionAskParams,
+  params: RequestParams = {},
+) =>
+  request<unknown>({
+    path: `/discussion/ask`,
+    method: "POST",
+    query: query,
+    ...params,
+  });
+
+/**
+ * @description discussion ask history
+ *
+ * @tags discussion
+ * @name GetDiscussionAskAskSessionId
+ * @summary discussion ask history
+ * @request GET:/discussion/ask/{ask_session_id}
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (ModelAskSession)[],
+
+}),
+
+})` OK
+ */
+
+export const getDiscussionAskAskSessionId = (
+  { askSessionId, ...query }: GetDiscussionAskAskSessionIdParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: ModelAskSession[];
+      };
+    }
+  >({
+    path: `/discussion/ask/${askSessionId}`,
+    method: "GET",
     format: "json",
     ...params,
   });
@@ -264,6 +391,26 @@ export const postDiscussionSummary = (
 ) =>
   request<unknown>({
     path: `/discussion/summary`,
+    method: "POST",
+    query: query,
+    ...params,
+  });
+
+/**
+ * @description content summary
+ *
+ * @tags discussion
+ * @name PostDiscussionSummaryContent
+ * @summary content summary
+ * @request POST:/discussion/summary/content
+ */
+
+export const postDiscussionSummaryContent = (
+  query: PostDiscussionSummaryContentParams,
+  params: RequestParams = {},
+) =>
+  request<unknown>({
+    path: `/discussion/summary/content`,
     method: "POST",
     query: query,
     ...params,
