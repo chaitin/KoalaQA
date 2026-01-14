@@ -4831,7 +4831,7 @@ const docTemplate = `{
             }
         },
         "/discussion/ask/{ask_session_id}": {
-            "post": {
+            "get": {
                 "description": "discussion ask history",
                 "produces": [
                     "application/json"

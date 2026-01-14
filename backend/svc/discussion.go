@@ -2090,17 +2090,12 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		}
 	}
 
-	var askHistories llm.AskSessionsTemplate
+	var askHistories []GenerateContextItem
 	err := d.in.AskSessionRepo.List(ctx, &askHistories,
 		repo.QueryWithOrderBy("created_at ASC, id ASC"),
 		repo.QueryWithEqual("uuid", req.SessionID),
 		repo.QueryWithEqual("user_id", uid),
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	prompt, err := askHistories.BuildAskPrompt()
 	if err != nil {
 		return nil, err
 	}
@@ -2116,9 +2111,10 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 	}
 
 	stream, err := d.in.LLM.StreamAnswer(ctx, llm.SystemChatNoRefPrompt, GenerateReq{
+		Context:       askHistories,
 		Question:      req.Question,
 		Groups:        groups,
-		Prompt:        prompt,
+		Prompt:        req.Question,
 		DefaultAnswer: "无法回答问题",
 		NewCommentID:  0,
 	})
@@ -2132,6 +2128,8 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 	}
 
 	go func() {
+		defer stream.Close()
+
 		var aiResBuilder strings.Builder
 		wrapSteam.Recv(func() (string, error) {
 			text, ok := stream.Text(ctx)

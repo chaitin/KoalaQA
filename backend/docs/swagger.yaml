@@ -5977,7 +5977,7 @@ paths:
       tags:
       - discussion
   /discussion/ask/{ask_session_id}:
-    post:
+    get:
       description: discussion ask history
       parameters:
       - description: ask_session_id

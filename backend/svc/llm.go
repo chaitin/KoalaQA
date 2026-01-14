@@ -46,12 +46,34 @@ func init() {
 	registerSvc(newLLM)
 }
 
+type GenerateContextItem struct {
+	Bot     bool   `json:"bot"`
+	Content string `json:"content"`
+}
+
 type GenerateReq struct {
+	Context       []GenerateContextItem `json:"context"`
 	Question      string                `json:"question"`
 	Groups        []model.GroupItemInfo `json:"groups"`
 	Prompt        string                `json:"prompt"`
 	DefaultAnswer string                `json:"default_answer"`
 	NewCommentID  uint                  `json:"new_comment_id"`
+}
+
+func (g *GenerateReq) Histories() []*schema.Message {
+	res := make([]*schema.Message, len(g.Context))
+	for i := range g.Context {
+		role := schema.User
+		if g.Context[i].Bot {
+			role = schema.Assistant
+		}
+		res[i] = &schema.Message{
+			Role:    role,
+			Content: g.Context[i].Content,
+		}
+	}
+
+	return res
 }
 
 func (g *GenerateReq) GroupInfo() (ids model.Int64Array, names []string) {
@@ -85,7 +107,7 @@ func (l *LLM) StreamAnswer(ctx context.Context, sysPrompt string, req GenerateRe
 		"CurrentDate":        time.Now().Format("2006-01-02"),
 		"DefaultAnswer":      req.DefaultAnswer,
 		"KnowledgeDocuments": knowledgeDocuments,
-	})
+	}, req.Histories()...)
 }
 
 func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (string, bool, error) {
@@ -262,7 +284,7 @@ func (l *LLMStream) Text(ctx context.Context) (string, bool) {
 	}
 }
 
-func (l *LLM) StreamChat(ctx context.Context, sMsg string, uMsg string, params map[string]any) (*LLMStream, error) {
+func (l *LLM) StreamChat(ctx context.Context, sMsg string, uMsg string, params map[string]any, histories ...*schema.Message) (*LLMStream, error) {
 	cm, err := l.kit.GetChatModel(ctx)
 	if err != nil {
 		return nil, err
@@ -274,8 +296,11 @@ func (l *LLM) StreamChat(ctx context.Context, sMsg string, uMsg string, params m
 		return nil, err
 	}
 
+	data := make([]*schema.Message, len(histories))
+	copy(data, histories)
+
 	logger.Debug("wait llm stream response")
-	reader, err := cm.Stream(ctx, msgs)
+	reader, err := cm.Stream(ctx, append(data, msgs...))
 	if err != nil {
 		return nil, err
 	}

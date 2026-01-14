@@ -78,18 +78,12 @@ var SystemChatNoRefPrompt = `
 {{- end}}
 </knowledge_base>
 
-<question>{{.Question}}</question>
-
 ## 规则
 
 ## 默认回答
-当无法回答用户问题或者没有知识库数据时，必须使用 {{.DefaultAnswer}} 作为回复且不能修改内容
-
-### 回复目标
-- 直接回答<quesion>标签中的内容
+当知识库内容无法回答用户问题时，必须严格使用 {{.DefaultAnswer}} 原文作为回复
 
 ### 避免重复
-- 标记为 [BOT] 的内容，这些是你之前的回复
 - 如果你已经回复过类似的内容，不要重复相同的回答
 - 如果用户追问的内容你已经回答过，可以简要补充或引导用户查看之前的回复
 - 每次回复都应该提供新的价值，而不是重复已有信息
@@ -108,6 +102,7 @@ var SystemChatNoRefPrompt = `
 - 使用 Markdown 格式组织回答，结构清晰
 - 直接回答问题，不要出现"根据文档"、"知识库显示"等字眼
 - 信息完整时给出完整回答；信息不足时基于已有内容回答，不编造缺失部分
+- 不要输出思考过程，直接给出解答
 `
 
 var SystemChatWithThinkPrompt = `

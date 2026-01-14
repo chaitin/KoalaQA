@@ -670,7 +670,7 @@ func (d *discussionAuth) Ask(ctx *context.Context) {
 // @Produce json
 // @Param ask_session_id path string true "ask_session_id"
 // @Success 200 {object} context.Response{data=model.ListRes{items=[]model.AskSession}}
-// @Router /discussion/ask/{ask_session_id} [post]
+// @Router /discussion/ask/{ask_session_id} [get]
 func (d *discussionAuth) AskHistory(ctx *context.Context) {
 	res, err := d.disc.AskHistory(ctx, ctx.Param("ask_session_id"), ctx.GetUser().UID)
 	if err != nil {
