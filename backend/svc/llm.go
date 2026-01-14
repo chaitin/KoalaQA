@@ -95,9 +95,18 @@ func (l *LLM) StreamAnswer(ctx context.Context, sysPrompt string, req GenerateRe
 		query += "\n" + strings.Join(groupNames, ",")
 	}
 
+	chatHistoies := make([]string, 0)
+	for _, v := range req.Context {
+		if v.Bot {
+			continue
+		}
+
+		chatHistoies = append(chatHistoies, v.Content)
+	}
+
 	rewrittenQuery, knowledgeDocuments, err := l.queryKnowledgeDocuments(ctx, query, model.KBDocMetadata{
 		GroupIDs: groupIDs,
-	})
+	}, chatHistoies...)
 	if err != nil {
 		return nil, err
 	}
@@ -491,7 +500,7 @@ func (l *LLM) GeneratePostPrompt(ctx context.Context, discID uint) (string, stri
 }
 
 // queryKnowledgeDocuments 查询相关知识文档
-func (l *LLM) queryKnowledgeDocuments(ctx context.Context, query string, metadata rag.Metadata) (string, []llm.KnowledgeDocument, error) {
+func (l *LLM) queryKnowledgeDocuments(ctx context.Context, query string, metadata rag.Metadata, histories ...string) (string, []llm.KnowledgeDocument, error) {
 	logger := l.logger.WithContext(ctx)
 
 	logger.With("query", query).Debug("query knowledge documents")
@@ -501,6 +510,7 @@ func (l *LLM) queryKnowledgeDocuments(ctx context.Context, query string, metadat
 		DatasetID: l.dataset.GetBackendID(ctx),
 		Query:     query,
 		Metadata:  metadata,
+		Histories: histories,
 	})
 	if err != nil {
 		return "", nil, fmt.Errorf("RAG query failed: %w", err)

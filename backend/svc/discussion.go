@@ -932,6 +932,7 @@ type DiscussionSearchReq struct {
 	SimilarityThreshold float64
 	MaxChunksPerDoc     int
 	Metadata            rag.Metadata
+	Histories           []string
 }
 
 func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*model.DiscussionListItem, error) {
@@ -947,6 +948,7 @@ func (d *Discussion) Search(ctx context.Context, req DiscussionSearchReq) ([]*mo
 		SimilarityThreshold: req.SimilarityThreshold,
 		MaxChunksPerDoc:     req.MaxChunksPerDoc,
 		Metadata:            req.Metadata,
+		Histories:           req.Histories,
 	})
 	if err != nil {
 		return nil, err
@@ -2231,14 +2233,20 @@ type SummaryByContentReq struct {
 }
 
 func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req SummaryByContentReq) (*LLMStream, error) {
-	ok, err := d.in.AskSessionRepo.Exist(ctx, repo.QueryWithEqual("uuid", req.SessoionID))
+	var chatHistories []model.AskSession
+	err := d.in.AskSessionRepo.List(ctx, &chatHistories,
+		repo.QueryWithEqual("uuid", req.SessoionID),
+		repo.QueryWithEqual("bot", false),
+	)
 	if err != nil {
 		return nil, err
 	}
-	if !ok {
+
+	if len(chatHistories) == 0 {
 		return nil, errors.New("session not exist")
 	}
-	ok, err = d.in.UserRepo.HasForumPermission(ctx, uid, req.ForumID)
+
+	ok, err := d.in.UserRepo.HasForumPermission(ctx, uid, req.ForumID)
 	if err != nil {
 		return nil, err
 	}
@@ -2277,12 +2285,19 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 			GroupIDs: req.GroupIDs,
 		}
 	}
+
+	histories := make([]string, len(chatHistories))
+	for i := range chatHistories {
+		histories[i] = chatHistories[i].Content
+	}
+
 	discs, err := d.Search(ctx, DiscussionSearchReq{
 		Keyword:             req.Content,
 		ForumID:             req.ForumID,
 		SimilarityThreshold: 0.4,
 		MaxChunksPerDoc:     1,
 		Metadata:            metadata,
+		Histories:           histories,
 	})
 	if err != nil {
 		return nil, err
