@@ -3,6 +3,7 @@ package svc
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -296,11 +297,8 @@ func (l *LLM) StreamChat(ctx context.Context, sMsg string, uMsg string, params m
 		return nil, err
 	}
 
-	data := make([]*schema.Message, len(histories))
-	copy(data, histories)
-
 	logger.Debug("wait llm stream response")
-	reader, err := cm.Stream(ctx, append(data, msgs...))
+	reader, err := cm.Stream(ctx, slices.Insert(msgs, 1, histories...))
 	if err != nil {
 		return nil, err
 	}
