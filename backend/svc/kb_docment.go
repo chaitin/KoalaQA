@@ -533,7 +533,8 @@ func (d *KBDocument) Detail(ctx context.Context, kbID uint, docID uint) (*model.
 	}
 
 	// 文档的 markdown 是 oss path，需要签名才能访问
-	if doc.DocType == model.DocTypeDocument || doc.DocType == model.DocTypeWeb {
+	switch doc.DocType {
+	case model.DocTypeDocument, model.DocTypeWeb:
 		publicAddress, err := d.svcPublicAddr.Get(ctx)
 		if err != nil {
 			return nil, err
@@ -546,6 +547,20 @@ func (d *KBDocument) Detail(ctx context.Context, kbID uint, docID uint) (*model.
 
 		doc.Markdown = markdownPath
 		doc.JSON = ""
+	case model.DocTypeQuestion:
+		discID, err := doc.QuestionDiscID()
+		if err != nil {
+			d.logger.WithContext(ctx).WithErr(err).With("doc_desc", doc.Desc).Warn("get quesion desc failed")
+		} else if discID > 0 {
+			var disc model.Discussion
+			err = d.repoDisc.GetByID(ctx, &disc, discID, repo.QueryWithSelectColumn("forum_id", "uuid"))
+			if err != nil {
+				return nil, err
+			}
+
+			doc.DiscForumID = disc.ForumID
+			doc.DiscUUID = disc.UUID
+		}
 	}
 
 	return &doc, nil

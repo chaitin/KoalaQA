@@ -8486,6 +8486,12 @@ const docTemplate = `{
                 "desc": {
                     "type": "string"
                 },
+                "disc_forum_id": {
+                    "type": "integer"
+                },
+                "disc_uuid": {
+                    "type": "string"
+                },
                 "doc_id": {
                     "type": "string"
                 },
