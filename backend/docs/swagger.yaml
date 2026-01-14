@@ -65,6 +65,8 @@ definitions:
         type: integer
       id:
         type: integer
+      summary:
+        type: boolean
       updated_at:
         type: integer
       user_id:
@@ -5190,6 +5192,23 @@ paths:
       summary: update user review
       tags:
       - user_review
+  /bot:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/svc.BotGetRes'
+              type: object
+      summary: get bot info
+      tags:
+      - bot
   /csrf:
     get:
       description: get csrf

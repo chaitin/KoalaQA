@@ -4559,6 +4559,37 @@ const docTemplate = `{
                 }
             }
         },
+        "/bot": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "bot"
+                ],
+                "summary": "get bot info",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/svc.BotGetRes"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/csrf": {
             "get": {
                 "description": "get csrf",
@@ -7729,6 +7760,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "summary": {
+                    "type": "boolean"
                 },
                 "updated_at": {
                     "type": "integer"
