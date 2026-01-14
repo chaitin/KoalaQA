@@ -162,8 +162,8 @@ UPDATE kb_documents SET status = ?, message = ? FROM all_folder_doc WHERE all_fo
 	}
 
 	if len(statusFilter) > 0 {
-		sql += " AND kb_documents.status IN (?)"
-		params = append(params, statusFilter)
+		sql += " AND kb_documents.status IN (?) AND kb_documents.file_type != ?"
+		params = append(params, statusFilter, model.FileTypeFolder)
 	}
 
 	return d.db.WithContext(ctx).Exec(sql, params...).Error
@@ -194,8 +194,8 @@ func (d *KBDocument) ListSpaceFolderAll(ctx context.Context, rootParentID uint, 
 	filter := ""
 	params := []any{rootParentID, folderID}
 	if len(statusFilter) > 0 {
-		filter = " AND d.status IN (?)"
-		params = append(params, statusFilter)
+		filter = " AND (d.status IN (?) OR d.file_type = ?)"
+		params = append(params, statusFilter, model.FileTypeFolder, statusFilter, model.FileTypeFolder)
 	}
 	sql := fmt.Sprintf(`WITH RECURSIVE all_folder_doc AS (
 	SELECT * FROM kb_documents d WHERE d.root_parent_id = ? AND d.parent_id = ?%s

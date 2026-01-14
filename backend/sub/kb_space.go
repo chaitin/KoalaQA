@@ -14,6 +14,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/topic"
 	"github.com/chaitin/koalaqa/repo"
 	"github.com/chaitin/koalaqa/svc"
+	"gorm.io/gorm"
 )
 
 type kbSpace struct {
@@ -274,6 +275,20 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 	var statusFilter []model.DocStatus
 	if msg.UpdateType == topic.KBSpaceUpdateTypeFailed {
 		statusFilter = []model.DocStatus{model.DocStatusApplyFailed, model.DocStatusExportFailed}
+	}
+
+	err = k.repoDoc.Update(ctx, map[string]any{
+		"status":     model.DocStatusPendingExport,
+		"message":    "",
+		"updated_at": gorm.Expr("updated_at"),
+	},
+		repo.QueryWithEqual("root_parent_id", folder.ID),
+		repo.QueryWithEqual("file_type", model.FileTypeFolder, repo.EqualOPNE),
+		repo.QueryWithEqual("status", statusFilter, repo.EqualOPIn),
+	)
+	if err != nil {
+		logger.WithErr(err).Warn("update doc pending export failed")
+		return err
 	}
 
 	needExportFolder := make(map[string]bool)
