@@ -213,7 +213,7 @@ const docTemplate = `{
                                                         "items": {
                                                             "type": "array",
                                                             "items": {
-                                                                "$ref": "#/definitions/model.AskSession"
+                                                                "$ref": "#/definitions/svc.ListAsksRes"
                                                             }
                                                         }
                                                     }
@@ -10352,6 +10352,38 @@ const docTemplate = `{
                 },
                 "value": {
                     "$ref": "#/definitions/anydoc.ListDoc"
+                }
+            }
+        },
+        "svc.ListAsksRes": {
+            "type": "object",
+            "properties": {
+                "bot": {
+                    "type": "boolean"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "boolean"
+                },
+                "updated_at": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
                 }
             }
         },

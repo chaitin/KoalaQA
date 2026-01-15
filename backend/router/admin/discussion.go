@@ -74,7 +74,7 @@ func (d *discussion) Reindex(ctx *context.Context) {
 // @Tags discussion
 // @Produce json
 // @Param req query svc.ListAsksReq false "req params"
-// @Success 200 {object} context.Response{data=model.ListRes{items=[]model.AskSession}}
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]svc.ListAsksRes}}
 // @Router /admin/discussion/ask [get]
 func (d *discussion) ListAsks(ctx *context.Context) {
 	var req svc.ListAsksReq

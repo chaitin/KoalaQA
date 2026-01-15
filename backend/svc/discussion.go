@@ -2291,12 +2291,19 @@ type ListAsksReq struct {
 	Content  *string `form:"content"`
 }
 
-func (d *Discussion) ListAsks(ctx context.Context, req ListAsksReq) (*model.ListRes[model.AskSession], error) {
-	var res model.ListRes[model.AskSession]
+type ListAsksRes struct {
+	model.AskSession
+
+	Username string `json:"username"`
+}
+
+func (d *Discussion) ListAsks(ctx context.Context, req ListAsksReq) (*model.ListRes[ListAsksRes], error) {
+	var res model.ListRes[ListAsksRes]
 	err := d.in.AskSessionRepo.ListSession(ctx, &res.Items,
 		repo.QueryWithILike("records.content", req.Content),
-		repo.QueryWithILike("records.name", req.Username),
+		repo.QueryWithILike("records.username", req.Username),
 		repo.QueryWithOrderBy("records.created_at DESC"),
+		repo.QueryWithPagination(req.Pagination),
 	)
 	if err != nil {
 		return nil, err
@@ -2304,7 +2311,7 @@ func (d *Discussion) ListAsks(ctx context.Context, req ListAsksReq) (*model.List
 
 	err = d.in.AskSessionRepo.CountSession(ctx, &res.Total,
 		repo.QueryWithILike("records.content", req.Content),
-		repo.QueryWithILike("records.name", req.Username),
+		repo.QueryWithILike("records.username", req.Username),
 	)
 	if err != nil {
 		return nil, err
@@ -2325,7 +2332,7 @@ func (d *Discussion) AskSession(ctx context.Context, req AskSessionReq) (*model.
 	err := d.in.AskSessionRepo.List(ctx, &res.Items,
 		repo.QueryWithEqual("uuid", req.SessionID),
 		repo.QueryWithEqual("user_id", req.UserID),
-		repo.QueryWithOrderBy("created_at DESC, id DESC"),
+		repo.QueryWithOrderBy("created_at ASC, id ASC"),
 		repo.QueryWithPagination(req.Pagination),
 	)
 	if err != nil {
