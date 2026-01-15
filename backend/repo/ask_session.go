@@ -30,7 +30,7 @@ func (a *AskSession) CountSession(ctx context.Context, res *int64, queryFuncs ..
 func (a *AskSession) Get(ctx context.Context, res any, queryFuncs ...QueryOptFunc) error {
 	opt := getQueryOpt(queryFuncs...)
 
-	return a.model(ctx).Scopes(opt.Scopes()...).First(res).Error
+	return a.model(ctx).Scopes(opt.Scopes()...).Find(res).Error
 }
 
 func newAskSession(db *database.DB) *AskSession {

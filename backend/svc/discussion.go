@@ -2123,7 +2123,7 @@ func (d *Discussion) AskSessionClosed(ctx context.Context, uid uint, sessionID s
 	var lastAsk model.AskSession
 	err := d.in.AskSessionRepo.Get(ctx, &lastAsk,
 		repo.QueryWithEqual("user_id", uid),
-		repo.QueryWithOrderBy("created_at DESC"),
+		repo.QueryWithOrderBy("created_at DESC,id DESC"),
 	)
 	if err != nil {
 		return false, err
