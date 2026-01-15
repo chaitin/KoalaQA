@@ -317,14 +317,18 @@ func (l *LLM) StreamChat(ctx context.Context, sMsg string, uMsg string, params m
 		stop: make(chan struct{}),
 	}
 
-	go s.Recv(func() (string, error) {
-		msg, err := reader.Recv()
-		if err != nil {
-			return "", err
-		}
+	go func() {
+		defer reader.Close()
 
-		return msg.Content, nil
-	})
+		s.Recv(func() (string, error) {
+			msg, err := reader.Recv()
+			if err != nil {
+				return "", err
+			}
+
+			return msg.Content, nil
+		})
+	}()
 
 	return &s, nil
 }

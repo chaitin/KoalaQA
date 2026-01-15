@@ -2103,9 +2103,11 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 
 	closed, err := d.AskSessionClosed(ctx, req.SessionID)
 	if err != nil {
-		return nil, err
-	}
-	if closed {
+		if !errors.Is(err, database.ErrRecordNotFound) {
+			return nil, err
+		}
+
+	} else if closed {
 		return nil, errAskSessionClosed
 	}
 
@@ -2144,12 +2146,13 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		return nil, err
 	}
 
+	defaultAnswer := "无法回答问题"
 	stream, err := d.in.LLM.StreamAnswer(ctx, llm.SystemChatNoRefPrompt, GenerateReq{
 		Context:       askHistories,
 		Question:      req.Question,
 		Groups:        groups,
 		Prompt:        req.Question,
-		DefaultAnswer: "无法回答问题",
+		DefaultAnswer: defaultAnswer,
 		NewCommentID:  0,
 	})
 	if err != nil {
@@ -2164,11 +2167,42 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 	go func() {
 		defer stream.Close()
 
-		var aiResBuilder strings.Builder
+		var (
+			parsed       bool
+			ret          bool
+			answerText   strings.Builder
+			aiResBuilder strings.Builder
+		)
 		wrapSteam.Recv(func() (string, error) {
+			if ret {
+				return "", io.EOF
+			}
+
 			text, ok := stream.Text(ctx)
 			if !ok {
+				if !parsed {
+					ret = true
+					return defaultAnswer, nil
+				}
 				return "", io.EOF
+			}
+			if !parsed {
+				length := min(len(text), 5-answerText.Len())
+				if answerText.Len() < 5 {
+					answerText.WriteString(text[:length])
+					if answerText.Len() < 5 {
+						return "", nil
+					}
+				}
+
+				if strings.TrimSpace(answerText.String()) == "true" {
+					text = text[length:]
+				} else {
+					text = defaultAnswer
+					ret = true
+				}
+
+				parsed = true
 			}
 
 			aiResBuilder.WriteString(text)

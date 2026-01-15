@@ -658,6 +658,10 @@ func (d *discussionAuth) Ask(ctx *context.Context) {
 			return false
 		}
 
+		if content == "" {
+			return true
+		}
+
 		ctx.SSEvent("text", fmt.Sprintf("%q", content))
 		return true
 	})
