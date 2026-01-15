@@ -4866,6 +4866,38 @@
                 "responses": {}
             }
         },
+        "/discussion/ask/session": {
+            "get": {
+                "description": "create or get last session id",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "create or get last session id",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/discussion/ask/{ask_session_id}": {
             "get": {
                 "description": "discussion ask history",

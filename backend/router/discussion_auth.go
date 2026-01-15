@@ -32,6 +32,7 @@ func (d *discussionAuth) Route(h server.Handler) {
 	g.POST("/upload", d.UploadFile)
 	g.POST("/ask", d.Ask)
 	g.GET("/ask/:ask_session_id", d.AskHistory)
+	g.GET("/ask/session", d.CreateOrLastSession)
 	g.POST("/summary/content", d.SummaryByContent)
 
 	{
@@ -665,6 +666,23 @@ func (d *discussionAuth) Ask(ctx *context.Context) {
 		ctx.SSEvent("text", fmt.Sprintf("%q", content))
 		return true
 	})
+}
+
+// CreateOrLastSession
+// @Summary create or get last session id
+// @Description create or get last session id
+// @Tags discussion
+// @Produce json
+// @Success 200 {object} context.Response{data=string}
+// @Router /discussion/ask/session [get]
+func (d *discussionAuth) CreateOrLastSession(ctx *context.Context) {
+	res, err := d.disc.CreateOrLastSession(ctx, ctx.GetUser().UID)
+	if err != nil {
+		ctx.InternalError(err, "get session failed")
+		return
+	}
+
+	ctx.Success(res)
 }
 
 // AskHistory

@@ -6034,6 +6034,24 @@ paths:
       summary: discussion ask history
       tags:
       - discussion
+  /discussion/ask/session:
+    get:
+      description: create or get last session id
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: create or get last session id
+      tags:
+      - discussion
   /discussion/complete:
     post:
       consumes:

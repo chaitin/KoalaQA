@@ -25,6 +25,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/pkg/webhook/message"
 	"github.com/chaitin/koalaqa/repo"
+	"github.com/google/uuid"
 	"go.uber.org/fx"
 	"golang.org/x/sync/singleflight"
 	"gorm.io/gorm"
@@ -2072,20 +2073,54 @@ func (d *Discussion) Reindex(ctx context.Context, req ReindexReq) error {
 	})
 }
 
+func (d *Discussion) CreateOrLastSession(ctx context.Context, uid uint) (string, error) {
+	bot, err := d.in.BotSvc.Get(ctx)
+	if err != nil {
+		return "", err
+	}
+	var lastSession model.AskSession
+	err = d.in.AskSessionRepo.Get(ctx, &lastSession,
+		repo.QueryWithEqual("user_id", uid),
+		repo.QueryWithEqual("created_at", time.Now().Add(-time.Hour), repo.EqualOPGT),
+	)
+	if err != nil {
+		if errors.Is(err, database.ErrRecordNotFound) {
+			sessionID := uuid.NewString()
+			err = d.in.AskSessionRepo.Create(ctx, &model.AskSession{
+				UUID:    sessionID,
+				UserID:  uid,
+				Bot:     true,
+				Summary: false,
+				Content: fmt.Sprintf("您好！我是%s，很高兴为您服务。有什么问题可以帮您？", bot.Name),
+			})
+			if err != nil {
+				return "", err
+			}
+			return sessionID, nil
+		}
+		return "", err
+	}
+
+	return lastSession.UUID, nil
+}
+
 type DiscussionAskReq struct {
 	SessionID string           `json:"session_id" binding:"required,uuid"`
 	Question  string           `json:"question" binding:"required"`
 	GroupIDs  model.Int64Array `json:"group_ids"`
 }
 
-func (d *Discussion) AskSessionClosed(ctx context.Context, sessionID string) (bool, error) {
+func (d *Discussion) AskSessionClosed(ctx context.Context, uid uint, sessionID string) (bool, error) {
 	var lastAsk model.AskSession
 	err := d.in.AskSessionRepo.Get(ctx, &lastAsk,
-		repo.QueryWithEqual("uuid", sessionID),
+		repo.QueryWithEqual("user_id", uid),
 		repo.QueryWithOrderBy("created_at DESC"),
 	)
 	if err != nil {
 		return false, err
+	}
+	if lastAsk.UUID != sessionID {
+		return false, errAskSessionClosed
 	}
 
 	return lastAsk.CreatedAt.Time().Add(time.Hour).Before(time.Now()), nil
@@ -2101,13 +2136,12 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		return nil, errors.New("disabled")
 	}
 
-	closed, err := d.AskSessionClosed(ctx, req.SessionID)
+	closed, err := d.AskSessionClosed(ctx, uid, req.SessionID)
 	if err != nil {
-		if !errors.Is(err, database.ErrRecordNotFound) {
-			return nil, err
-		}
+		return nil, err
+	}
 
-	} else if closed {
+	if closed {
 		return nil, errAskSessionClosed
 	}
 
@@ -2295,10 +2329,10 @@ func (d *Discussion) AskSession(ctx context.Context, req AskSessionReq) (*model.
 }
 
 type SummaryByContentReq struct {
-	SessoionID string           `json:"session_id" binding:"required,uuid"`
-	ForumID    uint             `json:"forum_id" binding:"required"`
-	Content    string           `json:"content" binding:"required"`
-	GroupIDs   model.Int64Array `json:"group_ids"`
+	SessionID string           `json:"session_id" binding:"required,uuid"`
+	ForumID   uint             `json:"forum_id" binding:"required"`
+	Content   string           `json:"content" binding:"required"`
+	GroupIDs  model.Int64Array `json:"group_ids"`
 }
 
 func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req SummaryByContentReq) (*LLMStream, error) {
@@ -2311,9 +2345,18 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 		return nil, errors.New("disabled")
 	}
 
+	closed, err := d.AskSessionClosed(ctx, uid, req.SessionID)
+	if err != nil {
+		return nil, err
+	}
+
+	if closed {
+		return nil, errAskSessionClosed
+	}
+
 	var chatHistories []model.AskSession
 	err = d.in.AskSessionRepo.List(ctx, &chatHistories,
-		repo.QueryWithEqual("uuid", req.SessoionID),
+		repo.QueryWithEqual("uuid", req.SessionID),
 		repo.QueryWithEqual("bot", false),
 		repo.QueryWithOrderBy("created_at ASC"),
 	)
@@ -2323,10 +2366,6 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 
 	if len(chatHistories) == 0 {
 		return nil, errors.New("session not exist")
-	}
-
-	if chatHistories[len(chatHistories)-1].CreatedAt.Time().Add(time.Hour).Before(time.Now()) {
-		return nil, errAskSessionClosed
 	}
 
 	ok, err := d.in.UserRepo.HasForumPermission(ctx, uid, req.ForumID)
@@ -2427,7 +2466,7 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 		})
 
 		err := d.in.AskSessionRepo.Create(context.Background(), &model.AskSession{
-			UUID:    req.SessoionID,
+			UUID:    req.SessionID,
 			UserID:  uid,
 			Bot:     true,
 			Summary: true,
