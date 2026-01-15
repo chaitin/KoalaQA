@@ -2295,7 +2295,7 @@ func (d *Discussion) ListAsks(ctx context.Context, req ListAsksReq) (*model.List
 	var res model.ListRes[model.AskSession]
 	err := d.in.AskSessionRepo.ListSession(ctx, &res.Items,
 		repo.QueryWithILike("records.content", req.Content),
-		repo.QueryWithEqual("records.name", req.Username),
+		repo.QueryWithILike("records.name", req.Username),
 		repo.QueryWithOrderBy("records.created_at DESC"),
 	)
 	if err != nil {
@@ -2303,8 +2303,8 @@ func (d *Discussion) ListAsks(ctx context.Context, req ListAsksReq) (*model.List
 	}
 
 	err = d.in.AskSessionRepo.CountSession(ctx, &res.Total,
-		repo.QueryWithILike("ask_sessions.content", req.Content),
-		repo.QueryWithILike("users.name", req.Username),
+		repo.QueryWithILike("records.content", req.Content),
+		repo.QueryWithILike("records.name", req.Username),
 	)
 	if err != nil {
 		return nil, err

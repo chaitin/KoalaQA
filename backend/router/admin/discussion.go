@@ -103,7 +103,7 @@ func (d *discussion) ListAsks(ctx *context.Context) {
 // @Router /admin/discussion/ask/session [get]
 func (d *discussion) AskSession(ctx *context.Context) {
 	var req svc.AskSessionReq
-	err := ctx.ShouldBindJSON(&req)
+	err := ctx.ShouldBindQuery(&req)
 	if err != nil {
 		ctx.BadRequest(err)
 		return

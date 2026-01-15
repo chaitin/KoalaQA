@@ -16,7 +16,7 @@ func (a *AskSession) ListSession(ctx context.Context, res any, queryFuncs ...Que
 
 	return a.db.WithContext(ctx).Table("(?) AS records", a.db.Model(a.m).
 		Select("ask_sessions.*, users.name, ROW_NUMBER() OVER (PARTITION BY ask_sessions.uuid, ask_sessions.user_id ORDER BY ask_sessions.created_at ASC) as rn").
-		Joins("LEFT JOIN users ON ask_sessions.user_id = users.id"),
+		Joins("LEFT JOIN users ON ask_sessions.user_id = users.id").Where("bot = ?", false),
 	).Where("rn = ?", 1).Scopes(opt.Scopes()...).Find(res).Error
 }
 
@@ -25,7 +25,7 @@ func (a *AskSession) CountSession(ctx context.Context, res *int64, queryFuncs ..
 
 	return a.db.WithContext(ctx).Table("(?) AS records", a.db.Model(a.m).
 		Select("ask_sessions.*, users.name, ROW_NUMBER() OVER (PARTITION BY ask_sessions.uuid, ask_sessions.user_id ORDER BY ask_sessions.created_at ASC) as rn").
-		Joins("LEFT JOIN users ON ask_sessions.user_id = users.id"),
+		Joins("LEFT JOIN users ON ask_sessions.user_id = users.id").Where("bot = ?", false),
 	).Where("rn = ?", 1).Scopes(opt.Scopes()...).Count(res).Error
 }
 
