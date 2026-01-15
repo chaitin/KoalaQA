@@ -10,6 +10,9 @@ services:
     ports:
       - "${HTTP_PORT:-80}:${HTTP_PORT:-80}"
       - "${HTTPS_PORT:-443}:${HTTPS_PORT:-443}"
+    volumes:
+      - ./data/nginx/conf:/etc/nginx
+      - ./data/nginx/logs:/var/log/nginx
     networks:
       koala:
         ipv4_address: "${SUBNET_PREFIX:-169.254.15}.10"
@@ -70,7 +73,16 @@ services:
     restart: always
     environment:
       - TZ=${TIMEZONE:-Asia/Shanghai}
-    command: [ "nats-server", "-c", "/etc/nats/nats.conf", "--user", "koala", "--pass", "${MQ_PASSWORD}" ]
+    command:
+      [
+        "nats-server",
+        "-c",
+        "/etc/nats/nats.conf",
+        "--user",
+        "koala",
+        "--pass",
+        "${MQ_PASSWORD}",
+      ]
     volumes:
       - ./data/nats:/data
     networks:
@@ -81,7 +93,16 @@ services:
     container_name: koala-qa-oss
     image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/oss:RELEASE.2025-04-22T22-12-26Z-cpuv1
     restart: always
-    command: [ "minio", "server", "/data", "--console-address", "0.0.0.0:9001", "--address", "0.0.0.0:9000" ]
+    command:
+      [
+        "minio",
+        "server",
+        "/data",
+        "--console-address",
+        "0.0.0.0:9001",
+        "--address",
+        "0.0.0.0:9000",
+      ]
     volumes:
       - ./data/oss:/data
     environment:

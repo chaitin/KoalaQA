@@ -213,7 +213,7 @@ const docTemplate = `{
                                                         "items": {
                                                             "type": "array",
                                                             "items": {
-                                                                "$ref": "#/definitions/model.AskSession"
+                                                                "$ref": "#/definitions/svc.ListAsksRes"
                                                             }
                                                         }
                                                     }
@@ -240,10 +240,22 @@ const docTemplate = `{
                 "summary": "backend ask session",
                 "parameters": [
                     {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "name": "session_id",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "size",
+                        "in": "query"
                     },
                     {
                         "type": "integer",
@@ -4859,6 +4871,45 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {}
+            }
+        },
+        "/discussion/ask/session": {
+            "get": {
+                "description": "create or get last session id",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "create or get last session id",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "name": "force_create",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
             }
         },
         "/discussion/ask/{ask_session_id}": {
@@ -10301,6 +10352,38 @@ const docTemplate = `{
                 },
                 "value": {
                     "$ref": "#/definitions/anydoc.ListDoc"
+                }
+            }
+        },
+        "svc.ListAsksRes": {
+            "type": "object",
+            "properties": {
+                "bot": {
+                    "type": "boolean"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "boolean"
+                },
+                "updated_at": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
                 }
             }
         },

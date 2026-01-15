@@ -5,6 +5,7 @@ import { SvcUserStatisticsRes } from '@/api/types'
 import { Message, useGuestActivation } from '@/components'
 import { AuthContext } from '@/components/authProvider'
 import UserAvatar from '@/components/UserAvatar'
+import Alert from "@/components/alert";
 import { useRouterWithRouteName } from '@/hooks/useRouterWithForum'
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera'
 import { showCustomPointNotification } from '@/utils/pointNotification'
@@ -221,6 +222,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
 
     try {
       await putUser({ name: editName })
+      Alert.success('更新用户名成功')
       setUser({ ...user, username: editName })
       setIsEditingName(false)
     } catch (error) {
@@ -236,6 +238,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
   const handleSaveBio = async () => {
     try {
       await putUser({ intro: editBio || '暂无个人介绍' })
+      Alert.success('更新个人介绍成功')
       setUser({ ...user, intro: editBio || '暂无个人介绍' })
       setIsEditingBio(false)
 

@@ -211,6 +211,13 @@ declare module '@mui/material/styles' {
     }
     border?: string // 边框颜色
     tableCellBorder?: string // 表格单元格边框颜色
+    alert?: {
+      success?: {
+        filled?: {
+          bg?: string
+        }
+      }
+    }
   }
 
   // allow configuration using `createTheme`
@@ -226,6 +233,13 @@ declare module '@mui/material/styles' {
     }
     border?: string // 边框颜色
     tableCellBorder?: string // 表格单元格边框颜色
+    alert?: {
+      success?: {
+        filled?: {
+          bg?: string
+        }
+      }
+    }
   }
 
   interface TypeBackground {
@@ -366,7 +380,7 @@ export function createAppTheme(primaryColor?: string, backgroundColor?: string):
       table: {
         cell: {
           border: themeColors.tableCellBorder,
-        }
+        },
       },
       // 操作状态颜色
       action: {
@@ -383,6 +397,11 @@ export function createAppTheme(primaryColor?: string, backgroundColor?: string):
         // @ts-ignore
         auxiliary: themeColors.textAuxiliary,
         disabled: themeColors.textDisabled,
+      },
+      alert: {
+        success: {
+          filled: { bg: 'rgb(246, 253, 242)' },
+        },
       },
     },
     shape: {
@@ -515,7 +534,7 @@ export function createAppTheme(primaryColor?: string, backgroundColor?: string):
 
   // 先创建基础主题
   const theme = createTheme(baseTheme, zhCN, CuiZhCN)
-  
+
   // 确保 breakpoints 配置被正确应用（防止被 locale 配置覆盖）
   return createTheme(theme, {
     breakpoints: {

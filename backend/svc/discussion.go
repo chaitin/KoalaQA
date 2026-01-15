@@ -25,6 +25,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/pkg/webhook/message"
 	"github.com/chaitin/koalaqa/repo"
+	"github.com/google/uuid"
 	"go.uber.org/fx"
 	"golang.org/x/sync/singleflight"
 	"gorm.io/gorm"
@@ -116,8 +117,9 @@ func (d *Discussion) allow(args ...any) bool {
 }
 
 var (
-	errRatelimit  = errors.New("ratelimit")
-	errPermission = errors.New("permission denied")
+	errRatelimit        = errors.New("ratelimit")
+	errPermission       = errors.New("permission denied")
+	errAskSessionClosed = errors.New("session closed")
 )
 
 func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req DiscussionCreateReq) (string, error) {
@@ -2071,10 +2073,66 @@ func (d *Discussion) Reindex(ctx context.Context, req ReindexReq) error {
 	})
 }
 
+type CreateOrLastSessionReq struct {
+	ForceCreate bool `form:"force_create"`
+}
+
+func (d *Discussion) CreateOrLastSession(ctx context.Context, uid uint, req CreateOrLastSessionReq) (string, error) {
+	bot, err := d.in.BotSvc.Get(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	if !req.ForceCreate {
+		var lastSession model.AskSession
+		err = d.in.AskSessionRepo.Get(ctx, &lastSession,
+			repo.QueryWithEqual("user_id", uid),
+			repo.QueryWithEqual("created_at", time.Now().Add(-time.Hour), repo.EqualOPGT),
+			repo.QueryWithOrderBy("created_at DESC"),
+		)
+		if err != nil {
+			if !errors.Is(err, database.ErrRecordNotFound) {
+				return "", err
+			}
+		} else {
+			return lastSession.UUID, nil
+		}
+	}
+
+	sessionID := uuid.NewString()
+	err = d.in.AskSessionRepo.Create(ctx, &model.AskSession{
+		UUID:    sessionID,
+		UserID:  uid,
+		Bot:     true,
+		Summary: false,
+		Content: fmt.Sprintf("您好！我是%s，很高兴为您服务。有什么问题可以帮您？", bot.Name),
+	})
+	if err != nil {
+		return "", err
+	}
+	return sessionID, nil
+}
+
 type DiscussionAskReq struct {
 	SessionID string           `json:"session_id" binding:"required,uuid"`
 	Question  string           `json:"question" binding:"required"`
 	GroupIDs  model.Int64Array `json:"group_ids"`
+}
+
+func (d *Discussion) AskSessionClosed(ctx context.Context, uid uint, sessionID string) (bool, error) {
+	var lastAsk model.AskSession
+	err := d.in.AskSessionRepo.Get(ctx, &lastAsk,
+		repo.QueryWithEqual("user_id", uid),
+		repo.QueryWithOrderBy("created_at DESC,id DESC"),
+	)
+	if err != nil {
+		return false, err
+	}
+	if lastAsk.UUID != sessionID {
+		return false, errAskSessionClosed
+	}
+
+	return lastAsk.CreatedAt.Time().Add(time.Hour).Before(time.Now()), nil
 }
 
 func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*LLMStream, error) {
@@ -2085,6 +2143,15 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 
 	if !webPlugin.Display {
 		return nil, errors.New("disabled")
+	}
+
+	closed, err := d.AskSessionClosed(ctx, uid, req.SessionID)
+	if err != nil {
+		return nil, err
+	}
+
+	if closed {
+		return nil, errAskSessionClosed
 	}
 
 	var groups []model.GroupItemInfo
@@ -2122,12 +2189,13 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		return nil, err
 	}
 
+	defaultAnswer := "无法回答问题"
 	stream, err := d.in.LLM.StreamAnswer(ctx, llm.SystemChatNoRefPrompt, GenerateReq{
 		Context:       askHistories,
 		Question:      req.Question,
 		Groups:        groups,
 		Prompt:        req.Question,
-		DefaultAnswer: "无法回答问题",
+		DefaultAnswer: defaultAnswer,
 		NewCommentID:  0,
 	})
 	if err != nil {
@@ -2142,11 +2210,42 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 	go func() {
 		defer stream.Close()
 
-		var aiResBuilder strings.Builder
+		var (
+			parsed       bool
+			ret          bool
+			answerText   strings.Builder
+			aiResBuilder strings.Builder
+		)
 		wrapSteam.Recv(func() (string, error) {
+			if ret {
+				return "", io.EOF
+			}
+
 			text, ok := stream.Text(ctx)
 			if !ok {
+				if !parsed {
+					ret = true
+					return defaultAnswer, nil
+				}
 				return "", io.EOF
+			}
+			if !parsed {
+				length := min(len(text), 5-answerText.Len())
+				if answerText.Len() < 5 {
+					answerText.WriteString(text[:length])
+					if answerText.Len() < 5 {
+						return "", nil
+					}
+				}
+
+				if strings.TrimSpace(answerText.String()) == "true" {
+					text = text[length:]
+				} else {
+					text = defaultAnswer
+					ret = true
+				}
+
+				parsed = true
 			}
 
 			aiResBuilder.WriteString(text)
@@ -2192,20 +2291,27 @@ type ListAsksReq struct {
 	Content  *string `form:"content"`
 }
 
-func (d *Discussion) ListAsks(ctx context.Context, req ListAsksReq) (*model.ListRes[model.AskSession], error) {
-	var res model.ListRes[model.AskSession]
+type ListAsksRes struct {
+	model.AskSession
+
+	Username string `json:"username"`
+}
+
+func (d *Discussion) ListAsks(ctx context.Context, req ListAsksReq) (*model.ListRes[ListAsksRes], error) {
+	var res model.ListRes[ListAsksRes]
 	err := d.in.AskSessionRepo.ListSession(ctx, &res.Items,
-		repo.QueryWithILike("ask_sessions.content", req.Content),
-		repo.QueryWithEqual("users.name", req.Username),
-		repo.QueryWithOrderBy("ask_sessions.created_at DESC"),
+		repo.QueryWithILike("records.content", req.Content),
+		repo.QueryWithILike("records.username", req.Username),
+		repo.QueryWithOrderBy("records.created_at DESC"),
+		repo.QueryWithPagination(req.Pagination),
 	)
 	if err != nil {
 		return nil, err
 	}
 
 	err = d.in.AskSessionRepo.CountSession(ctx, &res.Total,
-		repo.QueryWithILike("ask_sessions.content", req.Content),
-		repo.QueryWithEqual("users.name", req.Username),
+		repo.QueryWithILike("records.content", req.Content),
+		repo.QueryWithILike("records.username", req.Username),
 	)
 	if err != nil {
 		return nil, err
@@ -2215,6 +2321,8 @@ func (d *Discussion) ListAsks(ctx context.Context, req ListAsksReq) (*model.List
 }
 
 type AskSessionReq struct {
+	*model.Pagination
+
 	SessionID string `form:"session_id" binding:"required"`
 	UserID    uint   `form:"user_id" binding:"required"`
 }
@@ -2225,6 +2333,7 @@ func (d *Discussion) AskSession(ctx context.Context, req AskSessionReq) (*model.
 		repo.QueryWithEqual("uuid", req.SessionID),
 		repo.QueryWithEqual("user_id", req.UserID),
 		repo.QueryWithOrderBy("created_at ASC, id ASC"),
+		repo.QueryWithPagination(req.Pagination),
 	)
 	if err != nil {
 		return nil, err
@@ -2236,10 +2345,10 @@ func (d *Discussion) AskSession(ctx context.Context, req AskSessionReq) (*model.
 }
 
 type SummaryByContentReq struct {
-	SessoionID string           `json:"session_id" binding:"required,uuid"`
-	ForumID    uint             `json:"forum_id" binding:"required"`
-	Content    string           `json:"content" binding:"required"`
-	GroupIDs   model.Int64Array `json:"group_ids"`
+	SessionID string           `json:"session_id" binding:"required,uuid"`
+	ForumID   uint             `json:"forum_id" binding:"required"`
+	Content   string           `json:"content" binding:"required"`
+	GroupIDs  model.Int64Array `json:"group_ids"`
 }
 
 func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req SummaryByContentReq) (*LLMStream, error) {
@@ -2252,10 +2361,20 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 		return nil, errors.New("disabled")
 	}
 
+	closed, err := d.AskSessionClosed(ctx, uid, req.SessionID)
+	if err != nil {
+		return nil, err
+	}
+
+	if closed {
+		return nil, errAskSessionClosed
+	}
+
 	var chatHistories []model.AskSession
 	err = d.in.AskSessionRepo.List(ctx, &chatHistories,
-		repo.QueryWithEqual("uuid", req.SessoionID),
+		repo.QueryWithEqual("uuid", req.SessionID),
 		repo.QueryWithEqual("bot", false),
+		repo.QueryWithOrderBy("created_at ASC"),
 	)
 	if err != nil {
 		return nil, err
@@ -2363,7 +2482,7 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 		})
 
 		err := d.in.AskSessionRepo.Create(context.Background(), &model.AskSession{
-			UUID:    req.SessoionID,
+			UUID:    req.SessionID,
 			UserID:  uid,
 			Bot:     true,
 			Summary: true,

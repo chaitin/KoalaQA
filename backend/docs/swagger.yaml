@@ -1816,6 +1816,27 @@ definitions:
       value:
         $ref: '#/definitions/anydoc.ListDoc'
     type: object
+  svc.ListAsksRes:
+    properties:
+      bot:
+        type: boolean
+      content:
+        type: string
+      created_at:
+        type: integer
+      id:
+        type: integer
+      summary:
+        type: boolean
+      updated_at:
+        type: integer
+      user_id:
+        type: integer
+      username:
+        type: string
+      uuid:
+        type: string
+    type: object
   svc.ListRemoteReq:
     properties:
       opt:
@@ -2557,7 +2578,7 @@ paths:
                   - properties:
                       items:
                         items:
-                          $ref: '#/definitions/model.AskSession'
+                          $ref: '#/definitions/svc.ListAsksRes'
                         type: array
                     type: object
               type: object
@@ -2569,9 +2590,17 @@ paths:
       description: backend ask session
       parameters:
       - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - in: query
         name: session_id
         required: true
         type: string
+      - in: query
+        minimum: 1
+        name: size
+        type: integer
       - in: query
         name: user_id
         required: true
@@ -6024,6 +6053,28 @@ paths:
                     type: object
               type: object
       summary: discussion ask history
+      tags:
+      - discussion
+  /discussion/ask/session:
+    get:
+      description: create or get last session id
+      parameters:
+      - in: query
+        name: force_create
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: create or get last session id
       tags:
       - discussion
   /discussion/complete:

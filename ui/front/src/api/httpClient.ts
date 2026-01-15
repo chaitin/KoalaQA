@@ -163,6 +163,12 @@ export const clearAuthData = async (callLogoutAPI: boolean = true) => {
     // 清除所有待处理的用户相关请求
     if (typeof window !== "undefined" && window.httpClientInstance) {
       window.httpClientInstance.clearPendingRequestsByPath("/user");
+      // 清除所有用户相关的 API 缓存，防止用户信息混淆
+      // 由于缓存键可能包含用户标识，清除所有包含 /user 的缓存
+      const cacheKeysToDelete: string[] = [];
+      // 注意：这里我们无法直接访问 memoryCache，所以通过 httpClient 实例清除
+      // 清除所有缓存以确保用户切换时不会出现数据混淆
+      window.httpClientInstance.clearCache();
     }
 
     // 强制刷新页面状态，确保所有组件重新初始化
@@ -541,14 +547,11 @@ export class HttpClient<SecurityDataType = unknown> {
     body,
     ...params
   }: FullRequestParams): Promise<ExtractDataProp<T>> => {
-    // 生成缓存键和请求键
-    const cacheKey = generateCacheKey(path, { query, body, ...params });
     const method = params.method?.toUpperCase() || "GET";
 
-    // 对于 /user 请求，需要在请求key中包含用户身份标识，确保不同用户的请求不会被去重
-    let requestKey = `${method}:${cacheKey}`;
+    // 对于 /user 请求，需要获取用户身份标识，用于区分不同用户的缓存和请求
+    let authToken = "";
     if (path === "/user" && method === "GET") {
-      let authToken = "";
       try {
         // 在客户端环境中，从cookie中读取auth_token
         if (typeof window !== "undefined") {
@@ -566,19 +569,30 @@ export class HttpClient<SecurityDataType = unknown> {
           authToken = cookieStore.get("auth_token")?.value || "";
         }
       } catch (error) {
-        // 如果无法读取cookie，忽略错误，使用原始key
+        // 如果无法读取cookie，忽略错误
         console.warn(
-          "Failed to read auth_token for request deduplication:",
+          "Failed to read auth_token for cache key generation:",
           error,
         );
       }
+    }
 
-      // 如果获取到了auth_token，将其hash值添加到请求key中
-      // 使用简单的hash函数（前8个字符）来区分不同用户
-      if (authToken) {
-        const tokenHash = authToken.substring(0, 8);
-        requestKey = `${method}:${cacheKey}:${tokenHash}`;
-      }
+    // 生成缓存键，对于 /user 请求，在缓存键中包含用户身份标识
+    // 这样可以确保不同用户的缓存数据不会混淆
+    let cacheKeyParams: any = { query, body, ...params };
+    if (path === "/user" && method === "GET" && authToken) {
+      // 使用 token 的前16个字符作为用户标识（比请求去重用的8个字符更长，更安全）
+      const tokenHash = authToken.substring(0, 16);
+      cacheKeyParams = { ...cacheKeyParams, _userId: tokenHash };
+    }
+    const cacheKey = generateCacheKey(path, cacheKeyParams);
+
+    // 生成请求键，用于请求去重
+    let requestKey = `${method}:${cacheKey}`;
+    if (path === "/user" && method === "GET" && authToken) {
+      // 使用 token 的前8个字符作为用户标识（用于请求去重）
+      const tokenHash = authToken.substring(0, 8);
+      requestKey = `${method}:${cacheKey}:${tokenHash}`;
     }
 
     // 检查是否有相同的请求正在进行中（请求去重）

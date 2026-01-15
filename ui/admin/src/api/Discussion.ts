@@ -20,6 +20,7 @@ import {
   GetAdminDiscussionAskSessionParams,
   GetAdminDiscussionParams,
   GetDiscussionAskAskSessionIdParams,
+  GetDiscussionAskSessionParams,
   GetDiscussionDiscIdAssociateParams,
   GetDiscussionDiscIdFollowParams,
   GetDiscussionDiscIdParams,
@@ -59,6 +60,7 @@ import {
   SvcDiscussionCreateReq,
   SvcDiscussionListFollowRes,
   SvcDiscussionUpdateReq,
+  SvcListAsksRes,
   SvcResolveFeedbackReq,
   SvcResolveIssueReq,
 } from "./types";
@@ -106,7 +108,7 @@ export const getAdminDiscussion = (
  * @request GET:/admin/discussion/ask
  * @response `200` `(ContextResponse & {
     data?: (ModelListRes & {
-    items?: (ModelAskSession)[],
+    items?: (SvcListAsksRes)[],
 
 }),
 
@@ -120,7 +122,7 @@ export const getAdminDiscussionAsk = (
   request<
     ContextResponse & {
       data?: ModelListRes & {
-        items?: ModelAskSession[];
+        items?: SvcListAsksRes[];
       };
     }
   >({
@@ -246,6 +248,35 @@ export const postDiscussionAsk = (
     path: `/discussion/ask`,
     method: "POST",
     query: query,
+    ...params,
+  });
+
+/**
+ * @description create or get last session id
+ *
+ * @tags discussion
+ * @name GetDiscussionAskSession
+ * @summary create or get last session id
+ * @request GET:/discussion/ask/session
+ * @response `200` `(ContextResponse & {
+    data?: string,
+
+})` OK
+ */
+
+export const getDiscussionAskSession = (
+  query: GetDiscussionAskSessionParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: string;
+    }
+  >({
+    path: `/discussion/ask/session`,
+    method: "GET",
+    query: query,
+    format: "json",
     ...params,
   });
 

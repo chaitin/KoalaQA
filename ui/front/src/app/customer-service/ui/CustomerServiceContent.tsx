@@ -1,16 +1,16 @@
 'use client'
 
-import { getBot, getDiscussionAskAskSessionId } from '@/api'
+import { getDiscussionAskAskSessionId, getDiscussionAskSession } from '@/api'
 import { getCsrfToken } from '@/api/httpClient'
-import { ModelDiscussionListItem, ModelUserInfo } from '@/api/types'
+import { ModelDiscussionListItem, ModelUserInfo, SvcBotGetRes } from '@/api/types'
 import { getSystemWebPlugin } from '@/api/WebPlugin'
 import { AuthContext } from '@/components/authProvider'
 import EditorContent from '@/components/EditorContent'
+import Alert from '@/components/alert'
 import { useForumStore } from '@/store'
 import SSEClient from '@/utils/fetch'
-import AddIcon from '@mui/icons-material/Add'
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import SendIcon from '@mui/icons-material/Send'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import {
   alpha,
@@ -30,6 +30,7 @@ import {
 } from '@mui/material'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { Icon } from '@ctzhian/ui'
 
 interface Message {
   id: string
@@ -44,27 +45,42 @@ interface Message {
   originalQuestion?: string // 原始问题，用于填充发帖表单
   forumId?: number // 板块ID，用于发帖
   timestamp?: string // 时间戳
+  quickActions?: string[] // 快速操作按钮
 }
 
 interface CustomerServiceContentProps {
   initialUser: ModelUserInfo
+  botData?: SvcBotGetRes | null
+  initialSessionId?: string | null
 }
 
-export default function CustomerServiceContent({ initialUser }: CustomerServiceContentProps) {
+export default function CustomerServiceContent({
+  initialUser,
+  botData,
+  initialSessionId,
+}: CustomerServiceContentProps) {
   const { user } = useContext(AuthContext)
   const router = useRouter()
   const searchParams = useSearchParams()
   const theme = useTheme()
   const forumId = useForumStore((s) => s.selectedForumId)
   const forums = useForumStore((s) => s.forums)
-  const [botName, setBotName] = useState('小智助手')
-  const [botAvatar, setBotAvatar] = useState<string>('')
+  const [botName, setBotName] = useState(botData?.name || '小智助手')
+  const [botAvatar, setBotAvatar] = useState<string>(botData?.avatar || '')
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isWaiting, setIsWaiting] = useState(false)
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [isServiceEnabled, setIsServiceEnabled] = useState<boolean | null>(null) // null表示正在加载
+  const [commonQuestions, setCommonQuestions] = useState<string[]>([
+    '管理员密码忘了怎么办?',
+    '如何配置 SSO 登录',
+    '如何配置在线客服来使用智能问答',
+    '如何写文章',
+    '如何创建新文档',
+    '如何编辑功能',
+  ])
 
   // 生成 UUID 的工具函数
   const generateUuid = useCallback(() => {
@@ -109,21 +125,26 @@ export default function CustomerServiceContent({ initialUser }: CustomerServiceC
   const initialUrlIdRef = useRef<string | null>(searchParams.get('id'))
 
   const [sessionId, setSessionId] = useState(() => {
+    // 优先使用服务器端传入的 sessionId
+    if (initialSessionId) {
+      return initialSessionId
+    }
     // 从 URL 参数中获取 id
     const urlId = searchParams.get('id')
     if (urlId) {
       return urlId
     }
+    // 如果都没有，生成新的 UUID（这种情况不应该发生）
     return generateUuid()
   })
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const sseClientRef = useRef<SSEClient<any> | null>(null)
   const currentMessageRef = useRef<Message | null>(null)
 
-  // 如果 URL 中没有 id 参数，添加生成的 sessionId 到 URL
+  // 如果 URL 中没有 id 参数，添加 sessionId 到 URL
   useEffect(() => {
     const urlId = searchParams.get('id')
-    if (!urlId && sessionId) {
+    if (urlId !== sessionId && sessionId) {
       const currentUrl = new URL(window.location.href)
       currentUrl.searchParams.set('id', sessionId)
       router.replace(currentUrl.pathname + currentUrl.search, { scroll: false })
@@ -137,87 +158,70 @@ export default function CustomerServiceContent({ initialUser }: CustomerServiceC
     }
   }, [user, router])
 
-  // 加载历史对话或初始化欢迎消息
+  // 用于标记是否已经加载过历史对话，避免重复加载
+  const historyLoadedRef = useRef<string | null>(null)
+
+  // 当 sessionId 变化时，加载历史对话
   useEffect(() => {
-    // 只有当 URL 原本就有 id 时才尝试加载历史对话（区分新会话和已有会话）
-    const shouldLoadHistory = initialUrlIdRef.current !== null
+    // 使用 initialUser 或 user 来检查用户ID，确保在服务端渲染时也能正确加载
+    const currentUserId = user?.uid || initialUser?.uid
+    if (!sessionId || !currentUserId) {
+      return
+    }
+
+    // 如果已经加载过这个 sessionId 的历史对话，不再重复加载
+    if (historyLoadedRef.current === sessionId) {
+      return
+    }
+
+    // 如果 URL 中没有 id 参数，说明是新访问的页面（从 header 点击进入），应该加载历史对话
+    // 如果 URL 中有 id 参数，且与 sessionId 相同，说明是直接访问某个会话，也应该加载历史对话
+    const urlId = searchParams.get('id')
+    const shouldLoadHistory = !urlId || urlId === sessionId
+
+    if (!shouldLoadHistory) {
+      return
+    }
 
     const loadHistory = async () => {
-      console.log('加载历史对话检查:', {
-        shouldLoadHistory,
-        initialUrlId: initialUrlIdRef.current,
-        hasUser: !!user?.uid,
-        messagesLength: messages.length,
-      })
+      try {
+        const response = await getDiscussionAskAskSessionId({ askSessionId: sessionId })
 
-      // 如果是原本就有 id 的 URL 且用户已登录，尝试加载历史对话
-      if (shouldLoadHistory && initialUrlIdRef.current && user?.uid) {
-        try {
-          console.log('开始请求历史对话:', initialUrlIdRef.current)
-          const response = await getDiscussionAskAskSessionId({ askSessionId: initialUrlIdRef.current })
-          console.log('历史对话响应:', response)
+        const historyItems = response.items || []
 
-          const historyItems = response.items || []
-          console.log('历史对话数据:', historyItems)
+        if (historyItems && historyItems.length > 0) {
+          // 转换历史记录为 Message 格式
+          const historyMessages: Message[] = historyItems.map((item, index) => ({
+            id: item.id?.toString() || `history-${index}`,
+            role: item.bot ? 'assistant' : 'user',
+            content: item.content || '',
+            type: item.bot ? 'ai' : undefined,
+            timestamp: item.created_at
+              ? typeof item.created_at === 'number'
+                ? new Date(item.created_at * 1000).toISOString()
+                : item.created_at
+              : new Date().toISOString(),
+          }))
 
-          if (historyItems && historyItems.length > 0) {
-            // 转换历史记录为 Message 格式
-            const historyMessages: Message[] = historyItems.map((item, index) => ({
-              id: item.id?.toString() || `history-${index}`,
-              role: item.bot ? 'assistant' : 'user',
-              content: item.content || '',
-              type: item.bot ? 'ai' : undefined,
-              timestamp: item.created_at
-                ? typeof item.created_at === 'number'
-                  ? new Date(item.created_at * 1000).toISOString()
-                  : item.created_at
-                : new Date().toISOString(),
-            }))
-
-            // 在历史消息开头添加欢迎消息
-            const messagesWithWelcome: Message[] = [
-              {
-                id: 'welcome',
-                role: 'assistant',
-                content: `您好！我是${botName}，很高兴为您服务。有什么问题可以帮您？`,
-                type: 'ai',
-                timestamp: new Date().toISOString(),
-              },
-              ...historyMessages,
-            ]
-
-            console.log('转换后的历史消息（含欢迎语）:', messagesWithWelcome)
-            setMessages(messagesWithWelcome)
-            return // 成功加载历史记录
-          } else {
-            console.log('没有历史记录')
-          }
-        } catch (error) {
-          console.error('加载历史对话失败:', error)
-          // 加载失败，继续显示欢迎消息
+          setMessages(historyMessages)
+        } else {
+          // 没有历史记录，清空消息
+          setMessages([])
         }
-      }
 
-      // 没有历史记录或加载失败，或者是新会话，显示默认欢迎消息
-      if (messages.length === 0) {
-        console.log('显示欢迎消息')
-        setMessages([
-          {
-            id: 'welcome',
-            role: 'assistant',
-            content: `您好！我是${botName}，很高兴为您服务。有什么问题可以帮您？`,
-            type: 'ai',
-            timestamp: new Date().toISOString(),
-          },
-        ])
+        // 标记已加载
+        historyLoadedRef.current = sessionId
+      } catch (error) {
+        console.error('加载历史对话失败:', error)
+        // 加载失败，清空消息
+        setMessages([])
+        // 即使加载失败，也标记为已尝试加载，避免重复请求
+        historyLoadedRef.current = sessionId
       }
     }
 
-    // 只在用户信息加载完成后执行（或者不需要加载历史）
-    if (user?.uid || !shouldLoadHistory) {
-      loadHistory()
-    }
-  }, [user?.uid, botName])
+    loadHistory()
+  }, [sessionId, user?.uid, initialUser?.uid, searchParams])
 
   // 检查智能客服是否开启
   useEffect(() => {
@@ -235,23 +239,15 @@ export default function CustomerServiceContent({ initialUser }: CustomerServiceC
     checkServiceEnabled()
   }, [])
 
-  // 获取机器人信息
+  // 从 props 更新机器人信息（如果服务端获取到了）
   useEffect(() => {
-    const fetchBotInfo = async () => {
-      try {
-        const botData = await getBot()
-        if (botData?.name) {
-          setBotName(botData.name)
-        }
-        if (botData?.avatar) {
-          setBotAvatar(botData.avatar)
-        }
-      } catch (error) {
-        console.error('获取机器人信息失败:', error)
-      }
+    if (botData?.name) {
+      setBotName(botData.name)
     }
-    fetchBotInfo()
-  }, [])
+    if (botData?.avatar) {
+      setBotAvatar(botData.avatar)
+    }
+  }, [botData])
 
   // 清理资源
   useEffect(() => {
@@ -283,6 +279,26 @@ export default function CustomerServiceContent({ initialUser }: CustomerServiceC
           streamMode: true,
           onError: (err: Error) => {
             console.error('智能总结生成失败:', err)
+            const errorMessage = err.message || err.toString()
+
+            // 检查是否是 session closed 错误
+            if (errorMessage.toLowerCase().includes('session closed')) {
+              Alert.info('会话已过期，请点击右上角开启新会话', 5000)
+              setIsLoading(false)
+              setMessages((prev) => {
+                const newMessages = [...prev]
+                const index = newMessages.findIndex((m) => m.id === messageId)
+                if (index !== -1) {
+                  newMessages[index] = {
+                    ...newMessages[index],
+                    content: '会话已过期，请点击右上角开启新会话。',
+                  }
+                }
+                return newMessages
+              })
+              return
+            }
+
             setIsLoading(false)
             setMessages((prev) => {
               const newMessages = [...prev]
@@ -315,6 +331,31 @@ export default function CustomerServiceContent({ initialUser }: CustomerServiceC
         const thinkingPatterns = [/思考[:：]/, /推理[:：]/, /分析[:：]/, /让我想想/, /我需要/, /正在思考/]
 
         summarySseClient.subscribe(summaryRequestBody, (data) => {
+          // 检测 session closed 错误
+          let dataStr = ''
+          if (typeof data === 'string') {
+            dataStr = data
+          } else if (data && typeof data === 'object') {
+            dataStr = JSON.stringify(data)
+          }
+
+          if (dataStr.toLowerCase().includes('session closed')) {
+            Alert.info('会话已过期，请点击右上角开启新会话', 5000)
+            setIsLoading(false)
+            setMessages((prev) => {
+              const newMessages = [...prev]
+              const index = newMessages.findIndex((m) => m.id === messageId)
+              if (index !== -1) {
+                newMessages[index] = {
+                  ...newMessages[index],
+                  content: '会话已过期，请点击右上角开启新会话。',
+                }
+              }
+              return newMessages
+            })
+            return
+          }
+
           // 检测 no_disc 事件
           // SSE 事件格式: { event: 'no_disc', data: true }
           const isNoDiscEvent = (data && typeof data === 'object' && (data as any).event === 'no_disc') || data === true // 某些情况下 data 可能直接是 true
@@ -403,6 +444,26 @@ export default function CustomerServiceContent({ initialUser }: CustomerServiceC
         })
       } catch (err) {
         console.error('调用智能总结失败:', err)
+        const errorMessage = err instanceof Error ? err.message : String(err)
+
+        // 检查是否是 session closed 错误
+        if (errorMessage.toLowerCase().includes('session closed')) {
+          Alert.info('会话已过期，请点击右上角开启新会话', 5000)
+          setIsLoading(false)
+          setMessages((prev) => {
+            const newMessages = [...prev]
+            const index = newMessages.findIndex((m) => m.id === messageId)
+            if (index !== -1) {
+              newMessages[index] = {
+                ...newMessages[index],
+                content: '会话已过期，请点击右上角开启新会话。',
+              }
+            }
+            return newMessages
+          })
+          return
+        }
+
         setIsLoading(false)
         setMessages((prev) => {
           const newMessages = [...prev]
@@ -445,6 +506,8 @@ export default function CustomerServiceContent({ initialUser }: CustomerServiceC
       type: 'ai',
       timestamp: new Date().toISOString(),
     }
+    // 保存消息 ID 到闭包中，确保后续使用正确的 ID
+    const assistantMessageId = assistantMessage.id
     setMessages((prev) => [...prev, assistantMessage])
     currentMessageRef.current = assistantMessage
 
@@ -473,6 +536,28 @@ export default function CustomerServiceContent({ initialUser }: CustomerServiceC
           streamMode: true,
           onError: (err: Error) => {
             console.error('AI 回答生成失败:', err)
+            const errorMessage = err.message || err.toString()
+
+            // 检查是否是 session closed 错误
+            if (errorMessage.toLowerCase().includes('session closed')) {
+              Alert.info('会话已过期，请点击右上角开启新会话', 5000)
+              setIsLoading(false)
+              setIsWaiting(false)
+              setMessages((prev) => {
+                const newMessages = [...prev]
+                const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+                if (index !== -1) {
+                  newMessages[index] = {
+                    ...newMessages[index],
+                    content: '会话已过期，请点击右上角开启新会话。',
+                  }
+                }
+                return newMessages
+              })
+              resolve() // 使用 resolve 而不是 reject，避免触发 catch
+              return
+            }
+
             setIsLoading(false)
             setIsWaiting(false)
             reject(err)
@@ -491,13 +576,13 @@ export default function CustomerServiceContent({ initialUser }: CustomerServiceC
               const hasMultipleForums = forums && forums.length > 1
 
               if (hasMultipleForums) {
-                // 提示选择板块
+                // 提示选择板块 - 使用消息 ID 而不是索引
                 setMessages((prev) => {
                   const newMessages = [...prev]
-                  const lastIndex = newMessages.length - 1
-                  if (newMessages[lastIndex]?.role === 'assistant') {
-                    newMessages[lastIndex] = {
-                      ...newMessages[lastIndex],
+                  const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+                  if (index !== -1) {
+                    newMessages[index] = {
+                      ...newMessages[index],
                       content: '抱歉，我暂时无法回答这个问题。请选择一个板块，我将为您搜索相关帖子。',
                       type: 'ai',
                       needsForumSelection: true,
@@ -510,30 +595,29 @@ export default function CustomerServiceContent({ initialUser }: CustomerServiceC
                 resolve()
               } else {
                 // 只有一个板块，直接调用智能总结
-                const lastMessageId = currentMessageRef.current?.id
+                // 使用闭包中保存的 assistantMessageId，而不是从 ref 获取
                 // 如果没有 forumId，使用第一个（唯一的）板块
                 const targetForumId = forumId ?? forums?.[0]?.id
 
-                if (lastMessageId && targetForumId !== undefined && targetForumId !== null) {
-                  // 更新消息为loading状态，不展示"无法回答"
+                if (assistantMessageId && targetForumId !== undefined && targetForumId !== null) {
+                  // 更新消息为loading状态，不展示"无法回答" - 使用消息 ID 而不是索引
                   setMessages((prev) => {
                     const newMessages = [...prev]
-                    const lastIndex = newMessages.length - 1
-                    if (newMessages[lastIndex]?.role === 'assistant') {
-                      newMessages[lastIndex] = {
-                        ...newMessages[lastIndex],
+                    const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+                    if (index !== -1) {
+                      newMessages[index] = {
+                        ...newMessages[index],
                         content: '正在为您搜索相关帖子...',
                         type: 'search',
                       }
                     }
                     return newMessages
                   })
-                  
+
                   // 保持loading状态
                   setIsLoading(true)
-                  
                   ;(async () => {
-                    await callSummaryContent(targetForumId, question, lastMessageId, question)
+                    await callSummaryContent(targetForumId, question, assistantMessageId, question)
                     resolve()
                   })()
                 } else {
@@ -551,6 +635,35 @@ export default function CustomerServiceContent({ initialUser }: CustomerServiceC
         sseClientRef.current = askSseClient
 
         askSseClient.subscribe(requestBody, (data) => {
+          // 检测 session closed 错误
+          let dataStr = ''
+          if (typeof data === 'string') {
+            dataStr = data
+          } else if (data && typeof data === 'object') {
+            dataStr = JSON.stringify(data)
+          }
+
+          if (dataStr.toLowerCase().includes('session closed')) {
+            Alert.info('会话已过期，请点击右上角开启新会话', 5000)
+            setIsLoading(false)
+            setIsWaiting(false)
+            setMessages((prev) => {
+              const newMessages = [...prev]
+              const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+              if (index !== -1) {
+                newMessages[index] = {
+                  ...newMessages[index],
+                  content: '会话已过期，请点击右上角开启新会话。',
+                }
+              }
+              return newMessages
+            })
+            // 停止处理后续数据
+            askSseClient.unsubscribe()
+            resolve()
+            return
+          }
+
           let textToAdd = ''
           if (typeof data === 'string') {
             // 处理 JSON 字符串化的内容（后端使用 fmt.Sprintf("%q", content)）
@@ -587,14 +700,24 @@ export default function CustomerServiceContent({ initialUser }: CustomerServiceC
             if (!isThinkingLine) {
               answerText += textToAdd
 
+              // 使用消息 ID 而不是索引，确保即使消息数组发生变化也能正确更新
               setMessages((prev) => {
                 const newMessages = [...prev]
-                const lastIndex = newMessages.length - 1
-                if (newMessages[lastIndex]?.role === 'assistant') {
-                  newMessages[lastIndex] = {
-                    ...newMessages[lastIndex],
+                const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+                if (index !== -1) {
+                  // 从回答中提取可能的快速操作按钮（简单示例：提取标题或关键词）
+                  const quickActions: string[] = []
+                  // 如果回答包含"如何"开头的内容，可以提取作为快速操作
+                  const howToMatches = answerText.match(/如何[^。，\n]{2,10}/g)
+                  if (howToMatches && howToMatches.length > 0) {
+                    quickActions.push(...howToMatches.slice(0, 2))
+                  }
+
+                  newMessages[index] = {
+                    ...newMessages[index],
                     content: answerText,
                     type: 'ai',
+                    quickActions: quickActions.length > 0 ? quickActions : undefined,
                   }
                 }
                 return newMessages
@@ -611,6 +734,23 @@ export default function CustomerServiceContent({ initialUser }: CustomerServiceC
         await streamComplete
       } catch (err) {
         console.error('流式输出错误:', err)
+        const errorMessage = err instanceof Error ? err.message : String(err)
+
+        // 检查是否是 session closed 错误
+        if (errorMessage.toLowerCase().includes('session closed')) {
+          Alert.info('会话已过期，请点击右上角开启新会话', 5000)
+          setMessages((prev) => {
+            const newMessages = [...prev]
+            const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+            if (index !== -1) {
+              newMessages[index] = {
+                ...newMessages[index],
+                content: '会话已过期，请点击右上角开启新会话。',
+              }
+            }
+            return newMessages
+          })
+        }
         return
       }
     } catch (error) {
@@ -691,33 +831,176 @@ export default function CustomerServiceContent({ initialUser }: CustomerServiceC
   )
 
   // 处理新会话
-  const handleNewSession = useCallback(() => {
-    // 生成新的 session ID
-    const newSessionId = generateUuid()
-    setSessionId(newSessionId)
+  const handleNewSession = useCallback(async () => {
+    try {
+      // 调用接口创建新会话
+      const response = await getDiscussionAskSession({ force_create: true })
+      const newSessionId = response
 
-    // 标记为新会话（不应该加载历史对话）
-    initialUrlIdRef.current = null
+      if (newSessionId) {
+        setSessionId(newSessionId)
 
-    // 清空消息，显示欢迎消息
-    setMessages([
-      {
-        id: 'welcome',
+        // 标记为新会话（不应该加载历史对话）
+        initialUrlIdRef.current = null
+
+        // 重置历史加载标记，以便新会话可以加载历史（如果有的话）
+        historyLoadedRef.current = null
+
+        // 清空消息
+        setMessages([])
+
+        // 更新 URL
+        const currentUrl = new URL(window.location.href)
+        currentUrl.searchParams.set('id', newSessionId)
+        router.replace(currentUrl.pathname + currentUrl.search, { scroll: false })
+
+        // 清空输入框
+        setInputValue('')
+      }
+    } catch (error) {
+      console.error('创建新会话失败:', error)
+    }
+  }, [router])
+
+  // 刷新常见问题
+  const handleRefreshQuestions = useCallback(() => {
+    // 随机打乱常见问题列表
+    const shuffled = [...commonQuestions].sort(() => Math.random() - 0.5)
+    setCommonQuestions(shuffled)
+  }, [commonQuestions])
+
+  // 处理快速操作按钮点击
+  const handleQuickAction = useCallback(
+    (action: string) => {
+      // 直接使用 action 作为问题发送
+      if (!action.trim() || isLoading) return
+
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        role: 'user',
+        content: action.trim(),
+        timestamp: new Date().toISOString(),
+      }
+
+      setMessages((prev) => [...prev, userMessage])
+      setIsLoading(true)
+      setIsWaiting(true)
+
+      // 创建助手消息占位符
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `您好！我是${botName}，很高兴为您服务。有什么问题可以帮您？`,
+        content: '',
         type: 'ai',
         timestamp: new Date().toISOString(),
-      },
-    ])
+      }
+      const assistantMessageId = assistantMessage.id
+      setMessages((prev) => [...prev, assistantMessage])
+      currentMessageRef.current = assistantMessage
 
-    // 更新 URL
-    const currentUrl = new URL(window.location.href)
-    currentUrl.searchParams.set('id', newSessionId)
-    router.replace(currentUrl.pathname + currentUrl.search, { scroll: false })
+      // 调用发送逻辑（复用 handleSend 的核心逻辑）
+      ;(async () => {
+        try {
+          const csrfToken = await getCsrfToken()
+          const requestBody = JSON.stringify({
+            question: action.trim(),
+            session_id: sessionId,
+          })
 
-    // 清空输入框
-    setInputValue('')
-  }, [generateUuid, botName, router])
+          let answerText = ''
+          const thinkingPatterns = [/思考[:：]/, /推理[:：]/, /分析[:：]/, /让我想想/, /我需要/, /正在思考/]
+
+          const streamComplete = new Promise<void>((resolve, reject) => {
+            const askSseClient = new SSEClient<any>({
+              url: '/api/discussion/ask',
+              headers: {
+                'X-CSRF-TOKEN': csrfToken,
+              },
+              method: 'POST',
+              streamMode: true,
+              onError: (err: Error) => {
+                console.error('AI 回答生成失败:', err)
+                setIsLoading(false)
+                setIsWaiting(false)
+                reject(err)
+              },
+              onComplete: () => {
+                setIsWaiting(false)
+                setIsLoading(false)
+                resolve()
+              },
+            })
+
+            sseClientRef.current = askSseClient
+
+            askSseClient.subscribe(requestBody, (data) => {
+              let textToAdd = ''
+              if (typeof data === 'string') {
+                try {
+                  const unquoted = data.replaceAll(/^"|"$/g, '')
+                  textToAdd = unquoted.replaceAll(/\\"/g, '"').replaceAll(/\\n/g, '\n')
+                } catch {
+                  textToAdd = data
+                }
+              } else if (data && typeof data === 'object') {
+                if ((data as any).event === 'text') {
+                  const eventData = (data as any).data
+                  if (typeof eventData === 'string') {
+                    textToAdd = eventData
+                  } else if (eventData && typeof eventData === 'object') {
+                    textToAdd =
+                      eventData.content ||
+                      eventData.text ||
+                      eventData.chunk ||
+                      eventData.message ||
+                      eventData.result ||
+                      ''
+                  }
+                } else if (!(data as any).event) {
+                  textToAdd = data.content || data.text || data.data || data.chunk || data.message || data.result || ''
+                }
+              }
+
+              if (textToAdd) {
+                const isThinkingLine = thinkingPatterns.some((pattern) => pattern.test(textToAdd))
+                if (!isThinkingLine) {
+                  answerText += textToAdd
+                  setMessages((prev) => {
+                    const newMessages = [...prev]
+                    const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+                    if (index !== -1) {
+                      const howToMatches = answerText.match(/如何[^。，\n]{2,10}/g)
+                      const quickActions: string[] =
+                        howToMatches && howToMatches.length > 0 ? howToMatches.slice(0, 2) : []
+                      newMessages[index] = {
+                        ...newMessages[index],
+                        content: answerText,
+                        type: 'ai',
+                        quickActions: quickActions.length > 0 ? quickActions : undefined,
+                      }
+                    }
+                    return newMessages
+                  })
+                }
+              }
+            })
+          })
+
+          await streamComplete
+        } catch (error) {
+          console.error('发送消息失败:', error)
+          setIsLoading(false)
+          setIsWaiting(false)
+        }
+      })()
+    },
+    [isLoading, sessionId],
+  )
+
+  // 处理常见问题点击
+  const handleCommonQuestionClick = useCallback((question: string) => {
+    setInputValue(question)
+  }, [])
 
   // 如果正在检查服务状态，显示加载状态
   if (isServiceEnabled === null) {
@@ -797,89 +1080,28 @@ export default function CustomerServiceContent({ initialUser }: CustomerServiceC
         position: 'relative',
       }}
     >
-      {/* 顶部标题栏 - 现代化设计 */}
-      <Box
-        sx={{
-          background: `#000000e6`,
-          backdropFilter: 'blur(10px)',
-          borderBottom: 'none',
-          px: { xs: 2, sm: 4 },
-          py: 2.5,
-          boxShadow: `0 2px 12px ${alpha(theme.palette.primary.main, 0.15)}`,
-          position: 'relative',
-          zIndex: 10,
-        }}
-      >
-        <Box
-          sx={{ maxWidth: '900px', mx: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Avatar
-              src={botAvatar}
-              sx={{
-                bgcolor: 'rgba(255, 255, 255, 0.25)',
-                color: 'white',
-                width: 40,
-                height: 40,
-                fontSize: '1.1rem',
-                fontWeight: 600,
-                border: '2px solid rgba(255, 255, 255, 0.3)',
-              }}
-            >
-              {!botAvatar && botName[0]}
-            </Avatar>
-            <Box>
-              <Typography variant='h6' sx={{ fontWeight: 700, color: 'white', fontSize: '1.1rem', lineHeight: 1.2 }}>
-                {botName}
-              </Typography>
-              <Typography variant='caption' sx={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.75rem' }}>
-                🟢 在线客服 · 随时为您服务
-              </Typography>
-            </Box>
-          </Box>
-          <Tooltip title='新会话' arrow>
-            <IconButton
-              onClick={handleNewSession}
-              disabled={isLoading}
-              sx={{
-                color: 'white',
-                bgcolor: 'rgba(255, 255, 255, 0.15)',
-                '&:hover': {
-                  bgcolor: 'rgba(255, 255, 255, 0.25)',
-                },
-                width: 36,
-                height: 36,
-              }}
-            >
-              <AddIcon fontSize='small' />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      </Box>
-
       {/* 对话内容区域 - 优化滚动和间距 */}
       <Box
         sx={{
           flex: 1,
           overflow: 'auto',
-          px: { xs: 2, sm: 3 },
           py: 4,
+          width: '800px',
+          mx: 'auto',
+          maxWidth: '100%',
+          // 隐藏滚动条但保持滚动功能
           '&::-webkit-scrollbar': {
-            width: '6px',
+            display: 'none',
+            width: 0,
+            height: 0,
           },
-          '&::-webkit-scrollbar-track': {
-            background: 'transparent',
-          },
-          '&::-webkit-scrollbar-thumb': {
-            background: 'rgba(0, 0, 0, 0.2)',
-            borderRadius: '3px',
-            '&:hover': {
-              background: 'rgba(0, 0, 0, 0.3)',
-            },
-          },
+          // Firefox
+          scrollbarWidth: 'none' as any,
+          // IE and Edge
+          msOverflowStyle: 'none' as any,
         }}
       >
-        <Stack spacing={3} sx={{ maxWidth: '900px', mx: 'auto' }}>
+        <Stack spacing={3}>
           {messages.map((message) => {
             return (
               <Fade in={true} key={message.id} timeout={400}>
@@ -891,350 +1113,471 @@ export default function CustomerServiceContent({ initialUser }: CustomerServiceC
                     gap: 0.5,
                   }}
                 >
-                  {/* 时间戳和操作按钮 */}
-                  {/* <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1,
-                      px: message.role === 'user' ? 0 : 6,
-                      mb: 0.5,
-                    }}
-                  >
-                    {message.role === 'assistant' && message.timestamp && (
-                      <Typography variant='caption' sx={{ color: 'text.disabled', fontSize: '0.7rem' }}>
-                        {formatTime(message.timestamp)}
-                      </Typography>
-                    )}
-                    {message.role === 'user' && message.timestamp && (
-                      <Typography variant='caption' sx={{ color: 'text.disabled', fontSize: '0.7rem' }}>
-                        {formatTime(message.timestamp)}
-                      </Typography>
-                    )}
-                  </Box> */}
-
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      gap: 1.5,
-                      alignItems: 'flex-start',
-                      width: '100%',
-                      flexDirection: message.role === 'user' ? 'row-reverse' : 'row',
-                    }}
-                  >
-                    {/* 头像 */}
-                    {message.role === 'assistant' && (
-                      <Avatar
-                        src={botAvatar}
+                  {message.role === 'assistant' ? (
+                    /* 机器人消息布局：第一行头像+名字，第二行内容 */
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 1,
+                        width: '100%',
+                      }}
+                    >
+                      {/* 第一行：头像 + 机器人名字 */}
+                      <Box
                         sx={{
-                          background: botAvatar
-                            ? 'transparent'
-                            : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                          width: 36,
-                          height: 36,
-                          fontSize: '0.95rem',
-                          fontWeight: 600,
-                          boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.3)}`,
-                          flexShrink: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
                         }}
                       >
-                        {!botAvatar && botName[0]}
-                      </Avatar>
-                    )}
-                    {message.role === 'user' && (
+                        <Avatar
+                          src={botAvatar}
+                          sx={{
+                            background: botAvatar
+                              ? 'transparent'
+                              : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                            width: 40,
+                            height: 40,
+                            fontWeight: 600,
+                            boxShadow: 'none',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {!botAvatar && botName[0]}
+                        </Avatar>
+                        <Typography
+                          variant='body2'
+                          sx={{
+                            fontWeight: 600,
+                            color: 'text.primary',
+                            fontSize: '16px',
+                          }}
+                        >
+                          {botName}
+                        </Typography>
+                      </Box>
+
+                      {/* 第二行：消息内容 */}
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          gap: 1,
+                          alignItems: 'flex-start',
+                          pl: 5, // 左边距对齐到内容区域
+                        }}
+                      >
+                        {/* 消息气泡和快速操作按钮容器 */}
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            gap: 1,
+                            alignItems: 'flex-start',
+                            flex: 1,
+                            maxWidth: 'calc(100% - 40px)',
+                          }}
+                        >
+                          {/* 消息气泡 */}
+                          <Box
+                            sx={{
+                              position: 'relative',
+                              maxWidth: '100%',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 1,
+                            }}
+                          >
+                            <Paper
+                              elevation={0}
+                              sx={{
+                                px: 2.5,
+                                py: 1.5,
+                                boxShadow: 'none',
+                                borderRadius: 1,
+                                bgcolor: 'white',
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                transition: 'all 0.2s ease',
+                                fontSize: '14px',
+                                '&:hover': {
+                                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)',
+                                },
+                                '& p': {
+                                  my: 0,
+                                  lineHeight: 1.7,
+                                },
+                                '& ul, & ol': {
+                                  my: 1,
+                                  pl: 2,
+                                },
+                                '& li': {
+                                  my: 0.5,
+                                },
+                                '& code': {
+                                  bgcolor: 'rgba(0, 0, 0, 0.05)',
+                                  px: 0.75,
+                                  py: 0.25,
+                                  borderRadius: 0.5,
+                                },
+                              }}
+                            >
+                              {message.role === 'assistant' ? (
+                                <Box>
+                                  {message.content && (
+                                    <Box
+                                      sx={{
+                                        mb: message.sources ? 2 : 0,
+                                        '& > *:first-of-type': { mt: 0 },
+                                        '& > *:last-child': { mb: 0 },
+                                        '& p': {
+                                          fontSize: '14px',
+                                        },
+                                      }}
+                                    >
+                                      <EditorContent content={message.content} />
+                                    </Box>
+                                  )}
+
+                                  {/* 等待提示 - 优化的加载状态 */}
+                                  {isWaiting && message.id === currentMessageRef.current?.id && (
+                                    <Box
+                                      sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1.5,
+                                        py: 1.5,
+                                        px: 2,
+                                        borderRadius: 1,
+                                        bgcolor: alpha(theme.palette.grey[500], 0.08),
+                                      }}
+                                    >
+                                      <CircularProgress size={18} thickness={4} sx={{ color: 'text.secondary' }} />
+                                      <Typography variant='body2' sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>
+                                        正在查找相关信息...
+                                      </Typography>
+                                    </Box>
+                                  )}
+
+                                  {/* 板块选择器 - 优化样式 */}
+                                  {message.needsForumSelection &&
+                                    message.pendingQuestion &&
+                                    forums &&
+                                    forums.length > 1 && (
+                                      <Box sx={{ mt: 2 }}>
+                                        <Typography
+                                          variant='subtitle2'
+                                          sx={{ mb: 1.5, fontWeight: 600, color: 'text.primary' }}
+                                        >
+                                          请选择板块继续搜索
+                                        </Typography>
+                                        <Stack direction='row' spacing={1} flexWrap='wrap' sx={{ gap: 1 }}>
+                                          {forums.map((forum) => {
+                                            if (!forum.id) return null
+                                            return (
+                                              <Button
+                                                key={forum.id}
+                                                variant='outlined'
+                                                size='medium'
+                                                onClick={() =>
+                                                  handleForumSelect(forum.id!, message.pendingQuestion!, message.id)
+                                                }
+                                                disabled={isLoading}
+                                                sx={{
+                                                  textTransform: 'none',
+                                                  borderRadius: 2,
+                                                  px: 2,
+                                                  py: 1,
+                                                  borderColor: 'divider',
+                                                  '&:hover': {
+                                                    borderColor: 'primary.main',
+                                                    bgcolor: alpha(theme.palette.primary.main, 0.05),
+                                                  },
+                                                  fontWeight: 500,
+                                                }}
+                                              >
+                                                {forum.name}
+                                              </Button>
+                                            )
+                                          })}
+                                        </Stack>
+                                      </Box>
+                                    )}
+
+                                  {/* 引用帖子 - 卡片式设计 */}
+                                  {/* {message.type === 'search' && message.sources && message.sources.length > 0 && (
+                                    <Box sx={{ mt: 2 }}>
+                                      <Divider sx={{ my: 2 }} />
+                                      <Typography
+                                        variant='subtitle2'
+                                        sx={{ mb: 1.5, fontWeight: 600, color: 'text.secondary', fontSize: '0.85rem' }}
+                                      >
+                                        📚 相关帖子推荐
+                                      </Typography>
+                                      <Stack spacing={1.5}>
+                                        {message.sources.map((source, idx) => (
+                                          <Paper
+                                            key={source.id}
+                                            elevation={0}
+                                            onClick={() => handleSourceClick(source)}
+                                            sx={{
+                                              p: 1.5,
+                                              borderRadius: 2,
+                                              border: '1px solid',
+                                              borderColor: 'divider',
+                                              cursor: 'pointer',
+                                              transition: 'all 0.2s ease',
+                                              bgcolor: 'background.paper',
+                                              '&:hover': {
+                                                borderColor: 'primary.main',
+                                                bgcolor: alpha(theme.palette.primary.main, 0.03),
+                                                transform: 'translateX(4px)',
+                                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                                              },
+                                            }}
+                                          >
+                                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                                              <Box
+                                                sx={{
+                                                  minWidth: 24,
+                                                  height: 24,
+                                                  borderRadius: 1,
+                                                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                                  color: 'primary.main',
+                                                  display: 'flex',
+                                                  alignItems: 'center',
+                                                  justifyContent: 'center',
+                                                  fontSize: '0.75rem',
+                                                  fontWeight: 600,
+                                                }}
+                                              >
+                                                {idx + 1}
+                                              </Box>
+                                              <Typography
+                                                variant='body2'
+                                                sx={{
+                                                  flex: 1,
+                                                  fontWeight: 500,
+                                                  color: 'text.primary',
+                                                  lineHeight: 1.5,
+                                                  fontSize: '0.9rem',
+                                                }}
+                                              >
+                                                {source.title}
+                                              </Typography>
+                                            </Box>
+                                          </Paper>
+                                        ))}
+                                      </Stack>
+                                    </Box>
+                                  )} */}
+                                  {/* 发帖提示 - 优化样式 */}
+                                  {message.showPostPrompt && message.originalQuestion && (
+                                    <Box
+                                      sx={{
+                                        mt: 2,
+                                        p: 2.5,
+                                        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.primary.dark, 0.05)} 100%)`,
+                                        borderRadius: 2,
+                                        border: '1px solid',
+                                        borderColor: alpha(theme.palette.primary.main, 0.2),
+                                      }}
+                                    >
+                                      <Typography
+                                        variant='body2'
+                                        sx={{ mb: 1.5, color: 'text.secondary', lineHeight: 1.6 }}
+                                      >
+                                        💡 如未解决问题，可前往社区发帖补充详细信息寻求帮助
+                                      </Typography>
+                                      <Button
+                                        variant='contained'
+                                        size='medium'
+                                        onClick={() => handleGoToPost(message.originalQuestion!, message.forumId)}
+                                        sx={{
+                                          mt: 0.5,
+                                          textTransform: 'none',
+                                          borderRadius: 2,
+                                          background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                                          boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.3)}`,
+                                          '&:hover': {
+                                            boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`,
+                                          },
+                                          fontWeight: 600,
+                                        }}
+                                      >
+                                        前往社区发帖
+                                      </Button>
+                                    </Box>
+                                  )}
+                                </Box>
+                              ) : (
+                                /* 用户消息内容 */
+                                <Typography
+                                  variant='body1'
+                                  sx={{ fontSize: '14px', whiteSpace: 'pre-wrap', lineHeight: 1.7 }}
+                                >
+                                  {message.content}
+                                </Typography>
+                              )}
+                            </Paper>
+
+                            {/* 消息底部信息 - 时间戳、复制按钮、免责声明 */}
+                            {message.role === 'assistant' && message.content && (
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 1.5,
+                                  mt: 0.5,
+                                  pl: 0.5,
+                                  flexWrap: 'wrap',
+                                }}
+                              >
+                                {message.timestamp && (
+                                  <Typography variant='caption' sx={{ color: 'text.disabled', fontSize: '0.7rem' }}>
+                                    生成于 {formatTime(message.timestamp)}
+                                  </Typography>
+                                )}
+                                <Tooltip title={copiedMessageId === message.id ? '已复制' : '复制'} arrow>
+                                  <IconButton
+                                    size='small'
+                                    onClick={() => handleCopyMessage(message.content, message.id)}
+                                    sx={{
+                                      width: 20,
+                                      height: 20,
+                                      color: 'text.disabled',
+                                      '&:hover': {
+                                        color: 'primary.main',
+                                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                      },
+                                    }}
+                                  >
+                                    <ContentCopyIcon sx={{ fontSize: 12 }} />
+                                  </IconButton>
+                                </Tooltip>
+                                <Typography variant='caption' sx={{ color: 'text.disabled', fontSize: '0.7rem' }}>
+                                  本回答由 AI 驱动，仅供参考
+                                </Typography>
+                              </Box>
+                            )}
+                          </Box>
+
+                          {/* 快速操作按钮 - 显示在消息右侧 */}
+                          {message.role === 'assistant' &&
+                            message.content &&
+                            message.quickActions &&
+                            message.quickActions.length > 0 && (
+                              <Box
+                                sx={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: 1,
+                                  mt: 0.5,
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {message.quickActions.map((action, idx) => (
+                                  <Button
+                                    key={idx}
+                                    variant='outlined'
+                                    size='small'
+                                    onClick={() => handleQuickAction(action)}
+                                    sx={{
+                                      textTransform: 'none',
+                                      borderRadius: 2,
+                                      px: 2,
+                                      py: 0.75,
+                                      borderColor: alpha(theme.palette.primary.main, 0.3),
+                                      bgcolor: alpha(theme.palette.primary.main, 0.05),
+                                      color: 'primary.main',
+                                      fontSize: '0.85rem',
+                                      whiteSpace: 'nowrap',
+                                      '&:hover': {
+                                        borderColor: 'primary.main',
+                                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                      },
+                                    }}
+                                  >
+                                    {action}
+                                  </Button>
+                                ))}
+                              </Box>
+                            )}
+                        </Box>
+                      </Box>
+                    </Box>
+                  ) : (
+                    /* 用户消息布局：头像和内容垂直居中 */
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        gap: 1.5,
+                        alignItems: 'center',
+                        width: '100%',
+                        flexDirection: 'row-reverse',
+                        justifyContent: 'flex-start',
+                      }}
+                    >
+                      {/* 头像 */}
                       <Avatar
                         sx={{
                           bgcolor: alpha(theme.palette.primary.main, 0.1),
                           color: theme.palette.primary.main,
-                          width: 36,
-                          height: 36,
+                          width: 40,
+                          height: 40,
                           fontSize: '0.95rem',
                           fontWeight: 600,
-                          border: `2px solid ${alpha(theme.palette.primary.main, 0.3)}`,
                           flexShrink: 0,
                         }}
                       >
                         {user?.username?.[0]?.toUpperCase() || 'U'}
                       </Avatar>
-                    )}
 
-                    {/* 消息气泡 */}
-                    <Box
-                      sx={{
-                        position: 'relative',
-                        maxWidth: message.role === 'user' ? '70%' : '85%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 1,
-                      }}
-                    >
-                      <Paper
-                        elevation={0}
+                      {/* 消息气泡 */}
+                      <Box
                         sx={{
-                          px: 2.5,
-                          py: 2,
-                          borderRadius: message.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                          ...(message.role === 'user' && {
-                            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                            color: 'white',
-                            boxShadow: `0 2px 12px ${alpha(theme.palette.primary.main, 0.25)}`,
-                          }),
-                          ...(message.role === 'assistant' && {
-                            bgcolor: 'white',
-                            border: '1px solid',
-                            borderColor: 'divider',
-                            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
-                          }),
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
-                            boxShadow:
-                              message.role === 'user'
-                                ? `0 4px 16px ${alpha(theme.palette.primary.main, 0.35)}`
-                                : '0 2px 8px rgba(0, 0, 0, 0.12)',
-                          },
-                          '& p': {
-                            my: 0,
-                            lineHeight: 1.7,
-                          },
-                          '& ul, & ol': {
-                            my: 1,
-                            pl: 2,
-                          },
-                          '& li': {
-                            my: 0.5,
-                          },
-                          '& code': {
-                            bgcolor: message.role === 'user' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.05)',
-                            px: 0.75,
-                            py: 0.25,
-                            borderRadius: 0.5,
-                            fontSize: '0.9em',
-                          },
+                          position: 'relative',
+                          maxWidth: '70%',
+                          display: 'flex',
+                          flexDirection: 'column',
                         }}
                       >
-                        {message.role === 'user' ? (
-                          <Typography variant='body1' sx={{ fontSize: '0.95rem', whiteSpace: 'pre-wrap' }}>
-                            {message.content}
-                          </Typography>
-                        ) : (
-                          <Box>
-                            {message.content && (
-                              <Box
-                                sx={{
-                                  mb: message.sources ? 2 : 0,
-                                  fontSize: '0.95rem',
-                                  '& > *:first-of-type': { mt: 0 },
-                                  '& > *:last-child': { mb: 0 },
-                                }}
-                              >
-                                <EditorContent content={message.content} />
-                              </Box>
-                            )}
-
-                            {/* 等待提示 - 优化的加载状态 */}
-                            {isWaiting && message.id === currentMessageRef.current?.id && (
-                              <Box 
-                                sx={{ 
-                                  display: 'flex', 
-                                  alignItems: 'center', 
-                                  gap: 1.5, 
-                                  py: 1.5,
-                                  px: 2,
-                                  borderRadius: 2,
-                                  bgcolor: alpha(theme.palette.grey[500], 0.08),
-                                }}
-                              >
-                                <CircularProgress size={18} thickness={4} sx={{ color: 'text.secondary' }} />
-                                <Typography variant='body2' sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>
-                                  正在查找相关信息...
-                                </Typography>
-                              </Box>
-                            )}
-
-                            {/* 板块选择器 - 优化样式 */}
-                            {message.needsForumSelection && message.pendingQuestion && forums && forums.length > 1 && (
-                              <Box sx={{ mt: 2 }}>
-                                <Typography
-                                  variant='subtitle2'
-                                  sx={{ mb: 1.5, fontWeight: 600, color: 'text.primary' }}
-                                >
-                                  请选择板块继续搜索
-                                </Typography>
-                                <Stack direction='row' spacing={1} flexWrap='wrap' sx={{ gap: 1 }}>
-                                  {forums.map((forum) => {
-                                    if (!forum.id) return null
-                                    return (
-                                      <Button
-                                        key={forum.id}
-                                        variant='outlined'
-                                        size='medium'
-                                        onClick={() =>
-                                          handleForumSelect(forum.id!, message.pendingQuestion!, message.id)
-                                        }
-                                        disabled={isLoading}
-                                        sx={{
-                                          textTransform: 'none',
-                                          borderRadius: 2,
-                                          px: 2,
-                                          py: 1,
-                                          borderColor: 'divider',
-                                          '&:hover': {
-                                            borderColor: 'primary.main',
-                                            bgcolor: alpha(theme.palette.primary.main, 0.05),
-                                          },
-                                          fontWeight: 500,
-                                        }}
-                                      >
-                                        {forum.name}
-                                      </Button>
-                                    )
-                                  })}
-                                </Stack>
-                              </Box>
-                            )}
-
-                            {/* 引用帖子 - 卡片式设计 */}
-                            {message.type === 'search' && message.sources && message.sources.length > 0 && (
-                              <Box sx={{ mt: 2 }}>
-                                <Divider sx={{ my: 2 }} />
-                                <Typography
-                                  variant='subtitle2'
-                                  sx={{ mb: 1.5, fontWeight: 600, color: 'text.secondary', fontSize: '0.85rem' }}
-                                >
-                                  📚 相关帖子推荐
-                                </Typography>
-                                <Stack spacing={1.5}>
-                                  {message.sources.map((source, idx) => (
-                                    <Paper
-                                      key={source.id}
-                                      elevation={0}
-                                      onClick={() => handleSourceClick(source)}
-                                      sx={{
-                                        p: 1.5,
-                                        borderRadius: 2,
-                                        border: '1px solid',
-                                        borderColor: 'divider',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        bgcolor: 'background.paper',
-                                        '&:hover': {
-                                          borderColor: 'primary.main',
-                                          bgcolor: alpha(theme.palette.primary.main, 0.03),
-                                          transform: 'translateX(4px)',
-                                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-                                        },
-                                      }}
-                                    >
-                                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-                                        <Box
-                                          sx={{
-                                            minWidth: 24,
-                                            height: 24,
-                                            borderRadius: 1,
-                                            bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                            color: 'primary.main',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            fontSize: '0.75rem',
-                                            fontWeight: 600,
-                                          }}
-                                        >
-                                          {idx + 1}
-                                        </Box>
-                                        <Typography
-                                          variant='body2'
-                                          sx={{
-                                            flex: 1,
-                                            fontWeight: 500,
-                                            color: 'text.primary',
-                                            lineHeight: 1.5,
-                                            fontSize: '0.9rem',
-                                          }}
-                                        >
-                                          {source.title}
-                                        </Typography>
-                                      </Box>
-                                    </Paper>
-                                  ))}
-                                </Stack>
-                              </Box>
-                            )}
-                            {/* 发帖提示 - 优化样式 */}
-                            {message.showPostPrompt && message.originalQuestion && (
-                              <Box
-                                sx={{
-                                  mt: 2,
-                                  p: 2.5,
-                                  background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.primary.dark, 0.05)} 100%)`,
-                                  borderRadius: 2,
-                                  border: '1px solid',
-                                  borderColor: alpha(theme.palette.primary.main, 0.2),
-                                }}
-                              >
-                                <Typography variant='body2' sx={{ mb: 1.5, color: 'text.secondary', lineHeight: 1.6 }}>
-                                  💡 如未解决问题，可前往社区发帖补充详细信息寻求帮助
-                                </Typography>
-                                <Button
-                                  variant='contained'
-                                  size='medium'
-                                  onClick={() => handleGoToPost(message.originalQuestion!, message.forumId)}
-                                  sx={{
-                                    mt: 0.5,
-                                    textTransform: 'none',
-                                    borderRadius: 2,
-                                    background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                                    boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.3)}`,
-                                    '&:hover': {
-                                      boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`,
-                                    },
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  前往社区发帖
-                                </Button>
-                              </Box>
-                            )}
-                          </Box>
-                        )}
-                      </Paper>
-
-                      {/* 消息操作按钮 - 只对助手消息显示 */}
-                      {message.role === 'assistant' && message.content && !isWaiting && (
-                        <Box
+                        <Paper
+                          elevation={0}
                           sx={{
-                            display: 'flex',
-                            gap: 0.5,
-                            mt: 0.5,
-                            opacity: 0,
-                            transition: 'opacity 0.2s',
-                            '&:hover': { opacity: 1 },
-                            '.MuiBox-root:hover &': { opacity: 1 },
+                            px: 2.5,
+                            py: 1,
+                            borderRadius: 1,
+                            bgcolor: 'primary.main',
+                            color: 'white',
+                            boxShadow: `none`,
+                            transition: 'all 0.2s ease',
+                            fontSize: '14px',
+                            '&:hover': {
+                              boxShadow: `0 4px 16px ${alpha(theme.palette.primary.main, 0.35)}`,
+                            },
+                            '& p': {
+                              my: 0,
+                              lineHeight: 1.5,
+                            },
+                            '& code': {
+                              bgcolor: 'rgba(255, 255, 255, 0.2)',
+                              px: 0.75,
+                              py: 0.25,
+                              borderRadius: 0.5,
+                              fontSize: '14px',
+                            },
                           }}
                         >
-                          <Tooltip title={copiedMessageId === message.id ? '已复制' : '复制'} arrow>
-                            <IconButton
-                              size='small'
-                              onClick={() => handleCopyMessage(message.content, message.id)}
-                              sx={{
-                                width: 28,
-                                height: 28,
-                                bgcolor: 'background.paper',
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                '&:hover': {
-                                  bgcolor: 'action.hover',
-                                  borderColor: 'primary.main',
-                                },
-                              }}
-                            >
-                              <ContentCopyIcon sx={{ fontSize: 14 }} />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      )}
+                          <Typography
+                            variant='body1'
+                            sx={{ fontSize: '14px', whiteSpace: 'pre-wrap', lineHeight: 1.7 }}
+                          >
+                            {message.content}
+                          </Typography>
+                        </Paper>
+                      </Box>
                     </Box>
-                  </Box>
+                  )}
                 </Box>
               </Fade>
             )
@@ -1245,134 +1588,104 @@ export default function CustomerServiceContent({ initialUser }: CustomerServiceC
       </Box>
 
       {/* 底部输入区域 - 现代化设计 */}
-      <Box
-        sx={{
-          bgcolor: 'background.paper',
-          borderTop: '1px solid',
-          borderColor: 'divider',
-          px: { xs: 2, sm: 3 },
-          py: 2.5,
-          boxShadow: '0 -2px 12px rgba(0, 0, 0, 0.04)',
-        }}
-      >
-        <Box sx={{ maxWidth: '900px', mx: 'auto' }}>
-          <Stack direction='row' spacing={1.5} alignItems='flex-end'>
-            <Box
+      <Box sx={{pb: 2}}>
+        <Box sx={{ maxWidth: '800px', mx: 'auto' }}>
+          {/* 新会话按钮 - 位于输入框左上方 */}
+          <Box sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
+            <Button
+              variant='outlined'
+              size='small'
+              startIcon={<Icon type='icon-xinduihua' />}
+              onClick={handleNewSession}
+              disabled={isLoading}
               sx={{
-                flex: 1,
-                position: 'relative',
-                bgcolor: 'background.paper',
-                borderRadius: 3,
-                border: '2px solid',
-                borderColor: inputValue.trim() ? 'primary.main' : 'divider',
-                transition: 'all 0.2s ease',
-                '&:focus-within': {
-                  borderColor: 'primary.main',
-                  boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.1)}`,
+                textTransform: 'none',
+                borderRadius: 2,
+                bgcolor: 'white',
+                border: '1px solid',
+                borderColor: alpha(theme.palette.grey[400], 0.3),
+                color: 'text.primary',
+                boxShadow: 'none',
+                '&:hover': {
+                  borderColor: alpha(theme.palette.grey[400], 0.5),
+                  bgcolor: 'grey.50',
+                  boxShadow: 'none',
+                },
+                '&:disabled': {
+                  bgcolor: 'white',
+                  borderColor: alpha(theme.palette.grey[400], 0.3),
+                  color: 'text.disabled',
+                  opacity: 0.6,
+                },
+                '& .MuiButton-startIcon': {
+                  marginRight: 1,
                 },
               }}
             >
-              <TextField
-                fullWidth
-                multiline
-                maxRows={4}
-                placeholder='请输入人问题描述你的问题...'
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={isLoading}
-                variant='standard'
-                slotProps={{
-                  input: {
-                    disableUnderline: true,
-                    sx: {
-                      px: 2.5,
-                      py: 1.5,
-                      fontSize: '0.95rem',
-                      lineHeight: 1.6,
-                    },
+              新会话
+            </Button>
+          </Box>
+          <Box
+            sx={{
+              position: 'relative',
+              borderRadius: '10px',
+              border: '1px solid',
+              // borderColor: inputValue.trim() ? 'primary.main' : 'divider',
+              borderColor: 'primary.main',
+            }}
+          >
+            <TextField
+              fullWidth
+              multiline
+              minRows={3}
+              maxRows={8}
+              placeholder='请使用产品 + 问题描述你的问题'
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={isLoading}
+              variant='standard'
+              slotProps={{
+                input: {
+                  disableUnderline: true,
+                  sx: {
+                    px: 2.5,
+                    py: 1.5,
+                    pr: 6, // 为按钮留出右侧空间
+                    fontSize: '0.95rem',
+                    lineHeight: 1.6,
                   },
-                }}
-                sx={{
-                  '& .MuiInputBase-input': {
-                    '&::placeholder': {
-                      color: 'text.disabled',
-                      opacity: 0.7,
-                    },
-                  },
-                }}
-              />
-              {/* 快捷键提示 */}
-              {!inputValue && (
-                <Typography
-                  variant='caption'
-                  sx={{
-                    position: 'absolute',
-                    right: 12,
-                    bottom: 10,
-                    color: 'text.disabled',
-                    fontSize: '0.7rem',
-                    pointerEvents: 'none',
-                  }}
-                >
-                  Enter 发送
-                </Typography>
-              )}
-            </Box>
-            <Tooltip title='发送消息' arrow>
-              <span>
+                },
+              }}
+            />
+            {/* 发送按钮 - 位于输入框内部右下角 */}
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: 8,
+                right: 8,
+                zIndex: 1,
+              }}
+            >
+              <Tooltip title='发送消息' arrow>
                 <IconButton
                   color='primary'
                   onClick={handleSend}
                   disabled={!inputValue.trim() || isLoading}
                   sx={{
-                    width: 44,
-                    height: 44,
-                    background:
-                      inputValue.trim() && !isLoading
-                        ? `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`
-                        : 'transparent',
-                    color: inputValue.trim() && !isLoading ? 'white' : 'action.disabled',
-                    border: '2px solid',
-                    borderColor: inputValue.trim() && !isLoading ? 'transparent' : 'divider',
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      background:
-                        inputValue.trim() && !isLoading
-                          ? `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.dark} 100%)`
-                          : 'action.hover',
-                      transform: inputValue.trim() && !isLoading ? 'scale(1.05)' : 'none',
-                      boxShadow:
-                        inputValue.trim() && !isLoading
-                          ? `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`
-                          : 'none',
-                    },
-                    '&:disabled': {
-                      bgcolor: 'action.disabledBackground',
-                      color: 'action.disabled',
-                      border: '2px solid',
-                      borderColor: 'divider',
-                    },
+                    width: 40,
+                    height: 40,
                   }}
                 >
-                  {isLoading ? <CircularProgress size={20} sx={{ color: 'inherit' }} /> : <ArrowUpwardIcon />}
+                  {isLoading ? (
+                    <CircularProgress size={18} sx={{ color: 'inherit' }} />
+                  ) : (
+                    <SendIcon sx={{ fontSize: 18 }} />
+                  )}
                 </IconButton>
-              </span>
-            </Tooltip>
-          </Stack>
-          {/* 底部提示文字 */}
-          <Typography
-            variant='caption'
-            sx={{
-              display: 'block',
-              textAlign: 'center',
-              color: 'text.disabled',
-              mt: 1.5,
-              fontSize: '0.7rem',
-            }}
-          >
-            {botName} 由 AI 驱动，可能会出错。请核实重要信息。
-          </Typography>
+              </Tooltip>
+            </Box>
+          </Box>
         </Box>
       </Box>
     </Box>
