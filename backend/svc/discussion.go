@@ -2073,35 +2073,44 @@ func (d *Discussion) Reindex(ctx context.Context, req ReindexReq) error {
 	})
 }
 
-func (d *Discussion) CreateOrLastSession(ctx context.Context, uid uint) (string, error) {
+type CreateOrLastSessionReq struct {
+	ForceCreate bool `form:"force_create"`
+}
+
+func (d *Discussion) CreateOrLastSession(ctx context.Context, uid uint, req CreateOrLastSessionReq) (string, error) {
 	bot, err := d.in.BotSvc.Get(ctx)
 	if err != nil {
 		return "", err
 	}
-	var lastSession model.AskSession
-	err = d.in.AskSessionRepo.Get(ctx, &lastSession,
-		repo.QueryWithEqual("user_id", uid),
-		repo.QueryWithEqual("created_at", time.Now().Add(-time.Hour), repo.EqualOPGT),
-	)
-	if err != nil {
-		if errors.Is(err, database.ErrRecordNotFound) {
-			sessionID := uuid.NewString()
-			err = d.in.AskSessionRepo.Create(ctx, &model.AskSession{
-				UUID:    sessionID,
-				UserID:  uid,
-				Bot:     true,
-				Summary: false,
-				Content: fmt.Sprintf("您好！我是%s，很高兴为您服务。有什么问题可以帮您？", bot.Name),
-			})
-			if err != nil {
+
+	if !req.ForceCreate {
+		var lastSession model.AskSession
+		err = d.in.AskSessionRepo.Get(ctx, &lastSession,
+			repo.QueryWithEqual("user_id", uid),
+			repo.QueryWithEqual("created_at", time.Now().Add(-time.Hour), repo.EqualOPGT),
+			repo.QueryWithOrderBy("created_at DESC"),
+		)
+		if err != nil {
+			if !errors.Is(err, database.ErrRecordNotFound) {
 				return "", err
 			}
-			return sessionID, nil
+		} else {
+			return lastSession.UUID, nil
 		}
-		return "", err
 	}
 
-	return lastSession.UUID, nil
+	sessionID := uuid.NewString()
+	err = d.in.AskSessionRepo.Create(ctx, &model.AskSession{
+		UUID:    sessionID,
+		UserID:  uid,
+		Bot:     true,
+		Summary: false,
+		Content: fmt.Sprintf("您好！我是%s，很高兴为您服务。有什么问题可以帮您？", bot.Name),
+	})
+	if err != nil {
+		return "", err
+	}
+	return sessionID, nil
 }
 
 type DiscussionAskReq struct {

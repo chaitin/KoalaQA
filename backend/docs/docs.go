@@ -4883,6 +4883,13 @@ const docTemplate = `{
                     "discussion"
                 ],
                 "summary": "create or get last session id",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "name": "force_create",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",

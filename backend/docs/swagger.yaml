@@ -6037,6 +6037,10 @@ paths:
   /discussion/ask/session:
     get:
       description: create or get last session id
+      parameters:
+      - in: query
+        name: force_create
+        type: boolean
       produces:
       - application/json
       responses:

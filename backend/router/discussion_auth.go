@@ -673,10 +673,17 @@ func (d *discussionAuth) Ask(ctx *context.Context) {
 // @Description create or get last session id
 // @Tags discussion
 // @Produce json
+// @Param req query svc.CreateOrLastSessionReq false "req params"
 // @Success 200 {object} context.Response{data=string}
 // @Router /discussion/ask/session [get]
 func (d *discussionAuth) CreateOrLastSession(ctx *context.Context) {
-	res, err := d.disc.CreateOrLastSession(ctx, ctx.GetUser().UID)
+	var req svc.CreateOrLastSessionReq
+	err := ctx.ShouldBindQuery(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+	res, err := d.disc.CreateOrLastSession(ctx, ctx.GetUser().UID, req)
 	if err != nil {
 		ctx.InternalError(err, "get session failed")
 		return
