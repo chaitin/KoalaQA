@@ -2294,9 +2294,9 @@ type ListAsksReq struct {
 func (d *Discussion) ListAsks(ctx context.Context, req ListAsksReq) (*model.ListRes[model.AskSession], error) {
 	var res model.ListRes[model.AskSession]
 	err := d.in.AskSessionRepo.ListSession(ctx, &res.Items,
-		repo.QueryWithILike("ask_sessions.content", req.Content),
-		repo.QueryWithEqual("users.name", req.Username),
-		repo.QueryWithOrderBy("ask_sessions.created_at DESC"),
+		repo.QueryWithILike("records.content", req.Content),
+		repo.QueryWithEqual("records.name", req.Username),
+		repo.QueryWithOrderBy("records.created_at DESC"),
 	)
 	if err != nil {
 		return nil, err
@@ -2304,7 +2304,7 @@ func (d *Discussion) ListAsks(ctx context.Context, req ListAsksReq) (*model.List
 
 	err = d.in.AskSessionRepo.CountSession(ctx, &res.Total,
 		repo.QueryWithILike("ask_sessions.content", req.Content),
-		repo.QueryWithEqual("users.name", req.Username),
+		repo.QueryWithILike("users.name", req.Username),
 	)
 	if err != nil {
 		return nil, err

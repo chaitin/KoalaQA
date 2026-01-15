@@ -78,7 +78,7 @@ func (d *discussion) Reindex(ctx *context.Context) {
 // @Router /admin/discussion/ask [get]
 func (d *discussion) ListAsks(ctx *context.Context) {
 	var req svc.ListAsksReq
-	err := ctx.ShouldBindJSON(&req)
+	err := ctx.ShouldBindQuery(&req)
 	if err != nil {
 		ctx.BadRequest(err)
 		return
