@@ -2094,7 +2094,7 @@ func (d *Discussion) CreateOrLastSession(ctx context.Context, uid uint, req Crea
 			if !errors.Is(err, database.ErrRecordNotFound) {
 				return "", err
 			}
-		} else {
+		} else if lastSession.UUID != "" {
 			return lastSession.UUID, nil
 		}
 	}
@@ -2128,7 +2128,7 @@ func (d *Discussion) AskSessionClosed(ctx context.Context, uid uint, sessionID s
 	if err != nil {
 		return false, err
 	}
-	if lastAsk.UUID != sessionID {
+	if lastAsk.UUID == "" || lastAsk.UUID != sessionID {
 		return false, errAskSessionClosed
 	}
 
