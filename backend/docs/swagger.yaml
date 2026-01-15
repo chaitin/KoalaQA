@@ -2569,9 +2569,17 @@ paths:
       description: backend ask session
       parameters:
       - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - in: query
         name: session_id
         required: true
         type: string
+      - in: query
+        minimum: 1
+        name: size
+        type: integer
       - in: query
         name: user_id
         required: true

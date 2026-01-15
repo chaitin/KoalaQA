@@ -240,10 +240,22 @@ const docTemplate = `{
                 "summary": "backend ask session",
                 "parameters": [
                     {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "name": "session_id",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "size",
+                        "in": "query"
                     },
                     {
                         "type": "integer",

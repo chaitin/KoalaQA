@@ -116,8 +116,9 @@ func (d *Discussion) allow(args ...any) bool {
 }
 
 var (
-	errRatelimit  = errors.New("ratelimit")
-	errPermission = errors.New("permission denied")
+	errRatelimit        = errors.New("ratelimit")
+	errPermission       = errors.New("permission denied")
+	errAskSessionClosed = errors.New("session closed")
 )
 
 func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req DiscussionCreateReq) (string, error) {
@@ -2077,6 +2078,19 @@ type DiscussionAskReq struct {
 	GroupIDs  model.Int64Array `json:"group_ids"`
 }
 
+func (d *Discussion) AskSessionClosed(ctx context.Context, sessionID string) (bool, error) {
+	var lastAsk model.AskSession
+	err := d.in.AskSessionRepo.Get(ctx, &lastAsk,
+		repo.QueryWithEqual("uuid", sessionID),
+		repo.QueryWithOrderBy("created_at DESC"),
+	)
+	if err != nil {
+		return false, err
+	}
+
+	return lastAsk.CreatedAt.Time().Add(time.Hour).Before(time.Now()), nil
+}
+
 func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*LLMStream, error) {
 	webPlugin, err := d.in.WebPlugin.Get(ctx)
 	if err != nil {
@@ -2085,6 +2099,14 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 
 	if !webPlugin.Display {
 		return nil, errors.New("disabled")
+	}
+
+	closed, err := d.AskSessionClosed(ctx, req.SessionID)
+	if err != nil {
+		return nil, err
+	}
+	if closed {
+		return nil, errAskSessionClosed
 	}
 
 	var groups []model.GroupItemInfo
@@ -2215,6 +2237,8 @@ func (d *Discussion) ListAsks(ctx context.Context, req ListAsksReq) (*model.List
 }
 
 type AskSessionReq struct {
+	*model.Pagination
+
 	SessionID string `form:"session_id" binding:"required"`
 	UserID    uint   `form:"user_id" binding:"required"`
 }
@@ -2224,7 +2248,8 @@ func (d *Discussion) AskSession(ctx context.Context, req AskSessionReq) (*model.
 	err := d.in.AskSessionRepo.List(ctx, &res.Items,
 		repo.QueryWithEqual("uuid", req.SessionID),
 		repo.QueryWithEqual("user_id", req.UserID),
-		repo.QueryWithOrderBy("created_at ASC, id ASC"),
+		repo.QueryWithOrderBy("created_at DESC, id DESC"),
+		repo.QueryWithPagination(req.Pagination),
 	)
 	if err != nil {
 		return nil, err
@@ -2256,6 +2281,7 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 	err = d.in.AskSessionRepo.List(ctx, &chatHistories,
 		repo.QueryWithEqual("uuid", req.SessoionID),
 		repo.QueryWithEqual("bot", false),
+		repo.QueryWithOrderBy("created_at ASC"),
 	)
 	if err != nil {
 		return nil, err
@@ -2263,6 +2289,10 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 
 	if len(chatHistories) == 0 {
 		return nil, errors.New("session not exist")
+	}
+
+	if chatHistories[len(chatHistories)-1].CreatedAt.Time().Add(time.Hour).Before(time.Now()) {
+		return nil, errAskSessionClosed
 	}
 
 	ok, err := d.in.UserRepo.HasForumPermission(ctx, uid, req.ForumID)

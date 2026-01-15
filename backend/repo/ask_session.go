@@ -27,6 +27,12 @@ func (a *AskSession) CountSession(ctx context.Context, res *int64, queryFuncs ..
 		Where(opt.Scopes()).Group("ask_sessions.uuid, ask_sessions.user_id").Count(res).Error
 }
 
+func (a *AskSession) Get(ctx context.Context, res any, queryFuncs ...QueryOptFunc) error {
+	opt := getQueryOpt(queryFuncs...)
+
+	return a.model(ctx).Scopes(opt.Scopes()...).First(res).Error
+}
+
 func newAskSession(db *database.DB) *AskSession {
 	return &AskSession{
 		base: base[*model.AskSession]{
