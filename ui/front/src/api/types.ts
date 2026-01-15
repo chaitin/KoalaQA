@@ -1359,7 +1359,11 @@ export interface GetAdminDiscussionAskParams {
 }
 
 export interface GetAdminDiscussionAskSessionParams {
+  /** @min 1 */
+  page?: number;
   session_id: string;
+  /** @min 1 */
+  size?: number;
   user_id: number;
 }
 
@@ -1772,6 +1776,10 @@ export interface PostDiscussionAskParams {
   group_ids?: number[];
   question: string;
   session_id: string;
+}
+
+export interface GetDiscussionAskSessionParams {
+  force_create?: boolean;
 }
 
 export interface GetDiscussionAskAskSessionIdParams {

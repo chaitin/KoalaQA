@@ -20,6 +20,7 @@ import {
   GetAdminDiscussionAskSessionParams,
   GetAdminDiscussionParams,
   GetDiscussionAskAskSessionIdParams,
+  GetDiscussionAskSessionParams,
   GetDiscussionDiscIdAssociateParams,
   GetDiscussionDiscIdFollowParams,
   GetDiscussionDiscIdParams,
@@ -246,6 +247,35 @@ export const postDiscussionAsk = (
     path: `/discussion/ask`,
     method: "POST",
     query: query,
+    ...params,
+  });
+
+/**
+ * @description create or get last session id
+ *
+ * @tags discussion
+ * @name GetDiscussionAskSession
+ * @summary create or get last session id
+ * @request GET:/discussion/ask/session
+ * @response `200` `(ContextResponse & {
+    data?: string,
+
+})` OK
+ */
+
+export const getDiscussionAskSession = (
+  query: GetDiscussionAskSessionParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: string;
+    }
+  >({
+    path: `/discussion/ask/session`,
+    method: "GET",
+    query: query,
+    format: "json",
     ...params,
   });
 

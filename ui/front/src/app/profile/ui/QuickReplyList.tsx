@@ -2,6 +2,7 @@
 
 import { ModelUserQuickReply } from '@/api'
 import Modal from '@/components/modal'
+import { AuthContext } from '@/components/authProvider'
 import { useQuickReplyStore } from '@/store/quickReplyStore'
 import {
   closestCenter,
@@ -17,7 +18,7 @@ import { CSS } from '@dnd-kit/utilities'
 import CancelIcon from '@mui/icons-material/Cancel'
 import DragHandleIcon from '@mui/icons-material/DragHandle'
 import { Box, Button, CircularProgress, IconButton, Stack, Typography } from '@mui/material'
-import { useState } from 'react'
+import { useState, useContext, useEffect } from 'react'
 import QuickReplyEditModal from './QuickReplyEditModal'
 
 interface SortableItemProps {
@@ -105,6 +106,7 @@ function SortableItem({ id, item, onEdit, onDelete }: SortableItemProps) {
 }
 
 export default function QuickReplyList() {
+  const { user } = useContext(AuthContext)
   const {
     quickReplies,
     loading,
@@ -113,9 +115,19 @@ export default function QuickReplyList() {
     deleteQuickReply,
     reorderQuickReplies,
     localReorderQuickReplies,
+    setUserRole,
+    fetchQuickReplies,
   } = useQuickReplyStore()
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<ModelUserQuickReply | null>(null)
+
+  // 设置用户角色并获取快捷回复列表
+  useEffect(() => {
+    if (user?.role) {
+      setUserRole(user.role)
+      fetchQuickReplies()
+    }
+  }, [user?.role, setUserRole, fetchQuickReplies])
 
   const sensors = useSensors(
     useSensor(PointerSensor, {

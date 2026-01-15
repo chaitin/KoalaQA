@@ -1,5 +1,10 @@
 // 此文件由 script/downLoadIcon.js 自动生成
 export const ICON_TYPES = [
+  "icon-huanyipi",
+  "icon-xingxing",
+  "icon-fuzhi1",
+  "icon-xinduihua",
+  "icon-fasong",
   "icon-dingding",
   "icon-issue",
   "icon-wenzhang",

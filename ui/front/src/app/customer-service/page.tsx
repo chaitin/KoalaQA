@@ -1,8 +1,9 @@
-import { getUser } from '@/api';
+import { getUser, getBot, getDiscussionAskSession } from '@/api';
 import { cookies } from 'next/headers';
 import { Box } from '@mui/material';
 import { Metadata } from 'next';
 import CustomerServiceContent from './ui/CustomerServiceContent';
+import { SvcBotGetRes } from '@/api/types';
 
 // 强制动态渲染，因为使用了 cookies
 export const dynamic = 'force-dynamic'
@@ -28,8 +29,32 @@ async function getUserData() {
   }
 }
 
+async function getBotData(): Promise<SvcBotGetRes | null> {
+  try {
+    const botData = await getBot();
+    return botData || null;
+  } catch (error) {
+    console.error('获取机器人信息失败:', error);
+    return null;
+  }
+}
+
+async function getSessionId(): Promise<string | null> {
+  try {
+    const response = await getDiscussionAskSession({});
+    return response || null;
+  } catch (error) {
+    console.error('获取会话ID失败:', error);
+    return null;
+  }
+}
+
 export default async function CustomerServicePage() {
-  const user = await getUserData();
+  const [user, botData, sessionId] = await Promise.all([
+    getUserData(),
+    getBotData(),
+    getSessionId(),
+  ]);
 
   if (!user) {
     return (
@@ -48,5 +73,5 @@ export default async function CustomerServicePage() {
     );
   }
 
-  return <CustomerServiceContent initialUser={user} />;
+  return <CustomerServiceContent initialUser={user} botData={botData} initialSessionId={sessionId} />;
 }

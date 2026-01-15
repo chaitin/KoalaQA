@@ -72,6 +72,11 @@ const Account = ({ isChecked, passwordConfig }: { isChecked: boolean; passwordCo
     const ciphertext = aesCbcEncrypt(password?.trim())
     return postUserLogin({ email, password: ciphertext })
       .then(async (res) => {
+        // 清除之前的 API 缓存，防止用户切换时出现数据混淆
+        if (typeof window !== 'undefined' && (globalThis as any).httpClientInstance) {
+          (globalThis as any).httpClientInstance.clearCache()
+        }
+        
         Cookies.set('auth_token', res, {
           path: '/',
           expires: 7, // 7 天
@@ -104,6 +109,13 @@ const Account = ({ isChecked, passwordConfig }: { isChecked: boolean; passwordCo
       })
   }
 
+  // 处理回车键登录
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' && isChecked) {
+      handleSubmit(onSubmit)()
+    }
+  }
+
   return (
     <Stack sx={{ width: '100%', alignItems: 'center' }}>
       <TextField
@@ -128,6 +140,7 @@ const Account = ({ isChecked, passwordConfig }: { isChecked: boolean; passwordCo
         type='password'
         fullWidth={true}
         size='small'
+        onKeyDown={handleKeyDown}
       />
 
       <LoadingBtn

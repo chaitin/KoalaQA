@@ -1012,6 +1012,18 @@ export interface SvcListAnydocNode {
   value?: AnydocListDoc;
 }
 
+export interface SvcListAsksRes {
+  bot?: boolean;
+  content?: string;
+  created_at?: number;
+  id?: number;
+  summary?: boolean;
+  updated_at?: number;
+  user_id?: number;
+  username?: string;
+  uuid?: string;
+}
+
 export interface SvcListRemoteReq {
   opt?: ModelPlatformOpt;
   platform?: PlatformPlatformType;
@@ -1359,7 +1371,11 @@ export interface GetAdminDiscussionAskParams {
 }
 
 export interface GetAdminDiscussionAskSessionParams {
+  /** @min 1 */
+  page?: number;
   session_id: string;
+  /** @min 1 */
+  size?: number;
   user_id: number;
 }
 
@@ -1772,6 +1788,10 @@ export interface PostDiscussionAskParams {
   group_ids?: number[];
   question: string;
   session_id: string;
+}
+
+export interface GetDiscussionAskSessionParams {
+  force_create?: boolean;
 }
 
 export interface GetDiscussionAskAskSessionIdParams {
