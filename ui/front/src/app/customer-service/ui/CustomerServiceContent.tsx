@@ -6,6 +6,7 @@ import { ModelDiscussionListItem, ModelUserInfo, SvcBotGetRes } from '@/api/type
 import { getSystemWebPlugin } from '@/api/WebPlugin'
 import { AuthContext } from '@/components/authProvider'
 import EditorContent from '@/components/EditorContent'
+import UserAvatar from '@/components/UserAvatar'
 import Alert from '@/components/alert'
 import { useForumStore } from '@/store'
 import SSEClient from '@/utils/fetch'
@@ -63,6 +64,8 @@ export default function CustomerServiceContent({
   const router = useRouter()
   const searchParams = useSearchParams()
   const theme = useTheme()
+  const displayUser = user?.uid ? user : initialUser
+  const userInitial = displayUser?.username?.[0]?.toUpperCase() || 'U'
   const forumId = useForumStore((s) => s.selectedForumId)
   const forums = useForumStore((s) => s.forums)
   const [botName, setBotName] = useState(botData?.name || '小智助手')
@@ -616,10 +619,10 @@ export default function CustomerServiceContent({
 
                   // 保持loading状态
                   setIsLoading(true)
-                  ;(async () => {
-                    await callSummaryContent(targetForumId, question, assistantMessageId, question)
-                    resolve()
-                  })()
+                    ; (async () => {
+                      await callSummaryContent(targetForumId, question, assistantMessageId, question)
+                      resolve()
+                    })()
                 } else {
                   setIsLoading(false)
                   resolve()
@@ -898,101 +901,101 @@ export default function CustomerServiceContent({
       setMessages((prev) => [...prev, assistantMessage])
       currentMessageRef.current = assistantMessage
 
-      // 调用发送逻辑（复用 handleSend 的核心逻辑）
-      ;(async () => {
-        try {
-          const csrfToken = await getCsrfToken()
-          const requestBody = JSON.stringify({
-            question: action.trim(),
-            session_id: sessionId,
-          })
-
-          let answerText = ''
-          const thinkingPatterns = [/思考[:：]/, /推理[:：]/, /分析[:：]/, /让我想想/, /我需要/, /正在思考/]
-
-          const streamComplete = new Promise<void>((resolve, reject) => {
-            const askSseClient = new SSEClient<any>({
-              url: '/api/discussion/ask',
-              headers: {
-                'X-CSRF-TOKEN': csrfToken,
-              },
-              method: 'POST',
-              streamMode: true,
-              onError: (err: Error) => {
-                console.error('AI 回答生成失败:', err)
-                setIsLoading(false)
-                setIsWaiting(false)
-                reject(err)
-              },
-              onComplete: () => {
-                setIsWaiting(false)
-                setIsLoading(false)
-                resolve()
-              },
+        // 调用发送逻辑（复用 handleSend 的核心逻辑）
+        ; (async () => {
+          try {
+            const csrfToken = await getCsrfToken()
+            const requestBody = JSON.stringify({
+              question: action.trim(),
+              session_id: sessionId,
             })
 
-            sseClientRef.current = askSseClient
+            let answerText = ''
+            const thinkingPatterns = [/思考[:：]/, /推理[:：]/, /分析[:：]/, /让我想想/, /我需要/, /正在思考/]
 
-            askSseClient.subscribe(requestBody, (data) => {
-              let textToAdd = ''
-              if (typeof data === 'string') {
-                try {
-                  const unquoted = data.replaceAll(/^"|"$/g, '')
-                  textToAdd = unquoted.replaceAll(/\\"/g, '"').replaceAll(/\\n/g, '\n')
-                } catch {
-                  textToAdd = data
-                }
-              } else if (data && typeof data === 'object') {
-                if ((data as any).event === 'text') {
-                  const eventData = (data as any).data
-                  if (typeof eventData === 'string') {
-                    textToAdd = eventData
-                  } else if (eventData && typeof eventData === 'object') {
-                    textToAdd =
-                      eventData.content ||
-                      eventData.text ||
-                      eventData.chunk ||
-                      eventData.message ||
-                      eventData.result ||
-                      ''
+            const streamComplete = new Promise<void>((resolve, reject) => {
+              const askSseClient = new SSEClient<any>({
+                url: '/api/discussion/ask',
+                headers: {
+                  'X-CSRF-TOKEN': csrfToken,
+                },
+                method: 'POST',
+                streamMode: true,
+                onError: (err: Error) => {
+                  console.error('AI 回答生成失败:', err)
+                  setIsLoading(false)
+                  setIsWaiting(false)
+                  reject(err)
+                },
+                onComplete: () => {
+                  setIsWaiting(false)
+                  setIsLoading(false)
+                  resolve()
+                },
+              })
+
+              sseClientRef.current = askSseClient
+
+              askSseClient.subscribe(requestBody, (data) => {
+                let textToAdd = ''
+                if (typeof data === 'string') {
+                  try {
+                    const unquoted = data.replaceAll(/^"|"$/g, '')
+                    textToAdd = unquoted.replaceAll(/\\"/g, '"').replaceAll(/\\n/g, '\n')
+                  } catch {
+                    textToAdd = data
                   }
-                } else if (!(data as any).event) {
-                  textToAdd = data.content || data.text || data.data || data.chunk || data.message || data.result || ''
-                }
-              }
-
-              if (textToAdd) {
-                const isThinkingLine = thinkingPatterns.some((pattern) => pattern.test(textToAdd))
-                if (!isThinkingLine) {
-                  answerText += textToAdd
-                  setMessages((prev) => {
-                    const newMessages = [...prev]
-                    const index = newMessages.findIndex((m) => m.id === assistantMessageId)
-                    if (index !== -1) {
-                      const howToMatches = answerText.match(/如何[^。，\n]{2,10}/g)
-                      const quickActions: string[] =
-                        howToMatches && howToMatches.length > 0 ? howToMatches.slice(0, 2) : []
-                      newMessages[index] = {
-                        ...newMessages[index],
-                        content: answerText,
-                        type: 'ai',
-                        quickActions: quickActions.length > 0 ? quickActions : undefined,
-                      }
+                } else if (data && typeof data === 'object') {
+                  if ((data as any).event === 'text') {
+                    const eventData = (data as any).data
+                    if (typeof eventData === 'string') {
+                      textToAdd = eventData
+                    } else if (eventData && typeof eventData === 'object') {
+                      textToAdd =
+                        eventData.content ||
+                        eventData.text ||
+                        eventData.chunk ||
+                        eventData.message ||
+                        eventData.result ||
+                        ''
                     }
-                    return newMessages
-                  })
+                  } else if (!(data as any).event) {
+                    textToAdd = data.content || data.text || data.data || data.chunk || data.message || data.result || ''
+                  }
                 }
-              }
-            })
-          })
 
-          await streamComplete
-        } catch (error) {
-          console.error('发送消息失败:', error)
-          setIsLoading(false)
-          setIsWaiting(false)
-        }
-      })()
+                if (textToAdd) {
+                  const isThinkingLine = thinkingPatterns.some((pattern) => pattern.test(textToAdd))
+                  if (!isThinkingLine) {
+                    answerText += textToAdd
+                    setMessages((prev) => {
+                      const newMessages = [...prev]
+                      const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+                      if (index !== -1) {
+                        const howToMatches = answerText.match(/如何[^。，\n]{2,10}/g)
+                        const quickActions: string[] =
+                          howToMatches && howToMatches.length > 0 ? howToMatches.slice(0, 2) : []
+                        newMessages[index] = {
+                          ...newMessages[index],
+                          content: answerText,
+                          type: 'ai',
+                          quickActions: quickActions.length > 0 ? quickActions : undefined,
+                        }
+                      }
+                      return newMessages
+                    })
+                  }
+                }
+              })
+            })
+
+            await streamComplete
+          } catch (error) {
+            console.error('发送消息失败:', error)
+            setIsLoading(false)
+            setIsWaiting(false)
+          }
+        })()
     },
     [isLoading, sessionId],
   )
@@ -1518,19 +1521,21 @@ export default function CustomerServiceContent({
                       }}
                     >
                       {/* 头像 */}
-                      <Avatar
+                      <UserAvatar
+                        user={displayUser}
+                        showSkeleton={false}
+                        containerSx={{ flexShrink: 0 }}
                         sx={{
-                          bgcolor: alpha(theme.palette.primary.main, 0.1),
-                          color: theme.palette.primary.main,
                           width: 40,
                           height: 40,
                           fontSize: '0.95rem',
                           fontWeight: 600,
-                          flexShrink: 0,
+                          color: theme.palette.primary.main,
+                          backgroundColor: 'transparent',
                         }}
                       >
-                        {user?.username?.[0]?.toUpperCase() || 'U'}
-                      </Avatar>
+                        {userInitial}
+                      </UserAvatar>
 
                       {/* 消息气泡 */}
                       <Box
@@ -1588,7 +1593,7 @@ export default function CustomerServiceContent({
       </Box>
 
       {/* 底部输入区域 - 现代化设计 */}
-      <Box sx={{pb: 2}}>
+      <Box sx={{ pb: 2 }}>
         <Box sx={{ maxWidth: '800px', mx: 'auto' }}>
           {/* 新会话按钮 - 位于输入框左上方 */}
           <Box sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
