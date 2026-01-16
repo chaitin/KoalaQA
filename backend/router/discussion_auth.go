@@ -737,18 +737,18 @@ func (d *discussionAuth) SummaryByContent(ctx *context.Context) {
 	}
 
 	ctx.Stream(func(_ io.Writer) bool {
-		if stream == nil {
-			ctx.SSEvent("no_disc", true)
-			return false
-		}
-
-		content, ok := stream.Text(ctx)
+		data, ok := stream.Text(ctx)
 		if !ok {
 			ctx.SSEvent("end", true)
 			return false
 		}
 
-		ctx.SSEvent("text", fmt.Sprintf("%q", content))
+		if data.Type == "text" {
+			ctx.SSEvent(data.Type, fmt.Sprintf("%q", data.Content))
+		} else {
+			ctx.SSEvent(data.Type, data.Content)
+		}
+
 		return true
 	})
 }

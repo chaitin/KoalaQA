@@ -3,12 +3,14 @@ package svc
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -547,7 +549,7 @@ type DiscussionSummaryReq struct {
 	UUIDs   model.StringArray `json:"uuids" binding:"required"`
 }
 
-func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummaryReq, refer bool) (*LLMStream, error) {
+func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummaryReq, refer bool) (*LLMStream[string], error) {
 	var discs []model.DiscussionListItem
 	err := d.in.DiscRepo.List(ctx, &discs, repo.QueryWithEqual("uuid", req.UUIDs, repo.EqualOPEqAny))
 	if err != nil {
@@ -2135,7 +2137,7 @@ func (d *Discussion) AskSessionClosed(ctx context.Context, uid uint, sessionID s
 	return lastAsk.CreatedAt.Time().Add(time.Hour).Before(time.Now()), nil
 }
 
-func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*LLMStream, error) {
+func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*LLMStream[string], error) {
 	webPlugin, err := d.in.WebPlugin.Get(ctx)
 	if err != nil {
 		return nil, err
@@ -2202,10 +2204,7 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		return nil, err
 	}
 
-	wrapSteam := LLMStream{
-		c:    make(chan string, 8),
-		stop: make(chan struct{}),
-	}
+	wrapSteam := NewLLMStream[string]()
 
 	go func() {
 		defer stream.Close()
@@ -2265,7 +2264,7 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		}
 	}()
 
-	return &wrapSteam, nil
+	return wrapSteam, nil
 }
 
 func (d *Discussion) AskHistory(ctx context.Context, sessionID string, uid uint) (*model.ListRes[model.AskSession], error) {
@@ -2351,7 +2350,18 @@ type SummaryByContentReq struct {
 	GroupIDs  model.Int64Array `json:"group_ids"`
 }
 
-func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req SummaryByContentReq) (*LLMStream, error) {
+type SummaryByContentItem struct {
+	Type    string
+	Content string
+}
+
+type SummaryDiscItem struct {
+	Title   string `json:"title"`
+	ForumID uint   `json:"forum_id"`
+	UUID    string `json:"uuid"`
+}
+
+func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req SummaryByContentReq) (*LLMStream[SummaryByContentItem], error) {
 	webPlugin, err := d.in.WebPlugin.Get(ctx)
 	if err != nil {
 		return nil, err
@@ -2445,43 +2455,76 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 		return nil, nil
 	}
 
-	discUUIDs := make([]string, 0)
-	for _, disc := range discs {
-		discUUIDs = append(discUUIDs, disc.UUID)
-	}
-
-	stream, err := d.Summary(ctx, uid, DiscussionSummaryReq{
-		Keyword: req.Content,
-		UUIDs:   discUUIDs,
-	}, true)
-	if err != nil {
-		return nil, err
-	}
-	if stream == nil {
-		return nil, err
-	}
-
-	wrapSteam := LLMStream{
-		c:    make(chan string, 8),
-		stop: make(chan struct{}),
-	}
+	wrapSteam := NewLLMStream[SummaryByContentItem]()
 
 	go func() {
+		logger := d.logger.WithContext(ctx)
+		err = wrapSteam.Read(SummaryByContentItem{
+			Type:    "disc_count",
+			Content: strconv.Itoa(len(discs)),
+		})
+		if err != nil {
+			logger.WithErr(err).Warn("send disc count failed")
+			return
+		}
+
+		for _, disc := range discs {
+			discItem := SummaryDiscItem{
+				Title:   disc.Title,
+				ForumID: disc.ForumID,
+				UUID:    disc.UUID,
+			}
+			discBytes, err := json.Marshal(discItem)
+			if err != nil {
+				logger.WithErr(err).With("disc", discItem).Warn("marshal disc failed")
+				return
+			}
+
+			err = wrapSteam.Read(SummaryByContentItem{
+				Type:    "disc",
+				Content: string(discBytes),
+			})
+			if err != nil {
+				logger.WithErr(err).Warn("send disc failed")
+			}
+		}
+
+		discUUIDs := make([]string, 0)
+		for _, disc := range discs {
+			discUUIDs = append(discUUIDs, disc.UUID)
+		}
+
+		stream, err := d.Summary(ctx, uid, DiscussionSummaryReq{
+			Keyword: req.Content,
+			UUIDs:   discUUIDs,
+		}, true)
+		if err != nil {
+			logger.WithErr(err).Warn("sunmary failed")
+			err = wrapSteam.Read(SummaryByContentItem{
+				Type:    "summary_failed",
+				Content: "true",
+			})
+			return
+		}
+
 		defer stream.Close()
 
 		var aiResBuilder strings.Builder
-		wrapSteam.Recv(func() (string, error) {
+		wrapSteam.Recv(func() (SummaryByContentItem, error) {
 			text, ok := stream.Text(ctx)
 			if !ok {
-				return "", io.EOF
+				return SummaryByContentItem{}, io.EOF
 			}
 
 			aiResBuilder.WriteString(text)
 
-			return text, nil
+			return SummaryByContentItem{
+				Type:    "text",
+				Content: text,
+			}, nil
 		})
 
-		err := d.in.AskSessionRepo.Create(context.Background(), &model.AskSession{
+		err = d.in.AskSessionRepo.Create(context.Background(), &model.AskSession{
 			UUID:    req.SessionID,
 			UserID:  uid,
 			Bot:     true,
@@ -2489,10 +2532,10 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 			Content: aiResBuilder.String(),
 		})
 		if err != nil {
-			d.logger.WithContext(ctx).Warn("create bot ask session failed")
+			logger.WithErr(err).Warn("create bot ask session failed")
 			return
 		}
 	}()
 
-	return &wrapSteam, nil
+	return wrapSteam, nil
 }

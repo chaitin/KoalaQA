@@ -2,6 +2,7 @@ package svc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"strconv"
@@ -86,7 +87,7 @@ func (g *GenerateReq) GroupInfo() (ids model.Int64Array, names []string) {
 	return
 }
 
-func (l *LLM) StreamAnswer(ctx context.Context, sysPrompt string, req GenerateReq) (*LLMStream, error) {
+func (l *LLM) StreamAnswer(ctx context.Context, sysPrompt string, req GenerateReq) (*LLMStream[string], error) {
 	query := req.Question
 
 	groupIDs, groupNames := req.GroupInfo()
@@ -243,16 +244,16 @@ func (l *LLM) msgs(ctx context.Context, sMsg string, uMsg string, params map[str
 	return msgs, nil
 }
 
-type LLMStream struct {
-	c    chan string
+type LLMStream[T any] struct {
+	c    chan T
 	stop chan struct{}
 }
 
-func (l *LLMStream) Close() {
+func (l *LLMStream[T]) Close() {
 	close(l.stop)
 }
 
-func (l *LLMStream) Recv(f func() (string, error)) {
+func (l *LLMStream[T]) Recv(f func() (T, error)) {
 	defer close(l.c)
 	for {
 		content, err := f()
@@ -268,7 +269,19 @@ func (l *LLMStream) Recv(f func() (string, error)) {
 	}
 }
 
-func (l *LLMStream) Send(ctx context.Context, f func(content string)) {
+var ErrStreamStoped = errors.New("stream stoped")
+
+func (l *LLMStream[T]) Read(content T) error {
+	select {
+	case <-l.stop:
+		return ErrStreamStoped
+	case l.c <- content:
+	}
+
+	return nil
+}
+
+func (l *LLMStream[T]) Send(ctx context.Context, f func(content T)) {
 	defer l.Close()
 
 	for {
@@ -281,20 +294,27 @@ func (l *LLMStream) Send(ctx context.Context, f func(content string)) {
 	}
 }
 
-func (l *LLMStream) Text(ctx context.Context) (string, bool) {
+func (l *LLMStream[T]) Text(ctx context.Context) (T, bool) {
 	select {
 	case <-ctx.Done():
-		return "", false
+		return *new(T), false
 	case content, ok := <-l.c:
 		if !ok {
-			return "", false
+			return *new(T), false
 		}
 
 		return content, true
 	}
 }
 
-func (l *LLM) StreamChat(ctx context.Context, sMsg string, uMsg string, params map[string]any, histories ...*schema.Message) (*LLMStream, error) {
+func NewLLMStream[T any]() *LLMStream[T] {
+	return &LLMStream[T]{
+		c:    make(chan T, 8),
+		stop: make(chan struct{}),
+	}
+}
+
+func (l *LLM) StreamChat(ctx context.Context, sMsg string, uMsg string, params map[string]any, histories ...*schema.Message) (*LLMStream[string], error) {
 	cm, err := l.kit.GetChatModel(ctx)
 	if err != nil {
 		return nil, err
@@ -312,10 +332,7 @@ func (l *LLM) StreamChat(ctx context.Context, sMsg string, uMsg string, params m
 		return nil, err
 	}
 
-	s := LLMStream{
-		c:    make(chan string, 8),
-		stop: make(chan struct{}),
-	}
+	s := NewLLMStream[string]()
 
 	go func() {
 		defer reader.Close()
@@ -330,7 +347,7 @@ func (l *LLM) StreamChat(ctx context.Context, sMsg string, uMsg string, params m
 		})
 	}()
 
-	return &s, nil
+	return s, nil
 }
 
 // GenerateAnswerPrompt 生成回复帖子的提示词
