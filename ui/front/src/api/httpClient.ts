@@ -76,18 +76,12 @@ export enum ContentType {
 
 type ExtractDataProp<T> = T extends { data?: infer U } ? U : T;
 
-// CSRF token 缓存
-let csrfTokenCache: string | null = null;
+// CSRF token 获取请求去重（避免并发时重复请求）
 let csrfTokenPromise: Promise<string> | null = null;
 
-// 获取CSRF token的函数
+// 获取CSRF token的函数（每次都从服务器获取，不使用缓存）
 export const getCsrfToken = async (): Promise<string> => {
-  // 如果已经有缓存的token，直接返回
-  if (csrfTokenCache) {
-    return csrfTokenCache;
-  }
-
-  // 如果正在获取token，等待现有的请求
+  // 如果正在获取token，等待现有的请求（避免并发重复请求）
   if (csrfTokenPromise) {
     return csrfTokenPromise;
   }
@@ -108,7 +102,6 @@ export const getCsrfToken = async (): Promise<string> => {
       }
 
       if (token) {
-        csrfTokenCache = token;
         resolve(token);
       } else {
         reject(new Error("Failed to get CSRF token"));
@@ -117,7 +110,7 @@ export const getCsrfToken = async (): Promise<string> => {
       console.error("Failed to fetch CSRF token:", error);
       reject(error);
     } finally {
-      // 清除Promise缓存，允许重试
+      // 清除Promise缓存，允许后续请求
       csrfTokenPromise = null;
     }
   });
@@ -125,9 +118,8 @@ export const getCsrfToken = async (): Promise<string> => {
   return csrfTokenPromise;
 };
 
-// 清除CSRF token缓存的函数（在token失效时调用）
+// 清除CSRF token获取请求的函数（在token失效时调用，用于取消正在进行的请求）
 export const clearCsrfTokenCache = () => {
-  csrfTokenCache = null;
   csrfTokenPromise = null;
 };
 

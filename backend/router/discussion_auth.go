@@ -698,7 +698,7 @@ func (d *discussionAuth) CreateOrLastSession(ctx *context.Context) {
 // @Tags discussion
 // @Produce json
 // @Param ask_session_id path string true "ask_session_id"
-// @Success 200 {object} context.Response{data=model.ListRes{items=[]model.AskSession}}
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]model.AskSession{summary_discs=[]model.AskSessionSummaryDisc}}}
 // @Router /discussion/ask/{ask_session_id} [get]
 func (d *discussionAuth) AskHistory(ctx *context.Context) {
 	res, err := d.disc.AskHistory(ctx, ctx.Param("ask_session_id"), ctx.GetUser().UID)
@@ -730,25 +730,22 @@ func (d *discussionAuth) SummaryByContent(ctx *context.Context) {
 		ctx.InternalError(err, "summary failed")
 		return
 	}
+	defer stream.Close()
 
 	ctx.Writer.Header().Set("X-Accel-Buffering", "no")
-	if stream != nil {
-		defer stream.Close()
-	}
-
 	ctx.Stream(func(_ io.Writer) bool {
-		if stream == nil {
-			ctx.SSEvent("no_disc", true)
-			return false
-		}
-
-		content, ok := stream.Text(ctx)
+		data, ok := stream.Text(ctx)
 		if !ok {
 			ctx.SSEvent("end", true)
 			return false
 		}
 
-		ctx.SSEvent("text", fmt.Sprintf("%q", content))
+		if data.Type == "text" {
+			ctx.SSEvent(data.Type, fmt.Sprintf("%q", data.Content))
+		} else {
+			ctx.SSEvent(data.Type, data.Content)
+		}
+
 		return true
 	})
 }

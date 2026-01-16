@@ -74,7 +74,6 @@ const ChatConfig = () => {
         sx={{ pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}
       >
         <Typography variant="subtitle2">智能对话 </Typography>
-        <Chip label="Beta" color="primary" size="small" />
       </Stack>
 
       <Box sx={{ p: 2 }}>

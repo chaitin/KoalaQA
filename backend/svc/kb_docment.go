@@ -14,6 +14,7 @@ import (
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/anydoc"
 	"github.com/chaitin/koalaqa/pkg/anydoc/platform"
+	"github.com/chaitin/koalaqa/pkg/database"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/oss"
@@ -555,11 +556,13 @@ func (d *KBDocument) Detail(ctx context.Context, kbID uint, docID uint) (*model.
 			var disc model.Discussion
 			err = d.repoDisc.GetByID(ctx, &disc, discID, repo.QueryWithSelectColumn("forum_id", "uuid"))
 			if err != nil {
-				return nil, err
+				if !errors.Is(err, database.ErrRecordNotFound) {
+					return nil, err
+				}
+			} else {
+				doc.DiscForumID = disc.ForumID
+				doc.DiscUUID = disc.UUID
 			}
-
-			doc.DiscForumID = disc.ForumID
-			doc.DiscUUID = disc.UUID
 		}
 	}
 

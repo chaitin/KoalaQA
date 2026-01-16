@@ -1,6 +1,7 @@
 import { getAdminKbKbIdQuestionQaId, ModelKBDocumentDetail, postAdminLlmPolish } from '@/api';
 import { message, Modal } from '@ctzhian/ui';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import UndoIcon from '@mui/icons-material/Undo';
 import { Box, Button, IconButton, Stack, TextField, Tooltip, Typography } from '@mui/material';
 import { useRequest } from 'ahooks';
@@ -111,6 +112,27 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
 
   const hasHistoricalQa = !!qaItem?.similar_id && !!historicalQaDetail;
 
+  // 检查是否有原帖链接
+  const hasOriginalPost = !!(qaItem?.disc_forum_id && qaItem?.disc_uuid);
+
+  // 处理查看原帖
+  const handleViewOriginalPost = () => {
+    if (!qaItem?.disc_forum_id || !qaItem?.disc_uuid) {
+      return;
+    }
+
+    // 构建原帖链接
+    // 优先使用 route_name，如果没有则使用 forum_id
+    const baseUrl =
+      process.env.NODE_ENV === 'development'
+        ? `${globalThis.location.protocol}//${globalThis.location.hostname}:3000`
+        : globalThis.location.origin;
+
+    // 使用 forum_id 和 uuid 构建链接
+    const postUrl = `${baseUrl}/${qaItem.disc_forum_id}/${qaItem.disc_uuid}`;
+    window.open(postUrl, '_blank');
+  };
+
   return (
     <Modal
       open={open}
@@ -120,6 +142,17 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
       maskClosable={false}
       footer={
         <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ p: 3 }}>
+          {hasOriginalPost && (
+            <Button
+              onClick={handleViewOriginalPost}
+              startIcon={<OpenInNewIcon />}
+              sx={{
+                mr: 'auto!important',
+              }}
+            >
+              查看原帖
+            </Button>
+          )}
           <Button onClick={handleReject} color="error">
             拒绝
           </Button>
@@ -161,8 +194,12 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
                 value={historicalQaDetail?.title || ''}
                 disabled
                 size="small"
+                multiline
+                minRows={1}
+                maxRows={10}
                 sx={{
                   flexGrow: 1,
+                  whiteSpace: 'pre-wrap',
                   '& fieldset': {
                     border: 'none',
                   },
@@ -195,6 +232,9 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
           <Stack direction="row" alignItems="center" sx={{ mb: 2 }}>
             <TextField
               label="问题"
+              multiline
+              minRows={1}
+              maxRows={10}
               value={question}
               onChange={e => setQuestion(e.target.value)}
               fullWidth

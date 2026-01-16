@@ -233,6 +233,7 @@ export interface ModelAskSession {
   created_at?: number;
   id?: number;
   summary?: boolean;
+  summary_discs?: ModelDiscussionListItem[];
   updated_at?: number;
   user_id?: number;
   uuid?: string;

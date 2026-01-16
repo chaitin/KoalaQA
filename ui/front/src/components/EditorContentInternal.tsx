@@ -36,7 +36,6 @@ const EditorContentInternal: React.FC<MarkDownProps> = (props) => {
   const { content = '', sx, onTocUpdate } = props
   const [isMounted, setIsMounted] = useState(false)
   const [hasError, setHasError] = useState(false)
-
   // 初始化编辑器，使用空内容避免初始化时的错误
   const editorRef = useTiptap({
     content: '',
@@ -136,8 +135,28 @@ const EditorContentInternal: React.FC<MarkDownProps> = (props) => {
       className='editor-container'
       sx={{
         width: '100%',
+        '& .ProseMirror-trailingBreak': {
+          display: 'none',
+        },
         '& code': {
           whiteSpace: 'pre-wrap',
+        },
+        '& .tiptap.ProseMirror blockquote:after': {
+          width: '1px',
+          bgcolor: 'divider',
+        },
+        '& .tiptap.ProseMirror blockquote': {
+          bgcolor: 'transparent',
+          '& p': {
+            color: 'text.secondary',
+          },
+        },
+        '& .link-wrapper .MuiAvatar-root': {
+          display: 'none',
+        },
+        '& .link-wrapper a': {
+          color: 'text.secondary',
+          textDecoration: 'underline',
         },
         ...sx,
       }}
@@ -148,4 +167,3 @@ const EditorContentInternal: React.FC<MarkDownProps> = (props) => {
 }
 
 export default EditorContentInternal
-
