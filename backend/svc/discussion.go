@@ -2442,7 +2442,7 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 	discs, err := d.Search(ctx, DiscussionSearchReq{
 		Keyword:             lastContent,
 		ForumID:             req.ForumID,
-		SimilarityThreshold: 0.4,
+		SimilarityThreshold: 0.2,
 		MaxChunksPerDoc:     1,
 		Metadata:            metadata,
 		Histories:           histories[:len(histories)-1],
