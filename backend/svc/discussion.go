@@ -2458,7 +2458,7 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 		err = wrapSteam.RecvOne(SummaryByContentItem{
 			Type:    "disc_count",
 			Content: strconv.Itoa(len(discs)),
-		})
+		}, len(discs) == 0)
 		if err != nil {
 			logger.WithErr(err).Warn("send disc count failed")
 			return
@@ -2483,7 +2483,7 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 			err = wrapSteam.RecvOne(SummaryByContentItem{
 				Type:    "disc",
 				Content: string(discBytes),
-			})
+			}, false)
 			if err != nil {
 				logger.WithErr(err).Warn("send disc failed")
 				return
@@ -2504,7 +2504,7 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 			err = wrapSteam.RecvOne(SummaryByContentItem{
 				Type:    "summary_failed",
 				Content: "true",
-			})
+			}, true)
 			if err != nil {
 				logger.WithErr(err).Warn("send summary result failed")
 			}
