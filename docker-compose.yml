@@ -130,7 +130,7 @@ services:
 
   anydoc:
     container_name: koala-qa-anydoc
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/anydoc:v0.7.9
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/anydoc:v0.9.0
     restart: always
     environment:
       - TZ=${TIMEZONE:-Asia/Shanghai}
