@@ -6191,10 +6191,6 @@ paths:
       description: content summary
       parameters:
       - in: query
-        name: content
-        required: true
-        type: string
-      - in: query
         name: forum_id
         required: true
         type: integer

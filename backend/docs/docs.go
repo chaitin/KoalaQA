@@ -5164,12 +5164,6 @@ const docTemplate = `{
                 "summary": "content summary",
                 "parameters": [
                     {
-                        "type": "string",
-                        "name": "content",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
                         "type": "integer",
                         "name": "forum_id",
                         "in": "query",

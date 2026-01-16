@@ -2346,7 +2346,6 @@ func (d *Discussion) AskSession(ctx context.Context, req AskSessionReq) (*model.
 type SummaryByContentReq struct {
 	SessionID string           `json:"session_id" binding:"required,uuid"`
 	ForumID   uint             `json:"forum_id" binding:"required"`
-	Content   string           `json:"content" binding:"required"`
 	GroupIDs  model.Int64Array `json:"group_ids"`
 }
 
@@ -2439,13 +2438,14 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 		histories[i] = chatHistories[i].Content
 	}
 
+	lastContent := histories[len(histories)-1]
 	discs, err := d.Search(ctx, DiscussionSearchReq{
-		Keyword:             req.Content,
+		Keyword:             lastContent,
 		ForumID:             req.ForumID,
 		SimilarityThreshold: 0.4,
 		MaxChunksPerDoc:     1,
 		Metadata:            metadata,
-		Histories:           histories,
+		Histories:           histories[:len(histories)-1],
 	})
 	if err != nil {
 		return nil, err
@@ -2496,7 +2496,7 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 		}
 
 		stream, err := d.Summary(ctx, uid, DiscussionSummaryReq{
-			Keyword: req.Content,
+			Keyword: lastContent,
 			UUIDs:   discUUIDs,
 		}, true)
 		if err != nil {
