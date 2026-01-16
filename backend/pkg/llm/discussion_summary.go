@@ -94,18 +94,16 @@ const discussionSummaryUserTplStr = `
 {{- $urlPrefix := .URLPrefix -}}
 ## 帖子信息:
 {{- range $i, $disc := .Discussions}}
-### 帖子{{add $i 1}}
-#### 帖子ID：{{$disc.ID}}
-#### 帖子类型：{{getDiscType $disc.Type}}
-#### 帖子标题：{{$disc.Title}}
-#### 帖子总结：{{ if eq $disc.Summary ""}} 无 {{- else}} {{- $disc.Summary}} {{- end}}
+### 帖子类型：{{getDiscType $disc.Type}}
+### 帖子标题：{{$disc.Title}}
+### 帖子总结：{{ if eq $disc.Summary ""}} 无 {{- else}} {{- $disc.Summary}} {{- end}}
 {{- if ne $urlPrefix ""}}
-#### 帖子URL: {{$urlPrefix}}/{{$disc.UUID}}
+### 帖子URL: {{$urlPrefix}}/{{$disc.UUID}}
 {{- end}}
-#### 发帖人：{{$disc.UserName}}
-#### 发帖时间：{{formatTime $disc.CreatedAt}}
+### 发帖人：{{$disc.UserName}}
+### 发帖时间：{{formatTime $disc.CreatedAt}}
 {{- if $disc.Tags}}
-#### 帖子标签：{{join $disc.Tags ", "}}
+### 帖子标签：{{join $disc.Tags ", "}}
 {{- end}}
 {{if ne $disc.Type "blog"}}#### 帖子状态：{{getDiscState $disc.Resolved}}{{end}}
 {{- end}}
