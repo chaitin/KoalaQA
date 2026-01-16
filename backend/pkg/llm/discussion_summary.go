@@ -94,6 +94,7 @@ const discussionSummaryUserTplStr = `
 {{- $urlPrefix := .URLPrefix -}}
 ## 帖子信息:
 {{- range $i, $disc := .Discussions}}
+------
 ### 帖子类型：{{getDiscType $disc.Type}}
 ### 帖子标题：{{$disc.Title}}
 ### 帖子总结：{{ if eq $disc.Summary ""}} 无 {{- else}} {{- $disc.Summary}} {{- end}}
