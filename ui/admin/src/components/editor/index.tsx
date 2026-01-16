@@ -244,6 +244,7 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
             flexDirection: 'column',
             borderRadius: 3,
             transition: 'all 0.3s ease',
+            wordBreak: 'break-all',
             '.editor-toolbar + div': {
               flex: 1,
             },

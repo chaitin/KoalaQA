@@ -265,10 +265,10 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
   }
 
   // 新增: 移动端未登录时也展示发帖按钮，点击跳转至登录页
-  const handleMobilePostClick = () => {
+  const handleMobilePostClick = (e: React.MouseEvent<HTMLElement>) => {
     if (user?.uid) {
       // 已登录，和原来一样弹出菜单
-      handlePublishMenuOpen({} as React.MouseEvent<HTMLElement>)
+      handlePublishMenuOpen(e)
     } else {
       // 未登录跳转登录页
       plainRouter.push('/login')
@@ -442,19 +442,25 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
       >
         <Toolbar sx={{ py: 1, px: 1, color: 'text.primary' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
-            {/* Menu button - 只在有多个板块时显示 */}
-            {forums && !!forums.length && (
-              <IconButton
-                size='small'
-                onClick={openMobileMenu}
-                sx={{
-                  color: 'text.primary',
-                  '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
-                }}
-              >
-                <MenuIcon />
-              </IconButton>
-            )}
+            {/* Menu button - 只在有多个板块，或者只有一个板块但有常用链接时显示 */}
+            {(() => {
+              const hasMultipleForums = (forums?.length ?? 0) > 1
+              const hasCommonLinks =
+                currentForumInfo?.links?.enabled && (currentForumInfo?.links?.links?.length ?? 0) > 0
+              const shouldShowMenu = hasMultipleForums || hasCommonLinks
+              return shouldShowMenu ? (
+                <IconButton
+                  size='small'
+                  onClick={openMobileMenu}
+                  sx={{
+                    color: 'text.primary',
+                    '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
+                  }}
+                >
+                  <MenuIcon />
+                </IconButton>
+              ) : null
+            })()}
 
             {/* Logo */}
             <Box

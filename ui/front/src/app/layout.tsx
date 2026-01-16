@@ -179,7 +179,8 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
         {/* DNS 预解析优化 */}
         <link rel='dns-prefetch' href='//fonts.googleapis.com' />
         <link rel='preconnect' href='//fonts.googleapis.com' crossOrigin='anonymous' />
-        <link rel='icon' href={brand?.logo || '/logo.svg'} />
+        {/* 使用动态 favicon 路由，统一处理 favicon 请求 */}
+        <link rel='icon' href='/favicon.ico' />
       </head>
       <body className={`${monoFont.variable} ${alimamashuheitiFont.variable}`}>
         <Script src={`/font/iconfont.js?v=${ICONFONT_VERSION}`} strategy='beforeInteractive' />

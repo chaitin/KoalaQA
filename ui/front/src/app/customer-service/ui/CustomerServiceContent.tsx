@@ -19,7 +19,7 @@ import {
   Box,
   Button,
   CircularProgress,
-  Divider,
+  Collapse,
   Fade,
   IconButton,
   Paper,
@@ -29,16 +29,21 @@ import {
   Typography,
   useTheme,
 } from '@mui/material'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { Icon } from '@ctzhian/ui'
 
+// 检查回答是否是"无法回答问题"
+const cannotAnswerPatterns = [/^无法回答问题$/, /^无法回答$/]
 interface Message {
   id: string
   role: 'user' | 'assistant'
   content: string
   type?: 'ai' | 'search' // ai: AI知识库回答, search: 搜索帖子回答
   sources?: ModelDiscussionListItem[] // 引用帖子
+  discCount?: number // 搜索结果数量
   summary?: string // 智能总结
   needsForumSelection?: boolean // 是否需要选择板块
   pendingQuestion?: string // 待处理的问题
@@ -47,12 +52,13 @@ interface Message {
   forumId?: number // 板块ID，用于发帖
   timestamp?: string // 时间戳
   quickActions?: string[] // 快速操作按钮
+  isComplete?: boolean // 是否已完成（流式输出完成）
 }
 
 interface CustomerServiceContentProps {
-  initialUser: ModelUserInfo
-  botData?: SvcBotGetRes | null
-  initialSessionId?: string | null
+  readonly initialUser: ModelUserInfo
+  readonly botData?: SvcBotGetRes | null
+  readonly initialSessionId?: string | null
 }
 
 export default function CustomerServiceContent({
@@ -75,7 +81,9 @@ export default function CustomerServiceContent({
   const [isLoading, setIsLoading] = useState(false)
   const [isWaiting, setIsWaiting] = useState(false)
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
+  const [isInputFocused, setIsInputFocused] = useState(false)
   const [isServiceEnabled, setIsServiceEnabled] = useState<boolean | null>(null) // null表示正在加载
+  const [expandedSources, setExpandedSources] = useState<Set<string>>(new Set()) // 展开的搜索结果消息ID
   const [commonQuestions, setCommonQuestions] = useState<string[]>([
     '管理员密码忘了怎么办?',
     '如何配置 SSO 登录',
@@ -144,6 +152,17 @@ export default function CustomerServiceContent({
   const sseClientRef = useRef<SSEClient<any> | null>(null)
   const currentMessageRef = useRef<Message | null>(null)
 
+  // 获取当前的 sessionId，优先从 URL 获取，确保与 URL 同步
+  const getCurrentSessionId = useCallback(() => {
+    // 优先从 searchParams 获取（Next.js 的 useSearchParams 是响应式的）
+    const urlId = searchParams.get('id')
+    if (urlId) {
+      return urlId
+    }
+    // 如果没有，则使用 state 中的 sessionId
+    return sessionId
+  }, [searchParams, sessionId])
+
   // 如果 URL 中没有 id 参数，添加 sessionId 到 URL
   useEffect(() => {
     const urlId = searchParams.get('id')
@@ -193,18 +212,48 @@ export default function CustomerServiceContent({
         const historyItems = response.items || []
 
         if (historyItems && historyItems.length > 0) {
+          // 过滤掉匹配 cannotAnswerPatterns 的机器人消息（但保留最后一条）
+          const filteredItems = historyItems.filter((item, index) => {
+            // 如果是最后一条，无论是否匹配都保留
+            const isLastItem = index === historyItems.length - 1
+            if (isLastItem) {
+              return true
+            }
+
+            // 如果是机器人消息，检查内容是否匹配"无法回答问题"的模式
+            if (item.bot && item.content) {
+              const content = item.content.trim()
+              const isCannotAnswer = cannotAnswerPatterns.some((pattern) => pattern.test(content))
+              // 过滤掉匹配的消息（但最后一条已经在上面的判断中保留了）
+              return !isCannotAnswer
+            }
+            // 用户消息和空内容的消息都保留
+            return true
+          })
+
           // 转换历史记录为 Message 格式
-          const historyMessages: Message[] = historyItems.map((item, index) => ({
-            id: item.id?.toString() || `history-${index}`,
-            role: item.bot ? 'assistant' : 'user',
-            content: item.content || '',
-            type: item.bot ? 'ai' : undefined,
-            timestamp: item.created_at
-              ? typeof item.created_at === 'number'
-                ? new Date(item.created_at * 1000).toISOString()
-                : item.created_at
-              : new Date().toISOString(),
-          }))
+          const historyMessages: Message[] = filteredItems.map((item, index) => {
+            const message: Message = {
+              id: item.id?.toString() || `history-${index}`,
+              role: item.bot ? 'assistant' : 'user',
+              content: item.content || '',
+              type: item.bot ? 'ai' : undefined,
+              timestamp: item.created_at
+                ? typeof item.created_at === 'number'
+                  ? new Date(item.created_at * 1000).toISOString()
+                  : item.created_at
+                : new Date().toISOString(),
+            }
+
+            // 如果有 summary_discs，渲染成搜索结果
+            if (item.bot && item.summary_discs && item.summary_discs.length > 0) {
+              message.type = 'search'
+              message.sources = item.summary_discs
+              message.discCount = item.summary_discs.length
+            }
+
+            return message
+          })
 
           setMessages(historyMessages)
         } else {
@@ -317,6 +366,18 @@ export default function CustomerServiceContent({
           },
           onComplete: () => {
             setIsLoading(false)
+            // 标记消息已完成
+            setMessages((prev) => {
+              const newMessages = [...prev]
+              const index = newMessages.findIndex((m) => m.id === messageId)
+              if (index !== -1) {
+                newMessages[index] = {
+                  ...newMessages[index],
+                  isComplete: true,
+                }
+              }
+              return newMessages
+            })
           },
         })
 
@@ -324,11 +385,15 @@ export default function CustomerServiceContent({
 
         let summaryText = ''
         let searchResults: ModelDiscussionListItem[] = []
+        let discCount: number | undefined // 提升到外层作用域
+
+        // 获取当前的 sessionId，确保与 URL 同步
+        const currentSessionId = getCurrentSessionId()
 
         const summaryRequestBody = JSON.stringify({
           content: question,
           forum_id: forumId,
-          session_id: sessionId,
+          session_id: currentSessionId,
         })
 
         const thinkingPatterns = [/思考[:：]/, /推理[:：]/, /分析[:：]/, /让我想想/, /我需要/, /正在思考/]
@@ -359,45 +424,104 @@ export default function CustomerServiceContent({
             return
           }
 
-          // 检测 no_disc 事件
-          // SSE 事件格式: { event: 'no_disc', data: true }
-          const isNoDiscEvent = (data && typeof data === 'object' && (data as any).event === 'no_disc') || data === true // 某些情况下 data 可能直接是 true
+          // 处理新的流式数据格式
+          if (data && typeof data === 'object') {
+            const dataObj = data as any
+            const eventType = dataObj.event
+            const eventData = dataObj.data
 
-          if (isNoDiscEvent) {
-            setMessages((prev) => {
-              const newMessages = [...prev]
-              const index = newMessages.findIndex((m) => m.id === messageId)
-              if (index !== -1) {
-                newMessages[index] = {
-                  ...newMessages[index],
-                  content: data.message || '抱歉，暂时没有找到相关帖子。',
-                  type: 'search',
-                  showPostPrompt: !!originalQuestion,
-                  originalQuestion: originalQuestion,
-                  forumId: forumId, // 保存板块ID
+            // 处理 event:disc_count
+            if (eventType === 'disc_count') {
+              const count = typeof eventData === 'number' ? eventData : Number.parseInt(String(eventData), 10)
+              if (!Number.isNaN(count)) {
+                discCount = count
+                // 立即更新消息，显示搜索结果数量（此时 sources 可能还是空的）
+                setMessages((prev) => {
+                  const newMessages = [...prev]
+                  const index = newMessages.findIndex((m) => m.id === messageId)
+                  if (index !== -1) {
+                    newMessages[index] = {
+                      ...newMessages[index],
+                      type: 'search',
+                      discCount: count,
+                      sources: searchResults, // 保持现有的 sources
+                      content: '', // 此时还没有总结文本
+                    }
+                  }
+                  return newMessages
+                })
+
+                // 如果 disc_count === 0，显示没有找到结果
+                if (count === 0) {
+                  setMessages((prev) => {
+                    const newMessages = [...prev]
+                    const index = newMessages.findIndex((m) => m.id === messageId)
+                    if (index !== -1) {
+                      newMessages[index] = {
+                        ...newMessages[index],
+                        content: '抱歉，暂时没有找到相关帖子。',
+                        showPostPrompt: !!originalQuestion,
+                        originalQuestion: originalQuestion,
+                        forumId: forumId,
+                      }
+                    }
+                    return newMessages
+                  })
+                  setIsLoading(false)
                 }
               }
-              return newMessages
-            })
-            setIsLoading(false)
-            return
-          }
-
-          let textToAdd = ''
-          if (typeof data === 'string') {
-            try {
-              const unquoted = data.replaceAll(/^"|"$/g, '')
-              textToAdd = unquoted.replaceAll(/\\"/g, '"').replaceAll(/\\n/g, '\n')
-            } catch {
-              textToAdd = data
+              return
             }
-          } else if (data && typeof data === 'object') {
-            // 如果是带 event 字段的对象，从 data.data 中提取内容
-            if ((data as any).event === 'text') {
-              // event:text 类型，提取 data 字段
-              const eventData = (data as any).data
+
+            // 处理 event:disc - 单个帖子信息
+            if (eventType === 'disc') {
+              let discItem: ModelDiscussionListItem | null = null
+
               if (typeof eventData === 'string') {
-                textToAdd = eventData
+                try {
+                  discItem = JSON.parse(eventData) as ModelDiscussionListItem
+                } catch {
+                  // 解析失败，忽略
+                }
+              } else if (eventData && typeof eventData === 'object') {
+                discItem = eventData as ModelDiscussionListItem
+              }
+
+              if (discItem) {
+                // 添加到搜索结果列表
+                searchResults.push(discItem)
+
+                // 更新消息，显示最新的搜索结果列表
+                setMessages((prev) => {
+                  const newMessages = [...prev]
+                  const index = newMessages.findIndex((m) => m.id === messageId)
+                  if (index !== -1) {
+                    newMessages[index] = {
+                      ...newMessages[index],
+                      type: 'search',
+                      sources: [...searchResults], // 使用新数组触发更新
+                      discCount: discCount ?? searchResults.length,
+                      // 保持现有的 content（如果有的话）
+                    }
+                  }
+                  return newMessages
+                })
+              }
+              return
+            }
+
+            // 处理 event:text - 总结文本
+            if (eventType === 'text') {
+              let textToAdd = ''
+
+              if (typeof eventData === 'string') {
+                try {
+                  // 处理 JSON 字符串化的内容（后端使用 fmt.Sprintf("%q", content)）
+                  const unquoted = eventData.replaceAll(/^"|"$/g, '')
+                  textToAdd = unquoted.replaceAll(/\\"/g, '"').replaceAll(/\\n/g, '\n')
+                } catch {
+                  textToAdd = eventData
+                }
               } else if (eventData && typeof eventData === 'object') {
                 textToAdd =
                   eventData.content ||
@@ -408,40 +532,51 @@ export default function CustomerServiceContent({
                   eventData.summary ||
                   ''
               }
-            } else if (!(data as any).event) {
-              // 没有 event 字段的普通对象
-              textToAdd =
-                data.content ||
-                data.text ||
-                (typeof (data as any).data === 'string' ? (data as any).data : '') ||
-                data.chunk ||
-                data.message ||
-                data.result ||
-                data.summary ||
-                ''
-            }
-            // 其他 event 类型（如 end）已在 fetch.ts 中处理，这里不处理
-          }
 
-          if (textToAdd) {
-            // 过滤思考过程
-            const isThinkingLine = thinkingPatterns.some((pattern) => pattern.test(textToAdd))
-            if (!isThinkingLine) {
-              summaryText += textToAdd
+              if (textToAdd) {
+                // 过滤思考过程
+                const isThinkingLine = thinkingPatterns.some((pattern) => pattern.test(textToAdd))
+                if (!isThinkingLine) {
+                  summaryText += textToAdd
+                  // 更新消息，显示总结文本
+                  setMessages((prev) => {
+                    const newMessages = [...prev]
+                    const index = newMessages.findIndex((m) => m.id === messageId)
+                    if (index !== -1) {
+                      newMessages[index] = {
+                        ...newMessages[index],
+                        content: summaryText,
+                        type: 'search',
+                        summary: summaryText,
+                        sources: searchResults,
+                        discCount: discCount ?? searchResults.length,
+                      }
+                    }
+                    return newMessages
+                  })
+                }
+              }
+              return
+            }
+
+            // 处理 summary_failed（如果后端还返回这个字段）
+            if (dataObj.summary_failed === true) {
               setMessages((prev) => {
                 const newMessages = [...prev]
                 const index = newMessages.findIndex((m) => m.id === messageId)
                 if (index !== -1) {
                   newMessages[index] = {
                     ...newMessages[index],
-                    content: summaryText,
+                    content: '抱歉，总结生成失败，请稍后重试。',
                     type: 'search',
-                    summary: summaryText,
                     sources: searchResults,
+                    discCount: discCount ?? searchResults.length,
                   }
                 }
                 return newMessages
               })
+              setIsLoading(false)
+              return
             }
           }
         })
@@ -481,7 +616,7 @@ export default function CustomerServiceContent({
         })
       }
     },
-    [],
+    [sessionId, getCurrentSessionId],
   )
 
   // 发送消息
@@ -518,10 +653,13 @@ export default function CustomerServiceContent({
       // 使用 postDiscussionAsk 进行流式输出
       const csrfToken = await getCsrfToken()
 
+      // 获取当前的 sessionId，确保与 URL 同步
+      const currentSessionId = getCurrentSessionId()
+
       // 构建请求体
       const requestBody = JSON.stringify({
         question: question,
-        session_id: sessionId,
+        session_id: currentSessionId,
       })
 
       let answerText = ''
@@ -568,11 +706,21 @@ export default function CustomerServiceContent({
           onComplete: () => {
             setIsWaiting(false)
 
-            // 检查回答是否是"无法回答问题"
-            const cannotAnswerPatterns = [/^无法回答问题$/, /^无法回答$/]
-
             const finalAnswer = answerText.trim()
             const cannotAnswer = cannotAnswerPatterns.some((pattern) => pattern.test(finalAnswer))
+
+            // 标记消息已完成（如果不是无法回答的情况，或者已经处理完搜索）
+            setMessages((prev) => {
+              const newMessages = [...prev]
+              const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+              if (index !== -1) {
+                newMessages[index] = {
+                  ...newMessages[index],
+                  isComplete: true,
+                }
+              }
+              return newMessages
+            })
 
             if (cannotAnswer) {
               // 检查是否有多个板块
@@ -619,10 +767,10 @@ export default function CustomerServiceContent({
 
                   // 保持loading状态
                   setIsLoading(true)
-                    ; (async () => {
-                      await callSummaryContent(targetForumId, question, assistantMessageId, question)
-                      resolve()
-                    })()
+                  ;(async () => {
+                    await callSummaryContent(targetForumId, question, assistantMessageId, question)
+                    resolve()
+                  })()
                 } else {
                   setIsLoading(false)
                   resolve()
@@ -692,7 +840,7 @@ export default function CustomerServiceContent({
               // 没有 event 字段的普通对象
               textToAdd = data.content || data.text || data.data || data.chunk || data.message || data.result || ''
             }
-            // 其他 event 类型（如 end, no_disc）已在 fetch.ts 中处理，这里不处理
+            // 其他 event 类型（如 end）已在 fetch.ts 中处理，这里不处理
           }
 
           if (textToAdd) {
@@ -774,7 +922,7 @@ export default function CustomerServiceContent({
       setIsWaiting(false)
       currentMessageRef.current = null
     }
-  }, [inputValue, isLoading, forumId, forums, router, sessionId, callSummaryContent])
+  }, [inputValue, isLoading, forumId, forums, router, getCurrentSessionId, callSummaryContent])
 
   // 处理回车发送
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -788,7 +936,7 @@ export default function CustomerServiceContent({
   const handleSourceClick = (discussion: ModelDiscussionListItem) => {
     // ModelDiscussionListItem 可能没有 route_name，需要通过 forum_id 查找
     const forum = forums.find((f) => f.id === discussion.forum_id)
-    const routePath = forum?.route_name ? `/${forum.route_name}/${discussion.id}` : `/${discussion.id}`
+    const routePath = forum?.route_name ? `/${forum.route_name}/${discussion.uuid}` : `/${discussion.uuid}`
     window.open(routePath, '_blank')
   }
 
@@ -901,103 +1049,218 @@ export default function CustomerServiceContent({
       setMessages((prev) => [...prev, assistantMessage])
       currentMessageRef.current = assistantMessage
 
-        // 调用发送逻辑（复用 handleSend 的核心逻辑）
-        ; (async () => {
-          try {
-            const csrfToken = await getCsrfToken()
-            const requestBody = JSON.stringify({
-              question: action.trim(),
-              session_id: sessionId,
-            })
+      // 调用发送逻辑（复用 handleSend 的核心逻辑）
+      ;(async () => {
+        try {
+          const csrfToken = await getCsrfToken()
+          // 获取当前的 sessionId，确保与 URL 同步
+          const currentSessionId = getCurrentSessionId()
+          const requestBody = JSON.stringify({
+            question: action.trim(),
+            session_id: currentSessionId,
+          })
 
-            let answerText = ''
-            const thinkingPatterns = [/思考[:：]/, /推理[:：]/, /分析[:：]/, /让我想想/, /我需要/, /正在思考/]
+          let answerText = ''
+          const thinkingPatterns = [/思考[:：]/, /推理[:：]/, /分析[:：]/, /让我想想/, /我需要/, /正在思考/]
 
-            const streamComplete = new Promise<void>((resolve, reject) => {
-              const askSseClient = new SSEClient<any>({
-                url: '/api/discussion/ask',
-                headers: {
-                  'X-CSRF-TOKEN': csrfToken,
-                },
-                method: 'POST',
-                streamMode: true,
-                onError: (err: Error) => {
-                  console.error('AI 回答生成失败:', err)
+          const streamComplete = new Promise<void>((resolve, reject) => {
+            const askSseClient = new SSEClient<any>({
+              url: '/api/discussion/ask',
+              headers: {
+                'X-CSRF-TOKEN': csrfToken,
+              },
+              method: 'POST',
+              streamMode: true,
+              onError: (err: Error) => {
+                console.error('AI 回答生成失败:', err)
+                const errorMessage = err.message || err.toString()
+
+                // 检查是否是 session closed 错误
+                if (errorMessage.toLowerCase().includes('session closed')) {
+                  Alert.info('会话已过期，请点击右上角开启新会话', 5000)
                   setIsLoading(false)
                   setIsWaiting(false)
-                  reject(err)
-                },
-                onComplete: () => {
-                  setIsWaiting(false)
-                  setIsLoading(false)
-                  resolve()
-                },
-              })
-
-              sseClientRef.current = askSseClient
-
-              askSseClient.subscribe(requestBody, (data) => {
-                let textToAdd = ''
-                if (typeof data === 'string') {
-                  try {
-                    const unquoted = data.replaceAll(/^"|"$/g, '')
-                    textToAdd = unquoted.replaceAll(/\\"/g, '"').replaceAll(/\\n/g, '\n')
-                  } catch {
-                    textToAdd = data
-                  }
-                } else if (data && typeof data === 'object') {
-                  if ((data as any).event === 'text') {
-                    const eventData = (data as any).data
-                    if (typeof eventData === 'string') {
-                      textToAdd = eventData
-                    } else if (eventData && typeof eventData === 'object') {
-                      textToAdd =
-                        eventData.content ||
-                        eventData.text ||
-                        eventData.chunk ||
-                        eventData.message ||
-                        eventData.result ||
-                        ''
-                    }
-                  } else if (!(data as any).event) {
-                    textToAdd = data.content || data.text || data.data || data.chunk || data.message || data.result || ''
-                  }
-                }
-
-                if (textToAdd) {
-                  const isThinkingLine = thinkingPatterns.some((pattern) => pattern.test(textToAdd))
-                  if (!isThinkingLine) {
-                    answerText += textToAdd
-                    setMessages((prev) => {
-                      const newMessages = [...prev]
-                      const index = newMessages.findIndex((m) => m.id === assistantMessageId)
-                      if (index !== -1) {
-                        const howToMatches = answerText.match(/如何[^。，\n]{2,10}/g)
-                        const quickActions: string[] =
-                          howToMatches && howToMatches.length > 0 ? howToMatches.slice(0, 2) : []
-                        newMessages[index] = {
-                          ...newMessages[index],
-                          content: answerText,
-                          type: 'ai',
-                          quickActions: quickActions.length > 0 ? quickActions : undefined,
-                        }
+                  setMessages((prev) => {
+                    const newMessages = [...prev]
+                    const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+                    if (index !== -1) {
+                      newMessages[index] = {
+                        ...newMessages[index],
+                        content: '会话已过期，请点击右上角开启新会话。',
                       }
-                      return newMessages
-                    })
-                  }
+                    }
+                    return newMessages
+                  })
+                  resolve() // 使用 resolve 而不是 reject，避免触发 catch
+                  return
                 }
-              })
+
+                setIsLoading(false)
+                setIsWaiting(false)
+                reject(err)
+              },
+              onComplete: () => {
+                setIsWaiting(false)
+                setIsLoading(false)
+                // 标记消息已完成
+                setMessages((prev) => {
+                  const newMessages = [...prev]
+                  const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+                  if (index !== -1) {
+                    newMessages[index] = {
+                      ...newMessages[index],
+                      isComplete: true,
+                    }
+                  }
+                  return newMessages
+                })
+                resolve()
+              },
             })
 
+            sseClientRef.current = askSseClient
+
+            askSseClient.subscribe(requestBody, (data) => {
+              // 检测 session closed 错误
+              let dataStr = ''
+              if (typeof data === 'string') {
+                dataStr = data
+              } else if (data && typeof data === 'object') {
+                dataStr = JSON.stringify(data)
+              }
+
+              if (dataStr.toLowerCase().includes('session closed')) {
+                Alert.info('会话已过期，请点击右上角开启新会话', 5000)
+                setIsLoading(false)
+                setIsWaiting(false)
+                setMessages((prev) => {
+                  const newMessages = [...prev]
+                  const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+                  if (index !== -1) {
+                    newMessages[index] = {
+                      ...newMessages[index],
+                      content: '会话已过期，请点击右上角开启新会话。',
+                    }
+                  }
+                  return newMessages
+                })
+                // 停止处理后续数据
+                askSseClient.unsubscribe()
+                return
+              }
+
+              let textToAdd = ''
+              if (typeof data === 'string') {
+                // 处理 JSON 字符串化的内容（后端使用 fmt.Sprintf("%q", content)）
+                try {
+                  // 移除引号
+                  const unquoted = data.replaceAll(/^"|"$/g, '')
+                  textToAdd = unquoted.replaceAll(/\\"/g, '"').replaceAll(/\\n/g, '\n')
+                } catch {
+                  textToAdd = data
+                }
+              } else if (data && typeof data === 'object') {
+                // 如果是带 event 字段的对象，从 data.data 中提取内容
+                if ((data as any).event === 'text') {
+                  // event:text 类型，提取 data 字段
+                  const eventData = (data as any).data
+                  if (typeof eventData === 'string') {
+                    textToAdd = eventData
+                  } else if (eventData && typeof eventData === 'object') {
+                    textToAdd =
+                      eventData.content ||
+                      eventData.text ||
+                      eventData.chunk ||
+                      eventData.message ||
+                      eventData.result ||
+                      ''
+                  }
+                } else if (!(data as any).event) {
+                  // 没有 event 字段的普通对象
+                  textToAdd = data.content || data.text || data.data || data.chunk || data.message || data.result || ''
+                }
+                // 其他 event 类型（如 end）已在 fetch.ts 中处理，这里不处理
+              }
+
+              if (textToAdd) {
+                // 检查是否是思考过程
+                const isThinkingLine = thinkingPatterns.some((pattern) => pattern.test(textToAdd))
+
+                // 只添加非思考过程的内容
+                if (!isThinkingLine) {
+                  answerText += textToAdd
+
+                  // 使用消息 ID 而不是索引，确保即使消息数组发生变化也能正确更新
+                  setMessages((prev) => {
+                    const newMessages = [...prev]
+                    const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+                    if (index !== -1) {
+                      // 从回答中提取可能的快速操作按钮（简单示例：提取标题或关键词）
+                      const quickActions: string[] = []
+                      // 如果回答包含"如何"开头的内容，可以提取作为快速操作
+                      const howToMatches = answerText.match(/如何[^。，\n]{2,10}/g)
+                      if (howToMatches && howToMatches.length > 0) {
+                        quickActions.push(...howToMatches.slice(0, 2))
+                      }
+
+                      newMessages[index] = {
+                        ...newMessages[index],
+                        content: answerText,
+                        type: 'ai',
+                        quickActions: quickActions.length > 0 ? quickActions : undefined,
+                      }
+                    }
+                    return newMessages
+                  })
+                }
+              }
+            })
+          })
+
+          // 等待流式输出完成
+          try {
             await streamComplete
-          } catch (error) {
-            console.error('发送消息失败:', error)
-            setIsLoading(false)
-            setIsWaiting(false)
+          } catch (err) {
+            console.error('流式输出错误:', err)
+            const errorMessage = err instanceof Error ? err.message : String(err)
+
+            // 检查是否是 session closed 错误
+            if (errorMessage.toLowerCase().includes('session closed')) {
+              Alert.info('会话已过期，请点击右上角开启新会话', 5000)
+              setMessages((prev) => {
+                const newMessages = [...prev]
+                const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+                if (index !== -1) {
+                  newMessages[index] = {
+                    ...newMessages[index],
+                    content: '会话已过期，请点击右上角开启新会话。',
+                  }
+                }
+                return newMessages
+              })
+            }
           }
-        })()
+        } catch (error) {
+          console.error('发送消息失败:', error)
+          setMessages((prev) => {
+            const newMessages = [...prev]
+            const lastIndex = newMessages.length - 1
+            if (newMessages[lastIndex]?.role === 'assistant') {
+              newMessages[lastIndex] = {
+                ...newMessages[lastIndex],
+                content: '抱歉，服务暂时不可用，请稍后重试。',
+                type: 'ai',
+              }
+            }
+            return newMessages
+          })
+          setIsLoading(false)
+          setIsWaiting(false)
+          currentMessageRef.current = null
+        }
+      })()
     },
-    [isLoading, sessionId],
+    [isLoading, getCurrentSessionId],
   )
 
   // 处理常见问题点击
@@ -1105,7 +1368,18 @@ export default function CustomerServiceContent({
         }}
       >
         <Stack spacing={3}>
-          {messages.map((message) => {
+          {messages.map((message, index) => {
+            // 判断是否是最后一条机器人消息
+            // 条件：1. 当前是机器人消息 2. 之后没有机器人消息 3. 之前有用户消息
+            const isLastAssistantMessage =
+              message.role === 'assistant' &&
+              !messages.slice(index + 1).some((m) => m.role === 'assistant') &&
+              messages.slice(0, index).some((m) => m.role === 'user')
+
+            // 获取用户最后一条消息作为问题（在当前机器人消息之前）
+            const lastUserMessage = messages.slice(0, index + 1).findLast((m) => m.role === 'user')
+            const questionForPost = lastUserMessage?.content || ''
+
             return (
               <Fade in={true} key={message.id} timeout={400}>
                 <Box
@@ -1200,11 +1474,7 @@ export default function CustomerServiceContent({
                                 bgcolor: 'white',
                                 border: '1px solid',
                                 borderColor: 'divider',
-                                transition: 'all 0.2s ease',
                                 fontSize: '14px',
-                                '&:hover': {
-                                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.12)',
-                                },
                                 '& p': {
                                   my: 0,
                                   lineHeight: 1.7,
@@ -1226,10 +1496,129 @@ export default function CustomerServiceContent({
                             >
                               {message.role === 'assistant' ? (
                                 <Box>
+                                  {/* 搜索结果展示 - 放在最前面 */}
+                                  {message.type === 'search' &&
+                                    message.discCount !== undefined &&
+                                    message.discCount > 0 && (
+                                      <Box
+                                        sx={{
+                                          mb: message.content ? 2 : 0,
+                                        }}
+                                      >
+                                        {/* 搜索结果标题 - 可点击展开/折叠 */}
+                                        <Box
+                                          onClick={() => {
+                                            setExpandedSources((prev) => {
+                                              const newSet = new Set(prev)
+                                              if (newSet.has(message.id)) {
+                                                newSet.delete(message.id)
+                                              } else {
+                                                newSet.add(message.id)
+                                              }
+                                              return newSet
+                                            })
+                                          }}
+                                          sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            py: 1,
+                                            cursor: 'pointer',
+                                          }}
+                                        >
+                                          <Typography
+                                            variant='body2'
+                                            sx={{
+                                              fontWeight: 500,
+                                              color: 'text.primary',
+                                              fontSize: '14px',
+                                            }}
+                                          >
+                                            共找到{message.discCount}个结果
+                                          </Typography>
+                                          <IconButton
+                                            size='small'
+                                            sx={{
+                                              width: 20,
+                                              height: 20,
+                                              color: 'text.secondary',
+                                              p: 0,
+                                            }}
+                                          >
+                                            {expandedSources.has(message.id) ? (
+                                              <ExpandLessIcon sx={{ fontSize: 16 }} />
+                                            ) : (
+                                              <ExpandMoreIcon sx={{ fontSize: 16 }} />
+                                            )}
+                                          </IconButton>
+                                        </Box>
+
+                                        {/* 搜索结果列表 - 可折叠 */}
+                                        <Collapse in={expandedSources.has(message.id)}>
+                                          <Box
+                                            sx={{
+                                              pl: 2,
+                                              position: 'relative',
+                                              '&::before': {
+                                                content: '""',
+                                                position: 'absolute',
+                                                left: 0,
+                                                top: 0,
+                                                bottom: 0,
+                                                width: '1px',
+                                                bgcolor: 'divider',
+                                              },
+                                            }}
+                                          >
+                                            {message.sources && message.sources.length > 0 ? (
+                                              <Stack spacing={0}>
+                                                {message.sources.map((source, idx) => (
+                                                  <Box
+                                                    key={source.id || idx}
+                                                    onClick={() => handleSourceClick(source)}
+                                                    sx={{
+                                                      py: 0.75,
+                                                      cursor: 'pointer',
+                                                      '&:hover': {
+                                                        color: 'primary.main',
+                                                      },
+                                                      transition: 'color 0.2s',
+                                                    }}
+                                                  >
+                                                    <Typography
+                                                      variant='body2'
+                                                      sx={{
+                                                        fontSize: '14px',
+                                                        color: 'text.primary',
+                                                        lineHeight: 1.5,
+                                                      }}
+                                                    >
+                                                      {source.title || '无标题'}
+                                                    </Typography>
+                                                  </Box>
+                                                ))}
+                                              </Stack>
+                                            ) : (
+                                              <Typography
+                                                variant='body2'
+                                                sx={{
+                                                  color: 'text.secondary',
+                                                  fontSize: '14px',
+                                                  py: 1,
+                                                }}
+                                              >
+                                                正在加载搜索结果...
+                                              </Typography>
+                                            )}
+                                          </Box>
+                                        </Collapse>
+                                      </Box>
+                                    )}
+
+                                  {/* 消息内容 - 总结文本 */}
                                   {message.content && (
                                     <Box
                                       sx={{
-                                        mb: message.sources ? 2 : 0,
                                         '& > *:first-of-type': { mt: 0 },
                                         '& > *:last-child': { mb: 0 },
                                         '& p': {
@@ -1305,112 +1694,6 @@ export default function CustomerServiceContent({
                                         </Stack>
                                       </Box>
                                     )}
-
-                                  {/* 引用帖子 - 卡片式设计 */}
-                                  {/* {message.type === 'search' && message.sources && message.sources.length > 0 && (
-                                    <Box sx={{ mt: 2 }}>
-                                      <Divider sx={{ my: 2 }} />
-                                      <Typography
-                                        variant='subtitle2'
-                                        sx={{ mb: 1.5, fontWeight: 600, color: 'text.secondary', fontSize: '0.85rem' }}
-                                      >
-                                        📚 相关帖子推荐
-                                      </Typography>
-                                      <Stack spacing={1.5}>
-                                        {message.sources.map((source, idx) => (
-                                          <Paper
-                                            key={source.id}
-                                            elevation={0}
-                                            onClick={() => handleSourceClick(source)}
-                                            sx={{
-                                              p: 1.5,
-                                              borderRadius: 2,
-                                              border: '1px solid',
-                                              borderColor: 'divider',
-                                              cursor: 'pointer',
-                                              transition: 'all 0.2s ease',
-                                              bgcolor: 'background.paper',
-                                              '&:hover': {
-                                                borderColor: 'primary.main',
-                                                bgcolor: alpha(theme.palette.primary.main, 0.03),
-                                                transform: 'translateX(4px)',
-                                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-                                              },
-                                            }}
-                                          >
-                                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
-                                              <Box
-                                                sx={{
-                                                  minWidth: 24,
-                                                  height: 24,
-                                                  borderRadius: 1,
-                                                  bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                                  color: 'primary.main',
-                                                  display: 'flex',
-                                                  alignItems: 'center',
-                                                  justifyContent: 'center',
-                                                  fontSize: '0.75rem',
-                                                  fontWeight: 600,
-                                                }}
-                                              >
-                                                {idx + 1}
-                                              </Box>
-                                              <Typography
-                                                variant='body2'
-                                                sx={{
-                                                  flex: 1,
-                                                  fontWeight: 500,
-                                                  color: 'text.primary',
-                                                  lineHeight: 1.5,
-                                                  fontSize: '0.9rem',
-                                                }}
-                                              >
-                                                {source.title}
-                                              </Typography>
-                                            </Box>
-                                          </Paper>
-                                        ))}
-                                      </Stack>
-                                    </Box>
-                                  )} */}
-                                  {/* 发帖提示 - 优化样式 */}
-                                  {message.showPostPrompt && message.originalQuestion && (
-                                    <Box
-                                      sx={{
-                                        mt: 2,
-                                        p: 2.5,
-                                        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.primary.dark, 0.05)} 100%)`,
-                                        borderRadius: 2,
-                                        border: '1px solid',
-                                        borderColor: alpha(theme.palette.primary.main, 0.2),
-                                      }}
-                                    >
-                                      <Typography
-                                        variant='body2'
-                                        sx={{ mb: 1.5, color: 'text.secondary', lineHeight: 1.6 }}
-                                      >
-                                        💡 如未解决问题，可前往社区发帖补充详细信息寻求帮助
-                                      </Typography>
-                                      <Button
-                                        variant='contained'
-                                        size='medium'
-                                        onClick={() => handleGoToPost(message.originalQuestion!, message.forumId)}
-                                        sx={{
-                                          mt: 0.5,
-                                          textTransform: 'none',
-                                          borderRadius: 2,
-                                          background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                                          boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.3)}`,
-                                          '&:hover': {
-                                            boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`,
-                                          },
-                                          fontWeight: 600,
-                                        }}
-                                      >
-                                        前往社区发帖
-                                      </Button>
-                                    </Box>
-                                  )}
                                 </Box>
                               ) : (
                                 /* 用户消息内容 */
@@ -1461,6 +1744,58 @@ export default function CustomerServiceContent({
                                   本回答由 AI 驱动，仅供参考
                                 </Typography>
                               </Box>
+                            )}
+
+                            {/* 发帖提问按钮 - 放在气泡外部 */}
+                            {message.role === 'assistant' && (
+                              <>
+                                {message.showPostPrompt && message.originalQuestion ? (
+                                  <Box sx={{ mt: 1.5, pl: 0.5 }}>
+                                    <Button
+                                      variant='contained'
+                                      size='small'
+                                      onClick={() => handleGoToPost(message.originalQuestion!, message.forumId)}
+                                      sx={{
+                                        textTransform: 'none',
+                                        borderRadius: 2,
+                                        background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                                        boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.3)}`,
+                                        '&:hover': {
+                                          boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`,
+                                        },
+                                        fontWeight: 600,
+                                      }}
+                                    >
+                                      前往社区发帖
+                                    </Button>
+                                  </Box>
+                                ) : isLastAssistantMessage &&
+                                  questionForPost &&
+                                  !message.showPostPrompt &&
+                                  message.content &&
+                                  message.isComplete &&
+                                  message.type === 'search' ? (
+                                  <Box sx={{ mt: 1.5, pl: 0.5 }}>
+                                    <Button
+                                      variant='contained'
+                                      size='small'
+                                      onClick={() => handleGoToPost(questionForPost, forumId || undefined)}
+                                      sx={{
+                                        textTransform: 'none',
+                                        borderRadius: 2,
+                                        background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                                        boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.3)}`,
+                                        '&:hover': {
+                                          boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`,
+                                        },
+                                        fontWeight: 600,
+                                      }}
+                                    >
+                                      发帖提问
+                                    </Button>
+                                  </Box>
+                                ) : null}
+                              </>
                             )}
                           </Box>
 
@@ -1555,11 +1890,7 @@ export default function CustomerServiceContent({
                             bgcolor: 'primary.main',
                             color: 'white',
                             boxShadow: `none`,
-                            transition: 'all 0.2s ease',
                             fontSize: '14px',
-                            '&:hover': {
-                              boxShadow: `0 4px 16px ${alpha(theme.palette.primary.main, 0.35)}`,
-                            },
                             '& p': {
                               my: 0,
                               lineHeight: 1.5,
@@ -1593,7 +1924,7 @@ export default function CustomerServiceContent({
       </Box>
 
       {/* 底部输入区域 - 现代化设计 */}
-      <Box sx={{ pb: 2 }}>
+      <Box sx={{ pb: 2, pt: 1 }}>
         <Box sx={{ maxWidth: '800px', mx: 'auto' }}>
           {/* 新会话按钮 - 位于输入框左上方 */}
           <Box sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
@@ -1627,7 +1958,7 @@ export default function CustomerServiceContent({
                 },
               }}
             >
-              新会话
+              新问题
             </Button>
           </Box>
           <Box
@@ -1635,8 +1966,8 @@ export default function CustomerServiceContent({
               position: 'relative',
               borderRadius: '10px',
               border: '1px solid',
-              // borderColor: inputValue.trim() ? 'primary.main' : 'divider',
-              borderColor: 'primary.main',
+              borderColor: isInputFocused ? 'primary.main' : 'divider',
+              transition: 'border-color 0.2s ease',
             }}
           >
             <TextField
@@ -1648,6 +1979,8 @@ export default function CustomerServiceContent({
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
+              onFocus={() => setIsInputFocused(true)}
+              onBlur={() => setIsInputFocused(false)}
               disabled={isLoading}
               variant='standard'
               slotProps={{
