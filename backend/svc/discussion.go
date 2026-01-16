@@ -2451,20 +2451,20 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 		return nil, err
 	}
 
-	if len(discs) == 0 {
-		return nil, nil
-	}
-
 	wrapSteam := NewLLMStream[SummaryByContentItem]()
 
 	go func() {
 		logger := d.logger.WithContext(ctx)
-		err = wrapSteam.Read(SummaryByContentItem{
+		err = wrapSteam.RecvOne(SummaryByContentItem{
 			Type:    "disc_count",
 			Content: strconv.Itoa(len(discs)),
 		})
 		if err != nil {
 			logger.WithErr(err).Warn("send disc count failed")
+			return
+		}
+
+		if len(discs) == 0 {
 			return
 		}
 
@@ -2480,12 +2480,13 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 				return
 			}
 
-			err = wrapSteam.Read(SummaryByContentItem{
+			err = wrapSteam.RecvOne(SummaryByContentItem{
 				Type:    "disc",
 				Content: string(discBytes),
 			})
 			if err != nil {
 				logger.WithErr(err).Warn("send disc failed")
+				return
 			}
 		}
 
@@ -2500,13 +2501,15 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 		}, true)
 		if err != nil {
 			logger.WithErr(err).Warn("sunmary failed")
-			err = wrapSteam.Read(SummaryByContentItem{
+			err = wrapSteam.RecvOne(SummaryByContentItem{
 				Type:    "summary_failed",
 				Content: "true",
 			})
+			if err != nil {
+				logger.WithErr(err).Warn("send summary result failed")
+			}
 			return
 		}
-
 		defer stream.Close()
 
 		var aiResBuilder strings.Builder

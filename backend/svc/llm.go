@@ -271,7 +271,7 @@ func (l *LLMStream[T]) Recv(f func() (T, error)) {
 
 var ErrStreamStoped = errors.New("stream stoped")
 
-func (l *LLMStream[T]) Read(content T) error {
+func (l *LLMStream[T]) RecvOne(content T) error {
 	select {
 	case <-l.stop:
 		return ErrStreamStoped
@@ -281,7 +281,7 @@ func (l *LLMStream[T]) Read(content T) error {
 	return nil
 }
 
-func (l *LLMStream[T]) Send(ctx context.Context, f func(content T)) {
+func (l *LLMStream[T]) Read(ctx context.Context, f func(content T)) {
 	defer l.Close()
 
 	for {

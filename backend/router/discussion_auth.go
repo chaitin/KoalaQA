@@ -730,12 +730,9 @@ func (d *discussionAuth) SummaryByContent(ctx *context.Context) {
 		ctx.InternalError(err, "summary failed")
 		return
 	}
+	defer stream.Close()
 
 	ctx.Writer.Header().Set("X-Accel-Buffering", "no")
-	if stream != nil {
-		defer stream.Close()
-	}
-
 	ctx.Stream(func(_ io.Writer) bool {
 		data, ok := stream.Text(ctx)
 		if !ok {
