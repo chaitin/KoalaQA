@@ -67,10 +67,21 @@ definitions:
         type: integer
       summary:
         type: boolean
+      summary_discs:
+        $ref: '#/definitions/model.JSONB-array_model_AskSessionSummaryDisc'
       updated_at:
         type: integer
       user_id:
         type: integer
+      uuid:
+        type: string
+    type: object
+  model.AskSessionSummaryDisc:
+    properties:
+      forum_id:
+        type: integer
+      title:
+        type: string
       uuid:
         type: string
     type: object
@@ -673,6 +684,8 @@ definitions:
         type: integer
       name:
         type: string
+    type: object
+  model.JSONB-array_model_AskSessionSummaryDisc:
     type: object
   model.JSONB-array_model_ForumGroups:
     type: object
@@ -1828,6 +1841,8 @@ definitions:
         type: integer
       summary:
         type: boolean
+      summary_discs:
+        $ref: '#/definitions/model.JSONB-array_model_AskSessionSummaryDisc'
       updated_at:
         type: integer
       user_id:
@@ -2620,7 +2635,14 @@ paths:
                   - properties:
                       items:
                         items:
-                          $ref: '#/definitions/model.AskSession'
+                          allOf:
+                          - $ref: '#/definitions/model.AskSession'
+                          - properties:
+                              summary_discs:
+                                items:
+                                  $ref: '#/definitions/model.AskSessionSummaryDisc'
+                                type: array
+                            type: object
                         type: array
                     type: object
               type: object
@@ -6048,7 +6070,14 @@ paths:
                   - properties:
                       items:
                         items:
-                          $ref: '#/definitions/model.AskSession'
+                          allOf:
+                          - $ref: '#/definitions/model.AskSession'
+                          - properties:
+                              summary_discs:
+                                items:
+                                  $ref: '#/definitions/model.AskSessionSummaryDisc'
+                                type: array
+                            type: object
                         type: array
                     type: object
               type: object

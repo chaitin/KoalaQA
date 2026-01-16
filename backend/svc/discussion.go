@@ -2354,12 +2354,6 @@ type SummaryByContentItem struct {
 	Content string
 }
 
-type SummaryDiscItem struct {
-	Title   string `json:"title"`
-	ForumID uint   `json:"forum_id"`
-	UUID    string `json:"uuid"`
-}
-
 func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req SummaryByContentReq) (*LLMStream[SummaryByContentItem], error) {
 	webPlugin, err := d.in.WebPlugin.Get(ctx)
 	if err != nil {
@@ -2468,12 +2462,14 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 			return
 		}
 
-		for _, disc := range discs {
-			discItem := SummaryDiscItem{
+		summaryDiscs := make([]model.AskSessionSummaryDisc, len(discs))
+		for i, disc := range discs {
+			discItem := model.AskSessionSummaryDisc{
 				Title:   disc.Title,
 				ForumID: disc.ForumID,
 				UUID:    disc.UUID,
 			}
+			summaryDiscs[i] = discItem
 			discBytes, err := json.Marshal(discItem)
 			if err != nil {
 				logger.WithErr(err).With("disc", discItem).Warn("marshal disc failed")
@@ -2528,11 +2524,12 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 		})
 
 		err = d.in.AskSessionRepo.Create(context.Background(), &model.AskSession{
-			UUID:    req.SessionID,
-			UserID:  uid,
-			Bot:     true,
-			Summary: true,
-			Content: aiResBuilder.String(),
+			UUID:         req.SessionID,
+			UserID:       uid,
+			Bot:          true,
+			Summary:      true,
+			SummaryDiscs: model.NewJSONB(summaryDiscs),
+			Content:      aiResBuilder.String(),
 		})
 		if err != nil {
 			logger.WithErr(err).Warn("create bot ask session failed")

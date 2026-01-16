@@ -286,7 +286,22 @@ const docTemplate = `{
                                                         "items": {
                                                             "type": "array",
                                                             "items": {
-                                                                "$ref": "#/definitions/model.AskSession"
+                                                                "allOf": [
+                                                                    {
+                                                                        "$ref": "#/definitions/model.AskSession"
+                                                                    },
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "summary_discs": {
+                                                                                "type": "array",
+                                                                                "items": {
+                                                                                    "$ref": "#/definitions/model.AskSessionSummaryDisc"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                ]
                                                             }
                                                         }
                                                     }
@@ -4953,7 +4968,22 @@ const docTemplate = `{
                                                         "items": {
                                                             "type": "array",
                                                             "items": {
-                                                                "$ref": "#/definitions/model.AskSession"
+                                                                "allOf": [
+                                                                    {
+                                                                        "$ref": "#/definitions/model.AskSession"
+                                                                    },
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "summary_discs": {
+                                                                                "type": "array",
+                                                                                "items": {
+                                                                                    "$ref": "#/definitions/model.AskSessionSummaryDisc"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                ]
                                                             }
                                                         }
                                                     }
@@ -7809,11 +7839,28 @@ const docTemplate = `{
                 "summary": {
                     "type": "boolean"
                 },
+                "summary_discs": {
+                    "$ref": "#/definitions/model.JSONB-array_model_AskSessionSummaryDisc"
+                },
                 "updated_at": {
                     "type": "integer"
                 },
                 "user_id": {
                     "type": "integer"
+                },
+                "uuid": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.AskSessionSummaryDisc": {
+            "type": "object",
+            "properties": {
+                "forum_id": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
                 },
                 "uuid": {
                     "type": "string"
@@ -8675,6 +8722,9 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "model.JSONB-array_model_AskSessionSummaryDisc": {
+            "type": "object"
         },
         "model.JSONB-array_model_ForumGroups": {
             "type": "object"
@@ -10366,6 +10416,9 @@ const docTemplate = `{
                 },
                 "summary": {
                     "type": "boolean"
+                },
+                "summary_discs": {
+                    "$ref": "#/definitions/model.JSONB-array_model_AskSessionSummaryDisc"
                 },
                 "updated_at": {
                     "type": "integer"

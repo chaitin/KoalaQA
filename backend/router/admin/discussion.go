@@ -99,7 +99,7 @@ func (d *discussion) ListAsks(ctx *context.Context) {
 // @Tags discussion
 // @Produce json
 // @Param req query svc.AskSessionReq false "req params"
-// @Success 200 {object} context.Response{data=model.ListRes{items=[]model.AskSession}}
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]model.AskSession{summary_discs=[]model.AskSessionSummaryDisc}}}
 // @Router /admin/discussion/ask/session [get]
 func (d *discussion) AskSession(ctx *context.Context) {
 	var req svc.AskSessionReq
