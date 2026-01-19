@@ -1916,7 +1916,7 @@ export default function CustomerServiceContent({
                                         fontWeight: 600,
                                       }}
                                     >
-                                      前往社区发帖
+                                      前往发帖提问
                                     </Button>
                                   </Box>
                                 ) : canShowSearchButton ? (
@@ -1965,7 +1965,7 @@ export default function CustomerServiceContent({
                                         fontWeight: 600,
                                       }}
                                     >
-                                      发帖提问
+                                      前往发帖提问
                                     </Button>
                                   </Box>
                                 ) : null}
