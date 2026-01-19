@@ -1580,18 +1580,22 @@ export default function CustomerServiceContent({
                                                     onClick={() => handleSourceClick(source)}
                                                     sx={{
                                                       py: 0.75,
+                                                      px: 1,
+                                                      borderRadius: 1,
                                                       cursor: 'pointer',
+                                                      color: 'text.primary',
+                                                      transition: 'color 0.2s, background-color 0.2s',
                                                       '&:hover': {
                                                         color: 'primary.main',
+                                                        backgroundColor: alpha(theme.palette.primary.main, 0.08),
                                                       },
-                                                      transition: 'color 0.2s',
                                                     }}
                                                   >
                                                     <Typography
                                                       variant='body2'
                                                       sx={{
                                                         fontSize: '14px',
-                                                        color: 'text.primary',
+                                                        color: 'inherit',
                                                         lineHeight: 1.5,
                                                       }}
                                                     >
