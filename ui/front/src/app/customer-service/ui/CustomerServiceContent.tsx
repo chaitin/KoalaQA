@@ -1708,7 +1708,7 @@ export default function CustomerServiceContent({
                                                       transition: 'color 0.2s, background-color 0.2s',
                                                       '&:hover': {
                                                         color: 'primary.main',
-                                                        backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                                                        backgroundColor: 'transparent',
                                                       },
                                                     }}
                                                   >
