@@ -37,6 +37,7 @@ import { Icon } from '@ctzhian/ui'
 
 // 检查回答是否是"无法回答问题"
 const cannotAnswerPatterns = [/^无法回答问题$/, /^无法回答$/]
+const SEARCH_LOADING_TEXT = '正在为您搜索相关帖子...'
 interface Message {
   id: string
   role: 'user' | 'assistant'
@@ -47,6 +48,7 @@ interface Message {
   summary?: string // 智能总结
   needsForumSelection?: boolean // 是否需要选择板块
   pendingQuestion?: string // 待处理的问题
+  originalQuestionForSearch?: string // 用于重新搜索的原始问题
   showPostPrompt?: boolean // 是否显示发帖提示
   originalQuestion?: string // 原始问题，用于填充发帖表单
   forumId?: number // 板块ID，用于发帖
@@ -261,6 +263,7 @@ export default function CustomerServiceContent({
               message.isComplete = true
               if (lastUserQuestion) {
                 message.originalQuestion = lastUserQuestion
+                message.originalQuestionForSearch = lastUserQuestion
               }
               if (!message.forumId && item.summary_discs && item.summary_discs.length > 0) {
                 message.forumId = item.summary_discs[0]?.forum_id
@@ -662,6 +665,7 @@ export default function CustomerServiceContent({
       content: '',
       type: 'ai',
       timestamp: new Date().toISOString(),
+      originalQuestionForSearch: question,
     }
     // 保存消息 ID 到闭包中，确保后续使用正确的 ID
     const assistantMessageId = assistantMessage.id
@@ -780,7 +784,7 @@ export default function CustomerServiceContent({
                     if (index !== -1) {
                       newMessages[index] = {
                         ...newMessages[index],
-                        content: '正在为您搜索相关帖子...',
+                        content: SEARCH_LOADING_TEXT,
                         type: 'search',
                         isComplete: false,
                       }
@@ -982,6 +986,67 @@ export default function CustomerServiceContent({
     window.open(postUrl, '_blank')
   }
 
+  const handleSearchRelatedPosts = useCallback(
+    async (question: string, messageForumId?: number) => {
+      const trimmedQuestion = question.trim()
+      if (!trimmedQuestion) return
+
+      const availableForums = forums || []
+      const hasMultipleForums = availableForums.length > 1
+      const inferredForumId = messageForumId ?? forumId ?? availableForums[0]?.id
+
+      if (hasMultipleForums && (messageForumId === undefined || messageForumId === null) && !forumId) {
+        const selectionMessageId = generateUuid()
+        const selectionMessage: Message = {
+          id: selectionMessageId,
+          role: 'assistant',
+          content: '抱歉，我暂时无法回答这个问题。请选择一个板块，我将为您搜索相关帖子。',
+          type: 'search',
+          timestamp: new Date().toISOString(),
+          needsForumSelection: true,
+          pendingQuestion: trimmedQuestion,
+          originalQuestionForSearch: trimmedQuestion,
+          originalQuestion: trimmedQuestion,
+          showPostPrompt: false,
+          isComplete: false,
+        }
+        setMessages((prev) => [...prev, selectionMessage])
+        return
+      }
+
+      if (inferredForumId === undefined || inferredForumId === null) {
+        console.error('未找到用于搜索的板块信息', { messageForumId, forumId, forums })
+        Alert.warning('请先选择板块后再搜索相关帖子', 3000)
+        return
+      }
+
+      const searchMessageId = generateUuid()
+      const loadingMessage: Message = {
+        id: searchMessageId,
+        role: 'assistant',
+        content: SEARCH_LOADING_TEXT,
+        type: 'search',
+        timestamp: new Date().toISOString(),
+        summary: undefined,
+        sources: undefined,
+        discCount: undefined,
+        showPostPrompt: false,
+        needsForumSelection: false,
+        pendingQuestion: undefined,
+        isComplete: false,
+        forumId: inferredForumId,
+        originalQuestion: trimmedQuestion,
+        originalQuestionForSearch: trimmedQuestion,
+      }
+
+      setIsLoading(true)
+      setMessages((prev) => [...prev, loadingMessage])
+
+      await callSummaryContent(inferredForumId, trimmedQuestion, searchMessageId, trimmedQuestion)
+    },
+    [forums, forumId, callSummaryContent, generateUuid],
+  )
+
   // 处理板块选择
   const handleForumSelect = useCallback(
     async (selectedForumId: number, question: string, messageId: string) => {
@@ -995,7 +1060,15 @@ export default function CustomerServiceContent({
           newMessages[index] = {
             ...newMessages[index],
             needsForumSelection: false,
-            content: '正在为您搜索相关帖子...',
+            content: SEARCH_LOADING_TEXT,
+            type: 'search',
+            summary: undefined,
+            sources: undefined,
+            discCount: undefined,
+            showPostPrompt: false,
+            isComplete: false,
+            forumId: selectedForumId,
+            originalQuestionForSearch: question,
           }
         }
         return newMessages
@@ -1069,6 +1142,7 @@ export default function CustomerServiceContent({
         content: '',
         type: 'ai',
         timestamp: new Date().toISOString(),
+        originalQuestionForSearch: action.trim(),
       }
       const assistantMessageId = assistantMessage.id
       setMessages((prev) => [...prev, assistantMessage])
@@ -1410,6 +1484,24 @@ export default function CustomerServiceContent({
             // 获取用户最后一条消息作为问题（在当前机器人消息之前）
             const lastUserMessage = messages.slice(0, index + 1).findLast((m) => m.role === 'user')
             const questionForPost = lastUserMessage?.content || ''
+            const isSearchSummaryComplete =
+              message.type === 'search' &&
+              message.isComplete &&
+              !!message.content &&
+              message.content.trim() !== SEARCH_LOADING_TEXT
+            const canShowPostButton =
+              isSearchSummaryComplete &&
+              isLastAssistantMessage &&
+              !!questionForPost &&
+              !message.showPostPrompt
+            const canShowSearchButton =
+              message.role === 'assistant' &&
+              message.type === 'ai' &&
+              message.isComplete &&
+              isLastAssistantMessage &&
+              !!questionForPost &&
+              !message.showPostPrompt &&
+              !!message.content
 
             return (
               <Fade in={true} key={message.id} timeout={400}>
@@ -1651,7 +1743,23 @@ export default function CustomerServiceContent({
                                     )}
 
                                   {/* 消息内容 - 总结文本 */}
-                                  {message.content && (
+                                  {message.content && message.content.trim() === SEARCH_LOADING_TEXT ? (
+                                    <Box
+                                      sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1.5,
+                                        py: 1.5,
+                                        px: 2,
+                                        color: 'text.secondary',
+                                      }}
+                                    >
+                                      <CircularProgress size={18} thickness={4} sx={{ color: 'text.secondary' }} />
+                                      <Typography variant='body2' sx={{ fontSize: '0.9rem', color: 'text.secondary' }}>
+                                        {SEARCH_LOADING_TEXT}
+                                      </Typography>
+                                    </Box>
+                                  ) : (
                                     <Box
                                       sx={{
                                         '& > *:first-of-type': { mt: 0 },
@@ -1674,8 +1782,6 @@ export default function CustomerServiceContent({
                                         gap: 1.5,
                                         py: 1.5,
                                         px: 2,
-                                        borderRadius: 1,
-                                        bgcolor: alpha(theme.palette.grey[500], 0.08),
                                       }}
                                     >
                                       <CircularProgress size={18} thickness={4} sx={{ color: 'text.secondary' }} />
@@ -1784,7 +1890,10 @@ export default function CustomerServiceContent({
                             {/* 发帖提问按钮 - 放在气泡外部 */}
                             {message.role === 'assistant' && (
                               <>
-                                {message.showPostPrompt && message.originalQuestion && message.isComplete ? (
+                                {message.showPostPrompt &&
+                                message.originalQuestion &&
+                                message.isComplete &&
+                                isLastAssistantMessage ? (
                                   <Box sx={{ mt: 1.5, pl: 0.5 }}>
                                     <Button
                                       variant='contained'
@@ -1798,9 +1907,10 @@ export default function CustomerServiceContent({
                                       sx={{
                                         textTransform: 'none',
                                         borderRadius: 2,
-                                        background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                                        backgroundColor: theme.palette.primary.main,
                                         boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.3)}`,
                                         '&:hover': {
+                                          backgroundColor: theme.palette.primary.dark,
                                           boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`,
                                         },
                                         fontWeight: 600,
@@ -1809,23 +1919,47 @@ export default function CustomerServiceContent({
                                       前往社区发帖
                                     </Button>
                                   </Box>
-                                ) : isLastAssistantMessage &&
-                                  questionForPost &&
-                                  !message.showPostPrompt &&
-                                  message.content &&
-                                  message.isComplete &&
-                                  message.type === 'search' ? (
+                                ) : canShowSearchButton ? (
+                                  <Box sx={{ mt: 1.5, pl: 0.5 }}>
+                                    <Button
+                                      variant='contained'
+                                      size='small'
+                                      disabled={isLoading}
+                                      onClick={() =>
+                                        void handleSearchRelatedPosts(
+                                          message.originalQuestionForSearch || questionForPost,
+                                          message.forumId ?? forumId ?? undefined,
+                                        )
+                                      }
+                                      sx={{
+                                        textTransform: 'none',
+                                        borderRadius: 2,
+                                        backgroundColor: theme.palette.primary.main,
+                                        boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.3)}`,
+                                        '&:hover': {
+                                          backgroundColor: theme.palette.primary.dark,
+                                          boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`,
+                                        },
+                                        fontWeight: 600,
+                                      }}
+                                    >
+                                      搜索相关帖子
+                                    </Button>
+                                  </Box>
+                                ) : canShowPostButton ? (
                                   <Box sx={{ mt: 1.5, pl: 0.5 }}>
                                     <Button
                                       variant='contained'
                                       size='small'
                                       onClick={() => handleGoToPost(questionForPost, forumId || undefined)}
+                                      disabled={isLoading}
                                       sx={{
                                         textTransform: 'none',
                                         borderRadius: 2,
-                                        background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                                        backgroundColor: theme.palette.primary.main,
                                         boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.3)}`,
                                         '&:hover': {
+                                          backgroundColor: theme.palette.primary.dark,
                                           boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`,
                                         },
                                         fontWeight: 600,
