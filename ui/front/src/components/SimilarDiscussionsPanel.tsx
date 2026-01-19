@@ -5,7 +5,7 @@ import { ModelDiscussionListItem } from '@/api/types'
 import { useForumStore } from '@/store'
 import { Box, Divider, Paper, Stack, Typography } from '@mui/material'
 import Image from 'next/image'
-import { forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef, useCallback, useContext, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { CommonContext } from './commonProvider'
 import RelatedContentItem from '@/app/[route_name]/[id]/ui/RelatedContentItem'
@@ -25,13 +25,25 @@ interface SimilarDiscussionsPanelProps {
 
 const SimilarDiscussionsPanel = forwardRef<SimilarDiscussionsPanelRef, SimilarDiscussionsPanelProps>(
   ({ title, groupIds, content, editorContent, size = 5 }, ref) => {
-    const { selectedForumId } = useForumStore()
+    const selectedForumId = useForumStore((state) => state.selectedForumId)
+    const forums = useForumStore((state) => state.forums)
+    const setRouteName = useForumStore((state) => state.setRouteName)
+    const refreshForums = useForumStore((state) => state.refreshForums)
     const params = useParams()
     const routeName = params?.route_name as string
     const { groups } = useContext(CommonContext)
     const [similarDiscussions, setSimilarDiscussions] = useState<ModelDiscussionListItem[]>([])
     const [similarLoading, setSimilarLoading] = useState(false)
     const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+    const effectiveForumId = useMemo(() => {
+      if (selectedForumId) return selectedForumId
+      if (routeName && Array.isArray(forums)) {
+        const matched = forums.find((forum) => forum.route_name === routeName)
+        if (matched?.id) return matched.id
+      }
+      return undefined
+    }, [selectedForumId, forums, routeName])
 
     const clearTimer = useCallback(() => {
       if (searchTimeoutRef.current) {
@@ -40,6 +52,18 @@ const SimilarDiscussionsPanel = forwardRef<SimilarDiscussionsPanelRef, SimilarDi
       }
     }, [])
 
+    useEffect(() => {
+      if (routeName) {
+        setRouteName(routeName)
+      }
+    }, [routeName, setRouteName])
+
+    useEffect(() => {
+      if (!effectiveForumId && routeName) {
+        void refreshForums().catch(() => {})
+      }
+    }, [effectiveForumId, routeName, refreshForums])
+
     const clear = useCallback(() => {
       clearTimer()
       setSimilarDiscussions([])
@@ -47,7 +71,7 @@ const SimilarDiscussionsPanel = forwardRef<SimilarDiscussionsPanelRef, SimilarDi
 
     const searchSimilarDiscussions = useCallback(
       async (searchText: string, categoryIds?: number[]) => {
-        if (!searchText?.trim() || !selectedForumId) {
+        if (!searchText?.trim() || !effectiveForumId) {
           setSimilarDiscussions([])
           return
         }
@@ -55,7 +79,7 @@ const SimilarDiscussionsPanel = forwardRef<SimilarDiscussionsPanelRef, SimilarDi
         setSimilarLoading(true)
         try {
           const params: any = {
-            forum_id: selectedForumId,
+            forum_id: effectiveForumId,
             keyword: searchText.trim(),
             size,
             type: 'qa', // 只查询问答类型
@@ -76,7 +100,7 @@ const SimilarDiscussionsPanel = forwardRef<SimilarDiscussionsPanelRef, SimilarDi
           setSimilarLoading(false)
         }
       },
-      [selectedForumId, size],
+      [effectiveForumId, size],
     )
 
     const requestNow = useCallback(() => {
@@ -85,9 +109,12 @@ const SimilarDiscussionsPanel = forwardRef<SimilarDiscussionsPanelRef, SimilarDi
         setSimilarDiscussions([])
         return
       }
+      if (!effectiveForumId) {
+        return
+      }
       clearTimer()
-      void searchSimilarDiscussions(t, groupIds)
-    }, [title, groupIds, clearTimer, searchSimilarDiscussions])
+      void searchSimilarDiscussions(t, Array.isArray(groupIds) && groupIds.length > 0 ? groupIds : undefined)
+    }, [title, groupIds, clearTimer, searchSimilarDiscussions, effectiveForumId])
 
     useImperativeHandle(
       ref,
@@ -98,42 +125,27 @@ const SimilarDiscussionsPanel = forwardRef<SimilarDiscussionsPanelRef, SimilarDi
       [requestNow, clear],
     )
 
-    // 监听分类变化，当分类改变且标题已填写时，触发查询（防抖 300ms）
+    // 监听标题和内容变化，触发查询（防抖 800ms）
     useEffect(() => {
       const t = (title || '').trim()
+      if (!t || !effectiveForumId) {
+        setSimilarDiscussions([])
+        return
+      }
+
       const gids = Array.isArray(groupIds) ? groupIds : []
-      if (!t || gids.length === 0) return
+      const hasContent = (editorContent || '').trim() || (content || '').trim()
 
       clearTimer()
       searchTimeoutRef.current = setTimeout(() => {
-        void searchSimilarDiscussions(t, gids)
-      }, 300)
+        const keyword = hasContent && gids.length > 0 ? `${t} ${editorContent || content || ''}` : t
+        void searchSimilarDiscussions(keyword, gids.length > 0 ? gids : undefined)
+      }, 800)
 
       return () => {
         clearTimer()
       }
-    }, [groupIds, title, clearTimer, searchSimilarDiscussions])
-
-    // 当标题、分类、内容都填写后，再次查询（更精准，防抖 800ms）
-    useEffect(() => {
-      clearTimer()
-
-      const hasTitle = (title || '').trim()
-      const gids = Array.isArray(groupIds) ? groupIds : []
-      const hasGroups = gids.length > 0
-      const hasContent = (editorContent || '').trim() || (content || '').trim()
-
-      if (hasTitle && hasGroups && hasContent) {
-        const combinedText = `${hasTitle} ${editorContent || content || ''}`
-        searchTimeoutRef.current = setTimeout(() => {
-          void searchSimilarDiscussions(combinedText, gids)
-        }, 800)
-      }
-
-      return () => {
-        clearTimer()
-      }
-    }, [title, groupIds, content, editorContent, clearTimer, searchSimilarDiscussions])
+    }, [title, groupIds, content, editorContent, clearTimer, searchSimilarDiscussions, effectiveForumId])
 
     // 关闭弹窗时清空相似内容
     useEffect(() => {
