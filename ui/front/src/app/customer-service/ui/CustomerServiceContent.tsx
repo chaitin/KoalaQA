@@ -37,6 +37,7 @@ import { Icon } from '@ctzhian/ui'
 
 // 检查回答是否是"无法回答问题"
 const cannotAnswerPatterns = [/^无法回答问题$/, /^无法回答$/]
+const SEARCH_LOADING_TEXT = '正在为您搜索相关帖子...'
 interface Message {
   id: string
   role: 'user' | 'assistant'
@@ -47,11 +48,11 @@ interface Message {
   summary?: string // 智能总结
   needsForumSelection?: boolean // 是否需要选择板块
   pendingQuestion?: string // 待处理的问题
+  originalQuestionForSearch?: string // 用于重新搜索的原始问题
   showPostPrompt?: boolean // 是否显示发帖提示
   originalQuestion?: string // 原始问题，用于填充发帖表单
   forumId?: number // 板块ID，用于发帖
   timestamp?: string // 时间戳
-  quickActions?: string[] // 快速操作按钮
   isComplete?: boolean // 是否已完成（流式输出完成）
 }
 
@@ -232,6 +233,8 @@ export default function CustomerServiceContent({
           })
 
           // 转换历史记录为 Message 格式
+          let lastUserQuestion: string | null = null
+
           const historyMessages: Message[] = filteredItems.map((item, index) => {
             const message: Message = {
               id: item.id?.toString() || `history-${index}`,
@@ -250,6 +253,22 @@ export default function CustomerServiceContent({
               message.type = 'search'
               message.sources = item.summary_discs
               message.discCount = item.summary_discs.length
+              if (!message.forumId) {
+                message.forumId = item.summary_discs[0]?.forum_id
+              }
+            }
+
+            if (item.bot) {
+              message.isComplete = true
+              if (lastUserQuestion) {
+                message.originalQuestion = lastUserQuestion
+                message.originalQuestionForSearch = lastUserQuestion
+              }
+              if (!message.forumId && item.summary_discs && item.summary_discs.length > 0) {
+                message.forumId = item.summary_discs[0]?.forum_id
+              }
+            } else if (message.content) {
+              lastUserQuestion = message.content
             }
 
             return message
@@ -446,6 +465,7 @@ export default function CustomerServiceContent({
                       discCount: count,
                       sources: searchResults, // 保持现有的 sources
                       content: '', // 此时还没有总结文本
+                      forumId: forumId,
                     }
                   }
                   return newMessages
@@ -501,6 +521,7 @@ export default function CustomerServiceContent({
                       type: 'search',
                       sources: [...searchResults], // 使用新数组触发更新
                       discCount: discCount ?? searchResults.length,
+                      forumId: forumId,
                       // 保持现有的 content（如果有的话）
                     }
                   }
@@ -643,6 +664,7 @@ export default function CustomerServiceContent({
       content: '',
       type: 'ai',
       timestamp: new Date().toISOString(),
+      originalQuestionForSearch: question,
     }
     // 保存消息 ID 到闭包中，确保后续使用正确的 ID
     const assistantMessageId = assistantMessage.id
@@ -666,6 +688,8 @@ export default function CustomerServiceContent({
       const thinkingPatterns = [/思考[:：]/, /推理[:：]/, /分析[:：]/, /让我想想/, /我需要/, /正在思考/]
 
       // 使用 Promise 来等待流式输出完成
+      let hasReceivedData = false
+
       const streamComplete = new Promise<void>((resolve, reject) => {
         // 创建 SSE 客户端，在回调中处理完成逻辑
         const askSseClient = new SSEClient<any>({
@@ -709,14 +733,14 @@ export default function CustomerServiceContent({
             const finalAnswer = answerText.trim()
             const cannotAnswer = cannotAnswerPatterns.some((pattern) => pattern.test(finalAnswer))
 
-            // 标记消息已完成（如果不是无法回答的情况，或者已经处理完搜索）
+            // 标记消息完成状态（无法回答时保持未完成，等待搜索流程结束）
             setMessages((prev) => {
               const newMessages = [...prev]
               const index = newMessages.findIndex((m) => m.id === assistantMessageId)
               if (index !== -1) {
                 newMessages[index] = {
                   ...newMessages[index],
-                  isComplete: true,
+                  isComplete: !cannotAnswer,
                 }
               }
               return newMessages
@@ -738,6 +762,7 @@ export default function CustomerServiceContent({
                       type: 'ai',
                       needsForumSelection: true,
                       pendingQuestion: question,
+                      isComplete: false,
                     }
                   }
                   return newMessages
@@ -758,8 +783,9 @@ export default function CustomerServiceContent({
                     if (index !== -1) {
                       newMessages[index] = {
                         ...newMessages[index],
-                        content: '正在为您搜索相关帖子...',
+                        content: SEARCH_LOADING_TEXT,
                         type: 'search',
+                        isComplete: false,
                       }
                     }
                     return newMessages
@@ -767,10 +793,10 @@ export default function CustomerServiceContent({
 
                   // 保持loading状态
                   setIsLoading(true)
-                  ;(async () => {
-                    await callSummaryContent(targetForumId, question, assistantMessageId, question)
-                    resolve()
-                  })()
+                    ; (async () => {
+                      await callSummaryContent(targetForumId, question, assistantMessageId, question)
+                      resolve()
+                    })()
                 } else {
                   setIsLoading(false)
                   resolve()
@@ -849,6 +875,10 @@ export default function CustomerServiceContent({
 
             // 只添加非思考过程的内容
             if (!isThinkingLine) {
+              if (!hasReceivedData) {
+                hasReceivedData = true
+                setIsWaiting(false)
+              }
               answerText += textToAdd
 
               // 使用消息 ID 而不是索引，确保即使消息数组发生变化也能正确更新
@@ -856,19 +886,10 @@ export default function CustomerServiceContent({
                 const newMessages = [...prev]
                 const index = newMessages.findIndex((m) => m.id === assistantMessageId)
                 if (index !== -1) {
-                  // 从回答中提取可能的快速操作按钮（简单示例：提取标题或关键词）
-                  const quickActions: string[] = []
-                  // 如果回答包含"如何"开头的内容，可以提取作为快速操作
-                  const howToMatches = answerText.match(/如何[^。，\n]{2,10}/g)
-                  if (howToMatches && howToMatches.length > 0) {
-                    quickActions.push(...howToMatches.slice(0, 2))
-                  }
-
                   newMessages[index] = {
                     ...newMessages[index],
                     content: answerText,
                     type: 'ai',
-                    quickActions: quickActions.length > 0 ? quickActions : undefined,
                   }
                 }
                 return newMessages
@@ -877,8 +898,6 @@ export default function CustomerServiceContent({
           }
         })
       })
-
-      setIsWaiting(false)
 
       // 等待流式输出完成
       try {
@@ -943,7 +962,7 @@ export default function CustomerServiceContent({
   // 处理跳转到发帖页面
   const handleGoToPost = (question: string, messageForumId?: number) => {
     // 优先使用消息中保存的 forumId，否则使用全局 forumId
-    const targetForumId = messageForumId ?? forumId
+    const targetForumId = messageForumId ?? forumId ?? forums[0]?.id
     const forum = forums.find((f) => f.id === targetForumId)
 
     if (!forum?.route_name) {
@@ -956,6 +975,67 @@ export default function CustomerServiceContent({
     const postUrl = `/${forum.route_name}/edit?type=qa&title=${encodedTitle}`
     window.open(postUrl, '_blank')
   }
+
+  const handleSearchRelatedPosts = useCallback(
+    async (question: string, messageForumId?: number) => {
+      const trimmedQuestion = question.trim()
+      if (!trimmedQuestion) return
+
+      const availableForums = forums || []
+      const hasMultipleForums = availableForums.length > 1
+      const inferredForumId = messageForumId ?? forumId ?? availableForums[0]?.id
+
+      if (hasMultipleForums && (messageForumId === undefined || messageForumId === null) && !forumId) {
+        const selectionMessageId = generateUuid()
+        const selectionMessage: Message = {
+          id: selectionMessageId,
+          role: 'assistant',
+          content: '请选择一个板块，我将为您搜索相关帖子。',
+          type: 'search',
+          timestamp: new Date().toISOString(),
+          needsForumSelection: true,
+          pendingQuestion: trimmedQuestion,
+          originalQuestionForSearch: trimmedQuestion,
+          originalQuestion: trimmedQuestion,
+          showPostPrompt: false,
+          isComplete: false,
+        }
+        setMessages((prev) => [...prev, selectionMessage])
+        return
+      }
+
+      if (inferredForumId === undefined || inferredForumId === null) {
+        console.error('未找到用于搜索的板块信息', { messageForumId, forumId, forums })
+        Alert.warning('请先选择板块后再搜索相关帖子', 3000)
+        return
+      }
+
+      const searchMessageId = generateUuid()
+      const loadingMessage: Message = {
+        id: searchMessageId,
+        role: 'assistant',
+        content: SEARCH_LOADING_TEXT,
+        type: 'search',
+        timestamp: new Date().toISOString(),
+        summary: undefined,
+        sources: undefined,
+        discCount: undefined,
+        showPostPrompt: false,
+        needsForumSelection: false,
+        pendingQuestion: undefined,
+        isComplete: false,
+        forumId: inferredForumId,
+        originalQuestion: trimmedQuestion,
+        originalQuestionForSearch: trimmedQuestion,
+      }
+
+      setIsLoading(true)
+      setMessages((prev) => [...prev, loadingMessage])
+
+      await callSummaryContent(inferredForumId, trimmedQuestion, searchMessageId, trimmedQuestion)
+    },
+    [forums, forumId, callSummaryContent, generateUuid],
+  )
 
   // 处理板块选择
   const handleForumSelect = useCallback(
@@ -970,7 +1050,15 @@ export default function CustomerServiceContent({
           newMessages[index] = {
             ...newMessages[index],
             needsForumSelection: false,
-            content: '正在为您搜索相关帖子...',
+            content: SEARCH_LOADING_TEXT,
+            type: 'search',
+            summary: undefined,
+            sources: undefined,
+            discCount: undefined,
+            showPostPrompt: false,
+            isComplete: false,
+            forumId: selectedForumId,
+            originalQuestionForSearch: question,
           }
         }
         return newMessages
@@ -1019,249 +1107,6 @@ export default function CustomerServiceContent({
     const shuffled = [...commonQuestions].sort(() => Math.random() - 0.5)
     setCommonQuestions(shuffled)
   }, [commonQuestions])
-
-  // 处理快速操作按钮点击
-  const handleQuickAction = useCallback(
-    (action: string) => {
-      // 直接使用 action 作为问题发送
-      if (!action.trim() || isLoading) return
-
-      const userMessage: Message = {
-        id: Date.now().toString(),
-        role: 'user',
-        content: action.trim(),
-        timestamp: new Date().toISOString(),
-      }
-
-      setMessages((prev) => [...prev, userMessage])
-      setIsLoading(true)
-      setIsWaiting(true)
-
-      // 创建助手消息占位符
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: '',
-        type: 'ai',
-        timestamp: new Date().toISOString(),
-      }
-      const assistantMessageId = assistantMessage.id
-      setMessages((prev) => [...prev, assistantMessage])
-      currentMessageRef.current = assistantMessage
-
-      // 调用发送逻辑（复用 handleSend 的核心逻辑）
-      ;(async () => {
-        try {
-          const csrfToken = await getCsrfToken()
-          // 获取当前的 sessionId，确保与 URL 同步
-          const currentSessionId = getCurrentSessionId()
-          const requestBody = JSON.stringify({
-            question: action.trim(),
-            session_id: currentSessionId,
-          })
-
-          let answerText = ''
-          const thinkingPatterns = [/思考[:：]/, /推理[:：]/, /分析[:：]/, /让我想想/, /我需要/, /正在思考/]
-
-          const streamComplete = new Promise<void>((resolve, reject) => {
-            const askSseClient = new SSEClient<any>({
-              url: '/api/discussion/ask',
-              headers: {
-                'X-CSRF-TOKEN': csrfToken,
-              },
-              method: 'POST',
-              streamMode: true,
-              onError: (err: Error) => {
-                console.error('AI 回答生成失败:', err)
-                const errorMessage = err.message || err.toString()
-
-                // 检查是否是 session closed 错误
-                if (errorMessage.toLowerCase().includes('session closed')) {
-                  Alert.info('会话已过期，请点击右上角开启新会话', 5000)
-                  setIsLoading(false)
-                  setIsWaiting(false)
-                  setMessages((prev) => {
-                    const newMessages = [...prev]
-                    const index = newMessages.findIndex((m) => m.id === assistantMessageId)
-                    if (index !== -1) {
-                      newMessages[index] = {
-                        ...newMessages[index],
-                        content: '会话已过期，请点击右上角开启新会话。',
-                      }
-                    }
-                    return newMessages
-                  })
-                  resolve() // 使用 resolve 而不是 reject，避免触发 catch
-                  return
-                }
-
-                setIsLoading(false)
-                setIsWaiting(false)
-                reject(err)
-              },
-              onComplete: () => {
-                setIsWaiting(false)
-                setIsLoading(false)
-                // 标记消息已完成
-                setMessages((prev) => {
-                  const newMessages = [...prev]
-                  const index = newMessages.findIndex((m) => m.id === assistantMessageId)
-                  if (index !== -1) {
-                    newMessages[index] = {
-                      ...newMessages[index],
-                      isComplete: true,
-                    }
-                  }
-                  return newMessages
-                })
-                resolve()
-              },
-            })
-
-            sseClientRef.current = askSseClient
-
-            askSseClient.subscribe(requestBody, (data) => {
-              // 检测 session closed 错误
-              let dataStr = ''
-              if (typeof data === 'string') {
-                dataStr = data
-              } else if (data && typeof data === 'object') {
-                dataStr = JSON.stringify(data)
-              }
-
-              if (dataStr.toLowerCase().includes('session closed')) {
-                Alert.info('会话已过期，请点击右上角开启新会话', 5000)
-                setIsLoading(false)
-                setIsWaiting(false)
-                setMessages((prev) => {
-                  const newMessages = [...prev]
-                  const index = newMessages.findIndex((m) => m.id === assistantMessageId)
-                  if (index !== -1) {
-                    newMessages[index] = {
-                      ...newMessages[index],
-                      content: '会话已过期，请点击右上角开启新会话。',
-                    }
-                  }
-                  return newMessages
-                })
-                // 停止处理后续数据
-                askSseClient.unsubscribe()
-                return
-              }
-
-              let textToAdd = ''
-              if (typeof data === 'string') {
-                // 处理 JSON 字符串化的内容（后端使用 fmt.Sprintf("%q", content)）
-                try {
-                  // 移除引号
-                  const unquoted = data.replaceAll(/^"|"$/g, '')
-                  textToAdd = unquoted.replaceAll(/\\"/g, '"').replaceAll(/\\n/g, '\n')
-                } catch {
-                  textToAdd = data
-                }
-              } else if (data && typeof data === 'object') {
-                // 如果是带 event 字段的对象，从 data.data 中提取内容
-                if ((data as any).event === 'text') {
-                  // event:text 类型，提取 data 字段
-                  const eventData = (data as any).data
-                  if (typeof eventData === 'string') {
-                    textToAdd = eventData
-                  } else if (eventData && typeof eventData === 'object') {
-                    textToAdd =
-                      eventData.content ||
-                      eventData.text ||
-                      eventData.chunk ||
-                      eventData.message ||
-                      eventData.result ||
-                      ''
-                  }
-                } else if (!(data as any).event) {
-                  // 没有 event 字段的普通对象
-                  textToAdd = data.content || data.text || data.data || data.chunk || data.message || data.result || ''
-                }
-                // 其他 event 类型（如 end）已在 fetch.ts 中处理，这里不处理
-              }
-
-              if (textToAdd) {
-                // 检查是否是思考过程
-                const isThinkingLine = thinkingPatterns.some((pattern) => pattern.test(textToAdd))
-
-                // 只添加非思考过程的内容
-                if (!isThinkingLine) {
-                  answerText += textToAdd
-
-                  // 使用消息 ID 而不是索引，确保即使消息数组发生变化也能正确更新
-                  setMessages((prev) => {
-                    const newMessages = [...prev]
-                    const index = newMessages.findIndex((m) => m.id === assistantMessageId)
-                    if (index !== -1) {
-                      // 从回答中提取可能的快速操作按钮（简单示例：提取标题或关键词）
-                      const quickActions: string[] = []
-                      // 如果回答包含"如何"开头的内容，可以提取作为快速操作
-                      const howToMatches = answerText.match(/如何[^。，\n]{2,10}/g)
-                      if (howToMatches && howToMatches.length > 0) {
-                        quickActions.push(...howToMatches.slice(0, 2))
-                      }
-
-                      newMessages[index] = {
-                        ...newMessages[index],
-                        content: answerText,
-                        type: 'ai',
-                        quickActions: quickActions.length > 0 ? quickActions : undefined,
-                      }
-                    }
-                    return newMessages
-                  })
-                }
-              }
-            })
-          })
-
-          // 等待流式输出完成
-          try {
-            await streamComplete
-          } catch (err) {
-            console.error('流式输出错误:', err)
-            const errorMessage = err instanceof Error ? err.message : String(err)
-
-            // 检查是否是 session closed 错误
-            if (errorMessage.toLowerCase().includes('session closed')) {
-              Alert.info('会话已过期，请点击右上角开启新会话', 5000)
-              setMessages((prev) => {
-                const newMessages = [...prev]
-                const index = newMessages.findIndex((m) => m.id === assistantMessageId)
-                if (index !== -1) {
-                  newMessages[index] = {
-                    ...newMessages[index],
-                    content: '会话已过期，请点击右上角开启新会话。',
-                  }
-                }
-                return newMessages
-              })
-            }
-          }
-        } catch (error) {
-          console.error('发送消息失败:', error)
-          setMessages((prev) => {
-            const newMessages = [...prev]
-            const lastIndex = newMessages.length - 1
-            if (newMessages[lastIndex]?.role === 'assistant') {
-              newMessages[lastIndex] = {
-                ...newMessages[lastIndex],
-                content: '抱歉，服务暂时不可用，请稍后重试。',
-                type: 'ai',
-              }
-            }
-            return newMessages
-          })
-          setIsLoading(false)
-          setIsWaiting(false)
-          currentMessageRef.current = null
-        }
-      })()
-    },
-    [isLoading, getCurrentSessionId],
-  )
 
   // 处理常见问题点击
   const handleCommonQuestionClick = useCallback((question: string) => {
@@ -1379,6 +1224,24 @@ export default function CustomerServiceContent({
             // 获取用户最后一条消息作为问题（在当前机器人消息之前）
             const lastUserMessage = messages.slice(0, index + 1).findLast((m) => m.role === 'user')
             const questionForPost = lastUserMessage?.content || ''
+            const isSearchSummaryComplete =
+              message.type === 'search' &&
+              message.isComplete &&
+              !!message.content &&
+              message.content.trim() !== SEARCH_LOADING_TEXT
+            const canShowPostButton =
+              isSearchSummaryComplete &&
+              isLastAssistantMessage &&
+              !!questionForPost &&
+              !message.showPostPrompt
+            const canShowSearchButton =
+              message.role === 'assistant' &&
+              message.type === 'ai' &&
+              message.isComplete &&
+              isLastAssistantMessage &&
+              !!questionForPost &&
+              !message.showPostPrompt &&
+              !!message.content
 
             return (
               <Fade in={true} key={message.id} timeout={400}>
@@ -1578,18 +1441,22 @@ export default function CustomerServiceContent({
                                                     onClick={() => handleSourceClick(source)}
                                                     sx={{
                                                       py: 0.75,
+                                                      px: 1,
+                                                      borderRadius: 1,
                                                       cursor: 'pointer',
+                                                      color: 'text.primary',
+                                                      transition: 'color 0.2s, background-color 0.2s',
                                                       '&:hover': {
                                                         color: 'primary.main',
+                                                        backgroundColor: 'transparent',
                                                       },
-                                                      transition: 'color 0.2s',
                                                     }}
                                                   >
                                                     <Typography
                                                       variant='body2'
                                                       sx={{
                                                         fontSize: '14px',
-                                                        color: 'text.primary',
+                                                        color: 'inherit',
                                                         lineHeight: 1.5,
                                                       }}
                                                     >
@@ -1616,7 +1483,23 @@ export default function CustomerServiceContent({
                                     )}
 
                                   {/* 消息内容 - 总结文本 */}
-                                  {message.content && (
+                                  {message.content && message.content.trim() === SEARCH_LOADING_TEXT ? (
+                                    <Box
+                                      sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1.5,
+                                        py: 1.5,
+                                        px: 2,
+                                        color: 'text.secondary',
+                                      }}
+                                    >
+                                      <CircularProgress size={18} thickness={4} sx={{ color: 'text.secondary' }} />
+                                      <Typography variant='body2' sx={{ fontSize: '0.9rem', color: 'text.secondary' }}>
+                                        {SEARCH_LOADING_TEXT}
+                                      </Typography>
+                                    </Box>
+                                  ) : (
                                     <Box
                                       sx={{
                                         '& > *:first-of-type': { mt: 0 },
@@ -1639,8 +1522,6 @@ export default function CustomerServiceContent({
                                         gap: 1.5,
                                         py: 1.5,
                                         px: 2,
-                                        borderRadius: 1,
-                                        bgcolor: alpha(theme.palette.grey[500], 0.08),
                                       }}
                                     >
                                       <CircularProgress size={18} thickness={4} sx={{ color: 'text.secondary' }} />
@@ -1749,49 +1630,82 @@ export default function CustomerServiceContent({
                             {/* 发帖提问按钮 - 放在气泡外部 */}
                             {message.role === 'assistant' && (
                               <>
-                                {message.showPostPrompt && message.originalQuestion ? (
+                                {message.showPostPrompt &&
+                                  message.originalQuestion &&
+                                  message.isComplete &&
+                                  isLastAssistantMessage ? (
                                   <Box sx={{ mt: 1.5, pl: 0.5 }}>
                                     <Button
                                       variant='contained'
                                       size='small'
-                                      onClick={() => handleGoToPost(message.originalQuestion!, message.forumId)}
+                                      onClick={() =>
+                                        handleGoToPost(
+                                          message.originalQuestion!,
+                                          message.forumId ?? message.sources?.[0]?.forum_id,
+                                        )
+                                      }
                                       sx={{
                                         textTransform: 'none',
                                         borderRadius: 2,
-                                        background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                                        backgroundColor: theme.palette.primary.main,
                                         boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.3)}`,
                                         '&:hover': {
+                                          backgroundColor: theme.palette.primary.dark,
                                           boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`,
                                         },
                                         fontWeight: 600,
                                       }}
                                     >
-                                      前往社区发帖
+                                      前往发帖提问
                                     </Button>
                                   </Box>
-                                ) : isLastAssistantMessage &&
-                                  questionForPost &&
-                                  !message.showPostPrompt &&
-                                  message.content &&
-                                  message.isComplete &&
-                                  message.type === 'search' ? (
+                                ) : canShowSearchButton ? (
+                                  <Box sx={{ mt: 1.5, pl: 0.5 }}>
+                                    <Button
+                                      variant='contained'
+                                      size='small'
+                                      disabled={isLoading}
+                                      onClick={() =>
+                                        void handleSearchRelatedPosts(
+                                          message.originalQuestionForSearch || questionForPost,
+                                          message.forumId ?? forumId ?? undefined,
+                                        )
+                                      }
+                                      sx={{
+                                        textTransform: 'none',
+                                        borderRadius: 2,
+                                        backgroundColor: theme.palette.primary.main,
+                                        boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.3)}`,
+                                        '&:hover': {
+                                          backgroundColor: theme.palette.primary.dark,
+                                          boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`,
+                                        },
+                                        fontWeight: 600,
+                                      }}
+                                    >
+                                      搜索相关帖子
+                                    </Button>
+                                  </Box>
+                                ) : canShowPostButton ? (
                                   <Box sx={{ mt: 1.5, pl: 0.5 }}>
                                     <Button
                                       variant='contained'
                                       size='small'
                                       onClick={() => handleGoToPost(questionForPost, forumId || undefined)}
+                                      disabled={isLoading}
                                       sx={{
                                         textTransform: 'none',
                                         borderRadius: 2,
-                                        background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                                        backgroundColor: theme.palette.primary.main,
                                         boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.3)}`,
                                         '&:hover': {
+                                          backgroundColor: theme.palette.primary.dark,
                                           boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`,
                                         },
                                         fontWeight: 600,
                                       }}
                                     >
-                                      发帖提问
+                                      前往发帖提问
                                     </Button>
                                   </Box>
                                 ) : null}
@@ -1799,47 +1713,6 @@ export default function CustomerServiceContent({
                             )}
                           </Box>
 
-                          {/* 快速操作按钮 - 显示在消息右侧 */}
-                          {message.role === 'assistant' &&
-                            message.content &&
-                            message.quickActions &&
-                            message.quickActions.length > 0 && (
-                              <Box
-                                sx={{
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  gap: 1,
-                                  mt: 0.5,
-                                  flexShrink: 0,
-                                }}
-                              >
-                                {message.quickActions.map((action, idx) => (
-                                  <Button
-                                    key={idx}
-                                    variant='outlined'
-                                    size='small'
-                                    onClick={() => handleQuickAction(action)}
-                                    sx={{
-                                      textTransform: 'none',
-                                      borderRadius: 2,
-                                      px: 2,
-                                      py: 0.75,
-                                      borderColor: alpha(theme.palette.primary.main, 0.3),
-                                      bgcolor: alpha(theme.palette.primary.main, 0.05),
-                                      color: 'primary.main',
-                                      fontSize: '0.85rem',
-                                      whiteSpace: 'nowrap',
-                                      '&:hover': {
-                                        borderColor: 'primary.main',
-                                        bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                      },
-                                    }}
-                                  >
-                                    {action}
-                                  </Button>
-                                ))}
-                              </Box>
-                            )}
                         </Box>
                       </Box>
                     </Box>

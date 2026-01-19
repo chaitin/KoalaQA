@@ -60,6 +60,7 @@ type GenerateReq struct {
 	Prompt        string                `json:"prompt"`
 	DefaultAnswer string                `json:"default_answer"`
 	NewCommentID  uint                  `json:"new_comment_id"`
+	Debug         bool                  `json:"debug"`
 }
 
 func (g *GenerateReq) Histories() []*schema.Message {
@@ -118,6 +119,7 @@ func (l *LLM) StreamAnswer(ctx context.Context, sysPrompt string, req GenerateRe
 		"CurrentDate":        time.Now().Format("2006-01-02"),
 		"DefaultAnswer":      req.DefaultAnswer,
 		"KnowledgeDocuments": knowledgeDocuments,
+		"Debug":              req.Debug,
 	}, req.Histories()...)
 }
 

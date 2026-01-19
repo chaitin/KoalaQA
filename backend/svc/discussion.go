@@ -16,6 +16,7 @@ import (
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/batch"
+	"github.com/chaitin/koalaqa/pkg/config"
 	"github.com/chaitin/koalaqa/pkg/database"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/llm"
@@ -59,6 +60,7 @@ type discussionIn struct {
 	UserPoint      *UserPoint
 	PublicAddr     *PublicAddress
 	WebPlugin      *WebPlugin
+	Cfg            config.Config
 }
 
 type Discussion struct {
@@ -2199,6 +2201,7 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		Prompt:        req.Question,
 		DefaultAnswer: defaultAnswer,
 		NewCommentID:  0,
+		Debug:         d.in.Cfg.RAG.DEBUG,
 	})
 	if err != nil {
 		return nil, err
@@ -2237,11 +2240,18 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 					}
 				}
 
-				if strings.TrimSpace(answerText.String()) == "true" {
+				switch strings.TrimSpace(answerText.String()) {
+				case "true":
 					text = text[length:]
-				} else {
+				case "false":
 					text = defaultAnswer
-					ret = true
+					if !d.in.Cfg.RAG.DEBUG {
+						ret = true
+					} else {
+						d.logger.WithContext(ctx).With("answer_text", answerText.String()).Info("ask answer text")
+					}
+				default:
+					text = answerText.String() + text[length:]
 				}
 
 				parsed = true
