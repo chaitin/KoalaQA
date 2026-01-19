@@ -1000,7 +1000,7 @@ export default function CustomerServiceContent({
         const selectionMessage: Message = {
           id: selectionMessageId,
           role: 'assistant',
-          content: '抱歉，我暂时无法回答这个问题。请选择一个板块，我将为您搜索相关帖子。',
+          content: '请选择一个板块，我将为您搜索相关帖子。',
           type: 'search',
           timestamp: new Date().toISOString(),
           needsForumSelection: true,
@@ -1891,9 +1891,9 @@ export default function CustomerServiceContent({
                             {message.role === 'assistant' && (
                               <>
                                 {message.showPostPrompt &&
-                                message.originalQuestion &&
-                                message.isComplete &&
-                                isLastAssistantMessage ? (
+                                  message.originalQuestion &&
+                                  message.isComplete &&
+                                  isLastAssistantMessage ? (
                                   <Box sx={{ mt: 1.5, pl: 0.5 }}>
                                     <Button
                                       variant='contained'
