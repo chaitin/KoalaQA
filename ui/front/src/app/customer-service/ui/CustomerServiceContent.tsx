@@ -252,12 +252,18 @@ export default function CustomerServiceContent({
               message.type = 'search'
               message.sources = item.summary_discs
               message.discCount = item.summary_discs.length
+              if (!message.forumId) {
+                message.forumId = item.summary_discs[0]?.forum_id
+              }
             }
 
             if (item.bot) {
               message.isComplete = true
               if (lastUserQuestion) {
                 message.originalQuestion = lastUserQuestion
+              }
+              if (!message.forumId && item.summary_discs && item.summary_discs.length > 0) {
+                message.forumId = item.summary_discs[0]?.forum_id
               }
             } else if (message.content) {
               lastUserQuestion = message.content
@@ -457,6 +463,7 @@ export default function CustomerServiceContent({
                       discCount: count,
                       sources: searchResults, // 保持现有的 sources
                       content: '', // 此时还没有总结文本
+                      forumId: forumId,
                     }
                   }
                   return newMessages
@@ -512,6 +519,7 @@ export default function CustomerServiceContent({
                       type: 'search',
                       sources: [...searchResults], // 使用新数组触发更新
                       discCount: discCount ?? searchResults.length,
+                      forumId: forumId,
                       // 保持现有的 content（如果有的话）
                     }
                   }
@@ -960,7 +968,7 @@ export default function CustomerServiceContent({
   // 处理跳转到发帖页面
   const handleGoToPost = (question: string, messageForumId?: number) => {
     // 优先使用消息中保存的 forumId，否则使用全局 forumId
-    const targetForumId = messageForumId ?? forumId
+    const targetForumId = messageForumId ?? forumId ?? forums[0]?.id
     const forum = forums.find((f) => f.id === targetForumId)
 
     if (!forum?.route_name) {
@@ -1781,7 +1789,12 @@ export default function CustomerServiceContent({
                                     <Button
                                       variant='contained'
                                       size='small'
-                                      onClick={() => handleGoToPost(message.originalQuestion!, message.forumId)}
+                                      onClick={() =>
+                                        handleGoToPost(
+                                          message.originalQuestion!,
+                                          message.forumId ?? message.sources?.[0]?.forum_id,
+                                        )
+                                      }
                                       sx={{
                                         textTransform: 'none',
                                         borderRadius: 2,
