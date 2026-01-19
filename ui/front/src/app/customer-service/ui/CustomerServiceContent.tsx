@@ -232,6 +232,8 @@ export default function CustomerServiceContent({
           })
 
           // 转换历史记录为 Message 格式
+          let lastUserQuestion: string | null = null
+
           const historyMessages: Message[] = filteredItems.map((item, index) => {
             const message: Message = {
               id: item.id?.toString() || `history-${index}`,
@@ -250,6 +252,15 @@ export default function CustomerServiceContent({
               message.type = 'search'
               message.sources = item.summary_discs
               message.discCount = item.summary_discs.length
+            }
+
+            if (item.bot) {
+              message.isComplete = true
+              if (lastUserQuestion) {
+                message.originalQuestion = lastUserQuestion
+              }
+            } else if (message.content) {
+              lastUserQuestion = message.content
             }
 
             return message
