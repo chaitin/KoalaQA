@@ -2240,15 +2240,18 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 					}
 				}
 
-				if strings.TrimSpace(answerText.String()) == "true" {
+				switch strings.TrimSpace(answerText.String()) {
+				case "true":
 					text = text[length:]
-				} else {
+				case "false":
 					text = defaultAnswer
 					if !d.in.Cfg.RAG.DEBUG {
 						ret = true
 					} else {
 						d.logger.WithContext(ctx).With("answer_text", answerText.String()).Info("ask answer text")
 					}
+				default:
+					text = answerText.String() + text[length:]
 				}
 
 				parsed = true
