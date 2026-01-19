@@ -677,6 +677,8 @@ export default function CustomerServiceContent({
       const thinkingPatterns = [/思考[:：]/, /推理[:：]/, /分析[:：]/, /让我想想/, /我需要/, /正在思考/]
 
       // 使用 Promise 来等待流式输出完成
+      let hasReceivedData = false
+
       const streamComplete = new Promise<void>((resolve, reject) => {
         // 创建 SSE 客户端，在回调中处理完成逻辑
         const askSseClient = new SSEClient<any>({
@@ -862,6 +864,10 @@ export default function CustomerServiceContent({
 
             // 只添加非思考过程的内容
             if (!isThinkingLine) {
+              if (!hasReceivedData) {
+                hasReceivedData = true
+                setIsWaiting(false)
+              }
               answerText += textToAdd
 
               // 使用消息 ID 而不是索引，确保即使消息数组发生变化也能正确更新
@@ -890,8 +896,6 @@ export default function CustomerServiceContent({
           }
         })
       })
-
-      setIsWaiting(false)
 
       // 等待流式输出完成
       try {
@@ -1076,6 +1080,8 @@ export default function CustomerServiceContent({
             let answerText = ''
             const thinkingPatterns = [/思考[:：]/, /推理[:：]/, /分析[:：]/, /让我想想/, /我需要/, /正在思考/]
 
+            let hasReceivedData = false
+
             const streamComplete = new Promise<void>((resolve, reject) => {
               const askSseClient = new SSEClient<any>({
                 url: '/api/discussion/ask',
@@ -1201,6 +1207,10 @@ export default function CustomerServiceContent({
 
                   // 只添加非思考过程的内容
                   if (!isThinkingLine) {
+                    if (!hasReceivedData) {
+                      hasReceivedData = true
+                      setIsWaiting(false)
+                    }
                     answerText += textToAdd
 
                     // 使用消息 ID 而不是索引，确保即使消息数组发生变化也能正确更新
