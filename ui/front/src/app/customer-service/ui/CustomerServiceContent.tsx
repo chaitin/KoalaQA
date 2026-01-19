@@ -709,14 +709,14 @@ export default function CustomerServiceContent({
             const finalAnswer = answerText.trim()
             const cannotAnswer = cannotAnswerPatterns.some((pattern) => pattern.test(finalAnswer))
 
-            // 标记消息已完成（如果不是无法回答的情况，或者已经处理完搜索）
+            // 标记消息完成状态（无法回答时保持未完成，等待搜索流程结束）
             setMessages((prev) => {
               const newMessages = [...prev]
               const index = newMessages.findIndex((m) => m.id === assistantMessageId)
               if (index !== -1) {
                 newMessages[index] = {
                   ...newMessages[index],
-                  isComplete: true,
+                  isComplete: !cannotAnswer,
                 }
               }
               return newMessages
@@ -738,6 +738,7 @@ export default function CustomerServiceContent({
                       type: 'ai',
                       needsForumSelection: true,
                       pendingQuestion: question,
+                      isComplete: false,
                     }
                   }
                   return newMessages
@@ -760,6 +761,7 @@ export default function CustomerServiceContent({
                         ...newMessages[index],
                         content: '正在为您搜索相关帖子...',
                         type: 'search',
+                        isComplete: false,
                       }
                     }
                     return newMessages
@@ -767,10 +769,10 @@ export default function CustomerServiceContent({
 
                   // 保持loading状态
                   setIsLoading(true)
-                  ;(async () => {
-                    await callSummaryContent(targetForumId, question, assistantMessageId, question)
-                    resolve()
-                  })()
+                    ; (async () => {
+                      await callSummaryContent(targetForumId, question, assistantMessageId, question)
+                      resolve()
+                    })()
                 } else {
                   setIsLoading(false)
                   resolve()
@@ -1049,34 +1051,87 @@ export default function CustomerServiceContent({
       setMessages((prev) => [...prev, assistantMessage])
       currentMessageRef.current = assistantMessage
 
-      // 调用发送逻辑（复用 handleSend 的核心逻辑）
-      ;(async () => {
-        try {
-          const csrfToken = await getCsrfToken()
-          // 获取当前的 sessionId，确保与 URL 同步
-          const currentSessionId = getCurrentSessionId()
-          const requestBody = JSON.stringify({
-            question: action.trim(),
-            session_id: currentSessionId,
-          })
+        // 调用发送逻辑（复用 handleSend 的核心逻辑）
+        ; (async () => {
+          try {
+            const csrfToken = await getCsrfToken()
+            // 获取当前的 sessionId，确保与 URL 同步
+            const currentSessionId = getCurrentSessionId()
+            const requestBody = JSON.stringify({
+              question: action.trim(),
+              session_id: currentSessionId,
+            })
 
-          let answerText = ''
-          const thinkingPatterns = [/思考[:：]/, /推理[:：]/, /分析[:：]/, /让我想想/, /我需要/, /正在思考/]
+            let answerText = ''
+            const thinkingPatterns = [/思考[:：]/, /推理[:：]/, /分析[:：]/, /让我想想/, /我需要/, /正在思考/]
 
-          const streamComplete = new Promise<void>((resolve, reject) => {
-            const askSseClient = new SSEClient<any>({
-              url: '/api/discussion/ask',
-              headers: {
-                'X-CSRF-TOKEN': csrfToken,
-              },
-              method: 'POST',
-              streamMode: true,
-              onError: (err: Error) => {
-                console.error('AI 回答生成失败:', err)
-                const errorMessage = err.message || err.toString()
+            const streamComplete = new Promise<void>((resolve, reject) => {
+              const askSseClient = new SSEClient<any>({
+                url: '/api/discussion/ask',
+                headers: {
+                  'X-CSRF-TOKEN': csrfToken,
+                },
+                method: 'POST',
+                streamMode: true,
+                onError: (err: Error) => {
+                  console.error('AI 回答生成失败:', err)
+                  const errorMessage = err.message || err.toString()
 
-                // 检查是否是 session closed 错误
-                if (errorMessage.toLowerCase().includes('session closed')) {
+                  // 检查是否是 session closed 错误
+                  if (errorMessage.toLowerCase().includes('session closed')) {
+                    Alert.info('会话已过期，请点击右上角开启新会话', 5000)
+                    setIsLoading(false)
+                    setIsWaiting(false)
+                    setMessages((prev) => {
+                      const newMessages = [...prev]
+                      const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+                      if (index !== -1) {
+                        newMessages[index] = {
+                          ...newMessages[index],
+                          content: '会话已过期，请点击右上角开启新会话。',
+                        }
+                      }
+                      return newMessages
+                    })
+                    resolve() // 使用 resolve 而不是 reject，避免触发 catch
+                    return
+                  }
+
+                  setIsLoading(false)
+                  setIsWaiting(false)
+                  reject(err)
+                },
+                onComplete: () => {
+                  setIsWaiting(false)
+                  setIsLoading(false)
+                  // 标记消息已完成
+                  setMessages((prev) => {
+                    const newMessages = [...prev]
+                    const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+                    if (index !== -1) {
+                      newMessages[index] = {
+                        ...newMessages[index],
+                        isComplete: true,
+                      }
+                    }
+                    return newMessages
+                  })
+                  resolve()
+                },
+              })
+
+              sseClientRef.current = askSseClient
+
+              askSseClient.subscribe(requestBody, (data) => {
+                // 检测 session closed 错误
+                let dataStr = ''
+                if (typeof data === 'string') {
+                  dataStr = data
+                } else if (data && typeof data === 'object') {
+                  dataStr = JSON.stringify(data)
+                }
+
+                if (dataStr.toLowerCase().includes('session closed')) {
                   Alert.info('会话已过期，请点击右上角开启新会话', 5000)
                   setIsLoading(false)
                   setIsWaiting(false)
@@ -1091,48 +1146,89 @@ export default function CustomerServiceContent({
                     }
                     return newMessages
                   })
-                  resolve() // 使用 resolve 而不是 reject，避免触发 catch
+                  // 停止处理后续数据
+                  askSseClient.unsubscribe()
                   return
                 }
 
-                setIsLoading(false)
-                setIsWaiting(false)
-                reject(err)
-              },
-              onComplete: () => {
-                setIsWaiting(false)
-                setIsLoading(false)
-                // 标记消息已完成
-                setMessages((prev) => {
-                  const newMessages = [...prev]
-                  const index = newMessages.findIndex((m) => m.id === assistantMessageId)
-                  if (index !== -1) {
-                    newMessages[index] = {
-                      ...newMessages[index],
-                      isComplete: true,
-                    }
+                let textToAdd = ''
+                if (typeof data === 'string') {
+                  // 处理 JSON 字符串化的内容（后端使用 fmt.Sprintf("%q", content)）
+                  try {
+                    // 移除引号
+                    const unquoted = data.replaceAll(/^"|"$/g, '')
+                    textToAdd = unquoted.replaceAll(/\\"/g, '"').replaceAll(/\\n/g, '\n')
+                  } catch {
+                    textToAdd = data
                   }
-                  return newMessages
-                })
-                resolve()
-              },
+                } else if (data && typeof data === 'object') {
+                  // 如果是带 event 字段的对象，从 data.data 中提取内容
+                  if ((data as any).event === 'text') {
+                    // event:text 类型，提取 data 字段
+                    const eventData = (data as any).data
+                    if (typeof eventData === 'string') {
+                      textToAdd = eventData
+                    } else if (eventData && typeof eventData === 'object') {
+                      textToAdd =
+                        eventData.content ||
+                        eventData.text ||
+                        eventData.chunk ||
+                        eventData.message ||
+                        eventData.result ||
+                        ''
+                    }
+                  } else if (!(data as any).event) {
+                    // 没有 event 字段的普通对象
+                    textToAdd = data.content || data.text || data.data || data.chunk || data.message || data.result || ''
+                  }
+                  // 其他 event 类型（如 end）已在 fetch.ts 中处理，这里不处理
+                }
+
+                if (textToAdd) {
+                  // 检查是否是思考过程
+                  const isThinkingLine = thinkingPatterns.some((pattern) => pattern.test(textToAdd))
+
+                  // 只添加非思考过程的内容
+                  if (!isThinkingLine) {
+                    answerText += textToAdd
+
+                    // 使用消息 ID 而不是索引，确保即使消息数组发生变化也能正确更新
+                    setMessages((prev) => {
+                      const newMessages = [...prev]
+                      const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+                      if (index !== -1) {
+                        // 从回答中提取可能的快速操作按钮（简单示例：提取标题或关键词）
+                        const quickActions: string[] = []
+                        // 如果回答包含"如何"开头的内容，可以提取作为快速操作
+                        const howToMatches = answerText.match(/如何[^。，\n]{2,10}/g)
+                        if (howToMatches && howToMatches.length > 0) {
+                          quickActions.push(...howToMatches.slice(0, 2))
+                        }
+
+                        newMessages[index] = {
+                          ...newMessages[index],
+                          content: answerText,
+                          type: 'ai',
+                          quickActions: quickActions.length > 0 ? quickActions : undefined,
+                        }
+                      }
+                      return newMessages
+                    })
+                  }
+                }
+              })
             })
 
-            sseClientRef.current = askSseClient
+            // 等待流式输出完成
+            try {
+              await streamComplete
+            } catch (err) {
+              console.error('流式输出错误:', err)
+              const errorMessage = err instanceof Error ? err.message : String(err)
 
-            askSseClient.subscribe(requestBody, (data) => {
-              // 检测 session closed 错误
-              let dataStr = ''
-              if (typeof data === 'string') {
-                dataStr = data
-              } else if (data && typeof data === 'object') {
-                dataStr = JSON.stringify(data)
-              }
-
-              if (dataStr.toLowerCase().includes('session closed')) {
+              // 检查是否是 session closed 错误
+              if (errorMessage.toLowerCase().includes('session closed')) {
                 Alert.info('会话已过期，请点击右上角开启新会话', 5000)
-                setIsLoading(false)
-                setIsWaiting(false)
                 setMessages((prev) => {
                   const newMessages = [...prev]
                   const index = newMessages.findIndex((m) => m.id === assistantMessageId)
@@ -1144,121 +1240,27 @@ export default function CustomerServiceContent({
                   }
                   return newMessages
                 })
-                // 停止处理后续数据
-                askSseClient.unsubscribe()
-                return
               }
-
-              let textToAdd = ''
-              if (typeof data === 'string') {
-                // 处理 JSON 字符串化的内容（后端使用 fmt.Sprintf("%q", content)）
-                try {
-                  // 移除引号
-                  const unquoted = data.replaceAll(/^"|"$/g, '')
-                  textToAdd = unquoted.replaceAll(/\\"/g, '"').replaceAll(/\\n/g, '\n')
-                } catch {
-                  textToAdd = data
-                }
-              } else if (data && typeof data === 'object') {
-                // 如果是带 event 字段的对象，从 data.data 中提取内容
-                if ((data as any).event === 'text') {
-                  // event:text 类型，提取 data 字段
-                  const eventData = (data as any).data
-                  if (typeof eventData === 'string') {
-                    textToAdd = eventData
-                  } else if (eventData && typeof eventData === 'object') {
-                    textToAdd =
-                      eventData.content ||
-                      eventData.text ||
-                      eventData.chunk ||
-                      eventData.message ||
-                      eventData.result ||
-                      ''
-                  }
-                } else if (!(data as any).event) {
-                  // 没有 event 字段的普通对象
-                  textToAdd = data.content || data.text || data.data || data.chunk || data.message || data.result || ''
-                }
-                // 其他 event 类型（如 end）已在 fetch.ts 中处理，这里不处理
-              }
-
-              if (textToAdd) {
-                // 检查是否是思考过程
-                const isThinkingLine = thinkingPatterns.some((pattern) => pattern.test(textToAdd))
-
-                // 只添加非思考过程的内容
-                if (!isThinkingLine) {
-                  answerText += textToAdd
-
-                  // 使用消息 ID 而不是索引，确保即使消息数组发生变化也能正确更新
-                  setMessages((prev) => {
-                    const newMessages = [...prev]
-                    const index = newMessages.findIndex((m) => m.id === assistantMessageId)
-                    if (index !== -1) {
-                      // 从回答中提取可能的快速操作按钮（简单示例：提取标题或关键词）
-                      const quickActions: string[] = []
-                      // 如果回答包含"如何"开头的内容，可以提取作为快速操作
-                      const howToMatches = answerText.match(/如何[^。，\n]{2,10}/g)
-                      if (howToMatches && howToMatches.length > 0) {
-                        quickActions.push(...howToMatches.slice(0, 2))
-                      }
-
-                      newMessages[index] = {
-                        ...newMessages[index],
-                        content: answerText,
-                        type: 'ai',
-                        quickActions: quickActions.length > 0 ? quickActions : undefined,
-                      }
-                    }
-                    return newMessages
-                  })
+            }
+          } catch (error) {
+            console.error('发送消息失败:', error)
+            setMessages((prev) => {
+              const newMessages = [...prev]
+              const lastIndex = newMessages.length - 1
+              if (newMessages[lastIndex]?.role === 'assistant') {
+                newMessages[lastIndex] = {
+                  ...newMessages[lastIndex],
+                  content: '抱歉，服务暂时不可用，请稍后重试。',
+                  type: 'ai',
                 }
               }
+              return newMessages
             })
-          })
-
-          // 等待流式输出完成
-          try {
-            await streamComplete
-          } catch (err) {
-            console.error('流式输出错误:', err)
-            const errorMessage = err instanceof Error ? err.message : String(err)
-
-            // 检查是否是 session closed 错误
-            if (errorMessage.toLowerCase().includes('session closed')) {
-              Alert.info('会话已过期，请点击右上角开启新会话', 5000)
-              setMessages((prev) => {
-                const newMessages = [...prev]
-                const index = newMessages.findIndex((m) => m.id === assistantMessageId)
-                if (index !== -1) {
-                  newMessages[index] = {
-                    ...newMessages[index],
-                    content: '会话已过期，请点击右上角开启新会话。',
-                  }
-                }
-                return newMessages
-              })
-            }
+            setIsLoading(false)
+            setIsWaiting(false)
+            currentMessageRef.current = null
           }
-        } catch (error) {
-          console.error('发送消息失败:', error)
-          setMessages((prev) => {
-            const newMessages = [...prev]
-            const lastIndex = newMessages.length - 1
-            if (newMessages[lastIndex]?.role === 'assistant') {
-              newMessages[lastIndex] = {
-                ...newMessages[lastIndex],
-                content: '抱歉，服务暂时不可用，请稍后重试。',
-                type: 'ai',
-              }
-            }
-            return newMessages
-          })
-          setIsLoading(false)
-          setIsWaiting(false)
-          currentMessageRef.current = null
-        }
-      })()
+        })()
     },
     [isLoading, getCurrentSessionId],
   )
@@ -1749,7 +1751,7 @@ export default function CustomerServiceContent({
                             {/* 发帖提问按钮 - 放在气泡外部 */}
                             {message.role === 'assistant' && (
                               <>
-                                {message.showPostPrompt && message.originalQuestion ? (
+                                {message.showPostPrompt && message.originalQuestion && message.isComplete ? (
                                   <Box sx={{ mt: 1.5, pl: 0.5 }}>
                                     <Button
                                       variant='contained'
