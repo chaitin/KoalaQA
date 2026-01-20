@@ -14,7 +14,7 @@ type cors struct {
 func newCors() Interceptor {
 	return &cors{
 		postAllows: []string{
-			"/api/user/login/cors",
+			// "/api/user/login/cors",
 			"/api/discussion/ask",
 			"/api/discussion/summary/content",
 			"/api/discussion/ask/session",
