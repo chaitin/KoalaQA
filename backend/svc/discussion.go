@@ -2140,6 +2140,10 @@ func (d *Discussion) AskSessionClosed(ctx context.Context, uid uint, sessionID s
 }
 
 func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*LLMStream[string], error) {
+	if !d.allow("disc_ask", req.SessionID) {
+		return nil, errRatelimit
+	}
+
 	webPlugin, err := d.in.WebPlugin.Get(ctx)
 	if err != nil {
 		return nil, err
@@ -2365,6 +2369,10 @@ type SummaryByContentItem struct {
 }
 
 func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req SummaryByContentReq) (*LLMStream[SummaryByContentItem], error) {
+	if !d.allow("disc_ask", req.SessionID) {
+		return nil, errRatelimit
+	}
+
 	webPlugin, err := d.in.WebPlugin.Get(ctx)
 	if err != nil {
 		return nil, err
