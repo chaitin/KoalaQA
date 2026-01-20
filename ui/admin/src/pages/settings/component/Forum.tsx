@@ -425,7 +425,7 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
               name={`blocks.${index}.tag_ids`}
               render={({ field }) => {
                 if (!tagEnabled) {
-                  return <Box sx={{ minHeight: 40 }} />;
+                  return null;
                 }
 
                 // 确保即使标签数据未加载完成，也能正确显示已选中的标签
@@ -583,15 +583,14 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
                 </FormControl>
               )}
             />
-            <Box sx={{ minHeight: linksEnabled ? 'auto' : 32 }}>
-              {linksEnabled && (
-                <Stack direction="row" alignItems="flex-start" sx={{ mt: 1, }}>
-                  <Button variant="outlined" size="small" onClick={onEditLinks}>
-                    编辑常用链接
-                  </Button>
-                </Stack>
-              )}
+            {linksEnabled && (<Box sx={{ minHeight: linksEnabled ? 'auto' : 32 }}>
+              <Stack direction="row" alignItems="flex-start" sx={{ mt: 1, }}>
+                <Button variant="outlined" size="small" onClick={onEditLinks}>
+                  编辑常用链接
+                </Button>
+              </Stack>
             </Box>
+            )}
           </Box>
         </Stack>
 
