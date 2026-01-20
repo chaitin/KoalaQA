@@ -86,6 +86,7 @@ func (d *DiscRag) handleInsert(ctx context.Context, data topic.MsgDiscChange) er
 	ragID, err := d.rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
 		DatasetID:  forum.DatasetID,
 		DocumentID: data.RagID,
+		Title:      disc.Title,
 		Content:    content,
 		Metadata:   disc.Metadata(),
 	})

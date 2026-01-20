@@ -118,6 +118,7 @@ func (k *KBDoc) handleInsert(ctx context.Context, kbID uint, docID uint) error {
 	ragID, err := k.rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
 		DatasetID:  k.dataset.GetBackendID(ctx),
 		DocumentID: doc.RagID,
+		Title:      doc.Title,
 		Content:    content,
 		Metadata:   doc.Metadata(),
 	})

@@ -31,6 +31,7 @@ type Metadata interface {
 type UpsertRecordsReq struct {
 	DatasetID        string   `json:"dataset_id,omitempty"`
 	DocumentID       string   `json:"document_id,omitempty"`
+	Title            string   `json:"title,omitempty"`
 	Content          string   `json:"content,omitempty"`
 	Metadata         Metadata `json:"metadata,omitempty"`
 	Tags             []string `json:"tags,omitempty"`
