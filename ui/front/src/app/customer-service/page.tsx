@@ -67,5 +67,5 @@ export default async function CustomerServicePage(props: {
   ]);
 
   // 允许未登录用户访问，user 可以为 null
-  return <CustomerServiceContent initialUser={user || undefined} botData={botData} initialSessionId={sessionId} />;
+  return <CustomerServiceContent initialUser={user ?? undefined} botData={botData} initialSessionId={sessionId} />;
 }

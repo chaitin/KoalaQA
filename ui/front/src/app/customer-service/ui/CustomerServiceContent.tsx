@@ -58,7 +58,7 @@ interface Message {
 }
 
 interface CustomerServiceContentProps {
-  readonly initialUser: ModelUserInfo
+  readonly initialUser?: ModelUserInfo
   readonly botData?: SvcBotGetRes | null
   readonly initialSessionId?: string | null
 }
