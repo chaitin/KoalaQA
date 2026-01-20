@@ -2142,7 +2142,7 @@ func (d *Discussion) AskSessionClosed(ctx context.Context, uid uint, sessionID s
 	if err != nil {
 		return false, err
 	}
-	if lastAsk.UUID == "" || lastAsk.UUID != sessionID {
+	if lastAsk.UUID == "" || uid != lastAsk.UserID || lastAsk.UUID != sessionID {
 		return false, errAskSessionClosed
 	}
 
