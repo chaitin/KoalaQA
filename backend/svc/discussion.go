@@ -2152,7 +2152,7 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		return nil, err
 	}
 
-	if !webPlugin.Display {
+	if !webPlugin.Display && !webPlugin.Plugin {
 		return nil, errors.New("disabled")
 	}
 
@@ -2383,7 +2383,7 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 		return nil, err
 	}
 
-	if !webPlugin.Display {
+	if !webPlugin.Display && !webPlugin.Plugin {
 		return nil, errors.New("disabled")
 	}
 
