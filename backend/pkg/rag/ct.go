@@ -67,6 +67,7 @@ func (c *CTRag) UpsertRecords(ctx context.Context, req UpsertRecordsReq) (string
 	data := &raglite.UploadDocumentRequest{
 		DatasetID:        req.DatasetID,
 		DocumentID:       req.DocumentID,
+		Title:            req.Title,
 		File:             strings.NewReader(req.Content),
 		Filename:         fmt.Sprintf("%s.md", uuid.NewString()),
 		Metadata:         metadata,

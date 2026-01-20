@@ -28,6 +28,7 @@ import {
   GetDiscussionFollowParams,
   GetDiscussionParams,
   ModelAskSession,
+  ModelAskSessionSummaryDisc,
   ModelDiscussion,
   ModelDiscussionDetail,
   ModelDiscussionListItem,
@@ -142,7 +143,10 @@ export const getAdminDiscussionAsk = (
  * @request GET:/admin/discussion/ask/session
  * @response `200` `(ContextResponse & {
     data?: (ModelListRes & {
-    items?: (ModelAskSession)[],
+    items?: ((ModelAskSession & {
+    summary_discs?: (ModelAskSessionSummaryDisc)[],
+
+}))[],
 
 }),
 
@@ -156,7 +160,9 @@ export const getAdminDiscussionAskSession = (
   request<
     ContextResponse & {
       data?: ModelListRes & {
-        items?: ModelAskSession[];
+        items?: (ModelAskSession & {
+          summary_discs?: ModelAskSessionSummaryDisc[];
+        })[];
       };
     }
   >({
@@ -289,7 +295,10 @@ export const getDiscussionAskSession = (
  * @request GET:/discussion/ask/{ask_session_id}
  * @response `200` `(ContextResponse & {
     data?: (ModelListRes & {
-    items?: (ModelAskSession)[],
+    items?: ((ModelAskSession & {
+    summary_discs?: (ModelAskSessionSummaryDisc)[],
+
+}))[],
 
 }),
 
@@ -303,7 +312,9 @@ export const getDiscussionAskAskSessionId = (
   request<
     ContextResponse & {
       data?: ModelListRes & {
-        items?: ModelAskSession[];
+        items?: (ModelAskSession & {
+          summary_discs?: ModelAskSessionSummaryDisc[];
+        })[];
       };
     }
   >({

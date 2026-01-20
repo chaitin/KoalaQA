@@ -110,4 +110,5 @@ type SystemSEO struct {
 type SystemWebPlugin struct {
 	Enabled bool `json:"enabled"`
 	Display bool `json:"display"`
+	Plugin  bool `json:"plugin"`
 }

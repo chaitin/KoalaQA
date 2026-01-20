@@ -117,13 +117,23 @@ var SystemChatNoRefPrompt = `
 - 在 true/false 前后添加任何其他内容
 - 使用其他格式（如JSON）
 
-示例1：
+正确示例1：
 false
 {{if .Debug}}无法回答的原因{{end}}
 
-示例2：
+正确示例2：
 true
 该问题的答案
+
+错误示例1（第一行没有 bool 值）:
+该问题的答案
+
+错误示例2（第一行为 false 但后面跟随问题回答）:
+false
+该问题的答案
+
+错误示例3（第一行为 true 但是没有问题回答）:
+true
 `
 
 var SystemChatWithThinkPrompt = `

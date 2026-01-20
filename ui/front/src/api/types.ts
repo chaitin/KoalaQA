@@ -193,6 +193,11 @@ export enum ModelCommentLikeState {
   CommentLikeStateDislike = 2,
 }
 
+export enum ModelAskSessionSource {
+  AskSessionSourceWeb = 0,
+  AskSessionSourcePlugin = 1,
+}
+
 export interface AdminDocUserRes {
   client_id?: string;
   client_secret?: string;
@@ -232,10 +237,17 @@ export interface ModelAskSession {
   content?: string;
   created_at?: number;
   id?: number;
+  source?: ModelAskSessionSource;
   summary?: boolean;
-  summary_discs?: ModelDiscussionListItem[];
+  summary_discs?: ModelJSONBArrayModelAskSessionSummaryDisc;
   updated_at?: number;
   user_id?: number;
+  uuid?: string;
+}
+
+export interface ModelAskSessionSummaryDisc {
+  forum_id?: number;
+  title?: string;
   uuid?: string;
 }
 
@@ -485,6 +497,8 @@ export interface ModelGroupWithItem {
   name?: string;
 }
 
+export type ModelJSONBArrayModelAskSessionSummaryDisc = Record<string, any>;
+
 export type ModelJSONBArrayModelForumGroups = Record<string, any>;
 
 export type ModelJSONBArrayModelRankTimeGroupItem = Record<string, any>;
@@ -653,6 +667,7 @@ export interface ModelSystemSEO {
 export interface ModelSystemWebPlugin {
   display?: boolean;
   enabled?: boolean;
+  plugin?: boolean;
 }
 
 export interface ModelTrend {
@@ -1011,6 +1026,20 @@ export interface SvcKBUpdateReq {
 export interface SvcListAnydocNode {
   children?: SvcListAnydocNode[];
   value?: AnydocListDoc;
+}
+
+export interface SvcListAsksRes {
+  bot?: boolean;
+  content?: string;
+  created_at?: number;
+  id?: number;
+  source?: ModelAskSessionSource;
+  summary?: boolean;
+  summary_discs?: ModelJSONBArrayModelAskSessionSummaryDisc;
+  updated_at?: number;
+  user_id?: number;
+  username?: string;
+  uuid?: string;
 }
 
 export interface SvcListRemoteReq {
@@ -1781,6 +1810,7 @@ export interface PostDiscussionAskParams {
 
 export interface GetDiscussionAskSessionParams {
   force_create?: boolean;
+  session_id?: string;
 }
 
 export interface GetDiscussionAskAskSessionIdParams {
@@ -1801,7 +1831,6 @@ export interface PostDiscussionSummaryParams {
 }
 
 export interface PostDiscussionSummaryContentParams {
-  content: string;
   forum_id: number;
   group_ids?: number[];
   session_id: string;

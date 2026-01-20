@@ -257,6 +257,9 @@ const QaImport = (props: {
             {...register('title')}
             label="名称"
             fullWidth
+            multiline
+            minRows={1}
+            maxRows={10}
             error={Boolean(formState.errors.title?.message)}
             helperText={formState.errors.title?.message}
             slotProps={{

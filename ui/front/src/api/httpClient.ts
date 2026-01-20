@@ -76,12 +76,18 @@ export enum ContentType {
 
 type ExtractDataProp<T> = T extends { data?: infer U } ? U : T;
 
-// CSRF token 获取请求去重（避免并发时重复请求）
+// CSRF token 缓存
+let csrfTokenCache: string | null = null;
 let csrfTokenPromise: Promise<string> | null = null;
 
-// 获取CSRF token的函数（每次都从服务器获取，不使用缓存）
+// 获取CSRF token的函数
 export const getCsrfToken = async (): Promise<string> => {
-  // 如果正在获取token，等待现有的请求（避免并发重复请求）
+  // 如果已经有缓存的token，直接返回
+  if (csrfTokenCache) {
+    return csrfTokenCache;
+  }
+
+  // 如果正在获取token，等待现有的请求
   if (csrfTokenPromise) {
     return csrfTokenPromise;
   }
@@ -102,6 +108,7 @@ export const getCsrfToken = async (): Promise<string> => {
       }
 
       if (token) {
+        csrfTokenCache = token;
         resolve(token);
       } else {
         reject(new Error("Failed to get CSRF token"));
@@ -110,7 +117,7 @@ export const getCsrfToken = async (): Promise<string> => {
       console.error("Failed to fetch CSRF token:", error);
       reject(error);
     } finally {
-      // 清除Promise缓存，允许后续请求
+      // 清除Promise缓存，允许重试
       csrfTokenPromise = null;
     }
   });
@@ -118,8 +125,9 @@ export const getCsrfToken = async (): Promise<string> => {
   return csrfTokenPromise;
 };
 
-// 清除CSRF token获取请求的函数（在token失效时调用，用于取消正在进行的请求）
+// 清除CSRF token缓存的函数（在token失效时调用）
 export const clearCsrfTokenCache = () => {
+  csrfTokenCache = null;
   csrfTokenPromise = null;
 };
 
@@ -155,12 +163,6 @@ export const clearAuthData = async (callLogoutAPI: boolean = true) => {
     // 清除所有待处理的用户相关请求
     if (typeof window !== "undefined" && window.httpClientInstance) {
       window.httpClientInstance.clearPendingRequestsByPath("/user");
-      // 清除所有用户相关的 API 缓存，防止用户信息混淆
-      // 由于缓存键可能包含用户标识，清除所有包含 /user 的缓存
-      const cacheKeysToDelete: string[] = [];
-      // 注意：这里我们无法直接访问 memoryCache，所以通过 httpClient 实例清除
-      // 清除所有缓存以确保用户切换时不会出现数据混淆
-      window.httpClientInstance.clearCache();
     }
 
     // 强制刷新页面状态，确保所有组件重新初始化
@@ -539,11 +541,14 @@ export class HttpClient<SecurityDataType = unknown> {
     body,
     ...params
   }: FullRequestParams): Promise<ExtractDataProp<T>> => {
+    // 生成缓存键和请求键
+    const cacheKey = generateCacheKey(path, { query, body, ...params });
     const method = params.method?.toUpperCase() || "GET";
 
-    // 对于 /user 请求，需要获取用户身份标识，用于区分不同用户的缓存和请求
-    let authToken = "";
+    // 对于 /user 请求，需要在请求key中包含用户身份标识，确保不同用户的请求不会被去重
+    let requestKey = `${method}:${cacheKey}`;
     if (path === "/user" && method === "GET") {
+      let authToken = "";
       try {
         // 在客户端环境中，从cookie中读取auth_token
         if (typeof window !== "undefined") {
@@ -561,30 +566,19 @@ export class HttpClient<SecurityDataType = unknown> {
           authToken = cookieStore.get("auth_token")?.value || "";
         }
       } catch (error) {
-        // 如果无法读取cookie，忽略错误
+        // 如果无法读取cookie，忽略错误，使用原始key
         console.warn(
-          "Failed to read auth_token for cache key generation:",
+          "Failed to read auth_token for request deduplication:",
           error,
         );
       }
-    }
 
-    // 生成缓存键，对于 /user 请求，在缓存键中包含用户身份标识
-    // 这样可以确保不同用户的缓存数据不会混淆
-    let cacheKeyParams: any = { query, body, ...params };
-    if (path === "/user" && method === "GET" && authToken) {
-      // 使用 token 的前16个字符作为用户标识（比请求去重用的8个字符更长，更安全）
-      const tokenHash = authToken.substring(0, 16);
-      cacheKeyParams = { ...cacheKeyParams, _userId: tokenHash };
-    }
-    const cacheKey = generateCacheKey(path, cacheKeyParams);
-
-    // 生成请求键，用于请求去重
-    let requestKey = `${method}:${cacheKey}`;
-    if (path === "/user" && method === "GET" && authToken) {
-      // 使用 token 的前8个字符作为用户标识（用于请求去重）
-      const tokenHash = authToken.substring(0, 8);
-      requestKey = `${method}:${cacheKey}:${tokenHash}`;
+      // 如果获取到了auth_token，将其hash值添加到请求key中
+      // 使用简单的hash函数（前8个字符）来区分不同用户
+      if (authToken) {
+        const tokenHash = authToken.substring(0, 8);
+        requestKey = `${method}:${cacheKey}:${tokenHash}`;
+      }
     }
 
     // 检查是否有相同的请求正在进行中（请求去重）

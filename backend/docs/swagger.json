@@ -253,8 +253,7 @@
                     {
                         "type": "integer",
                         "name": "user_id",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -4896,6 +4895,11 @@
                         "type": "boolean",
                         "name": "force_create",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "session_id",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -7829,6 +7833,9 @@
                 "id": {
                     "type": "integer"
                 },
+                "source": {
+                    "$ref": "#/definitions/model.AskSessionSource"
+                },
                 "summary": {
                     "type": "boolean"
                 },
@@ -7845,6 +7852,17 @@
                     "type": "string"
                 }
             }
+        },
+        "model.AskSessionSource": {
+            "type": "integer",
+            "enum": [
+                0,
+                1
+            ],
+            "x-enum-varnames": [
+                "AskSessionSourceWeb",
+                "AskSessionSourcePlugin"
+            ]
         },
         "model.AskSessionSummaryDisc": {
             "type": "object",
@@ -9261,6 +9279,9 @@
                 },
                 "enabled": {
                     "type": "boolean"
+                },
+                "plugin": {
+                    "type": "boolean"
                 }
             }
         },
@@ -10406,6 +10427,9 @@
                 },
                 "id": {
                     "type": "integer"
+                },
+                "source": {
+                    "$ref": "#/definitions/model.AskSessionSource"
                 },
                 "summary": {
                     "type": "boolean"

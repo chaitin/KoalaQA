@@ -6,7 +6,7 @@ import UndoIcon from '@mui/icons-material/Undo';
 import { Box, Button, IconButton, Stack, TextField, Tooltip, Typography } from '@mui/material';
 import { useRequest } from 'ahooks';
 import dayjs from 'dayjs';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, startTransition } from 'react';
 import EditorWrap, { EditorWrapRef } from '../editor';
 import EditorContent from '../EditorContent';
 
@@ -35,6 +35,7 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
   const [isPolishing, setIsPolishing] = useState(false);
   const [historicalQaDetail, setHistoricalQaDetail] = useState<any>(null);
   const editorRef = useRef<EditorWrapRef>(null);
+  const previousQaItemIdRef = useRef<number | undefined>(undefined);
 
   // AI文本润色功能
   const { run: polishText, loading: polishLoading } = useRequest(
@@ -71,22 +72,33 @@ const QaReviewModal: React.FC<QaReviewModalProps> = ({
     }
   };
 
+  // 当 qaItem 变化时，更新表单状态
   useEffect(() => {
-    if (qaItem && open) {
-      setQuestion(qaItem.title || '');
-      setAnswer(qaItem.markdown || '');
-      setOriginalAnswer('');
+    if (!qaItem || !open) {
+      return;
+    }
 
-      // 如果有相似问答对ID，获取历史问答对详情
-      if (qaItem.similar_id) {
-        getAdminKbKbIdQuestionQaId({ kbId, qaId: qaItem.similar_id })
-          .then(res => {
-            setHistoricalQaDetail(res);
-          })
-          .catch(err => {
-            console.error('获取历史问答对详情失败:', err);
-          });
-      }
+    // 只在 qaItem.id 真正变化时才更新 state，避免不必要的渲染
+    const currentQaItemId = qaItem.id;
+    if (previousQaItemIdRef.current !== currentQaItemId) {
+      previousQaItemIdRef.current = currentQaItemId;
+      // 使用 startTransition 将状态更新标记为非紧急，避免同步更新导致的级联渲染
+      startTransition(() => {
+        setQuestion(qaItem.title || '');
+        setAnswer(qaItem.markdown || '');
+        setOriginalAnswer('');
+      });
+    }
+
+    // 如果有相似问答对ID，获取历史问答对详情
+    if (qaItem.similar_id) {
+      getAdminKbKbIdQuestionQaId({ kbId, qaId: qaItem.similar_id })
+        .then(res => {
+          setHistoricalQaDetail(res);
+        })
+        .catch(err => {
+          console.error('获取历史问答对详情失败:', err);
+        });
     }
   }, [qaItem, open, kbId]);
 

@@ -166,12 +166,10 @@ const SimilarDiscussionsPanel = forwardRef<SimilarDiscussionsPanelRef, SimilarDi
         elevation={0}
         sx={{
           flex: 1,
-          minHeight: 200,
           flexShrink: 0,
           p: 2,
           display: { xs: 'none', sm: 'flex' },
           flexDirection: 'column',
-          height: '60vh',
           overflow: 'hidden',
           borderRadius: 1,
           border: (theme) => `1px solid ${theme.palette.mode === 'light' ? '#EAECF0' : '#393939'}`,

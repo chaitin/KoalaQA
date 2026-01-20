@@ -14,7 +14,7 @@ type cors struct {
 func newCors() Interceptor {
 	return &cors{
 		postAllows: []string{
-			"/api/user/login/cors",
+			// "/api/user/login/cors",
 			"/api/discussion/ask",
 			"/api/discussion/summary/content",
 			"/api/discussion/ask/session",
@@ -25,6 +25,7 @@ func newCors() Interceptor {
 func (c *cors) Intercept(ctx *context.Context) {
 	if ctx.Request.Header.Get("Origin") != "" &&
 		(ctx.Request.Method == http.MethodGet || ctx.Request.Method == http.MethodPost && slices.Contains(c.postAllows, ctx.Request.RequestURI)) {
+		ctx.Set("cors", true)
 		ctx.Header("Access-Control-Allow-Origin", "*")
 		ctx.Header("Access-Control-Allow-Methods", "GET, POST")
 		ctx.Header("Access-Control-Allow-Headers", "*")

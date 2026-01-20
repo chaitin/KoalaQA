@@ -2078,7 +2078,8 @@ func (d *Discussion) Reindex(ctx context.Context, req ReindexReq) error {
 }
 
 type CreateOrLastSessionReq struct {
-	ForceCreate bool `form:"force_create"`
+	SessionID   *string `form:"session_id"`
+	ForceCreate bool    `form:"force_create"`
 }
 
 func (d *Discussion) CreateOrLastSession(ctx context.Context, uid uint, req CreateOrLastSessionReq) (string, error) {
@@ -2087,10 +2088,11 @@ func (d *Discussion) CreateOrLastSession(ctx context.Context, uid uint, req Crea
 		return "", err
 	}
 
-	if !req.ForceCreate {
+	if !req.ForceCreate && (uid > 0 || req.SessionID != nil) {
 		var lastSession model.AskSession
 		err = d.in.AskSessionRepo.Get(ctx, &lastSession,
 			repo.QueryWithEqual("user_id", uid),
+			repo.QueryWithEqual("uuid", req.SessionID),
 			repo.QueryWithEqual("created_at", time.Now().Add(-time.Hour), repo.EqualOPGT),
 			repo.QueryWithOrderBy("created_at DESC"),
 		)
@@ -2118,21 +2120,29 @@ func (d *Discussion) CreateOrLastSession(ctx context.Context, uid uint, req Crea
 }
 
 type DiscussionAskReq struct {
-	SessionID string           `json:"session_id" binding:"required,uuid"`
-	Question  string           `json:"question" binding:"required"`
-	GroupIDs  model.Int64Array `json:"group_ids"`
+	SessionID string                 `json:"session_id" binding:"required,uuid"`
+	Question  string                 `json:"question" binding:"required"`
+	GroupIDs  model.Int64Array       `json:"group_ids"`
+	Source    model.AskSessionSource `json:"-" swaggerignore:"true"`
 }
 
 func (d *Discussion) AskSessionClosed(ctx context.Context, uid uint, sessionID string) (bool, error) {
-	var lastAsk model.AskSession
-	err := d.in.AskSessionRepo.Get(ctx, &lastAsk,
-		repo.QueryWithEqual("user_id", uid),
+	query := []repo.QueryOptFunc{
 		repo.QueryWithOrderBy("created_at DESC,id DESC"),
-	)
+	}
+
+	if uid == 0 {
+		query = append(query, repo.QueryWithEqual("uuid", sessionID))
+	} else {
+		query = append(query, repo.QueryWithEqual("user_id", uid))
+	}
+
+	var lastAsk model.AskSession
+	err := d.in.AskSessionRepo.Get(ctx, &lastAsk, query...)
 	if err != nil {
 		return false, err
 	}
-	if lastAsk.UUID == "" || lastAsk.UUID != sessionID {
+	if lastAsk.UUID == "" || uid != lastAsk.UserID || lastAsk.UUID != sessionID {
 		return false, errAskSessionClosed
 	}
 
@@ -2140,12 +2150,16 @@ func (d *Discussion) AskSessionClosed(ctx context.Context, uid uint, sessionID s
 }
 
 func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*LLMStream[string], error) {
+	if !d.allow("disc_ask", req.SessionID) {
+		return nil, errRatelimit
+	}
+
 	webPlugin, err := d.in.WebPlugin.Get(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if !webPlugin.Display {
+	if !webPlugin.Display && !webPlugin.Plugin {
 		return nil, errors.New("disabled")
 	}
 
@@ -2265,6 +2279,7 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		err := d.in.AskSessionRepo.Create(context.Background(), &model.AskSession{
 			UUID:    req.SessionID,
 			UserID:  uid,
+			Source:  req.Source,
 			Bot:     true,
 			Content: aiResBuilder.String(),
 		})
@@ -2333,7 +2348,7 @@ type AskSessionReq struct {
 	*model.Pagination
 
 	SessionID string `form:"session_id" binding:"required"`
-	UserID    uint   `form:"user_id" binding:"required"`
+	UserID    uint   `form:"user_id"`
 }
 
 func (d *Discussion) AskSession(ctx context.Context, req AskSessionReq) (*model.ListRes[model.AskSession], error) {
@@ -2354,9 +2369,10 @@ func (d *Discussion) AskSession(ctx context.Context, req AskSessionReq) (*model.
 }
 
 type SummaryByContentReq struct {
-	SessionID string           `json:"session_id" binding:"required,uuid"`
-	ForumID   uint             `json:"forum_id" binding:"required"`
-	GroupIDs  model.Int64Array `json:"group_ids"`
+	SessionID string                 `json:"session_id" binding:"required,uuid"`
+	ForumID   uint                   `json:"forum_id" binding:"required"`
+	GroupIDs  model.Int64Array       `json:"group_ids"`
+	Source    model.AskSessionSource `json:"-" swaggerignore:"true"`
 }
 
 type SummaryByContentItem struct {
@@ -2365,12 +2381,16 @@ type SummaryByContentItem struct {
 }
 
 func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req SummaryByContentReq) (*LLMStream[SummaryByContentItem], error) {
+	if !d.allow("disc_ask", req.SessionID) {
+		return nil, errRatelimit
+	}
+
 	webPlugin, err := d.in.WebPlugin.Get(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if !webPlugin.Display {
+	if !webPlugin.Display && !webPlugin.Plugin {
 		return nil, errors.New("disabled")
 	}
 
@@ -2536,6 +2556,7 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 		err = d.in.AskSessionRepo.Create(context.Background(), &model.AskSession{
 			UUID:         req.SessionID,
 			UserID:       uid,
+			Source:       req.Source,
 			Bot:          true,
 			Summary:      true,
 			SummaryDiscs: model.NewJSONB(summaryDiscs),

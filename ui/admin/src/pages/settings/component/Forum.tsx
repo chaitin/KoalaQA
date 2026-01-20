@@ -44,6 +44,7 @@ import CategorySelector from '@/components/CategorySelector';
 import ArticleSelector from '@/components/ArticleSelector';
 import { putAdminForum } from '@/api/Forum';
 import { ModelForumInfo, ModelForumGroups, ModelDiscussionType, SvcForumBlog } from '@/api/types';
+import type { TagOption } from '@/store/forumStore';
 
 import type { ForumItem } from '@/store/slices/forum';
 
@@ -55,6 +56,13 @@ interface ForumLink {
 interface ForumLinks {
   enabled: boolean;
   links: ForumLink[];
+}
+
+interface BlockOriginalState {
+  tag_ids: number[];
+  blog_ids: number[];
+  tag_enabled: boolean;
+  links: ForumLinks;
 }
 
 interface ForumFormData {
@@ -89,6 +97,7 @@ const commonFieldSx = {
 interface SortableBlockItemProps {
   index: number;
   control: any;
+  getValues: () => ForumFormData;
   onRemove: () => void;
   onEdit: () => void;
   onEditCategories: () => void;
@@ -96,15 +105,13 @@ interface SortableBlockItemProps {
   onSave: () => void;
   forumId?: number;
   isSaving?: boolean;
-  originalTagIds?: number[];
-  originalBlogIds?: number[];
-  originalTagEnabled?: boolean;
-  originalLinks?: ForumLinks;
+  originalState?: BlockOriginalState;
 }
 
 const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
   index,
   control,
+  getValues,
   onRemove,
   onEdit,
   onEditCategories,
@@ -112,11 +119,9 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
   onSave,
   forumId,
   isSaving = false,
-  originalTagIds = [],
-  originalBlogIds = [],
-  originalTagEnabled = false,
-  originalLinks = { enabled: false, links: [] },
+  originalState,
 }) => {
+
   const blogOptions = useWatch({
     control,
     name: `blocks.${index}.blogs`,
@@ -157,12 +162,6 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
     defaultValue: false,
   }) as boolean;
 
-  const currentLinks = useWatch({
-    control,
-    name: `blocks.${index}.links`,
-    defaultValue: { enabled: false, links: [] },
-  }) as ForumLinks;
-
   // 比较数组是否相同（排序后比较）
   const arraysEqual = (a: number[], b: number[]) => {
     if (a.length !== b.length) return false;
@@ -183,23 +182,24 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
 
   // 检查是否有未保存的更改
   const hasUnsavedChanges = useMemo(() => {
-    const tagIdsChanged = !arraysEqual(currentTagIds || [], originalTagIds || []);
-    const blogIdsChanged = !arraysEqual(currentBlogIds || [], originalBlogIds || []);
-    const tagEnabledChanged = tagEnabled !== originalTagEnabled;
-    const linksChanged = !linksEqual(
-      currentLinks || { enabled: false, links: [] },
-      originalLinks || { enabled: false, links: [] }
-    );
+    if (!originalState) return false;
+
+    const tagIdsChanged = !arraysEqual(currentTagIds || [], originalState.tag_ids);
+    const blogIdsChanged = !arraysEqual(currentBlogIds || [], originalState.blog_ids);
+    const tagEnabledChanged = tagEnabled !== originalState.tag_enabled;
+
+    // 使用 getValues 获取最新的链接值，避免 useWatch 的时序问题
+    const linksChanged = linksEnabled !== originalState.links.enabled;
+
     return tagIdsChanged || blogIdsChanged || tagEnabledChanged || linksChanged;
   }, [
     currentTagIds,
     currentBlogIds,
-    originalTagIds,
-    originalBlogIds,
     tagEnabled,
-    originalTagEnabled,
-    currentLinks,
-    originalLinks,
+    originalState,
+    getValues,
+    index,
+    linksEnabled,
   ]);
 
   // 从 store 获取标签
@@ -209,12 +209,27 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
   // 标签输入框内容（用于在选择后清空输入）
   const [tagInputValue, setTagInputValue] = useState('');
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+  // 用于跟踪是否已经请求过标签，避免重复请求
+  const requestedTagsRef = React.useRef<Set<number>>(new Set());
 
   React.useEffect(() => {
     if (forumId && forumId > 0) {
-      fetchTagsForForums([forumId]);
+      // 如果标签已经存在（包括空数组），则不再请求
+      const hasTags = tags[forumId] !== undefined;
+      // 如果已经请求过，也不再请求（避免与 refreshForums 的批量请求冲突）
+      const hasRequested = requestedTagsRef.current.has(forumId);
+
+      if (!hasTags && !hasRequested) {
+        requestedTagsRef.current.add(forumId);
+        fetchTagsForForums([forumId]);
+      } else if (hasTags) {
+        // 如果标签已经存在，清除请求标记（允许后续重新请求，比如标签被清空后）
+        requestedTagsRef.current.delete(forumId);
+      }
     }
-  }, [forumId, fetchTagsForForums]);
+    // 注意：不将 fetchTagsForForums 作为依赖，因为它是稳定的 zustand 函数
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [forumId, tags]);
 
   React.useEffect(() => {
     // 切换版块/新建版块时，避免残留上一次输入
@@ -410,12 +425,20 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
               name={`blocks.${index}.tag_ids`}
               render={({ field }) => {
                 if (!tagEnabled) {
-                  return <Box />;
+                  return null;
                 }
 
-                const selectedTags = tagOptions.filter(tag =>
-                  (field.value || []).includes(tag.id || 0)
-                );
+                // 确保即使标签数据未加载完成，也能正确显示已选中的标签
+                // 使用 field.value 中的 ID 来匹配，如果 tagOptions 中还没有，先创建一个临时对象
+                const tagIds: number[] = field.value || [];
+                const selectedTags: TagOption[] = tagIds
+                  .map((id: number) => {
+                    const found = tagOptions.find((tag: TagOption) => (tag.id || 0) === id);
+                    if (found) return found;
+                    // 如果标签数据还没加载，创建一个临时对象（会在数据加载后自动更新）
+                    return { id, name: `加载中...`, count: undefined } as TagOption;
+                  })
+                  .filter((tag): tag is TagOption => tag !== null && tag !== undefined);
 
                 return (
                   <Autocomplete
@@ -560,12 +583,13 @@ const SortableBlockItem: React.FC<SortableBlockItemProps> = ({
                 </FormControl>
               )}
             />
-            {linksEnabled && (
-              <Stack direction="row" alignItems="flex-start" sx={{mt: 1,}}>
+            {linksEnabled && (<Box sx={{ minHeight: linksEnabled ? 'auto' : 32 }}>
+              <Stack direction="row" alignItems="flex-start" sx={{ mt: 1, }}>
                 <Button variant="outlined" size="small" onClick={onEditLinks}>
                   编辑常用链接
                 </Button>
               </Stack>
+            </Box>
             )}
           </Box>
         </Stack>
@@ -688,7 +712,10 @@ const Forum: React.FC = () => {
   const [linksBlockIndex, setLinksBlockIndex] = useState<number | null>(null);
   const [savingBlockIndex, setSavingBlockIndex] = useState<number | null>(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  // 存储每个板块的原始状态，用于检测未保存的更改
+  const [blockOriginalStates, setBlockOriginalStates] = useState<Map<number, BlockOriginalState>>(new Map());
   const { refreshForums } = useForumStore();
+  const hasInitializedRef = React.useRef(false);
 
   // 从 store 获取板块数据
   const { forums: storeForums, loading: storeLoading } = useForumStore();
@@ -804,45 +831,64 @@ const Forum: React.FC = () => {
     });
   }, []);
 
-  // 初始化：从 store 加载数据
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        if (isInitialLoading) {
-          setIsInitialLoading(true);
-        }
-
-        if (storeForums.length > 0) {
-          const blocks = convertForumsToBlocks(storeForums);
-          reset({ blocks });
-          setIsInitialLoading(false);
-          return;
-        }
-
-        if (!storeLoading) {
-          await refreshForums();
-        }
-      } catch (error) {
-        console.error('获取版块数据失败:', error);
-        reset({ blocks: [] });
-        setIsInitialLoading(false);
+  // 设置或更新原始状态
+  const updateBlockOriginalStates = useCallback((blocks: ForumFormData['blocks']) => {
+    const newOriginalStates = new Map<number, BlockOriginalState>();
+    blocks.forEach((block, index) => {
+      if (block.id) {
+        newOriginalStates.set(block.id, {
+          tag_ids: block.tag_ids || [],
+          blog_ids: block.blog_ids || [],
+          tag_enabled: block.tag_enabled ?? false,
+          links: block.links || { enabled: false, links: [] },
+        });
       }
-    };
-
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    });
+    setBlockOriginalStates(newOriginalStates);
   }, []);
 
-  // 当 store 中的数据变化时，更新表单
+  // 统一的数据加载和更新逻辑
   useEffect(() => {
-    if (storeForums.length > 0) {
+    // 如果正在加载中，不处理
+    if (storeLoading) {
+      return;
+    }
+
+    // 如果没有数据，尝试刷新
+    if (storeForums.length === 0 && !hasInitializedRef.current) {
+      refreshForums();
+      return;
+    }
+
+    // 如果有数据且还未初始化，进行初始化
+    if (storeForums.length > 0 && !hasInitializedRef.current) {
       const blocks = convertForumsToBlocks(storeForums);
-      reset({ blocks });
-    }
-    if (!storeLoading && isInitialLoading) {
+      reset({ blocks }, { keepDefaultValues: false });
+      updateBlockOriginalStates(blocks);
       setIsInitialLoading(false);
+      hasInitializedRef.current = true;
+      return;
     }
-  }, [storeForums, storeLoading, reset, convertForumsToBlocks, isInitialLoading]);
+
+    // 如果已经初始化，且数据有变化，更新表单（比如保存后刷新）
+    if (hasInitializedRef.current && storeForums.length > 0) {
+      const blocks = convertForumsToBlocks(storeForums);
+      const currentBlocks = getValues('blocks');
+
+      // 简单比较：如果数量不同或 ID 序列不同，则更新
+      const shouldUpdate =
+        blocks.length !== currentBlocks.length ||
+        blocks.some((block, idx) => {
+          const current = currentBlocks[idx];
+          return !current || block.id !== current.id;
+        });
+
+      if (shouldUpdate) {
+        reset({ blocks }, { keepDefaultValues: false });
+        updateBlockOriginalStates(blocks);
+      }
+    }
+  }, [storeForums, storeLoading, reset, convertForumsToBlocks, getValues, refreshForums, updateBlockOriginalStates]);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     setActiveId(event.active.id as string);
@@ -1117,12 +1163,11 @@ const Forum: React.FC = () => {
     if (linksBlockIndex === null) return;
 
     const currentBlock = blockFields[linksBlockIndex];
-    const currentLinks = currentBlock.links || { enabled: false, links: [] };
 
     updateBlock(linksBlockIndex, {
       ...currentBlock,
       links: {
-        ...currentLinks,
+        enabled: true,
         links: data.links.filter(link => link.name.trim() && link.address.trim()),
       },
     });
@@ -1189,6 +1234,23 @@ const Forum: React.FC = () => {
 
       await putAdminForum({ forums });
       message.success('保存成功');
+
+      // 更新当前板块的本地状态，确保原始值同步更新
+      const currentBlock = allBlocks[index];
+      updateBlock(index, {
+        ...currentBlock,
+        tag_ids: currentBlock.tag_ids || [],
+        tag_enabled: currentBlock.tag_enabled ?? false,
+        blog_ids: currentBlock.blog_ids || [],
+        links: {
+          enabled: currentBlock.links?.enabled ?? false,
+          links: currentBlock.links?.links || [],
+        },
+      });
+
+      // 更新原始状态
+      updateBlockOriginalStates(allBlocks);
+
       await refreshForums();
     } catch {
       console.error('保存失败');
@@ -1252,6 +1314,7 @@ const Forum: React.FC = () => {
                 key={block.fieldKey || index}
                 index={index}
                 control={control}
+                getValues={getValues}
                 onRemove={() => handleRemoveBlock(index)}
                 onEdit={() => handleEditBlock(index)}
                 onEditCategories={() => handleEditCategories(index)}
@@ -1259,10 +1322,7 @@ const Forum: React.FC = () => {
                 onSave={() => handleSaveBlock(index)}
                 forumId={block.id}
                 isSaving={savingBlockIndex === index}
-                originalTagIds={block.tag_ids}
-                originalBlogIds={block.blog_ids}
-                originalTagEnabled={block.tag_enabled}
-                originalLinks={block.links}
+                originalState={block.id ? blockOriginalStates.get(block.id) : undefined}
               />
             ))}
           </SortableContext>

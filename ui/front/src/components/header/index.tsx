@@ -383,46 +383,43 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
               />
             )}
 
+            {/* 客服智能对话入口 - 所有用户都可以访问 */}
+            {showCustomerService && (
+              <IconButton
+                size='small'
+                onClick={() => plainRouter.push('/customer-service')}
+                sx={{
+                  color: 'text.primary',
+                  '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
+                }}
+              >
+                <HeadsetMicIcon sx={{ fontSize: '20px', color: 'primary.main' }} />
+              </IconButton>
+            )}
+
             {!!user?.uid ? (
-              <>
-                {/* 客服智能对话入口 - 仅登录用户显示 */}
-                {showCustomerService && (
-                  <IconButton
-                    size='small'
-                    onClick={() => plainRouter.push('/customer-service')}
-                    sx={{
-                      color: 'text.primary',
-                      '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.1)' },
-                    }}
-                  >
-                    <HeadsetMicIcon sx={{ fontSize: '20px', color: 'primary.main' }} />
-                  </IconButton>
-                )}
-                <LoggedInView user={user} adminHref={backHref} />
-              </>
+              <LoggedInView user={user} adminHref={backHref} />
             ) : (
-              <>
-                <Button
-                  variant='contained'
-                  sx={{
-                    borderRadius: 1,
-                    height: 36,
-                    px: 2,
-                    fontSize: 14,
-                    textTransform: 'none',
+              <Button
+                variant='contained'
+                sx={{
+                  borderRadius: 1,
+                  height: 36,
+                  px: 2,
+                  fontSize: 14,
+                  textTransform: 'none',
+                  boxShadow: 'none',
+                  '&:hover': {
                     boxShadow: 'none',
-                    '&:hover': {
-                      boxShadow: 'none',
-                    },
-                  }}
-                  startIcon={<AccountCircleIcon sx={{ fontSize: 24 }} />}
-                  onClick={() => {
-                    plainRouter.push('/login')
-                  }}
-                >
-                  登录
-                </Button>
-              </>
+                  },
+                }}
+                startIcon={<AccountCircleIcon sx={{ fontSize: 24 }} />}
+                onClick={() => {
+                  plainRouter.push('/login')
+                }}
+              >
+                登录
+              </Button>
             )}
           </Box>
         </Toolbar>
@@ -519,8 +516,8 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
               <SearchIcon sx={{ fontSize: 24, color: 'primary.main' }} />
             </IconButton>
 
-            {/* 客服智能对话入口 */}
-            {!!user?.uid && showCustomerService && (
+            {/* 客服智能对话入口 - 所有用户都可以访问 */}
+            {showCustomerService && (
               <IconButton
                 size='small'
                 onClick={() => plainRouter.push('/customer-service')}
