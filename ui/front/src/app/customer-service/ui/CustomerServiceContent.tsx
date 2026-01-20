@@ -32,12 +32,13 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { UIEvent, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { Icon } from '@ctzhian/ui'
 
 // 检查回答是否是"无法回答问题"
 const cannotAnswerPatterns = [/^无法回答问题$/, /^无法回答$/]
 const SEARCH_LOADING_TEXT = '正在为您搜索相关帖子...'
+const AUTO_SCROLL_THRESHOLD_PX = 120
 interface Message {
   id: string
   role: 'user' | 'assistant'
@@ -57,7 +58,7 @@ interface Message {
 }
 
 interface CustomerServiceContentProps {
-  readonly initialUser?: ModelUserInfo
+  readonly initialUser: ModelUserInfo
   readonly botData?: SvcBotGetRes | null
   readonly initialSessionId?: string | null
 }
@@ -81,6 +82,7 @@ export default function CustomerServiceContent({
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isWaiting, setIsWaiting] = useState(false)
+  const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true)
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [isInputFocused, setIsInputFocused] = useState(false)
   const [isServiceEnabled, setIsServiceEnabled] = useState<boolean | null>(null) // null表示正在加载
@@ -150,6 +152,7 @@ export default function CustomerServiceContent({
     return generateUuid()
   })
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const sseClientRef = useRef<SSEClient<any> | null>(null)
   const currentMessageRef = useRef<Message | null>(null)
 
@@ -183,7 +186,6 @@ export default function CustomerServiceContent({
   useEffect(() => {
     // 使用 initialUser 或 user 来检查用户ID，确保在服务端渲染时也能正确加载
     // 允许未登录用户（currentUserId 为 0 或 undefined）
-    const currentUserId = user?.uid || initialUser?.uid
     if (!sessionId) {
       return
     }
@@ -329,8 +331,40 @@ export default function CustomerServiceContent({
 
   // 滚动到底部
   useEffect(() => {
+    if (!isAutoScrollEnabled) {
+      return
+    }
+
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isLoading])
+  }, [messages, isLoading, isAutoScrollEnabled])
+
+  const handleScroll = useCallback(
+    (event: UIEvent<HTMLDivElement>) => {
+      const element = event.currentTarget
+
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current)
+      }
+
+      setIsAutoScrollEnabled(false)
+
+      scrollTimeoutRef.current = setTimeout(() => {
+        const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight
+        const shouldEnable = distanceFromBottom <= AUTO_SCROLL_THRESHOLD_PX
+
+        setIsAutoScrollEnabled(shouldEnable)
+      }, 150)
+    },
+    [],
+  )
+
+  useEffect(() => {
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current)
+      }
+    }
+  }, [])
 
   // 调用智能总结接口的公共函数
   const callSummaryContent = useCallback(
@@ -958,27 +992,7 @@ export default function CustomerServiceContent({
 
   // 处理跳转到发帖页面
   const handleGoToPost = (question: string, messageForumId?: number) => {
-    // 检查登录状态
-    const currentUser = user?.uid ? user : initialUser
-    if (!currentUser?.uid) {
-      // 未登录，跳转到登录页，带上重定向参数和内容
-      const targetForumId = messageForumId ?? forumId ?? forums[0]?.id
-      const forum = forums.find((f) => f.id === targetForumId)
-      
-      if (!forum?.route_name) {
-        console.error('未找到板块信息:', { targetForumId, forums })
-        return
-      }
-
-      // 构建发帖页面 URL，传递标题和类型参数
-      const encodedTitle = encodeURIComponent(question)
-      const postUrl = `/${forum.route_name}/edit?type=qa&title=${encodedTitle}`
-      const loginUrl = `/login?redirect=${encodeURIComponent(postUrl)}`
-      router.push(loginUrl)
-      return
-    }
-
-    // 已登录，直接跳转到发帖页面
+    // 优先使用消息中保存的 forumId，否则使用全局 forumId
     const targetForumId = messageForumId ?? forumId ?? forums[0]?.id
     const forum = forums.find((f) => f.id === targetForumId)
 
@@ -1104,6 +1118,7 @@ export default function CustomerServiceContent({
 
         // 清空消息
         setMessages([])
+        setIsAutoScrollEnabled(true)
 
         // 更新 URL
         const currentUrl = new URL(window.location.href)
@@ -1210,6 +1225,7 @@ export default function CustomerServiceContent({
     >
       {/* 对话内容区域 - 优化滚动和间距 */}
       <Box
+        onScroll={handleScroll}
         sx={{
           flex: 1,
           overflow: 'auto',
