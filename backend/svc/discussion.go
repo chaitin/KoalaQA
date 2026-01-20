@@ -2348,7 +2348,7 @@ type AskSessionReq struct {
 	*model.Pagination
 
 	SessionID string `form:"session_id" binding:"required"`
-	UserID    uint   `form:"user_id" binding:"required"`
+	UserID    uint   `form:"user_id"`
 }
 
 func (d *Discussion) AskSession(ctx context.Context, req AskSessionReq) (*model.ListRes[model.AskSession], error) {

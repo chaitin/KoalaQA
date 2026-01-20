@@ -2632,7 +2632,6 @@ paths:
         type: integer
       - in: query
         name: user_id
-        required: true
         type: integer
       produces:
       - application/json

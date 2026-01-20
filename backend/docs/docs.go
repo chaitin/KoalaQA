@@ -260,8 +260,7 @@ const docTemplate = `{
                     {
                         "type": "integer",
                         "name": "user_id",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     }
                 ],
                 "responses": {
