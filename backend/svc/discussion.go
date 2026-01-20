@@ -2127,11 +2127,18 @@ type DiscussionAskReq struct {
 }
 
 func (d *Discussion) AskSessionClosed(ctx context.Context, uid uint, sessionID string) (bool, error) {
-	var lastAsk model.AskSession
-	err := d.in.AskSessionRepo.Get(ctx, &lastAsk,
-		repo.QueryWithEqual("user_id", uid),
+	query := []repo.QueryOptFunc{
 		repo.QueryWithOrderBy("created_at DESC,id DESC"),
-	)
+	}
+
+	if uid == 0 {
+		query = append(query, repo.QueryWithEqual("uuid", sessionID))
+	} else {
+		query = append(query, repo.QueryWithEqual("user_id", uid))
+	}
+
+	var lastAsk model.AskSession
+	err := d.in.AskSessionRepo.Get(ctx, &lastAsk, query...)
 	if err != nil {
 		return false, err
 	}
