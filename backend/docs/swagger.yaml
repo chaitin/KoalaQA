@@ -6105,6 +6105,9 @@ paths:
       - in: query
         name: force_create
         type: boolean
+      - in: query
+        name: session_id
+        type: string
       produces:
       - application/json
       responses:

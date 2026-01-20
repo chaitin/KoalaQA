@@ -2078,7 +2078,8 @@ func (d *Discussion) Reindex(ctx context.Context, req ReindexReq) error {
 }
 
 type CreateOrLastSessionReq struct {
-	ForceCreate bool `form:"force_create"`
+	SessionID   *string `form:"session_id"`
+	ForceCreate bool    `form:"force_create"`
 }
 
 func (d *Discussion) CreateOrLastSession(ctx context.Context, uid uint, req CreateOrLastSessionReq) (string, error) {
@@ -2087,10 +2088,11 @@ func (d *Discussion) CreateOrLastSession(ctx context.Context, uid uint, req Crea
 		return "", err
 	}
 
-	if !req.ForceCreate {
+	if !req.ForceCreate || (uid == 0 && req.SessionID != nil) {
 		var lastSession model.AskSession
 		err = d.in.AskSessionRepo.Get(ctx, &lastSession,
 			repo.QueryWithEqual("user_id", uid),
+			repo.QueryWithEqual("uuid", req.SessionID),
 			repo.QueryWithEqual("created_at", time.Now().Add(-time.Hour), repo.EqualOPGT),
 			repo.QueryWithOrderBy("created_at DESC"),
 		)

@@ -4903,6 +4903,11 @@ const docTemplate = `{
                         "type": "boolean",
                         "name": "force_create",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "session_id",
+                        "in": "query"
                     }
                 ],
                 "responses": {
