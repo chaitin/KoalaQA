@@ -6,11 +6,19 @@ type AskSessionSummaryDisc struct {
 	UUID    string `json:"uuid"`
 }
 
+type AskSessionSource uint
+
+const (
+	AskSessionSourceWeb AskSessionSource = iota
+	AskSessionSourcePlugin
+)
+
 type AskSession struct {
 	Base
 
 	UUID         string                         `json:"uuid" gorm:"column:uuid;type:text;index"`
-	UserID       uint                           `json:"user_id" gorm:"user_id;type:bigint"`
+	UserID       uint                           `json:"user_id" gorm:"column:user_id;type:bigint"`
+	Source       AskSessionSource               `json:"source" gorm:"column:source"`
 	Bot          bool                           `json:"bot" gorm:"column:bot;default:false"`
 	Summary      bool                           `json:"summary" gorm:"column:summary"`
 	SummaryDiscs JSONB[[]AskSessionSummaryDisc] `json:"summary_discs" gorm:"column:summary_discs;type:jsonb"`

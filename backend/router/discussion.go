@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/context"
 	"github.com/chaitin/koalaqa/server"
 	"github.com/chaitin/koalaqa/svc"
@@ -190,6 +191,10 @@ func (d *discussion) Ask(ctx *context.Context) {
 		return
 	}
 
+	if ctx.GetBool("cors") {
+		req.Source = model.AskSessionSourcePlugin
+	}
+
 	stream, err := d.disc.Ask(ctx, ctx.GetUser().UID, req)
 	if err != nil {
 		ctx.InternalError(err, "get ask stream failed")
@@ -271,6 +276,10 @@ func (d *discussion) SummaryByContent(ctx *context.Context) {
 	if err != nil {
 		ctx.BadRequest(err)
 		return
+	}
+
+	if ctx.GetBool("cors") {
+		req.Source = model.AskSessionSourcePlugin
 	}
 
 	stream, err := d.disc.SummaryByContent(ctx, ctx.GetUser().UID, req)

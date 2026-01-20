@@ -7836,6 +7836,9 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "source": {
+                    "$ref": "#/definitions/model.AskSessionSource"
+                },
                 "summary": {
                     "type": "boolean"
                 },
@@ -7852,6 +7855,17 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "model.AskSessionSource": {
+            "type": "integer",
+            "enum": [
+                0,
+                1
+            ],
+            "x-enum-varnames": [
+                "AskSessionSourceWeb",
+                "AskSessionSourcePlugin"
+            ]
         },
         "model.AskSessionSummaryDisc": {
             "type": "object",
@@ -9268,6 +9282,9 @@ const docTemplate = `{
                 },
                 "enabled": {
                     "type": "boolean"
+                },
+                "plugin": {
+                    "type": "boolean"
                 }
             }
         },
@@ -10413,6 +10430,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "source": {
+                    "$ref": "#/definitions/model.AskSessionSource"
                 },
                 "summary": {
                     "type": "boolean"

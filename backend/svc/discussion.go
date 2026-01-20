@@ -2118,9 +2118,10 @@ func (d *Discussion) CreateOrLastSession(ctx context.Context, uid uint, req Crea
 }
 
 type DiscussionAskReq struct {
-	SessionID string           `json:"session_id" binding:"required,uuid"`
-	Question  string           `json:"question" binding:"required"`
-	GroupIDs  model.Int64Array `json:"group_ids"`
+	SessionID string                 `json:"session_id" binding:"required,uuid"`
+	Question  string                 `json:"question" binding:"required"`
+	GroupIDs  model.Int64Array       `json:"group_ids"`
+	Source    model.AskSessionSource `json:"-" swaggerignore:"true"`
 }
 
 func (d *Discussion) AskSessionClosed(ctx context.Context, uid uint, sessionID string) (bool, error) {
@@ -2269,6 +2270,7 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		err := d.in.AskSessionRepo.Create(context.Background(), &model.AskSession{
 			UUID:    req.SessionID,
 			UserID:  uid,
+			Source:  req.Source,
 			Bot:     true,
 			Content: aiResBuilder.String(),
 		})
@@ -2358,9 +2360,10 @@ func (d *Discussion) AskSession(ctx context.Context, req AskSessionReq) (*model.
 }
 
 type SummaryByContentReq struct {
-	SessionID string           `json:"session_id" binding:"required,uuid"`
-	ForumID   uint             `json:"forum_id" binding:"required"`
-	GroupIDs  model.Int64Array `json:"group_ids"`
+	SessionID string                 `json:"session_id" binding:"required,uuid"`
+	ForumID   uint                   `json:"forum_id" binding:"required"`
+	GroupIDs  model.Int64Array       `json:"group_ids"`
+	Source    model.AskSessionSource `json:"-" swaggerignore:"true"`
 }
 
 type SummaryByContentItem struct {
@@ -2544,6 +2547,7 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 		err = d.in.AskSessionRepo.Create(context.Background(), &model.AskSession{
 			UUID:         req.SessionID,
 			UserID:       uid,
+			Source:       req.Source,
 			Bot:          true,
 			Summary:      true,
 			SummaryDiscs: model.NewJSONB(summaryDiscs),

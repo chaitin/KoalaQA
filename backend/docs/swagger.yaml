@@ -65,6 +65,8 @@ definitions:
         type: integer
       id:
         type: integer
+      source:
+        $ref: '#/definitions/model.AskSessionSource'
       summary:
         type: boolean
       summary_discs:
@@ -76,6 +78,14 @@ definitions:
       uuid:
         type: string
     type: object
+  model.AskSessionSource:
+    enum:
+    - 0
+    - 1
+    type: integer
+    x-enum-varnames:
+    - AskSessionSourceWeb
+    - AskSessionSourcePlugin
   model.AskSessionSummaryDisc:
     properties:
       forum_id:
@@ -1064,6 +1074,8 @@ definitions:
         type: boolean
       enabled:
         type: boolean
+      plugin:
+        type: boolean
     type: object
   model.Trend:
     properties:
@@ -1839,6 +1851,8 @@ definitions:
         type: integer
       id:
         type: integer
+      source:
+        $ref: '#/definitions/model.AskSessionSource'
       summary:
         type: boolean
       summary_discs:

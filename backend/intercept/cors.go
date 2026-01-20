@@ -25,6 +25,7 @@ func newCors() Interceptor {
 func (c *cors) Intercept(ctx *context.Context) {
 	if ctx.Request.Header.Get("Origin") != "" &&
 		(ctx.Request.Method == http.MethodGet || ctx.Request.Method == http.MethodPost && slices.Contains(c.postAllows, ctx.Request.RequestURI)) {
+		ctx.Set("cors", true)
 		ctx.Header("Access-Control-Allow-Origin", "*")
 		ctx.Header("Access-Control-Allow-Methods", "GET, POST")
 		ctx.Header("Access-Control-Allow-Headers", "*")
