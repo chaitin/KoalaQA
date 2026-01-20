@@ -945,7 +945,7 @@ export default function CustomerServiceContent({
 
   // 处理回车发送
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !(e.nativeEvent as KeyboardEvent).isComposing) {
       e.preventDefault()
       handleSend()
     }

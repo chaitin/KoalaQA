@@ -224,8 +224,6 @@ a {
     url(https://fonts.gstatic.com/s/spacemono/v2/i7dPIFZifjKcF5UAWdDRYEF8RQ.woff2) format('woff2');
 }
 
-
-
 @font-face {
   font-family: 'Gilroy Bold';
   font-display: swap;
@@ -384,4 +382,8 @@ p > .node-video {
 }
 p:has(> .node-video) {
   line-height: 0;
+}
+
+blockquote p{
+  white-space: pre-wrap;
 }
