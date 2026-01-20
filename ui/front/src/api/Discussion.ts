@@ -28,6 +28,7 @@ import {
   GetDiscussionFollowParams,
   GetDiscussionParams,
   ModelAskSession,
+  ModelAskSessionSummaryDisc,
   ModelDiscussion,
   ModelDiscussionDetail,
   ModelDiscussionListItem,
@@ -60,6 +61,7 @@ import {
   SvcDiscussionCreateReq,
   SvcDiscussionListFollowRes,
   SvcDiscussionUpdateReq,
+  SvcListAsksRes,
   SvcResolveFeedbackReq,
   SvcResolveIssueReq,
 } from "./types";
@@ -107,7 +109,7 @@ export const getAdminDiscussion = (
  * @request GET:/admin/discussion/ask
  * @response `200` `(ContextResponse & {
     data?: (ModelListRes & {
-    items?: (ModelAskSession)[],
+    items?: (SvcListAsksRes)[],
 
 }),
 
@@ -121,7 +123,7 @@ export const getAdminDiscussionAsk = (
   request<
     ContextResponse & {
       data?: ModelListRes & {
-        items?: ModelAskSession[];
+        items?: SvcListAsksRes[];
       };
     }
   >({
@@ -141,7 +143,10 @@ export const getAdminDiscussionAsk = (
  * @request GET:/admin/discussion/ask/session
  * @response `200` `(ContextResponse & {
     data?: (ModelListRes & {
-    items?: (ModelAskSession)[],
+    items?: ((ModelAskSession & {
+    summary_discs?: (ModelAskSessionSummaryDisc)[],
+
+}))[],
 
 }),
 
@@ -155,7 +160,9 @@ export const getAdminDiscussionAskSession = (
   request<
     ContextResponse & {
       data?: ModelListRes & {
-        items?: ModelAskSession[];
+        items?: (ModelAskSession & {
+          summary_discs?: ModelAskSessionSummaryDisc[];
+        })[];
       };
     }
   >({
@@ -288,7 +295,10 @@ export const getDiscussionAskSession = (
  * @request GET:/discussion/ask/{ask_session_id}
  * @response `200` `(ContextResponse & {
     data?: (ModelListRes & {
-    items?: (ModelAskSession)[],
+    items?: ((ModelAskSession & {
+    summary_discs?: (ModelAskSessionSummaryDisc)[],
+
+}))[],
 
 }),
 
@@ -302,7 +312,9 @@ export const getDiscussionAskAskSessionId = (
   request<
     ContextResponse & {
       data?: ModelListRes & {
-        items?: ModelAskSession[];
+        items?: (ModelAskSession & {
+          summary_discs?: ModelAskSessionSummaryDisc[];
+        })[];
       };
     }
   >({

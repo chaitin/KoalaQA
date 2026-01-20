@@ -64,7 +64,8 @@ const AskHistory = () => {
     setDetailModalOpen(true);
     setCurrentSessionId(record.uuid);
     setCurrentUserId(record.user_id);
-    setCurrentUsername(record.username || '用户');
+    // 如果 user_id 为 0 或 username 为空，显示"匿名游客"
+    setCurrentUsername(record.user_id === 0 || !record.username ? '匿名游客' : (record.username || '用户'));
     setSessionPage(1);
     setSessionDetail([]);
     setLoadingMore(false);
@@ -167,8 +168,11 @@ const AskHistory = () => {
       title: '用户',
       dataIndex: 'user_id',
       render: (_, record) => {
-        // 暂时显示用户ID，后续可以优化为显示用户名
-        return record?.username ?? '-';
+        // 如果 user_id 为 0 或 username 为空，显示"匿名游客"
+        if (record?.user_id === 0 || !record?.username) {
+          return '匿名游客';
+        }
+        return record.username;
       },
     },
     {
@@ -376,7 +380,7 @@ const AskHistory = () => {
                             fontSize: '0.875rem',
                           }}
                         >
-                          {currentUsername ? (currentUsername.length > 2 ? currentUsername.substring(0, 2) : currentUsername) : '用户'}
+                          {currentUsername ? (currentUsername.length > 2 ? currentUsername.substring(0, 2) : currentUsername) : '匿名游客'}
                         </Avatar>
                       )}
                     </Stack>

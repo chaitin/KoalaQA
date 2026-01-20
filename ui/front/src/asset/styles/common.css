@@ -385,5 +385,5 @@ p:has(> .node-video) {
 }
 
 blockquote p{
-  white-space: pre-wrap;
+  white-space: pre;
 }

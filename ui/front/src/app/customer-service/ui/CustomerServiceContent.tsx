@@ -57,7 +57,7 @@ interface Message {
 }
 
 interface CustomerServiceContentProps {
-  readonly initialUser: ModelUserInfo
+  readonly initialUser?: ModelUserInfo
   readonly botData?: SvcBotGetRes | null
   readonly initialSessionId?: string | null
 }
@@ -174,12 +174,7 @@ export default function CustomerServiceContent({
     }
   }, [sessionId, searchParams, router])
 
-  // 检查登录状态
-  useEffect(() => {
-    if (!user?.uid) {
-      router.push('/login')
-    }
-  }, [user, router])
+  // 移除登录检查，允许未登录用户访问
 
   // 用于标记是否已经加载过历史对话，避免重复加载
   const historyLoadedRef = useRef<string | null>(null)
@@ -187,10 +182,12 @@ export default function CustomerServiceContent({
   // 当 sessionId 变化时，加载历史对话
   useEffect(() => {
     // 使用 initialUser 或 user 来检查用户ID，确保在服务端渲染时也能正确加载
+    // 允许未登录用户（currentUserId 为 0 或 undefined）
     const currentUserId = user?.uid || initialUser?.uid
-    if (!sessionId || !currentUserId) {
+    if (!sessionId) {
       return
     }
+    // 如果用户未登录，currentUserId 可能为 0 或 undefined，仍然允许加载历史对话
 
     // 如果已经加载过这个 sessionId 的历史对话，不再重复加载
     if (historyLoadedRef.current === sessionId) {
@@ -961,7 +958,27 @@ export default function CustomerServiceContent({
 
   // 处理跳转到发帖页面
   const handleGoToPost = (question: string, messageForumId?: number) => {
-    // 优先使用消息中保存的 forumId，否则使用全局 forumId
+    // 检查登录状态
+    const currentUser = user?.uid ? user : initialUser
+    if (!currentUser?.uid) {
+      // 未登录，跳转到登录页，带上重定向参数和内容
+      const targetForumId = messageForumId ?? forumId ?? forums[0]?.id
+      const forum = forums.find((f) => f.id === targetForumId)
+      
+      if (!forum?.route_name) {
+        console.error('未找到板块信息:', { targetForumId, forums })
+        return
+      }
+
+      // 构建发帖页面 URL，传递标题和类型参数
+      const encodedTitle = encodeURIComponent(question)
+      const postUrl = `/${forum.route_name}/edit?type=qa&title=${encodedTitle}`
+      const loginUrl = `/login?redirect=${encodeURIComponent(postUrl)}`
+      router.push(loginUrl)
+      return
+    }
+
+    // 已登录，直接跳转到发帖页面
     const targetForumId = messageForumId ?? forumId ?? forums[0]?.id
     const forum = forums.find((f) => f.id === targetForumId)
 

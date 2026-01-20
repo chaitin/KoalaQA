@@ -1,6 +1,5 @@
 import { getUser, getBot, getDiscussionAskSession } from '@/api';
 import { cookies } from 'next/headers';
-import { Box } from '@mui/material';
 import { Metadata } from 'next';
 import CustomerServiceContent from './ui/CustomerServiceContent';
 import { SvcBotGetRes } from '@/api/types';
@@ -39,7 +38,13 @@ async function getBotData(): Promise<SvcBotGetRes | null> {
   }
 }
 
-async function getSessionId(): Promise<string | null> {
+async function getSessionId(user: Awaited<ReturnType<typeof getUserData>>, urlId: string | null): Promise<string | null> {
+  // 如果是游客状态（未登录）且当前 URL 中有 id，则直接使用 URL 中的 id
+  if (!user && urlId) {
+    return urlId;
+  }
+
+  // 否则调用 API 获取会话 ID
   try {
     const response = await getDiscussionAskSession({});
     return response || null;
@@ -49,29 +54,18 @@ async function getSessionId(): Promise<string | null> {
   }
 }
 
-export default async function CustomerServicePage() {
-  const [user, botData, sessionId] = await Promise.all([
-    getUserData(),
+export default async function CustomerServicePage(props: {
+  readonly searchParams: Promise<{ id?: string }>
+}) {
+  const searchParams = await props.searchParams;
+  const urlId = searchParams?.id || null;
+
+  const user = await getUserData();
+  const [botData, sessionId] = await Promise.all([
     getBotData(),
-    getSessionId(),
+    getSessionId(user, urlId),
   ]);
 
-  if (!user) {
-    return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100vh',
-          fontSize: 18,
-          color: '#666',
-        }}
-      >
-        请先登录
-      </Box>
-    );
-  }
-
-  return <CustomerServiceContent initialUser={user} botData={botData} initialSessionId={sessionId} />;
+  // 允许未登录用户访问，user 可以为 null
+  return <CustomerServiceContent initialUser={user || undefined} botData={botData} initialSessionId={sessionId} />;
 }
