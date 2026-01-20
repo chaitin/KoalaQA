@@ -39,7 +39,7 @@ const AskHistory = () => {
     run: fetchSessionDetail,
   } = useRequest(
     params => {
-      if (!params.uuid || !params.user_id) return Promise.resolve({ items: [], total: 0 });
+      if (!params.uuid) return Promise.resolve({ items: [], total: 0 });
       return getAdminDiscussionAskSession({
         session_id: params.uuid,
         user_id: params.user_id,
@@ -60,10 +60,10 @@ const AskHistory = () => {
 
   // 打开详情弹窗
   const handleOpenDetail = async (record: SvcListAsksRes) => {
-    if (!record.uuid || !record.user_id) return;
+    if (!record.uuid ) return;
     setDetailModalOpen(true);
     setCurrentSessionId(record.uuid);
-    setCurrentUserId(record.user_id);
+    setCurrentUserId(record.user_id || 0);
     // 如果 user_id 为 0 或 username 为空，显示"匿名游客"
     setCurrentUsername(record.user_id === 0 || !record.username ? '匿名游客' : (record.username || '用户'));
     setSessionPage(1);
@@ -147,15 +147,15 @@ const AskHistory = () => {
         return (
           <Ellipsis
             onClick={() => {
-              if (record.uuid && record.user_id) {
+              if (record.uuid) {
                 handleOpenDetail(record);
               }
             }}
             sx={{
-              cursor: record.uuid && record.user_id ? 'pointer' : 'default',
-              color: record.uuid && record.user_id ? 'primary.main' : 'text.primary',
+              cursor: record.uuid ? 'pointer' : 'default',
+              color: record.uuid ? 'primary.main' : 'text.primary',
               '&:hover': {
-                textDecoration: record.uuid && record.user_id ? 'underline' : 'none',
+                textDecoration: record.uuid ? 'underline' : 'none',
               },
             }}
           >

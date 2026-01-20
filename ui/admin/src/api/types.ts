@@ -1394,7 +1394,7 @@ export interface GetAdminDiscussionAskSessionParams {
   session_id: string;
   /** @min 1 */
   size?: number;
-  user_id: number;
+  user_id?: number;
 }
 
 /** request params */
