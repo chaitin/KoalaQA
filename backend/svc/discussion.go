@@ -2088,7 +2088,7 @@ func (d *Discussion) CreateOrLastSession(ctx context.Context, uid uint, req Crea
 		return "", err
 	}
 
-	if !req.ForceCreate || (uid == 0 && req.SessionID != nil) {
+	if !req.ForceCreate && (uid > 0 || req.SessionID != nil) {
 		var lastSession model.AskSession
 		err = d.in.AskSessionRepo.Get(ctx, &lastSession,
 			repo.QueryWithEqual("user_id", uid),
