@@ -1000,7 +1000,26 @@ export default function CustomerServiceContent({
       console.error('未找到板块信息:', { targetForumId, forums })
       return
     }
+    // 检查登录状态
+    const currentUser = user?.uid ? user : initialUser
+    if (!currentUser?.uid) {
+      // 未登录，跳转到登录页，带上重定向参数和内容
+      const targetForumId = messageForumId ?? forumId ?? forums[0]?.id
+      const forum = forums.find((f) => f.id === targetForumId)
 
+      if (!forum?.route_name) {
+        console.error('未找到板块信息:', { targetForumId, forums })
+        return
+      }
+
+      // 构建发帖页面 URL，传递标题和类型参数
+      const encodedTitle = encodeURIComponent(question)
+      const postUrl = `/${forum.route_name}/edit?type=qa&title=${encodedTitle}`
+      const loginUrl = `/login?redirect=${encodeURIComponent(postUrl)}`
+      router.push(loginUrl)
+      return
+    }
+    // 已登录，直接跳转到发帖页面
     // 构建发帖页面 URL，传递标题和类型参数
     const encodedTitle = encodeURIComponent(question)
     const postUrl = `/${forum.route_name}/edit?type=qa&title=${encodedTitle}`
