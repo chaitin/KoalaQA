@@ -20,6 +20,7 @@ const (
 	DocStatusPendingExport
 	DocStatusExportSuccess
 	DocStatusExportFailed
+	DocStatusPendingExec
 )
 
 type DocType uint

@@ -1244,7 +1244,8 @@ const docTemplate = `{
                             5,
                             6,
                             7,
-                            8
+                            8,
+                            9
                         ],
                         "type": "integer",
                         "x-enum-varnames": [
@@ -1256,7 +1257,8 @@ const docTemplate = `{
                             "DocStatusAppling",
                             "DocStatusPendingExport",
                             "DocStatusExportSuccess",
-                            "DocStatusExportFailed"
+                            "DocStatusExportFailed",
+                            "DocStatusPendingExec"
                         ],
                         "name": "status",
                         "in": "query"
@@ -1535,7 +1537,8 @@ const docTemplate = `{
                             5,
                             6,
                             7,
-                            8
+                            8,
+                            9
                         ],
                         "type": "integer",
                         "x-enum-varnames": [
@@ -1547,7 +1550,8 @@ const docTemplate = `{
                             "DocStatusAppling",
                             "DocStatusPendingExport",
                             "DocStatusExportSuccess",
-                            "DocStatusExportFailed"
+                            "DocStatusExportFailed",
+                            "DocStatusPendingExec"
                         ],
                         "name": "status",
                         "in": "query"
@@ -2355,7 +2359,8 @@ const docTemplate = `{
                                 5,
                                 6,
                                 7,
-                                8
+                                8,
+                                9
                             ],
                             "type": "integer"
                         },
@@ -8500,7 +8505,8 @@ const docTemplate = `{
                 5,
                 6,
                 7,
-                8
+                8,
+                9
             ],
             "x-enum-varnames": [
                 "DocStatusUnknown",
@@ -8511,7 +8517,8 @@ const docTemplate = `{
                 "DocStatusAppling",
                 "DocStatusPendingExport",
                 "DocStatusExportSuccess",
-                "DocStatusExportFailed"
+                "DocStatusExportFailed",
+                "DocStatusPendingExec"
             ]
         },
         "model.DocType": {
@@ -8782,6 +8789,9 @@ const docTemplate = `{
                 },
                 "doc_type": {
                     "$ref": "#/definitions/model.DocType"
+                },
+                "export_at": {
+                    "type": "integer"
                 },
                 "export_opt": {
                     "$ref": "#/definitions/model.JSONB-model_ExportOpt"

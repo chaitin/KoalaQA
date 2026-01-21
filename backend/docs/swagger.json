@@ -1237,7 +1237,8 @@
                             5,
                             6,
                             7,
-                            8
+                            8,
+                            9
                         ],
                         "type": "integer",
                         "x-enum-varnames": [
@@ -1249,7 +1250,8 @@
                             "DocStatusAppling",
                             "DocStatusPendingExport",
                             "DocStatusExportSuccess",
-                            "DocStatusExportFailed"
+                            "DocStatusExportFailed",
+                            "DocStatusPendingExec"
                         ],
                         "name": "status",
                         "in": "query"
@@ -1528,7 +1530,8 @@
                             5,
                             6,
                             7,
-                            8
+                            8,
+                            9
                         ],
                         "type": "integer",
                         "x-enum-varnames": [
@@ -1540,7 +1543,8 @@
                             "DocStatusAppling",
                             "DocStatusPendingExport",
                             "DocStatusExportSuccess",
-                            "DocStatusExportFailed"
+                            "DocStatusExportFailed",
+                            "DocStatusPendingExec"
                         ],
                         "name": "status",
                         "in": "query"
@@ -2348,7 +2352,8 @@
                                 5,
                                 6,
                                 7,
-                                8
+                                8,
+                                9
                             ],
                             "type": "integer"
                         },
@@ -8493,7 +8498,8 @@
                 5,
                 6,
                 7,
-                8
+                8,
+                9
             ],
             "x-enum-varnames": [
                 "DocStatusUnknown",
@@ -8504,7 +8510,8 @@
                 "DocStatusAppling",
                 "DocStatusPendingExport",
                 "DocStatusExportSuccess",
-                "DocStatusExportFailed"
+                "DocStatusExportFailed",
+                "DocStatusPendingExec"
             ]
         },
         "model.DocType": {
@@ -8775,6 +8782,9 @@
                 },
                 "doc_type": {
                     "$ref": "#/definitions/model.DocType"
+                },
+                "export_at": {
+                    "type": "integer"
                 },
                 "export_opt": {
                     "$ref": "#/definitions/model.JSONB-model_ExportOpt"

@@ -277,7 +277,7 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 	}
 
 	err = k.repoDoc.Update(ctx, map[string]any{
-		"status":     model.DocStatusPendingExport,
+		"status":     model.DocStatusPendingExec,
 		"message":    "",
 		"updated_at": gorm.Expr("updated_at"),
 	},
@@ -309,7 +309,7 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 			parentIDM[dbExportFolder.DocID] = dbExportFolder.ID
 		}
 
-		listFolderRes, err := k.repoDoc.ListSpaceFolderAll(ctx, folder.ID, exportFolderID, statusFilter, len(exportFolder.DocIDs) > 0)
+		listFolderRes, err := k.repoDoc.ListSpaceFolderAll(ctx, folder.ID, exportFolderID, []model.DocStatus{model.DocStatusPendingExec}, len(exportFolder.DocIDs) > 0)
 		if err != nil {
 			logger.WithErr(err).Warn("list folder doc failed")
 			return err
@@ -349,7 +349,7 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 		if err != nil {
 			logger.WithErr(err).Warn("list doc failed")
 
-			e := k.repoDoc.UpdateSpaceFolderAll(ctx, exportFolderID, statusFilter, model.DocStatusExportFailed, err.Error())
+			e := k.repoDoc.UpdateSpaceFolderAll(ctx, exportFolderID, []model.DocStatus{model.DocStatusPendingExec}, model.DocStatusExportFailed, err.Error())
 			if e != nil {
 				logger.WithErr(e).Warn("set doc export failed error")
 			}
