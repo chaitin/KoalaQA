@@ -3,7 +3,6 @@ package sub
 import (
 	"context"
 	"errors"
-	"slices"
 	"sync"
 	"time"
 
@@ -240,11 +239,11 @@ func (k *kbSpace) handleInsert(ctx context.Context, logger *glog.Logger, msg top
 }
 
 type docInfo struct {
-	id        uint
-	status    model.DocStatus
-	title     string
-	parentID  uint
-	updatedAt int64
+	id       uint
+	status   model.DocStatus
+	title    string
+	parentID uint
+	exportAt int64
 }
 
 type docKey struct {
@@ -323,11 +322,11 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 				docID: item.DocID,
 				file:  item.FileType != model.FileTypeFolder,
 			}] = docInfo{
-				id:        item.ID,
-				status:    item.Status,
-				title:     item.Title,
-				parentID:  item.ParentID,
-				updatedAt: int64(item.UpdatedAt),
+				id:       item.ID,
+				status:   item.Status,
+				title:    item.Title,
+				parentID: item.ParentID,
+				exportAt: int64(item.ExportAt),
 			}
 		}
 
@@ -390,16 +389,23 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 					return nil
 				}
 
-				if msg.UpdateType == topic.KBSpaceUpdateTypeIncr && doc.UpdatedAt > 0 && doc.UpdatedAt < dbDoc.updatedAt &&
-					!slices.Contains([]model.DocStatus{model.DocStatusExportFailed, model.DocStatusApplyFailed}, dbDoc.status) {
-					if dbDoc.parentID != parentID {
-						err = k.repoDoc.Update(ctx, map[string]any{"parent_id": parentID}, repo.QueryWithEqual("id", dbDoc.id))
-						if err != nil {
-							logger.WithErr(err).With("doc_id", dbDoc.id).With("parent_id", parentID).Warn("update parent_id failed")
-							return err
-						}
+				if msg.UpdateType == topic.KBSpaceUpdateTypeIncr && doc.UpdatedAt > 0 && doc.UpdatedAt < dbDoc.exportAt {
+					m := map[string]any{
+						"updated_at": gorm.Expr("updated_at"),
+						"status":     model.DocStatusApplySuccess,
 					}
-					logger.With("doc_id", doc.ID).With("anydoc_updated", doc.UpdatedAt).With("dbdoc_updated", dbDoc.updatedAt).Info("incr update ignore doc")
+
+					if dbDoc.parentID != parentID {
+						m["parent_id"] = parentID
+					}
+
+					err = k.repoDoc.Update(ctx, m, repo.QueryWithEqual("id", dbDoc.id))
+					if err != nil {
+						logger.WithErr(err).With("doc_id", dbDoc.id).With("parent_id", parentID).Warn("update parent_id failed")
+						return err
+					}
+
+					logger.With("doc_id", doc.ID).With("anydoc_updated", doc.UpdatedAt).With("dbdoc_updated", dbDoc.exportAt).Info("incr update ignore doc")
 					return nil
 				}
 			} else if msg.UpdateType == topic.KBSpaceUpdateTypeFailed {
