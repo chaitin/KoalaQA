@@ -6106,6 +6106,25 @@ paths:
       summary: discussion ask history
       tags:
       - discussion
+  /discussion/ask/{ask_session_id}/stop:
+    post:
+      description: stop discussion ask history
+      parameters:
+      - description: ask_session_id
+        in: path
+        name: ask_session_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: stop discussion ask history
+      tags:
+      - discussion
   /discussion/ask/session:
     get:
       description: create or get last session id

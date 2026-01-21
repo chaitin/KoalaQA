@@ -5000,6 +5000,35 @@
                 }
             }
         },
+        "/discussion/ask/{ask_session_id}/stop": {
+            "post": {
+                "description": "stop discussion ask history",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "stop discussion ask history",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ask_session_id",
+                        "name": "ask_session_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/discussion/complete": {
             "post": {
                 "description": "tab complete",

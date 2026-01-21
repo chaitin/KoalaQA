@@ -33,6 +33,7 @@ func (d *discussion) Route(h server.Handler) {
 	g.GET("/:disc_id/follow", d.FollowInfo)
 	g.POST("/ask", d.Ask)
 	g.GET("/ask/:ask_session_id", d.AskHistory)
+	g.POST("/ask/:ask_session_id/stop", d.StopAskSession)
 	g.GET("/ask/session", d.CreateOrLastSession)
 	g.POST("/summary/content", d.SummaryByContent)
 }
@@ -261,6 +262,24 @@ func (d *discussion) AskHistory(ctx *context.Context) {
 	}
 
 	ctx.Success(res)
+}
+
+// StopAskSession
+// @Summary stop discussion ask history
+// @Description stop discussion ask history
+// @Tags discussion
+// @Produce json
+// @Param ask_session_id path string true "ask_session_id"
+// @Success 200 {object} context.Response
+// @Router /discussion/ask/{ask_session_id}/stop [post]
+func (d *discussion) StopAskSession(ctx *context.Context) {
+	err := d.disc.StopAskSession(ctx, ctx.GetUser().UID, ctx.Param("ask_session_id"))
+	if err != nil {
+		ctx.InternalError(err, "stop ask session failed")
+		return
+	}
+
+	ctx.Success(nil)
 }
 
 // SummaryByContent

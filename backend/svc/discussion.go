@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
@@ -68,14 +69,16 @@ type Discussion struct {
 
 	sf          singleflight.Group
 	logger      *glog.Logger
+	streamStop  sync.Map
 	webhookType map[model.DiscussionType]message.Type
 }
 
 func newDiscussion(in discussionIn) *Discussion {
 	return &Discussion{
-		in:     in,
-		logger: glog.Module("svc", "discussion"),
-		sf:     singleflight.Group{},
+		in:         in,
+		logger:     glog.Module("svc", "discussion"),
+		sf:         singleflight.Group{},
+		streamStop: sync.Map{},
 		webhookType: map[model.DiscussionType]message.Type{
 			model.DiscussionTypeQA:       message.TypeNewQA,
 			model.DiscussionTypeFeedback: message.TypeNewFeedback,
@@ -124,6 +127,7 @@ var (
 	errRatelimit        = errors.New("ratelimit")
 	errPermission       = errors.New("permission denied")
 	errAskSessionClosed = errors.New("session closed")
+	errStreaming        = errors.New("streaming")
 )
 
 func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req DiscussionCreateReq) (string, error) {
@@ -2223,6 +2227,13 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 	}
 
 	wrapSteam := NewLLMStream[string]()
+	cancelCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	_, loaded := d.streamStop.LoadOrStore(req.SessionID, cancel)
+	if loaded {
+		return nil, errStreaming
+	}
 
 	go func() {
 		defer stream.Close()
@@ -2238,7 +2249,7 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 				return "", io.EOF
 			}
 
-			text, ok := stream.Text(ctx)
+			text, ok := stream.Text(cancelCtx)
 			if !ok {
 				if !parsed {
 					ret = true
@@ -2291,6 +2302,23 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 	}()
 
 	return wrapSteam, nil
+}
+
+func (d *Discussion) StopAskSession(ctx context.Context, uid uint, sessionID string) error {
+	var session model.AskSession
+	err := d.in.AskSessionRepo.Get(ctx, &session, repo.QueryWithEqual("user_id", uid), repo.QueryWithEqual("uuid", sessionID))
+	if err != nil {
+		return err
+	}
+
+	v, ok := d.streamStop.Load(sessionID)
+	if !ok {
+		return nil
+	}
+
+	v.(context.CancelFunc)()
+	d.streamStop.Delete(sessionID)
+	return nil
 }
 
 func (d *Discussion) AskHistory(ctx context.Context, sessionID string, uid uint) (*model.ListRes[model.AskSession], error) {
@@ -2478,7 +2506,16 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 
 	wrapSteam := NewLLMStream[SummaryByContentItem]()
 
+	cancelCtx, cancel := context.WithCancel(ctx)
+
+	_, loaded := d.streamStop.LoadOrStore(req.SessionID, cancel)
+	if loaded {
+		return nil, errStreaming
+	}
+
 	go func() {
+		defer cancel()
+
 		logger := d.logger.WithContext(ctx)
 		err = wrapSteam.RecvOne(SummaryByContentItem{
 			Type:    "disc_count",
@@ -2541,7 +2578,7 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 
 		var aiResBuilder strings.Builder
 		wrapSteam.Recv(func() (SummaryByContentItem, error) {
-			text, ok := stream.Text(ctx)
+			text, ok := stream.Text(cancelCtx)
 			if !ok {
 				return SummaryByContentItem{}, io.EOF
 			}
