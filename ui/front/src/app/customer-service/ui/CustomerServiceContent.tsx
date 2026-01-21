@@ -984,49 +984,49 @@ export default function CustomerServiceContent({
     }
   }
 
-  // 中断对话
-  const handleStop = useCallback(async () => {
-    // 1. 取消当前的 SSE 连接
-    if (sseClientRef.current) {
-      sseClientRef.current.unsubscribe()
-      sseClientRef.current = null
-    }
+  // 中断对话 - 暂时隐藏，下期再上
+  // const handleStop = useCallback(async () => {
+  //   // 1. 取消当前的 SSE 连接
+  //   if (sseClientRef.current) {
+  //     sseClientRef.current.unsubscribe()
+  //     sseClientRef.current = null
+  //   }
 
-    // 2. 调用后端 API 停止流式输出
-    const currentSessionId = getCurrentSessionId()
-    if (currentSessionId) {
-      try {
-        // 使用默认的 forum_id (0)，因为停止操作不需要特定板块
-        await postDiscussionAskStop({
-          session_id: currentSessionId,
-        })
-      } catch (error) {
-        console.error('停止对话失败:', error)
-      }
-    }
+  //   // 2. 调用后端 API 停止流式输出
+  //   const currentSessionId = getCurrentSessionId()
+  //   if (currentSessionId) {
+  //     try {
+  //       // 使用默认的 forum_id (0)，因为停止操作不需要特定板块
+  //       await postDiscussionAskStop({
+  //         session_id: currentSessionId,
+  //       })
+  //     } catch (error) {
+  //       console.error('停止对话失败:', error)
+  //     }
+  //   }
 
-    // 3. 更新状态
-    setIsLoading(false)
-    setIsWaiting(false)
+  //   // 3. 更新状态
+  //   setIsLoading(false)
+  //   setIsWaiting(false)
 
-    // 4. 标记当前消息为已完成（被中断），保留已输出的内容
-    if (currentMessageRef.current) {
-      const messageId = currentMessageRef.current.id
-      setMessages((prev) => {
-        const newMessages = [...prev]
-        const index = newMessages.findIndex((m) => m.id === messageId)
-        if (index !== -1) {
-          newMessages[index] = {
-            ...newMessages[index],
-            isComplete: true,
-            isInterrupted: true, // 标记为被中断
-          }
-        }
-        return newMessages
-      })
-      currentMessageRef.current = null
-    }
-  }, [getCurrentSessionId, forumId])
+  //   // 4. 标记当前消息为已完成（被中断），保留已输出的内容
+  //   if (currentMessageRef.current) {
+  //     const messageId = currentMessageRef.current.id
+  //     setMessages((prev) => {
+  //       const newMessages = [...prev]
+  //       const index = newMessages.findIndex((m) => m.id === messageId)
+  //       if (index !== -1) {
+  //         newMessages[index] = {
+  //           ...newMessages[index],
+  //           isComplete: true,
+  //           isInterrupted: true, // 标记为被中断
+  //         }
+  //       }
+  //       return newMessages
+  //     })
+  //     currentMessageRef.current = null
+  //   }
+  // }, [getCurrentSessionId, forumId])
 
   // 点击引用帖
   const handleSourceClick = (discussion: ModelDiscussionListItem) => {
@@ -1608,8 +1608,8 @@ export default function CustomerServiceContent({
                                       }}
                                     >
                                       <EditorContent content={message.content} />
-                                      {/* 中断提示 */}
-                                      {message.isInterrupted && (
+                                      {/* 中断提示 - 暂时隐藏，下期再上 */}
+                                      {/* {message.isInterrupted && (
                                         <Typography
                                           variant='body2'
                                           sx={{
@@ -1621,7 +1621,7 @@ export default function CustomerServiceContent({
                                         >
                                           (已暂停生成)
                                         </Typography>
-                                      )}
+                                      )} */}
                                     </Box>
                                   )}
 
@@ -1981,7 +1981,7 @@ export default function CustomerServiceContent({
                 },
               }}
             />
-            {/* 发送/停止按钮 - 位于输入框内部右下角 */}
+            {/* 发送按钮 - 位于输入框内部右下角 */}
             <Box
               sx={{
                 position: 'absolute',
@@ -1991,28 +1991,15 @@ export default function CustomerServiceContent({
               }}
             >
               {isLoading ? (
-                <Tooltip title='停止生成' arrow>
+                <Tooltip title='正在生成' arrow>
                   <Box sx={{ position: 'relative', display: 'inline-flex' }}>
                     <CircularProgress
                       size={26}
                       thickness={2}
                       sx={{
-                        color: 'error.main',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
+                        color: 'primary.main',
                       }}
                     />
-                    <IconButton
-                      color='error'
-                      onClick={handleStop}
-                      sx={{
-                        width: 26,
-                        height: 26,
-                      }}
-                    >
-                      <StopIcon sx={{ fontSize: 20 }} />
-                    </IconButton>
                   </Box>
                 </Tooltip>
               ) : (
