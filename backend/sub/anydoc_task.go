@@ -68,6 +68,7 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 			"platform_opt": model.NewJSONB(taskInfo.PlatformOpt),
 			"file_type":    taskInfo.DocType,
 			"markdown":     []byte(taskInfo.Markdown),
+			"export_at":    time.Now(),
 			"json":         []byte(taskInfo.JSON),
 		}, repo.QueryWithEqual("id", dbDoc.ID))
 		if err != nil {

@@ -20,6 +20,7 @@ const (
 	DocStatusPendingExport
 	DocStatusExportSuccess
 	DocStatusExportFailed
+	DocStatusPendingExec
 )
 
 type DocType uint
@@ -102,6 +103,7 @@ type KBDocument struct {
 	SimilarID    uint                  `json:"similar_id" gorm:"column:similar_id;type:bigint;default:0"`
 	Message      string                `json:"message" gorm:"column:message;type:text"`
 	GroupIDs     Int64Array            `json:"group_ids" gorm:"column:group_ids;type:bigint[]"`
+	ExportAt     Timestamp             `json:"export_at" gorm:"type:timestamp with time zone"`
 }
 
 func (d *KBDocument) QuestionDiscID() (uint, error) {

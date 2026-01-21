@@ -29,46 +29,48 @@ const GroupChips = ({ groupNames, postId }: { groupNames: string[]; postId: numb
       const containerWidth = container.offsetWidth
       if (containerWidth === 0) return // 容器还未渲染完成
 
-      // 创建一个临时元素来测量 Chip 宽度
-      const tempEl = document.createElement('div')
-      tempEl.style.position = 'absolute'
-      tempEl.style.visibility = 'hidden'
-      tempEl.style.whiteSpace = 'nowrap'
-      tempEl.style.fontSize = '12px'
-      tempEl.style.fontWeight = '400'
-      tempEl.style.padding = '0 8px'
-      tempEl.style.height = '20px'
-      tempEl.style.lineHeight = '20px'
-      document.body.appendChild(tempEl)
+      // 使用单个隐藏元素来测量所有文本宽度，避免频繁创建/销毁 DOM
+      let tempEl = document.getElementById('chip-width-measure')
+      if (!tempEl) {
+        tempEl = document.createElement('div')
+        tempEl.id = 'chip-width-measure'
+        tempEl.style.position = 'absolute'
+        tempEl.style.visibility = 'hidden'
+        tempEl.style.fontSize = '12px'
+        tempEl.style.fontWeight = '400'
+        tempEl.style.padding = '2px 8px'
+        tempEl.style.height = '20px'
+        tempEl.style.lineHeight = '20px'
+        tempEl.style.borderRadius = '3px'
+        tempEl.style.boxSizing = 'border-box'
+        tempEl.style.whiteSpace = 'nowrap'
+        tempEl.style.display = 'inline-flex'
+        tempEl.style.alignItems = 'center'
+        tempEl.style.pointerEvents = 'none'
+        document.body.appendChild(tempEl)
+      }
 
       let totalWidth = 0
       let count = 0
       const gap = 8 // spacing={1} 对应的 gap 值，MUI 的 spacing={1} 是 8px
 
-      // 先计算所有标签的宽度
-      const chipWidths: number[] = []
-      for (let i = 0; i < groupNames.length; i++) {
-        tempEl.textContent = groupNames[i]
-        chipWidths.push(tempEl.offsetWidth)
-      }
-
-      // 计算 "+N" 标签的宽度（用于预留空间）
-      // 需要计算不同剩余数量时的宽度，取最大值
+      // 计算 "+N" 标签的最大宽度
       let maxMoreChipWidth = 0
-      for (let i = 1; i <= groupNames.length; i++) {
+      for (let i = 1; i <= Math.min(groupNames.length, 10); i++) { // 限制最大数字以避免过多计算
         tempEl.textContent = `+${i}`
         maxMoreChipWidth = Math.max(maxMoreChipWidth, tempEl.offsetWidth)
       }
 
       // 计算可以显示多少个标签
       for (let i = 0; i < groupNames.length; i++) {
-        const chipWidth = chipWidths[i]
+        tempEl.textContent = groupNames[i]
+        const chipWidth = tempEl.offsetWidth
         const currentTotalWidth = totalWidth + chipWidth + (i > 0 ? gap : 0)
 
         // 如果显示当前标签后，还需要显示 "+N" 标签，检查总宽度
         const remainingCount = groupNames.length - i - 1
         if (remainingCount > 0) {
-          // 需要预留 "+N" 标签的空间
+          // 需要预留 "+N" 标签的空间，加上它们之间的 gap
           if (currentTotalWidth + gap + maxMoreChipWidth > containerWidth) {
             break
           }
@@ -84,11 +86,13 @@ const GroupChips = ({ groupNames, postId }: { groupNames: string[]; postId: numb
       }
 
       // 确保至少显示一个标签（如果容器宽度足够）
-      if (count === 0 && groupNames.length > 0 && chipWidths[0] <= containerWidth) {
-        count = 1
+      if (count === 0 && groupNames.length > 0) {
+        tempEl.textContent = groupNames[0]
+        if (tempEl.offsetWidth <= containerWidth) {
+          count = 1
+        }
       }
 
-      document.body.removeChild(tempEl)
       setVisibleCount(count)
     }
 
@@ -97,10 +101,18 @@ const GroupChips = ({ groupNames, postId }: { groupNames: string[]; postId: numb
       updateVisibleCount()
     }, 0)
 
-    window.addEventListener('resize', updateVisibleCount)
+    // 防抖处理 resize 事件，避免频繁计算
+    let resizeTimeout: NodeJS.Timeout
+    const debouncedResize = () => {
+      clearTimeout(resizeTimeout)
+      resizeTimeout = setTimeout(updateVisibleCount, 100)
+    }
+
+    window.addEventListener('resize', debouncedResize)
     return () => {
       clearTimeout(timeoutId)
-      window.removeEventListener('resize', updateVisibleCount)
+      clearTimeout(resizeTimeout)
+      window.removeEventListener('resize', debouncedResize)
     }
   }, [groupNames])
 

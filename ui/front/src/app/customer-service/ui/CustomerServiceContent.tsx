@@ -1,6 +1,6 @@
 'use client'
 
-import { getDiscussionAskAskSessionId, getDiscussionAskSession } from '@/api'
+import { getDiscussionAskAskSessionId, getDiscussionAskSession, postDiscussionAskStop } from '@/api'
 import { getCsrfToken } from '@/api/httpClient'
 import { ModelDiscussionListItem, ModelUserInfo, SvcBotGetRes } from '@/api/types'
 import { getSystemWebPlugin } from '@/api/WebPlugin'
@@ -12,6 +12,7 @@ import { useForumStore } from '@/store'
 import SSEClient from '@/utils/fetch'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import SendIcon from '@mui/icons-material/Send'
+import StopIcon from '@mui/icons-material/Stop'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import {
   alpha,
@@ -55,6 +56,7 @@ interface Message {
   forumId?: number // 板块ID，用于发帖
   timestamp?: string // 时间戳
   isComplete?: boolean // 是否已完成（流式输出完成）
+  isInterrupted?: boolean // 是否被手动中断
 }
 
 interface CustomerServiceContentProps {
@@ -982,6 +984,50 @@ export default function CustomerServiceContent({
     }
   }
 
+  // 中断对话 - 暂时隐藏，下期再上
+  // const handleStop = useCallback(async () => {
+  //   // 1. 取消当前的 SSE 连接
+  //   if (sseClientRef.current) {
+  //     sseClientRef.current.unsubscribe()
+  //     sseClientRef.current = null
+  //   }
+
+  //   // 2. 调用后端 API 停止流式输出
+  //   const currentSessionId = getCurrentSessionId()
+  //   if (currentSessionId) {
+  //     try {
+  //       // 使用默认的 forum_id (0)，因为停止操作不需要特定板块
+  //       await postDiscussionAskStop({
+  //         session_id: currentSessionId,
+  //       })
+  //     } catch (error) {
+  //       console.error('停止对话失败:', error)
+  //     }
+  //   }
+
+  //   // 3. 更新状态
+  //   setIsLoading(false)
+  //   setIsWaiting(false)
+
+  //   // 4. 标记当前消息为已完成（被中断），保留已输出的内容
+  //   if (currentMessageRef.current) {
+  //     const messageId = currentMessageRef.current.id
+  //     setMessages((prev) => {
+  //       const newMessages = [...prev]
+  //       const index = newMessages.findIndex((m) => m.id === messageId)
+  //       if (index !== -1) {
+  //         newMessages[index] = {
+  //           ...newMessages[index],
+  //           isComplete: true,
+  //           isInterrupted: true, // 标记为被中断
+  //         }
+  //       }
+  //       return newMessages
+  //     })
+  //     currentMessageRef.current = null
+  //   }
+  // }, [getCurrentSessionId, forumId])
+
   // 点击引用帖
   const handleSourceClick = (discussion: ModelDiscussionListItem) => {
     // ModelDiscussionListItem 可能没有 route_name，需要通过 forum_id 查找
@@ -1562,6 +1608,20 @@ export default function CustomerServiceContent({
                                       }}
                                     >
                                       <EditorContent content={message.content} />
+                                      {/* 中断提示 - 暂时隐藏，下期再上 */}
+                                      {/* {message.isInterrupted && (
+                                        <Typography
+                                          variant='body2'
+                                          sx={{
+                                            mt: 1,
+                                            color: 'text.disabled',
+                                            fontSize: '0.85rem',
+                                            fontStyle: 'italic',
+                                          }}
+                                        >
+                                          (已暂停生成)
+                                        </Typography>
+                                      )} */}
                                     </Box>
                                   )}
 
@@ -1930,23 +1990,33 @@ export default function CustomerServiceContent({
                 zIndex: 1,
               }}
             >
-              <Tooltip title='发送消息' arrow>
-                <IconButton
-                  color='primary'
-                  onClick={handleSend}
-                  disabled={!inputValue.trim() || isLoading}
-                  sx={{
-                    width: 40,
-                    height: 40,
-                  }}
-                >
-                  {isLoading ? (
-                    <CircularProgress size={18} sx={{ color: 'inherit' }} />
-                  ) : (
-                    <SendIcon sx={{ fontSize: 18 }} />
-                  )}
-                </IconButton>
-              </Tooltip>
+              {isLoading ? (
+                <Tooltip title='正在生成' arrow>
+                  <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+                    <CircularProgress
+                      size={26}
+                      thickness={2}
+                      sx={{
+                        color: 'primary.main',
+                      }}
+                    />
+                  </Box>
+                </Tooltip>
+              ) : (
+                <Tooltip title='发送消息' arrow>
+                  <IconButton
+                    color='primary'
+                    onClick={handleSend}
+                    disabled={!inputValue.trim()}
+                    sx={{
+                      width: 26,
+                      height: 26,
+                    }}
+                  >
+                    <SendIcon sx={{ fontSize: 20 }} />
+                  </IconButton>
+                </Tooltip>
+              )}
             </Box>
           </Box>
         </Box>

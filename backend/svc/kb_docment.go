@@ -329,6 +329,7 @@ func (d *KBDocument) CreateQA(ctx context.Context, kbID uint, req DocCreateQAReq
 		Desc:     req.Desc,
 		Markdown: []byte(req.Markdown),
 		Status:   model.DocStatusExportSuccess,
+		ExportAt: model.Timestamp(time.Now().Unix()),
 	}
 	err := d.repoDoc.Create(ctx, &doc)
 	if err != nil {
@@ -387,6 +388,7 @@ func (d *KBDocument) CreateDocByDisc(ctx context.Context, user model.UserInfo, d
 		Markdown: []byte(util.TrimFirstDir(ossPath)),
 		FileType: model.FileTypeMarkdown,
 		Status:   model.DocStatusExportSuccess,
+		ExportAt: model.Timestamp(time.Now().Unix()),
 	}
 
 	err = d.repoDoc.Create(ctx, &doc)
@@ -1262,6 +1264,7 @@ func (d *KBDocument) Review(ctx context.Context, req ReviewReq) error {
 			Title:    req.Title,
 			Markdown: []byte(req.Content),
 			Status:   model.DocStatusExportSuccess,
+			ExportAt: model.Timestamp(time.Now().Unix()),
 		}, repo.QueryWithEqual("id", req.QAID))
 		if err != nil {
 			return err

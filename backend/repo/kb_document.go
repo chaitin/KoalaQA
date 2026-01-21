@@ -153,7 +153,7 @@ func (d *KBDocument) UpsertSpaceFolderTree(ctx context.Context, folder *model.KB
 func (d *KBDocument) UpdateSpaceFolderAll(ctx context.Context, folderID uint, statusFilter []model.DocStatus, docStatus model.DocStatus, msg string) error {
 	sql := `WITH RECURSIVE all_folder_doc AS (
 	SELECT id, parent_id FROM kb_documents WHERE parent_id = ?
-	UNION ALL
+	UNION
 	SELECT d.id, d.parent_id FROM kb_documents d JOIN all_folder_doc ad ON d.parent_id = ad.id)
 	
 UPDATE kb_documents SET status = ?, message = ? FROM all_folder_doc WHERE all_folder_doc.id = kb_documents.id AND kb_documents.doc_type = ?`
@@ -172,7 +172,7 @@ UPDATE kb_documents SET status = ?, message = ? FROM all_folder_doc WHERE all_fo
 func (d *KBDocument) UpdateSpaceFolderGroupIDs(ctx context.Context, docIDs model.Int64Array, groupIDs model.Int64Array) error {
 	sql := `WITH RECURSIVE all_folder_doc AS (
 	SELECT id, parent_id FROM kb_documents WHERE id =ANY(?)
-	UNION ALL
+	UNION
 	SELECT d.id, d.parent_id FROM kb_documents d JOIN all_folder_doc ad ON d.parent_id = ad.id)
 	
 UPDATE kb_documents SET group_ids = ?, updated_at = now() FROM all_folder_doc WHERE all_folder_doc.id = kb_documents.id AND kb_documents.file_type != ?`
@@ -199,10 +199,10 @@ func (d *KBDocument) ListSpaceFolderAll(ctx context.Context, rootParentID uint, 
 	}
 	sql := fmt.Sprintf(`WITH RECURSIVE all_folder_doc AS (
 	SELECT * FROM kb_documents d WHERE d.root_parent_id = ? AND d.parent_id = ?%s
-	UNION ALL
+	UNION
 	SELECT d.* FROM kb_documents d JOIN all_folder_doc ad ON d.parent_id = ad.id%[1]s)
 	
-SELECT DISTINCT * FROM all_folder_doc`, filter)
+SELECT * FROM all_folder_doc`, filter)
 
 	err = d.db.WithContext(ctx).Raw(sql, params...).Scan(&res).Error
 
@@ -212,10 +212,10 @@ SELECT DISTINCT * FROM all_folder_doc`, filter)
 func (d *KBDocument) ListSpaceFolderAllDoc(ctx context.Context, docIDs model.Int64Array) (res []model.KBDocument, err error) {
 	sql := `WITH RECURSIVE all_folder_doc AS (
 	SELECT * FROM kb_documents d WHERE id =ANY(?)
-	UNION ALL
+	UNION
 	SELECT d.* FROM kb_documents d JOIN all_folder_doc ad ON d.parent_id = ad.id)
 	
-SELECT DISTINCT * FROM all_folder_doc where file_type != ?`
+SELECT * FROM all_folder_doc where file_type != ?`
 
 	err = d.db.WithContext(ctx).Raw(sql, docIDs, model.FileTypeFolder).Scan(&res).Error
 	return

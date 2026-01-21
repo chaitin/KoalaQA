@@ -133,7 +133,7 @@ const nextConfig = {
   },
 
   // 配置需要转译的外部包
-  transpilePackages: ['@ctzhian/tiptap', '@ctzhian/ui'],
+  transpilePackages: ['@ctzhian/ui'],
 
   // 注意：Turbopack 不支持 webpack 配置
   // 使用 serverComponentsExternalPackages 来排除服务器端不需要的包

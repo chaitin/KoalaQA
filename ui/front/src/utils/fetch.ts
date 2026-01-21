@@ -28,7 +28,7 @@ class SSEClient<T> {
     this.currentEvent = null
   }
 
-  public subscribe(body: BodyInit, onMessage: SSECallback<T>) {
+  public subscribe(body: BodyInit, onMessage: SSECallback<T>, isRetry = false) {
     this.controller.abort()
     this.controller = new AbortController()
     this.currentEvent = null // 重置事件状态
@@ -57,6 +57,41 @@ class SSEClient<T> {
       signal: this.controller.signal,
     })
       .then(async (response) => {
+        // 检查响应内容是否包含 CSRF mismatch 错误
+        if (response.ok) {
+          // 克隆响应以便可以多次读取
+          const clonedResponse = response.clone()
+          const text = await clonedResponse.text()
+
+          // 检测 CSRF mismatch 错误
+          if (text.includes('csrf token mismatch') && !isRetry) {
+            clearTimeout(timeoutId)
+            console.log('CSRF token mismatch detected in SSE, retrying with new token...')
+
+            // 动态导入并清除 CSRF token 缓存
+            try {
+              const { clearCsrfTokenCache, getCsrfToken } = await import('@/api/httpClient')
+              clearCsrfTokenCache()
+
+              // 获取新的 token
+              const newToken = await getCsrfToken()
+
+              // 更新 headers 中的 CSRF token
+              this.options.headers = {
+                ...(this.options.headers || {}),
+                'X-CSRF-TOKEN': newToken,
+              }
+
+              // 重试请求
+              this.subscribe(body, onMessage, true)
+              return
+            } catch (retryError) {
+              console.error('Failed to retry SSE request:', retryError)
+              onError?.(new Error('CSRF token refresh failed'))
+              return
+            }
+          }
+        }
 
         if (!response.ok) {
           clearTimeout(timeoutId)
@@ -81,22 +116,22 @@ class SSEClient<T> {
         this.reader = response.body.getReader()
 
         try {
-        while (true) {
-          const { done, value } = await this.reader.read()
-          if (done) {
-            clearTimeout(timeoutId)
-            onComplete?.()
-            break
+          while (true) {
+            const { done, value } = await this.reader.read()
+            if (done) {
+              clearTimeout(timeoutId)
+              onComplete?.()
+              break
+            }
+            this.processChunk(value, onMessage)
           }
-          this.processChunk(value, onMessage)
+        } catch (error) {
+          clearTimeout(timeoutId)
+          // 如果是因为中止导致的错误，不调用 onError
+          if (error instanceof Error && error.name !== 'AbortError') {
+            onError?.(error)
+          }
         }
-      } catch (error) {
-        clearTimeout(timeoutId)
-        // 如果是因为中止导致的错误，不调用 onError
-        if (error instanceof Error && error.name !== 'AbortError') {
-          onError?.(error)
-        }
-      }
       })
       .catch((error) => {
         clearTimeout(timeoutId)
@@ -209,7 +244,7 @@ class SSEClient<T> {
             if (this.currentEvent) {
               const eventData = { event: this.currentEvent, data: parsedData } as T
               callback(eventData)
-              
+
               // 如果是 no_disc 事件且 data 为 true，表示结束
               if (this.currentEvent === 'no_disc' && parsedData === true) {
                 this.currentEvent = null
@@ -218,7 +253,7 @@ class SSEClient<T> {
                 this.unsubscribe()
                 return
               }
-              
+
               this.currentEvent = null // 处理完数据后清除事件
             } else {
               callback(parsedData as T)
@@ -296,12 +331,12 @@ class SSEClient<T> {
       } catch (jsonError) {
         data = { content: rawData } as T
       }
-      
+
       // 如果有 event，将其包含在数据对象中
       if (event) {
         const eventData = { event, data } as T
         callback(eventData)
-        
+
         // 如果是 no_disc 事件且 data 为 true，表示结束
         if (event === 'no_disc' && data === true) {
           // 调用 onComplete 并停止处理

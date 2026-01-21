@@ -4,8 +4,8 @@
   "private": true,
   "license": "AGPL-3.0",
   "scripts": {
-    "dev": "next dev",
-    "dev:turbo": "next dev --turbo",
+    "dev": "NODE_OPTIONS=\"--max-old-space-size=4096\" next dev",
+    "dev:turbo": "NODE_OPTIONS=\"--max-old-space-size=4096\" next dev --turbo",
     "build": "next build",
     "start": "next start",
     "start:debugger": "NODE_OPTIONS=--inspect next start",

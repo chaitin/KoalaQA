@@ -514,6 +514,7 @@ definitions:
     - 6
     - 7
     - 8
+    - 9
     type: integer
     x-enum-varnames:
     - DocStatusUnknown
@@ -525,6 +526,7 @@ definitions:
     - DocStatusPendingExport
     - DocStatusExportSuccess
     - DocStatusExportFailed
+    - DocStatusPendingExec
   model.DocType:
     enum:
     - 0
@@ -723,6 +725,8 @@ definitions:
         type: string
       doc_type:
         $ref: '#/definitions/model.DocType'
+      export_at:
+        type: integer
       export_opt:
         $ref: '#/definitions/model.JSONB-model_ExportOpt'
       export_task_id:
@@ -3000,6 +3004,7 @@ paths:
         - 6
         - 7
         - 8
+        - 9
         in: query
         name: status
         type: integer
@@ -3013,6 +3018,7 @@ paths:
         - DocStatusPendingExport
         - DocStatusExportSuccess
         - DocStatusExportFailed
+        - DocStatusPendingExec
       - in: query
         name: title
         type: string
@@ -3206,6 +3212,7 @@ paths:
         - 6
         - 7
         - 8
+        - 9
         in: query
         name: status
         type: integer
@@ -3219,6 +3226,7 @@ paths:
         - DocStatusPendingExport
         - DocStatusExportSuccess
         - DocStatusExportFailed
+        - DocStatusPendingExec
       - in: query
         name: title
         type: string
@@ -3720,6 +3728,7 @@ paths:
           - 6
           - 7
           - 8
+          - 9
           type: integer
         name: status
         type: array

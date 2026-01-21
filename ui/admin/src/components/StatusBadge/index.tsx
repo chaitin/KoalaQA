@@ -28,6 +28,8 @@ const StatusBadge = ({ status, text, variant, onClick, sx, ...props }: StatusBad
       case ModelDocStatus.DocStatusExportFailed: // '导出失败';
       case ModelDocStatus.DocStatusApplyFailed:
         return '应用失败';
+      case ModelDocStatus.DocStatusPendingExec:
+        return '同步中';
       default:
         return '未应用';
     }
@@ -51,7 +53,7 @@ const StatusBadge = ({ status, text, variant, onClick, sx, ...props }: StatusBad
 
     if (
       variant === 'pending' ||
-      [ModelDocStatus.DocStatusPendingReview, ModelDocStatus.DocStatusPendingExport].includes(
+      [ModelDocStatus.DocStatusPendingReview, ModelDocStatus.DocStatusPendingExport, ModelDocStatus.DocStatusPendingExec].includes(
         status as ModelDocStatus
       )
     ) {

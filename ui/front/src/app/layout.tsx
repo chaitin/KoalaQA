@@ -88,6 +88,9 @@ export async function generateMetadata(): Promise<Metadata> {
         'max-snippet': -1,
       },
     },
+    icons: {
+      icon: '/favicon.ico',
+    },
   }
 }
 
@@ -174,13 +177,9 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
     <html lang='zh-CN'>
       <head>
         <meta httpEquiv='content-language' content='zh-CN' />
-        <meta name='description' content={description} />
-        <meta name='keywords' content={Array.isArray(keywords) ? keywords.join(',') : keywords} />
         {/* DNS 预解析优化 */}
         <link rel='dns-prefetch' href='//fonts.googleapis.com' />
         <link rel='preconnect' href='//fonts.googleapis.com' crossOrigin='anonymous' />
-        {/* 使用动态 favicon 路由，统一处理 favicon 请求 */}
-        <link rel='icon' href='/favicon.ico' />
       </head>
       <body className={`${monoFont.variable} ${alimamashuheitiFont.variable}`}>
         <Script src={`/font/iconfont.js?v=${ICONFONT_VERSION}`} strategy='beforeInteractive' />
