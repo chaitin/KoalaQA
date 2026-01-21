@@ -1113,30 +1113,40 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
           <Paper
             elevation={0}
             sx={{
-              position: !isQAPost ? 'relative' : { xs: 'relative', sm: 'sticky' },
-              bottom: !isQAPost ? 'unset' : { xs: 0, sm: 0 },
-              left: !isQAPost ? 'unset' : { xs: 0, sm: 'unset' },
-              right: !isQAPost ? 'unset' : { xs: 0, sm: 'unset' },
-              pb: !isQAPost ? 2 : { xs: 'calc(env(safe-area-inset-bottom, 0))', sm: 2 },
+              // 基础样式
               width: '100%',
-              maxWidth: { lg: '958px' },
-              mx: { xs: 0, sm: 'auto' },
-              mt: !isQAPost ? 0 : 'auto',
               zIndex: 9,
               borderRadius: 0,
               bgcolor: '#ffffff',
-              // 移动端添加底部安全区域支持，避免被 Safari 工具栏遮挡
-              ...(isQAPost && {
-                '@media (max-width: 600px)': {
-                  // Safari 工具栏高度约 44px，加上安全区域和内容 padding
-                  paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0))',
-                  // 添加左侧和右侧的安全区域支持
-                  paddingLeft: 'max(16px, env(safe-area-inset-left, 0px))',
-                  paddingRight: 'max(16px, env(safe-area-inset-right, 0px))',
-                  // 移除 maxWidth 限制，让 Paper 在移动端占据全宽
-                  maxWidth: '100%',
-                },
-              }),
+              // 根据帖子类型设置样式
+              // 问答类型且未有回答被采纳：桌面端 sticky 定位，移动端 relative
+              // 其他情况：普通定位
+              ...(isQAPost && !hasAcceptedComment
+                ? {
+                    position: { xs: 'relative', sm: 'sticky' },
+                    bottom: { xs: 0, sm: 0 },
+                    left: { xs: 0, sm: 'unset' },
+                    right: { xs: 0, sm: 'unset' },
+                    pb: { xs: 'calc(env(safe-area-inset-bottom, 0))', sm: 2 },
+                    mx: { xs: 0, sm: 'auto' },
+                    mt: 'auto',
+                    maxWidth: { lg: '958px' },
+                    // 移动端添加底部安全区域支持，避免被 Safari 工具栏遮挡
+                    '@media (max-width: 600px)': {
+                      paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0))',
+                      paddingLeft: 'max(16px, env(safe-area-inset-left, 0px))',
+                      paddingRight: 'max(16px, env(safe-area-inset-right, 0px))',
+                      maxWidth: '100%',
+                    },
+                  }
+                : {
+                    // 非问答类型或已有采纳回答：普通定位
+                    position: 'relative',
+                    pb: 2,
+                    mx: 0,
+                    mt: 0,
+                    maxWidth: { lg: '958px' },
+                  }),
             }}
           >
             <Box
