@@ -2153,6 +2153,8 @@ func (d *Discussion) AskSessionClosed(ctx context.Context, uid uint, sessionID s
 	return lastAsk.CreatedAt.Time().Add(time.Hour).Before(time.Now()), nil
 }
 
+const AskCancelMagic = "!@#$%^&*"
+
 func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*LLMStream[string], error) {
 	if !d.allow("disc_ask", req.SessionID) {
 		return nil, errRatelimit
@@ -2258,7 +2260,13 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 				canceled = c
 				if !parsed {
 					ret = true
+					if canceled {
+						return "用户取消生成", nil
+					}
 					return defaultAnswer, nil
+				} else if canceled {
+					ret = true
+					return AskCancelMagic, nil
 				}
 				return "", io.EOF
 			}
@@ -2593,9 +2601,18 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 
 		var aiResBuilder strings.Builder
 		wrapSteam.Recv(func() (SummaryByContentItem, error) {
+			if canceled {
+				return SummaryByContentItem{}, io.EOF
+			}
 			text, c, ok := stream.Text(cancelCtx)
 			if !ok {
 				canceled = c
+				if canceled {
+					return SummaryByContentItem{
+						Type:    "canceled",
+						Content: "true",
+					}, nil
+				}
 				return SummaryByContentItem{}, io.EOF
 			}
 
