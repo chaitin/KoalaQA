@@ -2254,6 +2254,13 @@ definitions:
       uv:
         type: integer
     type: object
+  svc.StopAskSessionReq:
+    properties:
+      session_id:
+        type: string
+    required:
+    - session_id
+    type: object
   svc.SummaryByContentReq:
     properties:
       forum_id:
@@ -6164,7 +6171,7 @@ paths:
         in: body
         name: req
         schema:
-          $ref: '#/definitions/svc.SummaryByContentReq'
+          $ref: '#/definitions/svc.StopAskSessionReq'
       - description: ask_session_id
         in: path
         name: ask_session_id

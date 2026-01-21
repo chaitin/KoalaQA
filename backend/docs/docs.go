@@ -4942,7 +4942,7 @@ const docTemplate = `{
                         "name": "req",
                         "in": "body",
                         "schema": {
-                            "$ref": "#/definitions/svc.SummaryByContentReq"
+                            "$ref": "#/definitions/svc.StopAskSessionReq"
                         }
                     },
                     {
@@ -11064,6 +11064,17 @@ const docTemplate = `{
                 },
                 "uv": {
                     "type": "integer"
+                }
+            }
+        },
+        "svc.StopAskSessionReq": {
+            "type": "object",
+            "required": [
+                "session_id"
+            ],
+            "properties": {
+                "session_id": {
+                    "type": "string"
                 }
             }
         },
