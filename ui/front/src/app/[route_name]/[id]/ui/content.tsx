@@ -1121,7 +1121,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
               // 根据帖子类型设置样式
               // 问答类型且未有回答被采纳：桌面端 sticky 定位，移动端 relative
               // 其他情况：普通定位
-              ...(isQAPost && !hasAcceptedComment
+              ...(isQAPost
                 ? {
                     position: { xs: 'relative', sm: 'sticky' },
                     bottom: { xs: 0, sm: 0 },
@@ -1171,11 +1171,11 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
                 },
               }}
             >
-              {!isQAPost && !showAnswerEditor ? (
+              {((!isQAPost || hasAcceptedComment) && !showAnswerEditor) ? (
                 <OutlinedInput
                   fullWidth
                   size='small'
-                  placeholder='添加评论...'
+                  placeholder={isQAPost ? '回答问题...' : '添加评论...'}
                   onClick={() => checkAuth(() => setShowAnswerEditor(true))}
                   endAdornment={
                     <InputAdornment position='end'>

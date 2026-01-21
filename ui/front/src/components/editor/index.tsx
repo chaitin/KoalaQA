@@ -1,13 +1,11 @@
 'use client'
 
-import { Box } from '@mui/material'
 import dynamic from 'next/dynamic'
 import { forwardRef } from 'react'
 
 // 动态导入编辑器组件，禁用 SSR 以避免服务器端加载 jsdom
 const EditorWrapInternal = dynamic(() => import('./EditorWrapInternal'), {
   ssr: false,
-  loading: () => <Box sx={{ minHeight: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}></Box>,
 })
 
 interface WrapProps {
