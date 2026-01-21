@@ -2261,7 +2261,9 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 				if !parsed {
 					ret = true
 					if canceled {
-						return "用户取消生成", nil
+						text = "已取消生成"
+						aiResBuilder.WriteString(text)
+						return text, nil
 					}
 					return defaultAnswer, nil
 				} else if canceled {
