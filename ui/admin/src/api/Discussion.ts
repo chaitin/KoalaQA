@@ -33,7 +33,7 @@ import {
   ModelDiscussionDetail,
   ModelDiscussionListItem,
   ModelListRes,
-  PostDiscussionAskParams,
+  PostDiscussionAskStopParams,
   PostDiscussionDiscIdAiLearnParams,
   PostDiscussionDiscIdAssociateParams,
   PostDiscussionDiscIdCommentCommentIdAcceptParams,
@@ -47,7 +47,6 @@ import {
   PostDiscussionDiscIdResolveIssueParams,
   PostDiscussionDiscIdResolveParams,
   PostDiscussionDiscIdRevokeLikeParams,
-  PostDiscussionSummaryContentParams,
   PostDiscussionSummaryParams,
   PostDiscussionUploadPayload,
   PutDiscussionDiscIdCloseParams,
@@ -56,6 +55,7 @@ import {
   SvcAssociateDiscussionReq,
   SvcCommentCreateReq,
   SvcCommentUpdateReq,
+  SvcDiscussionAskReq,
   SvcDiscussionCompeletReq,
   SvcDiscussionContentSummaryReq,
   SvcDiscussionCreateReq,
@@ -64,6 +64,7 @@ import {
   SvcListAsksRes,
   SvcResolveFeedbackReq,
   SvcResolveIssueReq,
+  SvcSummaryByContentReq,
 } from "./types";
 
 /**
@@ -247,13 +248,14 @@ export const postDiscussion = (
  */
 
 export const postDiscussionAsk = (
-  query: PostDiscussionAskParams,
+  req: SvcDiscussionAskReq,
   params: RequestParams = {},
 ) =>
   request<unknown>({
     path: `/discussion/ask`,
     method: "POST",
-    query: query,
+    body: req,
+    type: ContentType.Json,
     ...params,
   });
 
@@ -282,6 +284,30 @@ export const getDiscussionAskSession = (
     path: `/discussion/ask/session`,
     method: "GET",
     query: query,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * @description stop discussion ask history
+ *
+ * @tags discussion
+ * @name PostDiscussionAskStop
+ * @summary stop discussion ask history
+ * @request POST:/discussion/ask/stop
+ * @response `200` `ContextResponse` OK
+ */
+
+export const postDiscussionAskStop = (
+  { askSessionId, ...query }: PostDiscussionAskStopParams,
+  req: SvcSummaryByContentReq,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/discussion/ask/stop`,
+    method: "POST",
+    body: req,
+    type: ContentType.Json,
     format: "json",
     ...params,
   });
@@ -448,13 +474,14 @@ export const postDiscussionSummary = (
  */
 
 export const postDiscussionSummaryContent = (
-  query: PostDiscussionSummaryContentParams,
+  req: SvcSummaryByContentReq,
   params: RequestParams = {},
 ) =>
   request<unknown>({
     path: `/discussion/summary/content`,
     method: "POST",
-    query: query,
+    body: req,
+    type: ContentType.Json,
     ...params,
   });
 
