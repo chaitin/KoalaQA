@@ -171,6 +171,7 @@ export enum ModelDocStatus {
   DocStatusPendingExport = 6,
   DocStatusExportSuccess = 7,
   DocStatusExportFailed = 8,
+  DocStatusPendingExec = 9,
 }
 
 export enum ModelDiscussionType {
@@ -234,6 +235,7 @@ export interface ContextResponse {
 
 export interface ModelAskSession {
   bot?: boolean;
+  canceled?: boolean;
   content?: string;
   created_at?: number;
   id?: number;
@@ -518,6 +520,7 @@ export interface ModelKBDocumentDetail {
   disc_uuid?: string;
   doc_id?: string;
   doc_type?: ModelDocType;
+  export_at?: number;
   export_opt?: ModelJSONBModelExportOpt;
   export_task_id?: string;
   file_type?: ModelFileType;
@@ -885,6 +888,12 @@ export interface SvcDiscussUploadFileReq {
   uuid?: string;
 }
 
+export interface SvcDiscussionAskReq {
+  group_ids?: number[];
+  question: string;
+  session_id: string;
+}
+
 export interface SvcDiscussionCompeletReq {
   prefix?: string;
   suffix?: string;
@@ -1030,6 +1039,7 @@ export interface SvcListAnydocNode {
 
 export interface SvcListAsksRes {
   bot?: boolean;
+  canceled?: boolean;
   content?: string;
   created_at?: number;
   id?: number;
@@ -1224,6 +1234,16 @@ export interface SvcStatVisitRes {
   uv?: number;
 }
 
+export interface SvcStopAskSessionReq {
+  session_id: string;
+}
+
+export interface SvcSummaryByContentReq {
+  forum_id: number;
+  group_ids?: number[];
+  session_id: string;
+}
+
 export interface SvcURLExportReq {
   desc?: string;
   doc_id: string;
@@ -1394,7 +1414,7 @@ export interface GetAdminDiscussionAskSessionParams {
   session_id: string;
   /** @min 1 */
   size?: number;
-  user_id: number;
+  user_id?: number;
 }
 
 /** request params */
@@ -1457,7 +1477,7 @@ export interface GetAdminKbKbIdDocumentParams {
   page?: number;
   /** @min 1 */
   size?: number;
-  status?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+  status?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
   title?: string;
   /** kb_id */
   kbId: number;
@@ -1507,7 +1527,7 @@ export interface GetAdminKbKbIdQuestionParams {
   page?: number;
   /** @min 1 */
   size?: number;
-  status?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+  status?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
   title?: string;
   /** kb_id */
   kbId: number;
@@ -1625,7 +1645,7 @@ export interface GetAdminKbKbIdSpaceSpaceIdFolderFolderIdDocParams {
   parent_id: number;
   /** @min 1 */
   size?: number;
-  status?: (0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8)[];
+  status?: (0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9)[];
   title?: string;
   /** kb_id */
   kbId: number;
@@ -1802,12 +1822,6 @@ export interface GetDiscussionParams {
   type?: "qa" | "feedback" | "blog" | "issue";
 }
 
-export interface PostDiscussionAskParams {
-  group_ids?: number[];
-  question: string;
-  session_id: string;
-}
-
 export interface GetDiscussionAskSessionParams {
   force_create?: boolean;
   session_id?: string;
@@ -1828,12 +1842,6 @@ export interface GetDiscussionFollowParams {
 export interface PostDiscussionSummaryParams {
   keyword: string;
   uuids: string[];
-}
-
-export interface PostDiscussionSummaryContentParams {
-  forum_id: number;
-  group_ids?: number[];
-  session_id: string;
 }
 
 /** request params */
