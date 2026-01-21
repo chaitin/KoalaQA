@@ -16,6 +16,7 @@ func newCors() Interceptor {
 		postAllows: []string{
 			// "/api/user/login/cors",
 			"/api/discussion/ask",
+			"/api/discussion/ask/stop",
 			"/api/discussion/summary/content",
 			"/api/discussion/ask/session",
 		},

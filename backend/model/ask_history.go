@@ -20,6 +20,7 @@ type AskSession struct {
 	UserID       uint                           `json:"user_id" gorm:"column:user_id;type:bigint"`
 	Source       AskSessionSource               `json:"source" gorm:"column:source"`
 	Bot          bool                           `json:"bot" gorm:"column:bot;default:false"`
+	Canceled     bool                           `json:"canceled" gorm:"column:canceled;default:false"`
 	Summary      bool                           `json:"summary" gorm:"column:summary"`
 	SummaryDiscs JSONB[[]AskSessionSummaryDisc] `json:"summary_discs" gorm:"column:summary_discs;type:jsonb"`
 	Content      string                         `json:"content" gorm:"column:content"`

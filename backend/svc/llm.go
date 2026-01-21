@@ -294,7 +294,7 @@ func (l *LLMStream[T]) Read(ctx context.Context, f func(content T)) {
 	defer l.Close()
 
 	for {
-		content, ok := l.Text(ctx)
+		content, _, ok := l.Text(ctx)
 		if !ok {
 			return
 		}
@@ -303,16 +303,16 @@ func (l *LLMStream[T]) Read(ctx context.Context, f func(content T)) {
 	}
 }
 
-func (l *LLMStream[T]) Text(ctx context.Context) (T, bool) {
+func (l *LLMStream[T]) Text(ctx context.Context) (T, bool, bool) {
 	select {
 	case <-ctx.Done():
-		return *new(T), false
+		return *new(T), true, false
 	case content, ok := <-l.c:
 		if !ok {
-			return *new(T), false
+			return *new(T), false, false
 		}
 
-		return content, true
+		return content, false, true
 	}
 }
 

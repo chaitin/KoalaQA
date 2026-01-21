@@ -2228,7 +2228,6 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 
 	wrapSteam := NewLLMStream[string]()
 	cancelCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
 
 	_, loaded := d.streamStop.LoadOrStore(req.SessionID, cancel)
 	if loaded {
@@ -2236,21 +2235,27 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 	}
 
 	go func() {
-		defer stream.Close()
+		defer func() {
+			stream.Close()
+			cancel()
+			d.streamStop.Delete(req.SessionID)
+		}()
 
 		var (
 			parsed       bool
 			ret          bool
 			answerText   strings.Builder
 			aiResBuilder strings.Builder
+			canceled     bool
 		)
 		wrapSteam.Recv(func() (string, error) {
 			if ret {
 				return "", io.EOF
 			}
 
-			text, ok := stream.Text(cancelCtx)
+			text, c, ok := stream.Text(cancelCtx)
 			if !ok {
+				canceled = c
 				if !parsed {
 					ret = true
 					return defaultAnswer, nil
@@ -2289,11 +2294,12 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		})
 
 		err := d.in.AskSessionRepo.Create(context.Background(), &model.AskSession{
-			UUID:    req.SessionID,
-			UserID:  uid,
-			Source:  req.Source,
-			Bot:     true,
-			Content: aiResBuilder.String(),
+			UUID:     req.SessionID,
+			UserID:   uid,
+			Source:   req.Source,
+			Bot:      true,
+			Canceled: canceled,
+			Content:  aiResBuilder.String(),
 		})
 		if err != nil {
 			d.logger.WithContext(ctx).Warn("create bot ask session failed")
@@ -2304,20 +2310,24 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 	return wrapSteam, nil
 }
 
-func (d *Discussion) StopAskSession(ctx context.Context, uid uint, sessionID string) error {
+type StopAskSessionReq struct {
+	SeesionID string `json:"session_id" binding:"required"`
+}
+
+func (d *Discussion) StopAskSession(ctx context.Context, uid uint, req StopAskSessionReq) error {
 	var session model.AskSession
-	err := d.in.AskSessionRepo.Get(ctx, &session, repo.QueryWithEqual("user_id", uid), repo.QueryWithEqual("uuid", sessionID))
+	err := d.in.AskSessionRepo.Get(ctx, &session, repo.QueryWithEqual("user_id", uid), repo.QueryWithEqual("uuid", req.SeesionID))
 	if err != nil {
 		return err
 	}
 
-	v, ok := d.streamStop.Load(sessionID)
+	v, ok := d.streamStop.Load(req.SeesionID)
 	if !ok {
 		return nil
 	}
 
 	v.(context.CancelFunc)()
-	d.streamStop.Delete(sessionID)
+	d.streamStop.Delete(req.SeesionID)
 	return nil
 }
 
@@ -2514,7 +2524,10 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 	}
 
 	go func() {
-		defer cancel()
+		defer func() {
+			cancel()
+			d.streamStop.Delete(req.SessionID)
+		}()
 
 		logger := d.logger.WithContext(ctx)
 		err = wrapSteam.RecvOne(SummaryByContentItem{
@@ -2576,10 +2589,13 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 		}
 		defer stream.Close()
 
+		var canceled bool
+
 		var aiResBuilder strings.Builder
 		wrapSteam.Recv(func() (SummaryByContentItem, error) {
-			text, ok := stream.Text(cancelCtx)
+			text, c, ok := stream.Text(cancelCtx)
 			if !ok {
+				canceled = c
 				return SummaryByContentItem{}, io.EOF
 			}
 
@@ -2597,6 +2613,7 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 			Source:       req.Source,
 			Bot:          true,
 			Summary:      true,
+			Canceled:     canceled,
 			SummaryDiscs: model.NewJSONB(summaryDiscs),
 			Content:      aiResBuilder.String(),
 		})

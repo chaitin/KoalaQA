@@ -59,6 +59,8 @@ definitions:
     properties:
       bot:
         type: boolean
+      canceled:
+        type: boolean
       content:
         type: string
       created_at:
@@ -1563,6 +1565,20 @@ definitions:
       uuid:
         type: string
     type: object
+  svc.DiscussionAskReq:
+    properties:
+      group_ids:
+        items:
+          type: integer
+        type: array
+      question:
+        type: string
+      session_id:
+        type: string
+    required:
+    - question
+    - session_id
+    type: object
   svc.DiscussionCompeletReq:
     properties:
       prefix:
@@ -1848,6 +1864,8 @@ definitions:
   svc.ListAsksRes:
     properties:
       bot:
+        type: boolean
+      canceled:
         type: boolean
       content:
         type: string
@@ -2235,6 +2253,20 @@ definitions:
         type: integer
       uv:
         type: integer
+    type: object
+  svc.SummaryByContentReq:
+    properties:
+      forum_id:
+        type: integer
+      group_ids:
+        items:
+          type: integer
+        type: array
+      session_id:
+        type: string
+    required:
+    - forum_id
+    - session_id
     type: object
   svc.URLExportReq:
     properties:
@@ -6048,20 +6080,11 @@ paths:
     post:
       description: user ask
       parameters:
-      - collectionFormat: csv
-        in: query
-        items:
-          type: integer
-        name: group_ids
-        type: array
-      - in: query
-        name: question
-        required: true
-        type: string
-      - in: query
-        name: session_id
-        required: true
-        type: string
+      - description: req params
+        in: body
+        name: req
+        schema:
+          $ref: '#/definitions/svc.DiscussionAskReq'
       produces:
       - text/event-stream
       responses: {}
@@ -6106,25 +6129,6 @@ paths:
       summary: discussion ask history
       tags:
       - discussion
-  /discussion/ask/{ask_session_id}/stop:
-    post:
-      description: stop discussion ask history
-      parameters:
-      - description: ask_session_id
-        in: path
-        name: ask_session_id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/context.Response'
-      summary: stop discussion ask history
-      tags:
-      - discussion
   /discussion/ask/session:
     get:
       description: create or get last session id
@@ -6148,6 +6152,32 @@ paths:
                   type: string
               type: object
       summary: create or get last session id
+      tags:
+      - discussion
+  /discussion/ask/stop:
+    post:
+      consumes:
+      - application/json
+      description: stop discussion ask history
+      parameters:
+      - description: req params
+        in: body
+        name: req
+        schema:
+          $ref: '#/definitions/svc.SummaryByContentReq'
+      - description: ask_session_id
+        in: path
+        name: ask_session_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: stop discussion ask history
       tags:
       - discussion
   /discussion/complete:
@@ -6263,20 +6293,11 @@ paths:
     post:
       description: content summary
       parameters:
-      - in: query
-        name: forum_id
-        required: true
-        type: integer
-      - collectionFormat: csv
-        in: query
-        items:
-          type: integer
-        name: group_ids
-        type: array
-      - in: query
-        name: session_id
-        required: true
-        type: string
+      - description: req params
+        in: body
+        name: req
+        schema:
+          $ref: '#/definitions/svc.SummaryByContentReq'
       produces:
       - text/event-stream
       responses: {}
