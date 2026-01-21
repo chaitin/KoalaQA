@@ -212,16 +212,15 @@ func (d *discussion) Ask(ctx *context.Context) {
 			return false
 		}
 
-		if content == "" {
+		if content.Type != "text" {
+			ctx.SSEvent(content.Type, content.Content)
+			return true
+		}
+		if content.Content == "" {
 			return true
 		}
 
-		if content == svc.AskCancelMagic {
-			ctx.SSEvent("canceled", true)
-			return true
-		}
-
-		ctx.SSEvent("text", fmt.Sprintf("%q", content))
+		ctx.SSEvent("text", fmt.Sprintf("%q", content.Content))
 		return true
 	})
 }
