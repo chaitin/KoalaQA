@@ -4944,13 +4944,6 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/svc.StopAskSessionReq"
                         }
-                    },
-                    {
-                        "type": "string",
-                        "description": "ask_session_id",
-                        "name": "ask_session_id",
-                        "in": "path",
-                        "required": true
                     }
                 ],
                 "responses": {

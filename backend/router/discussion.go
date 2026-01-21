@@ -276,7 +276,6 @@ func (d *discussion) AskHistory(ctx *context.Context) {
 // @Produce json
 // @Accept json
 // @Param req body svc.StopAskSessionReq false "req params"
-// @Param ask_session_id path string true "ask_session_id"
 // @Success 200 {object} context.Response
 // @Router /discussion/ask/stop [post]
 func (d *discussion) StopAskSession(ctx *context.Context) {
