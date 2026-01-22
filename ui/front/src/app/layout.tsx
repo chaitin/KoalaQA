@@ -49,11 +49,13 @@ const alimamashuheitiFont = localFont({
 // 动态生成 metadata
 export async function generateMetadata(): Promise<Metadata> {
   let brandName = 'Koala QA'
+  let brandLogo = '/logo.svg'
   let description = '一个专业的技术讨论和知识分享社区'
   let keywords = ['技术讨论', '问答', '知识分享', '开发者社区']
   try {
     const [brand] = await Promise.all([getSystemBrand()])
     brandName = brand?.text || 'Koala QA'
+    brandLogo = brand?.logo || '/logo.svg'
   } catch (error) {
     // 构建时如果无法获取品牌信息，使用默认值
     safeLogError('Failed to fetch brand info during build', error)
@@ -89,7 +91,7 @@ export async function generateMetadata(): Promise<Metadata> {
       },
     },
     icons: {
-      icon: '/favicon.ico',
+      icon: brandLogo,
     },
   }
 }
