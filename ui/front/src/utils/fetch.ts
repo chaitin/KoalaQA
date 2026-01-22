@@ -164,12 +164,14 @@ class SSEClient<T> {
     try {
       // 检查是否包含SSE格式的数据
       if (this.buffer.includes('data:')) {
-        // 包含SSE格式，按SSE处理
+        // 包含SSE格式，按SSE处理（该方法内部会管理缓冲区）
         this.processStreamingSSEData(callback)
       } else if (this.buffer.includes('{') || this.buffer.includes('[')) {
         console.log('Detected JSON format, processing as JSON chunks')
         // 尝试按JSON块处理
         this.processJsonChunks(callback)
+        // 清空缓冲区
+        this.buffer = ''
       } else {
         console.log('Processing as plain text stream')
         // 纯文本流，直接处理
@@ -177,10 +179,9 @@ class SSEClient<T> {
         if (textData) {
           callback(textData as any)
         }
+        // 清空缓冲区
+        this.buffer = ''
       }
-
-      // 清空缓冲区
-      this.buffer = ''
     } catch (error) {
       console.error('Error processing streaming data:', error)
       // 出错时仍然尝试发送原始数据
@@ -221,8 +222,13 @@ class SSEClient<T> {
     // 处理流式SSE数据格式，立即提取并处理数据
     const lines = this.buffer.split('\n')
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim()
+    // 保留最后一个可能不完整的行（如果缓冲区不是以换行符结尾）
+    const hasTrailingNewline = this.buffer.endsWith('\n')
+    const linesToProcess = hasTrailingNewline ? lines : lines.slice(0, -1)
+    const remainingBuffer = hasTrailingNewline ? '' : lines[lines.length - 1]
+
+    for (let i = 0; i < linesToProcess.length; i++) {
+      const line = linesToProcess[i].trim()
 
       if (line.startsWith('event:')) {
         // 处理 event: 或 event:（有无空格都支持）
@@ -272,6 +278,9 @@ class SSEClient<T> {
         }
       }
     }
+
+    // 更新缓冲区，只保留未处理的不完整行
+    this.buffer = remainingBuffer
   }
 
   private processStandardSSEData(callback: SSECallback<T>) {
