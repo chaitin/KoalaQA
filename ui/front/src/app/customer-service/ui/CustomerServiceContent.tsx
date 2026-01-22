@@ -88,6 +88,7 @@ export default function CustomerServiceContent({
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [isInputFocused, setIsInputFocused] = useState(false)
   const [isServiceEnabled, setIsServiceEnabled] = useState<boolean | null>(null) // null表示正在加载
+  const [isInitialLoading, setIsInitialLoading] = useState(true) // 初始数据是否加载完成
   const [expandedSources, setExpandedSources] = useState<Set<string>>(new Set()) // 展开的搜索结果消息ID
   const [commonQuestions, setCommonQuestions] = useState<string[]>([
     '管理员密码忘了怎么办?',
@@ -283,12 +284,14 @@ export default function CustomerServiceContent({
 
         // 标记已加载
         historyLoadedRef.current = sessionId
+        setIsInitialLoading(false)
       } catch (error) {
         console.error('加载历史对话失败:', error)
         // 加载失败，清空消息
         setMessages([])
         // 即使加载失败，也标记为已尝试加载，避免重复请求
         historyLoadedRef.current = sessionId
+        setIsInitialLoading(false)
       }
     }
 
@@ -473,6 +476,25 @@ export default function CustomerServiceContent({
               }
               return newMessages
             })
+            return
+          }
+
+          // 检测后端发送的 cancel 事件（用户手动停止生成）
+          if (data && typeof data === 'object' && (data as any).cancel === true) {
+            setIsLoading(false)
+            setMessages((prev) => {
+              const newMessages = [...prev]
+              const index = newMessages.findIndex((m) => m.id === messageId)
+              if (index !== -1) {
+                newMessages[index] = {
+                  ...newMessages[index],
+                  isComplete: true,
+                  isInterrupted: true, // 标记为被中断
+                }
+              }
+              return newMessages
+            })
+            summarySseClient.unsubscribe()
             return
           }
 
@@ -874,6 +896,28 @@ export default function CustomerServiceContent({
             return
           }
 
+          // 检测后端发送的 cancel 事件（用户手动停止生成）
+          if (data && typeof data === 'object' && (data as any).cancel === true) {
+            setIsLoading(false)
+            setIsWaiting(false)
+            setMessages((prev) => {
+              const newMessages = [...prev]
+              const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+              if (index !== -1) {
+                newMessages[index] = {
+                  ...newMessages[index],
+                  isComplete: true,
+                  isInterrupted: true, // 标记为被中断
+                }
+              }
+              return newMessages
+            })
+            currentMessageRef.current = null
+            askSseClient.unsubscribe()
+            resolve()
+            return
+          }
+
           let textToAdd = ''
           if (typeof data === 'string') {
             // 处理 JSON 字符串化的内容（后端使用 fmt.Sprintf("%q", content)）
@@ -984,19 +1028,11 @@ export default function CustomerServiceContent({
     }
   }
 
-  // 中断对话
+  // 中断对话 - 只调用后端 API，等待后端发送 cancel 事件
   const handleStop = useCallback(async () => {
-    // 1. 取消当前的 SSE 连接
-    if (sseClientRef.current) {
-      sseClientRef.current.unsubscribe()
-      sseClientRef.current = null
-    }
-
-    // 2. 调用后端 API 停止流式输出
     const currentSessionId = getCurrentSessionId()
     if (currentSessionId) {
       try {
-        // 使用默认的 forum_id (0)，因为停止操作不需要特定板块
         await postDiscussionAskStop({
           session_id: currentSessionId,
         })
@@ -1004,29 +1040,7 @@ export default function CustomerServiceContent({
         console.error('停止对话失败:', error)
       }
     }
-
-    // 3. 更新状态
-    setIsLoading(false)
-    setIsWaiting(false)
-
-    // 4. 标记当前消息为已完成（被中断），保留已输出的内容
-    if (currentMessageRef.current) {
-      const messageId = currentMessageRef.current.id
-      setMessages((prev) => {
-        const newMessages = [...prev]
-        const index = newMessages.findIndex((m) => m.id === messageId)
-        if (index !== -1) {
-          newMessages[index] = {
-            ...newMessages[index],
-            isComplete: true,
-            isInterrupted: true, // 标记为被中断
-          }
-        }
-        return newMessages
-      })
-      currentMessageRef.current = null
-    }
-  }, [getCurrentSessionId, forumId])
+  }, [getCurrentSessionId])
 
   // 点击引用帖
   const handleSourceClick = (discussion: ModelDiscussionListItem) => {
@@ -1608,19 +1622,33 @@ export default function CustomerServiceContent({
                                       }}
                                     >
                                       <EditorContent content={message.content} />
-                                      {/* 中断提示 */}
+                                      {/* 中断提示 - 居中显示 */}
                                       {message.isInterrupted && (
-                                        <Typography
-                                          variant='body2'
+                                        <Box
                                           sx={{
-                                            mt: 1,
-                                            color: 'text.disabled',
-                                            fontSize: '0.85rem',
-                                            fontStyle: 'italic',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            mt: 2,
+                                            pt: 2,
+                                            borderTop: '1px dashed',
+                                            borderColor: 'divider',
                                           }}
                                         >
-                                          (已暂停生成)
-                                        </Typography>
+                                          <Typography
+                                            variant='body2'
+                                            sx={{
+                                              color: 'text.secondary',
+                                              fontSize: '0.85rem',
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              gap: 0.5,
+                                            }}
+                                          >
+                                            <StopIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+                                            已停止生成
+                                          </Typography>
+                                        </Box>
                                       )}
                                     </Box>
                                   )}
@@ -1981,56 +2009,58 @@ export default function CustomerServiceContent({
                 },
               }}
             />
-            {/* 发送/停止按钮 - 位于输入框内部右下角 */}
-            <Box
-              sx={{
-                position: 'absolute',
-                bottom: 8,
-                right: 8,
-                zIndex: 1,
-              }}
-            >
-              {isLoading ? (
-                <Tooltip title='停止生成' arrow>
-                  <Box sx={{ position: 'relative', display: 'inline-flex' }}>
-                    <CircularProgress
-                      size={26}
-                      thickness={2}
-                      sx={{
-                        color: 'error.main',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                      }}
-                    />
+            {/* 发送/停止按钮 - 位于输入框内部右下角，初始加载时隐藏 */}
+            {!isInitialLoading && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  bottom: 8,
+                  right: 8,
+                  zIndex: 1,
+                }}
+              >
+                {isLoading ? (
+                  <Tooltip title='停止生成' arrow>
+                    <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+                      <CircularProgress
+                        size={26}
+                        thickness={2}
+                        sx={{
+                          color: 'error.main',
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                        }}
+                      />
+                      <IconButton
+                        color='error'
+                        onClick={handleStop}
+                        sx={{
+                          width: 26,
+                          height: 26,
+                        }}
+                      >
+                        <StopIcon sx={{ fontSize: 20 }} />
+                      </IconButton>
+                    </Box>
+                  </Tooltip>
+                ) : (
+                  <Tooltip title='发送消息' arrow>
                     <IconButton
-                      color='error'
-                      onClick={handleStop}
+                      color='primary'
+                      onClick={handleSend}
+                      disabled={!inputValue.trim()}
                       sx={{
                         width: 26,
                         height: 26,
                       }}
                     >
-                      <StopIcon sx={{ fontSize: 20 }} />
+                      <SendIcon sx={{ fontSize: 20 }} />
                     </IconButton>
-                  </Box>
-                </Tooltip>
-              ) : (
-                <Tooltip title='发送消息' arrow>
-                  <IconButton
-                    color='primary'
-                    onClick={handleSend}
-                    disabled={!inputValue.trim()}
-                    sx={{
-                      width: 26,
-                      height: 26,
-                    }}
-                  >
-                    <SendIcon sx={{ fontSize: 20 }} />
-                  </IconButton>
-                </Tooltip>
-              )}
-            </Box>
+                  </Tooltip>
+                )}
+              </Box>
+            )}
           </Box>
         </Box>
       </Box>
