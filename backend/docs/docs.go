@@ -4868,25 +4868,12 @@ const docTemplate = `{
                 "summary": "user ask",
                 "parameters": [
                     {
-                        "type": "array",
-                        "items": {
-                            "type": "integer"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "group_ids",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "question",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "name": "session_id",
-                        "in": "query",
-                        "required": true
+                        "description": "req params",
+                        "name": "req",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/svc.DiscussionAskReq"
+                        }
                     }
                 ],
                 "responses": {}
@@ -4931,6 +4918,39 @@ const docTemplate = `{
                                     }
                                 }
                             ]
+                        }
+                    }
+                }
+            }
+        },
+        "/discussion/ask/stop": {
+            "post": {
+                "description": "stop discussion ask history",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "discussion"
+                ],
+                "summary": "stop discussion ask history",
+                "parameters": [
+                    {
+                        "description": "req params",
+                        "name": "req",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/svc.StopAskSessionReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
                         }
                     }
                 }
@@ -5203,25 +5223,12 @@ const docTemplate = `{
                 "summary": "content summary",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "name": "forum_id",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "integer"
-                        },
-                        "collectionFormat": "csv",
-                        "name": "group_ids",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "session_id",
-                        "in": "query",
-                        "required": true
+                        "description": "req params",
+                        "name": "req",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/svc.SummaryByContentReq"
+                        }
                     }
                 ],
                 "responses": {}
@@ -7836,6 +7843,9 @@ const docTemplate = `{
                 "bot": {
                     "type": "boolean"
                 },
+                "canceled": {
+                    "type": "boolean"
+                },
                 "content": {
                     "type": "string"
                 },
@@ -10003,6 +10013,27 @@ const docTemplate = `{
                 }
             }
         },
+        "svc.DiscussionAskReq": {
+            "type": "object",
+            "required": [
+                "question",
+                "session_id"
+            ],
+            "properties": {
+                "group_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "question": {
+                    "type": "string"
+                },
+                "session_id": {
+                    "type": "string"
+                }
+            }
+        },
         "svc.DiscussionCompeletReq": {
             "type": "object",
             "properties": {
@@ -10434,6 +10465,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "bot": {
+                    "type": "boolean"
+                },
+                "canceled": {
                     "type": "boolean"
                 },
                 "content": {
@@ -11023,6 +11057,38 @@ const docTemplate = `{
                 },
                 "uv": {
                     "type": "integer"
+                }
+            }
+        },
+        "svc.StopAskSessionReq": {
+            "type": "object",
+            "required": [
+                "session_id"
+            ],
+            "properties": {
+                "session_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "svc.SummaryByContentReq": {
+            "type": "object",
+            "required": [
+                "forum_id",
+                "session_id"
+            ],
+            "properties": {
+                "forum_id": {
+                    "type": "integer"
+                },
+                "group_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "session_id": {
+                    "type": "string"
                 }
             }
         },

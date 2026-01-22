@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
@@ -68,14 +69,16 @@ type Discussion struct {
 
 	sf          singleflight.Group
 	logger      *glog.Logger
+	streamStop  sync.Map
 	webhookType map[model.DiscussionType]message.Type
 }
 
 func newDiscussion(in discussionIn) *Discussion {
 	return &Discussion{
-		in:     in,
-		logger: glog.Module("svc", "discussion"),
-		sf:     singleflight.Group{},
+		in:         in,
+		logger:     glog.Module("svc", "discussion"),
+		sf:         singleflight.Group{},
+		streamStop: sync.Map{},
 		webhookType: map[model.DiscussionType]message.Type{
 			model.DiscussionTypeQA:       message.TypeNewQA,
 			model.DiscussionTypeFeedback: message.TypeNewFeedback,
@@ -124,6 +127,7 @@ var (
 	errRatelimit        = errors.New("ratelimit")
 	errPermission       = errors.New("permission denied")
 	errAskSessionClosed = errors.New("session closed")
+	errStreaming        = errors.New("streaming")
 )
 
 func (d *Discussion) Create(ctx context.Context, user model.UserInfo, req DiscussionCreateReq) (string, error) {
@@ -1814,10 +1818,15 @@ func (d *Discussion) Complete(ctx context.Context, req DiscussionCompeletReq) (s
 		return "", nil
 	}
 
-	return d.in.LLM.Chat(ctx, llm.SystemCompletePrompt, llm.UserCompleteTemplate, map[string]any{
+	userPrompt, err := llm.UserCompleteTemplate(map[string]string{
 		"Prefix": req.Prefix,
 		"Suffix": req.Suffix,
 	})
+	if err != nil {
+		return "", err
+	}
+
+	return d.in.LLM.Chat(ctx, llm.SystemCompletePrompt, userPrompt, nil)
 }
 
 type ResolveFeedbackReq struct {
@@ -2149,7 +2158,7 @@ func (d *Discussion) AskSessionClosed(ctx context.Context, uid uint, sessionID s
 	return lastAsk.CreatedAt.Time().Add(time.Hour).Before(time.Now()), nil
 }
 
-func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*LLMStream[string], error) {
+func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*LLMStream[AskSessionStreamItem], error) {
 	if !d.allow("disc_ask", req.SessionID) {
 		return nil, errRatelimit
 	}
@@ -2192,6 +2201,7 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		repo.QueryWithOrderBy("created_at ASC, id ASC"),
 		repo.QueryWithEqual("uuid", req.SessionID),
 		repo.QueryWithEqual("summary", false),
+		repo.QueryWithEqual("canceled", false),
 		repo.QueryWithEqual("user_id", uid),
 	)
 	if err != nil {
@@ -2208,81 +2218,136 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		return nil, err
 	}
 
-	defaultAnswer := "无法回答问题"
-	stream, err := d.in.LLM.StreamAnswer(ctx, llm.SystemChatNoRefPrompt, GenerateReq{
-		Context:       askHistories,
-		Question:      req.Question,
-		Groups:        groups,
-		Prompt:        req.Question,
-		DefaultAnswer: defaultAnswer,
-		NewCommentID:  0,
-		Debug:         d.in.Cfg.RAG.DEBUG,
-	})
-	if err != nil {
-		return nil, err
+	cancelCtx, cancel := context.WithCancel(ctx)
+
+	_, loaded := d.streamStop.LoadOrStore(req.SessionID, cancel)
+	if loaded {
+		return nil, errStreaming
 	}
 
-	wrapSteam := NewLLMStream[string]()
+	defaultAnswer := "无法回答问题"
+	wrapSteam := NewLLMStream[AskSessionStreamItem]()
 
 	go func() {
-		defer stream.Close()
+		defer func() {
+			cancel()
+			d.streamStop.Delete(req.SessionID)
+		}()
 
 		var (
-			parsed       bool
-			ret          bool
-			answerText   strings.Builder
 			aiResBuilder strings.Builder
+			canceled     bool
+			cancelText   = "已取消生成"
 		)
-		wrapSteam.Recv(func() (string, error) {
-			if ret {
-				return "", io.EOF
-			}
 
-			text, ok := stream.Text(ctx)
-			if !ok {
-				if !parsed {
-					ret = true
-					return defaultAnswer, nil
-				}
-				return "", io.EOF
-			}
-			if !parsed {
-				length := min(len(text), 5-answerText.Len())
-				if answerText.Len() < 5 {
-					answerText.WriteString(text[:length])
-					if answerText.Len() < 5 {
-						return "", nil
-					}
-				}
-
-				switch strings.TrimSpace(answerText.String()) {
-				case "true":
-					text = text[length:]
-				case "false":
-					text = defaultAnswer
-					if !d.in.Cfg.RAG.DEBUG {
-						ret = true
-					} else {
-						d.logger.WithContext(ctx).With("answer_text", answerText.String()).Info("ask answer text")
-					}
-				default:
-					text = answerText.String() + text[length:]
-				}
-
-				parsed = true
-			}
-
-			aiResBuilder.WriteString(text)
-
-			return text, nil
+		stream, err := d.in.LLM.StreamAnswer(cancelCtx, llm.SystemChatNoRefPrompt, GenerateReq{
+			Context:       askHistories,
+			Question:      req.Question,
+			Groups:        groups,
+			Prompt:        req.Question,
+			DefaultAnswer: defaultAnswer,
+			NewCommentID:  0,
+			Debug:         d.in.Cfg.RAG.DEBUG,
 		})
+		if err != nil {
+			if errors.Is(err, context.Canceled) {
+				canceled = true
+				aiResBuilder.WriteString(cancelText)
+				err = wrapSteam.RecvOne(AskSessionStreamItem{
+					Type:    "text",
+					Content: cancelText,
+				}, true)
+				if err != nil {
+					d.logger.WithContext(ctx).WithErr(err).Warn("wrap stream read failed")
+				}
+			} else {
+				d.logger.WithContext(ctx).WithErr(err).Warn("stream answer failed")
+				return
+			}
+		} else {
+			defer stream.Close()
 
-		err := d.in.AskSessionRepo.Create(context.Background(), &model.AskSession{
-			UUID:    req.SessionID,
-			UserID:  uid,
-			Source:  req.Source,
-			Bot:     true,
-			Content: aiResBuilder.String(),
+			var (
+				parsed     bool
+				ret        bool
+				answerText strings.Builder
+			)
+			wrapSteam.Recv(func() (AskSessionStreamItem, error) {
+				if ret {
+					return AskSessionStreamItem{}, io.EOF
+				}
+
+				text, c, ok := stream.Text(cancelCtx)
+				if !ok {
+					canceled = c
+					if !parsed {
+						ret = true
+						if canceled {
+							text = cancelText
+							aiResBuilder.WriteString(text)
+							return AskSessionStreamItem{
+								Type:    "text",
+								Content: text,
+							}, nil
+						}
+						return AskSessionStreamItem{
+							Type:    "text",
+							Content: defaultAnswer,
+						}, nil
+					} else if canceled {
+						ret = true
+						return AskSessionStreamItem{
+							Type:    "canceled",
+							Content: "true",
+						}, nil
+					}
+					return AskSessionStreamItem{}, io.EOF
+				}
+				if !parsed {
+					length := min(len(text), 5-answerText.Len())
+					if answerText.Len() < 5 {
+						answerText.WriteString(text[:length])
+						if answerText.Len() < 5 {
+							return AskSessionStreamItem{
+								Type:    "text",
+								Content: "",
+							}, nil
+						}
+					}
+
+					switch strings.TrimSpace(answerText.String()) {
+					case "true":
+						text = text[length:]
+					case "false":
+						text = defaultAnswer
+						if !d.in.Cfg.RAG.DEBUG {
+							ret = true
+						} else {
+							d.logger.WithContext(ctx).With("answer_text", answerText.String()).Info("ask answer text")
+						}
+					default:
+						text = answerText.String() + text[length:]
+					}
+
+					parsed = true
+				}
+
+				aiResBuilder.WriteString(text)
+
+				return AskSessionStreamItem{
+					Type:    "text",
+					Content: text,
+				}, nil
+			})
+		}
+
+		err = d.in.AskSessionRepo.Create(context.Background(), &model.AskSession{
+			UUID:     req.SessionID,
+			UserID:   uid,
+			Source:   req.Source,
+			Bot:      true,
+			Canceled: canceled,
+			Content:  aiResBuilder.String(),
 		})
 		if err != nil {
 			d.logger.WithContext(ctx).Warn("create bot ask session failed")
@@ -2291,6 +2356,26 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 	}()
 
 	return wrapSteam, nil
+}
+
+type StopAskSessionReq struct {
+	SeesionID string `json:"session_id" binding:"required"`
+}
+
+func (d *Discussion) StopAskSession(ctx context.Context, uid uint, req StopAskSessionReq) error {
+	var session model.AskSession
+	err := d.in.AskSessionRepo.Get(ctx, &session, repo.QueryWithEqual("user_id", uid), repo.QueryWithEqual("uuid", req.SeesionID))
+	if err != nil {
+		return err
+	}
+
+	v, ok := d.streamStop.Load(req.SeesionID)
+	if !ok {
+		return nil
+	}
+
+	v.(context.CancelFunc)()
+	return nil
 }
 
 func (d *Discussion) AskHistory(ctx context.Context, sessionID string, uid uint) (*model.ListRes[model.AskSession], error) {
@@ -2376,12 +2461,12 @@ type SummaryByContentReq struct {
 	Source    model.AskSessionSource `json:"-" swaggerignore:"true"`
 }
 
-type SummaryByContentItem struct {
+type AskSessionStreamItem struct {
 	Type    string
 	Content string
 }
 
-func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req SummaryByContentReq) (*LLMStream[SummaryByContentItem], error) {
+func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req SummaryByContentReq) (*LLMStream[AskSessionStreamItem], error) {
 	if !d.allow("disc_ask", req.SessionID) {
 		return nil, errRatelimit
 	}
@@ -2464,95 +2549,166 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 	}
 
 	lastContent := histories[len(histories)-1]
-	discs, err := d.Search(ctx, DiscussionSearchReq{
-		Keyword:             lastContent,
-		ForumID:             req.ForumID,
-		SimilarityThreshold: 0.2,
-		MaxChunksPerDoc:     1,
-		Metadata:            metadata,
-		Histories:           histories[:len(histories)-1],
-	})
-	if err != nil {
-		return nil, err
+
+	wrapSteam := NewLLMStream[AskSessionStreamItem]()
+
+	cancelCtx, cancel := context.WithCancel(ctx)
+
+	_, loaded := d.streamStop.LoadOrStore(req.SessionID, cancel)
+	if loaded {
+		return nil, errStreaming
 	}
 
-	wrapSteam := NewLLMStream[SummaryByContentItem]()
-
 	go func() {
+		defer func() {
+			cancel()
+			d.streamStop.Delete(req.SessionID)
+		}()
+
 		logger := d.logger.WithContext(ctx)
-		err = wrapSteam.RecvOne(SummaryByContentItem{
-			Type:    "disc_count",
-			Content: strconv.Itoa(len(discs)),
-		}, len(discs) == 0)
+
+		var (
+			canceled     bool
+			cancelText   = "已取消生成"
+			aiResBuilder strings.Builder
+			summaryDiscs []model.AskSessionSummaryDisc
+		)
+
+		discs, err := d.Search(cancelCtx, DiscussionSearchReq{
+			Keyword:             lastContent,
+			ForumID:             req.ForumID,
+			SimilarityThreshold: 0.2,
+			MaxChunksPerDoc:     1,
+			Metadata:            metadata,
+			Histories:           histories[:len(histories)-1],
+		})
 		if err != nil {
-			logger.WithErr(err).Warn("send disc count failed")
-			return
-		}
-
-		if len(discs) == 0 {
-			return
-		}
-
-		summaryDiscs := make([]model.AskSessionSummaryDisc, len(discs))
-		for i, disc := range discs {
-			discItem := model.AskSessionSummaryDisc{
-				Title:   disc.Title,
-				ForumID: disc.ForumID,
-				UUID:    disc.UUID,
+			if errors.Is(err, context.Canceled) {
+				canceled = true
+				aiResBuilder.WriteString(cancelText)
+				err = wrapSteam.RecvOne(AskSessionStreamItem{
+					Type:    "text",
+					Content: cancelText,
+				}, true)
+				if err != nil {
+					logger.WithErr(err).Warn("wrapstream recv failed")
+				}
+			} else {
+				logger.WithErr(err).Warn("search failed")
+				err = wrapSteam.RecvOne(AskSessionStreamItem{
+					Type:    "summary_failed",
+					Content: "true",
+				}, true)
+				if err != nil {
+					logger.WithErr(err).Warn("send summary result failed")
+				}
+				return
 			}
-			summaryDiscs[i] = discItem
-			discBytes, err := json.Marshal(discItem)
+		} else {
+			err = wrapSteam.RecvOne(AskSessionStreamItem{
+				Type:    "disc_count",
+				Content: strconv.Itoa(len(discs)),
+			}, len(discs) == 0)
 			if err != nil {
-				logger.WithErr(err).With("disc", discItem).Warn("marshal disc failed")
+				logger.WithErr(err).Warn("send disc count failed")
 				return
 			}
 
-			err = wrapSteam.RecvOne(SummaryByContentItem{
-				Type:    "disc",
-				Content: string(discBytes),
-			}, false)
-			if err != nil {
-				logger.WithErr(err).Warn("send disc failed")
+			if len(discs) == 0 {
 				return
 			}
-		}
 
-		discUUIDs := make([]string, 0)
-		for _, disc := range discs {
-			discUUIDs = append(discUUIDs, disc.UUID)
-		}
+			summaryDiscs = make([]model.AskSessionSummaryDisc, len(discs))
+			for i, disc := range discs {
+				discItem := model.AskSessionSummaryDisc{
+					Title:   disc.Title,
+					ForumID: disc.ForumID,
+					UUID:    disc.UUID,
+				}
+				summaryDiscs[i] = discItem
+				discBytes, err := json.Marshal(discItem)
+				if err != nil {
+					logger.WithErr(err).With("disc", discItem).Warn("marshal disc failed")
+					return
+				}
 
-		stream, err := d.Summary(ctx, uid, DiscussionSummaryReq{
-			Keyword: lastContent,
-			UUIDs:   discUUIDs,
-		}, true)
-		if err != nil {
-			logger.WithErr(err).Warn("sunmary failed")
-			err = wrapSteam.RecvOne(SummaryByContentItem{
-				Type:    "summary_failed",
-				Content: "true",
+				err = wrapSteam.RecvOne(AskSessionStreamItem{
+					Type:    "disc",
+					Content: string(discBytes),
+				}, false)
+				if err != nil {
+					logger.WithErr(err).Warn("send disc failed")
+					return
+				}
+			}
+
+			discUUIDs := make([]string, 0)
+			for _, disc := range discs {
+				discUUIDs = append(discUUIDs, disc.UUID)
+			}
+
+			stream, err := d.Summary(cancelCtx, uid, DiscussionSummaryReq{
+				Keyword: lastContent,
+				UUIDs:   discUUIDs,
 			}, true)
 			if err != nil {
-				logger.WithErr(err).Warn("send summary result failed")
+				if errors.Is(err, context.Canceled) {
+					canceled = true
+					aiResBuilder.WriteString(cancelText)
+					err = wrapSteam.RecvOne(AskSessionStreamItem{
+						Type:    "text",
+						Content: cancelText,
+					}, true)
+					if err != nil {
+						logger.WithErr(err).Warn("wrapstream recv failed")
+					}
+				} else {
+					logger.WithErr(err).Warn("sunmary failed")
+					err = wrapSteam.RecvOne(AskSessionStreamItem{
+						Type:    "summary_failed",
+						Content: "true",
+					}, true)
+					if err != nil {
+						logger.WithErr(err).Warn("send summary result failed")
+					}
+					return
+				}
+			} else {
+				defer stream.Close()
+
+				wrapSteam.Recv(func() (AskSessionStreamItem, error) {
+					if canceled {
+						return AskSessionStreamItem{}, io.EOF
+					}
+					text, c, ok := stream.Text(cancelCtx)
+					if !ok {
+						canceled = c
+						if canceled {
+							if aiResBuilder.Len() == 0 {
+								aiResBuilder.WriteString(cancelText)
+								return AskSessionStreamItem{
+									Type:    "text",
+									Content: cancelText,
+								}, nil
+							}
+
+							return AskSessionStreamItem{
+								Type:    "canceled",
+								Content: "true",
+							}, nil
+						}
+						return AskSessionStreamItem{}, io.EOF
+					}
+
+					aiResBuilder.WriteString(text)
+
+					return AskSessionStreamItem{
+						Type:    "text",
+						Content: text,
+					}, nil
+				})
 			}
-			return
 		}
-		defer stream.Close()
-
-		var aiResBuilder strings.Builder
-		wrapSteam.Recv(func() (SummaryByContentItem, error) {
-			text, ok := stream.Text(ctx)
-			if !ok {
-				return SummaryByContentItem{}, io.EOF
-			}
-
-			aiResBuilder.WriteString(text)
-
-			return SummaryByContentItem{
-				Type:    "text",
-				Content: text,
-			}, nil
-		})
 
 		err = d.in.AskSessionRepo.Create(context.Background(), &model.AskSession{
 			UUID:         req.SessionID,
@@ -2560,6 +2716,7 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 			Source:       req.Source,
 			Bot:          true,
 			Summary:      true,
+			Canceled:     canceled,
 			SummaryDiscs: model.NewJSONB(summaryDiscs),
 			Content:      aiResBuilder.String(),
 		})

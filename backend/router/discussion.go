@@ -33,6 +33,7 @@ func (d *discussion) Route(h server.Handler) {
 	g.GET("/:disc_id/follow", d.FollowInfo)
 	g.POST("/ask", d.Ask)
 	g.GET("/ask/:ask_session_id", d.AskHistory)
+	g.POST("/ask/stop", d.StopAskSession)
 	g.GET("/ask/session", d.CreateOrLastSession)
 	g.POST("/summary/content", d.SummaryByContent)
 }
@@ -100,10 +101,9 @@ func (d *discussion) Summary(ctx *context.Context) {
 	}
 	defer stream.Close()
 
-	ctx.Writer.Header().Set("X-Accel-Buffering", "no")
-
+	ctx.Header("X-Accel-Buffering", "no")
 	ctx.Stream(func(_ io.Writer) bool {
-		content, ok := stream.Text(ctx)
+		content, _, ok := stream.Text(ctx)
 		if !ok {
 			ctx.SSEvent("end", true)
 			return false
@@ -181,7 +181,7 @@ func (d *discussion) FollowInfo(ctx *context.Context) {
 // @Description user ask
 // @Tags discussion
 // @Produce text/event-stream
-// @Param req query svc.DiscussionAskReq false "req params"
+// @Param req body svc.DiscussionAskReq false "req params"
 // @Router /discussion/ask [post]
 func (d *discussion) Ask(ctx *context.Context) {
 	var req svc.DiscussionAskReq
@@ -202,20 +202,24 @@ func (d *discussion) Ask(ctx *context.Context) {
 	}
 	defer stream.Close()
 
-	ctx.Writer.Header().Set("X-Accel-Buffering", "no")
-
+	ctx.Header("X-Accel-Buffering", "no")
+	ctx.Header("Content-Type", "text/event-stream;charset=utf-8")
 	ctx.Stream(func(_ io.Writer) bool {
-		content, ok := stream.Text(ctx)
+		content, _, ok := stream.Text(ctx)
 		if !ok {
 			ctx.SSEvent("end", true)
 			return false
 		}
 
-		if content == "" {
+		if content.Type != "text" {
+			ctx.SSEvent(content.Type, content.Content)
+			return true
+		}
+		if content.Content == "" {
 			return true
 		}
 
-		ctx.SSEvent("text", fmt.Sprintf("%q", content))
+		ctx.SSEvent("text", fmt.Sprintf("%q", content.Content))
 		return true
 	})
 }
@@ -263,12 +267,37 @@ func (d *discussion) AskHistory(ctx *context.Context) {
 	ctx.Success(res)
 }
 
+// StopAskSession
+// @Summary stop discussion ask history
+// @Description stop discussion ask history
+// @Tags discussion
+// @Produce json
+// @Accept json
+// @Param req body svc.StopAskSessionReq false "req params"
+// @Success 200 {object} context.Response
+// @Router /discussion/ask/stop [post]
+func (d *discussion) StopAskSession(ctx *context.Context) {
+	var req svc.StopAskSessionReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+	err = d.disc.StopAskSession(ctx, ctx.GetUser().UID, req)
+	if err != nil {
+		ctx.InternalError(err, "stop ask session failed")
+		return
+	}
+
+	ctx.Success(nil)
+}
+
 // SummaryByContent
 // @Summary content summary
 // @Description content summary
 // @Tags discussion
 // @Produce text/event-stream
-// @Param req query svc.SummaryByContentReq false "req params"
+// @Param req body svc.SummaryByContentReq false "req params"
 // @Router /discussion/summary/content [post]
 func (d *discussion) SummaryByContent(ctx *context.Context) {
 	var req svc.SummaryByContentReq
@@ -289,9 +318,9 @@ func (d *discussion) SummaryByContent(ctx *context.Context) {
 	}
 	defer stream.Close()
 
-	ctx.Writer.Header().Set("X-Accel-Buffering", "no")
+	ctx.Header("X-Accel-Buffering", "no")
 	ctx.Stream(func(_ io.Writer) bool {
-		data, ok := stream.Text(ctx)
+		data, _, ok := stream.Text(ctx)
 		if !ok {
 			ctx.SSEvent("end", true)
 			return false

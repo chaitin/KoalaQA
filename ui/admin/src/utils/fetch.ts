@@ -10,6 +10,7 @@ interface SSEClientOptions {
   onCancel?: SSEErrorCallback;
   onComplete?: SSECompleteCallback;
   method?: string;
+  streamMode?: boolean; // 是否启用流式模式（处理每个数据块）
 }
 
 class SSEClient<T> {
@@ -27,7 +28,7 @@ class SSEClient<T> {
     this.currentEvent = null;
   }
 
-  public subscribe(body: BodyInit, onMessage: SSECallback<T>) {
+  public subscribe(body: BodyInit, onMessage: SSECallback<T>, additionalHeaders?: Record<string, string>) {
     this.controller.abort();
     this.controller = new AbortController();
     this.currentEvent = null; // 重置事件状态
@@ -39,6 +40,12 @@ class SSEClient<T> {
       onComplete,
       method = 'POST',
     } = this.options;
+    
+    // 合并额外的 headers
+    const mergedHeaders = {
+      ...headers,
+      ...additionalHeaders,
+    };
 
     const timeoutDuration = 300000;
     const timeoutId = setTimeout(() => {
@@ -58,10 +65,11 @@ class SSEClient<T> {
       headers: {
         Accept: 'text/event-stream',
         ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
-        ...headers,
+        ...mergedHeaders,
       },
       body: hasBody ? body : undefined,
       signal: this.controller.signal,
+      credentials: 'include',
     })
       .then(async response => {
         if (!response.ok) {
@@ -72,6 +80,13 @@ class SSEClient<T> {
           clearTimeout(timeoutId);
           onError?.(new Error('No response body'));
           return;
+        }
+
+        // 检查响应类型，如果是 text/event-stream，自动启用流式模式
+        const contentType = response.headers.get('content-type');
+        const isEventStream = contentType?.includes('text/event-stream');
+        if (isEventStream && !this.options.streamMode) {
+          this.options.streamMode = true;
         }
 
         onOpen?.();
@@ -102,21 +117,88 @@ class SSEClient<T> {
     if (!chunk) return;
 
     this.buffer += this.textDecoder.decode(chunk, { stream: true });
+
+    if (this.options.streamMode) {
+      // 流式模式：立即处理缓冲区中的数据，不等待完整消息
+      this.processStreamingData(callback);
+    } else {
+      // 标准SSE模式：按完整消息处理
+      this.processStandardSSEData(callback);
+    }
+  }
+
+  private processStreamingData(callback: SSECallback<T>) {
+    // 流式模式：立即处理缓冲区中的数据
+    if (this.buffer.length === 0) return;
+
+    const lines = this.buffer.split('\n');
+    let processedLines = 0;
+
+    for (let i = 0; i < lines.length - 1; i++) {
+      const line = lines[i].trim();
+
+      if (line.startsWith('event:') || line.startsWith('event: ')) {
+        this.currentEvent = line.startsWith('event: ') ? line.slice(7) : line.slice(6);
+        processedLines = i + 1;
+      } else if (line.startsWith('data:') || line.startsWith('data: ')) {
+        const dataContent = line.startsWith('data: ') ? line.slice(6) : line.slice(5);
+
+        if (dataContent && dataContent !== 'csrf token mismatch') {
+          // 如果是 end 事件，不调用 callback
+          if (this.currentEvent === 'end') {
+            this.currentEvent = null;
+            processedLines = i + 1;
+            continue;
+          }
+
+          try {
+            // 尝试解析为JSON
+            const parsedData = JSON.parse(dataContent);
+            // 如果有 event，将其包含在数据对象中
+            if (this.currentEvent) {
+              callback({ event: this.currentEvent, data: parsedData } as T);
+              this.currentEvent = null;
+            } else {
+              callback(parsedData as T);
+            }
+          } catch (error) {
+            // 不是JSON，直接作为文本处理
+            if (this.currentEvent) {
+              callback({ event: this.currentEvent, data: dataContent } as T);
+              this.currentEvent = null;
+            } else {
+              callback(dataContent as any);
+            }
+          }
+        }
+        processedLines = i + 1;
+      } else if (line === '') {
+        // 空行表示消息结束，但流式模式下我们已经处理了数据
+        processedLines = i + 1;
+      }
+    }
+
+    // 保留未处理的行
+    this.buffer = lines.slice(processedLines).join('\n');
+  }
+
+  private processStandardSSEData(callback: SSECallback<T>) {
+    // 标准SSE模式：按完整的SSE消息格式处理
     const lines = this.buffer.split('\n');
     let currentData = '';
     let isDataLine = false;
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
-      if (line.startsWith('event: ')) {
-        this.currentEvent = line.slice(7);
-      } else if (line.startsWith('data: ')) {
+      if (line.startsWith('event:') || line.startsWith('event: ')) {
+        this.currentEvent = line.startsWith('event: ') ? line.slice(7) : line.slice(6);
+      } else if (line.startsWith('data:') || line.startsWith('data: ')) {
         if (isDataLine) {
           currentData += '\n';
         }
-        currentData += line.slice(6);
+        currentData += line.startsWith('data: ') ? line.slice(6) : line.slice(5);
         isDataLine = true;
-      } else if (line === '') {
+      } else if (line === '' || line === '\r') {
         if (isDataLine) {
           try {
             const parsedData = JSON.parse(currentData);
@@ -142,7 +224,8 @@ class SSEClient<T> {
       }
     }
 
-    this.buffer = lines[lines.length - 1];
+    // 保留未处理的行
+    this.buffer = isDataLine ? currentData : (lines[lines.length - 1] || '');
   }
 
   public unsubscribe() {
