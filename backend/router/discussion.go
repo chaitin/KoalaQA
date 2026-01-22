@@ -101,8 +101,7 @@ func (d *discussion) Summary(ctx *context.Context) {
 	}
 	defer stream.Close()
 
-	ctx.Writer.Header().Set("X-Accel-Buffering", "no")
-
+	ctx.Header("X-Accel-Buffering", "no")
 	ctx.Stream(func(_ io.Writer) bool {
 		content, _, ok := stream.Text(ctx)
 		if !ok {
@@ -203,8 +202,8 @@ func (d *discussion) Ask(ctx *context.Context) {
 	}
 	defer stream.Close()
 
-	ctx.Writer.Header().Set("X-Accel-Buffering", "no")
-
+	ctx.Header("X-Accel-Buffering", "no")
+	ctx.Header("Content-Type", "text/event-stream;charset=utf-8")
 	ctx.Stream(func(_ io.Writer) bool {
 		content, _, ok := stream.Text(ctx)
 		if !ok {
@@ -319,7 +318,7 @@ func (d *discussion) SummaryByContent(ctx *context.Context) {
 	}
 	defer stream.Close()
 
-	ctx.Writer.Header().Set("X-Accel-Buffering", "no")
+	ctx.Header("X-Accel-Buffering", "no")
 	ctx.Stream(func(_ io.Writer) bool {
 		data, _, ok := stream.Text(ctx)
 		if !ok {

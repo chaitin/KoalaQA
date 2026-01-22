@@ -2303,7 +2303,10 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 					if answerText.Len() < 5 {
 						answerText.WriteString(text[:length])
 						if answerText.Len() < 5 {
-							return AskSessionStreamItem{}, nil
+							return AskSessionStreamItem{
+								Type:    "text",
+								Content: "",
+							}, nil
 						}
 					}
 
