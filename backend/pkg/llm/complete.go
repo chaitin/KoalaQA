@@ -1,5 +1,10 @@
 package llm
 
+import (
+	"bytes"
+	"html/template"
+)
+
 var SystemCompletePrompt = `
 角色与目标
 你是一个集成在文本编辑器中的 AI 助手，专为用户提供高质量的“内联文本续写”（Fill-in-the-Middle）。你的核心目标是在用户光标位置，依据上下文，生成流畅、连贯且有价值的续写内容。
@@ -36,7 +41,7 @@ var SystemCompletePrompt = `
 * 输出要求：仅输出能完美置于 {Prefix 文本} 和 {Suffix 文本} 之间的 {续写文本}。
 `
 
-const UserCompleteTemplate = `
+const userCompleteTemplateStr = `
 <FIM_PREFIX>
 {{.Prefix}}
 </FIM_PREFIX>
@@ -44,3 +49,23 @@ const UserCompleteTemplate = `
 {{.Suffix}}
 </FIM_SUFFIX>
 `
+
+var userCompleteTemplateTpl = template.New("user_complete_template")
+
+func init() {
+	var err error
+	userCompleteTemplateTpl, err = userCompleteTemplateTpl.Parse(userCompleteTemplateStr)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func UserCompleteTemplate(m map[string]string) (string, error) {
+	var buff bytes.Buffer
+	err := userCompleteTemplateTpl.Execute(&buff, m)
+	if err != nil {
+		return "", err
+	}
+
+	return buff.String(), nil
+}

@@ -1818,10 +1818,15 @@ func (d *Discussion) Complete(ctx context.Context, req DiscussionCompeletReq) (s
 		return "", nil
 	}
 
-	return d.in.LLM.Chat(ctx, llm.SystemCompletePrompt, llm.UserCompleteTemplate, map[string]any{
+	userPrompt, err := llm.UserCompleteTemplate(map[string]string{
 		"Prefix": req.Prefix,
 		"Suffix": req.Suffix,
 	})
+	if err != nil {
+		return "", err
+	}
+
+	return d.in.LLM.Chat(ctx, llm.SystemCompletePrompt, userPrompt, nil)
 }
 
 type ResolveFeedbackReq struct {
