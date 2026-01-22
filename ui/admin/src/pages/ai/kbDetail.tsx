@@ -274,7 +274,8 @@ const KnowledgeBaseDetailPage = () => {
   };
 
   // 获取文件夹统计信息（使用文件夹列表接口，更轻量）
-  const { data: folderListData, run: fetchStats } = useRequest(
+  const statsRequestRef = useRef(false);
+  const { data: folderListData, run: fetchStats, refresh: refreshStats } = useRequest(
     () => {
       if (!spaceId || !kb_id) {
         return Promise.resolve(null);
@@ -286,8 +287,22 @@ const KnowledgeBaseDetailPage = () => {
     },
     {
       manual: true,
+      onSuccess: () => {
+        statsRequestRef.current = true;
+      },
     }
   );
+
+  // 安全地获取统计信息（避免重复请求错误）
+  const safeFetchStats = () => {
+    if (statsRequestRef.current) {
+      // 如果已经请求过，使用 refresh 方法
+      refreshStats();
+    } else {
+      // 首次请求，使用 run 方法
+      fetchStats();
+    }
+  };
 
   // 从文件夹列表中获取当前文件夹的统计信息
   const currentFolder: SvcListSpaceFolderItem | undefined = folderListData?.items?.find(
@@ -317,16 +332,19 @@ const KnowledgeBaseDetailPage = () => {
       }
     });
 
-    // 刷新统计信息
-    fetchStats();
+    // 刷新统计信息（使用安全的方法，避免重复请求错误）
+    safeFetchStats();
   };
 
 
   // 统一处理数据获取：路由参数变化、筛选/分页变化
   useEffect(() => {
     if (spaceId && folderId && kb_id) {
+      // 重置请求状态标记（因为参数变化了，需要重新请求）
+      statsRequestRef.current = false;
       loadRootNodes(1, false);
-      fetchStats(); // 同时获取统计信息
+      // 同时获取统计信息（使用安全的方法，避免重复请求错误）
+      safeFetchStats();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spaceId, folderId, kb_id]);

@@ -1121,7 +1121,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
               // 根据帖子类型设置样式
               // 问答类型且未有回答被采纳：桌面端 sticky 定位，移动端 relative
               // 其他情况：普通定位
-              ...(isQAPost
+              ...(isQAPost && !hasAcceptedComment
                 ? {
                     position: { xs: 'relative', sm: 'sticky' },
                     bottom: { xs: 0, sm: 0 },
