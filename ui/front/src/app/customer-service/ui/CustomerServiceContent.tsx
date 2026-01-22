@@ -2026,14 +2026,14 @@ export default function CustomerServiceContent({
                         size={26}
                         thickness={2}
                         sx={{
-                          color: 'error.main',
+                          color: 'primary',
                           position: 'absolute',
                           top: 0,
                           left: 0,
                         }}
                       />
                       <IconButton
-                        color='error'
+                        color='primary'
                         onClick={handleStop}
                         sx={{
                           width: 26,
