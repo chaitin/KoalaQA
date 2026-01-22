@@ -98,6 +98,7 @@ export default function CustomerServiceContent({
     '如何创建新文档',
     '如何编辑功能',
   ])
+  const isStreaming = isLoading || isWaiting
 
   // 生成 UUID 的工具函数
   const generateUuid = useCallback(() => {
@@ -158,6 +159,7 @@ export default function CustomerServiceContent({
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const sseClientRef = useRef<SSEClient<any> | null>(null)
   const currentMessageRef = useRef<Message | null>(null)
+  const hasStreamedRef = useRef(false)
 
   // 获取当前的 sessionId，优先从 URL 获取，确保与 URL 同步
   const getCurrentSessionId = useCallback(() => {
@@ -343,6 +345,17 @@ export default function CustomerServiceContent({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading, isAutoScrollEnabled])
 
+  useEffect(() => {
+    if (isStreaming) {
+      hasStreamedRef.current = true
+      return
+    }
+
+    if (hasStreamedRef.current) {
+      setIsAutoScrollEnabled((prev) => (prev ? false : prev))
+    }
+  }, [isStreaming])
+
   const handleScroll = useCallback(
     (event: UIEvent<HTMLDivElement>) => {
       const element = event.currentTarget
@@ -351,16 +364,20 @@ export default function CustomerServiceContent({
         clearTimeout(scrollTimeoutRef.current)
       }
 
-      setIsAutoScrollEnabled(false)
+      setIsAutoScrollEnabled((prev) => (prev ? false : prev))
 
       scrollTimeoutRef.current = setTimeout(() => {
         const distanceFromBottom = element.scrollHeight - element.scrollTop - element.clientHeight
-        const shouldEnable = distanceFromBottom <= AUTO_SCROLL_THRESHOLD_PX
 
-        setIsAutoScrollEnabled(shouldEnable)
+        if (isStreaming) {
+          const shouldEnable = distanceFromBottom <= AUTO_SCROLL_THRESHOLD_PX
+          setIsAutoScrollEnabled((prev) => (prev === shouldEnable ? prev : shouldEnable))
+        } else {
+          setIsAutoScrollEnabled((prev) => (prev ? false : prev))
+        }
       }, 150)
     },
-    [],
+    [isStreaming],
   )
 
   useEffect(() => {
@@ -392,6 +409,7 @@ export default function CustomerServiceContent({
             if (errorMessage.toLowerCase().includes('session closed')) {
               Alert.info('会话已过期，请点击右上角开启新会话', 5000)
               setIsLoading(false)
+              setIsAutoScrollEnabled(false)
               setMessages((prev) => {
                 const newMessages = [...prev]
                 const index = newMessages.findIndex((m) => m.id === messageId)
@@ -407,6 +425,7 @@ export default function CustomerServiceContent({
             }
 
             setIsLoading(false)
+            setIsAutoScrollEnabled(false)
             setMessages((prev) => {
               const newMessages = [...prev]
               const index = newMessages.findIndex((m) => m.id === messageId)
@@ -433,10 +452,12 @@ export default function CustomerServiceContent({
               }
               return newMessages
             })
+            setIsAutoScrollEnabled(false)
           },
         })
 
         sseClientRef.current = summarySseClient
+        setIsAutoScrollEnabled(true)
 
         let summaryText = ''
         let searchResults: ModelDiscussionListItem[] = []
@@ -664,6 +685,7 @@ export default function CustomerServiceContent({
         if (errorMessage.toLowerCase().includes('session closed')) {
           Alert.info('会话已过期，请点击右上角开启新会话', 5000)
           setIsLoading(false)
+          setIsAutoScrollEnabled(false)
           setMessages((prev) => {
             const newMessages = [...prev]
             const index = newMessages.findIndex((m) => m.id === messageId)
@@ -679,6 +701,7 @@ export default function CustomerServiceContent({
         }
 
         setIsLoading(false)
+        setIsAutoScrollEnabled(false)
         setMessages((prev) => {
           const newMessages = [...prev]
           const index = newMessages.findIndex((m) => m.id === messageId)
@@ -711,6 +734,7 @@ export default function CustomerServiceContent({
     setInputValue('')
     setIsLoading(true)
     setIsWaiting(true)
+    setIsAutoScrollEnabled(true)
 
     // 创建助手消息占位符
     const assistantMessage: Message = {
@@ -763,6 +787,7 @@ export default function CustomerServiceContent({
               Alert.info('会话已过期，请点击右上角开启新会话', 5000)
               setIsLoading(false)
               setIsWaiting(false)
+              setIsAutoScrollEnabled(false)
               setMessages((prev) => {
                 const newMessages = [...prev]
                 const index = newMessages.findIndex((m) => m.id === assistantMessageId)
@@ -780,6 +805,7 @@ export default function CustomerServiceContent({
 
             setIsLoading(false)
             setIsWaiting(false)
+            setIsAutoScrollEnabled(false)
             reject(err)
           },
           onComplete: () => {
@@ -800,6 +826,7 @@ export default function CustomerServiceContent({
               }
               return newMessages
             })
+            setIsAutoScrollEnabled(false)
 
             if (cannotAnswer) {
               // 检查是否有多个板块
@@ -879,6 +906,7 @@ export default function CustomerServiceContent({
             Alert.info('会话已过期，请点击右上角开启新会话', 5000)
             setIsLoading(false)
             setIsWaiting(false)
+            setIsAutoScrollEnabled(false)
             setMessages((prev) => {
               const newMessages = [...prev]
               const index = newMessages.findIndex((m) => m.id === assistantMessageId)
@@ -998,6 +1026,7 @@ export default function CustomerServiceContent({
             return newMessages
           })
         }
+        setIsAutoScrollEnabled(false)
         return
       }
     } catch (error) {
@@ -1016,6 +1045,7 @@ export default function CustomerServiceContent({
       })
       setIsLoading(false)
       setIsWaiting(false)
+      setIsAutoScrollEnabled(false)
       currentMessageRef.current = null
     }
   }, [inputValue, isLoading, forumId, forums, router, getCurrentSessionId, callSummaryContent])
@@ -1040,7 +1070,30 @@ export default function CustomerServiceContent({
         console.error('停止对话失败:', error)
       }
     }
-  }, [getCurrentSessionId])
+
+    // 3. 更新状态
+    setIsLoading(false)
+    setIsWaiting(false)
+    setIsAutoScrollEnabled(false)
+
+    // 4. 标记当前消息为已完成（被中断），保留已输出的内容
+    if (currentMessageRef.current) {
+      const messageId = currentMessageRef.current.id
+      setMessages((prev) => {
+        const newMessages = [...prev]
+        const index = newMessages.findIndex((m) => m.id === messageId)
+        if (index !== -1) {
+          newMessages[index] = {
+            ...newMessages[index],
+            isComplete: true,
+            isInterrupted: true, // 标记为被中断
+          }
+        }
+        return newMessages
+      })
+      currentMessageRef.current = null
+    }
+  }, [getCurrentSessionId, forumId])
 
   // 点击引用帖
   const handleSourceClick = (discussion: ModelDiscussionListItem) => {
@@ -1197,6 +1250,7 @@ export default function CustomerServiceContent({
 
         // 清空消息
         setMessages([])
+        hasStreamedRef.current = false
         setIsAutoScrollEnabled(true)
 
         // 更新 URL
