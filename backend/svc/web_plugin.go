@@ -37,7 +37,7 @@ func (w *WebPlugin) Get(ctx context.Context) (*model.SystemWebPlugin, error) {
 }
 
 func (w *WebPlugin) Update(ctx context.Context, req model.SystemWebPlugin) error {
-	err := w.repoSys.Create(ctx, &model.System[any]{
+	err := w.repoSys.Upsert(ctx, &model.System[any]{
 		Key:   model.SystemKeyWebPlugin,
 		Value: model.NewJSONBAny(req),
 	})

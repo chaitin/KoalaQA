@@ -33,7 +33,6 @@ import {
   ModelDiscussionDetail,
   ModelDiscussionListItem,
   ModelListRes,
-  PostDiscussionAskStopParams,
   PostDiscussionDiscIdAiLearnParams,
   PostDiscussionDiscIdAssociateParams,
   PostDiscussionDiscIdCommentCommentIdAcceptParams,
@@ -64,6 +63,7 @@ import {
   SvcListAsksRes,
   SvcResolveFeedbackReq,
   SvcResolveIssueReq,
+  SvcStopAskSessionReq,
   SvcSummaryByContentReq,
 } from "./types";
 
@@ -299,8 +299,7 @@ export const getDiscussionAskSession = (
  */
 
 export const postDiscussionAskStop = (
-  { askSessionId, ...query }: PostDiscussionAskStopParams,
-  req: SvcSummaryByContentReq,
+  req: SvcStopAskSessionReq,
   params: RequestParams = {},
 ) =>
   request<ContextResponse>({

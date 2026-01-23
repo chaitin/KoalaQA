@@ -10,6 +10,7 @@ import { useSearchParams } from 'next/navigation'
 import Account from './account'
 import { useAuthConfig } from '@/hooks/useAuthConfig'
 import { TroubleshootOutlined } from '@mui/icons-material'
+import Message from '@/components/alert'
 
 const LoginType = () => {
   // 使用新的 useAuthConfig hook

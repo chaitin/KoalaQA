@@ -114,6 +114,7 @@ export enum ModelMsgNotifyType {
   MsgNotifyTypeIssueInProgress = 12,
   MsgNotifyTypeIssueResolved = 13,
   MsgNotifyTypeUserPoint = 14,
+  MsgNotifyTypeFollowDiscuss = 15,
 }
 
 export enum ModelMessageNotifySubType {
@@ -1234,6 +1235,10 @@ export interface SvcStatVisitRes {
   uv?: number;
 }
 
+export interface SvcStopAskSessionReq {
+  session_id: string;
+}
+
 export interface SvcSummaryByContentReq {
   forum_id: number;
   group_ids?: number[];
@@ -1821,11 +1826,6 @@ export interface GetDiscussionParams {
 export interface GetDiscussionAskSessionParams {
   force_create?: boolean;
   session_id?: string;
-}
-
-export interface PostDiscussionAskStopParams {
-  /** ask_session_id */
-  askSessionId: string;
 }
 
 export interface GetDiscussionAskAskSessionIdParams {

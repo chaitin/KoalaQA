@@ -9097,7 +9097,8 @@ const docTemplate = `{
                 11,
                 12,
                 13,
-                14
+                14,
+                15
             ],
             "x-enum-varnames": [
                 "MsgNotifyTypeUnknown",
@@ -9114,7 +9115,8 @@ const docTemplate = `{
                 "MsgNotifyTypeAssociateIssue",
                 "MsgNotifyTypeIssueInProgress",
                 "MsgNotifyTypeIssueResolved",
-                "MsgNotifyTypeUserPoint"
+                "MsgNotifyTypeUserPoint",
+                "MsgNotifyTypeFollowDiscuss"
             ]
         },
         "model.OrgType": {

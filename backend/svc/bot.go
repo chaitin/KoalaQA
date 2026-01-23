@@ -65,7 +65,7 @@ func (b *Bot) Set(ctx context.Context, req BotSetReq) error {
 		UnknownPrompt: strings.TrimSpace(req.UnknownPrompt),
 	}
 
-	err := b.repoBot.Create(ctx, &bot)
+	err := b.repoBot.Upsert(ctx, &bot)
 	if err != nil {
 		return err
 	}

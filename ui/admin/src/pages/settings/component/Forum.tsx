@@ -1559,7 +1559,7 @@ const Forum: React.FC = () => {
 
           <Stack direction="row" alignItems="center" spacing={2}>
             <Typography variant="body2" sx={{ minWidth: 80, fontSize: 14 }}>
-              Issue 类型
+              Issue 分类
             </Typography>
             <Box sx={{ flex: 1 }}>
               <Controller

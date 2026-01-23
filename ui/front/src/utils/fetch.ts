@@ -57,8 +57,11 @@ class SSEClient<T> {
       signal: this.controller.signal,
     })
       .then(async (response) => {
-        // 检查响应内容是否包含 CSRF mismatch 错误
-        if (response.ok) {
+        const contentType = response.headers.get('content-type')
+        const isEventStream = contentType?.includes('text/event-stream')
+
+        // 避免在流式响应上读取完整 body，导致流式输出阻塞
+        if (response.ok && !this.options.streamMode && !isEventStream) {
           // 克隆响应以便可以多次读取
           const clonedResponse = response.clone()
           const text = await clonedResponse.text()
@@ -102,10 +105,6 @@ class SSEClient<T> {
           onError?.(new Error('No response body'))
           return
         }
-
-        // 检查响应类型
-        const contentType = response.headers.get('content-type')
-        const isEventStream = contentType?.includes('text/event-stream')
 
         // 强制设置为流式模式，无论Content-Type如何
         if (!this.options.streamMode && isEventStream) {

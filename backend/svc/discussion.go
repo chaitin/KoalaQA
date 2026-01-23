@@ -338,7 +338,7 @@ func (d *Discussion) Delete(ctx context.Context, user model.UserInfo, uuid strin
 		return errors.New("resolved qa can not delete")
 	}
 
-	if err := d.in.DiscRepo.Delete(ctx, repo.QueryWithEqual("uuid", uuid)); err != nil {
+	if err := d.in.DiscRepo.DeleteByID(ctx, disc.ID); err != nil {
 		return err
 	}
 	if len(disc.TagIDs) > 0 {
@@ -2000,7 +2000,7 @@ func (d *Discussion) AssociateDiscussion(ctx context.Context, user model.UserInf
 		d.logger.WithContext(ctx).WithErr(err).With("disc_id", disc.ID).Warn("update disc rag metadata failed")
 	}
 
-	err = d.in.DiscFollowRepo.Create(ctx, &model.DiscussionFollow{
+	err = d.in.DiscFollowRepo.Upsert(ctx, &model.DiscussionFollow{
 		DiscussionID: issue.ID,
 		UserID:       disc.UserID,
 	})
@@ -2168,7 +2168,7 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		return nil, err
 	}
 
-	if !webPlugin.Display && !webPlugin.Plugin {
+	if !webPlugin.Enabled && !webPlugin.Plugin {
 		return nil, errors.New("disabled")
 	}
 
@@ -2476,7 +2476,8 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 		return nil, err
 	}
 
-	if !webPlugin.Display && !webPlugin.Plugin {
+	// Service is enabled if any of: Enabled (在线支持), Display (在社区前台展示), or Plugin (网页挂件) is true
+	if !webPlugin.Enabled && !webPlugin.Plugin {
 		return nil, errors.New("disabled")
 	}
 

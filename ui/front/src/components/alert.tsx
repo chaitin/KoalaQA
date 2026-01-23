@@ -92,6 +92,20 @@ function WarningBar({ alert, onRemove }: Readonly<WarningBarProps>) {
               color: 'success.main',
             },
           }),
+          ...(alert.color === 'error' && {
+            backgroundColor: 'rgb(254, 242, 242)',
+            color: 'text.secondary',
+            '& .MuiAlert-icon': {
+              color: 'error.main',
+            },
+          }),
+          ...(alert.color === 'info' && {
+            backgroundColor: 'rgb(240, 249, 255)',
+            color: 'text.secondary',
+            '& .MuiAlert-icon': {
+              color: 'info.main',
+            },
+          }),
         }}
       >
         {alert.content}
@@ -145,6 +159,21 @@ function AlertManager() {
 // 单例容器和 root
 let container: HTMLDivElement | null = null
 let root: Root | null = null
+let currentThemeColor: string | undefined
+
+export function updateAlertTheme(primaryColor?: string) {
+  if (currentThemeColor === primaryColor) return
+  currentThemeColor = primaryColor
+
+  if (root) {
+    const theme = createAppTheme(primaryColor)
+    root.render(
+      <ThemeProvider theme={theme}>
+        <AlertManager />
+      </ThemeProvider>,
+    )
+  }
+}
 
 function getOrCreateContainer() {
   // 检查是否在浏览器环境中
@@ -168,7 +197,7 @@ function getOrCreateContainer() {
   }
 
   if (!root) {
-    const theme = createAppTheme()
+    const theme = createAppTheme(currentThemeColor)
     root = createRoot(container)
     root.render(
       <ThemeProvider theme={theme}>

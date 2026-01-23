@@ -9,10 +9,11 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSelectedLayoutSegments } from 'next/navigation';
 import { useForumId } from '@/hooks/useForumId';
 
 export const CommonContext = createContext<{
@@ -42,27 +43,34 @@ export const CommonContext = createContext<{
   }) => void;
 }>({
   headerStyle: {},
-  setHeaderStyle: () => {},
+  setHeaderStyle: () => { },
   showHeaderSearch: false,
-  setShowHeaderSearch: () => {},
+  setShowHeaderSearch: () => { },
   keywords: '',
-  setKeywords: () => {},
+  setKeywords: () => { },
   tags: [],
   tagsLoading: true,
-  fetchTags: () => {},
-  setTags: () => {},
+  fetchTags: () => { },
+  setTags: () => { },
   groups: {
     origin: [],
     flat: [],
   },
   groupsLoading: true,
-  fetchGroup: () => {},
-  setGroups: () => {},
+  fetchGroup: () => { },
+  setGroups: () => { },
 });
 
 const CommonProvider = ({ children }: { children: React.ReactNode }) => {
   const params = useParams();
+  const segments = useSelectedLayoutSegments();
   const forumId = useForumId();
+
+  // 综合判断当前是否处于某个板块路由下
+  const currentRouteName = useMemo(() => {
+    return (params?.route_name as string | undefined) || (segments && segments.length > 0 ? segments[0] : undefined);
+  }, [params?.route_name, segments]);
+
   const [showHeaderSearch, setShowHeaderSearch] = useState(false);
   const [headerStyle, setHeaderStyle] = useState<SxProps<Theme>>({});
   const [keywords, setKeywords] = useState('');
@@ -109,9 +117,9 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
 
   // 获取groups数据的函数（供客户端页面调用）
   const fetchGroup = useCallback(() => {
-    // 如果没有 forumId，不发起请求
-    if (!forumId) {
-      setGroupsLoading(false);
+    // 如果在板块路径下但还没拿到 forumId，说明 forums 还没加载完，先不请求
+    if (currentRouteName && !forumId) {
+      // 特殊处理：如果是已知页面非论坛页面，可以放行。但这里保持保守。
       return;
     }
 
@@ -122,8 +130,8 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
 
     isFetchingRef.current = true;
     setGroupsLoading(true);
-    
-    getGroup({ forum_id: forumId })
+
+    getGroup(forumId ? { forum_id: forumId } : {})
       .then((r) => {
         const newGroups = {
           origin: r.items ?? [],
@@ -146,7 +154,7 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
         setGroupsLoading(false);
         isFetchingRef.current = false;
       });
-  }, [forumId]);
+  }, [forumId, currentRouteName]);
 
   // 获取tags数据的函数（供客户端页面调用）
   const fetchTags = useCallback(() => {

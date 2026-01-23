@@ -2,19 +2,21 @@ package svc
 
 import (
 	"context"
-	"errors"
 
 	"github.com/chaitin/koalaqa/model"
+	"github.com/chaitin/koalaqa/pkg/mq"
+	"github.com/chaitin/koalaqa/pkg/topic"
 	"github.com/chaitin/koalaqa/repo"
 )
 
 type DiscussionFollow struct {
 	discFollow *repo.DiscussionFollow
 	disc       *repo.Discussion
+	pub        mq.Publisher
 }
 
-func newDiscussionFollow(discFollow *repo.DiscussionFollow, disc *repo.Discussion) *DiscussionFollow {
-	return &DiscussionFollow{discFollow: discFollow, disc: disc}
+func newDiscussionFollow(discFollow *repo.DiscussionFollow, disc *repo.Discussion, pub mq.Publisher) *DiscussionFollow {
+	return &DiscussionFollow{discFollow: discFollow, disc: disc, pub: pub}
 }
 
 func init() {
@@ -49,17 +51,23 @@ func (d *DiscussionFollow) Follow(ctx context.Context, uid uint, discUUID string
 		return 0, err
 	}
 
-	if disc.Type != model.DiscussionTypeIssue {
-		return 0, errors.New("discussion can not follow")
-	}
-
 	follow := model.DiscussionFollow{
 		DiscussionID: disc.ID,
 		UserID:       uid,
 	}
-	err = d.discFollow.Create(ctx, &follow)
+	err = d.discFollow.Upsert(ctx, &follow)
 	if err != nil {
 		return 0, err
+	}
+
+	switch disc.Type {
+	case model.DiscussionTypeBlog, model.DiscussionTypeQA:
+		d.pub.Publish(ctx, topic.TopicMessageNotify, topic.MsgMessageNotify{
+			DiscussHeader: disc.Header(),
+			Type:          model.MsgNotifyTypeFollowDiscuss,
+			FromID:        uid,
+			ToID:          disc.UserID,
+		})
 	}
 
 	return follow.ID, nil
@@ -69,10 +77,6 @@ func (d *DiscussionFollow) Unfollow(ctx context.Context, uid uint, discUUID stri
 	disc, err := d.disc.GetByUUID(ctx, discUUID)
 	if err != nil {
 		return err
-	}
-
-	if disc.Type != model.DiscussionTypeIssue {
-		return errors.New("discussion can not unfollow")
 	}
 
 	err = d.discFollow.Delete(ctx, repo.QueryWithEqual("discussion_id", disc.ID), repo.QueryWithEqual("user_id", uid))
@@ -95,10 +99,6 @@ func (d *DiscussionFollow) FollowInfo(ctx context.Context, uid uint, discUUID st
 	}
 
 	var res DiscussionListFollowRes
-	if disc.Type != model.DiscussionTypeIssue {
-		return &res, nil
-	}
-
 	res.Followed, err = d.discFollow.Exist(ctx, repo.QueryWithEqual("discussion_id", disc.ID), repo.QueryWithEqual("user_id", uid))
 	if err != nil {
 		return nil, err

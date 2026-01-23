@@ -63,7 +63,7 @@ func (i *removeAIInsightRag) Run() {
 		}
 	}
 
-	err = i.repoRank.ClearExpireAIInsight(ctx, util.WeekTrunc(now.AddDate(0, 0, -21)))
+	err = i.repoRank.ClearExpireAIInsight(ctx, util.WeekTrunc(now.AddDate(0, 0, -28)))
 	if err != nil {
 		i.logger.WithErr(err).Warn("remove expire ai insight failed")
 	}

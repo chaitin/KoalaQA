@@ -48,7 +48,7 @@ func (s *SEO) Update(ctx context.Context, seo model.SystemSEO) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
-	err := s.repoSys.Create(ctx, &model.System[any]{
+	err := s.repoSys.Upsert(ctx, &model.System[any]{
 		Key:   model.SystemKeySEO,
 		Value: model.NewJSONBAny(seo),
 	})

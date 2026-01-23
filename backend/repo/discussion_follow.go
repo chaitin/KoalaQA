@@ -39,7 +39,7 @@ func (d *DiscussionFollow) ListUserID(ctx context.Context, discID uint) ([]uint,
 	return res, nil
 }
 
-func (d *DiscussionFollow) Create(ctx context.Context, data *model.DiscussionFollow) error {
+func (d *DiscussionFollow) Upsert(ctx context.Context, data *model.DiscussionFollow) error {
 	return d.model(ctx).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "discussion_id"}, {Name: "user_id"}},
 		DoNothing: true,

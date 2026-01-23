@@ -34,7 +34,7 @@ func (s *SystemDiscussion) Get(ctx context.Context) (*model.SystemDiscussion, er
 }
 
 func (s *SystemDiscussion) Update(ctx context.Context, req model.SystemDiscussion) error {
-	return s.repoSys.Create(ctx, &model.System[any]{
+	return s.repoSys.Upsert(ctx, &model.System[any]{
 		Key:   model.SystemKeyDiscussion,
 		Value: model.NewJSONBAny(req),
 	})

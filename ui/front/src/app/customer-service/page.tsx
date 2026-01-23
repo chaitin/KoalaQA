@@ -1,6 +1,7 @@
-import { getUser, getBot, getDiscussionAskSession } from '@/api';
+import { getUser, getBot, getDiscussionAskSession, getSystemWebPlugin } from '@/api';
 import { cookies } from 'next/headers';
 import { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import CustomerServiceContent from './ui/CustomerServiceContent';
 import { SvcBotGetRes } from '@/api/types';
 
@@ -16,7 +17,7 @@ async function getUserData() {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get('auth_token')?.value;
-    
+
     if (!token) {
       return null;
     }
@@ -55,16 +56,23 @@ async function getSessionId(user: Awaited<ReturnType<typeof getUserData>>, urlId
 }
 
 export default async function CustomerServicePage(props: {
-  readonly searchParams: Promise<{ id?: string }>
+  readonly searchParams: Promise<{ id?: string; is_widget?: string }>
 }) {
   const searchParams = await props.searchParams;
   const urlId = searchParams?.id || null;
+  const isWidget = searchParams?.is_widget === '1';
 
   const user = await getUserData();
-  const [botData, sessionId] = await Promise.all([
+  const [botData, sessionId, pluginConfig] = await Promise.all([
     getBotData(),
     getSessionId(user, urlId),
+    getSystemWebPlugin().catch(() => null),
   ]);
+
+  // 如果在线支持被禁用且不在 iframe 内（is_widget=1），触发 404
+  if (pluginConfig && !pluginConfig.enabled && !isWidget) {
+    notFound();
+  }
 
   // 允许未登录用户访问，user 可以为 null
   return <CustomerServiceContent initialUser={user ?? undefined} botData={botData} initialSessionId={sessionId} />;

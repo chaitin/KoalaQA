@@ -88,7 +88,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
   // 判断是否是当前用户（只能查看自己的积分明细）
   const isCurrentUser = useMemo(() => user?.uid === initialUser?.uid, [user?.uid, initialUser?.uid])
   const isAdmin = isAdminRole(user.role || ModelUserRole.UserRoleGuest)
-  
+
   // 更新查询参数并切换到动态标签页
   const updateQueryParams = useCallback(
     (discussionType: string, trendType: string) => {
@@ -126,12 +126,12 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
         value: statistics?.point ?? 0,
         onClick: isCurrentUser
           ? () => {
-              const params = new URLSearchParams(searchParams?.toString() || '')
-              params.set('tab', '5')
-              const queryString = params.toString()
-              const newUrl = queryString ? `${pathname}?${queryString}` : pathname
-              router.replace(newUrl)
-            }
+            const params = new URLSearchParams(searchParams?.toString() || '')
+            params.set('tab', '5')
+            const queryString = params.toString()
+            const newUrl = queryString ? `${pathname}?${queryString}` : pathname
+            router.replace(newUrl)
+          }
           : undefined,
       },
     ],
@@ -151,16 +151,16 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
     if (!userId) return
 
     let cancelled = false
-    ;(async () => {
-      try {
-        const response = await getUserUserId({ userId })
-        if (!cancelled) {
-          setStatistics(response)
+      ; (async () => {
+        try {
+          const response = await getUserUserId({ userId })
+          if (!cancelled) {
+            setStatistics(response)
+          }
+        } catch (error) {
+          console.error('获取用户统计信息失败', error)
         }
-      } catch (error) {
-        console.error('获取用户统计信息失败', error)
-      }
-    })()
+      })()
 
     return () => {
       cancelled = true
@@ -387,7 +387,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
               '&.Mui-selected': {
                 bgcolor: 'primary.main',
                 color: (theme) => theme.palette.primary.contrastText,
-                '&:hover':{
+                '&:hover': {
                   bgcolor: 'primary.dark',
                 }
               },
@@ -406,7 +406,7 @@ export default function ProfileContent({ initialUser }: ProfileContentProps) {
             </ToggleButton>
           )}
           <ToggleButton value={isAdminRole(user.role || ModelUserRole.UserRoleGuest) ? '3' : '2'} sx={toggleButtonSx}>
-            正在关注
+            关注收藏
           </ToggleButton>
           <ToggleButton value={'4'} sx={toggleButtonSx}>
             通知中心

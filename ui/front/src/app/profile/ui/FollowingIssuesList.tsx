@@ -36,14 +36,7 @@ const getStatusLabel = (status: string) => {
 }
 
 const shouldShowStatus = (data: ModelDiscussion) => {
-  // Issue 类型显示所有状态
-  if (data.type === ModelDiscussionType.DiscussionTypeIssue) {
-    return true
-  }
-  return (
-    data.resolved === ModelDiscussionState.DiscussionStateResolved ||
-    data.resolved === ModelDiscussionState.DiscussionStateClosed
-  )
+  return true
 }
 
 const isCategoryTag = (tag: string, groups: Array<{ name?: string }>) => {
@@ -72,10 +65,10 @@ const EmptyState = () => (
       <Image src='/empty.png' alt='暂无关注' width={250} height={137} style={{ maxWidth: '100%', height: 'auto' }} />
     </Box>
     <Typography variant='h6' sx={{ mb: 1, fontWeight: 600 }}>
-      暂无关注的 Issue
+      暂无关注或收藏的内容
     </Typography>
     <Typography variant='body2' sx={{ color: '#6b7280' }}>
-      您还没有关注任何 Issue
+      您还没有关注任何内容
     </Typography>
   </Box>
 )
@@ -84,14 +77,29 @@ export default function FollowingIssuesList() {
   const { groups } = useContext(CommonContext)
   const params = useParams()
 
-  // 使用 useMemo 优化分组名称计算
-  const getGroupNames = useCallback(
+  // // 使用 useMemo 优化分组名称计算
+  // const getGroupNames = useCallback(
+  //   (groupIds?: number[]) => {
+  //     if (!groupIds || !groups.flat.length) return []
+  //     const groupMap = new Map(groups.flat.map((g) => [g.id, g.name]))
+  //     return groupIds.map((groupId) => groupMap.get(groupId)).filter(Boolean) as string[]
+  //   },
+  //   [groups.flat],
+  // )
+
+  // 获取父级分类名称 (Category)
+  const getCategoryNames = useCallback(
     (groupIds?: number[]) => {
-      if (!groupIds || !groups.flat.length) return []
-      const groupMap = new Map(groups.flat.map((g) => [g.id, g.name]))
-      return groupIds.map((groupId) => groupMap.get(groupId)).filter(Boolean) as string[]
+      if (!groupIds || !groups.origin.length) return []
+      const names = new Set<string>()
+      groups.origin.forEach((parent) => {
+        if (parent.items?.some((item) => item.id && groupIds?.includes(item.id || 0))) {
+          if (parent.name) names.add(parent.name)
+        }
+      })
+      return Array.from(names)
     },
-    [groups.flat],
+    [groups.origin],
   )
 
   const [page, setPage] = useState(1)
@@ -176,11 +184,8 @@ export default function FollowingIssuesList() {
       )}
 
       {issues.map((issue) => {
-        const groupNames = getGroupNames(issue.group_ids)
-        const allTags = groupNames
-        const isIssuePost = issue.type === ModelDiscussionType.DiscussionTypeIssue
-        const postStatus = getPostStatus(issue)
-
+        // const groupNames = getGroupNames(issue.group_ids)
+        const categoryNames = getCategoryNames(issue.group_ids)
         return (
           <Link
             key={issue.id}
@@ -193,81 +198,102 @@ export default function FollowingIssuesList() {
                 transition: 'all 0.2s',
                 cursor: 'pointer',
                 '&:hover': {
-                  bgcolor: theme=>theme.palette.primaryAlpha?.[3],
+                  bgcolor: (theme) => theme.palette.primaryAlpha?.[3],
                 },
-                p: 2,
+                p: '16px 20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1.5,
               }}
             >
               <Box
                 sx={{
                   display: 'flex',
-                  alignItems: 'center',
-                  mb: 2,
-                  gap: 1,
+                  alignItems: 'flex-start',
+                  gap: 1.5,
                 }}
               >
-                <DiscussionTypeChip size='small' type={issue.type} variant='default' />
                 <Ellipsis
                   sx={{
-                    fontWeight: 700,
+                    fontWeight: 600,
                     color: '#111827',
                     letterSpacing: '-0.01em',
-                    fontSize: '16px',
-                    lineHeight: '24px',
-                    '&:hover': { color: '#000000' },
+                    fontSize: '15px',
+                    lineHeight: '1.4',
+                    '&:hover': { color: 'primary.main' },
                     flex: 1,
+                    // 强制单行，保证高度整齐
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                    textOverflow: 'ellipsis',
                   }}
                 >
                   {issue.title}
                 </Ellipsis>
               </Box>
 
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-                  {/* 使用统一的 StatusChip 显示状态 */}
-                  {shouldShowStatus(issue) && <StatusChip item={issue} size='small' />}
-                  {allTags.map((tag, index) => {
-                    const isCategory = isCategoryTag(tag, groups.flat)
-                    return (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 2,
+                }}
+              >
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    overflow: 'hidden',
+                    flex: 1,
+                  }}
+                >
+                  <Stack direction='row' alignItems='center' spacing={1} sx={{ overflow: 'hidden', flex: 1 }}>
+                    {/* 状态和类型 */}
+                    <StatusChip item={issue} size='small' sx={{ flexShrink: 0 }} />
+                    <DiscussionTypeChip size='small' type={issue.type} variant='default' sx={{ height: 20 }} />
+
+                    {categoryNames.map((name) => (
                       <Chip
-                        key={`${tag}-${isCategory ? 'category' : 'tag'}-${index}`}
-                        label={tag}
+                        key={`cat-${name}`}
+                        label={name}
                         size='small'
                         sx={{
                           bgcolor: 'rgba(233, 236, 239, 1)',
                           color: 'rgba(33, 34, 45, 1)',
-                          height: 20,
-                          fontSize: '12px',
+                          height: 22,
                           lineHeight: '22px',
+                          fontWeight: 400,
+                          fontSize: '12px',
                           borderRadius: '3px',
                           cursor: 'default',
                           pointerEvents: 'none',
                         }}
                       />
-                    )
-                  })}
+                    ))}
+
+                  </Stack>
                 </Box>
 
-                <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'center' }}>
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexShrink: 0 }}>
                   {(issue.type === ModelDiscussionType.DiscussionTypeBlog ||
-                    issue.type === ModelDiscussionType.DiscussionTypeIssue) && (
-                    <Box
-                      sx={(theme) => ({
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.5,
-                        background: theme.palette.primaryAlpha?.[6],
-                        color: 'primary.main',
-                        px: 1,
-                        borderRadius: 0.5,
-                      })}
-                    >
-                      <Icon type='icon-dianzan1' sx={{ fontSize: 12 }} />
-                      <Typography variant='caption' sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
-                        {(issue.like || 0) - (issue.dislike || 0)}
-                      </Typography>
-                    </Box>
-                  )}
+                    issue.type === ModelDiscussionType.DiscussionTypeIssue ||
+                    issue.type === ModelDiscussionType.DiscussionTypeQA) && (
+                      <Box
+                        sx={(theme) => ({
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          color: 'text.secondary',
+                        })}
+                      >
+                        <Icon type='icon-dianzan1' sx={{ fontSize: 13 }} />
+                        <Typography variant='caption' sx={{ fontWeight: 500 }}>
+                          {issue.like || 0}
+                        </Typography>
+                      </Box>
+                    )}
                 </Box>
               </Box>
             </Box>

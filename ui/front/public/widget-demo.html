@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>客服助手挂件演示 - Customer Service Widget Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+
+        h2 {
+            color: #764ba2;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        p {
+            margin-bottom: 15px;
+            color: #555;
+        }
+
+        .code-block {
+            background: #f5f5f5;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        code {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            color: #d63384;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 10px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .feature-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .button-demo {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            margin: 10px 10px 10px 0;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .button-demo:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .note strong {
+            color: #856404;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎯 客服助手挂件演示</h1>
+        <p>这是一个轻量级的客服助手挂件，可以嵌入到任何网页中。</p>
+
+        <h2>📦 特性</h2>
+        <ul class="feature-list">
+            <li>超轻量级：压缩后仅 ~2KB</li>
+            <li>零依赖：纯原生 JavaScript 实现</li>
+            <li>响应式设计：完美支持移动端和桌面端</li>
+            <li>流畅动画：使用 CSS3 动画提升用户体验</li>
+            <li>可配置：支持自定义颜色、位置等</li>
+            <li>易于集成：只需一行代码</li>
+        </ul>
+
+        <h2>🚀 快速开始</h2>
+        <p>在您的 HTML 页面中添加以下代码：</p>
+
+        <div class="code-block">
+            <code>&lt;!-- 使用客服挂件 --&gt;<br>
+&lt;script src="/customer-service-widget.js"&gt;&lt;/script&gt;</code>
+        </div>
+
+        <h2>⚙️ 自定义配置</h2>
+        <p>您可以在加载脚本前配置挂件：</p>
+
+        <div class="code-block">
+            <code>&lt;script&gt;<br>
+&nbsp;&nbsp;window.CustomerServiceConfig = {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;baseUrl: 'https://your-domain.com',<br>
+&nbsp;&nbsp;&nbsp;&nbsp;iframePath: '/customer-service',<br>
+&nbsp;&nbsp;&nbsp;&nbsp;position: 'bottom-right', // 或 'bottom-left'<br>
+&nbsp;&nbsp;&nbsp;&nbsp;buttonSize: 56,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;buttonColor: '#1976d2',<br>
+&nbsp;&nbsp;&nbsp;&nbsp;buttonHoverColor: '#1565c0',<br>
+&nbsp;&nbsp;&nbsp;&nbsp;zIndex: 9999<br>
+&nbsp;&nbsp;};<br>
+&lt;/script&gt;<br>
+&lt;script src="/customer-service-widget.min.js"&gt;&lt;/script&gt;</code>
+        </div>
+
+        <h2>🎮 JavaScript API</h2>
+        <p>挂件提供了简单的 JavaScript API：</p>
+
+        <div class="code-block">
+            <code>// 打开客服窗口<br>
+window.CustomerServiceWidget.open();<br><br>
+// 关闭客服窗口<br>
+window.CustomerServiceWidget.close();<br><br>
+// 获取版本号<br>
+console.log(window.CustomerServiceWidget.version);</code>
+        </div>
+
+        <p>试试这些按钮：</p>
+        <button class="button-demo" onclick="window.CustomerServiceWidget.open()">打开客服窗口</button>
+        <button class="button-demo" onclick="window.CustomerServiceWidget.close()">关闭客服窗口</button>
+
+        <div class="note">
+            <strong>💡 提示：</strong> 查看页面右下角的悬浮按钮，点击即可打开客服助手！
+        </div>
+
+        <h2>📝 文件说明</h2>
+        <ul class="feature-list">
+            <li><strong>customer-service-widget.js</strong> - 未压缩版本（约 7KB），便于开发调试</li>
+            <li><strong>customer-service-widget.min.js</strong> - 压缩版本（约 2KB），生产环境推荐使用</li>
+        </ul>
+
+        <h2>🌐 浏览器支持</h2>
+        <p>支持所有现代浏览器：</p>
+        <ul class="feature-list">
+            <li>Chrome / Edge (最新版本)</li>
+            <li>Firefox (最新版本)</li>
+            <li>Safari (最新版本)</li>
+            <li>移动端浏览器</li>
+        </ul>
+    </div>
+
+    <!-- 加载客服挂件 -->
+    <script src="/customer-service-widget.js"></script>
+</body>
+
+</html>
