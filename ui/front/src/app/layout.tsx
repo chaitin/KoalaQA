@@ -176,7 +176,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
   const keywords = seoResponse?.keywords || ['技术讨论', '问答', '知识分享', '开发者社区']
 
   return (
-    <html lang='zh-CN'>
+    <html lang='zh-CN' suppressHydrationWarning>
       <head>
         <meta httpEquiv='content-language' content='zh-CN' />
         {/* DNS 预解析优化 */}
@@ -206,7 +206,9 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
                         <CssBaseline />
                         <GuestActivationProvider>
                           <PageViewTracker />
-                          <ConditionalHeader brandConfig={brand} initialForums={forums} />
+                          <React.Suspense fallback={null}>
+                            <ConditionalHeader brandConfig={brand} initialForums={forums} />
+                          </React.Suspense>
                           <Box
                             component='main'
                             id='main-content'
@@ -220,6 +222,8 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
                             {props.children}
                           </Box>
                           <Scroll />
+                          {/* 使用挂件脚本，会根据 display 字段自动显示/隐藏 */}
+                          <Script src='/customer-service-widget.js' strategy='lazyOnload' />
                         </GuestActivationProvider>
                       </ThemeProviderWrapper>
                     </AppRouterCacheProvider>

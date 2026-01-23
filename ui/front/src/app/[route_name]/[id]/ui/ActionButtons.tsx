@@ -35,6 +35,7 @@ const ActionButtons = ({ data, menuAnchorEl, onMenuClick }: ActionButtonsProps) 
   const mobileMoreButtonRef = useRef<HTMLButtonElement | null>(null)
 
   const isIssuePost = data.type === ModelDiscussionType.DiscussionTypeIssue
+  const isBlogPost = data.type === ModelDiscussionType.DiscussionTypeBlog
   const isQAPost = data.type === ModelDiscussionType.DiscussionTypeQA
   const isClosed = data.resolved === ModelDiscussionState.DiscussionStateClosed
 
@@ -53,10 +54,10 @@ const ActionButtons = ({ data, menuAnchorEl, onMenuClick }: ActionButtonsProps) 
         console.error('Failed to fetch follow info:', error)
       }
     }
-    if (isIssuePost) {
+    if ((isIssuePost || isQAPost || isBlogPost) && data.uuid) {
       fetchFollowInfo()
     }
-  }, [data.uuid, isIssuePost])
+  }, [data.uuid, isIssuePost, isQAPost, isBlogPost])
 
   // 刷新页面但不增加浏览次数
   const refreshWithoutView = useCallback(() => {
@@ -150,8 +151,8 @@ const ActionButtons = ({ data, menuAnchorEl, onMenuClick }: ActionButtonsProps) 
         animation: mobileMenuOpen ? `fadeInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) ${index * 0.05}s both` : 'none',
         '&:active': onClick
           ? {
-              transform: 'scale(0.9)',
-            }
+            transform: 'scale(0.9)',
+          }
           : {},
         '@keyframes fadeInUp': {
           from: {
@@ -292,11 +293,12 @@ const ActionButtons = ({ data, menuAnchorEl, onMenuClick }: ActionButtonsProps) 
           </Box>
         )}
 
-        {/* Issue 类型显示关注按钮（爱心图标+关注数） */}
-        {isIssuePost && !isClosed && (
+        {/* 关注/收藏按钮 (Issue/QA/Blog) */}
+        {(isIssuePost || isQAPost || isBlogPost) && !isClosed && (
           <Box
             component='button'
             onClick={handleFollow}
+            title={isIssuePost ? '关注' : '收藏'}
             sx={(theme) => ({
               position: 'relative',
               display: 'flex',
@@ -359,25 +361,25 @@ const ActionButtons = ({ data, menuAnchorEl, onMenuClick }: ActionButtonsProps) 
           [ModelUserRole.UserRoleAdmin, ModelUserRole.UserRoleOperator].includes(
             user?.role || ModelUserRole.UserRoleUnknown,
           )) && (
-          <IconButton
-            disableRipple
-            size='small'
-            onClick={handleMenuClick}
-            sx={{
-              width: '40px',
-              height: '40px',
-              p: 0,
-              color: '#6b7280',
-              bgcolor: '#ffffff',
-              borderRadius: '8px',
-              border: '1px solid rgba(217,222,226,0.5)',
-              transition: 'all 0.15s ease-in-out',
-              '&:hover': { color: '#000000', bgcolor: '#f3f4f6' },
-            }}
-          >
-            <MoreVertIcon sx={{ fontSize: 20 }} />
-          </IconButton>
-        )}
+            <IconButton
+              disableRipple
+              size='small'
+              onClick={handleMenuClick}
+              sx={{
+                width: '40px',
+                height: '40px',
+                p: 0,
+                color: '#6b7280',
+                bgcolor: '#ffffff',
+                borderRadius: '8px',
+                border: '1px solid rgba(217,222,226,0.5)',
+                transition: 'all 0.15s ease-in-out',
+                '&:hover': { color: '#000000', bgcolor: '#f3f4f6' },
+              }}
+            >
+              <MoreVertIcon sx={{ fontSize: 20 }} />
+            </IconButton>
+          )}
       </Stack>
 
       {/* 移动端：悬浮球 - 仅在登录时显示 */}
@@ -450,8 +452,8 @@ const ActionButtons = ({ data, menuAnchorEl, onMenuClick }: ActionButtonsProps) 
               1,
             )} */}
 
-            {/* 关注（Issue类型） */}
-            {isIssuePost &&
+            {/* 关注（Issue类型）/ 收藏（其他类型） */}
+            {(isIssuePost || isQAPost || isBlogPost) &&
               !isClosed &&
               renderCircularButton(
                 <Icon

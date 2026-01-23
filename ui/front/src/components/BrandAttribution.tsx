@@ -11,9 +11,13 @@ interface BrandAttributionProps {
    * 侧边栏容器的 ref（用于计算是否需要固定）
    */
   sidebarRef?: React.RefObject<HTMLElement>
+  /**
+   * 是否为简单模式（仅显示内容，居中，无固定定位）
+   */
+  simple?: boolean
 }
 
-const BrandAttribution = ({ inSidebar = false, sidebarRef }: BrandAttributionProps) => {
+const BrandAttribution = ({ inSidebar = false, sidebarRef, simple = false }: BrandAttributionProps) => {
   const [isFixed, setIsFixed] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -78,6 +82,15 @@ const BrandAttribution = ({ inSidebar = false, sidebarRef }: BrandAttributionPro
       本网站由<Box sx={{ fontWeight: 'bold', color: 'rgb(0, 0, 0)' }}>KoalaQA</Box>提供技术支持
     </Stack>
   )
+
+  // 简单模式：仅展示内容，用于挂件底部等
+  if (simple) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%', py: 0.5 }}>
+        {content}
+      </Box>
+    )
+  }
 
   // 在侧边栏中使用，支持智能定位
   if (inSidebar) {

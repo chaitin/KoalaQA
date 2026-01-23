@@ -89,7 +89,6 @@ declare global {
     }
     
     .cs-widget-button:hover {
-      transform: translateY(-4px) scale(1.02);
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.3);
       filter: brightness(1.1);
     }
@@ -106,9 +105,7 @@ declare global {
       transition: transform 0.4s ease;
     }
 
-    .cs-widget-button:hover .cs-widget-button-icon {
-      transform: rotate(10deg) scale(1.1);
-    }
+
     
     .cs-widget-button-text {
       color: #333;
@@ -127,13 +124,15 @@ declare global {
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.2);
+      background: transparent;
       display: none;
       align-items: flex-end;
       justify-content: flex-end;
       padding: 24px;
+      ${config.position === 'bottom-left' ? 'padding-left' : 'padding-right'}: 100px;
       z-index: ${config.zIndex + 1};
       animation: cs-fade-in 0.2s ease-out;
+      pointer-events: none;
     }
     
     .cs-widget-modal.cs-active {
@@ -147,19 +146,21 @@ declare global {
       height: 600px;
       max-height: calc(100vh - 120px);
       background: white;
-      border-radius: 20px;
+      border-radius: 8px;
       box-shadow: 0 24px 80px rgba(0,0,0,0.3);
       overflow: hidden;
       animation: cs-slide-up 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      pointer-events: auto;
     }
     
     .cs-widget-close {
       position: absolute;
       top: 16px;
       right: 16px;
-      width: 36px;
+      min-width: 36px;
       height: 36px;
-      border-radius: 18px;
+      padding: 0 8px;
+      border-radius: 8px;
       background: rgba(255, 255, 255, 0.8);
       backdrop-filter: blur(8px);
       border: 1px solid rgba(0, 0, 0, 0.05);
@@ -171,25 +172,29 @@ declare global {
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       outline: none;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      color: #666;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
     
     .cs-widget-close:hover {
       background: white;
-      transform: rotate(90deg) scale(1.1);
+      color: #333;
+      transform: scale(1.05);
       box-shadow: 0 6px 16px rgba(0,0,0,0.15);
     }
     
     .cs-widget-close svg {
-      width: 20px;
-      height: 20px;
-      fill: #666;
+      display: none;
     }
     
     .cs-widget-iframe {
       width: 100%;
       height: 100%;
       border: none;
-      border-radius: 12px;
+      border-radius: 8px;
     }
     
     @keyframes cs-fade-in {
@@ -251,7 +256,7 @@ declare global {
 
   // 创建 SVG 图标
   function createCloseIcon(): string {
-    return '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>'
+    return 'ESC'
   }
 
   // 辅助函数：根据主题色计算悬停颜色（变暗 10%）
@@ -283,8 +288,7 @@ declare global {
     modal.className = 'cs-widget-modal'
     modal.innerHTML = `
       <div class="cs-widget-modal-content">
-        <button class="cs-widget-close" aria-label="关闭">${createCloseIcon()}</button>
-        <iframe class="cs-widget-iframe" src="${config.baseUrl}${config.iframePath}" title="客服助手"></iframe>
+        <iframe class="cs-widget-iframe" src="${config.baseUrl}${config.iframePath}?is_widget=1" title="客服助手"></iframe>
       </div>
     `
 
@@ -296,34 +300,70 @@ declare global {
     const closeBtn = modal.querySelector('.cs-widget-close') as HTMLButtonElement
 
     button.addEventListener('click', () => {
-      modal.classList.add('cs-active')
-      document.body.style.overflow = 'hidden'
+      if (modal.classList.contains('cs-active')) {
+        modal.classList.remove('cs-active')
+      } else {
+        modal.classList.add('cs-active')
+      }
     })
 
     closeBtn.addEventListener('click', () => {
       modal.classList.remove('cs-active')
-      document.body.style.overflow = ''
-    })
-
-    // 点击背景关闭
-    modal.addEventListener('click', (e: MouseEvent) => {
-      if (e.target === modal) {
-        modal.classList.remove('cs-active')
-        document.body.style.overflow = ''
-      }
     })
 
     // ESC 键关闭
     document.addEventListener('keydown', (e: KeyboardEvent) => {
       if (e.key === 'Escape' && modal.classList.contains('cs-active')) {
         modal.classList.remove('cs-active')
-        document.body.style.overflow = ''
+      }
+    })
+
+    // 监听来自 iframe 的关闭消息
+    window.addEventListener('message', (e) => {
+      if (e.data && e.data.type === 'CLOSE_WIDGET') {
+        modal.classList.remove('cs-active')
       }
     })
   }
 
   // 初始化
   async function init(): Promise<void> {
+    // 如果页面被 iframe 嵌套，不显示挂件（避免重复显示）
+    if (window.self !== window.top) {
+      return
+    }
+
+    // 检查服务端配置是否启用网页挂件
+    try {
+      // 避免阻塞，设置一个较短的超时
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 3000)
+
+      const response = await fetch(`${config.baseUrl}/api/system/web_plugin`, {
+        signal: controller.signal
+      })
+      clearTimeout(timeoutId)
+
+      if (response.ok) {
+        const res = await response.json()
+
+        // 检查当前页面的 origin 是否与挂件服务的 origin 一致
+        const currentOrigin = window.location.origin
+        const widgetOrigin = new URL(config.baseUrl).origin
+        const isSameOrigin = currentOrigin === widgetOrigin
+        if (res?.data?.plugin === false) {
+          return
+        }
+        // 同源：检查 display
+        if (isSameOrigin && res?.data?.display === false) {
+          return
+        }
+      }
+    } catch (error) {
+      // 获取配置失败时（如网络错误），默认继续加载，以免影响正常使用
+      console.warn('Failed to check widget status:', error)
+    }
+
     // 注入基础样式并创建挂件
     const setup = () => {
       injectStyles()
@@ -347,14 +387,12 @@ declare global {
       const modal = document.querySelector('.cs-widget-modal')
       if (modal) {
         modal.classList.add('cs-active')
-        document.body.style.overflow = 'hidden'
       }
     },
     close: () => {
       const modal = document.querySelector('.cs-widget-modal')
       if (modal) {
         modal.classList.remove('cs-active')
-        document.body.style.overflow = ''
       }
     },
   }

@@ -10,6 +10,7 @@ import { ModelDiscussionType, ModelListRes, ModelTrend, ModelForumInfo } from '@
 import { useForumStore } from '@/store'
 import { TimeDisplay } from '@/components/TimeDisplay'
 import { buildRouteWithRouteName } from '@/lib/utils'
+import { Ellipsis } from '@ctzhian/ui'
 
 interface UserTrendListProps {
   userId: number
@@ -80,11 +81,11 @@ export default function UserTrendList({ userId, ownerName }: UserTrendListProps)
   const forums = useForumStore((s) => s.forums)
   const forumMap = useMemo(() => {
     const map = new Map<number, { name?: string; route_name?: string }>()
-    ;(forums || []).forEach((forum) => {
-      if (typeof forum.id === 'number') {
-        map.set(forum.id, { name: forum.name, route_name: forum.route_name })
-      }
-    })
+      ; (forums || []).forEach((forum) => {
+        if (typeof forum.id === 'number') {
+          map.set(forum.id, { name: forum.name, route_name: forum.route_name })
+        }
+      })
     return map
   }, [forums])
   const accessibleForumIds = useMemo(() => new Set(forumMap.keys()), [forumMap])
@@ -117,11 +118,11 @@ export default function UserTrendList({ userId, ownerName }: UserTrendListProps)
           page: pageToFetch,
           size: PAGE_SIZE,
         }
-        
+
         if (discussionType) {
           params.discussion_type = discussionType
         }
-        
+
         if (trendType) {
           params.trend_type = trendType
         }
@@ -226,37 +227,54 @@ export default function UserTrendList({ userId, ownerName }: UserTrendListProps)
 
           return (
             <Link key={trend.id} href={href} style={{ textDecoration: 'none', color: 'inherit' }}>
-              <Card
-                variant='outlined'
-                sx={theme=>({
-                  borderRadius: 1,
-                  p: 2,
-                  bgcolor: '#fafbfc',
-                  border: '1px solid #D9DEE2',
+              <Box
+                sx={(theme) => ({
+                  borderBottom: '1px solid #f3f4f6',
+                  transition: 'all 0.2s',
                   cursor: 'pointer',
                   '&:hover': {
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                    bgcolor: theme.palette.primaryAlpha?.[3],
                   },
-                  fontSize: 14,
-                  transition: 'all 0.2s ease',
+                  p: '16px 20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 2,
                 })}
               >
-                <Stack direction='row' justifyContent='space-between' alignItems='center' spacing={2}>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Box component='span' sx={{ color: '#21222D', fontWeight: 700 }}>
-                      {trendDescription}
-                    </Box>
-                    <Box component='span' sx={{ color: 'rgba(33, 34, 45, 0.70)', fontWeight: 400, ml: '4px' }}>
-                      "{trend.discuss_title}"
-                    </Box>
+                <Box sx={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box
+                    component='span'
+                    sx={{
+                      color: 'primary.main',
+                      fontWeight: 600,
+                      fontSize: '14px',
+                      whiteSpace: 'nowrap',
+                      bgcolor: (theme) => theme.palette.primaryAlpha?.[6],
+                      px: 1,
+                      py: 0.2,
+                      borderRadius: 0.5,
+                    }}
+                  >
+                    {trendDescription}
                   </Box>
-                  {trend.updated_at && (
-                    <Box sx={{ flexShrink: 0 }}>
-                      <TimeDisplay timestamp={trend.updated_at} style={{ color: '#9ca3af', fontSize: '0.875rem' }} />
-                    </Box>
-                  )}
-                </Stack>
-              </Card>
+                  <Ellipsis
+                    sx={{
+                      color: '#111827',
+                      fontWeight: 500,
+                      fontSize: '14px',
+                      flex: 1,
+                    }}
+                  >
+                    {trend.discuss_title}
+                  </Ellipsis>
+                </Box>
+                {trend.updated_at && (
+                  <Box sx={{ flexShrink: 0 }}>
+                    <TimeDisplay timestamp={trend.updated_at} style={{ color: '#9ca3af', fontSize: '0.8125rem' }} />
+                  </Box>
+                )}
+              </Box>
             </Link>
           )
         })}

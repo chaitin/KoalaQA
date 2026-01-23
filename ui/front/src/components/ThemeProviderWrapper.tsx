@@ -2,7 +2,8 @@
 
 import { createAppTheme } from '@/theme'
 import { ThemeProvider } from '@mui/material/styles'
-import { useMemo } from 'react'
+import { useMemo, useEffect } from 'react'
+import { updateAlertTheme } from './alert'
 
 interface ThemeProviderWrapperProps {
   primaryColor?: string
@@ -20,6 +21,11 @@ export default function ThemeProviderWrapper({
   // 使用 useMemo 缓存主题，只有当 primaryColor 变化时才重新创建
   const theme = useMemo(() => {
     return createAppTheme(primaryColor)
+  }, [primaryColor])
+
+  // 同步 Alert 组件的主题色
+  useEffect(() => {
+    updateAlertTheme(primaryColor)
   }, [primaryColor])
 
   return <ThemeProvider theme={theme}>{children}</ThemeProvider>

@@ -2168,7 +2168,7 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		return nil, err
 	}
 
-	if !webPlugin.Display && !webPlugin.Plugin {
+	if !webPlugin.Enabled && !webPlugin.Plugin {
 		return nil, errors.New("disabled")
 	}
 
@@ -2476,7 +2476,8 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 		return nil, err
 	}
 
-	if !webPlugin.Display && !webPlugin.Plugin {
+	// Service is enabled if any of: Enabled (在线支持), Display (在社区前台展示), or Plugin (网页挂件) is true
+	if !webPlugin.Enabled && !webPlugin.Plugin {
 		return nil, errors.New("disabled")
 	}
 
