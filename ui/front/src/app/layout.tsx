@@ -22,7 +22,7 @@ import Script from 'next/script'
 import * as React from 'react'
 
 import PageViewTracker from '@/components/PageViewTracker'
-import Header from '../components/header'
+import ConditionalHeader from '../components/ConditionalHeader'
 import Scroll from './scroll'
 import { Box } from '@mui/material'
 
@@ -206,7 +206,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
                         <CssBaseline />
                         <GuestActivationProvider>
                           <PageViewTracker />
-                          <Header brandConfig={brand} initialForums={forums} />
+                          <ConditionalHeader brandConfig={brand} initialForums={forums} />
                           <Box
                             component='main'
                             id='main-content'

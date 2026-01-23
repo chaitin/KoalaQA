@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "NODE_OPTIONS=\"--max-old-space-size=4096\" next dev",
     "dev:turbo": "NODE_OPTIONS=\"--max-old-space-size=4096\" next dev --turbo",
-    "build": "next build",
+    "build": "npm run build:widget && next build",
+    "build:widget": "vite build --config widget.config.js",
     "start": "next start",
     "start:debugger": "NODE_OPTIONS=--inspect next start",
     "lint": "next lint",

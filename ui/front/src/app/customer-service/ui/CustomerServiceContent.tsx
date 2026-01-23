@@ -35,6 +35,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { UIEvent, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { Icon } from '@ctzhian/ui'
+import IframeHeader from './IframeHeader'
 
 // 检查回答是否是"无法回答问题"
 const cannotAnswerPatterns = [/^无法回答问题$/, /^无法回答$/]
@@ -98,7 +99,13 @@ export default function CustomerServiceContent({
     '如何创建新文档',
     '如何编辑功能',
   ])
+  const [isInIframe, setIsInIframe] = useState(false)
   const isStreaming = isLoading || isWaiting
+
+  // 检测是否在 iframe 中
+  useEffect(() => {
+    setIsInIframe(window.self !== window.top)
+  }, [])
 
   // 生成 UUID 的工具函数
   const generateUuid = useCallback(() => {
@@ -1354,8 +1361,18 @@ export default function CustomerServiceContent({
         height: '100%',
         background: 'linear-gradient(to bottom, #f7f9fc 0%, #ffffff 100%)',
         position: 'relative',
+        px: isInIframe ? 1 : 0
       }}
     >
+      {/* iframe 模式下的简化 Header */}
+      {isInIframe && (
+        <IframeHeader
+          title={botName}
+          subtitle="智能客服"
+          avatar={botAvatar}
+        />
+      )}
+
       {/* 对话内容区域 - 优化滚动和间距 */}
       <Box
         onScroll={handleScroll}
