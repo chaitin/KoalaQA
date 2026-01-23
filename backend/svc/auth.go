@@ -100,7 +100,7 @@ func (l *Auth) Update(ctx context.Context, req model.Auth) error {
 		return err
 	}
 
-	err = l.repoSys.Create(ctx, &model.System[any]{
+	err = l.repoSys.Upsert(ctx, &model.System[any]{
 		Key:   model.SystemKeyAuth,
 		Value: model.NewJSONBAny(req),
 	})

@@ -88,7 +88,7 @@ func (b *Brand) Update(ctx context.Context, req model.SystemBrand) error {
 		req.Logo = brand.Logo
 	}
 
-	err = b.repoSys.Create(ctx, &model.System[any]{
+	err = b.repoSys.Upsert(ctx, &model.System[any]{
 		Key:   model.SystemKeyBrand,
 		Value: model.NewJSONBAny(req),
 	})

@@ -26,7 +26,7 @@ func (s *System) GetValueByKey(ctx context.Context, res any, key string) error {
 	return json.Unmarshal(data.Value, res)
 }
 
-func (s *System) Create(ctx context.Context, data *model.System[any]) error {
+func (s *System) Upsert(ctx context.Context, data *model.System[any]) error {
 	return s.model(ctx).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "key"}},
 		DoUpdates: clause.AssignmentColumns([]string{"value", "updated_at"}),

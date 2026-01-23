@@ -372,3 +372,14 @@ func (d *Discussion) FilterTagIDs(ctx context.Context, tagIDs *model.Int64Array,
 	*tagIDs = filterIDs
 	return nil
 }
+
+func (d *Discussion) DeleteByID(ctx context.Context, id uint) error {
+	return d.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		err := tx.Model(d.m).Where("id = ?", id).Delete(nil).Error
+		if err != nil {
+			return err
+		}
+
+		return tx.Model(&model.DiscussionFollow{}).Where("discussion_id = ?", id).Delete(nil).Error
+	})
+}

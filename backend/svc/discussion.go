@@ -338,7 +338,7 @@ func (d *Discussion) Delete(ctx context.Context, user model.UserInfo, uuid strin
 		return errors.New("resolved qa can not delete")
 	}
 
-	if err := d.in.DiscRepo.Delete(ctx, repo.QueryWithEqual("uuid", uuid)); err != nil {
+	if err := d.in.DiscRepo.DeleteByID(ctx, disc.ID); err != nil {
 		return err
 	}
 	if len(disc.TagIDs) > 0 {
@@ -2000,7 +2000,7 @@ func (d *Discussion) AssociateDiscussion(ctx context.Context, user model.UserInf
 		d.logger.WithContext(ctx).WithErr(err).With("disc_id", disc.ID).Warn("update disc rag metadata failed")
 	}
 
-	err = d.in.DiscFollowRepo.Create(ctx, &model.DiscussionFollow{
+	err = d.in.DiscFollowRepo.Upsert(ctx, &model.DiscussionFollow{
 		DiscussionID: issue.ID,
 		UserID:       disc.UserID,
 	})

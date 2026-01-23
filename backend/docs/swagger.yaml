@@ -932,6 +932,7 @@ definitions:
     - 12
     - 13
     - 14
+    - 15
     type: integer
     x-enum-varnames:
     - MsgNotifyTypeUnknown
@@ -949,6 +950,7 @@ definitions:
     - MsgNotifyTypeIssueInProgress
     - MsgNotifyTypeIssueResolved
     - MsgNotifyTypeUserPoint
+    - MsgNotifyTypeFollowDiscuss
   model.OrgType:
     enum:
     - 0

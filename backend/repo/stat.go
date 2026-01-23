@@ -27,7 +27,7 @@ func (s *Stat) BotUnknown(ctx context.Context, res *int64, t time.Time) error {
 	return s.model(ctx).Where("type = ? AND ts >= ?", model.StatTypeBotUnknown, t.Unix()).Where("key IN (SELECT uuid FROM discussions WHERE created_at >= ?)", t).Count(res).Error
 }
 
-func (s *Stat) Create(ctx context.Context, stats ...model.Stat) error {
+func (s *Stat) Upsert(ctx context.Context, stats ...model.Stat) error {
 	if len(stats) == 0 {
 		return nil
 	}

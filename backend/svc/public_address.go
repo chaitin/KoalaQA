@@ -28,7 +28,7 @@ func (p *PublicAddress) Get(ctx context.Context) (*model.PublicAddress, error) {
 }
 
 func (p *PublicAddress) Update(ctx context.Context, publicAddress model.PublicAddress) error {
-	return p.repoSys.Create(ctx, &model.System[any]{
+	return p.repoSys.Upsert(ctx, &model.System[any]{
 		Key:   model.SystemKeyPublicAddress,
 		Value: model.NewJSONBAny(publicAddress),
 	})

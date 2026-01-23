@@ -45,7 +45,7 @@ func statExec(repoStat *repo.Stat) func(data []model.StatInfo) error {
 			return c[i].Type < c[j].Type || c[i].Ts < c[j].Ts || c[i].Key < c[j].Key
 		})
 
-		return repoStat.Create(context.Background(), c...)
+		return repoStat.Upsert(context.Background(), c...)
 	}
 }
 

@@ -23,6 +23,7 @@ const (
 	MsgNotifyTypeIssueInProgress
 	MsgNotifyTypeIssueResolved
 	MsgNotifyTypeUserPoint
+	MsgNotifyTypeFollowDiscuss
 )
 
 type MessageNotify struct {
