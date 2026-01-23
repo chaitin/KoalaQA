@@ -21,7 +21,7 @@ export default function IframeHeader({
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 px: 2,
-                lineHeight: '60px',
+                height: '42px',
                 bgcolor: 'white',
                 color: 'text.primary',
                 boxShadow: '0 1px 0 rgba(0,0,0,0.05)',

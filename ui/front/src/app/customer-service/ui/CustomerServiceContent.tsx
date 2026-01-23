@@ -1570,7 +1570,7 @@ export default function CustomerServiceContent({
                               sx={{
                                 fontWeight: 600,
                                 color: 'text.primary',
-                                fontSize: '16px',
+                                fontSize: isInIframe ? '14px' : '16px',
                               }}
                             >
                               {botName}
@@ -2043,7 +2043,7 @@ export default function CustomerServiceContent({
                             sx={{
                               width: 40,
                               height: 40,
-                              fontSize: '0.95rem',
+                              fontSize: isInIframe ? '0.85rem' : '0.95rem',
                               fontWeight: 600,
                               color: theme.palette.primary.main,
                               backgroundColor: 'transparent',
@@ -2119,6 +2119,7 @@ export default function CustomerServiceContent({
                     borderRadius: 2,
                     bgcolor: 'white',
                     border: '1px solid',
+                    fontSize: isInIframe ? '12px' : '14px',
                     borderColor: alpha(theme.palette.grey[400], 0.3),
                     color: 'text.primary',
                     boxShadow: 'none',
@@ -2170,8 +2171,11 @@ export default function CustomerServiceContent({
                         px: 2.5,
                         py: 1.5,
                         pr: 6, // 为按钮留出右侧空间
-                        fontSize: '0.95rem',
+                        fontSize: isInIframe ? '0.875rem' : '0.95rem',
                         lineHeight: 1.6,
+                        '& .MuiInputBase-input::placeholder': {
+                          fontSize: isInIframe ? '0.8rem' : '0.95rem',
+                        },
                       },
                     },
                   }}

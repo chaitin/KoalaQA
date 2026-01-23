@@ -170,75 +170,76 @@ const ChatConfig = () => {
         </Stack>
 
         {/* 在社区前台展示 */}
-        <Stack direction="row" alignItems="center">
-          <Typography variant="body2" sx={{ minWidth: '120px', color: 'text.secondary' }}>
-            在社区前台展示
-          </Typography>
-          <RadioGroup
-            row
-            value={display}
-            onChange={(e) => setDisplay(e.target.value as 'enabled' | 'disabled')}
-          >
-            <FormControlLabel
-              value="disabled"
-              control={<Radio size="small" />}
-              label={<Typography variant="body2">禁用</Typography>}
-            />
-            <FormControlLabel
-              value="enabled"
-              control={<Radio size="small" />}
-              label={<Typography variant="body2">启用</Typography>}
-            />
-          </RadioGroup>
-        </Stack>
-
-        {/* 嵌入代码 - 仅当网页挂件开启时显示，或者一直显示但提示开启？
-            用户原话：网页挂件启用后，用户嵌入代码后，才能展示挂件的内容，否则不展示。
-            通常这并不意味着隐藏代码块，而是代码块有效性的前提。
-            参考图片一直显示。 */}
-        <Stack direction="row" alignItems="flex-start" sx={{ mt: 1 }}>
-          <Typography variant="body2" sx={{ minWidth: '120px', pt: 1.5, color: 'text.secondary' }}>
-            嵌入代码
-          </Typography>
-          <Box sx={{ flex: 1, maxWidth: '600px' }}>
-            <Paper
-              variant="outlined"
-              sx={{
-                p: 1.5,
-                bgcolor: 'action.hover',
-                border: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                fontFamily: 'monospace',
-                fontSize: '0.875rem',
-                color: 'text.primary',
-              }}
+        {plugin === 'enabled' && (
+          <Stack direction="row" alignItems="center">
+            <Typography variant="body2" sx={{ minWidth: '120px', color: 'text.secondary' }}>
+              在社区前台展示
+            </Typography>
+            <RadioGroup
+              row
+              value={display}
+              onChange={(e) => setDisplay(e.target.value as 'enabled' | 'disabled')}
             >
-              <Typography
-                variant="body2"
-                component="code"
+              <FormControlLabel
+                value="disabled"
+                control={<Radio size="small" />}
+                label={<Typography variant="body2">禁用</Typography>}
+              />
+              <FormControlLabel
+                value="enabled"
+                control={<Radio size="small" />}
+                label={<Typography variant="body2">启用</Typography>}
+              />
+            </RadioGroup>
+          </Stack>
+        )}
+
+        {/* 嵌入代码 - 仅当网页挂件开启时显示 */}
+        {plugin === 'enabled' && (
+          <Stack direction="row" alignItems="flex-start" sx={{ mt: 1 }}>
+            <Typography variant="body2" sx={{ minWidth: '120px', pt: 1.5, color: 'text.secondary' }}>
+              嵌入代码
+            </Typography>
+            <Box sx={{ flex: 1, maxWidth: '600px' }}>
+              <Paper
+                variant="outlined"
                 sx={{
+                  p: 1.5,
+                  bgcolor: 'action.hover',
+                  border: 'none',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
                   fontFamily: 'monospace',
-                  wordBreak: 'break-all',
-                  mr: 2
+                  fontSize: '0.875rem',
+                  color: 'text.primary',
                 }}
               >
-                {embedCode}
+                <Typography
+                  variant="body2"
+                  component="code"
+                  sx={{
+                    fontFamily: 'monospace',
+                    wordBreak: 'break-all',
+                    mr: 2
+                  }}
+                >
+                  {embedCode}
+                </Typography>
+                <CopyToClipboard text={embedCode} onCopy={() => message.success('复制成功')}>
+                  <Tooltip title="复制全部">
+                    <IconButton size="small">
+                      <ContentCopyIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </CopyToClipboard>
+              </Paper>
+              <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, display: 'block' }}>
+                将此代码添加到您网站的 &lt;body&gt; 标签中即可启用挂件
               </Typography>
-              <CopyToClipboard text={embedCode} onCopy={() => message.success('复制成功')}>
-                <Tooltip title="复制全部">
-                  <IconButton size="small">
-                    <ContentCopyIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </CopyToClipboard>
-            </Paper>
-            <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, display: 'block' }}>
-              将此代码添加到您网站的 &lt;body&gt; 标签中即可启用挂件
-            </Typography>
-          </Box>
-        </Stack>
+            </Box>
+          </Stack>
+        )}
       </Box>
     </Card>
   );

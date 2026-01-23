@@ -77,14 +77,29 @@ export default function FollowingIssuesList() {
   const { groups } = useContext(CommonContext)
   const params = useParams()
 
-  // 使用 useMemo 优化分组名称计算
-  const getGroupNames = useCallback(
+  // // 使用 useMemo 优化分组名称计算
+  // const getGroupNames = useCallback(
+  //   (groupIds?: number[]) => {
+  //     if (!groupIds || !groups.flat.length) return []
+  //     const groupMap = new Map(groups.flat.map((g) => [g.id, g.name]))
+  //     return groupIds.map((groupId) => groupMap.get(groupId)).filter(Boolean) as string[]
+  //   },
+  //   [groups.flat],
+  // )
+
+  // 获取父级分类名称 (Category)
+  const getCategoryNames = useCallback(
     (groupIds?: number[]) => {
-      if (!groupIds || !groups.flat.length) return []
-      const groupMap = new Map(groups.flat.map((g) => [g.id, g.name]))
-      return groupIds.map((groupId) => groupMap.get(groupId)).filter(Boolean) as string[]
+      if (!groupIds || !groups.origin.length) return []
+      const names = new Set<string>()
+      groups.origin.forEach((parent) => {
+        if (parent.items?.some((item) => item.id && groupIds?.includes(item.id || 0))) {
+          if (parent.name) names.add(parent.name)
+        }
+      })
+      return Array.from(names)
     },
-    [groups.flat],
+    [groups.origin],
   )
 
   const [page, setPage] = useState(1)
@@ -169,9 +184,8 @@ export default function FollowingIssuesList() {
       )}
 
       {issues.map((issue) => {
-        const groupNames = getGroupNames(issue.group_ids)
-        const allTags = groupNames
-
+        // const groupNames = getGroupNames(issue.group_ids)
+        const categoryNames = getCategoryNames(issue.group_ids)
         return (
           <Link
             key={issue.id}
@@ -199,12 +213,6 @@ export default function FollowingIssuesList() {
                   gap: 1.5,
                 }}
               >
-                <DiscussionTypeChip
-                  size='small'
-                  type={issue.type}
-                  variant='default'
-                  sx={{ mt: '2px' }}
-                />
                 <Ellipsis
                   sx={{
                     fontWeight: 600,
@@ -241,38 +249,31 @@ export default function FollowingIssuesList() {
                     flex: 1,
                   }}
                 >
-                  {/* 使用统一的 StatusChip 显示状态 */}
-                  {shouldShowStatus(issue) && (
+                  <Stack direction='row' alignItems='center' spacing={1} sx={{ overflow: 'hidden', flex: 1 }}>
+                    {/* 状态和类型 */}
                     <StatusChip item={issue} size='small' sx={{ flexShrink: 0 }} />
-                  )}
+                    <DiscussionTypeChip size='small' type={issue.type} variant='default' sx={{ height: 20 }} />
 
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      gap: 1,
-                      overflow: 'hidden',
-                      maskImage: allTags.length > 3 ? 'linear-gradient(to right, black 80%, transparent)' : 'none',
-                    }}
-                  >
-                    {allTags.map((tag, index) => {
-                      return (
-                        <Chip
-                          key={`${tag}-${index}`}
-                          label={tag}
-                          size='small'
-                          sx={{
-                            bgcolor: 'rgba(243, 244, 246, 1)',
-                            color: '#4B5563',
-                            height: 20,
-                            fontSize: '11px',
-                            borderRadius: '4px',
-                            cursor: 'default',
-                            whiteSpace: 'nowrap',
-                          }}
-                        />
-                      )
-                    })}
-                  </Box>
+                    {categoryNames.map((name) => (
+                      <Chip
+                        key={`cat-${name}`}
+                        label={name}
+                        size='small'
+                        sx={{
+                          bgcolor: 'rgba(233, 236, 239, 1)',
+                          color: 'rgba(33, 34, 45, 1)',
+                          height: 22,
+                          lineHeight: '22px',
+                          fontWeight: 400,
+                          fontSize: '12px',
+                          borderRadius: '3px',
+                          cursor: 'default',
+                          pointerEvents: 'none',
+                        }}
+                      />
+                    ))}
+
+                  </Stack>
                 </Box>
 
                 <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexShrink: 0 }}>

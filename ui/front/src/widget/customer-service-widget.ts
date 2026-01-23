@@ -155,13 +155,12 @@ declare global {
     
     .cs-widget-close {
       position: absolute;
-      top: 16px;
-      right: 16px;
-      min-width: 36px;
-      height: 36px;
-      padding: 0 8px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.8);
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.9);
       backdrop-filter: blur(8px);
       border: 1px solid rgba(0, 0, 0, 0.05);
       cursor: pointer;
@@ -171,12 +170,7 @@ declare global {
       z-index: 10;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       outline: none;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       color: #666;
-      font-size: 13px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
     }
     
     .cs-widget-close:hover {
@@ -187,7 +181,9 @@ declare global {
     }
     
     .cs-widget-close svg {
-      display: none;
+      display: block;
+      width: 14px;
+      height: 14px;
     }
     
     .cs-widget-iframe {
@@ -256,21 +252,9 @@ declare global {
 
   // 创建 SVG 图标
   function createCloseIcon(): string {
-    return 'ESC'
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`
   }
 
-  // 辅助函数：根据主题色计算悬停颜色（变暗 10%）
-  function getHoverColor(hex: string): string {
-    // 简单的颜色变暗逻辑
-    if (!hex.startsWith('#')) return hex
-    let r = parseInt(hex.slice(1, 3), 16)
-    let g = parseInt(hex.slice(3, 5), 16)
-    let b = parseInt(hex.slice(5, 7), 16)
-    r = Math.floor(r * 0.9)
-    g = Math.floor(g * 0.9)
-    b = Math.floor(b * 0.9)
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
-  }
 
   // 创建 DOM 元素
   function createWidget(): void {

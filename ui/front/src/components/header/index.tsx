@@ -82,7 +82,7 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
       try {
         const config = await getSystemWebPlugin()
         // 只有当 enabled 和 display 都为 true 时才显示
-        setShowCustomerService(config?.display === true)
+        setShowCustomerService(config?.enabled === true)
       } catch (error) {
         console.error('获取 web plugin 配置失败:', error)
         // 出错时默认不显示
