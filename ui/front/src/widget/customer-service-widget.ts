@@ -288,6 +288,7 @@ declare global {
     modal.className = 'cs-widget-modal'
     modal.innerHTML = `
       <div class="cs-widget-modal-content">
+        <button class="cs-widget-close" aria-label="关闭">${createCloseIcon()}</button>
         <iframe class="cs-widget-iframe" src="${config.baseUrl}${config.iframePath}?is_widget=1" title="客服助手"></iframe>
       </div>
     `
@@ -307,9 +308,11 @@ declare global {
       }
     })
 
-    closeBtn.addEventListener('click', () => {
-      modal.classList.remove('cs-active')
-    })
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        modal.classList.remove('cs-active')
+      })
+    }
 
     // ESC 键关闭
     document.addEventListener('keydown', (e: KeyboardEvent) => {

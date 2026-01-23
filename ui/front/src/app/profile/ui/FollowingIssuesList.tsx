@@ -171,8 +171,6 @@ export default function FollowingIssuesList() {
       {issues.map((issue) => {
         const groupNames = getGroupNames(issue.group_ids)
         const allTags = groupNames
-        const isIssuePost = issue.type === ModelDiscussionType.DiscussionTypeIssue
-        const postStatus = getPostStatus(issue)
 
         return (
           <Link
