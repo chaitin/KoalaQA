@@ -83,21 +83,6 @@ export default function CustomerServiceContent({
   const searchParams = useSearchParams()
   const theme = useTheme()
   const displayUser = user?.uid ? user : initialUser
-
-  // 关闭处理函数
-  const handleClose = useCallback(() => {
-    if (onClose) {
-      onClose()
-      return
-    }
-    // 在iframe模式下，通过postMessage通知父窗口关闭
-    if (window.parent !== window) {
-      window.parent.postMessage({ type: 'CLOSE_WIDGET' }, '*')
-    } else {
-      // 如果不是在iframe中，回退到上一页
-      window.history.back()
-    }
-  }, [onClose])
   const userInitial = displayUser?.username?.[0]?.toUpperCase() || 'U'
   const forumId = useForumStore((s) => s.selectedForumId)
   const forums = useForumStore((s) => s.forums)
@@ -1401,8 +1386,6 @@ export default function CustomerServiceContent({
         <IframeHeader
           title={botName}
           subtitle="智能客服"
-          avatar={botAvatar}
-          onClose={handleClose}
         />
       )}
 

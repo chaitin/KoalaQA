@@ -1,16 +1,16 @@
 'use client'
 
-import { Box, IconButton, Typography } from '@mui/material'
-import CloseIcon from '@mui/icons-material/Close'
+import { Box, Typography } from '@mui/material'
 
 interface IframeHeaderProps {
-    title?: string
-    subtitle?: string
-    avatar?: string
-    onClose?: () => void
+    readonly title?: string
+    readonly subtitle?: string
+    readonly onClose?: () => void
 }
 
 export default function IframeHeader({
+    title,
+    subtitle,
     onClose,
 }: IframeHeaderProps) {
     return (
@@ -27,30 +27,28 @@ export default function IframeHeader({
                 boxShadow: '0 1px 0 rgba(0,0,0,0.05)',
             }}
         >
-            <Typography
-                variant='subtitle1'
-                sx={{
-                    fontWeight: 600,
-                    fontSize: '14px',
-                }}
-            >
-                智能客服
-            </Typography>
-
-            {/* <IconButton
-                onClick={onClose}
-                sx={{
-                    color: 'text.secondary',
-                    '&:hover': {
-                        bgcolor: 'rgba(0, 0, 0, 0.04)',
-                        color: 'text.primary',
-                    },
-                }}
-                size="small"
-                title="关闭"
-            >
-                <CloseIcon fontSize="small" />
-            </IconButton> */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+                <Typography
+                    variant='subtitle1'
+                    sx={{
+                        fontWeight: 600,
+                        fontSize: '14px',
+                    }}
+                >
+                    {title || '智能客服'}
+                </Typography>
+                {subtitle && (
+                    <Typography
+                        variant='caption'
+                        sx={{
+                            color: 'text.secondary',
+                            fontSize: '12px',
+                        }}
+                    >
+                        {subtitle}
+                    </Typography>
+                )}
+            </Box>
         </Box>
     )
 }
