@@ -37,17 +37,6 @@ export default function IframeHeader({
                 >
                     {title || '智能客服'}
                 </Typography>
-                {subtitle && (
-                    <Typography
-                        variant='caption'
-                        sx={{
-                            color: 'text.secondary',
-                            fontSize: '12px',
-                        }}
-                    >
-                        {subtitle}
-                    </Typography>
-                )}
             </Box>
         </Box>
     )
