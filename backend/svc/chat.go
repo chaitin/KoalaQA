@@ -84,14 +84,6 @@ func (c *Chat) Update(ctx context.Context, req model.SystemChat) error {
 		}
 	}
 
-	err = c.repoSys.Upsert(ctx, &model.System[any]{
-		Key:   model.SystemKeyChat,
-		Value: model.NewJSONBAny(req),
-	})
-	if err != nil {
-		return err
-	}
-
 	if !req.Enabled {
 		if c.chatBot != nil {
 			c.chatBot.Stop()
@@ -107,6 +99,14 @@ func (c *Chat) Update(ctx context.Context, req model.SystemChat) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	err = c.repoSys.Upsert(ctx, &model.System[any]{
+		Key:   model.SystemKeyChat,
+		Value: model.NewJSONBAny(req),
+	})
+	if err != nil {
+		return err
 	}
 
 	c.cache = &req
