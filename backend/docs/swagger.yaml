@@ -104,6 +104,7 @@ definitions:
           $ref: '#/definitions/model.AuthInfo'
         type: array
       enable_register:
+        description: 'Deprecated: move to AuthInfo, only use in migration'
         type: boolean
       need_review:
         type: boolean
@@ -139,6 +140,8 @@ definitions:
         type: string
       config:
         $ref: '#/definitions/model.AuthConfig'
+      enable_register:
+        type: boolean
       type:
         maximum: 4
         minimum: 1
@@ -1481,6 +1484,8 @@ definitions:
     properties:
       button_desc:
         type: string
+      enable_register:
+        type: boolean
       type:
         type: integer
     type: object
@@ -1490,8 +1495,6 @@ definitions:
         items:
           $ref: '#/definitions/svc.AuthFrontendGetAuth'
         type: array
-      enable_register:
-        type: boolean
       prompt:
         type: string
       public_access:

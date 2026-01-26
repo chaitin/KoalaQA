@@ -7910,6 +7910,7 @@ const docTemplate = `{
                     }
                 },
                 "enable_register": {
+                    "description": "Deprecated: move to AuthInfo, only use in migration",
                     "type": "boolean"
                 },
                 "need_review": {
@@ -7963,6 +7964,9 @@ const docTemplate = `{
                 },
                 "config": {
                     "$ref": "#/definitions/model.AuthConfig"
+                },
+                "enable_register": {
+                    "type": "boolean"
                 },
                 "type": {
                     "type": "integer",
@@ -9881,6 +9885,9 @@ const docTemplate = `{
                 "button_desc": {
                     "type": "string"
                 },
+                "enable_register": {
+                    "type": "boolean"
+                },
                 "type": {
                     "type": "integer"
                 }
@@ -9894,9 +9901,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/svc.AuthFrontendGetAuth"
                     }
-                },
-                "enable_register": {
-                    "type": "boolean"
                 },
                 "prompt": {
                     "type": "string"

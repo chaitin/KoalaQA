@@ -489,7 +489,7 @@ func (u *User) Register(ctx context.Context, req UserRegisterReq) error {
 		return err
 	}
 
-	if !auth.EnableRegister {
+	if !auth.CanRegister(model.AuthTypePassword) {
 		return errors.New("register disabled")
 	}
 
@@ -752,7 +752,7 @@ func (u *User) LoginThirdCallback(ctx context.Context, typ model.AuthType, req L
 		user.Role = model.UserRoleGuest
 	}
 
-	dbUser, err := u.repoUser.CreateThird(ctx, org.ID, user, auth.EnableRegister)
+	dbUser, err := u.repoUser.CreateThird(ctx, org.ID, user, auth.CanRegister(typ))
 	if err != nil {
 		return "", err
 	}

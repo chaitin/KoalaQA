@@ -41,15 +41,15 @@ func (l *Auth) Get(ctx context.Context) (*model.Auth, error) {
 }
 
 type AuthFrontendGetAuth struct {
-	Type       model.AuthType `json:"type"`
-	ButtonDesc string         `json:"button_desc"`
+	Type           model.AuthType `json:"type"`
+	ButtonDesc     string         `json:"button_desc"`
+	EnableRegister bool           `json:"enable_register"`
 }
 
 type AuthFrontendGetRes struct {
-	EnableRegister bool                  `json:"enable_register"`
-	PublicAccess   bool                  `json:"public_access"`
-	Prompt         string                `json:"prompt"`
-	AuthTypes      []AuthFrontendGetAuth `json:"auth_types"`
+	PublicAccess bool                  `json:"public_access"`
+	Prompt       string                `json:"prompt"`
+	AuthTypes    []AuthFrontendGetAuth `json:"auth_types"`
 }
 
 func (l *Auth) FrontendGet(ctx context.Context) (*AuthFrontendGetRes, error) {
@@ -59,16 +59,16 @@ func (l *Auth) FrontendGet(ctx context.Context) (*AuthFrontendGetRes, error) {
 	}
 
 	res := AuthFrontendGetRes{
-		EnableRegister: data.EnableRegister,
-		PublicAccess:   data.PublicAccess,
-		Prompt:         data.Prompt,
-		AuthTypes:      make([]AuthFrontendGetAuth, 0),
+		PublicAccess: data.PublicAccess,
+		Prompt:       data.Prompt,
+		AuthTypes:    make([]AuthFrontendGetAuth, 0),
 	}
 
 	for _, authInfo := range data.AuthInfos {
 		res.AuthTypes = append(res.AuthTypes, AuthFrontendGetAuth{
-			Type:       authInfo.Type,
-			ButtonDesc: authInfo.ButtonDesc,
+			Type:           authInfo.Type,
+			ButtonDesc:     authInfo.ButtonDesc,
+			EnableRegister: authInfo.EnableRegister,
 		})
 	}
 
@@ -95,6 +95,14 @@ func (l *Auth) updateAuthMgmt(ctx context.Context, auth model.Auth, checkCfg boo
 }
 
 func (l *Auth) Update(ctx context.Context, req model.Auth) error {
+	for i := range req.AuthInfos {
+		switch req.AuthInfos[i].Type {
+		case model.AuthTypePassword, model.AuthTypeWechat:
+		default:
+			req.AuthInfos[i].EnableRegister = true
+		}
+	}
+
 	err := l.updateAuthMgmt(ctx, req, true)
 	if err != nil {
 		return err
