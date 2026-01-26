@@ -1,7 +1,7 @@
-import { getAdminDiscussionAsk, ModelAskSession, getAdminDiscussionAskSession, SvcListAsksRes } from '@/api';
+import { getAdminDiscussionAsk, ModelAskSession, getAdminDiscussionAskSession, SvcListAsksRes, ModelAskSessionSource } from '@/api';
 import { useListQueryParams } from '@/hooks/useListQueryParams';
 import { Ellipsis, Table, Modal } from '@ctzhian/ui';
-import { Stack, TextField, Typography, Box, Paper, Avatar, CircularProgress } from '@mui/material';
+import { Stack, TextField, Typography, Box, Paper, Avatar, CircularProgress, Chip } from '@mui/material';
 import { useRequest } from 'ahooks';
 import { ColumnsType } from '@ctzhian/ui/dist/Table';
 import dayjs from 'dayjs';
@@ -60,7 +60,7 @@ const AskHistory = () => {
 
   // 打开详情弹窗
   const handleOpenDetail = async (record: SvcListAsksRes) => {
-    if (!record.uuid ) return;
+    if (!record.uuid) return;
     setDetailModalOpen(true);
     setCurrentSessionId(record.uuid);
     setCurrentUserId(record.user_id || 0);
@@ -144,23 +144,30 @@ const AskHistory = () => {
         const isUserMessage = record.bot === false;
         const displayText = record.content || '-';
         const truncatedText = isUserMessage ? displayText : (displayText.length > 100 ? displayText.substring(0, 100) + '...' : displayText);
+
         return (
-          <Ellipsis
-            onClick={() => {
-              if (record.uuid) {
-                handleOpenDetail(record);
-              }
-            }}
-            sx={{
-              cursor: record.uuid ? 'pointer' : 'default',
-              color: record.uuid ? 'primary.main' : 'text.primary',
-              '&:hover': {
-                textDecoration: record.uuid ? 'underline' : 'none',
-              },
-            }}
-          >
-            {truncatedText}
-          </Ellipsis>
+          <Stack spacing={0.5} alignItems="flex-start">
+            <Ellipsis
+              onClick={() => {
+                if (record.uuid) {
+                  handleOpenDetail(record);
+                }
+              }}
+              sx={{
+                cursor: record.uuid ? 'pointer' : 'default',
+                color: record.uuid ? 'primary.main' : 'text.primary',
+                '&:hover': {
+                  textDecoration: record.uuid ? 'underline' : 'none',
+                },
+                width: '100%',
+              }}
+            >
+              {truncatedText}
+            </Ellipsis>
+            <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+              {record.source === ModelAskSessionSource.AskSessionSourcePlugin ? '网页挂件' : record.source === ModelAskSessionSource.AskSessionSourceBot ? '机器人' : '在线支持'}
+            </Box>
+          </Stack>
         );
       },
     },
@@ -195,7 +202,7 @@ const AskHistory = () => {
 
   return (
     <>
-      <Stack direction="row" alignItems="center"  spacing={2} sx={{ mb: 2 }}>
+      <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
         <Typography variant="caption">共 {askData?.total || 0} 条记录</Typography>
         <TextField
           label="问题"

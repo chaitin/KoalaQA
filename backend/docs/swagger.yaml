@@ -84,10 +84,12 @@ definitions:
     enum:
     - 0
     - 1
+    - 2
     type: integer
     x-enum-varnames:
     - AskSessionSourceWeb
     - AskSessionSourcePlugin
+    - AskSessionSourceBot
   model.AskSessionSummaryDisc:
     properties:
       forum_id:
@@ -104,6 +106,7 @@ definitions:
           $ref: '#/definitions/model.AuthInfo'
         type: array
       enable_register:
+        description: 'Deprecated: move to AuthInfo, only use in migration'
         type: boolean
       need_review:
         type: boolean
@@ -139,6 +142,8 @@ definitions:
         type: string
       config:
         $ref: '#/definitions/model.AuthConfig'
+      enable_register:
+        type: boolean
       type:
         maximum: 4
         minimum: 1
@@ -1060,6 +1065,22 @@ definitions:
       theme:
         type: string
     type: object
+  model.SystemChat:
+    properties:
+      config:
+        $ref: '#/definitions/model.SystemChatConfig'
+      enabled:
+        type: boolean
+    type: object
+  model.SystemChatConfig:
+    properties:
+      client_id:
+        type: string
+      client_secret:
+        type: string
+      template_id:
+        type: string
+    type: object
   model.SystemDiscussion:
     properties:
       auto_close:
@@ -1481,6 +1502,8 @@ definitions:
     properties:
       button_desc:
         type: string
+      enable_register:
+        type: boolean
       type:
         type: integer
     type: object
@@ -1490,8 +1513,6 @@ definitions:
         items:
           $ref: '#/definitions/svc.AuthFrontendGetAuth'
         type: array
-      enable_register:
-        type: boolean
       prompt:
         type: string
       public_access:
@@ -1577,6 +1598,12 @@ definitions:
         type: string
       session_id:
         type: string
+      source:
+        allOf:
+        - $ref: '#/definitions/model.AskSessionSource'
+        enum:
+        - 0
+        - 1
     required:
     - question
     - session_id
@@ -2273,6 +2300,12 @@ definitions:
         type: array
       session_id:
         type: string
+      source:
+        allOf:
+        - $ref: '#/definitions/model.AskSessionSource'
+        enum:
+        - 0
+        - 1
     required:
     - forum_id
     - session_id
@@ -2578,6 +2611,43 @@ paths:
       summary: set bot info
       tags:
       - bot
+  /admin/chat:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.SystemChat'
+              type: object
+      summary: get chat info
+      tags:
+      - chat
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: chat info
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/model.SystemChat'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: set chat info
+      tags:
+      - chat
   /admin/discussion:
     get:
       description: backend list discussions

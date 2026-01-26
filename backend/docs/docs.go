@@ -85,6 +85,68 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/chat": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chat"
+                ],
+                "summary": "get chat info",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.SystemChat"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "chat"
+                ],
+                "summary": "set chat info",
+                "parameters": [
+                    {
+                        "description": "chat info",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.SystemChat"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/discussion": {
             "get": {
                 "description": "backend list discussions",
@@ -7879,11 +7941,13 @@ const docTemplate = `{
             "type": "integer",
             "enum": [
                 0,
-                1
+                1,
+                2
             ],
             "x-enum-varnames": [
                 "AskSessionSourceWeb",
-                "AskSessionSourcePlugin"
+                "AskSessionSourcePlugin",
+                "AskSessionSourceBot"
             ]
         },
         "model.AskSessionSummaryDisc": {
@@ -7910,6 +7974,7 @@ const docTemplate = `{
                     }
                 },
                 "enable_register": {
+                    "description": "Deprecated: move to AuthInfo, only use in migration",
                     "type": "boolean"
                 },
                 "need_review": {
@@ -7963,6 +8028,9 @@ const docTemplate = `{
                 },
                 "config": {
                     "$ref": "#/definitions/model.AuthConfig"
+                },
+                "enable_register": {
+                    "type": "boolean"
                 },
                 "type": {
                     "type": "integer",
@@ -9275,6 +9343,31 @@ const docTemplate = `{
                 }
             }
         },
+        "model.SystemChat": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/model.SystemChatConfig"
+                },
+                "enabled": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "model.SystemChatConfig": {
+            "type": "object",
+            "properties": {
+                "client_id": {
+                    "type": "string"
+                },
+                "client_secret": {
+                    "type": "string"
+                },
+                "template_id": {
+                    "type": "string"
+                }
+            }
+        },
         "model.SystemDiscussion": {
             "type": "object",
             "properties": {
@@ -9881,6 +9974,9 @@ const docTemplate = `{
                 "button_desc": {
                     "type": "string"
                 },
+                "enable_register": {
+                    "type": "boolean"
+                },
                 "type": {
                     "type": "integer"
                 }
@@ -9894,9 +9990,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/svc.AuthFrontendGetAuth"
                     }
-                },
-                "enable_register": {
-                    "type": "boolean"
                 },
                 "prompt": {
                     "type": "string"
@@ -10033,6 +10126,17 @@ const docTemplate = `{
                 },
                 "session_id": {
                     "type": "string"
+                },
+                "source": {
+                    "enum": [
+                        0,
+                        1
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.AskSessionSource"
+                        }
+                    ]
                 }
             }
         },
@@ -11091,6 +11195,17 @@ const docTemplate = `{
                 },
                 "session_id": {
                     "type": "string"
+                },
+                "source": {
+                    "enum": [
+                        0,
+                        1
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.AskSessionSource"
+                        }
+                    ]
                 }
             }
         },

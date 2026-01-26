@@ -49,7 +49,6 @@ const AUTH_TYPE_OPTIONS = [
 
 // Zod 验证模式
 const loginMethodSchema = z.object({
-  enable_register: z.boolean(),
   need_review: z.boolean(),
   public_access: z.boolean(),
   prompt: z.string().optional(),
@@ -60,6 +59,7 @@ const loginMethodSchema = z.object({
   password_config: z
     .object({
       button_desc: z.string().optional(),
+      enable_register: z.boolean().optional(),
     })
     .optional(),
   oidc_config: z
@@ -83,6 +83,7 @@ const loginMethodSchema = z.object({
       app_id: z.string().optional(),
       app_secret: z.string().optional(),
       button_desc: z.string().optional(),
+      enable_register: z.boolean().optional(),
     })
     .optional(),
 }).refine(
@@ -115,7 +116,6 @@ const LoginMethod: React.FC = () => {
   } = useForm<LoginMethodFormData>({
     resolver: zodResolver(loginMethodSchema),
     defaultValues: {
-      enable_register: true,
       need_review: false,
       public_access: true,
       prompt: '',
@@ -154,7 +154,7 @@ const LoginMethod: React.FC = () => {
   const { loading } = useRequest(getAdminSystemLoginMethod, {
     onSuccess: res => {
       if (res) {
-        const { need_review, enable_register, public_access, auth_infos } = res;
+        const { need_review, public_access, auth_infos } = res;
 
         // 从 auth_infos 中提取认证类型和配置
         const authTypes = auth_infos?.map((info: ModelAuthInfo) => info.type).filter(Boolean) ?? [
@@ -167,6 +167,7 @@ const LoginMethod: React.FC = () => {
         );
         const passwordConfig = {
           button_desc: passwordInfo?.button_desc ?? '密码登录',
+          enable_register: passwordInfo?.enable_register ?? false,
         };
 
         // 获取 OIDC 配置
@@ -193,10 +194,10 @@ const LoginMethod: React.FC = () => {
           app_id: wechatInfo?.config?.oauth?.client_id ?? '',
           app_secret: wechatInfo?.config?.oauth?.client_secret ?? '',
           button_desc: wechatInfo?.button_desc ?? '微信扫码登录',
+          enable_register: wechatInfo?.enable_register ?? false,
         };
 
         reset({
-          enable_register: enable_register ?? true,
           need_review: need_review ?? false,
           public_access: public_access ?? true,
           prompt: res?.prompt,
@@ -257,47 +258,53 @@ const LoginMethod: React.FC = () => {
       }
 
       // 构建认证信息
-      const authInfos: ModelAuthInfo[] = formData.auth_types.map(type => {
-        const authInfo: ModelAuthInfo = { type };
+      // 构建认证信息策略映射
+      const authInfoStrategies: Record<number, () => ModelAuthInfo> = {
+        [AuthType.PASSWORD]: () => ({
+          type: AuthType.PASSWORD,
+          button_desc: formData.password_config?.button_desc || '密码登录',
+          enable_register: formData.password_config?.enable_register ?? false,
+        }),
+        [AuthType.OIDC]: () => ({
+          type: AuthType.OIDC,
+          button_desc: formData.oidc_config?.button_desc || 'OIDC 登录',
+          config: {
+            oauth: {
+              url: formData.oidc_config?.url || '',
+              client_id: formData.oidc_config?.client_id || '',
+              client_secret: formData.oidc_config?.client_secret || '',
+            },
+          },
+        }),
+        [AuthType.WECOM]: () => ({
+          type: AuthType.WECOM,
+          button_desc: formData.wecom_config?.button_desc || '企业微信登陆',
+          config: {
+            oauth: {
+              corp_id: formData.wecom_config?.corp_id || '',
+              client_id: formData.wecom_config?.client_id || '',
+              client_secret: formData.wecom_config?.secret || '',
+            },
+          },
+        }),
+        [AuthType.WECHAT]: () => ({
+          type: AuthType.WECHAT,
+          button_desc: formData.wechat_config?.button_desc || '微信扫码登录',
+          enable_register: formData.wechat_config?.enable_register ?? false,
+          config: {
+            oauth: {
+              client_id: formData.wechat_config?.app_id || '',
+              client_secret: formData.wechat_config?.app_secret || '',
+            },
+          },
+        }),
+      };
 
-        if (type === AuthType.PASSWORD) {
-          authInfo.button_desc = formData.password_config?.button_desc || '密码登录';
-        } else if (type === AuthType.OIDC && formData.oidc_config) {
-          authInfo.button_desc = formData.oidc_config.button_desc || 'OIDC 登录';
-          const config: ModelAuthConfig = {
-            oauth: {
-              url: formData.oidc_config.url || '',
-              client_id: formData.oidc_config.client_id || '',
-              client_secret: formData.oidc_config.client_secret || '',
-            },
-          };
-          authInfo.config = config;
-        } else if (type === AuthType.WECOM && formData.wecom_config) {
-          authInfo.button_desc = formData.wecom_config.button_desc || '企业微信登陆';
-          const config: ModelAuthConfig = {
-            oauth: {
-              corp_id: formData.wecom_config.corp_id || '',
-              client_id: formData.wecom_config.client_id || '',
-              client_secret: formData.wecom_config.secret || '',
-            },
-          };
-          authInfo.config = config;
-        } else if (type === AuthType.WECHAT && formData.wechat_config) {
-          authInfo.button_desc = formData.wechat_config.button_desc || '微信扫码登录';
-          const config: ModelAuthConfig = {
-            oauth: {
-              client_id: formData.wechat_config.app_id || '',
-              client_secret: formData.wechat_config.app_secret || '',
-            },
-          };
-          authInfo.config = config;
-        }
-
-        return authInfo;
-      });
+      const authInfos: ModelAuthInfo[] = formData.auth_types
+        .map(type => authInfoStrategies[type]?.())
+        .filter(Boolean);
 
       const requestData: ModelAuth = {
-        enable_register: formData.enable_register,
         need_review: formData.need_review,
         public_access: formData.public_access,
         prompt: formData.prompt,
@@ -306,7 +313,6 @@ const LoginMethod: React.FC = () => {
 
       await putAdminSystemLoginMethod(requestData);
       message.success('登录配置保存成功');
-
       // 重新获取数据以更新表单状态
       reset(formData);
     } catch (error) {
@@ -335,7 +341,7 @@ const LoginMethod: React.FC = () => {
               variant="contained"
               size="small"
               disabled={loading}
-              onClick={handleSubmit(onSubmit)}
+              onClick={handleSubmit(onSubmit, (e) => { console.log(e) })}
             >
               保存
             </Button>
@@ -345,29 +351,29 @@ const LoginMethod: React.FC = () => {
 
       <Box component="form" onSubmit={handleSubmit(onSubmit)}>
         <Stack gap={1}>
-          {/* 开放用户注册 */}
+          {/* 公开访问 */}
           <Box display="flex" alignItems="center">
             <Typography variant="body2" sx={{ minWidth: 170 }}>
-              开放用户注册
+              公开访问
             </Typography>
             <Controller
-              name="enable_register"
+              name="public_access"
               control={control}
               render={({ field }) => (
                 <RadioGroup
                   row
-                  value={field.value ? 'enable' : 'disable'}
-                  onChange={e => field.onChange(e.target.value === 'enable')}
+                  value={field.value ? 'allow' : 'disallow'}
+                  onChange={e => field.onChange(e.target.value === 'allow')}
                 >
                   <FormControlLabel
-                    value="enable"
+                    value="allow"
                     control={<Radio size="small" />}
-                    label="开放用户注册"
+                    label="允许公开访问"
                   />
                   <FormControlLabel
-                    value="disable"
+                    value="disallow"
                     control={<Radio size="small" />}
-                    label="不开放用户注册"
+                    label="不允许公开访问"
                   />
                 </RadioGroup>
               )}
@@ -442,35 +448,6 @@ const LoginMethod: React.FC = () => {
               </Box>
             </Box>
           )}
-
-          {/* 公开访问 */}
-          <Box display="flex" alignItems="center">
-            <Typography variant="body2" sx={{ minWidth: 170 }}>
-              公开访问
-            </Typography>
-            <Controller
-              name="public_access"
-              control={control}
-              render={({ field }) => (
-                <RadioGroup
-                  row
-                  value={field.value ? 'allow' : 'disallow'}
-                  onChange={e => field.onChange(e.target.value === 'allow')}
-                >
-                  <FormControlLabel
-                    value="allow"
-                    control={<Radio size="small" />}
-                    label="允许公开访问"
-                  />
-                  <FormControlLabel
-                    value="disallow"
-                    control={<Radio size="small" />}
-                    label="不允许公开访问"
-                  />
-                </RadioGroup>
-              )}
-            />
-          </Box>
 
           {/* 登录方式选择 */}
           <Box display="flex" alignItems="center">
@@ -585,36 +562,66 @@ const LoginMethod: React.FC = () => {
                     密码认证配置
                   </Typography>
                 </Box>
-                <Stack direction="row" alignItems="center" spacing={2} sx={{ mt: 2 }}>
-                  <Typography variant="body2" sx={{ minWidth: 170 }}>
-                    登录按钮文案
-                  </Typography>
-                  <Box sx={{ flex: 1 }}>
+                <Stack spacing={2} sx={{ mt: 2 }}>
+                  <Box display="flex" alignItems="center">
+                    <Typography variant="body2" sx={{ minWidth: 170 }}>
+                      开放用户注册
+                    </Typography>
                     <Controller
-                      name="password_config.button_desc"
+                      name="password_config.enable_register"
                       control={control}
                       render={({ field }) => (
-                        <TextField
-                          {...field}
-                          placeholder="请输入"
-                          fullWidth
-                          size="small"
-                          InputLabelProps={{
-                            shrink: false,
-                          }}
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              backgroundColor: '#F8F9FA',
-                              borderRadius: '10px',
-                            },
-                            '& .MuiInputBase-input': {
-                              fontSize: 14,
-                            },
-                          }}
-                        />
+                        <RadioGroup
+                          row
+                          value={field.value ? 'enable' : 'disable'}
+                          onChange={e => field.onChange(e.target.value === 'enable')}
+                        >
+                          <FormControlLabel
+                            value="enable"
+                            control={<Radio size="small" />}
+                            label="开放用户注册"
+                          />
+                          <FormControlLabel
+                            value="disable"
+                            control={<Radio size="small" />}
+                            label="不开放用户注册"
+                          />
+                        </RadioGroup>
                       )}
                     />
                   </Box>
+
+                  <Stack direction="row" alignItems="center" spacing={2}>
+                    <Typography variant="body2" sx={{ minWidth: 170 }}>
+                      登录按钮文案
+                    </Typography>
+                    <Box sx={{ flex: 1 }}>
+                      <Controller
+                        name="password_config.button_desc"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            placeholder="请输入"
+                            fullWidth
+                            size="small"
+                            InputLabelProps={{
+                              shrink: false,
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                backgroundColor: '#F8F9FA',
+                                borderRadius: '10px',
+                              },
+                              '& .MuiInputBase-input': {
+                                fontSize: 14,
+                              },
+                            }}
+                          />
+                        )}
+                      />
+                    </Box>
+                  </Stack>
                 </Stack>
               </Box>
             </>
@@ -1073,6 +1080,33 @@ const LoginMethod: React.FC = () => {
               </Box>
 
               <Stack spacing={1.5}>
+                <Box display="flex" alignItems="center">
+                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                    开放用户注册
+                  </Typography>
+                  <Controller
+                    name="wechat_config.enable_register"
+                    control={control}
+                    render={({ field }) => (
+                      <RadioGroup
+                        row
+                        value={field.value ? 'enable' : 'disable'}
+                        onChange={e => field.onChange(e.target.value === 'enable')}
+                      >
+                        <FormControlLabel
+                          value="enable"
+                          control={<Radio size="small" />}
+                          label="开放用户注册"
+                        />
+                        <FormControlLabel
+                          value="disable"
+                          control={<Radio size="small" />}
+                          label="不开放用户注册"
+                        />
+                      </RadioGroup>
+                    )}
+                  />
+                </Box>
                 <Stack direction="row" alignItems="center" spacing={2}>
                   <Typography variant="body2" sx={{ minWidth: 170 }}>
                     App ID<span style={{ color: 'red' }}>*</span>

@@ -193,7 +193,7 @@ func (u *User) CreateThird(ctx context.Context, orgID uint, user *third_auth.Use
 				return txErr
 			}
 
-			if !enableRegister && user.Type == model.AuthTypeWechat {
+			if !enableRegister {
 				return errors.New("register is disabled")
 			}
 		} else {

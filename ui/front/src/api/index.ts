@@ -1,5 +1,6 @@
 export * from './Bot'
 export * from './Brand'
+export * from './Chat'
 export * from './Csrf'
 export * from './Discussion'
 export * from './Document'

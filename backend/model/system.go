@@ -1,6 +1,8 @@
 package model
 
 import (
+	"errors"
+
 	"github.com/chaitin/koalaqa/pkg/util"
 )
 
@@ -27,6 +29,7 @@ const (
 	SystemKeyDiscussion    = "discussion"
 	SystemKeySEO           = "seo"
 	SystemKeyWebPlugin     = "web_plugin"
+	SystemKeyChat          = "chat"
 )
 
 type PublicAddress struct {
@@ -55,12 +58,14 @@ const (
 )
 
 type AuthInfo struct {
-	Type       AuthType   `json:"type" binding:"min=1,max=4"`
-	Config     AuthConfig `json:"config"`
-	ButtonDesc string     `json:"button_desc"`
+	Type           AuthType   `json:"type" binding:"min=1,max=4"`
+	Config         AuthConfig `json:"config"`
+	ButtonDesc     string     `json:"button_desc"`
+	EnableRegister bool       `json:"enable_register"`
 }
 
 type Auth struct {
+	// Deprecated: move to AuthInfo, only use in migration
 	EnableRegister bool   `json:"enable_register"`
 	NeedReview     bool   `json:"need_review"`
 	PublicAccess   bool   `json:"public_access"`
@@ -68,6 +73,18 @@ type Auth struct {
 	// Deprecated: only use in migration
 	PublicForumIDs []uint     `json:"public_forum_ids"`
 	AuthInfos      []AuthInfo `json:"auth_infos" binding:"omitempty,dive"`
+}
+
+func (a *Auth) CanRegister(typ AuthType) bool {
+	for _, info := range a.AuthInfos {
+		if info.Type != typ {
+			continue
+		}
+
+		return info.EnableRegister
+	}
+
+	return false
 }
 
 func (a *Auth) CanAuth(t AuthType) bool {
@@ -111,4 +128,31 @@ type SystemWebPlugin struct {
 	Enabled bool `json:"enabled"`
 	Display bool `json:"display"`
 	Plugin  bool `json:"plugin"`
+}
+
+type SystemChat struct {
+	Enabled bool             `json:"enabled"`
+	Config  SystemChatConfig `json:"config"`
+}
+
+type SystemChatConfig struct {
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+	TemplateID   string `json:"template_id"`
+}
+
+func (s *SystemChatConfig) Check() error {
+	if s.ClientID == "" {
+		return errors.New("empty client_id")
+	}
+
+	if s.ClientSecret == "" {
+		return errors.New("empty client_secret")
+	}
+
+	if s.TemplateID == "" {
+		return errors.New("empty template_id")
+	}
+
+	return nil
 }

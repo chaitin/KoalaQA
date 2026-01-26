@@ -11,6 +11,7 @@ type AskSessionSource uint
 const (
 	AskSessionSourceWeb AskSessionSource = iota
 	AskSessionSourcePlugin
+	AskSessionSourceBot
 )
 
 type AskSession struct {

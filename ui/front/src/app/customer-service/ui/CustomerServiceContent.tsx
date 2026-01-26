@@ -537,6 +537,7 @@ export default function CustomerServiceContent({
           content: question,
           forum_id: forumId,
           session_id: currentSessionId,
+          source: isInIframe ? 1 : 0,
         })
 
         const thinkingPatterns = [/思考[:：]/, /推理[:：]/, /分析[:：]/, /让我想想/, /我需要/, /正在思考/]
@@ -833,6 +834,7 @@ export default function CustomerServiceContent({
       const requestBody = JSON.stringify({
         question: question,
         session_id: currentSessionId,
+        source: isInIframe ? 1 : 0,
       })
 
       let answerText = ''

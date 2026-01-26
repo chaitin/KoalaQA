@@ -3,6 +3,8 @@ module github.com/chaitin/koalaqa
 go 1.25.0
 
 require (
+	github.com/alibabacloud-go/dingtalk v1.6.98
+	github.com/alibabacloud-go/tea v1.3.14
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/chaitin/ModelKit/v2 v2.9.1
 	github.com/chaitin/raglite-go-sdk v0.2.1
@@ -16,6 +18,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/minio/minio-go/v7 v7.0.95
 	github.com/nats-io/nats.go v1.44.0
+	github.com/open-dingtalk/dingtalk-stream-sdk-go v0.9.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sabloger/sitemap-generator v1.3.0
@@ -43,11 +46,20 @@ require (
 	github.com/JohannesKaufmann/dom v0.2.0 // indirect
 	github.com/JohannesKaufmann/html-to-markdown/v2 v2.3.3 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
+	github.com/alibabacloud-go/alibabacloud-gateway-spi v0.0.5 // indirect
+	github.com/alibabacloud-go/darabonba-openapi/v2 v2.0.12 // indirect
+	github.com/alibabacloud-go/debug v1.0.1 // indirect
+	github.com/alibabacloud-go/gateway-dingtalk v1.0.2 // indirect
+	github.com/alibabacloud-go/openapi-util v0.1.1 // indirect
+	github.com/alibabacloud-go/tea-utils/v2 v2.0.7 // indirect
+	github.com/alibabacloud-go/tea-xml v1.1.3 // indirect
+	github.com/aliyun/credentials-go v1.4.6 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic v1.14.1 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
+	github.com/clbanning/mxj/v2 v2.7.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
 	github.com/cloudwego/eino-ext/components/embedding/ark v0.1.1 // indirect
 	github.com/cloudwego/eino-ext/components/embedding/ollama v0.0.0-20251202030425-890b7f22076d // indirect
@@ -123,6 +135,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/slongfield/pyfmt v0.0.0-20220222012616-ea85ff4c361f // indirect
 	github.com/tinylib/msgp v1.3.0 // indirect
+	github.com/tjfoc/gmsm v1.4.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.0 // indirect
 	github.com/volcengine/volc-sdk-golang v1.0.23 // indirect
@@ -152,6 +165,7 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250728155136-f173205681a0 // indirect
 	google.golang.org/grpc v1.74.2 // indirect
 	google.golang.org/protobuf v1.36.7 // indirect
+	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
