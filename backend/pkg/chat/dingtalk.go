@@ -14,7 +14,6 @@ import (
 	"github.com/alibabacloud-go/tea/tea"
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/glog"
-	"github.com/chaitin/koalaqa/pkg/llm"
 	"github.com/google/uuid"
 	"github.com/open-dingtalk/dingtalk-stream-sdk-go/chatbot"
 	"github.com/open-dingtalk/dingtalk-stream-sdk-go/client"
@@ -31,9 +30,8 @@ func (d *dingtalkAccessToken) expired() bool {
 }
 
 type dingtalk struct {
-	cfg                model.SystemChatConfig
-	botCallback        BotCallback
-	accessAddrCallback model.AccessAddrCallback
+	cfg         model.SystemChatConfig
+	botCallback BotCallback
 
 	logger     *glog.Logger
 	streamCli  *client.StreamClient
@@ -201,27 +199,28 @@ func (d *dingtalk) ChatBotCallback(ctx context.Context, data *chatbot.BotCallbac
 	go func() {
 		var builder strings.Builder
 		builder.WriteString(fmt.Sprintf("**%s**\n\n", question))
-
-		stream.Read(ctx, func(msg llm.AskSessionStreamItem) {
-			if msg.Type != "text" {
+		cur := time.Now()
+		stream.Read(ctx, func(msg string) {
+			if msg == "" {
 				return
 			}
 
-			builder.WriteString(msg.Content)
+			builder.WriteString(msg)
+
+			now := time.Now()
+			if now.Before(cur.Add(time.Second * 2)) {
+				return
+			}
+
+			cur = now
 			err = d.UpdateAIStreamCard(ctx, trackID, builder.String(), false)
 			if err != nil {
 				logger.WithErr(err).Warn("update ai stream failed")
 			}
 		})
-
-		addr, err := d.accessAddrCallback(ctx, "/")
-		if err != nil {
-			logger.WithErr(err).Warn("get access addr failed")
-		}
-		builder.WriteString(fmt.Sprintf("\n\n[前往社区搜索相似帖子](%s)", addr))
 		err = d.UpdateAIStreamCard(ctx, trackID, builder.String(), true)
 		if err != nil {
-			logger.WithErr(err).Warn("finish ai stream failed")
+			logger.WithErr(err).Warn("finish stream failed")
 		}
 	}()
 
@@ -254,7 +253,7 @@ func (d *dingtalk) Stop() {
 	d.streamCli.Close()
 }
 
-func newDingtalk(cfg model.SystemChatConfig, callback BotCallback, accessAddrCallback model.AccessAddrCallback) (Bot, error) {
+func newDingtalk(cfg model.SystemChatConfig, callback BotCallback) (Bot, error) {
 	config := &openapi.Config{}
 	config.Protocol = tea.String("https")
 	config.RegionId = tea.String("central")
@@ -268,12 +267,11 @@ func newDingtalk(cfg model.SystemChatConfig, callback BotCallback, accessAddrCal
 	}
 
 	return &dingtalk{
-		cfg:                cfg,
-		botCallback:        callback,
-		accessAddrCallback: accessAddrCallback,
-		oauthCli:           oauthCli,
-		cardCli:            cardCli,
-		logger:             glog.Module("chat", "dingtalk"),
-		sf:                 singleflight.Group{},
+		cfg:         cfg,
+		botCallback: callback,
+		oauthCli:    oauthCli,
+		cardCli:     cardCli,
+		logger:      glog.Module("chat", "dingtalk"),
+		sf:          singleflight.Group{},
 	}, err
 }

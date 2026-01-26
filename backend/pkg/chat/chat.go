@@ -20,17 +20,17 @@ type BotReq struct {
 	Question  string `json:"question"`
 }
 
-type BotCallback func(ctx context.Context, req BotReq) (*llm.Stream[llm.AskSessionStreamItem], error)
+type BotCallback func(ctx context.Context, req BotReq) (*llm.Stream[string], error)
 
 type Bot interface {
 	Start() error
 	Stop()
 }
 
-func New(typ ChatType, cfg model.SystemChatConfig, callback BotCallback, accessAddrCallback model.AccessAddrCallback) (Bot, error) {
+func New(typ ChatType, cfg model.SystemChatConfig, callback BotCallback) (Bot, error) {
 	switch typ {
 	case ChatTypeDingtalk:
-		return newDingtalk(cfg, callback, accessAddrCallback)
+		return newDingtalk(cfg, callback)
 	default:
 		return nil, errors.ErrUnsupported
 	}
