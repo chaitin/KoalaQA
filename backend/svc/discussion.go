@@ -2132,7 +2132,7 @@ type DiscussionAskReq struct {
 	SessionID string                 `json:"session_id" binding:"required,uuid"`
 	Question  string                 `json:"question" binding:"required"`
 	GroupIDs  model.Int64Array       `json:"group_ids"`
-	Source    model.AskSessionSource `json:"-" swaggerignore:"true"`
+	Source    model.AskSessionSource `json:"source" binding:"oneof=0 1"`
 }
 
 func (d *Discussion) AskSessionClosed(ctx context.Context, uid uint, sessionID string) (bool, error) {
@@ -2458,7 +2458,7 @@ type SummaryByContentReq struct {
 	SessionID string                 `json:"session_id" binding:"required,uuid"`
 	ForumID   uint                   `json:"forum_id" binding:"required"`
 	GroupIDs  model.Int64Array       `json:"group_ids"`
-	Source    model.AskSessionSource `json:"-" swaggerignore:"true"`
+	Source    model.AskSessionSource `json:"source" binding:"oneof=0 1"`
 }
 
 type AskSessionStreamItem struct {

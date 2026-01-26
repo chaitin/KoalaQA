@@ -1577,6 +1577,12 @@ definitions:
         type: string
       session_id:
         type: string
+      source:
+        allOf:
+        - $ref: '#/definitions/model.AskSessionSource'
+        enum:
+        - 0
+        - 1
     required:
     - question
     - session_id
@@ -2273,6 +2279,12 @@ definitions:
         type: array
       session_id:
         type: string
+      source:
+        allOf:
+        - $ref: '#/definitions/model.AskSessionSource'
+        enum:
+        - 0
+        - 1
     required:
     - forum_id
     - session_id

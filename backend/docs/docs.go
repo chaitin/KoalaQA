@@ -10033,6 +10033,17 @@ const docTemplate = `{
                 },
                 "session_id": {
                     "type": "string"
+                },
+                "source": {
+                    "enum": [
+                        0,
+                        1
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.AskSessionSource"
+                        }
+                    ]
                 }
             }
         },
@@ -11091,6 +11102,17 @@ const docTemplate = `{
                 },
                 "session_id": {
                     "type": "string"
+                },
+                "source": {
+                    "enum": [
+                        0,
+                        1
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.AskSessionSource"
+                        }
+                    ]
                 }
             }
         },
