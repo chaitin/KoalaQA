@@ -256,6 +256,7 @@ export interface ModelAskSessionSummaryDisc {
 
 export interface ModelAuth {
   auth_infos?: ModelAuthInfo[];
+  /** Deprecated: move to AuthInfo, only use in migration */
   enable_register?: boolean;
   need_review?: boolean;
   prompt?: string;
@@ -278,6 +279,7 @@ export interface ModelAuthConfigOauth {
 export interface ModelAuthInfo {
   button_desc?: string;
   config?: ModelAuthConfig;
+  enable_register?: boolean;
   /**
    * @min 1
    * @max 4
@@ -658,6 +660,17 @@ export interface ModelSystemBrand {
   theme?: string;
 }
 
+export interface ModelSystemChat {
+  config?: ModelSystemChatConfig;
+  enabled?: boolean;
+}
+
+export interface ModelSystemChatConfig {
+  client_id?: string;
+  client_secret?: string;
+  template_id?: string;
+}
+
 export interface ModelSystemDiscussion {
   auto_close?: number;
   content_placeholder?: string;
@@ -838,12 +851,12 @@ export interface SvcAssociateDiscussionReq {
 
 export interface SvcAuthFrontendGetAuth {
   button_desc?: string;
+  enable_register?: boolean;
   type?: number;
 }
 
 export interface SvcAuthFrontendGetRes {
   auth_types?: SvcAuthFrontendGetAuth[];
-  enable_register?: boolean;
   prompt?: string;
   public_access?: boolean;
 }
@@ -893,6 +906,7 @@ export interface SvcDiscussionAskReq {
   group_ids?: number[];
   question: string;
   session_id: string;
+  source?: 0 | 1;
 }
 
 export interface SvcDiscussionCompeletReq {
@@ -1243,6 +1257,7 @@ export interface SvcSummaryByContentReq {
   forum_id: number;
   group_ids?: number[];
   session_id: string;
+  source?: 0 | 1;
 }
 
 export interface SvcURLExportReq {

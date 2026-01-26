@@ -229,7 +229,8 @@ export class HttpClient<SecurityDataType = unknown> {
           // 检查是否是CSRF token mismatch错误（虽然状态码是200，但success为false）
           const isCsrfError =
             res.data === "csrf token mismatch" ||
-            res.err === "csrf token mismatch";
+            res.err === "csrf token mismatch" ||
+            res.message === "csrf token mismatch";
 
           if (isCsrfError && response.config && !response.config.__isRetry) {
             clearCsrfTokenCache();
@@ -276,6 +277,7 @@ export class HttpClient<SecurityDataType = unknown> {
           error.response?.status === 400 &&
           (error.response?.data?.data === "csrf token mismatch" ||
             error.response?.data?.err === "csrf token mismatch" ||
+            error.response?.data?.message === "csrf token mismatch" ||
             (typeof error.response?.data === "string" &&
               error.response.data.includes("csrf token mismatch")));
 
@@ -497,7 +499,7 @@ export class HttpClient<SecurityDataType = unknown> {
       headers: {
         ...((method &&
           this.instance.defaults.headers[
-            method.toLowerCase() as keyof HeadersDefaults
+          method.toLowerCase() as keyof HeadersDefaults
           ]) ||
           {}),
         ...(params1.headers || {}),
