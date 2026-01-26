@@ -117,7 +117,9 @@ func (c *Chat) botCallback(ctx context.Context, req chat.BotReq) (*llm.Stream[st
 				mdLinks[i] = fmt.Sprintf("[%s](%s)", forum.Name, publicAddr.FullURL("/"+forum.RouteName))
 			}
 			wrapStream.RecvOne(fmt.Sprintf(`抱歉，我暂时无法回答这个问题。请选择一个板块，我将为您搜索相关帖子。
+
 **请选择板块继续搜索**
+
 %s`, strings.Join(mdLinks, ",")), true)
 			return
 		}
