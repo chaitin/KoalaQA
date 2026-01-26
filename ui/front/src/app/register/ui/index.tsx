@@ -32,7 +32,7 @@ const Register = () => {
 
   useEffect(() => {
     if (!authConfigLoading) {
-      const enabled = authConfig?.enable_register ?? false
+      const enabled = authConfig?.auth_types?.some((item) => item.enable_register) ?? false
       setRegistrationEnabled(enabled)
 
       if (!enabled) {

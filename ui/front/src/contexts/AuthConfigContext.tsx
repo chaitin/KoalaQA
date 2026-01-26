@@ -18,9 +18,9 @@ interface AuthConfigProviderProps {
   initialAuthConfig?: SvcAuthFrontendGetRes | null
 }
 
-export const AuthConfigProvider = ({ 
-  children, 
-  initialAuthConfig = null 
+export const AuthConfigProvider = ({
+  children,
+  initialAuthConfig = null
 }: AuthConfigProviderProps) => {
   const [authConfig, setAuthConfig] = React.useState<SvcAuthFrontendGetRes | null>(initialAuthConfig)
   const [loading, setLoading] = React.useState(false)
@@ -58,7 +58,7 @@ export const AuthConfigProvider = ({
   const refresh = React.useCallback(async (): Promise<SvcAuthFrontendGetRes | null> => {
     setLoading(true)
     setError(null)
-    
+
     try {
       // 动态导入以避免服务端渲染问题
       const { getUserLoginMethod } = await import('@/api')
@@ -109,7 +109,7 @@ export const usePublicAccess = () => {
 // 便捷函数：检查是否启用注册
 export const useRegisterEnabled = () => {
   const { authConfig } = useAuthConfig()
-  return authConfig?.enable_register ?? false
+  return authConfig?.auth_types?.some(auth => auth.enable_register) ?? false
 }
 
 // 便捷函数：获取认证类型
