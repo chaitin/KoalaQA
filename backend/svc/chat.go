@@ -120,7 +120,7 @@ func (c *Chat) botCallback(ctx context.Context, req chat.BotReq) (*llm.Stream[st
 
 **请选择板块继续搜索**
 
-%s`, strings.Join(mdLinks, ",")), true)
+%s`, strings.Join(mdLinks, ", ")), true)
 			return
 		}
 
