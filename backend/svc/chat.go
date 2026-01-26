@@ -124,7 +124,10 @@ func (c *Chat) botCallback(ctx context.Context, req chat.BotReq) (*llm.Stream[st
 			return
 		}
 
-		time.Sleep(time.Second)
+		for c.svcDisc.IsAskSessionStreaming(ctx, sessionID) {
+			time.Sleep(time.Second)
+		}
+
 		summaryStream, err := c.svcDisc.SummaryByContent(ctx, 0, SummaryByContentReq{
 			SessionID: sessionID,
 			ForumID:   forums[0].ID,

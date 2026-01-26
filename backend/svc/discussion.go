@@ -2385,6 +2385,11 @@ func (d *Discussion) StopAskSession(ctx context.Context, uid uint, req StopAskSe
 	return nil
 }
 
+func (d *Discussion) IsAskSessionStreaming(ctx context.Context, sessionID string) bool {
+	_, ok := d.streamStop.Load(sessionID)
+	return ok
+}
+
 func (d *Discussion) AskHistory(ctx context.Context, sessionID string, uid uint) (*model.ListRes[model.AskSession], error) {
 	var res model.ListRes[model.AskSession]
 
