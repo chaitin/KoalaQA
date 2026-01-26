@@ -2,7 +2,6 @@ package svc
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"slices"
 	"strconv"
@@ -88,7 +87,7 @@ func (g *GenerateReq) GroupInfo() (ids model.Int64Array, names []string) {
 	return
 }
 
-func (l *LLM) StreamAnswer(ctx context.Context, sysPrompt string, req GenerateReq) (*LLMStream[string], error) {
+func (l *LLM) StreamAnswer(ctx context.Context, sysPrompt string, req GenerateReq) (*llm.Stream[string], error) {
 	query := req.Question
 
 	groupIDs, groupNames := req.GroupInfo()
@@ -246,84 +245,7 @@ func (l *LLM) msgs(ctx context.Context, sMsg string, uMsg string, params map[str
 	return msgs, nil
 }
 
-type LLMStream[T any] struct {
-	c    chan T
-	stop chan struct{}
-}
-
-func (l *LLMStream[T]) Close() {
-	close(l.stop)
-}
-
-func (l *LLMStream[T]) Recv(f func() (T, error)) {
-	defer close(l.c)
-	for {
-		content, err := f()
-		if err != nil {
-			return
-		}
-
-		select {
-		case <-l.stop:
-			return
-		case l.c <- content:
-		}
-	}
-}
-
-var ErrStreamStoped = errors.New("stream stoped")
-
-func (l *LLMStream[T]) RecvOne(content T, finish bool) error {
-	defer func() {
-		if finish {
-			close(l.c)
-		}
-	}()
-
-	select {
-	case <-l.stop:
-		finish = true
-		return ErrStreamStoped
-	case l.c <- content:
-	}
-
-	return nil
-}
-
-func (l *LLMStream[T]) Read(ctx context.Context, f func(content T)) {
-	defer l.Close()
-
-	for {
-		content, _, ok := l.Text(ctx)
-		if !ok {
-			return
-		}
-
-		f(content)
-	}
-}
-
-func (l *LLMStream[T]) Text(ctx context.Context) (T, bool, bool) {
-	select {
-	case <-ctx.Done():
-		return *new(T), true, false
-	case content, ok := <-l.c:
-		if !ok {
-			return *new(T), false, false
-		}
-
-		return content, false, true
-	}
-}
-
-func NewLLMStream[T any]() *LLMStream[T] {
-	return &LLMStream[T]{
-		c:    make(chan T, 8),
-		stop: make(chan struct{}),
-	}
-}
-
-func (l *LLM) StreamChat(ctx context.Context, sMsg string, uMsg string, params map[string]any, histories ...*schema.Message) (*LLMStream[string], error) {
+func (l *LLM) StreamChat(ctx context.Context, sMsg string, uMsg string, params map[string]any, histories ...*schema.Message) (*llm.Stream[string], error) {
 	cm, err := l.kit.GetChatModel(ctx)
 	if err != nil {
 		return nil, err
@@ -341,7 +263,7 @@ func (l *LLM) StreamChat(ctx context.Context, sMsg string, uMsg string, params m
 		return nil, err
 	}
 
-	s := NewLLMStream[string]()
+	s := llm.NewStream[string]()
 
 	go func() {
 		defer reader.Close()

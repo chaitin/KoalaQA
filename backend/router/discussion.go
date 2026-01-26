@@ -235,7 +235,7 @@ func (d *discussion) CreateOrLastSession(ctx *context.Context) {
 		return
 	}
 
-	res, err := d.disc.CreateOrLastSession(ctx, ctx.GetUser().UID, req)
+	res, err := d.disc.CreateOrLastSession(ctx, ctx.GetUser().UID, req, false)
 	if err != nil {
 		ctx.InternalError(err, "get session failed")
 		return

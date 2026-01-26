@@ -84,10 +84,12 @@ definitions:
     enum:
     - 0
     - 1
+    - 2
     type: integer
     x-enum-varnames:
     - AskSessionSourceWeb
     - AskSessionSourcePlugin
+    - AskSessionSourceBot
   model.AskSessionSummaryDisc:
     properties:
       forum_id:
@@ -1061,6 +1063,22 @@ definitions:
       text:
         type: string
       theme:
+        type: string
+    type: object
+  model.SystemChat:
+    properties:
+      config:
+        $ref: '#/definitions/model.SystemChatConfig'
+      enabled:
+        type: boolean
+    type: object
+  model.SystemChatConfig:
+    properties:
+      client_id:
+        type: string
+      client_secret:
+        type: string
+      template_id:
         type: string
     type: object
   model.SystemDiscussion:
@@ -2593,6 +2611,43 @@ paths:
       summary: set bot info
       tags:
       - bot
+  /admin/chat:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.SystemChat'
+              type: object
+      summary: get chat info
+      tags:
+      - chat
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: chat info
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/model.SystemChat'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: set chat info
+      tags:
+      - chat
   /admin/discussion:
     get:
       description: backend list discussions

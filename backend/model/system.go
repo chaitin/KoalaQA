@@ -1,6 +1,8 @@
 package model
 
 import (
+	"errors"
+
 	"github.com/chaitin/koalaqa/pkg/util"
 )
 
@@ -27,6 +29,7 @@ const (
 	SystemKeyDiscussion    = "discussion"
 	SystemKeySEO           = "seo"
 	SystemKeyWebPlugin     = "web_plugin"
+	SystemKeyChat          = "chat"
 )
 
 type PublicAddress struct {
@@ -125,4 +128,31 @@ type SystemWebPlugin struct {
 	Enabled bool `json:"enabled"`
 	Display bool `json:"display"`
 	Plugin  bool `json:"plugin"`
+}
+
+type SystemChat struct {
+	Enabled bool             `json:"enabled"`
+	Config  SystemChatConfig `json:"config"`
+}
+
+type SystemChatConfig struct {
+	ClientID     string `json:"client_id"`
+	ClientSecret string `json:"client_secret"`
+	TemplateID   string `json:"template_id"`
+}
+
+func (s *SystemChatConfig) Check() error {
+	if s.ClientID == "" {
+		return errors.New("empty client_id")
+	}
+
+	if s.ClientSecret == "" {
+		return errors.New("empty client_secret")
+	}
+
+	if s.TemplateID == "" {
+		return errors.New("empty template_id")
+	}
+
+	return nil
 }
