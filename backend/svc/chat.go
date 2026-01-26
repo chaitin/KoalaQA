@@ -107,7 +107,7 @@ func (c *Chat) botCallback(ctx context.Context, req chat.BotReq) (*llm.Stream[st
 		}
 
 		if ret {
-			wrapStream.RecvOne(fmt.Sprintf("\n\n[前往社区搜索相似帖子](%s)", publicAddr.FullURL("/")), true)
+			wrapStream.RecvOne(fmt.Sprintf("\n\n---\n\n[前往社区搜索相似帖子](%s)", publicAddr.FullURL("/")), true)
 			return
 		}
 
@@ -173,7 +173,7 @@ func (c *Chat) botCallback(ctx context.Context, req chat.BotReq) (*llm.Stream[st
 			}
 		}
 
-		wrapStream.RecvOne(fmt.Sprintf("\n\n[前往社区发帖提问](%s)", publicAddr.FullURL("/")), true)
+		wrapStream.RecvOne(fmt.Sprintf("\n\n---\n\n[前往社区发帖提问](%s)", publicAddr.FullURL("/")), true)
 	}()
 
 	return wrapStream, nil
@@ -228,7 +228,7 @@ func (c *Chat) Update(ctx context.Context, req model.SystemChat) error {
 			c.chatBot.Stop()
 			c.chatBot = nil
 		}
-	} else if chatCfg.Config != req.Config {
+	} else if !chatCfg.Enabled || chatCfg.Config != req.Config {
 		if c.chatBot != nil {
 			c.chatBot.Stop()
 		}
