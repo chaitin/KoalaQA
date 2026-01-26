@@ -46,6 +46,10 @@ type dingtalk struct {
 func (d *dingtalk) accessToken() (string, error) {
 	if d.tokenCache.expired() {
 		_, err, _ := d.sf.Do("access_token", func() (interface{}, error) {
+			if !d.tokenCache.expired() {
+				return nil, nil
+			}
+
 			request := &dingtalkoauth2_1_0.GetAccessTokenRequest{
 				AppKey:    tea.String(d.cfg.ClientID),
 				AppSecret: tea.String(d.cfg.ClientSecret),
