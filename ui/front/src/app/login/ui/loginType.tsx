@@ -90,7 +90,7 @@ const LoginType = () => {
   if (loading) {
     return
   }
-  const supportPwd = authConfig?.auth_types?.some((item) => item.type === AuthType.PASSWORD)
+
   // 根据配置决定显示哪种登录界面
   if (!hasPasswordLogin && hasThirdPartyLogin) {
     // 情况1：只有第三方登录，显示左侧样式（简单登录）
@@ -180,7 +180,7 @@ const LoginType = () => {
               </Stack>
 
               {/* 注册链接 */}
-              {authConfig?.enable_register && supportPwd && (
+              {passwordConfig?.enable_register && (
                 <Stack
                   direction='row'
                   alignItems='center'
@@ -233,7 +233,7 @@ const LoginType = () => {
             <Account isChecked={true} passwordConfig={passwordConfig} />
 
             {/* 注册链接 */}
-            {authConfig?.enable_register && supportPwd && (
+            {passwordConfig?.enable_register && (
               <Box
                 sx={{
                   textAlign: 'center',

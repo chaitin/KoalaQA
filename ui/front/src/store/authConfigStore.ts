@@ -63,7 +63,7 @@ export const usePublicAccess = () => {
 // 便捷 hook：检查是否启用注册
 export const useRegisterEnabled = () => {
   const authConfig = useAuthConfigStore((state) => state.authConfig)
-  return authConfig?.enable_register ?? false
+  return authConfig?.auth_types?.some(auth => auth.enable_register) ?? false
 }
 
 // 便捷 hook：获取认证类型
