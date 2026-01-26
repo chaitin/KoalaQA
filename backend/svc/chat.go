@@ -82,6 +82,7 @@ func (c *Chat) botCallback(ctx context.Context, req chat.BotReq) (*llm.Stream[st
 				if stringBuilder.String() != "无法回答问题" {
 					if !writed {
 						wrapStream.RecvOne(stringBuilder.String(), false)
+						writed = true
 					}
 					ret = true
 				}
@@ -97,7 +98,7 @@ func (c *Chat) botCallback(ctx context.Context, req chat.BotReq) (*llm.Stream[st
 				continue
 			}
 
-			if !writed && stringBuilder.Len() > canNotAnswerLen {
+			if !writed {
 				wrapStream.RecvOne(stringBuilder.String(), false)
 				writed = true
 			}
