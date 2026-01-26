@@ -65,7 +65,7 @@ export type RequestParams = Omit<
 let csrfTokenPromise: Promise<string> | null = null;
 
 // 获取CSRF token的函数
-const getCsrfToken = async (forceRefresh = false): Promise<string> => {
+const getCsrfToken = async (): Promise<string> => {
   // 如果正在获取token，等待现有的请求
   if (csrfTokenPromise) {
     return csrfTokenPromise;
@@ -74,14 +74,10 @@ const getCsrfToken = async (forceRefresh = false): Promise<string> => {
   // 创建新的获取token的Promise
   csrfTokenPromise = new Promise(async (resolve, reject) => {
     try {
-      const config: any = {
+      const response = await axios.get("/api/csrf", {
         withCredentials: true,
         timeout: 0, // 禁用超时
-      };
-      if (forceRefresh) {
-        config.params = { _t: Date.now() };
-      }
-      const response = await axios.get("/api/csrf", config);
+      });
 
       let token = "";
       if (response.data && response.data.success && response.data.data) {
@@ -166,8 +162,7 @@ export class HttpClient<SecurityDataType = unknown> {
           // 检查是否是CSRF token mismatch错误（虽然状态码是200，但success为false）
           const isCsrfError =
             res.data === "csrf token mismatch" ||
-            res.err === "csrf token mismatch" ||
-            res.message === "csrf token mismatch";
+            res.err === "csrf token mismatch";
 
           if (isCsrfError && response.config && !response.config.__isRetry) {
             clearCsrfTokenCache();
@@ -206,7 +201,6 @@ export class HttpClient<SecurityDataType = unknown> {
           error.response?.status === 400 &&
           (error.response?.data?.data === "csrf token mismatch" ||
             error.response?.data?.err === "csrf token mismatch" ||
-            error.response?.data?.message === "csrf token mismatch" ||
             (typeof error.response?.data === "string" &&
               error.response.data.includes("csrf token mismatch")));
 
@@ -272,7 +266,7 @@ export class HttpClient<SecurityDataType = unknown> {
       headers: {
         ...((method &&
           this.instance.defaults.headers[
-          method.toLowerCase() as keyof HeadersDefaults
+            method.toLowerCase() as keyof HeadersDefaults
           ]) ||
           {}),
         ...(params1.headers || {}),

@@ -198,6 +198,7 @@ export enum ModelCommentLikeState {
 export enum ModelAskSessionSource {
   AskSessionSourceWeb = 0,
   AskSessionSourcePlugin = 1,
+  AskSessionSourceBot = 2,
 }
 
 export interface AdminDocUserRes {

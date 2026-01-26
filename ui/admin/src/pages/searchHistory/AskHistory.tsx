@@ -144,7 +144,6 @@ const AskHistory = () => {
         const isUserMessage = record.bot === false;
         const displayText = record.content || '-';
         const truncatedText = isUserMessage ? displayText : (displayText.length > 100 ? displayText.substring(0, 100) + '...' : displayText);
-        const isPlugin = record.source === ModelAskSessionSource.AskSessionSourcePlugin;
 
         return (
           <Stack spacing={0.5} alignItems="flex-start">
@@ -166,7 +165,7 @@ const AskHistory = () => {
               {truncatedText}
             </Ellipsis>
             <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-              {isPlugin ? '网页挂件' : '在线支持'}
+              {record.source === ModelAskSessionSource.AskSessionSourcePlugin ? '网页挂件' : record.source === ModelAskSessionSource.AskSessionSourceBot ? '机器人' : '在线支持'}
             </Box>
           </Stack>
         );
