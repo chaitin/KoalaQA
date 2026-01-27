@@ -76,60 +76,7 @@ export enum ContentType {
 
 type ExtractDataProp<T> = T extends { data?: infer U } ? U : T;
 
-// CSRF token 缓存
-let csrfTokenCache: string | null = null;
-let csrfTokenPromise: Promise<string> | null = null;
-
-// 获取CSRF token的函数
-export const getCsrfToken = async (): Promise<string> => {
-  // 如果已经有缓存的token，直接返回
-  if (csrfTokenCache) {
-    return csrfTokenCache;
-  }
-
-  // 如果正在获取token，等待现有的请求
-  if (csrfTokenPromise) {
-    return csrfTokenPromise;
-  }
-
-  // 创建新的获取token的Promise
-  csrfTokenPromise = new Promise(async (resolve, reject) => {
-    try {
-      const response = await axios.get("/api/csrf", {
-        withCredentials: true,
-        timeout: 0, // 禁用超时
-      });
-
-      let token = "";
-      if (response.data && response.data.success && response.data.data) {
-        token = response.data.data;
-      } else if (response.data && typeof response.data === "string") {
-        token = response.data;
-      }
-
-      if (token) {
-        csrfTokenCache = token;
-        resolve(token);
-      } else {
-        reject(new Error("Failed to get CSRF token"));
-      }
-    } catch (error) {
-      console.error("Failed to fetch CSRF token:", error);
-      reject(error);
-    } finally {
-      // 清除Promise缓存，允许重试
-      csrfTokenPromise = null;
-    }
-  });
-
-  return csrfTokenPromise;
-};
-
-// 清除CSRF token缓存的函数（在token失效时调用）
-export const clearCsrfTokenCache = () => {
-  csrfTokenCache = null;
-  csrfTokenPromise = null;
-};
+// 导出公共访问状态获取函数，供其他组件使用
 
 // 导出公共访问状态获取函数，供其他组件使用
 
@@ -144,8 +91,7 @@ export const clearAuthData = async (callLogoutAPI: boolean = true) => {
     // 使用工具函数清除所有认证相关的cookie，包括auth_token
     clearAllAuthCookies();
 
-    // 清除CSRF token缓存
-    clearCsrfTokenCache();
+
 
     // 根据参数决定是否调用服务端登出API
     if (callLogoutAPI) {
@@ -226,40 +172,12 @@ export class HttpClient<SecurityDataType = unknown> {
             return res.data;
           }
 
-          // 检查是否是CSRF token mismatch错误（虽然状态码是200，但success为false）
-          const isCsrfError =
-            res.data === "csrf token mismatch" ||
-            res.err === "csrf token mismatch" ||
-            res.message === "csrf token mismatch";
 
-          if (isCsrfError && response.config && !response.config.__isRetry) {
-            clearCsrfTokenCache();
-            response.config.__isRetry = true;
-            // 重新获取CSRF token并重试请求
-            return getCsrfToken()
-              .then((token) => {
-                if (response.config) {
-                  response.config.headers = response.config.headers || {};
-                  response.config.headers["X-CSRF-TOKEN"] = token;
-                }
-                return this.instance.request(response.config);
-              })
-              .catch((retryError) => {
-                return Promise.reject(retryError);
-              })
-              .finally(() => {
-                // 重试完成后清除重试标志（无论成功还是失败）
-                if (response.config) {
-                  delete response.config.__isRetry;
-                }
-              });
-          }
 
           if (
             typeof window !== "undefined" &&
             Alert?.error &&
-            shouldShowError &&
-            !isCsrfError
+            shouldShowError
           ) {
             Alert.error(this.translateErrorMessage(res.err));
           }
@@ -272,45 +190,12 @@ export class HttpClient<SecurityDataType = unknown> {
         return Promise.reject(response);
       },
       (error) => {
-        // 检查是否是CSRF token mismatch错误（后端返回400状态码）
-        const isCsrfError =
-          error.response?.status === 400 &&
-          (error.response?.data?.data === "csrf token mismatch" ||
-            error.response?.data?.err === "csrf token mismatch" ||
-            error.response?.data?.message === "csrf token mismatch" ||
-            (typeof error.response?.data === "string" &&
-              error.response.data.includes("csrf token mismatch")));
-
-        // 如果是CSRF token相关错误，清除缓存并重试请求
         if (
-          isCsrfError ||
           error.response?.status === 403 ||
           error.response?.status === 419
         ) {
-          clearCsrfTokenCache();
-
-          // 如果是CSRF token mismatch，自动重试一次请求
-          if (isCsrfError && error.config && !error.config.__isRetry) {
-            error.config.__isRetry = true;
-            // 重新获取CSRF token并重试请求
-            return getCsrfToken()
-              .then((token) => {
-                if (error.config) {
-                  error.config.headers = error.config.headers || {};
-                  error.config.headers["X-CSRF-TOKEN"] = token;
-                }
-                return this.instance.request(error.config);
-              })
-              .catch((retryError) => {
-                return Promise.reject(retryError);
-              })
-              .finally(() => {
-                // 重试完成后清除重试标志（无论成功还是失败）
-                if (error.config) {
-                  delete error.config.__isRetry;
-                }
-              });
-          }
+          // 处理403 Forbidden和419 Authentication Timeout
+          // 旧代码在这里处理CSRF重试，现在移除CSRF逻辑，但保留对这些状态码的注意（如果需要的话，目前直接reject）
         }
 
         // 处理401未授权错误 - 清除认证信息并重定向到登录页
@@ -370,13 +255,12 @@ export class HttpClient<SecurityDataType = unknown> {
 
         // 检查请求路径，如果是 api/user 则不展示报错信息
         const requestUrl = error.config?.url || "";
-        const shouldShowError = requestUrl !== "/user" && !isCsrfError;
+        const shouldShowError = requestUrl !== "/user";
         // 如果是CSRF token错误且已经重试过，或者不是CSRF错误，才显示错误提示
         if (
           typeof window !== "undefined" &&
           Alert?.error &&
-          shouldShowError &&
-          (!isCsrfError || error.config?.__isRetry)
+          shouldShowError
         ) {
           let msg: string;
 
@@ -624,16 +508,7 @@ export class HttpClient<SecurityDataType = unknown> {
         : {}),
     };
 
-    // 对于非GET请求，添加CSRF token
-    if (method !== "GET") {
-      try {
-        const csrfToken = await getCsrfToken();
-        headers["X-CSRF-TOKEN"] = csrfToken;
-      } catch (error) {
-        console.error("Failed to get CSRF token for request:", error);
-        // 继续执行请求，让服务器处理CSRF验证失败
-      }
-    }
+
 
     // 在SSR环境中，需要手动转发cookie
     const requestConfig: any = {
