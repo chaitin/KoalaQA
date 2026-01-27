@@ -1,7 +1,7 @@
 'use client'
 
 import { getDiscussionAskAskSessionId, getDiscussionAskSession, postDiscussionAskStop } from '@/api'
-import { getCsrfToken } from '@/api/httpClient'
+
 import { ModelDiscussionListItem, ModelUserInfo, SvcBotGetRes } from '@/api/types'
 import { getSystemWebPlugin } from '@/api/WebPlugin'
 import { AuthContext } from '@/components/authProvider'
@@ -478,13 +478,8 @@ export default function CustomerServiceContent({
   const callSummaryContent = useCallback(
     async (forumId: number, question: string, messageId: string, originalQuestion?: string) => {
       try {
-        const summaryCsrfToken = await getCsrfToken()
-
         const summarySseClient = new SSEClient<any>({
           url: '/api/discussion/summary/content',
-          headers: {
-            'X-CSRF-TOKEN': summaryCsrfToken,
-          },
           method: 'POST',
           streamMode: true,
           onError: (err: Error) => {
@@ -844,7 +839,7 @@ export default function CustomerServiceContent({
 
     try {
       // 使用 postDiscussionAsk 进行流式输出
-      const csrfToken = await getCsrfToken()
+
 
       // 获取当前的 sessionId，确保与 URL 同步
       const currentSessionId = getCurrentSessionId()
@@ -866,9 +861,6 @@ export default function CustomerServiceContent({
         // 创建 SSE 客户端，在回调中处理完成逻辑
         const askSseClient = new SSEClient<any>({
           url: '/api/discussion/ask',
-          headers: {
-            'X-CSRF-TOKEN': csrfToken,
-          },
           method: 'POST',
           streamMode: true,
           onError: (err: Error) => {

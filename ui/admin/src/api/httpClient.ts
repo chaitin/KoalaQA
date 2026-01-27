@@ -61,52 +61,7 @@ export type RequestParams = Omit<
   FullRequestParams,
   "body" | "method" | "query" | "path"
 >;
-// CSRF token 缓存
-let csrfTokenPromise: Promise<string> | null = null;
 
-// 获取CSRF token的函数
-const getCsrfToken = async (): Promise<string> => {
-  // 如果正在获取token，等待现有的请求
-  if (csrfTokenPromise) {
-    return csrfTokenPromise;
-  }
-
-  // 创建新的获取token的Promise
-  csrfTokenPromise = new Promise(async (resolve, reject) => {
-    try {
-      const response = await axios.get("/api/csrf", {
-        withCredentials: true,
-        timeout: 0, // 禁用超时
-      });
-
-      let token = "";
-      if (response.data && response.data.success && response.data.data) {
-        token = response.data.data;
-      } else if (response.data && typeof response.data === "string") {
-        token = response.data;
-      }
-
-      if (token) {
-        resolve(token);
-      } else {
-        reject(new Error("Failed to get CSRF token"));
-      }
-    } catch (error) {
-      console.error("Failed to fetch CSRF token:", error);
-      reject(error);
-    } finally {
-      // 清除Promise缓存，允许重试
-      csrfTokenPromise = null;
-    }
-  });
-
-  return csrfTokenPromise;
-};
-
-// 清除CSRF token缓存的函数（在token失效时调用）
-export const clearCsrfTokenCache = () => {
-  csrfTokenPromise = null;
-};
 
 export interface ApiConfig<SecurityDataType = unknown>
   extends Omit<AxiosRequestConfig, "data" | "cancelToken"> {
@@ -159,35 +114,9 @@ export class HttpClient<SecurityDataType = unknown> {
             return res.data;
           }
 
-          // 检查是否是CSRF token mismatch错误（虽然状态码是200，但success为false）
-          const isCsrfError =
-            res.data === "csrf token mismatch" ||
-            res.err === "csrf token mismatch";
 
-          if (isCsrfError && response.config && !response.config.__isRetry) {
-            clearCsrfTokenCache();
-            response.config.__isRetry = true;
-            // 重新获取CSRF token并重试请求
-            return getCsrfToken()
-              .then((token) => {
-                if (response.config) {
-                  response.config.headers = response.config.headers || {};
-                  response.config.headers["X-CSRF-TOKEN"] = token;
-                }
-                return this.instance.request(response.config);
-              })
-              .catch((retryError) => {
-                return Promise.reject(retryError);
-              })
-              .finally(() => {
-                // 重试完成后清除重试标志（无论成功还是失败）
-                if (response.config) {
-                  delete response.config.__isRetry;
-                }
-              });
-          }
 
-          if (!isCsrfError) {
+          if (true) {
             message.error(res.message || "网络异常");
           }
           return Promise.reject(res);
@@ -196,52 +125,14 @@ export class HttpClient<SecurityDataType = unknown> {
         return Promise.reject(response);
       },
       (error) => {
-        // 检查是否是CSRF token mismatch错误（后端返回400状态码）
-        const isCsrfError =
-          error.response?.status === 400 &&
-          (error.response?.data?.data === "csrf token mismatch" ||
-            error.response?.data?.err === "csrf token mismatch" ||
-            (typeof error.response?.data === "string" &&
-              error.response.data.includes("csrf token mismatch")));
 
-        // 如果是CSRF token相关错误，清除缓存并重试请求
-        if (
-          isCsrfError ||
-          error.response?.status === 403 ||
-          error.response?.status === 419
-        ) {
-          clearCsrfTokenCache();
-
-          // 如果是CSRF token mismatch，自动重试一次请求
-          if (isCsrfError && error.config && !error.config.__isRetry) {
-            error.config.__isRetry = true;
-            // 重新获取CSRF token并重试请求
-            return getCsrfToken()
-              .then((token) => {
-                if (error.config) {
-                  error.config.headers = error.config.headers || {};
-                  error.config.headers["X-CSRF-TOKEN"] = token;
-                }
-                return this.instance.request(error.config);
-              })
-              .catch((retryError) => {
-                return Promise.reject(retryError);
-              })
-              .finally(() => {
-                // 重试完成后清除重试标志（无论成功还是失败）
-                if (error.config) {
-                  delete error.config.__isRetry;
-                }
-              });
-          }
-        }
 
         if (error.response?.status === 401) {
           window.location.href = `/login?redirect=${window.location.pathname}`;
         }
 
         // 如果是CSRF token错误且已经重试过，或者不是CSRF错误，才显示错误提示
-        if (!isCsrfError || error.config?.__isRetry) {
+        if (true) {
           message.error(translateErrorMessage(error));
         }
         return Promise.reject(error.response);
@@ -266,7 +157,7 @@ export class HttpClient<SecurityDataType = unknown> {
       headers: {
         ...((method &&
           this.instance.defaults.headers[
-            method.toLowerCase() as keyof HeadersDefaults
+          method.toLowerCase() as keyof HeadersDefaults
           ]) ||
           {}),
         ...(params1.headers || {}),
@@ -343,15 +234,7 @@ export class HttpClient<SecurityDataType = unknown> {
     };
     const method = params.method?.toUpperCase() || "GET";
 
-    if (method !== "GET") {
-      try {
-        const csrfToken = await getCsrfToken();
-        headers["X-CSRF-TOKEN"] = csrfToken;
-      } catch (error) {
-        console.error("Failed to get CSRF token for request:", error);
-        // 继续执行请求，让服务器处理CSRF验证失败
-      }
-    }
+
     return this.instance.request({
       ...requestParams,
       headers,

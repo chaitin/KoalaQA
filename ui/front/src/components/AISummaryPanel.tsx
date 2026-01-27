@@ -1,5 +1,5 @@
 'use client'
-import { getCsrfToken } from '@/api/httpClient'
+
 import { ModelDiscussionListItem } from '@/api/types'
 import SSEClient from '@/utils/fetch'
 import { Box, Paper, Stack, Typography } from '@mui/material'
@@ -24,29 +24,11 @@ export const AISummaryPanel = ({
   const [isSummarizing, setIsSummarizing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const sseClientRef = useRef<any>(null)
-  const lastTokenRefreshRef = useRef<number>(0)
-  const maxRetryCount = 3 // 增加重试次数
-  const tokenRefreshInterval = 5 * 60 * 1000 // 5分钟刷新一次token
 
-  // 获取新的CSRF token
-  const getFreshCsrfToken = useCallback(async (forceRefresh = false) => {
-    const now = Date.now()
-    const shouldRefresh = forceRefresh || (now - lastTokenRefreshRef.current) > tokenRefreshInterval
-
-    if (shouldRefresh) {
-      console.log('Refreshing CSRF token...')
-      // 清除缓存的token
-      const { clearCsrfTokenCache } = await import('@/api/httpClient')
-      clearCsrfTokenCache()
-      lastTokenRefreshRef.current = now
-    }
-
-    return await getCsrfToken()
-  }, [])
 
   // 开始生成总结
   const startSummary = useCallback(
-    async (retryCount: number = 0) => {
+    async () => {
       if (!searchQuery.trim() || searchResults.length === 0) {
         return
       }
@@ -67,34 +49,19 @@ export const AISummaryPanel = ({
           return
         }
 
-        // 获取 CSRF token（重试时强制刷新token）
-        const csrfToken = await getFreshCsrfToken(retryCount > 0)
+
 
         // 创建 SSE 客户端进行 POST 请求（启用流式模式）
         const sseClient = new SSEClient<any>({
           url: '/api/discussion/summary',
           headers: {
-            'X-CSRF-TOKEN': csrfToken,
           },
           method: 'POST',
           streamMode: true, // 启用流式模式，实时处理每个数据块
           onError: (error) => {
             console.error('SSE error:', error)
 
-            // 检查是否是CSRF token错误，且重试次数未超过限制
-            const isCsrfError =
-              error.message.includes('csrf token mismatch') ||
-              error.message.includes('403') ||
-              error.message.includes('419')
 
-            if (isCsrfError && retryCount < maxRetryCount) {
-              console.log(`CSRF token error detected, retrying (${retryCount + 1}/${maxRetryCount})...`)
-              // 延迟后重试，使用getFreshCsrfToken会自动刷新token
-              setTimeout(() => {
-                startSummary(retryCount + 1)
-              }, 1000)
-              return
-            }
 
             setError('总结生成失败，请稍后重试')
             setIsSummarizing(false)
@@ -120,40 +87,7 @@ export const AISummaryPanel = ({
             data = (data as any).data
           }
 
-          // 检查是否是CSRF错误消息
-          if (data && typeof data === 'object' && data.data === 'csrf token mismatch') {
-            console.error('CSRF token mismatch detected in SSE data')
-            if (retryCount < maxRetryCount) {
-              console.log(`CSRF token error in SSE stream, retrying (${retryCount + 1}/${maxRetryCount})...`)
-              // 断开当前连接
-              sseClient.unsubscribe()
 
-              setTimeout(() => {
-                startSummary(retryCount + 1)
-              }, 1000)
-              return
-            } else {
-              setError('CSRF验证失败，请刷新页面重试')
-              setIsSummarizing(false)
-              return
-            }
-          }
-
-          if (data === 'csrf token mismatch') {
-            console.error('CSRF token mismatch detected in SSE data')
-            if (retryCount < maxRetryCount) {
-              console.log(`CSRF token error in SSE stream, retrying (${retryCount + 1}/${maxRetryCount})...`)
-              sseClient.unsubscribe()
-              setTimeout(() => {
-                startSummary(retryCount + 1)
-              }, 1000)
-              return
-            } else {
-              setError('CSRF验证失败，请刷新页面重试')
-              setIsSummarizing(false)
-              return
-            }
-          }
 
           // 处理接收到的数据 - 简化逻辑
 
@@ -180,19 +114,7 @@ export const AISummaryPanel = ({
       } catch (err) {
         console.error('Failed to start SSE connection:', err)
 
-        // 检查是否是CSRF相关错误
-        const isCsrfError =
-          err instanceof Error &&
-          (err.message.includes('csrf') || err.message.includes('403') || err.message.includes('419'))
 
-        if (isCsrfError && retryCount < maxRetryCount) {
-          console.log(`CSRF error in request, retrying (${retryCount + 1}/${maxRetryCount})...`)
-          // 延迟后重试，使用getFreshCsrfToken会自动刷新token
-          setTimeout(() => {
-            startSummary(retryCount + 1)
-          }, 1000)
-          return
-        }
 
         setError('总结生成失败，请稍后重试')
         setIsSummarizing(false)
@@ -201,17 +123,7 @@ export const AISummaryPanel = ({
     [searchQuery, searchResults],
   )
 
-  // 当组件重新获得可见性时，检查是否需要刷新token
-  useEffect(() => {
-    if (visible) {
-      // 检查距离上次token刷新是否超过设定时间间隔
-      const now = Date.now()
-      if ((now - lastTokenRefreshRef.current) > tokenRefreshInterval) {
-        console.log('Component visible after long time, refreshing CSRF token...')
-        getFreshCsrfToken(true).catch(console.error)
-      }
-    }
-  }, [visible, getFreshCsrfToken])
+
 
   // 清理资源
   useEffect(() => {
@@ -427,7 +339,7 @@ export const AISummaryPanel = ({
       {!isSummarizing && summary && (
         <Typography
           color='rgba(33, 34, 45, 0.30)'
-          sx={{ fontSize: '11px', marginTop: 1}}
+          sx={{ fontSize: '11px', marginTop: 1 }}
         >
           本内容由 AI 基于搜索结果生成整理，如信息已过期或失效，可能不适用于当前情形，仅供参考。
         </Typography>

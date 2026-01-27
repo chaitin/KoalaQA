@@ -1,7 +1,7 @@
 'use client'
 import { ModelDiscussionDetail } from '@/api'
 import { putDiscussionDiscId } from '@/api/Discussion'
-import { getCsrfToken } from '@/api/httpClient'
+
 import { Card } from '@/components'
 import CustomLoadingButton from '@/components/CustomLoadingButton'
 import EditorContent from '@/components/EditorContent'
@@ -72,26 +72,26 @@ const OutlineSidebar = ({
       if (Array.isArray(toc)) {
         setHeadings(toc)
         try {
-          ;(window as any).__lastToc = toc
-        } catch {}
+          ; (window as any).__lastToc = toc
+        } catch { }
       } else {
         setHeadings([])
         try {
-          ;(window as any).__lastToc = []
-        } catch {}
+          ; (window as any).__lastToc = []
+        } catch { }
       }
     }
     try {
       if (typeof window !== 'undefined') {
         window.addEventListener('toc-update', handler as any)
       }
-    } catch {}
+    } catch { }
     return () => {
       try {
         if (typeof window !== 'undefined') {
           window.removeEventListener('toc-update', handler as any)
         }
-      } catch {}
+      } catch { }
     }
   }, [])
 
@@ -102,7 +102,7 @@ const OutlineSidebar = ({
           sseClientRef.current.unsubscribe()
           sseClientRef.current = null
         }
-      } catch {}
+      } catch { }
     }
   }, [])
 
@@ -112,7 +112,7 @@ const OutlineSidebar = ({
         sseClientRef.current.unsubscribe()
         sseClientRef.current = null
       }
-    } catch {}
+    } catch { }
     setIsGenerating(false)
     setError(null)
     setModalOpen(false)
@@ -130,12 +130,8 @@ const OutlineSidebar = ({
         return
       }
 
-      const csrfToken = await getCsrfToken()
       const sseClient = new SSEClient<any>({
         url: '/api/discussion/content_summary',
-        headers: {
-          'X-CSRF-TOKEN': csrfToken,
-        },
         method: 'POST',
         streamMode: true,
         onError: (err) => {
@@ -224,7 +220,7 @@ const OutlineSidebar = ({
     setLocalSummary(next.trim())
     try {
       refreshWithoutView()
-    } catch {}
+    } catch { }
 
     setModalOpen(false)
   }
