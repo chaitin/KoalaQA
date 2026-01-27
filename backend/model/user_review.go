@@ -27,9 +27,10 @@ type UserReview struct {
 type UserReviewWithUser struct {
 	UserReview
 
-	UserEmail  string `json:"user_email"`
-	UserName   string `json:"user_name"`
-	UserAvatar string `json:"user_avatar"`
+	UserEmail  string     `json:"user_email"`
+	UserName   string     `json:"user_name"`
+	UserAvatar string     `json:"user_avatar"`
+	UserOrgIDs Int64Array `json:"-" gorm:"column:user_org_ids;type:bigint[]"`
 }
 
 type UserReviewHeader struct {

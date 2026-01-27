@@ -46,6 +46,10 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 	logger := t.logger.WithContext(ctx).With("task_info", taskInfo)
 
 	logger.Info("receive task result")
+	if taskInfo.TaskID == "" {
+		logger.Warn("empty task id, skip")
+		return nil
+	}
 	dbDoc, err := t.repoDoc.GetByTaskID(ctx, taskInfo.TaskID)
 	if err != nil {
 		if errors.Is(err, database.ErrRecordNotFound) {
@@ -119,6 +123,12 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 
 	case topic.TaskStatusFailed:
 		logger.Warn("doc export task failed")
+		if taskInfo.Err == "" {
+			taskInfo.Err = "anydoc export failed"
+		}
+		if len(taskInfo.Err) > 200 {
+			taskInfo.Err = taskInfo.Err[:200]
+		}
 
 		err = t.repoDoc.Update(ctx, map[string]any{
 			"status":       model.DocStatusExportFailed,

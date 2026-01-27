@@ -105,9 +105,9 @@ const UserNotificationSubscription = () => {
         type: ModelMessageNotifySubType.MessageNotifySubTypeDingtalk,
         info: data.enabled
           ? {
-              client_id: data.client_id,
-              client_secret: data.client_secret,
-            }
+            client_id: data.client_id,
+            client_secret: data.client_secret,
+          }
           : undefined,
       };
       await postAdminSystemNotifySub(req);
@@ -157,8 +157,8 @@ const UserNotificationSubscription = () => {
         </Box>
       ) : (
         <Stack spacing={3}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between">
-            <Typography variant="body2" sx={{ minWidth: 140 }}>
+          <Stack direction="row" alignItems="center" >
+            <Typography variant="body2" sx={{ minWidth: 170 }}>
               钉钉机器人
             </Typography>
             <FormControl fullWidth>
@@ -181,7 +181,7 @@ const UserNotificationSubscription = () => {
           {enabled && (
             <>
               <Box display="flex" alignItems="center">
-                <Typography variant="body2" sx={{ mr: 2, minWidth: 120 }}>
+                <Typography variant="body2" sx={{ minWidth: 170 }}>
                   ClientID
                 </Typography>
                 <TextField
@@ -195,7 +195,7 @@ const UserNotificationSubscription = () => {
               </Box>
 
               <Box display="flex" alignItems="center">
-                <Typography variant="body2" sx={{ mr: 2, minWidth: 120 }}>
+                <Typography variant="body2" sx={{ minWidth: 170 }}>
                   ClientSecret
                 </Typography>
                 <TextField

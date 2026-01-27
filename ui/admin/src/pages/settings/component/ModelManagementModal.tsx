@@ -3,7 +3,7 @@ import Card from '@/components/card';
 import { addOpacityToColor } from '@/utils';
 import { ModelModal } from '@ctzhian/modelkit';
 import { message } from '@ctzhian/ui';
-import { Box, Button, CircularProgress, Stack, Switch, useTheme } from '@mui/material';
+import { Box, Button, CircularProgress, Stack, Switch, Tooltip, useTheme } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { modelService } from './services/modelService';
 
@@ -15,6 +15,17 @@ interface ModelConfig {
   description: string;
   isInUse: boolean;
   isRequired: boolean;
+}
+
+export enum ModelLLMStatus {
+  LLMStatusUnknown = 0,
+  LLMStatusNormal = 1,
+  LLMStatusError = 2,
+}
+
+interface ModelLLMWithStatus extends ModelLLM {
+  status?: ModelLLMStatus;
+  message?: string;
 }
 
 interface ModelManagementModalProps {
@@ -30,8 +41,8 @@ const ModelManagementModal = ({
   onConfigured,
 }: ModelManagementModalProps) => {
   const theme = useTheme();
-  const [editData, setEditData] = useState<ModelLLM | null>(null);
-  const [modelList, setModelList] = useState<ModelLLM[]>([]);
+  const [editData, setEditData] = useState<ModelLLMWithStatus | null>(null);
+  const [modelList, setModelList] = useState<ModelLLMWithStatus[]>([]);
   const [activeLoadingMap, setActiveLoadingMap] = useState<Record<string, boolean>>({});
 
   // 模型配置数组
@@ -79,13 +90,13 @@ const ModelManagementModal = ({
   const getModel = useCallback(async () => {
     const res = await getAdminModelList();
     const filteredModels = res.filter(item => model.includes(item.type as any));
-    setModelList(filteredModels);
+    setModelList(filteredModels as ModelLLMWithStatus[]);
   }, []);
 
   useEffect(() => {
     getModel();
   }, [getModel]);
-  
+
   const handleRefresh = async () => {
     await getModel();
     // 保存模型后，通知父组件更新配置状态
@@ -155,47 +166,47 @@ const ModelManagementModal = ({
                     {[ModelLLMType.LLMTypeAnalysisVL, ModelLLMType.LLMTypeAnalysis].includes(
                       config.key
                     ) && (
-                      <Stack direction="row" alignItems="center" gap={0.5} sx={{ ml: 0.5 }}>
-                        {isLoading ? (
-                          <CircularProgress size={16} />
-                        ) : (
-                          <Switch
-                            size="small"
-                            checked={!!item && !!isActive}
-                            disabled={!itemId || isLoading}
-                            onChange={async (_, checked) => {
-                              if (itemIdNum == null) {
-                                message.error('请先配置模型');
-                                return;
-                              }
-                              const prev = isActive;
-                              // 乐观更新
-                              setModelList(list =>
-                                list.map(m =>
-                                  m.id === itemIdNum ? { ...m, is_active: checked } : m
-                                )
-                              );
-                              setActiveLoadingMap(m => ({ ...m, [itemId]: true }));
-                              try {
-                                await putAdminModelIdActive({ id: itemIdNum }, { active: checked });
-                                message.success(checked ? '已启用' : '已禁用');
-                                getModel();
-                              } catch {
-                                // 回滚
+                        <Stack direction="row" alignItems="center" gap={0.5} sx={{ ml: 0.5 }}>
+                          {isLoading ? (
+                            <CircularProgress size={16} />
+                          ) : (
+                            <Switch
+                              size="small"
+                              checked={!!item && !!isActive}
+                              disabled={!itemId || isLoading}
+                              onChange={async (_, checked) => {
+                                if (itemIdNum == null) {
+                                  message.error('请先配置模型');
+                                  return;
+                                }
+                                const prev = isActive;
+                                // 乐观更新
                                 setModelList(list =>
                                   list.map(m =>
-                                    m.id === itemIdNum ? { ...m, is_active: prev } : m
+                                    m.id === itemIdNum ? { ...m, is_active: checked } : m
                                   )
                                 );
-                                message.error('操作失败');
-                              } finally {
-                                setActiveLoadingMap(m => ({ ...m, [itemId]: false }));
-                              }
-                            }}
-                          />
-                        )}
-                      </Stack>
-                    )}
+                                setActiveLoadingMap(m => ({ ...m, [itemId]: true }));
+                                try {
+                                  await putAdminModelIdActive({ id: itemIdNum }, { active: checked });
+                                  message.success(checked ? '已启用' : '已禁用');
+                                  getModel();
+                                } catch {
+                                  // 回滚
+                                  setModelList(list =>
+                                    list.map(m =>
+                                      m.id === itemIdNum ? { ...m, is_active: prev } : m
+                                    )
+                                  );
+                                  message.error('操作失败');
+                                } finally {
+                                  setActiveLoadingMap(m => ({ ...m, [itemId]: false }));
+                                }
+                              }}
+                            />
+                          )}
+                        </Stack>
+                      )}
                   </Stack>
                   <Box sx={{ fontSize: 12, color: 'text.secondary' }}>{config.description}</Box>
                 </Stack>
@@ -203,18 +214,36 @@ const ModelManagementModal = ({
                 <Stack direction="row" spacing={1} alignItems="center">
                   {item ? (
                     <>
-                      <Box
-                        sx={{
-                          fontSize: 12,
-                          px: 1,
-                          lineHeight: '20px',
-                          borderRadius: '10px',
-                          bgcolor: addOpacityToColor(theme.palette.success.main, 0.1),
-                          color: 'success.main',
-                        }}
-                      >
-                        状态正常
-                      </Box>
+                      {item.status === ModelLLMStatus.LLMStatusError ? (
+                        <Tooltip title={item.message || '模型异常'} arrow>
+                          <Box
+                            sx={{
+                              fontSize: 12,
+                              px: 1,
+                              lineHeight: '20px',
+                              borderRadius: '10px',
+                              bgcolor: addOpacityToColor(theme.palette.error.main, 0.1),
+                              color: 'error.main',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            状态异常
+                          </Box>
+                        </Tooltip>
+                      ) : (
+                        <Box
+                          sx={{
+                            fontSize: 12,
+                            px: 1,
+                            lineHeight: '20px',
+                            borderRadius: '10px',
+                            bgcolor: addOpacityToColor(theme.palette.success.main, 0.1),
+                            color: 'success.main',
+                          }}
+                        >
+                          状态正常
+                        </Box>
+                      )}
                       <Button
                         size="small"
                         variant="outlined"
@@ -245,7 +274,7 @@ const ModelManagementModal = ({
                         size="small"
                         variant="outlined"
                         onClick={() => {
-                          setEditData({ type: config.key } as ModelLLM);
+                          setEditData({ type: config.key } as ModelLLMWithStatus);
                         }}
                       >
                         配置
@@ -266,7 +295,14 @@ const ModelManagementModal = ({
         }}
         refresh={handleRefresh}
         data={
-          editData?.id ? { ...editData, id: editData?.id + '', model_name: editData?.model } : null
+          editData?.id
+            ? {
+              ...editData,
+              id: editData?.id + '',
+              model_name: editData?.model,
+              status: editData.status !== undefined ? String(editData.status) : undefined,
+            }
+            : null
         }
         model_type={editData?.type || ''}
         modelService={modelService}

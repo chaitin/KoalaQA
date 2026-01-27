@@ -129,9 +129,10 @@ func (c *Chat) botCallback(ctx context.Context, req chat.BotReq) (*llm.Stream[st
 		}
 
 		summaryStream, err := c.svcDisc.SummaryByContent(ctx, 0, SummaryByContentReq{
-			SessionID: sessionID,
-			ForumID:   forums[0].ID,
-			Source:    model.AskSessionSourceBot,
+			SessionID:   sessionID,
+			ForumID:     forums[0].ID,
+			Source:      model.AskSessionSourceBot,
+			ReferFormat: false,
 		})
 		if err != nil {
 			c.logger.WithContext(ctx).WithErr(err).With("session_id", sessionID).Warn("summary by content failed")
@@ -162,7 +163,7 @@ func (c *Chat) botCallback(ctx context.Context, req chat.BotReq) (*llm.Stream[st
 					continue
 				}
 
-				wrapStream.RecvOne(fmt.Sprintf("> [%s](%s)\n\n", discItem.Title, publicAddr.FullURL("/"+forums[0].RouteName+"/"+discItem.UUID)), false)
+				wrapStream.RecvOne(fmt.Sprintf("> [%s](%s)\n>\n", discItem.Title, publicAddr.FullURL("/"+forums[0].RouteName+"/"+discItem.UUID)), false)
 			case "text":
 				wrapStream.RecvOne(item.Content, false)
 			}

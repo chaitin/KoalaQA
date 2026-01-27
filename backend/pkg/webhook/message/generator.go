@@ -13,6 +13,7 @@ type generatorIn struct {
 	fx.In
 
 	RepoReview *repo.UserReview
+	RepoUser   *repo.User
 	Common     *commonGetter
 }
 
@@ -104,6 +105,7 @@ func (g *Generator) UserReview(ctx context.Context, msgType Type, id uint) (Mess
 	case TypeUserReviewGuest:
 		return NewUserReviewGuest(commonUser{
 			ID:     review.UserID,
+			OrgIDs: review.UserOrgIDs,
 			Name:   review.UserName,
 			Reason: review.Reason,
 		}, address), nil

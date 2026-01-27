@@ -28,9 +28,10 @@ type LLM struct {
 	cfg     config.Config
 	disc    *repo.Discussion
 	comm    *repo.Comment
+	repoLLM *repo.LLM
 }
 
-func newLLM(rag rag.Service, dataset *repo.Dataset, doc *repo.KBDocument, kit *ModelKit, cfg config.Config, disc *repo.Discussion, comm *repo.Comment) *LLM {
+func newLLM(rag rag.Service, dataset *repo.Dataset, doc *repo.KBDocument, kit *ModelKit, cfg config.Config, disc *repo.Discussion, comm *repo.Comment, repoLLM *repo.LLM) *LLM {
 	return &LLM{
 		rag:     rag,
 		dataset: dataset,
@@ -40,6 +41,7 @@ func newLLM(rag rag.Service, dataset *repo.Dataset, doc *repo.KBDocument, kit *M
 		cfg:     cfg,
 		disc:    disc,
 		comm:    comm,
+		repoLLM: repoLLM,
 	}
 }
 
@@ -199,6 +201,31 @@ func (l *LLM) IsTokenLimitError(err error) bool {
 	return util.StringContainsAny(err.Error(), tokenLimitKeywords)
 }
 
+// updateChatModelStatus 更新智能对话模型的状态
+func (l *LLM) updateChatModelStatus(ctx context.Context, status model.LLMStatus, message string) {
+	logger := l.logger.WithContext(ctx)
+
+	// 获取智能对话模型
+	chatModel, err := l.repoLLM.GetChatModel(ctx)
+	if err != nil {
+		logger.WithErr(err).Warn("get chat model failed when updating status")
+		return
+	}
+
+	// 更新状态
+	err = l.repoLLM.Update(ctx, map[string]any{
+		"status":     status,
+		"message":    message,
+		"updated_at": time.Now(),
+	}, repo.QueryWithEqual("id", chatModel.ID))
+
+	if err != nil {
+		logger.WithErr(err).Warn("update chat model status failed")
+	} else {
+		logger.With("status", status, "model_id", chatModel.ID).Info("chat model status updated")
+	}
+}
+
 func (l *LLM) Chat(ctx context.Context, sMsg string, uMsg string, params map[string]any) (string, error) {
 	cm, err := l.kit.GetChatModel(ctx)
 	if err != nil {
@@ -215,8 +242,14 @@ func (l *LLM) Chat(ctx context.Context, sMsg string, uMsg string, params map[str
 	res, err := cm.Generate(ctx, msgs)
 	if err != nil {
 		logger.WithErr(err).Error("llm response failed")
+		// 更新模型状态为错误
+		l.updateChatModelStatus(ctx, model.LLMStatusError, err.Error())
 		return "", err
 	}
+
+	// 调用成功，更新模型状态为正常
+	l.updateChatModelStatus(ctx, model.LLMStatusNormal, "")
+
 	logger.With("response", res.Content).Debug("llm response success")
 	return res.Content, nil
 }
@@ -260,9 +293,11 @@ func (l *LLM) StreamChat(ctx context.Context, sMsg string, uMsg string, params m
 	logger.Debug("wait llm stream response")
 	reader, err := cm.Stream(ctx, slices.Insert(msgs, 1, histories...))
 	if err != nil {
+		// 更新模型状态为错误
+		l.updateChatModelStatus(ctx, model.LLMStatusError, err.Error())
 		return nil, err
 	}
-
+	l.updateChatModelStatus(ctx, model.LLMStatusNormal, "")
 	s := llm.NewStream[string]()
 
 	go func() {
@@ -276,6 +311,7 @@ func (l *LLM) StreamChat(ctx context.Context, sMsg string, uMsg string, params m
 
 			return msg.Content, nil
 		})
+
 	}()
 
 	return s, nil

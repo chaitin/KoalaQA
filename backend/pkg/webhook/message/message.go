@@ -23,6 +23,7 @@ type commonUserThird struct {
 
 type commonUser struct {
 	ID     uint              `json:"id"`
+	OrgIDs model.Int64Array  `json:"org_ids"`
 	Thirds []commonUserThird `json:"thirds"`
 	Name   string            `json:"name"`
 	Reason string            `json:"reason,omitempty"`

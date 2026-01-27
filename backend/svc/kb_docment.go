@@ -282,6 +282,7 @@ type DocListItem struct {
 	SimilarID uint                  `json:"similar_id"`
 	GroupIDs  model.Int64Array      `json:"group_ids" gorm:"type:bigint[]"`
 	ParentID  uint                  `json:"parent_id"`
+	Message   string                `json:"message"`
 }
 
 func (d *KBDocument) List(ctx context.Context, kbID uint, docType model.DocType, req DocListReq) (*model.ListRes[DocListItem], error) {

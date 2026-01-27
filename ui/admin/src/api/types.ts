@@ -955,6 +955,7 @@ export interface SvcDocListItem {
   file_type?: ModelFileType;
   group_ids?: number[];
   id?: number;
+  message?: string;
   parent_id?: number;
   platform?: PlatformPlatformType;
   similar_id?: number;

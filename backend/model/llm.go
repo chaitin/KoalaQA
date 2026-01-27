@@ -65,6 +65,13 @@ func (m LLMType) RagSupported() bool {
 	return m != LLMTypeChat
 }
 
+type LLMStatus string
+
+const (
+	LLMStatusNormal LLMStatus = "normal"
+	LLMStatusError  LLMStatus = "error"
+)
+
 type LLM struct {
 	Base
 
@@ -79,6 +86,9 @@ type LLM struct {
 	Type       LLMType `json:"type" gorm:"default:chat;uniqueIndex"`
 
 	IsActive bool `json:"is_active" gorm:"default:false"`
+
+	Status  LLMStatus `json:"status" gorm:"default:normal"`
+	Message string    `json:"message" gorm:"default:''"`
 
 	PromptTokens     uint64 `json:"prompt_tokens" gorm:"default:0"`
 	CompletionTokens uint64 `json:"completion_tokens" gorm:"default:0"`

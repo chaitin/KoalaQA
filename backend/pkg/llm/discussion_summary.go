@@ -78,10 +78,13 @@ var DiscussionSummarySystemPrompt = `
   回答结束后，如果有引用列表则按照序号输出，格式如下，没有则不输出
 	---
 	###### 相关帖子
-	> [1]. [文档标题1](URL1)
-	> [2]. [文档标题2](URL2)
-	> ...
-	> [N]. [文档标题N](URLN)
+	{{if .ReferenceFormat}}> {{end}}[1]. [文档标题1](URL1)
+	{{if .ReferenceFormat}}> {{end}}
+	{{if .ReferenceFormat}}> {{end}}[2]. [文档标题2](URL2)
+	{{if .ReferenceFormat}}> {{end}}
+	{{if .ReferenceFormat}}> {{end}}...
+	{{if .ReferenceFormat}}> {{end}}
+	{{if .ReferenceFormat}}> {{end}}[N]. [文档标题N](URLN)
 	---
 {{- end}}
 
