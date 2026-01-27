@@ -14,6 +14,7 @@ import { CheckCircleOutline as CheckCircleOutlineIcon } from '@mui/icons-materia
 import { Chip } from '@mui/material'
 import { useParams } from 'next/navigation'
 import { useContext } from 'react'
+import { useForumStore } from '@/store'
 
 const PAGE_SIZE = 10
 
@@ -76,6 +77,7 @@ const EmptyState = () => (
 export default function FollowingIssuesList() {
   const { groups } = useContext(CommonContext)
   const params = useParams()
+  const forums = useForumStore((s) => s.forums)
 
   // // 使用 useMemo 优化分组名称计算
   // const getGroupNames = useCallback(
@@ -186,10 +188,13 @@ export default function FollowingIssuesList() {
       {issues.map((issue) => {
         // const groupNames = getGroupNames(issue.group_ids)
         const categoryNames = getCategoryNames(issue.group_ids)
+        const forum = forums.find((f) => f.id === issue.forum_id)
+        const routeName = forum?.route_name || (params?.route_name as string) || ''
+
         return (
           <Link
             key={issue.id}
-            href={`/${params?.route_name as string}/${issue.uuid}`}
+            href={`/${routeName}/${issue.uuid}`}
             style={{ textDecoration: 'none', color: 'inherit' }}
           >
             <Box

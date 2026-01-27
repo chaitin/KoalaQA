@@ -80,7 +80,7 @@ const Access = ({ onSaved }: AccessProps) => {
 
       <Stack spacing={3}>
         <Box display="flex" alignItems="center">
-          <Typography variant="body2" sx={{ mr: 2, minWidth: 170 }}>
+          <Typography variant="body2" sx={{ minWidth: 170 }}>
             用户实际访问地址
           </Typography>
           <TextField

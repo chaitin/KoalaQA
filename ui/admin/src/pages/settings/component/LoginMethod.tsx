@@ -591,7 +591,7 @@ const LoginMethod: React.FC = () => {
                     />
                   </Box>
 
-                  <Stack direction="row" alignItems="center" spacing={2}>
+                  <Stack direction="row" alignItems="center" >
                     <Typography variant="body2" sx={{ minWidth: 170 }}>
                       登录按钮文案
                     </Typography>

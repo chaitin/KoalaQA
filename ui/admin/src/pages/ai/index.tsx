@@ -21,7 +21,7 @@ import Model from '../settings/component/Model';
 import LaunchIcon from '@mui/icons-material/Launch';
 import Bot from './bot';
 import ChatConfig from './ChatConfig';
-import DingBot from './DingBot';
+
 
 const schema = z.object({
   name: z.string().min(1, '必填').default(''),
@@ -102,7 +102,7 @@ const AdminDocument = () => {
         <Grid size={{ sm: 12, md: 6 }}>
           <Bot />
           <ChatConfig />
-          <DingBot />
+
 
         </Grid>
         <Grid size={{ sm: 12, md: 6 }}>

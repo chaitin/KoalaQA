@@ -165,7 +165,7 @@ const AskHistory = () => {
               {truncatedText}
             </Ellipsis>
             <Box sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-              {record.source === ModelAskSessionSource.AskSessionSourcePlugin ? '网页挂件' : record.source === ModelAskSessionSource.AskSessionSourceBot ? '机器人' : '在线支持'}
+              {record.source === ModelAskSessionSource.AskSessionSourcePlugin ? '网页挂件' : record.source === ModelAskSessionSource.AskSessionSourceBot ? '钉钉机器人' : '在线支持'}
             </Box>
           </Stack>
         );

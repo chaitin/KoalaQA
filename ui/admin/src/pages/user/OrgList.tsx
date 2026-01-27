@@ -137,7 +137,20 @@ const OrgList = ({ orgList: initialOrgList, onRefresh }: OrgListProps) => {
     {
       title: '组织',
       dataIndex: 'name',
-      render: (_, record) => record.name || '-',
+      render: (_, record) => {
+        const name = record.name || '-';
+        const id = record.id;
+        return (
+          <Box display="flex" flexDirection="column">
+            <Typography variant="body2">{name}</Typography>
+            {id && (
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                组织ID: {id}
+              </Typography>
+            )}
+          </Box>
+        );
+      },
     },
     {
       title: '访问权限',

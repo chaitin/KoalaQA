@@ -15,6 +15,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import SendIcon from '@mui/icons-material/Send'
 import StopIcon from '@mui/icons-material/Stop'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
+import MarkDown from 'react-markdown'
 import {
   alpha,
   Avatar,
@@ -147,6 +148,25 @@ export default function CustomerServiceContent({
       }
     }
   }, [searchParams, isWidgetMode])
+
+  // Hide the widget button on this page
+  useEffect(() => {
+    const style = document.createElement('style')
+    style.innerHTML = `
+      .cs-widget-button {
+        display: none !important;
+      }
+      .cs-widget-modal {
+        display: none !important;
+      }
+    `
+    document.head.appendChild(style)
+
+    return () => {
+      document.head.removeChild(style)
+    }
+  }, [])
+
 
   // 生成 UUID 的工具函数
   const generateUuid = useCallback(() => {
@@ -1602,6 +1622,7 @@ export default function CustomerServiceContent({
                                     border: '1px solid',
                                     borderColor: 'divider',
                                     fontSize: '14px',
+                                    overflow: 'overlay',
                                     '& p': {
                                       my: 0,
                                       lineHeight: 1.7,
@@ -1768,12 +1789,22 @@ export default function CustomerServiceContent({
                                           sx={{
                                             '& > *:first-of-type': { mt: 0 },
                                             '& > *:last-child': { mb: 0 },
-                                            '& p': {
+                                            '& p, & h6': {
                                               fontSize: '14px',
+                                              mb: 1,
                                             },
+                                            '& a': {
+                                              color: 'inherit',
+                                              textDecoration: 'none',
+                                            },
+                                            '& blockquote': {
+                                              mx: 2,
+                                              mt: '8px!important',
+                                            }
+
                                           }}
                                         >
-                                          <EditorContent content={message.content} />
+                                          <MarkDown >{message.content}</MarkDown>
                                           {/* 中断提示 - 居中显示 */}
                                           {message.isInterrupted && (
                                             <Box

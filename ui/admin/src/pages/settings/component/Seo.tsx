@@ -102,7 +102,7 @@ const Seo = () => {
 
       <Stack spacing={3}>
         <Box display="flex" alignItems="center">
-          <Typography variant="body2" sx={{ mr: 2, minWidth: 170 }}>
+          <Typography variant="body2" sx={{ minWidth: 170 }}>
             社区描述
           </Typography>
           <TextField
@@ -120,7 +120,7 @@ const Seo = () => {
         </Box>
 
         <Box display="flex" alignItems="center">
-          <Typography variant="body2" sx={{ mr: 2, minWidth: 170 }}>
+          <Typography variant="body2" sx={{ minWidth: 170 }}>
             关键词
           </Typography>
           <TextField
