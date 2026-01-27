@@ -555,7 +555,7 @@ type DiscussionSummaryReq struct {
 	UUIDs   model.StringArray `json:"uuids" binding:"required"`
 }
 
-func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummaryReq, refer bool) (*llm.Stream[string], error) {
+func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummaryReq, refer bool, referFormat bool) (*llm.Stream[string], error) {
 	var discs []model.DiscussionListItem
 	err := d.in.DiscRepo.List(ctx, &discs, repo.QueryWithEqual("uuid", req.UUIDs, repo.EqualOPEqAny))
 	if err != nil {
@@ -607,10 +607,11 @@ func (d *Discussion) Summary(ctx context.Context, uid uint, req DiscussionSummar
 	}
 
 	return d.in.LLM.StreamChat(ctx, llm.DiscussionSummarySystemPrompt, userPrompt, map[string]any{
-		"CurrentDate": time.Now().Format("2006-01-02"),
-		"Question":    req.Keyword,
-		"Discussions": discs,
-		"Reference":   refer,
+		"CurrentDate":     time.Now().Format("2006-01-02"),
+		"Question":        req.Keyword,
+		"Discussions":     discs,
+		"Reference":       refer,
+		"ReferenceFormat": referFormat,
 	})
 }
 
@@ -2467,10 +2468,11 @@ func (d *Discussion) AskSession(ctx context.Context, req AskSessionReq) (*model.
 }
 
 type SummaryByContentReq struct {
-	SessionID string                 `json:"session_id" binding:"required,uuid"`
-	ForumID   uint                   `json:"forum_id" binding:"required"`
-	GroupIDs  model.Int64Array       `json:"group_ids"`
-	Source    model.AskSessionSource `json:"source" binding:"oneof=0 1"`
+	SessionID   string                 `json:"session_id" binding:"required,uuid"`
+	ForumID     uint                   `json:"forum_id" binding:"required"`
+	GroupIDs    model.Int64Array       `json:"group_ids"`
+	Source      model.AskSessionSource `json:"source" binding:"oneof=0 1"`
+	ReferFormat bool                   `json:"-" swaggerignore:"true"`
 }
 
 func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req SummaryByContentReq) (*llm.Stream[llm.AskSessionStreamItem], error) {
@@ -2658,7 +2660,7 @@ func (d *Discussion) SummaryByContent(ctx context.Context, uid uint, req Summary
 			stream, err := d.Summary(cancelCtx, uid, DiscussionSummaryReq{
 				Keyword: lastContent,
 				UUIDs:   discUUIDs,
-			}, true)
+			}, true, req.ReferFormat)
 			if err != nil {
 				if errors.Is(err, context.Canceled) {
 					canceled = true
