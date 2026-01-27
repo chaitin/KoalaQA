@@ -122,8 +122,8 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 		if taskInfo.Err == "" {
 			taskInfo.Err = "anydoc export failed"
 		}
-		if len(taskInfo.Err) > 100 {
-			taskInfo.Err = taskInfo.Err[:100]
+		if len(taskInfo.Err) > 200 {
+			taskInfo.Err = taskInfo.Err[:200]
 		}
 
 		err = t.repoDoc.Update(ctx, map[string]any{
