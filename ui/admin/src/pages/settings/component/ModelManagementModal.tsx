@@ -1,9 +1,9 @@
-import { getAdminModelList, ModelLLM, ModelLLMType, putAdminModelIdActive } from '@/api';
+import { getAdminModelList, ModelLLM, ModelLLMStatus, ModelLLMType, putAdminModelIdActive } from '@/api';
 import Card from '@/components/card';
 import { addOpacityToColor } from '@/utils';
 import { ModelModal } from '@ctzhian/modelkit';
 import { message } from '@ctzhian/ui';
-import { Box, Button, CircularProgress, Stack, Switch, useTheme } from '@mui/material';
+import { Box, Button, CircularProgress, Stack, Switch, Tooltip, useTheme } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { modelService } from './services/modelService';
 
@@ -203,18 +203,36 @@ const ModelManagementModal = ({
                 <Stack direction="row" spacing={1} alignItems="center">
                   {item ? (
                     <>
-                      <Box
-                        sx={{
-                          fontSize: 12,
-                          px: 1,
-                          lineHeight: '20px',
-                          borderRadius: '10px',
-                          bgcolor: addOpacityToColor(theme.palette.success.main, 0.1),
-                          color: 'success.main',
-                        }}
-                      >
-                        状态正常
-                      </Box>
+                      {item.status === ModelLLMStatus.LLMStatusError ? (
+                        <Tooltip title={item.message || '模型异常'} arrow>
+                          <Box
+                            sx={{
+                              fontSize: 12,
+                              px: 1,
+                              lineHeight: '20px',
+                              borderRadius: '10px',
+                              bgcolor: addOpacityToColor(theme.palette.error.main, 0.1),
+                              color: 'error.main',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            状态异常
+                          </Box>
+                        </Tooltip>
+                      ) : (
+                        <Box
+                          sx={{
+                            fontSize: 12,
+                            px: 1,
+                            lineHeight: '20px',
+                            borderRadius: '10px',
+                            bgcolor: addOpacityToColor(theme.palette.success.main, 0.1),
+                            color: 'success.main',
+                          }}
+                        >
+                          状态正常
+                        </Box>
+                      )}
                       <Button
                         size="small"
                         variant="outlined"

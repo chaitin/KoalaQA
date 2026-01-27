@@ -28,6 +28,10 @@ func (l *LLM) GetChatModel(ctx context.Context) (*model.LLM, error) {
 	return &res, nil
 }
 
+func (l *LLM) UpdateByRagID(ctx context.Context, ragID string, data map[string]any) error {
+	return l.base.model(ctx).Where("rag_id = ?", ragID).Updates(data).Error
+}
+
 func init() {
 	register(newLLM)
 }
