@@ -119,6 +119,9 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 
 	case topic.TaskStatusFailed:
 		logger.Warn("doc export task failed")
+		if taskInfo.Err == "" {
+			taskInfo.Err = "anydoc export failed"
+		}
 
 		err = t.repoDoc.Update(ctx, map[string]any{
 			"status":       model.DocStatusExportFailed,

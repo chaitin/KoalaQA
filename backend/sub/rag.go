@@ -102,6 +102,9 @@ func (r *ragDoc) updateKbDocStatus(ctx context.Context, data topic.MsgRagDocUpda
 	}
 	switch data.Status {
 	case topic.RagDocStatusFailed:
+		if data.Message == "" {
+			data.Message = "rag apply failed"
+		}
 		updateM["message"] = data.Message
 	case topic.RagDocStatusSucceeded:
 		updateM["message"] = ""
