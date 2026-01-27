@@ -96,6 +96,44 @@ class SSEClient<T> {
           }
         }
 
+        if (response.status === 400 && !isRetry) {
+          // 克隆响应以便读取错误信息
+          const clonedResponse = response.clone()
+          try {
+            const text = await clonedResponse.text()
+            // 检测 CSRF mismatch 错误
+            if (text.includes('csrf token mismatch')) {
+              clearTimeout(timeoutId)
+              console.log('CSRF token mismatch detected in SSE (400), retrying with new token...')
+
+              // 动态导入并清除 CSRF token 缓存
+              try {
+                const { clearCsrfTokenCache, getCsrfToken } = await import('@/api/httpClient')
+                clearCsrfTokenCache()
+
+                // 获取新的 token
+                const newToken = await getCsrfToken()
+
+                // 更新 headers 中的 CSRF token
+                this.options.headers = {
+                  ...(this.options.headers || {}),
+                  'X-CSRF-TOKEN': newToken,
+                }
+
+                // 重试请求
+                this.subscribe(body, onMessage, true)
+                return
+              } catch (retryError) {
+                console.error('Failed to retry SSE request:', retryError)
+                onError?.(new Error('CSRF token refresh failed'))
+                return
+              }
+            }
+          } catch (e) {
+            console.warn('Failed to read error response body:', e)
+          }
+        }
+
         if (!response.ok) {
           clearTimeout(timeoutId)
           throw new Error(`HTTP error! status: ${response.status}`)
