@@ -5,7 +5,6 @@ import { getCsrfToken } from '@/api/httpClient'
 import { ModelDiscussionListItem, ModelUserInfo, SvcBotGetRes } from '@/api/types'
 import { getSystemWebPlugin } from '@/api/WebPlugin'
 import { AuthContext } from '@/components/authProvider'
-import EditorContent from '@/components/EditorContent'
 import UserAvatar from '@/components/UserAvatar'
 import Alert from '@/components/alert'
 import BrandAttribution from '@/components/BrandAttribution'
@@ -1800,8 +1799,10 @@ export default function CustomerServiceContent({
                                             '& blockquote': {
                                               mx: 2,
                                               mt: '8px!important',
-                                            }
-
+                                            },
+                                            '& hr': {
+                                              borderColor: 'rgba(0, 0, 0, 0.06)',
+                                            },
                                           }}
                                         >
                                           <MarkDown >{message.content}</MarkDown>
