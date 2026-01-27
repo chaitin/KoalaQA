@@ -10284,6 +10284,9 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "message": {
+                    "type": "string"
+                },
                 "parent_id": {
                     "type": "integer"
                 },
