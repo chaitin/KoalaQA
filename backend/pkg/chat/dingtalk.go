@@ -2,6 +2,7 @@ package chat
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -251,6 +252,10 @@ func (d *dingtalk) Stop() {
 
 	d.streamCli.AutoReconnect = false
 	d.streamCli.Close()
+}
+
+func (d *dingtalk) StreamText(_ context.Context, _ VerifyReq) (string, error) {
+	return "", errors.ErrUnsupported
 }
 
 func newDingtalk(cfg model.SystemChatConfig, callback BotCallback) (Bot, error) {
