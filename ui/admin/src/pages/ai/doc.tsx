@@ -2,6 +2,7 @@ import {
   deleteAdminKbKbIdDocumentDocId,
   getAdminKbKbIdDocument,
   getAdminKbKbIdDocumentDocId,
+  ModelDocStatus,
   ModelDocType,
   ModelFileType,
   ModelKBDocumentDetail,
@@ -27,6 +28,7 @@ import {
   Select,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useRequest } from 'ahooks';
@@ -63,7 +65,7 @@ const AdminDocument = () => {
     run: fetchData,
     mutate,
   } = useRequest(params => getAdminKbKbIdDocument({ ...params, kbId: kb_id }), { manual: true });
-  
+
   // 使用分类编辑hook
   const categoryEdit = useCategoryEdit({
     kbId: kb_id,
@@ -181,6 +183,19 @@ const AdminDocument = () => {
       dataIndex: 'status',
       render: (_, record) => {
         if (!record?.status) return '-';
+        if (
+          (record.status === ModelDocStatus.DocStatusApplyFailed ||
+            record.status === ModelDocStatus.DocStatusExportFailed) &&
+          record.message
+        ) {
+          return (
+            <Tooltip title={record.message}>
+              <Box component="span" sx={{ cursor: 'help' }}>
+                <StatusBadge status={record.status} />
+              </Box>
+            </Tooltip>
+          );
+        }
         return <StatusBadge status={record.status} />;
       },
     },

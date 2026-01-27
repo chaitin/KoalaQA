@@ -130,11 +130,6 @@ export enum ModelLLMType {
   LLMTypeAnalysisVL = "analysis-vl",
 }
 
-export enum ModelLLMStatus {
-  LLMStatusNormal = "normal",
-  LLMStatusError = "error",
-}
-
 export enum ModelFileType {
   FileTypeUnknown = 0,
   FileTypeMarkdown = 1,
@@ -565,8 +560,6 @@ export interface ModelLLM {
   provider?: string;
   rag_id?: string;
   show_name?: string;
-  status?: ModelLLMStatus;
-  message?: string;
   total_tokens?: number;
   type?: ModelLLMType;
   updated_at?: number;
@@ -962,6 +955,7 @@ export interface SvcDocListItem {
   file_type?: ModelFileType;
   group_ids?: number[];
   id?: number;
+  message?: string;
   parent_id?: number;
   platform?: PlatformPlatformType;
   similar_id?: number;
