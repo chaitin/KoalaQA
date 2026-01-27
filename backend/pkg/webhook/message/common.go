@@ -105,6 +105,7 @@ func (c *commonGetter) DiscussMessage(ctx context.Context, dissID uint, userID u
 		},
 		User: commonUser{
 			ID:     userID,
+			OrgIDs: user.OrgIDs,
 			Thirds: messageThirds,
 			Name:   user.Name,
 		},
@@ -150,7 +151,8 @@ func (c *commonGetter) DocMessage(ctx context.Context, kbID uint, docID uint) (*
 func NewTestCommon() Common {
 	return Common{
 		User: commonUser{
-			ID: 1,
+			ID:     1,
+			OrgIDs: model.Int64Array{1},
 			Thirds: []commonUserThird{
 				{
 					ID:   "123",

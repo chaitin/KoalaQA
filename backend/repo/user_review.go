@@ -46,7 +46,7 @@ func (u *UserReview) Get(ctx context.Context, res any, queryFuncs ...QueryOptFun
 
 func (u *UserReview) GetByIDWithUser(ctx context.Context, id uint) (*model.UserReviewWithUser, error) {
 	var res model.UserReviewWithUser
-	err := u.model(ctx).Select("user_reviews.*, users.email as user_email, users.name as user_name, users.avatar as user_avatar").
+	err := u.model(ctx).Select("user_reviews.*, users.email as user_email, users.name as user_name, users.avatar as user_avatar, users.org_ids as user_org_ids").
 		Joins("LEFT JOIN users ON users.id = user_reviews.user_id").
 		Where("user_reviews.id = ?", id).
 		First(&res).Error
