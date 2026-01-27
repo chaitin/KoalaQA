@@ -92,6 +92,9 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
     setValue('org_ids', []);
   };
 
+  // 监听角色字段变化
+  const currentRole = watch('role');
+
   const {
     data,
     loading,
@@ -141,6 +144,17 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
       role: roleFilter,
     });
   }, [query, orgIdFilter, roleFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 当角色改为游客时，自动设置为 builtin 组织
+  useEffect(() => {
+    if (currentRole === ModelUserRole.UserRoleGuest) {
+      // 查找 builtin 为 true 的组织
+      const builtinOrg = orgList.find(org => org.builtin === true);
+      if (builtinOrg?.id) {
+        setValue('org_ids', [builtinOrg.id]);
+      }
+    }
+  }, [currentRole, orgList, setValue]);
 
   const deleteUser = (item: SvcUserListItem) => {
     Modal.confirm({
@@ -595,7 +609,7 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
         <FormControl fullWidth sx={{ my: 2 }} error={false}>
           <InputLabel
             id="org-select-label"
-            disabled={editItem?.builtin && editItem.role === ModelUserRole.UserRoleAdmin}
+            disabled={currentRole === ModelUserRole.UserRoleGuest || (editItem?.builtin && editItem.role === ModelUserRole.UserRoleAdmin)}
           >
             组织
           </InputLabel>
@@ -618,7 +632,7 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
                   label="组织"
                   multiple
                   value={field.value || []}
-                  disabled={editItem?.builtin && editItem.role === ModelUserRole.UserRoleAdmin}
+                  disabled={currentRole === ModelUserRole.UserRoleGuest || (editItem?.builtin && editItem.role === ModelUserRole.UserRoleAdmin)}
                   onChange={e => {
                     const value = e.target.value as number[];
                     field.onChange(value);
