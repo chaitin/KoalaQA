@@ -145,7 +145,7 @@ const OrgList = ({ orgList: initialOrgList, onRefresh }: OrgListProps) => {
             <Typography variant="body2">{name}</Typography>
             {id && (
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                组织ID: {id}
+                ID: {id}
               </Typography>
             )}
           </Box>

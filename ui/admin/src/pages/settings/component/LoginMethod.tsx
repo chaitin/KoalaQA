@@ -678,7 +678,7 @@ const LoginMethod: React.FC = () => {
 
               <Stack spacing={1.5}>
                 <Stack direction="row" alignItems="center" spacing={2}>
-                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                  <Typography variant="body2" sx={{ minWidth: 155 }}>
                     服务器地址<span style={{ color: 'red' }}>*</span>
                   </Typography>
                   <Box sx={{ flex: 1 }}>
@@ -714,7 +714,7 @@ const LoginMethod: React.FC = () => {
                 </Stack>
 
                 <Stack direction="row" alignItems="center" spacing={2}>
-                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                  <Typography variant="body2" sx={{ minWidth: 155 }}>
                     Client ID<span style={{ color: 'red' }}>*</span>
                   </Typography>
                   <Box sx={{ flex: 1 }}>
@@ -747,7 +747,7 @@ const LoginMethod: React.FC = () => {
                 </Stack>
 
                 <Stack direction="row" alignItems="center" spacing={2}>
-                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                  <Typography variant="body2" sx={{ minWidth: 155 }}>
                     Client Secret<span style={{ color: 'red' }}>*</span>
                   </Typography>
                   <Box sx={{ flex: 1 }}>
@@ -796,7 +796,7 @@ const LoginMethod: React.FC = () => {
                 </Stack>
 
                 <Stack direction="row" alignItems="center" spacing={2}>
-                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                  <Typography variant="body2" sx={{ minWidth: 155 }}>
                     按钮文案
                   </Typography>
                   <Box sx={{ flex: 1 }}>
@@ -881,7 +881,7 @@ const LoginMethod: React.FC = () => {
 
               <Stack spacing={1.5}>
                 <Stack direction="row" alignItems="center" spacing={2}>
-                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                  <Typography variant="body2" sx={{ minWidth: 155 }}>
                     企业 ID<span style={{ color: 'red' }}>*</span>
                   </Typography>
                   <Box sx={{ flex: 1 }}>
@@ -914,7 +914,7 @@ const LoginMethod: React.FC = () => {
                 </Stack>
 
                 <Stack direction="row" alignItems="center" spacing={2}>
-                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                  <Typography variant="body2" sx={{ minWidth: 155 }}>
                     Agent ID<span style={{ color: 'red' }}>*</span>
                   </Typography>
                   <Box sx={{ flex: 1 }}>
@@ -947,7 +947,7 @@ const LoginMethod: React.FC = () => {
                 </Stack>
 
                 <Stack direction="row" alignItems="center" spacing={2}>
-                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                  <Typography variant="body2" sx={{ minWidth: 155 }}>
                     Secret<span style={{ color: 'red' }}>*</span>
                   </Typography>
                   <Box sx={{ flex: 1 }}>
@@ -996,7 +996,7 @@ const LoginMethod: React.FC = () => {
                 </Stack>
 
                 <Stack direction="row" alignItems="center" spacing={2}>
-                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                  <Typography variant="body2" sx={{ minWidth: 155 }}>
                     按钮文案
                   </Typography>
                   <Box sx={{ flex: 1 }}>
@@ -1108,7 +1108,7 @@ const LoginMethod: React.FC = () => {
                   />
                 </Box>
                 <Stack direction="row" alignItems="center" spacing={2}>
-                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                  <Typography variant="body2" sx={{ minWidth: 155 }}>
                     App ID<span style={{ color: 'red' }}>*</span>
                   </Typography>
                   <Box sx={{ flex: 1 }}>
@@ -1141,7 +1141,7 @@ const LoginMethod: React.FC = () => {
                 </Stack>
 
                 <Stack direction="row" alignItems="center" spacing={2}>
-                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                  <Typography variant="body2" sx={{ minWidth: 155 }}>
                     App Secret<span style={{ color: 'red' }}>*</span>
                   </Typography>
                   <Box sx={{ flex: 1 }}>
@@ -1190,7 +1190,7 @@ const LoginMethod: React.FC = () => {
                 </Stack>
 
                 <Stack direction="row" alignItems="center" spacing={2}>
-                  <Typography variant="body2" sx={{ minWidth: 170 }}>
+                  <Typography variant="body2" sx={{ minWidth: 155 }}>
                     按钮文案
                   </Typography>
                   <Box sx={{ flex: 1 }}>

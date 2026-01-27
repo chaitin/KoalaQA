@@ -256,7 +256,6 @@ const ChatConfig = () => {
         </Stack>
 
         {/* Section 2: Web Widget */}
-        <Box sx={{ borderTop: '1px dashed #e0e0e0', my: 2 }} />
         <SectionTitle title="网页挂件" />
         <Stack spacing={2} sx={{ pl: 2 }}>
           <Stack direction="row" alignItems="center">
@@ -353,24 +352,33 @@ const ChatConfig = () => {
         </Stack>
 
         {/* Section 3: DingTalk Robot */}
-        <Box sx={{ borderTop: '1px dashed #e0e0e0', my: 2 }} />
         <SectionTitle title="钉钉机器人" />
         <Stack spacing={2} sx={{ pl: 2 }}>
           <Stack direction="row" alignItems="center">
             <Box sx={{ width: 120, flexShrink: 0 }}>
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>开启</Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>钉钉机器人</Typography>
             </Box>
-            <Switch
-              checked={dingEnabled}
+            <RadioGroup
+              row
+              value={dingEnabled ? 'enabled' : 'disabled'}
               onChange={(e) => {
-                setValue('enabled', e.target.checked, { shouldDirty: true });
+                setValue('enabled', e.target.value === 'enabled', { shouldDirty: true });
               }}
-              size="small"
-              sx={{ mr: 'auto' }}
-            />
+            >
+              <FormControlLabel
+                value="disabled"
+                control={<Radio size="small" />}
+                label={<Typography variant="body2">禁用</Typography>}
+              />
+              <FormControlLabel
+                value="enabled"
+                control={<Radio size="small" />}
+                label={<Typography variant="body2">启用</Typography>}
+              />
+            </RadioGroup>
           </Stack>
 
-          <Stack direction="row" alignItems="flex-start">
+          {dingEnabled && <>  <Stack direction="row" alignItems="flex-start">
             <Box sx={{ width: 120, flexShrink: 0, pt: 1 }}>
               <Stack direction="row">
                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>Client ID</Typography>
@@ -388,41 +396,41 @@ const ChatConfig = () => {
             />
           </Stack>
 
-          <Stack direction="row" alignItems="flex-start">
-            <Box sx={{ width: 120, flexShrink: 0, pt: 1 }}>
-              <Stack direction="row">
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>Client Secret</Typography>
-                <Typography variant="body2" color="error.main" sx={{ ml: 0.5 }}>*</Typography>
-              </Stack>
-            </Box>
-            <TextField
-              {...register('client_secret')}
-              placeholder=""
-              fullWidth
-              size="small"
-              error={!!errors.client_secret}
-              helperText={errors.client_secret?.message}
-              sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#f6f8fa' } }}
-            />
-          </Stack>
+            <Stack direction="row" alignItems="flex-start">
+              <Box sx={{ width: 120, flexShrink: 0, pt: 1 }}>
+                <Stack direction="row">
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>Client Secret</Typography>
+                  <Typography variant="body2" color="error.main" sx={{ ml: 0.5 }}>*</Typography>
+                </Stack>
+              </Box>
+              <TextField
+                {...register('client_secret')}
+                placeholder=""
+                fullWidth
+                size="small"
+                error={!!errors.client_secret}
+                helperText={errors.client_secret?.message}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#f6f8fa' } }}
+              />
+            </Stack>
 
-          <Stack direction="row" alignItems="flex-start">
-            <Box sx={{ width: 120, flexShrink: 0, pt: 1 }}>
-              <Stack direction="row">
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>Template ID</Typography>
-                <Typography variant="body2" color="error.main" sx={{ ml: 0.5 }}>*</Typography>
-              </Stack>
-            </Box>
-            <TextField
-              {...register('template_id')}
-              placeholder="> 钉钉开发平台 > 卡片平台 > 模板列表 > 模板 ID"
-              fullWidth
-              size="small"
-              error={!!errors.template_id}
-              helperText={errors.template_id?.message}
-              sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#f6f8fa' } }}
-            />
-          </Stack>
+            <Stack direction="row" alignItems="flex-start">
+              <Box sx={{ width: 120, flexShrink: 0, pt: 1 }}>
+                <Stack direction="row">
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>Template ID</Typography>
+                  <Typography variant="body2" color="error.main" sx={{ ml: 0.5 }}>*</Typography>
+                </Stack>
+              </Box>
+              <TextField
+                {...register('template_id')}
+                placeholder="> 钉钉开发平台 > 卡片平台 > 模板列表 > 模板 ID"
+                fullWidth
+                size="small"
+                error={!!errors.template_id}
+                helperText={errors.template_id?.message}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#f6f8fa' } }}
+              />
+            </Stack></>}
         </Stack>
       </Box>
     </Card>
