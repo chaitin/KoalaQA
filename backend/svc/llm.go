@@ -297,12 +297,8 @@ func (l *LLM) StreamChat(ctx context.Context, sMsg string, uMsg string, params m
 		l.updateChatModelStatus(ctx, model.LLMStatusError, err.Error())
 		return nil, err
 	}
-
+	l.updateChatModelStatus(ctx, model.LLMStatusNormal, "")
 	s := llm.NewStream[string]()
-
-	// 标记是否有错误发生
-	hasError := false
-	var streamErr error
 
 	go func() {
 		defer reader.Close()
@@ -310,22 +306,12 @@ func (l *LLM) StreamChat(ctx context.Context, sMsg string, uMsg string, params m
 		s.Recv(func() (string, error) {
 			msg, err := reader.Recv()
 			if err != nil {
-				// 记录流式错误
-				hasError = true
-				streamErr = err
 				return "", err
 			}
 
 			return msg.Content, nil
 		})
 
-		// 流结束后更新状态
-		if hasError && streamErr != nil {
-			l.updateChatModelStatus(ctx, model.LLMStatusError, streamErr.Error())
-		} else {
-			// 流式调用成功
-			l.updateChatModelStatus(ctx, model.LLMStatusNormal, "")
-		}
 	}()
 
 	return s, nil
