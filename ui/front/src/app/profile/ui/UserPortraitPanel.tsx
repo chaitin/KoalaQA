@@ -265,9 +265,9 @@ export default function UserPortraitPanel({ userId, targetUserName }: UserPortra
       sx={{
         width: '100%',
         p: { xs: 2, lg: 3 },
-        borderRadius: { xs: 2, lg: 3 },
-        border: '1px solid rgba(15, 23, 42, 0.06)',
-        boxShadow: '0px 12px 32px rgba(15, 23, 42, 0.08)',
+        borderRadius: 1,
+        border: (theme) => `1px solid ${theme.palette.mode === 'light' ? '#EAECF0' : '#393939'}`,
+        boxShadow: 'none',
         bgcolor: '#ffffff',
       }}
     >
