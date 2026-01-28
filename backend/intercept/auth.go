@@ -76,6 +76,7 @@ func authUser(ctx *context.Context, freeAuth bool, j *jwt.Generator, user *svc.U
 			UID:      item.ID,
 			AuthType: model.AuthTypeFree,
 			Key:      item.Key,
+			Salt:     item.Key,
 		}
 	} else {
 		userCore, err := j.Verify(token)
