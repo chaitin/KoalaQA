@@ -190,6 +190,8 @@ export default function FollowingIssuesList() {
         const categoryNames = getCategoryNames(issue.group_ids)
         const forum = forums.find((f) => f.id === issue.forum_id)
         const routeName = forum?.route_name || (params?.route_name as string) || ''
+        const isQAPost = issue.type === ModelDiscussionType.DiscussionTypeQA
+        const commentCount = issue.comment ?? 0
 
         return (
           <Link
@@ -285,19 +287,36 @@ export default function FollowingIssuesList() {
                   {(issue.type === ModelDiscussionType.DiscussionTypeBlog ||
                     issue.type === ModelDiscussionType.DiscussionTypeIssue ||
                     issue.type === ModelDiscussionType.DiscussionTypeQA) && (
-                      <Box
-                        sx={(theme) => ({
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 0.5,
-                          color: 'text.secondary',
-                        })}
-                      >
-                        <Icon type='icon-dianzan1' sx={{ fontSize: 13 }} />
-                        <Typography variant='caption' sx={{ fontWeight: 500 }}>
-                          {issue.like || 0}
-                        </Typography>
-                      </Box>
+                      <>
+                        {isQAPost && (
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 0.5,
+                              color: 'text.secondary',
+                            }}
+                          >
+                            <Icon type='icon-wendapinglun' sx={{ fontSize: 13 }} />
+                            <Typography variant='caption' sx={{ fontWeight: 500 }}>
+                              {commentCount}
+                            </Typography>
+                          </Box>
+                        )}
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.5,
+                            color: 'text.secondary',
+                          }}
+                        >
+                          <Icon type='icon-dianzan1' sx={{ fontSize: 13 }} />
+                          <Typography variant='caption' sx={{ fontWeight: 500 }}>
+                            {issue.like || 0}
+                          </Typography>
+                        </Box>
+                      </>
                     )}
                 </Box>
               </Box>
