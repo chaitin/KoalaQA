@@ -791,6 +791,8 @@ definitions:
         type: integer
       is_active:
         type: boolean
+      message:
+        type: string
       model:
         type: string
       parameters:
@@ -803,6 +805,8 @@ definitions:
         type: string
       show_name:
         type: string
+      status:
+        $ref: '#/definitions/model.LLMStatus'
       total_tokens:
         type: integer
       type:
@@ -825,6 +829,14 @@ definitions:
       support_prompt_cache:
         type: boolean
     type: object
+  model.LLMStatus:
+    enum:
+    - normal
+    - error
+    type: string
+    x-enum-varnames:
+    - LLMStatusNormal
+    - LLMStatusError
   model.LLMType:
     enum:
     - chat
@@ -2433,6 +2445,30 @@ definitions:
     required:
     - email
     - password
+    type: object
+  svc.UserPortraitListItem:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: integer
+      created_by:
+        type: integer
+      id:
+        type: integer
+      updated_at:
+        type: integer
+      user_id:
+        type: integer
+      username:
+        type: string
+    type: object
+  svc.UserPortraitReq:
+    properties:
+      content:
+        type: string
+    required:
+    - content
     type: object
   svc.UserQuickReplyReq:
     properties:
@@ -5395,24 +5431,6 @@ paths:
       summary: get bot info
       tags:
       - bot
-  /csrf:
-    get:
-      description: get csrf
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            allOf:
-            - $ref: '#/definitions/context.Response'
-            - properties:
-                data:
-                  type: string
-              type: object
-      summary: get csrf
-      tags:
-      - csrf
   /discussion:
     get:
       description: list discussions
@@ -6735,6 +6753,121 @@ paths:
                   $ref: '#/definitions/svc.UserStatisticsRes'
               type: object
       summary: stat user info
+      tags:
+      - user
+  /user/{user_id}/portrait:
+    get:
+      parameters:
+      - description: user_id
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/svc.UserPortraitListItem'
+                        type: array
+                    type: object
+              type: object
+      summary: list user portrait
+      tags:
+      - user
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: user_id
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: req param
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.UserPortraitReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: integer
+              type: object
+      summary: create user portrait
+      tags:
+      - user
+  /user/{user_id}/portrait/{portrait_id}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: user_id
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: portrait_id
+        in: path
+        name: portrait_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: delete user portrait
+      tags:
+      - user
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: user_id
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: portrait_id
+        in: path
+        name: portrait_id
+        required: true
+        type: string
+      - description: req param
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.UserPortraitReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: update user portrait
       tags:
       - user
   /user/login:

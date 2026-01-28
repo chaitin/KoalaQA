@@ -212,7 +212,7 @@ export default function UserTrendList({ userId, ownerName }: UserTrendListProps)
         pt: 2,
       }}
     >
-      <Stack spacing={2}>
+      <Stack spacing={0} sx={{ '& > a:last-of-type > div': { borderBottom: 'none' } }}>
         {error && (
           <Card variant='outlined'>
             <Typography variant='body2' color='error'>
@@ -226,7 +226,11 @@ export default function UserTrendList({ userId, ownerName }: UserTrendListProps)
           const href = formatRoute(trend, forums)
 
           return (
-            <Link key={trend.id} href={href} style={{ textDecoration: 'none', color: 'inherit' }}>
+            <Link
+              key={trend.id}
+              href={href}
+              style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+            >
               <Box
                 sx={(theme) => ({
                   borderBottom: '1px solid #f3f4f6',
@@ -236,6 +240,7 @@ export default function UserTrendList({ userId, ownerName }: UserTrendListProps)
                     bgcolor: theme.palette.primaryAlpha?.[3],
                   },
                   p: '16px 20px',
+                  minHeight: 72,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',

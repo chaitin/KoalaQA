@@ -347,7 +347,7 @@ func (s *kbSpace) DeleteSpaceFolder(ctx *context.Context) {
 		return
 	}
 
-	err = s.svcDoc.DeleteSpaceFolder(ctx, kbID, folderID)
+	err = s.svcDoc.DeleteSpaceFolder(ctx, kbID, folderID, 0)
 	if err != nil {
 		ctx.InternalError(err, "delete space folder failed")
 		return

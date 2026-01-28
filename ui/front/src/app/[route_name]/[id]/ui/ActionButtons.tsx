@@ -10,6 +10,7 @@ import { ModelDiscussionDetail, ModelDiscussionState, ModelDiscussionType, Model
 import { AuthContext } from '@/components/authProvider'
 import { useAuthCheck } from '@/hooks/useAuthCheck'
 import { formatNumber } from '@/lib/utils'
+import alert from '@/components/alert'
 import { PointActionType, showPointNotification } from '@/utils/pointNotification'
 import { Icon } from '@ctzhian/ui'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
@@ -91,6 +92,12 @@ const ActionButtons = ({ data, menuAnchorEl, onMenuClick }: ActionButtonsProps) 
         } else {
           await postDiscussionDiscIdFollow({ discId: data.uuid || '' })
         }
+        const successMessage = (() => {
+          if (isIssuePost) {
+            return isFollowed ? '取消关注成功' : '关注成功'
+          }
+          return isFollowed ? '取消收藏成功' : '收藏成功'
+        })()
         const followData = await getDiscussionDiscIdFollow({ discId: data.uuid || '' })
         if (followData) {
           setFollowInfo({
@@ -98,6 +105,7 @@ const ActionButtons = ({ data, menuAnchorEl, onMenuClick }: ActionButtonsProps) 
             follower: followData.follower,
           })
         }
+        alert.success(successMessage)
         refreshWithoutView()
       } catch (error) {
         console.error('关注操作失败:', error)

@@ -6,7 +6,7 @@ const LoadingBtn = (params: LoadingButtonProps & { onClick: any }) => {
   const handleClick = (event: any) => {
     if (!params.onClick) return;
     const r = params.onClick(event);
-    if (r.then) {
+    if (r && r.then) {
       setLoading(true);
       r.finally(() => {
         setLoading(false);
