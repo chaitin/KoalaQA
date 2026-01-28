@@ -23,13 +23,14 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
+  Menu,
+  MenuItem,
   Stack,
   TextField,
   Typography,
 } from '@mui/material'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined'
 import AddIcon from '@mui/icons-material/Add'
+import MoreVertIcon from '@mui/icons-material/MoreVert'
 import { TimeDisplay } from '@/components/TimeDisplay'
 
 interface UserPortraitPanelProps {
@@ -56,6 +57,8 @@ export default function UserPortraitPanel({ userId, targetUserName }: UserPortra
   const [portraits, setPortraits] = useState<SvcUserPortraitListItem[]>([])
   const [loading, setLoading] = useState(false)
   const [formState, setFormState] = useState<PortraitFormState>(INITIAL_FORM_STATE)
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null)
+  const [selectedPortrait, setSelectedPortrait] = useState<SvcUserPortraitListItem | null>(null)
 
   const canManage = useMemo(() => {
     const role = user?.role ?? ModelUserRole.UserRoleUnknown
@@ -143,6 +146,30 @@ export default function UserPortraitPanel({ userId, targetUserName }: UserPortra
     })
   }
 
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, item: SvcUserPortraitListItem) => {
+    setMenuAnchorEl(event.currentTarget)
+    setSelectedPortrait(item)
+  }
+
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null)
+    setSelectedPortrait(null)
+  }
+
+  const handleMenuEdit = () => {
+    if (!selectedPortrait) return
+    const target = selectedPortrait
+    handleMenuClose()
+    handleOpenEdit(target)
+  }
+
+  const handleMenuDelete = () => {
+    if (!selectedPortrait) return
+    const target = selectedPortrait
+    handleMenuClose()
+    handleDeletePortrait(target)
+  }
+
   const renderContent = () => {
     if (loading) {
       return (
@@ -193,45 +220,6 @@ export default function UserPortraitPanel({ userId, targetUserName }: UserPortra
               >
                 {item.content}
               </Typography>
-              {canManage && (
-                <Stack
-                  direction='row'
-                  spacing={0.5}
-                  sx={{
-                    opacity: 0,
-                    pointerEvents: 'none',
-                    transition: 'opacity 0.2s ease',
-                    '.portrait-item:hover &': {
-                      opacity: 1,
-                      pointerEvents: 'auto',
-                    },
-                    flexShrink: 0,
-                  }}
-                >
-                  <IconButton
-                    size='small'
-                    sx={{
-                      bgcolor: 'transparent',
-                      color: '#0f172a',
-                      '&:hover': { bgcolor: 'rgba(148, 163, 184, 0.15)' },
-                    }}
-                    onClick={() => handleOpenEdit(item)}
-                  >
-                    <EditOutlinedIcon fontSize='inherit' />
-                  </IconButton>
-                  <IconButton
-                    size='small'
-                    sx={{
-                      bgcolor: 'transparent',
-                      color: '#ef4444',
-                      '&:hover': { bgcolor: 'rgba(248, 113, 113, 0.15)' },
-                    }}
-                    onClick={() => handleDeletePortrait(item)}
-                  >
-                    <DeleteOutlineIcon fontSize='inherit' />
-                  </IconButton>
-                </Stack>
-              )}
             </Box>
             <Stack direction='row' alignItems='center' justifyContent='space-between' sx={{ mt: 1.5 }}>
               <Box
@@ -248,11 +236,25 @@ export default function UserPortraitPanel({ userId, targetUserName }: UserPortra
               >
                 {item.username || '系统管理员'}
               </Box>
-              {item.created_at ? (
-                <Typography variant='caption' sx={{ fontSize: 12, color: '#6b7280' }}>
-                  <TimeDisplay timestamp={item.created_at} />
-                </Typography>
-              ) : null}
+              <Stack direction='row' alignItems='center' spacing={1}>
+                {item.created_at ? (
+                  <Typography variant='caption' sx={{ fontSize: 12, color: '#6b7280' }}>
+                    <TimeDisplay timestamp={item.created_at} />
+                  </Typography>
+                ) : null}
+                {canManage ? (
+                  <IconButton
+                    size='small'
+                    sx={{
+                      color: '#475569',
+                    }}
+                    onClick={(event) => handleMenuOpen(event, item)}
+                    aria-label='更多操作'
+                  >
+                    <MoreVertIcon fontSize='inherit' />
+                  </IconButton>
+                ) : null}
+              </Stack>
             </Stack>
           </Box>
         ))}
@@ -290,6 +292,20 @@ export default function UserPortraitPanel({ userId, targetUserName }: UserPortra
         ) : null}
       </Stack>
       {renderContent()}
+      {canManage ? (
+        <Menu
+          anchorEl={menuAnchorEl}
+          open={Boolean(menuAnchorEl)}
+          onClose={handleMenuClose}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        >
+          <MenuItem onClick={handleMenuEdit}>编辑</MenuItem>
+          <MenuItem onClick={handleMenuDelete} sx={{ color: 'error.main' }}>
+            删除
+          </MenuItem>
+        </Menu>
+      ) : null}
 
       <Dialog open={formState.open} onClose={handleCloseForm} fullWidth maxWidth='sm'>
         <DialogTitle sx={{ fontSize: 16 }}>
