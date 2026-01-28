@@ -292,8 +292,16 @@ export default function UserPortraitPanel({ userId, targetUserName }: UserPortra
       {renderContent()}
 
       <Dialog open={formState.open} onClose={handleCloseForm} fullWidth maxWidth='sm'>
-        <DialogTitle>{formState.editingId ? '编辑用户画像' : '添加用户画像'}</DialogTitle>
-        <DialogContent>
+        <DialogTitle sx={{ fontSize: 16 }}>
+          {formState.editingId ? '编辑用户画像' : '添加用户画像'}
+        </DialogTitle>
+        <DialogContent
+          sx={{
+            px: 3,
+            pt: 2,
+            pb: 0,
+          }}
+        >
           <TextField
             autoFocus
             fullWidth
@@ -304,7 +312,12 @@ export default function UserPortraitPanel({ userId, targetUserName }: UserPortra
             placeholder='可输入用户画像信息备注等'
           />
         </DialogContent>
-        <DialogActions>
+        <DialogActions
+          sx={{
+            px: 3,
+            pb: 3,
+          }}
+        >
           <Button onClick={handleCloseForm} disabled={formState.loading}>
             取消
           </Button>

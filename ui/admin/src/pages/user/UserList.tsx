@@ -350,6 +350,7 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
             <Button
               variant="text"
               size="small"
+              color="info"
               onClick={() => openFrontendProfile(record.id)}
             >
               前台查看
