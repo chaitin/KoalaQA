@@ -501,16 +501,13 @@ func (d *KBDocument) Delete(ctx context.Context, kbID uint, docID uint) error {
 
 	if doc.DocType != model.DocTypeQuestion {
 		if len(doc.Markdown) > 0 {
-			err = d.oc.Delete(ctx, string(doc.Markdown), oss.WithBucket("anydoc"))
-			if err != nil {
-				d.logger.WithContext(ctx).WithErr(err).With("path", string(doc.Markdown)).Warn("delete oss doc failed")
+			if err := d.anydoc.DeleteResources(ctx, string(doc.Markdown)); err != nil {
+				d.logger.WithErr(err).Error("failed to delete resources")
 			}
 		}
-
 		if len(doc.JSON) > 0 {
-			err = d.oc.Delete(ctx, string(doc.JSON), oss.WithBucket("anydoc"))
-			if err != nil {
-				d.logger.WithContext(ctx).WithErr(err).With("path", string(doc.JSON)).Warn("delete oss doc failed")
+			if err := d.anydoc.DeleteResources(ctx, string(doc.JSON)); err != nil {
+				d.logger.WithErr(err).Error("failed to delete resources")
 			}
 		}
 	}

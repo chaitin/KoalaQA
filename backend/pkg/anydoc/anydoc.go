@@ -169,6 +169,7 @@ type Anydoc interface {
 	Export(ctx context.Context, platform platform.PlatformType, id string, docID string, optFuncs ...ExportFunc) (string, error)
 	AuthURL(ctx context.Context, platform platform.PlatformType, req AuthURLReq) (string, error)
 	UserInfo(ctx context.Context, platform platform.PlatformType, req UserInfoReq) (*UserInfoRes, error)
+	DeleteResources(ctx context.Context, path string) error
 }
 
 type anydoc struct {
@@ -462,6 +463,48 @@ func (a *anydoc) UserInfo(ctx context.Context, plat platform.PlatformType, reqDa
 	}
 
 	return &res.Data, nil
+}
+
+func (a *anydoc) DeleteResources(ctx context.Context, path string) error {
+	reqBody := map[string]string{
+		"path": path,
+	}
+
+	reqBodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, fmt.Sprintf("%s/api/tasks/resources", a.address), bytes.NewReader(reqBodyBytes))
+	if err != nil {
+		return err
+	}
+
+	req.Header["X-Trace-ID"] = trace.TraceID(ctx)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := util.HTTPClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	var res anydocRes[interface{}]
+	err = json.NewDecoder(resp.Body).Decode(&res)
+	if err != nil {
+		return err
+	}
+
+	err = res.Error()
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("anydoc delete task resources status code: %d", resp.StatusCode)
+	}
+
+	return nil
 }
 
 type in struct {

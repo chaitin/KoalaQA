@@ -20,3 +20,4 @@ sync_prompt.py
 sync_remote.sh
 
 backend/deploy/
+.opencode/rcl
