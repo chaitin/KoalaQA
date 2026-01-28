@@ -776,7 +776,7 @@ func (d *KBDocument) DeleteSpace(ctx context.Context, kbID uint, docID uint) err
 	}
 
 	for _, folder := range folderRes.Items {
-		err = d.DeleteSpaceFolder(ctx, kbID, folder.ID)
+		err = d.DeleteSpaceFolder(ctx, kbID, folder.ID, 0)
 		if err != nil {
 			return err
 		}
@@ -978,7 +978,7 @@ func (d *KBDocument) CreateSpaceFolder(ctx context.Context, kbID uint, spaceID u
 
 			for _, folder := range existFolderM {
 				for folderDocID, folderID := range folder {
-					err = d.DeleteSpaceFolder(ctx, kbID, folderID)
+					err = d.DeleteSpaceFolder(ctx, kbID, dbFolder.ID, folderID)
 					if err != nil {
 						return err
 					}
@@ -1169,31 +1169,46 @@ func (d *KBDocument) ListSpaceFolderDoc(ctx context.Context, kbID uint, rootPare
 	return &res, nil
 }
 
-func (d *KBDocument) DeleteSpaceFolder(ctx context.Context, kbID uint, folderID uint) error {
-	doc, err := d.GetByID(ctx, kbID, folderID)
+func (d *KBDocument) DeleteSpaceFolder(ctx context.Context, kbID uint, rootParentID, subFolderID uint) error {
+	doc, err := d.GetByID(ctx, kbID, rootParentID)
 	if err != nil {
-		return nil
-	}
-
-	if doc.RootParentID == 0 {
-		doc.RootParentID = doc.ID
+		if errors.Is(err, database.ErrRecordNotFound) {
+			return nil
+		}
+		return err
 	}
 
 	if doc.DocType != model.DocTypeSpace || doc.FileType != model.FileTypeFolder || doc.ParentID == 0 {
 		return errors.ErrUnsupported
 	}
 
+	deleteID := doc.ID
+	if subFolderID > 0 {
+		subFolder, err := d.GetByID(ctx, kbID, subFolderID)
+		if err != nil {
+			if errors.Is(err, database.ErrRecordNotFound) {
+				return nil
+			}
+			return err
+		}
+
+		if subFolder.RootParentID != doc.ID {
+			return errors.New("folder root_parent_id mismatch")
+		}
+		deleteID = subFolderID
+	}
+
 	err = d.pub.Publish(ctx, topic.TopicKBSpace, topic.MsgKBSpace{
 		OP:          topic.OPDelete,
 		KBID:        kbID,
-		FolderID:    doc.RootParentID,
-		SubFolderID: doc.ID,
+		FolderID:    doc.ID,
+		SubFolderID: subFolderID,
 	})
 	if err != nil {
-		d.logger.WithContext(ctx).WithErr(err).With("kb_id", kbID).With("folder_id", folderID).Warn("pub delete msg failed")
+		d.logger.WithContext(ctx).WithErr(err).With("kb_id", kbID).With("folder_id", rootParentID).Warn("pub delete msg failed")
 	}
 
-	err = d.repoDoc.Delete(ctx, repo.QueryWithEqual("kb_id", kbID), repo.QueryWithEqual("id", folderID))
+	err = d.repoDoc.Delete(ctx, repo.QueryWithEqual("kb_id", kbID), repo.QueryWithEqual("id", deleteID))
 	if err != nil {
 		return err
 	}
