@@ -315,6 +315,7 @@ export default function UserPortraitPanel({ userId, targetUserName }: UserPortra
         <DialogActions
           sx={{
             px: 3,
+            pt: 3,
             pb: 3,
           }}
         >

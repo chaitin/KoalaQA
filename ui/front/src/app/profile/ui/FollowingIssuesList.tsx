@@ -89,19 +89,26 @@ export default function FollowingIssuesList() {
   //   [groups.flat],
   // )
 
-  // 获取父级分类名称 (Category)
-  const getCategoryNames = useCallback(
-    (groupIds?: number[]) => {
-      if (!groupIds || !groups.origin.length) return []
-      const names = new Set<string>()
-      groups.origin.forEach((parent) => {
-        if (parent.items?.some((item) => item.id && groupIds?.includes(item.id || 0))) {
-          if (parent.name) names.add(parent.name)
+  const groupItemNameMap = useMemo(() => {
+    const map = new Map<number, string>()
+    groups.origin.forEach((parent) => {
+      parent.items?.forEach((item) => {
+        if (item.id) {
+          map.set(item.id, item.name || '')
         }
       })
-      return Array.from(names)
+    })
+    return map
+  }, [groups.origin])
+
+  const getGroupItemNames = useCallback(
+    (groupIds?: number[]) => {
+      if (!groupIds || groupIds.length === 0 || groupItemNameMap.size === 0) return []
+      return groupIds
+        .map((groupId) => groupItemNameMap.get(groupId))
+        .filter((name): name is string => Boolean(name))
     },
-    [groups.origin],
+    [groupItemNameMap],
   )
 
   const [page, setPage] = useState(1)
@@ -187,7 +194,7 @@ export default function FollowingIssuesList() {
 
       {issues.map((issue) => {
         // const groupNames = getGroupNames(issue.group_ids)
-        const categoryNames = getCategoryNames(issue.group_ids)
+        const categoryNames = getGroupItemNames(issue.group_ids)
         const forum = forums.find((f) => f.id === issue.forum_id)
         const routeName = forum?.route_name || (params?.route_name as string) || ''
         const isQAPost = issue.type === ModelDiscussionType.DiscussionTypeQA
@@ -288,7 +295,7 @@ export default function FollowingIssuesList() {
                     issue.type === ModelDiscussionType.DiscussionTypeIssue ||
                     issue.type === ModelDiscussionType.DiscussionTypeQA) && (
                       <>
-                        {isQAPost && (
+                        {isQAPost ? (
                           <Box
                             sx={{
                               display: 'flex',
@@ -302,20 +309,21 @@ export default function FollowingIssuesList() {
                               {commentCount}
                             </Typography>
                           </Box>
+                        ) : (
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 0.5,
+                              color: 'text.secondary',
+                            }}
+                          >
+                            <Icon type='icon-dianzan1' sx={{ fontSize: 13 }} />
+                            <Typography variant='caption' sx={{ fontWeight: 500 }}>
+                              {issue.like || 0}
+                            </Typography>
+                          </Box>
                         )}
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 0.5,
-                            color: 'text.secondary',
-                          }}
-                        >
-                          <Icon type='icon-dianzan1' sx={{ fontSize: 13 }} />
-                          <Typography variant='caption' sx={{ fontWeight: 500 }}>
-                            {issue.like || 0}
-                          </Typography>
-                        </Box>
                       </>
                     )}
                 </Box>
