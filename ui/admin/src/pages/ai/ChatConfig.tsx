@@ -17,12 +17,42 @@ interface OriginalState {
   display: boolean;
 }
 
-const dingBotSchema = z.object({
-  client_id: z.string().min(1, '必填'),
-  client_secret: z.string().min(1, '必填'),
-  template_id: z.string().min(1, '必填'),
-  enabled: z.boolean(),
-});
+const dingBotSchema = z
+  .object({
+    client_id: z.string(),
+    client_secret: z.string(),
+    template_id: z.string(),
+    enabled: z.boolean(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.enabled) {
+      return;
+    }
+
+    if (!data.client_id.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: '必填',
+        path: ['client_id'],
+      });
+    }
+
+    if (!data.client_secret.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: '必填',
+        path: ['client_secret'],
+      });
+    }
+
+    if (!data.template_id.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: '必填',
+        path: ['template_id'],
+      });
+    }
+  });
 
 type DingBotFormData = z.infer<typeof dingBotSchema>;
 
