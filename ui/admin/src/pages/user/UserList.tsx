@@ -35,7 +35,7 @@ import {
 import { useRequest } from 'ahooks';
 import { ColumnsType } from '@ctzhian/ui/dist/Table';
 import dayjs from 'dayjs';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { aesCbcEncrypt } from '@/utils/aes';
 
@@ -155,6 +155,27 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
       }
     }
   }, [currentRole, orgList, setValue]);
+
+  const getFrontendProfileUrl = useCallback((userId?: number) => {
+    if (!userId || typeof window === 'undefined') {
+      return undefined;
+    }
+
+    if (process.env.NODE_ENV === 'development') {
+      return `${window.location.protocol}//${window.location.hostname}:3000/profile/${userId}`;
+    }
+
+    return `${window.location.origin}/profile/${userId}`;
+  }, []);
+
+  const openFrontendProfile = useCallback((userId?: number) => {
+    const url = getFrontendProfileUrl(userId);
+    if (!url) {
+      message.warning('无法打开前台用户页面');
+      return;
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }, [getFrontendProfileUrl]);
 
   const deleteUser = (item: SvcUserListItem) => {
     Modal.confirm({
@@ -326,6 +347,13 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
       render: (_, record) => {
         return (
           <Stack direction="row" alignItems="center" spacing={1}>
+            <Button
+              variant="text"
+              size="small"
+              onClick={() => openFrontendProfile(record.id)}
+            >
+              前台查看
+            </Button>
             <Button
               variant="text"
               size="small"
