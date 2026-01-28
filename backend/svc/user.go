@@ -579,6 +579,7 @@ func (u *User) Login(ctx context.Context, req UserLoginReq, cors bool) (string, 
 		AuthType: model.AuthTypePassword,
 		Cors:     cors,
 		Key:      user.Key,
+		Salt:     util.RandomString(16),
 	})
 	if err != nil {
 		return "", err
@@ -762,6 +763,7 @@ func (u *User) LoginThirdCallback(ctx context.Context, typ model.AuthType, req L
 		AuthType: typ,
 		Cors:     cors,
 		Key:      dbUser.Key,
+		Salt:     util.RandomString(16),
 	})
 }
 
