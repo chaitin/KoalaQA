@@ -75,6 +75,7 @@ func (c *Chat) botCallback(ctx context.Context, req chat.BotReq) (*llm.Stream[st
 		var stringBuilder strings.Builder
 		ret := false
 		writed := false
+		retText := "前往社区搜索相似帖子"
 
 		for {
 			item, _, ok := stream.Text(ctx)
@@ -89,25 +90,27 @@ func (c *Chat) botCallback(ctx context.Context, req chat.BotReq) (*llm.Stream[st
 				break
 			}
 
-			if item.Type != "text" {
-				continue
-			}
+			switch item.Type {
+			case "need_human":
+				retText = "发帖"
+				fallthrough
+			case "text":
+				if stringBuilder.Len() <= canNotAnswerLen {
+					stringBuilder.WriteString(item.Content)
+					continue
+				}
 
-			if stringBuilder.Len() <= canNotAnswerLen {
-				stringBuilder.WriteString(item.Content)
-				continue
-			}
+				if !writed {
+					wrapStream.RecvOne(stringBuilder.String(), false)
+					writed = true
+				}
 
-			if !writed {
-				wrapStream.RecvOne(stringBuilder.String(), false)
-				writed = true
+				wrapStream.RecvOne(item.Content, false)
 			}
-
-			wrapStream.RecvOne(item.Content, false)
 		}
 
 		if ret {
-			wrapStream.RecvOne(fmt.Sprintf("\n\n---\n\n[前往社区搜索相似帖子](%s)", publicAddr.FullURL("/")), true)
+			wrapStream.RecvOne(fmt.Sprintf("\n\n---\n\n[%s](%s)", retText, publicAddr.FullURL("/")), true)
 			return
 		}
 
