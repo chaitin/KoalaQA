@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/chaitin/koalaqa/pkg/config"
 	"github.com/chaitin/koalaqa/pkg/context"
+	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/server"
 )
 
@@ -34,5 +35,5 @@ func (c *csrf) Get(ctx *context.Context) {
 		ctx.Success("")
 		return
 	}
-	ctx.Success(ctx.GetUser().Salt)
+	ctx.Success(util.Sha1(c.cfg.API.CSRFSecret + "-" + ctx.GetUser().Salt))
 }

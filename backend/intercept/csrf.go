@@ -21,7 +21,7 @@ type csrf struct {
 func newCsrf(cfg config.Config) Interceptor {
 	return &csrf{
 		ignoreMethods: []string{http.MethodGet, http.MethodOptions, http.MethodHead},
-		secret:        util.RandomString(16),
+		secret:        cfg.API.CSRFSecret,
 		freeCSRF:      cfg.API.FreeCSRF,
 	}
 }
