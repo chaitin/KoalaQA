@@ -2248,16 +2248,15 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 			cancelText   = "已取消生成"
 		)
 
-		// 检测用户是否要求转人工客服
-		requestHuman, err := d.in.LLM.CheckRequestHuman(cancelCtx, req.Question)
-		if err != nil {
-			d.logger.WithContext(ctx).WithErr(err).Warn("check request human failed")
-		}
-
-		// 如果用户要求转人工，直接返回标准回复
-		if requestHuman {
+		// 使用关键词匹配快速检测用户是否要求转人工客服（避免额外的大模型调用）
+		if llm.IsRequestHuman(req.Question) {
 			humanResponse := llm.HumanAssistanceResponse
 			aiResBuilder.WriteString(humanResponse)
+			
+			d.logger.WithContext(ctx).
+				With("question", req.Question).
+				Info("detected request for human assistance")
+			
 			err = wrapSteam.RecvOne(llm.AskSessionStreamItem{
 				Type:    "text",
 				Content: humanResponse,

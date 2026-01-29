@@ -254,33 +254,6 @@ func (l *LLM) Chat(ctx context.Context, sMsg string, uMsg string, params map[str
 	return res.Content, nil
 }
 
-// CheckRequestHuman 检测用户是否明确要求转人工客服
-func (l *LLM) CheckRequestHuman(ctx context.Context, question string) (bool, error) {
-	aiRes, err := l.Chat(ctx, llm.RequestHumanPrompt, "", map[string]any{
-		"Question": question,
-	})
-	if err != nil {
-		l.logger.WithContext(ctx).WithErr(err).Warn("check request human failed")
-		return false, err
-	}
-
-	requestHuman, parseErr := strconv.ParseBool(strings.TrimSpace(aiRes))
-	if parseErr != nil {
-		l.logger.WithContext(ctx).
-			WithErr(parseErr).
-			With("ai_response", aiRes).
-			Warn("failed to parse LLM response as boolean")
-		return false, nil
-	}
-
-	l.logger.WithContext(ctx).
-		With("question", question).
-		With("request_human", requestHuman).
-		Debug("check request human result")
-
-	return requestHuman, nil
-}
-
 func (l *LLM) msgs(ctx context.Context, sMsg string, uMsg string, params map[string]any) ([]*schema.Message, error) {
 	if params == nil {
 		params = make(map[string]any)
