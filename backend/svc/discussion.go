@@ -2312,8 +2312,8 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 					return llm.AskSessionStreamItem{}, io.EOF
 				}
 				if !parsed {
-					// 只需要读取1个字符来判断是 1/2/3
-					maxLength := 1
+					// 读取最多3个字符来判断是 1/2/3（考虑可能的前导空白字符）
+					maxLength := 3
 					length := min(len(text), maxLength-answerText.Len())
 					if answerText.Len() < maxLength {
 						answerText.WriteString(text[:length])
