@@ -2208,8 +2208,6 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		repo.QueryWithOrderBy("created_at ASC, id ASC"),
 		repo.QueryWithEqual("uuid", req.SessionID),
 		repo.QueryWithEqual("summary", false),
-		repo.QueryWithEqual("need_human", false),
-		repo.QueryWithEqual("canceled", false),
 		repo.QueryWithEqual("user_id", uid),
 	)
 	if err != nil {
