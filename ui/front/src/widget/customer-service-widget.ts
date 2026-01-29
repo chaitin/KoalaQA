@@ -70,27 +70,38 @@ declare global {
       position: fixed;
       ${config.position === 'bottom-left' ? 'left' : 'right'}: 24px;
       bottom: 24px;
-      min-width: 48px;
-      padding: 16px 8px;
-      border-radius: 30px;
+      min-width: ${config.buttonSize}px;
+      max-width: ${config.buttonSize}px;
+      height: ${config.buttonSize}px;
+      padding: 0;
+      border-radius: 50%;
       background: linear-gradient(135deg, var(--cs-primary-color, ${config.buttonColor}) 0%, var(--cs-primary-hover-color, ${config.buttonHoverColor}) 100%);
       border: 1px solid rgba(255, 255, 255, 0.1);
       cursor: pointer;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.2);
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
       justify-content: center;
-      gap: 8px;
       transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       z-index: ${config.zIndex};
       outline: none;
       animation: cs-widget-entrance 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+      overflow: hidden;
+      box-sizing: border-box;
     }
     
     .cs-widget-button:hover {
+      max-width: 300px;
+      padding: 0 24px;
+      gap: 12px;
+      border-radius: 30px;
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.3);
       filter: brightness(1.1);
+      border: 1px solid transparent;
+      background: 
+        linear-gradient(135deg, var(--cs-primary-color, ${config.buttonColor}) 0%, var(--cs-primary-hover-color, ${config.buttonHoverColor}) 100%) padding-box,
+        linear-gradient(90deg, rgba(0, 156, 200, 1), rgba(0, 99, 151, 1)) border-box;
     }
     
     .cs-widget-button:active {
@@ -103,19 +114,26 @@ declare global {
       object-fit: contain;
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
       transition: transform 0.4s ease;
+      flex-shrink: 0;
     }
-
-
     
     .cs-widget-button-text {
-      color: #333;
+      background: linear-gradient(0deg, #009CC8 0%, #006397 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      color: transparent;
       font-size: 14px;
       font-weight: 600;
-      writing-mode: vertical-rl;
-      text-orientation: upright;
-      letter-spacing: 2px;
-      line-height: 1.2;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      white-space: nowrap;
+      opacity: 0;
+      max-width: 0;
+      transition: all 0.4s ease;
+    }
+
+    .cs-widget-button:hover .cs-widget-button-text {
+      opacity: 1;
+      max-width: 100px;
     }
     
     .cs-widget-modal {
@@ -145,8 +163,11 @@ declare global {
       max-width: calc(100vw - 48px);
       height: 600px;
       max-height: calc(100vh - 120px);
-      background: white;
-      border-radius: 8px;
+      background: 
+        linear-gradient(#fff, #fff) padding-box,
+        linear-gradient(90deg, rgba(0, 156, 200, 1), rgba(0, 99, 151, 1)) border-box;
+      border: 1px solid transparent;
+      border-radius: 12px;
       box-shadow: 0 24px 80px rgba(0,0,0,0.3);
       overflow: hidden;
       animation: cs-slide-up 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -160,9 +181,9 @@ declare global {
       width: 28px;
       height: 28px;
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.9);
+      background: transparent;
       backdrop-filter: blur(8px);
-      border: 1px solid rgba(0, 0, 0, 0.05);
+      border-color: transparent;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -262,8 +283,8 @@ declare global {
     const button = document.createElement('button')
     button.className = 'cs-widget-button'
     button.innerHTML = `
-      <img src="${config.baseUrl}/logo.svg" alt="Logo" class="cs-widget-button-icon" />
       <span class="cs-widget-button-text">智能客服</span>
+      <img src="${config.baseUrl}/logo.svg" alt="Logo" class="cs-widget-button-icon" />
     `
     button.setAttribute('aria-label', '打开智能客服')
 
