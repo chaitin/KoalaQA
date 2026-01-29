@@ -115,19 +115,54 @@ class SSEClient<T> {
         }
 
         if (response.status === 400 && !isRetry) {
-          // 克隆响应以便读取错误信息
           const clonedResponse = response.clone()
           try {
             const text = await clonedResponse.text()
-
+            const json = JSON.parse(text)
+            if (json.data === 'csrf token mismatch' && typeof window !== 'undefined') {
+              console.log('[SSEClient] CSRF token mismatch detected (400), retrying with new token')
+              clearTimeout(timeoutId)
+              const { getCsrfToken, clearCsrfToken } = await import('@/api/httpClient')
+              clearCsrfToken()
+              const newCsrfToken = await getCsrfToken()
+              if (newCsrfToken) {
+                const updatedHeaders = {
+                  ...(this.options.headers || {}),
+                  'X-CSRF-TOKEN': newCsrfToken,
+                }
+                const newClient = new SSEClient<T>({
+                  ...this.options,
+                  headers: updatedHeaders,
+                })
+                newClient.subscribe(body, onMessage, true)
+                return
+              }
+            }
           } catch (e) {
-            console.warn('Failed to read error response body:', e)
+            console.warn('Failed to check CSRF error in 400 response:', e)
           }
         }
 
         if (!response.ok) {
           clearTimeout(timeoutId)
-          throw new Error(`HTTP error! status: ${response.status}`)
+          let errorMessage = `HTTP error! status: ${response.status}`
+          try {
+            const errorText = await response.clone().text()
+            try {
+              const json = JSON.parse(errorText)
+              if (json.err === 'ratelimit') {
+                errorMessage = 'ratelimit'
+              } else if (json.msg) {
+                errorMessage = json.msg
+              }
+            } catch {
+              // Not JSON, ignore
+            }
+          } catch (e) {
+            console.warn('Failed to read error response:', e)
+          }
+
+          throw new Error(errorMessage)
         }
         if (!response.body) {
           clearTimeout(timeoutId)

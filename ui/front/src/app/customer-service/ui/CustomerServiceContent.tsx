@@ -892,6 +892,28 @@ export default function CustomerServiceContent({
             console.error('AI 回答生成失败:', err)
             const errorMessage = err.message || err.toString()
 
+            // 检查是否是 ratelimit 错误
+            if (errorMessage === 'ratelimit' || errorMessage.includes('ratelimit')) {
+              Alert.warning('请求过于频繁，请稍后再试', 3000)
+              setIsLoading(false)
+              setIsWaiting(false)
+              setIsAutoScrollEnabled(false)
+              setMessages((prev) => {
+                const newMessages = [...prev]
+                const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+                if (index !== -1) {
+                  newMessages[index] = {
+                    ...newMessages[index],
+                    content: '请求过于频繁，请稍后再试。',
+                    isComplete: true,
+                  }
+                }
+                return newMessages
+              })
+              resolve()
+              return
+            }
+
             // 检查是否是 session closed 错误
             if (errorMessage.toLowerCase().includes('session closed')) {
               Alert.info('会话已过期，请点击右上角开启新会话', 5000)
@@ -1033,6 +1055,81 @@ export default function CustomerServiceContent({
             })
             setIsLoading(false)
             setIsWaiting(false)
+            askSseClient.unsubscribe()
+            resolve()
+            return
+          }
+
+          // Check for ratelimit in JSON data (200 OK case)
+          if (data && typeof data === 'object' && (data as any).err === 'ratelimit') {
+            Alert.warning('请求过于频繁，请稍后再试', 3000)
+            setIsLoading(false)
+            setIsWaiting(false)
+            setIsAutoScrollEnabled(false)
+            setMessages((prev) => {
+              const newMessages = [...prev]
+              const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+              if (index !== -1) {
+                newMessages[index] = {
+                  ...newMessages[index],
+                  content: '请求过于频繁，请稍后再试。',
+                  isComplete: true,
+                }
+              }
+              return newMessages
+            })
+            askSseClient.unsubscribe()
+            resolve()
+            return
+          }
+
+          // 检测 session closed 错误
+          let dataStr = ''
+          if (typeof data === 'string') {
+            dataStr = data
+          } else if (data && typeof data === 'object') {
+            dataStr = JSON.stringify(data)
+          }
+
+          if (dataStr.toLowerCase().includes('session closed')) {
+            Alert.info('会话已过期，请点击右上角开启新会话', 5000)
+            setIsLoading(false)
+            setIsWaiting(false)
+            setIsAutoScrollEnabled(false)
+            setMessages((prev) => {
+              const newMessages = [...prev]
+              const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+              if (index !== -1) {
+                newMessages[index] = {
+                  ...newMessages[index],
+                  content: '会话已过期，请点击右上角开启新会话。',
+                }
+              }
+              return newMessages
+            })
+            // 停止处理后续数据
+            askSseClient.unsubscribe()
+            resolve()
+            return
+          }
+
+          // 检测后端发送的 cancel 事件（用户手动停止生成）
+          if (data && typeof data === 'object' && (data as any).cancel === true) {
+            setIsLoading(false)
+            setIsWaiting(false)
+            setMessages((prev) => {
+              const newMessages = [...prev]
+              const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+              if (index !== -1) {
+                newMessages[index] = {
+                  ...newMessages[index],
+                  isComplete: true,
+                  isInterrupted: true, // 标记为被中断
+                }
+              }
+              return newMessages
+            })
+            currentMessageRef.current = null
             askSseClient.unsubscribe()
             resolve()
             return
@@ -1590,39 +1687,41 @@ export default function CustomerServiceContent({
                           }}
                         >
                           {/* 第一行：头像 + 机器人名字 */}
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 1,
-                            }}
-                          >
-                            <Avatar
-                              src={botAvatar}
+                          {!isInIframe && (
+                            <Box
                               sx={{
-                                background: botAvatar
-                                  ? 'transparent'
-                                  : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                                width: 40,
-                                height: 40,
-                                fontWeight: 600,
-                                boxShadow: 'none',
-                                flexShrink: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
                               }}
                             >
-                              {!botAvatar && botName[0]}
-                            </Avatar>
-                            <Typography
-                              variant='body2'
-                              sx={{
-                                fontWeight: 600,
-                                color: 'text.primary',
-                                fontSize: isInIframe ? '14px' : '16px',
-                              }}
-                            >
-                              {botName}
-                            </Typography>
-                          </Box>
+                              <Avatar
+                                src={botAvatar}
+                                sx={{
+                                  background: botAvatar
+                                    ? 'transparent'
+                                    : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                                  width: 40,
+                                  height: 40,
+                                  fontWeight: 600,
+                                  boxShadow: 'none',
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {!botAvatar && botName[0]}
+                              </Avatar>
+                              <Typography
+                                variant='body2'
+                                sx={{
+                                  fontWeight: 600,
+                                  color: 'text.primary',
+                                  fontSize: isInIframe ? '14px' : '16px',
+                                }}
+                              >
+                                {botName}
+                              </Typography>
+                            </Box>
+                          )}
 
                           {/* 第二行：消息内容 */}
                           <Box
@@ -1630,7 +1729,7 @@ export default function CustomerServiceContent({
                               display: 'flex',
                               gap: 1,
                               alignItems: 'flex-start',
-                              pl: 5, // 左边距对齐到内容区域
+                              pl: isInIframe ? 0 : 5, // 左边距对齐到内容区域
                             }}
                           >
                             {/* 消息气泡和快速操作按钮容器 */}
@@ -1640,7 +1739,7 @@ export default function CustomerServiceContent({
                                 gap: 1,
                                 alignItems: 'flex-start',
                                 flex: 1,
-                                maxWidth: 'calc(100% - 40px)',
+                                maxWidth: isInIframe ? '100%' : 'calc(100% - 40px)',
                               }}
                             >
                               {/* 消息气泡 */}
@@ -2036,7 +2135,7 @@ export default function CustomerServiceContent({
                                       </IconButton>
                                     </Tooltip>
                                     <Typography variant='caption' sx={{ color: 'text.disabled', fontSize: '0.7rem' }}>
-                                      本回答由 AI 驱动，仅供参考
+                                      本回答由 {botName} AI 驱动，仅供参考
                                     </Typography>
                                   </Box>
                                 )}
