@@ -81,9 +81,7 @@ func (d *NeedHuman) Handle(ctx context.Context, msg mq.Message) error {
 		return nil
 	}
 
-	aiRes, err := d.llm.Chat(ctx, llm.NeedHumanPrompt, "", map[string]any{
-		"Data": comment.Content,
-	})
+	aiRes, err := d.llm.Chat(ctx, llm.NeedHumanPrompt, comment.Content, nil)
 	if err != nil {
 		logger.WithErr(err).Warn("ai need human failed")
 		return nil
