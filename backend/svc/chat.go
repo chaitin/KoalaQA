@@ -18,6 +18,11 @@ import (
 	"go.uber.org/fx"
 )
 
+type chatCache struct {
+	cfg *model.SystemChat
+	bot chat.Bot
+}
+
 type Chat struct {
 	repoSys       *repo.System
 	svcDisc       *Discussion
@@ -26,9 +31,8 @@ type Chat struct {
 	repoOrg       *repo.Org
 	repoForum     *repo.Forum
 
-	cache   *model.SystemChat
-	chatBot chat.Bot
-	lock    sync.Mutex
+	cache        sync.Map
+	systemKeyMap map[chat.Type]string
 }
 
 var canNotAnswerLen = len("无法回答问题")
@@ -178,30 +182,66 @@ func (c *Chat) botCallback(ctx context.Context, req chat.BotReq) (*llm.Stream[st
 	return wrapStream, nil
 }
 
-func (c *Chat) Get(ctx context.Context) (*model.SystemChat, error) {
-	if c.cache != nil {
-		return c.cache, nil
+func (c *Chat) getCache(ctx context.Context, typ chat.Type) (*chatCache, error) {
+	val, ok := c.cache.Load(typ)
+	if ok {
+		return val.(*chatCache), nil
 	}
 
-	var chat model.SystemChat
-	err := c.repoSys.GetValueByKey(ctx, &chat, model.SystemKeyChat)
+	systemKey, ok := c.systemKeyMap[typ]
+	if !ok {
+		return nil, errors.ErrUnsupported
+	}
+
+	var dbChat model.SystemChat
+	err := c.repoSys.GetValueByKey(ctx, &dbChat, systemKey)
 	if err != nil {
 		if errors.Is(err, database.ErrRecordNotFound) {
-			c.cache = &model.SystemChat{}
-			return c.cache, nil
+			cache := &chatCache{
+				cfg: &model.SystemChat{},
+				bot: nil,
+			}
+			c.cache.Store(typ, cache)
+			return cache, nil
 		}
 
 		return nil, err
 	}
 
-	c.cache = &chat
-	return c.cache, nil
+	var bot chat.Bot
+	if dbChat.Enabled {
+		bot, err = chat.New(chat.TypeDingtalk, dbChat.Config, c.botCallback)
+		if err != nil {
+			c.logger.WithContext(ctx).With("cfg", dbChat.Config).Warn("new chat bot failed")
+		}
+	}
+
+	cache := &chatCache{
+		cfg: &dbChat,
+		bot: bot,
+	}
+	c.cache.Store(typ, cache)
+	return cache, nil
 }
 
-func (c *Chat) Update(ctx context.Context, req model.SystemChat) error {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+type ChatGetReq struct {
+	Type chat.Type `form:"type" binding:"required"`
+}
 
+func (c *Chat) Get(ctx context.Context, req ChatGetReq) (*model.SystemChat, error) {
+	cache, err := c.getCache(ctx, req.Type)
+	if err != nil {
+		return nil, err
+	}
+	return cache.cfg, nil
+}
+
+type ChatUpdateReq struct {
+	Type chat.Type `json:"type" binding:"required"`
+	model.SystemChat
+}
+
+func (c *Chat) Update(ctx context.Context, req ChatUpdateReq) error {
 	if req.Enabled {
 		err := req.Config.Check()
 		if err != nil {
@@ -209,47 +249,70 @@ func (c *Chat) Update(ctx context.Context, req model.SystemChat) error {
 		}
 	}
 
-	chatCfg, err := c.Get(ctx)
+	systemKey, ok := c.systemKeyMap[req.Type]
+	if !ok {
+		return errors.ErrUnsupported
+	}
+
+	cache, err := c.getCache(ctx, req.Type)
 	if err != nil {
 		return err
 	}
 
 	var newBot chat.Bot
 	if req.Enabled {
-		newBot, err = chat.New(chat.ChatTypeDingtalk, req.Config, c.botCallback)
+		newBot, err = chat.New(req.Type, req.Config, c.botCallback)
 		if err != nil {
 			return err
 		}
 	}
 
 	if !req.Enabled {
-		if c.chatBot != nil {
-			c.chatBot.Stop()
-			c.chatBot = nil
+		if cache.bot != nil {
+			cache.bot.Stop()
+			cache.bot = nil
 		}
-	} else if !chatCfg.Enabled || chatCfg.Config != req.Config {
-		if c.chatBot != nil {
-			c.chatBot.Stop()
+	} else if !cache.cfg.Enabled || cache.cfg.Config != req.Config {
+		if cache.bot != nil {
+			cache.bot.Stop()
 		}
 
-		c.chatBot = newBot
-		err = c.chatBot.Start()
+		cache.bot = newBot
+		err = cache.bot.Start()
 		if err != nil {
 			return err
 		}
 	}
 
 	err = c.repoSys.Upsert(ctx, &model.System[any]{
-		Key:   model.SystemKeyChat,
+		Key:   systemKey,
 		Value: model.NewJSONBAny(req),
 	})
 	if err != nil {
 		return err
 	}
 
-	c.cache = &req
-
 	return nil
+}
+
+type WecomVerifyReq struct {
+	chat.VerifySign
+	EchoStr string `form:"echostr" binding:"required"`
+}
+
+func (c *Chat) StreamText(ctx context.Context, typ chat.Type, req chat.VerifyReq) (string, error) {
+	cache, err := c.getCache(ctx, typ)
+	if err != nil {
+		return "", err
+	}
+
+	bot := cache.bot
+
+	if bot == nil {
+		return "", errors.New("bot not exist")
+	}
+
+	return bot.StreamText(ctx, req)
 }
 
 func newChat(lc fx.Lifecycle, sys *repo.System, disc *Discussion, publicAddr *PublicAddress, repoOrg *repo.Org, repoForum *repo.Forum) *Chat {
@@ -259,29 +322,28 @@ func newChat(lc fx.Lifecycle, sys *repo.System, disc *Discussion, publicAddr *Pu
 		svcPublicAddr: publicAddr,
 		repoOrg:       repoOrg,
 		repoForum:     repoForum,
-		logger:        glog.Module("svc", "chat"),
+		cache:         sync.Map{},
+		systemKeyMap: map[chat.Type]string{
+			chat.TypeDingtalk: model.SystemKeyChatDingtalk,
+			chat.TypeWecom:    model.SystemKeyChatWecom,
+		},
+		logger: glog.Module("svc", "chat"),
 	}
 	lc.Append(fx.StartHook(func(ctx context.Context) error {
-		chatCfg, err := c.Get(ctx)
-		if err != nil {
-			return err
-		}
+		for _, typ := range []chat.Type{chat.TypeDingtalk, chat.TypeWecom} {
+			cache, err := c.getCache(ctx, typ)
+			if err != nil {
+				return err
+			}
 
-		if !chatCfg.Enabled {
-			return nil
-		}
+			if cache.bot == nil {
+				return nil
+			}
 
-		newBot, err := chat.New(chat.ChatTypeDingtalk, chatCfg.Config, c.botCallback)
-		if err != nil {
-			c.logger.WithContext(ctx).With("cfg", chatCfg.Config).Warn("new chat bot failed")
-			return nil
-		}
-
-		err = newBot.Start()
-		if err != nil {
-			c.logger.WithContext(ctx).With("cfg", chatCfg.Config).Warn("start chat bot failed")
-		} else {
-			c.chatBot = newBot
+			err = cache.bot.Start()
+			if err != nil {
+				c.logger.WithContext(ctx).With("cfg", cache.cfg.Config).Warn("start chat bot failed")
+			}
 		}
 
 		return nil

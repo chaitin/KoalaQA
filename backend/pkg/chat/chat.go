@@ -8,12 +8,12 @@ import (
 	"github.com/chaitin/koalaqa/pkg/llm"
 )
 
-type ChatType uint
+type Type uint
 
 const (
-	ChatTypeUnknown ChatType = iota
-	ChatTypeDingtalk
-	ChatTypeWecom
+	TypeUnknown Type = iota
+	TypeDingtalk
+	TypeWecom
 )
 
 type BotReq struct {
@@ -42,11 +42,11 @@ type Bot interface {
 	Stop()
 }
 
-func New(typ ChatType, cfg model.SystemChatConfig, callback BotCallback) (Bot, error) {
+func New(typ Type, cfg model.SystemChatConfig, callback BotCallback) (Bot, error) {
 	switch typ {
-	case ChatTypeDingtalk:
+	case TypeDingtalk:
 		return newDingtalk(cfg, callback)
-	case ChatTypeWecom:
+	case TypeWecom:
 		return newWecom(cfg, callback)
 	default:
 		return nil, errors.ErrUnsupported
