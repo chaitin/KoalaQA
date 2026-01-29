@@ -617,44 +617,6 @@ export default function CustomerServiceContent({
             const eventType = dataObj.event
             const eventData = dataObj.data
 
-            // 处理 event:need_human - 用户要求转人工
-            if (eventType === 'need_human') {
-              // 提取文本内容
-              // 注意：need_human 事件后端直接发送原始内容，不像 text 事件那样用 fmt.Sprintf("%q") 字符串化
-              // 所以不需要 replaceAll 处理，直接使用即可
-              let textContent = ''
-              if (typeof eventData === 'string') {
-                textContent = eventData
-              } else if (eventData && typeof eventData === 'object') {
-                textContent =
-                  eventData.content ||
-                  eventData.text ||
-                  eventData.message ||
-                  ''
-              }
-
-              // 标记消息类型为转人工，并设置内容
-              // 同时设置 showPostPrompt 和 originalQuestion，以便显示发帖按钮
-              setMessages((prev) => {
-                const newMessages = [...prev]
-                const index = newMessages.findIndex((m) => m.id === messageId)
-                if (index !== -1) {
-                  newMessages[index] = {
-                    ...newMessages[index],
-                    type: 'need_human',
-                    content: textContent,
-                    isComplete: true,
-                    showPostPrompt: true,
-                    originalQuestion: question,
-                    forumId: forumId || undefined,
-                  }
-                }
-                return newMessages
-              })
-              setIsLoading(false)
-              return
-            }
-
             // 处理 event:disc_count
             if (eventType === 'disc_count') {
               const count = typeof eventData === 'number' ? eventData : Number.parseInt(String(eventData), 10)
@@ -1083,6 +1045,40 @@ export default function CustomerServiceContent({
               return newMessages
             })
             currentMessageRef.current = null
+            askSseClient.unsubscribe()
+            resolve()
+            return
+          }
+
+          // 处理 need_human 事件
+          if (data && typeof data === 'object' && (data as any).event === 'need_human') {
+            const eventData = (data as any).data
+            let textContent = ''
+            if (typeof eventData === 'string') {
+              textContent = eventData
+            } else if (eventData && typeof eventData === 'object') {
+              textContent = eventData.content || eventData.text || eventData.message || ''
+            }
+
+            // 更新消息为 need_human 类型
+            setMessages((prev) => {
+              const newMessages = [...prev]
+              const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+              if (index !== -1) {
+                newMessages[index] = {
+                  ...newMessages[index],
+                  type: 'need_human',
+                  content: textContent,
+                  isComplete: true,
+                  showPostPrompt: true,
+                  originalQuestion: question,
+                  forumId: forumId || undefined,
+                }
+              }
+              return newMessages
+            })
+            setIsLoading(false)
+            setIsWaiting(false)
             askSseClient.unsubscribe()
             resolve()
             return
@@ -1666,9 +1662,9 @@ export default function CustomerServiceContent({
                                     py: 1.5,
                                     boxShadow: 'none',
                                     borderRadius: 1,
-                                    bgcolor: message.type === 'need_human' ? alpha(theme.palette.warning.main, 0.08) : 'white',
+                                    bgcolor: 'white',
                                     border: '1px solid',
-                                    borderColor: message.type === 'need_human' ? alpha(theme.palette.warning.main, 0.3) : 'divider',
+                                    borderColor: 'divider',
                                     fontSize: '14px',
                                     overflow: 'overlay',
                                     '& p': {
