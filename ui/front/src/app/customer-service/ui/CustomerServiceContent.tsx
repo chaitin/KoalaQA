@@ -1619,7 +1619,7 @@ export default function CustomerServiceContent({
               flex: 1,
               overflow: 'auto',
               py: 4,
-              px: isInIframe ? 1 : 0,
+              px: isInIframe ? 2 : 0,
               width: '800px',
               mx: 'auto',
               maxWidth: '100%',
@@ -1947,7 +1947,9 @@ export default function CustomerServiceContent({
                                             },
                                           }}
                                         >
-                                          <MarkDown >{message.content}</MarkDown>
+                                          <MarkDown components={{ a: (props) => <a {...props} target='_blank' rel='noopener noreferrer' /> }}>
+                                            {message.content}
+                                          </MarkDown>
                                           {/* 中断提示 - 居中显示 */}
                                           {message.isInterrupted && (
                                             <Box
@@ -2207,7 +2209,7 @@ export default function CustomerServiceContent({
                                         <Button
                                           variant='contained'
                                           size='small'
-                                          onClick={() => handleGoToPost(questionForPost, forumId || undefined, undefined)}
+                                          onClick={() => handleGoToPost(questionForPost, message.forumId ?? forumId ?? undefined, undefined)}
                                           disabled={isLoading}
                                           sx={{
                                             textTransform: 'none',
@@ -2315,7 +2317,7 @@ export default function CustomerServiceContent({
           </Box>
 
           {/* 底部输入区域 - 现代化设计 */}
-          <Box sx={{ pb: isInIframe ? 0 : 2, pt: 1, px: isInIframe ? 1 : 0 }}>
+          <Box sx={{ pb: isInIframe ? 0 : 2, pt: 1, px: isInIframe ? 2 : 0 }}>
             <Box sx={{ maxWidth: '800px', mx: 'auto' }}>
               {/* 新会话按钮 - 位于输入框左上方 */}
               <Box sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
