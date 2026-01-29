@@ -1215,6 +1215,8 @@ definitions:
         type: integer
       role:
         $ref: '#/definitions/model.UserRole'
+      salt:
+        type: string
       uid:
         type: integer
       username:
@@ -5431,6 +5433,24 @@ paths:
       summary: get bot info
       tags:
       - bot
+  /csrf:
+    get:
+      description: get csrf
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: get csrf
+      tags:
+      - csrf
   /discussion:
     get:
       description: list discussions
