@@ -2245,21 +2245,23 @@ export default function CustomerServiceContent({
                           }}
                         >
                           {/* 头像 */}
-                          <UserAvatar
-                            user={displayUser}
-                            showSkeleton={false}
-                            containerSx={{ flexShrink: 0 }}
-                            sx={{
-                              width: 40,
-                              height: 40,
-                              fontSize: isInIframe ? '0.85rem' : '0.95rem',
-                              fontWeight: 600,
-                              color: theme.palette.primary.main,
-                              backgroundColor: 'transparent',
-                            }}
-                          >
-                            {userInitial}
-                          </UserAvatar>
+                          {!isInIframe && (
+                            <UserAvatar
+                              user={displayUser}
+                              showSkeleton={false}
+                              containerSx={{ flexShrink: 0 }}
+                              sx={{
+                                width: 40,
+                                height: 40,
+                                fontSize: isInIframe ? '0.85rem' : '0.95rem',
+                                fontWeight: 600,
+                                color: theme.palette.primary.main,
+                                backgroundColor: 'transparent',
+                              }}
+                            >
+                              {userInitial}
+                            </UserAvatar>
+                          )}
 
                           {/* 消息气泡 */}
                           <Box
