@@ -2312,8 +2312,8 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 					return llm.AskSessionStreamItem{}, io.EOF
 				}
 				if !parsed {
-					// 需要读取最多14个字符来判断是否是 request_human
-					maxLength := 14
+					// 只需要读取1个字符来判断是 1/2/3
+					maxLength := 1
 					length := min(len(text), maxLength-answerText.Len())
 					if answerText.Len() < maxLength {
 						answerText.WriteString(text[:length])
@@ -2326,11 +2326,11 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 					}
 
 					trimmed := strings.TrimSpace(answerText.String())
-					switch {
-					case trimmed == "true":
-						// 能够回答，去掉 "true" 后继续输出
+					switch trimmed {
+					case "1":
+						// 能够回答，去掉 "1" 后继续输出
 						text = text[min(length, len(text)):]
-					case trimmed == "false":
+					case "2":
 						// 无法回答
 						text = defaultAnswer
 						if !d.in.Cfg.RAG.DEBUG {
@@ -2338,7 +2338,7 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 						} else {
 							d.logger.WithContext(ctx).With("answer_text", answerText.String()).Info("ask answer text")
 						}
-					case trimmed == "request_human" || strings.HasPrefix(trimmed, "request_human"):
+					case "3":
 						// 用户要求转人工
 						text = llm.HumanAssistanceResponse
 						aiResBuilder.WriteString(text)
