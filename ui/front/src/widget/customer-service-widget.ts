@@ -262,6 +262,29 @@ declare global {
         border-radius: 0;
       }
     }
+    .cs-widget-icon-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+    }
+
+    .cs-widget-star {
+      position: absolute;
+      right: -6px;
+      bottom: -3px;
+      pointer-events: none;
+      z-index: 10;
+      transition: all 0.3s ease;
+      width: 14px;
+      height: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
   `
 
   // 创建样式标签
@@ -278,13 +301,22 @@ declare global {
 
 
   // 创建 DOM 元素
-  function createWidget(): void {
+  function createWidget(avatarUrl?: string): void {
+    const finalAvatarUrl = avatarUrl || `${config.baseUrl}/logo.svg`
+
     // 创建按钮
     const button = document.createElement('button')
     button.className = 'cs-widget-button'
     button.innerHTML = `
       <span class="cs-widget-button-text">智能客服</span>
-      <img src="${config.baseUrl}/logo.svg" alt="Logo" class="cs-widget-button-icon" />
+      <div class="cs-widget-icon-wrapper">
+        <img src="${finalAvatarUrl}" alt="Logo" class="cs-widget-button-icon" />
+        <div class="cs-widget-star">
+          <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 13 14" fill="none">
+            <path d="M6.25708 0.941406L8.03816 5.16631L12.5511 6.55184L8.27117 8.78913L6.96321 13.1665L4.72911 8.94827L0.461914 7.21852L4.54226 5.37257L6.25708 0.941406Z" fill="#009CC8"/>
+          </svg>
+        </div>
+      </div>
     `
     button.setAttribute('aria-label', '打开智能客服')
 
@@ -342,18 +374,21 @@ declare global {
     }
 
     // 检查服务端配置是否启用网页挂件
+    let avatarUrl = ''
+
     try {
       // 避免阻塞，设置一个较短的超时
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 3000)
 
-      const response = await fetch(`${config.baseUrl}/api/system/web_plugin`, {
-        signal: controller.signal
-      })
+      const [pluginResponse, botResponse] = await Promise.all([
+        fetch(`${config.baseUrl}/api/system/web_plugin`, { signal: controller.signal }),
+        fetch(`${config.baseUrl}/api/bot`, { signal: controller.signal })
+      ])
       clearTimeout(timeoutId)
 
-      if (response.ok) {
-        const res = await response.json()
+      if (pluginResponse.ok) {
+        const res = await pluginResponse.json()
 
         // 检查当前页面的 origin 是否与挂件服务的 origin 一致
         const currentOrigin = window.location.origin
@@ -367,6 +402,20 @@ declare global {
           return
         }
       }
+
+      if (botResponse.ok) {
+        const res = await botResponse.json()
+        if (res?.data?.avatar) {
+          const avatar = res.data.avatar
+          if (avatar.startsWith('http') || avatar.startsWith('//')) {
+            avatarUrl = avatar
+          } else {
+            const base = config.baseUrl.endsWith('/') ? config.baseUrl.slice(0, -1) : config.baseUrl
+            const path = avatar.startsWith('/') ? avatar.substring(1) : avatar
+            avatarUrl = `${base}/${path}`
+          }
+        }
+      }
     } catch (error) {
       // 获取配置失败时（如网络错误），默认继续加载，以免影响正常使用
       console.warn('Failed to check widget status:', error)
@@ -375,7 +424,7 @@ declare global {
     // 注入基础样式并创建挂件
     const setup = () => {
       injectStyles()
-      createWidget()
+      createWidget(avatarUrl)
     }
 
     if (document.readyState === 'loading') {
