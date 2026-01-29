@@ -482,13 +482,9 @@ export default function CustomerServiceContent({
         // 准备headers：如果不在widget/iframe中且用户已登录，添加CSRF token
         const headers: Record<string, string> = {}
 
-        // 智能挂件（widget/iframe）里的请求不需要csrf
-        // 只有非widget/iframe模式且用户已登录时才添加CSRF token
-        if (!isInIframe && !isWidgetMode && (user?.uid || initialUser?.uid)) {
-          const csrfToken = await getCsrfToken()
-          if (csrfToken) {
-            headers['X-CSRF-TOKEN'] = csrfToken
-          }
+        const csrfToken = await getCsrfToken()
+        if (csrfToken) {
+          headers['X-CSRF-TOKEN'] = csrfToken
         }
 
         const summarySseClient = new SSEClient<any>({
@@ -871,13 +867,9 @@ export default function CustomerServiceContent({
       // 准备headers：如果不在widget/iframe中且用户已登录，添加CSRF token
       const headers: Record<string, string> = {}
 
-      // 智能挂件（widget/iframe）里的请求不需要csrf
-      // 只有非widget/iframe模式且用户已登录时才添加CSRF token
-      if (!isInIframe && !isWidgetMode && (user?.uid || initialUser?.uid)) {
-        const csrfToken = await getCsrfToken()
-        if (csrfToken) {
-          headers['X-CSRF-TOKEN'] = csrfToken
-        }
+      const csrfToken = await getCsrfToken()
+      if (csrfToken) {
+        headers['X-CSRF-TOKEN'] = csrfToken
       }
 
       // 使用 Promise 来等待流式输出完成
