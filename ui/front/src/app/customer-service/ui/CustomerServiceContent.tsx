@@ -634,6 +634,7 @@ export default function CustomerServiceContent({
               }
 
               // 标记消息类型为转人工，并设置内容
+              // 同时设置 showPostPrompt 和 originalQuestion，以便显示发帖按钮
               setMessages((prev) => {
                 const newMessages = [...prev]
                 const index = newMessages.findIndex((m) => m.id === messageId)
@@ -643,6 +644,9 @@ export default function CustomerServiceContent({
                     type: 'need_human',
                     content: textContent,
                     isComplete: true,
+                    showPostPrompt: true,
+                    originalQuestion: question,
+                    forumId: forumId || undefined,
                   }
                 }
                 return newMessages
