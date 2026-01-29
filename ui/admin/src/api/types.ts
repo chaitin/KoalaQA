@@ -241,6 +241,7 @@ export interface ModelAskSession {
   content?: string;
   created_at?: number;
   id?: number;
+  need_human?: boolean;
   source?: ModelAskSessionSource;
   summary?: boolean;
   summary_discs?: ModelJSONBArrayModelAskSessionSummaryDisc;

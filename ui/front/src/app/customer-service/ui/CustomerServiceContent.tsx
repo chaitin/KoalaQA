@@ -47,7 +47,7 @@ interface Message {
   id: string
   role: 'user' | 'assistant'
   content: string
-  type?: 'ai' | 'search' // ai: AI知识库回答, search: 搜索帖子回答
+  type?: 'ai' | 'search' | 'need_human' // ai: AI知识库回答, search: 搜索帖子回答, need_human: 转人工
   sources?: ModelDiscussionListItem[] // 引用帖子
   discCount?: number // 搜索结果数量
   summary?: string // 智能总结
@@ -329,6 +329,12 @@ export default function CustomerServiceContent({
               if (!message.forumId) {
                 message.forumId = item.summary_discs[0]?.forum_id
               }
+            }
+
+            // 检查是否是 need_human 消息（根据后端返回的标识或内容特征）
+            if (item.bot && item.need_human) {
+              message.type = 'need_human'
+              message.showPostPrompt = true
             }
 
             if (item.bot) {
@@ -998,53 +1004,35 @@ export default function CustomerServiceContent({
         sseClientRef.current = askSseClient
 
         askSseClient.subscribe(requestBody, (data) => {
-          // 检测 session closed 错误
-          let dataStr = ''
-          if (typeof data === 'string') {
-            dataStr = data
-          } else if (data && typeof data === 'object') {
-            dataStr = JSON.stringify(data)
-          }
+          // 处理 need_human 事件
+          if (data && typeof data === 'object' && (data as any).event === 'need_human') {
+            const eventData = (data as any).data
+            let textContent = ''
+            if (typeof eventData === 'string') {
+              textContent = eventData
+            } else if (eventData && typeof eventData === 'object') {
+              textContent = eventData.content || eventData.text || eventData.message || ''
+            }
 
-          if (dataStr.toLowerCase().includes('session closed')) {
-            Alert.info('会话已过期，请点击右上角开启新会话', 5000)
-            setIsLoading(false)
-            setIsWaiting(false)
-            setIsAutoScrollEnabled(false)
+            // 更新消息为 need_human 类型
             setMessages((prev) => {
               const newMessages = [...prev]
               const index = newMessages.findIndex((m) => m.id === assistantMessageId)
               if (index !== -1) {
                 newMessages[index] = {
                   ...newMessages[index],
-                  content: '会话已过期，请点击右上角开启新会话。',
-                }
-              }
-              return newMessages
-            })
-            // 停止处理后续数据
-            askSseClient.unsubscribe()
-            resolve()
-            return
-          }
-
-          // 检测后端发送的 cancel 事件（用户手动停止生成）
-          if (data && typeof data === 'object' && (data as any).cancel === true) {
-            setIsLoading(false)
-            setIsWaiting(false)
-            setMessages((prev) => {
-              const newMessages = [...prev]
-              const index = newMessages.findIndex((m) => m.id === assistantMessageId)
-              if (index !== -1) {
-                newMessages[index] = {
-                  ...newMessages[index],
+                  type: 'need_human',
+                  content: textContent,
                   isComplete: true,
-                  isInterrupted: true, // 标记为被中断
+                  showPostPrompt: true,
+                  originalQuestion: question,
+                  forumId: forumId || undefined,
                 }
               }
               return newMessages
             })
-            currentMessageRef.current = null
+            setIsLoading(false)
+            setIsWaiting(false)
             askSseClient.unsubscribe()
             resolve()
             return
@@ -1208,7 +1196,28 @@ export default function CustomerServiceContent({
   }
 
   // 处理跳转到发帖页面
-  const handleGoToPost = (question: string, messageForumId?: number) => {
+  const handleGoToPost = (question: string, messageForumId?: number, messageId?: string) => {
+    // 检查是否有多个板块且未指定板块
+    const hasMultipleForums = forums.length > 1
+
+    // 如果有多个板块且未指定板块，显示板块选择器
+    if (hasMultipleForums && !messageForumId) {
+      // 更新消息，添加 needsForumSelection 标记
+      setMessages((prev) => {
+        const newMessages = [...prev]
+        const index = newMessages.findIndex((m) => m.id === messageId)
+        if (index !== -1) {
+          newMessages[index] = {
+            ...newMessages[index],
+            needsForumSelection: true,
+            pendingQuestion: question,
+          }
+        }
+        return newMessages
+      })
+      return
+    }
+
     // 优先使用消息中保存的 forumId，否则使用全局 forumId
     const targetForumId = messageForumId ?? forumId ?? forums[0]?.id
     const forum = forums.find((f) => f.id === targetForumId)
@@ -1334,6 +1343,29 @@ export default function CustomerServiceContent({
       await callSummaryContent(selectedForumId, question, messageId, question)
     },
     [callSummaryContent],
+  )
+
+  // 处理发帖的板块选择
+  const handleForumSelectForPost = useCallback(
+    (selectedForumId: number, question: string, messageId: string) => {
+      // 更新消息，移除板块选择标记
+      setMessages((prev) => {
+        const newMessages = [...prev]
+        const index = newMessages.findIndex((m) => m.id === messageId)
+        if (index !== -1) {
+          newMessages[index] = {
+            ...newMessages[index],
+            needsForumSelection: false,
+            forumId: selectedForumId,
+          }
+        }
+        return newMessages
+      })
+
+      // 直接调用 handleGoToPost，传入选中的板块 ID
+      handleGoToPost(question, selectedForumId)
+    },
+    [handleGoToPost],
   )
 
   // 处理新会话
@@ -1866,9 +1898,10 @@ export default function CustomerServiceContent({
                                         </Box>
                                       )}
 
-                                      {/* 板块选择器 - 优化样式 */}
+                                      {/* 板块选择器 - 用于搜索 */}
                                       {message.needsForumSelection &&
                                         message.pendingQuestion &&
+                                        message.type === 'search' &&
                                         forums &&
                                         forums.length > 1 && (
                                           <Box sx={{ mt: 2 }}>
@@ -1888,6 +1921,52 @@ export default function CustomerServiceContent({
                                                     size='medium'
                                                     onClick={() =>
                                                       handleForumSelect(forum.id!, message.pendingQuestion!, message.id)
+                                                    }
+                                                    disabled={isLoading}
+                                                    sx={{
+                                                      textTransform: 'none',
+                                                      borderRadius: 2,
+                                                      px: 2,
+                                                      py: 1,
+                                                      borderColor: 'divider',
+                                                      '&:hover': {
+                                                        borderColor: 'primary.main',
+                                                        bgcolor: alpha(theme.palette.primary.main, 0.05),
+                                                      },
+                                                      fontWeight: 500,
+                                                    }}
+                                                  >
+                                                    {forum.name}
+                                                  </Button>
+                                                )
+                                              })}
+                                            </Stack>
+                                          </Box>
+                                        )}
+
+                                      {/* 板块选择器 - 用于发帖 */}
+                                      {message.needsForumSelection &&
+                                        message.pendingQuestion &&
+                                        message.type !== 'search' &&
+                                        forums &&
+                                        forums.length > 1 && (
+                                          <Box sx={{ mt: 2 }}>
+                                            <Typography
+                                              variant='subtitle2'
+                                              sx={{ mb: 1.5, fontWeight: 600, color: 'text.primary' }}
+                                            >
+                                              请选择板块发帖
+                                            </Typography>
+                                            <Stack direction='row' spacing={1} flexWrap='wrap' sx={{ gap: 1 }}>
+                                              {forums.map((forum) => {
+                                                if (!forum.id) return null
+                                                return (
+                                                  <Button
+                                                    key={forum.id}
+                                                    variant='outlined'
+                                                    size='medium'
+                                                    onClick={() =>
+                                                      handleForumSelectForPost(forum.id!, message.pendingQuestion!, message.id)
                                                     }
                                                     disabled={isLoading}
                                                     sx={{
@@ -1965,9 +2044,11 @@ export default function CustomerServiceContent({
                                 {/* 发帖提问按钮 - 放在气泡外部 */}
                                 {message.role === 'assistant' && (
                                   <>
+                                    {/* 只有不需要选择板块时才显示发帖按钮 */}
                                     {message.showPostPrompt &&
                                       message.originalQuestion &&
                                       message.isComplete &&
+                                      !message.needsForumSelection &&
                                       isLastAssistantMessage ? (
                                       <Box sx={{ mt: 1.5, pl: 0.5 }}>
                                         <Button
@@ -1977,6 +2058,7 @@ export default function CustomerServiceContent({
                                             handleGoToPost(
                                               message.originalQuestion!,
                                               message.forumId ?? message.sources?.[0]?.forum_id,
+                                              message.id,
                                             )
                                           }
                                           sx={{
@@ -2026,7 +2108,7 @@ export default function CustomerServiceContent({
                                         <Button
                                           variant='contained'
                                           size='small'
-                                          onClick={() => handleGoToPost(questionForPost, forumId || undefined)}
+                                          onClick={() => handleGoToPost(questionForPost, forumId || undefined, undefined)}
                                           disabled={isLoading}
                                           sx={{
                                             textTransform: 'none',
