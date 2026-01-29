@@ -2349,18 +2349,9 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 							With("question", req.Question).
 							Info("LLM detected request for human assistance")
 						
-						// 先发送 need_human 类型事件
-						err = wrapSteam.RecvOne(llm.AskSessionStreamItem{
-							Type:    "need_human",
-							Content: "",
-						}, false)
-						if err != nil {
-							d.logger.WithContext(ctx).WithErr(err).Warn("wrap stream send need_human event failed")
-						}
-						
-						// 再发送文本内容
+						// 发送 need_human 类型事件，content 直接包含文本内容
 						return llm.AskSessionStreamItem{
-							Type:    "text",
+							Type:    "need_human",
 							Content: text,
 						}, nil
 					default:

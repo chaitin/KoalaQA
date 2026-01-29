@@ -619,7 +619,24 @@ export default function CustomerServiceContent({
 
             // 处理 event:need_human - 用户要求转人工
             if (eventType === 'need_human') {
-              // 标记消息类型为转人工
+              // 提取文本内容
+              let textContent = ''
+              if (typeof eventData === 'string') {
+                try {
+                  const unquoted = eventData.replaceAll(/^"|"$/g, '')
+                  textContent = unquoted.replaceAll(/\\"/g, '"').replaceAll(/\\n/g, '\n')
+                } catch {
+                  textContent = eventData
+                }
+              } else if (eventData && typeof eventData === 'object') {
+                textContent =
+                  eventData.content ||
+                  eventData.text ||
+                  eventData.message ||
+                  ''
+              }
+
+              // 标记消息类型为转人工，并设置内容
               setMessages((prev) => {
                 const newMessages = [...prev]
                 const index = newMessages.findIndex((m) => m.id === messageId)
@@ -627,10 +644,13 @@ export default function CustomerServiceContent({
                   newMessages[index] = {
                     ...newMessages[index],
                     type: 'need_human',
+                    content: textContent,
+                    isComplete: true,
                   }
                 }
                 return newMessages
               })
+              setIsLoading(false)
               return
             }
 
