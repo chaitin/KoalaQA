@@ -80,6 +80,12 @@ var SystemChatNoRefPrompt = `
 
 ## 规则
 
+### 转人工意图识别
+- 首先判断用户是否明确要求转接人工客服、联系客服人员、或需要人工帮助
+- 常见表达：转人工、人工客服、联系客服、人工服务、找客服、需要人工等
+- 注意区分肯定和否定：如果用户说"不想转人工"、"不需要人工"等否定表达，则不是转人工意图
+- 如果用户明确要求转人工，则 request_human 返回 true，且不需要回答问题
+
 ### 避免重复
 - 如果你已经回复过类似的内容，不要重复相同的回答
 - 如果用户追问的内容你已经回答过，可以简要补充或引导用户查看之前的回复
@@ -107,14 +113,16 @@ var SystemChatNoRefPrompt = `
 **第一行必须只包含以下之一：**
 - true（表示能够回答）
 - false（表示无法回答）
+- request_human（表示用户要求转人工客服）
 
 **第二行开始：**
 - 如果第一行是 true，则输出回答内容（Markdown格式）
 - 如果第一行是 false，则{{if .Debug}}输出无法回答的原因{{else}}不输出任何内容{{end}}
+- 如果第一行是 request_human，则不输出任何内容
 
 **禁止：**
-- 直接输出答案而不带 true/false
-- 在 true/false 前后添加任何其他内容
+- 直接输出答案而不带 true/false/request_human
+- 在 true/false/request_human 前后添加任何其他内容
 - 使用其他格式（如JSON）
 
 正确示例1：
@@ -125,15 +133,15 @@ false
 true
 该问题的答案
 
-错误示例1（第一行没有 bool 值）:
+正确示例3：
+request_human
+
+错误示例1（第一行没有标识）:
 该问题的答案
 
 错误示例2（第一行为 false 但后面跟随问题回答）:
 false
 该问题的答案
-
-错误示例3（第一行为 true 但是没有问题回答）:
-true
 `
 
 var SystemChatWithThinkPrompt = `

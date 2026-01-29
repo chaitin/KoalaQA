@@ -2248,38 +2248,6 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 			cancelText   = "已取消生成"
 		)
 
-		// 使用关键词匹配快速检测用户是否要求转人工客服（避免额外的大模型调用）
-		if llm.IsRequestHuman(req.Question) {
-			humanResponse := llm.HumanAssistanceResponse
-			aiResBuilder.WriteString(humanResponse)
-			
-			d.logger.WithContext(ctx).
-				With("question", req.Question).
-				Info("detected request for human assistance")
-			
-			err = wrapSteam.RecvOne(llm.AskSessionStreamItem{
-				Type:    "text",
-				Content: humanResponse,
-			}, true)
-			if err != nil {
-				d.logger.WithContext(ctx).WithErr(err).Warn("wrap stream send human response failed")
-			}
-
-			err = d.in.AskSessionRepo.Create(context.Background(), &model.AskSession{
-				UUID:     req.SessionID,
-				UserID:   uid,
-				Source:   req.Source,
-				Bot:      true,
-				Canceled: false,
-				Summary:  false,
-				Content:  humanResponse,
-			})
-			if err != nil {
-				d.logger.WithContext(ctx).Warn("create bot ask session failed")
-			}
-			return
-		}
-
 		stream, err := d.in.LLM.StreamAnswer(cancelCtx, llm.SystemChatNoRefPrompt, GenerateReq{
 			Context:       askHistories,
 			Question:      req.Question,
@@ -2344,10 +2312,12 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 					return llm.AskSessionStreamItem{}, io.EOF
 				}
 				if !parsed {
-					length := min(len(text), 5-answerText.Len())
-					if answerText.Len() < 5 {
+					// 需要读取最多14个字符来判断是否是 request_human
+					maxLength := 14
+					length := min(len(text), maxLength-answerText.Len())
+					if answerText.Len() < maxLength {
 						answerText.WriteString(text[:length])
-						if answerText.Len() < 5 {
+						if answerText.Len() < maxLength {
 							return llm.AskSessionStreamItem{
 								Type:    "text",
 								Content: "",
@@ -2355,18 +2325,34 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 						}
 					}
 
-					switch strings.TrimSpace(answerText.String()) {
-					case "true":
-						text = text[length:]
-					case "false":
+					trimmed := strings.TrimSpace(answerText.String())
+					switch {
+					case trimmed == "true":
+						// 能够回答，去掉 "true" 后继续输出
+						text = text[min(length, len(text)):]
+					case trimmed == "false":
+						// 无法回答
 						text = defaultAnswer
 						if !d.in.Cfg.RAG.DEBUG {
 							ret = true
 						} else {
 							d.logger.WithContext(ctx).With("answer_text", answerText.String()).Info("ask answer text")
 						}
+					case trimmed == "request_human" || strings.HasPrefix(trimmed, "request_human"):
+						// 用户要求转人工
+						text = llm.HumanAssistanceResponse
+						aiResBuilder.WriteString(text)
+						ret = true
+						d.logger.WithContext(ctx).
+							With("question", req.Question).
+							Info("LLM detected request for human assistance")
+						return llm.AskSessionStreamItem{
+							Type:    "text",
+							Content: text,
+						}, nil
 					default:
-						text = answerText.String() + text[length:]
+						// 没有识别标识，把已读取的内容作为答案的一部分
+						text = answerText.String() + text[min(length, len(text)):]
 					}
 
 					parsed = true
