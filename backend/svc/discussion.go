@@ -2248,6 +2248,38 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 			cancelText   = "已取消生成"
 		)
 
+		// 检测用户是否要求转人工客服
+		requestHuman, err := d.in.LLM.CheckRequestHuman(cancelCtx, req.Question)
+		if err != nil {
+			d.logger.WithContext(ctx).WithErr(err).Warn("check request human failed")
+		}
+
+		// 如果用户要求转人工，直接返回标准回复
+		if requestHuman {
+			humanResponse := llm.HumanAssistanceResponse
+			aiResBuilder.WriteString(humanResponse)
+			err = wrapSteam.RecvOne(llm.AskSessionStreamItem{
+				Type:    "text",
+				Content: humanResponse,
+			}, true)
+			if err != nil {
+				d.logger.WithContext(ctx).WithErr(err).Warn("wrap stream send human response failed")
+			}
+
+			err = d.in.AskSessionRepo.Create(context.Background(), &model.AskSession{
+				UUID:     req.SessionID,
+				UserID:   uid,
+				Source:   req.Source,
+				Bot:      true,
+				Canceled: false,
+				Content:  humanResponse,
+			})
+			if err != nil {
+				d.logger.WithContext(ctx).Warn("create bot ask session failed")
+			}
+			return
+		}
+
 		stream, err := d.in.LLM.StreamAnswer(cancelCtx, llm.SystemChatNoRefPrompt, GenerateReq{
 			Context:       askHistories,
 			Question:      req.Question,
