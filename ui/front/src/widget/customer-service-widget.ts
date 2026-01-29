@@ -73,7 +73,7 @@ declare global {
       min-width: ${config.buttonSize}px;
       max-width: ${config.buttonSize}px;
       height: ${config.buttonSize}px;
-      padding: 0;
+      padding: 0 calc((${config.buttonSize}px - 28px) / 2) 0 0;
       border-radius: 50%;
       background: linear-gradient(135deg, var(--cs-primary-color, ${config.buttonColor}) 0%, var(--cs-primary-hover-color, ${config.buttonHoverColor}) 100%);
       border: 1px solid ${themeColor};
@@ -82,8 +82,9 @@ declare global {
       display: flex;
       flex-direction: row;
       align-items: center;
-      justify-content: center;
-      /* transition: all 0.4s ease; */
+      justify-content: flex-end;
+      gap: 0;
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
       z-index: ${config.zIndex};
       outline: none;
       overflow: hidden;
@@ -92,7 +93,7 @@ declare global {
     
     .cs-widget-button:hover {
       max-width: 300px;
-      padding: 0 24px;
+      padding: 0 calc((${config.buttonSize}px - 28px) / 2) 0 24px;
       gap: 12px;
       border-radius: 30px;
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.3);
@@ -107,6 +108,12 @@ declare global {
       transform: translateY(-2px) scale(0.98);
     }
     
+    .cs-widget-icon-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     .cs-widget-button-icon {
       width: 28px;
       height: 28px;
@@ -125,7 +132,8 @@ declare global {
       white-space: nowrap;
       opacity: 0;
       max-width: 0;
-      /* transition: all 0.4s ease; */
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
     }
 
     .cs-widget-button:hover .cs-widget-button-text {
@@ -191,7 +199,8 @@ declare global {
     .cs-widget-close:hover {
       background: rgba(33 34 45 / calc(0.04));
       color: #333;
-      transform: scale(1.05);
+      box-shadow: 0px 4px 8px 0px rgba(33,34,45,0.05);
+      transform: scale(1.1) rotate(90deg);
     }
     
     .cs-widget-close svg {

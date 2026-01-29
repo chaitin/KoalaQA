@@ -16,6 +16,10 @@ import SendIcon from '@mui/icons-material/Send'
 import StopIcon from '@mui/icons-material/Stop'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import MarkDown from 'react-markdown'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import remarkGfm from 'remark-gfm'
+import remarkBreaks from 'remark-breaks'
 import {
   alpha,
   Avatar,
@@ -1780,6 +1784,8 @@ export default function CustomerServiceContent({
                                       px: 0.75,
                                       py: 0.25,
                                       borderRadius: 0.5,
+                                      whiteSpace: 'pre-wrap',
+                                      wordBreak: 'break-word',
                                     },
                                   }}
                                 >
@@ -1933,21 +1939,110 @@ export default function CustomerServiceContent({
                                             '& p, & h6': {
                                               fontSize: '14px',
                                               mb: 1,
+                                              lineHeight: 1.6,
                                             },
                                             '& a': {
-                                              color: 'inherit',
+                                              color: theme.palette.primary.main,
                                               textDecoration: 'none',
+                                              '&:hover': {
+                                                textDecoration: 'underline',
+                                              },
                                             },
                                             '& blockquote': {
-                                              mx: 2,
-                                              mt: '8px!important',
+                                              borderLeft: '4px solid',
+                                              borderColor: 'divider',
+                                              mx: 0,
+                                              pl: 2,
+                                              py: 1,
+                                              my: 1.5,
+                                              bgcolor: alpha(theme.palette.grey[500], 0.05),
+                                              borderRadius: '0 4px 4px 0',
+                                              color: 'text.secondary',
+                                            },
+                                            '& ul, & ol': {
+                                              pl: 3,
+                                              mb: 1.5,
+                                            },
+                                            '& li': {
+                                              mb: 0.5,
                                             },
                                             '& hr': {
-                                              borderColor: 'rgba(0, 0, 0, 0.06)',
+                                              borderColor: 'divider',
+                                              my: 2,
+                                            },
+                                            '& pre': {
+                                              m: '0.5rem 0',
+                                              p: 0,
+                                              bgcolor: 'transparent',
+                                              borderRadius: 2,
+                                              overflow: 'hidden',
+                                            },
+                                            // Prevent global code styles from affecting the syntax highlighter
+                                            '& pre code': {
+                                              bgcolor: 'transparent !important',
+                                              p: '0 !important',
+                                              borderRadius: '0 !important',
+                                              color: 'inherit !important',
+                                            },
+                                            '& table': {
+                                              borderCollapse: 'collapse',
+                                              width: '100%',
+                                              mb: 2,
+                                              display: 'block',
+                                              overflowX: 'auto',
+                                              border: '1px solid',
+                                              borderColor: 'divider',
+                                              borderRadius: 1,
+                                            },
+                                            '& th, & td': {
+                                              border: '1px solid',
+                                              borderColor: 'divider',
+                                              p: 1.5,
+                                              fontSize: '13px',
+                                            },
+                                            '& th': {
+                                              bgcolor: alpha(theme.palette.grey[500], 0.05),
+                                              fontWeight: 600,
+                                              textAlign: 'left',
                                             },
                                           }}
                                         >
-                                          <MarkDown components={{ a: (props) => <a {...props} target='_blank' rel='noopener noreferrer' /> }}>
+                                          <MarkDown
+                                            remarkPlugins={[remarkGfm, remarkBreaks]}
+                                            components={{
+                                              a: (props) => <a {...props} target='_blank' rel='noopener noreferrer' />,
+                                              code(props) {
+                                                const { children, className, node, ref, ...rest } = props
+                                                const match = /language-(\w+)/.exec(className || '')
+                                                const { inline } = props as any
+                                                const hasNewline = String(children).includes('\n')
+
+                                                if (match || (!inline && hasNewline)) {
+                                                  return (
+                                                    <SyntaxHighlighter
+                                                      {...rest}
+                                                      PreTag="div"
+                                                      children={String(children).replace(/\n$/, '')}
+                                                      language={match ? match[1] : 'text'}
+                                                      style={oneDark}
+                                                      customStyle={{
+                                                        margin: 0,
+                                                        borderRadius: '8px',
+                                                        fontSize: '13px',
+                                                        lineHeight: '1.5',
+                                                      }}
+                                                    />
+                                                  )
+                                                }
+
+                                                return (
+                                                  <code ref={ref} {...rest} className={className}>
+                                                    {children}
+                                                  </code>
+                                                )
+                                              },
+                                            }}
+                                          >
                                             {message.content}
                                           </MarkDown>
                                           {/* 中断提示 - 居中显示 */}
@@ -2294,6 +2389,8 @@ export default function CustomerServiceContent({
                                   py: 0.25,
                                   borderRadius: 0.5,
                                   fontSize: '14px',
+                                  whiteSpace: 'pre-wrap',
+                                  wordBreak: 'break-word',
                                 },
                               }}
                             >
