@@ -47,7 +47,7 @@ interface Message {
   id: string
   role: 'user' | 'assistant'
   content: string
-  type?: 'ai' | 'search' // ai: AI知识库回答, search: 搜索帖子回答
+  type?: 'ai' | 'search' | 'need_human' // ai: AI知识库回答, search: 搜索帖子回答, need_human: 转人工
   sources?: ModelDiscussionListItem[] // 引用帖子
   discCount?: number // 搜索结果数量
   summary?: string // 智能总结
@@ -616,6 +616,23 @@ export default function CustomerServiceContent({
             const dataObj = data as any
             const eventType = dataObj.event
             const eventData = dataObj.data
+
+            // 处理 event:need_human - 用户要求转人工
+            if (eventType === 'need_human') {
+              // 标记消息类型为转人工
+              setMessages((prev) => {
+                const newMessages = [...prev]
+                const index = newMessages.findIndex((m) => m.id === messageId)
+                if (index !== -1) {
+                  newMessages[index] = {
+                    ...newMessages[index],
+                    type: 'need_human',
+                  }
+                }
+                return newMessages
+              })
+              return
+            }
 
             // 处理 event:disc_count
             if (eventType === 'disc_count') {
@@ -1628,9 +1645,9 @@ export default function CustomerServiceContent({
                                     py: 1.5,
                                     boxShadow: 'none',
                                     borderRadius: 1,
-                                    bgcolor: 'white',
+                                    bgcolor: message.type === 'need_human' ? alpha(theme.palette.warning.main, 0.08) : 'white',
                                     border: '1px solid',
-                                    borderColor: 'divider',
+                                    borderColor: message.type === 'need_human' ? alpha(theme.palette.warning.main, 0.3) : 'divider',
                                     fontSize: '14px',
                                     overflow: 'overlay',
                                     '& p': {
