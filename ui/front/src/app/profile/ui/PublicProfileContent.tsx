@@ -2,8 +2,8 @@
 
 import { ModelUserRole, SvcUserStatisticsRes } from '@/api/types'
 import CommonAvatar from '@/components/CommonAvatar'
-import { Box, Divider } from '@mui/material'
-import { useMemo, useCallback, useContext } from 'react'
+import { Box, Divider, Drawer, Button } from '@mui/material'
+import { useMemo, useCallback, useContext, useState } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import ProfileHeroCard from './ProfileHeroCard'
 import UserTrendList from './UserTrendList'
@@ -21,6 +21,7 @@ export default function PublicProfileContent({ userId, statistics }: PublicProfi
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { user } = useContext(AuthContext)
+  const [mobilePortraitOpen, setMobilePortraitOpen] = useState(false)
 
   const canManagePortrait = useMemo(() => {
     const role = user?.role ?? ModelUserRole.UserRoleUnknown
@@ -117,6 +118,23 @@ export default function PublicProfileContent({ userId, statistics }: PublicProfi
             }
             title={statistics?.name || '匿名用户'}
             metrics={metrics}
+            rightSlot={
+              canManagePortrait ? (
+                <Button
+                  variant='outlined'
+                  color='primary'
+                  size='small'
+                  onClick={() => setMobilePortraitOpen(true)}
+                  sx={{
+                    display: { xs: 'flex', lg: 'none' },
+                    width: { xs: '100%', md: 'auto' },
+                    mt: { xs: 2, md: 0 },
+                  }}
+                >
+                  查看用户画像
+                </Button>
+              ) : undefined
+            }
           />
           <Divider sx={{ mb: 2, mx: 3 }} />
           {/* 标签页 */}
@@ -127,9 +145,49 @@ export default function PublicProfileContent({ userId, statistics }: PublicProfi
         </Box>
 
         {canManagePortrait ? (
-          <Box sx={{ width: { xs: '100%', lg: 320 }, flexShrink: 0 }}>
-            <UserPortraitPanel userId={userId} targetUserName={statistics?.name} />
-          </Box>
+          <>
+            {/* Desktop View: Side Panel */}
+            <Box
+              sx={{
+                width: { xs: '100%', lg: 320 },
+                flexShrink: 0,
+                display: { xs: 'none', lg: 'block' },
+                position: 'sticky',
+                top: 24,
+                alignSelf: 'flex-start',
+              }}
+            >
+              <UserPortraitPanel userId={userId} targetUserName={statistics?.name} />
+            </Box>
+
+            {/* Mobile View: Drawer */}
+            <Drawer
+              anchor='bottom'
+              open={mobilePortraitOpen}
+              onClose={() => setMobilePortraitOpen(false)}
+              PaperProps={{
+                sx: {
+                  borderTopLeftRadius: 16,
+                  borderTopRightRadius: 16,
+                  maxHeight: '85vh',
+                },
+              }}
+            >
+              <Box sx={{ p: 1, pt: 2, display: 'flex', justifyContent: 'center' }}>
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 4,
+                    bgcolor: 'grey.300',
+                    borderRadius: 2,
+                  }}
+                />
+              </Box>
+              <Box sx={{ overflowY: 'auto', p: 1 }}>
+                <UserPortraitPanel userId={userId} targetUserName={statistics?.name} />
+              </Box>
+            </Drawer>
+          </>
         ) : null}
       </Box>
     </Box>
