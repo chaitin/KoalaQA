@@ -1,6 +1,7 @@
 'use client'
 
 import { getDiscussionAskAskSessionId, getDiscussionAskSession, postDiscussionAskStop } from '@/api'
+import { getCsrfToken } from '@/api/httpClient'
 
 import { ModelDiscussionListItem, ModelUserInfo, SvcBotGetRes } from '@/api/types'
 import { getSystemWebPlugin } from '@/api/WebPlugin'
@@ -478,9 +479,22 @@ export default function CustomerServiceContent({
   const callSummaryContent = useCallback(
     async (forumId: number, question: string, messageId: string, originalQuestion?: string) => {
       try {
+        // 准备headers：如果不在widget/iframe中且用户已登录，添加CSRF token
+        const headers: Record<string, string> = {}
+
+        // 智能挂件（widget/iframe）里的请求不需要csrf
+        // 只有非widget/iframe模式且用户已登录时才添加CSRF token
+        if (!isInIframe && !isWidgetMode && (user?.uid || initialUser?.uid)) {
+          const csrfToken = await getCsrfToken()
+          if (csrfToken) {
+            headers['X-CSRF-TOKEN'] = csrfToken
+          }
+        }
+
         const summarySseClient = new SSEClient<any>({
           url: '/api/discussion/summary/content',
           method: 'POST',
+          headers,  // 传入准备好的headers
           streamMode: true,
           onError: (err: Error) => {
             console.error('智能总结生成失败:', err)
@@ -854,6 +868,18 @@ export default function CustomerServiceContent({
       let answerText = ''
       const thinkingPatterns = [/思考[:：]/, /推理[:：]/, /分析[:：]/, /让我想想/, /我需要/, /正在思考/]
 
+      // 准备headers：如果不在widget/iframe中且用户已登录，添加CSRF token
+      const headers: Record<string, string> = {}
+
+      // 智能挂件（widget/iframe）里的请求不需要csrf
+      // 只有非widget/iframe模式且用户已登录时才添加CSRF token
+      if (!isInIframe && !isWidgetMode && (user?.uid || initialUser?.uid)) {
+        const csrfToken = await getCsrfToken()
+        if (csrfToken) {
+          headers['X-CSRF-TOKEN'] = csrfToken
+        }
+      }
+
       // 使用 Promise 来等待流式输出完成
       let hasReceivedData = false
 
@@ -862,6 +888,7 @@ export default function CustomerServiceContent({
         const askSseClient = new SSEClient<any>({
           url: '/api/discussion/ask',
           method: 'POST',
+          headers,  // 传入准备好的headers
           streamMode: true,
           onError: (err: Error) => {
             console.error('AI 回答生成失败:', err)

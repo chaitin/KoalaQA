@@ -76,7 +76,55 @@ export enum ContentType {
 
 type ExtractDataProp<T> = T extends { data?: infer U } ? U : T;
 
-// 导出公共访问状态获取函数，供其他组件使用
+// CSRF Token 管理
+let cachedCsrfToken: string | null = null;
+
+// 获取 CSRF Token（登录后获取，登出时清除）
+// 导出此函数以便在SSEClient等场景中使用
+export const getCsrfToken = async (): Promise<string | null> => {
+  // 如果已有缓存的token，直接返回
+  if (cachedCsrfToken) {
+    return cachedCsrfToken;
+  }
+
+  // 只在客户端环境中获取
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    // 调用后端API获取CSRF token（后端返回计算好的token）
+    const response = await fetch("/api/csrf", {
+      method: "GET",
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    if (data.success && data.data) {
+      // 获取后端返回的CSRF token
+      const csrfToken = data.data;
+      if (csrfToken) {
+        // 缓存token
+        cachedCsrfToken = csrfToken;
+        return csrfToken;
+      }
+    }
+  } catch (error) {
+    console.warn("Failed to get CSRF token:", error);
+  }
+
+  return null;
+};
+
+// 清除CSRF token缓存
+// 导出此函数以便在SSEClient等场景中使用
+export const clearCsrfToken = () => {
+  cachedCsrfToken = null;
+};
 
 // 导出公共访问状态获取函数，供其他组件使用
 
@@ -90,6 +138,9 @@ export const clearAuthData = async (callLogoutAPI: boolean = true) => {
 
     // 使用工具函数清除所有认证相关的cookie，包括auth_token
     clearAllAuthCookies();
+
+    // 清除CSRF token缓存
+    clearCsrfToken();
 
 
 
@@ -172,7 +223,13 @@ export class HttpClient<SecurityDataType = unknown> {
             return res.data;
           }
 
-
+          // 检查是否是CSRF错误
+          if (res.data === "csrf token mismatch" && typeof window !== "undefined") {
+            // 清除缓存的CSRF token
+            clearCsrfToken();
+            // 返回特殊错误，让调用者可以重试
+            return Promise.reject({ ...res, _csrfError: true });
+          }
 
           if (
             typeof window !== "undefined" &&
@@ -508,6 +565,15 @@ export class HttpClient<SecurityDataType = unknown> {
         : {}),
     };
 
+    // 为非安全方法（非GET/OPTIONS/HEAD）添加CSRF token
+    const needsCsrf = !['GET', 'OPTIONS', 'HEAD'].includes(method);
+    if (needsCsrf && typeof window !== "undefined") {
+      const csrfToken = await getCsrfToken();
+      if (csrfToken) {
+        headers["X-CSRF-TOKEN"] = csrfToken;
+      }
+    }
+
 
 
     // 在SSR环境中，需要手动转发cookie
@@ -548,11 +614,31 @@ export class HttpClient<SecurityDataType = unknown> {
       }
     }
 
-    // 创建请求 Promise 并添加到待处理请求中（移除重试机制）
+    // 创建请求 Promise 并添加到待处理请求中
     const requestPromise = this.instance
       .request(requestConfig)
-      .then((result) => {
-        return result;
+      .catch(async (error) => {
+        // 如果是CSRF错误，重新获取token并重试一次
+        if (error?._csrfError && typeof window !== "undefined") {
+          console.log("[HttpClient] CSRF token mismatch, retrying with new token");
+
+          // 重新获取CSRF token
+          const newCsrfToken = await getCsrfToken();
+          if (newCsrfToken) {
+            // 更新请求配置中的CSRF token
+            requestConfig.headers["X-CSRF-TOKEN"] = newCsrfToken;
+
+            // 重试请求
+            return this.instance.request(requestConfig).catch((retryError) => {
+              // 重试失败，抛出原始错误（但移除特殊标记）
+              const { _csrfError, ...cleanError } = retryError;
+              throw cleanError;
+            });
+          }
+        }
+
+        // 不是CSRF错误或重试失败，直接抛出
+        throw error;
       })
       .finally(() => {
         // 请求完成后从待处理列表中移除
