@@ -331,6 +331,12 @@ export default function CustomerServiceContent({
               }
             }
 
+            // 检查是否是 need_human 消息（根据后端返回的标识或内容特征）
+            if (item.bot && item.need_human) {
+              message.type = 'need_human'
+              message.showPostPrompt = true
+            }
+
             if (item.bot) {
               message.isComplete = true
               if (lastUserQuestion) {
