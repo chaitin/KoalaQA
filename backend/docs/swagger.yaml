@@ -43,6 +43,16 @@ definitions:
       refresh_token:
         type: string
     type: object
+  chat.Type:
+    enum:
+    - 0
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - TypeUnknown
+    - TypeDingtalk
+    - TypeWecom
   context.Response:
     properties:
       data: {}
@@ -1215,6 +1225,8 @@ definitions:
         type: integer
       role:
         $ref: '#/definitions/model.UserRole'
+      salt:
+        type: string
       uid:
         type: integer
       username:
@@ -1540,6 +1552,17 @@ definitions:
         type: string
       user_id:
         type: integer
+    type: object
+  svc.ChatUpdateReq:
+    properties:
+      config:
+        $ref: '#/definitions/model.SystemChatConfig'
+      enabled:
+        type: boolean
+      type:
+        $ref: '#/definitions/chat.Type'
+    required:
+    - type
     type: object
   svc.CheckModelRes:
     properties:
@@ -2651,6 +2674,19 @@ paths:
       - bot
   /admin/chat:
     get:
+      parameters:
+      - enum:
+        - 0
+        - 1
+        - 2
+        in: query
+        name: type
+        required: true
+        type: integer
+        x-enum-varnames:
+        - TypeUnknown
+        - TypeDingtalk
+        - TypeWecom
       produces:
       - application/json
       responses:
@@ -2675,7 +2711,7 @@ paths:
         name: req
         required: true
         schema:
-          $ref: '#/definitions/model.SystemChat'
+          $ref: '#/definitions/svc.ChatUpdateReq'
       produces:
       - application/json
       responses:
@@ -5431,6 +5467,24 @@ paths:
       summary: get bot info
       tags:
       - bot
+  /csrf:
+    get:
+      description: get csrf
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: get csrf
+      tags:
+      - csrf
   /discussion:
     get:
       description: list discussions

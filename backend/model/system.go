@@ -29,7 +29,8 @@ const (
 	SystemKeyDiscussion    = "discussion"
 	SystemKeySEO           = "seo"
 	SystemKeyWebPlugin     = "web_plugin"
-	SystemKeyChat          = "chat"
+	SystemKeyChatDingtalk  = "chat_dingtalk"
+	SystemKeyChatWecom     = "chat_wecom"
 )
 
 type PublicAddress struct {

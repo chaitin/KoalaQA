@@ -94,6 +94,24 @@ const docTemplate = `{
                     "chat"
                 ],
                 "summary": "get chat info",
+                "parameters": [
+                    {
+                        "enum": [
+                            0,
+                            1,
+                            2
+                        ],
+                        "type": "integer",
+                        "x-enum-varnames": [
+                            "TypeUnknown",
+                            "TypeDingtalk",
+                            "TypeWecom"
+                        ],
+                        "name": "type",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -133,7 +151,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.SystemChat"
+                            "$ref": "#/definitions/svc.ChatUpdateReq"
                         }
                     }
                 ],
@@ -4683,6 +4701,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/csrf": {
+            "get": {
+                "description": "get csrf",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "csrf"
+                ],
+                "summary": "get csrf",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/discussion": {
             "get": {
                 "description": "list discussions",
@@ -8037,6 +8087,19 @@ const docTemplate = `{
                 }
             }
         },
+        "chat.Type": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-varnames": [
+                "TypeUnknown",
+                "TypeDingtalk",
+                "TypeWecom"
+            ]
+        },
         "context.Response": {
             "type": "object",
             "properties": {
@@ -9724,6 +9787,9 @@ const docTemplate = `{
                 "role": {
                     "$ref": "#/definitions/model.UserRole"
                 },
+                "salt": {
+                    "type": "string"
+                },
                 "uid": {
                     "type": "integer"
                 },
@@ -10186,6 +10252,23 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "integer"
+                }
+            }
+        },
+        "svc.ChatUpdateReq": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/model.SystemChatConfig"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "type": {
+                    "$ref": "#/definitions/chat.Type"
                 }
             }
         },

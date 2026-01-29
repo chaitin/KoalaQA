@@ -12,7 +12,7 @@ type csrf struct {
 }
 
 func (c *csrf) Route(h server.Handler) {
-	h.GET("/api/csrf", c.Get)
+	h.GET("/csrf", c.Get)
 }
 
 func newCsrf(cfg config.Config) server.Router {
@@ -20,7 +20,7 @@ func newCsrf(cfg config.Config) server.Router {
 }
 
 func init() {
-	registerGlobalRouter(newCsrf)
+	registerApiNoAuthRouter(newCsrf)
 }
 
 // Get
