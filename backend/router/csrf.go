@@ -31,7 +31,7 @@ func init() {
 // @Success 200 {object} context.Response{data=string}
 // @Router /csrf [get]
 func (c *csrf) Get(ctx *context.Context) {
-	if c.cfg.API.FreeCSRF {
+	if c.cfg.API.FreeCSRF || ctx.GetUser().Salt == "" {
 		ctx.Success("")
 		return
 	}
