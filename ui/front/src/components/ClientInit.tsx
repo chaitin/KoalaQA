@@ -15,6 +15,13 @@ const ClientInit = ({ initialForums = [] }: { initialForums?: ModelForumInfo[] }
 
     const init = async () => {
       try {
+        //先设置 routeName，这样后面 setForums 时就能正确设置 selectedForumId
+        const routeName = params?.route_name as string | undefined
+        if (routeName) {
+          setRouteName(routeName)
+        }
+
+        // 然后设置 forums，setForums 会自动根据 routeName 设置 selectedForumId
         if (initialForums && initialForums.length > 0) {
           setForums(initialForums)
         } else {
@@ -23,11 +30,6 @@ const ClientInit = ({ initialForums = [] }: { initialForums?: ModelForumInfo[] }
           if (mounted && refreshed && refreshed.length > 0) {
             setForums(refreshed)
           }
-        }
-
-        const routeName = params?.route_name as string | undefined
-        if (routeName) {
-          setRouteName(routeName)
         }
       } catch (e) {
         // 忽略错误，客户端无需阻塞渲染

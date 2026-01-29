@@ -15,7 +15,7 @@ var NeedHumanPrompt = `
 - 需要人工介入：输出 true
 - 不需要人工介入：输出 false
 - 不要输出任何解释、分析过程或其他额外内容
-
-## 输入内容
-{{ .Data }}
 `
+
+// HumanAssistanceResponse 转人工时的标准回复文案
+const HumanAssistanceResponse = "您好！如果您需要人工协助，请前往社区，发帖详细描述您的问题，我们的客服人员会尽快与您联系并提供帮助。感谢您的理解与配合！"

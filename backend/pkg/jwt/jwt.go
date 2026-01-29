@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -62,6 +63,10 @@ func (g *Generator) Verify(token string) (*model.UserCore, error) {
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	if claims.Salt == "" {
+		return nil, errors.New("empty salt")
 	}
 
 	return &claims.UserCore, nil

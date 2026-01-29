@@ -34,6 +34,7 @@ type UserCore struct {
 	AuthType AuthType `json:"auth_type"`
 	Cors     bool     `json:"cors"`
 	Key      string   `json:"key"`
+	Salt     string   `json:"salt"`
 }
 
 type UserInfo struct {

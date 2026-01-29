@@ -60,7 +60,10 @@ var upgrader = websocket.Upgrader{
 // @Success 200 {object} context.Response{data=model.UserInfo}
 // @Router /user [get]
 func (u *userAuth) Detail(ctx *context.Context) {
-	ctx.Success(ctx.GetUser())
+	user := ctx.GetUser()
+	user.Salt = ""
+	user.Key = ""
+	ctx.Success(user)
 }
 
 // Update

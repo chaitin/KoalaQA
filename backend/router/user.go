@@ -84,7 +84,8 @@ func (u *user) Login(ctx *context.Context) {
 		return
 	}
 
-	ctx.Success(token)
+	ctx.SetCookie("auth_token", token, u.expire, "/", "", false, true)
+	ctx.Success(nil)
 }
 
 // LoginCors

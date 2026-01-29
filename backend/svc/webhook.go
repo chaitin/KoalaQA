@@ -131,7 +131,7 @@ func (w *Webhook) allow(id uint, discID string, msgType message.Type) bool {
 func (w *Webhook) Send(ctx context.Context, msg message.Message) error {
 	for id, hook := range w.webhooks {
 		if !w.allow(id, msg.ID(), msg.Type()) {
-			w.logger.WithContext(ctx).With("webhook_id", id).With("msg", msg).Debug("webhook ratelimit, skip send")
+			w.logger.WithContext(ctx).With("webhook_id", id).With("msg", msg).Info("webhook ratelimit, skip send")
 			continue
 		}
 		err := hook.Send(ctx, msg)

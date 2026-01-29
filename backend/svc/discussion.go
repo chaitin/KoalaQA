@@ -2208,7 +2208,6 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		repo.QueryWithOrderBy("created_at ASC, id ASC"),
 		repo.QueryWithEqual("uuid", req.SessionID),
 		repo.QueryWithEqual("summary", false),
-		repo.QueryWithEqual("canceled", false),
 		repo.QueryWithEqual("user_id", uid),
 	)
 	if err != nil {
@@ -2245,6 +2244,7 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		var (
 			aiResBuilder strings.Builder
 			canceled     bool
+			needHuman    bool
 			cancelText   = "已取消生成"
 		)
 
@@ -2298,6 +2298,7 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 								Content: text,
 							}, nil
 						}
+						aiResBuilder.WriteString(defaultAnswer)
 						return llm.AskSessionStreamItem{
 							Type:    "text",
 							Content: defaultAnswer,
@@ -2312,10 +2313,13 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 					return llm.AskSessionStreamItem{}, io.EOF
 				}
 				if !parsed {
-					length := min(len(text), 5-answerText.Len())
-					if answerText.Len() < 5 {
+					// 只需要读取1个字符（数字 1/2/3）
+					// Prompt 明确要求不能有前后多余内容，且使用 TrimSpace 处理空白
+					maxLength := 1
+					length := min(len(text), maxLength-answerText.Len())
+					if answerText.Len() < maxLength {
 						answerText.WriteString(text[:length])
-						if answerText.Len() < 5 {
+						if answerText.Len() < maxLength {
 							return llm.AskSessionStreamItem{
 								Type:    "text",
 								Content: "",
@@ -2323,18 +2327,37 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 						}
 					}
 
-					switch strings.TrimSpace(answerText.String()) {
-					case "true":
-						text = text[length:]
-					case "false":
+					trimmed := strings.TrimSpace(answerText.String())
+					switch trimmed {
+					case "1":
+						// 能够回答，去掉 "1" 后继续输出
+						text = text[min(length, len(text)):]
+					case "2":
+						// 无法回答
 						text = defaultAnswer
 						if !d.in.Cfg.RAG.DEBUG {
 							ret = true
 						} else {
 							d.logger.WithContext(ctx).With("answer_text", answerText.String()).Info("ask answer text")
 						}
+					case "3":
+						// 用户要求转人工
+						text = llm.HumanAssistanceResponse
+						aiResBuilder.WriteString(text)
+						ret = true
+						needHuman = true
+						d.logger.WithContext(ctx).
+							With("question", req.Question).
+							Info("LLM detected request for human assistance")
+
+						// 发送 need_human 类型事件，content 直接包含文本内容
+						return llm.AskSessionStreamItem{
+							Type:    "need_human",
+							Content: text,
+						}, nil
 					default:
-						text = answerText.String() + text[length:]
+						// 没有识别标识，把已读取的内容作为答案的一部分
+						text = answerText.String() + text[min(length, len(text)):]
 					}
 
 					parsed = true
@@ -2350,12 +2373,13 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		}
 
 		err = d.in.AskSessionRepo.Create(context.Background(), &model.AskSession{
-			UUID:     req.SessionID,
-			UserID:   uid,
-			Source:   req.Source,
-			Bot:      true,
-			Canceled: canceled,
-			Content:  aiResBuilder.String(),
+			UUID:      req.SessionID,
+			UserID:    uid,
+			Source:    req.Source,
+			Bot:       true,
+			Canceled:  canceled,
+			NeedHuman: needHuman,
+			Content:   aiResBuilder.String(),
 		})
 		if err != nil {
 			d.logger.WithContext(ctx).Warn("create bot ask session failed")

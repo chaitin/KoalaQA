@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/caarlos0/env/v11"
+	"github.com/chaitin/koalaqa/pkg/util"
 )
 
 type Config struct {
@@ -72,6 +73,7 @@ type API struct {
 	FreeCSRF      bool   `env:"FREE_CSRF"`
 	AdminPassword string `env:"ADMIN_PASSWORD"`
 	AdminEmail    string `env:"ADMIN_EMAIL"`
+	CSRFSecret    string
 }
 
 func newConfig() (Config, error) {
@@ -80,5 +82,9 @@ func newConfig() (Config, error) {
 	log.SetOutput(io.Discard)
 
 	err := env.Parse(&cfg)
-	return cfg, err
+	if err != nil {
+		return Config{}, err
+	}
+	cfg.API.CSRFSecret = util.RandomString(16)
+	return cfg, nil
 }

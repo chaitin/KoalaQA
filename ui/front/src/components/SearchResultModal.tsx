@@ -38,8 +38,10 @@ export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish 
   const searchInputRef = useRef<HTMLInputElement>(null)
   const { user } = useContext(AuthContext)
 
-  // 从 store 获取 forumId
-  const forumId = useForumStore((s) => s.selectedForumId)
+  // 从 store 获取 forumId，如果为 null 则使用第一个板块作为兜底
+  const selectedForumId = useForumStore((s) => s.selectedForumId)
+  const forums = useForumStore((s) => s.forums)
+  const forumId = selectedForumId ?? forums[0]?.id
 
   // 内部状态管理
   const [searchQuery, setSearchQuery] = useState(initialQuery)
@@ -59,7 +61,8 @@ export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish 
         }, 100)
       }
       // 如果有初始查询，自动执行搜索
-      if (initialQuery.trim()) {
+      // forumId 现在有兜底方案（selectedForumId ?? forums[0]?.id），应该总是有值
+      if (initialQuery.trim() && forumId) {
         performSearch(initialQuery.trim())
       }
     } else {
@@ -69,17 +72,24 @@ export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish 
       setLastSearchedQuery('')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, initialQuery])
+  }, [open, initialQuery, forumId]) // 保留 forumId 依赖，确保板块变化时重新搜索
 
   // 执行搜索的函数
   const performSearch = useCallback(
     async (query: string) => {
       if (!query.trim()) return
 
+      // forumId 应该总是有值（selectedForumId 或 forums[0].id）
+      // 只在极端情况下（forums 为空且 selectedForumId 为 null）才跳过
+      if (!forumId) {
+        console.warn('[SearchResultModal] No valid forumId available, cannot perform search')
+        return
+      }
+
       setLoading(true)
       try {
         const params: GetDiscussionParams = {
-          forum_id: forumId as any,
+          forum_id: forumId,
           keyword: query.trim(),
           stat: true,
         }
@@ -301,11 +311,11 @@ export const SearchResultModal = ({ open, onClose, initialQuery = '', onPublish 
                       },
                       ...(isAdminRole(user.role || ModelUserRole.UserRoleUnknown)
                         ? [
-                            {
-                              label: '👉提交Issue',
-                              onClick: () => onPublish(ModelDiscussionType.DiscussionTypeIssue, searchQuery.trim()),
-                            },
-                          ]
+                          {
+                            label: '👉提交Issue',
+                            onClick: () => onPublish(ModelDiscussionType.DiscussionTypeIssue, searchQuery.trim()),
+                          },
+                        ]
                         : []),
                       {
                         label: '👉发布文章',

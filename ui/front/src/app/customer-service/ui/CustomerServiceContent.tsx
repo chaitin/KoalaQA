@@ -1,6 +1,7 @@
 'use client'
 
 import { getDiscussionAskAskSessionId, getDiscussionAskSession, postDiscussionAskStop } from '@/api'
+import { getCsrfToken } from '@/api/httpClient'
 
 import { ModelDiscussionListItem, ModelUserInfo, SvcBotGetRes } from '@/api/types'
 import { getSystemWebPlugin } from '@/api/WebPlugin'
@@ -15,6 +16,10 @@ import SendIcon from '@mui/icons-material/Send'
 import StopIcon from '@mui/icons-material/Stop'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import MarkDown from 'react-markdown'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import remarkGfm from 'remark-gfm'
+import remarkBreaks from 'remark-breaks'
 import {
   alpha,
   Avatar,
@@ -46,7 +51,7 @@ interface Message {
   id: string
   role: 'user' | 'assistant'
   content: string
-  type?: 'ai' | 'search' // ai: AI知识库回答, search: 搜索帖子回答
+  type?: 'ai' | 'search' | 'need_human' // ai: AI知识库回答, search: 搜索帖子回答, need_human: 转人工
   sources?: ModelDiscussionListItem[] // 引用帖子
   discCount?: number // 搜索结果数量
   summary?: string // 智能总结
@@ -330,6 +335,12 @@ export default function CustomerServiceContent({
               }
             }
 
+            // 检查是否是 need_human 消息（根据后端返回的标识或内容特征）
+            if (item.bot && item.need_human) {
+              message.type = 'need_human'
+              message.showPostPrompt = true
+            }
+
             if (item.bot) {
               message.isComplete = true
               if (lastUserQuestion) {
@@ -478,9 +489,18 @@ export default function CustomerServiceContent({
   const callSummaryContent = useCallback(
     async (forumId: number, question: string, messageId: string, originalQuestion?: string) => {
       try {
+        // 准备headers：如果不在widget/iframe中且用户已登录，添加CSRF token
+        const headers: Record<string, string> = {}
+
+        const csrfToken = await getCsrfToken()
+        if (csrfToken) {
+          headers['X-CSRF-TOKEN'] = csrfToken
+        }
+
         const summarySseClient = new SSEClient<any>({
           url: '/api/discussion/summary/content',
           method: 'POST',
+          headers,  // 传入准备好的headers
           streamMode: true,
           onError: (err: Error) => {
             console.error('智能总结生成失败:', err)
@@ -854,6 +874,14 @@ export default function CustomerServiceContent({
       let answerText = ''
       const thinkingPatterns = [/思考[:：]/, /推理[:：]/, /分析[:：]/, /让我想想/, /我需要/, /正在思考/]
 
+      // 准备headers：如果不在widget/iframe中且用户已登录，添加CSRF token
+      const headers: Record<string, string> = {}
+
+      const csrfToken = await getCsrfToken()
+      if (csrfToken) {
+        headers['X-CSRF-TOKEN'] = csrfToken
+      }
+
       // 使用 Promise 来等待流式输出完成
       let hasReceivedData = false
 
@@ -862,10 +890,33 @@ export default function CustomerServiceContent({
         const askSseClient = new SSEClient<any>({
           url: '/api/discussion/ask',
           method: 'POST',
+          headers,  // 传入准备好的headers
           streamMode: true,
           onError: (err: Error) => {
             console.error('AI 回答生成失败:', err)
             const errorMessage = err.message || err.toString()
+
+            // 检查是否是 ratelimit 错误
+            if (errorMessage === 'ratelimit' || errorMessage.includes('ratelimit')) {
+              Alert.warning('请求过于频繁，请稍后再试', 3000)
+              setIsLoading(false)
+              setIsWaiting(false)
+              setIsAutoScrollEnabled(false)
+              setMessages((prev) => {
+                const newMessages = [...prev]
+                const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+                if (index !== -1) {
+                  newMessages[index] = {
+                    ...newMessages[index],
+                    content: '请求过于频繁，请稍后再试。',
+                    isComplete: true,
+                  }
+                }
+                return newMessages
+              })
+              resolve()
+              return
+            }
 
             // 检查是否是 session closed 错误
             if (errorMessage.toLowerCase().includes('session closed')) {
@@ -979,6 +1030,63 @@ export default function CustomerServiceContent({
         sseClientRef.current = askSseClient
 
         askSseClient.subscribe(requestBody, (data) => {
+          // 处理 need_human 事件
+          if (data && typeof data === 'object' && (data as any).event === 'need_human') {
+            const eventData = (data as any).data
+            let textContent = ''
+            if (typeof eventData === 'string') {
+              textContent = eventData
+            } else if (eventData && typeof eventData === 'object') {
+              textContent = eventData.content || eventData.text || eventData.message || ''
+            }
+
+            // 更新消息为 need_human 类型
+            setMessages((prev) => {
+              const newMessages = [...prev]
+              const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+              if (index !== -1) {
+                newMessages[index] = {
+                  ...newMessages[index],
+                  type: 'need_human',
+                  content: textContent,
+                  isComplete: true,
+                  showPostPrompt: true,
+                  originalQuestion: question,
+                  forumId: forumId || undefined,
+                }
+              }
+              return newMessages
+            })
+            setIsLoading(false)
+            setIsWaiting(false)
+            askSseClient.unsubscribe()
+            resolve()
+            return
+          }
+
+          // Check for ratelimit in JSON data (200 OK case)
+          if (data && typeof data === 'object' && (data as any).err === 'ratelimit') {
+            Alert.warning('请求过于频繁，请稍后再试', 3000)
+            setIsLoading(false)
+            setIsWaiting(false)
+            setIsAutoScrollEnabled(false)
+            setMessages((prev) => {
+              const newMessages = [...prev]
+              const index = newMessages.findIndex((m) => m.id === assistantMessageId)
+              if (index !== -1) {
+                newMessages[index] = {
+                  ...newMessages[index],
+                  content: '请求过于频繁，请稍后再试。',
+                  isComplete: true,
+                }
+              }
+              return newMessages
+            })
+            askSseClient.unsubscribe()
+            resolve()
+            return
+          }
+
           // 检测 session closed 错误
           let dataStr = ''
           if (typeof data === 'string') {
@@ -1189,7 +1297,28 @@ export default function CustomerServiceContent({
   }
 
   // 处理跳转到发帖页面
-  const handleGoToPost = (question: string, messageForumId?: number) => {
+  const handleGoToPost = (question: string, messageForumId?: number, messageId?: string) => {
+    // 检查是否有多个板块且未指定板块
+    const hasMultipleForums = forums.length > 1
+
+    // 如果有多个板块且未指定板块，显示板块选择器
+    if (hasMultipleForums && !messageForumId) {
+      // 更新消息，添加 needsForumSelection 标记
+      setMessages((prev) => {
+        const newMessages = [...prev]
+        const index = newMessages.findIndex((m) => m.id === messageId)
+        if (index !== -1) {
+          newMessages[index] = {
+            ...newMessages[index],
+            needsForumSelection: true,
+            pendingQuestion: question,
+          }
+        }
+        return newMessages
+      })
+      return
+    }
+
     // 优先使用消息中保存的 forumId，否则使用全局 forumId
     const targetForumId = messageForumId ?? forumId ?? forums[0]?.id
     const forum = forums.find((f) => f.id === targetForumId)
@@ -1315,6 +1444,29 @@ export default function CustomerServiceContent({
       await callSummaryContent(selectedForumId, question, messageId, question)
     },
     [callSummaryContent],
+  )
+
+  // 处理发帖的板块选择
+  const handleForumSelectForPost = useCallback(
+    (selectedForumId: number, question: string, messageId: string) => {
+      // 更新消息，移除板块选择标记
+      setMessages((prev) => {
+        const newMessages = [...prev]
+        const index = newMessages.findIndex((m) => m.id === messageId)
+        if (index !== -1) {
+          newMessages[index] = {
+            ...newMessages[index],
+            needsForumSelection: false,
+            forumId: selectedForumId,
+          }
+        }
+        return newMessages
+      })
+
+      // 直接调用 handleGoToPost，传入选中的板块 ID
+      handleGoToPost(question, selectedForumId)
+    },
+    [handleGoToPost],
   )
 
   // 处理新会话
@@ -1471,7 +1623,7 @@ export default function CustomerServiceContent({
               flex: 1,
               overflow: 'auto',
               py: 4,
-              px: isInIframe ? 1 : 0,
+              px: isInIframe ? 2 : 0,
               width: '800px',
               mx: 'auto',
               maxWidth: '100%',
@@ -1539,39 +1691,41 @@ export default function CustomerServiceContent({
                           }}
                         >
                           {/* 第一行：头像 + 机器人名字 */}
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 1,
-                            }}
-                          >
-                            <Avatar
-                              src={botAvatar}
+                          {!isInIframe && (
+                            <Box
                               sx={{
-                                background: botAvatar
-                                  ? 'transparent'
-                                  : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                                width: 40,
-                                height: 40,
-                                fontWeight: 600,
-                                boxShadow: 'none',
-                                flexShrink: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
                               }}
                             >
-                              {!botAvatar && botName[0]}
-                            </Avatar>
-                            <Typography
-                              variant='body2'
-                              sx={{
-                                fontWeight: 600,
-                                color: 'text.primary',
-                                fontSize: isInIframe ? '14px' : '16px',
-                              }}
-                            >
-                              {botName}
-                            </Typography>
-                          </Box>
+                              <Avatar
+                                src={botAvatar}
+                                sx={{
+                                  background: botAvatar
+                                    ? 'transparent'
+                                    : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                                  width: 40,
+                                  height: 40,
+                                  fontWeight: 600,
+                                  boxShadow: 'none',
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {!botAvatar && botName[0]}
+                              </Avatar>
+                              <Typography
+                                variant='body2'
+                                sx={{
+                                  fontWeight: 600,
+                                  color: 'text.primary',
+                                  fontSize: isInIframe ? '14px' : '16px',
+                                }}
+                              >
+                                {botName}
+                              </Typography>
+                            </Box>
+                          )}
 
                           {/* 第二行：消息内容 */}
                           <Box
@@ -1579,7 +1733,7 @@ export default function CustomerServiceContent({
                               display: 'flex',
                               gap: 1,
                               alignItems: 'flex-start',
-                              pl: 5, // 左边距对齐到内容区域
+                              pl: isInIframe ? 0 : 5, // 左边距对齐到内容区域
                             }}
                           >
                             {/* 消息气泡和快速操作按钮容器 */}
@@ -1589,7 +1743,7 @@ export default function CustomerServiceContent({
                                 gap: 1,
                                 alignItems: 'flex-start',
                                 flex: 1,
-                                maxWidth: 'calc(100% - 40px)',
+                                maxWidth: isInIframe ? '100%' : 'calc(100% - 40px)',
                               }}
                             >
                               {/* 消息气泡 */}
@@ -1630,6 +1784,8 @@ export default function CustomerServiceContent({
                                       px: 0.75,
                                       py: 0.25,
                                       borderRadius: 0.5,
+                                      whiteSpace: 'pre-wrap',
+                                      wordBreak: 'break-word',
                                     },
                                   }}
                                 >
@@ -1783,21 +1939,112 @@ export default function CustomerServiceContent({
                                             '& p, & h6': {
                                               fontSize: '14px',
                                               mb: 1,
+                                              lineHeight: 1.6,
                                             },
                                             '& a': {
-                                              color: 'inherit',
+                                              color: theme.palette.primary.main,
                                               textDecoration: 'none',
+                                              '&:hover': {
+                                                textDecoration: 'underline',
+                                              },
                                             },
                                             '& blockquote': {
-                                              mx: 2,
-                                              mt: '8px!important',
+                                              borderLeft: '4px solid',
+                                              borderColor: 'divider',
+                                              mx: 0,
+                                              pl: 2,
+                                              py: 1,
+                                              my: 1.5,
+                                              bgcolor: alpha(theme.palette.grey[500], 0.05),
+                                              borderRadius: '0 4px 4px 0',
+                                              color: 'text.secondary',
+                                            },
+                                            '& ul, & ol': {
+                                              pl: 3,
+                                              mb: 1.5,
+                                            },
+                                            '& li': {
+                                              mb: 0.5,
                                             },
                                             '& hr': {
-                                              borderColor: 'rgba(0, 0, 0, 0.06)',
+                                              borderColor: 'divider',
+                                              my: 2,
+                                            },
+                                            '& pre': {
+                                              m: '0.5rem 0',
+                                              p: 0,
+                                              bgcolor: 'transparent',
+                                              borderRadius: 2,
+                                              overflow: 'hidden',
+                                            },
+                                            // Prevent global code styles from affecting the syntax highlighter
+                                            '& pre code': {
+                                              bgcolor: 'transparent !important',
+                                              p: '0 !important',
+                                              borderRadius: '0 !important',
+                                              color: 'inherit !important',
+                                            },
+                                            '& table': {
+                                              borderCollapse: 'collapse',
+                                              width: '100%',
+                                              mb: 2,
+                                              display: 'block',
+                                              overflowX: 'auto',
+                                              border: '1px solid',
+                                              borderColor: 'divider',
+                                              borderRadius: 1,
+                                            },
+                                            '& th, & td': {
+                                              border: '1px solid',
+                                              borderColor: 'divider',
+                                              p: 1.5,
+                                              fontSize: '13px',
+                                            },
+                                            '& th': {
+                                              bgcolor: alpha(theme.palette.grey[500], 0.05),
+                                              fontWeight: 600,
+                                              textAlign: 'left',
                                             },
                                           }}
                                         >
-                                          <MarkDown >{message.content}</MarkDown>
+                                          <MarkDown
+                                            remarkPlugins={[remarkGfm, remarkBreaks]}
+                                            components={{
+                                              a: (props) => <a {...props} target='_blank' rel='noopener noreferrer' />,
+                                              code(props) {
+                                                const { children, className, node, ref, ...rest } = props
+                                                const match = /language-(\w+)/.exec(className || '')
+                                                const { inline } = props as any
+                                                const hasNewline = String(children).includes('\n')
+
+                                                if (match || (!inline && hasNewline)) {
+                                                  return (
+                                                    <SyntaxHighlighter
+                                                      {...rest}
+                                                      PreTag="div"
+                                                      children={String(children).replace(/\n$/, '')}
+                                                      language={match ? match[1] : 'text'}
+                                                      style={oneDark}
+                                                      customStyle={{
+                                                        margin: 0,
+                                                        borderRadius: '8px',
+                                                        fontSize: '13px',
+                                                        lineHeight: '1.5',
+                                                      }}
+                                                    />
+                                                  )
+                                                }
+
+                                                return (
+                                                  <code ref={ref} {...rest} className={className}>
+                                                    {children}
+                                                  </code>
+                                                )
+                                              },
+                                            }}
+                                          >
+                                            {message.content}
+                                          </MarkDown>
                                           {/* 中断提示 - 居中显示 */}
                                           {message.isInterrupted && (
                                             <Box
@@ -1847,9 +2094,10 @@ export default function CustomerServiceContent({
                                         </Box>
                                       )}
 
-                                      {/* 板块选择器 - 优化样式 */}
+                                      {/* 板块选择器 - 用于搜索 */}
                                       {message.needsForumSelection &&
                                         message.pendingQuestion &&
+                                        message.type === 'search' &&
                                         forums &&
                                         forums.length > 1 && (
                                           <Box sx={{ mt: 2 }}>
@@ -1869,6 +2117,52 @@ export default function CustomerServiceContent({
                                                     size='medium'
                                                     onClick={() =>
                                                       handleForumSelect(forum.id!, message.pendingQuestion!, message.id)
+                                                    }
+                                                    disabled={isLoading}
+                                                    sx={{
+                                                      textTransform: 'none',
+                                                      borderRadius: 2,
+                                                      px: 2,
+                                                      py: 1,
+                                                      borderColor: 'divider',
+                                                      '&:hover': {
+                                                        borderColor: 'primary.main',
+                                                        bgcolor: alpha(theme.palette.primary.main, 0.05),
+                                                      },
+                                                      fontWeight: 500,
+                                                    }}
+                                                  >
+                                                    {forum.name}
+                                                  </Button>
+                                                )
+                                              })}
+                                            </Stack>
+                                          </Box>
+                                        )}
+
+                                      {/* 板块选择器 - 用于发帖 */}
+                                      {message.needsForumSelection &&
+                                        message.pendingQuestion &&
+                                        message.type !== 'search' &&
+                                        forums &&
+                                        forums.length > 1 && (
+                                          <Box sx={{ mt: 2 }}>
+                                            <Typography
+                                              variant='subtitle2'
+                                              sx={{ mb: 1.5, fontWeight: 600, color: 'text.primary' }}
+                                            >
+                                              请选择板块发帖
+                                            </Typography>
+                                            <Stack direction='row' spacing={1} flexWrap='wrap' sx={{ gap: 1 }}>
+                                              {forums.map((forum) => {
+                                                if (!forum.id) return null
+                                                return (
+                                                  <Button
+                                                    key={forum.id}
+                                                    variant='outlined'
+                                                    size='medium'
+                                                    onClick={() =>
+                                                      handleForumSelectForPost(forum.id!, message.pendingQuestion!, message.id)
                                                     }
                                                     disabled={isLoading}
                                                     sx={{
@@ -1938,7 +2232,7 @@ export default function CustomerServiceContent({
                                       </IconButton>
                                     </Tooltip>
                                     <Typography variant='caption' sx={{ color: 'text.disabled', fontSize: '0.7rem' }}>
-                                      本回答由 AI 驱动，仅供参考
+                                      本回答由 {botName} AI 驱动，仅供参考
                                     </Typography>
                                   </Box>
                                 )}
@@ -1946,9 +2240,11 @@ export default function CustomerServiceContent({
                                 {/* 发帖提问按钮 - 放在气泡外部 */}
                                 {message.role === 'assistant' && (
                                   <>
+                                    {/* 只有不需要选择板块时才显示发帖按钮 */}
                                     {message.showPostPrompt &&
                                       message.originalQuestion &&
                                       message.isComplete &&
+                                      !message.needsForumSelection &&
                                       isLastAssistantMessage ? (
                                       <Box sx={{ mt: 1.5, pl: 0.5 }}>
                                         <Button
@@ -1958,6 +2254,7 @@ export default function CustomerServiceContent({
                                             handleGoToPost(
                                               message.originalQuestion!,
                                               message.forumId ?? message.sources?.[0]?.forum_id,
+                                              message.id,
                                             )
                                           }
                                           sx={{
@@ -2007,7 +2304,7 @@ export default function CustomerServiceContent({
                                         <Button
                                           variant='contained'
                                           size='small'
-                                          onClick={() => handleGoToPost(questionForPost, forumId || undefined)}
+                                          onClick={() => handleGoToPost(questionForPost, message.forumId ?? forumId ?? undefined, undefined)}
                                           disabled={isLoading}
                                           sx={{
                                             textTransform: 'none',
@@ -2045,21 +2342,23 @@ export default function CustomerServiceContent({
                           }}
                         >
                           {/* 头像 */}
-                          <UserAvatar
-                            user={displayUser}
-                            showSkeleton={false}
-                            containerSx={{ flexShrink: 0 }}
-                            sx={{
-                              width: 40,
-                              height: 40,
-                              fontSize: isInIframe ? '0.85rem' : '0.95rem',
-                              fontWeight: 600,
-                              color: theme.palette.primary.main,
-                              backgroundColor: 'transparent',
-                            }}
-                          >
-                            {userInitial}
-                          </UserAvatar>
+                          {!isInIframe && (
+                            <UserAvatar
+                              user={displayUser}
+                              showSkeleton={false}
+                              containerSx={{ flexShrink: 0 }}
+                              sx={{
+                                width: 40,
+                                height: 40,
+                                fontSize: isInIframe ? '0.85rem' : '0.95rem',
+                                fontWeight: 600,
+                                color: theme.palette.primary.main,
+                                backgroundColor: 'transparent',
+                              }}
+                            >
+                              {userInitial}
+                            </UserAvatar>
+                          )}
 
                           {/* 消息气泡 */}
                           <Box
@@ -2090,6 +2389,8 @@ export default function CustomerServiceContent({
                                   py: 0.25,
                                   borderRadius: 0.5,
                                   fontSize: '14px',
+                                  whiteSpace: 'pre-wrap',
+                                  wordBreak: 'break-word',
                                 },
                               }}
                             >
@@ -2113,7 +2414,7 @@ export default function CustomerServiceContent({
           </Box>
 
           {/* 底部输入区域 - 现代化设计 */}
-          <Box sx={{ pb: isInIframe ? 0 : 2, pt: 1, px: isInIframe ? 1 : 0 }}>
+          <Box sx={{ pb: isInIframe ? 0 : 2, pt: 1, px: isInIframe ? 2 : 0 }}>
             <Box sx={{ maxWidth: '800px', mx: 'auto' }}>
               {/* 新会话按钮 - 位于输入框左上方 */}
               <Box sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>

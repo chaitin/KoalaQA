@@ -89,7 +89,7 @@ async function fetchForumData(route_name: string, searchParams: any) {
       page: 1,
       size: 10,
       type: 'blog',
-      forum_id: forumInfo?.id,
+      forum_id: forumId,
     }
 
     // 并行获取数据
@@ -164,7 +164,7 @@ const Page = async (props: {
   const headersList = await headers()
   const searchParamsStr = headersList.get('x-search-params') || ''
   const pathname = headersList.get('x-pathname') || ''
-  
+
   // 在服务端获取所有数据
   const forumData = await fetchForumData(route_name, searchParams)
   const { forumId, forumInfo, groups } = forumData

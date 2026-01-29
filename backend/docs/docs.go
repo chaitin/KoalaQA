@@ -4683,6 +4683,38 @@ const docTemplate = `{
                 }
             }
         },
+        "/csrf": {
+            "get": {
+                "description": "get csrf",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "csrf"
+                ],
+                "summary": "get csrf",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/discussion": {
             "get": {
                 "description": "list discussions",
@@ -9723,6 +9755,9 @@ const docTemplate = `{
                 },
                 "role": {
                     "$ref": "#/definitions/model.UserRole"
+                },
+                "salt": {
+                    "type": "string"
                 },
                 "uid": {
                     "type": "integer"

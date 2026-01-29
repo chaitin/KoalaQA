@@ -60,6 +60,51 @@ class SSEClient<T> {
         const contentType = response.headers.get('content-type')
         const isEventStream = contentType?.includes('text/event-stream')
 
+        // 检查CSRF错误（在流式响应之前）
+        if (response.ok && !isRetry && !isEventStream) {
+          const clonedResponse = response.clone()
+          try {
+            const text = await clonedResponse.text()
+            // 尝试解析为JSON检查CSRF错误
+            try {
+              const json = JSON.parse(text)
+              if (json.data === 'csrf token mismatch' && typeof window !== 'undefined') {
+                console.log('[SSEClient] CSRF token mismatch detected, retrying with new token')
+                clearTimeout(timeoutId)
+
+                // 动态导入getCsrfToken和clearCsrfToken（避免循环依赖）
+                const { getCsrfToken, clearCsrfToken } = await import('@/api/httpClient')
+
+                // 先清空旧的token缓存
+                clearCsrfToken()
+
+                // 重新获取CSRF token
+                const newCsrfToken = await getCsrfToken()
+
+                if (newCsrfToken) {
+                  // 更新headers并重试
+                  const updatedHeaders = {
+                    ...(this.options.headers || {}),
+                    'X-CSRF-TOKEN': newCsrfToken,
+                  }
+
+                  // 创建新的SSEClient实例并重试
+                  const newClient = new SSEClient<T>({
+                    ...this.options,
+                    headers: updatedHeaders,
+                  })
+                  newClient.subscribe(body, onMessage, true) // isRetry = true
+                  return // 不继续处理当前响应
+                }
+              }
+            } catch (e) {
+              // 不是JSON，继续正常处理
+            }
+          } catch (e) {
+            console.warn('Failed to check CSRF error:', e)
+          }
+        }
+
         // 避免在流式响应上读取完整 body，导致流式输出阻塞
         if (response.ok && !this.options.streamMode && !isEventStream) {
           // 克隆响应以便可以多次读取
@@ -70,19 +115,54 @@ class SSEClient<T> {
         }
 
         if (response.status === 400 && !isRetry) {
-          // 克隆响应以便读取错误信息
           const clonedResponse = response.clone()
           try {
             const text = await clonedResponse.text()
-
+            const json = JSON.parse(text)
+            if (json.data === 'csrf token mismatch' && typeof window !== 'undefined') {
+              console.log('[SSEClient] CSRF token mismatch detected (400), retrying with new token')
+              clearTimeout(timeoutId)
+              const { getCsrfToken, clearCsrfToken } = await import('@/api/httpClient')
+              clearCsrfToken()
+              const newCsrfToken = await getCsrfToken()
+              if (newCsrfToken) {
+                const updatedHeaders = {
+                  ...(this.options.headers || {}),
+                  'X-CSRF-TOKEN': newCsrfToken,
+                }
+                const newClient = new SSEClient<T>({
+                  ...this.options,
+                  headers: updatedHeaders,
+                })
+                newClient.subscribe(body, onMessage, true)
+                return
+              }
+            }
           } catch (e) {
-            console.warn('Failed to read error response body:', e)
+            console.warn('Failed to check CSRF error in 400 response:', e)
           }
         }
 
         if (!response.ok) {
           clearTimeout(timeoutId)
-          throw new Error(`HTTP error! status: ${response.status}`)
+          let errorMessage = `HTTP error! status: ${response.status}`
+          try {
+            const errorText = await response.clone().text()
+            try {
+              const json = JSON.parse(errorText)
+              if (json.err === 'ratelimit') {
+                errorMessage = 'ratelimit'
+              } else if (json.msg) {
+                errorMessage = json.msg
+              }
+            } catch {
+              // Not JSON, ignore
+            }
+          } catch (e) {
+            console.warn('Failed to read error response:', e)
+          }
+
+          throw new Error(errorMessage)
         }
         if (!response.body) {
           clearTimeout(timeoutId)
