@@ -2272,6 +2272,7 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 				Source:   req.Source,
 				Bot:      true,
 				Canceled: false,
+				Summary:  false,
 				Content:  humanResponse,
 			})
 			if err != nil {

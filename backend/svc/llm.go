@@ -264,7 +264,15 @@ func (l *LLM) CheckRequestHuman(ctx context.Context, question string) (bool, err
 		return false, err
 	}
 
-	requestHuman, _ := strconv.ParseBool(strings.TrimSpace(aiRes))
+	requestHuman, parseErr := strconv.ParseBool(strings.TrimSpace(aiRes))
+	if parseErr != nil {
+		l.logger.WithContext(ctx).
+			WithErr(parseErr).
+			With("ai_response", aiRes).
+			Warn("failed to parse LLM response as boolean")
+		return false, nil
+	}
+
 	l.logger.WithContext(ctx).
 		With("question", question).
 		With("request_human", requestHuman).
