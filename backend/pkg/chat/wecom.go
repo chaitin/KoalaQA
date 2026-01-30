@@ -302,7 +302,7 @@ func (w *wecom) Stop() {}
 
 func newWecom(cfg model.SystemChatConfig, callback BotCallback) (Bot, error) {
 	return &wecom{
-		logger:      glog.Module("chat", "wecom"),
+		logger:      glog.Module("chat", "wecom_service"),
 		cfg:         cfg,
 		botCallback: callback,
 	}, nil

@@ -20,15 +20,16 @@ func init() {
 }
 
 const (
-	SystemKeyPublicAddress = "public_address"
-	SystemKeyAuth          = "auth"
-	SystemKeyMachineID     = "machine_id"
-	SystemKeyBrand         = "brand"
-	SystemKeyDiscussion    = "discussion"
-	SystemKeySEO           = "seo"
-	SystemKeyWebPlugin     = "web_plugin"
-	SystemKeyChatDingtalk  = "chat_dingtalk"
-	SystemKeyChatWecom     = "chat_wecom"
+	SystemKeyPublicAddress    = "public_address"
+	SystemKeyAuth             = "auth"
+	SystemKeyMachineID        = "machine_id"
+	SystemKeyBrand            = "brand"
+	SystemKeyDiscussion       = "discussion"
+	SystemKeySEO              = "seo"
+	SystemKeyWebPlugin        = "web_plugin"
+	SystemKeyChatDingtalk     = "chat_dingtalk"
+	SystemKeyChatWecom        = "chat_wecom"
+	SystemKeyChatWecomService = "chat_webcom_service"
 )
 
 type PublicAddress struct {

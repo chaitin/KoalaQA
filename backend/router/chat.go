@@ -94,12 +94,12 @@ func (c *chat) WecomServiceAnswer(ctx *context.Context) {
 }
 
 func (c *chat) Route(h server.Handler) {
-	g := h.Group("/chat")
+	// g := h.Group("/chat")
 
 	{
-		botG := g.Group("/bot")
-		botG.GET("/wecom", c.WecomVerify)
-		botG.POST("/wecom", c.WecomChat)
+		// botG := g.Group("/bot")
+		// botG.GET("/wecom", c.WecomVerify)
+		// botG.POST("/wecom", c.WecomChat)
 		// botG.GET("/wecom_intelligent", c.WecomIntelligentVerify)
 		// botG.POST("/wecom_intelligent", c.WecomIntelligentChat)
 		// botG.GET("/wecom_service", c.WecomServiceVerify)

@@ -254,7 +254,7 @@ type ChatUpdateReq struct {
 }
 
 func (c *Chat) checkConfig(typ chat.Type, cfg model.SystemChatConfig) error {
-	if cfg.ClientID == "" {
+	if typ != chat.TypeWecomService && cfg.ClientID == "" {
 		return errors.New("empty client_id")
 	}
 
@@ -267,7 +267,7 @@ func (c *Chat) checkConfig(typ chat.Type, cfg model.SystemChatConfig) error {
 		if cfg.TemplateID == "" {
 			return errors.New("empty template_id")
 		}
-	case chat.TypeWecom:
+	case chat.TypeWecom, chat.TypeWecomService:
 		if cfg.CorpID == "" {
 			return errors.New("empty corp_id")
 		}
@@ -380,12 +380,13 @@ func newChat(lc fx.Lifecycle, sys *repo.System, disc *Discussion, publicAddr *Pu
 		cache:         sync.Map{},
 		systemKeyMap: map[chat.Type]string{
 			chat.TypeDingtalk: model.SystemKeyChatDingtalk,
-			chat.TypeWecom:    model.SystemKeyChatWecom,
+			// chat.TypeWecom:        model.SystemKeyChatWecom,
+			// chat.TypeWecomService: model.SystemKeyChatWecomService,
 		},
 		logger: glog.Module("svc", "chat"),
 	}
 	lc.Append(fx.StartHook(func(ctx context.Context) error {
-		for _, typ := range []chat.Type{chat.TypeDingtalk, chat.TypeWecom} {
+		for typ := range c.systemKeyMap {
 			cache, err := c.getCache(ctx, typ)
 			if err != nil {
 				return err
