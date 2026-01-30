@@ -56,10 +56,10 @@ const dingBotSchema = z
 
 const weComBotSchema = z
   .object({
-    client_id: z.string(),
+    corp_id: z.string(),
     client_secret: z.string(),
-    token: z.string(),
-    encoding_aes_key: z.string(),
+    client_token: z.string(),
+    aes_key: z.string(),
     enabled: z.boolean(),
   })
   .superRefine((data, ctx) => {
@@ -67,11 +67,11 @@ const weComBotSchema = z
       return;
     }
 
-    if (!data.client_id.trim()) {
+    if (!data.corp_id.trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: '必填',
-        path: ['client_id'],
+        path: ['corp_id'],
       });
     }
 
@@ -83,19 +83,19 @@ const weComBotSchema = z
       });
     }
 
-    if (!data.token.trim()) {
+    if (!data.client_token.trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: '必填',
-        path: ['token'],
+        path: ['client_token'],
       });
     }
 
-    if (!data.encoding_aes_key.trim()) {
+    if (!data.aes_key.trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: '必填',
-        path: ['encoding_aes_key'],
+        path: ['aes_key'],
       });
     }
   });
@@ -170,10 +170,10 @@ const ChatConfig = () => {
         enabled: false,
       },
       weComBot: {
-        client_id: '',
+        corp_id: '',
         client_secret: '',
-        token: '',
-        encoding_aes_key: '',
+        client_token: '',
+        aes_key: '',
         enabled: false,
       },
     },
@@ -215,10 +215,10 @@ const ChatConfig = () => {
             enabled: dingRes?.enabled || false,
           },
           weComBot: {
-            client_id: weComRes?.config?.client_id || '',
+            corp_id: weComRes?.config?.corp_id || '',
             client_secret: weComRes?.config?.client_secret || '',
-            token: weComRes?.config?.token || '',
-            encoding_aes_key: weComRes?.config?.encoding_aes_key || '',
+            client_token: weComRes?.config?.client_token || '',
+            aes_key: weComRes?.config?.aes_key || '',
             enabled: weComRes?.enabled || false,
           },
         });
@@ -278,10 +278,10 @@ const ChatConfig = () => {
         await putAdminChat({
           type: ChatType.TypeWecom,
           config: {
-            client_id: formData.weComBot.client_id,
+            corp_id: formData.weComBot.corp_id,
             client_secret: formData.weComBot.client_secret,
-            token: formData.weComBot.token,
-            encoding_aes_key: formData.weComBot.encoding_aes_key,
+            client_token: formData.weComBot.client_token,
+            aes_key: formData.weComBot.aes_key,
           },
           enabled: formData.weComBot.enabled,
         });
@@ -628,12 +628,12 @@ const ChatConfig = () => {
                   </Stack>
                 </Box>
                 <TextField
-                  {...register('weComBot.client_id')}
+                  {...register('weComBot.corp_id')}
                   placeholder=""
                   fullWidth
                   size="small"
-                  error={!!errors.weComBot?.client_id}
-                  helperText={errors.weComBot?.client_id?.message}
+                  error={!!errors.weComBot?.corp_id}
+                  helperText={errors.weComBot?.corp_id?.message}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#f6f8fa' } }}
                 />
               </Stack>
@@ -664,12 +664,12 @@ const ChatConfig = () => {
                   </Stack>
                 </Box>
                 <TextField
-                  {...register('weComBot.token')}
+                  {...register('weComBot.client_token')}
                   placeholder=""
                   fullWidth
                   size="small"
-                  error={!!errors.weComBot?.token}
-                  helperText={errors.weComBot?.token?.message}
+                  error={!!errors.weComBot?.client_token}
+                  helperText={errors.weComBot?.client_token?.message}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#f6f8fa' } }}
                 />
               </Stack>
@@ -682,12 +682,12 @@ const ChatConfig = () => {
                   </Stack>
                 </Box>
                 <TextField
-                  {...register('weComBot.encoding_aes_key')}
+                  {...register('weComBot.aes_key')}
                   placeholder=""
                   fullWidth
                   size="small"
-                  error={!!errors.weComBot?.encoding_aes_key}
-                  helperText={errors.weComBot?.encoding_aes_key?.message}
+                  error={!!errors.weComBot?.aes_key}
+                  helperText={errors.weComBot?.aes_key?.message}
                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#f6f8fa' } }}
                 />
               </Stack>
