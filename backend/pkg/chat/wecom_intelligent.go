@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"strings"
 	"sync"
 
 	"github.com/chaitin/koalaqa/model"
@@ -137,17 +136,12 @@ func (w *wecomIntelligent) StreamText(ctx context.Context, req VerifyReq) (strin
 
 	switch decryptReq.Msgtype {
 	case "text":
-		state := &streamState{
-			question: decryptReq.Text.Content,
-			mutex:    sync.Mutex{},
-			stream:   strings.Builder{},
-			Done:     true,
-		}
+		state := newSteamState()
 		_, loaded := w.cache.LoadOrStore(decryptReq.Msgid, state)
 		if !loaded {
 			stream, err := w.botCallback(ctx, BotReq{
 				SessionID: "wecom_" + decryptReq.Msgid,
-				Question:  state.question,
+				Question:  decryptReq.Text.Content,
 			})
 			if err != nil {
 				logger.WithErr(err).Error("bot callback failed")
@@ -191,7 +185,7 @@ func (w *wecomIntelligent) StreamText(ctx context.Context, req VerifyReq) (strin
 		}
 
 		state := stateI.(*streamState)
-		content := state.Text()
+		content := state.Text(false)
 
 		if content == "" {
 			content = "<think>正在查找相关信息...</think>"

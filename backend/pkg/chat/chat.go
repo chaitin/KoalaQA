@@ -24,10 +24,21 @@ func (d *accessToken) expired() bool {
 }
 
 type streamState struct {
-	mutex    sync.Mutex
-	question string
-	stream   strings.Builder
-	Done     bool
+	mutex   sync.Mutex
+	c       chan string
+	stream  strings.Builder
+	Visited bool
+	Done    bool
+}
+
+func newSteamState() *streamState {
+	return &streamState{
+		mutex:   sync.Mutex{},
+		c:       make(chan string, 8),
+		stream:  strings.Builder{},
+		Visited: false,
+		Done:    false,
+	}
 }
 
 func (s *streamState) Append(data string, done bool) {
@@ -36,16 +47,27 @@ func (s *streamState) Append(data string, done bool) {
 
 	if data != "" {
 		s.stream.WriteString(data)
+		if s.Visited {
+			select {
+			case s.c <- data:
+			default:
+			}
+		}
 	}
 
 	if done {
 		s.Done = done
+		close(s.c)
 	}
 }
 
-func (s *streamState) Text() string {
+func (s *streamState) Text(visited bool) string {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
+
+	if visited {
+		return <-s.c
+	}
 
 	return s.stream.String()
 }

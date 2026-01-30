@@ -7,7 +7,6 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -347,12 +346,7 @@ func (w *wecomService) chat(ctx context.Context, logger *glog.Logger, msg *wecom
 	}
 
 	sessionID := uuid.NewString()
-	w.stateManager.Set(sessionID, &streamState{
-		mutex:    sync.Mutex{},
-		question: lastMsg.Text.Content,
-		stream:   strings.Builder{},
-		Done:     false,
-	})
+	w.stateManager.Set(sessionID, newSteamState())
 
 	err = w.sendURL(ctx, lastMsg.ExternalUserid, lastMsg.OpenKfid, sessionID, lastMsg.Text.Content)
 	if err != nil {
@@ -362,6 +356,8 @@ func (w *wecomService) chat(ctx context.Context, logger *glog.Logger, msg *wecom
 	}
 
 	go func() {
+		defer w.stateManager.Delete(sessionID)
+
 		stream, err := w.botCallback(ctx, BotReq{
 			SessionID: sessionID,
 			Question:  lastMsg.Text.Content,
