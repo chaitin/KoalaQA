@@ -150,6 +150,7 @@ func (c *Chat) botCallback(ctx context.Context, req chat.BotReq) (*llm.Stream[st
 		}
 		defer summaryStream.Close()
 
+		first := true
 		for {
 			item, _, ok := summaryStream.Text(ctx)
 			if !ok {
@@ -174,6 +175,10 @@ func (c *Chat) botCallback(ctx context.Context, req chat.BotReq) (*llm.Stream[st
 
 				wrapStream.RecvOne(fmt.Sprintf("> [%s](%s)\n>\n", discItem.Title, publicAddr.FullURL("/"+forums[0].RouteName+"/"+discItem.UUID)), false)
 			case "text":
+				if first {
+					item.Content = "\n" + item.Content
+					first = false
+				}
 				wrapStream.RecvOne(item.Content, false)
 			}
 		}
@@ -380,7 +385,7 @@ func newChat(lc fx.Lifecycle, sys *repo.System, disc *Discussion, publicAddr *Pu
 			}
 
 			if cache.bot == nil {
-				return nil
+				continue
 			}
 
 			err = cache.bot.Start()
