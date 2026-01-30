@@ -54,7 +54,58 @@ const dingBotSchema = z
     }
   });
 
-type DingBotFormData = z.infer<typeof dingBotSchema>;
+const weComBotSchema = z
+  .object({
+    client_id: z.string(),
+    client_secret: z.string(),
+    token: z.string(),
+    encoding_aes_key: z.string(),
+    enabled: z.boolean(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.enabled) {
+      return;
+    }
+
+    if (!data.client_id.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: '必填',
+        path: ['client_id'],
+      });
+    }
+
+    if (!data.client_secret.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: '必填',
+        path: ['client_secret'],
+      });
+    }
+
+    if (!data.token.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: '必填',
+        path: ['token'],
+      });
+    }
+
+    if (!data.encoding_aes_key.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: '必填',
+        path: ['encoding_aes_key'],
+      });
+    }
+  });
+
+const formSchema = z.object({
+  dingBot: dingBotSchema,
+  weComBot: weComBotSchema,
+});
+
+type FormData = z.infer<typeof formSchema>;
 
 const SectionTitle = ({ title }: { title: string }) => (
   <Box
@@ -101,7 +152,7 @@ const ChatConfig = () => {
   const [origin, setOrigin] = useState('');
   const [originalState, setOriginalState] = useState<OriginalState | null>(null);
 
-  // DingBot Form
+  // Bot Form
   const {
     register,
     handleSubmit,
@@ -109,17 +160,27 @@ const ChatConfig = () => {
     reset,
     watch,
     setValue,
-  } = useForm<DingBotFormData>({
-    resolver: zodResolver(dingBotSchema),
+  } = useForm<FormData>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      client_id: '',
-      client_secret: '',
-      template_id: '',
-      enabled: false,
+      dingBot: {
+        client_id: '',
+        client_secret: '',
+        template_id: '',
+        enabled: false,
+      },
+      weComBot: {
+        client_id: '',
+        client_secret: '',
+        token: '',
+        encoding_aes_key: '',
+        enabled: false,
+      },
     },
   });
 
-  const dingEnabled = watch('enabled');
+  const dingEnabled = watch('dingBot.enabled');
+  const weComEnabled = watch('weComBot.enabled');
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -143,15 +204,24 @@ const ChatConfig = () => {
         }
 
         // Load DingBot Config
-        const chatRes = await getAdminChat({ type: ChatType.TypeDingtalk });
-        if (chatRes) {
-          reset({
-            client_id: chatRes.config?.client_id || '',
-            client_secret: chatRes.config?.client_secret || '',
-            template_id: chatRes.config?.template_id || '',
-            enabled: chatRes.enabled || false,
-          });
-        }
+        const dingRes = await getAdminChat({ type: ChatType.TypeDingtalk });
+        const weComRes = await getAdminChat({ type: ChatType.TypeWecom });
+
+        reset({
+          dingBot: {
+            client_id: dingRes?.config?.client_id || '',
+            client_secret: dingRes?.config?.client_secret || '',
+            template_id: dingRes?.config?.template_id || '',
+            enabled: dingRes?.enabled || false,
+          },
+          weComBot: {
+            client_id: weComRes?.config?.client_id || '',
+            client_secret: weComRes?.config?.client_secret || '',
+            token: weComRes?.config?.token || '',
+            encoding_aes_key: weComRes?.config?.encoding_aes_key || '',
+            enabled: weComRes?.enabled || false,
+          },
+        });
       } catch (error) {
         console.error('加载配置失败:', error);
         message.error('加载配置失败');
@@ -171,7 +241,7 @@ const ChatConfig = () => {
 
   const hasUnsavedChanges = webPluginChanged || isDirty;
 
-  const handleSave = async (dingData?: DingBotFormData) => {
+  const handleSave = async (formData?: FormData) => {
     if (loading) return;
     setLoading(true);
     try {
@@ -191,18 +261,32 @@ const ChatConfig = () => {
         });
       }
 
-      // Save DingBot if form is dirty and data is provided
-      if (isDirty && dingData) {
+      // Save Bots if form is dirty and data is provided
+      if (isDirty && formData) {
+        // Save DingBot
         await putAdminChat({
           type: ChatType.TypeDingtalk,
           config: {
-            client_id: dingData.client_id,
-            client_secret: dingData.client_secret,
-            template_id: dingData.template_id,
+            client_id: formData.dingBot.client_id,
+            client_secret: formData.dingBot.client_secret,
+            template_id: formData.dingBot.template_id,
           },
-          enabled: dingData.enabled,
+          enabled: formData.dingBot.enabled,
         });
-        reset(dingData); // Reset dirty state with new data
+
+        // Save WeComBot
+        await putAdminChat({
+          type: ChatType.TypeWecom,
+          config: {
+            client_id: formData.weComBot.client_id,
+            client_secret: formData.weComBot.client_secret,
+            token: formData.weComBot.token,
+            encoding_aes_key: formData.weComBot.encoding_aes_key,
+          },
+          enabled: formData.weComBot.enabled,
+        });
+
+        reset(formData); // Reset dirty state with new data
       }
 
       message.success('配置已保存');
@@ -393,7 +477,7 @@ const ChatConfig = () => {
               row
               value={dingEnabled ? 'enabled' : 'disabled'}
               onChange={(e) => {
-                setValue('enabled', e.target.value === 'enabled', { shouldDirty: true });
+                setValue('dingBot.enabled', e.target.value === 'enabled', { shouldDirty: true });
               }}
             >
               <FormControlLabel
@@ -409,23 +493,24 @@ const ChatConfig = () => {
             </RadioGroup>
           </Stack>
 
-          {dingEnabled && <>  <Stack direction="row" alignItems="flex-start">
-            <Box sx={{ width: 120, flexShrink: 0, pt: 1 }}>
-              <Stack direction="row">
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>Client ID</Typography>
-                <Typography variant="body2" color="error.main" sx={{ ml: 0.5 }}>*</Typography>
-              </Stack>
-            </Box>
-            <TextField
-              {...register('client_id')}
-              placeholder=""
-              fullWidth
-              size="small"
-              error={!!errors.client_id}
-              helperText={errors.client_id?.message}
-              sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#f6f8fa' } }}
-            />
-          </Stack>
+          {dingEnabled && <>
+            <Stack direction="row" alignItems="flex-start">
+              <Box sx={{ width: 120, flexShrink: 0, pt: 1 }}>
+                <Stack direction="row">
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>Client ID</Typography>
+                  <Typography variant="body2" color="error.main" sx={{ ml: 0.5 }}>*</Typography>
+                </Stack>
+              </Box>
+              <TextField
+                {...register('dingBot.client_id')}
+                placeholder=""
+                fullWidth
+                size="small"
+                error={!!errors.dingBot?.client_id}
+                helperText={errors.dingBot?.client_id?.message}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#f6f8fa' } }}
+              />
+            </Stack>
 
             <Stack direction="row" alignItems="flex-start">
               <Box sx={{ width: 120, flexShrink: 0, pt: 1 }}>
@@ -435,12 +520,12 @@ const ChatConfig = () => {
                 </Stack>
               </Box>
               <TextField
-                {...register('client_secret')}
+                {...register('dingBot.client_secret')}
                 placeholder=""
                 fullWidth
                 size="small"
-                error={!!errors.client_secret}
-                helperText={errors.client_secret?.message}
+                error={!!errors.dingBot?.client_secret}
+                helperText={errors.dingBot?.client_secret?.message}
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#f6f8fa' } }}
               />
             </Stack>
@@ -453,16 +538,164 @@ const ChatConfig = () => {
                 </Stack>
               </Box>
               <TextField
-                {...register('template_id')}
+                {...register('dingBot.template_id')}
                 placeholder="> 钉钉开发平台 > 卡片平台 > 模板列表 > 模板 ID"
                 fullWidth
                 size="small"
-                error={!!errors.template_id}
-                helperText={errors.template_id?.message}
+                error={!!errors.dingBot?.template_id}
+                helperText={errors.dingBot?.template_id?.message}
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#f6f8fa' } }}
               />
-            </Stack></>}
+            </Stack>
+          </>}
         </Stack>
+
+        <SectionTitle title="企业微信客服" />
+        <Stack spacing={2} sx={{ pl: 2 }}>
+          <Stack direction="row" alignItems="center">
+            <Typography variant="body2" sx={{ minWidth: '120px', color: 'text.secondary' }}>
+              企业微信客服
+            </Typography>
+            <RadioGroup
+              row
+              value={weComEnabled ? 'enabled' : 'disabled'}
+              onChange={(e) => {
+                setValue('weComBot.enabled', e.target.value === 'enabled', { shouldDirty: true });
+              }}
+            >
+              <FormControlLabel
+                value="disabled"
+                control={<Radio size="small" />}
+                label={<Typography variant="body2">禁用</Typography>}
+              />
+              <FormControlLabel
+                value="enabled"
+                control={<Radio size="small" />}
+                label={<Typography variant="body2">启用</Typography>}
+              />
+            </RadioGroup>
+          </Stack>
+
+          {weComEnabled && (
+            <>
+              <Stack direction="row" alignItems="flex-start">
+                <Typography variant="body2" sx={{ minWidth: '120px', pt: 1.5, color: 'text.secondary' }}>
+                  回调地址
+                </Typography>
+                <Box sx={{ flex: 1, maxWidth: '600px' }}>
+                  <Paper
+                    variant="outlined"
+                    sx={{
+                      p: 1.5,
+                      bgcolor: 'action.hover',
+                      border: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      fontFamily: 'monospace',
+                      fontSize: '0.875rem',
+                      color: 'text.primary',
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      component="code"
+                      sx={{
+                        fontFamily: 'monospace',
+                        wordBreak: 'break-all',
+                        mr: 2,
+                        userSelect: 'all',
+                      }}
+                    >
+                      {`${origin}/api/inte/wecom/callback`}
+                    </Typography>
+                    <CopyToClipboard text={`${origin}/api/inte/wecom/callback`} onCopy={() => message.success('复制成功')}>
+                      <Tooltip title="复制">
+                        <IconButton size="small">
+                          <ContentCopyIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </CopyToClipboard>
+                  </Paper>
+                </Box>
+              </Stack>
+
+              <Stack direction="row" alignItems="flex-start">
+                <Box sx={{ width: 120, flexShrink: 0, pt: 1 }}>
+                  <Stack direction="row">
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>企业 ID</Typography>
+                    <Typography variant="body2" color="error.main" sx={{ ml: 0.5 }}>*</Typography>
+                  </Stack>
+                </Box>
+                <TextField
+                  {...register('weComBot.client_id')}
+                  placeholder=""
+                  fullWidth
+                  size="small"
+                  error={!!errors.weComBot?.client_id}
+                  helperText={errors.weComBot?.client_id?.message}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#f6f8fa' } }}
+                />
+              </Stack>
+
+              <Stack direction="row" alignItems="flex-start">
+                <Box sx={{ width: 120, flexShrink: 0, pt: 1 }}>
+                  <Stack direction="row">
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>Corp Secret</Typography>
+                    <Typography variant="body2" color="error.main" sx={{ ml: 0.5 }}>*</Typography>
+                  </Stack>
+                </Box>
+                <TextField
+                  {...register('weComBot.client_secret')}
+                  placeholder=""
+                  fullWidth
+                  size="small"
+                  error={!!errors.weComBot?.client_secret}
+                  helperText={errors.weComBot?.client_secret?.message}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#f6f8fa' } }}
+                />
+              </Stack>
+
+              <Stack direction="row" alignItems="flex-start">
+                <Box sx={{ width: 120, flexShrink: 0, pt: 1 }}>
+                  <Stack direction="row">
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>Token</Typography>
+                    <Typography variant="body2" color="error.main" sx={{ ml: 0.5 }}>*</Typography>
+                  </Stack>
+                </Box>
+                <TextField
+                  {...register('weComBot.token')}
+                  placeholder=""
+                  fullWidth
+                  size="small"
+                  error={!!errors.weComBot?.token}
+                  helperText={errors.weComBot?.token?.message}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#f6f8fa' } }}
+                />
+              </Stack>
+
+              <Stack direction="row" alignItems="flex-start">
+                <Box sx={{ width: 120, flexShrink: 0, pt: 1 }}>
+                  <Stack direction="row">
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>Encoding Aes Key</Typography>
+                    <Typography variant="body2" color="error.main" sx={{ ml: 0.5 }}>*</Typography>
+                  </Stack>
+                </Box>
+                <TextField
+                  {...register('weComBot.encoding_aes_key')}
+                  placeholder=""
+                  fullWidth
+                  size="small"
+                  error={!!errors.weComBot?.encoding_aes_key}
+                  helperText={errors.weComBot?.encoding_aes_key?.message}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#f6f8fa' } }}
+                />
+              </Stack>
+            </>
+          )}
+        </Stack>
+
+
       </Box>
     </Card>
   );

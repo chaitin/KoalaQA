@@ -684,6 +684,8 @@ export interface ModelSystemChatConfig {
   client_id?: string;
   client_secret?: string;
   template_id?: string;
+  token?: string;
+  encoding_aes_key?: string;
 }
 
 export interface ModelSystemDiscussion {
@@ -1512,25 +1514,25 @@ export interface DeleteAdminKbKbIdParams {
 
 export interface GetAdminKbKbIdDocumentParams {
   file_type?:
-    | 0
-    | 1
-    | 2
-    | 3
-    | 4
-    | 5
-    | 6
-    | 7
-    | 8
-    | 9
-    | 10
-    | 11
-    | 12
-    | 13
-    | 14
-    | 15
-    | 16
-    | 17
-    | 18;
+  | 0
+  | 1
+  | 2
+  | 3
+  | 4
+  | 5
+  | 6
+  | 7
+  | 8
+  | 9
+  | 10
+  | 11
+  | 12
+  | 13
+  | 14
+  | 15
+  | 16
+  | 17
+  | 18;
   /** @min 1 */
   page?: number;
   /** @min 1 */
@@ -1562,25 +1564,25 @@ export interface DeleteAdminKbKbIdDocumentDocIdParams {
 
 export interface GetAdminKbKbIdQuestionParams {
   file_type?:
-    | 0
-    | 1
-    | 2
-    | 3
-    | 4
-    | 5
-    | 6
-    | 7
-    | 8
-    | 9
-    | 10
-    | 11
-    | 12
-    | 13
-    | 14
-    | 15
-    | 16
-    | 17
-    | 18;
+  | 0
+  | 1
+  | 2
+  | 3
+  | 4
+  | 5
+  | 6
+  | 7
+  | 8
+  | 9
+  | 10
+  | 11
+  | 12
+  | 13
+  | 14
+  | 15
+  | 16
+  | 17
+  | 18;
   /** @min 1 */
   page?: number;
   /** @min 1 */
