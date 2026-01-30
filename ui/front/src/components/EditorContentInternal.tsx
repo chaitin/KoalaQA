@@ -47,15 +47,15 @@ const EditorContentInternal: React.FC<MarkDownProps> = (props) => {
     },
     onTocUpdate: onTocUpdate
       ? (toc: any) => {
-          try {
-            if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
-              if (Array.isArray(toc) && toc.length > 0) {
-                ;(window as any).__lastToc = toc
-              }
-              window.dispatchEvent(new CustomEvent('toc-update', { detail: toc } as any))
+        try {
+          if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
+            if (Array.isArray(toc) && toc.length > 0) {
+              ; (window as any).__lastToc = toc
             }
-          } catch {}
-        }
+            window.dispatchEvent(new CustomEvent('toc-update', { detail: toc } as any))
+          }
+        } catch { }
+      }
       : undefined,
   } as Parameters<typeof useTiptap>[0] & ExtendedTiptapOptions)
 
@@ -155,8 +155,8 @@ const EditorContentInternal: React.FC<MarkDownProps> = (props) => {
           display: 'none',
         },
         '& .link-wrapper a': {
-          color: 'text.secondary',
-          textDecoration: 'underline',
+          color: 'primary.main',
+          textDecoration: 'none',
         },
         ...sx,
       }}
