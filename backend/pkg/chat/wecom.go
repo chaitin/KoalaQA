@@ -139,20 +139,20 @@ func (w *wecom) verify(ctx context.Context, req VerifyReq) (string, error) {
 }
 
 func (w *wecom) chat(ctx context.Context, logger *glog.Logger, question string, fromUser string) {
-	userInfo, err := w.getUserInfo(fromUser)
-	if err != nil {
-		logger.WithErr(err).Warn("get user info failed")
-		return
-	}
+	// userInfo, err := w.getUserInfo(fromUser)
+	// if err != nil {
+	// 	logger.WithErr(err).Warn("get user info failed")
+	// 	return
+	// }
 
-	err = w.chatText(ctx, question, userInfo)
+	err := w.chatText(ctx, question, fromUser)
 	if err != nil {
 		logger.WithErr(err).Warn("chat text failed")
 		return
 	}
 }
 
-func (w *wecom) chatText(ctx context.Context, question string, user *wecomUserInfo) error {
+func (w *wecom) chatText(ctx context.Context, question string, fromUser string) error {
 	stream, err := w.botCallback(ctx, BotReq{
 		SessionID: uuid.NewString(),
 		Question:  question,
@@ -175,7 +175,7 @@ func (w *wecom) chatText(ctx context.Context, question string, user *wecomUserIn
 
 		builder.WriteString(content)
 		if builder.Len() > 2000 {
-			err = w.sendTextRes(builder.String(), user.Name)
+			err = w.sendTextRes(builder.String(), fromUser)
 			if err != nil {
 				return err
 			}
@@ -185,7 +185,7 @@ func (w *wecom) chatText(ctx context.Context, question string, user *wecomUserIn
 	}
 
 	if builder.Len() > 0 {
-		err = w.sendTextRes(builder.String(), user.Name)
+		err = w.sendTextRes(builder.String(), fromUser)
 		if err != nil {
 			return err
 		}
@@ -235,11 +235,12 @@ func (w *wecom) sendTextRes(response string, touser string) error {
 }
 
 func (w *wecom) StreamText(ctx context.Context, req VerifyReq) (string, error) {
-	logger := w.logger.WithContext(ctx).With("req", req)
-	logger.Info("receive wecom stream text req")
 	if req.OnlyVerify {
 		return w.verify(ctx, req)
 	}
+
+	logger := w.logger.WithContext(ctx).With("req", req)
+	logger.Info("receive wecom stream text req")
 
 	wx := wxbizmsgcrypt.NewWXBizMsgCrypt(w.cfg.Token, w.cfg.AESKey, w.cfg.CorpID, wxbizmsgcrypt.XmlType)
 	decryptBytes, cryptErr := wx.DecryptMsg(req.MsgSignature, req.Timestamp, req.Nonce, []byte(req.Content))
@@ -299,7 +300,7 @@ func (w *wecom) Start() error {
 func (w *wecom) Stop() {}
 
 func newWecom(cfg model.SystemChatConfig, callback BotCallback) (Bot, error) {
-	return &wecomIntelligent{
+	return &wecom{
 		logger:      glog.Module("chat", "wecom"),
 		cfg:         cfg,
 		botCallback: callback,

@@ -50,6 +50,33 @@ func (s *streamState) Text() string {
 	return s.stream.String()
 }
 
+type StateManager struct {
+	cache sync.Map
+}
+
+func (s *StateManager) Get(key string) (*streamState, bool) {
+	val, ok := s.cache.Load(key)
+	if !ok {
+		return nil, false
+	}
+
+	return val.(*streamState), true
+}
+
+func (s *StateManager) Set(key string, state *streamState) {
+	s.cache.Store(key, state)
+}
+
+func (s *StateManager) Delete(key string) {
+	s.cache.Delete(key)
+}
+
+func newStateManager() *StateManager {
+	return &StateManager{
+		cache: sync.Map{},
+	}
+}
+
 type Type uint
 
 const (
@@ -57,6 +84,7 @@ const (
 	TypeDingtalk
 	TypeWecom
 	TypeWecomIntelligent
+	TypeWecomService
 )
 
 type BotReq struct {
@@ -85,12 +113,17 @@ type Bot interface {
 	Stop()
 }
 
-func New(typ Type, cfg model.SystemChatConfig, callback BotCallback) (Bot, error) {
+func New(typ Type, cfg model.SystemChatConfig, callback BotCallback,
+	accessAddrCallback model.AccessAddrCallback, stateManager *StateManager) (Bot, error) {
 	switch typ {
 	case TypeDingtalk:
 		return newDingtalk(cfg, callback)
 	case TypeWecom:
+		return newWecom(cfg, callback)
+	case TypeWecomIntelligent:
 		return newWecomIntelligent(cfg, callback)
+	case TypeWecomService:
+		return newWecomService(cfg, callback, accessAddrCallback, stateManager)
 	default:
 		return nil, errors.ErrUnsupported
 	}

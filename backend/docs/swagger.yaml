@@ -49,12 +49,14 @@ definitions:
     - 1
     - 2
     - 3
+    - 4
     type: integer
     x-enum-varnames:
     - TypeUnknown
     - TypeDingtalk
     - TypeWecom
     - TypeWecomIntelligent
+    - TypeWecomService
   context.Response:
     properties:
       data: {}
@@ -2692,6 +2694,7 @@ paths:
         - 1
         - 2
         - 3
+        - 4
         in: query
         name: type
         required: true
@@ -2701,6 +2704,7 @@ paths:
         - TypeDingtalk
         - TypeWecom
         - TypeWecomIntelligent
+        - TypeWecomService
       produces:
       - application/json
       responses:

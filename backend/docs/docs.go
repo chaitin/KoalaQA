@@ -100,14 +100,16 @@ const docTemplate = `{
                             0,
                             1,
                             2,
-                            3
+                            3,
+                            4
                         ],
                         "type": "integer",
                         "x-enum-varnames": [
                             "TypeUnknown",
                             "TypeDingtalk",
                             "TypeWecom",
-                            "TypeWecomIntelligent"
+                            "TypeWecomIntelligent",
+                            "TypeWecomService"
                         ],
                         "name": "type",
                         "in": "query",
@@ -8095,13 +8097,15 @@ const docTemplate = `{
                 0,
                 1,
                 2,
-                3
+                3,
+                4
             ],
             "x-enum-varnames": [
                 "TypeUnknown",
                 "TypeDingtalk",
                 "TypeWecom",
-                "TypeWecomIntelligent"
+                "TypeWecomIntelligent",
+                "TypeWecomService"
             ]
         },
         "context.Response": {

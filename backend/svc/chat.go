@@ -30,7 +30,9 @@ type Chat struct {
 	logger        *glog.Logger
 	repoOrg       *repo.Org
 	repoForum     *repo.Forum
+	stateMgr      *chat.StateManager
 
+	lock         sync.Mutex
 	cache        sync.Map
 	systemKeyMap map[chat.Type]string
 }
@@ -210,7 +212,7 @@ func (c *Chat) getCache(ctx context.Context, typ chat.Type) (*chatCache, error) 
 
 	var bot chat.Bot
 	if dbChat.Enabled {
-		bot, err = chat.New(chat.TypeDingtalk, dbChat.Config, c.botCallback)
+		bot, err = chat.New(chat.TypeDingtalk, dbChat.Config, c.botCallback, c.svcPublicAddr.Callback, c.stateMgr)
 		if err != nil {
 			c.logger.WithContext(ctx).With("cfg", dbChat.Config).Warn("new chat bot failed")
 		}
@@ -242,6 +244,9 @@ type ChatUpdateReq struct {
 }
 
 func (c *Chat) Update(ctx context.Context, req ChatUpdateReq) error {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
 	if req.Enabled {
 		err := req.Config.Check()
 		if err != nil {
@@ -261,7 +266,7 @@ func (c *Chat) Update(ctx context.Context, req ChatUpdateReq) error {
 
 	var newBot chat.Bot
 	if req.Enabled {
-		newBot, err = chat.New(req.Type, req.Config, c.botCallback)
+		newBot, err = chat.New(req.Type, req.Config, c.botCallback, c.svcPublicAddr.Callback, c.stateMgr)
 		if err != nil {
 			return err
 		}
@@ -315,13 +320,22 @@ func (c *Chat) StreamText(ctx context.Context, typ chat.Type, req chat.VerifyReq
 	return bot.StreamText(ctx, req)
 }
 
-func newChat(lc fx.Lifecycle, sys *repo.System, disc *Discussion, publicAddr *PublicAddress, repoOrg *repo.Org, repoForum *repo.Forum) *Chat {
+type SteamAnswerReq struct {
+	ID string `form:"id" binding:"required"`
+}
+
+func (c *Chat) StreamAnswer(ctx context.Context, req SteamAnswerReq) error {
+	return errors.ErrUnsupported
+}
+
+func newChat(lc fx.Lifecycle, sys *repo.System, disc *Discussion, publicAddr *PublicAddress, repoOrg *repo.Org, repoForum *repo.Forum, stateMgr *chat.StateManager) *Chat {
 	c := &Chat{
 		repoSys:       sys,
 		svcDisc:       disc,
 		svcPublicAddr: publicAddr,
 		repoOrg:       repoOrg,
 		repoForum:     repoForum,
+		stateMgr:      stateMgr,
 		cache:         sync.Map{},
 		systemKeyMap: map[chat.Type]string{
 			chat.TypeDingtalk: model.SystemKeyChatDingtalk,
