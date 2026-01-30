@@ -185,7 +185,7 @@ func (w *wecomIntelligent) StreamText(ctx context.Context, req VerifyReq) (strin
 		}
 
 		state := stateI.(*streamState)
-		content := state.Text(false)
+		content := state.Text()
 
 		if content == "" {
 			content = "<think>正在查找相关信息...</think>"
