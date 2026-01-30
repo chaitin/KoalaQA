@@ -14,7 +14,7 @@ type chat struct {
 	svcChat *svc.Chat
 }
 
-func (c *chat) WecomVerify(ctx *context.Context) {
+func (c *chat) wecomVerify(ctx *context.Context, typ chatPkg.Type) {
 	var req svc.WecomVerifyReq
 	err := ctx.ShouldBindQuery(&req)
 	if err != nil {
@@ -22,7 +22,7 @@ func (c *chat) WecomVerify(ctx *context.Context) {
 		return
 	}
 
-	res, err := c.svcChat.StreamText(ctx, chatPkg.TypeWecom, chatPkg.VerifyReq{
+	res, err := c.svcChat.StreamText(ctx, typ, chatPkg.VerifyReq{
 		VerifySign: req.VerifySign,
 		Content:    req.EchoStr,
 		OnlyVerify: true,
@@ -35,7 +35,7 @@ func (c *chat) WecomVerify(ctx *context.Context) {
 	ctx.String(http.StatusOK, res)
 }
 
-func (c *chat) WecomChat(ctx *context.Context) {
+func (c *chat) wecomChat(ctx *context.Context, typ chatPkg.Type) {
 	var req chatPkg.VerifySign
 	err := ctx.ShouldBindQuery(&req)
 	if err != nil {
@@ -49,7 +49,7 @@ func (c *chat) WecomChat(ctx *context.Context) {
 		return
 	}
 
-	res, err := c.svcChat.StreamText(ctx, chatPkg.TypeWecom, chatPkg.VerifyReq{
+	res, err := c.svcChat.StreamText(ctx, typ, chatPkg.VerifyReq{
 		VerifySign: req,
 		Content:    string(content),
 		OnlyVerify: false,
@@ -59,7 +59,26 @@ func (c *chat) WecomChat(ctx *context.Context) {
 		return
 	}
 
+	if typ == chatPkg.TypeWecom {
+		ctx.Header("Content-Type", "application/xml; charset=UTF-8")
+	}
 	ctx.String(http.StatusOK, res)
+}
+
+func (c *chat) WecomVerify(ctx *context.Context) {
+	c.wecomVerify(ctx, chatPkg.TypeWecom)
+}
+
+func (c *chat) WecomChat(ctx *context.Context) {
+	c.wecomChat(ctx, chatPkg.TypeWecom)
+}
+
+func (c *chat) WecomIntelligentVerify(ctx *context.Context) {
+	c.wecomVerify(ctx, chatPkg.TypeWecomIntelligent)
+}
+
+func (c *chat) WecomIntelligentChat(ctx *context.Context) {
+	c.wecomChat(ctx, chatPkg.TypeWecomIntelligent)
 }
 
 func (c *chat) Route(h server.Handler) {
@@ -67,8 +86,10 @@ func (c *chat) Route(h server.Handler) {
 
 	{
 		botG := g.Group("/bot")
-		botG.GET("/wecom")
-		botG.POST("/wecom")
+		botG.GET("/wecom", c.WecomVerify)
+		botG.POST("/wecom", c.WecomChat)
+		botG.GET("/wecom_intelligent", c.WecomIntelligentVerify)
+		botG.POST("/wecom_intelligent", c.WecomIntelligentChat)
 	}
 }
 

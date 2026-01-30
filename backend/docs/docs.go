@@ -99,13 +99,15 @@ const docTemplate = `{
                         "enum": [
                             0,
                             1,
-                            2
+                            2,
+                            3
                         ],
                         "type": "integer",
                         "x-enum-varnames": [
                             "TypeUnknown",
                             "TypeDingtalk",
-                            "TypeWecom"
+                            "TypeWecom",
+                            "TypeWecomIntelligent"
                         ],
                         "name": "type",
                         "in": "query",
@@ -8092,12 +8094,14 @@ const docTemplate = `{
             "enum": [
                 0,
                 1,
-                2
+                2,
+                3
             ],
             "x-enum-varnames": [
                 "TypeUnknown",
                 "TypeDingtalk",
-                "TypeWecom"
+                "TypeWecom",
+                "TypeWecomIntelligent"
             ]
         },
         "context.Response": {
@@ -9596,10 +9600,19 @@ const docTemplate = `{
         "model.SystemChatConfig": {
             "type": "object",
             "properties": {
+                "aes_key": {
+                    "type": "string"
+                },
                 "client_id": {
                     "type": "string"
                 },
                 "client_secret": {
+                    "type": "string"
+                },
+                "client_token": {
+                    "type": "string"
+                },
+                "corp_id": {
                     "type": "string"
                 },
                 "template_id": {

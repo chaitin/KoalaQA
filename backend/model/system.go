@@ -140,6 +140,9 @@ type SystemChatConfig struct {
 	ClientID     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
 	TemplateID   string `json:"template_id"`
+	CorpID       string `json:"corp_id"`
+	Token        string `json:"client_token"`
+	AESKey       string `json:"aes_key"`
 }
 
 func (s *SystemChatConfig) Check() error {
