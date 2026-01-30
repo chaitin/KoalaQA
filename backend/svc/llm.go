@@ -539,9 +539,13 @@ func (l *LLM) queryKnowledgeDocuments(ctx context.Context, query string, metadat
 
 	knowledgeDocs := make([]llm.KnowledgeDocument, 0, len(docs))
 	for _, doc := range docs {
+		content := docContent[doc.RagID]
+		if doc.DocType == model.DocTypeQuestion {
+			content = string(doc.Markdown)
+		}
 		knowledgeDocs = append(knowledgeDocs, llm.KnowledgeDocument{
 			Title:   doc.Title,
-			Content: docContent[doc.RagID],
+			Content: content,
 			Source:  strconv.Itoa(int(doc.ID)),
 			QA:      doc.DocType == model.DocTypeQuestion,
 		})
