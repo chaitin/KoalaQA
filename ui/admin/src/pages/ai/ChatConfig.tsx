@@ -2,7 +2,7 @@ import Card from '@/components/card';
 import { Box, FormControlLabel, Radio, RadioGroup, Stack, Typography, Paper, IconButton, Tooltip, Switch, Link, TextField } from '@mui/material';
 import { useState, useEffect, useMemo } from 'react';
 import { message } from '@ctzhian/ui';
-import { getAdminSystemWebPlugin, putAdminSystemWebPlugin, getAdminChat, putAdminChat } from '@/api';
+import { getAdminSystemWebPlugin, putAdminSystemWebPlugin, getAdminChat, putAdminChat, ChatType } from '@/api';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import LoadingButton from '@/components/LoadingButton';
@@ -143,7 +143,7 @@ const ChatConfig = () => {
         }
 
         // Load DingBot Config
-        const chatRes = await getAdminChat();
+        const chatRes = await getAdminChat({ type: ChatType.TypeDingtalk });
         if (chatRes) {
           reset({
             client_id: chatRes.config?.client_id || '',
@@ -194,6 +194,7 @@ const ChatConfig = () => {
       // Save DingBot if form is dirty and data is provided
       if (isDirty && dingData) {
         await putAdminChat({
+          type: ChatType.TypeDingtalk,
           config: {
             client_id: dingData.client_id,
             client_secret: dingData.client_secret,

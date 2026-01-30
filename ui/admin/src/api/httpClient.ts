@@ -15,9 +15,9 @@
 // @ts-nocheck
 /*
  * ---------------------------------------------------------------
- * ## THIS FILE WAS GENERATED VIA SWAGGER-TYPESCRIPT-API        ##
- * ##                                                           ##
- * ## AUTHOR: acacode                                           ##
+ * ## THIS FILE WAS GENERATED VIA SWAGGER-TYPESCRIPT-API ##
+ * ## ##
+ * ## AUTHOR: acacode ##
  * ## SOURCE: https://github.com/acacode/swagger-typescript-api ##
  * ---------------------------------------------------------------
  */
@@ -61,7 +61,6 @@ export type RequestParams = Omit<
   FullRequestParams,
   "body" | "method" | "query" | "path"
 >;
-
 
 export interface ApiConfig<SecurityDataType = unknown>
   extends Omit<AxiosRequestConfig, "data" | "cancelToken"> {
@@ -183,7 +182,10 @@ export class HttpClient<SecurityDataType = unknown> {
           }
 
           // 检查是否是CSRF错误
-          if (res.data === "csrf token mismatch" && typeof window !== "undefined") {
+          if (
+            res.data === "csrf token mismatch" &&
+            typeof window !== "undefined"
+          ) {
             // 清除缓存的CSRF token
             clearCsrfToken();
             // 返回特殊错误，让调用者可以重试
@@ -199,8 +201,6 @@ export class HttpClient<SecurityDataType = unknown> {
         return Promise.reject(response);
       },
       (error) => {
-
-
         if (error.response?.status === 401) {
           window.location.href = `/login?redirect=${window.location.pathname}`;
         }
@@ -231,7 +231,7 @@ export class HttpClient<SecurityDataType = unknown> {
       headers: {
         ...((method &&
           this.instance.defaults.headers[
-          method.toLowerCase() as keyof HeadersDefaults
+            method.toLowerCase() as keyof HeadersDefaults
           ]) ||
           {}),
         ...(params1.headers || {}),
@@ -309,7 +309,7 @@ export class HttpClient<SecurityDataType = unknown> {
     const method = params.method?.toUpperCase() || "GET";
 
     // 为非安全方法（非GET/OPTIONS/HEAD）添加CSRF token
-    const needsCsrf = !['GET', 'OPTIONS', 'HEAD'].includes(method);
+    const needsCsrf = !["GET", "OPTIONS", "HEAD"].includes(method);
     if (needsCsrf && typeof window !== "undefined") {
       const csrfToken = await getCsrfToken();
       if (csrfToken) {
@@ -317,44 +317,49 @@ export class HttpClient<SecurityDataType = unknown> {
       }
     }
 
+    return this.instance
+      .request({
+        ...requestParams,
+        headers,
+        params: query,
+        responseType: responseFormat,
+        data: body,
+        url: path,
+      })
+      .catch(async (error) => {
+        // 如果是CSRF错误，重新获取token并重试一次
+        if (error?._csrfError && typeof window !== "undefined") {
+          console.log(
+            "[HttpClient] CSRF token mismatch, retrying with new token",
+          );
 
-    return this.instance.request({
-      ...requestParams,
-      headers,
-      params: query,
-      responseType: responseFormat,
-      data: body,
-      url: path,
-    }).catch(async (error) => {
-      // 如果是CSRF错误，重新获取token并重试一次
-      if (error?._csrfError && typeof window !== "undefined") {
-        console.log("[HttpClient] CSRF token mismatch, retrying with new token");
+          // 重新获取CSRF token
+          const newCsrfToken = await getCsrfToken();
+          if (newCsrfToken) {
+            // 更新headers中的CSRF token
+            headers["X-CSRF-TOKEN"] = newCsrfToken;
 
-        // 重新获取CSRF token
-        const newCsrfToken = await getCsrfToken();
-        if (newCsrfToken) {
-          // 更新headers中的CSRF token
-          headers["X-CSRF-TOKEN"] = newCsrfToken;
-
-          // 重试请求
-          return this.instance.request({
-            ...requestParams,
-            headers,
-            params: query,
-            responseType: responseFormat,
-            data: body,
-            url: path,
-          }).catch((retryError) => {
-            // 重试失败，抛出原始错误（但移除特殊标记）
-            const { _csrfError, ...cleanError } = retryError;
-            throw cleanError;
-          });
+            // 重试请求
+            return this.instance
+              .request({
+                ...requestParams,
+                headers,
+                params: query,
+                responseType: responseFormat,
+                data: body,
+                url: path,
+              })
+              .catch((retryError) => {
+                // 重试失败，抛出原始错误（但移除特殊标记）
+                const { _csrfError, ...cleanError } = retryError;
+                throw cleanError;
+              });
+          }
         }
-      }
 
-      // 不是CSRF错误或重试失败，直接抛出
-      throw error;
-    });
+        // 不是CSRF错误或重试失败，直接抛出
+        throw error;
+      });
   };
 }
 export default new HttpClient({ format: "json" }).request;
