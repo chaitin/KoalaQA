@@ -336,6 +336,8 @@ func (c *Chat) Update(ctx context.Context, req ChatUpdateReq) error {
 		return err
 	}
 
+	cache.cfg = &req.SystemChat
+
 	return nil
 }
 
