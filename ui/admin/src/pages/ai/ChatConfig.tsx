@@ -1,5 +1,5 @@
 import Card from '@/components/card';
-import { Box, FormControlLabel, Radio, RadioGroup, Stack, Typography, Paper, IconButton, Tooltip, Switch, Link, TextField } from '@mui/material';
+import { Box, FormControlLabel, Radio, RadioGroup, Stack, Typography, Paper, IconButton, Tooltip, Switch, Link, TextField, InputAdornment } from '@mui/material';
 import { useState, useEffect, useMemo } from 'react';
 import { message } from '@ctzhian/ui';
 import { getAdminSystemWebPlugin, putAdminSystemWebPlugin, getAdminChat, putAdminChat, ChatType } from '@/api';
@@ -156,7 +156,7 @@ const ChatConfig = () => {
   const {
     register,
     handleSubmit,
-    formState: { errors, isDirty },
+    formState: { errors, isDirty, dirtyFields },
     reset,
     watch,
     setValue,
@@ -205,7 +205,7 @@ const ChatConfig = () => {
 
         // Load DingBot Config
         const dingRes = await getAdminChat({ type: ChatType.TypeDingtalk });
-        const weComRes = await getAdminChat({ type: ChatType.TypeWecom });
+        const weComRes = await getAdminChat({ type: ChatType.TypeWecomService });
 
         reset({
           dingBot: {
@@ -263,28 +263,36 @@ const ChatConfig = () => {
 
       // Save Bots if form is dirty and data is provided
       if (isDirty && formData) {
+        const promises = [];
+
         // Save DingBot
-        await putAdminChat({
-          type: ChatType.TypeDingtalk,
-          config: {
-            client_id: formData.dingBot.client_id,
-            client_secret: formData.dingBot.client_secret,
-            template_id: formData.dingBot.template_id,
-          },
-          enabled: formData.dingBot.enabled,
-        });
+        if (dirtyFields.dingBot) {
+          promises.push(putAdminChat({
+            type: ChatType.TypeDingtalk,
+            config: {
+              client_id: formData.dingBot.client_id,
+              client_secret: formData.dingBot.client_secret,
+              template_id: formData.dingBot.template_id,
+            },
+            enabled: formData.dingBot.enabled,
+          }));
+        }
 
         // Save WeComBot
-        await putAdminChat({
-          type: ChatType.TypeWecom,
-          config: {
-            corp_id: formData.weComBot.corp_id,
-            client_secret: formData.weComBot.client_secret,
-            client_token: formData.weComBot.client_token,
-            aes_key: formData.weComBot.aes_key,
-          },
-          enabled: formData.weComBot.enabled,
-        });
+        if (dirtyFields.weComBot) {
+          promises.push(putAdminChat({
+            type: ChatType.TypeWecomService,
+            config: {
+              corp_id: formData.weComBot.corp_id,
+              client_secret: formData.weComBot.client_secret,
+              client_token: formData.weComBot.client_token,
+              aes_key: formData.weComBot.aes_key,
+            },
+            enabled: formData.weComBot.enabled,
+          }));
+        }
+
+        await Promise.all(promises);
 
         reset(formData); // Reset dirty state with new data
       }
@@ -349,7 +357,7 @@ const ChatConfig = () => {
         {/* Section 1: Online Support */}
         <SectionTitle title="在线支持" />
         <Stack direction="row" alignItems="center" sx={{ pl: 2 }}>
-          <Typography variant="body2" sx={{ minWidth: '120px', color: 'text.secondary' }}>
+          <Typography variant="body2" sx={{ minWidth: '130px', color: 'text.secondary' }}>
             在线支持
           </Typography>
           <RadioGroup
@@ -374,7 +382,7 @@ const ChatConfig = () => {
         <SectionTitle title="网页挂件" />
         <Stack spacing={2} sx={{ pl: 2 }}>
           <Stack direction="row" alignItems="center">
-            <Typography variant="body2" sx={{ minWidth: '120px', color: 'text.secondary' }}>
+            <Typography variant="body2" sx={{ minWidth: '130px', color: 'text.secondary' }}>
               网页挂件
             </Typography>
             <RadioGroup
@@ -398,7 +406,7 @@ const ChatConfig = () => {
           {plugin === 'enabled' && (
             <>
               <Stack direction="row" alignItems="center">
-                <Typography variant="body2" sx={{ minWidth: '120px', color: 'text.secondary' }}>
+                <Typography variant="body2" sx={{ minWidth: '130px', color: 'text.secondary' }}>
                   在社区前台展示
                 </Typography>
                 <RadioGroup
@@ -420,43 +428,30 @@ const ChatConfig = () => {
               </Stack>
 
               <Stack direction="row" alignItems="flex-start">
-                <Typography variant="body2" sx={{ minWidth: '120px', pt: 1.5, color: 'text.secondary' }}>
+                <Typography variant="body2" sx={{ minWidth: '130px', pt: 1.5, color: 'text.secondary' }}>
                   嵌入代码
                 </Typography>
                 <Box sx={{ flex: 1, maxWidth: '600px' }}>
-                  <Paper
-                    variant="outlined"
-                    sx={{
-                      p: 1.5,
-                      bgcolor: 'action.hover',
-                      border: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      fontFamily: 'monospace',
-                      fontSize: '0.875rem',
-                      color: 'text.primary',
+                  <TextField
+                    value={embedCode}
+                    fullWidth
+                    size="small"
+                    InputProps={{
+                      readOnly: true,
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <CopyToClipboard text={embedCode} onCopy={() => message.success('复制成功')}>
+                            <Tooltip title="复制全部">
+                              <IconButton size="small" edge="end">
+                                <ContentCopyIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </CopyToClipboard>
+                        </InputAdornment>
+                      ),
                     }}
-                  >
-                    <Typography
-                      variant="body2"
-                      component="code"
-                      sx={{
-                        fontFamily: 'monospace',
-                        wordBreak: 'break-all',
-                        mr: 2
-                      }}
-                    >
-                      {embedCode}
-                    </Typography>
-                    <CopyToClipboard text={embedCode} onCopy={() => message.success('复制成功')}>
-                      <Tooltip title="复制全部">
-                        <IconButton size="small">
-                          <ContentCopyIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </CopyToClipboard>
-                  </Paper>
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#f6f8fa' } }}
+                  />
                   <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, display: 'block' }}>
                     将此代码添加到您网站的 &lt;body&gt; 标签中即可启用挂件
                   </Typography>
@@ -470,7 +465,7 @@ const ChatConfig = () => {
         <SectionTitle title="钉钉机器人" />
         <Stack spacing={2} sx={{ pl: 2 }}>
           <Stack direction="row" alignItems="center">
-            <Box sx={{ width: 120, flexShrink: 0 }}>
+            <Box sx={{ width: 130, flexShrink: 0 }}>
               <Typography variant="body2" sx={{ color: 'text.secondary' }}>钉钉机器人</Typography>
             </Box>
             <RadioGroup
@@ -495,7 +490,7 @@ const ChatConfig = () => {
 
           {dingEnabled && <>
             <Stack direction="row" alignItems="flex-start">
-              <Box sx={{ width: 120, flexShrink: 0, pt: 1 }}>
+              <Box sx={{ width: 130, flexShrink: 0, pt: 1 }}>
                 <Stack direction="row">
                   <Typography variant="body2" sx={{ color: 'text.secondary' }}>Client ID</Typography>
                   <Typography variant="body2" color="error.main" sx={{ ml: 0.5 }}>*</Typography>
@@ -513,7 +508,7 @@ const ChatConfig = () => {
             </Stack>
 
             <Stack direction="row" alignItems="flex-start">
-              <Box sx={{ width: 120, flexShrink: 0, pt: 1 }}>
+              <Box sx={{ width: 130, flexShrink: 0, pt: 1 }}>
                 <Stack direction="row">
                   <Typography variant="body2" sx={{ color: 'text.secondary' }}>Client Secret</Typography>
                   <Typography variant="body2" color="error.main" sx={{ ml: 0.5 }}>*</Typography>
@@ -531,7 +526,7 @@ const ChatConfig = () => {
             </Stack>
 
             <Stack direction="row" alignItems="flex-start">
-              <Box sx={{ width: 120, flexShrink: 0, pt: 1 }}>
+              <Box sx={{ width: 130, flexShrink: 0, pt: 1 }}>
                 <Stack direction="row">
                   <Typography variant="body2" sx={{ color: 'text.secondary' }}>Template ID</Typography>
                   <Typography variant="body2" color="error.main" sx={{ ml: 0.5 }}>*</Typography>
@@ -553,7 +548,7 @@ const ChatConfig = () => {
         <SectionTitle title="企业微信客服" />
         <Stack spacing={2} sx={{ pl: 2 }}>
           <Stack direction="row" alignItems="center">
-            <Typography variant="body2" sx={{ minWidth: '120px', color: 'text.secondary' }}>
+            <Typography variant="body2" sx={{ minWidth: '130px', color: 'text.secondary' }}>
               企业微信客服
             </Typography>
             <RadioGroup
@@ -579,49 +574,35 @@ const ChatConfig = () => {
           {weComEnabled && (
             <>
               <Stack direction="row" alignItems="flex-start">
-                <Typography variant="body2" sx={{ minWidth: '120px', pt: 1.5, color: 'text.secondary' }}>
+                <Typography variant="body2" sx={{ minWidth: '130px', pt: 1.5, color: 'text.secondary' }}>
                   回调地址
                 </Typography>
                 <Box sx={{ flex: 1, maxWidth: '600px' }}>
-                  <Paper
-                    variant="outlined"
-                    sx={{
-                      p: 1.5,
-                      bgcolor: 'action.hover',
-                      border: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      fontFamily: 'monospace',
-                      fontSize: '0.875rem',
-                      color: 'text.primary',
+                  <TextField
+                    value={`${origin}/api/chat/bot/wecom_service`}
+                    fullWidth
+                    size="small"
+                    InputProps={{
+                      readOnly: true,
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <CopyToClipboard text={`${origin}/api/chat/bot/wecom_service`} onCopy={() => message.success('复制成功')}>
+                            <Tooltip title="复制">
+                              <IconButton size="small" edge="end">
+                                <ContentCopyIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </CopyToClipboard>
+                        </InputAdornment>
+                      ),
                     }}
-                  >
-                    <Typography
-                      variant="body2"
-                      component="code"
-                      sx={{
-                        fontFamily: 'monospace',
-                        wordBreak: 'break-all',
-                        mr: 2,
-                        userSelect: 'all',
-                      }}
-                    >
-                      {`${origin}/api/inte/wecom/callback`}
-                    </Typography>
-                    <CopyToClipboard text={`${origin}/api/inte/wecom/callback`} onCopy={() => message.success('复制成功')}>
-                      <Tooltip title="复制">
-                        <IconButton size="small">
-                          <ContentCopyIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </CopyToClipboard>
-                  </Paper>
+                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#f6f8fa' } }}
+                  />
                 </Box>
               </Stack>
 
               <Stack direction="row" alignItems="flex-start">
-                <Box sx={{ width: 120, flexShrink: 0, pt: 1 }}>
+                <Box sx={{ width: 130, flexShrink: 0, pt: 1 }}>
                   <Stack direction="row">
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>企业 ID</Typography>
                     <Typography variant="body2" color="error.main" sx={{ ml: 0.5 }}>*</Typography>
@@ -638,8 +619,27 @@ const ChatConfig = () => {
                 />
               </Stack>
 
+              {/* <Stack direction="row" alignItems="flex-start">
+                <Box sx={{ width: 130, flexShrink: 0, pt: 1 }}>
+                  <Stack direction="row">
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>Agent ID</Typography>
+                    <Typography variant="body2" color="error.main" sx={{ ml: 0.5 }}>*</Typography>
+                  </Stack>
+                </Box>
+                <TextField
+                  {...register('weComBot.client_id')}
+                  placeholder=""
+                  fullWidth
+                  size="small"
+                  error={!!errors.weComBot?.client_id}
+                  helperText={errors.weComBot?.client_id?.message}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#f6f8fa' } }}
+                />
+              </Stack> */}
+
+
               <Stack direction="row" alignItems="flex-start">
-                <Box sx={{ width: 120, flexShrink: 0, pt: 1 }}>
+                <Box sx={{ width: 130, flexShrink: 0, pt: 1 }}>
                   <Stack direction="row">
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>Corp Secret</Typography>
                     <Typography variant="body2" color="error.main" sx={{ ml: 0.5 }}>*</Typography>
@@ -657,7 +657,7 @@ const ChatConfig = () => {
               </Stack>
 
               <Stack direction="row" alignItems="flex-start">
-                <Box sx={{ width: 120, flexShrink: 0, pt: 1 }}>
+                <Box sx={{ width: 130, flexShrink: 0, pt: 1 }}>
                   <Stack direction="row">
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>Token</Typography>
                     <Typography variant="body2" color="error.main" sx={{ ml: 0.5 }}>*</Typography>
@@ -675,10 +675,10 @@ const ChatConfig = () => {
               </Stack>
 
               <Stack direction="row" alignItems="flex-start">
-                <Box sx={{ width: 120, flexShrink: 0, pt: 1 }}>
+                <Box sx={{ width: 130, flexShrink: 0, pt: 1 }}>
                   <Stack direction="row">
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>Encoding Aes Key</Typography>
-                    <Typography variant="body2" color="error.main" sx={{ ml: 0.5 }}>*</Typography>
+                    <Typography variant="body2" color="error.main" >*</Typography>
                   </Stack>
                 </Box>
                 <TextField

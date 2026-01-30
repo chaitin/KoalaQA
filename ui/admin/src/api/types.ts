@@ -211,6 +211,7 @@ export enum ChatType {
   TypeDingtalk = 1,
   TypeWecom = 2,
   TypeWecomIntelligent = 3,
+  TypeWecomService = 4,
 }
 
 export interface AdminDocUserRes {
@@ -1449,7 +1450,7 @@ export interface PutAdminBotPayload {
 }
 
 export interface GetAdminChatParams {
-  type: 0 | 1 | 2 | 3;
+  type: 0 | 1 | 2 | 3 | 4;
 }
 
 export interface GetAdminDiscussionParams {
