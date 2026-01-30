@@ -3,7 +3,6 @@ package sub
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"time"
 
@@ -93,7 +92,7 @@ func (k *KBDoc) handleInsert(ctx context.Context, kbID uint, docID uint) error {
 	var content string
 	switch doc.DocType {
 	case model.DocTypeQuestion:
-		content = fmt.Sprintf(`问题：%s\n答案:\n%s`, doc.Title, doc.Markdown)
+		content = string(doc.Markdown)
 	case model.DocTypeDocument, model.DocTypeSpace, model.DocTypeWeb:
 		url := string(doc.Markdown)
 		r, err := oss.Download(ctx, url, oss.WithBucket("anydoc"))

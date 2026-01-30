@@ -543,6 +543,7 @@ func (l *LLM) queryKnowledgeDocuments(ctx context.Context, query string, metadat
 			Title:   doc.Title,
 			Content: docContent[doc.RagID],
 			Source:  strconv.Itoa(int(doc.ID)),
+			QA:      doc.DocType == model.DocTypeQuestion,
 		})
 	}
 	logger.With("knowledges", knowledgeDocs).Debug("query knowledge documents success")
