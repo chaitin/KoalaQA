@@ -210,6 +210,8 @@ export enum ChatType {
   TypeUnknown = 0,
   TypeDingtalk = 1,
   TypeWecom = 2,
+  TypeWecomIntelligent = 3,
+  TypeWecomService = 4,
 }
 
 export interface AdminDocUserRes {
@@ -681,8 +683,11 @@ export interface ModelSystemChat {
 }
 
 export interface ModelSystemChatConfig {
+  aes_key?: string;
   client_id?: string;
   client_secret?: string;
+  client_token?: string;
+  corp_id?: string;
   template_id?: string;
 }
 
@@ -1359,10 +1364,6 @@ export interface SvcUserPortraitListItem {
   username?: string;
 }
 
-export interface SvcUserPortraitReq {
-  content: string;
-}
-
 export interface SvcUserQuickReplyReq {
   content: string;
   /** @maxLength 10 */
@@ -1445,7 +1446,7 @@ export interface PutAdminBotPayload {
 }
 
 export interface GetAdminChatParams {
-  type: 0 | 1 | 2;
+  type: 0 | 1 | 2 | 3 | 4;
 }
 
 export interface GetAdminDiscussionParams {
@@ -1512,25 +1513,25 @@ export interface DeleteAdminKbKbIdParams {
 
 export interface GetAdminKbKbIdDocumentParams {
   file_type?:
-    | 0
-    | 1
-    | 2
-    | 3
-    | 4
-    | 5
-    | 6
-    | 7
-    | 8
-    | 9
-    | 10
-    | 11
-    | 12
-    | 13
-    | 14
-    | 15
-    | 16
-    | 17
-    | 18;
+  | 0
+  | 1
+  | 2
+  | 3
+  | 4
+  | 5
+  | 6
+  | 7
+  | 8
+  | 9
+  | 10
+  | 11
+  | 12
+  | 13
+  | 14
+  | 15
+  | 16
+  | 17
+  | 18;
   /** @min 1 */
   page?: number;
   /** @min 1 */
@@ -1562,25 +1563,25 @@ export interface DeleteAdminKbKbIdDocumentDocIdParams {
 
 export interface GetAdminKbKbIdQuestionParams {
   file_type?:
-    | 0
-    | 1
-    | 2
-    | 3
-    | 4
-    | 5
-    | 6
-    | 7
-    | 8
-    | 9
-    | 10
-    | 11
-    | 12
-    | 13
-    | 14
-    | 15
-    | 16
-    | 17
-    | 18;
+  | 0
+  | 1
+  | 2
+  | 3
+  | 4
+  | 5
+  | 6
+  | 7
+  | 8
+  | 9
+  | 10
+  | 11
+  | 12
+  | 13
+  | 14
+  | 15
+  | 16
+  | 17
+  | 18;
   /** @min 1 */
   page?: number;
   /** @min 1 */
