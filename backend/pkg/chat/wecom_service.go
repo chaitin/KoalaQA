@@ -359,6 +359,7 @@ func (w *wecomService) chat(ctx context.Context, logger *glog.Logger, msg *wecom
 		defer w.stateManager.Delete(sessionID)
 
 		stream, err := w.botCallback(ctx, BotReq{
+			Type:      TypeWecomService,
 			SessionID: sessionID,
 			Question:  lastMsg.Text.Content,
 		})

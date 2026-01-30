@@ -95,6 +95,7 @@ const (
 )
 
 type BotReq struct {
+	Type      Type   `json:"-"`
 	SessionID string `json:"session_id"`
 	Question  string `json:"question"`
 }

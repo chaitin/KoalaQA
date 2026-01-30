@@ -137,11 +137,16 @@ func (c *Chat) botCallback(ctx context.Context, req chat.BotReq) (*llm.Stream[st
 			time.Sleep(time.Second)
 		}
 
+		referFormat := false
+		if req.Type == chat.TypeWecom {
+			referFormat = true
+		}
+
 		summaryStream, err := c.svcDisc.SummaryByContent(ctx, 0, SummaryByContentReq{
 			SessionID:   sessionID,
 			ForumID:     forums[0].ID,
 			Source:      model.AskSessionSourceBot,
-			ReferFormat: false,
+			ReferFormat: referFormat,
 		})
 		if err != nil {
 			c.logger.WithContext(ctx).WithErr(err).With("session_id", sessionID).Warn("summary by content failed")
@@ -217,7 +222,7 @@ func (c *Chat) getCache(ctx context.Context, typ chat.Type) (*chatCache, error) 
 
 	var bot chat.Bot
 	if dbChat.Enabled {
-		bot, err = chat.New(chat.TypeDingtalk, dbChat.Config, c.botCallback, c.svcPublicAddr.Callback, c.stateMgr)
+		bot, err = chat.New(typ, dbChat.Config, c.botCallback, c.svcPublicAddr.Callback, c.stateMgr)
 		if err != nil {
 			c.logger.WithContext(ctx).With("cfg", dbChat.Config).Warn("new chat bot failed")
 		}

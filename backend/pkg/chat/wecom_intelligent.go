@@ -140,7 +140,8 @@ func (w *wecomIntelligent) StreamText(ctx context.Context, req VerifyReq) (strin
 		_, loaded := w.cache.LoadOrStore(decryptReq.Msgid, state)
 		if !loaded {
 			stream, err := w.botCallback(ctx, BotReq{
-				SessionID: "wecom_" + decryptReq.Msgid,
+				Type:      TypeWecomIntelligent,
+				SessionID: "wecom_intelligent_" + decryptReq.Msgid,
 				Question:  decryptReq.Text.Content,
 			})
 			if err != nil {

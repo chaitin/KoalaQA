@@ -154,6 +154,7 @@ func (w *wecom) chat(ctx context.Context, logger *glog.Logger, question string, 
 
 func (w *wecom) chatText(ctx context.Context, question string, fromUser string) error {
 	stream, err := w.botCallback(ctx, BotReq{
+		Type:      TypeWecom,
 		SessionID: uuid.NewString(),
 		Question:  question,
 	})

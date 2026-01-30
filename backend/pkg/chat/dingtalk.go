@@ -174,6 +174,7 @@ func (d *dingtalk) ChatBotCallback(ctx context.Context, data *chatbot.BotCallbac
 	sessionID := "dingtalk_" + data.ConversationId
 
 	stream, err := d.botCallback(ctx, BotReq{
+		Type:      TypeDingtalk,
 		SessionID: sessionID,
 		Question:  question,
 	})
