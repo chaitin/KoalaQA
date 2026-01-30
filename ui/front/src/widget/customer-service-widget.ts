@@ -193,20 +193,17 @@ declare global {
       z-index: 10;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       outline: none;
-      color: #666;
+      color: #21222d80;
     }
     
     .cs-widget-close:hover {
       background: rgba(33 34 45 / calc(0.04));
-      color: #333;
-      box-shadow: 0px 4px 8px 0px rgba(33,34,45,0.05);
-      transform: scale(1.1) rotate(90deg);
     }
     
     .cs-widget-close svg {
       display: block;
-      width: 26px;
-      height: 26px;
+      width: 14px;
+      height: 14px;
     }
     
     .cs-widget-iframe {

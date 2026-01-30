@@ -18,17 +18,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/open-dingtalk/dingtalk-stream-sdk-go/chatbot"
 	"github.com/open-dingtalk/dingtalk-stream-sdk-go/client"
-	"golang.org/x/sync/singleflight"
 )
-
-type dingtalkAccessToken struct {
-	token    string
-	expireAt time.Time
-}
-
-func (d *dingtalkAccessToken) expired() bool {
-	return d.token == "" || time.Now().After(d.expireAt.Add(-time.Minute*5))
-}
 
 type dingtalk struct {
 	cfg         model.SystemChatConfig
@@ -38,13 +28,12 @@ type dingtalk struct {
 	streamCli  *client.StreamClient
 	oauthCli   *dingtalkoauth2_1_0.Client
 	cardCli    *dingtalkcard_1_0.Client
-	sf         singleflight.Group
-	tokenCache dingtalkAccessToken
+	tokenCache accessToken
 }
 
 func (d *dingtalk) accessToken() (string, error) {
 	if d.tokenCache.expired() {
-		_, err, _ := d.sf.Do("access_token", func() (interface{}, error) {
+		_, err, _ := sf.Do("access_token_dingtalk", func() (interface{}, error) {
 			if !d.tokenCache.expired() {
 				return nil, nil
 			}
@@ -63,7 +52,7 @@ func (d *dingtalk) accessToken() (string, error) {
 				return nil, fmt.Errorf("get access_token status code: %d", *resp.StatusCode)
 			}
 
-			d.tokenCache = dingtalkAccessToken{
+			d.tokenCache = accessToken{
 				token:    *resp.Body.AccessToken,
 				expireAt: time.Now().Add(time.Duration(*resp.Body.ExpireIn) * time.Second),
 			}
@@ -185,6 +174,7 @@ func (d *dingtalk) ChatBotCallback(ctx context.Context, data *chatbot.BotCallbac
 	sessionID := "dingtalk_" + data.ConversationId
 
 	stream, err := d.botCallback(ctx, BotReq{
+		Type:      TypeDingtalk,
 		SessionID: sessionID,
 		Question:  question,
 	})
@@ -277,6 +267,5 @@ func newDingtalk(cfg model.SystemChatConfig, callback BotCallback) (Bot, error) 
 		oauthCli:    oauthCli,
 		cardCli:     cardCli,
 		logger:      glog.Module("chat", "dingtalk"),
-		sf:          singleflight.Group{},
 	}, err
 }

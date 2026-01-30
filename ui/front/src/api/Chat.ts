@@ -11,7 +11,12 @@
  */
 
 import request, { ContentType, RequestParams } from "./httpClient";
-import { ContextResponse, ModelSystemChat } from "./types";
+import {
+  ContextResponse,
+  GetAdminChatParams,
+  ModelSystemChat,
+  SvcChatUpdateReq,
+} from "./types";
 
 /**
  * No description
@@ -26,7 +31,10 @@ import { ContextResponse, ModelSystemChat } from "./types";
 })` OK
  */
 
-export const getAdminChat = (params: RequestParams = {}) =>
+export const getAdminChat = (
+  query: GetAdminChatParams,
+  params: RequestParams = {},
+) =>
   request<
     ContextResponse & {
       data?: ModelSystemChat;
@@ -34,6 +42,7 @@ export const getAdminChat = (params: RequestParams = {}) =>
   >({
     path: `/admin/chat`,
     method: "GET",
+    query: query,
     format: "json",
     ...params,
   });
@@ -49,7 +58,7 @@ export const getAdminChat = (params: RequestParams = {}) =>
  */
 
 export const putAdminChat = (
-  req: ModelSystemChat,
+  req: SvcChatUpdateReq,
   params: RequestParams = {},
 ) =>
   request<ContextResponse>({

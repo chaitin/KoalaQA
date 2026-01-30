@@ -1,246 +1,297 @@
 package chat
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
+	"fmt"
 	"strings"
-	"sync"
+	"time"
 
 	"github.com/chaitin/koalaqa/model"
-	"github.com/chaitin/koalaqa/pkg/crypt"
 	"github.com/chaitin/koalaqa/pkg/glog"
+	"github.com/chaitin/koalaqa/pkg/util"
+	"github.com/google/uuid"
+	"github.com/sbzhu/weworkapi_golang/wxbizmsgcrypt"
 )
 
-type streamState struct {
-	mutex    sync.Mutex
-	question string
-	stream   strings.Builder
-	Done     bool
+type wecomReq struct {
+	ToUserName   string `xml:"ToUserName"`
+	FromUserName string `xml:"FromUserName"`
+	CreateTime   int64  `xml:"CreateTime"`
+	MsgType      string `xml:"MsgType"`
+	Content      string `xml:"Content"`
+	MsgID        string `xml:"MsgId"`
 }
 
-func (s *streamState) Append(data string, done bool) {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
-	if data != "" {
-		s.stream.WriteString(data)
-	}
-
-	if done {
-		s.Done = done
-	}
+type wecomRes struct {
+	XMLName      xml.Name   `xml:"xml"`
+	ToUserName   wecomCDATA `xml:"ToUserName"`
+	FromUserName wecomCDATA `xml:"FromUserName"`
+	CreateTime   int64      `xml:"CreateTime"`
+	MsgType      wecomCDATA `xml:"MsgType"`
+	Content      wecomCDATA `xml:"Content"`
 }
 
-func (s *streamState) Text() string {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+type wecomCDATA struct {
+	Value string `xml:",cdata"`
+}
 
-	return s.stream.String()
+type wecomAccessToken struct {
+	Errcode     int    `json:"errcode"`
+	Errmsg      string `json:"errmsg"`
+	AccessToken string `json:"access_token"`
+	ExpiresIn   int    `json:"expires_in"`
+}
+
+type wecomUserInfo struct {
+	Errcode    int    `json:"errcode"`
+	Errmsg     string `json:"errmsg"`
+	UserID     string `json:"userid"`
+	Name       string `json:"name"`
+	Department []int  `json:"department"`
+	Mobile     string `json:"mobile"`
+	Email      string `json:"email"`
+	Status     int    `json:"status"`
 }
 
 type wecom struct {
 	logger      *glog.Logger
-	cache       sync.Map
 	cfg         model.SystemChatConfig
 	botCallback BotCallback
+
+	tokenCache accessToken
 }
 
-func (w *wecom) verify(req VerifyReq) (string, error) {
-	wx, _, err := crypt.NewWXBizJsonMsgCrypt(w.cfg.ClientID, w.cfg.ClientSecret, "")
-	if err != nil {
-		return "", err
+func (w *wecom) getAccessToken() (string, error) {
+	if w.tokenCache.expired() {
+		_, err, _ := sf.Do("access_token_wecom", func() (interface{}, error) {
+			resp, err := util.HTTPClient.Get(fmt.Sprintf("https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid=%s&corpsecret=%s", w.cfg.CorpID, w.cfg.ClientSecret))
+			if err != nil {
+				return "", errors.New("get wechatapp accesstoken failed")
+			}
+			defer resp.Body.Close()
+
+			var tokenResp wecomAccessToken // 获取到token消息
+
+			if err := json.NewDecoder(resp.Body).Decode(&tokenResp); err != nil {
+				return "", errors.New("json decode wechat resp failed")
+			}
+
+			if tokenResp.Errcode != 0 {
+				return "", fmt.Errorf("get wechat access token failed, code: %d, msg: %s", tokenResp.Errcode, tokenResp.Errmsg)
+			}
+
+			w.tokenCache = accessToken{
+				token:    tokenResp.AccessToken,
+				expireAt: time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second),
+			}
+			return nil, nil
+		})
+		if err != nil {
+			return "", err
+		}
 	}
-	code, str := wx.VerifyURL(req.Signature, req.Timestamp, req.Nonce, req.Content)
-	err = crypt.WecomErrorByCode(code)
+
+	return w.tokenCache.token, nil
+}
+
+func (cfg *wecom) getUserInfo(username string) (*wecomUserInfo, error) {
+	accessToken, err := cfg.getAccessToken()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
+	// 请求获取用户的内容
+	resp, err := util.HTTPClient.Get(fmt.Sprintf(
+		"https://qyapi.weixin.qq.com/cgi-bin/user/get?access_token=%s&userid=%s",
+		accessToken, username))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
 
-	return str, nil
-}
-
-type userReq struct {
-	Msgid    string `json:"msgid"`
-	Aibotid  string `json:"aibotid"`
-	Chattype string `json:"chattype"`
-	From     struct {
-		Userid string `json:"userid"`
-	} `json:"from"`
-	Msgtype string `json:"msgtype"`
-	Text    struct {
-		Content string `json:"content"`
-	} `json:"text"`
-	Stream struct {
-		Id string `json:"id"`
-	} `json:"stream"`
-}
-
-type userResp struct {
-	Msgtype string      `json:"msgtype"`
-	Stream  weComStream `json:"stream"`
-}
-
-type weComStream struct {
-	Id      string `json:"id"`
-	Finish  bool   `json:"finish"`
-	Content string `json:"content"`
-	MsgItem []struct {
-		Msgtype string `json:"msgtype"`
-		Image   struct {
-			Base64 string `json:"base64"`
-			Md5    string `json:"md5"`
-		} `json:"image"`
-	} `json:"msg_item"`
-}
-
-func (w *wecom) decryptUserReq(ctx context.Context, req VerifyReq) (*userReq, error) {
-	wx, _, err := crypt.NewWXBizJsonMsgCrypt(
-		w.cfg.ClientID,
-		w.cfg.ClientSecret,
-		"",
-	)
+	var userInfo wecomUserInfo
+	err = json.NewDecoder(resp.Body).Decode(&userInfo)
 	if err != nil {
 		return nil, err
 	}
 
-	code, reqMsg := wx.DecryptMsg(req.Content, req.Signature, req.Timestamp, req.Nonce)
-	err = crypt.WecomErrorByCode(code)
-	if err != nil {
-		return nil, err
-	}
-	logger := w.logger.WithContext(ctx).With("req", reqMsg)
-	logger.Info("recv wecom req")
-	var data userReq
-	err = json.Unmarshal([]byte(reqMsg), &data)
-	if err != nil {
-		return nil, err
+	if userInfo.Errcode != 0 {
+		return nil, fmt.Errorf("get user info failed: %d, %s", userInfo.Errcode, userInfo.Errmsg)
 	}
 
-	return &data, nil
+	return &userInfo, nil
 }
 
-func (w *wecom) EncryptUserRes(ctx context.Context, nonce string, data weComStream) (string, error) {
-	wx, _, err := crypt.NewWXBizJsonMsgCrypt(
-		w.cfg.ClientID,
-		w.cfg.ClientSecret,
-		"",
-	)
-	if err != nil {
+func (w *wecom) verify(ctx context.Context, req VerifyReq) (string, error) {
+	wx := wxbizmsgcrypt.NewWXBizMsgCrypt(w.cfg.Token, w.cfg.AESKey, w.cfg.CorpID, wxbizmsgcrypt.XmlType)
+
+	decryptBytes, cryptErr := wx.VerifyURL(req.MsgSignature, req.Timestamp, req.Nonce, req.Content)
+	if cryptErr != nil {
+		err := fmt.Errorf("verify failed: code: %d, msg: %s", cryptErr.ErrCode, cryptErr.ErrMsg)
+		w.logger.WithContext(ctx).WithErr(err).With("req", req).Error("verify failed")
 		return "", err
 	}
 
-	respBytes, err := json.Marshal(userResp{
-		Msgtype: "stream",
-		Stream:  data,
+	return string(decryptBytes), nil
+}
+
+func (w *wecom) chat(ctx context.Context, logger *glog.Logger, question string, fromUser string) {
+	// userInfo, err := w.getUserInfo(fromUser)
+	// if err != nil {
+	// 	logger.WithErr(err).Warn("get user info failed")
+	// 	return
+	// }
+
+	err := w.chatText(ctx, question, fromUser)
+	if err != nil {
+		logger.WithErr(err).Warn("chat text failed")
+		return
+	}
+}
+
+func (w *wecom) chatText(ctx context.Context, question string, fromUser string) error {
+	stream, err := w.botCallback(ctx, BotReq{
+		Type:      TypeWecom,
+		SessionID: uuid.NewString(),
+		Question:  question,
+	})
+	if err != nil {
+		return err
+	}
+	defer stream.Close()
+
+	var builder strings.Builder
+	for {
+		content, _, ok := stream.Text(ctx)
+		if !ok {
+			break
+		}
+
+		if content == "" {
+			continue
+		}
+
+		builder.WriteString(content)
+		if builder.Len() > 2000 {
+			err = w.sendTextRes(builder.String(), fromUser)
+			if err != nil {
+				return err
+			}
+
+			builder.Reset()
+		}
+	}
+
+	if builder.Len() > 0 {
+		err = w.sendTextRes(builder.String(), fromUser)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (w *wecom) sendTextRes(response string, touser string) error {
+	accessToken, err := w.getAccessToken()
+	if err != nil {
+		return err
+	}
+	msgData := map[string]interface{}{
+		"touser":  touser,
+		"msgtype": "markdown",
+		"agentid": w.cfg.ClientID,
+		"markdown": map[string]string{
+			"content": response,
+		},
+	}
+
+	jsonData, err := json.Marshal(msgData)
+	if err != nil {
+		return err
+	}
+
+	url := fmt.Sprintf("https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token=%s", accessToken)
+	resp, err := util.HTTPClient.Post(url, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	var result struct {
+		Errcode int    `json:"errcode"`
+		Errmsg  string `json:"errmsg"`
+	}
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		return err
+	}
+	if result.Errcode != 0 {
+		return fmt.Errorf("wechat Api failed : %s (code: %d)", result.Errmsg, result.Errcode)
+	}
+	return nil
+}
+
+func (w *wecom) StreamText(ctx context.Context, req VerifyReq) (string, error) {
+	if req.OnlyVerify {
+		return w.verify(ctx, req)
+	}
+
+	logger := w.logger.WithContext(ctx).With("req", req)
+	logger.Info("receive wecom stream text req")
+
+	wx := wxbizmsgcrypt.NewWXBizMsgCrypt(w.cfg.Token, w.cfg.AESKey, w.cfg.CorpID, wxbizmsgcrypt.XmlType)
+	decryptBytes, cryptErr := wx.DecryptMsg(req.MsgSignature, req.Timestamp, req.Nonce, []byte(req.Content))
+	if cryptErr != nil {
+		err := fmt.Errorf("decrypt msg failed: code: %d, msg: %s", cryptErr.ErrCode, cryptErr.ErrMsg)
+		logger.WithErr(err).Error("decrypt msg failed")
+		return "", err
+	}
+
+	var msg wecomReq
+	err := xml.Unmarshal(decryptBytes, &msg)
+	if err != nil {
+		logger.WithErr(err).With("msg", string(decryptBytes)).Error("unmarshal msg failed")
+		return "", err
+	}
+	logger = logger.With("msg", msg)
+	if msg.MsgType != "text" {
+		logger.Info("type is not text, skip")
+		return "", nil
+	}
+
+	content, err := w.resMsg(wecomRes{
+		ToUserName:   wecomCDATA{Value: msg.FromUserName},
+		FromUserName: wecomCDATA{Value: msg.ToUserName},
+		CreateTime:   msg.CreateTime,
+		MsgType:      wecomCDATA{"text"},
+		Content:      wecomCDATA{Value: "正在查找相关信息..."},
 	})
 	if err != nil {
 		return "", err
 	}
 
-	code, msg := wx.EncryptMsg(string(respBytes), nonce)
-	err = crypt.WecomErrorByCode(code)
-	if err != nil {
-		return "", err
-	}
+	go w.chat(context.Background(), logger, msg.Content, msg.FromUserName)
 
-	return msg, nil
+	return content, nil
 }
 
-func (w *wecom) StreamText(ctx context.Context, req VerifyReq) (string, error) {
-	if req.OnlyVerify {
-		return w.verify(req)
-	}
-
-	logger := w.logger.WithContext(ctx)
-
-	decryptReq, err := w.decryptUserReq(ctx, req)
+func (w *wecom) resMsg(res wecomRes) (string, error) {
+	resBytes, err := xml.Marshal(res)
 	if err != nil {
-		logger.WithErr(err).Error("decrypt user req failed")
 		return "", err
 	}
 
-	logger = logger.With("req", decryptReq)
-
-	switch decryptReq.Msgtype {
-	case "text":
-		state := &streamState{
-			question: decryptReq.Text.Content,
-			mutex:    sync.Mutex{},
-			stream:   strings.Builder{},
-			Done:     true,
-		}
-		_, loaded := w.cache.LoadOrStore(decryptReq.Msgid, state)
-		if !loaded {
-			stream, err := w.botCallback(ctx, BotReq{
-				SessionID: "wecom_" + decryptReq.Msgid,
-				Question:  state.question,
-			})
-			if err != nil {
-				logger.WithErr(err).Error("bot callback failed")
-				state.Append("出错了，请稍后再试", true)
-			} else {
-				go func() {
-					stream.Read(context.Background(), func(content string) {
-						state.Append(content, false)
-					})
-
-					state.Append("", true)
-				}()
-			}
-		}
-
-		resp, err := w.EncryptUserRes(ctx, req.Nonce, weComStream{
-			Id:      decryptReq.Msgid,
-			Finish:  false,
-			Content: "<think>正在查找相关信息...</think>",
-		})
-		if err != nil {
-			logger.WithErr(err).Error("encrypt wecom user res failed")
-			return "", err
-		}
-
-		return resp, nil
-	case "stream":
-		stateI, ok := w.cache.Load(decryptReq.Stream.Id)
-		if !ok {
-			logger.Warn("msg not exist")
-			resp, err := w.EncryptUserRes(ctx, req.Nonce, weComStream{
-				Id:      decryptReq.Stream.Id,
-				Finish:  true,
-				Content: "出错了，请稍后再试",
-			})
-			if err != nil {
-				logger.WithErr(err).Warn("encrypt user res failed")
-				return "", err
-			}
-			return resp, nil
-		}
-
-		state := stateI.(*streamState)
-		content := state.Text()
-
-		if content == "" {
-			content = "<think>正在查找相关信息...</think>"
-		}
-
-		if state.Done {
-			w.cache.Delete(decryptReq.Stream.Id)
-		}
-
-		resp, err := w.EncryptUserRes(ctx, req.Nonce, weComStream{
-			Id:      decryptReq.Stream.Id,
-			Finish:  state.Done,
-			Content: content,
-		})
-		if err != nil {
-			logger.WithErr(err).Error("encrypt user res failed")
-			return "", err
-		}
-		return resp, nil
+	wx := wxbizmsgcrypt.NewWXBizMsgCrypt(w.cfg.Token, w.cfg.AESKey, w.cfg.CorpID, wxbizmsgcrypt.XmlType)
+	encryptMsg, cryptErr := wx.EncryptMsg(string(resBytes), "", "")
+	if cryptErr != nil {
+		return "", fmt.Errorf("encrypt msg failed: code: %d. msg: %s", cryptErr.ErrCode, cryptErr.ErrMsg)
 	}
 
-	return "", errors.ErrUnsupported
+	return string(encryptMsg), nil
 }
 
 func (w *wecom) Start() error {
@@ -251,8 +302,7 @@ func (w *wecom) Stop() {}
 
 func newWecom(cfg model.SystemChatConfig, callback BotCallback) (Bot, error) {
 	return &wecom{
-		logger:      glog.Module("chat", "wecom"),
-		cache:       sync.Map{},
+		logger:      glog.Module("chat", "wecom_service"),
 		cfg:         cfg,
 		botCallback: callback,
 	}, nil

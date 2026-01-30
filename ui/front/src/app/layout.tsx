@@ -24,6 +24,7 @@ import * as React from 'react'
 import PageViewTracker from '@/components/PageViewTracker'
 import ConditionalHeader from '../components/ConditionalHeader'
 import Scroll from './scroll'
+import CustomerServiceWidgetLoader from '@/components/CustomerServiceWidgetLoader'
 import { Box } from '@mui/material'
 
 export const dynamic = 'force-dynamic'
@@ -222,8 +223,8 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
                             {props.children}
                           </Box>
                           <Scroll />
-                          {/* 使用挂件脚本，会根据 display 字段自动显示/隐藏 */}
-                          <Script src='/customer-service-widget.js' strategy='lazyOnload' />
+                          {/* 智能客服挂件 - 自动根据路由显隐 */}
+                          <CustomerServiceWidgetLoader />
                         </GuestActivationProvider>
                       </ThemeProviderWrapper>
                     </AppRouterCacheProvider>

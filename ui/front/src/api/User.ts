@@ -14,6 +14,7 @@ import request, { ContentType, RequestParams } from "./httpClient";
 import {
   ContextResponse,
   DeleteAdminUserUserIdParams,
+  DeleteUserUserIdPortraitPortraitIdParams,
   GetAdminUserHistorySearchParams,
   GetAdminUserParams,
   GetAdminUserUserIdParams,
@@ -23,6 +24,7 @@ import {
   GetUserPointParams,
   GetUserTrendParams,
   GetUserUserIdParams,
+  GetUserUserIdPortraitParams,
   ModelListRes,
   ModelMessageNotify,
   ModelTrend,
@@ -31,8 +33,10 @@ import {
   ModelUserNotiySub,
   ModelUserPointRecord,
   ModelUserSearchHistory,
+  PostUserUserIdPortraitParams,
   PutAdminUserUserIdParams,
   PutUserPayload,
+  PutUserUserIdPortraitPortraitIdParams,
   SvcAuthFrontendGetRes,
   SvcNotifyReadReq,
   SvcUnbindNotifySubReq,
@@ -40,6 +44,8 @@ import {
   SvcUserJoinOrgReq,
   SvcUserListItem,
   SvcUserLoginReq,
+  SvcUserPortraitListItem,
+  SvcUserPortraitReq,
   SvcUserRegisterReq,
   SvcUserStatisticsRes,
   SvcUserUpdateReq,
@@ -688,6 +694,116 @@ export const getUserUserId = (
   >({
     path: `/user/${userId}`,
     method: "GET",
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name GetUserUserIdPortrait
+ * @summary list user portrait
+ * @request GET:/user/{user_id}/portrait
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (SvcUserPortraitListItem)[],
+
+}),
+
+})` OK
+ */
+
+export const getUserUserIdPortrait = (
+  { userId, ...query }: GetUserUserIdPortraitParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: SvcUserPortraitListItem[];
+      };
+    }
+  >({
+    path: `/user/${userId}/portrait`,
+    method: "GET",
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name PostUserUserIdPortrait
+ * @summary create user portrait
+ * @request POST:/user/{user_id}/portrait
+ * @response `200` `(ContextResponse & {
+    data?: number,
+
+})` OK
+ */
+
+export const postUserUserIdPortrait = (
+  { userId, ...query }: PostUserUserIdPortraitParams,
+  req: SvcUserPortraitReq,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: number;
+    }
+  >({
+    path: `/user/${userId}/portrait`,
+    method: "POST",
+    body: req,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name PutUserUserIdPortraitPortraitId
+ * @summary update user portrait
+ * @request PUT:/user/{user_id}/portrait/{portrait_id}
+ * @response `200` `ContextResponse` OK
+ */
+
+export const putUserUserIdPortraitPortraitId = (
+  { userId, portraitId, ...query }: PutUserUserIdPortraitPortraitIdParams,
+  req: SvcUserPortraitReq,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/user/${userId}/portrait/${portraitId}`,
+    method: "PUT",
+    body: req,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name DeleteUserUserIdPortraitPortraitId
+ * @summary delete user portrait
+ * @request DELETE:/user/{user_id}/portrait/{portrait_id}
+ * @response `200` `ContextResponse` OK
+ */
+
+export const deleteUserUserIdPortraitPortraitId = (
+  { userId, portraitId, ...query }: DeleteUserUserIdPortraitPortraitIdParams,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/user/${userId}/portrait/${portraitId}`,
+    method: "DELETE",
+    type: ContentType.Json,
     format: "json",
     ...params,
   });

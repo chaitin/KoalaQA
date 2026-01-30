@@ -15,9 +15,9 @@
 // @ts-nocheck
 /*
  * ---------------------------------------------------------------
- * ## THIS FILE WAS GENERATED VIA SWAGGER-TYPESCRIPT-API        ##
- * ##                                                           ##
- * ## AUTHOR: acacode                                           ##
+ * ## THIS FILE WAS GENERATED VIA SWAGGER-TYPESCRIPT-API ##
+ * ## ##
+ * ## AUTHOR: acacode ##
  * ## SOURCE: https://github.com/acacode/swagger-typescript-api ##
  * ---------------------------------------------------------------
  */
@@ -142,8 +142,6 @@ export const clearAuthData = async (callLogoutAPI: boolean = true) => {
     // 清除CSRF token缓存
     clearCsrfToken();
 
-
-
     // 根据参数决定是否调用服务端登出API
     if (callLogoutAPI) {
       try {
@@ -224,7 +222,10 @@ export class HttpClient<SecurityDataType = unknown> {
           }
 
           // 检查是否是CSRF错误
-          if (res.data === "csrf token mismatch" && typeof window !== "undefined") {
+          if (
+            res.data === "csrf token mismatch" &&
+            typeof window !== "undefined"
+          ) {
             // 清除缓存的CSRF token
             clearCsrfToken();
             // 返回特殊错误，让调用者可以重试
@@ -247,12 +248,8 @@ export class HttpClient<SecurityDataType = unknown> {
         return Promise.reject(response);
       },
       (error) => {
-        if (
-          error.response?.status === 403 ||
-          error.response?.status === 419
-        ) {
+        if (error.response?.status === 403 || error.response?.status === 419) {
           // 处理403 Forbidden和419 Authentication Timeout
-          // 旧代码在这里处理CSRF重试，现在移除CSRF逻辑，但保留对这些状态码的注意（如果需要的话，目前直接reject）
         }
 
         // 处理401未授权错误 - 清除认证信息并重定向到登录页
@@ -314,11 +311,7 @@ export class HttpClient<SecurityDataType = unknown> {
         const requestUrl = error.config?.url || "";
         const shouldShowError = requestUrl !== "/user";
         // 如果是CSRF token错误且已经重试过，或者不是CSRF错误，才显示错误提示
-        if (
-          typeof window !== "undefined" &&
-          Alert?.error &&
-          shouldShowError
-        ) {
+        if (typeof window !== "undefined" && Alert?.error && shouldShowError) {
           let msg: string;
 
           // 如果有响应（服务器返回了错误）
@@ -421,9 +414,8 @@ export class HttpClient<SecurityDataType = unknown> {
     });
 
     if (keysToDelete.length > 0) {
-      console.log(
-        `[HttpClient] Cleared ${keysToDelete.length} pending requests for path: ${pathPattern}`,
-      );
+      console.log(`[HttpClient] Cleared ${keysToDelete.length} pending requests for path:
+                          ${pathPattern}`);
     }
   };
 
@@ -440,7 +432,7 @@ export class HttpClient<SecurityDataType = unknown> {
       headers: {
         ...((method &&
           this.instance.defaults.headers[
-          method.toLowerCase() as keyof HeadersDefaults
+            method.toLowerCase() as keyof HeadersDefaults
           ]) ||
           {}),
         ...(params1.headers || {}),
@@ -566,15 +558,13 @@ export class HttpClient<SecurityDataType = unknown> {
     };
 
     // 为非安全方法（非GET/OPTIONS/HEAD）添加CSRF token
-    const needsCsrf = !['GET', 'OPTIONS', 'HEAD'].includes(method);
+    const needsCsrf = !["GET", "OPTIONS", "HEAD"].includes(method);
     if (needsCsrf && typeof window !== "undefined") {
       const csrfToken = await getCsrfToken();
       if (csrfToken) {
         headers["X-CSRF-TOKEN"] = csrfToken;
       }
     }
-
-
 
     // 在SSR环境中，需要手动转发cookie
     const requestConfig: any = {
@@ -599,14 +589,14 @@ export class HttpClient<SecurityDataType = unknown> {
         }
 
         // if (process.env.NODE_ENV === "development") {
-        //   console.log(`[SSR] API Request to ${path}`);
-        //   console.log(`[SSR] Cookies available:`, !!allCookies);
-        //   if (allCookies) {
-        //     console.log(
-        //       `[SSR] Cookie header:`,
-        //       allCookies.substring(0, 100) + "...",
-        //     );
-        //   }
+        // console.log(`[SSR] API Request to ${path}`);
+        // console.log(`[SSR] Cookies available:`, !!allCookies);
+        // if (allCookies) {
+        // console.log(
+        // `[SSR] Cookie header:`,
+        // allCookies.substring(0, 100) + "...",
+        // );
+        // }
         // }
       } catch (error) {
         // 在某些情况下cookies可能不可用，忽略错误
@@ -620,7 +610,9 @@ export class HttpClient<SecurityDataType = unknown> {
       .catch(async (error) => {
         // 如果是CSRF错误，重新获取token并重试一次
         if (error?._csrfError && typeof window !== "undefined") {
-          console.log("[HttpClient] CSRF token mismatch, retrying with new token");
+          console.log(
+            "[HttpClient] CSRF token mismatch, retrying with new token",
+          );
 
           // 重新获取CSRF token
           const newCsrfToken = await getCsrfToken();

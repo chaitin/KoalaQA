@@ -94,6 +94,28 @@ const docTemplate = `{
                     "chat"
                 ],
                 "summary": "get chat info",
+                "parameters": [
+                    {
+                        "enum": [
+                            0,
+                            1,
+                            2,
+                            3,
+                            4
+                        ],
+                        "type": "integer",
+                        "x-enum-varnames": [
+                            "TypeUnknown",
+                            "TypeDingtalk",
+                            "TypeWecom",
+                            "TypeWecomIntelligent",
+                            "TypeWecomService"
+                        ],
+                        "name": "type",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -133,7 +155,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.SystemChat"
+                            "$ref": "#/definitions/svc.ChatUpdateReq"
                         }
                     }
                 ],
@@ -8069,6 +8091,23 @@ const docTemplate = `{
                 }
             }
         },
+        "chat.Type": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2,
+                3,
+                4
+            ],
+            "x-enum-varnames": [
+                "TypeUnknown",
+                "TypeDingtalk",
+                "TypeWecom",
+                "TypeWecomIntelligent",
+                "TypeWecomService"
+            ]
+        },
         "context.Response": {
             "type": "object",
             "properties": {
@@ -8104,6 +8143,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "need_human": {
+                    "type": "boolean"
                 },
                 "source": {
                     "$ref": "#/definitions/model.AskSessionSource"
@@ -9562,10 +9604,19 @@ const docTemplate = `{
         "model.SystemChatConfig": {
             "type": "object",
             "properties": {
+                "aes_key": {
+                    "type": "string"
+                },
                 "client_id": {
                     "type": "string"
                 },
                 "client_secret": {
+                    "type": "string"
+                },
+                "client_token": {
+                    "type": "string"
+                },
+                "corp_id": {
                     "type": "string"
                 },
                 "template_id": {
@@ -10224,6 +10275,23 @@ const docTemplate = `{
                 }
             }
         },
+        "svc.ChatUpdateReq": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "config": {
+                    "$ref": "#/definitions/model.SystemChatConfig"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "type": {
+                    "$ref": "#/definitions/chat.Type"
+                }
+            }
+        },
         "svc.CheckModelRes": {
             "type": "object",
             "properties": {
@@ -10795,6 +10863,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "need_human": {
+                    "type": "boolean"
                 },
                 "source": {
                     "$ref": "#/definitions/model.AskSessionSource"

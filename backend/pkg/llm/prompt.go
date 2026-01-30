@@ -6,7 +6,7 @@ var SystemChatPrompt = `
 <knowledge_base>
 {{- if .KnowledgeDocuments}}
 {{- range $i, $doc := .KnowledgeDocuments}}
-<doc title="{{$doc.Title}}">
+<doc title="{{$doc.Title}}" qa="{{if $doc.QA}}true{{else}}false{{end}}">
 {{$doc.Content}}
 </doc>
 {{- end}}
@@ -39,6 +39,10 @@ var SystemChatPrompt = `
 - 禁止推测、延伸或补充知识库未明确表述的内容
 - 多个文档内容冲突时，优先采用更具体、更详细的描述
 
+### QA 文档输出
+- 每个知识库文档包含 qa 字段，qa=true 表示问答原文
+- 当问题匹配的知识库文档 qa=true 时，回答必须严格按照该文档 content 原文输出，禁止改写、补充或删减
+
 ### 礼貌性回复处理
 - 用户发送"谢谢"、"感谢"、"好的"、"明白了"、"收到"、"OK"等确认性或礼貌性回复时，返回 matched=true
 - 回复简短的礼貌性内容，如"不客气，有问题随时问我～"、"很高兴能帮到你！"等
@@ -49,6 +53,7 @@ var SystemChatPrompt = `
 - 使用 Markdown 格式组织回答，结构清晰
 - 直接回答问题，不要出现"根据文档"、"知识库显示"等字眼
 - 信息完整时给出完整回答；信息不足时基于已有内容回答，不编造缺失部分
+- 如果知识库内容包含链接，必须保留链接的 Markdown 格式，如 [链接文本](URL)，确保链接可点击
 
 ## 输出格式
 严格返回单行合法 JSON，禁止输出任何其他内容（无代码块、无解释、无前后缀）。
@@ -69,7 +74,7 @@ var SystemChatNoRefPrompt = `
 <knowledge_base>
 {{- if .KnowledgeDocuments}}
 {{- range $i, $doc := .KnowledgeDocuments}}
-<doc title="{{$doc.Title}}">
+<doc title="{{$doc.Title}}" qa="{{if $doc.QA}}true{{else}}false{{end}}">
 {{$doc.Content}}
 </doc>
 {{- end}}
@@ -98,6 +103,10 @@ var SystemChatNoRefPrompt = `
 - 禁止推测、延伸或补充知识库未明确表述的内容
 - 多个文档内容冲突时，优先采用更具体、更详细的描述
 
+### QA 文档输出
+- 知识库文档包含 qa 字段，qa=true 表示问答原文
+- 当命中的文档 qa=true 时，必须逐字使用该文档 content，禁止改写、增删或补充
+
 ### 礼貌性回复处理
 - 用户发送"谢谢"、"感谢"、"好的"、"明白了"、"收到"、"OK"等确认性或礼貌性回复时，回复简短的礼貌性内容，如"不客气，有问题随时问我～"、"很高兴能帮到你！"等
 
@@ -106,6 +115,7 @@ var SystemChatNoRefPrompt = `
 - 使用 Markdown 格式组织回答，结构清晰
 - 直接回答问题，不要出现"根据文档"、"知识库显示"等字眼
 - 信息完整时给出完整回答；信息不足时基于已有内容回答，不编造缺失部分
+- 如果知识库内容包含链接，必须保留链接的 Markdown 格式，如 [链接文本](URL)，确保链接可点击
 - 不要输出思考过程，直接给出解答
 
 ## 输出格式
@@ -174,6 +184,7 @@ var SystemChatWithThinkPrompt = `
 - 使用 Markdown 格式，结构清晰
 - 不要出现"根据文档"、"知识库显示"等字眼
 - 不要向用户提问
+- 如果知识库内容包含链接，必须保留链接的 Markdown 格式，如 [链接文本](URL)，确保链接可点击
 - 确认性回复（"好的"、"谢谢"等）返回 matched=false
 
 ## 输出格式

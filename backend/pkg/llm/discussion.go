@@ -37,6 +37,7 @@ type KnowledgeDocument struct {
 	Title   string `json:"title"`
 	Content string `json:"content"`
 	Source  string `json:"source,omitempty"`
+	QA      bool   `json:"qa"`
 }
 
 const discussionPostTemplate = `

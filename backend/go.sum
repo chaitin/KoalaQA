@@ -373,6 +373,8 @@ github.com/sabloger/sitemap-generator v1.3.0 h1:R8tGnxgxXvZOObL310mgv1ahSiDuaPQm
 github.com/sabloger/sitemap-generator v1.3.0/go.mod h1:/Qk4vakEIlNrkhGhbLOCDTxs2yseQdQyuI9yJsp1Vs0=
 github.com/samber/lo v1.52.0 h1:Rvi+3BFHES3A8meP33VPAxiBZX/Aws5RxrschYGjomw=
 github.com/samber/lo v1.52.0/go.mod h1:4+MXEGsJzbKGaUEQFKBq2xtfuznW9oz/WrgyzMzRoM0=
+github.com/sbzhu/weworkapi_golang v0.0.0-20250808123004-7e1b55d1e17e h1:tvCq4eghI2azHpT6QbCywhpdfasKJBSYiYQsxXHo5ck=
+github.com/sbzhu/weworkapi_golang v0.0.0-20250808123004-7e1b55d1e17e/go.mod h1:gLXVYg36wlOl44Uh8Uw0aDiNMcZNnV+tzZq1FBj+f6A=
 github.com/sebdah/goldie/v2 v2.5.5 h1:rx1mwF95RxZ3/83sdS4Yp7t2C5TCokvWP4TBRbAyEWY=
 github.com/sebdah/goldie/v2 v2.5.5/go.mod h1:oZ9fp0+se1eapSRjfYbsV/0Hqhbuu3bJVvKI/NNtssI=
 github.com/sergi/go-diff v1.3.1 h1:xkr+Oxo4BOQKmkn/B9eMK0g5Kg/983T9DqqPHwYqD+8=

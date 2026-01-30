@@ -130,6 +130,11 @@ export enum ModelLLMType {
   LLMTypeAnalysisVL = "analysis-vl",
 }
 
+export enum ModelLLMStatus {
+  LLMStatusNormal = "normal",
+  LLMStatusError = "error",
+}
+
 export enum ModelFileType {
   FileTypeUnknown = 0,
   FileTypeMarkdown = 1,
@@ -199,6 +204,14 @@ export enum ModelAskSessionSource {
   AskSessionSourceWeb = 0,
   AskSessionSourcePlugin = 1,
   AskSessionSourceBot = 2,
+}
+
+export enum ChatType {
+  TypeUnknown = 0,
+  TypeDingtalk = 1,
+  TypeWecom = 2,
+  TypeWecomIntelligent = 3,
+  TypeWecomService = 4,
 }
 
 export interface AdminDocUserRes {
@@ -555,12 +568,14 @@ export interface ModelLLM {
   created_at?: number;
   id?: number;
   is_active?: boolean;
+  message?: string;
   model?: string;
   parameters?: ModelLLMModelParam;
   prompt_tokens?: number;
   provider?: string;
   rag_id?: string;
   show_name?: string;
+  status?: ModelLLMStatus;
   total_tokens?: number;
   type?: ModelLLMType;
   updated_at?: number;
@@ -668,8 +683,11 @@ export interface ModelSystemChat {
 }
 
 export interface ModelSystemChatConfig {
+  aes_key?: string;
   client_id?: string;
   client_secret?: string;
+  client_token?: string;
+  corp_id?: string;
   template_id?: string;
 }
 
@@ -734,6 +752,7 @@ export interface ModelUserInfo {
   org_ids?: number[];
   point?: number;
   role?: ModelUserRole;
+  salt?: string;
   uid?: number;
   username?: string;
   web_notify?: boolean;
@@ -868,6 +887,12 @@ export interface SvcBotGetRes {
   name?: string;
   unknown_prompt?: string;
   user_id?: number;
+}
+
+export interface SvcChatUpdateReq {
+  config?: ModelSystemChatConfig;
+  enabled?: boolean;
+  type: ChatType;
 }
 
 export interface SvcCheckModelRes {
@@ -1061,6 +1086,7 @@ export interface SvcListAsksRes {
   content?: string;
   created_at?: number;
   id?: number;
+  need_human?: boolean;
   source?: ModelAskSessionSource;
   summary?: boolean;
   summary_discs?: ModelJSONBArrayModelAskSessionSummaryDisc;
@@ -1328,6 +1354,20 @@ export interface SvcUserLoginReq {
   password: string;
 }
 
+export interface SvcUserPortraitListItem {
+  content?: string;
+  created_at?: number;
+  created_by?: number;
+  id?: number;
+  updated_at?: number;
+  user_id?: number;
+  username?: string;
+}
+
+export interface SvcUserPortraitReq {
+  content: string;
+}
+
 export interface SvcUserQuickReplyReq {
   content: string;
   /** @maxLength 10 */
@@ -1407,6 +1447,10 @@ export interface PutAdminBotPayload {
   avatar?: File;
   name: string;
   unknown_prompt?: string;
+}
+
+export interface GetAdminChatParams {
+  type: 0 | 1 | 2 | 3 | 4;
 }
 
 export interface GetAdminDiscussionParams {
@@ -2077,4 +2121,28 @@ export interface GetUserTrendParams {
 export interface GetUserUserIdParams {
   /** user id */
   userId: number;
+}
+
+export interface GetUserUserIdPortraitParams {
+  /** user_id */
+  userId: string;
+}
+
+export interface PostUserUserIdPortraitParams {
+  /** user_id */
+  userId: string;
+}
+
+export interface PutUserUserIdPortraitPortraitIdParams {
+  /** user_id */
+  userId: string;
+  /** portrait_id */
+  portraitId: string;
+}
+
+export interface DeleteUserUserIdPortraitPortraitIdParams {
+  /** user_id */
+  userId: string;
+  /** portrait_id */
+  portraitId: string;
 }

@@ -1,11 +1,11 @@
-import { getAdminChat, putAdminChat } from '@/api';
+import { ChatType, getAdminChat, putAdminChat } from '@/api';
 import Card from '@/components/card';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Box, Button, FormControlLabel, Link, Stack, Switch, TextField, Typography } from '@mui/material';
+import { message } from '@ctzhian/ui';
+import { Box, Button, Link, Stack, Switch, TextField, Typography } from '@mui/material';
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { message } from '@ctzhian/ui';
 
 const formSchema = z.object({
     client_id: z.string().min(1, '必填'),
@@ -39,6 +39,7 @@ const DingBot: React.FC = () => {
     const onSubmit = async (data: FormData) => {
         try {
             await putAdminChat({
+                type: ChatType.TypeDingtalk,
                 config: {
                     client_id: data.client_id,
                     client_secret: data.client_secret,
@@ -54,7 +55,7 @@ const DingBot: React.FC = () => {
     };
 
     useEffect(() => {
-        getAdminChat().then(res => {
+        getAdminChat({ type: ChatType.TypeDingtalk }).then(res => {
             if (res) {
                 reset({
                     client_id: res.config?.client_id || '',
