@@ -43,6 +43,8 @@ const StatusBadge = ({ status, text, variant, onClick, sx, ...props }: StatusBad
         ModelDocStatus.DocStatusAppling,
         ModelDocStatus.DocStatusPendingApply,
         ModelDocStatus.DocStatusApplySuccess,
+        ModelDocStatus.DocStatusPendingExport,
+        ModelDocStatus.DocStatusExportSuccess,
       ].includes(status as ModelDocStatus)
     ) {
       return {
@@ -53,7 +55,7 @@ const StatusBadge = ({ status, text, variant, onClick, sx, ...props }: StatusBad
 
     if (
       variant === 'pending' ||
-      [ModelDocStatus.DocStatusPendingReview, ModelDocStatus.DocStatusPendingExport, ModelDocStatus.DocStatusPendingExec].includes(
+      [ModelDocStatus.DocStatusPendingReview, ModelDocStatus.DocStatusPendingExec].includes(
         status as ModelDocStatus
       )
     ) {
@@ -63,13 +65,13 @@ const StatusBadge = ({ status, text, variant, onClick, sx, ...props }: StatusBad
         cursor: onClick ? 'pointer' : 'default',
         '&:hover': onClick
           ? {
-              backgroundColor: '#ffeaa7',
-            }
+            backgroundColor: '#ffeaa7',
+          }
           : {},
       };
     }
 
-    if (variant === 'success' || status === ModelDocStatus.DocStatusExportSuccess) {
+    if (variant === 'success') {
       return {
         backgroundColor: 'rgba(46, 125, 50, 0.10)',
         color: '#2e7d32',
