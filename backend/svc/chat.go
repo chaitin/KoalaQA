@@ -243,12 +243,41 @@ type ChatUpdateReq struct {
 	model.SystemChat
 }
 
+func (c *Chat) checkConfig(typ chat.Type, cfg model.SystemChatConfig) error {
+	if cfg.ClientID == "" {
+		return errors.New("empty client_id")
+	}
+
+	if cfg.ClientSecret == "" {
+		return errors.New("empty client_secret")
+	}
+
+	switch typ {
+	case chat.TypeDingtalk:
+		if cfg.TemplateID == "" {
+			return errors.New("empty template_id")
+		}
+	case chat.TypeWecom:
+		if cfg.CorpID == "" {
+			return errors.New("empty corp_id")
+		}
+		if cfg.Token == "" {
+			return errors.New("empty token")
+		}
+		if cfg.AESKey == "" {
+			return errors.New("empty aes_key")
+		}
+	}
+
+	return nil
+}
+
 func (c *Chat) Update(ctx context.Context, req ChatUpdateReq) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
 	if req.Enabled {
-		err := req.Config.Check()
+		err := c.checkConfig(req.Type, req.Config)
 		if err != nil {
 			return err
 		}

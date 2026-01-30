@@ -1,8 +1,6 @@
 package model
 
 import (
-	"errors"
-
 	"github.com/chaitin/koalaqa/pkg/util"
 )
 
@@ -143,20 +141,4 @@ type SystemChatConfig struct {
 	CorpID       string `json:"corp_id"`
 	Token        string `json:"client_token"`
 	AESKey       string `json:"aes_key"`
-}
-
-func (s *SystemChatConfig) Check() error {
-	if s.ClientID == "" {
-		return errors.New("empty client_id")
-	}
-
-	if s.ClientSecret == "" {
-		return errors.New("empty client_secret")
-	}
-
-	if s.TemplateID == "" {
-		return errors.New("empty template_id")
-	}
-
-	return nil
 }
