@@ -69,7 +69,7 @@ const CommunityChatWidget = () => {
                     <CustomerServiceContent
                         onClose={() => setOpen(false)}
                         isWidgetMode={true}
-
+                        sessionId=""
                     />
                 </Paper>
             </Fade>
