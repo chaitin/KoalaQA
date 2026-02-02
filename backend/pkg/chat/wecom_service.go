@@ -11,6 +11,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"strconv"
 	"sync"
 	"time"
 
@@ -449,6 +450,7 @@ func (w *wecomService) uploadMediaToWechat(reader io.Reader, fileName string) (s
 func (w *wecomService) sendURL(ctx context.Context, userID, openkfID, sessionID, question string) error {
 	val := make(url.Values)
 	val.Set("question", question)
+	val.Set("source", strconv.Itoa(int(model.AskSessionSourceWecomService)))
 	if sessionID != "" {
 		val.Set("id", sessionID)
 	}

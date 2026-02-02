@@ -8172,12 +8172,14 @@ const docTemplate = `{
             "enum": [
                 0,
                 1,
-                2
+                2,
+                3
             ],
             "x-enum-varnames": [
                 "AskSessionSourceWeb",
                 "AskSessionSourcePlugin",
-                "AskSessionSourceBot"
+                "AskSessionSourceBot",
+                "AskSessionSourceWecomService"
             ]
         },
         "model.AskSessionSummaryDisc": {
@@ -10406,7 +10408,8 @@ const docTemplate = `{
                 "source": {
                     "enum": [
                         0,
-                        1
+                        1,
+                        3
                     ],
                     "allOf": [
                         {
@@ -11481,7 +11484,8 @@ const docTemplate = `{
                 "source": {
                     "enum": [
                         0,
-                        1
+                        1,
+                        3
                     ],
                     "allOf": [
                         {

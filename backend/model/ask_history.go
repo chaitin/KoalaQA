@@ -12,6 +12,7 @@ const (
 	AskSessionSourceWeb AskSessionSource = iota
 	AskSessionSourcePlugin
 	AskSessionSourceBot
+	AskSessionSourceWecomService
 )
 
 type AskSession struct {
