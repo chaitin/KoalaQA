@@ -28,7 +28,7 @@ type dingtalk struct {
 	streamCli  *client.StreamClient
 	oauthCli   *dingtalkoauth2_1_0.Client
 	cardCli    *dingtalkcard_1_0.Client
-	tokenCache accessToken
+	tokenCache token
 }
 
 func (d *dingtalk) accessToken() (string, error) {
@@ -52,7 +52,7 @@ func (d *dingtalk) accessToken() (string, error) {
 				return nil, fmt.Errorf("get access_token status code: %d", *resp.StatusCode)
 			}
 
-			d.tokenCache = accessToken{
+			d.tokenCache = token{
 				token:    *resp.Body.AccessToken,
 				expireAt: time.Now().Add(time.Duration(*resp.Body.ExpireIn) * time.Second),
 			}

@@ -14,12 +14,12 @@ import (
 
 var sf singleflight.Group
 
-type accessToken struct {
+type token struct {
 	token    string
 	expireAt time.Time
 }
 
-func (d *accessToken) expired() bool {
+func (d *token) expired() bool {
 	return d.token == "" || time.Now().After(d.expireAt.Add(-time.Minute*5))
 }
 
