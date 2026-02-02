@@ -271,8 +271,7 @@ func (l *LLM) msgs(ctx context.Context, sMsg string, uMsg string, params map[str
 		return nil, err
 	}
 	for _, msg := range msgs {
-		fmt.Println(msg.Role, msg.Content)
-		// logger.With("role", msg.Role, "content", msg.Content).Debug("format message")
+		l.logger.With("role", msg.Role).WithText("content", msg.Content).Debug("format message")
 	}
 
 	return msgs, nil
@@ -550,7 +549,6 @@ func (l *LLM) queryKnowledgeDocuments(ctx context.Context, query string, metadat
 			QA:      doc.DocType == model.DocTypeQuestion,
 		})
 	}
-	logger.With("knowledges", knowledgeDocs).Debug("query knowledge documents success")
 	return rewrittenQuery, knowledgeDocs, nil
 }
 

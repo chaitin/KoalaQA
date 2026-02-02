@@ -2,11 +2,13 @@ package glog
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/chaitin/koalaqa/pkg/trace"
 )
@@ -21,6 +23,25 @@ const (
 	LevelError
 	LevelDiscard
 )
+
+func (lv level) String() string {
+	switch lv {
+	case LevelTrace:
+		return "trace"
+	case LevelDebug:
+		return "debug"
+	case LevelInfo:
+		return "info"
+	case LevelWarn:
+		return "warn"
+	case LevelError:
+		return "error"
+	case LevelDiscard:
+		return "discard"
+	default:
+		return "unknown"
+	}
+}
 
 var (
 	defaultLevel = LevelInfo
@@ -48,8 +69,19 @@ type Logger struct {
 	strModules string
 	skip       int
 
-	logger *slog.Logger
+	logger    *slog.Logger
+	textAttrs []textAttr
 }
+
+type textAttr struct {
+	key   string
+	value string
+}
+
+var (
+	textAttrMu     sync.Mutex
+	textAttrWriter = os.Stdout
+)
 
 func (l *Logger) Module(name ...string) *Logger {
 	cloned := l.clone()
@@ -72,6 +104,7 @@ func (l *Logger) clone() *Logger {
 		modules:    m,
 		strModules: l.strModules,
 		logger:     &logger,
+		textAttrs:  append([]textAttr(nil), l.textAttrs...),
 	}
 }
 
@@ -83,6 +116,7 @@ func (l *Logger) cloneLogger() *Logger {
 		modules:    l.modules,
 		strModules: l.strModules,
 		logger:     &logger,
+		textAttrs:  append([]textAttr(nil), l.textAttrs...),
 	}
 }
 
@@ -98,7 +132,19 @@ func (l *Logger) Skip(i int) *Logger {
 
 func (l *Logger) With(args ...any) *Logger {
 	t := *l
+	if len(l.textAttrs) > 0 {
+		t.textAttrs = append([]textAttr(nil), l.textAttrs...)
+	}
 	t.logger = t.logger.With(args...)
+	return &t
+}
+
+func (l *Logger) WithText(key string, value string) *Logger {
+	t := *l
+	if len(l.textAttrs) > 0 {
+		t.textAttrs = append([]textAttr(nil), l.textAttrs...)
+	}
+	t.textAttrs = append(t.textAttrs, textAttr{key: key, value: value})
 	return &t
 }
 
@@ -146,6 +192,7 @@ func (l *Logger) log(lv level, msg string, args ...any) {
 	}
 
 	l.withExtra(stack).logger.Log(context.Background(), slogLevelMap[lv], msg, args...)
+	l.outputTextAttrs()
 }
 
 var (
@@ -208,4 +255,19 @@ func (l *Logger) withModule() *Logger {
 		return l
 	}
 	return l.With("module", l.strModules)
+}
+
+func (l *Logger) outputTextAttrs() {
+	if len(l.textAttrs) == 0 {
+		return
+	}
+
+	textAttrMu.Lock()
+	defer textAttrMu.Unlock()
+
+	for _, attr := range l.textAttrs {
+		fmt.Fprintf(textAttrWriter, "%s:\n", attr.key)
+		fmt.Fprintln(textAttrWriter, attr.value)
+		fmt.Fprintln(textAttrWriter)
+	}
 }
