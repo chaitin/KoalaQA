@@ -1,12 +1,15 @@
 import { getAdminDiscussionAsk, ModelAskSession, getAdminDiscussionAskSession, SvcListAsksRes, ModelAskSessionSource } from '@/api';
 import { useListQueryParams } from '@/hooks/useListQueryParams';
 import { Ellipsis, Table, Modal } from '@ctzhian/ui';
-import { Stack, TextField, Typography, Box, Paper, Avatar, CircularProgress, Chip } from '@mui/material';
+import { Stack, TextField, Typography, Box, Paper, Avatar, CircularProgress, Chip, alpha } from '@mui/material';
 import { useRequest } from 'ahooks';
 import { ColumnsType } from '@ctzhian/ui/dist/Table';
 import dayjs from 'dayjs';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import EditorContent from '@/components/EditorContent';
+import Markdown from 'react-markdown';
+import SyntaxHighlighter from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 const AskHistory = () => {
   const { page, size, setParams } = useListQueryParams();
@@ -340,7 +343,7 @@ const AskHistory = () => {
                       )}
                       <Box
                         sx={{
-                          maxWidth: '70%',
+                          maxWidth: '85%',
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: isUser ? 'flex-end' : 'flex-start',
@@ -350,6 +353,7 @@ const AskHistory = () => {
                           elevation={0}
                           sx={{
                             p: 1.5,
+                            maxWidth: '100%',
                             bgcolor: isUser ? 'primary.main' : 'background.paper',
                             color: isUser ? 'white' : 'text.primary',
                             borderRadius: isUser
@@ -365,16 +369,120 @@ const AskHistory = () => {
                           }}
                         >
                           <Box
-                            sx={{
-                              '& *': {
-                                color: isUser ? 'white' : 'inherit',
+                            sx={theme => ({
+                              wordBreak: 'break-word',
+                              overflowWrap: 'anywhere',
+                              '& > *:first-of-type': { mt: 0 },
+                              '& > *:last-child': { mb: 0 },
+                              '& p, & h6': {
+                                fontSize: '14px',
+                                mb: 1,
+                                lineHeight: 1.6,
                               },
                               '& a': {
-                                color: isUser ? 'rgba(255,255,255,0.8)' : 'primary.main',
+                                color: theme.palette.primary.main,
+                                textDecoration: 'none',
+                                '&:hover': {
+                                  textDecoration: 'underline',
+                                },
                               },
-                            }}
+                              '& blockquote': {
+                                borderLeft: '4px solid',
+                                borderColor: 'divider',
+                                mx: 0,
+                                pl: 2,
+                                py: 1,
+                                my: 1.5,
+                                bgcolor: alpha(theme.palette.grey[500], 0.05),
+                                borderRadius: '0 4px 4px 0',
+                                color: 'text.secondary',
+                              },
+                              '& ul, & ol': {
+                                pl: 3,
+                                mb: 1.5,
+                              },
+                              '& li': {
+                                mb: 0.5,
+                              },
+                              '& hr': {
+                                borderColor: 'divider',
+                                my: 2,
+                              },
+                              '& pre': {
+                                m: '0.5rem 0',
+                                p: 0,
+                                bgcolor: 'transparent',
+                                borderRadius: 2,
+                                overflow: 'hidden',
+                              },
+                              // Prevent global code styles from affecting the syntax highlighter
+                              '& pre code': {
+                                bgcolor: 'transparent !important',
+                                p: '0 !important',
+                                borderRadius: '0 !important',
+                                color: 'inherit !important',
+                                whiteSpace: 'pre-wrap!important',
+                                wordBreak: 'break-all!important',
+                              },
+                              '& table': {
+                                borderCollapse: 'collapse',
+                                width: '100%',
+                                mb: 2,
+                                display: 'block',
+                                overflowX: 'auto',
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                              },
+                              '& th, & td': {
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                p: 1.5,
+                                fontSize: '13px',
+                              },
+                              '& th': {
+                                bgcolor: alpha(theme.palette.grey[500], 0.05),
+                                fontWeight: 600,
+                                textAlign: 'left',
+                              },
+                            })}
+
                           >
-                            <EditorContent content={item.content || ''} />
+                            <Markdown components={{
+                              a: (props) => <a {...props} target='_blank' rel='noopener noreferrer' />,
+                              code(props) {
+                                const { children, className, node, ref, ...rest } = props
+                                const match = /language-(\w+)/.exec(className || '')
+                                const { inline } = props as any
+                                const hasNewline = String(children).includes('\n')
+
+                                if (match || (!inline && hasNewline)) {
+                                  return (
+                                    <SyntaxHighlighter
+                                      {...rest}
+                                      PreTag="div"
+                                      children={String(children).replace(/\n$/, '')}
+                                      language={match ? match[1] : 'text'}
+                                      style={oneDark}
+                                      customStyle={{
+                                        margin: 0,
+                                        borderRadius: '8px',
+                                        fontSize: '13px',
+                                        lineHeight: '1.5',
+                                        whiteSpace: 'pre-wrap',
+                                        overflowWrap: 'anywhere',
+                                      }}
+                                    />
+                                  )
+                                }
+
+                                return (
+                                  <code ref={ref} {...rest} className={className}>
+                                    {children}
+                                  </code>
+                                )
+                              },
+                            }}>{item.content || ''}</Markdown>
                           </Box>
                         </Paper>
                       </Box>

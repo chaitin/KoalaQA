@@ -69,7 +69,7 @@ interface Message {
 interface CustomerServiceContentProps {
   readonly initialUser?: ModelUserInfo
   readonly botData?: SvcBotGetRes | null
-  readonly initialSessionId?: string | null
+  readonly sessionId: string
   readonly onClose?: () => void
   readonly isWidgetMode?: boolean
   readonly permissionCheckType?: 'enabled' | 'display'
@@ -78,7 +78,7 @@ interface CustomerServiceContentProps {
 export default function CustomerServiceContent({
   initialUser,
   botData,
-  initialSessionId,
+  sessionId,
   onClose,
   isWidgetMode,
   permissionCheckType,
@@ -171,16 +171,6 @@ export default function CustomerServiceContent({
     }
   }, [])
 
-
-  // 生成 UUID 的工具函数
-  const generateUuid = useCallback(() => {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = (Math.random() * 16) | 0
-      const v = c === 'x' ? r : (r & 0x3) | 0x8
-      return v.toString(16)
-    })
-  }, [])
-
   // 格式化时间
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp)
@@ -213,20 +203,6 @@ export default function CustomerServiceContent({
 
   // 记录初始 URL 中是否有 id（用于区分是否需要加载历史对话）
   const initialUrlIdRef = useRef<string | null>(searchParams.get('id'))
-
-  const [sessionId, setSessionId] = useState(() => {
-    // 优先使用服务器端传入的 sessionId
-    if (initialSessionId) {
-      return initialSessionId
-    }
-    // 从 URL 参数中获取 id
-    const urlId = searchParams.get('id')
-    if (urlId) {
-      return urlId
-    }
-    // 如果都没有，生成新的 UUID（这种情况不应该发生）
-    return generateUuid()
-  })
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -259,11 +235,12 @@ export default function CustomerServiceContent({
 
   // 用于标记是否已经加载过历史对话，避免重复加载
   const historyLoadedRef = useRef<string | null>(null)
+  // 用于标记正在加载的历史对话 SessionID，避免重复请求
+  const loadingHistorySessionIdRef = useRef<string | null>(null)
 
   // 当 sessionId 变化时，加载历史对话
   useEffect(() => {
-    // 使用 initialUser 或 user 来检查用户ID，确保在服务端渲染时也能正确加载
-    // 允许未登录用户（currentUserId 为 0 或 undefined）
+    console.log('sessionId-------', sessionId)
     if (!sessionId) {
       return
     }
@@ -271,6 +248,11 @@ export default function CustomerServiceContent({
 
     // 如果已经加载过这个 sessionId 的历史对话，不再重复加载
     if (historyLoadedRef.current === sessionId) {
+      return
+    }
+
+    // 如果正在加载这个 sessionId 的历史对话，不再重复加载
+    if (loadingHistorySessionIdRef.current === sessionId) {
       return
     }
 
@@ -282,6 +264,9 @@ export default function CustomerServiceContent({
     if (!shouldLoadHistory) {
       return
     }
+
+    // 标记正在加载
+    loadingHistorySessionIdRef.current = sessionId
 
     const loadHistory = async () => {
       try {
@@ -373,11 +358,13 @@ export default function CustomerServiceContent({
         // 即使加载失败，也标记为已尝试加载，避免重复请求
         historyLoadedRef.current = sessionId
         setIsInitialLoading(false)
+      } finally {
+        loadingHistorySessionIdRef.current = null
       }
     }
 
     loadHistory()
-  }, [sessionId, user?.uid, initialUser?.uid, searchParams])
+  }, [sessionId])
 
   // 检查智能客服是否开启
   useEffect(() => {
@@ -820,20 +807,20 @@ export default function CustomerServiceContent({
     [sessionId, getCurrentSessionId],
   )
 
-  // 发送消息
-  const handleSend = useCallback(async () => {
-    if (!inputValue.trim() || isLoading) return
+  // 核心发送逻辑
+  const sendMessage = useCallback(async (content: string) => {
+    const question = content.trim()
+    if (!question || isLoading) return
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: inputValue.trim(),
+      content: question,
       timestamp: new Date().toISOString(),
     }
 
     setMessages((prev) => [...prev, userMessage])
-    const question = inputValue.trim()
-    setInputValue('')
+
     setIsLoading(true)
     setIsWaiting(true)
     setIsAutoScrollEnabled(true)
@@ -1239,9 +1226,35 @@ export default function CustomerServiceContent({
       setIsLoading(false)
       setIsWaiting(false)
       setIsAutoScrollEnabled(false)
+      setIsAutoScrollEnabled(false)
       currentMessageRef.current = null
     }
-  }, [inputValue, isLoading, forumId, forums, router, getCurrentSessionId, callSummaryContent])
+  }, [isLoading, forumId, forums, router, getCurrentSessionId, callSummaryContent])
+
+  const handleSend = useCallback(async () => {
+    if (!inputValue.trim() || isLoading) return
+    const text = inputValue
+    setInputValue('')
+    await sendMessage(text)
+  }, [inputValue, isLoading, sendMessage])
+
+  // 处理 URL 中的 question 参数
+  const hasAutoAskedRef = useRef(false)
+
+  useEffect(() => {
+    const question = searchParams.get('question')
+    if (question && !hasAutoAskedRef.current && sessionId && !isLoading && !isInitialLoading) {
+      hasAutoAskedRef.current = true
+
+      // 先移除 URL 参数
+      const currentUrl = new URL(window.location.href)
+      currentUrl.searchParams.delete('question')
+      router.replace(currentUrl.pathname + currentUrl.search, { scroll: false })
+
+      // 再发送消息
+      sendMessage(question)
+    }
+  }, [searchParams, sessionId, sendMessage, isInitialLoading, isLoading, router]) // isLoading not included to avoid loop, checked in condition
 
   // 处理回车发送
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -1363,7 +1376,7 @@ export default function CustomerServiceContent({
       const inferredForumId = messageForumId ?? forumId ?? availableForums[0]?.id
 
       if (hasMultipleForums && (messageForumId === undefined || messageForumId === null) && !forumId) {
-        const selectionMessageId = generateUuid()
+        const selectionMessageId = `select-${Date.now()}`
         const selectionMessage: Message = {
           id: selectionMessageId,
           role: 'assistant',
@@ -1387,7 +1400,7 @@ export default function CustomerServiceContent({
         return
       }
 
-      const searchMessageId = generateUuid()
+      const searchMessageId = `search-${Date.now()}`
       const loadingMessage: Message = {
         id: searchMessageId,
         role: 'assistant',
@@ -1411,7 +1424,7 @@ export default function CustomerServiceContent({
 
       await callSummaryContent(inferredForumId, trimmedQuestion, searchMessageId, trimmedQuestion)
     },
-    [forums, forumId, callSummaryContent, generateUuid],
+    [forums, forumId, callSummaryContent],
   )
 
   // 处理板块选择
@@ -1473,11 +1486,9 @@ export default function CustomerServiceContent({
   const handleNewSession = useCallback(async () => {
     try {
       // 调用接口创建新会话
-      const response = await getDiscussionAskSession({ force_create: true })
-      const newSessionId = response
+      const newSessionId = await getDiscussionAskSession({ force_create: true })
 
       if (newSessionId) {
-        setSessionId(newSessionId)
 
         // 标记为新会话（不应该加载历史对话）
         initialUrlIdRef.current = null
