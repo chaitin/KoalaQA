@@ -101,11 +101,13 @@ definitions:
     - 0
     - 1
     - 2
+    - 3
     type: integer
     x-enum-varnames:
     - AskSessionSourceWeb
     - AskSessionSourcePlugin
     - AskSessionSourceBot
+    - AskSessionSourceWecomService
   model.AskSessionSummaryDisc:
     properties:
       forum_id:
@@ -1651,6 +1653,7 @@ definitions:
         enum:
         - 0
         - 1
+        - 3
     required:
     - question
     - session_id
@@ -2357,6 +2360,7 @@ definitions:
         enum:
         - 0
         - 1
+        - 3
     required:
     - forum_id
     - session_id

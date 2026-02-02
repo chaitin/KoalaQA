@@ -7,13 +7,18 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"io"
+	"mime/multipart"
+	"net/http"
+	"net/url"
+	"strconv"
 	"sync"
 	"time"
 
+	"github.com/chaitin/koalaqa/assets"
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/util"
-	"github.com/google/uuid"
 	"github.com/sbzhu/weworkapi_golang/wxbizmsgcrypt"
 )
 
@@ -95,15 +100,24 @@ type wecomServiceReplyMsg struct {
 	Text     wecomServiceReplyMsgText `json:"text,omitempty"`
 }
 
+type wecomServiceMediaUploadResponse struct {
+	ErrCode   int    `json:"errcode"`
+	ErrMsg    string `json:"errmsg"`
+	MediaType string `json:"type"`
+	MediaID   string `json:"media_id"`
+	CreatedAt string `json:"created_at"`
+}
+
 type wecomService struct {
 	logger             *glog.Logger
 	cfg                model.SystemChatConfig
 	botCallback        BotCallback
 	accessAddrCallback model.AccessAddrCallback
-	stateManager       *StateManager
+	enabledCallback    model.EnabledCallback
 
 	cursor     sync.Map
-	tokenCache accessToken
+	tokenCache token
+	imageCache token
 }
 
 func (w *wecomService) getAccessToken() (string, error) {
@@ -125,7 +139,7 @@ func (w *wecomService) getAccessToken() (string, error) {
 				return "", fmt.Errorf("get wechat access token failed, code: %d, msg: %s", tokenResp.Errcode, tokenResp.Errmsg)
 			}
 
-			w.tokenCache = accessToken{
+			w.tokenCache = token{
 				token:    tokenResp.AccessToken,
 				expireAt: time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second),
 			}
@@ -176,7 +190,7 @@ func (w *wecomService) StreamText(ctx context.Context, req VerifyReq) (string, e
 	}
 	logger = logger.With("msg", msg)
 
-	go w.chat(ctx, logger, &msg)
+	go w.chat(context.Background(), logger, &msg)
 
 	return "", nil
 }
@@ -211,6 +225,10 @@ func (w *wecomService) getMsgs(accessToken string, msg *wecomServiceUserAskMsg) 
 	err = json.NewDecoder(resp.Body).Decode(&msgRet)
 	if err != nil {
 		return nil, err
+	}
+
+	if msgRet.Errcode != 0 {
+		return nil, fmt.Errorf("get service msgs failed, code: %d, msg: %s", msgRet.Errcode, msgRet.Errmsg)
 	}
 
 	if msgRet.NextCursor != "" {
@@ -329,50 +347,119 @@ func (w *wecomService) chat(ctx context.Context, logger *glog.Logger, msg *wecom
 		return
 	}
 
-	// state, err := w.checkSessionState(lastMsg.ExternalUserid, lastMsg.OpenKfid)
-	// if err != nil {
-	// 	logger.WithErr(err).Warn("check session state failed")
-	// 	return
-	// }
-
-	// if state == 3 {
-	// 	logger.Info("human state, skip")
-	// }
-
-	err = w.sendMsg(lastMsg.ExternalUserid, lastMsg.OpenKfid, "正在查找相关信息...")
+	state, err := w.checkSessionState(lastMsg.ExternalUserid, lastMsg.OpenKfid)
 	if err != nil {
-		logger.WithErr(err).Warn("send msg failed")
+		logger.WithErr(err).Warn("check session state failed")
 		return
 	}
 
-	sessionID := uuid.NewString()
-	w.stateManager.Set(sessionID, newSteamState())
-
-	err = w.sendURL(ctx, lastMsg.ExternalUserid, lastMsg.OpenKfid, sessionID, lastMsg.Text.Content)
-	if err != nil {
-		logger.WithErr(err).Warn("send url failed")
-		w.stateManager.Delete(sessionID)
+	if state > 2 {
+		logger.Info("human state, skip")
 		return
 	}
 
-	go func() {
-		defer w.stateManager.Delete(sessionID)
+	enabled, err := w.enabledCallback(ctx)
+	if err != nil {
+		logger.WithErr(err).Error("get customer-service failed")
+		e := w.sendMsg(lastMsg.ExternalUserid, lastMsg.OpenKfid, "出错了，请稍后再试。")
+		if e != nil {
+			logger.WithErr(e).Error("sned msg to user failed")
+		}
+		return
+	}
 
-		stream, err := w.botCallback(ctx, BotReq{
-			Type:      TypeWecomService,
-			SessionID: sessionID,
-			Question:  lastMsg.Text.Content,
-		})
+	if !enabled {
+		logger.Info("customer-service is disabled, skip")
+		err = w.sendMsg(lastMsg.ExternalUserid, lastMsg.OpenKfid, "在线支持未开启。")
 		if err != nil {
-			logger.WithErr(err).Warn("bot callback failed")
+			logger.WithErr(err).Error("send msg to user failed")
 			return
 		}
-		defer stream.Close()
-	}()
+	}
+
+	err = w.sendURL(ctx, lastMsg.ExternalUserid, lastMsg.OpenKfid, "", lastMsg.Text.Content)
+	if err != nil {
+		logger.WithErr(err).Warn("send url failed")
+		return
+	}
+}
+
+func (w *wecomService) uploadMediaToWechat(reader io.Reader, fileName string) (string, error) {
+	if w.imageCache.expired() {
+		_, err, _ := sf.Do("wecom_service_image", func() (interface{}, error) {
+			accessToken, err := w.getAccessToken()
+			if err != nil {
+				return "", err
+			}
+			// 上传文件 req
+			body := &bytes.Buffer{}
+			writer := multipart.NewWriter(body)
+
+			part, err := writer.CreateFormFile("media", fileName)
+			if err != nil {
+				return "", err
+			}
+
+			// 将图片数据复制到表单中
+			_, err = io.Copy(part, reader)
+			if err != nil {
+				return "", fmt.Errorf("copy image failed: %w", err)
+			}
+
+			if err := writer.Close(); err != nil {
+				return "", err
+			}
+
+			url := fmt.Sprintf("https://qyapi.weixin.qq.com/cgi-bin/media/upload?access_token=%s&type=image", accessToken)
+			req, err := http.NewRequest(http.MethodPost, url, body)
+			if err != nil {
+				return "", err
+			}
+			req.Header.Set("Content-Type", writer.FormDataContentType())
+
+			httpResp, err := util.HTTPClient.Do(req)
+			if err != nil {
+				return "", err
+			}
+			defer httpResp.Body.Close()
+
+			var result wecomServiceMediaUploadResponse
+			if err := json.NewDecoder(httpResp.Body).Decode(&result); err != nil {
+				return "", err
+			}
+
+			if result.ErrCode != 0 {
+				return "", fmt.Errorf("upload image failed: [%d] %s", result.ErrCode, result.ErrMsg)
+			}
+
+			w.imageCache = token{
+				token:    result.MediaID,
+				expireAt: time.Now().Add(time.Hour * 72),
+			}
+
+			return nil, nil
+		})
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return w.imageCache.token, nil
 }
 
 func (w *wecomService) sendURL(ctx context.Context, userID, openkfID, sessionID, question string) error {
-	fullPath, err := w.accessAddrCallback(ctx, "/h5-chat?id="+sessionID)
+	val := make(url.Values)
+	val.Set("question", question)
+	val.Set("source", strconv.Itoa(int(model.AskSessionSourceWecomService)))
+	if sessionID != "" {
+		val.Set("id", sessionID)
+	}
+	fullPath, err := w.accessAddrCallback(ctx, "/customer-service")
+	if err != nil {
+		return err
+	}
+
+	imageID, err := w.uploadMediaToWechat(bytes.NewReader(assets.WecomService), "image.png")
 	if err != nil {
 		return err
 	}
@@ -382,9 +469,10 @@ func (w *wecomService) sendURL(ctx context.Context, userID, openkfID, sessionID,
 		OpenKfid: openkfID,
 		Msgtype:  "link",
 		Link: wecomServiceLink{
-			Url:   fullPath,
-			Desc:  "本回答由 KoalaQA 基于 AI 生成，仅供参考。",
-			Title: question,
+			Url:          fullPath + "?" + val.Encode(),
+			Desc:         "KoalaQA 在线支持",
+			Title:        question,
+			ThumbMediaID: imageID,
 		},
 	})
 
@@ -397,12 +485,13 @@ func (w *wecomService) Start() error {
 
 func (w *wecomService) Stop() {}
 
-func newWecomService(cfg model.SystemChatConfig, callback BotCallback, accessAddrCallback model.AccessAddrCallback, stateManager *StateManager) (Bot, error) {
+func newWecomService(cfg model.SystemChatConfig, callback BotCallback,
+	accessAddrCallback model.AccessAddrCallback, enabled model.EnabledCallback) (Bot, error) {
 	return &wecomService{
 		logger:             glog.Module("chat", "wecom_service"),
 		cfg:                cfg,
 		botCallback:        callback,
-		stateManager:       stateManager,
+		enabledCallback:    enabled,
 		accessAddrCallback: accessAddrCallback,
 		cursor:             sync.Map{},
 	}, nil

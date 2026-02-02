@@ -6,8 +6,8 @@ import Script from 'next/script'
 export default function CustomerServiceWidgetLoader() {
     const pathname = usePathname()
 
-    // Check if we are on login or register pages
-    const isExcluded = pathname?.startsWith('/login') || pathname?.startsWith('/register')
+    // Check if we are on login or register pages, or on the customer service page itself
+    const isExcluded = pathname?.startsWith('/login') || pathname?.startsWith('/register') || pathname?.startsWith('/customer-service')
 
     return (
         <>

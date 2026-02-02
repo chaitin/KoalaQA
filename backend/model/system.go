@@ -1,6 +1,8 @@
 package model
 
 import (
+	"context"
+
 	"github.com/chaitin/koalaqa/pkg/util"
 )
 
@@ -143,3 +145,5 @@ type SystemChatConfig struct {
 	Token        string `json:"client_token"`
 	AESKey       string `json:"aes_key"`
 }
+
+type EnabledCallback func(context.Context) (bool, error)

@@ -62,7 +62,7 @@ type wecom struct {
 	cfg         model.SystemChatConfig
 	botCallback BotCallback
 
-	tokenCache accessToken
+	tokenCache token
 }
 
 func (w *wecom) getAccessToken() (string, error) {
@@ -84,7 +84,7 @@ func (w *wecom) getAccessToken() (string, error) {
 				return "", fmt.Errorf("get wechat access token failed, code: %d, msg: %s", tokenResp.Errcode, tokenResp.Errmsg)
 			}
 
-			w.tokenCache = accessToken{
+			w.tokenCache = token{
 				token:    tokenResp.AccessToken,
 				expireAt: time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second),
 			}

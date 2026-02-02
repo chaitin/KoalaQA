@@ -1,7 +1,7 @@
 import { getUser, getBot, getDiscussionAskSession, getSystemWebPlugin } from '@/api';
 import { cookies } from 'next/headers';
 import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import CustomerServiceContent from './ui/CustomerServiceContent';
 import { SvcBotGetRes } from '@/api/types';
 
@@ -39,7 +39,7 @@ async function getBotData(): Promise<SvcBotGetRes | null> {
   }
 }
 
-async function getSessionId(user: Awaited<ReturnType<typeof getUserData>>, urlId: string | null): Promise<string | null> {
+async function getSessionId(user: Awaited<ReturnType<typeof getUserData>>, urlId: string | null, question: string | null): Promise<string | null> {
   // 如果是游客状态（未登录）且当前 URL 中有 id，则直接使用 URL 中的 id
   if (!user && urlId) {
     return urlId;
@@ -47,7 +47,9 @@ async function getSessionId(user: Awaited<ReturnType<typeof getUserData>>, urlId
 
   // 否则调用 API 获取会话 ID
   try {
-    const response = await getDiscussionAskSession({});
+    // 只有在有问题且没有 URL ID 的情况下才强制创建新会话，避免重定向死循环
+    const shouldForceCreate = question && !urlId;
+    const response = await getDiscussionAskSession(shouldForceCreate ? { force_create: true } : {});
     return response || null;
   } catch (error) {
     console.error('获取会话ID失败:', error);
@@ -56,24 +58,42 @@ async function getSessionId(user: Awaited<ReturnType<typeof getUserData>>, urlId
 }
 
 export default async function CustomerServicePage(props: {
-  readonly searchParams: Promise<{ id?: string; is_widget?: string }>
+  readonly searchParams: Promise<{ id?: string; is_widget?: string; question?: string }>
 }) {
   const searchParams = await props.searchParams;
   const urlId = searchParams?.id || null;
+  const question = searchParams?.question || null;
   const isWidget = searchParams?.is_widget === '1';
 
   const user = await getUserData();
   const [botData, sessionId, pluginConfig] = await Promise.all([
     getBotData(),
-    getSessionId(user, urlId),
+    getSessionId(user, urlId, question),
     getSystemWebPlugin().catch(() => null),
   ]);
+
+  // 如果获取到了新的 sessionId 且与 URL 中的 id 不一致，重定向到带有 id 的 URL
+  // 这样可以确保 URL 始终包含当前的会话 ID
+  if (sessionId && sessionId !== urlId) {
+    const newParams = new URLSearchParams();
+    newParams.set('id', sessionId);
+
+    if (question) {
+      newParams.set('question', question);
+    }
+
+    if (isWidget) {
+      newParams.set('is_widget', '1');
+    }
+
+    redirect(`/customer-service?${newParams.toString()}`);
+  }
 
   // 如果在线支持被禁用且不在 iframe 内（is_widget=1），触发 404
   if (pluginConfig && !pluginConfig.enabled && !isWidget) {
     notFound();
   }
-
+  if (!sessionId) return
   // 允许未登录用户访问，user 可以为 null
-  return <CustomerServiceContent initialUser={user ?? undefined} botData={botData} initialSessionId={sessionId} />;
+  return <CustomerServiceContent key={sessionId || 'init'} initialUser={user ?? undefined} botData={botData} sessionId={sessionId} />;
 }
