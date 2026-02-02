@@ -15,6 +15,15 @@ type WebPlugin struct {
 	repoSys *repo.System
 }
 
+func (w *WebPlugin) CustomerServiceEnabled(ctx context.Context) (bool, error) {
+	plugin, err := w.Get(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	return plugin.Enabled, nil
+}
+
 func (w *WebPlugin) Get(ctx context.Context) (*model.SystemWebPlugin, error) {
 	if w.cache != nil {
 		return w.cache, nil

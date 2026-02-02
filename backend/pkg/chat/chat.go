@@ -122,7 +122,7 @@ type Bot interface {
 }
 
 func New(typ Type, cfg model.SystemChatConfig, callback BotCallback,
-	accessAddrCallback model.AccessAddrCallback, stateManager *StateManager) (Bot, error) {
+	accessAddrCallback model.AccessAddrCallback, enabledCallback model.EnabledCallback) (Bot, error) {
 	switch typ {
 	case TypeDingtalk:
 		return newDingtalk(cfg, callback)
@@ -131,7 +131,7 @@ func New(typ Type, cfg model.SystemChatConfig, callback BotCallback,
 	case TypeWecomIntelligent:
 		return newWecomIntelligent(cfg, callback)
 	case TypeWecomService:
-		return newWecomService(cfg, callback, accessAddrCallback, stateManager)
+		return newWecomService(cfg, callback, accessAddrCallback, enabledCallback)
 	default:
 		return nil, errors.ErrUnsupported
 	}

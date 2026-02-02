@@ -27,10 +27,10 @@ type Chat struct {
 	repoSys       *repo.System
 	svcDisc       *Discussion
 	svcPublicAddr *PublicAddress
+	svcWebPlugin  *WebPlugin
 	logger        *glog.Logger
 	repoOrg       *repo.Org
 	repoForum     *repo.Forum
-	stateMgr      *chat.StateManager
 
 	lock         sync.Mutex
 	cache        sync.Map
@@ -222,7 +222,7 @@ func (c *Chat) getCache(ctx context.Context, typ chat.Type) (*chatCache, error) 
 
 	var bot chat.Bot
 	if dbChat.Enabled {
-		bot, err = chat.New(typ, dbChat.Config, c.botCallback, c.svcPublicAddr.Callback, c.stateMgr)
+		bot, err = chat.New(typ, dbChat.Config, c.botCallback, c.svcPublicAddr.Callback, c.svcWebPlugin.CustomerServiceEnabled)
 		if err != nil {
 			c.logger.WithContext(ctx).With("cfg", dbChat.Config).Warn("new chat bot failed")
 		}
@@ -305,7 +305,7 @@ func (c *Chat) Update(ctx context.Context, req ChatUpdateReq) error {
 
 	var newBot chat.Bot
 	if req.Enabled {
-		newBot, err = chat.New(req.Type, req.Config, c.botCallback, c.svcPublicAddr.Callback, c.stateMgr)
+		newBot, err = chat.New(req.Type, req.Config, c.botCallback, c.svcPublicAddr.Callback, c.svcWebPlugin.CustomerServiceEnabled)
 		if err != nil {
 			return err
 		}
@@ -361,27 +361,20 @@ func (c *Chat) StreamText(ctx context.Context, typ chat.Type, req chat.VerifyReq
 	return bot.StreamText(ctx, req)
 }
 
-type SteamAnswerReq struct {
-	ID string `form:"id" binding:"required"`
-}
-
-func (c *Chat) StreamAnswer(ctx context.Context, req SteamAnswerReq) error {
-	return errors.ErrUnsupported
-}
-
-func newChat(lc fx.Lifecycle, sys *repo.System, disc *Discussion, publicAddr *PublicAddress, repoOrg *repo.Org, repoForum *repo.Forum, stateMgr *chat.StateManager) *Chat {
+func newChat(lc fx.Lifecycle, sys *repo.System, disc *Discussion, publicAddr *PublicAddress,
+	webPlugin *WebPlugin, repoOrg *repo.Org, repoForum *repo.Forum) *Chat {
 	c := &Chat{
 		repoSys:       sys,
 		svcDisc:       disc,
 		svcPublicAddr: publicAddr,
+		svcWebPlugin:  webPlugin,
 		repoOrg:       repoOrg,
 		repoForum:     repoForum,
-		stateMgr:      stateMgr,
 		cache:         sync.Map{},
 		systemKeyMap: map[chat.Type]string{
 			chat.TypeDingtalk: model.SystemKeyChatDingtalk,
 			// chat.TypeWecom:        model.SystemKeyChatWecom,
-			// chat.TypeWecomService: model.SystemKeyChatWecomService,
+			chat.TypeWecomService: model.SystemKeyChatWecomService,
 		},
 		logger: glog.Module("svc", "chat"),
 	}

@@ -7,13 +7,13 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"net/url"
 	"sync"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/util"
-	"github.com/google/uuid"
 	"github.com/sbzhu/weworkapi_golang/wxbizmsgcrypt"
 )
 
@@ -100,7 +100,7 @@ type wecomService struct {
 	cfg                model.SystemChatConfig
 	botCallback        BotCallback
 	accessAddrCallback model.AccessAddrCallback
-	stateManager       *StateManager
+	enabledCallback    model.EnabledCallback
 
 	cursor     sync.Map
 	tokenCache accessToken
@@ -329,50 +329,51 @@ func (w *wecomService) chat(ctx context.Context, logger *glog.Logger, msg *wecom
 		return
 	}
 
-	// state, err := w.checkSessionState(lastMsg.ExternalUserid, lastMsg.OpenKfid)
-	// if err != nil {
-	// 	logger.WithErr(err).Warn("check session state failed")
-	// 	return
-	// }
-
-	// if state == 3 {
-	// 	logger.Info("human state, skip")
-	// }
-
-	err = w.sendMsg(lastMsg.ExternalUserid, lastMsg.OpenKfid, "正在查找相关信息...")
+	state, err := w.checkSessionState(lastMsg.ExternalUserid, lastMsg.OpenKfid)
 	if err != nil {
-		logger.WithErr(err).Warn("send msg failed")
+		logger.WithErr(err).Warn("check session state failed")
 		return
 	}
 
-	sessionID := uuid.NewString()
-	w.stateManager.Set(sessionID, newSteamState())
-
-	err = w.sendURL(ctx, lastMsg.ExternalUserid, lastMsg.OpenKfid, sessionID, lastMsg.Text.Content)
-	if err != nil {
-		logger.WithErr(err).Warn("send url failed")
-		w.stateManager.Delete(sessionID)
+	if state > 2 {
+		logger.Info("human state, skip")
 		return
 	}
 
-	go func() {
-		defer w.stateManager.Delete(sessionID)
-
-		stream, err := w.botCallback(ctx, BotReq{
-			Type:      TypeWecomService,
-			SessionID: sessionID,
-			Question:  lastMsg.Text.Content,
-		})
-		if err != nil {
-			logger.WithErr(err).Warn("bot callback failed")
+	enabled, err := w.enabledCallback(ctx)
+	if err != nil {
+		logger.WithErr(err).Error("get customer-service failed")
+		e := w.sendMsg(lastMsg.ExternalUserid, lastMsg.OpenKfid, "出错了，请稍后再试。")
+		if e != nil {
+			logger.WithErr(e).Error("sned msg to user failed")
 			return
 		}
-		defer stream.Close()
-	}()
+	}
+
+	if !enabled {
+		logger.Info("customer-service is disabled, skip")
+		err = w.sendMsg(lastMsg.ExternalUserid, lastMsg.OpenKfid, "在线支持未开启。")
+		if err != nil {
+			logger.WithErr(err).Error("send msg to user failed")
+			return
+		}
+	}
+
+	err = w.sendURL(ctx, lastMsg.ExternalUserid, lastMsg.OpenKfid, "", lastMsg.Text.Content)
+	if err != nil {
+		logger.WithErr(err).Warn("send url failed")
+		return
+	}
 }
 
 func (w *wecomService) sendURL(ctx context.Context, userID, openkfID, sessionID, question string) error {
-	fullPath, err := w.accessAddrCallback(ctx, "/h5-chat?id="+sessionID)
+	val := make(url.Values)
+	val.Set("new", "true")
+	val.Set("question", question)
+	if sessionID != "" {
+		val.Set("id", sessionID)
+	}
+	fullPath, err := w.accessAddrCallback(ctx, "/customer-service?"+val.Encode())
 	if err != nil {
 		return err
 	}
@@ -383,7 +384,7 @@ func (w *wecomService) sendURL(ctx context.Context, userID, openkfID, sessionID,
 		Msgtype:  "link",
 		Link: wecomServiceLink{
 			Url:   fullPath,
-			Desc:  "本回答由 KoalaQA 基于 AI 生成，仅供参考。",
+			Desc:  "KoalaQA 在线支持",
 			Title: question,
 		},
 	})
@@ -397,12 +398,13 @@ func (w *wecomService) Start() error {
 
 func (w *wecomService) Stop() {}
 
-func newWecomService(cfg model.SystemChatConfig, callback BotCallback, accessAddrCallback model.AccessAddrCallback, stateManager *StateManager) (Bot, error) {
+func newWecomService(cfg model.SystemChatConfig, callback BotCallback,
+	accessAddrCallback model.AccessAddrCallback, enabled model.EnabledCallback) (Bot, error) {
 	return &wecomService{
 		logger:             glog.Module("chat", "wecom_service"),
 		cfg:                cfg,
 		botCallback:        callback,
-		stateManager:       stateManager,
+		enabledCallback:    enabled,
 		accessAddrCallback: accessAddrCallback,
 		cursor:             sync.Map{},
 	}, nil
