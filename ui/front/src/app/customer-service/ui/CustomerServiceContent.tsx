@@ -1242,7 +1242,9 @@ export default function CustomerServiceContent({
   const hasAutoAskedRef = useRef(false)
 
   useEffect(() => {
-    const question = searchParams.get('question')
+    const rawQuestion = searchParams.get('question')
+    const question = rawQuestion ? decodeURIComponent(rawQuestion) : null
+
     if (question && !hasAutoAskedRef.current && sessionId && !isLoading && !isInitialLoading) {
       hasAutoAskedRef.current = true
 
