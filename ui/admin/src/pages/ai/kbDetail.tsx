@@ -183,6 +183,8 @@ const KnowledgeBaseDetailPage = () => {
     setRootLoading(true);
     try {
       const statusFilter = getStatusFilter();
+      const isFlatMode = statusFilter !== undefined;
+
       const response = await getAdminKbKbIdSpaceSpaceIdFolderFolderIdDoc({
         kbId: kb_id,
         spaceId: spaceId,
@@ -192,6 +194,7 @@ const KnowledgeBaseDetailPage = () => {
         status: statusFilter,
         title: docStatusSearch.trim() || undefined,
         parent_id: folderId, // 根节点使用 folderId 作为 parent_id
+        all_doc: isFlatMode,
       });
 
       const items = response?.items || [];
@@ -362,12 +365,12 @@ const KnowledgeBaseDetailPage = () => {
       setRootNodes([]);
       setRootPage(1);
       setRootHasMore(true);
-      
+
       // 清空所有树节点状态，确保已展开的节点也会被重置
       // 这样所有已展开的节点都会变成收起状态，子节点数据也会被清空
       // 使用函数式更新确保立即清空，避免 React 渲染延迟导致旧数据仍然显示
       setTreeNodeStates(new Map());
-      
+
       // 重新加载根节点（会应用新的筛选条件）
       loadRootNodes(1, false);
     }
@@ -557,6 +560,12 @@ const KnowledgeBaseDetailPage = () => {
   const TreeNode = ({ doc, level = 0 }: { doc: SvcDocListItem; level?: number }) => {
     const docId = doc.id!;
     const isFolder = doc.file_type === ModelFileType.FileTypeFolder;
+
+    // 平铺模式下（status不为undefined），不显示展开/收起按钮，也不缩进
+    const isFlatMode = docStatusTab !== 'all';
+    const showExpand = isFolder && !isFlatMode;
+    const displayLevel = isFlatMode ? 0 : level;
+
     const nodeState = treeNodeStates.get(docId);
     const isExpanded = nodeState?.expanded || false;
     const children = nodeState?.children || [];
@@ -669,7 +678,7 @@ const KnowledgeBaseDetailPage = () => {
             alignItems: 'center',
             p: 1.5,
             mb: 0.5,
-            ml: level * 3,
+            ml: displayLevel * 3,
             borderRadius: 1,
             '&:hover': {
               bgcolor: 'action.hover',
@@ -685,20 +694,21 @@ const KnowledgeBaseDetailPage = () => {
             sx={{ mr: 1 }}
           />
 
-          {/* 展开/收起按钮 - 只有文件夹才显示 */}
-          {isFolder ? (
-            <IconButton size="small" onClick={handleToggleExpand} sx={{ mr: 1, p: 0.5 }}>
-              {loading && nodeState?.page === 0 ? (
-                <CircularProgress size={16} />
-              ) : isExpanded ? (
-                <ExpandMoreIcon fontSize="small" />
-              ) : (
-                <ChevronRightIcon fontSize="small" />
-              )}
-            </IconButton>
-          ) : (
-            <Box sx={{ width: 32, mr: 1 }} />
-          )}
+          {/* 展开/收起按钮 - 只有树形模式显示 */}
+          {!isFlatMode &&
+            (showExpand ? (
+              <IconButton size="small" onClick={handleToggleExpand} sx={{ mr: 1, p: 0.5 }}>
+                {loading && nodeState?.page === 0 ? (
+                  <CircularProgress size={16} />
+                ) : isExpanded ? (
+                  <ExpandMoreIcon fontSize="small" />
+                ) : (
+                  <ChevronRightIcon fontSize="small" />
+                )}
+              </IconButton>
+            ) : (
+              <Box sx={{ width: 32, mr: 1 }} />
+            ))}
 
           {/* 状态图标 */}
           <Box sx={{ mr: 2 }}>{!isFolder && renderStatusIcon(doc)}</Box>
@@ -737,7 +747,7 @@ const KnowledgeBaseDetailPage = () => {
         </Paper>
 
         {/* 子节点 - 只有文件夹才显示 */}
-        {isFolder && isExpanded && (
+        {showExpand && isExpanded && (
           <Box>
             {children.map(child => (
               <TreeNode key={child.id} doc={child} level={level + 1} />
@@ -953,7 +963,7 @@ const KnowledgeBaseDetailPage = () => {
             fontWeight: 500,
           }}
         >
-          <Box sx={{ width: 40 }}>{/* 展开按钮列 */}</Box>
+          {docStatusTab === 'all' && <Box sx={{ width: 40 }}>{/* 展开按钮列 */}</Box>}
           <Box sx={{ width: 32 }}>{/* 文件夹图标列 */}</Box>
           <Typography variant="body2" fontWeight={500} sx={{ flex: 1 }}>
             文档名称
