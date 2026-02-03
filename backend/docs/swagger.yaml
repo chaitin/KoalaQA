@@ -3913,6 +3913,9 @@ paths:
         required: true
         type: integer
       - in: query
+        name: all_doc
+        type: boolean
+      - in: query
         minimum: 1
         name: page
         type: integer
