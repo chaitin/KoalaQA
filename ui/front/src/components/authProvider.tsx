@@ -29,7 +29,7 @@ export const AuthContext = createContext<{
 }>({
   user: EMPTY_USER,
   loading: false,
-  setUser: () => {},
+  setUser: () => { },
   fetchUser: () => Promise.resolve(),
   isAuthenticated: false,
 });
@@ -39,10 +39,10 @@ export const encodeUrl = (url: string) => {
   return d.pathname + d.search + d.hash;
 };
 
-const AuthProvider = ({ 
+const AuthProvider = ({
   children,
-  initialUser = null 
-}: { 
+  initialUser = null
+}: {
   children: React.ReactNode;
   initialUser?: ModelUserInfo | null;
 }) => {
@@ -51,28 +51,35 @@ const AuthProvider = ({
   const [loading, setLoading] = useState(false); // 固定初始值为false，避免hydration不匹配
   const fetchingRef = useRef(false);
 
+  // 使用 useRef 存储当前的请求 promise，以便并发调用时共享
+  const fetchingPromiseRef = useRef<Promise<void> | null>(null);
+
   // 使用 useCallback 优化函数引用
   const fetchUser = useCallback(async () => {
-    // 防止重复请求
-    if (fetchingRef.current) {
-      return;
+    // 防止重复请求，如果已有请求在进行中，直接返回该 promise
+    if (fetchingPromiseRef.current) {
+      return fetchingPromiseRef.current;
     }
 
-    fetchingRef.current = true;
-    setLoading(true);
-    
-    try {
-      // httpClient 现在内置了缓存和重试，直接调用即可
-      const userData = await getUser();
-      setUser(userData);
-    } catch (error) {
-      // 如果是401错误，说明需要登录，但不在这里处理重定向
-      // 重定向逻辑已经在httpClient中处理了
-      setUser(EMPTY_USER);
-    } finally {
-      setLoading(false);
-      fetchingRef.current = false;
-    }
+    // 创建新的 promise 并存储
+    fetchingPromiseRef.current = (async () => {
+      setLoading(true);
+
+      try {
+        // httpClient 现在内置了缓存和重试，直接调用即可
+        const userData = await getUser();
+        setUser(userData);
+      } catch (error) {
+        // 如果是401错误，说明需要登录，但不在这里处理重定向
+        // 重定向逻辑已经在httpClient中处理了
+        setUser(EMPTY_USER);
+      } finally {
+        setLoading(false);
+        fetchingPromiseRef.current = null;
+      }
+    })();
+
+    return fetchingPromiseRef.current;
   }, []);
 
   useEffect(() => {
@@ -81,15 +88,7 @@ const AuthProvider = ({
       return;
     }
 
-    // 检查是否有有效的 token，只检查 cookie
-    const hasValidToken = safeClientExecute(() => {
-      return document.cookie.includes('auth_token');
-    }) || false;
 
-    if (!hasValidToken) {
-      setLoading(false);
-      return;
-    }
 
     fetchUser();
   }, [initialUser, fetchUser]);
