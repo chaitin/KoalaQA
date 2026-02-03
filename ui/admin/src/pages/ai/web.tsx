@@ -4,6 +4,7 @@ import {
   getAdminKbKbIdWeb,
   ModelDocType,
   ModelKBDocumentDetail,
+  ModelDocStatus,
   PlatformPlatformType,
   putAdminKbKbIdWebDocId,
   SvcDocListItem,
@@ -24,6 +25,7 @@ import {
   Button,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { useRequest } from 'ahooks';
@@ -50,7 +52,7 @@ const AdminDocument = () => {
   const kb_id = +searchParams.get('id')!;
   const [title, setTitle] = useState(query.title);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-  
+
   const {
     data,
     loading,
@@ -59,7 +61,7 @@ const AdminDocument = () => {
   } = useRequest(params => getAdminKbKbIdWeb({ page, size, ...params, kbId: kb_id }), {
     manual: true,
   });
-  
+
   // 使用分类编辑hook
   const categoryEdit = useCategoryEdit({
     kbId: kb_id,
@@ -179,6 +181,13 @@ const AdminDocument = () => {
       width: 160,
       render: (_, record) => {
         if (!record?.status) return '-';
+        if (record.status === ModelDocStatus.DocStatusApplyFailed) {
+          return (
+            <Tooltip title={record.message}>
+              <StatusBadge status={record.status} />
+            </Tooltip>
+          );
+        }
         return <StatusBadge status={record.status} />;
       },
     },
@@ -187,7 +196,7 @@ const AdminDocument = () => {
       dataIndex: 'file_type',
       width: 100,
       render: (_, record) => {
-        return !record?.file_type 
+        return !record?.file_type
           ? '-'
           : fileType[record.file_type as keyof typeof fileType] || record?.file_type;
       },
