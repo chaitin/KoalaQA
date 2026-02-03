@@ -31,7 +31,12 @@ type messageNotifySubManager struct {
 func (m *messageNotifySubManager) new(typ model.MessageNotifySubType, info model.MessageNotifySubInfo, pc model.AccessAddrCallback) (notify_sub.Sender, error) {
 	switch typ {
 	case model.MessageNotifySubTypeDingtalk:
-		return notify_sub.NewDingtalk(notify_sub.DingtalkIn{
+		return notify_sub.NewDingtalk(notify_sub.NotifySubIn{
+			Forum: m.in.Forum,
+			User:  m.in.User,
+		}, info, pc), nil
+	case model.MessageNotifySubTypeWechatOfficialAccount:
+		return notify_sub.NewWechatOfficialAccount(notify_sub.NotifySubIn{
 			Forum: m.in.Forum,
 			User:  m.in.User,
 		}, info, pc), nil
@@ -153,6 +158,17 @@ type MessageNotifySubCreateReq struct {
 func (m *MessageNotifySub) Upsert(ctx context.Context, req MessageNotifySubCreateReq) (uint, error) {
 	if req.Enabled {
 		switch req.Type {
+		case model.MessageNotifySubTypeWechatOfficialAccount:
+			if req.Info.TemplateID == "" {
+				return 0, errors.New("invalid template_id")
+			}
+			if req.Info.Token == "" {
+				return 0, errors.New("empty token")
+			}
+			if req.Info.AESKey == "" {
+				return 0, errors.New("empty aes_key")
+			}
+			fallthrough
 		case model.MessageNotifySubTypeDingtalk:
 			if req.Info.ClientID == "" || req.Info.ClientSecret == "" {
 				return 0, errors.New("invalid cred")

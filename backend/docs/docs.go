@@ -7308,12 +7308,14 @@ const docTemplate = `{
                     {
                         "enum": [
                             0,
-                            1
+                            1,
+                            2
                         ],
                         "type": "integer",
                         "x-enum-varnames": [
                             "MessageNotifySubTypeUnknown",
-                            "MessageNotifySubTypeDingtalk"
+                            "MessageNotifySubTypeDingtalk",
+                            "MessageNotifySubTypeWechatOfficialAccount"
                         ],
                         "name": "type",
                         "in": "query",
@@ -7386,6 +7388,18 @@ const docTemplate = `{
                         }
                     }
                 }
+            }
+        },
+        "/user/notify_sub/wechat_official_account/qrcode": {
+            "get": {
+                "produces": [
+                    "image/jpg"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "get user qrcode",
+                "responses": {}
             }
         },
         "/user/point": {
@@ -9383,10 +9397,19 @@ const docTemplate = `{
         "model.MessageNotifySubInfo": {
             "type": "object",
             "properties": {
+                "aes_key": {
+                    "type": "string"
+                },
                 "client_id": {
                     "type": "string"
                 },
                 "client_secret": {
+                    "type": "string"
+                },
+                "template_id": {
+                    "type": "string"
+                },
+                "token": {
                     "type": "string"
                 }
             }
@@ -9395,11 +9418,13 @@ const docTemplate = `{
             "type": "integer",
             "enum": [
                 0,
-                1
+                1,
+                2
             ],
             "x-enum-varnames": [
                 "MessageNotifySubTypeUnknown",
-                "MessageNotifySubTypeDingtalk"
+                "MessageNotifySubTypeDingtalk",
+                "MessageNotifySubTypeWechatOfficialAccount"
             ]
         },
         "model.MsgNotifyType": {

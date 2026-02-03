@@ -5,15 +5,19 @@ type MessageNotifySubType uint
 const (
 	MessageNotifySubTypeUnknown MessageNotifySubType = iota
 	MessageNotifySubTypeDingtalk
+	MessageNotifySubTypeWechatOfficialAccount
 )
 
 type MessageNotifySubInfo struct {
 	ClientID     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
+	TemplateID   string `json:"template_id"`
+	Token        string `json:"token"`
+	AESKey       string `json:"aes_key"`
 }
 
 func (m MessageNotifySubInfo) Equal(d MessageNotifySubInfo) bool {
-	return m.ClientID == d.ClientID && m.ClientSecret == d.ClientSecret
+	return m == d
 }
 
 type MessageNotifySub struct {
