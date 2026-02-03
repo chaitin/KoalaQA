@@ -2316,6 +2316,14 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 					// 只需要读取1个字符（数字 1/2/3）
 					// Prompt 明确要求不能有前后多余内容，且使用 TrimSpace 处理空白
 					maxLength := 1
+					text = strings.TrimLeft(text, " \t\n\r")
+					if text == "" {
+						return llm.AskSessionStreamItem{
+							Type:    "text",
+							Content: "",
+						}, nil
+					}
+
 					length := min(len(text), maxLength-answerText.Len())
 					if answerText.Len() < maxLength {
 						answerText.WriteString(text[:length])
