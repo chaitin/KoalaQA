@@ -143,8 +143,7 @@ func (c *MessageNotifyCommon) Dingtalk(ctx context.Context, ac AccessAddrCallbac
 	if title == "" {
 		return nil
 	}
-	path := fmt.Sprintf("/%s/%s", forum.RouteName, c.DiscussUUID)
-	publicAddr, _ := ac(ctx, path)
+	publicAddr, _ := ac(ctx, fmt.Sprintf("/%s/%s", forum.RouteName, c.DiscussUUID))
 
 	return &MessageNotifyDingtalk{
 		Title: title,

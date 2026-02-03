@@ -4,9 +4,14 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
+	"fmt"
+	"io"
 	"mime/multipart"
+	"net/http"
 	"path/filepath"
 	"slices"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
@@ -20,6 +25,10 @@ import (
 	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/repo"
 	"github.com/google/uuid"
+	"github.com/silenceper/wechat/v2"
+	"github.com/silenceper/wechat/v2/officialaccount/basic"
+	"github.com/silenceper/wechat/v2/officialaccount/config"
+	"github.com/silenceper/wechat/v2/officialaccount/message"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -628,7 +637,8 @@ type NotifySubBindAuthURLReq struct {
 }
 
 var thirdAuthTypeM = map[model.MessageNotifySubType]model.AuthType{
-	model.MessageNotifySubTypeDingtalk: model.AuthTypeDingtalk,
+	model.MessageNotifySubTypeDingtalk:              model.AuthTypeDingtalk,
+	model.MessageNotifySubTypeWechatOfficialAccount: model.AuthTypeWechat,
 }
 
 func (u *User) SubBindAuthURL(ctx context.Context, state string, req NotifySubBindAuthURLReq) (string, error) {
@@ -687,7 +697,15 @@ func (u *User) SubBindCallback(ctx context.Context, uid uint, typ model.MessageN
 		return err
 	}
 
-	thirdUser, err := author.User(ctx, req.Code, third_auth.UserWithThirdIDKey(third_auth.ThirdIDKeyUserID))
+	var key third_auth.ThirdIDKey
+	switch typ {
+	case model.MessageNotifySubTypeDingtalk:
+		key = third_auth.ThirdIDKeyUserID
+	default:
+		key = third_auth.ThirdIDKeyOpenID
+	}
+
+	thirdUser, err := author.User(ctx, req.Code, third_auth.UserWithThirdIDKey(key))
 	if err != nil {
 		return err
 	}
@@ -882,6 +900,106 @@ func (u *User) ListSearchHistory(ctx context.Context, req ListSearchHistoryReq) 
 	}
 
 	return &res, nil
+}
+
+func (u *User) GetNotifySubByType(ctx context.Context, typ model.MessageNotifySubType) (*model.MessageNotifySub, error) {
+	notifySub, err := u.repoNotifySub.GetByType(ctx, typ)
+	if err != nil {
+		u.logger.WithContext(ctx).WithErr(err).Error("get notify_sub failed")
+		return nil, errors.New("get config failed")
+	}
+
+	return notifySub, nil
+}
+
+func (u *User) getUserIDFromEventKey(key string) (uint, error) {
+	if key == "" {
+		return 0, errors.New("empty event_key")
+	}
+
+	id, err := strconv.ParseUint(strings.TrimPrefix(key, "qrscene_"), 10, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	return uint(id), nil
+}
+
+func (u *User) HandleWechatOfficialAccount(ctx context.Context, msg *message.MixMessage) string {
+	logger := u.logger.WithContext(ctx).With("msg", msg)
+	logger.Info("recv wechat_official_account msg")
+
+	if msg.MsgType != message.MsgTypeEvent || (msg.Event != message.EventSubscribe && msg.Event != message.EventScan) {
+		logger.Info("not target event, skip")
+		return ""
+	}
+
+	userID, err := u.getUserIDFromEventKey(msg.EventKey)
+	if err != nil {
+		logger.WithErr(err).Error("invalid event_key")
+		return "绑定用户失败，无效参数"
+	}
+
+	err = u.repoUser.BindNotifySub(ctx, &model.UserNotiySub{
+		Type:    model.MessageNotifySubTypeWechatOfficialAccount,
+		UserID:  userID,
+		ThirdID: msg.GetOpenID(),
+	})
+	if err != nil {
+		logger.WithErr(err).Error("bind user failed")
+		return "绑定用户失败，内部错误"
+	}
+
+	return "绑定用户成功，感谢关注"
+}
+
+func (u *User) WechatOfficialAccountQrcode(ctx context.Context, uid uint) ([]byte, error) {
+	sub, err := u.GetNotifySubByType(ctx, model.MessageNotifySubTypeWechatOfficialAccount)
+	if err != nil {
+		return nil, err
+	}
+
+	info := sub.Info.Inner()
+
+	oa := wechat.NewWechat().GetOfficialAccount(&config.Config{
+		AppID:          info.ClientID,
+		AppSecret:      info.ClientSecret,
+		Token:          info.Token,
+		EncodingAESKey: info.AESKey,
+	})
+
+	ticketRes, err := oa.GetBasic().GetQRTicket(&basic.Request{
+		ExpireSeconds: 600,
+		ActionName:    "QR_SCENE",
+		ActionInfo: struct {
+			Scene struct {
+				SceneStr string `json:"scene_str,omitempty"`
+				SceneID  int    `json:"scene_id,omitempty"`
+			} `json:"scene"`
+		}{
+			Scene: struct {
+				SceneStr string `json:"scene_str,omitempty"`
+				SceneID  int    `json:"scene_id,omitempty"`
+			}{
+				SceneID: int(uid),
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := util.HTTPClient.Get(basic.ShowQRCode(ticketRes))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("get qrcode failed: %d", resp.StatusCode)
+	}
+
+	return io.ReadAll(resp.Body)
 }
 
 func newUser(repoUser *repo.User, genrator *jwt.Generator, auth *Auth, notifySub *repo.MessageNotifySub,
