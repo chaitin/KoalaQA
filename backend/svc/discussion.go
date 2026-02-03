@@ -2189,9 +2189,6 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		return nil, errAskSessionClosed
 	}
 
-	defaultAnswer := "无法回答问题"
-	wrapSteam := llm.NewStream[llm.AskSessionStreamItem]()
-
 	var groups []model.GroupItemInfo
 	if len(req.GroupIDs) > 0 {
 		groupIDs, err := d.in.UserRepo.UserGroupIDs(ctx, uid)
@@ -2204,17 +2201,6 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		)
 		if err != nil {
 			return nil, err
-		}
-	} else {
-		wrapSteam.RecvOne(llm.AskSessionStreamItem{
-			Type:    "thinking",
-			Content: "",
-		}, false)
-		autoGroups, err := d.detectAskGroups(ctx, uid, req.Question)
-		if err != nil {
-			d.logger.WithContext(ctx).WithErr(err).Warn("auto detect ask groups failed")
-		} else {
-			groups = autoGroups
 		}
 	}
 
@@ -2247,6 +2233,9 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		return nil, errStreaming
 	}
 
+	defaultAnswer := "无法回答问题"
+	wrapSteam := llm.NewStream[llm.AskSessionStreamItem]()
+
 	go func() {
 		defer func() {
 			cancel()
@@ -2259,6 +2248,21 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 			needHuman    bool
 			cancelText   = "已取消生成"
 		)
+
+		if len(groups) == 0 {
+			wrapSteam.RecvOne(llm.AskSessionStreamItem{
+				Type:    "thinking",
+				Content: "",
+			}, false)
+			autoGroups, err := d.detectAskGroups(ctx, uid, req.Question)
+			if err == nil {
+				groups = autoGroups
+			}
+			wrapSteam.RecvOne(llm.AskSessionStreamItem{
+				Type:    "searching",
+				Content: "",
+			}, false)
+		}
 
 		stream, err := d.in.LLM.StreamAnswer(cancelCtx, llm.SystemChatNoRefPrompt, GenerateReq{
 			Context:       askHistories,
