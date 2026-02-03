@@ -68,6 +68,11 @@ func (d *docMetadata) Handle(ctx context.Context, msg mq.Message) error {
 	}
 
 	for _, doc := range docs {
+		if doc.RagID == "" {
+			logger.With("doc_id", doc.ID).Info("empty rag_id, skip update doc metadata")
+			continue
+		}
+
 		err := d.rag.UpdateDocumentMetadata(ctx, d.dataset.GetBackendID(ctx), doc.RagID, doc.Metadata())
 		if err != nil {
 			logger.WithErr(err).With("doc_id", doc.ID).With("rag_id", doc.RagID).Warn("upsert rag records failed")

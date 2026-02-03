@@ -1132,6 +1132,7 @@ func (d *KBDocument) UpdateSpaceFolder(ctx context.Context, kbID uint, folderID 
 type ListSpaceFolderDocReq struct {
 	*model.Pagination
 
+	AllDoc   bool              `form:"all_doc"`
 	ParentID *uint             `form:"parent_id" binding:"required"`
 	Title    *string           `form:"title"`
 	Status   []model.DocStatus `form:"status"`
@@ -1140,28 +1141,35 @@ type ListSpaceFolderDocReq struct {
 func (d *KBDocument) ListSpaceFolderDoc(ctx context.Context, kbID uint, rootParentID uint, req ListSpaceFolderDocReq) (*model.ListRes[DocListItem], error) {
 	var res model.ListRes[DocListItem]
 
-	err := d.repoDoc.List(ctx, &res.Items,
+	queryFuncs := []repo.QueryOptFunc{
 		repo.QueryWithEqual("kb_id", kbID),
 		repo.QueryWithEqual("root_parent_id", rootParentID),
 		repo.QueryWithEqual("doc_type", model.DocTypeSpace),
 		repo.QueryWithILike("title", req.Title),
-		repo.QueryWithEqual("parent_id", req.ParentID),
+	}
+
+	// 查询所有文档
+	if req.AllDoc {
+		queryFuncs = append(queryFuncs,
+			repo.QueryWithEqual("file_type", model.FileTypeFolder, repo.EqualOPNE),
+			repo.QueryWithEqual("status", req.Status, repo.EqualOPIn),
+		)
+	} else {
+		queryFuncs = append(queryFuncs,
+			repo.QueryWithEqual("parent_id", req.ParentID),
+			repo.QueryWithEqual("(file_type = 16 OR status IN (?))", req.Status, repo.EqualOPRaw),
+		)
+	}
+
+	err := d.repoDoc.List(ctx, &res.Items, append([]repo.QueryOptFunc{
 		repo.QueryWithPagination(req.Pagination),
 		repo.QueryWithOrderBy("created_at DESC, id ASC"),
-		repo.QueryWithEqual("(file_type = 16 OR status IN (?))", req.Status, repo.EqualOPRaw),
-	)
+	}, queryFuncs...)...)
 	if err != nil {
 		return nil, err
 	}
 
-	err = d.repoDoc.Count(ctx, &res.Total,
-		repo.QueryWithEqual("kb_id", kbID),
-		repo.QueryWithEqual("root_parent_id", rootParentID),
-		repo.QueryWithEqual("parent_id", req.ParentID),
-		repo.QueryWithEqual("doc_type", model.DocTypeSpace),
-		repo.QueryWithILike("title", req.Title),
-		repo.QueryWithEqual("(file_type = 16 OR status IN (?))", req.Status, repo.EqualOPRaw),
-	)
+	err = d.repoDoc.Count(ctx, &res.Total, queryFuncs...)
 	if err != nil {
 		return nil, err
 	}
@@ -1224,6 +1232,7 @@ type ListWebItem struct {
 	FileType model.FileType   `json:"file_type"`
 	Status   model.DocStatus  `json:"status"`
 	GroupIDs model.Int64Array `json:"group_ids" gorm:"type:bigint[]"`
+	Message  string           `json:"message"`
 }
 
 type ListWebReq struct {
@@ -1246,6 +1255,7 @@ func (d *KBDocument) ListWeb(ctx context.Context, req ListWebReq) (*model.ListRe
 		return nil, err
 	}
 	err = d.repoDoc.Count(ctx, &res.Total,
+		repo.QueryWithILike("title", req.Title),
 		repo.QueryWithEqual("kb_id", req.KBID),
 		repo.QueryWithEqual("doc_type", model.DocTypeWeb),
 	)

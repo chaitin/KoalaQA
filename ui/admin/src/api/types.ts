@@ -204,6 +204,7 @@ export enum ModelAskSessionSource {
   AskSessionSourceWeb = 0,
   AskSessionSourcePlugin = 1,
   AskSessionSourceBot = 2,
+  AskSessionSourceWecomService = 3,
 }
 
 export enum ChatType {
@@ -933,7 +934,7 @@ export interface SvcDiscussionAskReq {
   group_ids?: number[];
   question: string;
   session_id: string;
-  source?: 0 | 1;
+  source?: 0 | 1 | 3;
 }
 
 export interface SvcDiscussionCompeletReq {
@@ -1132,6 +1133,7 @@ export interface SvcListWebItem {
   file_type?: ModelFileType;
   group_ids?: number[];
   id?: number;
+  message?: string;
   status?: ModelDocStatus;
   title?: string;
   updated_at?: number;
@@ -1286,7 +1288,7 @@ export interface SvcSummaryByContentReq {
   forum_id: number;
   group_ids?: number[];
   session_id: string;
-  source?: 0 | 1;
+  source?: 0 | 1 | 3;
 }
 
 export interface SvcURLExportReq {
@@ -1703,6 +1705,7 @@ export interface DeleteAdminKbKbIdSpaceSpaceIdFolderFolderIdParams {
 }
 
 export interface GetAdminKbKbIdSpaceSpaceIdFolderFolderIdDocParams {
+  all_doc?: boolean;
   /** @min 1 */
   page?: number;
   parent_id: number;

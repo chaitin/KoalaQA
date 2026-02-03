@@ -5,7 +5,9 @@ import (
 	"log"
 
 	"github.com/caarlos0/env/v11"
+	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/util"
+	"github.com/open-dingtalk/dingtalk-stream-sdk-go/logger"
 )
 
 type Config struct {
@@ -80,6 +82,7 @@ func newConfig() (Config, error) {
 	var cfg Config
 
 	log.SetOutput(io.Discard)
+	logger.SetLogger(glog.Module("sdk", "dingtalk"))
 
 	err := env.Parse(&cfg)
 	if err != nil {

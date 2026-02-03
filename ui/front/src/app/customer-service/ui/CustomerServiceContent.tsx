@@ -35,6 +35,11 @@ import {
   Tooltip,
   Typography,
   useTheme,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
@@ -98,6 +103,7 @@ export default function CustomerServiceContent({
   const [isLoading, setIsLoading] = useState(false)
   const [isWaiting, setIsWaiting] = useState(false)
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true)
+  const [sessionExpiredDialogOpen, setSessionExpiredDialogOpen] = useState(false)
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [isInputFocused, setIsInputFocused] = useState(false)
   const [isServiceEnabled, setIsServiceEnabled] = useState<boolean | null>(null) // null表示正在加载
@@ -495,7 +501,7 @@ export default function CustomerServiceContent({
 
             // 检查是否是 session closed 错误
             if (errorMessage.toLowerCase().includes('session closed')) {
-              Alert.info('会话已过期，请点击右上角开启新会话', 5000)
+              setSessionExpiredDialogOpen(true)
               setIsLoading(false)
               setIsAutoScrollEnabled(false)
               setMessages((prev) => {
@@ -573,7 +579,7 @@ export default function CustomerServiceContent({
           }
 
           if (dataStr.toLowerCase().includes('session closed')) {
-            Alert.info('会话已过期，请点击右上角开启新会话', 5000)
+            setSessionExpiredDialogOpen(true)
             setIsLoading(false)
             setMessages((prev) => {
               const newMessages = [...prev]
@@ -772,7 +778,7 @@ export default function CustomerServiceContent({
 
         // 检查是否是 session closed 错误
         if (errorMessage.toLowerCase().includes('session closed')) {
-          Alert.info('会话已过期，请点击右上角开启新会话', 5000)
+          setSessionExpiredDialogOpen(true)
           setIsLoading(false)
           setIsAutoScrollEnabled(false)
           setMessages((prev) => {
@@ -907,7 +913,7 @@ export default function CustomerServiceContent({
 
             // 检查是否是 session closed 错误
             if (errorMessage.toLowerCase().includes('session closed')) {
-              Alert.info('会话已过期，请点击右上角开启新会话', 5000)
+              setSessionExpiredDialogOpen(true)
               setIsLoading(false)
               setIsWaiting(false)
               setIsAutoScrollEnabled(false)
@@ -1083,7 +1089,7 @@ export default function CustomerServiceContent({
           }
 
           if (dataStr.toLowerCase().includes('session closed')) {
-            Alert.info('会话已过期，请点击右上角开启新会话', 5000)
+            setSessionExpiredDialogOpen(true)
             setIsLoading(false)
             setIsWaiting(false)
             setIsAutoScrollEnabled(false)
@@ -1193,7 +1199,7 @@ export default function CustomerServiceContent({
 
         // 检查是否是 session closed 错误
         if (errorMessage.toLowerCase().includes('session closed')) {
-          Alert.info('会话已过期，请点击右上角开启新会话', 5000)
+          setSessionExpiredDialogOpen(true)
           setMessages((prev) => {
             const newMessages = [...prev]
             const index = newMessages.findIndex((m) => m.id === assistantMessageId)
@@ -2555,6 +2561,33 @@ export default function CustomerServiceContent({
                     )}
                   </Box>
                 )}
+                <Dialog
+                  open={sessionExpiredDialogOpen}
+                  onClose={() => setSessionExpiredDialogOpen(false)}
+                  aria-labelledby='session-expired-dialog-title'
+                  aria-describedby='session-expired-dialog-description'
+                >
+                  <DialogTitle id='session-expired-dialog-title'>会话已过期</DialogTitle>
+                  <DialogContent>
+                    <DialogContentText id='session-expired-dialog-description'>
+                      此问答已过期，是否开启新会话？
+                    </DialogContentText>
+                  </DialogContent>
+                  <DialogActions>
+                    <Button onClick={() => setSessionExpiredDialogOpen(false)} color='inherit'>
+                      取消
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setSessionExpiredDialogOpen(false)
+                        handleNewSession()
+                      }}
+                      autoFocus
+                    >
+                      开启新会话
+                    </Button>
+                  </DialogActions>
+                </Dialog>
               </Box>
               {isInIframe && <BrandAttribution simple />}
             </Box>

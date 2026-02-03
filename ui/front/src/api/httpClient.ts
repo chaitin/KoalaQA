@@ -432,7 +432,7 @@ export class HttpClient<SecurityDataType = unknown> {
       headers: {
         ...((method &&
           this.instance.defaults.headers[
-            method.toLowerCase() as keyof HeadersDefaults
+          method.toLowerCase() as keyof HeadersDefaults
           ]) ||
           {}),
         ...(params1.headers || {}),
@@ -485,16 +485,8 @@ export class HttpClient<SecurityDataType = unknown> {
     if (path === "/user" && method === "GET") {
       let authToken = "";
       try {
-        // 在客户端环境中，从cookie中读取auth_token
-        if (typeof window !== "undefined") {
-          const cookies = document.cookie.split(";");
-          const authCookie = cookies.find((c) =>
-            c.trim().startsWith("auth_token="),
-          );
-          if (authCookie) {
-            authToken = authCookie.split("=")[1]?.trim() || "";
-          }
-        } else {
+        // 客户端环境无法读取HttpOnly cookie
+        if (typeof window === "undefined") {
           // 在SSR环境中，从cookieStore中读取auth_token
           const { cookies } = await import("next/headers");
           const cookieStore = await cookies();

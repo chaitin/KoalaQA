@@ -185,6 +185,26 @@ func (l *Logger) Fatal(msg string, args ...any) {
 	os.Exit(1)
 }
 
+func (l *Logger) Debugf(format string, args ...interface{}) {
+	l.Debug(fmt.Sprintf(format, args...))
+}
+
+func (l *Logger) Infof(format string, args ...interface{}) {
+	l.Info(fmt.Sprintf(format, args...))
+}
+
+func (l *Logger) Warningf(format string, args ...interface{}) {
+	l.Warn(fmt.Sprintf(format, args...))
+}
+
+func (l *Logger) Errorf(format string, args ...interface{}) {
+	l.Error(fmt.Sprintf(format, args...))
+}
+
+func (l *Logger) Fatalf(format string, args ...interface{}) {
+	l.Fatal(fmt.Sprintf(format, args...))
+}
+
 func (l *Logger) log(lv level, msg string, args ...any) {
 	stack, ok := canOutput(l.modules, l.strModules, lv)
 	if !ok {

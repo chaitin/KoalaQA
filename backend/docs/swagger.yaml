@@ -2036,6 +2036,8 @@ definitions:
         type: array
       id:
         type: integer
+      message:
+        type: string
       status:
         $ref: '#/definitions/model.DocStatus'
       title:
@@ -3910,6 +3912,9 @@ paths:
         name: space_id
         required: true
         type: integer
+      - in: query
+        name: all_doc
+        type: boolean
       - in: query
         minimum: 1
         name: page
