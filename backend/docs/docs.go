@@ -10992,6 +10992,9 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "message": {
+                    "type": "string"
+                },
                 "status": {
                     "$ref": "#/definitions/model.DocStatus"
                 },

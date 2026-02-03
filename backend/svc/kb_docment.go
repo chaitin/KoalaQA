@@ -1224,6 +1224,7 @@ type ListWebItem struct {
 	FileType model.FileType   `json:"file_type"`
 	Status   model.DocStatus  `json:"status"`
 	GroupIDs model.Int64Array `json:"group_ids" gorm:"type:bigint[]"`
+	Message  string           `json:"message"`
 }
 
 type ListWebReq struct {
@@ -1246,6 +1247,7 @@ func (d *KBDocument) ListWeb(ctx context.Context, req ListWebReq) (*model.ListRe
 		return nil, err
 	}
 	err = d.repoDoc.Count(ctx, &res.Total,
+		repo.QueryWithILike("title", req.Title),
 		repo.QueryWithEqual("kb_id", req.KBID),
 		repo.QueryWithEqual("doc_type", model.DocTypeWeb),
 	)
