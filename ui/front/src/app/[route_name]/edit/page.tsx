@@ -421,6 +421,7 @@ export default function EditPage() {
                 ref={editorRef}
                 aiWriting
                 mode='advanced'
+                autoHeight
                 value={contentValue}
                 onChange={(val) => {
                   setValue('content', val || '', { shouldDirty: true })

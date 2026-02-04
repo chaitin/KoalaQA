@@ -73,16 +73,7 @@ services:
     restart: always
     environment:
       - TZ=${TIMEZONE:-Asia/Shanghai}
-    command:
-      [
-        "nats-server",
-        "-c",
-        "/etc/nats/nats.conf",
-        "--user",
-        "koala",
-        "--pass",
-        "${MQ_PASSWORD}",
-      ]
+    command: [ "nats-server", "-c", "/etc/nats/nats.conf", "--user", "koala", "--pass", "${MQ_PASSWORD}" ]
     volumes:
       - ./data/nats:/data
     networks:
@@ -93,16 +84,7 @@ services:
     container_name: koala-qa-oss
     image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/oss:RELEASE.2025-04-22T22-12-26Z-cpuv1
     restart: always
-    command:
-      [
-        "minio",
-        "server",
-        "/data",
-        "--console-address",
-        "0.0.0.0:9001",
-        "--address",
-        "0.0.0.0:9000",
-      ]
+    command: [ "minio", "server", "/data", "--console-address", "0.0.0.0:9001", "--address", "0.0.0.0:9000" ]
     volumes:
       - ./data/oss:/data
     environment:
@@ -130,7 +112,7 @@ services:
 
   anydoc:
     container_name: koala-qa-anydoc
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/anydoc:v0.9.7
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/anydoc:v0.9.8
     restart: always
     environment:
       - TZ=${TIMEZONE:-Asia/Shanghai}
@@ -171,7 +153,7 @@ services:
 
   raglite:
     container_name: koala-qa-raglite
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/raglite:v2.14.0
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/raglite:v2.14.1
     restart: always
     environment:
       - TZ=${TIMEZONE:-Asia/Shanghai}

@@ -31,14 +31,6 @@ export const TreeNode = ({
   onDocToggle,
   onFolderExpand,
 }: TreeNodeProps) => {
-  // 调试：检查 indeterminateFolders 是否正确传递
-  if (level === 0 && node.value?.id) {
-    console.log('TreeNode 根节点接收到的 indeterminateFolders:', {
-      nodeId: String(node.value.id),
-      indeterminateFolders: Array.from(indeterminateFolders),
-      isSet: indeterminateFolders instanceof Set,
-    });
-  }
   // 如果节点没有 value，但有 children，直接渲染 children
   if (!node.value && node.children && node.children.length > 0) {
     return (
@@ -146,7 +138,7 @@ export const TreeNode = ({
 
     const isLoading = loadingFolderIds.has(docIdStr);
     const actionLabel = !hasChildren ? '获取文档' : isExpanded ? '收起' : '展开';
-    
+
     // 判断是否为半选状态：
     // 1. 如果文件夹在 indeterminateFolders 中（doc_ids 不为 null），则为半选
     // 2. 或者文件夹下有部分文档被选中（但不是全部）
@@ -155,46 +147,8 @@ export const TreeNode = ({
     const isInIndeterminateFolders = indeterminateFolders.has(docIdStr);
     const hasPartialSelection = allChildDocs > 0 && folderSelectedDocsCount > 0 && folderSelectedDocsCount < allChildDocs;
     const isIndeterminate = isInIndeterminateFolders || hasPartialSelection;
-    
-    // 特殊调试：对于目标文件夹，输出详细信息
-    if (docIdStr === 'QOG9lyrgJP3gRn7RSBkZLdkrVzN67Mw4') {
-      console.log('目标文件夹半选状态检查:', {
-        docIdStr,
-        docIdStrType: typeof docIdStr,
-        docIdStrLength: docIdStr.length,
-        title,
-        isInIndeterminateFolders,
-        hasPartialSelection,
-        isIndeterminate,
-        indeterminateFoldersSize: indeterminateFolders.size,
-        indeterminateFoldersArray: Array.from(indeterminateFolders),
-        hasResult: indeterminateFolders.has(docIdStr),
-        checked: selectedFolders.includes(docIdStr),
-        // 检查每个 key 的类型和值
-        keysInSet: Array.from(indeterminateFolders).map(k => ({
-          key: k,
-          type: typeof k,
-          length: k.length,
-          equals: k === docIdStr,
-          strictEquals: k === docIdStr,
-        })),
-      });
-    }
-    
-    // 调试信息 - 检查所有文件夹节点
-    if (!isFile && docId) {
-      console.log('TreeNode 文件夹节点:', {
-        docIdStr,
-        title,
-        isInIndeterminateFolders,
-        hasPartialSelection,
-        isIndeterminate,
-        indeterminateFolders: Array.from(indeterminateFolders),
-        allChildDocs,
-        folderSelectedDocsCount,
-        checked: selectedFolders.includes(docIdStr),
-      });
-    }
+
+
 
     return (
       <Box key={docIdStr} sx={{ mb: 1 }}>
@@ -213,22 +167,13 @@ export const TreeNode = ({
               indeterminate={isIndeterminate}
               onChange={() => onFolderToggle(docIdStr)}
             />
-            {/* 调试信息 */}
-            {docIdStr === 'QOG9lyrgJP3gRn7RSBkZLdkrVzN67Mw4' && (
-              <span style={{ fontSize: '10px', color: 'red' }}>
-                {isIndeterminate ? '半选' : '未半选'} | 
-                {isInIndeterminateFolders ? '在Set中' : '不在Set中'} | 
-                {indeterminateFolders.has(docIdStr) ? 'has=true' : 'has=false'}
-              </span>
-            )}
           </ListItemIcon>
           <ListItemText
             primary={title}
             secondary={
               isExpanded && allChildDocs > 0
-                ? `${allChildDocs} 个文档${
-                    folderSelectedDocsCount > 0 ? ` (已选择 ${folderSelectedDocsCount} 个)` : ''
-                  }`
+                ? `${allChildDocs} 个文档${folderSelectedDocsCount > 0 ? ` (已选择 ${folderSelectedDocsCount} 个)` : ''
+                }`
                 : hasChildren
                   ? `${allChildDocs} 个文档（点击展开查看）`
                   : ''
@@ -245,51 +190,53 @@ export const TreeNode = ({
         </ListItem>
 
         {/* 展开的子节点 */}
-        {isExpanded && hasChildren && node.children && (
-          <Box sx={{ ml: 4, mb: 2 }}>
-            {node.children.length === 0 ? (
-              <Box
-                sx={{
-                  p: 2,
-                  border: '1px dashed',
-                  borderColor: 'divider',
-                  borderRadius: 1,
-                  bgcolor: 'grey.50',
-                  textAlign: 'center',
-                }}
-              >
-                <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
-                  <DescriptionIcon
-                    fontSize="small"
-                    sx={{ color: 'text.disabled', fontSize: 18 }}
-                  />
-                  <Typography variant="body2" color="text.disabled" sx={{ fontSize: '13px' }}>
-                    暂无文档
-                  </Typography>
-                </Stack>
-              </Box>
-            ) : (
-              node.children.map((child, index) => (
-                <Box key={child.value?.id || index}>
-                  <TreeNode
-                    node={child}
-                    level={level + 1}
-                    parentId={docIdStr}
-                    selectedFolders={selectedFolders}
-                    selectedDocs={selectedDocs}
-                    expandedDocs={expandedDocs}
-                    loadingFolderIds={loadingFolderIds}
-                    indeterminateFolders={indeterminateFolders}
-                    onFolderToggle={onFolderToggle}
-                    onDocToggle={onDocToggle}
-                    onFolderExpand={onFolderExpand}
-                  />
+        {
+          isExpanded && hasChildren && node.children && (
+            <Box sx={{ ml: 4, mb: 2 }}>
+              {node.children.length === 0 ? (
+                <Box
+                  sx={{
+                    p: 2,
+                    border: '1px dashed',
+                    borderColor: 'divider',
+                    borderRadius: 1,
+                    bgcolor: 'grey.50',
+                    textAlign: 'center',
+                  }}
+                >
+                  <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
+                    <DescriptionIcon
+                      fontSize="small"
+                      sx={{ color: 'text.disabled', fontSize: 18 }}
+                    />
+                    <Typography variant="body2" color="text.disabled" sx={{ fontSize: '13px' }}>
+                      暂无文档
+                    </Typography>
+                  </Stack>
                 </Box>
-              ))
-            )}
-          </Box>
-        )}
-      </Box>
+              ) : (
+                node.children.map((child, index) => (
+                  <Box key={child.value?.id || index}>
+                    <TreeNode
+                      node={child}
+                      level={level + 1}
+                      parentId={docIdStr}
+                      selectedFolders={selectedFolders}
+                      selectedDocs={selectedDocs}
+                      expandedDocs={expandedDocs}
+                      loadingFolderIds={loadingFolderIds}
+                      indeterminateFolders={indeterminateFolders}
+                      onFolderToggle={onFolderToggle}
+                      onDocToggle={onDocToggle}
+                      onFolderExpand={onFolderExpand}
+                    />
+                  </Box>
+                ))
+              )}
+            </Box>
+          )
+        }
+      </Box >
     );
   }
 

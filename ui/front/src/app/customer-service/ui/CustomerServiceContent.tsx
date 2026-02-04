@@ -52,6 +52,13 @@ import IframeHeader from './IframeHeader'
 const cannotAnswerPatterns = [/^无法回答问题$/, /^无法回答$/]
 const SEARCH_LOADING_TEXT = '正在为您搜索相关帖子...'
 const AUTO_SCROLL_THRESHOLD_PX = 120
+type WaitingStatus = 'thinking' | 'searching' | 'answering'
+
+const WAITING_STATUS_TEXT: Record<WaitingStatus, string> = {
+  thinking: '正在思考...',
+  searching: '正在搜索文档...',
+  answering: '正在回答...',
+}
 interface Message {
   id: string
   role: 'user' | 'assistant'
@@ -101,7 +108,7 @@ export default function CustomerServiceContent({
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [isWaiting, setIsWaiting] = useState(false)
+  const [waitingStatus, setWaitingStatus] = useState<WaitingStatus | null>(null)
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true)
   const [sessionExpiredDialogOpen, setSessionExpiredDialogOpen] = useState(false)
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
@@ -124,7 +131,8 @@ export default function CustomerServiceContent({
     if (isWidgetMode) return false
     return searchParams?.get('is_widget') === '1'
   })
-  const isStreaming = isLoading || isWaiting
+  const isStreaming = isLoading || waitingStatus !== null
+  const waitingStatusText = waitingStatus ? WAITING_STATUS_TEXT[waitingStatus] : ''
 
   // 检测是否在 iframe 中
   useEffect(() => {
@@ -828,7 +836,7 @@ export default function CustomerServiceContent({
     setMessages((prev) => [...prev, userMessage])
 
     setIsLoading(true)
-    setIsWaiting(true)
+    setWaitingStatus('answering')
     setIsAutoScrollEnabled(true)
 
     // 发送后立即确保窗口不偏移
@@ -893,7 +901,7 @@ export default function CustomerServiceContent({
             if (errorMessage === 'ratelimit' || errorMessage.includes('ratelimit')) {
               Alert.warning('请求过于频繁，请稍后再试', 3000)
               setIsLoading(false)
-              setIsWaiting(false)
+              setWaitingStatus(null)
               setIsAutoScrollEnabled(false)
               setMessages((prev) => {
                 const newMessages = [...prev]
@@ -915,7 +923,7 @@ export default function CustomerServiceContent({
             if (errorMessage.toLowerCase().includes('session closed')) {
               setSessionExpiredDialogOpen(true)
               setIsLoading(false)
-              setIsWaiting(false)
+              setWaitingStatus(null)
               setIsAutoScrollEnabled(false)
               setMessages((prev) => {
                 const newMessages = [...prev]
@@ -933,12 +941,12 @@ export default function CustomerServiceContent({
             }
 
             setIsLoading(false)
-            setIsWaiting(false)
+            setWaitingStatus(null)
             setIsAutoScrollEnabled(false)
             reject(err)
           },
           onComplete: () => {
-            setIsWaiting(false)
+            setWaitingStatus(null)
 
             const finalAnswer = answerText.trim()
             const cannotAnswer = cannotAnswerPatterns.some((pattern) => pattern.test(finalAnswer))
@@ -1051,9 +1059,19 @@ export default function CustomerServiceContent({
               return newMessages
             })
             setIsLoading(false)
-            setIsWaiting(false)
+            setWaitingStatus(null)
             askSseClient.unsubscribe()
             resolve()
+            return
+          }
+
+          const eventType = typeof data === 'object' && data ? (data as any).event : null
+          if (eventType === 'thinking') {
+            setWaitingStatus('thinking')
+            return
+          }
+          if (eventType === 'searching') {
+            setWaitingStatus('searching')
             return
           }
 
@@ -1061,7 +1079,7 @@ export default function CustomerServiceContent({
           if (data && typeof data === 'object' && (data as any).err === 'ratelimit') {
             Alert.warning('请求过于频繁，请稍后再试', 3000)
             setIsLoading(false)
-            setIsWaiting(false)
+            setWaitingStatus(null)
             setIsAutoScrollEnabled(false)
             setMessages((prev) => {
               const newMessages = [...prev]
@@ -1091,7 +1109,7 @@ export default function CustomerServiceContent({
           if (dataStr.toLowerCase().includes('session closed')) {
             setSessionExpiredDialogOpen(true)
             setIsLoading(false)
-            setIsWaiting(false)
+            setWaitingStatus(null)
             setIsAutoScrollEnabled(false)
             setMessages((prev) => {
               const newMessages = [...prev]
@@ -1113,7 +1131,7 @@ export default function CustomerServiceContent({
           // 检测后端发送的 cancel 事件（用户手动停止生成）
           if (data && typeof data === 'object' && (data as any).cancel === true) {
             setIsLoading(false)
-            setIsWaiting(false)
+            setWaitingStatus(null)
             setMessages((prev) => {
               const newMessages = [...prev]
               const index = newMessages.findIndex((m) => m.id === assistantMessageId)
@@ -1168,7 +1186,7 @@ export default function CustomerServiceContent({
             if (!isThinkingLine) {
               if (!hasReceivedData) {
                 hasReceivedData = true
-                setIsWaiting(false)
+                setWaitingStatus(null)
               }
               answerText += textToAdd
 
@@ -1230,7 +1248,7 @@ export default function CustomerServiceContent({
         return newMessages
       })
       setIsLoading(false)
-      setIsWaiting(false)
+      setWaitingStatus(null)
       setIsAutoScrollEnabled(false)
       setIsAutoScrollEnabled(false)
       currentMessageRef.current = null
@@ -1287,7 +1305,7 @@ export default function CustomerServiceContent({
 
     // 3. 更新状态
     setIsLoading(false)
-    setIsWaiting(false)
+    setWaitingStatus(null)
     setIsAutoScrollEnabled(false)
 
     // 4. 标记当前消息为已完成（被中断），保留已输出的内容
@@ -2096,7 +2114,7 @@ export default function CustomerServiceContent({
                                       )}
 
                                       {/* 等待提示 - 优化的加载状态 */}
-                                      {isWaiting && message.id === currentMessageRef.current?.id && (
+                                      {waitingStatus !== null && message.id === currentMessageRef.current?.id && (
                                         <Box
                                           sx={{
                                             display: 'flex',
@@ -2108,7 +2126,7 @@ export default function CustomerServiceContent({
                                         >
                                           <CircularProgress size={18} thickness={4} sx={{ color: 'text.secondary' }} />
                                           <Typography variant='body2' sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>
-                                            正在查找相关信息...
+                                            {waitingStatusText || WAITING_STATUS_TEXT.answering}
                                           </Typography>
                                         </Box>
                                       )}

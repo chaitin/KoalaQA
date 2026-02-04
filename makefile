@@ -31,7 +31,7 @@ image.db:
 
 image.raglite:
 	cd docker/raglite && DOCKER_BUILDKIT=1 docker build \
-		-t chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/raglite:v2.14.0 .
+		-t chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/raglite:v2.14.1 .
 
 image.nginx:
 	cd docker/nginx && DOCKER_BUILDKIT=1 docker build \
@@ -39,7 +39,7 @@ image.nginx:
 
 image.anydoc:
 	cd docker/anydoc && DOCKER_BUILDKIT=1 docker build \
-		-t chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/anydoc:v0.9.7 .
+		-t chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/anydoc:v0.9.8 .
 
 image.mq:
 	cd docker/mq && DOCKER_BUILDKIT=1 docker build \

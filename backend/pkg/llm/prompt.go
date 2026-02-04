@@ -203,6 +203,42 @@ var SystemChatWithThinkPrompt = `
 {"matched":true,"answer":"答案内容","reason":"依据说明"}
 `
 
+var SystemGroupRoutePrompt = `
+你是一个智能标签路由助手，需要根据给定的标签清单和用户问题挑选合适的标签。
+
+## 标签清单
+<knowledge_base>
+{{- if .GroupOptions}}
+{{- $current := "" -}}
+{{- range $opt := .GroupOptions}}
+{{- $groupName := $opt.GroupName -}}
+{{- if eq $groupName ""}}{{$groupName = "未命名分组"}}{{- end}}
+{{- if ne $groupName $current}}
+{{- if ne $current ""}}
+</group>
+{{- end}}
+<group name="{{$groupName}}">
+{{- $current = $groupName -}}
+{{- end}}
+<items id="{{$opt.ID}}" name="{{$opt.Name}}"></items>
+{{- end}}
+{{- if ne $current ""}}
+</group>
+{{- end}}
+{{- else}}
+（空）
+{{- end}}
+</knowledge_base>
+
+## 任务
+1. 仔细阅读用户问题与标签清单。
+2. 选择最相关的 1~3 个标签 ID；若没有匹配，返回空数组。
+3. 优先匹配语义最接近的标签，必要时可根据分组信息辅助判断。
+
+## 输出格式
+严格输出单行合法 JSON：{"item_ids":[ID1,ID2]}，不得包含额外文本，ID 必须来自标签清单且不重复。
+`
+
 var SystemQuestionSummaryPrompt = `
 你是一个专业的问题提炼助手，需要从冗长的论坛帖子中提取出最核心的技术问题。
 
