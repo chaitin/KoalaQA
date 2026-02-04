@@ -978,7 +978,7 @@ export default function CustomerServiceContent({
                     newMessages[index] = {
                       ...newMessages[index],
                       content: '抱歉，我暂时无法回答这个问题。请选择一个板块，我将为您搜索相关帖子。',
-                      type: 'ai',
+                      type: 'search',
                       needsForumSelection: true,
                       pendingQuestion: question,
                       isComplete: false,

@@ -482,16 +482,15 @@ export class HttpClient<SecurityDataType = unknown> {
 
     // 对于 /user 请求，需要在请求key中包含用户身份标识，确保不同用户的请求不会被去重
     let requestKey = `${method}:${cacheKey}`;
-    if (path === "/user" && method === "GET") {
+    // 在 SSR 环境中，必须在 requestKey 中包含用户身份标识，
+    // 否则会导致不同用户（如游客和登录用户）复用同一个 pendingRequest，导致权限/数据混乱。
+    if (typeof window === "undefined") {
       let authToken = "";
       try {
-        // 客户端环境无法读取HttpOnly cookie
-        if (typeof window === "undefined") {
-          // 在SSR环境中，从cookieStore中读取auth_token
-          const { cookies } = await import("next/headers");
-          const cookieStore = await cookies();
-          authToken = cookieStore.get("auth_token")?.value || "";
-        }
+        // 在SSR环境中，从cookieStore中读取auth_token
+        const { cookies } = await import("next/headers");
+        const cookieStore = await cookies();
+        authToken = cookieStore.get("auth_token")?.value || "";
       } catch (error) {
         // 如果无法读取cookie，忽略错误，使用原始key
         console.warn(
@@ -501,7 +500,6 @@ export class HttpClient<SecurityDataType = unknown> {
       }
 
       // 如果获取到了auth_token，将其hash值添加到请求key中
-      // 使用简单的hash函数（前8个字符）来区分不同用户
       if (authToken) {
         const tokenHash = authToken.substring(0, 8);
         requestKey = `${method}:${cacheKey}:${tokenHash}`;

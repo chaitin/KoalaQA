@@ -100,7 +100,8 @@ const Header = ({ brandConfig, initialForums = [] }: HeaderProps) => {
   const [showSearchInAppBar, setShowSearchInAppBar] = useState(false)
 
   // 使用 zustand store 中的数据，保证迁移后组件直接读取同一数据源
-  const forums = useForumStore((s) => s.forums)
+  const storeForums = useForumStore((s) => s.forums)
+  const forums = storeForums && storeForums.length > 0 ? storeForums : initialForums
   // console.log(forums)
   // 使用板块选择器 - 只在非登录/注册页面使用
   const isAuthPage = ['/login', '/register'].includes(pathname)
