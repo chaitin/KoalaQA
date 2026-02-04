@@ -16,6 +16,7 @@ import {
 import { postUserNotifyRead, ModelUserRole } from '@/api'
 import MarkDown from '@/components/markDown'
 import { Ellipsis } from '@ctzhian/ui'
+import { isImageContent } from '../SimilarContentItem'
 
 // 内容类型枚举
 enum ContentType {
@@ -109,7 +110,7 @@ class ContentTypeConfigManager {
   private static instance: ContentTypeConfigManager
   private configs: Record<string, ContentTypeConfig> = CONTENT_TYPE_CONFIGS
 
-  private constructor() {}
+  private constructor() { }
 
   static getInstance(): ContentTypeConfigManager {
     if (!ContentTypeConfigManager.instance) {
@@ -266,10 +267,10 @@ export const getNotificationTextForExport = (
   info:
     | MessageNotifyInfo
     | {
-        discussion_type?: string | 'qa' | 'feedback' | 'blog'
-        type?: number
-        to_bot?: boolean
-      },
+      discussion_type?: string | 'qa' | 'feedback' | 'blog'
+      type?: number
+      to_bot?: boolean
+    },
 ): string => {
   // 类型适配：将 ModelMessageNotify 转换为 MessageNotifyInfo 格式
   const adaptedInfo: MessageNotifyInfo = {
@@ -630,25 +631,31 @@ const LoggedInView: React.FC<LoggedInProps> = ({ user: propUser, adminHref }) =>
                           </>
                         )}
                       </Stack>
-                      {!isUserReview &&
-                        !isUserPoint &&
-                        (notification.type === MsgNotifyType.MsgNotifyTypeReplyComment ? (
-                          <MarkDown
-                            content={notification.parent_comment}
-                            truncateLength={10}
-                            sx={{ bgcolor: 'transparent', color: 'text.auxiliary' }}
-                          />
-                        ) : (
-                          <Ellipsis
-                            sx={{
-                              fontWeight: 500,
-                              color: '#333',
-                              fontSize: '12px',
-                            }}
-                          >
-                            {notification.discuss_title || '无标题'}
-                          </Ellipsis>
-                        ))}
+                      <Box sx={{
+                        '& *': {
+                          fontWeight: 500,
+                          color: '#333',
+                          fontSize: '12px',
+                        }
+                      }}>
+
+                        {!isUserReview &&
+                          !isUserPoint &&
+                          (notification.type === MsgNotifyType.MsgNotifyTypeReplyComment ? (
+                            <MarkDown
+                              content={notification.parent_comment}
+                              truncateLength={10}
+                            />
+                          ) : (
+                            <Ellipsis
+                              sx={{
+
+                              }}
+                            >
+                              {notification.discuss_title || '无标题'}
+                            </Ellipsis>
+                          ))}
+                      </Box>
                     </Box>
                   </Stack>
                 )
