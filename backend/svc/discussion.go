@@ -2235,6 +2235,7 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 
 	defaultAnswer := "无法回答问题"
 	wrapSteam := llm.NewStream[llm.AskSessionStreamItem]()
+	logger := d.logger.WithContext(ctx)
 
 	go func() {
 		defer func() {
@@ -2256,6 +2257,7 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 			}, false)
 			autoGroups, err := d.detectAskGroups(ctx, uid, req.Question)
 			if err == nil {
+				logger.With("groups", autoGroups).Info("detect ask groups")
 				groups = autoGroups
 			}
 			wrapSteam.RecvOne(llm.AskSessionStreamItem{
