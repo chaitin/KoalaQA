@@ -45,19 +45,19 @@ export const ImportModal = ({
   // syncedData 格式：{ folder_id: [doc_ids] | null }
   // null 表示整个文件夹被选中，数组表示只选中了部分文档（半选状态）
   const collectSyncedNodeIds = useCallback((
-    node: SvcListAnydocNode, 
+    node: SvcListAnydocNode,
     syncedData: Record<string, string[] | null>
   ): { folders: string[]; docs: string[] } => {
     const folders: string[] = [];
     const docs: string[] = [];
-    
+
     if (!node) return { folders, docs };
-    
+
     const nodeId = node.value?.id;
     const isFile = node.value?.file;
     // 确保 nodeId 是字符串类型，与 syncedData 的 key 保持一致
     const nodeIdStr = nodeId ? String(nodeId) : undefined;
-    
+
     // 如果当前节点是文件夹，检查是否在 syncedData 中
     if (nodeIdStr && !isFile) {
       const syncedInfo = syncedData[nodeIdStr];
@@ -93,7 +93,7 @@ export const ImportModal = ({
         });
       }
     }
-    
+
     // 如果当前节点是文件，检查它是否在任何文件夹的 doc_ids 中
     if (nodeIdStr && isFile) {
       for (const docIds of Object.values(syncedData)) {
@@ -103,7 +103,7 @@ export const ImportModal = ({
         }
       }
     }
-    
+
     // 递归处理子节点（只有在不是全选文件夹的情况下才递归）
     if (node.children) {
       const currentNodeSyncedInfo = nodeIdStr && !isFile ? syncedData[nodeIdStr] : undefined;
@@ -116,20 +116,20 @@ export const ImportModal = ({
         });
       }
     }
-    
+
     return { folders, docs };
   }, []);
 
   // 加载已同步的文件夹列表，并提取 export_opt 中的数据
   const loadSyncedFolders = useCallback(async () => {
     if (!kbId || !selectedSpaceId) return;
-    
+
     try {
       const response = await getAdminKbKbIdSpaceSpaceIdFolder({
         kbId,
         spaceId: selectedSpaceId,
       });
-      
+
       // 从 export_opt.folders 中提取文件夹和文件的映射关系
       // 处理逻辑：
       // 1. 凡是在 items 数组里的，一定是选中的（即不是全选就是半选）
@@ -140,17 +140,17 @@ export const ImportModal = ({
       //      * doc_ids 是数组且长度 > 0：表示半选（只选中了部分文档）
       const syncedData: Record<string, string[] | null> = {};
       const indeterminateFolderIds = new Set<string>();
-      
+
       response?.items?.forEach((item: any) => {
         const exportOpt = item.export_opt;
         const kbRootId = item.doc_id ? String(item.doc_id) : null;
-        
+
         // 如果 export_opt 为 null，或者 export_opt.folders 为 null 或长度为 0，则表示全选
         if (
-          !exportOpt || 
+          !exportOpt ||
           exportOpt === null ||
-          !exportOpt.folders || 
-          exportOpt.folders === null || 
+          !exportOpt.folders ||
+          exportOpt.folders === null ||
           (Array.isArray(exportOpt.folders) && exportOpt.folders.length === 0)
         ) {
           // 如果知识库根节点 ID 存在，标记为全选
@@ -159,9 +159,15 @@ export const ImportModal = ({
           }
           return;
         }
-        
+
         // 如果 export_opt.folders 存在且有内容，遍历每个 folder
         if (exportOpt.folders && Array.isArray(exportOpt.folders) && exportOpt.folders.length > 0) {
+          // 如果知识库根节点有 export_opt.folders，说明它的子节点有被选中
+          // 因此根节点应该被标记为半选状态
+          if (kbRootId) {
+            indeterminateFolderIds.add(kbRootId);
+          }
+
           exportOpt.folders.forEach((folder: any) => {
             if (folder.folder_id) {
               const folderId = String(folder.folder_id);
@@ -180,22 +186,36 @@ export const ImportModal = ({
           });
         }
       });
-      
-      console.log('loadSyncedFolders 结果:', {
-        syncedData,
-        indeterminateFolderIds: Array.from(indeterminateFolderIds),
-        rawResponse: response?.items,
-      });
-      console.log('loadSyncedFolders 详细数据:', {
-        syncedDataKeys: Object.keys(syncedData),
-        syncedDataValues: Object.entries(syncedData).map(([k, v]) => ({ key: k, value: v })),
-        indeterminateFolderIdsArray: Array.from(indeterminateFolderIds),
-      });
-      
+
+
+
       setInitialSyncedData(syncedData);
       // 立即设置 indeterminateFolders，确保半选状态能正确显示
       setIndeterminateFolders(new Set(indeterminateFolderIds));
       setIsFullSelected(false); // 不再使用全局 fullSelected，每个知识库独立处理
+
+      // 立即将 syncedData 中的数据标记为选中状态，不需要等待 treeData 加载
+      // 这样即使用户还没有点击"获取文档"，已同步的文件夹也会显示为选中状态
+      const foldersToSelect: string[] = [];
+      const docsToSelect: string[] = [];
+
+      Object.entries(syncedData).forEach(([folderId, docIds]) => {
+        if (docIds === null) {
+          // 整个文件夹全选
+          foldersToSelect.push(folderId);
+        } else if (Array.isArray(docIds) && docIds.length > 0) {
+          // 半选状态：只选中特定的文档
+          docsToSelect.push(...docIds);
+        }
+      });
+
+      if (foldersToSelect.length > 0) {
+        setSelectedFolders(foldersToSelect);
+      }
+
+      if (docsToSelect.length > 0) {
+        setSelectedDocs(new Set(docsToSelect));
+      }
     } catch (error) {
       console.error('获取已同步文件夹失败:', error);
       // 失败时不阻断流程，只是没有初始选中状态
@@ -224,54 +244,29 @@ export const ImportModal = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, kbId, selectedSpaceId]);
 
-  // 当 initialSyncedData 加载完成后，立即设置 indeterminateFolders
-  // 这确保即使 treeData 还没有加载，半选状态也能正确显示
-  useEffect(() => {
-    // 设置所有在 initialSyncedData 中且 doc_ids 是数组的文件夹为半选状态
-    const newIndeterminateFolders = new Set<string>();
-    
-    // 添加所有在 initialSyncedData 中且是半选状态的文件夹
-    Object.entries(initialSyncedData).forEach(([folderId, docIds]) => {
-      if (Array.isArray(docIds) && docIds.length > 0) {
-        newIndeterminateFolders.add(folderId);
-      }
-    });
-    
-    console.log('设置 indeterminateFolders (useEffect initialSyncedData):', {
-      initialSyncedData,
-      newIndeterminateFolders: Array.from(newIndeterminateFolders),
-      initialSyncedDataKeys: Object.keys(initialSyncedData),
-    });
-    
-    // 只有在有数据时才更新，避免清空已有的半选状态
-    if (newIndeterminateFolders.size > 0 || Object.keys(initialSyncedData).length === 0) {
-      setIndeterminateFolders(newIndeterminateFolders);
-    }
-  }, [initialSyncedData]);
-
   // 当树形数据和已同步的数据都加载完成后，标记已同步的节点
   useEffect(() => {
     console.log('useEffect 开始:', {
       hasTeeData: !!treeData,
       initialSyncedDataKeys: Object.keys(initialSyncedData),
     });
-    
+
     if (!treeData) {
       // treeData 未加载时，indeterminateFolders 已经在 loadSyncedFolders 中设置了
       // 这里不需要再次设置，避免覆盖已设置的值
       return;
     }
-    
+
     // 如果没有已同步的数据，不进行标记
     if (Object.keys(initialSyncedData).length === 0) return;
-    
+
     // 收集需要标记的节点ID（从已加载的树中）
     const { folders, docs } = collectSyncedNodeIds(treeData, initialSyncedData);
-    
+
     // 同时，即使文档还没有加载到树中，也要将 initialSyncedData 中标记的文档ID添加到 selectedDocs
     // 这样当文档加载后，它们就能正确显示为选中状态
     const allSyncedDocIds = new Set<string>(docs);
-    
+
     Object.entries(initialSyncedData).forEach(([folderId, docIds]) => {
       if (Array.isArray(docIds) && docIds.length > 0) {
         // 半选状态：将文档ID添加到 selectedDocs
@@ -280,13 +275,13 @@ export const ImportModal = ({
         });
       }
     });
-    
+
     // 更新 indeterminateFolders：确保所有在 initialSyncedData 中且 doc_ids 是数组的文件夹都显示半选状态
     // 注意：即使文件夹未展开（findNodeInTree 找不到），只要在 initialSyncedData 中且 doc_ids 是数组，就应该显示半选状态
     // 因为 export_opt.folders 中的 folder_id 对应 remote 树中的节点，只是可能还没有展开
     setIndeterminateFolders(prev => {
       const newSet = new Set<string>();
-      
+
       // 先添加所有在 initialSyncedData 中且是半选状态的文件夹（这是初始化时的半选状态）
       Object.entries(initialSyncedData).forEach(([folderId, docIds]) => {
         if (Array.isArray(docIds) && docIds.length > 0) {
@@ -295,7 +290,7 @@ export const ImportModal = ({
           newSet.add(folderId);
         }
       });
-      
+
       // 保留之前设置的其他半选状态（这些可能是用户操作导致的半选状态，不在 initialSyncedData 中）
       prev.forEach(folderId => {
         // 如果不在 initialSyncedData 中，则保留（可能是用户操作导致的半选状态）
@@ -303,7 +298,7 @@ export const ImportModal = ({
           newSet.add(folderId);
         }
       });
-      
+
       // 检查所有父文件夹：如果子文件夹中有半选状态的，父文件夹也应该显示半选
       // 递归检查树结构，找到所有包含半选子文件夹的父文件夹
       const findParentFoldersWithIndeterminateChildren = (
@@ -314,11 +309,11 @@ export const ImportModal = ({
         const nodeId = node.value?.id;
         const isFile = node.value?.file;
         const nodeIdStr = nodeId ? String(nodeId) : undefined;
-        
+
         if (nodeIdStr && !isFile) {
           // 检查当前文件夹的子节点中是否有半选状态的
           let hasIndeterminateChild = false;
-          
+
           // 如果子节点已加载，检查子节点
           if (node.children && node.children.length > 0) {
             hasIndeterminateChild = node.children.some(child => {
@@ -340,13 +335,13 @@ export const ImportModal = ({
             // 这里我们无法直接知道父子关系，所以暂时跳过
             // 当用户展开文件夹后，会通过 toggleFolderExpand 来处理
           }
-          
+
           // 如果当前文件夹的子节点中有半选状态的，将当前文件夹也标记为半选
           if (hasIndeterminateChild && !indeterminateSet.has(nodeIdStr)) {
             parentFolders.push(nodeIdStr);
           }
         }
-        
+
         // 递归处理子节点
         if (node.children) {
           node.children.forEach(child => {
@@ -354,16 +349,16 @@ export const ImportModal = ({
             parentFolders.push(...childParents);
           });
         }
-        
+
         return parentFolders;
       };
-      
+
       // 找到所有包含半选子文件夹的父文件夹（通过遍历树）
       const parentFoldersWithIndeterminateChildren = findParentFoldersWithIndeterminateChildren(treeData, newSet);
       parentFoldersWithIndeterminateChildren.forEach(folderId => {
         newSet.add(folderId);
       });
-      
+
       // 对于 initialSyncedData 中的半选文件夹，如果它们在树中找不到，说明它们可能是子文件夹
       // 我们需要找到它们的父文件夹并标记为半选
       // 通过遍历树，找到所有可能包含这些子文件夹的父文件夹
@@ -374,11 +369,11 @@ export const ImportModal = ({
           const findParentInTree = (node: SvcListAnydocNode, targetId: string, parentId?: string): string | null => {
             const nodeId = node.value?.id;
             const nodeIdStr = nodeId ? String(nodeId) : undefined;
-            
+
             if (nodeIdStr === targetId) {
               return parentId || null;
             }
-            
+
             if (node.children) {
               for (const child of node.children) {
                 const found = findParentInTree(child, targetId, nodeIdStr || parentId);
@@ -387,10 +382,10 @@ export const ImportModal = ({
                 }
               }
             }
-            
+
             return null;
           };
-          
+
           const parentId = findParentInTree(treeData, folderId);
           if (parentId && !newSet.has(parentId)) {
             // 如果找到了父文件夹，且父文件夹不在 newSet 中，将其标记为半选
@@ -409,7 +404,7 @@ export const ImportModal = ({
           }
         }
       });
-      
+
       // 如果有选中的文档或文件夹，将知识库根节点标记为半选状态
       // 检查根节点是否有有效的 id
       const rootNodeId = treeData?.value?.id;
@@ -418,25 +413,25 @@ export const ImportModal = ({
         // 如果根节点不是文件，且有选中的子节点（文件夹或文档），则标记为半选
         // 这里检查 initialSyncedData 是否有数据，或者 collectSyncedNodeIds 收集到了选中的节点
         // 或者有半选状态的子文件夹（即使子文件夹还没有加载）
-        const hasSelectedItems = 
-          folders.length > 0 || 
-          allSyncedDocIds.size > 0 || 
+        const hasSelectedItems =
+          folders.length > 0 ||
+          allSyncedDocIds.size > 0 ||
           Object.keys(initialSyncedData).length > 0 ||
           newSet.size > 0; // 如果有半选状态的文件夹，根节点也应该显示半选
         if (!treeData.value.file && hasSelectedItems) {
           newSet.add(rootIdStr);
         }
       }
-      
+
       console.log('useEffect treeData 更新 indeterminateFolders:', {
         prev: Array.from(prev),
         newSet: Array.from(newSet),
         initialSyncedData,
       });
-      
+
       return newSet;
     });
-    
+
     // 一次性更新选中状态
     if (folders.length > 0) {
       setSelectedFolders(prev => {
@@ -444,7 +439,7 @@ export const ImportModal = ({
         return Array.from(newSet);
       });
     }
-    
+
     if (allSyncedDocIds.size > 0) {
       setSelectedDocs(prev => {
         const newSet = new Set([...prev, ...Array.from(allSyncedDocIds)]);
@@ -530,7 +525,7 @@ export const ImportModal = ({
           setSelectedFolders(prev => prev.filter(id => id !== folderId));
         }
       }
-      
+
       // 更新所有父文件夹的半选状态
       const parentFolderIds = getParentFolderIds(treeData, docId);
       setIndeterminateFolders(prev => {
@@ -542,7 +537,7 @@ export const ImportModal = ({
             const allChildDocs = countDocsInTree(parentNode);
             const folderSelectedDocsCount = countSelectedDocs(parentNode, newSet);
             const isParentSelected = selectedFolders.includes(parentId);
-            
+
             // 如果父文件夹全选或未选，则移除半选状态
             // 如果父文件夹部分选中，则添加半选状态
             if (isParentSelected || folderSelectedDocsCount === 0) {
@@ -585,7 +580,7 @@ export const ImportModal = ({
           });
         }
       }
-      
+
       // 更新所有父文件夹的半选状态
       const parentFolderIds = getParentFolderIds(treeData, docId);
       setIndeterminateFolders(prev => {
@@ -597,7 +592,7 @@ export const ImportModal = ({
             const allChildDocs = countDocsInTree(parentNode);
             const folderSelectedDocsCount = countSelectedDocs(parentNode, newSet);
             const isParentSelected = selectedFolders.includes(parentId);
-            
+
             // 如果父文件夹全选，则移除半选状态
             if (isParentSelected) {
               newIndeterminateSet.delete(parentId);
@@ -629,10 +624,13 @@ export const ImportModal = ({
       // 取消全选
       setSelectedFolders([]);
       setSelectedDocs(new Set());
+      setIndeterminateFolders(new Set());
     } else {
       // 全选
       setSelectedFolders(folderIds);
       setSelectedDocs(new Set(docIds));
+      // 全选时清除所有半选状态
+      setIndeterminateFolders(new Set());
     }
   };
 
@@ -718,18 +716,18 @@ export const ImportModal = ({
           newSet.add(docId);
           return newSet;
         });
-        
+
         // 获取到新的子节点后，检查是否有已同步的节点并标记
         if (response.children) {
           // 检查当前展开的文件夹是否在 initialSyncedData 中且为全选状态（null）
           const expandedFolderIdStr = String(docId);
           const expandedFolderSyncedInfo = initialSyncedData[expandedFolderIdStr];
-          
+
           // 如果当前文件夹在 initialSyncedData 中且为全选状态（null），全选所有子节点
           if (expandedFolderSyncedInfo === null) {
             const allFolders: string[] = [];
             const allDocs: string[] = [];
-            
+
             const collectAllIds = (child: SvcListAnydocNode) => {
               const childId = child.value?.id;
               const childIsFile = child.value?.file;
@@ -744,64 +742,72 @@ export const ImportModal = ({
                 child.children.forEach(collectAllIds);
               }
             };
-            
+
             response.children.forEach(collectAllIds);
-            
+
             if (allFolders.length > 0) {
               setSelectedFolders(prev => {
                 const newSet = new Set([...prev, ...allFolders]);
                 return Array.from(newSet);
               });
             }
-            
+
             if (allDocs.length > 0) {
               setSelectedDocs(prev => {
                 const newSet = new Set([...prev, ...allDocs]);
                 return newSet;
               });
             }
+
+            // 全选状态下，移除当前文件夹及其所有子文件夹的半选状态
+            setIndeterminateFolders(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(expandedFolderIdStr);
+              allFolders.forEach(folderId => newSet.delete(folderId));
+              return newSet;
+            });
           } else if (Object.keys(initialSyncedData).length > 0) {
             // 否则，根据 initialSyncedData 标记已同步的节点
             const allFolders: string[] = [];
             const allDocs: string[] = [];
-            
+
             response.children.forEach(child => {
               const { folders, docs } = collectSyncedNodeIds(child, initialSyncedData);
               allFolders.push(...folders);
               allDocs.push(...docs);
             });
-            
+
             // 更新选中状态
             let updatedSelectedFolders = selectedFolders;
             let updatedSelectedDocs = selectedDocs;
-            
+
             if (allFolders.length > 0) {
               updatedSelectedFolders = Array.from(new Set([...selectedFolders, ...allFolders]));
               setSelectedFolders(updatedSelectedFolders);
             }
-            
+
             if (allDocs.length > 0) {
               updatedSelectedDocs = new Set([...Array.from(selectedDocs), ...allDocs]);
               setSelectedDocs(updatedSelectedDocs);
             }
-            
+
             // 更新半选状态：基于 initialSyncedData 和实际选择状态
             // 遍历新获取的子节点，计算半选状态
             setIndeterminateFolders(prev => {
               const newIndeterminateSet = new Set(prev);
-              
+
               response.children?.forEach(child => {
                 if (!child.value?.file && child.value?.id) {
                   const childIdStr = String(child.value.id);
                   const syncedInfo = initialSyncedData[childIdStr];
-                  
+
                   // 如果子文件夹在 initialSyncedData 中且是半选状态（doc_ids 是数组）
                   if (Array.isArray(syncedInfo) && syncedInfo.length > 0) {
                     // 检查实际选择状态
                     const isFolderSelected = updatedSelectedFolders.includes(childIdStr);
                     const allChildDocs = countDocsInTree(child);
                     const folderSelectedDocsCount = countSelectedDocs(child, updatedSelectedDocs);
-                    
+
                     // 如果文件夹全选，移除半选状态
                     if (isFolderSelected) {
                       newIndeterminateSet.delete(childIdStr);
@@ -821,7 +827,36 @@ export const ImportModal = ({
                   }
                 }
               });
-              
+
+              // 重新计算父文件夹的半选状态
+              // 如果当前展开的文件夹有部分选中的子节点，它应该显示半选
+              if (!updatedSelectedFolders.includes(expandedFolderIdStr) && treeData) {
+                const expandedFolderNode = findNodeInTree(treeData, expandedFolderIdStr);
+                if (expandedFolderNode) {
+                  const allChildDocs = countDocsInTree(expandedFolderNode);
+                  const selectedChildDocs = countSelectedDocs(expandedFolderNode, updatedSelectedDocs);
+
+                  if (selectedChildDocs > 0 && selectedChildDocs < allChildDocs) {
+                    newIndeterminateSet.add(expandedFolderIdStr);
+                  } else if (selectedChildDocs === 0) {
+                    newIndeterminateSet.delete(expandedFolderIdStr);
+                  } else if (selectedChildDocs === allChildDocs && allChildDocs > 0) {
+                    // 所有子文档都被选中，应该全选文件夹而不是半选
+                    newIndeterminateSet.delete(expandedFolderIdStr);
+                    // 自动全选该文件夹
+                    setSelectedFolders(prev => {
+                      if (!prev.includes(expandedFolderIdStr)) {
+                        return [...prev, expandedFolderIdStr];
+                      }
+                      return prev;
+                    });
+                  }
+                }
+              } else if (updatedSelectedFolders.includes(expandedFolderIdStr)) {
+                // 如果文件夹已经全选，移除半选状态
+                newIndeterminateSet.delete(expandedFolderIdStr);
+              }
+
               return newIndeterminateSet;
             });
           }
@@ -842,19 +877,19 @@ export const ImportModal = ({
   // 在树中查找节点
   const findNodeInTree = useCallback((root: SvcListAnydocNode, nodeId: string): SvcListAnydocNode | null => {
     if (!root) return null;
-    
+
     const rootId = root.value?.id;
     if (rootId && String(rootId) === nodeId) {
       return root;
     }
-    
+
     if (root.children) {
       for (const child of root.children) {
         const found = findNodeInTree(child, nodeId);
         if (found) return found;
       }
     }
-    
+
     return null;
   }, []);
 
@@ -868,21 +903,21 @@ export const ImportModal = ({
     }
 
     const selectedTrees = collectSelectedRoots(treeData, selectedFolders, selectedDocs);
-    
+
     // 处理半选状态的文件夹
     indeterminateFolders.forEach((folderId) => {
       // 检查是否已经在 selectedTrees 中
       const alreadyIncluded = selectedTrees.some(tree => tree.doc_id === folderId);
       if (alreadyIncluded) return;
-      
+
       // 在树中查找该文件夹节点
       const folderNode = findNodeInTree(treeData, folderId);
       if (!folderNode || !folderNode.value) return;
-      
+
       // 获取该文件夹的选中文档ID列表
       const syncedDocIds = initialSyncedData[folderId];
       if (!Array.isArray(syncedDocIds) || syncedDocIds.length === 0) return;
-      
+
       // 构建文件夹的树形结构，只包含选中的文档
       // 即使文档还没有加载到树中，我们也使用文档ID（title 是可选的）
       const children = syncedDocIds.map(docId => {
@@ -905,7 +940,7 @@ export const ImportModal = ({
           file: true,
         };
       });
-      
+
       // 如果有选中的文档，添加到 selectedTrees
       if (children.length > 0) {
         selectedTrees.push({
@@ -916,7 +951,7 @@ export const ImportModal = ({
         });
       }
     });
-    
+
     const docsToImport: SvcCreateSpaceForlderItem[] = selectedTrees
       .filter(tree => !!tree.doc_id)
       .map(tree => ({
@@ -968,10 +1003,12 @@ export const ImportModal = ({
               checked={(() => {
                 if (!treeData) return false;
                 const { folderIds, docIds } = collectTreeIds(treeData);
+                // 如果没有任何节点，返回 false
+                if (folderIds.length === 0 && docIds.length === 0) return false;
+                // 检查所有已加载的节点是否都被选中
                 return (
                   selectedFolders.length === folderIds.length &&
-                  selectedDocs.size === docIds.length &&
-                  (folderIds.length > 0 || docIds.length > 0)
+                  selectedDocs.size === docIds.length
                 );
               })()}
               indeterminate={(() => {
@@ -979,14 +1016,16 @@ export const ImportModal = ({
                 const { folderIds, docIds } = collectTreeIds(treeData);
                 const hasSelectedFolders = selectedFolders.length > 0;
                 const hasSelectedDocs = selectedDocs.size > 0;
-                const allFoldersSelected =
-                  selectedFolders.length === folderIds.length && folderIds.length > 0;
-                const allDocsSelected =
-                  docIds.length === 0 || docIds.every(id => selectedDocs.has(id));
-                return (
-                  (hasSelectedFolders || hasSelectedDocs) &&
-                  !(allFoldersSelected && allDocsSelected)
-                );
+                // 如果没有任何选中项，不显示半选
+                if (!hasSelectedFolders && !hasSelectedDocs) return false;
+                // 如果所有已加载的节点都被选中，不显示半选
+                const allLoadedSelected =
+                  selectedFolders.length === folderIds.length &&
+                  selectedDocs.size === docIds.length &&
+                  (folderIds.length > 0 || docIds.length > 0);
+                if (allLoadedSelected) return false;
+                // 否则，只要有选中项，就显示半选
+                return true;
               })()}
               onChange={handleSelectAll}
             />
