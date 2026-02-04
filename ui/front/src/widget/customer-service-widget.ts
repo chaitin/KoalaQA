@@ -69,7 +69,12 @@ declare global {
     .cs-widget-button {
       position: fixed;
       ${config.position === 'bottom-left' ? 'left' : 'right'}: 24px;
-      bottom: 88px;
+      bottom: 24px;
+      @media (max-width: 768px) {
+        left: 24px !important;
+        right: auto !important;
+        bottom: 24px !important;
+      }
       min-width: ${config.buttonSize}px;
       max-width: ${config.buttonSize}px;
       height: ${config.buttonSize}px;

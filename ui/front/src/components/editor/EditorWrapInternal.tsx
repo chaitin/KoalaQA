@@ -20,6 +20,7 @@ interface WrapProps {
   mode?: 'advanced' | 'simple'
   onChange?: (value: string) => void // 双向绑定的变更回调，类似input组件的onChange
   onTocUpdate?: ((toc: any) => void) | boolean // 可选，默认false；true表示仅启用但不回调
+  autoHeight?: boolean
 }
 
 export interface EditorWrapRef {
@@ -41,6 +42,7 @@ const EditorWrapInternal = forwardRef<EditorWrapRef, WrapProps>(
       onTocUpdate,
       mode = 'simple',
       readonly = false,
+      autoHeight = false,
     }: WrapProps,
     ref,
   ) => {
@@ -94,8 +96,8 @@ const EditorWrapInternal = forwardRef<EditorWrapRef, WrapProps>(
 
     const onAiWritingGetSuggestion = aiWriting
       ? async ({ prefix, suffix }: { prefix: string; suffix: string }) => {
-          return postDiscussionComplete({ prefix, suffix })
-        }
+        return postDiscussionComplete({ prefix, suffix })
+      }
       : undefined
     const editorRef = useTiptap({
       contentType: 'markdown',
@@ -111,15 +113,15 @@ const EditorWrapInternal = forwardRef<EditorWrapRef, WrapProps>(
       content: value,
       onTocUpdate: onTocUpdate
         ? (toc: any) => {
-            try {
-              if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
-                if (Array.isArray(toc) && toc.length > 0) {
-                  ;(window as any).__lastToc = toc
-                }
-                window.dispatchEvent(new CustomEvent('toc-update', { detail: toc } as any))
+          try {
+            if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
+              if (Array.isArray(toc) && toc.length > 0) {
+                ; (window as any).__lastToc = toc
               }
-            } catch {}
-          }
+              window.dispatchEvent(new CustomEvent('toc-update', { detail: toc } as any))
+            }
+          } catch { }
+        }
         : undefined,
       onUpdate: handleEditorUpdate,
       onAiWritingGetSuggestion: onAiWritingGetSuggestion,
@@ -258,15 +260,15 @@ const EditorWrapInternal = forwardRef<EditorWrapRef, WrapProps>(
         <Stack
           className='editor-wrap'
           sx={{
-            height: '100%',
+            height: autoHeight ? 'auto' : '100%',
             borderRadius: 3,
             transition: 'all 0.3s ease',
             '.editor-toolbar + div': {
               flex: 1,
-              overflow: 'auto',
+              overflow: autoHeight ? 'visible' : 'auto',
             },
             '& .tiptap': {
-              height: '100%',
+              height: autoHeight ? 'auto' : '100%',
             },
             '& .editor-toolbar > div': {
               flexWrap: 'wrap',
@@ -287,7 +289,7 @@ const EditorWrapInternal = forwardRef<EditorWrapRef, WrapProps>(
             </>
           )}
         </Stack>
-      </EditorThemeProvider>
+      </EditorThemeProvider >
     )
   },
 )

@@ -246,11 +246,6 @@ export const ImportModal = ({
 
   // 当树形数据和已同步的数据都加载完成后，标记已同步的节点
   useEffect(() => {
-    console.log('useEffect 开始:', {
-      hasTeeData: !!treeData,
-      initialSyncedDataKeys: Object.keys(initialSyncedData),
-    });
-
     if (!treeData) {
       // treeData 未加载时，indeterminateFolders 已经在 loadSyncedFolders 中设置了
       // 这里不需要再次设置，避免覆盖已设置的值
@@ -422,13 +417,6 @@ export const ImportModal = ({
           newSet.add(rootIdStr);
         }
       }
-
-      console.log('useEffect treeData 更新 indeterminateFolders:', {
-        prev: Array.from(prev),
-        newSet: Array.from(newSet),
-        initialSyncedData,
-      });
-
       return newSet;
     });
 

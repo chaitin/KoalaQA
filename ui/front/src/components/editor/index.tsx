@@ -16,6 +16,7 @@ interface WrapProps {
   mode?: 'advanced' | 'simple'
   onChange?: (value: string) => void
   onTocUpdate?: ((toc: any) => void) | boolean
+  autoHeight?: boolean
 }
 
 export interface EditorWrapRef {

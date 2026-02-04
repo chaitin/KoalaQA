@@ -17,3 +17,4 @@ export { default as TagFilterChip } from './TagFilterChip';
 export { default as SimilarContentItem } from './SimilarContentItem';
 export { default as SimilarDiscussionsPanel } from './SimilarDiscussionsPanel';
 export type { SimilarDiscussionsPanelRef } from './SimilarDiscussionsPanel';
+export { default as BackToTop } from './BackToTop';

@@ -2,7 +2,7 @@ import { getForum, getSystemBrand, getSystemSeo, getUser, getUserLoginMethod } f
 import '@/asset/styles/common.css'
 import '@/asset/styles/markdown.css'
 // import 'react-photo-view/dist/react-photo-view.css';
-import { AuthProvider, CommonProvider, GuestActivationProvider } from '@/components'
+import { AuthProvider, CommonProvider, GuestActivationProvider, BackToTop } from '@/components'
 import ThemeProviderWrapper from '@/components/ThemeProviderWrapper'
 import ClientInit from '@/components/ClientInit'
 import ServerErrorBoundary from '@/components/ServerErrorBoundary'
@@ -223,6 +223,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
                             {props.children}
                           </Box>
                           <Scroll />
+                          <BackToTop />
                           {/* 智能客服挂件 - 自动根据路由显隐 */}
                           <CustomerServiceWidgetLoader />
                         </GuestActivationProvider>
