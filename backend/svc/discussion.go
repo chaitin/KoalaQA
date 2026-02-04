@@ -2252,7 +2252,7 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		if len(groups) == 0 {
 			wrapSteam.RecvOne(llm.AskSessionStreamItem{
 				Type:    "thinking",
-				Content: "",
+				Content: "thinking",
 			}, false)
 			autoGroups, err := d.detectAskGroups(ctx, uid, req.Question)
 			if err == nil {
@@ -2260,7 +2260,7 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 			}
 			wrapSteam.RecvOne(llm.AskSessionStreamItem{
 				Type:    "searching",
-				Content: "",
+				Content: "searching",
 			}, false)
 		}
 
