@@ -46,6 +46,7 @@ type discussionIn struct {
 	CommLikeRepo   *repo.CommentLike
 	UserRepo       *repo.User
 	GroupItemRepo  *repo.GroupItem
+	GroupRepo      *repo.Group
 	OrgRepo        *repo.Org
 	AskSessionRepo *repo.AskSession
 	BotSvc         *Bot
@@ -2248,6 +2249,21 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 			cancelText   = "已取消生成"
 		)
 
+		if len(groups) == 0 {
+			wrapSteam.RecvOne(llm.AskSessionStreamItem{
+				Type:    "thinking",
+				Content: "thinking",
+			}, false)
+			autoGroups, err := d.detectAskGroups(ctx, uid, req.Question)
+			if err == nil {
+				groups = autoGroups
+			}
+			wrapSteam.RecvOne(llm.AskSessionStreamItem{
+				Type:    "searching",
+				Content: "searching",
+			}, false)
+		}
+
 		stream, err := d.in.LLM.StreamAnswer(cancelCtx, llm.SystemChatNoRefPrompt, GenerateReq{
 			Context:       askHistories,
 			Question:      req.Question,
@@ -2396,6 +2412,93 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 	}()
 
 	return wrapSteam, nil
+}
+
+func (d *Discussion) detectAskGroups(ctx context.Context, uid uint, question string) ([]model.GroupItemInfo, error) {
+	if strings.TrimSpace(question) == "" {
+		return nil, nil
+	}
+
+	options, infoMap, err := d.buildAskGroupRouteOptions(ctx, uid)
+	if err != nil || len(options) == 0 {
+		return nil, err
+	}
+
+	ids, err := d.in.LLM.RouteGroups(ctx, question, options)
+	if err != nil {
+		return nil, err
+	}
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	var groups []model.GroupItemInfo
+	seen := make(map[uint]struct{}, len(ids))
+	for _, id := range ids {
+		itemID := uint(id)
+		if _, ok := seen[itemID]; ok {
+			continue
+		}
+		if info, ok := infoMap[itemID]; ok {
+			groups = append(groups, info)
+			seen[itemID] = struct{}{}
+		}
+	}
+
+	return groups, nil
+}
+
+func (d *Discussion) buildAskGroupRouteOptions(ctx context.Context, uid uint) ([]GroupRouteOption, map[uint]model.GroupItemInfo, error) {
+	groupIDs, err := d.in.UserRepo.UserGroupIDs(ctx, uid)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(groupIDs) == 0 {
+		return nil, nil, nil
+	}
+
+	var groupItems []model.GroupItem
+	err = d.in.GroupItemRepo.List(ctx, &groupItems,
+		repo.QueryWithEqual("group_id", groupIDs, repo.EqualOPEqAny),
+		repo.QueryWithOrderBy("group_id ASC, \"index\" ASC"),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(groupItems) == 0 {
+		return nil, nil, nil
+	}
+
+	var groupsMeta []model.Group
+	err = d.in.GroupRepo.List(ctx, &groupsMeta,
+		repo.QueryWithEqual("id", groupIDs, repo.EqualOPEqAny),
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	groupNameMap := make(map[uint]string, len(groupsMeta))
+	for _, g := range groupsMeta {
+		groupNameMap[g.ID] = g.Name
+	}
+
+	infoMap := make(map[uint]model.GroupItemInfo, len(groupItems))
+	options := make([]GroupRouteOption, 0, len(groupItems))
+	for _, item := range groupItems {
+		infoMap[item.ID] = model.GroupItemInfo{
+			ID:    item.ID,
+			Name:  item.Name,
+			Index: item.Index,
+		}
+		options = append(options, GroupRouteOption{
+			ID:        item.ID,
+			GroupID:   item.GroupID,
+			Name:      item.Name,
+			GroupName: groupNameMap[item.GroupID],
+		})
+	}
+
+	return options, infoMap, nil
 }
 
 type StopAskSessionReq struct {

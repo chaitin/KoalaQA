@@ -2,6 +2,7 @@ package svc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"slices"
 	"strconv"
@@ -64,6 +65,13 @@ type GenerateReq struct {
 	Debug         bool                  `json:"debug"`
 }
 
+type GroupRouteOption struct {
+	ID        uint   `json:"id"`
+	GroupID   uint   `json:"group_id"`
+	Name      string `json:"name"`
+	GroupName string `json:"group_name"`
+}
+
 func (g *GenerateReq) Histories() []*schema.Message {
 	res := make([]*schema.Message, len(g.Context))
 	for i := range g.Context {
@@ -87,6 +95,38 @@ func (g *GenerateReq) GroupInfo() (ids model.Int64Array, names []string) {
 	}
 
 	return
+}
+
+func (l *LLM) RouteGroups(ctx context.Context, question string, options []GroupRouteOption) ([]int64, error) {
+	question = strings.TrimSpace(question)
+	if question == "" || len(options) == 0 {
+		return nil, nil
+	}
+
+	res, err := l.Chat(ctx, llm.SystemGroupRoutePrompt, question, map[string]any{
+		"GroupOptions": options,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var parsed struct {
+		ItemIDs []int64 `json:"item_ids"`
+	}
+	if err := json.Unmarshal([]byte(res), &parsed); err != nil {
+		l.logger.WithContext(ctx).
+			WithErr(err).
+			With("raw", res).
+			Warn("route groups response parse failed")
+		return nil, err
+	}
+
+	ids := parsed.ItemIDs
+	if len(ids) > 3 {
+		ids = ids[:3]
+	}
+
+	return ids, nil
 }
 
 func (l *LLM) StreamAnswer(ctx context.Context, sysPrompt string, req GenerateReq) (*llm.Stream[string], error) {
