@@ -154,22 +154,22 @@ const ActionButtons = ({ data, menuAnchorEl, onMenuClick }: ActionButtonsProps) 
         justifyContent: 'center',
         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        transform: mobileMenuOpen ? 'scale(1) translateY(0)' : 'scale(0) translateY(20px)',
+        transform: mobileMenuOpen ? 'scale(1) translateX(0)' : 'scale(0) translateX(20px)',
         opacity: mobileMenuOpen ? 1 : 0,
-        animation: mobileMenuOpen ? `fadeInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) ${index * 0.05}s both` : 'none',
+        animation: mobileMenuOpen ? `fadeInLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1) ${index * 0.05}s both` : 'none',
         '&:active': onClick
           ? {
             transform: 'scale(0.9)',
           }
           : {},
-        '@keyframes fadeInUp': {
+        '@keyframes fadeInLeft': {
           from: {
             opacity: 0,
-            transform: 'translateY(20px) scale(0.8)',
+            transform: 'translateX(20px) scale(0.8)',
           },
           to: {
             opacity: 1,
-            transform: 'translateY(0) scale(1)',
+            transform: 'translateX(0) scale(1)',
           },
         },
         ...sx,
@@ -418,13 +418,15 @@ const ActionButtons = ({ data, menuAnchorEl, onMenuClick }: ActionButtonsProps) 
             />
           )}
           <Stack
+            direction='row-reverse'
             spacing={2}
             sx={{
               position: 'absolute',
-              bottom: 72,
-              right: 0,
+              bottom: 0,
+              right: 56, // 40px (button width) + 16px (gap)
               alignItems: 'center',
               zIndex: 1001,
+              pointerEvents: mobileMenuOpen ? 'auto' : 'none',
             }}
           >
             {/* 点赞 - 问题类型不显示 */}
@@ -510,16 +512,23 @@ const ActionButtons = ({ data, menuAnchorEl, onMenuClick }: ActionButtonsProps) 
           {/* 主悬浮按钮 */}
           <Fab
             onClick={handleMobileMenuToggle}
+            size='small'
             sx={{
-              width: 56,
-              height: 56,
-              bgcolor: mobileMenuOpen ? '#000000' : 'primary.main',
-              color: 'white',
-              boxShadow: mobileMenuOpen ? '0 8px 24px rgba(0, 0, 0, 0.3)' : '0 4px 12px rgba(0, 0, 0, 0.15)',
+              width: 40,
+              height: 40,
+              bgcolor: mobileMenuOpen ? '#000000' : 'background.paper',
+              color: mobileMenuOpen ? 'white' : 'primary.main',
+              border: mobileMenuOpen ? 'none' : '1px solid',
+              borderColor: mobileMenuOpen ? 'transparent' : 'primary.main',
+              boxShadow: mobileMenuOpen ? '0 8px 24px rgba(0, 0, 0, 0.3)' : '0 20px 40px rgba(0, 0, 0, 0.1)',
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               transform: mobileMenuOpen ? 'rotate(45deg)' : 'rotate(0deg)',
               '&:hover': {
-                boxShadow: mobileMenuOpen ? '0 8px 24px rgba(0, 0, 0, 0.3)' : '0 6px 16px rgba(0, 0, 0, 0.2)',
+                bgcolor: mobileMenuOpen ? '#000000' : 'background.paper',
+                filter: mobileMenuOpen ? 'none' : 'brightness(0.96)',
+                border: mobileMenuOpen ? 'none' : '1px solid',
+                borderColor: mobileMenuOpen ? 'transparent' : 'primary.main',
+                boxShadow: mobileMenuOpen ? '0 8px 24px rgba(0, 0, 0, 0.3)' : '0 12px 30px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.3)',
                 transform: mobileMenuOpen ? 'rotate(45deg) scale(1.05)' : 'rotate(0deg) scale(1.05)',
               },
               '&:active': {

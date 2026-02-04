@@ -71,9 +71,15 @@ declare global {
       ${config.position === 'bottom-left' ? 'left' : 'right'}: 24px;
       bottom: 24px;
       @media (max-width: 768px) {
-        left: 24px !important;
-        right: auto !important;
-        bottom: 24px !important;
+        left: auto !important;
+        right: 24px !important;
+        bottom: 80px !important;
+        min-width: 40px !important;
+        max-width: 40px !important;
+        height: 40px !important;
+        padding: 0 !important;
+        border-radius: 50% !important;
+        justify-content: center !important;
       }
       min-width: ${config.buttonSize}px;
       max-width: ${config.buttonSize}px;

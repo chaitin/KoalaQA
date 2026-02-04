@@ -10,13 +10,12 @@ const StyledFab = styled(Fab)(({ theme }) => ({
     right: theme.spacing(3),
     zIndex: 2000,
     [theme.breakpoints.down('lg')]: {
-        left: theme.spacing(3),
-        right: 'auto',
-        bottom: theme.spacing(12), // 24px (CS offset) + 56px (CS size) + 16px (gap) ~ 96px => spacing(12) is 96px. 
-        // CS widget is fixed at bottom 24px. 
-        // 24 + 56 = 80.
-        // 80 + 16 = 96.
-        // So spacing(12) is correct.
+        left: 'auto',
+        right: theme.spacing(3),
+        bottom: 136, // 80px (CS widget bottom) + 40px (CS widget height) + 16px (gap)
+        width: 40,
+        height: 40,
+        minHeight: 40,
     }
 }))
 
@@ -53,10 +52,23 @@ export default function BackToTop() {
     return (
         <Fade in={isVisible}>
             <StyledFab
-                color='primary'
                 size='large'
                 onClick={handleClick}
                 aria-label='scroll back to top'
+                sx={{
+                    bgcolor: 'background.paper',
+                    color: 'primary.main',
+                    border: '1px solid',
+                    borderColor: 'primary.main',
+                    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+                    '&:hover': {
+                        bgcolor: 'background.paper',
+                        filter: 'brightness(0.96)',
+                        border: '1px solid',
+                        borderColor: 'primary.main',
+                        boxShadow: '0 12px 30px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.3)',
+                    }
+                }}
             >
                 <ArrowUpwardIcon />
             </StyledFab>
