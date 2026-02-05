@@ -431,7 +431,7 @@ const ChatConfig = () => {
                 <Typography variant="body2" sx={{ minWidth: '130px', pt: 1.5, color: 'text.secondary' }}>
                   嵌入代码
                 </Typography>
-                <Box sx={{ flex: 1, maxWidth: '600px' }}>
+                <Box sx={{ flex: 1 }}>
                   <TextField
                     value={embedCode}
                     fullWidth
@@ -579,7 +579,7 @@ const ChatConfig = () => {
                   <Typography variant="body2" sx={{ minWidth: '130px', pt: 1.5, color: 'text.secondary' }}>
                     回调地址
                   </Typography>
-                  <Box sx={{ flex: 1, maxWidth: '600px' }}>
+                  <Box sx={{ flex: 1 }}>
                     <TextField
                       value={`${origin}/api/chat/bot/wecom_service`}
                       fullWidth

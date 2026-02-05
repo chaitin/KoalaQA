@@ -132,6 +132,18 @@ export default function CustomerServiceContent({
     if (isWidgetMode) return false
     return searchParams?.get('is_widget') === '1'
   })
+  // 从 URL 读取 source 参数，如果没有则根据 isInIframe 状态决定默认值
+  const [sourceParam, setSourceParam] = useState<number>(() => {
+    const urlSource = searchParams?.get('source')
+    if (urlSource !== null && urlSource !== undefined) {
+      const parsed = Number.parseInt(urlSource, 10)
+      if (!Number.isNaN(parsed)) {
+        return parsed
+      }
+    }
+    // 默认值：iframe 模式为 1，否则为 0
+    return isInIframe ? 1 : 0
+  })
   const isStreaming = isLoading || waitingStatus !== null
   const waitingStatusText = waitingStatus ? WAITING_STATUS_TEXT[waitingStatus] : ''
 
@@ -601,7 +613,7 @@ export default function CustomerServiceContent({
           content: question,
           forum_id: forumId,
           session_id: currentSessionId,
-          source: isInIframe ? 1 : 0,
+          source: sourceParam,
         })
 
         const thinkingPatterns = [/思考[:：]/, /推理[:：]/, /分析[:：]/, /让我想想/, /我需要/, /正在思考/]
@@ -898,7 +910,7 @@ export default function CustomerServiceContent({
       const requestBody = JSON.stringify({
         question: question,
         session_id: currentSessionId,
-        source: isInIframe ? 1 : 0,
+        source: sourceParam,
       })
 
       let answerText = ''
