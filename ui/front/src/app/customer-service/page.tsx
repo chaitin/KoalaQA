@@ -39,7 +39,13 @@ async function getBotData(): Promise<SvcBotGetRes | null> {
   }
 }
 
-async function getSessionId(user: Awaited<ReturnType<typeof getUserData>>, urlId: string | null, question: string | null): Promise<string | null> {
+async function getSessionId(user: Awaited<ReturnType<typeof getUserData>>, urlId: string | null, question: string | null, isWidget: boolean): Promise<string | null> {
+  // 在 widget 模式下，如果没有 urlId，不在服务端获取 sessionId
+  // 而是让客户端组件自行处理，避免服务端重定向导致的页面闪烁
+  if (isWidget && !urlId) {
+    return null;
+  }
+
   // 如果是游客状态（未登录）且当前 URL 中有 id，则直接使用 URL 中的 id
   if (!user && urlId) {
     return urlId;
@@ -68,22 +74,19 @@ export default async function CustomerServicePage(props: {
   const user = await getUserData();
   const [botData, sessionId, pluginConfig] = await Promise.all([
     getBotData(),
-    getSessionId(user, urlId, question),
+    getSessionId(user, urlId, question, isWidget),
     getSystemWebPlugin().catch(() => null),
   ]);
 
   // 如果获取到了新的 sessionId 且与 URL 中的 id 不一致，重定向到带有 id 的 URL
   // 这样可以确保 URL 始终包含当前的会话 ID
-  if (sessionId && sessionId !== urlId) {
+  // 但在 widget 模式下，为了避免 iframe 页面闪烁，不在服务端重定向，而是让客户端组件处理
+  if (sessionId && sessionId !== urlId && !isWidget) {
     const newParams = new URLSearchParams();
     newParams.set('id', sessionId);
 
     if (question) {
       newParams.set('question', question);
-    }
-
-    if (isWidget) {
-      newParams.set('is_widget', '1');
     }
 
     redirect(`/customer-service?${newParams.toString()}`);
@@ -93,7 +96,11 @@ export default async function CustomerServicePage(props: {
   if (pluginConfig && !pluginConfig.enabled && !isWidget) {
     notFound();
   }
-  if (!sessionId) return
+  // 在非 widget 模式下，如果没有 sessionId，不渲染组件
+  // 在 widget 模式下，允许 sessionId 为 null，客户端会自行获取
+  if (!sessionId && !isWidget) {
+    return null;
+  }
   // 允许未登录用户访问，user 可以为 null
-  return <CustomerServiceContent key={sessionId || 'init'} initialUser={user ?? undefined} botData={botData} sessionId={sessionId} />;
+  return <CustomerServiceContent key={sessionId || 'init'} initialUser={user ?? undefined} botData={botData} sessionId={sessionId || ''} />;
 }

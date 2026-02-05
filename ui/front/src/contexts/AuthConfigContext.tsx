@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, ReactNode } from 'react'
 import { SvcAuthFrontendGetRes } from '@/api/types'
+import { setPublicAccessAllowed } from '@/api/httpClient'
 
 interface AuthConfigContextType {
   authConfig: SvcAuthFrontendGetRes | null
@@ -25,6 +26,13 @@ export const AuthConfigProvider = ({
   const [authConfig, setAuthConfig] = React.useState<SvcAuthFrontendGetRes | null>(initialAuthConfig)
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState<Error | null>(null)
+
+  // 初始化设置 public access
+  React.useEffect(() => {
+    if (initialAuthConfig) {
+      setPublicAccessAllowed(initialAuthConfig.public_access ?? false)
+    }
+  }, [initialAuthConfig])
 
   // 清除缓存函数
   const clearCache = React.useCallback(() => {
@@ -63,6 +71,7 @@ export const AuthConfigProvider = ({
       // 动态导入以避免服务端渲染问题
       const { getUserLoginMethod } = await import('@/api')
       const response = await getUserLoginMethod()
+      setPublicAccessAllowed(response?.public_access ?? false)
       setAuthConfig(response)
       setLoading(false)
       return response

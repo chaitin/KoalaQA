@@ -116,6 +116,7 @@ export default function CustomerServiceContent({
   const [isServiceEnabled, setIsServiceEnabled] = useState<boolean | null>(null) // null表示正在加载
   const [isInitialLoading, setIsInitialLoading] = useState(true) // 初始数据是否加载完成
   const [expandedSources, setExpandedSources] = useState<Set<string>>(new Set()) // 展开的搜索结果消息ID
+  const [clientSessionId, setClientSessionId] = useState<string>('') // 客户端获取的 sessionId，用于 widget 模式
   const [commonQuestions, setCommonQuestions] = useState<string[]>([
     '管理员密码忘了怎么办?',
     '如何配置 SSO 登录',
@@ -224,16 +225,44 @@ export default function CustomerServiceContent({
   const currentMessageRef = useRef<Message | null>(null)
   const hasStreamedRef = useRef(false)
 
-  // 获取当前的 sessionId，优先从 URL 获取，确保与 URL 同步
+  // 获取当前的 sessionId，优先级：clientSessionId > URL id > props sessionId
   const getCurrentSessionId = useCallback(() => {
-    // 优先从 searchParams 获取（Next.js 的 useSearchParams 是响应式的）
+    // 优先使用客户端获取的 sessionId（widget 模式下）
+    if (clientSessionId) {
+      return clientSessionId
+    }
+    // 其次从 searchParams 获取（Next.js 的 useSearchParams 是响应式的）
     const urlId = searchParams.get('id')
     if (urlId) {
       return urlId
     }
-    // 如果没有，则使用 state 中的 sessionId
+    // 最后使用 props 中的 sessionId
     return sessionId
-  }, [searchParams, sessionId])
+  }, [clientSessionId, searchParams, sessionId])
+
+  // 在 widget 模式下，如果 URL 中没有 id 参数且 props 中的 sessionId 为空，
+  // 则在客户端获取 sessionId 并存储到 state，避免 URL 更新导致的页面重新渲染
+  useEffect(() => {
+    const urlId = searchParams.get('id')
+    const isWidget = searchParams.get('is_widget') === '1'
+
+    // 只在 widget 模式下，且没有 URL id，且没有 props sessionId，且还没有获取过 clientSessionId 时执行
+    if (isWidget && !urlId && !sessionId && !clientSessionId) {
+      const fetchSessionId = async () => {
+        try {
+          const newSessionId = await getDiscussionAskSession({})
+          if (newSessionId) {
+            // 存储到 state，不更新 URL，避免页面重新渲染
+            setClientSessionId(newSessionId)
+          }
+        } catch (error) {
+          console.error('获取会话ID失败:', error)
+        }
+      }
+
+      fetchSessionId()
+    }
+  }, [searchParams, sessionId, clientSessionId])
 
   // 如果 URL 中没有 id 参数，添加 sessionId 到 URL
   useEffect(() => {
@@ -252,39 +281,39 @@ export default function CustomerServiceContent({
   // 用于标记正在加载的历史对话 SessionID，避免重复请求
   const loadingHistorySessionIdRef = useRef<string | null>(null)
 
-  // 当 sessionId 变化时，加载历史对话
+  // 当 sessionId 或 clientSessionId 变化时，加载历史对话
   useEffect(() => {
-    console.log('sessionId-------', sessionId)
-    if (!sessionId) {
+    const currentSessionId = getCurrentSessionId()
+    if (!currentSessionId) {
       return
     }
     // 如果用户未登录，currentUserId 可能为 0 或 undefined，仍然允许加载历史对话
 
     // 如果已经加载过这个 sessionId 的历史对话，不再重复加载
-    if (historyLoadedRef.current === sessionId) {
+    if (historyLoadedRef.current === currentSessionId) {
       return
     }
 
     // 如果正在加载这个 sessionId 的历史对话，不再重复加载
-    if (loadingHistorySessionIdRef.current === sessionId) {
+    if (loadingHistorySessionIdRef.current === currentSessionId) {
       return
     }
 
     // 如果 URL 中没有 id 参数，说明是新访问的页面（从 header 点击进入），应该加载历史对话
     // 如果 URL 中有 id 参数，且与 sessionId 相同，说明是直接访问某个会话，也应该加载历史对话
     const urlId = searchParams.get('id')
-    const shouldLoadHistory = !urlId || urlId === sessionId
+    const shouldLoadHistory = !urlId || urlId === currentSessionId
 
     if (!shouldLoadHistory) {
       return
     }
 
     // 标记正在加载
-    loadingHistorySessionIdRef.current = sessionId
+    loadingHistorySessionIdRef.current = currentSessionId
 
     const loadHistory = async () => {
       try {
-        const response = await getDiscussionAskAskSessionId({ askSessionId: sessionId })
+        const response = await getDiscussionAskAskSessionId({ askSessionId: currentSessionId })
 
         const historyItems = response.items || []
 
@@ -297,7 +326,7 @@ export default function CustomerServiceContent({
               return true
             }
 
-            // 如果是机器人消息，检查内容是否匹配"无法回答问题"的模式
+            // 如果是机器人消息，检查内容是否匹配\"无法回答问题\"的模式
             if (item.bot && item.content) {
               const content = item.content.trim()
               const isCannotAnswer = cannotAnswerPatterns.some((pattern) => pattern.test(content))
@@ -363,14 +392,14 @@ export default function CustomerServiceContent({
         }
 
         // 标记已加载
-        historyLoadedRef.current = sessionId
+        historyLoadedRef.current = currentSessionId
         setIsInitialLoading(false)
       } catch (error) {
         console.error('加载历史对话失败:', error)
         // 加载失败，清空消息
         setMessages([])
         // 即使加载失败，也标记为已尝试加载，避免重复请求
-        historyLoadedRef.current = sessionId
+        historyLoadedRef.current = currentSessionId
         setIsInitialLoading(false)
       } finally {
         loadingHistorySessionIdRef.current = null
@@ -378,7 +407,7 @@ export default function CustomerServiceContent({
     }
 
     loadHistory()
-  }, [sessionId])
+  }, [sessionId, clientSessionId, searchParams, getCurrentSessionId])
 
   // 检查智能客服是否开启
   useEffect(() => {

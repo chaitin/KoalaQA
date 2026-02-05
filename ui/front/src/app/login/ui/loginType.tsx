@@ -12,7 +12,7 @@ import { useAuthConfig } from '@/hooks/useAuthConfig'
 import { TroubleshootOutlined } from '@mui/icons-material'
 import Message from '@/components/alert'
 
-const LoginType = () => {
+const LoginTypeContent = () => {
   // 使用新的 useAuthConfig hook
   const { authConfig, loading } = useAuthConfig()
   const searchParams = useSearchParams()
@@ -88,57 +88,192 @@ const LoginType = () => {
   const wechatConfig = authConfig?.auth_types?.find((auth) => auth.type === AuthType.WECHAT)
 
   if (loading) {
-    return
+    return null
   }
 
   // 根据配置决定显示哪种登录界面
   if (!hasPasswordLogin && hasThirdPartyLogin) {
     // 情况1：只有第三方登录，显示左侧样式（简单登录）
     return (
-      <Suspense>
-        <Stack
-          alignItems='center'
-          justifyContent='center'
+      <Stack
+        alignItems='center'
+        justifyContent='center'
+        sx={{
+          height: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          px: 2,
+          border: '1px solid #D9DEE2',
+        }}
+      >
+        <Card
           sx={{
-            height: '100%',
+            width: '400px',
+            maxWidth: '80%',
+            border: '1px solid #e0e0e0',
             display: 'flex',
+            flexDirection: 'column',
             justifyContent: 'center',
-            alignItems: 'center',
-            px: 2,
-            border: '1px solid #D9DEE2',
           }}
         >
-          <Card
-            sx={{
-              width: '400px',
-              maxWidth: '80%',
-              border: '1px solid #e0e0e0',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-            }}
-          >
-            <Stack spacing={4} alignItems='center'>
-              <Typography
+          <Stack spacing={4} alignItems='center'>
+            <Typography
+              sx={{
+                fontSize: '24px',
+                fontWeight: 600,
+                color: '#666',
+                textAlign: 'center',
+              }}
+            >
+              登录
+            </Typography>
+
+            {/* 第三方登录按钮 */}
+            <Stack spacing={2} sx={{ width: '100%' }}>
+              {oauthConfig && (
+                <Button
+                  variant='outlined'
+                  fullWidth
+                  sx={{
+                    height: 48,
+                    color: 'primary.main',
+                    backgroundColor: 'transparent',
+                    fontSize: '14px',
+                  }}
+                  onClick={() => handleOAuthLogin(oauthConfig.type!)}
+                >
+                  {oauthConfig.button_desc || 'OAuth 登录'}
+                </Button>
+              )}
+              {wecomConfig && (
+                <Button
+                  variant='outlined'
+                  fullWidth
+                  sx={{
+                    height: 48,
+                    color: 'primary.main',
+                    backgroundColor: 'transparent',
+                    fontSize: '14px',
+                  }}
+                  onClick={() => handleOAuthLogin(wecomConfig.type!)}
+                >
+                  {wecomConfig.button_desc || '企业微信登录'}
+                </Button>
+              )}
+              {wechatConfig && (
+                <Button
+                  variant='outlined'
+                  fullWidth
+                  sx={{
+                    height: 48,
+                    color: 'primary.main',
+                    backgroundColor: 'transparent',
+                    fontSize: '14px',
+                  }}
+                  onClick={() => handleOAuthLogin(wechatConfig.type!)}
+                >
+                  {wechatConfig.button_desc || '微信登录'}
+                </Button>
+              )}
+            </Stack>
+
+            {/* 注册链接 */}
+            {passwordConfig?.enable_register && (
+              <Stack
+                direction='row'
+                alignItems='center'
                 sx={{
-                  fontSize: '24px',
-                  fontWeight: 600,
-                  color: '#666',
-                  textAlign: 'center',
+                  color: 'rgba(0,0,0,0.4)',
+                  fontSize: 14,
                 }}
               >
-                登录
-              </Typography>
+                还没有注册？
+                <Link href='/register' style={{ textDecoration: 'none' }}>
+                  <Box sx={{ color: 'primary.main', ml: 0.5, textDecoration: 'none' }}>立即注册</Box>
+                </Link>
+              </Stack>
+            )}
+          </Stack>
+        </Card>
+      </Stack>
+    )
+  }
 
-              {/* 第三方登录按钮 */}
-              <Stack spacing={2} sx={{ width: '100%' }}>
+  // 情况2：有账号密码登录（可能同时有第三方登录），显示右侧样式（完整登录表单）
+  return (
+    <Stack alignItems='center' justifyContent='center' sx={{ height: '100%' }}>
+      <Card
+        sx={{
+          width: 400,
+          maxWidth: '80%',
+          p: 3,
+          borderRadius: 2,
+          mx: 'auto',
+          border: '1px solid #D9DEE2',
+        }}
+      >
+        <Stack spacing={2}>
+          <Typography
+            variant='h1'
+            sx={{
+              fontSize: '20px',
+              fontWeight: 600,
+              textAlign: 'center',
+              color: '#333',
+            }}
+          >
+            登录
+          </Typography>
+
+          {/* 账号密码登录 */}
+          <Account isChecked={true} passwordConfig={passwordConfig} />
+
+          {/* 注册链接 */}
+          {passwordConfig?.enable_register && (
+            <Box
+              sx={{
+                textAlign: 'center',
+                color: 'rgba(0,0,0,0.4)',
+                fontSize: 14,
+              }}
+            >
+              还没有注册？
+              <Link href='/register' style={{ textDecoration: 'none' }}>
+                <Box
+                  sx={{
+                    display: 'inline-block',
+                    fontWeight: 500,
+                    color: 'primary.main',
+                    ml: 0.5,
+                    textDecoration: 'none',
+                  }}
+                >
+                  立即注册
+                </Box>
+              </Link>
+            </Box>
+          )}
+
+          {/* 如果有第三方登录，显示分割线和第三方登录按钮 */}
+          {hasThirdPartyLogin && (
+            <>
+              <Box
+                sx={{
+                  textAlign: 'center',
+                  color: 'rgba(0,0,0,0.4)',
+                  fontSize: 14,
+                }}
+              >
+                使用其他登录方式
+              </Box>
+
+              <Stack spacing={1}>
                 {oauthConfig && (
                   <Button
                     variant='outlined'
                     fullWidth
                     sx={{
-                      height: 48,
-                      color: 'primary.main',
                       backgroundColor: 'transparent',
                       fontSize: '14px',
                     }}
@@ -152,8 +287,6 @@ const LoginType = () => {
                     variant='outlined'
                     fullWidth
                     sx={{
-                      height: 48,
-                      color: 'primary.main',
                       backgroundColor: 'transparent',
                       fontSize: '14px',
                     }}
@@ -167,8 +300,6 @@ const LoginType = () => {
                     variant='outlined'
                     fullWidth
                     sx={{
-                      height: 48,
-                      color: 'primary.main',
                       backgroundColor: 'transparent',
                       fontSize: '14px',
                     }}
@@ -178,145 +309,18 @@ const LoginType = () => {
                   </Button>
                 )}
               </Stack>
-
-              {/* 注册链接 */}
-              {passwordConfig?.enable_register && (
-                <Stack
-                  direction='row'
-                  alignItems='center'
-                  sx={{
-                    color: 'rgba(0,0,0,0.4)',
-                    fontSize: 14,
-                  }}
-                >
-                  还没有注册？
-                  <Link href='/register' style={{ textDecoration: 'none' }}>
-                    <Box sx={{ color: 'primary.main', ml: 0.5, textDecoration: 'none' }}>立即注册</Box>
-                  </Link>
-                </Stack>
-              )}
-            </Stack>
-          </Card>
+            </>
+          )}
         </Stack>
-      </Suspense>
-    )
-  }
+      </Card>
+    </Stack>
+  )
+}
 
-  // 情况2：有账号密码登录（可能同时有第三方登录），显示右侧样式（完整登录表单）
+const LoginType = () => {
   return (
     <Suspense>
-      <Stack alignItems='center' justifyContent='center' sx={{ height: '100%' }}>
-        <Card
-          sx={{
-            width: 400,
-            maxWidth: '80%',
-            p: 3,
-            borderRadius: 2,
-            mx: 'auto',
-            border: '1px solid #D9DEE2',
-          }}
-        >
-          <Stack spacing={2}>
-            <Typography
-              variant='h1'
-              sx={{
-                fontSize: '20px',
-                fontWeight: 600,
-                textAlign: 'center',
-                color: '#333',
-              }}
-            >
-              登录
-            </Typography>
-
-            {/* 账号密码登录 */}
-            <Account isChecked={true} passwordConfig={passwordConfig} />
-
-            {/* 注册链接 */}
-            {passwordConfig?.enable_register && (
-              <Box
-                sx={{
-                  textAlign: 'center',
-                  color: 'rgba(0,0,0,0.4)',
-                  fontSize: 14,
-                }}
-              >
-                还没有注册？
-                <Link href='/register' style={{ textDecoration: 'none' }}>
-                  <Box
-                    sx={{
-                      display: 'inline-block',
-                      fontWeight: 500,
-                      color: 'primary.main',
-                      ml: 0.5,
-                      textDecoration: 'none',
-                    }}
-                  >
-                    立即注册
-                  </Box>
-                </Link>
-              </Box>
-            )}
-
-            {/* 如果有第三方登录，显示分割线和第三方登录按钮 */}
-            {hasThirdPartyLogin && (
-              <>
-                <Box
-                  sx={{
-                    textAlign: 'center',
-                    color: 'rgba(0,0,0,0.4)',
-                    fontSize: 14,
-                  }}
-                >
-                  使用其他登录方式
-                </Box>
-
-                <Stack spacing={1}>
-                  {oauthConfig && (
-                    <Button
-                      variant='outlined'
-                      fullWidth
-                      sx={{
-                        backgroundColor: 'transparent',
-                        fontSize: '14px',
-                      }}
-                      onClick={() => handleOAuthLogin(oauthConfig.type!)}
-                    >
-                      {oauthConfig.button_desc || 'OAuth 登录'}
-                    </Button>
-                  )}
-                  {wecomConfig && (
-                    <Button
-                      variant='outlined'
-                      fullWidth
-                      sx={{
-                        backgroundColor: 'transparent',
-                        fontSize: '14px',
-                      }}
-                      onClick={() => handleOAuthLogin(wecomConfig.type!)}
-                    >
-                      {wecomConfig.button_desc || '企业微信登录'}
-                    </Button>
-                  )}
-                  {wechatConfig && (
-                    <Button
-                      variant='outlined'
-                      fullWidth
-                      sx={{
-                        backgroundColor: 'transparent',
-                        fontSize: '14px',
-                      }}
-                      onClick={() => handleOAuthLogin(wechatConfig.type!)}
-                    >
-                      {wechatConfig.button_desc || '微信登录'}
-                    </Button>
-                  )}
-                </Stack>
-              </>
-            )}
-          </Stack>
-        </Card>
-      </Stack>
+      <LoginTypeContent />
     </Suspense>
   )
 }

@@ -129,6 +129,10 @@ export const clearCsrfToken = () => {
 };
 
 // 导出公共访问状态获取函数，供其他组件使用
+let isPublicAccessAllowed = false;
+export const setPublicAccessAllowed = (allowed: boolean) => {
+  isPublicAccessAllowed = allowed;
+};
 
 // 清除所有认证信息的函数
 export const clearAuthData = async (callLogoutAPI: boolean = true) => {
@@ -263,6 +267,17 @@ export class HttpClient<SecurityDataType = unknown> {
         if (error.response?.status === 401) {
           // 只在客户端环境下进行处理
           if (typeof window !== "undefined") {
+            // 如果允许公开访问，则只清除认证信息，不强制跳转登录
+            if (isPublicAccessAllowed) {
+              console.log(
+                "401 Unauthorized error in public access mode, clearing auth data without redirect:",
+                error.response.data.err,
+              );
+              // 清除认证信息，但不调用登出API（因为token无效了），也不跳转
+              clearAuthData(false);
+              return Promise.reject(error.response.data.err);
+            }
+
             console.log(
               "401 Unauthorized error detected, clearing auth data:",
               error.response.data.err,

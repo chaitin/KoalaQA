@@ -56,22 +56,6 @@ export default function RootPageFallback() {
     handleRedirect()
   }, [forums, loading, error, refreshForums, router, hasRedirected])
 
-  // 显示加载状态
-  return (
-    <div style={{ 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
-      height: '100vh',
-      flexDirection: 'column',
-      gap: '16px'
-    }}>
-      <div>你的账号没有任何板块权限，请联系管理员添加权限</div>
-      {error && (
-        <div style={{ color: '#666', fontSize: '14px' }}>
-          正在尝试重新获取数据...
-        </div>
-      )}
-    </div>
-  )
+  // 不显示任何错误信息，直接显示空白（等待重定向）
+  return null
 }

@@ -222,6 +222,7 @@ declare global {
       height: 100%;
       border: none;
       border-radius: 8px;
+      background: #fff;
     }
     
     @keyframes cs-fade-in {
