@@ -67,7 +67,7 @@ const AuthProvider = ({
 
       try {
         // httpClient 现在内置了缓存和重试，直接调用即可
-        const userData = await getUser();
+        const userData = await getUser({ skipAuthRedirect: true });
         setUser(userData);
       } catch (error) {
         // 如果是401错误，说明需要登录，但不在这里处理重定向

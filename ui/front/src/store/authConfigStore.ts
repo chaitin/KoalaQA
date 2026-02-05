@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { SvcAuthFrontendGetRes } from '@/api/types'
+import { setPublicAccessAllowed } from '@/api/httpClient'
 
 interface AuthConfigState {
   authConfig: SvcAuthFrontendGetRes | null
@@ -26,10 +27,12 @@ export const useAuthConfigStore = create<AuthConfigState>((set) => {
     error: null,
 
     setAuthConfig: (config) => {
+      setPublicAccessAllowed(config?.public_access ?? false)
       set({ authConfig: config })
     },
 
     initialize: (initialConfig) => {
+      setPublicAccessAllowed(initialConfig?.public_access ?? false)
       set({ authConfig: initialConfig })
     },
 
@@ -44,6 +47,7 @@ export const useAuthConfigStore = create<AuthConfigState>((set) => {
         // 动态导入以避免服务端渲染问题
         const { getUserLoginMethod } = await import('@/api')
         const response = await getUserLoginMethod()
+        setPublicAccessAllowed(response?.public_access ?? false)
         set({ authConfig: response, loading: false })
         return response
       } catch (err) {
