@@ -64,11 +64,12 @@ async function getSessionId(user: Awaited<ReturnType<typeof getUserData>>, urlId
 }
 
 export default async function CustomerServicePage(props: {
-  readonly searchParams: Promise<{ id?: string; is_widget?: string; question?: string }>
+  readonly searchParams: Promise<{ id?: string; is_widget?: string; question?: string; source?: string }>
 }) {
   const searchParams = await props.searchParams;
   const urlId = searchParams?.id || null;
   const question = searchParams?.question || null;
+  const source = searchParams?.source || null;
   const isWidget = searchParams?.is_widget === '1';
 
   const user = await getUserData();
@@ -87,6 +88,10 @@ export default async function CustomerServicePage(props: {
 
     if (question) {
       newParams.set('question', question);
+    }
+
+    if (source) {
+      newParams.set('source', source);
     }
 
     redirect(`/customer-service?${newParams.toString()}`);
