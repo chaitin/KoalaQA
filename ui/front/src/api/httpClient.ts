@@ -51,6 +51,8 @@ export interface FullRequestParams
   format?: ResponseType;
   /** request body */
   body?: unknown;
+  /** skip auth redirect on 401 */
+  skipAuthRedirect?: boolean;
 }
 
 export type RequestParams = Omit<
@@ -250,6 +252,11 @@ export class HttpClient<SecurityDataType = unknown> {
       (error) => {
         if (error.response?.status === 403 || error.response?.status === 419) {
           // 处理403 Forbidden和419 Authentication Timeout
+        }
+
+        // 检查是否配置了跳过401自动重定向
+        if (error.config?.skipAuthRedirect && error.response?.status === 401) {
+          return Promise.reject(error.response.data?.err ?? error);
         }
 
         // 处理401未授权错误 - 清除认证信息并重定向到登录页

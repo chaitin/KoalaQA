@@ -384,7 +384,7 @@ export default function CustomerServiceContent({
   useEffect(() => {
     const checkServiceEnabled = async () => {
       try {
-        const response = await getSystemWebPlugin()
+        const response = await getSystemWebPlugin({ skipAuthRedirect: true })
 
         // Backend logic: service is enabled if any of Enabled, Display, or Plugin is true
         // This matches: if !webPlugin.Enabled && !webPlugin.Display && !webPlugin.Plugin { return error }

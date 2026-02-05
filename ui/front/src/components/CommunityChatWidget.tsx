@@ -13,7 +13,7 @@ const CommunityChatWidget = () => {
     useEffect(() => {
         const checkConfig = async () => {
             try {
-                const res = await getSystemWebPlugin()
+                const res = await getSystemWebPlugin({ skipAuthRedirect: true })
                 // Show widget if any of: enabled (在线支持), display (在社区前台展示), or plugin (网页挂件) is true
                 // This matches backend logic: !webPlugin.Enabled && !webPlugin.Display && !webPlugin.Plugin
                 if (res && (res.enabled === true || res.display === true || res.plugin === true)) {
