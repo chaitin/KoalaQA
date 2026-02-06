@@ -74,18 +74,22 @@ declare global {
         left: auto !important;
         right: 24px !important;
         bottom: 80px !important;
+        width: 40px !important;
         min-width: 40px !important;
         max-width: 40px !important;
         height: 40px !important;
         padding: 0 !important;
-        border-radius: 50% !important;
+        border-radius: 20px !important;
         justify-content: center !important;
       }
+      width: ${config.buttonSize}px;
       min-width: ${config.buttonSize}px;
       max-width: ${config.buttonSize}px;
       height: ${config.buttonSize}px;
+      min-height: ${config.buttonSize}px;
+      max-height: ${config.buttonSize}px;
       padding: 0 calc((${config.buttonSize}px - 28px) / 2) 0 0;
-      border-radius: 50%;
+      border-radius: ${config.buttonSize / 2}px;
       background: linear-gradient(135deg, var(--cs-primary-color, ${config.buttonColor}) 0%, var(--cs-primary-hover-color, ${config.buttonHoverColor}) 100%);
       border: 1px solid ${themeColor};
       cursor: pointer;
@@ -128,6 +132,10 @@ declare global {
     .cs-widget-button-icon {
       width: 28px;
       height: 28px;
+      min-width: 28px;
+      min-height: 28px;
+      max-width: 28px;
+      max-height: 28px;
       object-fit: contain;
       position: relative;
       top: 2px;
@@ -280,6 +288,10 @@ declare global {
       justify-content: center;
       width: 28px;
       height: 28px;
+      min-width: 28px;
+      min-height: 28px;
+      max-width: 28px;
+      max-height: 28px;
       flex-shrink: 0;
     }
 
