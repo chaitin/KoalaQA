@@ -1,8 +1,6 @@
 package intercept
 
 import (
-	"net/http"
-
 	"github.com/chaitin/koalaqa/pkg/context"
 	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/gin-contrib/sessions"
@@ -28,7 +26,6 @@ func newSession() Interceptor {
 }
 
 func (s *session) Intercept(ctx *context.Context) {
-	ctx.SetSameSite(http.SameSiteStrictMode)
 	s.handler(ctx.Context)
 }
 

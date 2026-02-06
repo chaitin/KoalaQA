@@ -74,18 +74,24 @@ declare global {
         left: auto !important;
         right: 24px !important;
         bottom: 80px !important;
+        width: 40px !important;
         min-width: 40px !important;
         max-width: 40px !important;
         height: 40px !important;
+        min-height: 40px !important;
+        max-height: 40px !important;
         padding: 0 !important;
-        border-radius: 50% !important;
+        border-radius: 50px !important;
         justify-content: center !important;
       }
+      width: ${config.buttonSize}px;
       min-width: ${config.buttonSize}px;
       max-width: ${config.buttonSize}px;
       height: ${config.buttonSize}px;
-      padding: 0 calc((${config.buttonSize}px - 28px) / 2) 0 0;
-      border-radius: 50%;
+      min-height: ${config.buttonSize}px;
+      max-height: ${config.buttonSize}px;
+      padding: 0 14px 0 0;
+      border-radius: 50px;
       background: linear-gradient(135deg, var(--cs-primary-color, ${config.buttonColor}) 0%, var(--cs-primary-hover-color, ${config.buttonHoverColor}) 100%);
       border: 1px solid ${themeColor};
       cursor: pointer;
@@ -104,7 +110,8 @@ declare global {
     
     .cs-widget-button:hover {
       max-width: 300px;
-      padding: 0 calc((${config.buttonSize}px - 28px) / 2) 0 24px;
+      width: auto;
+      padding: 0 14px 0 20px;
       gap: 12px;
       border-radius: 30px;
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.3);
@@ -120,14 +127,26 @@ declare global {
     }
     
     .cs-widget-icon-wrapper {
+      position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
+      width: 28px;
+      height: 28px;
+      min-width: 28px;
+      min-height: 28px;
+      max-width: 28px;
+      max-height: 28px;
+      flex-shrink: 0;
     }
 
     .cs-widget-button-icon {
       width: 28px;
       height: 28px;
+      min-width: 28px;
+      min-height: 28px;
+      max-width: 28px;
+      max-height: 28px;
       object-fit: contain;
       position: relative;
       top: 2px;
@@ -143,13 +162,16 @@ declare global {
       white-space: nowrap;
       opacity: 0;
       max-width: 0;
-      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      visibility: hidden;
+      transition: opacity 0.2s ease-out, max-width 0.3s ease-out, visibility 0s linear 0.2s;
       overflow: hidden;
     }
 
     .cs-widget-button:hover .cs-widget-button-text {
       opacity: 1;
       max-width: 100px;
+      visibility: visible;
+      transition: opacity 0.4s ease-in 0.1s, max-width 0.5s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0s;
     }
     
     .cs-widget-modal {
@@ -273,15 +295,7 @@ declare global {
         border-radius: 0;
       }
     }
-    .cs-widget-icon-wrapper {
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 28px;
-      height: 28px;
-      flex-shrink: 0;
-    }
+
 
     .cs-widget-star {
       position: absolute;
