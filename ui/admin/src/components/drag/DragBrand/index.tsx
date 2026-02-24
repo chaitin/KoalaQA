@@ -13,7 +13,7 @@ import {
 } from '@dnd-kit/core';
 import { rectSortingStrategy, SortableContext } from '@dnd-kit/sortable';
 import { Box, Button, Stack, Typography } from '@mui/material';
-import { message } from '@ctzhian/ui';
+import { message, Modal } from '@ctzhian/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -58,7 +58,6 @@ const DragBrand = () => {
   const sensors = useSensors(useSensor(MouseSensor), useSensor(TouchSensor));
   const {
     control,
-    handleSubmit,
     reset,
     getValues,
     trigger,
@@ -139,9 +138,48 @@ const DragBrand = () => {
 
   const handleRemove = useCallback(
     (index: number) => {
-      removeBrandGroup(index);
+      const groupName = getValues(`brand_groups.${index}.name`) || '该分类';
+      Modal.confirm({
+        title: '确认删除',
+        okText: '删除',
+        okButtonProps: { color: 'primary' },
+        content: (
+          <>
+            确定要删除
+            <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
+              {` ${groupName} `}
+            </Box>
+            吗？删除后不可恢复。
+          </>
+        ),
+        onOk: async () => {
+          try {
+            const currentData = getValues('brand_groups');
+            const updatedGroups = currentData
+              .filter((_, i) => i !== index)
+              .map((item, i) => ({
+                name: item.name,
+                id: item.id,
+                index: i,
+                items: item.links.map((link, j) => ({ ...link, index: j })),
+              }));
+            await putAdminGroup({ groups: updatedGroups });
+            removeBrandGroup(index);
+            await refresh();
+            const getTimestamp = () => Date.now();
+            eventManager.emit(EVENTS.CATEGORY_UPDATED, {
+              timestamp: getTimestamp(),
+              message: '分类信息已更新',
+            });
+            message.success('删除成功');
+          } catch (error) {
+            console.error('删除分类失败:', error);
+            message.error('删除分类失败');
+          }
+        },
+      });
     },
-    [removeBrandGroup]
+    [removeBrandGroup, getValues, refresh]
   );
 
   const handleAddBrandGroup = () => {
@@ -182,24 +220,31 @@ const DragBrand = () => {
     setEditingGroupIndex(null);
   };
 
-  const onSubmit = handleSubmit(async data => {
-    await putAdminGroup({
-      groups: data.brand_groups.map((item, index) => ({
-        name: item.name,
-        id: item.id,
-        index,
-        items: item.links.map((link, i) => ({ ...link, index: i })),
-      })),
-    });
-    // 刷新分组数据
-    await refresh();
-    // 触发分类更新事件，通知其他组件
-    const getTimestamp = () => Date.now();
-    eventManager.emit(EVENTS.CATEGORY_UPDATED, {
-      timestamp: getTimestamp(),
-      message: '分类信息已更新',
-    });
-  });
+  const onSubmit = async () => {
+    try {
+      const currentData = getValues('brand_groups');
+      await putAdminGroup({
+        groups: currentData.map((item, index) => ({
+          name: item.name,
+          id: item.id,
+          index,
+          items: item.links.map((link, i) => ({ ...link, index: i })),
+        })),
+      });
+      // 刷新分组数据
+      await refresh();
+      // 触发分类更新事件，通知其他组件
+      const getTimestamp = () => Date.now();
+      eventManager.emit(EVENTS.CATEGORY_UPDATED, {
+        timestamp: getTimestamp(),
+        message: '分类信息已更新',
+      });
+      message.success('保存成功');
+    } catch (error) {
+      console.error('保存失败:', error);
+      message.error('保存失败');
+    }
+  };
 
   return (
     <Card>
