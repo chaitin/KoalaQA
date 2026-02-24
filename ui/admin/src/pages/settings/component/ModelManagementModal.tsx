@@ -1,4 +1,4 @@
-import { getAdminModelList, ModelLLM, ModelLLMType, putAdminModelIdActive } from '@/api';
+import { getAdminModelList, ModelLLM, ModelLLMStatus, ModelLLMType, putAdminModelIdActive } from '@/api';
 import Card from '@/components/card';
 import { addOpacityToColor } from '@/utils';
 import { ModelModal } from '@ctzhian/modelkit';
@@ -17,17 +17,6 @@ interface ModelConfig {
   isRequired: boolean;
 }
 
-export enum ModelLLMStatus {
-  LLMStatusUnknown = 0,
-  LLMStatusNormal = 1,
-  LLMStatusError = 2,
-}
-
-interface ModelLLMWithStatus extends ModelLLM {
-  status?: ModelLLMStatus;
-  message?: string;
-}
-
 interface ModelManagementModalProps {
   open: boolean;
   mandatory?: boolean;
@@ -41,8 +30,8 @@ const ModelManagementModal = ({
   onConfigured,
 }: ModelManagementModalProps) => {
   const theme = useTheme();
-  const [editData, setEditData] = useState<ModelLLMWithStatus | null>(null);
-  const [modelList, setModelList] = useState<ModelLLMWithStatus[]>([]);
+  const [editData, setEditData] = useState<ModelLLM | null>(null);
+  const [modelList, setModelList] = useState<ModelLLM[]>([]);
   const [activeLoadingMap, setActiveLoadingMap] = useState<Record<string, boolean>>({});
 
   // 模型配置数组
@@ -90,7 +79,7 @@ const ModelManagementModal = ({
   const getModel = useCallback(async () => {
     const res = await getAdminModelList();
     const filteredModels = res.filter(item => model.includes(item.type as any));
-    setModelList(filteredModels as ModelLLMWithStatus[]);
+    setModelList(filteredModels as ModelLLM[]);
   }, []);
 
   useEffect(() => {
@@ -274,7 +263,7 @@ const ModelManagementModal = ({
                         size="small"
                         variant="outlined"
                         onClick={() => {
-                          setEditData({ type: config.key } as ModelLLMWithStatus);
+                          setEditData({ type: config.key } as ModelLLM);
                         }}
                       >
                         配置
