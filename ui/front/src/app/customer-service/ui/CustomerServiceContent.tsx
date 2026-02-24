@@ -2022,6 +2022,7 @@ export default function CustomerServiceContent({
                                             '& a': {
                                               color: theme.palette.primary.main,
                                               textDecoration: 'none',
+                                              whiteSpace: 'normal',
                                               '&:hover': {
                                                 textDecoration: 'underline',
                                               },

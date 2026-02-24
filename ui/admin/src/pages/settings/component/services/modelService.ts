@@ -38,6 +38,7 @@ const convertToKit = (data: UICreateModelData): SvcMKCreateReq => {
     ..._data,
     model: data.model_name || '',
     type: (data.model_type as SvcMKCreateReq['type']) || 'chat',
+    param: data.param as SvcMKCreateReq['param'],
   };
 };
 // ModelService 实现
@@ -54,8 +55,8 @@ export const modelService: IModelService = {
 
     const models: UIModelListItem[] = result.models
       ? result.models?.map(item => ({
-          model: item.model || '',
-        }))
+        model: item.model || '',
+      }))
       : [];
     const error: string = '';
 
@@ -71,7 +72,8 @@ export const modelService: IModelService = {
   },
 
   async updateModel(data: UIUpdateModelData) {
-    const res = await putAdminModelId({ id: data.id + '' }, convertToKit(data));
+    console.log(data);
+    const res = await putAdminModelId({ id: data.id ? +data.id : 0 }, convertToKit(data));
     // 更新成功后返回模型数据
     const model: Model = res;
 

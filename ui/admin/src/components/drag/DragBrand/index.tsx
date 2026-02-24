@@ -58,7 +58,6 @@ const DragBrand = () => {
   const sensors = useSensors(useSensor(MouseSensor), useSensor(TouchSensor));
   const {
     control,
-    handleSubmit,
     reset,
     getValues,
     trigger,
@@ -182,24 +181,31 @@ const DragBrand = () => {
     setEditingGroupIndex(null);
   };
 
-  const onSubmit = handleSubmit(async data => {
-    await putAdminGroup({
-      groups: data.brand_groups.map((item, index) => ({
-        name: item.name,
-        id: item.id,
-        index,
-        items: item.links.map((link, i) => ({ ...link, index: i })),
-      })),
-    });
-    // 刷新分组数据
-    await refresh();
-    // 触发分类更新事件，通知其他组件
-    const getTimestamp = () => Date.now();
-    eventManager.emit(EVENTS.CATEGORY_UPDATED, {
-      timestamp: getTimestamp(),
-      message: '分类信息已更新',
-    });
-  });
+  const onSubmit = async () => {
+    try {
+      const currentData = getValues('brand_groups');
+      await putAdminGroup({
+        groups: currentData.map((item, index) => ({
+          name: item.name,
+          id: item.id,
+          index,
+          items: item.links.map((link, i) => ({ ...link, index: i })),
+        })),
+      });
+      // 刷新分组数据
+      await refresh();
+      // 触发分类更新事件，通知其他组件
+      const getTimestamp = () => Date.now();
+      eventManager.emit(EVENTS.CATEGORY_UPDATED, {
+        timestamp: getTimestamp(),
+        message: '分类信息已更新',
+      });
+      message.success('保存成功');
+    } catch (error) {
+      console.error('保存失败:', error);
+      message.error('保存失败');
+    }
+  };
 
   return (
     <Card>

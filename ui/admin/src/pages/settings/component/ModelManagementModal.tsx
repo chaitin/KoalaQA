@@ -301,6 +301,7 @@ const ModelManagementModal = ({
               id: editData?.id + '',
               model_name: editData?.model,
               status: editData.status !== undefined ? String(editData.status) : undefined,
+              param: editData.parameters,
             }
             : null
         }

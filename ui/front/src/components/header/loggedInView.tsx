@@ -34,7 +34,7 @@ enum MsgNotifyType {
   MsgNotifyTypeLikeComment = 4, //赞同了你的回答
   MsgNotifyTypeDislikeComment = 5, // 不喜欢你的回答 、不喜欢机器人的回答（仅管理员）
   MsgNotifyTypeBotUnknown = 6, //提出了机器人无法回答的问题（仅管理员
-  MsgNotifyTypeLikeFeedback = 7, //点赞了你的反馈
+  MsgNotifyTypeLikeFeedback = 7, //点赞了你的 Issue
   MsgNotifyTypeUserReview = 8, // 用户审核结果
   MsgNotifyTypeResolveByAdmin = 9, // 管理员将你的帖子标记为已解决
   MsgNotifyTypeCloseDiscussion = 10, // 管理员关闭了你的帖子
@@ -62,7 +62,7 @@ interface ContentTypeConfig {
   dislikeBotAction: string // 不喜欢机器人动作文本
   // 特殊动作
   botUnknownAction: string // 机器人无法回答动作文本
-  likeFeedbackAction: string // 点赞反馈动作文本
+  likeFeedbackAction: string // 点赞 Issue 动作文本
   adminMarkSolvedAction: string // 管理员标记为已解决动作文本
 }
 
@@ -76,7 +76,7 @@ const CONTENT_TYPE_CONFIGS: Record<ContentType, ContentTypeConfig> = {
     dislikeAction: '不喜欢你的回答',
     dislikeBotAction: '不喜欢机器人的回答',
     botUnknownAction: '提出了机器人无法回答的问题',
-    likeFeedbackAction: '点赞了你的反馈',
+    likeFeedbackAction: '点赞了你的 Issue',
     adminMarkSolvedAction: '将你的问题标记为已解决',
   },
   [ContentType.BLOG]: {
@@ -98,7 +98,7 @@ const CONTENT_TYPE_CONFIGS: Record<ContentType, ContentTypeConfig> = {
     dislikeAction: '不喜欢你的回答',
     dislikeBotAction: '不喜欢机器人的回答',
     botUnknownAction: '提出了机器人无法回答的问题',
-    likeFeedbackAction: '点赞了你的反馈',
+    likeFeedbackAction: '点赞了你的 Issue',
     adminMarkSolvedAction: '将你的问题标记为已解决',
   },
 }
