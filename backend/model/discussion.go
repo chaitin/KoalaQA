@@ -6,6 +6,21 @@ import (
 
 type DiscussionType string
 
+func (d DiscussionType) Name() string {
+	switch d {
+	case DiscussionTypeQA:
+		return "问题"
+	case DiscussionTypeFeedback:
+		return "反馈"
+	case DiscussionTypeBlog:
+		return "文章"
+	case DiscussionTypeIssue:
+		return "Issue"
+	default:
+		return "未知"
+	}
+}
+
 const (
 	DiscussionTypeQA       DiscussionType = "qa"
 	DiscussionTypeFeedback DiscussionType = "feedback"

@@ -113,7 +113,7 @@ var (
 	}
 )
 
-func (c *MessageNotifyCommon) titleOperateText() (string, string) {
+func (c *MessageNotifyCommon) TitleOperateText() (string, string) {
 	if c.Type == MsgNotifyTypeUserReview {
 		title := "账号激活反馈"
 		if c.ReviewState == UserReviewStatePass {
@@ -139,7 +139,7 @@ func (c *MessageNotifyCommon) titleOperateText() (string, string) {
 type AccessAddrCallback func(ctx context.Context, path string) (string, error)
 
 func (c *MessageNotifyCommon) Dingtalk(ctx context.Context, ac AccessAddrCallback, forum Forum) *MessageNotifyDingtalk {
-	title, operate := c.titleOperateText()
+	title, operate := c.TitleOperateText()
 	if title == "" {
 		return nil
 	}

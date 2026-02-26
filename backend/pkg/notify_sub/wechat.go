@@ -3,6 +3,7 @@ package notify_sub
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/silenceper/wechat/v2"
 	"github.com/silenceper/wechat/v2/cache"
@@ -41,6 +42,12 @@ func (w *wechatOfficialAccount) Send(ctx context.Context, userIDs model.Int64Arr
 	logger := w.logger.WithContext(ctx).With("user_ids", userIDs).With("notify_data", notifyData)
 	logger.Info("send wechat_official_account notify_sub")
 
+	title, op := notifyData.TitleOperateText()
+	if title == "" {
+		logger.Info("no wechat official account data, skip")
+		return nil
+	}
+
 	var forum model.Forum
 	if notifyData.ForumID > 0 {
 		err := w.in.Forum.GetByID(ctx, &forum, notifyData.ForumID)
@@ -57,7 +64,20 @@ func (w *wechatOfficialAccount) Send(ctx context.Context, userIDs model.Int64Arr
 				ToUser:     un.ThirdID,
 				TemplateID: w.cfg.TemplateID,
 				URL:        publicAddr,
-				Data:       map[string]*message.TemplateDataItem{},
+				Data: map[string]*message.TemplateDataItem{
+					"thing2": {
+						Value: title,
+					},
+					"thing3": {
+						Value: op,
+					},
+					"thing24": {
+						Value: notifyData.FromName,
+					},
+					"thing22": {
+						Value: time.Now().Format(time.DateTime),
+					},
+				},
 			})
 			if err != nil {
 				logger.WithErr(err).With("sub_info", un).Error("send notify message failed")
