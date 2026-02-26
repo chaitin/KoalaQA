@@ -10,6 +10,7 @@ type Bot struct {
 	Avatar        string `gorm:"column:avatar;type:text"`
 	Name          string `gorm:"column:name;type:text"`
 	UnknownPrompt string `gorm:"column:unknown_prompt;type:text"`
+	AnswerRef     bool   `gorm:"column:answer_ref" json:"answer_ref"`
 }
 
 func init() {

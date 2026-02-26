@@ -4,11 +4,11 @@ import Card from '@/components/card';
 import Header from '@/components/header';
 import Sidebar from '@/components/sidebar';
 import { AuthContext } from '@/context';
-import Access from '@/pages/settings/component/Access';
+import Access, { AccessHandle } from '@/pages/settings/component/Access';
 import ModelManagementModal from '@/pages/settings/component/ModelManagementModal';
 import { Box, Button, Link, Modal, Stack, Typography } from '@mui/material';
 import LaunchIcon from '@mui/icons-material/Launch';
-import { useCallback, useContext, useEffect, useState, startTransition } from 'react';
+import { useCallback, useContext, useEffect, useState, startTransition, useRef } from 'react';
 import { Outlet } from 'react-router-dom';
 import { GroupDataProvider } from '@/context/GroupDataContext';
 
@@ -17,6 +17,7 @@ const MainLayout = () => {
   const [user] = useContext(AuthContext);
   const { setKbId } = useConfigStore();
   const { refreshForums } = useForumStore();
+  const accessRef = useRef<AccessHandle>(null);
   const isAuthenticated = user?.uid ? true : user === undefined ? null : false;
 
   useEffect(() => {
@@ -121,7 +122,7 @@ const MainLayout = () => {
       {/* 强制配置引导弹窗（模型 + 访问地址） */}
       <Modal
         open={showGuide}
-        onClose={() => {}} // 禁止遮罩关闭
+        onClose={() => { }} // 禁止遮罩关闭
         disableEscapeKeyDown
         sx={{
           display: 'flex',
@@ -146,7 +147,7 @@ const MainLayout = () => {
           <Stack spacing={2}>
             <Box>
               <Box sx={{ fontSize: 16, fontWeight: 600, mb: 2 }}>社区基础配置</Box>
-              <Access />
+              <Access ref={accessRef} />
             </Box>
             <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
               <Stack direction="row" alignItems="center" spacing={1}>
@@ -167,7 +168,12 @@ const MainLayout = () => {
           </Stack>
           <Button
             variant="outlined"
-            onClick={() => checkNecessaryConfigurations(false)}
+            onClick={async () => {
+              const success = await accessRef.current?.submit();
+              if (success) {
+                checkNecessaryConfigurations(false);
+              }
+            }}
             sx={{ ml: 'auto', mt: 2 }}
           >
             完成

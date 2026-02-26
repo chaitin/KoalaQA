@@ -25,6 +25,7 @@ type BotSetReq struct {
 	Avatar        *multipart.FileHeader `form:"avatar" swaggerignore:"true"`
 	Name          string                `form:"name" binding:"required"`
 	UnknownPrompt string                `form:"unknown_prompt"`
+	AnswerRef     bool                  `form:"answer_ref"`
 }
 
 func (b *Bot) Set(ctx context.Context, req BotSetReq) error {
@@ -63,6 +64,7 @@ func (b *Bot) Set(ctx context.Context, req BotSetReq) error {
 		Name:          req.Name,
 		Avatar:        avatarPath,
 		UnknownPrompt: strings.TrimSpace(req.UnknownPrompt),
+		AnswerRef:     req.AnswerRef,
 	}
 
 	err := b.repoBot.Upsert(ctx, &bot)
@@ -78,6 +80,7 @@ type BotGetRes struct {
 	Avatar        string `json:"avatar"`
 	Name          string `json:"name"`
 	UnknownPrompt string `json:"unknown_prompt"`
+	AnswerRef     bool   `json:"answer_ref"`
 }
 
 func (b *Bot) Get(ctx context.Context) (*BotGetRes, error) {

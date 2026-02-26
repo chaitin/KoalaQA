@@ -884,6 +884,7 @@ export interface SvcAuthFrontendGetRes {
 }
 
 export interface SvcBotGetRes {
+  answer_ref?: boolean;
   avatar?: string;
   name?: string;
   unknown_prompt?: string;
@@ -1447,6 +1448,7 @@ export interface PutAdminBotPayload {
    * @format binary
    */
   avatar?: File;
+  answer_ref?: boolean;
   name: string;
   unknown_prompt?: string;
 }

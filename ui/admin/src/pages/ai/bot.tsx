@@ -1,7 +1,17 @@
 import { getAdminBot, putAdminBot } from '@/api';
 import Card from '@/components/card';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Avatar, Box, Button, Stack, TextField, Typography } from '@mui/material';
+import {
+  Avatar,
+  Box,
+  Button,
+  FormControlLabel,
+  Radio,
+  RadioGroup,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import React, { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -12,6 +22,7 @@ const formSchema = z.object({
   avatar: z.union([z.string(), z.instanceof(File)]),
   name: z.string().min(1, '名称不能为空').max(50, '名称不能超过50个字符'),
   unknown_prompt: z.string().optional(),
+  answer_ref: z.boolean().optional(),
   id: z.string().optional(),
 });
 
@@ -31,6 +42,7 @@ const Bot: React.FC = () => {
       avatar: '',
       name: '',
       unknown_prompt: '',
+      answer_ref: false,
     },
   });
 
@@ -39,6 +51,7 @@ const Bot: React.FC = () => {
       await putAdminBot({
         name: data.name,
         unknown_prompt: data.unknown_prompt || '',
+        answer_ref: data.answer_ref,
       });
     } else {
       await putAdminBot(data as any);
@@ -104,8 +117,8 @@ const Bot: React.FC = () => {
                     typeof field.value === 'string'
                       ? field.value
                       : field.value
-                      ? URL.createObjectURL(field.value)
-                      : ''
+                        ? URL.createObjectURL(field.value)
+                        : ''
                   }
                   sx={{
                     width: 78,
@@ -194,6 +207,34 @@ const Bot: React.FC = () => {
             }}
           />
         </Stack>
+        <Stack direction="row" sx={{ mt: 2 }} alignItems="center">
+          <Typography variant="subtitle2" sx={{ minWidth: '24%' }}>
+            回答展示引用来源
+          </Typography>
+          <Controller
+            name="answer_ref"
+            control={control}
+            render={({ field }) => (
+              <RadioGroup
+                row
+                value={field.value ? 'enabled' : 'disabled'}
+                onChange={e => field.onChange(e.target.value === 'enabled')}
+              >
+                <FormControlLabel
+                  value="disabled"
+                  control={<Radio size="small" />}
+                  label={<Typography variant="body2">禁用</Typography>}
+                />
+                <FormControlLabel
+                  value="enabled"
+                  control={<Radio size="small" />}
+                  label={<Typography variant="body2">启用</Typography>}
+                />
+              </RadioGroup>
+            )}
+          />
+        </Stack>
+
       </Box>
     </Card>
   );

@@ -8,23 +8,30 @@ import { message } from '@ctzhian/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Box, Button, Stack, TextField, Typography } from '@mui/material';
 import { useRequest } from 'ahooks';
+import { forwardRef, useImperativeHandle } from 'react';
 import { useForm } from 'react-hook-form';
 import z from 'zod';
 
 const accessSchema = z.object({
-  address: z.string().trim().min(1).max(255),
+  address: z.string().trim().min(1, '请输入用户实际访问地址').max(255),
 });
+
+export interface AccessHandle {
+  submit: () => Promise<boolean>;
+}
+
 interface AccessProps {
   onSaved?: () => void;
 }
 
-const Access = ({ onSaved }: AccessProps) => {
+const Access = forwardRef<AccessHandle, AccessProps>(({ onSaved }, ref) => {
   const {
     register,
     handleSubmit,
     reset,
     watch,
     formState: { errors, isDirty },
+    trigger,
   } = useForm<ModelPublicAddress>({
     resolver: zodResolver(accessSchema),
   });
@@ -33,7 +40,7 @@ const Access = ({ onSaved }: AccessProps) => {
   useRequest(getAdminSystemPublicAddress, {
     onSuccess: res => {
       reset({
-        address: res.address,
+        address: res.address || '',
       });
     },
   });
@@ -45,10 +52,22 @@ const Access = ({ onSaved }: AccessProps) => {
       reset(data);
       message.success('保存成功');
       onSaved?.();
+      return true;
     } catch (error) {
       message.error('保存失败');
+      return false;
     }
   };
+
+  useImperativeHandle(ref, () => ({
+    submit: async () => {
+      const isValid = await trigger();
+      if (isValid) {
+        return onSubmit(watch());
+      }
+      return false;
+    },
+  }));
 
   return (
     <Card>
@@ -99,6 +118,6 @@ const Access = ({ onSaved }: AccessProps) => {
       </Stack>
     </Card>
   );
-};
+});
 
 export default Access;
