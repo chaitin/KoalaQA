@@ -50,6 +50,8 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 		logger.Warn("empty task id, skip")
 		return nil
 	}
+	// 导出时先创建任务获取id再入库，避免任务完成太快，sleep 1s
+	time.Sleep(time.Second)
 	dbDoc, err := t.repoDoc.GetByTaskID(ctx, taskInfo.TaskID)
 	if err != nil {
 		if errors.Is(err, database.ErrRecordNotFound) {
