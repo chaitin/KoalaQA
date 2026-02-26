@@ -227,18 +227,8 @@ const Logo: React.FC = () => {
         {isDirty && (
           <Stack direction="row" justifyContent="end" sx={{ gap: 2, my: '-8px' }}>
             <Button
-              onClick={() => {
-                reset();
-              }}
-              variant="outlined"
-              sx={{ borderRadius: '6px' }}
-            >
-              取消
-            </Button>
-            <Button
               onClick={handleSubmit(onSubmit)}
               variant="contained"
-              sx={{ borderRadius: '6px' }}
             >
               保存
             </Button>
