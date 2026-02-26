@@ -29,10 +29,12 @@ type LLM struct {
 	cfg     config.Config
 	disc    *repo.Discussion
 	comm    *repo.Comment
+	bot     *Bot
 	repoLLM *repo.LLM
 }
 
-func newLLM(rag rag.Service, dataset *repo.Dataset, doc *repo.KBDocument, kit *ModelKit, cfg config.Config, disc *repo.Discussion, comm *repo.Comment, repoLLM *repo.LLM) *LLM {
+func newLLM(rag rag.Service, dataset *repo.Dataset, doc *repo.KBDocument, kit *ModelKit, bot *Bot,
+	cfg config.Config, disc *repo.Discussion, comm *repo.Comment, repoLLM *repo.LLM) *LLM {
 	return &LLM{
 		rag:     rag,
 		dataset: dataset,
@@ -42,6 +44,7 @@ func newLLM(rag rag.Service, dataset *repo.Dataset, doc *repo.KBDocument, kit *M
 		cfg:     cfg,
 		disc:    disc,
 		comm:    comm,
+		bot:     bot,
 		repoLLM: repoLLM,
 	}
 }
@@ -202,7 +205,11 @@ func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (st
 	if !resp.Matched || resp.Answer == "" {
 		return req.DefaultAnswer, false, nil
 	}
-	if len(resp.Sources) > 0 {
+	botInfo, err := l.bot.Get(ctx)
+	if err != nil {
+		return "", false, err
+	}
+	if botInfo.AnswerRef && len(resp.Sources) > 0 {
 		resp.Answer += "\n\n---\n\n" + "引用来源: "
 		for i, source := range resp.Sources {
 			resp.Answer += fmt.Sprintf(`<span data-tooltip="<h3>来源</h3><br>%s">[%d]</span> `, source.Title, i+1)

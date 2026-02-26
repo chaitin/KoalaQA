@@ -25,6 +25,7 @@ type BotSetReq struct {
 	Avatar        *multipart.FileHeader `form:"avatar" swaggerignore:"true"`
 	Name          string                `form:"name" binding:"required"`
 	UnknownPrompt string                `form:"unknown_prompt"`
+	AnswerRef     bool                  `form:"answer_ref"`
 }
 
 func (b *Bot) Set(ctx context.Context, req BotSetReq) error {
@@ -78,6 +79,7 @@ type BotGetRes struct {
 	Avatar        string `json:"avatar"`
 	Name          string `json:"name"`
 	UnknownPrompt string `json:"unknown_prompt"`
+	AnswerRef     bool   `json:"answer_ref"`
 }
 
 func (b *Bot) Get(ctx context.Context) (*BotGetRes, error) {

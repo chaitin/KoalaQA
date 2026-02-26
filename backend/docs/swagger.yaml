@@ -1558,6 +1558,8 @@ definitions:
     type: object
   svc.BotGetRes:
     properties:
+      answer_ref:
+        type: boolean
       avatar:
         type: string
       name:
@@ -2675,6 +2677,9 @@ paths:
         in: formData
         name: avatar
         type: file
+      - in: formData
+        name: answer_ref
+        type: boolean
       - in: formData
         name: name
         required: true

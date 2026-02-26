@@ -64,6 +64,11 @@ const docTemplate = `{
                         "in": "formData"
                     },
                     {
+                        "type": "boolean",
+                        "name": "answer_ref",
+                        "in": "formData"
+                    },
+                    {
                         "type": "string",
                         "name": "name",
                         "in": "formData",
@@ -10268,6 +10273,9 @@ const docTemplate = `{
         "svc.BotGetRes": {
             "type": "object",
             "properties": {
+                "answer_ref": {
+                    "type": "boolean"
+                },
                 "avatar": {
                     "type": "string"
                 },
