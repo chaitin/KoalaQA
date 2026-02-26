@@ -13,7 +13,7 @@ type Bot struct {
 }
 
 func (b *Bot) Upsert(ctx context.Context, req *model.Bot) error {
-	updateColumns := []string{"unknown_prompt"}
+	updateColumns := []string{"unknown_prompt", "answer_ref"}
 	if req.Avatar != "" {
 		updateColumns = append(updateColumns, "avatar")
 	}

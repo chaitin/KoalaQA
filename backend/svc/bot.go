@@ -64,6 +64,7 @@ func (b *Bot) Set(ctx context.Context, req BotSetReq) error {
 		Name:          req.Name,
 		Avatar:        avatarPath,
 		UnknownPrompt: strings.TrimSpace(req.UnknownPrompt),
+		AnswerRef:     req.AnswerRef,
 	}
 
 	err := b.repoBot.Upsert(ctx, &bot)
