@@ -51,6 +51,8 @@ export interface FullRequestParams
   format?: ResponseType;
   /** request body */
   body?: unknown;
+  /** skip automatic 401 redirect to login page */
+  skipAuthRedirect?: boolean;
 }
 
 export type RequestParams = Omit<

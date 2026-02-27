@@ -767,6 +767,7 @@ export interface ModelUserNotiySub {
   created_at?: number;
   id?: number;
   third_id?: string;
+  third_name?: string;
   type?: ModelMessageNotifySubType;
   updated_at?: number;
   user_id?: number;

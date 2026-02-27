@@ -1,11 +1,9 @@
 import request, { ContentType, RequestParams } from './httpClient'
-import { ContextResponse, ModelListRes, SvcUserPortraitListItem } from './types'
+import { ContextResponse, ModelListRes, SvcUserPortraitListItem, SvcUserPortraitReq } from './types'
 
 
 
-export interface SvcUserPortraitReq {
-  content: string
-}
+
 
 export interface GetUserPortraitParams {
   userId: number | string
