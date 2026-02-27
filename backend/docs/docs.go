@@ -9870,6 +9870,9 @@ const docTemplate = `{
                 "third_id": {
                     "type": "string"
                 },
+                "third_name": {
+                    "type": "string"
+                },
                 "type": {
                     "$ref": "#/definitions/model.MessageNotifySubType"
                 },

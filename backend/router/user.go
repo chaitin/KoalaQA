@@ -244,7 +244,7 @@ func (u *user) VerifyWechatOfficialAccount(ctx *context.Context) {
 		AppSecret:      info.ClientSecret,
 		Token:          info.Token,
 		EncodingAESKey: info.AESKey,
-		Cache:          cache.NewMemcache(),
+		Cache:          cache.NewMemory(),
 	}).GetServer(ctx.Request, ctx.Writer).Serve()
 	if err != nil {
 		ctx.InternalError(err, "server msg failed")
@@ -265,7 +265,7 @@ func (u *user) HandleWechatOfficialAccount(ctx *context.Context) {
 		AppSecret:      info.ClientSecret,
 		Token:          info.Token,
 		EncodingAESKey: info.AESKey,
-		Cache:          cache.NewMemcache(),
+		Cache:          cache.NewMemory(),
 	}).GetServer(ctx.Request, ctx.Writer)
 
 	server.SetMessageHandler(func(mm *message.MixMessage) *message.Reply {
@@ -273,12 +273,17 @@ func (u *user) HandleWechatOfficialAccount(ctx *context.Context) {
 		if msg == "" {
 			return nil
 		}
-		return &message.Reply{MsgType: message.MsgTypeText, MsgData: msg}
+		return &message.Reply{MsgType: message.MsgTypeText, MsgData: message.NewText(msg)}
 	})
 
 	err = server.Serve()
 	if err != nil {
 		ctx.InternalError(err, "handle msg failed")
+		return
+	}
+	err = server.Send()
+	if err != nil {
+		ctx.InternalError(err, "send wechat welcome message failed")
 		return
 	}
 }

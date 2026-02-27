@@ -26,6 +26,7 @@ import (
 	"github.com/chaitin/koalaqa/repo"
 	"github.com/google/uuid"
 	"github.com/silenceper/wechat/v2"
+	"github.com/silenceper/wechat/v2/cache"
 	"github.com/silenceper/wechat/v2/officialaccount/basic"
 	"github.com/silenceper/wechat/v2/officialaccount/config"
 	"github.com/silenceper/wechat/v2/officialaccount/message"
@@ -711,9 +712,10 @@ func (u *User) SubBindCallback(ctx context.Context, uid uint, typ model.MessageN
 	}
 
 	return u.repoUser.BindNotifySub(ctx, &model.UserNotiySub{
-		Type:    typ,
-		UserID:  uid,
-		ThirdID: thirdUser.ThirdID,
+		Type:      typ,
+		UserID:    uid,
+		ThirdID:   thirdUser.ThirdID,
+		ThirdName: thirdUser.Name,
 	})
 }
 
@@ -966,6 +968,7 @@ func (u *User) WechatOfficialAccountQrcode(ctx context.Context, uid uint) ([]byt
 		AppSecret:      info.ClientSecret,
 		Token:          info.Token,
 		EncodingAESKey: info.AESKey,
+		Cache:          cache.NewMemory(),
 	})
 
 	ticketRes, err := oa.GetBasic().GetQRTicket(&basic.Request{

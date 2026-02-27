@@ -33,7 +33,7 @@ func NewWechatOfficialAccount(in NotifySubIn, cfg model.MessageNotifySubInfo, pc
 		oa: wechat.NewWechat().GetOfficialAccount(&config.Config{
 			AppID:     cfg.ClientID,
 			AppSecret: cfg.ClientSecret,
-			Cache:     cache.NewMemcache(),
+			Cache:     cache.NewMemory(),
 		}),
 	}
 }
@@ -42,10 +42,15 @@ func (w *wechatOfficialAccount) Send(ctx context.Context, userIDs model.Int64Arr
 	logger := w.logger.WithContext(ctx).With("user_ids", userIDs).With("notify_data", notifyData)
 	logger.Info("send wechat_official_account notify_sub")
 
-	title, op := notifyData.TitleOperateText()
+	title, op := notifyData.TitleOperateText(false, false)
 	if title == "" {
 		logger.Info("no wechat official account data, skip")
 		return nil
+	}
+
+	// 限制最长只有20个字符，所以进行截断处理
+	if len([]rune(op)) > 20 {
+		op = string([]rune(op)[:17]) + "..."
 	}
 
 	var forum model.Forum
@@ -74,7 +79,7 @@ func (w *wechatOfficialAccount) Send(ctx context.Context, userIDs model.Int64Arr
 					"thing24": {
 						Value: notifyData.FromName,
 					},
-					"thing22": {
+					"time22": {
 						Value: time.Now().Format(time.DateTime),
 					},
 				},

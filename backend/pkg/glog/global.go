@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/chaitin/koalaqa/pkg/trace"
+	"github.com/sirupsen/logrus"
 )
 
 var global *Logger
@@ -90,6 +91,21 @@ func init() {
 			defaultLevel = l
 		}
 	}
+
+	logrusLevel := logrus.InfoLevel
+	switch defaultLevel {
+	case LevelDebug:
+		logrusLevel = logrus.DebugLevel
+	case LevelInfo:
+		logrusLevel = logrus.InfoLevel
+	case LevelWarn:
+		logrusLevel = logrus.WarnLevel
+	case LevelError:
+		logrusLevel = logrus.ErrorLevel
+	case LevelDiscard:
+		logrusLevel = logrus.PanicLevel
+	}
+	logrus.SetLevel(logrusLevel)
 
 	if !disableAutoCheck {
 		configCheckLoop(getModuleConifgPath())
