@@ -27,6 +27,8 @@
     "@mui/material": "^7.3.6",
     "@mui/utils": "^7.3.6",
     "@reduxjs/toolkit": "^2.11.0",
+    "@tiptap/extension-drag-handle": "3.20.0",
+    "@tiptap/extension-drag-handle-react": "3.20.0",
     "ahooks": "^3.9.6",
     "axios": "^1.13.2",
     "clsx": "^2.1.1",
