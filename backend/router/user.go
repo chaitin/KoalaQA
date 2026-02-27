@@ -7,12 +7,16 @@ import (
 	"net/url"
 
 	"github.com/chaitin/koalaqa/model"
-	"github.com/chaitin/koalaqa/pkg/config"
+	koalaCfg "github.com/chaitin/koalaqa/pkg/config"
 	"github.com/chaitin/koalaqa/pkg/context"
 	"github.com/chaitin/koalaqa/server"
 	"github.com/chaitin/koalaqa/svc"
 	"github.com/gin-contrib/sessions"
 	"github.com/google/uuid"
+	"github.com/silenceper/wechat/v2"
+	"github.com/silenceper/wechat/v2/cache"
+	"github.com/silenceper/wechat/v2/officialaccount/config"
+	"github.com/silenceper/wechat/v2/officialaccount/message"
 )
 
 type user struct {
@@ -227,6 +231,63 @@ func (u *user) LoginWechatCallback(ctx *context.Context) {
 	u.loginThirdCallback(ctx, model.AuthTypeWechat)
 }
 
+func (u *user) VerifyWechatOfficialAccount(ctx *context.Context) {
+	notifySub, err := u.svcU.GetNotifySubByType(ctx, model.MessageNotifySubTypeWechatOfficialAccount)
+	if err != nil {
+		ctx.InternalError(err, "get notify info failed")
+		return
+	}
+	info := notifySub.Info.Inner()
+
+	err = wechat.NewWechat().GetOfficialAccount(&config.Config{
+		AppID:          info.ClientID,
+		AppSecret:      info.ClientSecret,
+		Token:          info.Token,
+		EncodingAESKey: info.AESKey,
+		Cache:          cache.NewMemory(),
+	}).GetServer(ctx.Request, ctx.Writer).Serve()
+	if err != nil {
+		ctx.InternalError(err, "server msg failed")
+		return
+	}
+}
+
+func (u *user) HandleWechatOfficialAccount(ctx *context.Context) {
+	notifySub, err := u.svcU.GetNotifySubByType(ctx, model.MessageNotifySubTypeWechatOfficialAccount)
+	if err != nil {
+		ctx.InternalError(err, "get notify info failed")
+		return
+	}
+	info := notifySub.Info.Inner()
+
+	server := wechat.NewWechat().GetOfficialAccount(&config.Config{
+		AppID:          info.ClientID,
+		AppSecret:      info.ClientSecret,
+		Token:          info.Token,
+		EncodingAESKey: info.AESKey,
+		Cache:          cache.NewMemory(),
+	}).GetServer(ctx.Request, ctx.Writer)
+
+	server.SetMessageHandler(func(mm *message.MixMessage) *message.Reply {
+		msg := u.svcU.HandleWechatOfficialAccount(ctx, mm)
+		if msg == "" {
+			return nil
+		}
+		return &message.Reply{MsgType: message.MsgTypeText, MsgData: message.NewText(msg)}
+	})
+
+	err = server.Serve()
+	if err != nil {
+		ctx.InternalError(err, "handle msg failed")
+		return
+	}
+	err = server.Send()
+	if err != nil {
+		ctx.InternalError(err, "send wechat welcome message failed")
+		return
+	}
+}
+
 func (u *user) Route(h server.Handler) {
 	g := h.Group("/api/user")
 	g.POST("/register", u.Register)
@@ -243,9 +304,15 @@ func (u *user) Route(h server.Handler) {
 		}
 
 	}
+
+	{
+		notifySubG := g.Group("/notify_sub")
+		notifySubG.GET("/wechat_officical_account", u.VerifyWechatOfficialAccount)
+		notifySubG.POST("/wechat_officical_account", u.HandleWechatOfficialAccount)
+	}
 }
 
-func newUser(cfg config.Config, u *svc.User, trend *svc.Trend) server.Router {
+func newUser(cfg koalaCfg.Config, u *svc.User, trend *svc.Trend) server.Router {
 	return &user{
 		expire:   int(cfg.JWT.Expire),
 		svcU:     u,

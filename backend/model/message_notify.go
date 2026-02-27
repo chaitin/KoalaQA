@@ -113,7 +113,7 @@ var (
 	}
 )
 
-func (c *MessageNotifyCommon) titleOperateText() (string, string) {
+func (c *MessageNotifyCommon) TitleOperateText(mdFormat bool, fromName bool) (string, string) {
 	if c.Type == MsgNotifyTypeUserReview {
 		title := "账号激活反馈"
 		if c.ReviewState == UserReviewStatePass {
@@ -133,18 +133,27 @@ func (c *MessageNotifyCommon) titleOperateText() (string, string) {
 		return "", ""
 	}
 
-	return text[0], "**" + c.FromName + "** " + text[1] + " **" + c.DiscussTitle + "**"
+	mdData := ""
+	if mdFormat {
+		mdData = "**"
+	}
+
+	prefix := ""
+	if fromName {
+		prefix = mdData + c.FromName + mdData + " "
+	}
+
+	return text[0], prefix + text[1] + " " + mdData + c.DiscussTitle + mdData
 }
 
 type AccessAddrCallback func(ctx context.Context, path string) (string, error)
 
 func (c *MessageNotifyCommon) Dingtalk(ctx context.Context, ac AccessAddrCallback, forum Forum) *MessageNotifyDingtalk {
-	title, operate := c.titleOperateText()
+	title, operate := c.TitleOperateText(true, true)
 	if title == "" {
 		return nil
 	}
-	path := fmt.Sprintf("/%s/%s", forum.RouteName, c.DiscussUUID)
-	publicAddr, _ := ac(ctx, path)
+	publicAddr, _ := ac(ctx, fmt.Sprintf("/%s/%s", forum.RouteName, c.DiscussUUID))
 
 	return &MessageNotifyDingtalk{
 		Title: title,

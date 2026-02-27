@@ -606,6 +606,20 @@ func (u *userAuth) NotifySubUnbind(ctx *context.Context) {
 	ctx.Success(nil)
 }
 
+// NotifySubWechatOfficialAccount
+// @Summary get user qrcode
+// @Tags user
+// @Produce image/jpg
+// @Router /user/notify_sub/wechat_official_account/qrcode [get]
+func (u *userAuth) NotifySubWechatOfficialAccount(ctx *context.Context) {
+	img, err := u.in.SvcU.WechatOfficialAccountQrcode(ctx, ctx.GetUser().UID)
+	if err != nil {
+		ctx.InternalError(err, "get qrcode failed")
+		return
+	}
+	ctx.Data(http.StatusOK, "image/jpg", img)
+}
+
 func (u *userAuth) Route(h server.Handler) {
 	g := h.Group("/user")
 	g.POST("/logout", u.Logout)
@@ -625,9 +639,14 @@ func (u *userAuth) Route(h server.Handler) {
 	{
 		notifySubG := g.Group("/notify_sub")
 		notifySubG.GET("/auth_url", u.SubBindAuthURL)
-		notifySubG.GET("/callback/dingtalk", u.SubBindCallbackDingtalk)
 		notifySubG.GET("/bind", u.ListNotifySubBind)
 		notifySubG.DELETE("", u.NotifySubUnbind)
+		notifySubG.GET("/wechat_official_account/qrcode", u.NotifySubWechatOfficialAccount)
+
+		{
+			callbackG := notifySubG.Group("/callback")
+			callbackG.GET("/dingtalk", u.SubBindCallbackDingtalk)
+		}
 	}
 
 	{

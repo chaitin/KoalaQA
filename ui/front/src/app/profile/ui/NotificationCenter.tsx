@@ -6,6 +6,7 @@ import {
   getUserNotifyList,
   getUserNotifySubAuthUrl,
   getUserNotifySubBind,
+  getUserNotifySubWechatOfficialAccountQrcode,
   getUserNotifyUnread,
   ModelMessageNotify,
   ModelMessageNotifySubType,
@@ -24,7 +25,12 @@ import { Box, Button, Card, Pagination, Stack, Typography, useMediaQuery, useThe
 import { useRequest } from 'ahooks'
 import Image from 'next/image'
 import { useSearchParams, usePathname } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useState,
+  useRef,
+} from 'react'
 
 export default function NotificationCenter() {
   const theme = useTheme()
@@ -38,7 +44,14 @@ export default function NotificationCenter() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [showChannelConfigModal, setShowChannelConfigModal] = useState(false)
   const [dingtalkBound, setDingtalkBound] = useState(false)
+  const [dingtalkAccount, setDingtalkAccount] = useState('')
+  const [wechatBound, setWechatBound] = useState(false)
+  const [wechatAccount, setWechatAccount] = useState('')
+  const [enabledConfigs, setEnabledConfigs] = useState<ModelMessageNotifySubType[]>([])
   const [showConfigButton, setShowConfigButton] = useState(false)
+  const pollTimerRef = useRef<any>(null)
+  const [showQrcodeModal, setShowQrcodeModal] = useState(false)
+  const [qrcodeUrl, setQrcodeUrl] = useState('')
   // 使用 useRequest 加载通知列表
   const {
     data: notifyData,
@@ -96,8 +109,8 @@ export default function NotificationCenter() {
     return false
   }, [])
 
-  // 获取钉钉绑定状态
-  const loadDingtalkBindStatus = useCallback(async () => {
+  // 获取绑定状态
+  const loadBindStatus = useCallback(async () => {
     try {
       const res = await getUserNotifySubBind()
       const items = res?.items || []
@@ -105,16 +118,23 @@ export default function NotificationCenter() {
       const dingtalkBind = items.find(
         (item) => item.type === ModelMessageNotifySubType.MessageNotifySubTypeDingtalk,
       )
-      // 如果找到了绑定记录，说明已绑定
       setDingtalkBound(!!dingtalkBind)
+      setDingtalkAccount((dingtalkBind as any)?.third_name || dingtalkBind?.third_id || '')
+
+      // 查找微信类型的绑定记录
+      const wechatBind = items.find(
+        (item) => item.type === ModelMessageNotifySubType.MessageNotifySubTypeWechatOfficialAccount,
+      )
+      setWechatBound(!!wechatBind)
+      // 绑定后需要展示绑定的微信账户名称
+      setWechatAccount((wechatBind as any)?.third_name || wechatBind?.third_id || '')
     } catch (error) {
-      console.error('获取钉钉绑定状态失败:', error)
-      // 不显示错误提示，避免干扰用户体验
+      console.error('获取绑定状态失败:', error)
       setDingtalkBound(false)
+      setWechatBound(false)
     }
   }, [])
 
-  // 加载通知列表和未读数量
   useEffect(() => {
     fetchNotifications({
       page: notifyPage,
@@ -126,18 +146,75 @@ export default function NotificationCenter() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notifyPage, notifyPageSize])
 
+  // 开始轮询绑定状态
+  const startPollingBindStatus = useCallback(() => {
+    // 如果已经在轮询，先清除
+    if (pollTimerRef.current) {
+      clearInterval(pollTimerRef.current)
+    }
+
+    pollTimerRef.current = setInterval(async () => {
+      try {
+        const res = await getUserNotifySubBind()
+        const items = res?.items || []
+        const wechatBind = items.find(
+          (item) => item.type === ModelMessageNotifySubType.MessageNotifySubTypeWechatOfficialAccount,
+        )
+
+        if (wechatBind) {
+          // 已经绑定成功
+          clearInterval(pollTimerRef.current)
+          pollTimerRef.current = null
+
+          // 关闭二维码弹窗
+          setShowQrcodeModal(false)
+
+          // 更新当前状态
+          setWechatBound(true)
+          setWechatAccount((wechatBind as any)?.third_name || wechatBind?.third_id || '')
+          Message.success('微信已成功绑定')
+        }
+      } catch (error) {
+        console.error('轮询绑定状态失败:', error)
+      }
+    }, 2000)
+  }, [])
+
+  // 清除轮询
+  const stopPollingBindStatus = useCallback(() => {
+    if (pollTimerRef.current) {
+      clearInterval(pollTimerRef.current)
+      pollTimerRef.current = null
+    }
+  }, [])
+
+  // 组件销毁或弹窗关闭时清除轮询
+  useEffect(() => {
+    if (!showChannelConfigModal || !showQrcodeModal) {
+      if (!showQrcodeModal) {
+        stopPollingBindStatus()
+      }
+    }
+  }, [showChannelConfigModal, showQrcodeModal, stopPollingBindStatus])
+
+  useEffect(() => {
+    return () => {
+      stopPollingBindStatus()
+    }
+  }, [stopPollingBindStatus])
+
   // 加载系统通知订阅配置，判断是否显示配置按钮
   const loadSystemNotifySubConfig = useCallback(async () => {
     try {
       const res = await getSystemNotifySub()
       const items = res?.items || []
-      // 查找钉钉类型的通知订阅配置
-      const dingtalkSub = items.find((item) => item.type === ModelMessageNotifySubType.MessageNotifySubTypeDingtalk)
-      // 只有当 enabled 为 true 时才显示配置按钮
-      setShowConfigButton(dingtalkSub?.enabled === true)
+      // 获取已启用的配置类型
+      const enabledTypes = items.filter(item => item.enabled).map(item => item.type)
+      setEnabledConfigs(enabledTypes as ModelMessageNotifySubType[])
+      // 只有当存在启用的配置时才显示配置按钮
+      setShowConfigButton(enabledTypes.length > 0)
     } catch (error) {
       console.error('加载系统通知订阅配置失败:', error)
-      // 不显示错误提示，避免干扰用户体验
       setShowConfigButton(false)
     }
   }, [])
@@ -164,7 +241,7 @@ export default function NotificationCenter() {
   // 当弹窗打开时，调用接口获取绑定状态
   useEffect(() => {
     if (showChannelConfigModal) {
-      loadDingtalkBindStatus()
+      loadBindStatus()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showChannelConfigModal])
@@ -384,7 +461,7 @@ export default function NotificationCenter() {
                     {/* 通知内容 */}
                     <Box sx={{ overflow: 'hidden', mb: { xs: 0.5, sm: 0 } }}>
                       {notification.type === ModelMsgNotifyType.MsgNotifyTypeUserReview ||
-                      notification.type === ModelMsgNotifyType.MsgNotifyTypeUserPoint ? (
+                        notification.type === ModelMsgNotifyType.MsgNotifyTypeUserPoint ? (
                         <Typography
                           variant='body2'
                           sx={{
@@ -537,10 +614,10 @@ export default function NotificationCenter() {
         onClose={handleCloseModal}
         onCancel={handleCloseModal}
         title='通知渠道配置'
-        width={520}
+        width={540}
         footer={null}
       >
-        <Box>
+        <Stack spacing={2}>
           <Typography
             variant='body2'
             sx={{
@@ -553,89 +630,127 @@ export default function NotificationCenter() {
           </Typography>
 
           {/* 钉钉渠道卡片 */}
-          <Card
-            sx={{
-              p: 2.5,
-              border: '1px solid #e0e0e0',
-              borderRadius: '8px',
-              boxShadow: 'none',
-            }}
-          >
-            <Stack direction='row' alignItems='center' spacing={2}>
-              {/* 钉钉图标 */}
-              <Icon type='icon-dingding' sx={{ fontSize: 40 }} />
-              {/* 渠道信息 */}
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography
-                  variant='body1'
-                  sx={{
-                    fontWeight: 600,
-                    fontSize: '16px',
-                    color: 'rgba(33, 34, 45, 1)',
-                    mb: 0.5,
-                  }}
-                >
-                  钉钉
-                </Typography>
-                <Typography
-                  variant='body2'
-                  sx={{
-                    fontSize: '14px',
-                    color: 'rgba(33, 34, 45, 0.70)',
-                  }}
-                >
-                  绑定钉钉账号,接收钉钉消息通知
-                </Typography>
-              </Box>
-
-              {/* 绑定状态和操作按钮 */}
+          {enabledConfigs.includes(ModelMessageNotifySubType.MessageNotifySubTypeDingtalk) && (
+            <Card
+              sx={{
+                p: 2.5,
+                border: '1px solid #e0e0e0',
+                borderRadius: '8px',
+                boxShadow: 'none',
+                mb: 0,
+              }}
+            >
               <Stack direction='row' alignItems='center' spacing={2}>
-                {dingtalkBound ? (
-                  <>
-                    <Stack direction='row' alignItems='center' spacing={1}>
-                      <Box
-                        sx={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: '50%',
-                          backgroundColor: '#52c41a',
+                <Icon type='icon-dingding' sx={{ fontSize: 40 }} />
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography
+                    variant='body1'
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: '16px',
+                      color: 'rgba(33, 34, 45, 1)',
+                      mb: 0.5,
+                    }}
+                  >
+                    钉钉
+                    {dingtalkBound && dingtalkAccount && (
+                      <Typography component='span' sx={{ ml: 1, color: 'primary.main', fontSize: '14px' }}>
+                        ({dingtalkAccount})
+                      </Typography>
+                    )}
+                  </Typography>
+
+                  <Typography
+                    variant='body2'
+                    sx={{
+                      fontSize: '14px',
+                      color: 'rgba(33, 34, 45, 0.70)',
+                    }}
+                  >
+                    绑定钉钉账号,接收钉钉消息通知
+                  </Typography>
+                </Box>
+
+                <Stack direction='row' alignItems='center' spacing={2}>
+                  {dingtalkBound ? (
+                    <>
+                      <Stack direction='row' alignItems='center' spacing={1}>
+                        <Box
+                          sx={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            backgroundColor: '#52c41a',
+                          }}
+                        />
+                        <Typography
+                          variant='body2'
+                          sx={{
+                            fontSize: '14px',
+                            color: 'rgba(33, 34, 45, 0.70)',
+                          }}
+                        >
+                          已绑定
+                        </Typography>
+                      </Stack>
+                      <Button
+                        variant='outlined'
+                        color='error'
+                        size='small'
+                        onClick={() => {
+                          Modal.confirm({
+                            title: '确定要解除绑定吗？',
+                            content: '解除绑定后，您将无法在钉钉接收消息通知。',
+                            okButtonProps: { color: 'primary' },
+                            onOk: () => {
+                              void deleteUserNotifySub({
+                                type: ModelMessageNotifySubType.MessageNotifySubTypeDingtalk,
+                              })
+                                .then(() => {
+                                  return loadBindStatus()
+                                })
+                                .then(() => {
+                                  Message.success('已解除绑定')
+                                })
+                                .catch((error) => {
+                                  console.error('解除绑定失败:', error)
+                                  Message.error('解除绑定失败，请稍后重试')
+                                })
+                            },
+                          })
                         }}
-                      />
-                      <Typography
-                        variant='body2'
                         sx={{
+                          textTransform: 'none',
                           fontSize: '14px',
-                          color: 'rgba(33, 34, 45, 0.70)',
+                          minWidth: 'auto',
+                          px: 2,
                         }}
                       >
-                        已绑定
-                      </Typography>
-                    </Stack>
+                        解除绑定
+                      </Button>
+                    </>
+                  ) : (
                     <Button
-                      variant='outlined'
-                      color='error'
+                      variant='contained'
+                      color='primary'
                       size='small'
-                      onClick={() => {
-                        Modal.confirm({
-                          title: '确定要解除绑定吗？',
-                          content: '解除绑定后，您将无法在钉钉接收消息通知。',
-                          okButtonProps: { color: 'primary' },
-                          onOk: () => {
-                            void deleteUserNotifySub({
-                              type: ModelMessageNotifySubType.MessageNotifySubTypeDingtalk,
-                            })
-                              .then(() => {
-                                return loadDingtalkBindStatus()
-                              })
-                              .then(() => {
-                                Message.success('已解除绑定')
-                              })
-                              .catch((error) => {
-                                console.error('解除绑定失败:', error)
-                                Message.error('解除绑定失败，请稍后重试')
-                              })
-                          },
-                        })
+                      onClick={async () => {
+                        try {
+                          const url = await getUserNotifySubAuthUrl({
+                            app: isInDingtalkApp(),
+                            type: ModelMessageNotifySubType.MessageNotifySubTypeDingtalk,
+                          })
+                          if (url && url.trim() !== '') {
+                            if (typeof globalThis !== 'undefined' && globalThis.location) {
+                              globalThis.location.href = url
+                            }
+                          } else {
+                            Message.error('获取绑定链接失败，请稍后重试')
+                          }
+                        } catch (error) {
+                          console.error('获取绑定链接失败:', error)
+                          Message.error('获取绑定链接失败，请稍后重试')
+                        }
                       }}
                       sx={{
                         textTransform: 'none',
@@ -644,48 +759,178 @@ export default function NotificationCenter() {
                         px: 2,
                       }}
                     >
-                      解除绑定
+                      立即绑定
                     </Button>
-                  </>
-                ) : (
-                  <Button
-                    variant='contained'
-                    color='primary'
-                    size='small'
-                    onClick={async () => {
-                      try {
-                        // 点击绑定时，实时获取跳转链接
-                        const url = await getUserNotifySubAuthUrl({
-                          app: isInDingtalkApp(),
-                          type: ModelMessageNotifySubType.MessageNotifySubTypeDingtalk,
-                        })
-                        if (url && url.trim() !== '') {
-                          // 跳转到钉钉绑定页面
-                          if (typeof globalThis !== 'undefined' && globalThis.location) {
-                            globalThis.location.href = url
-                          }
-                        } else {
-                          Message.error('获取绑定链接失败，请稍后重试')
-                        }
-                      } catch (error) {
-                        console.error('获取绑定链接失败:', error)
-                        Message.error('获取绑定链接失败，请稍后重试')
-                      }
-                    }}
+                  )}
+                </Stack>
+              </Stack>
+            </Card>
+          )}
+
+          {/* 微信服务号渠道卡片 */}
+          {enabledConfigs.includes(ModelMessageNotifySubType.MessageNotifySubTypeWechatOfficialAccount) && (
+            <Card
+              sx={{
+                p: 2.5,
+                border: '1px solid #e0e0e0',
+                borderRadius: '8px',
+                boxShadow: 'none',
+              }}
+            >
+              <Stack direction='row' alignItems='center' spacing={2}>
+                <Icon type='icon-weixingongzhonghao1' sx={{ fontSize: 40 }} />
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography
+                    variant='body1'
                     sx={{
-                      textTransform: 'none',
-                      fontSize: '14px',
-                      minWidth: 'auto',
-                      px: 2,
+                      fontWeight: 600,
+                      fontSize: '16px',
+                      color: 'rgba(33, 34, 45, 1)',
+                      mb: 0.5,
                     }}
                   >
-                    立即绑定
-                  </Button>
-                )}
+                    微信服务号
+                    {/* <Typography component='span' sx={{ ml: 1, color: 'primary.main', fontSize: '14px' }}>
+                      (微信服务号)
+                    </Typography> */}
+                  </Typography>
+                  <Typography
+                    variant='body2'
+                    sx={{
+                      fontSize: '14px',
+                      color: 'rgba(33, 34, 45, 0.70)',
+                    }}
+                  >
+                    绑定微信服务号,接收微信消息通知
+                  </Typography>
+                </Box>
+
+                <Stack direction='row' alignItems='center' spacing={2}>
+                  {wechatBound ? (
+                    <>
+                      <Stack direction='row' alignItems='center' spacing={1}>
+                        <Box
+                          sx={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            backgroundColor: '#52c41a',
+                          }}
+                        />
+                        <Typography
+                          variant='body2'
+                          sx={{
+                            fontSize: '14px',
+                            color: 'rgba(33, 34, 45, 0.70)',
+                          }}
+                        >
+                          已绑定
+                        </Typography>
+                      </Stack>
+                      <Button
+                        variant='outlined'
+                        color='error'
+                        size='small'
+                        onClick={() => {
+                          Modal.confirm({
+                            title: '确定要解除绑定吗？',
+                            content: '解除绑定后，您将无法在微信接收消息通知。',
+                            okButtonProps: { color: 'primary' },
+                            onOk: () => {
+                              void deleteUserNotifySub({
+                                type: ModelMessageNotifySubType.MessageNotifySubTypeWechatOfficialAccount,
+                              })
+                                .then(() => {
+                                  return loadBindStatus()
+                                })
+                                .then(() => {
+                                  Message.success('已解除绑定')
+                                })
+                                .catch((error) => {
+                                  console.error('解除绑定失败:', error)
+                                  Message.error('解除绑定失败，请稍后重试')
+                                })
+                            },
+                          })
+                        }}
+                        sx={{
+                          textTransform: 'none',
+                          fontSize: '14px',
+                          minWidth: 'auto',
+                          px: 2,
+                        }}
+                      >
+                        解除绑定
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant='contained'
+                      color='primary'
+                      size='small'
+                      onClick={async () => {
+                        try {
+                          const blob = await getUserNotifySubWechatOfficialAccountQrcode({ format: 'blob' })
+
+                          if (blob && blob instanceof Blob) {
+                            const url = URL.createObjectURL(blob)
+                            setQrcodeUrl(url)
+                            setShowQrcodeModal(true)
+
+                            // 开启轮询
+                            startPollingBindStatus()
+                          } else {
+                            Message.error('获取绑定二维码失败，请稍后重试')
+                          }
+                        } catch (error) {
+                          console.error('获取绑定链接失败:', error)
+                          Message.error('获取绑定链接失败，请稍后重试')
+                        }
+                      }}
+                      sx={{
+                        textTransform: 'none',
+                        fontSize: '14px',
+                        minWidth: 'auto',
+                        px: 2,
+                      }}
+                    >
+                      立即绑定
+                    </Button>
+                  )}
+                </Stack>
               </Stack>
-            </Stack>
-          </Card>
-        </Box>
+            </Card>
+          )}
+        </Stack>
+      </Modal>
+
+      {/* 微信绑定二维码弹窗 */}
+      <Modal
+        open={showQrcodeModal}
+        onCancel={() => setShowQrcodeModal(false)}
+        onClose={() => setShowQrcodeModal(false)}
+        title='微信绑定'
+        width={400}
+        footer={null}
+      >
+        <Stack alignItems='center' spacing={2} sx={{ py: 2 }}>
+          {qrcodeUrl ? (
+            <Image
+              src={qrcodeUrl}
+              alt='微信绑定二维码'
+              width={240}
+              height={240}
+              style={{ borderRadius: '8px' }}
+            />
+          ) : (
+            <Box sx={{ width: 240, height: 240, display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'rgba(0,0,0,0.05)', borderRadius: '8px' }}>
+              加载中...
+            </Box>
+          )}
+          <Typography variant='body2' color='text.secondary'>
+            请使用微信扫描上方二维码进行绑定
+          </Typography>
+        </Stack>
       </Modal>
     </Box>
   )

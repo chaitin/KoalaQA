@@ -937,19 +937,27 @@ definitions:
     type: object
   model.MessageNotifySubInfo:
     properties:
+      aes_key:
+        type: string
       client_id:
         type: string
       client_secret:
+        type: string
+      template_id:
+        type: string
+      token:
         type: string
     type: object
   model.MessageNotifySubType:
     enum:
     - 0
     - 1
+    - 2
     type: integer
     x-enum-varnames:
     - MessageNotifySubTypeUnknown
     - MessageNotifySubTypeDingtalk
+    - MessageNotifySubTypeWechatOfficialAccount
   model.MsgNotifyType:
     enum:
     - 0
@@ -1255,6 +1263,8 @@ definitions:
       id:
         type: integer
       third_id:
+        type: string
+      third_name:
         type: string
       type:
         $ref: '#/definitions/model.MessageNotifySubType'
@@ -7190,6 +7200,7 @@ paths:
       - enum:
         - 0
         - 1
+        - 2
         in: query
         name: type
         required: true
@@ -7197,6 +7208,7 @@ paths:
         x-enum-varnames:
         - MessageNotifySubTypeUnknown
         - MessageNotifySubTypeDingtalk
+        - MessageNotifySubTypeWechatOfficialAccount
       produces:
       - application/json
       responses:
@@ -7234,6 +7246,14 @@ paths:
                     type: object
               type: object
       summary: list notify sub
+      tags:
+      - user
+  /user/notify_sub/wechat_official_account/qrcode:
+    get:
+      produces:
+      - image/jpg
+      responses: {}
+      summary: get user qrcode
       tags:
       - user
   /user/point:

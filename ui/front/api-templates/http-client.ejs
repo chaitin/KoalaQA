@@ -197,6 +197,10 @@
                           const shouldShowError = requestUrl !== '/user'
                           if (response.status === 200) {
                           const res = response.data
+                          // 如果返回的是二进制数据，直接返回
+                          if (res instanceof Blob || res instanceof ArrayBuffer) {
+                          return res
+                          }
                           if (res.success) {
                           return res.data
                           }

@@ -13,25 +13,17 @@ import (
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/repo"
-	"go.uber.org/fx"
 )
-
-type DingtalkIn struct {
-	fx.In
-
-	Forum *repo.Forum
-	User  *repo.User
-}
 
 type dingtalk struct {
 	logger *glog.Logger
 
-	in  DingtalkIn
+	in  NotifySubIn
 	cfg model.MessageNotifySubInfo
 	pc  model.AccessAddrCallback
 }
 
-func NewDingtalk(in DingtalkIn, cfg model.MessageNotifySubInfo, pc model.AccessAddrCallback) Sender {
+func NewDingtalk(in NotifySubIn, cfg model.MessageNotifySubInfo, pc model.AccessAddrCallback) Sender {
 	return &dingtalk{
 		logger: glog.Module("notify_sub", "dingtalk"),
 		in:     in,
