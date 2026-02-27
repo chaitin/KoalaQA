@@ -13,6 +13,7 @@ import (
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/glog"
+	"github.com/chaitin/koalaqa/repo"
 )
 
 type wechatOfficialAccount struct {
@@ -93,5 +94,5 @@ func (w *wechatOfficialAccount) Send(ctx context.Context, userIDs model.Int64Arr
 		}
 
 		return nil
-	})
+	}, repo.QueryWithEqual("user_id", userIDs, repo.EqualOPEqAny))
 }
