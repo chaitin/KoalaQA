@@ -120,6 +120,7 @@ export enum ModelMsgNotifyType {
 export enum ModelMessageNotifySubType {
   MessageNotifySubTypeUnknown = 0,
   MessageNotifySubTypeDingtalk = 1,
+  MessageNotifySubTypeWechatOfficialAccount = 2,
 }
 
 export enum ModelLLMType {
@@ -204,6 +205,7 @@ export enum ModelAskSessionSource {
   AskSessionSourceWeb = 0,
   AskSessionSourcePlugin = 1,
   AskSessionSourceBot = 2,
+  AskSessionSourceWecomService = 3,
 }
 
 export enum ChatType {
@@ -629,8 +631,11 @@ export interface ModelMessageNotifySub {
 }
 
 export interface ModelMessageNotifySubInfo {
+  aes_key?: string;
   client_id?: string;
   client_secret?: string;
+  template_id?: string;
+  token?: string;
 }
 
 export interface ModelPlatformOpt {
@@ -883,6 +888,7 @@ export interface SvcAuthFrontendGetRes {
 }
 
 export interface SvcBotGetRes {
+  answer_ref?: boolean;
   avatar?: string;
   name?: string;
   unknown_prompt?: string;
@@ -933,7 +939,7 @@ export interface SvcDiscussionAskReq {
   group_ids?: number[];
   question: string;
   session_id: string;
-  source?: 0 | 1;
+  source?: 0 | 1 | 3;
 }
 
 export interface SvcDiscussionCompeletReq {
@@ -1132,6 +1138,7 @@ export interface SvcListWebItem {
   file_type?: ModelFileType;
   group_ids?: number[];
   id?: number;
+  message?: string;
   status?: ModelDocStatus;
   title?: string;
   updated_at?: number;
@@ -1286,7 +1293,7 @@ export interface SvcSummaryByContentReq {
   forum_id: number;
   group_ids?: number[];
   session_id: string;
-  source?: 0 | 1;
+  source?: 0 | 1 | 3;
 }
 
 export interface SvcURLExportReq {
@@ -1362,6 +1369,10 @@ export interface SvcUserPortraitListItem {
   updated_at?: number;
   user_id?: number;
   username?: string;
+}
+
+export interface SvcUserPortraitReq {
+  content: string;
 }
 
 export interface SvcUserQuickReplyReq {
@@ -1441,6 +1452,7 @@ export interface PutAdminBotPayload {
    * @format binary
    */
   avatar?: File;
+  answer_ref?: boolean;
   name: string;
   unknown_prompt?: string;
 }
@@ -1513,25 +1525,25 @@ export interface DeleteAdminKbKbIdParams {
 
 export interface GetAdminKbKbIdDocumentParams {
   file_type?:
-  | 0
-  | 1
-  | 2
-  | 3
-  | 4
-  | 5
-  | 6
-  | 7
-  | 8
-  | 9
-  | 10
-  | 11
-  | 12
-  | 13
-  | 14
-  | 15
-  | 16
-  | 17
-  | 18;
+    | 0
+    | 1
+    | 2
+    | 3
+    | 4
+    | 5
+    | 6
+    | 7
+    | 8
+    | 9
+    | 10
+    | 11
+    | 12
+    | 13
+    | 14
+    | 15
+    | 16
+    | 17
+    | 18;
   /** @min 1 */
   page?: number;
   /** @min 1 */
@@ -1563,25 +1575,25 @@ export interface DeleteAdminKbKbIdDocumentDocIdParams {
 
 export interface GetAdminKbKbIdQuestionParams {
   file_type?:
-  | 0
-  | 1
-  | 2
-  | 3
-  | 4
-  | 5
-  | 6
-  | 7
-  | 8
-  | 9
-  | 10
-  | 11
-  | 12
-  | 13
-  | 14
-  | 15
-  | 16
-  | 17
-  | 18;
+    | 0
+    | 1
+    | 2
+    | 3
+    | 4
+    | 5
+    | 6
+    | 7
+    | 8
+    | 9
+    | 10
+    | 11
+    | 12
+    | 13
+    | 14
+    | 15
+    | 16
+    | 17
+    | 18;
   /** @min 1 */
   page?: number;
   /** @min 1 */
@@ -1699,6 +1711,7 @@ export interface DeleteAdminKbKbIdSpaceSpaceIdFolderFolderIdParams {
 }
 
 export interface GetAdminKbKbIdSpaceSpaceIdFolderFolderIdDocParams {
+  all_doc?: boolean;
   /** @min 1 */
   page?: number;
   parent_id: number;
@@ -2084,7 +2097,7 @@ export interface GetUserNotifyListParams {
 
 export interface GetUserNotifySubAuthUrlParams {
   app?: boolean;
-  type: 0 | 1;
+  type: 0 | 1 | 2;
 }
 
 export interface GetUserPointParams {

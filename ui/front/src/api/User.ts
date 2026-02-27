@@ -583,6 +583,24 @@ export const getUserNotifySubBind = (params: RequestParams = {}) =>
  * No description
  *
  * @tags user
+ * @name GetUserNotifySubWechatOfficialAccountQrcode
+ * @summary get user qrcode
+ * @request GET:/user/notify_sub/wechat_official_account/qrcode
+ */
+
+export const getUserNotifySubWechatOfficialAccountQrcode = (
+  params: RequestParams = {},
+) =>
+  request<unknown>({
+    path: `/user/notify_sub/wechat_official_account/qrcode`,
+    method: "GET",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
  * @name GetUserPoint
  * @summary list user point
  * @request GET:/user/point

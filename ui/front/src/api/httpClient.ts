@@ -51,8 +51,6 @@ export interface FullRequestParams
   format?: ResponseType;
   /** request body */
   body?: unknown;
-  /** skip auth redirect on 401 */
-  skipAuthRedirect?: boolean;
 }
 
 export type RequestParams = Omit<
@@ -223,6 +221,10 @@ export class HttpClient<SecurityDataType = unknown> {
         const shouldShowError = requestUrl !== "/user";
         if (response.status === 200) {
           const res = response.data;
+          // 如果返回的是二进制数据，直接返回
+          if (res instanceof Blob || res instanceof ArrayBuffer) {
+            return res;
+          }
           if (res.success) {
             return res.data;
           }
@@ -454,7 +456,7 @@ export class HttpClient<SecurityDataType = unknown> {
       headers: {
         ...((method &&
           this.instance.defaults.headers[
-          method.toLowerCase() as keyof HeadersDefaults
+            method.toLowerCase() as keyof HeadersDefaults
           ]) ||
           {}),
         ...(params1.headers || {}),
@@ -502,10 +504,9 @@ export class HttpClient<SecurityDataType = unknown> {
     const cacheKey = generateCacheKey(path, { query, body, ...params });
     const method = params.method?.toUpperCase() || "GET";
 
-    // 对于 /user 请求，需要在请求key中包含用户身份标识，确保不同用户的请求不会被去重
-    let requestKey = `${method}:${cacheKey}`;
     // 在 SSR 环境中，必须在 requestKey 中包含用户身份标识，
     // 否则会导致不同用户（如游客和登录用户）复用同一个 pendingRequest，导致权限/数据混乱。
+    let requestKey = `${method}:${cacheKey}`;
     if (typeof window === "undefined") {
       let authToken = "";
       try {
