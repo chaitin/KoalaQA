@@ -92,24 +92,35 @@ func (d *KBDocument) SpaceExport(ctx context.Context, plat platform.PlatformType
 	return d.export(ctx, plat, req.BaseExportReq, anydoc.ExportWithSpaceID(req.SpaceID), anydoc.ExportWithFileType(req.FileType))
 }
 
-type YueQueListReq struct {
-	UUID string                `form:"uuid"`
-	File *multipart.FileHeader `form:"file"`
-}
+func (d *KBDocument) YuQueList(ctx context.Context, req FileListReq) (*AnydocListRes, error) {
+	if path.Ext(req.File.Filename) != ".lakebook" {
+		return nil, errors.New("invalid file ext")
+	}
 
-func (d *KBDocument) YuQueList(ctx context.Context, req YueQueListReq) (*anydoc.ListRes, error) {
-	return d.anydoc.List(ctx, platform.PlatformYuQue,
-		anydoc.ListWithUUID(req.UUID),
+	list, err := d.anydoc.List(ctx, platform.PlatformYuQue,
 		anydoc.ListWithReader(req.File),
 	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	res := AnydocListRes{
+		UUID: list.UUID,
+	}
+
+	list.Docs.Range(anydoc.ListDoc{}, func(parent, value anydoc.ListDoc) error {
+		if value.File {
+			res.Docs = append(res.Docs, value)
+		}
+		return nil
+	})
+
+	return &res, nil
 }
 
-type YuQueExportReq struct {
-	BaseExportReq
-}
-
-func (d *KBDocument) YuQueExport(ctx context.Context, req YuQueExportReq) (string, error) {
-	req.BaseExportReq.DBDoc.Type = model.DocTypeSpace
+func (d *KBDocument) YuQueExport(ctx context.Context, req FileExportReq) (string, error) {
+	req.BaseExportReq.DBDoc.Type = model.DocTypeDocument
 	return d.export(ctx, platform.PlatformYuQue, req.BaseExportReq)
 }
 
@@ -117,8 +128,6 @@ type FileListReq struct {
 	File *multipart.FileHeader `form:"file" swaggerignore:"true"`
 }
 
-type AnydocListItem struct {
-}
 type AnydocListRes struct {
 	UUID string           `json:"uuid"`
 	Docs []anydoc.ListDoc `json:"docs"`

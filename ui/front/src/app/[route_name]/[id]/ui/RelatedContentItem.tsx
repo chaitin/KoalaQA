@@ -184,6 +184,7 @@ const RelatedContentItem = ({ routeName, relatedPost, groupNames }: RelatedConte
     <Link
       href={`/${routeName}/${relatedPost.uuid}`}
       target='_blank'
+      prefetch={false}
       style={{
         textDecoration: 'none',
         color: 'inherit',

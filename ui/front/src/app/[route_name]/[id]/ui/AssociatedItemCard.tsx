@@ -35,6 +35,7 @@ const AssociatedItemCard = ({ item, routeName, statusChip }: AssociatedItemCardP
       <Link
         href={`/${routeName}/${item.uuid}`}
         target='_blank'
+        prefetch={false}
         style={{
           textDecoration: 'none',
           color: 'inherit',

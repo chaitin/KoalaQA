@@ -2,36 +2,22 @@ package platform
 
 import "net/http"
 
-type dingtalk struct {
-	prefix string
-}
+type dingtalk struct{}
 
 func (s *dingtalk) Platform() PlatformType {
 	return PlatformDingtalk
-}
-
-func (s *dingtalk) ListURL() string {
-	return s.prefix + "/list"
 }
 
 func (s *dingtalk) ListMethod() string {
 	return http.MethodPost
 }
 
-func (s *dingtalk) ExportURL() string {
-	return s.prefix + "/export"
-}
-
-func (s *dingtalk) AuthURL() string {
-	return s.prefix + "/auth_url"
-}
-
-func (s *dingtalk) UserInfoURL() string {
-	return s.prefix + "/user"
+func (d *dingtalk) PathPrefix() string {
+	return "/api/docs/dingtalk"
 }
 
 func newDingtalk() Platform {
-	return &dingtalk{prefix: "/api/docs/dingtalk"}
+	return &dingtalk{}
 }
 
 func init() {

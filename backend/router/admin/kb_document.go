@@ -74,6 +74,58 @@ func (d *kbDocument) FileExport(ctx *context.Context) {
 	ctx.Success(res)
 }
 
+// YuQueList
+// @Summary list yuque documents
+// @Tags document
+// @Accept multipart/form-data
+// @Param file formData file true "upload file"
+// @Produce json
+// @Success 200 {object} context.Response{data=svc.AnydocListRes}
+// @Router /admin/kb/document/yuque/list [post]
+func (d *kbDocument) YuQueList(ctx *context.Context) {
+	var req svc.FileListReq
+
+	err := ctx.ShouldBind(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	res, err := d.svcDoc.YuQueList(ctx, req)
+	if err != nil {
+		ctx.InternalError(err, "yuque list failed")
+		return
+	}
+
+	ctx.Success(res)
+}
+
+// YuQueExport
+// @Summary export yuque document
+// @Tags document
+// @Accept json
+// @Param req body svc.FileExportReq true "request params"
+// @Produce json
+// @Success 200 {object} context.Response{data=string}
+// @Router /admin/kb/document/yuque/export [post]
+func (d *kbDocument) YuQueExport(ctx *context.Context) {
+	var req svc.FileExportReq
+
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	res, err := d.svcDoc.YuQueExport(ctx, req)
+	if err != nil {
+		ctx.InternalError(err, "file export failed")
+		return
+	}
+
+	ctx.Success(res)
+}
+
 // URLList
 // @Summary list url documents
 // @Tags document
@@ -451,6 +503,9 @@ func (d *kbDocument) Route(e server.Handler) {
 		g := e.Group("/kb/document")
 		g.POST("/file/list", d.FileList)
 		g.POST("/file/export", d.FileExport)
+
+		g.POST("/yuque/list", d.YuQueList)
+		g.POST("/yuque/export", d.YuQueExport)
 
 		g.POST("/url/list", d.URLList)
 		g.POST("/url/export", d.URLExport)
