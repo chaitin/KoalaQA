@@ -285,6 +285,10 @@ func (a *anydoc) List(ctx context.Context, plat platform.PlatformType, optFuncs 
 		return nil, err
 	}
 
+	if req.Method == http.MethodPost {
+		req.Header.Set("Content-Type", "application/json")
+	}
+
 	req.Header["X-Trace-ID"] = trace.TraceID(ctx)
 
 	resp, err := util.HTTPClient.Do(req)
