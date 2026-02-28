@@ -212,8 +212,7 @@ func (a *anydoc) List(ctx context.Context, plat platform.PlatformType, optFuncs 
 	if err != nil {
 		return nil, err
 	}
-	u.Path = p.ListURL()
-	var contentType string
+	u.Path = p.PathPrefix() + "/list"
 
 	var body io.Reader
 	switch p.ListMethod() {
@@ -288,16 +287,16 @@ func (a *anydoc) List(ctx context.Context, plat platform.PlatformType, optFuncs 
 
 	req.Header["X-Trace-ID"] = trace.TraceID(ctx)
 
-	if contentType != "" {
-		req.Header.Set("Content-Type", contentType)
-	}
-
 	resp, err := util.HTTPClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("anydoc list failed, status code: %d", resp.StatusCode)
+	}
 
 	var (
 		docRes anydocRes[struct {
@@ -317,9 +316,6 @@ func (a *anydoc) List(ctx context.Context, plat platform.PlatformType, optFuncs 
 		return nil, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("anydoc list status code: %d", resp.StatusCode)
-	}
 	res.Docs = docRes.Data.Docs
 
 	return &res, nil
@@ -353,7 +349,7 @@ func (a *anydoc) Export(ctx context.Context, platform platform.PlatformType, id 
 		return "", err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s%s", a.address, p.ExportURL()), bytes.NewReader(reqBodyBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s%s", a.address, p.PathPrefix()+"/export"), bytes.NewReader(reqBodyBytes))
 	if err != nil {
 		return "", err
 	}
@@ -367,6 +363,10 @@ func (a *anydoc) Export(ctx context.Context, platform platform.PlatformType, id 
 
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("anydoc export status code: %d", resp.StatusCode)
+	}
+
 	var res anydocRes[string]
 	err = json.NewDecoder(resp.Body).Decode(&res)
 	if err != nil {
@@ -376,10 +376,6 @@ func (a *anydoc) Export(ctx context.Context, platform platform.PlatformType, id 
 	err = res.Error()
 	if err != nil {
 		return "", err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("anydoc export status code: %d", resp.StatusCode)
 	}
 
 	return res.Data, nil
@@ -395,7 +391,7 @@ func (a *anydoc) AuthURL(ctx context.Context, plat platform.PlatformType, reqDat
 	if err != nil {
 		return "", err
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s%s", a.address, p.AuthURL()), bytes.NewReader(reqBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s%s", a.address, p.PathPrefix()+"/auth_url"), bytes.NewReader(reqBytes))
 	if err != nil {
 		return "", err
 	}
@@ -435,7 +431,7 @@ func (a *anydoc) UserInfo(ctx context.Context, plat platform.PlatformType, reqDa
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s%s", a.address, p.UserInfoURL()), bytes.NewReader(reqBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s%s", a.address, p.PathPrefix()+"/user"), bytes.NewReader(reqBytes))
 	if err != nil {
 		return nil, err
 	}

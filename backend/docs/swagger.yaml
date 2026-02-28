@@ -4328,6 +4328,57 @@ paths:
       summary: list url documents
       tags:
       - document
+  /admin/kb/document/yuque/export:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.FileExportReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: export yuque document
+      tags:
+      - document
+  /admin/kb/document/yuque/list:
+    post:
+      consumes:
+      - multipart/form-data
+      parameters:
+      - description: upload file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/svc.AnydocListRes'
+              type: object
+      summary: list yuque documents
+      tags:
+      - document
   /admin/kb/space/remote:
     post:
       parameters:

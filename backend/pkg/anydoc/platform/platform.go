@@ -18,9 +18,6 @@ const (
 
 type Platform interface {
 	Platform() PlatformType
-	ListURL() string
 	ListMethod() string
-	ExportURL() string
-	AuthURL() string
-	UserInfoURL() string
+	PathPrefix() string
 }

@@ -2,36 +2,22 @@ package platform
 
 import "net/http"
 
-type file struct {
-	prefix string
-}
+type file struct{}
 
 func (f *file) Platform() PlatformType {
 	return PlatformFile
-}
-
-func (f *file) ListURL() string {
-	return f.prefix + "/list"
 }
 
 func (f *file) ListMethod() string {
 	return http.MethodPost
 }
 
-func (f *file) ExportURL() string {
-	return f.prefix + "/export"
-}
-
-func (f *file) AuthURL() string {
-	return f.prefix + "/auth_url"
-}
-
-func (f *file) UserInfoURL() string {
-	return f.prefix + "/user"
+func (d *file) PathPrefix() string {
+	return "/api/docs/file"
 }
 
 func newFile() Platform {
-	return &file{prefix: "/api/docs/file"}
+	return &file{}
 }
 
 func init() {
