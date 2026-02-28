@@ -2,6 +2,7 @@ import OfflineFileImport from './OfflineFile';
 import SitemapImport from './Sitemap';
 import { ImportDocProps, ImportDocType } from './type';
 import URLImport from './URL';
+import YuqueImport from './Yuque';
 
 const ImportDoc = ({
   type,
@@ -36,6 +37,14 @@ const ImportDoc = ({
           refresh={refresh}
           onCancel={onCancel}
           parentId={parentId}
+        />
+      );
+    case 'Yuque':
+      return (
+        <YuqueImport
+          open={open}
+          refresh={refresh}
+          onCancel={onCancel}
         />
       );
     default:

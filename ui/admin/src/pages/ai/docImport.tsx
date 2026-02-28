@@ -46,13 +46,20 @@ const DocImport = (props: DocImportProps) => {
         setKey('Sitemap');
       },
     },
+    Yuque: {
+      label: '通过语雀导入',
+      onClick: () => {
+        setUrlOpen(true);
+        setKey('Yuque');
+      },
+    },
   };
 
   // 根据 allowedImportTypes 过滤导入方式
   const filteredImportWays = allowedImportTypes
     ? Object.entries(ImportContentWays).filter(([type]) =>
-        allowedImportTypes.includes(type as ImportDocType)
-      )
+      allowedImportTypes.includes(type as ImportDocType)
+    )
     : Object.entries(ImportContentWays);
 
   return (

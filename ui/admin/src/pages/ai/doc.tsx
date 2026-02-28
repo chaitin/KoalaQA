@@ -319,7 +319,7 @@ const AdminDocument = () => {
             </Button>
           </Stack>
         ) : (
-          <DocImport refresh={fetchData} allowedImportTypes={['OfflineFile']} />
+          <DocImport refresh={fetchData} allowedImportTypes={['OfflineFile', 'Yuque']} />
         )}
       </Stack>
       <Table
