@@ -265,7 +265,7 @@ const UserNotificationSubscription = () => {
         </Box>
       ) : (
         <Box component="form" onSubmit={handleSubmit(onSubmit)}>
-          <Stack spacing={4}>
+          <Stack spacing={3}>
             {/* 钉钉机器人配置 */}
             <Box>
               {renderSectionHeader('钉钉')}
@@ -363,7 +363,7 @@ const UserNotificationSubscription = () => {
               </Stack>
             </Box>
 
-            <Divider sx={{ borderStyle: 'dashed' }} />
+            <Divider sx={{ borderStyle: 'dashed', }} />
 
             {/* 微信服务号配置 */}
             <Box>

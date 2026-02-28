@@ -509,9 +509,9 @@ const Article = ({
   // 帖子类型配置
   const postTypes = [
     { id: 'all', name: '全部', icon: <Icon type='icon-quanbu' sx={{ fontSize: 20, color: 'primary.main' }} /> },
-    { id: 'qa', name: '问题', icon: <Image width={20} height={20} src='/qa.svg' alt='问题' /> },
-    { id: 'issue', name: 'Issue', icon: <Icon type='icon-issue' sx={{ fontSize: 20 }} /> },
-    { id: 'blog', name: '文章', icon: <Image width={20} height={20} src='/blog.svg' alt='文章' /> },
+    { id: 'qa', name: '问题', icon: <Icon type='icon-wenti' sx={{ fontSize: 20, color: 'primary.main' }} /> },
+    { id: 'issue', name: 'Issue', icon: <Icon type='icon-issue' sx={{ fontSize: 20, color: 'primary.main' }} /> },
+    { id: 'blog', name: '文章', icon: <Icon type='icon-wenzhang' sx={{ fontSize: 20, color: 'primary.main' }} /> },
   ]
 
   // 获取当前类型对应的分类
@@ -750,6 +750,10 @@ const Article = ({
                       '&.Mui-selected': {
                         bgcolor: 'primary.main',
                         color: theme.palette.primary.contrastText,
+                        '& svg': {
+                          display: { xs: 'none', sm: 'block' },
+                          color: theme.palette.primary.contrastText,
+                        },
                         '&:hover': {
                           bgcolor: theme.palette.primary.dark,
                           color: theme.palette.primary.contrastText,
@@ -759,7 +763,7 @@ const Article = ({
                     })}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>{postType.icon}</Box>
+                      {postType.icon}
                       {postType.name}
                     </Box>
                   </ToggleButton>
