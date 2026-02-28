@@ -2,7 +2,7 @@
 
 This document defines the rules and guidelines that AI agents on behalf of MonkeyCode-AI Smart Development Platform must follow when working in this repository.
 
-## Output Format
+## Output Formats
 
 Do not include any emoji characters in your output. Keep all responses in plain text format using only standard ASCII or Unicode text characters.
 
