@@ -1,15 +1,15 @@
+import { ChatType, getAdminChat, getAdminSystemWebPlugin, putAdminChat, putAdminSystemWebPlugin } from '@/api';
 import Card from '@/components/card';
-import { Box, FormControlLabel, Radio, RadioGroup, Stack, Typography, Paper, IconButton, Tooltip, Switch, Link, TextField, InputAdornment } from '@mui/material';
-import { useState, useEffect, useMemo } from 'react';
-import { message } from '@ctzhian/ui';
-import { getAdminSystemWebPlugin, putAdminSystemWebPlugin, getAdminChat, putAdminChat, ChatType } from '@/api';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import { CopyToClipboard } from 'react-copy-to-clipboard';
 import LoadingButton from '@/components/LoadingButton';
-import { useForm } from 'react-hook-form';
+import { message } from '@ctzhian/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import LaunchIcon from '@mui/icons-material/Launch';
+import { Box, FormControlLabel, IconButton, InputAdornment, Link, Radio, RadioGroup, Stack, TextField, Typography } from '@mui/material';
+import Copy from 'copy-to-clipboard';
+import { useEffect, useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 interface OriginalState {
   plugin: boolean;
@@ -440,13 +440,12 @@ const ChatConfig = () => {
                       readOnly: true,
                       endAdornment: (
                         <InputAdornment position="end">
-                          <CopyToClipboard text={embedCode} onCopy={() => message.success('复制成功')}>
-                            <Tooltip title="复制全部">
-                              <IconButton size="small" edge="end">
-                                <ContentCopyIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </CopyToClipboard>
+                          <IconButton size="small" edge="end" onClick={() => {
+                            Copy(embedCode)
+                            message.success('复制成功')
+                          }}>
+                            <ContentCopyIcon fontSize="small" />
+                          </IconButton>
                         </InputAdornment>
                       ),
                     }}
@@ -588,13 +587,9 @@ const ChatConfig = () => {
                         readOnly: true,
                         endAdornment: (
                           <InputAdornment position="end">
-                            <CopyToClipboard text={`${origin}/api/chat/bot/wecom_service`} onCopy={() => message.success('复制成功')}>
-                              <Tooltip title="复制">
-                                <IconButton size="small" edge="end">
-                                  <ContentCopyIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            </CopyToClipboard>
+                            <IconButton size="small" edge="end" onClick={() => { Copy(`${origin}/api/chat/bot/wecom_service`); message.success('复制成功') }}>
+                              <ContentCopyIcon fontSize="small" />
+                            </IconButton>
                           </InputAdornment>
                         ),
                       }}
@@ -701,7 +696,7 @@ const ChatConfig = () => {
 
 
       </Box>
-    </Card>
+    </Card >
   );
 };
 

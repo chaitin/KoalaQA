@@ -4,7 +4,7 @@
  */
 
 import { ModelUserRole } from '@/api'
-import { roleConfig } from '@/constant'
+import copy from 'copy-to-clipboard'
 
 /**
  * 条件类名合并工具
@@ -264,24 +264,7 @@ export async function waitFor(condition: () => boolean, timeout = 5000, interval
  */
 export async function copyToClipboard(text: string): Promise<boolean> {
   try {
-    if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(text)
-      return true
-    } else {
-      // 降级方案
-      const textArea = document.createElement('textarea')
-      textArea.value = text
-      textArea.style.position = 'fixed'
-      textArea.style.left = '-999999px'
-      document.body.appendChild(textArea)
-      textArea.select()
-      try {
-        document.execCommand('copy')
-        return true
-      } finally {
-        document.body.removeChild(textArea)
-      }
-    }
+    return copy(text)
   } catch {
     return false
   }

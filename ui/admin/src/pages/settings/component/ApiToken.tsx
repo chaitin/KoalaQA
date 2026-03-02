@@ -4,10 +4,12 @@ import Card from '@/components/card';
 import { useAuthContext } from '@/hooks/context';
 import { Icon, message, Modal } from '@ctzhian/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
+import LaunchIcon from '@mui/icons-material/Launch';
 import {
     Box,
     Button,
     IconButton,
+    Link,
     Stack,
     TextField,
     Tooltip,
@@ -16,6 +18,7 @@ import {
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import copy from 'copy-to-clipboard';
 
 const apiTokenSchema = z.object({
     name: z.string().min(1, '请输入 Token 备注').default(''),
@@ -104,7 +107,7 @@ const ApiToken = () => {
     };
 
     const handleCopy = (text: string) => {
-        navigator.clipboard.writeText(text);
+        copy(text);
         message.success('复制成功');
     };
 
@@ -112,9 +115,19 @@ const ApiToken = () => {
         <Card sx={{ mt: 2 }}>
             <Stack spacing={2}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0 }}>
-                    <Typography variant="subtitle2" sx={{ fontSize: 14 }}>
-                        API Token
-                    </Typography>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                        <Typography variant="subtitle2" sx={{ mb: 0 }}>
+                            API Token
+                        </Typography>
+                        <Link
+                            sx={{ color: 'info.main', cursor: 'pointer', fontSize: '14px' }}
+                            href="https://koalaqa.docs.baizhi.cloud/node/019cae08-61ed-764f-95c9-d46e732a1e49"
+                            target="_blank"
+                        >
+                            文档
+                            <LaunchIcon sx={{ fontSize: 14, ml: 0.5 }} />
+                        </Link>
+                    </Stack>
                     <Button variant="text" color="info" onClick={handleAdd}>
                         创建 API Token
                     </Button>
@@ -134,7 +147,6 @@ const ApiToken = () => {
                                 sx={{
                                     border: '1px solid #e0e0e0',
                                     borderRadius: 1,
-                                    backgroundColor: '#f9f9f9',
                                     p: 2,
                                     display: 'flex',
                                     alignItems: 'center',
@@ -147,7 +159,7 @@ const ApiToken = () => {
                                         title={item.name}
                                         sx={{
                                             width: '20%',
-                                            color: 'text.secondary',
+                                            fontWeight: 'bold',
                                             whiteSpace: 'nowrap',
                                             overflow: 'hidden',
                                             textOverflow: 'ellipsis',
@@ -195,7 +207,7 @@ const ApiToken = () => {
                     </Stack>
                 </Modal>
             </Stack>
-        </Card>
+        </Card >
     );
 };
 

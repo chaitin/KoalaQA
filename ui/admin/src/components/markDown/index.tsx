@@ -11,6 +11,7 @@ import { getBaseLanguageId } from '@/utils';
 import Diff from './diff';
 import Code from './code';
 import Command from './command';
+import copy from 'copy-to-clipboard';
 
 interface ExtendedComponents extends Components {
   tools?: React.ComponentType<any>;
@@ -368,8 +369,8 @@ const MarkDown = ({
                   {...rest}
                   className={className}
                   onClick={() => {
-                    if (navigator.clipboard) {
-                      navigator.clipboard.writeText(String(children));
+                    const success = copy(String(children));
+                    if (success) {
                       message.success('复制成功');
                     }
                   }}

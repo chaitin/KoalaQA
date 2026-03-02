@@ -4,6 +4,7 @@ import Image from 'next/image';
 import error from '@/asset/img/500.png';
 import { Box, Stack, Button, Typography, Collapse, Chip, IconButton, Tooltip, Alert } from '@mui/material';
 import { useState } from 'react';
+import copy from 'copy-to-clipboard';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 export default function Error({
@@ -31,9 +32,9 @@ export default function Error({
       environment: process.env.NODE_ENV,
       ...(err as any),
     };
-    
+
     try {
-      await navigator.clipboard.writeText(JSON.stringify(errorInfo, null, 2));
+      await copy(JSON.stringify(errorInfo, null, 2));
       setCopyStatus('success');
       // 3秒后重置状态
       setTimeout(() => setCopyStatus('idle'), 3000);
@@ -69,9 +70,9 @@ export default function Error({
         <Stack alignItems='center' gap={1} sx={{ maxWidth: 900, mx: 'auto', px: 2 }}>
           <Stack direction='row' alignItems='center' gap={1}>
             <Typography variant='h6'>发生错误</Typography>
-            <Chip 
-              label={isProduction ? '生产环境' : '开发环境'} 
-              size='small' 
+            <Chip
+              label={isProduction ? '生产环境' : '开发环境'}
+              size='small'
               color={isProduction ? 'error' : 'warning'}
               variant='outlined'
             />
@@ -126,11 +127,11 @@ export default function Error({
               </IconButton>
             </Tooltip>
           </Stack>
-          
+
           {/* 复制状态提示 */}
           {copyStatus !== 'idle' && (
-            <Alert 
-              severity={copyStatus === 'success' ? 'success' : 'error'} 
+            <Alert
+              severity={copyStatus === 'success' ? 'success' : 'error'}
               sx={{ width: '100%', maxWidth: 400 }}
             >
               {copyStatus === 'success' ? '错误信息已复制到剪贴板' : '复制失败，请手动复制'}
@@ -168,7 +169,7 @@ export default function Error({
                   </Box>
                 </Box>
               )}
-              
+
               {/* 详细错误信息 */}
               <Box sx={{ p: 2 }}>
                 <Typography variant='subtitle2' gutterBottom>
