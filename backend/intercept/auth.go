@@ -9,6 +9,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/config"
 	"github.com/chaitin/koalaqa/pkg/context"
 	"github.com/chaitin/koalaqa/pkg/jwt"
+	"github.com/chaitin/koalaqa/repo"
 	"github.com/chaitin/koalaqa/svc"
 )
 
@@ -18,14 +19,15 @@ type auth struct {
 	freeAuth bool
 	jwt      *jwt.Generator
 	user     *svc.User
+	apiToken *repo.APIToken
 }
 
-func newAuth(cfg config.Config, generator *jwt.Generator, user *svc.User) Interceptor {
-	return &auth{freeAuth: cfg.API.FreeAuth, jwt: generator, user: user}
+func newAuth(cfg config.Config, generator *jwt.Generator, user *svc.User, apiToken *repo.APIToken) Interceptor {
+	return &auth{freeAuth: cfg.API.FreeAuth, jwt: generator, user: user, apiToken: apiToken}
 }
 
 func (a *auth) Intercept(ctx *context.Context) {
-	userInfo, err := authUser(ctx, a.freeAuth, a.jwt, a.user)
+	userInfo, err := authUser(ctx, a.freeAuth, a.jwt, a.user, a.apiToken)
 	if err != nil {
 		ctx.Unauthorized(err.Error())
 		ctx.Abort()
@@ -45,7 +47,7 @@ func init() {
 	registerAPIAuth(newAuth)
 }
 
-func authUser(ctx *context.Context, freeAuth bool, j *jwt.Generator, user *svc.User) (*model.UserInfo, error) {
+func authUser(ctx *context.Context, freeAuth bool, j *jwt.Generator, user *svc.User, apiToken *repo.APIToken) (*model.UserInfo, error) {
 	var token = ""
 	if authToken := ctx.GetHeader("Authorization"); authToken != "" {
 		splitToken := strings.Split(authToken, " ")
@@ -58,8 +60,9 @@ func authUser(ctx *context.Context, freeAuth bool, j *jwt.Generator, user *svc.U
 	}
 
 	var (
-		item *model.User
-		core model.UserCore
+		item        *model.User
+		core        model.UserCore
+		reqAPIToken = ctx.GetHeader("X-KOALA-TOKEN")
 	)
 	if token == "" {
 		if freeAuth {
@@ -68,6 +71,21 @@ func authUser(ctx *context.Context, freeAuth bool, j *jwt.Generator, user *svc.U
 			if err != nil {
 				return nil, err
 			}
+		} else if reqAPIToken != "" && strings.HasPrefix(ctx.Request.RequestURI, "/api/admin") {
+			exist, err := apiToken.Exist(ctx, repo.QueryWithEqual("token", reqAPIToken))
+			if err != nil {
+				return nil, errors.New("check api token failed")
+			}
+
+			if !exist {
+				return nil, errors.New("invalid api token")
+			}
+			return &model.UserInfo{
+				UserCore: model.UserCore{
+					AuthType: model.AuthTypeAPIToken,
+				},
+				Role: model.UserRoleAdmin,
+			}, nil
 		} else {
 			return nil, errors.New("auth token is empty")
 		}
