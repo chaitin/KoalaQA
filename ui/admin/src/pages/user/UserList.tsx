@@ -38,6 +38,7 @@ import dayjs from 'dayjs';
 import { useCallback, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { aesCbcEncrypt } from '@/utils/aes';
+import copy from 'copy-to-clipboard';
 
 const transRole: Record<ModelUserRole, string> = {
   [ModelUserRole.UserRoleUnknown]: '未知',
@@ -582,7 +583,7 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
                           }
                           setValue('password', password);
                           try {
-                            await navigator.clipboard.writeText(password);
+                            copy(password);
                             message.success('已生成随机密码并复制到剪贴板');
                           } catch (err) {
                             // 如果复制失败，仍然显示成功消息（至少密码已经生成）

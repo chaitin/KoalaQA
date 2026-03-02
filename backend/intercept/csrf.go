@@ -3,6 +3,7 @@ package intercept
 import (
 	"net/http"
 	"slices"
+	"strings"
 
 	"github.com/chaitin/koalaqa/pkg/config"
 	"github.com/chaitin/koalaqa/pkg/context"
@@ -30,7 +31,8 @@ func (c *csrf) Intercept(ctx *context.Context) {
 	salt := ctx.GetUser().Salt
 	token := ctx.GetHeader("X-CSRF-TOKEN")
 
-	if c.freeCSRF || slices.Contains(c.ignoreMethods, ctx.Request.Method) || salt == "" ||
+	if c.freeCSRF || (ctx.GetHeader("X-KOALA-TOKEN") != "" && strings.HasPrefix(ctx.Request.RequestURI, "/api/admin")) ||
+		slices.Contains(c.ignoreMethods, ctx.Request.Method) || salt == "" ||
 		(token != "" && util.Sha1(c.secret+"-"+salt) == token) {
 		ctx.Next()
 		return

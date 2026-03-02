@@ -69,6 +69,19 @@ definitions:
       trace_id:
         type: string
     type: object
+  model.APIToken:
+    properties:
+      created_at:
+        type: integer
+      id:
+        type: integer
+      name:
+        type: string
+      token:
+        type: string
+      updated_at:
+        type: integer
+    type: object
   model.AskSession:
     properties:
       bot:
@@ -1518,6 +1531,13 @@ definitions:
         type: string
       updated_at:
         type: integer
+    type: object
+  svc.APITokenCreateReq:
+    properties:
+      name:
+        type: string
+    required:
+    - name
     type: object
   svc.ActiveModelReq:
     properties:
@@ -5293,6 +5313,68 @@ paths:
       summary: update webhook config
       tags:
       - webhook
+  /admin/token:
+    get:
+      description: backend list api token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/model.APIToken'
+                        type: array
+                    type: object
+              type: object
+      summary: backend list api token
+      tags:
+      - api_token
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.APITokenCreateReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  type: integer
+              type: object
+      summary: create api token
+      tags:
+      - api_token
+  /admin/token/{token_id}:
+    delete:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: delete api token
+      tags:
+      - api_token
   /admin/user:
     get:
       parameters:

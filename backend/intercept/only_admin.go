@@ -2,11 +2,12 @@ package intercept
 
 import (
 	"github.com/chaitin/koalaqa/pkg/context"
+	"github.com/chaitin/koalaqa/repo"
 )
 
 type onlyAdmin struct{}
 
-func newOnlyAdmin() Interceptor {
+func newOnlyAdmin(apiToken *repo.APIToken) Interceptor {
 	return &onlyAdmin{}
 }
 

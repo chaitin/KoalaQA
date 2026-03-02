@@ -12,6 +12,7 @@ import BrandAttribution from '@/components/BrandAttribution'
 import { useForumStore } from '@/store'
 import SSEClient from '@/utils/fetch'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import copy from 'copy-to-clipboard'
 import SendIcon from '@mui/icons-material/Send'
 import StopIcon from '@mui/icons-material/Stop'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
@@ -220,7 +221,7 @@ export default function CustomerServiceContent({
   // 复制消息内容
   const handleCopyMessage = useCallback(async (content: string, messageId: string) => {
     try {
-      await navigator.clipboard.writeText(content)
+      await copy(content)
       setCopiedMessageId(messageId)
       setTimeout(() => setCopiedMessageId(null), 2000)
     } catch (err) {

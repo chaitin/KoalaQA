@@ -41,6 +41,7 @@
     "ahooks": "^3.9.6",
     "axios": "^1.13.2",
     "codemirror": "^6.0.2",
+    "copy-to-clipboard": "^3.3.3",
     "crypto-js": "^4.2.0",
     "cvss": "^1.0.5",
     "dayjs": "^1.11.19",
