@@ -30,7 +30,7 @@ func (c *csrf) Intercept(ctx *context.Context) {
 	salt := ctx.GetUser().Salt
 	token := ctx.GetHeader("X-CSRF-TOKEN")
 
-	if c.freeCSRF || slices.Contains(c.ignoreMethods, ctx.Request.Method) || salt == "" ||
+	if c.freeCSRF || ctx.GetHeader("X-KOALA-TOKEN") != "" || slices.Contains(c.ignoreMethods, ctx.Request.Method) || salt == "" ||
 		(token != "" && util.Sha1(c.secret+"-"+salt) == token) {
 		ctx.Next()
 		return

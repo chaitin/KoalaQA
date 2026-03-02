@@ -57,6 +57,7 @@ const (
 	AuthTypeWeCom
 	AuthTypeWechat
 	AuthTypeDingtalk
+	AuthTypeAPIToken
 )
 
 type AuthInfo struct {
