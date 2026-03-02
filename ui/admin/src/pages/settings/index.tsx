@@ -4,6 +4,7 @@ import GroupTagManager from './component/Topic';
 import PostManagement from './component/PostManagement';
 import Access from './component/Access';
 import Webhook from './component/Webhook';
+import ApiToken from './component/ApiToken';
 import LoginMethod from './component/LoginMethod';
 import Logo from './component/Logo';
 import Seo from './component/Seo.tsx';
@@ -31,6 +32,7 @@ const Settings = () => {
             <Seo />
             <UserNotificationSubscription />
             <Webhook />
+            <ApiToken />
           </Stack>
         </Grid>
       </Grid>

@@ -250,6 +250,14 @@ export interface ContextResponse {
   trace_id?: string;
 }
 
+export interface ModelAPIToken {
+  created_at?: number;
+  id?: number;
+  name?: string;
+  token?: string;
+  updated_at?: number;
+}
+
 export interface ModelAskSession {
   bot?: boolean;
   canceled?: boolean;
@@ -858,6 +866,10 @@ export interface SvcAIInsightDiscussionItem {
   rank_id?: number;
   title?: string;
   updated_at?: number;
+}
+
+export interface SvcAPITokenCreateReq {
+  name: string;
 }
 
 export interface SvcActiveModelReq {
@@ -1835,6 +1847,10 @@ export interface PutAdminSystemWebhookWebhookIdParams {
 export interface DeleteAdminSystemWebhookWebhookIdParams {
   /** wenhook id */
   webhookId: number;
+}
+
+export interface DeleteAdminTokenTokenIdParams {
+  tokenId: string;
 }
 
 export interface GetAdminUserParams {
