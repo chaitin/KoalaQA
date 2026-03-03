@@ -2,6 +2,7 @@ package intercept
 
 import (
 	"errors"
+	"net/http"
 	"time"
 
 	"github.com/chaitin/koalaqa/pkg/context"
@@ -16,7 +17,7 @@ func newUserBlock() Interceptor {
 func (u *userBlock) Intercept(ctx *context.Context) {
 	blockUntil := ctx.GetUser().BlockUntil
 
-	if blockUntil < 0 || blockUntil > 0 && time.Now().Unix() < blockUntil {
+	if ctx.Request.Method != http.MethodGet && (blockUntil < 0 || blockUntil > 0 && time.Now().Unix() < blockUntil) {
 		ctx.BadRequest(errors.New("user is blocked"))
 		ctx.Abort()
 		return
