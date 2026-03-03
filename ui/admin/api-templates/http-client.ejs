@@ -42,6 +42,8 @@
       switch (error.response?.data.err) {
       case 'email already used':
       return '该邮箱已被其他账号绑定'
+      case 'user is blocked':
+      return '该用户已被封禁'
       default:
       return error.response?.data.err
       }

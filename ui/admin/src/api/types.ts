@@ -736,6 +736,7 @@ export interface ModelTrend {
 
 export interface ModelUser {
   avatar?: string;
+  block_until?: number;
   builtin?: boolean;
   created_at?: number;
   email?: string;
@@ -744,18 +745,20 @@ export interface ModelUser {
   invisible?: boolean;
   key?: string;
   last_login?: number;
-  name?: string;
   org_ids?: number[];
   password?: string;
   point?: number;
   role?: ModelUserRole;
   updated_at?: number;
+  /** username: 为了兼容之前的参数名 */
+  username?: string;
   web_notify?: boolean;
 }
 
 export interface ModelUserInfo {
   auth_type?: number;
   avatar?: string;
+  block_until?: number;
   builtin?: boolean;
   cors?: boolean;
   email?: string;
@@ -767,6 +770,7 @@ export interface ModelUserInfo {
   role?: ModelUserRole;
   salt?: string;
   uid?: number;
+  /** username: 为了兼容之前的参数名 */
   username?: string;
   web_notify?: boolean;
 }
@@ -1348,6 +1352,10 @@ export interface SvcUpdateWebNotifyReq {
   enable?: boolean;
 }
 
+export interface SvcUserBlockReq {
+  until?: number;
+}
+
 export interface SvcUserJoinOrgReq {
   /** @minItems 1 */
   org_ids?: number[];
@@ -1357,6 +1365,7 @@ export interface SvcUserJoinOrgReq {
 
 export interface SvcUserListItem {
   avatar?: string;
+  block_until?: number;
   builtin?: boolean;
   created_at?: number;
   email?: string;
@@ -1898,6 +1907,11 @@ export interface PutAdminUserUserIdParams {
 }
 
 export interface DeleteAdminUserUserIdParams {
+  /** user id */
+  userId: number;
+}
+
+export interface PutAdminUserUserIdBlockParams {
   /** user id */
   userId: number;
 }

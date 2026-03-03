@@ -53,6 +53,8 @@ const translateErrorMessage = (error: any) => {
   switch (error.response?.data.err) {
     case "email already used":
       return "该邮箱已被其他账号绑定";
+    case "user is blocked":
+      return "该用户已被封禁";
     default:
       return error.response?.data.err;
   }
@@ -231,7 +233,7 @@ export class HttpClient<SecurityDataType = unknown> {
       headers: {
         ...((method &&
           this.instance.defaults.headers[
-            method.toLowerCase() as keyof HeadersDefaults
+          method.toLowerCase() as keyof HeadersDefaults
           ]) ||
           {}),
         ...(params1.headers || {}),
