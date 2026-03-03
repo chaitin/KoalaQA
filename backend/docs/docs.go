@@ -11952,6 +11952,9 @@ const docTemplate = `{
                 "avatar": {
                     "type": "string"
                 },
+                "block_until": {
+                    "type": "integer"
+                },
                 "builtin": {
                     "type": "boolean"
                 },

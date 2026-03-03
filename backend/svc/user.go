@@ -63,15 +63,16 @@ type UserListReq struct {
 type UserListItem struct {
 	model.Base
 
-	OrgIDs    model.Int64Array  `json:"org_ids" gorm:"type:bigint[]"`
-	OrgNames  model.StringArray `json:"org_names" gorm:"type:text[]"`
-	Name      string            `json:"name"`
-	Role      model.UserRole    `json:"role"`
-	Avatar    string            `json:"avatar"`
-	Builtin   bool              `json:"builtin"`
-	Email     string            `json:"email"`
-	LastLogin model.Timestamp   `json:"last_login"`
-	Key       string            `json:"-"`
+	OrgIDs     model.Int64Array  `json:"org_ids" gorm:"type:bigint[]"`
+	OrgNames   model.StringArray `json:"org_names" gorm:"type:text[]"`
+	Name       string            `json:"name"`
+	Role       model.UserRole    `json:"role"`
+	Avatar     string            `json:"avatar"`
+	Builtin    bool              `json:"builtin"`
+	Email      string            `json:"email"`
+	LastLogin  model.Timestamp   `json:"last_login"`
+	Key        string            `json:"-"`
+	BlockUntil int64             `json:"block_until"`
 }
 
 func (u *User) List(ctx context.Context, req UserListReq) (*model.ListRes[UserListItem], error) {
