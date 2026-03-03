@@ -270,10 +270,11 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
   };
 
   // 判断用户是否处于封禁状态
-  const isBlocked = (item: SvcUserListItem & { blocked_until?: number }) => {
-    if (!item.blocked_until) return false;
-    if (item.blocked_until === 0) return true; // 永久
-    return item.blocked_until > Math.floor(Date.now() / 1000);
+  const isBlocked = (item: SvcUserListItem & { block_until?: number }) => {
+    if (item.block_until === undefined || item.block_until === null) return false;
+    if (item.block_until < 0) return true; // 永久封禁
+    if (item.block_until === 0) return false;
+    return item.block_until > Math.floor(Date.now() / 1000);
   };
 
   const putUser = handleSubmit(data => {
