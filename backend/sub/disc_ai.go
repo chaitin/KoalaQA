@@ -254,7 +254,9 @@ func (d *Disc) handleUpdate(ctx context.Context, data topic.MsgDiscChange) error
 			UserCore: model.UserCore{
 				UID: botComment.UserID,
 			},
-			Role: model.UserRoleUser,
+			UserBasic: model.UserBasic{
+				Role: model.UserRoleUser,
+			},
 		}, data.DiscUUID, botComment.ID, svc.CommentUpdateReq{
 			Content: llmRes,
 			Bot:     true,

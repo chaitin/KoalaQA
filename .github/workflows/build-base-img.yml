@@ -24,7 +24,7 @@ jobs:
           - name: anydoc
             dockerfile: docker/anydoc/Dockerfile
             context: docker/anydoc
-            tag: "v0.9.10"
+            tag: "v0.9.11"
           - name: db
             dockerfile: docker/db/Dockerfile
             context: docker/db
@@ -44,7 +44,7 @@ jobs:
           - name: raglite
             dockerfile: docker/raglite/Dockerfile
             context: docker/raglite
-            tag: "v2.15.1"
+            tag: "v2.15.2"
 
     steps:
       - name: Checkout code

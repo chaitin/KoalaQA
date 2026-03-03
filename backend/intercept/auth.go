@@ -84,7 +84,9 @@ func authUser(ctx *context.Context, freeAuth bool, j *jwt.Generator, user *svc.U
 				UserCore: model.UserCore{
 					AuthType: model.AuthTypeAPIToken,
 				},
-				Role: model.UserRoleAdmin,
+				UserBasic: model.UserBasic{
+					Role: model.UserRoleAdmin,
+				},
 			}, nil
 		} else {
 			return nil, errors.New("auth token is empty")
@@ -120,15 +122,7 @@ func authUser(ctx *context.Context, freeAuth bool, j *jwt.Generator, user *svc.U
 
 	return &model.UserInfo{
 		UserCore:   core,
-		OrgIDs:     item.OrgIDs,
-		Role:       item.Role,
-		Email:      item.Email,
-		Username:   item.Name,
-		Intro:      item.Intro,
-		Avatar:     item.Avatar,
-		Builtin:    item.Builtin,
+		UserBasic:  item.UserBasic,
 		NoPassword: item.Password == "",
-		Point:      item.Point,
-		WebNotify:  item.WebNotify,
 	}, nil
 }

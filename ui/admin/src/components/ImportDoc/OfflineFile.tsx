@@ -106,12 +106,10 @@ const OfflineFileImport = ({
       { file },
       {
         onUploadProgress: (event) => {
-          // 如果事件对象有 progress 属性且是 0-1 之间的值，需要乘以 100
-          // 如果已经有 progress 属性且是 0-100 的值，直接使用
-          // 否则使用 loaded 和 total 计算
+          // event.progress 是 axios 计算好的 0~1 之间的比例，直接乘以 100 即可
           let progress = 0;
           if (event.progress !== undefined) {
-            progress = event.progress < 1 ? event.progress * 100 : event.progress;
+            progress = event.progress * 100;
           } else if (event.loaded && event.total) {
             progress = (event.loaded / event.total) * 100;
           } else {
@@ -205,7 +203,7 @@ const OfflineFileImport = ({
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
                   <CircularProgress size={16} sx={{ mr: 1.5 }} />
-                  <Typography variant='body2'>{uploadProgress}%</Typography>
+                  <Typography variant='body2'>{Math.round(uploadProgress)}%</Typography>
                 </Box>
               </Stack>
               <LinearProgress

@@ -4881,6 +4881,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/user/{user_id}/block": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "block user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "user id",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "request params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.UserBlockReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/bot": {
             "get": {
                 "produces": [
@@ -9972,6 +10009,9 @@ const docTemplate = `{
                 "avatar": {
                     "type": "string"
                 },
+                "block_until": {
+                    "type": "integer"
+                },
                 "builtin": {
                     "type": "boolean"
                 },
@@ -9996,9 +10036,6 @@ const docTemplate = `{
                 "last_login": {
                     "type": "integer"
                 },
-                "name": {
-                    "type": "string"
-                },
                 "org_ids": {
                     "type": "array",
                     "items": {
@@ -10017,6 +10054,10 @@ const docTemplate = `{
                 "updated_at": {
                     "type": "integer"
                 },
+                "username": {
+                    "description": "username: 为了兼容之前的参数名",
+                    "type": "string"
+                },
                 "web_notify": {
                     "type": "boolean"
                 }
@@ -10030,6 +10071,9 @@ const docTemplate = `{
                 },
                 "avatar": {
                     "type": "string"
+                },
+                "block_until": {
+                    "type": "integer"
                 },
                 "builtin": {
                     "type": "boolean"
@@ -10068,6 +10112,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "username": {
+                    "description": "username: 为了兼容之前的参数名",
                     "type": "string"
                 },
                 "web_notify": {
@@ -11874,6 +11919,14 @@ const docTemplate = `{
                 }
             }
         },
+        "svc.UserBlockReq": {
+            "type": "object",
+            "properties": {
+                "until": {
+                    "type": "integer"
+                }
+            }
+        },
         "svc.UserJoinOrgReq": {
             "type": "object",
             "properties": {
@@ -11898,6 +11951,9 @@ const docTemplate = `{
             "properties": {
                 "avatar": {
                     "type": "string"
+                },
+                "block_until": {
+                    "type": "integer"
                 },
                 "builtin": {
                     "type": "boolean"

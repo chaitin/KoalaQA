@@ -184,6 +184,7 @@ const KnowledgeBaseDetailPage = () => {
     try {
       const statusFilter = getStatusFilter();
       const isFlatMode = statusFilter !== undefined;
+      const hasSearch = !!docStatusSearch.trim();
 
       const response = await getAdminKbKbIdSpaceSpaceIdFolderFolderIdDoc({
         kbId: kb_id,
@@ -194,7 +195,7 @@ const KnowledgeBaseDetailPage = () => {
         status: statusFilter,
         title: docStatusSearch.trim() || undefined,
         parent_id: folderId, // 根节点使用 folderId 作为 parent_id
-        all_doc: isFlatMode,
+        all_doc: isFlatMode || hasSearch, // 状态筛选或搜索时，均展平查询所有层级文档
       });
 
       const items = response?.items || [];

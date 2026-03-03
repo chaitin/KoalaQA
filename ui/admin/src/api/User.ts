@@ -34,6 +34,7 @@ import {
   ModelUserPointRecord,
   ModelUserSearchHistory,
   PostUserUserIdPortraitParams,
+  PutAdminUserUserIdBlockParams,
   PutAdminUserUserIdParams,
   PutUserPayload,
   PutUserUserIdPortraitPortraitIdParams,
@@ -41,6 +42,7 @@ import {
   SvcNotifyReadReq,
   SvcUnbindNotifySubReq,
   SvcUpdateWebNotifyReq,
+  SvcUserBlockReq,
   SvcUserJoinOrgReq,
   SvcUserListItem,
   SvcUserLoginReq,
@@ -211,6 +213,30 @@ export const deleteAdminUserUserId = (
   request<ContextResponse>({
     path: `/admin/user/${userId}`,
     method: "DELETE",
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags user
+ * @name PutAdminUserUserIdBlock
+ * @summary block user
+ * @request PUT:/admin/user/{user_id}/block
+ * @response `200` `ContextResponse` OK
+ */
+
+export const putAdminUserUserIdBlock = (
+  { userId, ...query }: PutAdminUserUserIdBlockParams,
+  req: SvcUserBlockReq,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/admin/user/${userId}/block`,
+    method: "PUT",
+    body: req,
+    type: ContentType.Json,
     format: "json",
     ...params,
   });

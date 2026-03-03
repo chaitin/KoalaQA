@@ -63,15 +63,16 @@ type UserListReq struct {
 type UserListItem struct {
 	model.Base
 
-	OrgIDs    model.Int64Array  `json:"org_ids" gorm:"type:bigint[]"`
-	OrgNames  model.StringArray `json:"org_names" gorm:"type:text[]"`
-	Name      string            `json:"name"`
-	Role      model.UserRole    `json:"role"`
-	Avatar    string            `json:"avatar"`
-	Builtin   bool              `json:"builtin"`
-	Email     string            `json:"email"`
-	LastLogin model.Timestamp   `json:"last_login"`
-	Key       string            `json:"-"`
+	OrgIDs     model.Int64Array  `json:"org_ids" gorm:"type:bigint[]"`
+	OrgNames   model.StringArray `json:"org_names" gorm:"type:text[]"`
+	Name       string            `json:"name"`
+	Role       model.UserRole    `json:"role"`
+	Avatar     string            `json:"avatar"`
+	Builtin    bool              `json:"builtin"`
+	Email      string            `json:"email"`
+	LastLogin  model.Timestamp   `json:"last_login"`
+	Key        string            `json:"-"`
+	BlockUntil int64             `json:"block_until"`
 }
 
 func (u *User) List(ctx context.Context, req UserListReq) (*model.ListRes[UserListItem], error) {
@@ -454,6 +455,33 @@ func (u *User) Delete(ctx context.Context, id uint) error {
 	return nil
 }
 
+type UserBlockReq struct {
+	Until int64 `json:"until"`
+}
+
+func (u *User) Block(ctx context.Context, opUID, uid uint, req UserBlockReq) error {
+	if opUID == uid {
+		return errors.New("can not block self")
+	}
+
+	user, err := u.Detail(ctx, uid)
+	if err != nil {
+		return err
+	}
+	if user.Builtin {
+		return errors.New("can not block builtin user")
+	}
+
+	err = u.repoUser.Update(ctx, map[string]any{
+		"block_until": req.Until,
+	}, repo.QueryWithEqual("id", uid))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type UserRegisterReq struct {
 	Name     string `json:"name" binding:"required"`
 	Email    string `json:"email" binding:"required,email"`
@@ -523,14 +551,16 @@ func (u *User) Register(ctx context.Context, req UserRegisterReq) error {
 	}
 
 	user := model.User{
-		Name:      req.Name,
-		Email:     req.Email,
-		Builtin:   false,
-		Password:  hashPass,
-		Role:      model.UserRoleUser,
-		Key:       uuid.NewString(),
-		OrgIDs:    model.Int64Array{int64(org.ID)},
-		WebNotify: true,
+		UserBasic: model.UserBasic{
+			Name:      req.Name,
+			Email:     req.Email,
+			Builtin:   false,
+			Role:      model.UserRoleUser,
+			OrgIDs:    model.Int64Array{int64(org.ID)},
+			WebNotify: true,
+		},
+		Password: hashPass,
+		Key:      uuid.NewString(),
 	}
 
 	if auth.NeedReview {

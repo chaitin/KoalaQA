@@ -190,6 +190,9 @@ export class HttpClient<SecurityDataType = unknown> {
     if (raw && /rate\s*limit|ratelimit/i.test(raw)) {
       return "操作过于频繁，请稍后再试";
     }
+    if (raw === "user is blocked") {
+      return "您的账号已被封禁，请联系管理员";
+    }
     return raw || "网络异常";
   }
 
@@ -335,7 +338,7 @@ export class HttpClient<SecurityDataType = unknown> {
 
         // 检查请求路径，如果是 api/user 则不展示报错信息
         const requestUrl = error.config?.url || "";
-        const shouldShowError = requestUrl !== "/user";
+        const shouldShowError = requestUrl !== "/user" || error.response.data.err === "user is blocked";
         // 如果是CSRF token错误且已经重试过，或者不是CSRF错误，才显示错误提示
         if (typeof window !== "undefined" && Alert?.error && shouldShowError) {
           let msg: string;
@@ -378,10 +381,13 @@ export class HttpClient<SecurityDataType = unknown> {
             if (Alert?.error) {
               try {
                 const statusCode = error?.response?.status ?? "未知";
+                // 如果消息已被翻译为友好提示（与原始 msg 不同），直接展示，不加状态码前缀
                 const alertMessage =
-                  errorMsg && errorMsg !== "未知错误"
-                    ? `请求出错，状态码: ${statusCode}\n${errorMsg}`
-                    : `请求出错，状态码: ${statusCode}`;
+                  errorMsg !== msg
+                    ? errorMsg
+                    : errorMsg && errorMsg !== "未知错误"
+                      ? `请求出错，状态码: ${statusCode}\n${errorMsg}`
+                      : `请求出错，状态码: ${statusCode}`;
                 Alert.error(alertMessage);
               } catch (e) {
                 // 如果 Alert.error 调用失败，至少输出到控制台
@@ -458,7 +464,7 @@ export class HttpClient<SecurityDataType = unknown> {
       headers: {
         ...((method &&
           this.instance.defaults.headers[
-            method.toLowerCase() as keyof HeadersDefaults
+          method.toLowerCase() as keyof HeadersDefaults
           ]) ||
           {}),
         ...(params1.headers || {}),

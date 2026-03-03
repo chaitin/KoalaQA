@@ -33,12 +33,14 @@ func (m *initAdmin) Migrate(tx *gorm.DB) error {
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return tx.Create(&model.User{
-				Name:      "admin",
-				Email:     m.email,
-				Avatar:    "",
-				Builtin:   true,
+				UserBasic: model.UserBasic{
+					Name:    "admin",
+					Email:   m.email,
+					Avatar:  "",
+					Builtin: true,
+					Role:    model.UserRoleAdmin,
+				},
 				Password:  string(hashPass),
-				Role:      model.UserRoleAdmin,
 				Invisible: false,
 				Key:       uuid.NewString(),
 			}).Error

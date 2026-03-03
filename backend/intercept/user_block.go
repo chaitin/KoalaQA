@@ -1,0 +1,35 @@
+package intercept
+
+import (
+	"errors"
+	"net/http"
+	"time"
+
+	"github.com/chaitin/koalaqa/pkg/context"
+)
+
+type userBlock struct{}
+
+func newUserBlock() Interceptor {
+	return &userBlock{}
+}
+
+func (u *userBlock) Intercept(ctx *context.Context) {
+	blockUntil := ctx.GetUser().BlockUntil
+
+	if ctx.Request.Method != http.MethodGet && ctx.Request.RequestURI != "/api/user/logout" && (blockUntil < 0 || blockUntil > 0 && time.Now().Unix() < blockUntil) {
+		ctx.BadRequest(errors.New("user is blocked"))
+		ctx.Abort()
+		return
+	}
+
+	ctx.Next()
+}
+
+func (u *userBlock) Priority() int {
+	return 1
+}
+
+func init() {
+	registerAPIAuth(newUserBlock)
+}

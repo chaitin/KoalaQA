@@ -5,6 +5,7 @@ import {
   ModelUserRole,
   postAdminUserJoinOrg,
   putAdminUserUserId,
+  putAdminUserUserIdBlock,
   SvcOrgListItem,
   SvcUserListItem,
 } from '@/api';
@@ -20,18 +21,28 @@ import {
   Button,
   Checkbox,
   Chip,
+  Divider,
   FormControl,
+  FormControlLabel,
   FormHelperText,
   IconButton,
   InputAdornment,
   InputLabel,
   Link,
+  ListItemIcon,
+  ListItemText,
+  Menu,
   MenuItem,
+  Radio,
+  RadioGroup,
   Select,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
+import BlockIcon from '@mui/icons-material/Block';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { useRequest } from 'ahooks';
 import { ColumnsType } from '@ctzhian/ui/dist/Table';
 import dayjs from 'dayjs';
@@ -87,6 +98,14 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
   const [joinOrgSelectedOrgs, setJoinOrgSelectedOrgs] = useState<number[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  // 封禁相关状态
+  const [blockModalOpen, setBlockModalOpen] = useState(false);
+  const [blockTarget, setBlockTarget] = useState<SvcUserListItem | null>(null);
+  const [blockDuration, setBlockDuration] = useState<'3d' | '7d' | 'forever'>('3d');
+  const [blockLoading, setBlockLoading] = useState(false);
+  // 操作菜单
+  const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
+  const [menuTarget, setMenuTarget] = useState<SvcUserListItem | null>(null);
   const cancelEdit = () => {
     setEditItem(null);
     reset();
@@ -204,6 +223,60 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
     });
   };
 
+  const openBlockModal = (item: SvcUserListItem) => {
+    setBlockTarget(item);
+    setBlockDuration('3d');
+    setBlockModalOpen(true);
+  };
+
+  const handleBlock = () => {
+    if (!blockTarget) return;
+    setBlockLoading(true);
+    let until: number | undefined;
+    const now = Math.floor(Date.now() / 1000);
+    if (blockDuration === '3d') until = now + 3 * 24 * 3600;
+    else if (blockDuration === '7d') until = now + 7 * 24 * 3600;
+    else until = -1; // 永久
+    putAdminUserUserIdBlock({ userId: blockTarget.id! }, { until })
+      .then(() => {
+        message.success('封禁成功');
+        setBlockModalOpen(false);
+        fetchData({ ...query, org_id: orgIdFilter, role: roleFilter });
+      })
+      .finally(() => setBlockLoading(false));
+  };
+
+  const handleUnblock = (item: SvcUserListItem) => {
+    Modal.confirm({
+      title: '解封用户',
+      okText: '确认解封',
+      content: (
+        <>
+          确定要解封用户
+          <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
+            「{item.name}」
+          </Box>
+          吗？
+        </>
+      ),
+      onOk: () => {
+        putAdminUserUserIdBlock({ userId: item.id! }, { until: 0 })
+          .then(() => {
+            message.success('解封成功');
+            fetchData({ ...query, org_id: orgIdFilter, role: roleFilter });
+          });
+      },
+    });
+  };
+
+  // 判断用户是否处于封禁状态
+  const isBlocked = (item: SvcUserListItem & { block_until?: number }) => {
+    if (item.block_until === undefined || item.block_until === null) return false;
+    if (item.block_until < 0) return true; // 永久封禁
+    if (item.block_until === 0) return false;
+    return item.block_until > Math.floor(Date.now() / 1000);
+  };
+
   const putUser = handleSubmit(data => {
     if (editItem) {
       const orgIds = data.org_ids || [];
@@ -285,6 +358,34 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
                 sx={{ height: 20, fontSize: '11px' }}
               />
             )}
+
+            {!!record.block_until && (() => {
+              const until = record.block_until!;
+              let label: string;
+              if (until < 0) {
+                label = '永久封禁';
+              } else {
+                const diffSec = until - Math.floor(Date.now() / 1000);
+                if (diffSec <= 0) {
+                  label = '封禁已到期';
+                } else if (diffSec >= 86400) {
+                  label = `${Math.ceil(diffSec / 86400)}天后解封`;
+                } else if (diffSec >= 3600) {
+                  label = `${Math.ceil(diffSec / 3600)}小时后解封`;
+                } else {
+                  label = `${Math.ceil(diffSec / 60)}分钟后解封`;
+                }
+              }
+              return (
+                <Chip
+                  label={label}
+                  size="small"
+                  color="error"
+                  sx={{ height: 20, fontSize: '11px' }}
+                />
+              );
+            })()}
+
           </Stack>
         );
       },
@@ -346,6 +447,7 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
       ),
       dataIndex: 'opt',
       render: (_, record) => {
+        const blocked = isBlocked(record as SvcUserListItem & { blocked_until?: number });
         return (
           <Stack direction="row" alignItems="center" spacing={1}>
             <Button
@@ -372,9 +474,24 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
             >
               编辑
             </Button>
-            <Button variant="text" size="small" color="error" onClick={() => deleteUser(record)}>
-              删除
-            </Button>
+            {blocked && (
+              <Chip
+                label="封禁中"
+                size="small"
+                color="error"
+                variant="outlined"
+                sx={{ height: 20, fontSize: '11px' }}
+              />
+            )}
+            <IconButton
+              size="small"
+              onClick={e => {
+                setMenuAnchorEl(e.currentTarget);
+                setMenuTarget(record);
+              }}
+            >
+              <MoreVertIcon fontSize="small" />
+            </IconButton>
           </Stack>
         );
       },
@@ -505,7 +622,6 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
             mx: 2,
           },
         }}
-        loading={loading}
         columns={columns}
         dataSource={data?.items || []}
         rowKey="id"
@@ -782,6 +898,72 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
           fetchPendingReviewCount();
         }}
       />
+
+      {/* 操作下拉菜单 */}
+      <Menu
+        anchorEl={menuAnchorEl}
+        open={Boolean(menuAnchorEl)}
+        onClose={() => {
+          setMenuAnchorEl(null);
+          // 延迟清空，避免关闭动画期间菜单内容闪烁
+          setTimeout(() => setMenuTarget(null), 300);
+        }}
+        sx={{
+
+        }}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+      >
+        {menuTarget?.block_until ? (
+          <MenuItem
+            onClick={() => {
+              setMenuAnchorEl(null);
+              handleUnblock(menuTarget!);
+            }}
+          >解封
+          </MenuItem>
+        ) : (
+          <MenuItem
+            onClick={() => {
+              setMenuAnchorEl(null);
+              openBlockModal(menuTarget!);
+            }}
+          >封禁
+          </MenuItem>
+        )}
+        <MenuItem
+          onClick={() => {
+            setMenuAnchorEl(null);
+            deleteUser(menuTarget!);
+          }}
+          sx={{ color: 'error.main' }}
+        >
+          删除
+        </MenuItem>
+      </Menu>
+
+      {/* 封禁弹窗 */}
+      <Modal
+        open={blockModalOpen}
+        onCancel={() => setBlockModalOpen(false)}
+        title="封禁用户"
+        okText="确认封禁"
+        okButtonProps={{ disabled: blockLoading }}
+        onOk={handleBlock}
+        sx={{ py: 2 }}
+      >
+        <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+          确认封禁用户「<Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>{blockTarget?.name}</Box>」，请选择封禁时长：
+        </Typography>
+        <RadioGroup
+          value={blockDuration}
+          onChange={e => setBlockDuration(e.target.value as '3d' | '7d' | 'forever')}
+        >
+          <FormControlLabel value="3d" control={<Radio size="small" />} label="3 天" />
+          <FormControlLabel value="7d" control={<Radio size="small" />} label="7 天" />
+          <FormControlLabel value="forever" control={<Radio size="small" />} label="永久封禁" />
+        </RadioGroup>
+      </Modal>
     </>
   );
 };

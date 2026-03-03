@@ -107,9 +107,11 @@ func (m *datasetInit) initEmbeddingLLM() error {
 	}
 	eid, err := m.rag.AddModel(context.Background(), embeddingModel)
 	if err != nil {
-		return err
+		embeddingModel.Status = model.LLMStatusError
+		embeddingModel.Message = err.Error()
+	} else {
+		embeddingModel.RagID = eid
 	}
-	embeddingModel.RagID = eid
 	err = m.llm.Create(context.Background(), embeddingModel)
 	if err != nil {
 		return err
@@ -125,9 +127,11 @@ func (m *datasetInit) initEmbeddingLLM() error {
 	}
 	rid, err := m.rag.AddModel(context.Background(), rerankModel)
 	if err != nil {
-		return err
+		rerankModel.Status = model.LLMStatusError
+		rerankModel.Message = err.Error()
+	} else {
+		rerankModel.RagID = rid
 	}
-	rerankModel.RagID = rid
 	err = m.llm.Create(context.Background(), rerankModel)
 	if err != nil {
 		return err
