@@ -467,7 +467,7 @@ func (d *Discussion) List(ctx context.Context, sessionUUID string, userInfo mode
 				Key:  sessionUUID,
 			})
 
-			username := userInfo.Username
+			username := userInfo.Name
 			if userInfo.UID == 0 {
 				username = "匿名游客"
 			}

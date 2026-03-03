@@ -4874,6 +4874,43 @@
                 }
             }
         },
+        "/admin/user/{user_id}/block": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "block user",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "user id",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "request params",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/svc.UserBlockReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/bot": {
             "get": {
                 "produces": [
@@ -9965,6 +10002,9 @@
                 "avatar": {
                     "type": "string"
                 },
+                "block_until": {
+                    "type": "integer"
+                },
                 "builtin": {
                     "type": "boolean"
                 },
@@ -9989,9 +10029,6 @@
                 "last_login": {
                     "type": "integer"
                 },
-                "name": {
-                    "type": "string"
-                },
                 "org_ids": {
                     "type": "array",
                     "items": {
@@ -10010,6 +10047,10 @@
                 "updated_at": {
                     "type": "integer"
                 },
+                "username": {
+                    "description": "username: 为了兼容之前的参数名",
+                    "type": "string"
+                },
                 "web_notify": {
                     "type": "boolean"
                 }
@@ -10023,6 +10064,9 @@
                 },
                 "avatar": {
                     "type": "string"
+                },
+                "block_until": {
+                    "type": "integer"
                 },
                 "builtin": {
                     "type": "boolean"
@@ -10061,6 +10105,7 @@
                     "type": "integer"
                 },
                 "username": {
+                    "description": "username: 为了兼容之前的参数名",
                     "type": "string"
                 },
                 "web_notify": {
@@ -11864,6 +11909,14 @@
             "properties": {
                 "enable": {
                     "type": "boolean"
+                }
+            }
+        },
+        "svc.UserBlockReq": {
+            "type": "object",
+            "properties": {
+                "until": {
+                    "type": "integer"
                 }
             }
         },

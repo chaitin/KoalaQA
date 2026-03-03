@@ -13,20 +13,12 @@ const (
 
 type User struct {
 	Base
+	UserBasic
 
-	OrgIDs    Int64Array `gorm:"column:org_ids;type:bigint[]" json:"org_ids"`
-	Name      string     `gorm:"column:name;type:text" json:"name"`
-	Email     string     `gorm:"column:email;type:text;default:null;uniqueIndex" json:"email"`
-	Avatar    string     `gorm:"column:avatar;type:text" json:"avatar"`
-	Intro     string     `gorm:"column:intro;type:text" json:"intro"`
-	Builtin   bool       `gorm:"column:builtin" json:"builtin"`
-	Password  string     `gorm:"column:password;type:text" json:"password"`
-	Role      UserRole   `gorm:"column:role" json:"role"`
-	LastLogin Timestamp  `gorm:"column:last_login;type:timestamp with time zone" json:"last_login"`
-	Invisible bool       `gorm:"column:invisible"`
-	Key       string     `gorm:"column:key;type:text;uniqueIndex"`
-	Point     uint       `gorm:"column:point;type:bigint;default:0" json:"point"`
-	WebNotify bool       `gorm:"column:web_notify" json:"web_notify"`
+	Password  string    `gorm:"column:password;type:text" json:"password"`
+	LastLogin Timestamp `gorm:"column:last_login;type:timestamp with time zone" json:"last_login"`
+	Invisible bool      `gorm:"column:invisible"`
+	Key       string    `gorm:"column:key;type:text;uniqueIndex"`
 }
 
 type UserCore struct {
@@ -37,18 +29,24 @@ type UserCore struct {
 	Salt     string   `json:"salt"`
 }
 
+type UserBasic struct {
+	OrgIDs     Int64Array `gorm:"column:org_ids;type:bigint[]" json:"org_ids"`
+	Role       UserRole   `gorm:"column:role" json:"role"`
+	Email      string     `gorm:"column:email;type:text;default:null;uniqueIndex" json:"email"`
+	Name       string     `gorm:"column:name;type:text" json:"username"` // username: 为了兼容之前的参数名
+	Intro      string     `gorm:"column:intro;type:text" json:"intro"`
+	Avatar     string     `gorm:"column:avatar;type:text" json:"avatar"`
+	Builtin    bool       `gorm:"column:builtin" json:"builtin"`
+	Point      uint       `gorm:"column:point;type:bigint;default:0" json:"point"`
+	WebNotify  bool       `gorm:"column:web_notify" json:"web_notify"`
+	BlockUntil int64      `gorm:"column:block_until;type:bigint" json:"block_until"`
+}
+
 type UserInfo struct {
 	UserCore
-	OrgIDs     Int64Array `json:"org_ids"`
-	Role       UserRole   `json:"role"`
-	Email      string     `json:"email"`
-	Username   string     `json:"username"`
-	Intro      string     `json:"intro"`
-	Avatar     string     `json:"avatar"`
-	Builtin    bool       `json:"builtin"`
-	NoPassword bool       `json:"no_password"`
-	Point      uint       `json:"point"`
-	WebNotify  bool       `json:"web_notify"`
+	UserBasic
+
+	NoPassword bool `json:"no_password"`
 }
 
 func (ui *UserInfo) IsAdmin() bool {

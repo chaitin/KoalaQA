@@ -112,6 +112,37 @@ func (u *user) Delete(ctx *context.Context) {
 	ctx.Success(nil)
 }
 
+// Block
+// @Summary block user
+// @Tags user
+// @Param user_id path uint true "user id"
+// @Param req body svc.UserBlockReq true "request params"
+// @Produce json
+// @Success 200 {object} context.Response
+// @Router /admin/user/{user_id}/block [put]
+func (u *user) Block(ctx *context.Context) {
+	userID, err := ctx.ParamUint("user_id")
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	var req svc.UserBlockReq
+	err = ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	err = u.svcUser.Block(ctx, ctx.GetUser().UID, userID, req)
+	if err != nil {
+		ctx.InternalError(err, "block user failed")
+		return
+	}
+
+	ctx.Success(nil)
+}
+
 // JoinOrg
 // @Summary user join org
 // @Tags user
@@ -171,6 +202,7 @@ func (u *user) Route(h server.Handler) {
 			userG.GET("", u.Detail)
 			userG.PUT("", u.Update)
 			userG.DELETE("", u.Delete)
+			userG.PUT("/block", u.Block)
 		}
 	}
 }

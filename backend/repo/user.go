@@ -236,16 +236,18 @@ func (u *User) CreateThird(ctx context.Context, orgID uint, user *third_auth.Use
 			user.Avatar = u.getAvatarFromURL(ctx, user.Avatar)
 
 			dbUser = model.User{
-				Name:      user.Name,
-				Email:     user.Email,
-				Builtin:   false,
-				Role:      user.Role,
+				UserBasic: model.UserBasic{
+					Name:      user.Name,
+					Email:     user.Email,
+					Builtin:   false,
+					Role:      user.Role,
+					Avatar:    user.Avatar,
+					OrgIDs:    model.Int64Array{int64(orgID)},
+					WebNotify: true,
+				},
 				Invisible: false,
-				Avatar:    user.Avatar,
 				LastLogin: model.Timestamp(time.Now().Unix()),
 				Key:       uuid.NewString(),
-				OrgIDs:    model.Int64Array{int64(orgID)},
-				WebNotify: true,
 			}
 			txErr = u.createUser(tx, &dbUser)
 			if txErr != nil {

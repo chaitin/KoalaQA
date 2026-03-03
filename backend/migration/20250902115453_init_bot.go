@@ -32,10 +32,12 @@ func (m *initBot) Migrate(tx *gorm.DB) error {
 	}
 
 	botUser := model.User{
-		Name:      "售后在线客服",
-		Avatar:    p,
-		Builtin:   true,
-		Role:      model.UserRoleUser,
+		UserBasic: model.UserBasic{
+			Name:    "售后在线客服",
+			Avatar:  p,
+			Builtin: true,
+			Role:    model.UserRoleUser,
+		},
 		Invisible: true,
 		Key:       uuid.NewString(),
 	}
