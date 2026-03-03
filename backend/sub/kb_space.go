@@ -143,6 +143,7 @@ func (k *kbSpace) handleInsert(ctx context.Context, logger *glog.Logger, msg top
 
 	for _, exportFolder := range exportFolders {
 		parentIDM := make(map[string]uint)
+		rootFolderID := folder.ID
 		if exportFolder.FolderID != "" && exportFolder.FolderID != folder.DocID {
 			dbExportFolder, err := k.repoDoc.GetSpaceDoc(ctx, folder.KBID, folder.ID, exportFolder.FolderID)
 			if err != nil {
@@ -151,6 +152,7 @@ func (k *kbSpace) handleInsert(ctx context.Context, logger *glog.Logger, msg top
 			}
 
 			parentIDM[dbExportFolder.DocID] = dbExportFolder.ID
+			rootFolderID = dbExportFolder.ID
 		}
 
 		needExportDocIDs := make(map[string]bool)
@@ -181,7 +183,7 @@ func (k *kbSpace) handleInsert(ctx context.Context, logger *glog.Logger, msg top
 
 			parentID, ok := parentIDM[parent.ID]
 			if !ok {
-				parentID = folder.ID
+				parentID = rootFolderID
 			}
 
 			if !doc.File {
