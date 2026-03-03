@@ -17,7 +17,7 @@ func newUserBlock() Interceptor {
 func (u *userBlock) Intercept(ctx *context.Context) {
 	blockUntil := ctx.GetUser().BlockUntil
 
-	if ctx.Request.Method != http.MethodGet && (blockUntil < 0 || blockUntil > 0 && time.Now().Unix() < blockUntil) {
+	if ctx.Request.Method != http.MethodGet && ctx.Request.RequestURI != "/api/user/logout" && (blockUntil < 0 || blockUntil > 0 && time.Now().Unix() < blockUntil) {
 		ctx.BadRequest(errors.New("user is blocked"))
 		ctx.Abort()
 		return
