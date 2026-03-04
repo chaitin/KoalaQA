@@ -66,7 +66,7 @@ func (r *Rank) UserContribute(ctx context.Context, rankType model.RankType) ([]m
 	return res, nil
 }
 
-func (r *Rank) GroupByTime(ctx context.Context, rankLimit int, queryFuncs ...QueryOptFunc) (res []model.RankTimeGroup, err error) {
+func (r *Rank) GroupByTime(ctx context.Context, limit, rankLimit int, queryFuncs ...QueryOptFunc) (res []model.RankTimeGroup, err error) {
 	opt := getQueryOpt(queryFuncs...)
 
 	err = r.db.WithContext(ctx).Table("(?) AS group_rank", r.model(ctx).
@@ -77,6 +77,7 @@ func (r *Rank) GroupByTime(ctx context.Context, rankLimit int, queryFuncs ...Que
 		Where("rank <= ?", rankLimit).
 		Group("time").
 		Order("time DESC").
+		Limit(limit).
 		Find(&res).Error
 
 	return
