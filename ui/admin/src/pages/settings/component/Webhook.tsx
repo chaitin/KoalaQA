@@ -47,6 +47,7 @@ const contentOptions = [
   { value: 7, label: '有新的 AI 洞察' },
   { value: 8, label: '有新的用户申请激活账号' },
   { value: 9, label: '有新的 Issue' },
+  { value: 10, label: '有新的 AI 洞察' },
 ];
 
 // 定义表单验证 schema

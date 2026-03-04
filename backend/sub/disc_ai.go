@@ -103,6 +103,14 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 		return err
 	}
 
+	err = d.pub.Publish(ctx, topic.TopicHotQuestion, topic.MsgHotQuestion{
+		Content:  disc.Title,
+		DiscUUID: disc.UUID,
+	})
+	if err != nil {
+		logger.WithErr(err).Warn("pub hot question failed")
+	}
+
 	question, groups, prompt, err := d.llm.GenerateAnswerPrompt(ctx, data.DiscID, 0)
 	if err != nil {
 		logger.WithErr(err).Error("generate prompt failed")

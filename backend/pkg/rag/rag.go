@@ -46,6 +46,7 @@ type Service interface {
 	QueryRecords(ctx context.Context, req QueryRecordsReq) (string, []*model.NodeContentChunk, error)
 	DeleteRecords(ctx context.Context, datasetID string, docIDs []string) error
 	DeleteDataset(ctx context.Context, datasetID string) error
+	DatasetProcessFinish(ctx context.Context, datasetID string) (bool, error)
 	UpdateDocumentMetadata(ctx context.Context, datasetID string, docID string, metadata Metadata) error
 
 	GetModelList(ctx context.Context) ([]*model.LLM, error)

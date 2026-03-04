@@ -3466,6 +3466,129 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/rank/hot_question": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rank"
+                ],
+                "summary": "hot question rank",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "name": "count",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "allOf": [
+                                                    {
+                                                        "$ref": "#/definitions/model.RankTimeGroup"
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "items": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "$ref": "#/definitions/model.RankTimeGroupItem"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/rank/hot_question/{hot_question_id}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rank"
+                ],
+                "summary": "list hot quesion item",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "hot_question_id",
+                        "name": "hot_question_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/model.HotQuestion"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/admin/stat/discussion": {
             "get": {
                 "produces": [
@@ -6791,13 +6914,15 @@ const docTemplate = `{
                         "enum": [
                             1,
                             2,
-                            3
+                            3,
+                            4
                         ],
                         "type": "integer",
                         "x-enum-varnames": [
                             "RankTypeContribute",
                             "RankTypeAIInsight",
-                            "RankTypeAllContribute"
+                            "RankTypeAllContribute",
+                            "RankTypeHotQuestion"
                         ],
                         "name": "type",
                         "in": "query",
@@ -9336,6 +9461,32 @@ const docTemplate = `{
                 }
             }
         },
+        "model.HotQuestion": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "discussion_uuid": {
+                    "type": "string"
+                },
+                "group_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "rag_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "integer"
+                }
+            }
+        },
         "model.JSONB-array_model_AskSessionSummaryDisc": {
             "type": "object"
         },
@@ -9804,6 +9955,9 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
+                "score": {
+                    "type": "number"
+                },
                 "score_id": {
                     "type": "string"
                 }
@@ -9814,12 +9968,14 @@ const docTemplate = `{
             "enum": [
                 1,
                 2,
-                3
+                3,
+                4
             ],
             "x-enum-varnames": [
                 "RankTypeContribute",
                 "RankTypeAIInsight",
-                "RankTypeAllContribute"
+                "RankTypeAllContribute",
+                "RankTypeHotQuestion"
             ]
         },
         "model.StatTrend": {

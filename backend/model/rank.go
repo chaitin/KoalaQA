@@ -6,6 +6,7 @@ const (
 	RankTypeContribute RankType = iota + 1
 	RankTypeAIInsight
 	RankTypeAllContribute
+	RankTypeHotQuestion
 )
 
 type Rank struct {
@@ -21,16 +22,27 @@ type Rank struct {
 }
 
 type RankTimeGroupItem struct {
-	ID          uint   `json:"id"`
-	SocreID     string `json:"score_id"`
-	ForeignID   uint   `json:"foreign_id"`
-	AssociateID uint   `json:"associate_id"`
-	Extra       string `json:"extra"`
+	ID          uint    `json:"id"`
+	SocreID     string  `json:"score_id"`
+	ForeignID   uint    `json:"foreign_id"`
+	AssociateID uint    `json:"associate_id"`
+	Extra       string  `json:"extra"`
+	Score       float64 `json:"score"`
 }
 
 type RankTimeGroup struct {
 	Time  Timestamp                  `json:"time"`
 	Items JSONB[[]RankTimeGroupItem] `json:"items" gorm:"type:jsonb"`
+}
+
+type RankMetadata struct {
+	Type RankType
+}
+
+func (r RankMetadata) Map() map[string]any {
+	return map[string]any{
+		"type": r.Type,
+	}
 }
 
 func init() {

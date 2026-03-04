@@ -90,6 +90,7 @@ export enum ModelRankType {
   RankTypeContribute = 1,
   RankTypeAIInsight = 2,
   RankTypeAllContribute = 3,
+  RankTypeHotQuestion = 4,
 }
 
 export enum ModelOrgType {
@@ -527,6 +528,16 @@ export interface ModelGroupWithItem {
   name?: string;
 }
 
+export interface ModelHotQuestion {
+  content?: string;
+  created_at?: number;
+  discussion_uuid?: string;
+  group_id?: string;
+  id?: number;
+  rag_id?: string;
+  updated_at?: number;
+}
+
 export type ModelJSONBArrayModelAskSessionSummaryDisc = Record<string, any>;
 
 export type ModelJSONBArrayModelForumGroups = Record<string, any>;
@@ -671,6 +682,7 @@ export interface ModelRankTimeGroupItem {
   extra?: string;
   foreign_id?: number;
   id?: number;
+  score?: number;
   score_id?: string;
 }
 
@@ -1825,6 +1837,19 @@ export interface GetAdminRankAiInsightAiInsightIdDiscussionParams {
   aiInsightId: number;
 }
 
+export interface GetAdminRankHotQuestionParams {
+  count?: number;
+}
+
+export interface GetAdminRankHotQuestionHotQuestionIdParams {
+  /** @min 1 */
+  page?: number;
+  /** @min 1 */
+  size?: number;
+  /** hot_question_id */
+  hotQuestionId: number;
+}
+
 export interface GetAdminStatDiscussionParams {
   begin: number;
 }
@@ -2104,7 +2129,7 @@ export interface GetGroupParams {
 }
 
 export interface GetRankContributeParams {
-  type: 1 | 2 | 3;
+  type: 1 | 2 | 3 | 4;
 }
 
 export interface PutUserPayload {

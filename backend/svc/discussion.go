@@ -2189,6 +2189,13 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		return nil, errAskSessionClosed
 	}
 
+	err = d.in.Pub.Publish(ctx, topic.TopicHotQuestion, topic.MsgHotQuestion{
+		Content: req.Question,
+	})
+	if err != nil {
+		d.logger.WithContext(ctx).WithErr(err).Warn("pub hot question failed")
+	}
+
 	var groups []model.GroupItemInfo
 	if len(req.GroupIDs) > 0 {
 		groupIDs, err := d.in.UserRepo.UserGroupIDs(ctx, uid)

@@ -735,6 +735,23 @@ definitions:
       name:
         type: string
     type: object
+  model.HotQuestion:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: integer
+      discussion_uuid:
+        type: string
+      group_id:
+        type: string
+      id:
+        type: integer
+      rag_id:
+        type: string
+      updated_at:
+        type: integer
+    type: object
   model.JSONB-array_model_AskSessionSummaryDisc:
     type: object
   model.JSONB-array_model_ForumGroups:
@@ -1060,6 +1077,8 @@ definitions:
         type: integer
       id:
         type: integer
+      score:
+        type: number
       score_id:
         type: string
     type: object
@@ -1068,11 +1087,13 @@ definitions:
     - 1
     - 2
     - 3
+    - 4
     type: integer
     x-enum-varnames:
     - RankTypeContribute
     - RankTypeAIInsight
     - RankTypeAllContribute
+    - RankTypeHotQuestion
   model.StatTrend:
     properties:
       items:
@@ -4807,6 +4828,74 @@ paths:
       summary: list ai insight discussion
       tags:
       - rank
+  /admin/rank/hot_question:
+    get:
+      parameters:
+      - in: query
+        name: count
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - $ref: '#/definitions/model.RankTimeGroup'
+                    - properties:
+                        items:
+                          items:
+                            $ref: '#/definitions/model.RankTimeGroupItem'
+                          type: array
+                      type: object
+                  type: array
+              type: object
+      summary: hot question rank
+      tags:
+      - rank
+  /admin/rank/hot_question/{hot_question_id}:
+    get:
+      parameters:
+      - description: hot_question_id
+        in: path
+        name: hot_question_id
+        required: true
+        type: integer
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - in: query
+        minimum: 1
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/model.HotQuestion'
+                        type: array
+                    type: object
+              type: object
+      summary: list hot quesion item
+      tags:
+      - rank
   /admin/stat/discussion:
     get:
       parameters:
@@ -6797,6 +6886,7 @@ paths:
         - 1
         - 2
         - 3
+        - 4
         in: query
         name: type
         required: true
@@ -6805,6 +6895,7 @@ paths:
         - RankTypeContribute
         - RankTypeAIInsight
         - RankTypeAllContribute
+        - RankTypeHotQuestion
       produces:
       - application/json
       responses:

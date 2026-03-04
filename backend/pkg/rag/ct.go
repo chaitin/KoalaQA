@@ -48,6 +48,15 @@ func (c *CTRag) CreateDataset(ctx context.Context) (string, error) {
 	return dataset.ID, nil
 }
 
+func (c *CTRag) DatasetProcessFinish(ctx context.Context, datasetID string) (bool, error) {
+	stats, err := c.client.Datasets.GetStats(ctx, datasetID)
+	if err != nil {
+		return false, err
+	}
+
+	return stats.PendingDocs+stats.ProcessingDocs == 0, nil
+}
+
 func (c *CTRag) UpdateDataset(ctx context.Context, datasetID string, req UpdateDatasetReq) error {
 	_, err := c.client.Datasets.Update(ctx, datasetID, &raglite.UpdateDatasetRequest{})
 	if err != nil {

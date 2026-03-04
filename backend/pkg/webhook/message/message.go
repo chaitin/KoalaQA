@@ -14,6 +14,7 @@ const (
 	TypeAIInsightKnowledgeGap
 	TypeUserReviewGuest
 	TypeNewIssue
+	TypeAIInsightHotQuestion
 )
 
 type commonUserThird struct {
