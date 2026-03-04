@@ -85,6 +85,8 @@ func (g *Generator) AIInsight(ctx context.Context, msgType Type) (Message, error
 	switch msgType {
 	case TypeAIInsightKnowledgeGap:
 		return NewAIInsightKnowledgeGap(address), nil
+	case TypeAIInsightHotQuestion:
+		return NewAIInsightHotQuestion(address), nil
 	default:
 		return nil, fmt.Errorf("action %d not support", msgType)
 	}

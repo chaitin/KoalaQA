@@ -4,13 +4,12 @@ import (
 	"context"
 	"errors"
 	"math"
-	"strconv"
+	"sort"
 	"time"
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/database"
 	"github.com/chaitin/koalaqa/pkg/glog"
-	"github.com/chaitin/koalaqa/pkg/llm"
 	"github.com/chaitin/koalaqa/pkg/rag"
 	"github.com/chaitin/koalaqa/pkg/util"
 	"github.com/chaitin/koalaqa/repo"
@@ -141,37 +140,14 @@ func (i *aiInsight2Rank) exist(ctx context.Context, datasetID string, data model
 		return false, nil
 	}
 
-	targets := make([]string, len(records))
-	for i, record := range records {
-		targets[i] = record.Content
-	}
-
-	res, err := i.LLM.Chat(ctx, llm.SimilarityPrompt, "", map[string]any{
-		"Source":  data.Keyword,
-		"Targets": targets,
+	sort.SliceStable(records, func(i, j int) bool {
+		return records[i].Similarity > records[j].Similarity
 	})
-	if err != nil {
-		logger.WithErr(err).Warn("chat to llm failed")
-		return false, err
-	}
-
-	logger = logger.With("llm_res", res)
-
-	index, err := strconv.Atoi(res)
-	if err != nil {
-		logger.Warn("can not atoi, invalid llm response")
-		return false, nil
-	}
-
-	if index >= len(records) || index < 0 {
-		logger.Debug("llm res out of range")
-		return false, nil
-	}
 
 	exist, err := i.RepoRank.UpdateWithExist(ctx, map[string]any{
 		"hit": gorm.Expr("hit+1"),
 	}, repo.QueryWithEqual("type", model.RankTypeAIInsight),
-		repo.QueryWithEqual("rag_id", records[index].DocID),
+		repo.QueryWithEqual("rag_id", records[0].DocID),
 	)
 	if err != nil {
 		logger.WithErr(err).Warn("update hit failed")
@@ -179,9 +155,9 @@ func (i *aiInsight2Rank) exist(ctx context.Context, datasetID string, data model
 	}
 
 	if !exist {
-		err = i.Rag.DeleteRecords(ctx, datasetID, []string{records[index].DocID})
+		err = i.Rag.DeleteRecords(ctx, datasetID, []string{records[0].DocID})
 		if err != nil {
-			logger.WithErr(err).With("rag_id", records[index].DocID).Warn("delete not exist rag failed")
+			logger.WithErr(err).With("rag_id", records[0].DocID).Warn("delete not exist rag failed")
 		}
 	}
 

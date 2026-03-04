@@ -13,6 +13,7 @@ type Rank struct {
 	repoRank          *repo.Rank
 	repoUser          *repo.User
 	repoDiscAIInsight *repo.DiscussionAIInsight
+	repoHotQuestion   *repo.HotQuestion
 	svcBot            *Bot
 }
 
@@ -93,12 +94,51 @@ func (r *Rank) AIInsightDiscussion(ctx context.Context, aiInsightID uint) (*mode
 	return &res, nil
 }
 
-func newRank(r *repo.Rank, user *repo.User, bot *Bot, discAIInsight *repo.DiscussionAIInsight) *Rank {
+func (r *Rank) ListHotQuesion(ctx context.Context) ([]model.RankTimeGroup, error) {
+	now := time.Now()
+	return r.repoRank.GroupByTime(ctx, 3,
+		repo.QueryWithEqual("type", model.RankTypeHotQuestion),
+		repo.QueryWithEqual("created_at", util.WeekTrunc(now), repo.EqualOPLT),
+		repo.QueryWithEqual("created_at", util.WeekTrunc(now.AddDate(0, 0, -21)), repo.EqualOPGTE),
+	)
+}
+
+type ListHotQuestionItemReq struct {
+	*model.Pagination
+}
+
+func (r *Rank) ListHostQuesionItem(ctx context.Context, rankID uint, req ListHotQuestionItemReq) (*model.ListRes[model.HotQuestion], error) {
+	var rank model.Rank
+	err := r.repoRank.GetByID(ctx, &rank, rankID)
+	if err != nil {
+		return nil, err
+	}
+
+	var res model.ListRes[model.HotQuestion]
+	err = r.repoHotQuestion.List(ctx, &res.Items,
+		repo.QueryWithPagination(req.Pagination),
+		repo.QueryWithEqual("group_id", rank.Extra),
+		repo.QueryWithOrderBy("created_at DESC,id DESC"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.repoHotQuestion.Count(ctx, &res.Total, repo.QueryWithEqual("group_id", rank.ForeignID))
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+func newRank(r *repo.Rank, user *repo.User, bot *Bot, discAIInsight *repo.DiscussionAIInsight, hotQuesion *repo.HotQuestion) *Rank {
 	return &Rank{
 		repoRank:          r,
 		repoDiscAIInsight: discAIInsight,
 		repoUser:          user,
 		svcBot:            bot,
+		repoHotQuestion:   hotQuesion,
 	}
 }
 

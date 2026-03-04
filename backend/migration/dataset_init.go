@@ -37,6 +37,9 @@ func (m *datasetInit) Migrate(tx *gorm.DB) error {
 	if err := m.initDataset(tx, model.DatasetFrontend); err != nil {
 		return fmt.Errorf("init frontend dataset failed: %w", err)
 	}
+	if err := m.initDataset(tx, model.DatasetRank); err != nil {
+		return fmt.Errorf("init rank dataset failed: %w", err)
+	}
 	return nil
 }
 

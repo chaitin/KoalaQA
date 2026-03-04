@@ -1,7 +1,10 @@
 package model
 
-var DatasetBackend = "backend"
-var DatasetFrontend = "frontend"
+var (
+	DatasetBackend  = "backend"
+	DatasetFrontend = "frontend"
+	DatasetRank     = "rank"
+)
 
 type Dataset struct {
 	Base

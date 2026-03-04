@@ -10,6 +10,7 @@ import (
 type Dataset struct {
 	backendID  string
 	frontendID string
+	rankID     string
 	base[*model.Dataset]
 }
 
@@ -31,9 +32,15 @@ func (d *Dataset) SetID(name string, id string) {
 		d.backendID = id
 	case model.DatasetFrontend:
 		d.frontendID = id
+	case model.DatasetRank:
+		d.rankID = id
 	}
 }
 
 func (d *Dataset) GetBackendID(ctx context.Context) string {
 	return d.backendID
+}
+
+func (d *Dataset) GetRankID(ctx context.Context) string {
+	return d.rankID
 }

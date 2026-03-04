@@ -17,7 +17,7 @@ func init() {
 
 {{ .HeadingPrefix }}：{{ .Msg.Type }}
 
-建议：AI 对这些问题理解不足，建议前往知识学习完善相关资料
+建议：{{ .Msg.Suggest }}
 
 [点击查看详情]({{ .Msg.URL }})`)
 	if err != nil {
@@ -26,8 +26,9 @@ func init() {
 }
 
 type commonAIInsight struct {
-	Type string
-	URL  string
+	Type    string
+	URL     string
+	Suggest string
 }
 
 type aiInsightMsg struct {
@@ -82,8 +83,24 @@ func NewAIInsightKnowledgeGap(path string) Message {
 			HeadingPrefix: "类型",
 		},
 		Msg: commonAIInsight{
-			Type: "知识缺口",
-			URL:  path,
+			Type:    "知识缺口",
+			URL:     path,
+			Suggest: "AI 对这些问题理解不足，建议前往知识学习完善相关资料",
+		},
+	}
+}
+
+func NewAIInsightHotQuestion(path string) Message {
+	return &aiInsightMsg{
+		Header: Header{
+			MsgType:       TypeAIInsightHotQuestion,
+			MsgTitle:      "你有新的 AI 洞察",
+			HeadingPrefix: "类型",
+		},
+		Msg: commonAIInsight{
+			Type:    "热门问题",
+			URL:     path,
+			Suggest: "近期热门讨论问题，有助于快速聚焦当前核心用户痛点",
 		},
 	}
 }
