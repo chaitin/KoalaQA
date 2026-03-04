@@ -70,7 +70,7 @@ func (r *Rank) UpdateContribute(ctx context.Context, req UpdateContributeReq) er
 
 func (r *Rank) AIInsight(ctx context.Context) ([]model.RankTimeGroup, error) {
 	now := time.Now()
-	return r.repoRank.GroupByTime(ctx, -1, 3,
+	return r.repoRank.GroupByTime(ctx, 3,
 		repo.QueryWithEqual("type", model.RankTypeAIInsight),
 		repo.QueryWithEqual("created_at", util.WeekTrunc(now), repo.EqualOPLT),
 		repo.QueryWithEqual("created_at", util.WeekTrunc(now.AddDate(0, 0, -21)), repo.EqualOPGTE),
@@ -100,7 +100,7 @@ type ListHotQuestionReq struct {
 
 func (r *Rank) ListHotQuesion(ctx context.Context, req ListHotQuestionReq) ([]model.RankTimeGroup, error) {
 	now := time.Now()
-	return r.repoRank.GroupByTime(ctx, req.Count, 3,
+	return r.repoRank.GroupByTime(ctx, req.Count,
 		repo.QueryWithEqual("type", model.RankTypeHotQuestion),
 		repo.QueryWithEqual("created_at", util.WeekTrunc(now), repo.EqualOPLT),
 		repo.QueryWithEqual("created_at", util.WeekTrunc(now.AddDate(0, 0, -21)), repo.EqualOPGTE),

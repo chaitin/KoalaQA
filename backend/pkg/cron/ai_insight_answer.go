@@ -28,7 +28,7 @@ func (i *aiInsightAnswer) Run() {
 
 	i.logger.Info("ai insight answer task begin...")
 
-	groups, err := i.repoRank.GroupByTime(ctx, -1, 3,
+	groups, err := i.repoRank.GroupByTime(ctx, 3,
 		repo.QueryWithEqual("type", model.RankTypeAIInsight),
 		repo.QueryWithEqual("created_at", util.WeekTrunc(now), repo.EqualOPLT),
 		repo.QueryWithEqual("created_at", util.WeekTrunc(now.AddDate(0, 0, -7)), repo.EqualOPGTE),
