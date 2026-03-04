@@ -3466,7 +3466,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/rank/hot_quesion": {
+        "/admin/rank/hot_question": {
             "get": {
                 "produces": [
                     "application/json"

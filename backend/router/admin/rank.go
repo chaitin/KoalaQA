@@ -53,7 +53,7 @@ func (r *rank) ListAIInsightDiscussion(ctx *context.Context) {
 // @Tags rank
 // @Produce json
 // @Success 200 {object} context.Response{data=[]model.RankTimeGroup{items=[]model.RankTimeGroupItem}}
-// @Router /admin/rank/hot_quesion [get]
+// @Router /admin/rank/hot_question [get]
 func (r *rank) ListHotQuestion(ctx *context.Context) {
 	res, err := r.svcRank.ListHotQuesion(ctx)
 	if err != nil {
