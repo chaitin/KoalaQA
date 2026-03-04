@@ -6,6 +6,7 @@ import {
   Dashboard as DashboardIcon,
   Description,
   Notifications,
+  TrendingUp,
   People,
   Search,
 } from '@mui/icons-material';
@@ -24,7 +25,7 @@ import {
   useTheme,
 } from '@mui/material';
 import dayjs from 'dayjs';
-import React, { ReactNode, useEffect, useMemo, useState } from 'react';
+import React, { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Area,
   Bar,
@@ -42,6 +43,7 @@ import {
   getAdminStatSearch,
   getAdminStatTrend,
   getAdminStatVisit,
+  getAdminRankHotQuestion
 } from '../../api';
 import {
   ModelRankTimeGroup,
@@ -75,6 +77,7 @@ interface DashboardData {
   discussions: SvcStatDiscussionItem[] | null;
   searchCount: number | null;
   aiInsights: ModelRankTimeGroup[] | null;
+  hotQuestions: ModelRankTimeGroup[] | null;
   // 独立的趋势数据
   visitTrendData: ModelStatTrend[] | null; // 访问用户情况趋势
   postTrendData: ModelStatTrend[] | null; // 发帖情况趋势
@@ -89,11 +92,13 @@ interface InsightData {
   title: string;
   time: string;
   questions: ModelRankTimeGroupItem[];
+  category: 'knowledgeGap' | 'hotQuestion';
 }
 
 // 扩展的问题处理项接口
 interface ExtendedQuestionItem extends ModelRankTimeGroupItem {
   insightData?: InsightData;
+  category?: 'knowledgeGap' | 'hotQuestion';
 }
 
 interface MetricItem {
@@ -119,6 +124,7 @@ interface InsightItemProps {
   time: string;
   title: string;
   scoreIds: ModelRankTimeGroupItem[];
+  category: 'knowledgeGap' | 'hotQuestion';
   isExpanded?: boolean;
   onQuestionClick?: (item: ExtendedQuestionItem) => void;
 }
@@ -651,7 +657,7 @@ const ChartSection: React.FC<ChartSectionProps> = ({ title, children, showTime =
         height: 'calc(35vh - 21px)',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0px 0px 10px 0px rgba(54,59,76,0.1), 0px 0px 1px 1px rgba(54,59,76,0.03)',
+        boxShadow: 'none!important',
       }}
     >
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
@@ -690,8 +696,8 @@ const MainDashboardCard: React.FC<MainDashboardCardProps> = ({ children, sx = {}
   );
 };
 
-const InsightItem: React.FC<InsightItemProps> = ({ time, title, scoreIds, onQuestionClick }) => {
-  const iconBg = 'rgba(76, 165, 167, 0.10)'; // Red 100 / Cyan 100
+const InsightItem: React.FC<InsightItemProps> = ({ time, title, scoreIds, onQuestionClick, category }) => {
+  const iconBg ='rgba(76, 165, 167, 0.10)';
   const iconColor = 'rgba(76, 165, 167, 1)';
 
   const handleInsightClick = () => {
@@ -702,8 +708,10 @@ const InsightItem: React.FC<InsightItemProps> = ({ time, title, scoreIds, onQues
         insightData: {
           title,
           time,
-          questions: scoreIds,
+          questions: scoreIds.slice(0, 5),
+          category,
         },
+        category,
       });
     }
   };
@@ -734,7 +742,11 @@ const InsightItem: React.FC<InsightItemProps> = ({ time, title, scoreIds, onQues
             height: 32,
           }}
         >
-          <Notifications sx={{ fontSize: 16 }} />
+          {category === 'hotQuestion' ? (
+            <TrendingUp sx={{ fontSize: 16 }} />
+          ) : (
+            <Notifications sx={{ fontSize: 16 }} />
+          )}
         </Avatar>
 
         <Box sx={{ flexGrow: 1 }}>
@@ -767,7 +779,7 @@ const InsightItem: React.FC<InsightItemProps> = ({ time, title, scoreIds, onQues
         }}
       >
         <Stack spacing={1}>
-          {scoreIds.map((item, index) => (
+          {scoreIds.slice(0, 3).map((item, index) => (
             <Typography key={index} variant="caption" color="text.secondary">
               · {item?.score_id || '未知问题'}
             </Typography>
@@ -795,6 +807,7 @@ const Dashboard: React.FC = () => {
     discussions: null,
     searchCount: null,
     aiInsights: null,
+    hotQuestions: null,
     // 独立的趋势数据
     visitTrendData: null,
     postTrendData: null,
@@ -807,7 +820,9 @@ const Dashboard: React.FC = () => {
 
   // 处理AI洞察问题点击
   const handleQuestionClick = (item: ExtendedQuestionItem) => {
-    setCurrentInsightData(item.insightData);
+    if (item.insightData) {
+      setCurrentInsightData(item.insightData);
+    }
     setInsightModalOpen(true);
   };
 
@@ -902,6 +917,7 @@ const Dashboard: React.FC = () => {
       aiResponseRateResponse, // AI 应答率趋势原始数据（固定30天）
       aiResolveRateResponse, // AI 解决率趋势原始数据（固定30天）
       aiInsightResponse,
+      hotQuestionResponse,
     ] = await Promise.all([
       // AI 应答率趋势原始数据 - 固定30天
       getAdminStatTrend({
@@ -918,54 +934,56 @@ const Dashboard: React.FC = () => {
       }),
 
       getAdminRankAiInsight(),
+      getAdminRankHotQuestion({count: 5}).catch(() => null),
     ]);
 
     // 只返回AI相关的数据（不要在这里 setState，避免 effect 调用链触发规则）
     return {
       aiInsights: aiInsightResponse || [],
+      hotQuestions: hotQuestionResponse || [],
       aiResponseRateData: aiResponseRateResponse?.items || [],
       aiResolveRateData: aiResolveRateResponse?.items || [],
     } satisfies Partial<DashboardData>;
   };
 
   // 格式化 AI 洞察数据
-  const aiInsightData = useMemo(() => {
-    const insightData = data.aiInsights;
-    if (!insightData || insightData.length === 0) {
-      return [];
-    }
+  const buildInsightCards = useCallback(
+    (source: ModelRankTimeGroup[] | null | undefined, category: 'knowledgeGap' | 'hotQuestion') => {
+      if (!source || source.length === 0) return [] as { title: string; subtitle: string; items: ModelRankTimeGroupItem[]; category: 'knowledgeGap' | 'hotQuestion'; }[];
 
-    const now = dayjs();
-    const currentWeekStart = now.startOf('week');
+      const now = dayjs();
+      const currentWeekStart = now.startOf('week');
 
-    return insightData.map((item: ModelRankTimeGroup) => {
-      const weekStart = dayjs.unix(item.time || 0);
-      const weekEnd = weekStart.add(6, 'day');
+      return source.map((item: ModelRankTimeGroup) => {
+        const weekStart = dayjs.unix(item.time || 0);
+        const weekEnd = weekStart.add(6, 'day');
 
-      // 判断是否是当前周
-      const isCurrentWeek = weekStart.isSame(currentWeekStart, 'day');
+        const isCurrentWeek = weekStart.isSame(currentWeekStart, 'day');
 
-      let subtitle: string;
-      if (isCurrentWeek) {
-        subtitle = '近7天';
-      } else {
-        // 格式化日期：10月11日-10月18日
-        const startStr = weekStart.format('M月D日');
-        const endStr = weekEnd.format('M月D日');
-        subtitle = `${startStr}-${endStr}`;
-      }
+        let subtitle: string;
+        if (isCurrentWeek) {
+          subtitle = '近7天';
+        } else {
+          const startStr = weekStart.format('M月D日');
+          const endStr = weekEnd.format('M月D日');
+          subtitle = `${startStr}-${endStr}`;
+        }
 
-      // 将 score_ids 转换为问题列表，如果没有则显示空数组
-      // 确保 items 是一个数组
-      const items = Array.isArray(item.items) ? item.items : [];
+        const items = Array.isArray(item.items) ? item.items : [];
 
-      return {
-        title: '发现新的知识缺口',
-        subtitle,
-        items: items,
-      };
-    });
-  }, [data.aiInsights]);
+        return {
+          title: category === 'knowledgeGap' ? '发现新的知识缺口' : '近期热门问题',
+          subtitle,
+          items: items.slice(0, 5),
+          category,
+        };
+      });
+    },
+    [],
+  );
+
+  const aiInsightData = useMemo(() => buildInsightCards(data.aiInsights, 'knowledgeGap'), [buildInsightCards, data.aiInsights]);
+  const hotQuestionData = useMemo(() => buildInsightCards(data.hotQuestions, 'hotQuestion'), [buildInsightCards, data.hotQuestions]);
   // 初始化数据获取 - 只在组件挂载时获取一次AI数据和时间相关数据
   useEffect(() => {
     let cancelled = false;
@@ -1123,7 +1141,7 @@ const Dashboard: React.FC = () => {
             <Grid size={12} sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
               <Grid container spacing={2} sx={{ flex: 1 }}>
                 {/* 主仪表板卡片 */}
-                <Grid size={{ xs: 12, lg: 9 }} sx={{ display: 'flex' }}>
+                <Grid size={{ xs: 12, lg: 9 }} sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, }}>
                   <MainDashboardCard sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                     {/* 时间选择器 */}
                     <TopFilter value={timeRange} onChange={handleTimeRangeChange} />
@@ -1322,8 +1340,172 @@ const Dashboard: React.FC = () => {
                       </Grid>
                     </Grid>
                   </MainDashboardCard>
+                  {/* 第二行：AI 趋势图表 - 全宽底部区域 */}
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <ChartSection title="AI 应答率趋势">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <div style={{ outline: 'none' }} onMouseDown={e => e.preventDefault()}>
+                            <ComposedChart
+                              data={aiResponseRateData}
+                              margin={{ left: 20, right: 10, top: 10, bottom: 10 }}
+                            >
+                              <defs>
+                                <linearGradient id="aiResponseAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stopColor="#2dd4bf" stopOpacity={0.3} />
+                                  <stop offset="100%" stopColor="#2dd4bf" stopOpacity={0} />
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f0f0f0" />
+                              <XAxis
+                                dataKey="name"
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 12, fill: theme.palette.text.secondary }}
+                                interval={6}
+                              />
+                              <Tooltip
+                                contentStyle={{
+                                  borderRadius: 8,
+                                  border: 'none',
+                                  boxShadow: theme.shadows[3],
+                                }}
+                                content={({ active, payload }) => {
+                                  if (active && payload && payload.length > 0) {
+                                    const value = payload[0].value as number;
+                                    const name = payload[0].payload.name as string;
+                                    return (
+                                      <Box
+                                        sx={{
+                                          backgroundColor: 'white',
+                                          padding: 1.5,
+                                          borderRadius: 1,
+                                          boxShadow: theme.shadows[3],
+                                        }}
+                                      >
+                                        <Typography variant="body2" sx={{ mb: 1, fontWeight: 400 }}>
+                                          {name}
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 400 }}>
+                                          AI 应答率：{value.toFixed(1)}%
+                                        </Typography>
+                                      </Box>
+                                    );
+                                  }
+                                  return null;
+                                }}
+                              />
+                              <Area
+                                type="monotone"
+                                dataKey="value"
+                                fill="url(#aiResponseAreaGradient)"
+                                stroke="none"
+                              />
+                              <Area
+                                type="monotone"
+                                dataKey="value"
+                                fill="url(#aiResponseAreaGradient)"
+                                stroke="none"
+                              />
+                              <Line
+                                type="monotone"
+                                dataKey="value"
+                                stroke="#1AA086"
+                                strokeWidth={3}
+                                dot={false}
+                                activeDot={{ r: 4, fill: '#1AA086' }}
+                              />
+                            </ComposedChart>
+                          </div>
+                        </ResponsiveContainer>
+                      </ChartSection>
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <ChartSection title="AI 解决率趋势">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <div style={{ outline: 'none' }} onMouseDown={e => e.preventDefault()}>
+                            <ComposedChart
+                              data={aiResolveRateData}
+                              margin={{ left: 20, right: 10, top: 10, bottom: 10 }}
+                            >
+                              <defs>
+                                <linearGradient id="aiResolveAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stopColor="#FE662A" stopOpacity={0.3} />
+                                  <stop offset="100%" stopColor="#FE662A" stopOpacity={0} />
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f0f0f0" />
+                              <XAxis
+                                dataKey="name"
+                                axisLine={false}
+                                tickLine={false}
+                                tick={{ fontSize: 12, fill: theme.palette.text.secondary }}
+                                interval={6}
+                              />
+                              <Tooltip
+                                contentStyle={{
+                                  borderRadius: 8,
+                                  border: 'none',
+                                  boxShadow: theme.shadows[3],
+                                }}
+                                content={({ active, payload }) => {
+                                  if (active && payload && payload.length > 0) {
+                                    const value = payload[0].value as number;
+                                    const name = payload[0].payload.name as string;
+                                    return (
+                                      <Box
+                                        sx={{
+                                          backgroundColor: 'white',
+                                          padding: 1.5,
+                                          borderRadius: 1,
+                                          boxShadow: theme.shadows[3],
+                                        }}
+                                      >
+                                        <Typography
+                                          variant="body2"
+                                          sx={{ mb: 1, fontWeight: 400, fontSize: '13px' }}
+                                        >
+                                          {name}
+                                        </Typography>
+                                        <Typography
+                                          variant="body2"
+                                          sx={{ fontWeight: 400, fontSize: '13px' }}
+                                        >
+                                          AI 解决率：{value.toFixed(1)}%
+                                        </Typography>
+                                      </Box>
+                                    );
+                                  }
+                                  return null;
+                                }}
+                              />
+                              <Area
+                                type="monotone"
+                                dataKey="value"
+                                fill="url(#aiResolveAreaGradient)"
+                                stroke="none"
+                              />
+                              <Area
+                                type="monotone"
+                                dataKey="value"
+                                fill="url(#aiResolveAreaGradient)"
+                                stroke="none"
+                              />
+                              <Line
+                                type="monotone"
+                                dataKey="value"
+                                stroke="#FE662A"
+                                strokeWidth={3}
+                                dot={false}
+                                activeDot={{ r: 4, fill: '#FE662A' }}
+                              />
+                            </ComposedChart>
+                          </div>
+                        </ResponsiveContainer>
+                      </ChartSection>
+                    </Grid>
+                  </Grid>
                 </Grid>
-
                 {/* 右侧 AI 洞察卡片 */}
                 <Grid
                   size={{ xs: 12, lg: 3 }}
@@ -1354,224 +1536,58 @@ const Dashboard: React.FC = () => {
                     >
                       AI 洞察
                     </Typography>
-                    <Stack
-                      sx={{
-                        flexGrow: 1,
-                        overflowY: 'auto',
-                        maxHeight: 'calc(35vh + 110px)', // 减去标题高度
-                        '&::-webkit-scrollbar': {
-                          width: '4px',
-                        },
-                        '&::-webkit-scrollbar-track': {
-                          background: '#f1f1f1',
-                          borderRadius: '2px',
-                        },
-                        '&::-webkit-scrollbar-thumb': {
-                          background: '#c1c1c1',
-                          borderRadius: '2px',
-                          '&:hover': {
-                            background: '#a8a8a8',
-                          },
-                        },
-                      }}
-                      spacing={1}
-                    >
-                      {aiInsightData && aiInsightData.length > 0 ? (
-                        aiInsightData.map((insight, index) => {
-                          return (
+                    <Grid container spacing={1}>
+                      <Grid size={{ xs: 12 }}>
+                        <Stack
+                          sx={{
+                            mb: 1,
+                            overflowY: 'auto',
+                            '&::-webkit-scrollbar': { width: '4px' },
+                            '&::-webkit-scrollbar-track': { background: '#f1f1f1', borderRadius: '2px' },
+                            '&::-webkit-scrollbar-thumb': { background: '#c1c1c1', borderRadius: '2px', '&:hover': { background: '#a8a8a8' } },
+                          }}
+                          spacing={1}
+                        >
+                          {(
+                            aiInsightData?.slice(0, 3).map((insight, index) => (
+                              <InsightItem
+                                key={`gap-${index}`}
+                                type={'normal'}
+                                time={insight.subtitle}
+                                title={insight.title}
+                                scoreIds={insight.items}
+                                isExpanded={true}
+                                category="knowledgeGap"
+                                onQuestionClick={handleQuestionClick}
+                              />
+                            ))
+                          )}
+                          {hotQuestionData?.slice(0, 3).map((insight, index) => (
                             <InsightItem
-                              key={index}
+                              key={`hot-${index}`}
                               type={'normal'}
                               time={insight.subtitle}
                               title={insight.title}
                               scoreIds={insight.items}
                               isExpanded={true}
+                              category="hotQuestion"
                               onQuestionClick={handleQuestionClick}
                             />
-                          );
-                        })
-                      ) : (
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{ textAlign: 'center', py: 4 }}
-                        >
-                          暂无AI洞察数据
-                        </Typography>
-                      )}
-                    </Stack>
+                          ))}
+                          {!aiInsightData.length && !hotQuestionData.length && (
+                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                              暂无数据
+                            </Typography>)
+                          }
+                        </Stack>
+                      </Grid>
+
+                    </Grid>
                   </Card>
                 </Grid>
               </Grid>
             </Grid>
 
-            {/* 第二行：AI 趋势图表 - 全宽底部区域 */}
-            <Grid size={12}>
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <ChartSection title="AI 应答率趋势">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <div style={{ outline: 'none' }} onMouseDown={e => e.preventDefault()}>
-                        <ComposedChart
-                          data={aiResponseRateData}
-                          margin={{ left: 20, right: 10, top: 10, bottom: 10 }}
-                        >
-                          <defs>
-                            <linearGradient id="aiResponseAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#2dd4bf" stopOpacity={0.3} />
-                              <stop offset="100%" stopColor="#2dd4bf" stopOpacity={0} />
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f0f0f0" />
-                          <XAxis
-                            dataKey="name"
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 12, fill: theme.palette.text.secondary }}
-                            interval={6}
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              borderRadius: 8,
-                              border: 'none',
-                              boxShadow: theme.shadows[3],
-                            }}
-                            content={({ active, payload }) => {
-                              if (active && payload && payload.length > 0) {
-                                const value = payload[0].value as number;
-                                const name = payload[0].payload.name as string;
-                                return (
-                                  <Box
-                                    sx={{
-                                      backgroundColor: 'white',
-                                      padding: 1.5,
-                                      borderRadius: 1,
-                                      boxShadow: theme.shadows[3],
-                                    }}
-                                  >
-                                    <Typography variant="body2" sx={{ mb: 1, fontWeight: 400 }}>
-                                      {name}
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ fontWeight: 400 }}>
-                                      AI 应答率：{value.toFixed(1)}%
-                                    </Typography>
-                                  </Box>
-                                );
-                              }
-                              return null;
-                            }}
-                          />
-                          <Area
-                            type="monotone"
-                            dataKey="value"
-                            fill="url(#aiResponseAreaGradient)"
-                            stroke="none"
-                          />
-                          <Area
-                            type="monotone"
-                            dataKey="value"
-                            fill="url(#aiResponseAreaGradient)"
-                            stroke="none"
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="value"
-                            stroke="#1AA086"
-                            strokeWidth={3}
-                            dot={false}
-                            activeDot={{ r: 4, fill: '#1AA086' }}
-                          />
-                        </ComposedChart>
-                      </div>
-                    </ResponsiveContainer>
-                  </ChartSection>
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <ChartSection title="AI 解决率趋势">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <div style={{ outline: 'none' }} onMouseDown={e => e.preventDefault()}>
-                        <ComposedChart
-                          data={aiResolveRateData}
-                          margin={{ left: 20, right: 10, top: 10, bottom: 10 }}
-                        >
-                          <defs>
-                            <linearGradient id="aiResolveAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#FE662A" stopOpacity={0.3} />
-                              <stop offset="100%" stopColor="#FE662A" stopOpacity={0} />
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f0f0f0" />
-                          <XAxis
-                            dataKey="name"
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 12, fill: theme.palette.text.secondary }}
-                            interval={6}
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              borderRadius: 8,
-                              border: 'none',
-                              boxShadow: theme.shadows[3],
-                            }}
-                            content={({ active, payload }) => {
-                              if (active && payload && payload.length > 0) {
-                                const value = payload[0].value as number;
-                                const name = payload[0].payload.name as string;
-                                return (
-                                  <Box
-                                    sx={{
-                                      backgroundColor: 'white',
-                                      padding: 1.5,
-                                      borderRadius: 1,
-                                      boxShadow: theme.shadows[3],
-                                    }}
-                                  >
-                                    <Typography
-                                      variant="body2"
-                                      sx={{ mb: 1, fontWeight: 400, fontSize: '13px' }}
-                                    >
-                                      {name}
-                                    </Typography>
-                                    <Typography
-                                      variant="body2"
-                                      sx={{ fontWeight: 400, fontSize: '13px' }}
-                                    >
-                                      AI 解决率：{value.toFixed(1)}%
-                                    </Typography>
-                                  </Box>
-                                );
-                              }
-                              return null;
-                            }}
-                          />
-                          <Area
-                            type="monotone"
-                            dataKey="value"
-                            fill="url(#aiResolveAreaGradient)"
-                            stroke="none"
-                          />
-                          <Area
-                            type="monotone"
-                            dataKey="value"
-                            fill="url(#aiResolveAreaGradient)"
-                            stroke="none"
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="value"
-                            stroke="#FE662A"
-                            strokeWidth={3}
-                            dot={false}
-                            activeDot={{ r: 4, fill: '#FE662A' }}
-                          />
-                        </ComposedChart>
-                      </div>
-                    </ResponsiveContainer>
-                  </ChartSection>
-                </Grid>
-              </Grid>
-            </Grid>
           </Grid>
         </Box>
       )}

@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   CircularProgress,
+  Divider,
   Grid,
   IconButton,
   Paper,
@@ -15,22 +16,35 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   getAdminRankAiInsightAiInsightIdDiscussion,
+  getAdminRankHotQuestionHotQuestionId,
   postAdminKbKbIdQuestion,
-  SvcAIInsightDiscussionItem,
 } from '../../api';
-import { ModelDiscussionListItem, ModelRankTimeGroupItem } from '../../api/types';
+import { ModelRankTimeGroupItem } from '../../api/types';
 import { useForumStore, useConfigStore } from '../../store';
 import EditorWrap, { EditorWrapRef } from '../editor';
 
 // ==================== Types ====================
+type InsightCategory = 'knowledgeGap' | 'hotQuestion';
+
+type RelatedQuestionItem = {
+  id?: number;
+  title: string;
+  discussion_id?: string;
+  deleted?: boolean;
+  forum_id?: number;
+};
+
 type QuestionWithPosts = ModelRankTimeGroupItem & {
-  relatedPosts?: SvcAIInsightDiscussionItem[];
+  category: InsightCategory;
+  relatedPosts?: RelatedQuestionItem[];
+  clusterTotal?: number;
 };
 
 interface InsightData {
   title: string;
   time: string;
   questions: ModelRankTimeGroupItem[];
+  category: InsightCategory;
 }
 
 interface AIInsightDetailModalProps {
@@ -59,7 +73,7 @@ const EMPTY_CONTENT = '';
 function useQuestions(isOpen: boolean, insightData?: InsightData) {
   const [questions, setQuestions] = useState<QuestionWithPosts[]>([]);
   const loadingRef = useRef<Set<string>>(new Set());
-  const postsCacheRef = useRef<Map<string, ModelDiscussionListItem[]>>(new Map());
+  const postsCacheRef = useRef<Map<string, RelatedQuestionItem[]>>(new Map());
 
   // 初始化问题列表
   useEffect(() => {
@@ -73,11 +87,14 @@ function useQuestions(isOpen: boolean, insightData?: InsightData) {
     // 在初始化时，保留已经更新过的 associate_id
     setQuestions(prev => {
       const convertedQuestions: QuestionWithPosts[] = insightData.questions.map(item => {
+        const presetTotal = (item as any).hit ?? (item as any).score ?? (item as any).count ?? 0;
         // 如果新数据中已经有 associate_id，使用新数据中的值
         if (item.associate_id !== undefined && item.associate_id > 0) {
           return {
             ...item,
+            category: insightData.category,
             relatedPosts: [],
+            clusterTotal: presetTotal,
           };
         }
         // 如果新数据中没有 associate_id，检查当前 state 中是否有对应的已更新的 associate_id
@@ -85,14 +102,18 @@ function useQuestions(isOpen: boolean, insightData?: InsightData) {
         if (existingQuestion?.associate_id !== undefined && existingQuestion.associate_id > 0) {
           return {
             ...item,
+            category: insightData.category,
             associate_id: existingQuestion.associate_id,
             relatedPosts: existingQuestion.relatedPosts || [],
+            clusterTotal: existingQuestion.clusterTotal ?? presetTotal,
           };
         }
         // 否则使用新数据
         return {
           ...item,
+          category: insightData.category,
           relatedPosts: [],
+          clusterTotal: presetTotal,
         };
       });
 
@@ -106,62 +127,88 @@ function useQuestions(isOpen: boolean, insightData?: InsightData) {
   /**
    * 加载问题的关联帖子
    */
-  const loadRelatedPosts = useCallback(
-    async (scoreId: string, forumId: number, ai_insight_id: number) => {
-      console.log('loadRelatedPosts called:', { scoreId, forumId });
-      if (!forumId || forumId <= 0 || !scoreId) {
-        console.log('loadRelatedPosts: missing forumId or scoreId (or forumId is 0)', {
-          forumId,
-          scoreId,
-        });
-        return;
-      }
+  const loadRelatedPosts = useCallback(async (question: QuestionWithPosts) => {
+    if (!question?.score_id) return;
 
-      // 检查缓存
-      if (postsCacheRef.current.has(scoreId)) {
-        console.log('loadRelatedPosts: using cache for', scoreId);
-        const cachedPosts = postsCacheRef.current.get(scoreId) || [];
-        setQuestions(prev => {
-          const question = prev.find(q => q.score_id === scoreId);
-          // 如果已经有相同的数据，不更新
-          if (question?.relatedPosts?.length === cachedPosts.length) {
-            return prev;
-          }
-          return prev.map(q => (q.score_id === scoreId ? { ...q, relatedPosts: cachedPosts } : q));
-        });
-        return;
-      }
+    const cacheKey = `${question.category}-${question.score_id}`;
 
-      // 检查是否正在加载
-      if (loadingRef.current.has(scoreId)) {
-        console.log('loadRelatedPosts: already loading', scoreId);
-        return;
-      }
+    if (postsCacheRef.current.has(cacheKey)) {
+      const cachedPosts = postsCacheRef.current.get(cacheKey) || [];
+      setQuestions(prev =>
+        prev.map(q => (q.score_id === question.score_id ? { ...q, relatedPosts: cachedPosts } : q))
+      );
+      return;
+    }
 
-      // 标记为正在加载
-      loadingRef.current.add(scoreId);
+    if (loadingRef.current.has(cacheKey)) {
+      return;
+    }
 
-      try {
+    loadingRef.current.add(cacheKey);
+
+    try {
+      let relatedPosts: RelatedQuestionItem[] = [];
+      if (question.category === 'knowledgeGap') {
         const response = await getAdminRankAiInsightAiInsightIdDiscussion({
-          aiInsightId: ai_insight_id,
+          aiInsightId: question.id!,
         });
-
-        const relatedPosts = response.items || [];
-        postsCacheRef.current.set(scoreId, relatedPosts);
-        setQuestions(prev => prev.map(q => (q.score_id === scoreId ? { ...q, relatedPosts } : q)));
-      } catch (error) {
-        console.error('Failed to load related posts:', error);
-        // 即使失败也设置空数组，避免重复请求
-        postsCacheRef.current.set(scoreId, []);
-        setQuestions(prev =>
-          prev.map(q => (q.score_id === scoreId ? { ...q, relatedPosts: [] } : q))
-        );
-      } finally {
-        loadingRef.current.delete(scoreId);
+        relatedPosts = (response.items || []).map(item => ({
+          id: item.id,
+          title: item.title || '无标题',
+          discussion_id: item.discussion_id,
+          deleted: item.deleted,
+          forum_id: question.foreign_id || item.rank_id,
+        }));
+      } else {
+        const hotQuestionId = question.id || question.foreign_id || (question as any)?.rank_id;
+        if (!hotQuestionId) {
+          console.warn('Hot question id missing, skip loadRelatedPosts');
+          loadingRef.current.delete(cacheKey);
+          return;
+        }
+        const response = await getAdminRankHotQuestionHotQuestionId({
+          hotQuestionId,
+          page: 1,
+          size: 50,
+        });
+        relatedPosts = (response.items || []).map(item => ({
+          id: item.id,
+          title: item.content || '无标题',
+          discussion_id: item.discussion_uuid,
+          forum_id: item.id,
+        }));
       }
-    },
-    []
-  );
+
+      postsCacheRef.current.set(cacheKey, relatedPosts);
+      setQuestions(prev =>
+        prev.map(q =>
+          q.score_id === question.score_id
+            ? {
+              ...q,
+              relatedPosts,
+              clusterTotal: q.clusterTotal ?? relatedPosts.length,
+            }
+            : q,
+        )
+      );
+    } catch (error) {
+      console.error('Failed to load related posts:', error);
+      postsCacheRef.current.set(cacheKey, []);
+      setQuestions(prev =>
+        prev.map(q =>
+          q.score_id === question.score_id
+            ? {
+              ...q,
+              relatedPosts: [],
+              clusterTotal: q.clusterTotal || 0,
+            }
+            : q,
+        )
+      );
+    } finally {
+      loadingRef.current.delete(cacheKey);
+    }
+  }, []);
 
   /**
    * 更新问题的 associate_id
@@ -264,6 +311,7 @@ const QuestionItem: React.FC<QuestionItemProps> = ({
 }) => {
   const hasRelatedPosts = (question.relatedPosts?.length ?? 0) > 0;
   const postCount = question.relatedPosts?.length ?? 0;
+  const totalCount = question.clusterTotal ?? postCount;
   const iconBg = 'rgba(0,99,151,0.1)';
   const iconColor = 'rgba(0, 99, 151, 1)';
 
@@ -314,6 +362,23 @@ const QuestionItem: React.FC<QuestionItemProps> = ({
             >
               {question.score_id || `问题 ${index + 1}`}
             </Typography>
+
+            <Box
+              sx={{
+                px: 1,
+                py: 0.25,
+                ml: 1,
+                borderRadius: 1,
+                bgcolor: 'rgba(0,99,151,0.08)',
+                color: iconColor,
+                fontSize: '12px',
+                fontWeight: 600,
+                minWidth: 32,
+                textAlign: 'center',
+              }}
+            >
+              {totalCount > 99 ? '99+' : totalCount}
+            </Box>
 
             <ChevronRightIcon
               sx={{
@@ -371,23 +436,24 @@ const QuestionItem: React.FC<QuestionItemProps> = ({
             <Stack spacing={1}>
               {question.relatedPosts?.map((post, postIndex) => (
                 <Typography
-                  key={post.discussion_id || postIndex}
+                  key={post.discussion_id || `${question.id}-${postIndex}`}
                   variant="caption"
                   onClick={e => {
                     e.stopPropagation();
-                    if (!post.deleted) {
-                      onPostClick(post.discussion_id || '', question.foreign_id || 0);
+                    const targetForumId = post.forum_id || question.foreign_id || 0;
+                    if (!post.deleted && post.discussion_id) {
+                      onPostClick(post.discussion_id, targetForumId);
                     }
                   }}
                   sx={{
                     color: post.deleted ? 'text.disabled' : 'text.secondary',
-                    cursor: post.deleted ? 'default' : 'pointer',
-                    '&:hover': post.deleted
+                    cursor: post.deleted || !post.discussion_id ? 'default' : 'pointer',
+                    '&:hover': post.deleted || !post.discussion_id
                       ? {}
                       : {
-                          color: STYLES.selectedBorder,
-                          textDecoration: 'underline',
-                        },
+                        color: STYLES.selectedBorder,
+                        textDecoration: 'underline',
+                      },
                     '&::before': {
                       content: '"· "',
                       color: STYLES.secondaryText,
@@ -402,6 +468,152 @@ const QuestionItem: React.FC<QuestionItemProps> = ({
         </>
       )}
     </Box>
+  );
+};
+
+// ==================== Hot Question List ====================
+interface HotQuestionListProps {
+  questions: QuestionWithPosts[];
+  expandedId?: number;
+  onToggle: (id: number) => void;
+  onPostClick: (uuid: string, forumId: number) => void;
+  onLoadPosts: (question: QuestionWithPosts) => void;
+  onCollapseAll: () => void;
+}
+
+const HotQuestionList: React.FC<HotQuestionListProps> = ({
+  questions,
+  expandedId,
+  onToggle,
+  onPostClick,
+  onLoadPosts,
+  onCollapseAll,
+}) => {
+  return (
+    <Stack spacing={1.25}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 0.5 }}>
+        <Typography variant="body2" color="text.secondary">
+          问题簇（最多展示 5 个）
+        </Typography>
+        <Button
+          size="small"
+          variant="text"
+          onClick={onCollapseAll}
+          sx={{ textTransform: 'none', minWidth: 64 }}
+        >
+          收起全部
+        </Button>
+      </Stack>
+      {questions.slice(0, 5).map((q, idx) => {
+        const isOpen = expandedId === q.id;
+        const count = q.clusterTotal ?? q.relatedPosts?.length ?? 0;
+
+        return (
+          <Box
+            key={q.id || idx}
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              bgcolor: '#ffffff',
+              border: '1px solid #e5e7eb',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={1.25}
+              sx={{ cursor: 'pointer' }}
+              onClick={() => {
+                onToggle(q.id || idx);
+                if (!q.relatedPosts || q.relatedPosts.length === 0) {
+                  onLoadPosts(q);
+                }
+              }}
+            >
+              <Avatar
+                sx={{
+                  width: 24,
+                  height: 24,
+                  fontSize: '12px',
+                  bgcolor: '#e5e7eb',
+                  color: '#111827',
+                  fontWeight: 700,
+                }}
+              >
+                {idx + 1}
+              </Avatar>
+              <Typography
+                variant="body1"
+                fontWeight={600}
+                sx={{ flex: 1, color: '#111827', lineHeight: 1.5 }}
+                noWrap
+              >
+                {q.score_id || '热门问题'}
+              </Typography>
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ color: '#6b7280' }}>
+                <Typography variant="body2" sx={{ minWidth: 44, textAlign: 'right', fontWeight: 600 }}>
+                  {count} 次
+                </Typography>
+                <IconButton size="small">
+                  <ChevronRightIcon
+                    sx={{
+                      fontSize: 18,
+                      color: '#6b7280',
+                      transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.2s ease',
+                    }}
+                  />
+                </IconButton>
+              </Stack>
+            </Stack>
+
+            {isOpen && (q.relatedPosts?.length || 0) > 0 && (
+              <>
+                <Divider sx={{ mt: 2, mx: -2, }} />
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    mt: 1.5,
+                    py: 0.5,
+                    border: 'none',
+                    bgcolor: '#fff',
+                    boxShadow: 'none'
+                  }}
+                >
+                  <Stack spacing={0.75}>
+                    {q.relatedPosts?.slice(0, 5).map((post, i) => (
+                      <Typography
+                        key={post.discussion_id || `${q.id}-${i}`}
+                        variant="body2"
+                        onClick={() => {
+                          if (post.discussion_id) {
+                            onPostClick(post.discussion_id, post.forum_id || q.foreign_id || 0);
+                          }
+                        }}
+                        sx={{
+                          cursor: post.discussion_id ? 'pointer' : 'default',
+                          // bgcolor: '#f5f7fb',
+                          px: 1.15,
+                          py: 0.8,
+                          borderRadius: 1,
+                          border: '1px solid #e6e8ef',
+                          '&:hover': post.discussion_id
+                            ? { color: '#2563eb', borderColor: '#d3d8e6', backgroundColor: '#eef2fb' }
+                            : {},
+                        }}
+                      >
+                        {post.title || '无标题'}
+                      </Typography>
+                    ))}
+                  </Stack>
+                </Paper>
+              </>
+            )}
+          </Box>
+        );
+      })}
+    </Stack>
   );
 };
 
@@ -624,26 +836,8 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
     setTimeout(setEditorContent, 0);
     setTimeout(setEditorContent, 100);
 
-    // 加载关联帖子（foreign_id 为 0 时不请求）
-    // 如果已经有相关帖子数据，说明已经加载过，不需要重新请求
-    if (
-      selectedQuestion.score_id &&
-      selectedQuestion.foreign_id &&
-      selectedQuestion.foreign_id > 0
-    ) {
-      // 检查是否已经有相关帖子数据，如果有就不需要重新请求
-      if (!selectedQuestion.relatedPosts || selectedQuestion.relatedPosts.length === 0) {
-        loadRelatedPosts(
-          selectedQuestion.score_id,
-          selectedQuestion.foreign_id,
-          selectedQuestion.id!
-        );
-      }
-    } else {
-      console.log('useEffect: missing score_id or foreign_id (or foreign_id is 0)', {
-        score_id: selectedQuestion.score_id,
-        foreign_id: selectedQuestion.foreign_id,
-      });
+    if (!selectedQuestion.relatedPosts || selectedQuestion.relatedPosts.length === 0) {
+      void loadRelatedPosts(selectedQuestion);
     }
   }, [open, selectedId, selectedQuestion, loadRelatedPosts]);
 
@@ -710,6 +904,67 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
 
   if (!open) return null;
 
+  const isHot = insightData?.category === 'hotQuestion';
+  
+  if (isHot) {
+    return (
+      <Box
+        sx={{
+          p: 3,
+          width: '100%',
+          backgroundColor: '#fff',
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          overflow: 'hidden',
+        }}
+      >
+        <Box
+          sx={{
+            mb: 2,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Box>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ color: '#2563eb' }}>
+              <Typography variant="h6" fontWeight={700} sx={{ color: '#0f172a' }}>
+                热门问题
+              </Typography>
+            </Stack>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              {insightData?.time || ''}
+            </Typography>
+          </Box>
+          <IconButton
+            onClick={handleClose}
+            sx={{
+              flexShrink: 0,
+              width: '36px',
+              height: '36px',
+              color: STYLES.secondaryText,
+              '&:hover': { color: STYLES.primaryText, backgroundColor: 'rgba(0,0,0,0.04)' },
+            }}
+          >
+            ×
+          </IconButton>
+        </Box>
+
+        <Box sx={{ flex: 1, overflow: 'auto' }}>
+          <HotQuestionList
+            questions={questions}
+            expandedId={selectedId}
+            onToggle={id => setSelectedId(id)}
+            onPostClick={handlePostClick}
+            onLoadPosts={loadRelatedPosts}
+            onCollapseAll={() => setSelectedId(undefined)}
+          />
+        </Box>
+      </Box>
+    );
+  }
+
   return (
     <Box
       sx={{
@@ -740,7 +995,7 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
               fontSize: '18px',
             }}
           >
-            发现新的知识缺口
+            {insightData?.category === 'hotQuestion' ? '近期热门问题' : '发现新的知识缺口'}
           </Typography>
           <Typography
             variant="body2"
@@ -749,8 +1004,10 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
               fontSize: '13px',
             }}
           >
-            AI 对此类问题理解不足,建议前往知识学习完善相关资料・
-            {insightData?.time || '10月10日~10月16日'}
+            {insightData?.category === 'hotQuestion'
+              ? '近期热门讨论问题，帮助快速聚焦当前用户痛点'
+              : 'AI 对此类问题理解不足，建议完善知识库资料'}
+            ・{insightData?.time || '10月10日~10月16日'}
           </Typography>
         </Box>
         <IconButton
