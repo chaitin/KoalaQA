@@ -3475,6 +3475,13 @@ const docTemplate = `{
                     "rank"
                 ],
                 "summary": "hot question rank",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "name": "count",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",

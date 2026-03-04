@@ -4830,6 +4830,10 @@ paths:
       - rank
   /admin/rank/hot_question:
     get:
+      parameters:
+      - in: query
+        name: count
+        type: integer
       produces:
       - application/json
       responses:

@@ -52,10 +52,18 @@ func (r *rank) ListAIInsightDiscussion(ctx *context.Context) {
 // @Summary hot question rank
 // @Tags rank
 // @Produce json
+// @Param req query svc.ListHotQuestionReq true "req param"
 // @Success 200 {object} context.Response{data=[]model.RankTimeGroup{items=[]model.RankTimeGroupItem}}
 // @Router /admin/rank/hot_question [get]
 func (r *rank) ListHotQuestion(ctx *context.Context) {
-	res, err := r.svcRank.ListHotQuesion(ctx)
+	var req svc.ListHotQuestionReq
+	err := ctx.ShouldBindQuery(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	res, err := r.svcRank.ListHotQuesion(ctx, req)
 	if err != nil {
 		ctx.InternalError(err, "list hot quesion failed")
 		return

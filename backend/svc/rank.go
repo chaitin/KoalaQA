@@ -94,9 +94,13 @@ func (r *Rank) AIInsightDiscussion(ctx context.Context, aiInsightID uint) (*mode
 	return &res, nil
 }
 
-func (r *Rank) ListHotQuesion(ctx context.Context) ([]model.RankTimeGroup, error) {
+type ListHotQuestionReq struct {
+	Count int `form:"count,default=3"`
+}
+
+func (r *Rank) ListHotQuesion(ctx context.Context, req ListHotQuestionReq) ([]model.RankTimeGroup, error) {
 	now := time.Now()
-	return r.repoRank.GroupByTime(ctx, 3,
+	return r.repoRank.GroupByTime(ctx, req.Count,
 		repo.QueryWithEqual("type", model.RankTypeHotQuestion),
 		repo.QueryWithEqual("created_at", util.WeekTrunc(now), repo.EqualOPLT),
 		repo.QueryWithEqual("created_at", util.WeekTrunc(now.AddDate(0, 0, -21)), repo.EqualOPGTE),
