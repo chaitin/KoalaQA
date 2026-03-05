@@ -60,7 +60,7 @@ type StatInvalidKnowledgeDoc struct {
 type StatInvalidKnowledge struct {
 	StatInvalidKnowledgeDoc
 
-	Key string `json:"string"`
+	Key string `json:"key"`
 }
 
 func (s *StatInfo) UUID() string {
