@@ -11,6 +11,8 @@ interface WrapProps {
   placeholder?: string;
   readonly?: boolean;
   mode?: 'advanced' | 'simple';
+  showToolbar?: boolean;
+  autoFocus?: 'start' | 'end' | false;
   onChange?: (value: string) => void; // 双向绑定的变更回调，类似input组件的onChange
   onTocUpdate?: ((toc: any) => void) | boolean; // 可选，默认false；true表示仅启用但不回调
 }
@@ -34,6 +36,8 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
       onTocUpdate,
       mode = 'simple',
       readonly = false,
+      showToolbar = true,
+      autoFocus = 'end',
     }: WrapProps,
     ref
   ) => {
@@ -151,11 +155,13 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
     });
     useEffect(() => {
       if (!editorRef?.editor) return;
+      if (autoFocus === false) return;
       const timer = setTimeout(() => {
-        editorRef.editor?.commands.focus('end');
+        const position = autoFocus === 'start' ? 'start' : 'end';
+        editorRef.editor?.commands.focus(position as any);
       }, 0);
       return () => clearTimeout(timer);
-    }, [editorRef?.editor]);
+    }, [editorRef?.editor, autoFocus]);
 
     // 当 readonly 状态改变时，更新编辑器的可编辑状态
     useEffect(() => {
@@ -261,7 +267,7 @@ const EditorWrap = forwardRef<EditorWrapRef, WrapProps>(
         >
           {editorRef.editor && (
             <>
-              <EditorToolbar editor={editorRef.editor} mode={mode} />
+              {showToolbar && <EditorToolbar editor={editorRef.editor} mode={mode} />}
               <Editor editor={editorRef.editor} />
             </>
           )}

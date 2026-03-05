@@ -11,8 +11,10 @@ import {
   Stack,
   TextField,
   Typography,
+  Chip,
 } from '@mui/material';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   getAdminRankAiInsightAiInsightIdDiscussion,
@@ -24,7 +26,7 @@ import { useForumStore, useConfigStore } from '../../store';
 import EditorWrap, { EditorWrapRef } from '../editor';
 
 // ==================== Types ====================
-type InsightCategory = 'knowledgeGap' | 'hotQuestion';
+type InsightCategory = 'knowledgeGap' | 'hotQuestion' | 'invalidKnowledge';
 
 type RelatedQuestionItem = {
   id?: number;
@@ -38,11 +40,13 @@ type QuestionWithPosts = ModelRankTimeGroupItem & {
   category: InsightCategory;
   relatedPosts?: RelatedQuestionItem[];
   clusterTotal?: number;
+  parsedExtra?: any;
 };
 
 interface InsightData {
   title: string;
   time: string;
+  timeStart?: number;
   questions: ModelRankTimeGroupItem[];
   category: InsightCategory;
 }
@@ -63,6 +67,16 @@ const STYLES = {
   defaultBg: 'rgb(246 247 250)',
   dividerLine: 'rgb(170 179 210)',
 } as const;
+
+const TYPE_LABELS: Record<number, string> = {
+  0: '未知类型',
+  1: '问答对',
+  2: '通用文档',
+  3: '知识库',
+  4: '在线网页',
+};
+
+const DIALOG_BODY_HEIGHT = '70vh';
 
 const EMPTY_CONTENT = '';
 
@@ -87,6 +101,14 @@ function useQuestions(isOpen: boolean, insightData?: InsightData) {
     // 在初始化时，保留已经更新过的 associate_id
     setQuestions(prev => {
       const convertedQuestions: QuestionWithPosts[] = insightData.questions.map(item => {
+        let parsedExtra: any = undefined;
+        if (item.extra) {
+          try {
+            parsedExtra = JSON.parse(item.extra);
+          } catch (e) {
+            parsedExtra = undefined;
+          }
+        }
         const presetTotal = (item as any).hit ?? (item as any).score ?? (item as any).count ?? 0;
         // 如果新数据中已经有 associate_id，使用新数据中的值
         if (item.associate_id !== undefined && item.associate_id > 0) {
@@ -95,6 +117,7 @@ function useQuestions(isOpen: boolean, insightData?: InsightData) {
             category: insightData.category,
             relatedPosts: [],
             clusterTotal: presetTotal,
+            parsedExtra,
           };
         }
         // 如果新数据中没有 associate_id，检查当前 state 中是否有对应的已更新的 associate_id
@@ -106,6 +129,7 @@ function useQuestions(isOpen: boolean, insightData?: InsightData) {
             associate_id: existingQuestion.associate_id,
             relatedPosts: existingQuestion.relatedPosts || [],
             clusterTotal: existingQuestion.clusterTotal ?? presetTotal,
+            parsedExtra: existingQuestion.parsedExtra ?? parsedExtra,
           };
         }
         // 否则使用新数据
@@ -114,6 +138,7 @@ function useQuestions(isOpen: boolean, insightData?: InsightData) {
           category: insightData.category,
           relatedPosts: [],
           clusterTotal: presetTotal,
+          parsedExtra,
         };
       });
 
@@ -129,6 +154,7 @@ function useQuestions(isOpen: boolean, insightData?: InsightData) {
    */
   const loadRelatedPosts = useCallback(async (question: QuestionWithPosts) => {
     if (!question?.score_id) return;
+    if (question.category === 'invalidKnowledge') return;
 
     const cacheKey = `${question.category}-${question.score_id}`;
 
@@ -363,23 +389,6 @@ const QuestionItem: React.FC<QuestionItemProps> = ({
               {question.score_id || `问题 ${index + 1}`}
             </Typography>
 
-            <Box
-              sx={{
-                px: 1,
-                py: 0.25,
-                ml: 1,
-                borderRadius: 1,
-                bgcolor: 'rgba(0,99,151,0.08)',
-                color: iconColor,
-                fontSize: '12px',
-                fontWeight: 600,
-                minWidth: 32,
-                textAlign: 'center',
-              }}
-            >
-              {totalCount > 99 ? '99+' : totalCount}
-            </Box>
-
             <ChevronRightIcon
               sx={{
                 fontSize: '18px',
@@ -475,10 +484,9 @@ const QuestionItem: React.FC<QuestionItemProps> = ({
 interface HotQuestionListProps {
   questions: QuestionWithPosts[];
   expandedId?: number;
-  onToggle: (id: number) => void;
+  onToggle: (id?: number) => void;
   onPostClick: (uuid: string, forumId: number) => void;
   onLoadPosts: (question: QuestionWithPosts) => void;
-  onCollapseAll: () => void;
 }
 
 const HotQuestionList: React.FC<HotQuestionListProps> = ({
@@ -487,23 +495,9 @@ const HotQuestionList: React.FC<HotQuestionListProps> = ({
   onToggle,
   onPostClick,
   onLoadPosts,
-  onCollapseAll,
 }) => {
   return (
     <Stack spacing={1.25}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 0.5 }}>
-        <Typography variant="body2" color="text.secondary">
-          问题簇（最多展示 5 个）
-        </Typography>
-        <Button
-          size="small"
-          variant="text"
-          onClick={onCollapseAll}
-          sx={{ textTransform: 'none', minWidth: 64 }}
-        >
-          收起全部
-        </Button>
-      </Stack>
       {questions.slice(0, 5).map((q, idx) => {
         const isOpen = expandedId === q.id;
         const count = q.clusterTotal ?? q.relatedPosts?.length ?? 0;
@@ -716,6 +710,8 @@ const EditorSection: React.FC<EditorSectionProps> = ({
           value={editorValue}
           placeholder="请输入内容"
           readonly={isAssociated}
+          showToolbar={false}
+          autoFocus={false}
         />
       </Paper>
 
@@ -763,7 +759,6 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
   const [titleValue, setTitleValue] = useState<string>('');
   const editorRef = useRef<EditorWrapRef>(null);
   const { forums } = useForumStore();
-
   const { questions, loadRelatedPosts, updateQuestionAssociateId } = useQuestions(
     open,
     insightData
@@ -905,7 +900,192 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
   if (!open) return null;
 
   const isHot = insightData?.category === 'hotQuestion';
-  
+  const isInvalid = insightData?.category === 'invalidKnowledge';
+
+  if (isInvalid) {
+    const timeStart = insightData?.timeStart;
+
+    const parseStartFromSubtitle = (subtitle?: string): dayjs.Dayjs | null => {
+      if (!subtitle) return null;
+      const match = subtitle.match(/(\d{1,2})月(\d{1,2})日/);
+      if (!match) return null;
+      const month = Number(match[1]);
+      const day = Number(match[2]);
+      if (Number.isNaN(month) || Number.isNaN(day)) return null;
+      return dayjs().month(month - 1).date(day).startOf('day');
+    };
+
+    const buildSubtitle = () => {
+      const prefix = '发现知识内容可能已不再准确或适用，建议尽快更新';
+      let startDay: dayjs.Dayjs | null = null;
+
+      if (timeStart !== undefined && timeStart !== null) {
+        const startValue = typeof timeStart === 'number' && timeStart < 1e12
+          ? dayjs.unix(timeStart)
+          : dayjs(timeStart);
+        if (startValue.isValid()) {
+          startDay = startValue.startOf('day');
+        }
+      }
+
+      if (!startDay) {
+        startDay = parseStartFromSubtitle(insightData?.time);
+      }
+
+      if (!startDay) {
+        return insightData?.time ? `${prefix}·${insightData.time}` : prefix;
+      }
+
+      const endDay = startDay.add(1, 'month').startOf('month');
+      const startStr = startDay.format('M月D日');
+      const endStr = endDay.format('M月D日');
+      return `${prefix}·${startStr}-${endStr}`;
+    };
+
+    const subtitleText = buildSubtitle();
+
+    return (
+      <Box
+        sx={{
+          p: 3,
+          width: '100%',
+          backgroundColor: '#f8fafc',
+          display: 'flex',
+          flexDirection: 'column',
+          height: DIALOG_BODY_HEIGHT,
+          maxHeight: DIALOG_BODY_HEIGHT,
+          overflow: 'hidden',
+        }}
+      >
+        <Box
+          sx={{
+            mb: 2,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Box>
+            <Typography variant="h6" fontWeight={700} sx={{ color: '#0f172a', fontSize: 18 }}>
+              识别疑似失效知识
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              {subtitleText}
+            </Typography>
+          </Box>
+          <IconButton
+            onClick={handleClose}
+            sx={{
+              flexShrink: 0,
+              width: '36px',
+              height: '36px',
+              color: STYLES.secondaryText,
+              '&:hover': { color: STYLES.primaryText, backgroundColor: 'rgba(0,0,0,0.04)' },
+            }}
+          >
+            ×
+          </IconButton>
+        </Box>
+
+        <Box sx={{ flex: 1, overflow: 'auto', pr: 0.5 }}>
+          <Stack spacing={1.5}>
+            {questions.map((q, idx) => {
+              const extra = q.parsedExtra || {};
+              const docTitle = extra.title || q.score_id || '未知文档';
+              const docTypeCode = extra.type ?? extra.doc_type;
+              const docType = typeof docTypeCode === 'number'
+                ? TYPE_LABELS[docTypeCode] || '-'
+                : docTypeCode || '-';
+              const updatedAtRaw = extra.updated_at;
+              const updatedAt = updatedAtRaw
+                ? dayjs(
+                  typeof updatedAtRaw === 'number' && updatedAtRaw < 1e12
+                    ? updatedAtRaw * 1000
+                    : updatedAtRaw,
+                ).format('YYYY-MM-DD')
+                : '-';
+              const downvote =
+                extra.dislike_count ??
+                extra.dislike ??
+                extra.downvote ??
+                extra.downvote_count ??
+                extra.thumb_down ??
+                0;
+              const hit =
+                extra.hit ??
+                extra.hit_count ??
+                extra.score ??
+                extra.count ??
+                0;
+              const reason = extra.reason || extra.desc || extra.description || extra.summary || '';
+
+              return (
+                <Paper
+                  key={q.id || idx}
+                  elevation={0}
+                  sx={{
+                    p: 2,
+                    borderRadius: 2,
+                    border: '1px solid #e5e7eb',
+                    background: 'linear-gradient(135deg, #f9fbff 0%, #ffffff 100%)',
+                    userSelect: 'none',
+                  }}
+                >
+                  <Stack direction="row" alignItems="flex-start" spacing={1.5}>
+                    {docType && docType !== '-' ? (
+                      <Chip
+                        label={docType}
+                        size="small"
+                        sx={{
+                          bgcolor: 'rgba(37, 99, 235, 0.12)',
+                          color: '#1d4ed8',
+                          borderRadius: '6px',
+                          fontWeight: 700,
+                          height: 26,
+                          px: 0.5,
+                        }}
+                      />
+                    ) : (
+                      <Box sx={{ width: 26 }} />
+                    )}
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
+                        <Typography
+                          variant="body1"
+                          fontWeight={700}
+                          sx={{ flex: 1, color: '#0f172a', lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                        >
+                          {docTitle}
+                        </Typography>
+                      </Stack>
+                      {reason && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }} noWrap>
+                          {reason}
+                        </Typography>
+                      )}
+                    </Box>
+                  </Stack>
+
+                  <Stack direction="row" spacing={2} mt={1.25} alignItems="center" flexWrap="wrap" rowGap={0.75}>
+                    <Typography variant="caption" color="text.secondary">
+                      更新时间：{updatedAt}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      点踩：{downvote}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      命中：{hit}
+                    </Typography>
+                  </Stack>
+                </Paper>
+              );
+            })}
+          </Stack>
+        </Box>
+      </Box>
+    );
+  }
+
   if (isHot) {
     return (
       <Box
@@ -915,7 +1095,8 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
           backgroundColor: '#fff',
           display: 'flex',
           flexDirection: 'column',
-          height: '100%',
+          height: DIALOG_BODY_HEIGHT,
+          maxHeight: DIALOG_BODY_HEIGHT,
           overflow: 'hidden',
         }}
       >
@@ -929,8 +1110,8 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
         >
           <Box>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ color: '#2563eb' }}>
-              <Typography variant="h6" fontWeight={700} sx={{ color: '#0f172a' }}>
-                热门问题
+              <Typography variant="h6" fontWeight={700} sx={{ color: '#0f172a', fontSize: 18 }}>
+                近期热门问题
               </Typography>
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
@@ -958,7 +1139,6 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
             onToggle={id => setSelectedId(id)}
             onPostClick={handlePostClick}
             onLoadPosts={loadRelatedPosts}
-            onCollapseAll={() => setSelectedId(undefined)}
           />
         </Box>
       </Box>
@@ -973,7 +1153,9 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
         backgroundColor: '#fff',
         display: 'flex',
         flexDirection: 'column',
-        height: '100%',
+        height: DIALOG_BODY_HEIGHT,
+        maxHeight: DIALOG_BODY_HEIGHT,
+        overflow: 'hidden',
       }}
     >
       {/* Header */}
@@ -1025,24 +1207,39 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
       </Box>
 
       {/* Main Content */}
-      <Grid container spacing={3} sx={{ flex: 1 }}>
-        {/* Left: Question List */}
-        <Grid size={{ xs: 12, md: 4 }} sx={{ overflow: 'auto', maxHeight: 'calc(100vh - 200px)' }}>
-          <QuestionList
-            questions={questions}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            onPostClick={handlePostClick}
-          />
-        </Grid>
+        <Grid container spacing={3} sx={{ flex: 1, minHeight: 0 }}>
+          {/* Left: Question List */}
+          <Grid
+            size={{ xs: 12, md: 4 }}
+            sx={{
+              overflow: 'auto',
+              maxHeight: '100%',
+              pr: 1,
+            }}
+          >
+            <QuestionList
+              questions={questions}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              onPostClick={handlePostClick}
+            />
+          </Grid>
 
-        {/* Right: Editor */}
-        <Grid size={{ xs: 12, md: 8 }} sx={{ display: 'flex', flexDirection: 'column' }}>
-          <EditorSection
-            question={selectedQuestion}
-            editorRef={editorRef}
-            editorValue={editorValue}
-            titleValue={titleValue}
+          {/* Right: Editor */}
+          <Grid
+            size={{ xs: 12, md: 8 }}
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              maxHeight: '100%',
+              minHeight: 0,
+            }}
+          >
+            <EditorSection
+              question={selectedQuestion}
+              editorRef={editorRef}
+              editorValue={editorValue}
+              titleValue={titleValue}
             onTitleChange={setTitleValue}
             onSave={handleSave}
             saving={saving}
