@@ -137,7 +137,7 @@ func (r *Rank) ListHostQuesionItem(ctx context.Context, rankID uint, req ListHot
 }
 
 type ListInvalidKnowledgeReq struct {
-	Count int `form:"count,default=3"`
+	Count int `form:"count,default=10"`
 }
 
 func (r *Rank) ListInvalidKnowledge(ctx context.Context, req ListInvalidKnowledgeReq) ([]model.RankTimeGroup, error) {
