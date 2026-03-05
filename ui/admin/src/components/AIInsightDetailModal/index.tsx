@@ -705,14 +705,14 @@ const EditorSection: React.FC<EditorSectionProps> = ({
           },
         }}
       >
-        <EditorWrap
+        {!!editorValue && <EditorWrap
           ref={editorRef}
           value={editorValue}
           placeholder="请输入内容"
           readonly={isAssociated}
           showToolbar={false}
           autoFocus={false}
-        />
+        />}
       </Paper>
 
       {/* Save Button or Status Text */}
