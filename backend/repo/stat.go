@@ -93,7 +93,7 @@ func (s *Stat) InvalidKnowledge(ctx context.Context, queryFuncs ...QueryOptFunc)
 		Where("stats.assocaite_id IN (select id from discussions where type = ?)", model.DiscussionTypeQA).
 		Where("comments.bot = ?", true).
 		Group("stats.key").
-		Select("stats.key, MAX(kb_documents.title) AS title, MAX(kb_documents.doc_type) AS type, MAX(kb_documents.updated_at) as updated_at, COUNT(DISTINCT comment_likes.id) AS dislike_count, COUNT(DISTINCT stats.key) AS hit_count").
+		Select("stats.key, MAX(kb_documents.title) AS title, MAX(kb_documents.doc_type) AS type, MAX(kb_documents.updated_at) as updated_at, COUNT(DISTINCT comment_likes.id) AS dislike_count, COUNT(DISTINCT stats.id) AS hit_count").
 		Find(&res).Error
 	if err != nil {
 		return nil, err
