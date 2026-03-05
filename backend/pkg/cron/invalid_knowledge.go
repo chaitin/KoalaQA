@@ -191,6 +191,10 @@ func (i *invalidKnowledge) Run() {
 			Extra:   string(docBytes),
 		})
 	}
+	if len(ranks) == 0 {
+		logger.Info("empty ranks. return")
+		return
+	}
 
 	err = i.rank.BatchCreate(ctx, &ranks)
 	if err != nil {
