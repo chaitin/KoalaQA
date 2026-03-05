@@ -88,12 +88,12 @@ func (s *Stat) InvalidKnowledge(ctx context.Context, queryFuncs ...QueryOptFunc)
 	err := s.model(ctx).Scopes(o.Scopes()...).
 		Joins("LEFT JOIN comment_likes ON stats.assocaite_id = comment_likes.discussion_id AND comment_likes.state = ?", model.CommentLikeStateDislike).
 		Joins("JOIN kb_documents ON stats.key::bigint = kb_documents.id").
-		Joins("JOIN comments ON comments.id = comment_likes.comment_id").
+		Joins("LEFT JOIN comments ON comments.id = comment_likes.comment_id").
 		Where("stats.type = ?", model.StatTypeKnowledgeHit).
 		Where("stats.assocaite_id IN (select id from discussions where type = ?)", model.DiscussionTypeQA).
 		Where("comments.bot = ?", true).
 		Group("stats.key").
-		Select("stats.key, MAX(kb_documents.title) AS title, MAX(kb_documents.doc_type) AS type, MAX(kb_documents.updated_at) as updated_at, COUNT(comment_likes.id) AS dislike_count, COUNT(stats.key) AS hit_count").
+		Select("stats.key, MAX(kb_documents.title) AS title, MAX(kb_documents.doc_type) AS type, MAX(kb_documents.updated_at) as updated_at, COUNT(DISTINCT comment_likes.id) AS dislike_count, COUNT(DISTINCT stats.key) AS hit_count").
 		Find(&res).Error
 	if err != nil {
 		return nil, err
