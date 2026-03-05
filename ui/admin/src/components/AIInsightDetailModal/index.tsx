@@ -696,7 +696,7 @@ const EditorSection: React.FC<EditorSectionProps> = ({
           borderColor: 'divider',
           borderRadius: 1,
           mb: 2,
-          maxHeight: '300px',
+          maxHeight: '340px',
           '& .tiptap': {
             px: 1,
             height: '100%',
@@ -1207,43 +1207,45 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
       </Box>
 
       {/* Main Content */}
-        <Grid container spacing={3} sx={{ flex: 1, minHeight: 0 }}>
-          {/* Left: Question List */}
-          <Grid
-            size={{ xs: 12, md: 4 }}
-            sx={{
-              overflow: 'auto',
-              maxHeight: '100%',
-              pr: 1,
-            }}
-          >
-            <QuestionList
-              questions={questions}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-              onPostClick={handlePostClick}
-            />
-          </Grid>
+      <Grid container spacing={3} sx={{ flex: 1, minHeight: 0 }}>
+        {/* Left: Question List */}
+        <Grid
+          size={{ xs: 12, md: 4 }}
+          sx={{
+            overflow: 'auto',
+            maxHeight: '100%',
+            pr: 1,
+          }}
+        >
+          <QuestionList
+            questions={questions}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            onPostClick={handlePostClick}
+          />
+        </Grid>
 
-          {/* Right: Editor */}
-          <Grid
-            size={{ xs: 12, md: 8 }}
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              maxHeight: '100%',
-              minHeight: 0,
-            }}
-          >
+        {/* Right: Editor */}
+        <Grid
+          size={{ xs: 12, md: 8 }}
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: '100%',
+            minHeight: 0,
+          }}
+        >
+          <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
             <EditorSection
               question={selectedQuestion}
               editorRef={editorRef}
               editorValue={editorValue}
               titleValue={titleValue}
-            onTitleChange={setTitleValue}
-            onSave={handleSave}
-            saving={saving}
-          />
+              onTitleChange={setTitleValue}
+              onSave={handleSave}
+              saving={saving}
+            />
+          </Box>
         </Grid>
       </Grid>
     </Box>
