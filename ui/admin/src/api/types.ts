@@ -84,6 +84,7 @@ export enum ModelStatType {
   StatTypeDiscussionBlog = 6,
   StatTypeDiscussionIssue = 7,
   StatTypeBotUnknownComment = 8,
+  StatTypeKnowledgeHit = 9,
 }
 
 export enum ModelRankType {
@@ -91,6 +92,7 @@ export enum ModelRankType {
   RankTypeAIInsight = 2,
   RankTypeAllContribute = 3,
   RankTypeHotQuestion = 4,
+  RankTypeInvalidKnowledge = 5,
 }
 
 export enum ModelOrgType {
@@ -1850,6 +1852,10 @@ export interface GetAdminRankHotQuestionHotQuestionIdParams {
   hotQuestionId: number;
 }
 
+export interface GetAdminRankInvalidKnowledgeParams {
+  count?: number;
+}
+
 export interface GetAdminStatDiscussionParams {
   begin: number;
 }
@@ -1861,7 +1867,7 @@ export interface GetAdminStatSearchParams {
 export interface GetAdminStatTrendParams {
   begin: number;
   stat_group: number;
-  stat_types: (1 | 2 | 3 | 4 | 5 | 6 | 7 | 8)[];
+  stat_types: (1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9)[];
 }
 
 export interface GetAdminStatVisitParams {
@@ -2129,7 +2135,7 @@ export interface GetGroupParams {
 }
 
 export interface GetRankContributeParams {
-  type: 1 | 2 | 3 | 4;
+  type: 1 | 2 | 3 | 4 | 5;
 }
 
 export interface PutUserPayload {

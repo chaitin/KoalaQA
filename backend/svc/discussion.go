@@ -702,7 +702,7 @@ func (d *Discussion) AIInsightAnswer(ctx context.Context, req DiscussionKeywordA
 			return "", err
 		}
 
-		content, answer, err := d.in.LLM.AnswerWithThink(ctx, GenerateReq{
+		content, answer, _, err := d.in.LLM.AnswerWithThink(ctx, GenerateReq{
 			Question:      req.Keyword,
 			Prompt:        prompt,
 			DefaultAnswer: "无法回答问题",

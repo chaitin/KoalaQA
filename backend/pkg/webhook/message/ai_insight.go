@@ -104,3 +104,18 @@ func NewAIInsightHotQuestion(path string) Message {
 		},
 	}
 }
+
+func NewAIInsightInvalidKnowledge(path string) Message {
+	return &aiInsightMsg{
+		Header: Header{
+			MsgType:       TypeAIInsightInvalidKnowledge,
+			MsgTitle:      "你有新的 AI 洞察",
+			HeadingPrefix: "类型",
+		},
+		Msg: commonAIInsight{
+			Type:    "疑似失效知识",
+			URL:     path,
+			Suggest: "发现知识内容可能已不再准确或适用，建议尽快核实更新",
+		},
+	}
+}

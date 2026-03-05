@@ -4,6 +4,7 @@ import {
   CheckCircle,
   Comment,
   Dashboard as DashboardIcon,
+  DescriptionOutlined,
   Description,
   Notifications,
   TrendingUp,
@@ -43,7 +44,8 @@ import {
   getAdminStatSearch,
   getAdminStatTrend,
   getAdminStatVisit,
-  getAdminRankHotQuestion
+  getAdminRankHotQuestion,
+  getAdminRankInvalidKnowledge,
 } from '../../api';
 import {
   ModelRankTimeGroup,
@@ -78,6 +80,7 @@ interface DashboardData {
   searchCount: number | null;
   aiInsights: ModelRankTimeGroup[] | null;
   hotQuestions: ModelRankTimeGroup[] | null;
+  invalidKnowledge: ModelRankTimeGroup[] | null;
   // 独立的趋势数据
   visitTrendData: ModelStatTrend[] | null; // 访问用户情况趋势
   postTrendData: ModelStatTrend[] | null; // 发帖情况趋势
@@ -92,13 +95,13 @@ interface InsightData {
   title: string;
   time: string;
   questions: ModelRankTimeGroupItem[];
-  category: 'knowledgeGap' | 'hotQuestion';
+  category: 'knowledgeGap' | 'hotQuestion' | 'invalidKnowledge';
 }
 
 // 扩展的问题处理项接口
 interface ExtendedQuestionItem extends ModelRankTimeGroupItem {
   insightData?: InsightData;
-  category?: 'knowledgeGap' | 'hotQuestion';
+  category?: 'knowledgeGap' | 'hotQuestion' | 'invalidKnowledge';
 }
 
 interface MetricItem {
@@ -122,9 +125,10 @@ interface ChartSectionProps {
 interface InsightItemProps {
   type: 'critical' | 'normal';
   time: string;
+  timeStart?: number;
   title: string;
   scoreIds: ModelRankTimeGroupItem[];
-  category: 'knowledgeGap' | 'hotQuestion';
+  category: 'knowledgeGap' | 'hotQuestion' | 'invalidKnowledge';
   isExpanded?: boolean;
   onQuestionClick?: (item: ExtendedQuestionItem) => void;
 }
@@ -696,8 +700,8 @@ const MainDashboardCard: React.FC<MainDashboardCardProps> = ({ children, sx = {}
   );
 };
 
-const InsightItem: React.FC<InsightItemProps> = ({ time, title, scoreIds, onQuestionClick, category }) => {
-  const iconBg ='rgba(76, 165, 167, 0.10)';
+const InsightItem: React.FC<InsightItemProps> = ({ time, timeStart, title, scoreIds, onQuestionClick, category }) => {
+  const iconBg = 'rgba(76, 165, 167, 0.10)';
   const iconColor = 'rgba(76, 165, 167, 1)';
 
   const handleInsightClick = () => {
@@ -708,7 +712,8 @@ const InsightItem: React.FC<InsightItemProps> = ({ time, title, scoreIds, onQues
         insightData: {
           title,
           time,
-          questions: scoreIds.slice(0, 5),
+          timeStart,
+          questions: scoreIds,
           category,
         },
         category,
@@ -723,7 +728,7 @@ const InsightItem: React.FC<InsightItemProps> = ({ time, title, scoreIds, onQues
         borderRadius: 2,
         p: 1.5,
         transition: 'all 0.3s',
-        cursor: onQuestionClick ? 'pointer' : 'default',
+        cursor: 'pointer' ,
         '&:hover': {
           bgcolor: 'rgba(76, 165, 167, 0.12)',
           '& .check_detail': {
@@ -744,6 +749,8 @@ const InsightItem: React.FC<InsightItemProps> = ({ time, title, scoreIds, onQues
         >
           {category === 'hotQuestion' ? (
             <TrendingUp sx={{ fontSize: 16 }} />
+          ) : category === 'invalidKnowledge' ? (
+            <DescriptionOutlined sx={{ fontSize: 16 }} />
           ) : (
             <Notifications sx={{ fontSize: 16 }} />
           )}
@@ -779,11 +786,22 @@ const InsightItem: React.FC<InsightItemProps> = ({ time, title, scoreIds, onQues
         }}
       >
         <Stack spacing={1}>
-          {scoreIds.slice(0, 3).map((item, index) => (
-            <Typography key={index} variant="caption" color="text.secondary">
-              · {item?.score_id || '未知问题'}
-            </Typography>
-          ))}
+          {scoreIds.slice(0, 3).map((item, index) => {
+            let display = item?.score_id || '未知问题';
+            if (category === 'invalidKnowledge' && item?.extra) {
+              try {
+                const parsed = JSON.parse(item.extra);
+                display = parsed.title || display;
+              } catch (e) {
+                // ignore parse error
+              }
+            }
+            return (
+              <Typography key={index} variant="caption" color="text.secondary">
+                · {display}
+              </Typography>
+            );
+          })}
         </Stack>
       </Paper>
     </Box>
@@ -808,6 +826,7 @@ const Dashboard: React.FC = () => {
     searchCount: null,
     aiInsights: null,
     hotQuestions: null,
+    invalidKnowledge: null,
     // 独立的趋势数据
     visitTrendData: null,
     postTrendData: null,
@@ -918,6 +937,7 @@ const Dashboard: React.FC = () => {
       aiResolveRateResponse, // AI 解决率趋势原始数据（固定30天）
       aiInsightResponse,
       hotQuestionResponse,
+      invalidKnowledgeResponse,
     ] = await Promise.all([
       // AI 应答率趋势原始数据 - 固定30天
       getAdminStatTrend({
@@ -934,13 +954,15 @@ const Dashboard: React.FC = () => {
       }),
 
       getAdminRankAiInsight(),
-      getAdminRankHotQuestion({count: 5}).catch(() => null),
+      getAdminRankHotQuestion({ count: 5 }).catch(() => null),
+      getAdminRankInvalidKnowledge({ count: 10 }).catch(() => null),
     ]);
 
     // 只返回AI相关的数据（不要在这里 setState，避免 effect 调用链触发规则）
     return {
       aiInsights: aiInsightResponse || [],
       hotQuestions: hotQuestionResponse || [],
+      invalidKnowledge: invalidKnowledgeResponse || [],
       aiResponseRateData: aiResponseRateResponse?.items || [],
       aiResolveRateData: aiResolveRateResponse?.items || [],
     } satisfies Partial<DashboardData>;
@@ -948,34 +970,48 @@ const Dashboard: React.FC = () => {
 
   // 格式化 AI 洞察数据
   const buildInsightCards = useCallback(
-    (source: ModelRankTimeGroup[] | null | undefined, category: 'knowledgeGap' | 'hotQuestion') => {
-      if (!source || source.length === 0) return [] as { title: string; subtitle: string; items: ModelRankTimeGroupItem[]; category: 'knowledgeGap' | 'hotQuestion'; }[];
+    (source: ModelRankTimeGroup[] | null | undefined, category: 'knowledgeGap' | 'hotQuestion' | 'invalidKnowledge') => {
+      if (!source || source.length === 0)
+        return [] as { title: string; subtitle: string; items: ModelRankTimeGroupItem[]; category: 'knowledgeGap' | 'hotQuestion' | 'invalidKnowledge'; }[];
 
       const now = dayjs();
       const currentWeekStart = now.startOf('week');
 
       return source.map((item: ModelRankTimeGroup) => {
-        const weekStart = dayjs.unix(item.time || 0);
-        const weekEnd = weekStart.add(6, 'day');
-
-        const isCurrentWeek = weekStart.isSame(currentWeekStart, 'day');
+        const startTime = dayjs.unix(item.time || 0);
+        const weekEnd = startTime.add(6, 'day');
 
         let subtitle: string;
-        if (isCurrentWeek) {
-          subtitle = '近7天';
-        } else {
-          const startStr = weekStart.format('M月D日');
-          const endStr = weekEnd.format('M月D日');
+        if (category === 'invalidKnowledge') {
+          const startStr = startTime.format('M月D日');
+          const endStr = startTime.add(1, 'month').startOf('month').format('M月D日');
           subtitle = `${startStr}-${endStr}`;
+        } else {
+          const isCurrentWeek = startTime.isSame(currentWeekStart, 'day');
+          if (isCurrentWeek) {
+            subtitle = '近7天';
+          } else {
+            const startStr = startTime.format('M月D日');
+            const endStr = weekEnd.format('M月D日');
+            subtitle = `${startStr}-${endStr}`;
+          }
         }
 
         const items = Array.isArray(item.items) ? item.items : [];
 
+        const title =
+          category === 'knowledgeGap'
+            ? '发现新的知识缺口'
+            : category === 'hotQuestion'
+              ? '近期热门问题'
+              : '识别疑似失效知识';
+
         return {
-          title: category === 'knowledgeGap' ? '发现新的知识缺口' : '近期热门问题',
+          title,
           subtitle,
-          items: items.slice(0, 5),
-          category,
+          items,
+          category: category as 'knowledgeGap' | 'hotQuestion' | 'invalidKnowledge',
+          timeStart: item.time || 0,
         };
       });
     },
@@ -984,6 +1020,7 @@ const Dashboard: React.FC = () => {
 
   const aiInsightData = useMemo(() => buildInsightCards(data.aiInsights, 'knowledgeGap'), [buildInsightCards, data.aiInsights]);
   const hotQuestionData = useMemo(() => buildInsightCards(data.hotQuestions, 'hotQuestion'), [buildInsightCards, data.hotQuestions]);
+  const invalidKnowledgeData = useMemo(() => buildInsightCards(data.invalidKnowledge, 'invalidKnowledge'), [buildInsightCards, data.invalidKnowledge]);
   // 初始化数据获取 - 只在组件挂载时获取一次AI数据和时间相关数据
   useEffect(() => {
     let cancelled = false;
@@ -1511,6 +1548,7 @@ const Dashboard: React.FC = () => {
                   size={{ xs: 12, lg: 3 }}
                   sx={{
                     overflow: 'auto',
+                    height: 'calc(100vh - 81px)',
                     scrollbarWidth: 'thin',
                     '&::-webkit-scrollbar': { width: '6px' },
                     '&::-webkit-scrollbar-track': { background: '#f1f1f1' },
@@ -1524,8 +1562,10 @@ const Dashboard: React.FC = () => {
                       p: 2,
                       borderRadius: 2,
                       height: '100%',
+                      maxHeight: '100%',
                       display: 'flex',
                       flexDirection: 'column',
+                      overflow: 'hidden',
                     }}
                   >
                     <Typography
@@ -1536,52 +1576,75 @@ const Dashboard: React.FC = () => {
                     >
                       AI 洞察
                     </Typography>
-                    <Grid container spacing={1}>
+                    <Grid container spacing={1} sx={{ flex: 1, minHeight: 0, overflow: 'auto', pr: 0.5 }}>
                       <Grid size={{ xs: 12 }}>
-                        <Stack
-                          sx={{
-                            mb: 1,
-                            overflowY: 'auto',
-                            '&::-webkit-scrollbar': { width: '4px' },
-                            '&::-webkit-scrollbar-track': { background: '#f1f1f1', borderRadius: '2px' },
-                            '&::-webkit-scrollbar-thumb': { background: '#c1c1c1', borderRadius: '2px', '&:hover': { background: '#a8a8a8' } },
-                          }}
-                          spacing={1}
-                        >
-                          {(
-                            aiInsightData?.slice(0, 3).map((insight, index) => (
+                        <Stack spacing={1} sx={{ mb: 1 }}>
+                          {aiInsightData?.slice(0, 3).map((insight, index) => (
                               <InsightItem
                                 key={`gap-${index}`}
                                 type={'normal'}
                                 time={insight.subtitle}
+                                timeStart={insight.timeStart}
                                 title={insight.title}
                                 scoreIds={insight.items}
                                 isExpanded={true}
                                 category="knowledgeGap"
                                 onQuestionClick={handleQuestionClick}
                               />
-                            ))
+                            ))}
+                          {!aiInsightData?.length && (
+                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 1 }}>
+                              暂无知识缺口
+                            </Typography>
                           )}
-                          {hotQuestionData?.slice(0, 3).map((insight, index) => (
-                            <InsightItem
-                              key={`hot-${index}`}
-                              type={'normal'}
-                              time={insight.subtitle}
-                              title={insight.title}
-                              scoreIds={insight.items}
-                              isExpanded={true}
-                              category="hotQuestion"
-                              onQuestionClick={handleQuestionClick}
-                            />
-                          ))}
-                          {!aiInsightData.length && !hotQuestionData.length && (
-                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                              暂无数据
-                            </Typography>)
-                          }
                         </Stack>
                       </Grid>
 
+                      <Grid size={{ xs: 12 }}>
+                        <Stack spacing={1} sx={{ mb: 1 }}>
+                          {hotQuestionData?.slice(0, 3).map((insight, index) => (
+                              <InsightItem
+                                key={`hot-${index}`}
+                                type={'normal'}
+                                time={insight.subtitle}
+                                timeStart={insight.timeStart}
+                                title={insight.title}
+                                scoreIds={insight.items}
+                                isExpanded={true}
+                                category="hotQuestion"
+                                onQuestionClick={handleQuestionClick}
+                            />
+                          ))}
+                          {!hotQuestionData?.length && (
+                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 1 }}>
+                              暂无热门问题
+                            </Typography>
+                          )}
+                        </Stack>
+                      </Grid>
+
+                      <Grid size={{ xs: 12 }}>
+                        <Stack spacing={1}>
+                          {invalidKnowledgeData?.slice(0, 3).map((insight, index) => (
+                              <InsightItem
+                                key={`invalid-${index}`}
+                                type={'normal'}
+                                time={insight.subtitle}
+                                timeStart={insight.timeStart}
+                                title={insight.title}
+                                scoreIds={insight.items}
+                                isExpanded={true}
+                                category="invalidKnowledge"
+                                onQuestionClick={handleQuestionClick}
+                            />
+                          ))}
+                          {!invalidKnowledgeData?.length && (
+                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 1 }}>
+                              暂无失效知识
+                            </Typography>
+                          )}
+                        </Stack>
+                      </Grid>
                     </Grid>
                   </Card>
                 </Grid>

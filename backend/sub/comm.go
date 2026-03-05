@@ -147,7 +147,7 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 		logger.WithErr(err).Error("generate prompt failed")
 		return nil
 	}
-	llmRes, answered, err := d.llm.Answer(ctx, svc.GenerateReq{
+	llmRes, answered, refDocIDs, err := d.llm.Answer(ctx, svc.GenerateReq{
 		Question:      question,
 		Groups:        groups,
 		Prompt:        prompt,
@@ -156,6 +156,16 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 	})
 	if err != nil {
 		return err
+	}
+
+	nowUnix := time.Now().Unix()
+	for _, refDocID := range refDocIDs {
+		d.batcher.Send(model.StatInfo{
+			Type:        model.StatTypeKnowledgeHit,
+			Ts:          nowUnix,
+			Key:         refDocID,
+			AssociateID: data.DiscID,
+		})
 	}
 
 	if answered == disc.BotUnknown {

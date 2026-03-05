@@ -16,6 +16,7 @@ import {
   GetAdminRankAiInsightAiInsightIdDiscussionParams,
   GetAdminRankHotQuestionHotQuestionIdParams,
   GetAdminRankHotQuestionParams,
+  GetAdminRankInvalidKnowledgeParams,
   GetRankContributeParams,
   ModelHotQuestion,
   ModelListRes,
@@ -150,6 +151,40 @@ export const getAdminRankHotQuestionHotQuestionId = (
     }
   >({
     path: `/admin/rank/hot_question/${hotQuestionId}`,
+    method: "GET",
+    query: query,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags rank
+ * @name GetAdminRankInvalidKnowledge
+ * @summary invalid knowledge rank
+ * @request GET:/admin/rank/invalid_knowledge
+ * @response `200` `(ContextResponse & {
+    data?: ((ModelRankTimeGroup & {
+    items?: (ModelRankTimeGroupItem)[],
+
+}))[],
+
+})` OK
+ */
+
+export const getAdminRankInvalidKnowledge = (
+  query: GetAdminRankInvalidKnowledgeParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: (ModelRankTimeGroup & {
+        items?: ModelRankTimeGroupItem[];
+      })[];
+    }
+  >({
+    path: `/admin/rank/invalid_knowledge`,
     method: "GET",
     query: query,
     format: "json",

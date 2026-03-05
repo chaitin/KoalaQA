@@ -7,6 +7,7 @@ const (
 	RankTypeAIInsight
 	RankTypeAllContribute
 	RankTypeHotQuestion
+	RankTypeInvalidKnowledge
 )
 
 type Rank struct {
