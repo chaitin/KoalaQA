@@ -71,7 +71,7 @@ func (i *invalidKnowledge) Run() {
 		logger.WithErr(err).Warn("clear expire rank failed")
 	}
 
-	err = i.stat.Delete(ctx, repo.QueryWithEqual("created_at", util.DayTrunc(now.AddDate(0, -5, 0)), repo.EqualOPLT),
+	err = i.stat.Delete(ctx, repo.QueryWithEqual("created_at", util.DayTrunc(now.AddDate(0, -4, 0)), repo.EqualOPLT),
 		repo.QueryWithEqual("type", model.StatTypeKnowledgeHit))
 	if err != nil {
 		logger.WithErr(err).Warn("clear expire knowledge hit stat failed")
