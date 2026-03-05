@@ -12,8 +12,6 @@ import (
 
 type Stat struct {
 	base[*model.Stat]
-
-	Bot
 }
 
 func newStat(db *database.DB) *Stat {
