@@ -29,7 +29,7 @@ type invalidKnowledge struct {
 }
 
 func (i *invalidKnowledge) Period() string {
-	return "0 0 10 * *"
+	return "0 0 10 1 *"
 }
 
 func (i *invalidKnowledge) coefficient(t, now time.Time) float64 {
@@ -55,11 +55,6 @@ func (i *invalidKnowledge) Run() {
 	now := time.Now()
 	ctx := context.Background()
 	logger := i.logger.WithContext(ctx)
-
-	if now.Day() != 1 {
-		logger.Debug("not 1, skip")
-		return
-	}
 
 	lastMonth := util.DayTrunc(now.AddDate(0, -1, 0))
 
