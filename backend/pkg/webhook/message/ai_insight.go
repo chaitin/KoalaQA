@@ -108,7 +108,7 @@ func NewAIInsightHotQuestion(path string) Message {
 func NewAIInsightInvalidKnowledge(path string) Message {
 	return &aiInsightMsg{
 		Header: Header{
-			MsgType:       TypeAIinsightInvalidKnowledge,
+			MsgType:       TypeAIInsightInvalidKnowledge,
 			MsgTitle:      "你有新的 AI 洞察",
 			HeadingPrefix: "类型",
 		},

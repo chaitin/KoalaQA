@@ -197,7 +197,7 @@ func (i *invalidKnowledge) Run() {
 		return
 	}
 
-	msg, err := i.generator.AIInsight(ctx, message.TypeAIinsightInvalidKnowledge)
+	msg, err := i.generator.AIInsight(ctx, message.TypeAIInsightInvalidKnowledge)
 	if err != nil {
 		logger.WithErr(err).Error("generate msg failed")
 		return
