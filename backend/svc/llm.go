@@ -167,7 +167,7 @@ func (l *LLM) StreamAnswer(ctx context.Context, sysPrompt string, req GenerateRe
 	}, req.Histories()...)
 }
 
-func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (string, bool, error) {
+func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (string, bool, []string, error) {
 	query := req.Question
 
 	groupIDs, groupNames := req.GroupInfo()
@@ -180,7 +180,7 @@ func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (st
 		GroupIDs: groupIDs,
 	})
 	if err != nil {
-		return "", false, err
+		return "", false, nil, err
 	}
 	res, err := l.Chat(ctx, sysPrompt, req.Prompt, map[string]any{
 		"Question":           rewrittenQuery,
@@ -189,25 +189,25 @@ func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (st
 		"KnowledgeDocuments": knowledgeDocuments,
 	})
 	if err != nil {
-		return "", false, err
+		return "", false, nil, err
 	}
 
 	// 解析 JSON 响应
 	resp, err := llm.ParseChatResponse(res)
 	if err != nil {
 		l.logger.WithContext(ctx).WithErr(err).With("raw", res).Error("llm response parse failed")
-		return "", false, err
+		return "", false, nil, err
 	}
 	l.logger.WithContext(ctx).
 		With("matched", resp.Matched).
 		With("reason", resp.Reason).
 		Info("llm response parsed")
 	if !resp.Matched || resp.Answer == "" {
-		return req.DefaultAnswer, false, nil
+		return req.DefaultAnswer, false, nil, nil
 	}
 	botInfo, err := l.bot.Get(ctx)
 	if err != nil {
-		return "", false, err
+		return "", false, nil, err
 	}
 	if botInfo.AnswerRef && len(resp.Sources) > 0 {
 		resp.Answer += "\n\n---\n\n" + "引用来源: "
@@ -215,14 +215,29 @@ func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (st
 			resp.Answer += fmt.Sprintf(`<span data-tooltip="<h3>来源</h3><br>%s">[%d]</span> `, source.Title, i+1)
 		}
 	}
-	return resp.Answer, true, nil
+
+	docM := make(map[string]bool)
+	for _, doc := range knowledgeDocuments {
+		docM[doc.Source] = true
+	}
+
+	refID := make([]string, 0)
+	for _, source := range resp.Sources {
+		if !docM[source.ID] {
+			continue
+		}
+
+		refID = append(refID, source.ID)
+	}
+
+	return resp.Answer, true, refID, nil
 }
 
-func (l *LLM) Answer(ctx context.Context, req GenerateReq) (string, bool, error) {
+func (l *LLM) Answer(ctx context.Context, req GenerateReq) (string, bool, []string, error) {
 	return l.answer(ctx, llm.SystemChatPrompt, req)
 }
 
-func (l *LLM) AnswerWithThink(ctx context.Context, req GenerateReq) (string, bool, error) {
+func (l *LLM) AnswerWithThink(ctx context.Context, req GenerateReq) (string, bool, []string, error) {
 	return l.answer(ctx, llm.SystemChatWithThinkPrompt, req)
 }
 

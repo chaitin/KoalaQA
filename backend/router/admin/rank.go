@@ -103,12 +103,38 @@ func (r *rank) ListHotQuesionItem(ctx *context.Context) {
 	ctx.Success(res)
 }
 
+// ListInvalidKnowledge
+// @Summary invalid knowledge rank
+// @Tags rank
+// @Produce json
+// @Param req query svc.ListInvalidKnowledgeReq true "req param"
+// @Success 200 {object} context.Response{data=[]model.RankTimeGroup{items=[]model.RankTimeGroupItem}}
+// @Router /admin/rank/invalid_knowledge [get]
+func (r *rank) ListInvalidKnowledge(ctx *context.Context) {
+	var req svc.ListInvalidKnowledgeReq
+	err := ctx.ShouldBindQuery(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	res, err := r.svcRank.ListInvalidKnowledge(ctx, req)
+	if err != nil {
+		ctx.InternalError(err, "list invalid knowledge failed")
+		return
+	}
+
+	ctx.Success(res)
+}
+
 func (r *rank) Route(h server.Handler) {
 	g := h.Group("/rank")
 	g.GET("/ai_insight", r.AIInsight)
 	g.GET("/ai_insight/:ai_insight_id/discussion", r.ListAIInsightDiscussion)
 	g.GET("/hot_question", r.ListHotQuestion)
 	g.GET("/hot_question/:hot_question_id", r.ListHotQuesionItem)
+	g.GET("/invalid_knowledge", r.ListInvalidKnowledge)
+
 }
 
 func newRank(r *svc.Rank) server.Router {

@@ -70,7 +70,7 @@ func (r *Rank) UpdateContribute(ctx context.Context, req UpdateContributeReq) er
 
 func (r *Rank) AIInsight(ctx context.Context) ([]model.RankTimeGroup, error) {
 	now := time.Now()
-	return r.repoRank.GroupByTime(ctx, 3,
+	return r.repoRank.GroupByTime(ctx, "week", 3,
 		repo.QueryWithEqual("type", model.RankTypeAIInsight),
 		repo.QueryWithEqual("created_at", util.WeekTrunc(now), repo.EqualOPLT),
 		repo.QueryWithEqual("created_at", util.WeekTrunc(now.AddDate(0, 0, -21)), repo.EqualOPGTE),
@@ -100,7 +100,7 @@ type ListHotQuestionReq struct {
 
 func (r *Rank) ListHotQuesion(ctx context.Context, req ListHotQuestionReq) ([]model.RankTimeGroup, error) {
 	now := time.Now()
-	return r.repoRank.GroupByTime(ctx, req.Count,
+	return r.repoRank.GroupByTime(ctx, "week", req.Count,
 		repo.QueryWithEqual("type", model.RankTypeHotQuestion),
 		repo.QueryWithEqual("created_at", util.WeekTrunc(now), repo.EqualOPLT),
 		repo.QueryWithEqual("created_at", util.WeekTrunc(now.AddDate(0, 0, -21)), repo.EqualOPGTE),
@@ -134,6 +134,19 @@ func (r *Rank) ListHostQuesionItem(ctx context.Context, rankID uint, req ListHot
 	}
 
 	return &res, nil
+}
+
+type ListInvalidKnowledgeReq struct {
+	Count int `form:"count,default=3"`
+}
+
+func (r *Rank) ListInvalidKnowledge(ctx context.Context, req ListInvalidKnowledgeReq) ([]model.RankTimeGroup, error) {
+	now := time.Now()
+	return r.repoRank.GroupByTime(ctx, "month", req.Count,
+		repo.QueryWithEqual("type", model.RankTypeInvalidKnowledge),
+		repo.QueryWithEqual("created_at", util.MonthTrunc(now), repo.EqualOPLT),
+		repo.QueryWithEqual("created_at", util.MonthTrunc(now.AddDate(0, -3, 0)), repo.EqualOPGTE),
+	)
 }
 
 func newRank(r *repo.Rank, user *repo.User, bot *Bot, discAIInsight *repo.DiscussionAIInsight, hotQuesion *repo.HotQuestion) *Rank {

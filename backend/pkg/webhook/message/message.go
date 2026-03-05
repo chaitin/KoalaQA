@@ -15,6 +15,7 @@ const (
 	TypeUserReviewGuest
 	TypeNewIssue
 	TypeAIInsightHotQuestion
+	TypeAIinsightInvalidKnowledge
 )
 
 type commonUserThird struct {

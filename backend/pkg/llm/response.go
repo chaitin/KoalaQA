@@ -17,6 +17,7 @@ type ChatResponse struct {
 
 // Source 引用来源
 type Source struct {
+	ID    string `json:"id"`
 	Title string `json:"title"`
 }
 

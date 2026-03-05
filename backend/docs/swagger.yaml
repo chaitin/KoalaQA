@@ -1088,12 +1088,14 @@ definitions:
     - 2
     - 3
     - 4
+    - 5
     type: integer
     x-enum-varnames:
     - RankTypeContribute
     - RankTypeAIInsight
     - RankTypeAllContribute
     - RankTypeHotQuestion
+    - RankTypeInvalidKnowledge
   model.StatTrend:
     properties:
       items:
@@ -1118,6 +1120,7 @@ definitions:
     - 6
     - 7
     - 8
+    - 9
     type: integer
     x-enum-varnames:
     - StatTypeVisit
@@ -1128,6 +1131,7 @@ definitions:
     - StatTypeDiscussionBlog
     - StatTypeDiscussionIssue
     - StatTypeBotUnknownComment
+    - StatTypeKnowledgeHit
   model.SystemBrand:
     properties:
       logo:
@@ -4896,6 +4900,36 @@ paths:
       summary: list hot quesion item
       tags:
       - rank
+  /admin/rank/invalid_knowledge:
+    get:
+      parameters:
+      - in: query
+        name: count
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - $ref: '#/definitions/model.RankTimeGroup'
+                    - properties:
+                        items:
+                          items:
+                            $ref: '#/definitions/model.RankTimeGroupItem'
+                          type: array
+                      type: object
+                  type: array
+              type: object
+      summary: invalid knowledge rank
+      tags:
+      - rank
   /admin/stat/discussion:
     get:
       parameters:
@@ -4970,6 +5004,7 @@ paths:
           - 6
           - 7
           - 8
+          - 9
           type: integer
         name: stat_types
         required: true
@@ -6887,6 +6922,7 @@ paths:
         - 2
         - 3
         - 4
+        - 5
         in: query
         name: type
         required: true
@@ -6896,6 +6932,7 @@ paths:
         - RankTypeAIInsight
         - RankTypeAllContribute
         - RankTypeHotQuestion
+        - RankTypeInvalidKnowledge
       produces:
       - application/json
       responses:

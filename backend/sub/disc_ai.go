@@ -116,7 +116,7 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 		logger.WithErr(err).Error("generate prompt failed")
 		return nil
 	}
-	llmRes, answered, err := d.llm.Answer(ctx, svc.GenerateReq{
+	llmRes, answered, refDocIDs, err := d.llm.Answer(ctx, svc.GenerateReq{
 		Question:      question,
 		Groups:        groups,
 		Prompt:        prompt,
@@ -150,6 +150,17 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 			return errors.New("ai not know the answer, retry later")
 		}
 	}
+
+	nowUnix := time.Now().Unix()
+	for _, refDocID := range refDocIDs {
+		d.batcher.Send(model.StatInfo{
+			Type:        model.StatTypeKnowledgeHit,
+			Ts:          nowUnix,
+			Key:         refDocID,
+			AssociateID: data.DiscID,
+		})
+	}
+
 	if answered || bot.UnknownPrompt != "" {
 		commentID, err := d.disc.CreateComment(ctx, bot.UserID, data.DiscUUID, svc.CommentCreateReq{
 			Content:     llmRes,
@@ -204,7 +215,7 @@ func (d *Disc) handleUpdate(ctx context.Context, data topic.MsgDiscChange) error
 		logger.WithErr(err).Error("generate prompt failed")
 		return nil
 	}
-	llmRes, answered, err := d.llm.Answer(ctx, svc.GenerateReq{
+	llmRes, answered, refDocIDs, err := d.llm.Answer(ctx, svc.GenerateReq{
 		Question:      question,
 		Prompt:        prompt,
 		DefaultAnswer: bot.UnknownPrompt,
@@ -244,6 +255,16 @@ func (d *Disc) handleUpdate(ctx context.Context, data topic.MsgDiscChange) error
 		}
 
 		return nil
+	}
+
+	nowUnix := time.Now().Unix()
+	for _, refDocID := range refDocIDs {
+		d.batcher.Send(model.StatInfo{
+			Type:        model.StatTypeKnowledgeHit,
+			Ts:          nowUnix,
+			Key:         refDocID,
+			AssociateID: data.DiscID,
+		})
 	}
 
 	haveBotComment := true

@@ -3589,6 +3589,62 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/rank/invalid_knowledge": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rank"
+                ],
+                "summary": "invalid knowledge rank",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "name": "count",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "allOf": [
+                                                    {
+                                                        "$ref": "#/definitions/model.RankTimeGroup"
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "items": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "$ref": "#/definitions/model.RankTimeGroupItem"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/admin/stat/discussion": {
             "get": {
                 "produces": [
@@ -3715,7 +3771,8 @@ const docTemplate = `{
                                 5,
                                 6,
                                 7,
-                                8
+                                8,
+                                9
                             ],
                             "type": "integer"
                         },
@@ -6915,14 +6972,16 @@ const docTemplate = `{
                             1,
                             2,
                             3,
-                            4
+                            4,
+                            5
                         ],
                         "type": "integer",
                         "x-enum-varnames": [
                             "RankTypeContribute",
                             "RankTypeAIInsight",
                             "RankTypeAllContribute",
-                            "RankTypeHotQuestion"
+                            "RankTypeHotQuestion",
+                            "RankTypeInvalidKnowledge"
                         ],
                         "name": "type",
                         "in": "query",
@@ -9969,13 +10028,15 @@ const docTemplate = `{
                 1,
                 2,
                 3,
-                4
+                4,
+                5
             ],
             "x-enum-varnames": [
                 "RankTypeContribute",
                 "RankTypeAIInsight",
                 "RankTypeAllContribute",
-                "RankTypeHotQuestion"
+                "RankTypeHotQuestion",
+                "RankTypeInvalidKnowledge"
             ]
         },
         "model.StatTrend": {
@@ -10010,7 +10071,8 @@ const docTemplate = `{
                 5,
                 6,
                 7,
-                8
+                8,
+                9
             ],
             "x-enum-varnames": [
                 "StatTypeVisit",
@@ -10020,7 +10082,8 @@ const docTemplate = `{
                 "StatTypeDiscussionQA",
                 "StatTypeDiscussionBlog",
                 "StatTypeDiscussionIssue",
-                "StatTypeBotUnknownComment"
+                "StatTypeBotUnknownComment",
+                "StatTypeKnowledgeHit"
             ]
         },
         "model.SystemBrand": {

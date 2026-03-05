@@ -66,11 +66,11 @@ func (r *Rank) UserContribute(ctx context.Context, rankType model.RankType) ([]m
 	return res, nil
 }
 
-func (r *Rank) GroupByTime(ctx context.Context, rankLimit int, queryFuncs ...QueryOptFunc) (res []model.RankTimeGroup, err error) {
+func (r *Rank) GroupByTime(ctx context.Context, trunc string, rankLimit int, queryFuncs ...QueryOptFunc) (res []model.RankTimeGroup, err error) {
 	opt := getQueryOpt(queryFuncs...)
 
 	err = r.db.WithContext(ctx).Table("(?) AS group_rank", r.model(ctx).
-		Select("id, score_id, score, foreign_id, associate_id, extra, DATE_TRUNC('week',created_at, ?) AS time, RANK() OVER ( PARTITION BY DATE_TRUNC('week',created_at, ?) order by score*log(2, 1+hit) DESC, id ASC) AS rank", r.info.TZ(), r.info.TZ()).
+		Select("id, score_id, score, foreign_id, associate_id, extra, DATE_TRUNC(? ,created_at, ?) AS time, RANK() OVER ( PARTITION BY DATE_TRUNC(?,created_at, ?) order by score*log(2, 1+hit) DESC, id ASC) AS rank", trunc, r.info.TZ(), trunc, r.info.TZ()).
 		Scopes(opt.Scopes()...),
 	).
 		Select("time, JSONB_AGG(jsonb_build_object('id', id,'score_id',score_id, 'score', score, 'foreign_id', foreign_id, 'associate_id', associate_id, 'extra', extra)) AS items").
