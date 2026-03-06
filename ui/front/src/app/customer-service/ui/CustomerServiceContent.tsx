@@ -154,12 +154,7 @@ export default function CustomerServiceContent({
   useEffect(() => {
     // widget 模式强制视为 iframe 环境
     if (isWidgetMode) {
-const [isInIframe, setIsInIframe] = useState<boolean>(false);
-
-useEffect(() => {
-  const inIframe = window.self !== window.top;
-  setIsInIframe(inIframe);
-}, []);
+      setIsInIframe(true)
       return
     }
 
@@ -1877,7 +1872,7 @@ useEffect(() => {
                               }}
                             >
                               <Avatar
-                                 src={botAvatar}
+                                src={botAvatar}
                                 sx={{
                                   background: botAvatar
                                     ? 'transparent'
@@ -1899,7 +1894,7 @@ useEffect(() => {
                                   fontSize: isInIframe ? '14px' : '16px',
                                 }}
                               >
-                                 {botName}
+                                {botName}
                               </Typography>
                             </Box>
                           )}
@@ -2275,7 +2270,7 @@ useEffect(() => {
                                       {/* 推荐问题：首条机器人打招呼下方展示 */}
                                       {showSupportSuggestions && supportSuggestQuestions.length > 0 && index === 0 && (
                                         <Box
-                                          
+
                                         >
                                           <Box
                                             sx={{
@@ -2320,7 +2315,7 @@ useEffect(() => {
                                                 size='small'
                                                 onClick={() => handleSuggestClick(question)}
                                                 disabled={isLoading}
-                                                sx={{textAlign: 'left'}}
+                                                sx={{ textAlign: 'left' }}
                                               >
                                                 {question}
                                               </Button>
@@ -2433,7 +2428,7 @@ useEffect(() => {
                                 </Paper>
 
                                 {/* 消息底部信息 - 时间戳、复制按钮、免责声明 */}
-                                 {message.role === 'assistant' && message.content && index !== 0 && (
+                                {message.role === 'assistant' && message.content && index !== 0 && (
                                   <Box
                                     sx={{
                                       display: 'flex',
