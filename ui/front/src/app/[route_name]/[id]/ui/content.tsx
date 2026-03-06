@@ -69,6 +69,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const [commentIndex, setCommentIndex] = useState<ModelDiscussionComment | ModelDiscussionReply | null>(null)
   const [editCommentModalVisible, setEditCommentModalVisible] = useState(false)
   const [duplicateAnswerModalVisible, setDuplicateAnswerModalVisible] = useState(false)
+  const [selfAnswerModalVisible, setSelfAnswerModalVisible] = useState(false)
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
   const open = Boolean(anchorEl)
   const isArticlePost = data.type === ModelDiscussionType.DiscussionTypeBlog
@@ -80,6 +81,7 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const [collapsedComments, setCollapsedComments] = useState<{ [key: number]: boolean }>({})
   const answerEditorRef = React.useRef<EditorWrapRef>(null)
   const answerEditorContainerRef = React.useRef<HTMLDivElement>(null)
+  const skipSelfConfirmRef = React.useRef(false)
   const commentEditorRefs = React.useRef<{ [key: number]: EditorWrapRef | null }>({})
   const prevHasAcceptedRef = React.useRef<boolean>(false)
   const [hasAnswerContent, setHasAnswerContent] = useState(false)
@@ -90,6 +92,9 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   const isClosed = data.resolved === ModelDiscussionState.DiscussionStateClosed
   const isClosedQAPost = isQAPost && isClosed
   const isClosedPost = isClosed // All post types should be read-only when closed
+  const isAuthor = data.user_id === (user?.uid || 0)
+  const isAdmin = isAdminRole(user?.role || ModelUserRole.UserRoleUnknown)
+  const canAcceptAnswer = isAuthor || isAdmin
 
   const handleAnswerEditorChange = useCallback((content: string) => {
     const normalized = content
@@ -164,16 +169,38 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
   // 处理点击回答框
   const handleAnswerInputClick = useCallback(() => {
     checkAuth(() => {
+      // 若编辑器已展开，直接聚焦不再弹窗
+      if (showAnswerEditor) {
+        setTimeout(() => {
+          const el = answerEditorContainerRef.current?.querySelector('.tiptap')
+          if (el instanceof HTMLElement) el.focus()
+        }, 0)
+        return
+      }
+      if (skipSelfConfirmRef.current) {
+        skipSelfConfirmRef.current = false
+        setShowAnswerEditor(true)
+        setTimeout(() => {
+          const el = answerEditorContainerRef.current?.querySelector('.tiptap')
+          if (el instanceof HTMLElement) el.focus()
+        }, 0)
+        return
+      }
       // 如果是问答类型，检查用户是否已回答过
       if (isQAPost && userHasAnswered) {
         // 只要用户已回答过，就显示弹窗引导编辑原有回答
         setDuplicateAnswerModalVisible(true)
         return
       }
+      // 发帖人自己回答时，弹出二次确认
+      if (isQAPost && isAuthor) {
+        setSelfAnswerModalVisible(true)
+        return
+      }
       // 如果用户未回答过，正常显示编辑器
       setShowAnswerEditor(true)
     })
-  }, [checkAuth, isQAPost, userHasAnswered])
+  }, [checkAuth, isQAPost, userHasAnswered, isAuthor, showAnswerEditor])
 
   // 处理编辑原有回答
   const handleEditExistingAnswer = useCallback(() => {
@@ -197,6 +224,25 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
       }, 100)
     }
   }, [getUserAnswer])
+
+  const handleSelfAnswerContinue = useCallback(() => {
+    setSelfAnswerModalVisible(false)
+    skipSelfConfirmRef.current = true
+    setShowAnswerEditor(true)
+    setTimeout(() => {
+      const el = answerEditorContainerRef.current?.querySelector('.tiptap')
+      if (el instanceof HTMLElement) el.focus()
+    }, 0)
+  }, [])
+
+  const handleSelfAnswerEditQuestion = useCallback(() => {
+    setSelfAnswerModalVisible(false)
+    const parts = pathname.split('/').filter(Boolean)
+    const routeName = parts[0] || ''
+    if (routeName && data.uuid) {
+      router.push(`/${routeName}/edit?id=${data.uuid}&type=${data.type}`)
+    }
+  }, [pathname, data.uuid, router])
 
   const handleAcceptComment = () => {
     setAnchorEl(null)
@@ -244,9 +290,6 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
 
   // 判断帖子是否有被采纳的评论
   const hasAcceptedComment = data.comments?.some((comment) => comment.accepted)
-  const isAuthor = data.user_id === (user?.uid || 0)
-  const isAdmin = isAdminRole(user?.role || ModelUserRole.UserRoleUnknown)
-  const canAcceptAnswer = isAuthor || isAdmin
 
   // 当有采纳的回答时,自动收起其他回答下的评论(仅问答类型)
   useEffect(() => {
@@ -458,6 +501,48 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
         onCancel={() => setDuplicateAnswerModalVisible(false)}
         onEditExisting={handleEditExistingAnswer}
       />
+      <Modal
+        open={selfAnswerModalVisible}
+        onCancel={() => setSelfAnswerModalVisible(false)}
+        onClose={() => setSelfAnswerModalVisible(false)}
+        title='提示'
+        width={480}
+        footer={null}
+        showCancel={false}
+      >
+        <Stack spacing={3} sx={{ py: 2 }}>
+          <Typography sx={{ fontSize: '0.875rem', color: 'text.primary', lineHeight: 1.6 }}>
+            你正在回答自己提出的问题。如需补充信息，建议编辑问题。
+          </Typography>
+          <Stack direction='row' spacing={2} justifyContent='flex-end'>
+            <Button
+              onClick={handleSelfAnswerContinue}
+
+              sx={{
+                textTransform: 'none',
+                color: 'text.primary',
+                fontWeight: 600,
+                fontSize: '0.875rem',
+              }}
+            >
+              继续回答
+
+            </Button>
+            <Button
+              variant='contained'
+              onClick={handleSelfAnswerEditQuestion}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                px: 2,
+              }}
+            >
+              编辑问题
+            </Button>
+          </Stack>
+        </Stack>
+      </Modal>
       <Stack
         sx={{
           px: 1,
@@ -1123,30 +1208,30 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
               // 其他情况：普通定位
               ...(isQAPost && !hasAcceptedComment
                 ? {
-                    position: { xs: 'relative', sm: 'sticky' },
-                    bottom: { xs: 0, sm: 0 },
-                    left: { xs: 0, sm: 'unset' },
-                    right: { xs: 0, sm: 'unset' },
-                    pb: { xs: 'calc(env(safe-area-inset-bottom, 0))', sm: 2 },
-                    mx: { xs: 0, sm: 'auto' },
-                    mt: 'auto',
-                    maxWidth: { lg: '958px' },
-                    // 移动端添加底部安全区域支持，避免被 Safari 工具栏遮挡
-                    '@media (max-width: 600px)': {
-                      paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0))',
-                      paddingLeft: 'max(16px, env(safe-area-inset-left, 0px))',
-                      paddingRight: 'max(16px, env(safe-area-inset-right, 0px))',
-                      maxWidth: '100%',
-                    },
-                  }
+                  position: { xs: 'relative', sm: 'sticky' },
+                  bottom: { xs: 0, sm: 0 },
+                  left: { xs: 0, sm: 'unset' },
+                  right: { xs: 0, sm: 'unset' },
+                  pb: { xs: 'calc(env(safe-area-inset-bottom, 0))', sm: 2 },
+                  mx: { xs: 0, sm: 'auto' },
+                  mt: 'auto',
+                  maxWidth: { lg: '958px' },
+                  // 移动端添加底部安全区域支持，避免被 Safari 工具栏遮挡
+                  '@media (max-width: 600px)': {
+                    paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0))',
+                    paddingLeft: 'max(16px, env(safe-area-inset-left, 0px))',
+                    paddingRight: 'max(16px, env(safe-area-inset-right, 0px))',
+                    maxWidth: '100%',
+                  },
+                }
                 : {
-                    // 非问答类型或已有采纳回答：普通定位
-                    position: 'relative',
-                    pb: 2,
-                    mx: 0,
-                    mt: 0,
-                    maxWidth: { lg: '958px' },
-                  }),
+                  // 非问答类型或已有采纳回答：普通定位
+                  position: 'relative',
+                  pb: 2,
+                  mx: 0,
+                  mt: 0,
+                  maxWidth: { lg: '958px' },
+                }),
             }}
           >
             <Box

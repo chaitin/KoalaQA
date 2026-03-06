@@ -118,19 +118,21 @@ export default function CustomerServiceContent({
   const [isInitialLoading, setIsInitialLoading] = useState(true) // 初始数据是否加载完成
   const [expandedSources, setExpandedSources] = useState<Set<string>>(new Set()) // 展开的搜索结果消息ID
   const [clientSessionId, setClientSessionId] = useState<string>('') // 客户端获取的 sessionId，用于 widget 模式
-  const [commonQuestions, setCommonQuestions] = useState<string[]>([
-    '管理员密码忘了怎么办?',
-    '如何配置 SSO 登录',
-    '如何配置在线客服来使用智能问答',
-    '如何写文章',
-    '如何创建新文档',
-    '如何编辑功能',
-  ])
+  const [supportSuggestQuestions, setSupportSuggestQuestions] = useState<string[]>([])
+  const [showSupportSuggestions, setShowSupportSuggestions] = useState(true)
+  const [showWelcomeCard, setShowWelcomeCard] = useState(true)
+  const getSuggestListByMode = useCallback(
+    (data?: { suggest_questions?: string[]; plugin_suggest_questions?: string[] }) => {
+      if (!data) return [] as string[]
+      return (isWidgetMode ? data.plugin_suggest_questions : data.suggest_questions) || []
+    },
+    [isWidgetMode],
+  )
   // 区分真正的 iframe 嵌入和 Widget 模式
   // Widget 模式不需要显示 IframeHeader，因为外层组件已经有自己的容器
   const [isInIframe, setIsInIframe] = useState(() => {
-    // Widget 模式不算作 iframe
-    if (isWidgetMode) return false
+    // widget 模式优先视为 iframe 容器内渲染
+    if (isWidgetMode) return true
     return searchParams?.get('is_widget') === '1'
   })
   // 从 URL 读取 source 参数，如果没有则根据 isInIframe 状态决定默认值
@@ -150,9 +152,9 @@ export default function CustomerServiceContent({
 
   // 检测是否在 iframe 中
   useEffect(() => {
-    // Widget 模式不算作 iframe
+    // widget 模式强制视为 iframe 环境
     if (isWidgetMode) {
-      setIsInIframe(false)
+      setIsInIframe(true)
       return
     }
 
@@ -433,6 +435,9 @@ export default function CustomerServiceContent({
         const isEnabled = response?.enabled === true || response?.display === true || response?.plugin === true
 
         setIsServiceEnabled(isEnabled)
+        const suggestList = getSuggestListByMode(response)
+        setSupportSuggestQuestions(suggestList)
+        setShowSupportSuggestions(suggestList.length > 0)
       } catch (error) {
         console.error('获取智能客服配置失败:', error)
         // 默认允许访问，避免因网络问题阻止用户
@@ -495,6 +500,28 @@ export default function CustomerServiceContent({
       setIsAutoScrollEnabled((prev) => (prev ? false : prev))
     }
   }, [isStreaming])
+
+  useEffect(() => {
+    if (!showSupportSuggestions) return
+    const hasUserMessage = messages.some((m) => m.role === 'user')
+    if (hasUserMessage) {
+      setShowSupportSuggestions(false)
+    }
+  }, [messages, showSupportSuggestions])
+
+  // 新会话或欢迎卡片可见时，重新展示推荐问题
+  useEffect(() => {
+    if (showWelcomeCard && supportSuggestQuestions.length > 0) {
+      setShowSupportSuggestions(true)
+    }
+  }, [showWelcomeCard, supportSuggestQuestions])
+
+  useEffect(() => {
+    const hasUserMessage = messages.some((m) => m.role === 'user')
+    if (hasUserMessage && showWelcomeCard) {
+      setShowWelcomeCard(false)
+    }
+  }, [messages, showWelcomeCard])
 
   const handleScroll = useCallback(
     (event: UIEvent<HTMLDivElement>) => {
@@ -867,6 +894,9 @@ export default function CustomerServiceContent({
   const sendMessage = useCallback(async (content: string) => {
     const question = content.trim()
     if (!question || isLoading) return
+
+    setShowSupportSuggestions(false)
+    setShowWelcomeCard(false)
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -1304,6 +1334,19 @@ export default function CustomerServiceContent({
     await sendMessage(text)
   }, [inputValue, isLoading, sendMessage])
 
+  const handleSuggestClick = useCallback(
+    (question: string) => {
+      if (isLoading) return
+      const text = question.trim()
+      if (!text) return
+      setInputValue('')
+      setShowSupportSuggestions(false)
+      setShowWelcomeCard(false)
+      void sendMessage(text)
+    },
+    [isLoading, sendMessage],
+  )
+
   // 处理 URL 中的 question 参数
   const hasAutoAskedRef = useRef(false)
 
@@ -1581,23 +1624,13 @@ export default function CustomerServiceContent({
 
         // 清空输入框
         setInputValue('')
+        setShowSupportSuggestions((supportSuggestQuestions.length || 0) > 0)
+        setShowWelcomeCard(true)
       }
     } catch (error) {
       console.error('创建新会话失败:', error)
     }
-  }, [router])
-
-  // 刷新常见问题
-  const handleRefreshQuestions = useCallback(() => {
-    // 随机打乱常见问题列表
-    const shuffled = [...commonQuestions].sort(() => Math.random() - 0.5)
-    setCommonQuestions(shuffled)
-  }, [commonQuestions])
-
-  // 处理常见问题点击
-  const handleCommonQuestionClick = useCallback((question: string) => {
-    setInputValue(question)
-  }, [])
+  }, [router, supportSuggestQuestions])
 
   return (
     <Box
@@ -1719,6 +1752,60 @@ export default function CustomerServiceContent({
             }}
           >
             <Stack spacing={3}>
+              {/* 无消息时也展示推荐问题，保持初始体验一致 */}
+              {showSupportSuggestions && supportSuggestQuestions.length > 0 && messages.length === 0 && (
+                <Box sx={{ width: '100%' }}>
+                  <Box
+                    sx={{
+                      mb: 1,
+                      color: 'text.secondary',
+                      letterSpacing: '0.2px',
+                    }}
+                  >
+                    你可能想问
+                  </Box>
+                  <Stack
+                    direction='row'
+                    spacing={1}
+                    useFlexGap
+                    flexWrap='wrap'
+                    sx={{
+                      '& button': {
+                        justifyContent: 'flex-start',
+                        border: '1px solid',
+                        borderColor: 'rgba(15, 23, 42, 0.08)',
+                        bgcolor: '#ffffff',
+                        color: 'text.primary',
+                        textTransform: 'none',
+                        minHeight: 34,
+                        borderRadius: 1,
+                        px: 1.5,
+                        py: 0.55,
+                        fontWeight: 400,
+                        letterSpacing: '0.1px',
+                        transition: 'all 0.18s ease',
+                      },
+                      '& button:hover': {
+                        color: 'primary.main',
+                      },
+                    }}
+                  >
+                    {supportSuggestQuestions.map((question) => (
+                      <Button
+                        key={question}
+                        variant='outlined'
+                        size='small'
+                        onClick={() => handleSuggestClick(question)}
+                        disabled={isLoading}
+                        sx={{ textAlign: 'left' }}
+                      >
+                        {question}
+                      </Button>
+                    ))}
+                  </Stack>
+                </Box>
+              )}
+
               {messages.map((message, index) => {
                 // 判断是否是最后一条机器人消息
                 // 条件：1. 当前是机器人消息 2. 之后没有机器人消息 3. 之前有用户消息
@@ -1749,6 +1836,12 @@ export default function CustomerServiceContent({
                   !message.showPostPrompt &&
                   !!message.content
 
+                const isWelcomeMessage = message.role === 'assistant' && index === 0
+
+                if (message.role === 'assistant' && index === 0 && !showWelcomeCard) {
+                  return null
+                }
+
                 return (
                   <Fade in={true} key={message.id} timeout={400}>
                     <Box
@@ -1770,7 +1863,7 @@ export default function CustomerServiceContent({
                           }}
                         >
                           {/* 第一行：头像 + 机器人名字 */}
-                          {!isInIframe && (
+                          {!isInIframe && !(message.role === 'assistant' && index === 0) && (
                             <Box
                               sx={{
                                 display: 'flex',
@@ -1779,7 +1872,7 @@ export default function CustomerServiceContent({
                               }}
                             >
                               <Avatar
-                                src={botAvatar}
+                                 src={botAvatar}
                                 sx={{
                                   background: botAvatar
                                     ? 'transparent'
@@ -1801,7 +1894,7 @@ export default function CustomerServiceContent({
                                   fontSize: isInIframe ? '14px' : '16px',
                                 }}
                               >
-                                {botName}
+                                 {botName}
                               </Typography>
                             </Box>
                           )}
@@ -1812,7 +1905,7 @@ export default function CustomerServiceContent({
                               display: 'flex',
                               gap: 1,
                               alignItems: 'flex-start',
-                              pl: isInIframe ? 0 : 5, // 左边距对齐到内容区域
+                              pl: isWelcomeMessage ? 0 : isInIframe ? 0 : 5, // 打招呼卡片与输入区同宽
                             }}
                           >
                             {/* 消息气泡和快速操作按钮容器 */}
@@ -1822,7 +1915,7 @@ export default function CustomerServiceContent({
                                 gap: 1,
                                 alignItems: 'flex-start',
                                 flex: 1,
-                                maxWidth: isInIframe ? '100%' : 'calc(100% - 40px)',
+                                maxWidth: isWelcomeMessage ? '100%' : isInIframe ? '100%' : 'calc(100% - 40px)',
                               }}
                             >
                               {/* 消息气泡 */}
@@ -2174,6 +2267,63 @@ export default function CustomerServiceContent({
                                         </Box>
                                       )}
 
+                                      {/* 推荐问题：首条机器人打招呼下方展示 */}
+                                      {showSupportSuggestions && supportSuggestQuestions.length > 0 && index === 0 && (
+                                        <Box
+                                          
+                                        >
+                                          <Box
+                                            sx={{
+                                              mb: 1,
+                                              mt: 2,
+                                              color: 'text.secondary',
+                                              letterSpacing: '0.2px',
+                                            }}
+                                          >
+                                            你可能想问
+                                          </Box>
+                                          <Stack
+                                            direction='row'
+                                            spacing={1}
+                                            useFlexGap
+                                            flexWrap='wrap'
+                                            sx={{
+                                              '& button': {
+                                                justifyContent: 'flex-start',
+                                                border: '1px solid',
+                                                borderColor: 'rgba(15, 23, 42, 0.08)',
+                                                bgcolor: '#ffffff',
+                                                color: 'text.primary',
+                                                textTransform: 'none',
+                                                minHeight: 34,
+                                                borderRadius: 1,
+                                                px: 1.5,
+                                                py: 0.55,
+                                                fontWeight: 400,
+                                                letterSpacing: '0.1px',
+                                                transition: 'all 0.18s ease',
+                                              },
+                                              '& button:hover': {
+                                                color: 'primary.main',
+                                              },
+                                            }}
+                                          >
+                                            {supportSuggestQuestions.map((question) => (
+                                              <Button
+                                                key={question}
+                                                variant='outlined'
+                                                size='small'
+                                                onClick={() => handleSuggestClick(question)}
+                                                disabled={isLoading}
+                                                sx={{textAlign: 'left'}}
+                                              >
+                                                {question}
+                                              </Button>
+                                            ))}
+                                          </Stack>
+                                        </Box>
+                                      )}
+
                                       {/* 板块选择器 - 用于搜索 */}
                                       {message.needsForumSelection &&
                                         message.pendingQuestion &&
@@ -2278,7 +2428,7 @@ export default function CustomerServiceContent({
                                 </Paper>
 
                                 {/* 消息底部信息 - 时间戳、复制按钮、免责声明 */}
-                                {message.role === 'assistant' && message.content && (
+                                 {message.role === 'assistant' && message.content && index !== 0 && (
                                   <Box
                                     sx={{
                                       display: 'flex',

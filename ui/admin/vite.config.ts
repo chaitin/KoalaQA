@@ -13,6 +13,10 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, 'src'),
+        '@ctzhian/tiptap/dist/extension/component/TableExtendButton/TableExtendButton.css': path.resolve(
+          __dirname,
+          'src/styles/tiptap-table-extend-placeholder.css'
+        ),
       },
     },
     server: {

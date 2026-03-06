@@ -44,11 +44,9 @@ const contentOptions = [
   // { value: 4, label: '有新的反馈' },
   { value: 5, label: '有新的文章' },
   { value: 6, label: '有新的回答等待审核' },
-  { value: 7, label: '有新的知识缺口' },
+  { value: 7, label: '有新的 AI 洞察' },
   { value: 8, label: '有新的用户申请激活账号' },
   { value: 9, label: '有新的 Issue' },
-  { value: 10, label: '有新的热门问题' },
-  { value: 11, label: '有新的疑似失效知识' },
 ];
 
 // 定义表单验证 schema

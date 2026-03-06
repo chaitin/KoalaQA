@@ -84,12 +84,15 @@ export enum ModelStatType {
   StatTypeDiscussionBlog = 6,
   StatTypeDiscussionIssue = 7,
   StatTypeBotUnknownComment = 8,
+  StatTypeKnowledgeHit = 9,
 }
 
 export enum ModelRankType {
   RankTypeContribute = 1,
   RankTypeAIInsight = 2,
   RankTypeAllContribute = 3,
+  RankTypeHotQuestion = 4,
+  RankTypeInvalidKnowledge = 5,
 }
 
 export enum ModelOrgType {
@@ -248,6 +251,14 @@ export interface ContextResponse {
   msg?: string;
   success?: boolean;
   trace_id?: string;
+}
+
+export interface ModelAPIToken {
+  created_at?: number;
+  id?: number;
+  name?: string;
+  token?: string;
+  updated_at?: number;
 }
 
 export interface ModelAskSession {
@@ -519,6 +530,16 @@ export interface ModelGroupWithItem {
   name?: string;
 }
 
+export interface ModelHotQuestion {
+  content?: string;
+  created_at?: number;
+  discussion_uuid?: string;
+  group_id?: string;
+  id?: number;
+  rag_id?: string;
+  updated_at?: number;
+}
+
 export type ModelJSONBArrayModelAskSessionSummaryDisc = Record<string, any>;
 
 export type ModelJSONBArrayModelForumGroups = Record<string, any>;
@@ -663,6 +684,7 @@ export interface ModelRankTimeGroupItem {
   extra?: string;
   foreign_id?: number;
   id?: number;
+  score?: number;
   score_id?: string;
 }
 
@@ -710,6 +732,8 @@ export interface ModelSystemWebPlugin {
   display?: boolean;
   enabled?: boolean;
   plugin?: boolean;
+  plugin_suggest_questions?: string[];
+  suggest_questions?: string[];
 }
 
 export interface ModelTrend {
@@ -728,6 +752,7 @@ export interface ModelTrend {
 
 export interface ModelUser {
   avatar?: string;
+  block_until?: number;
   builtin?: boolean;
   created_at?: number;
   email?: string;
@@ -736,18 +761,20 @@ export interface ModelUser {
   invisible?: boolean;
   key?: string;
   last_login?: number;
-  name?: string;
   org_ids?: number[];
   password?: string;
   point?: number;
   role?: ModelUserRole;
   updated_at?: number;
+  /** username: 为了兼容之前的参数名 */
+  username?: string;
   web_notify?: boolean;
 }
 
 export interface ModelUserInfo {
   auth_type?: number;
   avatar?: string;
+  block_until?: number;
   builtin?: boolean;
   cors?: boolean;
   email?: string;
@@ -759,6 +786,7 @@ export interface ModelUserInfo {
   role?: ModelUserRole;
   salt?: string;
   uid?: number;
+  /** username: 为了兼容之前的参数名 */
   username?: string;
   web_notify?: boolean;
 }
@@ -858,6 +886,10 @@ export interface SvcAIInsightDiscussionItem {
   rank_id?: number;
   title?: string;
   updated_at?: number;
+}
+
+export interface SvcAPITokenCreateReq {
+  name: string;
 }
 
 export interface SvcActiveModelReq {
@@ -1336,6 +1368,10 @@ export interface SvcUpdateWebNotifyReq {
   enable?: boolean;
 }
 
+export interface SvcUserBlockReq {
+  until?: number;
+}
+
 export interface SvcUserJoinOrgReq {
   /** @minItems 1 */
   org_ids?: number[];
@@ -1345,6 +1381,7 @@ export interface SvcUserJoinOrgReq {
 
 export interface SvcUserListItem {
   avatar?: string;
+  block_until?: number;
   builtin?: boolean;
   created_at?: number;
   email?: string;
@@ -1507,6 +1544,14 @@ export interface GetAdminForumForumIdTagsParams {
 }
 
 export interface PostAdminKbDocumentFileListPayload {
+  /**
+   * upload file
+   * @format binary
+   */
+  file: File;
+}
+
+export interface PostAdminKbDocumentYuqueListPayload {
   /**
    * upload file
    * @format binary
@@ -1796,6 +1841,23 @@ export interface GetAdminRankAiInsightAiInsightIdDiscussionParams {
   aiInsightId: number;
 }
 
+export interface GetAdminRankHotQuestionParams {
+  count?: number;
+}
+
+export interface GetAdminRankHotQuestionHotQuestionIdParams {
+  /** @min 1 */
+  page?: number;
+  /** @min 1 */
+  size?: number;
+  /** hot_question_id */
+  hotQuestionId: number;
+}
+
+export interface GetAdminRankInvalidKnowledgeParams {
+  count?: number;
+}
+
 export interface GetAdminStatDiscussionParams {
   begin: number;
 }
@@ -1807,7 +1869,7 @@ export interface GetAdminStatSearchParams {
 export interface GetAdminStatTrendParams {
   begin: number;
   stat_group: number;
-  stat_types: (1 | 2 | 3 | 4 | 5 | 6 | 7 | 8)[];
+  stat_types: (1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9)[];
 }
 
 export interface GetAdminStatVisitParams {
@@ -1827,6 +1889,10 @@ export interface PutAdminSystemWebhookWebhookIdParams {
 export interface DeleteAdminSystemWebhookWebhookIdParams {
   /** wenhook id */
   webhookId: number;
+}
+
+export interface DeleteAdminTokenTokenIdParams {
+  tokenId: string;
 }
 
 export interface GetAdminUserParams {
@@ -1874,6 +1940,11 @@ export interface PutAdminUserUserIdParams {
 }
 
 export interface DeleteAdminUserUserIdParams {
+  /** user id */
+  userId: number;
+}
+
+export interface PutAdminUserUserIdBlockParams {
   /** user id */
   userId: number;
 }
@@ -2066,7 +2137,7 @@ export interface GetGroupParams {
 }
 
 export interface GetRankContributeParams {
-  type: 1 | 2 | 3;
+  type: 1 | 2 | 3 | 4 | 5;
 }
 
 export interface PutUserPayload {

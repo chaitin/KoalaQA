@@ -5,9 +5,9 @@ import { message } from '@ctzhian/ui';
 import { zodResolver } from '@hookform/resolvers/zod';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import LaunchIcon from '@mui/icons-material/Launch';
-import { Box, FormControlLabel, IconButton, InputAdornment, Link, Radio, RadioGroup, Stack, TextField, Typography } from '@mui/material';
+import { Box, FormControlLabel, IconButton, InputAdornment, InputBase, Link, Radio, RadioGroup, Stack, TextField, Typography } from '@mui/material';
 import Copy from 'copy-to-clipboard';
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -15,6 +15,8 @@ interface OriginalState {
   plugin: boolean;
   enabled: boolean;
   display: boolean;
+  suggestQuestions: string[];
+  pluginSuggestQuestions: string[];
 }
 
 const dingBotSchema = z
@@ -148,9 +150,15 @@ const ChatConfig = () => {
   const [plugin, setPlugin] = useState<'enabled' | 'disabled'>('disabled');
   const [enabled, setEnabled] = useState<'enabled' | 'disabled'>('disabled');
   const [display, setDisplay] = useState<'enabled' | 'disabled'>('disabled');
+  const [suggestQuestions, setSuggestQuestions] = useState<string[]>([]);
+  const [pluginSuggestQuestions, setPluginSuggestQuestions] = useState<string[]>([]);
+  const [suggestInput, setSuggestInput] = useState('');
+  const [pluginSuggestInput, setPluginSuggestInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [origin, setOrigin] = useState('');
   const [originalState, setOriginalState] = useState<OriginalState | null>(null);
+  const suggestInputRef = useRef<HTMLInputElement | null>(null);
+  const pluginSuggestInputRef = useRef<HTMLInputElement | null>(null);
 
   // Bot Form
   const {
@@ -181,6 +189,138 @@ const ChatConfig = () => {
 
   const dingEnabled = watch('dingBot.enabled');
   const weComEnabled = watch('weComBot.enabled');
+  const handleAddSuggest = () => {
+    const value = suggestInput.trim();
+    if (!value) return;
+    if (!suggestQuestions.includes(value)) {
+      setSuggestQuestions(prev => [...prev, value]);
+    }
+    setSuggestInput('');
+  };
+
+  const handleAddPluginSuggest = () => {
+    const value = pluginSuggestInput.trim();
+    if (!value) return;
+    if (!pluginSuggestQuestions.includes(value)) {
+      setPluginSuggestQuestions(prev => [...prev, value]);
+    }
+    setPluginSuggestInput('');
+  };
+
+  const renderSuggestInput = ({
+    placeholder,
+    questions,
+    inputValue,
+    setInputValue,
+    onAdd,
+    onRemove,
+    inputRef,
+    keyPrefix,
+  }: {
+    placeholder: string;
+    questions: string[];
+    inputValue: string;
+    setInputValue: (v: string) => void;
+    onAdd: () => void;
+    onRemove: (item: string) => void;
+    inputRef: React.RefObject<HTMLInputElement>;
+    keyPrefix: string;
+  }) => (
+    <Box sx={{ flex: 1 }}>
+      <Box
+        onClick={() => inputRef.current?.focus()}
+        sx={{
+          width: '100%',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: 1,
+          px: 1.25,
+          py: 1,
+          minHeight: 48,
+          borderRadius: '8px',
+          border: '1px solid #e5e7eb',
+          bgcolor: '#f6f8fa',
+          cursor: 'text',
+        }}
+      >
+        {questions.map(item => (
+          <Box
+            key={`${keyPrefix}-${item}`}
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 0.75,
+              px: 1.25,
+              py: 0.5,
+              borderRadius: '999px',
+              border: '1px solid #e5e7eb',
+              bgcolor: '#ffffff',
+              boxShadow: '0px 1px 2px rgba(16, 24, 40, 0.08)',
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{
+                maxWidth: 240,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                color: '#161823',
+              }}
+            >
+              {item}
+            </Typography>
+            <IconButton
+              size="small"
+              onClick={() => onRemove(item)}
+              sx={{
+                width: 22,
+                height: 22,
+                border: '1px solid #e5e7eb',
+                bgcolor: '#f2f4f7',
+                '&:hover': { bgcolor: '#e9ecef' },
+              }}
+            >
+              ×
+            </IconButton>
+          </Box>
+        ))}
+        <InputBase
+          inputRef={inputRef}
+          value={inputValue}
+          onChange={e => setInputValue(e.target.value)}
+          placeholder={inputValue || questions.length ? '' : placeholder}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              onAdd();
+            }
+          }}
+          sx={{
+            flex: 1,
+            minWidth: 180,
+            fontSize: 14,
+            '& .MuiInputBase-input': {
+              p: 0,
+              lineHeight: '20px',
+              '::placeholder': {
+                color: '#9aa0a6',
+              },
+            },
+          }}
+        />
+      </Box>
+    </Box>
+  );
+
+  const handleRemoveSuggest = (item: string) => {
+    setSuggestQuestions(prev => prev.filter(q => q !== item));
+  };
+
+  const handleRemovePluginSuggest = (item: string) => {
+    setPluginSuggestQuestions(prev => prev.filter(q => q !== item));
+  };
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -196,10 +336,14 @@ const ChatConfig = () => {
           setPlugin(webRes.plugin ? 'enabled' : 'disabled');
           setEnabled(webRes.enabled ? 'enabled' : 'disabled');
           setDisplay(webRes.display ? 'enabled' : 'disabled');
+          setSuggestQuestions(webRes.suggest_questions || []);
+          setPluginSuggestQuestions(webRes.plugin_suggest_questions || []);
           setOriginalState({
             plugin: webRes.plugin || false,
             enabled: webRes.enabled || false,
             display: webRes.display || false,
+            suggestQuestions: webRes.suggest_questions || [],
+            pluginSuggestQuestions: webRes.plugin_suggest_questions || [],
           });
         }
 
@@ -236,8 +380,12 @@ const ChatConfig = () => {
     const pluginChanged = (plugin === 'enabled') !== originalState.plugin;
     const enabledChanged = (enabled === 'enabled') !== originalState.enabled;
     const displayChanged = (display === 'enabled') !== originalState.display;
-    return pluginChanged || enabledChanged || displayChanged;
-  }, [plugin, enabled, display, originalState]);
+    const suggestChanged = JSON.stringify((suggestQuestions || []).map(s => s.trim()).filter(Boolean)) !==
+      JSON.stringify((originalState.suggestQuestions || []).map(s => s.trim()).filter(Boolean));
+    const pluginSuggestChanged = JSON.stringify((pluginSuggestQuestions || []).map(s => s.trim()).filter(Boolean)) !==
+      JSON.stringify((originalState.pluginSuggestQuestions || []).map(s => s.trim()).filter(Boolean));
+    return pluginChanged || enabledChanged || displayChanged || suggestChanged || pluginSuggestChanged;
+  }, [plugin, enabled, display, suggestQuestions, pluginSuggestQuestions, originalState]);
 
   const hasUnsavedChanges = webPluginChanged || isDirty;
 
@@ -251,6 +399,8 @@ const ChatConfig = () => {
           plugin: plugin === 'enabled',
           enabled: enabled === 'enabled',
           display: display === 'enabled',
+          suggest_questions: suggestQuestions.map(q => q.trim()).filter(Boolean),
+          plugin_suggest_questions: pluginSuggestQuestions.map(q => q.trim()).filter(Boolean),
         });
 
         // Update original state for Web Plugin
@@ -258,6 +408,8 @@ const ChatConfig = () => {
           plugin: plugin === 'enabled',
           enabled: enabled === 'enabled',
           display: display === 'enabled',
+          suggestQuestions: suggestQuestions.map(q => q.trim()).filter(Boolean),
+          pluginSuggestQuestions: pluginSuggestQuestions.map(q => q.trim()).filter(Boolean),
         });
       }
 
@@ -378,6 +530,24 @@ const ChatConfig = () => {
           </RadioGroup>
         </Stack>
 
+        <Stack direction="row" alignItems="flex-start" sx={{ pl: 2, mt: 1.5 }}>
+          <Typography variant="body2" sx={{ minWidth: '130px', pt: 1, color: 'text.secondary' }}>
+            推荐问题
+          </Typography>
+          <Box sx={{ flex: 1 }}>
+            {renderSuggestInput({
+              placeholder: '回车添加，示例：如何接入Webhook？',
+              questions: suggestQuestions,
+              inputValue: suggestInput,
+              setInputValue: setSuggestInput,
+              onAdd: handleAddSuggest,
+              onRemove: handleRemoveSuggest,
+              inputRef: suggestInputRef,
+              keyPrefix: 'support-suggest'
+            })}
+          </Box>
+        </Stack>
+
         {/* Section 2: Web Widget */}
         <SectionTitle title="网页挂件" />
         <Stack spacing={2} sx={{ pl: 2 }}>
@@ -425,6 +595,24 @@ const ChatConfig = () => {
                     label={<Typography variant="body2">启用</Typography>}
                   />
                 </RadioGroup>
+              </Stack>
+
+              <Stack direction="row" alignItems="flex-start">
+                <Typography variant="body2" sx={{ minWidth: '130px', pt: 1, color: 'text.secondary' }}>
+                  推荐问题
+                </Typography>
+                <Box sx={{ flex: 1 }}>
+                  {renderSuggestInput({
+                    placeholder: '回车添加，示例：如何快速接入？',
+                    questions: pluginSuggestQuestions,
+                    inputValue: pluginSuggestInput,
+                    setInputValue: setPluginSuggestInput,
+                    onAdd: handleAddPluginSuggest,
+                    onRemove: handleRemovePluginSuggest,
+                    inputRef: pluginSuggestInputRef,
+                    keyPrefix: 'plugin-suggest'
+                  })}
+                </Box>
               </Stack>
 
               <Stack direction="row" alignItems="flex-start">

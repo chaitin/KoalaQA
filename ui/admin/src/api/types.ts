@@ -732,6 +732,8 @@ export interface ModelSystemWebPlugin {
   display?: boolean;
   enabled?: boolean;
   plugin?: boolean;
+  plugin_suggest_questions?: string[];
+  suggest_questions?: string[];
 }
 
 export interface ModelTrend {

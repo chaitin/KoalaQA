@@ -14,7 +14,11 @@ import request, { RequestParams } from "./httpClient";
 import {
   ContextResponse,
   GetAdminRankAiInsightAiInsightIdDiscussionParams,
+  GetAdminRankHotQuestionHotQuestionIdParams,
+  GetAdminRankHotQuestionParams,
+  GetAdminRankInvalidKnowledgeParams,
   GetRankContributeParams,
+  ModelHotQuestion,
   ModelListRes,
   ModelRankTimeGroup,
   ModelRankTimeGroupItem,
@@ -81,6 +85,108 @@ export const getAdminRankAiInsightAiInsightIdDiscussion = (
   >({
     path: `/admin/rank/ai_insight/${aiInsightId}/discussion`,
     method: "GET",
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags rank
+ * @name GetAdminRankHotQuestion
+ * @summary hot question rank
+ * @request GET:/admin/rank/hot_question
+ * @response `200` `(ContextResponse & {
+    data?: ((ModelRankTimeGroup & {
+    items?: (ModelRankTimeGroupItem)[],
+
+}))[],
+
+})` OK
+ */
+
+export const getAdminRankHotQuestion = (
+  query: GetAdminRankHotQuestionParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: (ModelRankTimeGroup & {
+        items?: ModelRankTimeGroupItem[];
+      })[];
+    }
+  >({
+    path: `/admin/rank/hot_question`,
+    method: "GET",
+    query: query,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags rank
+ * @name GetAdminRankHotQuestionHotQuestionId
+ * @summary list hot quesion item
+ * @request GET:/admin/rank/hot_question/{hot_question_id}
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (ModelHotQuestion)[],
+
+}),
+
+})` OK
+ */
+
+export const getAdminRankHotQuestionHotQuestionId = (
+  { hotQuestionId, ...query }: GetAdminRankHotQuestionHotQuestionIdParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: ModelHotQuestion[];
+      };
+    }
+  >({
+    path: `/admin/rank/hot_question/${hotQuestionId}`,
+    method: "GET",
+    query: query,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags rank
+ * @name GetAdminRankInvalidKnowledge
+ * @summary invalid knowledge rank
+ * @request GET:/admin/rank/invalid_knowledge
+ * @response `200` `(ContextResponse & {
+    data?: ((ModelRankTimeGroup & {
+    items?: (ModelRankTimeGroupItem)[],
+
+}))[],
+
+})` OK
+ */
+
+export const getAdminRankInvalidKnowledge = (
+  query: GetAdminRankInvalidKnowledgeParams,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: (ModelRankTimeGroup & {
+        items?: ModelRankTimeGroupItem[];
+      })[];
+    }
+  >({
+    path: `/admin/rank/invalid_knowledge`,
+    method: "GET",
+    query: query,
     format: "json",
     ...params,
   });
