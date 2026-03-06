@@ -54,11 +54,12 @@ func (d *DiscReindex) Handle(ctx context.Context, msg mq.Message) error {
 	logger := d.logger.WithContext(ctx).With("disc_id", data.DiscID)
 	logger.Debug("handle discussion reindex")
 
-	ragContent, err := d.llm.GenerateContentForRetrieval(ctx, data.DiscID)
+	ragRes, err := d.llm.GeneratePrompt(ctx, svc.GeneratePromptOpts{Mode: svc.PromptModeRetrieval, DiscIDs: []uint{data.DiscID}})
 	if err != nil {
 		logger.WithErr(err).Error("generate content for retrieval failed")
 		return nil
 	}
+	ragContent := ragRes.Content
 
 	forum, err := d.forum.GetByID(ctx, data.ForumID)
 	if err != nil {

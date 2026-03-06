@@ -98,7 +98,7 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 		logger.WithErr(err).Warn("get forum failed")
 		return nil
 	}
-	ragContent, err := d.llm.GenerateContentForRetrieval(ctx, data.DiscID)
+	ragRes, err := d.llm.GeneratePrompt(ctx, svc.GeneratePromptOpts{Mode: svc.PromptModeRetrieval, DiscIDs: []uint{data.DiscID}})
 	if err != nil {
 		logger.WithErr(err).Error("generate content for retrieval failed")
 		return nil
@@ -107,7 +107,7 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 	ragID, err := d.rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
 		DatasetID:  forum.DatasetID,
 		DocumentID: disc.RagID,
-		Content:    ragContent,
+		Content:    ragRes.Content,
 		Metadata:   disc.Metadata(),
 	})
 	if err != nil {
@@ -142,15 +142,15 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 		return nil
 	}
 
-	question, groups, prompt, err := d.llm.GenerateAnswerPrompt(ctx, data.DiscID, data.CommID)
+	answerRes, err := d.llm.GeneratePrompt(ctx, svc.GeneratePromptOpts{Mode: svc.PromptModeAnswer, DiscIDs: []uint{data.DiscID}, CommID: data.CommID})
 	if err != nil {
 		logger.WithErr(err).Error("generate prompt failed")
 		return nil
 	}
 	llmRes, answered, refDocIDs, err := d.llm.Answer(ctx, svc.GenerateReq{
-		Question:      question,
-		Groups:        groups,
-		Prompt:        prompt,
+		Question:      answerRes.Question,
+		Groups:        answerRes.Groups,
+		Prompt:        answerRes.Content,
 		DefaultAnswer: bot.UnknownPrompt,
 		NewCommentID:  data.CommID,
 	})
@@ -211,7 +211,7 @@ func (d *Comment) handleInsert(ctx context.Context, data topic.MsgCommentChange)
 func (d *Comment) handleUpdate(ctx context.Context, data topic.MsgCommentChange) error {
 	logger := d.logger.WithContext(ctx).With("comment_id", data.CommID)
 	logger.Info("handle update comment")
-	ragContent, err := d.llm.GenerateContentForRetrieval(ctx, data.DiscID)
+	ragRes, err := d.llm.GeneratePrompt(ctx, svc.GeneratePromptOpts{Mode: svc.PromptModeRetrieval, DiscIDs: []uint{data.DiscID}})
 	if err != nil {
 		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
 		return nil
@@ -229,7 +229,7 @@ func (d *Comment) handleUpdate(ctx context.Context, data topic.MsgCommentChange)
 	ragID, err := d.rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
 		DatasetID:  forum.DatasetID,
 		DocumentID: disc.RagID,
-		Content:    ragContent,
+		Content:    ragRes.Content,
 		Metadata:   disc.Metadata(),
 	})
 	if err != nil {
@@ -247,7 +247,7 @@ func (d *Comment) handleUpdate(ctx context.Context, data topic.MsgCommentChange)
 func (d *Comment) handleDelete(ctx context.Context, data topic.MsgCommentChange) error {
 	logger := d.logger.WithContext(ctx).With("comment_id", data.CommID)
 	logger.Info("handle delete comment")
-	ragContent, err := d.llm.GenerateContentForRetrieval(ctx, data.DiscID)
+	ragRes, err := d.llm.GeneratePrompt(ctx, svc.GeneratePromptOpts{Mode: svc.PromptModeRetrieval, DiscIDs: []uint{data.DiscID}})
 	if err != nil {
 		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
 		return nil
@@ -265,7 +265,7 @@ func (d *Comment) handleDelete(ctx context.Context, data topic.MsgCommentChange)
 	ragID, err := d.rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
 		DatasetID:  forum.DatasetID,
 		DocumentID: disc.RagID,
-		Content:    ragContent,
+		Content:    ragRes.Content,
 		Metadata:   disc.Metadata(),
 	})
 	if err != nil {

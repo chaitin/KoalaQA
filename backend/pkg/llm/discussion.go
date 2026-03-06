@@ -13,7 +13,6 @@ import (
 
 // DiscussionPromptTemplate 论坛智能回帖提示词模版
 type DiscussionPromptTemplate struct {
-
 	// 帖子信息
 	Discussion *model.DiscussionDetail
 
@@ -22,9 +21,6 @@ type DiscussionPromptTemplate struct {
 
 	// 触发回复的新评论
 	NewComment *model.CommentDetail
-
-	// BOT的历史回复（用于保持对话连续性）
-	BotHistoryReplies []model.CommentDetail
 
 	// 评论树结构
 	CommentTree []*CommentNode
@@ -39,28 +35,6 @@ type KnowledgeDocument struct {
 	Source  string `json:"source,omitempty"`
 	QA      bool   `json:"qa"`
 }
-
-const discussionPostTemplate = `
-### ID：{{.Discussion.ID}}
-### 标题：{{.Discussion.Title}}
-### 内容：{{.Discussion.Content}}
-### 发帖人：{{.Discussion.UserName}}
-### 时间：{{formatTime .Discussion.CreatedAt}}
-{{- if .Discussion.Groups}}
-### 分组：{{renderGroups .Discussion.Groups}}
-{{- end}}
-{{- if .Discussion.Tags}}
-### 标签：{{join .Discussion.Tags ", "}}
-{{- end}}
-### 解决状态：{{getDiscState .Discussion.Resolved}}
-
-{{- if .CommentTree}}
-## 评论楼层结构
-{{- range $i, $node := .CommentTree}}
-楼层{{add $i 1}} {{renderComment $node ""}}
-{{- end}}
-{{- end}}
-`
 
 const discussionFullTemplate = `
 ## 当前帖子信息
@@ -156,31 +130,6 @@ func (t *DiscussionPromptTemplate) Question() string {
 	return q
 }
 
-// BuildPostPrompt 构建帖子提示词
-func (t *DiscussionPromptTemplate) BuildPostPrompt() (string, error) {
-	// 初始化帖子模版
-	if err := t.initPostTemplate(); err != nil {
-		return "", fmt.Errorf("初始化帖子模版失败: %w", err)
-	}
-
-	// 清理帖子内容中的无意义内容（base64图片、冗长日志等），避免 token 超限
-	// maxLen=8000 约为 ~3000-4000 tokens，为知识库检索和回复留出空间
-	t.Discussion.Content = util.CleanContentForLLM(t.Discussion.Content, 8000)
-	if t.NewComment != nil {
-		t.NewComment.Content = util.CleanContentForLLM(t.NewComment.Content, 1000)
-	}
-
-	// 构建评论树
-	t.CommentTree = t.buildCommentTree()
-
-	var buf bytes.Buffer
-	if err := t.template.Execute(&buf, t); err != nil {
-		return "", fmt.Errorf("执行帖子模版失败: %w", err)
-	}
-
-	return buf.String(), nil
-}
-
 // BuildFullPrompt 构建完整的提示词
 func (t *DiscussionPromptTemplate) BuildFullPrompt() (string, error) {
 	if err := t.initFullTemplate(); err != nil {
@@ -196,9 +145,6 @@ func (t *DiscussionPromptTemplate) BuildFullPrompt() (string, error) {
 
 	// 构建评论树
 	t.CommentTree = t.buildCommentTree()
-
-	// 提取BOT历史回复
-	t.ExtractBotReplies()
 
 	// 执行模版
 	var buf bytes.Buffer
@@ -234,39 +180,15 @@ func (t *DiscussionPromptTemplate) BuildContentForRetrieval() string {
 	return strings.TrimSpace(builder.String())
 }
 
-// initPostTemplate 初始化帖子模版
-func (t *DiscussionPromptTemplate) initPostTemplate() error {
-	funcMap := template.FuncMap{
-		"formatTime":      formatTime,
-		"join":            strings.Join,
-		"add":             add,
-		"renderGroups":    renderGroups,
-		"renderComment":   renderComment,
-		"findCommentByID": t.findCommentByID,
-		"isReplyToBot":    t.isReplyToBot,
-		"getDiscState":    getDiscState,
-	}
-
-	tmpl, err := template.New("discussion_post_prompt").Funcs(funcMap).Parse(discussionPostTemplate)
-	if err != nil {
-		return err
-	}
-
-	t.template = tmpl
-	return nil
-}
-
 // initFullTemplate 初始化完整模版
 func (t *DiscussionPromptTemplate) initFullTemplate() error {
 	funcMap := template.FuncMap{
-		"formatTime":      formatTime,
-		"join":            strings.Join,
-		"add":             add,
-		"renderGroups":    renderGroups,
-		"renderComment":   renderComment,
-		"findCommentByID": t.findCommentByID,
-		"isReplyToBot":    t.isReplyToBot,
-		"getDiscState":    getDiscState,
+		"formatTime":    formatTime,
+		"join":          strings.Join,
+		"add":           add,
+		"renderGroups":  renderGroups,
+		"renderComment": renderComment,
+		"getDiscState":  getDiscState,
 	}
 
 	tmpl, err := template.New("discussion_full_prompt").Funcs(funcMap).Parse(discussionFullTemplate)
@@ -341,41 +263,6 @@ func (t *DiscussionPromptTemplate) sortChildComments(node *CommentNode) {
 	for _, child := range node.Children {
 		t.sortChildComments(child)
 	}
-}
-
-// findCommentByID 根据ID查找评论（用于模版）
-func (t *DiscussionPromptTemplate) findCommentByID(comments []model.CommentDetail, id uint) *model.CommentDetail {
-	for _, comment := range comments {
-		if comment.ID == id {
-			return &comment
-		}
-	}
-	return nil
-}
-
-// isReplyToBot 检查是否是对BOT回复的响应（用于模版）
-func (t *DiscussionPromptTemplate) isReplyToBot(botReplies []model.CommentDetail, parentID uint) bool {
-	for _, botReply := range botReplies {
-		if botReply.ID == parentID {
-			return true
-		}
-	}
-	return false
-}
-
-// ExtractBotReplies 提取BOT的历史回复
-func (t *DiscussionPromptTemplate) ExtractBotReplies() {
-	t.BotHistoryReplies = make([]model.CommentDetail, 0)
-	for _, comment := range t.AllComments {
-		if comment.Bot && (t.NewComment == nil || comment.ID != t.NewComment.ID) {
-			t.BotHistoryReplies = append(t.BotHistoryReplies, comment)
-		}
-	}
-
-	// 按时间排序
-	sort.Slice(t.BotHistoryReplies, func(i, j int) bool {
-		return t.BotHistoryReplies[i].CreatedAt < t.BotHistoryReplies[j].CreatedAt
-	})
 }
 
 // NewDiscussionPromptTemplate 创建新的提示词模版实例

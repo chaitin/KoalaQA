@@ -92,12 +92,12 @@ func (q *QAReview) Handle(ctx context.Context, msg mq.Message) error {
 		logger.WithErr(err).Warn("summary discussion question failed")
 		return nil
 	}
-	_, _, answer, err := q.llm.GenerateAnswerPrompt(ctx, data.DiscussID, 0)
+	answerRes, err := q.llm.GeneratePrompt(ctx, svc.GeneratePromptOpts{Mode: svc.PromptModeAnswer, DiscIDs: []uint{data.DiscussID}})
 	if err != nil {
 		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
 		return nil
 	}
-	aiAnswer, err := q.llm.Chat(ctx, llm.SystemAnswerSummaryPrompt, answer, nil)
+	aiAnswer, err := q.llm.Chat(ctx, llm.SystemAnswerSummaryPrompt, answerRes.Content, nil)
 	if err != nil {
 		logger.WithErr(err).Warn("summary discussion answer failed")
 		return nil

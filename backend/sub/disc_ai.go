@@ -111,15 +111,15 @@ func (d *Disc) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 		logger.WithErr(err).Warn("pub hot question failed")
 	}
 
-	question, groups, prompt, err := d.llm.GenerateAnswerPrompt(ctx, data.DiscID, 0)
+	answerRes, err := d.llm.GeneratePrompt(ctx, svc.GeneratePromptOpts{Mode: svc.PromptModeAnswerNoComments, DiscIDs: []uint{data.DiscID}})
 	if err != nil {
 		logger.WithErr(err).Error("generate prompt failed")
 		return nil
 	}
 	llmRes, answered, refDocIDs, err := d.llm.Answer(ctx, svc.GenerateReq{
-		Question:      question,
-		Groups:        groups,
-		Prompt:        prompt,
+		Question:      answerRes.Question,
+		Groups:        answerRes.Groups,
+		Prompt:        answerRes.Content,
 		DefaultAnswer: bot.UnknownPrompt,
 		NewCommentID:  0,
 	})
@@ -210,17 +210,17 @@ func (d *Disc) handleUpdate(ctx context.Context, data topic.MsgDiscChange) error
 		return nil
 	}
 
-	question, prompt, groups, err := d.llm.GeneratePostPrompt(ctx, data.DiscID)
+	postRes, err := d.llm.GeneratePrompt(ctx, svc.GeneratePromptOpts{Mode: svc.PromptModeAnswerNoComments, DiscIDs: []uint{data.DiscID}})
 	if err != nil {
 		logger.WithErr(err).Error("generate prompt failed")
 		return nil
 	}
 	llmRes, answered, refDocIDs, err := d.llm.Answer(ctx, svc.GenerateReq{
-		Question:      question,
-		Prompt:        prompt,
+		Question:      postRes.Question,
+		Prompt:        postRes.Content,
 		DefaultAnswer: bot.UnknownPrompt,
 		NewCommentID:  0,
-		Groups:        groups,
+		Groups:        postRes.Groups,
 	})
 	if err != nil {
 		logger.WithErr(err).Error("answer failed")

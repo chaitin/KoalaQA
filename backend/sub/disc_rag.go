@@ -67,11 +67,12 @@ func (d *DiscRag) Handle(ctx context.Context, msg mq.Message) error {
 func (d *DiscRag) handleInsert(ctx context.Context, data topic.MsgDiscChange) error {
 	logger := d.logger.WithContext(ctx).With("data", data)
 	logger.Debug("handle insert discussion rag")
-	content, err := d.llm.GenerateContentForRetrieval(ctx, data.DiscID)
+	ragRes, err := d.llm.GeneratePrompt(ctx, svc.GeneratePromptOpts{Mode: svc.PromptModeRetrieval, DiscIDs: []uint{data.DiscID}})
 	if err != nil {
 		logger.WithContext(ctx).WithErr(err).Error("generate prompt failed")
 		return nil
 	}
+	content := ragRes.Content
 	forum, err := d.forum.GetByID(ctx, data.ForumID)
 	if err != nil {
 		logger.WithErr(err).Warn("get forum failed")
@@ -97,7 +98,7 @@ func (d *DiscRag) handleInsert(ctx context.Context, data topic.MsgDiscChange) er
 	if err != nil {
 		return err
 	}
-	content, err = d.llm.GenerateContentForRetrievalWithoutComments(ctx, data.DiscID)
+	noCommRes, err := d.llm.GeneratePrompt(ctx, svc.GeneratePromptOpts{Mode: svc.PromptModeRetrievalNoComments, DiscIDs: []uint{data.DiscID}})
 	if err != nil {
 		logger.WithContext(ctx).WithErr(err).Error("generate content for retrieval without comments failed")
 		return nil
@@ -105,7 +106,7 @@ func (d *DiscRag) handleInsert(ctx context.Context, data topic.MsgDiscChange) er
 	_, err = d.rag.UpsertRecords(ctx, rag.UpsertRecordsReq{
 		DatasetID:        forum.DatasetID,
 		DocumentID:       ragID,
-		Content:          content,
+		Content:          noCommRes.Content,
 		Metadata:         disc.Metadata(),
 		KeywordsOnlyMode: true,
 	})
