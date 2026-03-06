@@ -84,6 +84,7 @@ func (i *invalidKnowledge) Run() {
 
 	ranks := make([]model.Rank, 0)
 	knowledgeDocIDs := make(model.Int64Array, 0)
+	docExtra := make(map[string]model.StatInvalidKnowledgeDoc)
 
 	if len(knowledges) > 0 {
 		for _, knowledge := range knowledges {
@@ -107,16 +108,12 @@ func (i *invalidKnowledge) Run() {
 				continue
 			}
 
-			docBytes, err := json.Marshal(model.StatInvalidKnowledgeDoc{
+			docExtra[knowledge.Key] = model.StatInvalidKnowledgeDoc{
 				Title:        knowledge.Title,
 				Type:         knowledge.Type,
 				DislikeCount: knowledge.DislikeCount,
 				HitCount:     knowledge.HitCount,
 				UpdatedAt:    knowledge.UpdatedAt,
-			})
-			if err != nil {
-				logger.WithErr(err).With("knowledge_info", knowledge).Warn("marsha json failed, skip")
-				continue
 			}
 
 			ranks = append(ranks, model.Rank{
@@ -126,7 +123,6 @@ func (i *invalidKnowledge) Run() {
 				Type:    model.RankTypeInvalidKnowledge,
 				ScoreID: knowledge.Key,
 				Score:   (float64(knowledge.DislikeCount) + 1) / (float64(knowledge.HitCount) + 1) * t,
-				Extra:   string(docBytes),
 			})
 		}
 
@@ -166,14 +162,11 @@ func (i *invalidKnowledge) Run() {
 			continue
 		}
 
-		docBytes, err := json.Marshal(model.StatInvalidKnowledgeDoc{
+		strDocID := strconv.FormatUint(uint64(doc.ID), 10)
+		docExtra[strDocID] = model.StatInvalidKnowledgeDoc{
 			Title:     doc.Title,
 			Type:      doc.DocType,
 			UpdatedAt: doc.UpdatedAt,
-		})
-		if err != nil {
-			logger.WithErr(err).With("knowledge_info", doc).Warn("marsha json failed, skip")
-			continue
 		}
 
 		ranks = append(ranks, model.Rank{
@@ -181,14 +174,50 @@ func (i *invalidKnowledge) Run() {
 				CreatedAt: model.Timestamp(lastMonth.Unix()),
 			},
 			Type:    model.RankTypeInvalidKnowledge,
-			ScoreID: strconv.FormatUint(uint64(doc.ID), 10),
+			ScoreID: strDocID,
 			Score:   t,
-			Extra:   string(docBytes),
 		})
 	}
 	if len(ranks) == 0 {
 		logger.Info("empty ranks. return")
 		return
+	}
+
+	for index, rank := range ranks {
+		extra, ok := docExtra[rank.ScoreID]
+		if !ok {
+			logger.With("score_id", rank.ScoreID).Warn("not found in map, skip")
+			continue
+		}
+
+		if extra.Type == model.DocTypeSpace {
+			docID, err := strconv.ParseUint(rank.ScoreID, 10, 64)
+			if err != nil {
+				logger.WithErr(err).With("score_id", rank.ScoreID).Warn("parse score_id failed, skip")
+			} else {
+				folderID, err := i.doc.GetFolderID(ctx, uint(docID))
+				if err != nil {
+					logger.WithErr(err).With("doc_id", docID).Warn("get doc folder id failed")
+				} else {
+					extra.FolderID = folderID
+
+					spaceID, err := i.doc.GetFolderID(ctx, folderID)
+					if err != nil {
+						logger.WithErr(err).With("folder_id", folderID).Warn("get doc space if failed")
+					} else {
+						extra.SpaceID = spaceID
+					}
+				}
+			}
+		}
+
+		extraBytes, err := json.Marshal(extra)
+		if err != nil {
+			logger.WithErr(err).With("extra", extra).Warn("marshal extra failed")
+			continue
+		}
+
+		ranks[index].Extra = string(extraBytes)
 	}
 
 	err = i.rank.BatchCreate(ctx, &ranks)
