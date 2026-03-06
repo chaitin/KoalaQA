@@ -94,6 +94,7 @@ type TimeRange = 'today' | 'week' | 'month';
 interface InsightData {
   title: string;
   time: string;
+  timeStart?: number;
   questions: ModelRankTimeGroupItem[];
   category: 'knowledgeGap' | 'hotQuestion' | 'invalidKnowledge';
 }
@@ -972,12 +973,14 @@ const Dashboard: React.FC = () => {
   const buildInsightCards = useCallback(
     (source: ModelRankTimeGroup[] | null | undefined, category: 'knowledgeGap' | 'hotQuestion' | 'invalidKnowledge') => {
       if (!source || source.length === 0)
-        return [] as { title: string; subtitle: string; items: ModelRankTimeGroupItem[]; category: 'knowledgeGap' | 'hotQuestion' | 'invalidKnowledge'; }[];
+        return [] as { title: string; subtitle: string; items: ModelRankTimeGroupItem[]; category: 'knowledgeGap' | 'hotQuestion' | 'invalidKnowledge'; timeStart: number; }[];
 
       const now = dayjs();
       const currentWeekStart = now.startOf('week');
 
-      return source.map((item: ModelRankTimeGroup) => {
+      const sorted = [...source].sort((a, b) => (b.time || 0) - (a.time || 0));
+
+      return sorted.map((item: ModelRankTimeGroup) => {
         const startTime = dayjs.unix(item.time || 0);
         const weekEnd = startTime.add(6, 'day');
 
@@ -1021,6 +1024,14 @@ const Dashboard: React.FC = () => {
   const aiInsightData = useMemo(() => buildInsightCards(data.aiInsights, 'knowledgeGap'), [buildInsightCards, data.aiInsights]);
   const hotQuestionData = useMemo(() => buildInsightCards(data.hotQuestions, 'hotQuestion'), [buildInsightCards, data.hotQuestions]);
   const invalidKnowledgeData = useMemo(() => buildInsightCards(data.invalidKnowledge, 'invalidKnowledge'), [buildInsightCards, data.invalidKnowledge]);
+
+  const mergedInsights = useMemo(() => {
+    const list: Array<ReturnType<typeof buildInsightCards>[number]> = [];
+    if (aiInsightData) list.push(...aiInsightData);
+    if (hotQuestionData) list.push(...hotQuestionData);
+    if (invalidKnowledgeData) list.push(...invalidKnowledgeData);
+    return list.sort((a, b) => (b.timeStart || 0) - (a.timeStart || 0));
+  }, [aiInsightData, hotQuestionData, invalidKnowledgeData, buildInsightCards]);
   // 初始化数据获取 - 只在组件挂载时获取一次AI数据和时间相关数据
   useEffect(() => {
     let cancelled = false;
@@ -1578,69 +1589,24 @@ const Dashboard: React.FC = () => {
                     </Typography>
                     <Grid container spacing={1} sx={{ flex: 1, minHeight: 0, overflow: 'auto', pr: 0.5 }}>
                       <Grid size={{ xs: 12 }}>
-                        <Stack spacing={1} sx={{ mb: 1 }}>
-                          {aiInsightData?.slice(0, 3).map((insight, index) => (
+                        <Stack spacing={1}>
+                          {mergedInsights.length > 0 ? (
+                            mergedInsights.slice(0, 9).map((insight, index) => (
                               <InsightItem
-                                key={`gap-${index}`}
+                                key={`${insight.category}-${index}-${insight.timeStart}`}
                                 type={'normal'}
                                 time={insight.subtitle}
                                 timeStart={insight.timeStart}
                                 title={insight.title}
                                 scoreIds={insight.items}
                                 isExpanded={true}
-                                category="knowledgeGap"
+                                category={insight.category}
                                 onQuestionClick={handleQuestionClick}
                               />
-                            ))}
-                          {!aiInsightData?.length && (
+                            ))
+                          ) : (
                             <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 1 }}>
-                              暂无知识缺口
-                            </Typography>
-                          )}
-                        </Stack>
-                      </Grid>
-
-                      <Grid size={{ xs: 12 }}>
-                        <Stack spacing={1} sx={{ mb: 1 }}>
-                          {hotQuestionData?.slice(0, 3).map((insight, index) => (
-                              <InsightItem
-                                key={`hot-${index}`}
-                                type={'normal'}
-                                time={insight.subtitle}
-                                timeStart={insight.timeStart}
-                                title={insight.title}
-                                scoreIds={insight.items}
-                                isExpanded={true}
-                                category="hotQuestion"
-                                onQuestionClick={handleQuestionClick}
-                            />
-                          ))}
-                          {!hotQuestionData?.length && (
-                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 1 }}>
-                              暂无热门问题
-                            </Typography>
-                          )}
-                        </Stack>
-                      </Grid>
-
-                      <Grid size={{ xs: 12 }}>
-                        <Stack spacing={1}>
-                          {invalidKnowledgeData?.slice(0, 3).map((insight, index) => (
-                              <InsightItem
-                                key={`invalid-${index}`}
-                                type={'normal'}
-                                time={insight.subtitle}
-                                timeStart={insight.timeStart}
-                                title={insight.title}
-                                scoreIds={insight.items}
-                                isExpanded={true}
-                                category="invalidKnowledge"
-                                onQuestionClick={handleQuestionClick}
-                            />
-                          ))}
-                          {!invalidKnowledgeData?.length && (
-                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 1 }}>
-                              暂无失效知识
+                              暂无洞察数据
                             </Typography>
                           )}
                         </Stack>

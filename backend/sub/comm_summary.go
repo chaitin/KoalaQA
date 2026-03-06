@@ -58,18 +58,17 @@ func (c *CommentSummary) Handle(ctx context.Context, msg mq.Message) error {
 		logger.WithErr(err).Error("get disc failed")
 		return nil
 	}
-
 	if disc.Type != model.DiscussionTypeQA {
 		logger.Debug("ignore comment update")
 		return nil
 	}
 
-	_, prompt, _, err := c.llm.GeneratePostPrompt(ctx, data.DiscID)
+	postRes, err := c.llm.GeneratePrompt(ctx, svc.GeneratePromptOpts{Mode: svc.PromptModeAnswer, DiscIDs: []uint{data.DiscID}})
 	if err != nil {
 		logger.WithErr(err).Error("generate post prompt failed")
 		return nil
 	}
-	summary, err := c.llm.Chat(ctx, llm.SystemBlogSummaryPrompt, prompt, map[string]any{
+	summary, err := c.llm.Chat(ctx, llm.SystemBlogSummaryPrompt, postRes.Content, map[string]any{
 		"CurrentDate": time.Now().Format("2006-01-02"),
 	})
 	if err != nil {

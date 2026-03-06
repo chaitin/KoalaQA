@@ -83,7 +83,7 @@ func (g *Generator) AIInsight(ctx context.Context, msgType Type) (Message, error
 	}
 
 	switch msgType {
-	case TypeAIInsightKnowledgeGap:
+	case TypeAIInsight:
 		return NewAIInsightKnowledgeGap(address), nil
 	case TypeAIInsightHotQuestion:
 		return NewAIInsightHotQuestion(address), nil

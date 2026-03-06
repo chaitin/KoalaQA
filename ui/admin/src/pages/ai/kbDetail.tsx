@@ -43,7 +43,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 const KnowledgeBaseDetailPage = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const params = useParams();
   const navigate = useNavigate();
 
@@ -56,7 +56,8 @@ const KnowledgeBaseDetailPage = () => {
   const folderId = +searchParams.get('folderId')!;
 
   // 所有 Hooks 必须在早期返回之前调用
-  const [docStatusSearch, setDocStatusSearch] = useState('');
+  const initialSearchTitle = searchParams.get('title') || '';
+  const [docStatusSearch, setDocStatusSearch] = useState(initialSearchTitle);
   const [docStatusTab, setDocStatusTab] = useState<'all' | 'success' | 'failed' | 'syncing'>('all');
   const [docFailReasonById, setDocFailReasonById] = useState<Record<number, string>>({});
   const [docFailReasonLoadingById, setDocFailReasonLoadingById] = useState<Record<number, boolean>>(
@@ -380,26 +381,31 @@ const KnowledgeBaseDetailPage = () => {
 
   // 搜索条件变化时，使用防抖延迟请求
   useEffect(() => {
-    // 跳过首次挂载，避免与初始加载重复请求
     if (isFirstMountForSearchRef.current) {
       isFirstMountForSearchRef.current = false;
-      return;
     }
 
-    if (spaceId && folderId && kb_id) {
-      // 清除之前的定时器
-      if (searchDebounceTimerRef.current) {
-        clearTimeout(searchDebounceTimerRef.current);
+    if (searchDebounceTimerRef.current) {
+      clearTimeout(searchDebounceTimerRef.current);
+    }
+
+    searchDebounceTimerRef.current = setTimeout(() => {
+      const newParams = new URLSearchParams(searchParams.toString());
+      if (docStatusSearch.trim()) {
+        newParams.set('title', docStatusSearch.trim());
+      } else {
+        newParams.delete('title');
       }
-      // 设置新的防抖定时器
-      searchDebounceTimerRef.current = setTimeout(() => {
+      setSearchParams(newParams, { replace: true });
+
+      if (spaceId && folderId && kb_id) {
         setRootNodes([]);
         setRootPage(1);
         setRootHasMore(true);
         setTreeNodeStates(new Map());
         loadRootNodes(1, false);
-      }, 500); // 500ms 防抖
-    }
+      }
+    }, 500);
 
     return () => {
       if (searchDebounceTimerRef.current) {
@@ -407,7 +413,7 @@ const KnowledgeBaseDetailPage = () => {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [docStatusSearch]);
+  }, [docStatusSearch, searchParams, setSearchParams]);
 
   // 如果 kb_id 无效，返回错误提示（在所有 Hooks 调用之后）
   if (!kb_id || kb_id <= 0 || Number.isNaN(kb_id)) {
@@ -821,8 +827,18 @@ const KnowledgeBaseDetailPage = () => {
     return topLevelIds;
   };
 
-  // 获取文件夹标题（从URL参数或需要单独获取）
-  const folderTitle = searchParams.get('folderTitle') || '知识库详情';
+  const folderTitleFromQuery = searchParams.get('folderTitle');
+  const folderTitle = folderTitleFromQuery || currentFolder?.title || '知识库详情';
+
+  // 当 URL 未提供 folderTitle 但接口已返回文件夹名称时，同步到 URL，便于外部跳转带上完整路径
+  useEffect(() => {
+    if (!folderTitleFromQuery && currentFolder?.title) {
+      const newParams = new URLSearchParams(searchParams.toString());
+      newParams.set('folderTitle', currentFolder.title);
+      setSearchParams(newParams, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [folderTitleFromQuery, currentFolder?.title]);
 
   return (
     <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', boxShadow: 'none' }}>

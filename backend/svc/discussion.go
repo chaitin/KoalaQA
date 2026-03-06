@@ -647,11 +647,11 @@ func (d *Discussion) DiscussionRequirement(ctx context.Context, user model.UserI
 		return "", errors.New("invalid discussion")
 	}
 
-	_, prompt, _, err := d.in.LLM.GeneratePostPrompt(ctx, disc.ID)
+	postRes, err := d.in.LLM.GeneratePrompt(ctx, GeneratePromptOpts{Mode: PromptModeAnswer, DiscIDs: []uint{disc.ID}})
 	if err != nil {
 		return "", err
 	}
-	requirement, err := d.in.LLM.Chat(ctx, llm.DiscussionRequirementSystemPrompt, prompt, map[string]any{
+	requirement, err := d.in.LLM.Chat(ctx, llm.DiscussionRequirementSystemPrompt, postRes.Content, map[string]any{
 		"CurrentDate": time.Now().Format("2006-01-02"),
 	})
 	if err != nil {
@@ -697,14 +697,14 @@ func (d *Discussion) AIInsightAnswer(ctx context.Context, req DiscussionKeywordA
 	logger.With("disc_ids", discIDs).Info("ai keyword answer get discs")
 
 	for {
-		prompt, err := d.in.LLM.GenerateDiscussionPrompt(ctx, discIDs...)
+		batchRes, err := d.in.LLM.GeneratePrompt(ctx, GeneratePromptOpts{DiscIDs: discIDs})
 		if err != nil {
 			return "", err
 		}
 
 		content, answer, _, err := d.in.LLM.AnswerWithThink(ctx, GenerateReq{
 			Question:      req.Keyword,
-			Prompt:        prompt,
+			Prompt:        batchRes.Content,
 			DefaultAnswer: "无法回答问题",
 		})
 		if err != nil {
@@ -2258,19 +2258,27 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		)
 
 		if len(groups) == 0 {
-			wrapSteam.RecvOne(llm.AskSessionStreamItem{
+			err = wrapSteam.RecvOne(llm.AskSessionStreamItem{
 				Type:    "thinking",
 				Content: "thinking",
 			}, false)
+			if err != nil {
+				d.logger.WithContext(ctx).WithErr(err).Warn("wrap stream thinking recv failed")
+				return
+			}
 			autoGroups, err := d.detectAskGroups(ctx, uid, req.Question)
 			if err == nil {
 				logger.With("groups", autoGroups).Info("detect ask groups")
 				groups = autoGroups
 			}
-			wrapSteam.RecvOne(llm.AskSessionStreamItem{
+			err = wrapSteam.RecvOne(llm.AskSessionStreamItem{
 				Type:    "searching",
 				Content: "searching",
 			}, false)
+			if err != nil {
+				d.logger.WithContext(ctx).WithErr(err).Warn("wrap stream searching recv failed")
+				return
+			}
 		}
 
 		stream, err := d.in.LLM.StreamAnswer(cancelCtx, llm.SystemChatNoRefPrompt, GenerateReq{

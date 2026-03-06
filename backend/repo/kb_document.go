@@ -22,6 +22,16 @@ func (d *KBDocument) GetByID(ctx context.Context, res any, kbID uint, docID uint
 	return d.model(ctx).Where("kb_id = ? and id = ?", kbID, docID).Scopes(o.Scopes()...).First(res).Error
 }
 
+func (d *KBDocument) GetFolderID(ctx context.Context, id uint) (uint, error) {
+	var doc model.KBDocument
+	err := d.model(ctx).Select("root_parent_id").Where("id = ?", id).First(&doc).Error
+	if err != nil {
+		return 0, err
+	}
+
+	return doc.RootParentID, nil
+}
+
 func (d *KBDocument) GetByRagIDs(ctx context.Context, ids []string) ([]model.KBDocument, error) {
 	var docs []model.KBDocument
 	if err := d.model(ctx).

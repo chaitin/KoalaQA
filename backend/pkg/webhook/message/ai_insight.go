@@ -44,7 +44,7 @@ type sendAIInsightMsg struct {
 }
 
 func (i *aiInsightMsg) ID() string {
-	return i.MsgTitle
+	return i.Msg.Type
 }
 
 func (i *aiInsightMsg) Message(webhookType model.WebhookType) (string, error) {
@@ -75,10 +75,11 @@ func (i *aiInsightMsg) Data() Data {
 	}
 }
 
+// 由于勾选项只有一个，所以使用同一类型
 func NewAIInsightKnowledgeGap(path string) Message {
 	return &aiInsightMsg{
 		Header: Header{
-			MsgType:       TypeAIInsightKnowledgeGap,
+			MsgType:       TypeAIInsight,
 			MsgTitle:      "你有新的 AI 洞察",
 			HeadingPrefix: "类型",
 		},
@@ -93,7 +94,7 @@ func NewAIInsightKnowledgeGap(path string) Message {
 func NewAIInsightHotQuestion(path string) Message {
 	return &aiInsightMsg{
 		Header: Header{
-			MsgType:       TypeAIInsightHotQuestion,
+			MsgType:       TypeAIInsight,
 			MsgTitle:      "你有新的 AI 洞察",
 			HeadingPrefix: "类型",
 		},
@@ -108,7 +109,7 @@ func NewAIInsightHotQuestion(path string) Message {
 func NewAIInsightInvalidKnowledge(path string) Message {
 	return &aiInsightMsg{
 		Header: Header{
-			MsgType:       TypeAIInsightInvalidKnowledge,
+			MsgType:       TypeAIInsight,
 			MsgTitle:      "你有新的 AI 洞察",
 			HeadingPrefix: "类型",
 		},

@@ -51,6 +51,8 @@ type StatTrend struct {
 
 type StatInvalidKnowledgeDoc struct {
 	Title        string    `json:"title"`
+	SpaceID      uint      `json:"space_id"`
+	FolderID     uint      `json:"folder"`
 	Type         DocType   `json:"type"`
 	DislikeCount int64     `json:"dislike_count"`
 	HitCount     int64     `json:"hit_count"`

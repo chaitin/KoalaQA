@@ -82,13 +82,16 @@ func (a *Blog) handleInsert(ctx context.Context, data topic.MsgDiscChange) error
 			return nil
 		}
 	}
-
-	_, prompt, _, err := a.llm.GeneratePostPrompt(ctx, data.DiscID)
+	mode := svc.PromptModeAnswerNoComments
+	if data.Type == model.DiscussionTypeQA {
+		mode = svc.PromptModeAnswer
+	}
+	postRes, err := a.llm.GeneratePrompt(ctx, svc.GeneratePromptOpts{Mode: mode, DiscIDs: []uint{data.DiscID}})
 	if err != nil {
 		logger.WithErr(err).Error("generate post prompt failed")
 		return nil
 	}
-	summary, err := a.llm.Chat(ctx, llm.SystemBlogSummaryPrompt, prompt, map[string]any{
+	summary, err := a.llm.Chat(ctx, llm.SystemBlogSummaryPrompt, postRes.Content, map[string]any{
 		"CurrentDate": time.Now().Format("2006-01-02"),
 	})
 	if err != nil {

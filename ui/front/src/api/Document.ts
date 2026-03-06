@@ -20,6 +20,7 @@ import {
   ModelKBDocumentDetail,
   ModelListRes,
   PostAdminKbDocumentFileListPayload,
+  PostAdminKbDocumentYuqueListPayload,
   PutAdminKbKbIdDocumentGroupIdsParams,
   SvcAnydocListRes,
   SvcDocListItem,
@@ -263,6 +264,66 @@ export const postAdminKbDocumentUrlList = (
     method: "POST",
     body: req,
     type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags document
+ * @name PostAdminKbDocumentYuqueExport
+ * @summary export yuque document
+ * @request POST:/admin/kb/document/yuque/export
+ * @response `200` `(ContextResponse & {
+    data?: string,
+
+})` OK
+ */
+
+export const postAdminKbDocumentYuqueExport = (
+  req: SvcFileExportReq,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: string;
+    }
+  >({
+    path: `/admin/kb/document/yuque/export`,
+    method: "POST",
+    body: req,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags document
+ * @name PostAdminKbDocumentYuqueList
+ * @summary list yuque documents
+ * @request POST:/admin/kb/document/yuque/list
+ * @response `200` `(ContextResponse & {
+    data?: SvcAnydocListRes,
+
+})` OK
+ */
+
+export const postAdminKbDocumentYuqueList = (
+  data: PostAdminKbDocumentYuqueListPayload,
+  params: RequestParams = {},
+) =>
+  request<
+    ContextResponse & {
+      data?: SvcAnydocListRes;
+    }
+  >({
+    path: `/admin/kb/document/yuque/list`,
+    method: "POST",
+    body: data,
+    type: ContentType.FormData,
     format: "json",
     ...params,
   });

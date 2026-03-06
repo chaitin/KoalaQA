@@ -10170,6 +10170,18 @@ const docTemplate = `{
                 },
                 "plugin": {
                     "type": "boolean"
+                },
+                "plugin_suggest_questions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "suggest_questions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

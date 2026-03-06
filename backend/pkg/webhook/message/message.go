@@ -11,7 +11,7 @@ const (
 	TypeNewFeedback
 	TypeNewBlog
 	TypeQANeedReview
-	TypeAIInsightKnowledgeGap
+	TypeAIInsight
 	TypeUserReviewGuest
 	TypeNewIssue
 	TypeAIInsightHotQuestion

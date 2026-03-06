@@ -76,6 +76,13 @@ const TYPE_LABELS: Record<number, string> = {
   4: '在线网页',
 };
 
+const DOC_TYPE = {
+  question: 1,
+  document: 2,
+  space: 3,
+  web: 4,
+} as const;
+
 const DIALOG_BODY_HEIGHT = '70vh';
 
 const EMPTY_CONTENT = '';
@@ -696,7 +703,7 @@ const EditorSection: React.FC<EditorSectionProps> = ({
           borderColor: 'divider',
           borderRadius: 1,
           mb: 2,
-          maxHeight: '340px',
+          overflow: 'auto',
           '& .tiptap': {
             px: 1,
             height: '100%',
@@ -996,6 +1003,29 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
               const docType = typeof docTypeCode === 'number'
                 ? TYPE_LABELS[docTypeCode] || '-'
                 : docTypeCode || '-';
+              const spaceId = extra.space_id || extra.space || 0;
+              const folderId = extra.folder_id || extra.folder || extra.folderId || 0;
+              const buildDocLink = () => {
+                const base = window.location.origin;
+                const encodedTitle = encodeURIComponent(docTitle || '');
+
+                if (docTypeCode === DOC_TYPE.question) {
+                  return `${base}/admin/ai/qa?id=1&title=${encodedTitle}`;
+                }
+                if (docTypeCode === DOC_TYPE.web) {
+                  return `${base}/admin/ai/web?id=1&title=${encodedTitle}`;
+                }
+                if (docTypeCode === DOC_TYPE.space) {
+                  const params = new URLSearchParams();
+                  if (spaceId) params.set('spaceId', String(spaceId));
+                  if (folderId) params.set('folderId', String(folderId));
+                  if (docTitle) params.set('title', docTitle);
+                  if (!params.get('id')) params.set('id', '1');
+                  return `${base}/admin/ai/kb/detail?${params.toString()}`;
+                }
+                // 默认通用文档
+                return `${base}/admin/ai/doc?id=1&title=${encodedTitle}`;
+              };
               const updatedAtRaw = extra.updated_at;
               const updatedAt = updatedAtRaw
                 ? dayjs(
@@ -1053,7 +1083,12 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
                         <Typography
                           variant="body1"
                           fontWeight={700}
-                          sx={{ flex: 1, color: '#0f172a', lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                          onClick={() => {
+                            if (!docTitle) return;
+                            const targetUrl = buildDocLink();
+                            window.open(targetUrl, '_blank');
+                          }}
+                          sx={{ flex: 1, color: '#0f172a', lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer', textDecoration: 'underline', textDecorationColor: 'transparent', '&:hover': { textDecorationColor: '#0f172a' } }}
                         >
                           {docTitle}
                         </Typography>

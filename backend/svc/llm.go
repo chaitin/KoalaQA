@@ -378,135 +378,35 @@ func (l *LLM) StreamChat(ctx context.Context, sMsg string, uMsg string, params m
 	return s, nil
 }
 
-// GenerateAnswerPrompt 生成回复帖子的提示词
-func (l *LLM) GenerateAnswerPrompt(ctx context.Context, discID uint, commID uint) (string, []model.GroupItemInfo, string, error) {
-	logger := l.logger.WithContext(ctx).With("discussion_id", discID, "comment_id", commID)
-	logger.Debug("start generate prompt")
-
-	// 1. 获取讨论详情
-	discussion, err := l.disc.Detail(ctx, 0, discID)
-	if err != nil {
-		return "", nil, "", fmt.Errorf("get discussion detail failed: %w", err)
-	}
-
-	// 2. 获取该讨论的所有评论
-	var allComments []model.CommentDetail
-	err = l.comm.List(ctx, &allComments,
-		repo.QueryWithEqual("discussion_id", discID),
-		repo.QueryWithOrderBy("created_at ASC"),
-	)
-	if err != nil {
-		return "", nil, "", fmt.Errorf("get discussion comments failed: %w", err)
-	}
-
-	// 3. 获取新评论详情
-	var newComment *model.CommentDetail
-	if commID > 0 {
-		newComment, err = l.comm.Detail(ctx, commID)
-		if err != nil {
-			return "", nil, "", fmt.Errorf("get new comment detail failed: %w", err)
-		}
-	}
-
-	// 4. 创建提示词模版并生成提示词
-	template := llm.NewDiscussionPromptTemplate(discussion, allComments, newComment)
-
-	prompt, err := template.BuildFullPrompt()
-	if err != nil {
-		return "", nil, "", fmt.Errorf("generate prompt failed: %w", err)
-	}
-
-	logger.With("prompt", prompt).Debug("generate prompt success")
-	return template.Question(), discussion.GroupInfo(), prompt, nil
+// discussionTemplateOpts 控制构建讨论提示词模板的行为
+type discussionTemplateOpts struct {
+	// CommID 触发回复的新评论 ID，为 0 时不加载新评论
+	CommID uint
+	// LoadComments 是否加载该讨论的全部评论列表
+	LoadComments bool
 }
 
-// GenerateContentForRetrieval 生成用于检索的纯内容文本
-func (l *LLM) GenerateContentForRetrieval(ctx context.Context, discID uint) (string, error) {
-	logger := l.logger.WithContext(ctx).With("discussion_id", discID)
-	logger.Debug("start generate content for retrieval")
-
-	// 1. 获取讨论详情
-	discussion, err := l.disc.Detail(ctx, 0, discID)
-	if err != nil {
-		return "", fmt.Errorf("get discussion detail failed: %w", err)
-	}
-
-	// 2. 获取所有评论
-	var allComments []model.CommentDetail
-	err = l.comm.List(ctx, &allComments,
-		repo.QueryWithEqual("discussion_id", discID),
-		repo.QueryWithOrderBy("created_at ASC"),
-	)
-	if err != nil {
-		return "", fmt.Errorf("get discussion comments failed: %w", err)
-	}
-
-	// 3. 创建模版并生成纯内容
-	template := llm.NewDiscussionPromptTemplate(discussion, allComments, nil)
-	content := template.BuildContentForRetrieval()
-
-	logger.Debug("generate content for retrieval success")
-	return content, nil
-}
-
-// GenerateContentForRetrieval 生成用于检索的纯内容文本
-func (l *LLM) GenerateContentForRetrievalWithoutComments(ctx context.Context, discID uint) (string, error) {
-	logger := l.logger.WithContext(ctx).With("discussion_id", discID)
-	logger.Debug("start generate content for retrieval")
-
-	// 1. 获取讨论详情
-	discussion, err := l.disc.Detail(ctx, 0, discID)
-	if err != nil {
-		return "", fmt.Errorf("get discussion detail failed: %w", err)
-	}
-	// 2. 创建模版并生成纯内容
-	template := llm.NewDiscussionPromptTemplate(discussion, nil, nil)
-	content := template.BuildContentForRetrieval()
-
-	logger.Debug("generate content for retrieval success")
-	return content, nil
-}
-
-func (l *LLM) GenerateDiscussionPrompt(ctx context.Context, discIDs ...uint) (string, error) {
-	var discTemplates llm.DiscussionPromptTemplates
-	for _, discID := range discIDs {
-		template, err := l.discussionPromptTemplate(ctx, discID, 0)
-		if err != nil {
-			l.logger.WithContext(ctx).WithErr(err).With("disc_id", discID).Warn("get discussion propmt failed")
-			continue
-		}
-		discTemplates = append(discTemplates, *template)
-	}
-
-	if len(discTemplates) == 0 {
-		l.logger.WithContext(ctx).With("disc_ids", discIDs).Warn("discs not found")
-		return "", nil
-	}
-
-	return discTemplates.BuildFullPrompt()
-}
-
-func (l *LLM) discussionPromptTemplate(ctx context.Context, discID uint, commID uint) (*llm.DiscussionPromptTemplate, error) {
-	// 1. 获取讨论详情
+// buildDiscussionTemplate 统一构建讨论提示词模板的内部方法
+func (l *LLM) buildDiscussionTemplate(ctx context.Context, discID uint, opts discussionTemplateOpts) (*llm.DiscussionPromptTemplate, error) {
 	discussion, err := l.disc.Detail(ctx, 0, discID)
 	if err != nil {
 		return nil, fmt.Errorf("get discussion detail failed: %w", err)
 	}
 
-	// 2. 获取该讨论的所有评论
 	var allComments []model.CommentDetail
-	err = l.comm.List(ctx, &allComments,
-		repo.QueryWithEqual("discussion_id", discID),
-		repo.QueryWithOrderBy("created_at ASC"),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("get discussion comments failed: %w", err)
+	if opts.LoadComments {
+		err = l.comm.List(ctx, &allComments,
+			repo.QueryWithEqual("discussion_id", discID),
+			repo.QueryWithOrderBy("created_at ASC"),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("get discussion comments failed: %w", err)
+		}
 	}
 
-	// 3. 获取新评论详情
 	var newComment *model.CommentDetail
-	if commID > 0 {
-		newComment, err = l.comm.Detail(ctx, commID)
+	if opts.CommID > 0 {
+		newComment, err = l.comm.Detail(ctx, opts.CommID)
 		if err != nil {
 			return nil, fmt.Errorf("get new comment detail failed: %w", err)
 		}
@@ -515,37 +415,96 @@ func (l *LLM) discussionPromptTemplate(ctx context.Context, discID uint, commID 
 	return llm.NewDiscussionPromptTemplate(discussion, allComments, newComment), nil
 }
 
-func (l *LLM) GeneratePostPrompt(ctx context.Context, discID uint) (string, string, []model.GroupItemInfo, error) {
-	logger := l.logger.WithContext(ctx).With("discussion_id", discID)
+// PromptMode 控制 GeneratePrompt 的行为
+type PromptMode int
+
+const (
+	// PromptModeAnswer 回答模式：加载全部评论及新评论，返回 Question/Groups/Content
+	PromptModeAnswer PromptMode = iota
+	// PromptModeAnswerNoComments 回答模式（不含评论）：不加载评论，返回 Question/Groups/Content
+	PromptModeAnswerNoComments
+	// PromptModeRetrieval 检索模式：加载全部评论，返回 Content
+	PromptModeRetrieval
+	// PromptModeRetrievalNoComments 无评论检索模式：不加载评论，返回 Content
+	PromptModeRetrievalNoComments
+)
+
+// GeneratePromptOpts GeneratePrompt 的参数
+type GeneratePromptOpts struct {
+	Mode    PromptMode
+	DiscIDs []uint // 单帖模式取第一个，批量模式取全部
+	CommID  uint   // 仅 PromptModeAnswer 时使用
+}
+
+// PromptResult GeneratePrompt 的返回值，按 Mode 不同，部分字段可能为零值
+type PromptResult struct {
+	Question string
+	Content  string
+	Groups   []model.GroupItemInfo
+}
+
+// GeneratePrompt 统一生成讨论相关提示词或检索内容。
+// DiscIDs 传入多个时自动进入批量模式，加载各帖子评论后合并渲染，返回 Content。
+func (l *LLM) GeneratePrompt(ctx context.Context, opts GeneratePromptOpts) (PromptResult, error) {
+	logger := l.logger.WithContext(ctx).With("mode", opts.Mode, "disc_ids", opts.DiscIDs)
 	logger.Debug("start generate prompt")
 
-	// 1. 获取讨论详情
-	discussion, err := l.disc.Detail(ctx, 0, discID)
-	if err != nil {
-		return "", "", nil, fmt.Errorf("get discussion detail failed: %w", err)
-	}
-
-	// 2. 如果为问答，获取该讨论的所有评论
-	var allComments []model.CommentDetail
-	if discussion.Type == model.DiscussionTypeQA {
-		err = l.comm.List(ctx, &allComments,
-			repo.QueryWithEqual("discussion_id", discID),
-			repo.QueryWithOrderBy("created_at ASC"),
-		)
-		if err != nil {
-			return "", "", nil, fmt.Errorf("get discussion comments failed: %w", err)
+	if len(opts.DiscIDs) > 1 {
+		var discTemplates llm.DiscussionPromptTemplates
+		for _, discID := range opts.DiscIDs {
+			t, err := l.buildDiscussionTemplate(ctx, discID, discussionTemplateOpts{LoadComments: true})
+			if err != nil {
+				logger.WithErr(err).With("disc_id", discID).Warn("get discussion prompt failed")
+				continue
+			}
+			discTemplates = append(discTemplates, *t)
 		}
+		if len(discTemplates) == 0 {
+			logger.Warn("discs not found")
+			return PromptResult{}, nil
+		}
+		content, err := discTemplates.BuildFullPrompt()
+		if err != nil {
+			return PromptResult{}, err
+		}
+		return PromptResult{Content: content}, nil
 	}
 
-	template := llm.NewDiscussionPromptTemplate(discussion, allComments, nil)
+	if len(opts.DiscIDs) == 0 {
+		return PromptResult{}, fmt.Errorf("DiscIDs is required")
+	}
+	discID := opts.DiscIDs[0]
 
-	prompt, err := template.BuildPostPrompt()
+	templateOptsMap := map[PromptMode]discussionTemplateOpts{
+		PromptModeAnswer:              {CommID: opts.CommID, LoadComments: true},
+		PromptModeAnswerNoComments:    {},
+		PromptModeRetrieval:           {LoadComments: true},
+		PromptModeRetrievalNoComments: {},
+	}
+	t, err := l.buildDiscussionTemplate(ctx, discID, templateOptsMap[opts.Mode])
 	if err != nil {
-		return "", "", nil, fmt.Errorf("generate prompt failed: %w", err)
+		return PromptResult{}, err
 	}
 
-	logger.With("prompt", prompt).Debug("generate prompt success")
-	return template.Question(), prompt, discussion.GroupInfo(), nil
+	var result PromptResult
+	switch opts.Mode {
+	case PromptModeAnswer:
+		result.Question = t.Question()
+		result.Groups = t.Discussion.GroupInfo()
+		result.Content, err = t.BuildFullPrompt()
+	case PromptModeAnswerNoComments:
+		result.Question = t.Question()
+		result.Groups = t.Discussion.GroupInfo()
+		result.Content, err = t.BuildFullPrompt()
+	case PromptModeRetrieval, PromptModeRetrievalNoComments:
+		result.Content = t.BuildContentForRetrieval()
+	}
+	if err != nil {
+		return PromptResult{}, fmt.Errorf("generate prompt failed: %w", err)
+	}
+
+	logger.Debug("generate prompt success")
+	return result, nil
 }
 
 // queryKnowledgeDocuments 查询相关知识文档
