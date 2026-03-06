@@ -2258,19 +2258,27 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 		)
 
 		if len(groups) == 0 {
-			wrapSteam.RecvOne(llm.AskSessionStreamItem{
+			err = wrapSteam.RecvOne(llm.AskSessionStreamItem{
 				Type:    "thinking",
 				Content: "thinking",
 			}, false)
+			if err != nil {
+				d.logger.WithContext(ctx).WithErr(err).Warn("wrap stream thinking recv failed")
+				return
+			}
 			autoGroups, err := d.detectAskGroups(ctx, uid, req.Question)
 			if err == nil {
 				logger.With("groups", autoGroups).Info("detect ask groups")
 				groups = autoGroups
 			}
-			wrapSteam.RecvOne(llm.AskSessionStreamItem{
+			err = wrapSteam.RecvOne(llm.AskSessionStreamItem{
 				Type:    "searching",
 				Content: "searching",
 			}, false)
+			if err != nil {
+				d.logger.WithContext(ctx).WithErr(err).Warn("wrap stream searching recv failed")
+				return
+			}
 		}
 
 		stream, err := d.in.LLM.StreamAnswer(cancelCtx, llm.SystemChatNoRefPrompt, GenerateReq{
