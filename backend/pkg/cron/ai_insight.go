@@ -42,7 +42,7 @@ func (i *aiInsight) Run() {
 		return
 	}
 
-	msg, err := i.generator.AIInsight(ctx, message.TypeAIInsightKnowledgeGap)
+	msg, err := i.generator.AIInsight(ctx, message.TypeAIInsight)
 	if err != nil {
 		i.logger.WithErr(err).Warn("generate knowledge gap msg failed")
 		return
