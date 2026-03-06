@@ -51,13 +51,11 @@ const discussionFullTemplate = `
 {{- end}}
 解决状态：{{getDiscState .Discussion.Resolved}}
 
-## 评论楼层结构
 {{- if .CommentTree}}
+## 评论楼层结构
 {{- range $i, $node := .CommentTree}}
 楼层{{add $i 1}} {{renderComment $node ""}}
 {{- end}}
-{{- else}}
-暂无评论
 {{- end}}
 `
 
@@ -81,13 +79,11 @@ const discussionsFullTemplateStr = `
 {{- end}}
 解决状态：{{getDiscState $disc.Discussion.Resolved}}
 
-### 帖子{{add $j 1}}评论楼层结构
 {{- if $disc.CommentTree}}
+### 帖子{{add $j 1}}评论楼层结构
 {{- range $i, $node := $disc.CommentTree}}
 楼层{{add $i 1}} {{renderComment $node ""}}
 {{- end}}
-{{- else}}
-暂无评论
 {{- end}}
 {{- end}}
 {{- else}}
