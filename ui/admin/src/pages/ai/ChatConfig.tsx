@@ -234,14 +234,16 @@ const ChatConfig = () => {
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
-          gap: 1,
-          px: 1.25,
+          gap: 0.75,
+          px: 1,
           py: 1,
-          minHeight: 48,
+          minHeight: 44,
           borderRadius: '8px',
-          border: '1px solid #e5e7eb',
           bgcolor: '#f6f8fa',
           cursor: 'text',
+          '&:focus-within': {
+            border: '1px solid #000',
+          },
         }}
       >
         {questions.map(item => (
@@ -250,13 +252,11 @@ const ChatConfig = () => {
             sx={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: 0.75,
-              px: 1.25,
-              py: 0.5,
-              borderRadius: '999px',
-              border: '1px solid #e5e7eb',
+              gap: 0.5,
+              px: 1,
+              py: 0.35,
+              borderRadius: '14px',
               bgcolor: '#ffffff',
-              boxShadow: '0px 1px 2px rgba(16, 24, 40, 0.08)',
             }}
           >
             <Typography
@@ -267,6 +267,7 @@ const ChatConfig = () => {
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
                 color: '#161823',
+                fontSize: 12,
               }}
             >
               {item}
@@ -275,10 +276,8 @@ const ChatConfig = () => {
               size="small"
               onClick={() => onRemove(item)}
               sx={{
-                width: 22,
-                height: 22,
-                border: '1px solid #e5e7eb',
-                bgcolor: '#f2f4f7',
+                width: 12,
+                height: 12,
                 '&:hover': { bgcolor: '#e9ecef' },
               }}
             >
@@ -299,8 +298,8 @@ const ChatConfig = () => {
           }}
           sx={{
             flex: 1,
-            minWidth: 180,
-            fontSize: 14,
+            minWidth: 200,
+            fontSize: 13,
             '& .MuiInputBase-input': {
               p: 0,
               lineHeight: '20px',

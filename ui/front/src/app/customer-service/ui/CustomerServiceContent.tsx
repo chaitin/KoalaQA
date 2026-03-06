@@ -1752,59 +1752,6 @@ export default function CustomerServiceContent({
             }}
           >
             <Stack spacing={3}>
-              {/* 无消息时也展示推荐问题，保持初始体验一致 */}
-              {showSupportSuggestions && supportSuggestQuestions.length > 0 && messages.length === 0 && (
-                <Box sx={{ width: '100%' }}>
-                  <Box
-                    sx={{
-                      mb: 1,
-                      color: 'text.secondary',
-                      letterSpacing: '0.2px',
-                    }}
-                  >
-                    你可能想问
-                  </Box>
-                  <Stack
-                    direction='row'
-                    spacing={1}
-                    useFlexGap
-                    flexWrap='wrap'
-                    sx={{
-                      '& button': {
-                        justifyContent: 'flex-start',
-                        border: '1px solid',
-                        borderColor: 'rgba(15, 23, 42, 0.08)',
-                        bgcolor: '#ffffff',
-                        color: 'text.primary',
-                        textTransform: 'none',
-                        minHeight: 34,
-                        borderRadius: 1,
-                        px: 1.5,
-                        py: 0.55,
-                        fontWeight: 400,
-                        letterSpacing: '0.1px',
-                        transition: 'all 0.18s ease',
-                      },
-                      '& button:hover': {
-                        color: 'primary.main',
-                      },
-                    }}
-                  >
-                    {supportSuggestQuestions.map((question) => (
-                      <Button
-                        key={question}
-                        variant='outlined'
-                        size='small'
-                        onClick={() => handleSuggestClick(question)}
-                        disabled={isLoading}
-                        sx={{ textAlign: 'left' }}
-                      >
-                        {question}
-                      </Button>
-                    ))}
-                  </Stack>
-                </Box>
-              )}
 
               {messages.map((message, index) => {
                 // 判断是否是最后一条机器人消息
@@ -1916,6 +1863,7 @@ export default function CustomerServiceContent({
                                 alignItems: 'flex-start',
                                 flex: 1,
                                 maxWidth: isWelcomeMessage ? '100%' : isInIframe ? '100%' : 'calc(100% - 40px)',
+                                width: isWelcomeMessage ? '100%' : 'auto',
                               }}
                             >
                               {/* 消息气泡 */}
@@ -1923,6 +1871,7 @@ export default function CustomerServiceContent({
                                 sx={{
                                   position: 'relative',
                                   maxWidth: '100%',
+                                  width: isWelcomeMessage ? '100%' : 'auto',
                                   display: 'flex',
                                   flexDirection: 'column',
                                   gap: 1,
@@ -1933,6 +1882,7 @@ export default function CustomerServiceContent({
                                   sx={{
                                     px: 2.5,
                                     py: 1.5,
+                                    width: isWelcomeMessage ? '100%' : 'auto',
                                     boxShadow: 'none',
                                     borderRadius: 1,
                                     bgcolor: 'white',
