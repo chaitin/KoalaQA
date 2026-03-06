@@ -1187,6 +1187,10 @@ definitions:
         type: boolean
       plugin:
         type: boolean
+      suggest_questions:
+        items:
+          type: string
+        type: array
     type: object
   model.Trend:
     properties:
