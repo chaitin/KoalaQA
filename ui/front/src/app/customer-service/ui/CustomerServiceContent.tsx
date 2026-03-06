@@ -154,7 +154,12 @@ export default function CustomerServiceContent({
   useEffect(() => {
     // widget 模式强制视为 iframe 环境
     if (isWidgetMode) {
-      setIsInIframe(true)
+const [isInIframe, setIsInIframe] = useState<boolean>(false);
+
+useEffect(() => {
+  const inIframe = window.self !== window.top;
+  setIsInIframe(inIframe);
+}, []);
       return
     }
 
