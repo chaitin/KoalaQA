@@ -100,7 +100,7 @@ func TestBuildPostPrompt(t *testing.T) {
 
 	template := NewDiscussionPromptTemplate(discussion, allComments, nil)
 
-	prompt, err := template.BuildPostPrompt()
+	prompt, err := template.BuildFullPrompt()
 	if err != nil {
 		t.Fatalf("生成提示词失败: %v", err)
 	}
