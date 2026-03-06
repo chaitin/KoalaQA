@@ -44,7 +44,7 @@ type sendAIInsightMsg struct {
 }
 
 func (i *aiInsightMsg) ID() string {
-	return i.MsgTitle
+	return i.Msg.Type
 }
 
 func (i *aiInsightMsg) Message(webhookType model.WebhookType) (string, error) {
