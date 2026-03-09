@@ -85,7 +85,7 @@ func (b *Bot) Set(ctx context.Context, req BotSetReq) error {
 		bot.Avatar = dbBot.Avatar
 	}
 	if req.Name == "" {
-		bot.Name = req.Name
+		bot.Name = dbBot.Name
 	}
 
 	b.botCache.BotInfo = bot.BotInfo
