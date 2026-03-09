@@ -136,7 +136,8 @@ func (b *Bot) Get(ctx context.Context) (*BotGetRes, error) {
 	err := b.repoBot.GetByKey(ctx, &botInfo, model.BotKeyDisscution)
 	if err != nil {
 		if errors.Is(err, database.ErrRecordNotFound) {
-			return &BotGetRes{}, nil
+			b.botCache = &BotGetRes{}
+			return b.botCache, nil
 		}
 		return nil, err
 	}
