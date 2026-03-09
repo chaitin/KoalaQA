@@ -89,6 +89,7 @@ func (b *Bot) Set(ctx context.Context, req BotSetReq) error {
 	}
 
 	b.botCache.BotInfo = bot.BotInfo
+	b.botCache.keywordMatcher = nil
 	return nil
 }
 

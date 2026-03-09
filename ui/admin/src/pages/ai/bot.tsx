@@ -50,6 +50,8 @@ const Bot: React.FC = () => {
     },
   });
 
+  const keywordsEnabled = watch('keywords_enable');
+
   const onSubmit = async (data: FormData) => {
     if (!dirtyFields.avatar) {
       await putAdminBot({
@@ -263,25 +265,24 @@ const Bot: React.FC = () => {
             )}
           />
         </Stack>
-        <Stack direction="row" sx={{ mt: 2 }} alignItems="center">
-          <Typography variant="subtitle2" sx={{ minWidth: '24%' }}>
-            敏感词
-          </Typography>
-          <TextField
-            {...register('keywords')}
-            placeholder="请输入需要屏蔽的关键词，多个关键词用逗号分隔"
-            fullWidth
-            disabled={!watch('keywords_enable')}
-            multiline
-            rows={3}
-            slotProps={{
-              inputLabel: {
-                shrink: !!watch('keywords') || undefined,
-                sx: { display: 'none' },
-              },
-            }}
-          />
-        </Stack>
+        {keywordsEnabled && (
+          <Stack direction="row" sx={{ mt: 2 }} alignItems="flex-start">
+            <Box sx={{ minWidth: '24%' }} />
+            <TextField
+              {...register('keywords')}
+              placeholder="请输入需要屏蔽的关键词，多个关键词用逗号分隔"
+              fullWidth
+              multiline
+              rows={3}
+              slotProps={{
+                inputLabel: {
+                  shrink: !!watch('keywords') || undefined,
+                  sx: { display: 'none' },
+                },
+              }}
+            />
+          </Stack>
+        )}
 
       </Box>
     </Card>
