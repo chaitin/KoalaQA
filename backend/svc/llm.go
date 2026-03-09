@@ -190,6 +190,11 @@ func (l *LLM) StreamAnswer(ctx context.Context, sysPrompt string, req GenerateRe
 		filterStream.Recv(func() (string, error) {
 			msg, _, ok := stream.Text(ctx)
 			if !ok {
+				if len(runes) > 0 {
+					data := string(runes)
+					runes = runes[:0]
+					return data, nil
+				}
 				return "", errStreaming
 			}
 
@@ -294,6 +299,9 @@ func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (st
 				cursor.Clear()
 				runes = runes[:0]
 			}
+		}
+		if len(runes) > 0 {
+			builder.WriteString(string(runes))
 		}
 
 		resp.Answer = builder.String()
