@@ -157,14 +157,74 @@ func (l *LLM) StreamAnswer(ctx context.Context, sysPrompt string, req GenerateRe
 		return nil, err
 	}
 
-	return l.StreamChat(ctx, sysPrompt, req.Prompt, map[string]any{
+	botInfo, err := l.bot.Get(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	blockKeywords := ""
+	cursor := botInfo.MatcherCursor()
+	if botInfo.KeywordsEnable && cursor == nil {
+		blockKeywords = botInfo.Keywords
+	}
+
+	filterStream := llm.NewStream[string]()
+
+	stream, err := l.StreamChat(ctx, sysPrompt, req.Prompt, map[string]any{
 		"Question":           rewrittenQuery,
 		"NewCommentID":       req.NewCommentID,
 		"CurrentDate":        time.Now().Format("2006-01-02"),
 		"DefaultAnswer":      req.DefaultAnswer,
 		"KnowledgeDocuments": knowledgeDocuments,
 		"Debug":              req.Debug,
+		"BlockKeywords":      blockKeywords,
 	}, req.Histories()...)
+	if err != nil {
+		return nil, err
+	}
+
+	go func() {
+		defer stream.Close()
+
+		runes := make([]rune, 0)
+		filterStream.Recv(func() (string, error) {
+			msg, _, ok := stream.Text(ctx)
+			if !ok {
+				if len(runes) > 0 {
+					data := string(runes)
+					runes = runes[:0]
+					return data, nil
+				}
+				return "", errStreaming
+			}
+
+			if cursor != nil {
+				resMsg := ""
+				for _, s := range msg {
+					cursor.Append(s)
+					runes = append(runes, s)
+					if cursor.Failed() {
+						index := len(runes) - cursor.Depth()
+						data := string(runes[:index])
+						runes = runes[index:]
+						resMsg += data
+					}
+					if cursor.IsKeyword() {
+						resMsg += strings.Repeat(".", cursor.Depth())
+						cursor.Clear()
+						runes = runes[:0]
+					}
+				}
+
+				return resMsg, nil
+			}
+
+			return msg, nil
+		})
+
+	}()
+
+	return filterStream, nil
 }
 
 func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (string, bool, []string, error) {
@@ -176,17 +236,30 @@ func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (st
 		query += "\n" + strings.Join(groupNames, ",")
 	}
 
+	botInfo, err := l.bot.Get(ctx)
+	if err != nil {
+		return "", false, nil, err
+	}
+
 	rewrittenQuery, knowledgeDocuments, err := l.queryKnowledgeDocuments(ctx, query, model.KBDocMetadata{
 		GroupIDs: groupIDs,
 	})
 	if err != nil {
 		return "", false, nil, err
 	}
+
+	blockKeywords := ""
+	cursor := botInfo.MatcherCursor()
+	if botInfo.KeywordsEnable && cursor == nil {
+		blockKeywords = botInfo.Keywords
+	}
+
 	res, err := l.Chat(ctx, sysPrompt, req.Prompt, map[string]any{
 		"Question":           rewrittenQuery,
 		"NewCommentID":       req.NewCommentID,
 		"CurrentDate":        time.Now().Format("2006-01-02"),
 		"KnowledgeDocuments": knowledgeDocuments,
+		"BlockKeywords":      blockKeywords,
 	})
 	if err != nil {
 		return "", false, nil, err
@@ -205,10 +278,35 @@ func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (st
 	if !resp.Matched || resp.Answer == "" {
 		return req.DefaultAnswer, false, nil, nil
 	}
-	botInfo, err := l.bot.Get(ctx)
-	if err != nil {
-		return "", false, nil, err
+
+	if cursor != nil {
+		var (
+			builder strings.Builder
+		)
+
+		runes := make([]rune, 0)
+		for _, s := range resp.Answer {
+			cursor.Append(s)
+			runes = append(runes, s)
+			if cursor.Failed() {
+				index := len(runes) - cursor.Depth()
+				data := string(runes[:index])
+				builder.WriteString(data)
+				runes = runes[index:]
+			}
+			if cursor.IsKeyword() {
+				builder.WriteString(strings.Repeat(".", cursor.Depth()))
+				cursor.Clear()
+				runes = runes[:0]
+			}
+		}
+		if len(runes) > 0 {
+			builder.WriteString(string(runes))
+		}
+
+		resp.Answer = builder.String()
 	}
+
 	if botInfo.AnswerRef && len(resp.Sources) > 0 {
 		resp.Answer += "\n\n---\n\n" + "引用来源: "
 		for i, source := range resp.Sources {

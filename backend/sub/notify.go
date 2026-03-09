@@ -81,15 +81,15 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 	data := msg.(topic.MsgMessageNotify)
 
 	logger := mn.logger.WithContext(ctx).With("msg", data)
-	botUserID, err := mn.bot.GetUserID(ctx)
+	bot, err := mn.bot.Get(ctx)
 	if err != nil {
 		logger.WithErr(err).Warn("notify get bot user id failed")
 		return nil
 	}
 
 	if data.FromID == data.ToID || (data.FromID == 0 && data.Type != model.MsgNotifyTypeUserPoint) ||
-		(data.ToID == botUserID && !slices.Contains([]model.MsgNotifyType{model.MsgNotifyTypeDislikeComment, model.MsgNotifyTypeBotUnknown}, data.Type)) {
-		logger.With("msg", data).With("bot_user_id", botUserID).Debug("ignore message notify")
+		(data.ToID == bot.UserID && !slices.Contains([]model.MsgNotifyType{model.MsgNotifyTypeDislikeComment, model.MsgNotifyTypeBotUnknown}, data.Type)) {
+		logger.With("msg", data).With("bot_user_id", bot.UserID).Debug("ignore message notify")
 		return nil
 	}
 
@@ -134,13 +134,13 @@ func (mn *messageNotify) Handle(ctx context.Context, msg mq.Message) error {
 		Type:            data.Type,
 		FromID:          data.FromID,
 		FromName:        fromUser.Name,
-		FromBot:         data.FromID == botUserID,
+		FromBot:         data.FromID == bot.UserID,
 		ToID:            data.ToID,
 		ToName:          toUser.Name,
-		ToBot:           data.ToID == botUserID,
+		ToBot:           data.ToID == bot.UserID,
 	}
 
-	if data.ToID == botUserID {
+	if data.ToID == bot.UserID {
 		switch data.Type {
 		case model.MsgNotifyTypeDislikeComment:
 			err = mn.natsPub.Publish(ctx, topic.TopicDiscussWebhook, topic.MsgDiscussWebhook{

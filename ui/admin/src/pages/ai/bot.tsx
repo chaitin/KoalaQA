@@ -23,6 +23,8 @@ const formSchema = z.object({
   name: z.string().min(1, '名称不能为空').max(50, '名称不能超过50个字符'),
   unknown_prompt: z.string().optional(),
   answer_ref: z.boolean().optional(),
+  keywords_enable: z.boolean().optional(),
+  keywords: z.string().optional(),
   id: z.string().optional(),
 });
 
@@ -43,8 +45,12 @@ const Bot: React.FC = () => {
       name: '',
       unknown_prompt: '',
       answer_ref: false,
+      keywords_enable: false,
+      keywords: '',
     },
   });
+
+  const keywordsEnabled = watch('keywords_enable');
 
   const onSubmit = async (data: FormData) => {
     if (!dirtyFields.avatar) {
@@ -52,6 +58,8 @@ const Bot: React.FC = () => {
         name: data.name,
         unknown_prompt: data.unknown_prompt || '',
         answer_ref: data.answer_ref,
+        keywords_enable: data.keywords_enable,
+        keywords: data.keywords,
       });
     } else {
       await putAdminBot(data as any);
@@ -62,7 +70,11 @@ const Bot: React.FC = () => {
 
   useEffect(() => {
     getAdminBot().then(res => {
-      reset(res);
+      reset({
+        ...res,
+        keywords_enable: res.keywords_enable ?? false,
+        keywords: Array.isArray(res.keywords) ? res.keywords.join(',') : res.keywords || '',
+      });
     });
   }, []);
 
@@ -225,6 +237,52 @@ const Bot: React.FC = () => {
             )}
           />
         </Stack>
+
+        <Stack direction="row" sx={{ mt: 2 }} alignItems="center">
+          <Typography variant="subtitle2" sx={{ minWidth: '24%' }}>
+            敏感信息屏蔽
+          </Typography>
+          <Controller
+            name="keywords_enable"
+            control={control}
+            render={({ field }) => (
+              <RadioGroup
+                row
+                value={field.value ? 'enabled' : 'disabled'}
+                onChange={e => field.onChange(e.target.value === 'enabled')}
+              >
+                <FormControlLabel
+                  value="disabled"
+                  control={<Radio size="small" />}
+                  label={<Typography variant="body2">禁用</Typography>}
+                />
+                <FormControlLabel
+                  value="enabled"
+                  control={<Radio size="small" />}
+                  label={<Typography variant="body2">启用</Typography>}
+                />
+              </RadioGroup>
+            )}
+          />
+        </Stack>
+        {keywordsEnabled && (
+          <Stack direction="row" sx={{ mt: 2 }} alignItems="flex-start">
+            <Box sx={{ minWidth: '24%' }} />
+            <TextField
+              {...register('keywords')}
+              placeholder="请输入需要屏蔽的关键词，多个关键词用逗号分隔"
+              fullWidth
+              multiline
+              rows={3}
+              slotProps={{
+                inputLabel: {
+                  shrink: !!watch('keywords') || undefined,
+                  sx: { display: 'none' },
+                },
+              }}
+            />
+          </Stack>
+        )}
 
       </Box>
     </Card>

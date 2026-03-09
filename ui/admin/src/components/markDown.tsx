@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React from 'react';
 import { SxProps } from '@mui/material/styles';
 import { Box } from '@mui/material';
 import ReactMarkdown from 'react-markdown';
@@ -9,7 +9,6 @@ import rehypeRaw from 'rehype-raw';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import { anOldHope } from 'react-syntax-highlighter/dist/esm/styles/hljs';
-// import remarkToc from "remark-toc";
 
 export interface MarkDownProps {
   title?: string;
@@ -17,10 +16,31 @@ export interface MarkDownProps {
   sx?: SxProps;
 }
 
+const sanitizeSchema = {
+  ...defaultSchema,
+  tagNames: [...(defaultSchema.tagNames as string[]), 'center', 'input'],
+  attributes: {
+    ...(defaultSchema.attributes || {}),
+    '*': [
+      ...((defaultSchema.attributes as any)?.['*'] || []),
+      'className',
+      'style',
+      'data-sourcepos',
+    ],
+    ol: [...((defaultSchema.attributes as any)?.ol || []), 'start', 'type'],
+    ul: [...((defaultSchema.attributes as any)?.ul || []), 'className'],
+    li: [...((defaultSchema.attributes as any)?.li || []), 'className', 'value'],
+    input: [
+      ...((defaultSchema.attributes as any)?.input || []),
+      'type',
+      'checked',
+      'disabled',
+    ],
+  },
+};
+
 const MarkDown: React.FC<MarkDownProps> = props => {
   const { content = '', sx } = props;
-  const [visible, setVisible] = useState(false);
-  const [previewSrc, setPreviewSrc] = useState('');
   let contentStr = content;
   if (content.length > 100000) {
     contentStr = content.slice(0, 100000);
@@ -31,7 +51,7 @@ const MarkDown: React.FC<MarkDownProps> = props => {
         remarkPlugins={[remarkGfm, remarkBreaks]}
         rehypePlugins={[
           rehypeRaw,
-          [rehypeSanitize, { tagNames: [...(defaultSchema.tagNames as string[]), 'center'] }],
+          [rehypeSanitize, sanitizeSchema],
         ]}
         components={{
           h1: ({ ...props }) => <h2 {...props} />,
@@ -47,11 +67,6 @@ const MarkDown: React.FC<MarkDownProps> = props => {
                   marginLeft: '5px',
                   boxShadow: '0px 0px 3px 1px rgba(0,0,5,0.15)',
                   cursor: 'pointer',
-                }}
-                referrerPolicy="no-referrer"
-                onClick={() => {
-                  setPreviewSrc(props.src as string);
-                  setVisible(true);
                 }}
               />
             ) : null;

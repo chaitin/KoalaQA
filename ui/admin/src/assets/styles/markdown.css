@@ -369,10 +369,20 @@
 }
 
 .markdown-body ul,
-.markdown-body ol {
+.markdown-body ol,
+.markdown-body menu {
   margin-top: 0;
   margin-bottom: 0;
   padding-left: 2em;
+  list-style: revert;
+}
+
+.markdown-body ul {
+  list-style-type: disc;
+}
+
+.markdown-body ol {
+  list-style-type: decimal;
 }
 
 .markdown-body ol ol,

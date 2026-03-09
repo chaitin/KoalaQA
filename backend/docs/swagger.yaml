@@ -1631,6 +1631,12 @@ definitions:
         type: boolean
       avatar:
         type: string
+      keywords:
+        items:
+          type: string
+        type: array
+      keywords_enable:
+        type: boolean
       name:
         type: string
       unknown_prompt:
@@ -2755,6 +2761,12 @@ paths:
         type: file
       - in: formData
         name: answer_ref
+        type: boolean
+      - in: formData
+        name: keywords
+        type: string
+      - in: formData
+        name: keywords_enable
         type: boolean
       - in: formData
         name: name
