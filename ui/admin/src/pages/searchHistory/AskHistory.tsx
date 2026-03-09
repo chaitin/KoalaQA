@@ -157,7 +157,7 @@ const AskHistory = () => {
                 cursor: record.uuid ? 'pointer' : 'default',
                 color: record.uuid ? 'primary.main' : 'text.primary',
                 '&:hover': {
-                  textDecoration: record.uuid ? 'underline' : 'none',
+                  color: 'info.main',
                 },
                 width: '100%',
               }}

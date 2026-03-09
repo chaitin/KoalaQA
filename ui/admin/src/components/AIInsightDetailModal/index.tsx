@@ -467,8 +467,7 @@ const QuestionItem: React.FC<QuestionItemProps> = ({
                     '&:hover': post.deleted || !post.discussion_id
                       ? {}
                       : {
-                        color: STYLES.selectedBorder,
-                        textDecoration: 'underline',
+                        color: 'info.main',
                       },
                     '&::before': {
                       content: '"· "',
@@ -1088,7 +1087,7 @@ const AIInsightDetailModal: React.FC<AIInsightDetailModalProps> = ({
                             const targetUrl = buildDocLink();
                             window.open(targetUrl, '_blank');
                           }}
-                          sx={{ flex: 1, color: '#0f172a', lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer', textDecoration: 'underline', textDecorationColor: 'transparent', '&:hover': { textDecorationColor: '#0f172a' } }}
+                          sx={{ flex: 1, color: '#0f172a', lineHeight: 1.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer', textDecoration: 'underline', textDecorationColor: 'transparent', '&:hover': { color: 'info.main' } }}
                         >
                           {docTitle}
                         </Typography>
