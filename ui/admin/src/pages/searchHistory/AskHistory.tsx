@@ -1,15 +1,12 @@
-import { getAdminDiscussionAsk, ModelAskSession, getAdminDiscussionAskSession, SvcListAsksRes, ModelAskSessionSource } from '@/api';
-import { useListQueryParams } from '@/hooks/useListQueryParams';
-import { Ellipsis, Table, Modal } from '@ctzhian/ui';
-import { Stack, TextField, Typography, Box, Paper, Avatar, CircularProgress, Chip, alpha } from '@mui/material';
-import { useRequest } from 'ahooks';
-import { ColumnsType } from '@ctzhian/ui/dist/Table';
-import dayjs from 'dayjs';
-import { useEffect, useState, useRef, useCallback } from 'react';
-import EditorContent from '@/components/EditorContent';
+import { getAdminDiscussionAsk, getAdminDiscussionAskSession, ModelAskSession, ModelAskSessionSource, SvcListAsksRes } from '@/api';
 import Markdown from '@/components/markDown';
-import SyntaxHighlighter from 'react-syntax-highlighter';
-import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useListQueryParams } from '@/hooks/useListQueryParams';
+import { Ellipsis, Modal, Table } from '@ctzhian/ui';
+import { ColumnsType } from '@ctzhian/ui/dist/Table';
+import { alpha, Avatar, Box, CircularProgress, Paper, Stack, TextField, Typography } from '@mui/material';
+import { useRequest } from 'ahooks';
+import dayjs from 'dayjs';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 const AskHistory = () => {
   const { page, size, setParams } = useListQueryParams();
@@ -356,13 +353,22 @@ const AskHistory = () => {
                             maxWidth: '100%',
 
                             borderRadius: isUser
-                              ? '18px  4px 18px 18px'
+                              ? '18px 18px 4px 18px'
                               : '18px 18px 18px 4px',
-                            border: '1px solid',
+                            border: isUser
+                              ? 'none'
+                              : '1px solid',
                             borderColor: 'divider',
                             boxShadow: isUser
                               ? '0 1px 2px rgba(0,0,0,0.1)'
                               : '0 1px 2px rgba(0,0,0,0.05)',
+                            bgcolor: isUser ? 'primary.main' : 'background.paper',
+                            '& *': {
+                              color: isUser ? 'white' : 'text.primary',
+                            },
+                            '& #markdown-body': {
+                              bgcolor: isUser ? 'primary.main' : 'background.paper',
+                            }
                           }}
                         >
                           <Markdown content={item.content || ''} />
