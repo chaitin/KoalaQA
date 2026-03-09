@@ -101,9 +101,9 @@ type BotGetRes struct {
 
 var lock sync.Mutex
 
-func (b *BotGetRes) Matcher() *keyword.Matcher {
+func (b *BotGetRes) MatcherCursor() *keyword.Cursor {
 	if b.keywordMatcher != nil {
-		return b.keywordMatcher
+		return b.keywordMatcher.NewCursor()
 	}
 
 	if !b.KeywordsEnable || len(b.Keywords) <= 1000 {
@@ -114,7 +114,7 @@ func (b *BotGetRes) Matcher() *keyword.Matcher {
 	defer lock.Unlock()
 
 	if b.keywordMatcher != nil {
-		return b.keywordMatcher
+		return b.keywordMatcher.NewCursor()
 	}
 
 	matcher := keyword.NewMatcher()
@@ -123,7 +123,7 @@ func (b *BotGetRes) Matcher() *keyword.Matcher {
 
 	b.keywordMatcher = matcher
 
-	return b.keywordMatcher
+	return b.keywordMatcher.NewCursor()
 }
 
 func (b *Bot) Get(ctx context.Context) (*BotGetRes, error) {

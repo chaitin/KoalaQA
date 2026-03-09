@@ -12,7 +12,6 @@ import (
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/config"
 	"github.com/chaitin/koalaqa/pkg/glog"
-	"github.com/chaitin/koalaqa/pkg/keyword"
 	"github.com/chaitin/koalaqa/pkg/llm"
 	"github.com/chaitin/koalaqa/pkg/rag"
 	"github.com/chaitin/koalaqa/pkg/util"
@@ -164,8 +163,8 @@ func (l *LLM) StreamAnswer(ctx context.Context, sysPrompt string, req GenerateRe
 	}
 
 	blockKeywords := ""
-	matcher := botInfo.Matcher()
-	if botInfo.KeywordsEnable && matcher == nil {
+	cursor := botInfo.MatcherCursor()
+	if botInfo.KeywordsEnable && cursor == nil {
 		blockKeywords = botInfo.Keywords
 	}
 
@@ -188,17 +187,13 @@ func (l *LLM) StreamAnswer(ctx context.Context, sysPrompt string, req GenerateRe
 		defer stream.Close()
 
 		runes := make([]rune, 0)
-		var cursor *keyword.Cursor
-		if matcher != nil {
-			cursor = matcher.NewCursor()
-		}
 		filterStream.Recv(func() (string, error) {
 			msg, _, ok := stream.Text(ctx)
 			if !ok {
 				return "", errStreaming
 			}
 
-			if matcher != nil {
+			if cursor != nil {
 				resMsg := ""
 				for _, s := range msg {
 					cursor.Append(s)
@@ -249,8 +244,8 @@ func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (st
 	}
 
 	blockKeywords := ""
-	matcher := botInfo.Matcher()
-	if botInfo.KeywordsEnable && matcher == nil {
+	cursor := botInfo.MatcherCursor()
+	if botInfo.KeywordsEnable && cursor == nil {
 		blockKeywords = botInfo.Keywords
 	}
 
@@ -279,12 +274,11 @@ func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (st
 		return req.DefaultAnswer, false, nil, nil
 	}
 
-	if matcher != nil {
+	if cursor != nil {
 		var (
 			builder strings.Builder
 		)
 
-		cursor := matcher.NewCursor()
 		runes := make([]rune, 0)
 		for _, s := range resp.Answer {
 			cursor.Append(s)
