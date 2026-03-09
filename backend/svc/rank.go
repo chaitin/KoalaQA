@@ -38,7 +38,7 @@ func (r *Rank) Contribute(ctx context.Context, req ListContributeReq) (*model.Li
 			return nil, err
 		}
 	case model.RankTypeAllContribute:
-		botUserID, err := r.svcBot.GetUserID(ctx)
+		bot, err := r.svcBot.Get(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -48,7 +48,7 @@ func (r *Rank) Contribute(ctx context.Context, req ListContributeReq) (*model.Li
 			repo.QueryWithPagination(&model.Pagination{
 				Size: 5,
 			}),
-			repo.QueryWithEqual("id", botUserID, repo.EqualOPNE),
+			repo.QueryWithEqual("id", bot.UserID, repo.EqualOPNE),
 			repo.QueryWithEqual("point", 0, repo.EqualOPGT),
 			repo.QueryWithOrderBy("point DESC, id ASC"),
 		)

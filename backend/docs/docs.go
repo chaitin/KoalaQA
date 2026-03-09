@@ -70,6 +70,16 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "name": "keywords",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "name": "keywords_enable",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
                         "name": "name",
                         "in": "formData",
                         "required": true
@@ -10810,6 +10820,15 @@ const docTemplate = `{
                 },
                 "avatar": {
                     "type": "string"
+                },
+                "keywords": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "keywords_enable": {
+                    "type": "boolean"
                 },
                 "name": {
                     "type": "string"

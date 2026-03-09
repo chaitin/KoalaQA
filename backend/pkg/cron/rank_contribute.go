@@ -28,7 +28,7 @@ func (r *rankContribute) Run() {
 
 	ctx := context.Background()
 
-	botUserID, err := r.svcBot.GetUserID(ctx)
+	bot, err := r.svcBot.Get(ctx)
 	if err != nil {
 		r.logger.WithErr(err).Warn("get user bot id failed")
 		return
@@ -38,7 +38,7 @@ func (r *rankContribute) Run() {
 	data, err := r.userPoint.UserPoints(ctx,
 		repo.QueryWithEqual("created_at", util.WeekTrunc(now.AddDate(0, 0, -7)), repo.EqualOPGTE),
 		repo.QueryWithEqual("created_at", util.WeekTrunc(now), repo.EqualOPLT),
-		repo.QueryWithEqual("user_id", botUserID, repo.EqualOPNE),
+		repo.QueryWithEqual("user_id", bot.UserID, repo.EqualOPNE),
 		repo.QueryWithPagination(&model.Pagination{
 			Size: 5,
 		}),

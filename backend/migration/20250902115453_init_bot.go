@@ -48,13 +48,15 @@ func (m *initBot) Migrate(tx *gorm.DB) error {
 	}
 	bot := model.Bot{
 		UserID: botUser.ID,
-		Name:   botUser.Name,
-		Avatar: botUser.Avatar,
 		Key:    model.BotKeyDisscution,
-		UnknownPrompt: `无法定位问题，麻烦补充
+		BotInfo: model.BotInfo{
+			Name:   botUser.Name,
+			Avatar: botUser.Avatar,
+			UnknownPrompt: `无法定位问题，麻烦补充
 1. 产品相关信息
 2. 具体操作步骤
 3. 报错详情`,
+		},
 	}
 
 	err = tx.Create(&bot).Error

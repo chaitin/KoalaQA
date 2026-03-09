@@ -923,6 +923,8 @@ export interface SvcAuthFrontendGetRes {
 export interface SvcBotGetRes {
   answer_ref?: boolean;
   avatar?: string;
+  keywords?: string | string[];
+  keywords_enable?: boolean;
   name?: string;
   unknown_prompt?: string;
   user_id?: number;
@@ -1491,6 +1493,8 @@ export interface PutAdminBotPayload {
    */
   avatar?: File;
   answer_ref?: boolean;
+  keywords?: string;
+  keywords_enable?: boolean;
   name: string;
   unknown_prompt?: string;
 }
@@ -1571,25 +1575,25 @@ export interface DeleteAdminKbKbIdParams {
 
 export interface GetAdminKbKbIdDocumentParams {
   file_type?:
-    | 0
-    | 1
-    | 2
-    | 3
-    | 4
-    | 5
-    | 6
-    | 7
-    | 8
-    | 9
-    | 10
-    | 11
-    | 12
-    | 13
-    | 14
-    | 15
-    | 16
-    | 17
-    | 18;
+  | 0
+  | 1
+  | 2
+  | 3
+  | 4
+  | 5
+  | 6
+  | 7
+  | 8
+  | 9
+  | 10
+  | 11
+  | 12
+  | 13
+  | 14
+  | 15
+  | 16
+  | 17
+  | 18;
   /** @min 1 */
   page?: number;
   /** @min 1 */
@@ -1621,25 +1625,25 @@ export interface DeleteAdminKbKbIdDocumentDocIdParams {
 
 export interface GetAdminKbKbIdQuestionParams {
   file_type?:
-    | 0
-    | 1
-    | 2
-    | 3
-    | 4
-    | 5
-    | 6
-    | 7
-    | 8
-    | 9
-    | 10
-    | 11
-    | 12
-    | 13
-    | 14
-    | 15
-    | 16
-    | 17
-    | 18;
+  | 0
+  | 1
+  | 2
+  | 3
+  | 4
+  | 5
+  | 6
+  | 7
+  | 8
+  | 9
+  | 10
+  | 11
+  | 12
+  | 13
+  | 14
+  | 15
+  | 16
+  | 17
+  | 18;
   /** @min 1 */
   page?: number;
   /** @min 1 */
