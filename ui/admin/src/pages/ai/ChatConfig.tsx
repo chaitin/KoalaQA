@@ -369,13 +369,14 @@ const ChatConfig = () => {
           const loadedSuggest = webRes.suggest_questions || [];
           const loadedPluginSuggest = webRes.plugin_suggest_questions || [];
           const loadedSuggestMode =
-            webRes.question_type !== undefined && webRes.question_type !== null
-              ? apiQuestionTypeToSuggestMode(webRes.question_type)
-              : inferSuggestMode(loadedSuggest);
-          const loadedPluginSuggestMode =
-            webRes.plugin_question_type !== undefined && webRes.plugin_question_type !== null
-              ? apiQuestionTypeToSuggestMode(webRes.plugin_question_type)
-              : inferSuggestMode(loadedPluginSuggest);
+const loadedSuggestMode =
+  webRes.question_type === ModelSuggestQuestionType.SuggestQuestionTypeDisable && loadedSuggest.length > 0
+    ? inferSuggestMode(loadedSuggest)
+    : apiQuestionTypeToSuggestMode(webRes.question_type);
+const loadedPluginSuggestMode =
+  webRes.plugin_question_type === ModelSuggestQuestionType.SuggestQuestionTypeDisable && loadedPluginSuggest.length > 0
+    ? inferSuggestMode(loadedPluginSuggest)
+    : apiQuestionTypeToSuggestMode(webRes.plugin_question_type);
           setPlugin(webRes.plugin ? 'enabled' : 'disabled');
           setEnabled(webRes.enabled ? 'enabled' : 'disabled');
           setDisplay(webRes.display ? 'enabled' : 'disabled');
