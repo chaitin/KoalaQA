@@ -235,7 +235,6 @@ export default function CustomerServiceContent({
 
   // 记录初始 URL 中是否有 id（用于区分是否需要加载历史对话）
   const initialUrlIdRef = useRef<string | null>(searchParams.get('id'))
-  const messagesEndRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const sseClientRef = useRef<SSEClient<any> | null>(null)
@@ -1909,13 +1908,13 @@ export default function CustomerServiceContent({
                                     boxShadow: 'none',
                                     borderRadius: 1,
                                     border: '1px solid',
+                                    borderColor: 'divider',
                                     fontSize: '14px',
                                     overflow: isWelcomeMessage ? 'hidden' : 'overlay',
                                     position: isWelcomeMessage ? 'relative' : undefined,
                                     ...(isWelcomeMessage
                                       ? {
                                         backgroundImage: `linear-gradient(180deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, rgba(0,156,200,0) 100%)`,
-                                        borderColor: 'rgba(0, 0, 0, 0.06)'
                                       }
                                       : { bgcolor: 'white' }),
                                     '& p': {
@@ -1940,7 +1939,7 @@ export default function CustomerServiceContent({
                                   }}
                                 >
                                   {message.role === 'assistant' ? (
-                                    <Box>
+                                    <>
                                       {/* 欢迎卡片：标题、问候语、你可能想问 + 推荐问题列表 */}
                                       {isWelcomeMessage ? (
                                         <>
@@ -1954,14 +1953,14 @@ export default function CustomerServiceContent({
                                             color: 'primary.main',
                                           }} />
                                           <Box sx={{ position: 'relative', zIndex: 1 }}>
-                                            <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 500, }}>
+                                            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 500, }}>
                                               您好！我是{botName}，很高兴为您服务。有什么问题可以帮您？
                                             </Typography>
                                             {showSupportSuggestions && supportSuggestQuestions.length > 0 && (
                                               <>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', my: 1.5 }}>
                                                   <AutoAwesomeIcon sx={{ fontSize: 18, mr: 0.5, color: 'primary.main' }} />
-                                                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                                                  <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 12, color: 'primary.main' }}>
                                                     你可能想问
                                                   </Typography>
                                                 </Box>
@@ -1980,7 +1979,7 @@ export default function CustomerServiceContent({
                                                         }}
                                                       >
                                                         <Icon type='icon-huati' sx={{ fontSize: 14, mr: 1, color: 'text.secondary' }} />
-                                                        <Ellipsis sx={{ flex: 1 }}>
+                                                        <Ellipsis sx={{ flex: 1, fontSize: 12 }}>
                                                           {question}
                                                         </Ellipsis>
                                                       </Box>
@@ -2447,7 +2446,7 @@ export default function CustomerServiceContent({
                                             )}
                                         </>
                                       )}
-                                    </Box>
+                                    </>
                                   ) : (
                                     /* 用户消息内容 */
                                     <Typography
@@ -2670,8 +2669,6 @@ export default function CustomerServiceContent({
                   </Fade>
                 )
               })}
-
-              <div ref={messagesEndRef} />
             </Stack>
           </Box>
 

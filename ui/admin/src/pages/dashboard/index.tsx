@@ -1030,8 +1030,10 @@ const Dashboard: React.FC = () => {
     if (aiInsightData) list.push(...aiInsightData);
     if (hotQuestionData) list.push(...hotQuestionData);
     if (invalidKnowledgeData) list.push(...invalidKnowledgeData);
+
     return list.sort((a, b) => (b.timeStart || 0) - (a.timeStart || 0));
   }, [aiInsightData, hotQuestionData, invalidKnowledgeData, buildInsightCards]);
+  console.log(mergedInsights)
   // 初始化数据获取 - 只在组件挂载时获取一次AI数据和时间相关数据
   useEffect(() => {
     let cancelled = false;

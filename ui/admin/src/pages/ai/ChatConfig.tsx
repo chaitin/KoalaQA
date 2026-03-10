@@ -615,9 +615,7 @@ const ChatConfig = () => {
         </Stack>
         {suggestMode === 'custom' && (
           <Stack direction="row" alignItems="flex-start" sx={{ pl: 2, mt: 1.5 }}>
-            <Typography variant="body2" sx={{ minWidth: '130px', pt: 1, color: 'text.secondary' }}>
-              自定义问题
-            </Typography>
+            <Typography variant="body2" sx={{ minWidth: '130px', pt: 1, color: 'text.secondary' }}/>
             <Box sx={{ flex: 1 }}>
               {renderSuggestInput({
                 placeholder: '回车添加，示例：如何接入Webhook？',
@@ -699,7 +697,7 @@ const ChatConfig = () => {
               {pluginSuggestMode === 'custom' && (
                 <Stack direction="row" alignItems="flex-start">
                   <Typography variant="body2" sx={{ minWidth: '130px', pt: 1, color: 'text.secondary' }}>
-                    自定义问题
+                    
                   </Typography>
                   <Box sx={{ flex: 1 }}>
                     {renderSuggestInput({
