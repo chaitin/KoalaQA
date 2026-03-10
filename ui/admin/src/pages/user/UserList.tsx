@@ -906,7 +906,7 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
       >
-        {menuTarget?.block_until && menuTarget.block_until > Math.floor(Date.now() / 1000) ? (
+{menuTarget?.block_until && (menuTarget.block_until < 0 || menuTarget.block_until > Math.floor(Date.now() / 1000)) ? (
           <MenuItem
             onClick={() => {
               setMenuAnchorEl(null);
