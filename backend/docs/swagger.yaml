@@ -2765,7 +2765,12 @@ paths:
             - $ref: '#/definitions/context.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/svc.BotGetRes'
+                  allOf:
+                  - $ref: '#/definitions/svc.BotGetRes'
+                  - properties:
+                      avatar:
+                        type: string
+                    type: object
               type: object
       summary: get bot info
       tags:
