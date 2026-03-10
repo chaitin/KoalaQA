@@ -1623,7 +1623,8 @@ export default function CustomerServiceContent({
         initialUrlIdRef.current = null
 
         // 立即将历史加载标记设置为新 sessionId，防止 URL 变更触发的 effect 重新载入旧会话消息
-        historyLoadedRef.current = newSessionId
+        // 重置历史加载标记，使新 session 可以正常加载后端初始化消息（如欢迎语）
+        historyLoadedRef.current = null
 
         // 如果是 widget 模式通过 clientSessionId 管理会话，同步更新为新 sessionId
         if (clientSessionId) {
