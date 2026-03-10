@@ -75,6 +75,12 @@ export enum ModelTrendType {
   TrendTypeAnswer = 3,
 }
 
+export enum ModelSuggestQuestionType {
+  SuggestQuestionTypeDisable = 0,
+  SuggestQuestionTypeHot = 1,
+  SuggestQuestionTypeCustomize = 2,
+}
+
 export enum ModelStatType {
   StatTypeVisit = 1,
   StatTypeSearch = 2,
@@ -732,7 +738,9 @@ export interface ModelSystemWebPlugin {
   display?: boolean;
   enabled?: boolean;
   plugin?: boolean;
+  plugin_question_type?: ModelSuggestQuestionType;
   plugin_suggest_questions?: string[];
+  question_type?: ModelSuggestQuestionType;
   suggest_questions?: string[];
 }
 
@@ -922,10 +930,10 @@ export interface SvcAuthFrontendGetRes {
 
 export interface SvcBotGetRes {
   answer_ref?: boolean;
-  avatar?: string;
-  keywords?: string | string[];
+  general_knowledge?: boolean;
+  keywords?: string;
   keywords_enable?: boolean;
-  name?: string;
+  name: string;
   unknown_prompt?: string;
   user_id?: number;
 }
@@ -1114,6 +1122,10 @@ export interface SvcKBListItem {
 export interface SvcKBUpdateReq {
   desc?: string;
   name: string;
+}
+
+export interface SvcLastHotQuestionsItem {
+  content?: string;
 }
 
 export interface SvcListAnydocNode {
@@ -1493,6 +1505,7 @@ export interface PutAdminBotPayload {
    */
   avatar?: File;
   answer_ref?: boolean;
+  general_knowledge?: boolean;
   keywords?: string;
   keywords_enable?: boolean;
   name: string;
@@ -1575,25 +1588,25 @@ export interface DeleteAdminKbKbIdParams {
 
 export interface GetAdminKbKbIdDocumentParams {
   file_type?:
-  | 0
-  | 1
-  | 2
-  | 3
-  | 4
-  | 5
-  | 6
-  | 7
-  | 8
-  | 9
-  | 10
-  | 11
-  | 12
-  | 13
-  | 14
-  | 15
-  | 16
-  | 17
-  | 18;
+    | 0
+    | 1
+    | 2
+    | 3
+    | 4
+    | 5
+    | 6
+    | 7
+    | 8
+    | 9
+    | 10
+    | 11
+    | 12
+    | 13
+    | 14
+    | 15
+    | 16
+    | 17
+    | 18;
   /** @min 1 */
   page?: number;
   /** @min 1 */
@@ -1625,25 +1638,25 @@ export interface DeleteAdminKbKbIdDocumentDocIdParams {
 
 export interface GetAdminKbKbIdQuestionParams {
   file_type?:
-  | 0
-  | 1
-  | 2
-  | 3
-  | 4
-  | 5
-  | 6
-  | 7
-  | 8
-  | 9
-  | 10
-  | 11
-  | 12
-  | 13
-  | 14
-  | 15
-  | 16
-  | 17
-  | 18;
+    | 0
+    | 1
+    | 2
+    | 3
+    | 4
+    | 5
+    | 6
+    | 7
+    | 8
+    | 9
+    | 10
+    | 11
+    | 12
+    | 13
+    | 14
+    | 15
+    | 16
+    | 17
+    | 18;
   /** @min 1 */
   page?: number;
   /** @min 1 */

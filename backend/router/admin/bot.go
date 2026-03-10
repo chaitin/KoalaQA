@@ -40,7 +40,7 @@ func (b *bot) Set(ctx *context.Context) {
 // @Summary get bot info
 // @Tags bot
 // @Produce json
-// @Success 200 {object} context.Response{data=svc.BotGetRes}
+// @Success 200 {object} context.Response{data=svc.BotGetRes{avatar=string}}
 // @Router /admin/bot [get]
 func (b *bot) Get(ctx *context.Context) {
 	res, err := b.svcBot.Get(ctx)

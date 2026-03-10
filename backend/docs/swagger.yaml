@@ -1132,6 +1132,16 @@ definitions:
     - StatTypeDiscussionIssue
     - StatTypeBotUnknownComment
     - StatTypeKnowledgeHit
+  model.SuggestQuestionType:
+    enum:
+    - 0
+    - 1
+    - 2
+    type: integer
+    x-enum-varnames:
+    - SuggestQuestionTypeDisable
+    - SuggestQuestionTypeHot
+    - SuggestQuestionTypeCustomize
   model.SystemBrand:
     properties:
       logo:
@@ -1187,10 +1197,14 @@ definitions:
         type: boolean
       plugin:
         type: boolean
+      plugin_question_type:
+        $ref: '#/definitions/model.SuggestQuestionType'
       plugin_suggest_questions:
         items:
           type: string
         type: array
+      question_type:
+        $ref: '#/definitions/model.SuggestQuestionType'
       suggest_questions:
         items:
           type: string
@@ -1629,12 +1643,10 @@ definitions:
     properties:
       answer_ref:
         type: boolean
-      avatar:
-        type: string
+      general_knowledge:
+        type: boolean
       keywords:
-        items:
-          type: string
-        type: array
+        type: string
       keywords_enable:
         type: boolean
       name:
@@ -1643,6 +1655,8 @@ definitions:
         type: string
       user_id:
         type: integer
+    required:
+    - name
     type: object
   svc.ChatUpdateReq:
     properties:
@@ -2009,6 +2023,11 @@ definitions:
         type: string
     required:
     - name
+    type: object
+  svc.LastHotQuestionsItem:
+    properties:
+      content:
+        type: string
     type: object
   svc.ListAnydocNode:
     properties:
@@ -2746,7 +2765,12 @@ paths:
             - $ref: '#/definitions/context.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/svc.BotGetRes'
+                  allOf:
+                  - $ref: '#/definitions/svc.BotGetRes'
+                  - properties:
+                      avatar:
+                        type: string
+                    type: object
               type: object
       summary: get bot info
       tags:
@@ -2761,6 +2785,9 @@ paths:
         type: file
       - in: formData
         name: answer_ref
+        type: boolean
+      - in: formData
+        name: general_knowledge
         type: boolean
       - in: formData
         name: keywords
@@ -5818,7 +5845,12 @@ paths:
             - $ref: '#/definitions/context.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/svc.BotGetRes'
+                  allOf:
+                  - $ref: '#/definitions/svc.BotGetRes'
+                  - properties:
+                      avatar:
+                        type: string
+                    type: object
               type: object
       summary: get bot info
       tags:
@@ -6973,6 +7005,30 @@ paths:
                     type: object
               type: object
       summary: contribyte rank
+      tags:
+      - rank
+  /rank/hot_question:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/context.Response'
+            - properties:
+                data:
+                  allOf:
+                  - $ref: '#/definitions/model.ListRes'
+                  - properties:
+                      items:
+                        items:
+                          $ref: '#/definitions/svc.LastHotQuestionsItem'
+                        type: array
+                    type: object
+              type: object
+      summary: last hot questions rank
       tags:
       - rank
   /stat:

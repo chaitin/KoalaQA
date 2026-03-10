@@ -14,7 +14,7 @@ type bot struct {
 // @Summary get bot info
 // @Tags bot
 // @Produce json
-// @Success 200 {object} context.Response{data=svc.BotGetRes}
+// @Success 200 {object} context.Response{data=svc.BotGetRes{avatar=string}}
 // @Router /bot [get]
 func (b *bot) Get(ctx *context.Context) {
 	res, err := b.svcBot.Get(ctx)
@@ -23,8 +23,9 @@ func (b *bot) Get(ctx *context.Context) {
 		return
 	}
 
-	res.UnknownPrompt = ""
-	ctx.Success(res)
+	data := *res
+	data.UnknownPrompt = ""
+	ctx.Success(data)
 }
 
 func (b *bot) Route(h server.Handler) {

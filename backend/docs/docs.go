@@ -36,7 +36,19 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/svc.BotGetRes"
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/svc.BotGetRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "avatar": {
+                                                            "type": "string"
+                                                        }
+                                                    }
+                                                }
+                                            ]
                                         }
                                     }
                                 }
@@ -66,6 +78,11 @@ const docTemplate = `{
                     {
                         "type": "boolean",
                         "name": "answer_ref",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "boolean",
+                        "name": "general_knowledge",
                         "in": "formData"
                     },
                     {
@@ -5129,7 +5146,19 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/svc.BotGetRes"
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/svc.BotGetRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "avatar": {
+                                                            "type": "string"
+                                                        }
+                                                    }
+                                                }
+                                            ]
                                         }
                                     }
                                 }
@@ -7021,6 +7050,52 @@ const docTemplate = `{
                                                             "type": "array",
                                                             "items": {
                                                                 "$ref": "#/definitions/svc.RankContributeItem"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/rank/hot_question": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "rank"
+                ],
+                "summary": "last hot questions rank",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/context.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/model.ListRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "items": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "$ref": "#/definitions/svc.LastHotQuestionsItem"
                                                             }
                                                         }
                                                     }
@@ -10096,6 +10171,19 @@ const docTemplate = `{
                 "StatTypeKnowledgeHit"
             ]
         },
+        "model.SuggestQuestionType": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-varnames": [
+                "SuggestQuestionTypeDisable",
+                "SuggestQuestionTypeHot",
+                "SuggestQuestionTypeCustomize"
+            ]
+        },
         "model.SystemBrand": {
             "type": "object",
             "properties": {
@@ -10181,11 +10269,17 @@ const docTemplate = `{
                 "plugin": {
                     "type": "boolean"
                 },
+                "plugin_question_type": {
+                    "$ref": "#/definitions/model.SuggestQuestionType"
+                },
                 "plugin_suggest_questions": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
+                },
+                "question_type": {
+                    "$ref": "#/definitions/model.SuggestQuestionType"
                 },
                 "suggest_questions": {
                     "type": "array",
@@ -10814,18 +10908,18 @@ const docTemplate = `{
         },
         "svc.BotGetRes": {
             "type": "object",
+            "required": [
+                "name"
+            ],
             "properties": {
                 "answer_ref": {
                     "type": "boolean"
                 },
-                "avatar": {
-                    "type": "string"
+                "general_knowledge": {
+                    "type": "boolean"
                 },
                 "keywords": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                    "type": "string"
                 },
                 "keywords_enable": {
                     "type": "boolean"
@@ -11395,6 +11489,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "svc.LastHotQuestionsItem": {
+            "type": "object",
+            "properties": {
+                "content": {
                     "type": "string"
                 }
             }

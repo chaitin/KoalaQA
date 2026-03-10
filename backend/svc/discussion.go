@@ -2281,7 +2281,7 @@ func (d *Discussion) Ask(ctx context.Context, uid uint, req DiscussionAskReq) (*
 			}
 		}
 
-		stream, err := d.in.LLM.StreamAnswer(cancelCtx, llm.SystemChatNoRefPrompt, GenerateReq{
+		stream, err := d.in.LLM.StreamAnswer(cancelCtx, llm.SystemStreamChatPrompt, GenerateReq{
 			Context:       askHistories,
 			Question:      req.Question,
 			Groups:        groups,

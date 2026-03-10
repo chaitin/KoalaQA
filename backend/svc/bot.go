@@ -24,12 +24,9 @@ type Bot struct {
 }
 
 type BotSetReq struct {
-	Avatar         *multipart.FileHeader `form:"avatar" swaggerignore:"true"`
-	Name           string                `form:"name" binding:"required"`
-	UnknownPrompt  string                `form:"unknown_prompt"`
-	AnswerRef      bool                  `form:"answer_ref"`
-	KeywordsEnable bool                  `form:"keywords_enable"`
-	Keywords       string                `form:"keywords"`
+	Avatar *multipart.FileHeader `form:"avatar" swaggerignore:"true"`
+
+	model.BotInfo
 }
 
 func (b *Bot) Set(ctx context.Context, req BotSetReq) error {
@@ -38,7 +35,6 @@ func (b *Bot) Set(ctx context.Context, req BotSetReq) error {
 		return err
 	}
 
-	avatarPath := ""
 	if req.Avatar != nil {
 		f, err := req.Avatar.Open()
 		if err != nil {
@@ -46,7 +42,7 @@ func (b *Bot) Set(ctx context.Context, req BotSetReq) error {
 		}
 		defer f.Close()
 
-		avatarPath, err = b.oc.Upload(ctx, "avatar", f,
+		avatarPath, err := b.oc.Upload(ctx, "avatar", f,
 			oss.WithLimitSize(),
 			oss.WithFileSize(int(req.Avatar.Size)),
 			oss.WithExt(filepath.Ext(req.Avatar.Filename)),
@@ -55,6 +51,7 @@ func (b *Bot) Set(ctx context.Context, req BotSetReq) error {
 		if err != nil {
 			return err
 		}
+		req.BotInfo.Avatar = avatarPath
 
 		if dbBot.Avatar != "" {
 			err = b.oc.Delete(ctx, util.TrimFirstDir(dbBot.Avatar))
@@ -65,15 +62,8 @@ func (b *Bot) Set(ctx context.Context, req BotSetReq) error {
 	}
 
 	bot := model.Bot{
-		Key: model.BotKeyDisscution,
-		BotInfo: model.BotInfo{
-			Name:           req.Name,
-			Avatar:         avatarPath,
-			UnknownPrompt:  strings.TrimSpace(req.UnknownPrompt),
-			AnswerRef:      req.AnswerRef,
-			KeywordsEnable: req.KeywordsEnable,
-			Keywords:       normalizeKeywords(req.Keywords),
-		},
+		Key:     model.BotKeyDisscution,
+		BotInfo: req.BotInfo,
 	}
 
 	err = b.repoBot.Upsert(ctx, &bot)
@@ -81,7 +71,7 @@ func (b *Bot) Set(ctx context.Context, req BotSetReq) error {
 		return err
 	}
 
-	if avatarPath == "" {
+	if req.BotInfo.Avatar == "" {
 		bot.Avatar = dbBot.Avatar
 	}
 	if req.Name == "" {
@@ -144,14 +134,6 @@ func (b *Bot) Get(ctx context.Context) (*BotGetRes, error) {
 
 	b.botCache = &botInfo
 	return b.botCache, nil
-}
-
-func normalizeKeywords(raw string) string {
-	parts := splitKeywords(raw)
-	if len(parts) == 0 {
-		return ""
-	}
-	return strings.Join(parts, ",")
 }
 
 func splitKeywords(raw string) []string {
