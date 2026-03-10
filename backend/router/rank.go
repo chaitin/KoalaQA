@@ -34,6 +34,22 @@ func (r *rank) Contribute(ctx *context.Context) {
 	ctx.Success(res)
 }
 
+// LastHotQuestions
+// @Summary last hot questions rank
+// @Tags rank
+// @Produce json
+// @Success 200 {object} context.Response{data=model.ListRes{items=[]svc.LastHotQuestionsItem}}
+// @Router /rank/hot_question [get]
+func (r *rank) LastHotQuestions(ctx *context.Context) {
+	res, err := r.svcRank.LastHotQuestions(ctx)
+	if err != nil {
+		ctx.InternalError(err, "get last hot questions failed")
+		return
+	}
+
+	ctx.Success(res)
+}
+
 func (r *rank) Route(h server.Handler) {
 	g := h.Group("/rank")
 	g.GET("/contribute", r.Contribute)

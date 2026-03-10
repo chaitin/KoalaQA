@@ -46,6 +46,12 @@ func (w *WebPlugin) Get(ctx context.Context) (*model.SystemWebPlugin, error) {
 }
 
 func (w *WebPlugin) Update(ctx context.Context, req model.SystemWebPlugin) error {
+	if req.QuestionType != model.SuggestQuestionTypeCustomize {
+		req.SuggestQuestions = make([]string, 0)
+	}
+	if req.PluginQuestionType != model.SuggestQuestionTypeCustomize {
+		req.PluginSuggectQuestions = make([]string, 0)
+	}
 	err := w.repoSys.Upsert(ctx, &model.System[any]{
 		Key:   model.SystemKeyWebPlugin,
 		Value: model.NewJSONBAny(req),

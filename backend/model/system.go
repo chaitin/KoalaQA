@@ -127,12 +127,22 @@ type SystemSEO struct {
 	Keywords []string `json:"keywords"`
 }
 
+type SuggestQuestionType uint
+
+const (
+	SuggestQuestionTypeDisable SuggestQuestionType = iota
+	SuggestQuestionTypeHot
+	SuggestQuestionTypeCustomize
+)
+
 type SystemWebPlugin struct {
-	Enabled                bool     `json:"enabled"`
-	Display                bool     `json:"display"`
-	Plugin                 bool     `json:"plugin"`
-	SuggestQuestions       []string `json:"suggest_questions"`
-	PluginSuggectQuestions []string `json:"plugin_suggest_questions"`
+	Enabled                bool                `json:"enabled"`
+	Display                bool                `json:"display"`
+	Plugin                 bool                `json:"plugin"`
+	QuestionType           SuggestQuestionType `json:"question_type"`
+	SuggestQuestions       []string            `json:"suggest_questions"`
+	PluginQuestionType     SuggestQuestionType `json:"plugin_question_type"`
+	PluginSuggectQuestions []string            `json:"plugin_suggest_questions"`
 }
 
 type SystemChat struct {

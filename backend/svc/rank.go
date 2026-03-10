@@ -149,6 +149,21 @@ func (r *Rank) ListInvalidKnowledge(ctx context.Context, req ListInvalidKnowledg
 	)
 }
 
+type LastHotQuestionsItem struct {
+	Content string `json:"content"`
+}
+
+func (r *Rank) LastHotQuestions(ctx context.Context) (*model.ListRes[LastHotQuestionsItem], error) {
+	var res model.ListRes[LastHotQuestionsItem]
+	err := r.repoRank.LastHotQuestions(ctx, &res.Items, repo.QueryWithSelectColumn("score_id AS content"))
+	if err != nil {
+		return nil, err
+	}
+
+	res.Total = int64(len(res.Items))
+	return &res, nil
+}
+
 func newRank(r *repo.Rank, user *repo.User, bot *Bot, discAIInsight *repo.DiscussionAIInsight, hotQuesion *repo.HotQuestion) *Rank {
 	return &Rank{
 		repoRank:          r,

@@ -178,6 +178,7 @@ func (l *LLM) StreamAnswer(ctx context.Context, sysPrompt string, req GenerateRe
 		"KnowledgeDocuments": knowledgeDocuments,
 		"Debug":              req.Debug,
 		"BlockKeywords":      blockKeywords,
+		"GeneralKnowledge":   botInfo.GeneralKnowledge,
 	}, req.Histories()...)
 	if err != nil {
 		return nil, err
@@ -260,6 +261,7 @@ func (l *LLM) answer(ctx context.Context, sysPrompt string, req GenerateReq) (st
 		"CurrentDate":        time.Now().Format("2006-01-02"),
 		"KnowledgeDocuments": knowledgeDocuments,
 		"BlockKeywords":      blockKeywords,
+		"GeneralKnowledge":   botInfo.GeneralKnowledge,
 	})
 	if err != nil {
 		return "", false, nil, err
