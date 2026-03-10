@@ -367,7 +367,7 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
               } else {
                 const diffSec = until - Math.floor(Date.now() / 1000);
                 if (diffSec <= 0) {
-                  label = '封禁已到期';
+                  return null
                 } else if (diffSec >= 86400) {
                   label = `${Math.ceil(diffSec / 86400)}天后解封`;
                 } else if (diffSec >= 3600) {
@@ -381,6 +381,7 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
                   label={label}
                   size="small"
                   color="error"
+                  variant="outlined"
                   sx={{ height: 20, fontSize: '11px' }}
                 />
               );
@@ -474,15 +475,6 @@ const UserList = ({ orgList, fetchOrgList }: UserListProps) => {
             >
               编辑
             </Button>
-            {blocked && (
-              <Chip
-                label="封禁中"
-                size="small"
-                color="error"
-                variant="outlined"
-                sx={{ height: 20, fontSize: '11px' }}
-              />
-            )}
             <IconButton
               size="small"
               onClick={e => {

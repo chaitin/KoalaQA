@@ -29,6 +29,7 @@ import {
   CircularProgress,
   Collapse,
   Fade,
+  Grid,
   IconButton,
   Paper,
   Stack,
@@ -42,11 +43,12 @@ import {
   DialogContentText,
   DialogActions,
 } from '@mui/material'
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { UIEvent, useCallback, useContext, useEffect, useRef, useState } from 'react'
-import { Icon } from '@ctzhian/ui'
+import { Ellipsis, Icon } from '@ctzhian/ui'
 import IframeHeader from './IframeHeader'
 
 // 检查回答是否是"无法回答问题"
@@ -1752,6 +1754,89 @@ export default function CustomerServiceContent({
             }}
           >
             <Stack spacing={3}>
+              {/* 无消息时展示欢迎卡片 */}
+              {showWelcomeCard && messages.length === 0 && (
+                <Fade in timeout={400}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      position: 'relative',
+                      overflow: 'hidden',
+                      borderRadius: 3,
+                      p: 3,
+                      width: '100%',
+                      maxWidth: 800,
+                      border: '1px solid rgba(0, 0, 0, 0.06)',
+                      ...(isInIframe
+                        ? { bgcolor: 'white' }
+                        : {
+                          bgcolor: alpha(theme.palette.primary.main, 0.06),
+                        }),
+                    }}
+                  >
+                    {!isInIframe && (
+                      <Icon type='icon-a-kefu' sx={{
+                        position: 'absolute',
+                        top: 16,
+                        right: 32,
+                        fontSize: 120,
+                        opacity: 0.06,
+                        pointerEvents: 'none',
+                        color: 'primary.main',
+                      }} />
+                    )}
+                    <Box sx={{ position: 'relative', zIndex: 1 }}>
+                      <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 500, mb: 2 }}>
+                        您好！我是{botName}，很高兴为您服务。有什么问题可以帮您？
+                      </Typography>
+                      {supportSuggestQuestions.length > 0 && (
+                        <>
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+                            <AutoAwesomeIcon sx={{ fontSize: 18, mr: 0.5, color: 'primary.main' }} />
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                              你可能想问
+                            </Typography>
+                          </Box>
+                          <Grid container spacing={1.5}>
+                            {supportSuggestQuestions.map((q) => (
+                              <Grid size={{ xs: 12, sm: 6 }} key={q}>
+                                <Box
+                                  onClick={() => handleSuggestClick(q)}
+                                  sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    cursor: isLoading ? 'default' : 'pointer',
+                                    color: 'text.secondary',
+                                    '&:hover': isLoading ? {} : { color: 'primary.main' },
+                                    '&:hover .welcome-bullet': isLoading ? {} : { borderColor: 'primary.main' },
+                                  }}
+                                >
+                                  <Box
+                                    className="welcome-bullet"
+                                    sx={{
+                                      width: 6,
+                                      height: 6,
+                                      borderRadius: '50%',
+                                      border: '1px solid',
+                                      borderColor: 'grey.400',
+                                      mr: 1.5,
+                                      flexShrink: 0,
+                                      transition: 'border-color 0.2s',
+                                    }}
+                                  />
+                                  <Typography variant="body2" sx={{ flex: 1 }}>
+                                    {q}
+                                  </Typography>
+                                </Box>
+                              </Grid>
+                            ))}
+                          </Grid>
+                        </>
+                      )}
+                    </Box>
+                  </Paper>
+                </Fade>
+              )}
 
               {messages.map((message, index) => {
                 // 判断是否是最后一条机器人消息
@@ -1880,16 +1965,22 @@ export default function CustomerServiceContent({
                                 <Paper
                                   elevation={0}
                                   sx={{
-                                    px: 2.5,
-                                    py: 1.5,
+                                    px: isWelcomeMessage ? 3 : 2.5,
+                                    py: isWelcomeMessage ? 3 : 1.5,
                                     width: isWelcomeMessage ? '100%' : 'auto',
                                     boxShadow: 'none',
                                     borderRadius: 1,
-                                    bgcolor: 'white',
                                     border: '1px solid',
-                                    borderColor: 'divider',
                                     fontSize: '14px',
-                                    overflow: 'overlay',
+                                    overflow: isWelcomeMessage ? 'hidden' : 'overlay',
+                                    position: isWelcomeMessage ? 'relative' : undefined,
+                                    ...(isWelcomeMessage
+                                      ? {
+                                        backgroundImage: `linear-gradient(180deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, rgba(0,156,200,0) 100%)`
+                                        ,
+                                        borderColor: 'rgba(0, 0, 0, 0.06)'
+                                      }
+                                      : { bgcolor: 'white' }),
                                     '& p': {
                                       my: 0,
                                       lineHeight: 1.7,
@@ -1913,458 +2004,512 @@ export default function CustomerServiceContent({
                                 >
                                   {message.role === 'assistant' ? (
                                     <Box>
-                                      {/* 搜索结果展示 - 放在最前面 */}
-                                      {message.type === 'search' &&
-                                        message.discCount !== undefined &&
-                                        message.discCount > 0 && (
-                                          <Box
-                                            sx={{
-                                              mb: message.content ? 2 : 0,
-                                            }}
-                                          >
-                                            {/* 搜索结果标题 - 可点击展开/折叠 */}
+                                      {/* 欢迎卡片：标题、问候语、你可能想问 + 推荐问题列表 */}
+                                      {isWelcomeMessage ? (
+                                        <>
+                                          <Icon type='icon-a-kefu' sx={{
+                                            position: 'absolute',
+                                            top: -20,
+                                            right: 32,
+                                            fontSize: 120,
+                                            opacity: 0.06,
+                                            pointerEvents: 'none',
+                                            color: 'primary.main',
+                                          }} />
+                                          <Box sx={{ position: 'relative', zIndex: 1 }}>
+                                            <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 500, }}>
+                                              您好！我是{botName}，很高兴为您服务。有什么问题可以帮您？
+                                            </Typography>
+                                            {showSupportSuggestions && supportSuggestQuestions.length > 0 && (
+                                              <>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', my: 1.5 }}>
+                                                  <AutoAwesomeIcon sx={{ fontSize: 18, mr: 0.5, color: 'primary.main' }} />
+                                                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                                                    你可能想问
+                                                  </Typography>
+                                                </Box>
+                                                <Grid container>
+                                                  {supportSuggestQuestions.map((question) => (
+                                                    <Grid size={{ xs: 12, sm: 6 }} sx={{ py: 1, pl: 2, pr: 1, borderLeft: '1px solid', borderColor: '#ECEEF1' }} key={question}>
+                                                      <Box
+                                                        onClick={() => handleSuggestClick(question)}
+                                                        sx={{
+                                                          display: 'flex',
+                                                          alignItems: 'center',
+                                                          cursor: isLoading ? 'default' : 'pointer',
+                                                          color: 'text.secondary',
+                                                          '&:hover': isLoading ? {} : { color: 'primary.main' },
+                                                          '&:hover .welcome-bullet': isLoading ? {} : { borderColor: 'primary.main' },
+                                                        }}
+                                                      >
+                                                        <Icon type='icon-huati' sx={{ fontSize: 14, mr: 1, color: 'text.secondary' }} />
+                                                        <Ellipsis sx={{ flex: 1 }}>
+                                                          {question}
+                                                        </Ellipsis>
+                                                      </Box>
+                                                    </Grid>
+                                                  ))}
+                                                </Grid>
+                                              </>
+                                            )}
+                                          </Box>
+                                        </>
+                                      ) : (
+                                        <>
+                                          {/* 搜索结果展示 - 放在最前面 */}
+                                          {message.type === 'search' &&
+                                            message.discCount !== undefined &&
+                                            message.discCount > 0 && (
+                                              <Box
+                                                sx={{
+                                                  mb: message.content ? 2 : 0,
+                                                }}
+                                              >
+                                                {/* 搜索结果标题 - 可点击展开/折叠 */}
+                                                <Box
+                                                  onClick={() => {
+                                                    setExpandedSources((prev) => {
+                                                      const newSet = new Set(prev)
+                                                      if (newSet.has(message.id)) {
+                                                        newSet.delete(message.id)
+                                                      } else {
+                                                        newSet.add(message.id)
+                                                      }
+                                                      return newSet
+                                                    })
+                                                  }}
+                                                  sx={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    py: 1,
+                                                    cursor: 'pointer',
+                                                  }}
+                                                >
+                                                  <Typography
+                                                    variant='body2'
+                                                    sx={{
+                                                      fontWeight: 500,
+                                                      color: 'text.primary',
+                                                      fontSize: '14px',
+                                                    }}
+                                                  >
+                                                    共找到{message.discCount}个结果
+                                                  </Typography>
+                                                  <IconButton
+                                                    size='small'
+                                                    sx={{
+                                                      width: 20,
+                                                      height: 20,
+                                                      color: 'text.secondary',
+                                                      p: 0,
+                                                    }}
+                                                  >
+                                                    {expandedSources.has(message.id) ? (
+                                                      <ExpandLessIcon sx={{ fontSize: 16 }} />
+                                                    ) : (
+                                                      <ExpandMoreIcon sx={{ fontSize: 16 }} />
+                                                    )}
+                                                  </IconButton>
+                                                </Box>
+
+                                                {/* 搜索结果列表 - 可折叠 */}
+                                                <Collapse in={expandedSources.has(message.id)}>
+                                                  <Box
+                                                    sx={{
+                                                      pl: 2,
+                                                      position: 'relative',
+                                                      '&::before': {
+                                                        content: '""',
+                                                        position: 'absolute',
+                                                        left: 0,
+                                                        top: 0,
+                                                        bottom: 0,
+                                                        width: '1px',
+                                                        bgcolor: 'divider',
+                                                      },
+                                                    }}
+                                                  >
+                                                    {message.sources && message.sources.length > 0 ? (
+                                                      <Stack spacing={0}>
+                                                        {message.sources.map((source, idx) => (
+                                                          <Box
+                                                            key={source.id || idx}
+                                                            onClick={() => handleSourceClick(source)}
+                                                            sx={{
+                                                              py: 0.75,
+                                                              px: 1,
+                                                              borderRadius: 1,
+                                                              cursor: 'pointer',
+                                                              color: 'text.primary',
+                                                              transition: 'color 0.2s, background-color 0.2s',
+                                                              '&:hover': {
+                                                                color: 'primary.main',
+                                                                backgroundColor: 'transparent',
+                                                              },
+                                                            }}
+                                                          >
+                                                            <Typography
+                                                              variant='body2'
+                                                              sx={{
+                                                                fontSize: '14px',
+                                                                color: 'inherit',
+                                                                lineHeight: 1.5,
+                                                              }}
+                                                            >
+                                                              {source.title || '无标题'}
+                                                            </Typography>
+                                                          </Box>
+                                                        ))}
+                                                      </Stack>
+                                                    ) : (
+                                                      <Typography
+                                                        variant='body2'
+                                                        sx={{
+                                                          color: 'text.secondary',
+                                                          fontSize: '14px',
+                                                          py: 1,
+                                                        }}
+                                                      >
+                                                        正在加载搜索结果...
+                                                      </Typography>
+                                                    )}
+                                                  </Box>
+                                                </Collapse>
+                                              </Box>
+                                            )}
+
+                                          {/* 消息内容 - 总结文本 */}
+                                          {message.content && message.content.trim() === SEARCH_LOADING_TEXT ? (
                                             <Box
-                                              onClick={() => {
-                                                setExpandedSources((prev) => {
-                                                  const newSet = new Set(prev)
-                                                  if (newSet.has(message.id)) {
-                                                    newSet.delete(message.id)
-                                                  } else {
-                                                    newSet.add(message.id)
-                                                  }
-                                                  return newSet
-                                                })
-                                              }}
                                               sx={{
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                justifyContent: 'space-between',
-                                                py: 1,
-                                                cursor: 'pointer',
+                                                gap: 1.5,
+                                                py: 1.5,
+                                                px: 2,
+                                                color: 'text.secondary',
                                               }}
                                             >
-                                              <Typography
-                                                variant='body2'
-                                                sx={{
-                                                  fontWeight: 500,
-                                                  color: 'text.primary',
-                                                  fontSize: '14px',
-                                                }}
-                                              >
-                                                共找到{message.discCount}个结果
+                                              <CircularProgress size={18} thickness={4} sx={{ color: 'text.secondary' }} />
+                                              <Typography variant='body2' sx={{ fontSize: '0.9rem', color: 'text.secondary' }}>
+                                                {SEARCH_LOADING_TEXT}
                                               </Typography>
-                                              <IconButton
-                                                size='small'
-                                                sx={{
-                                                  width: 20,
-                                                  height: 20,
-                                                  color: 'text.secondary',
-                                                  p: 0,
-                                                }}
-                                              >
-                                                {expandedSources.has(message.id) ? (
-                                                  <ExpandLessIcon sx={{ fontSize: 16 }} />
-                                                ) : (
-                                                  <ExpandMoreIcon sx={{ fontSize: 16 }} />
-                                                )}
-                                              </IconButton>
                                             </Box>
-
-                                            {/* 搜索结果列表 - 可折叠 */}
-                                            <Collapse in={expandedSources.has(message.id)}>
-                                              <Box
-                                                sx={{
+                                          ) : (
+                                            <Box
+                                              sx={{
+                                                '& > *:first-of-type': { mt: 0 },
+                                                '& > *:last-child': { mb: 0 },
+                                                '& p, & h6': {
+                                                  fontSize: '14px',
+                                                  mb: 1,
+                                                  lineHeight: 1.6,
+                                                },
+                                                '& a': {
+                                                  color: theme.palette.primary.main,
+                                                  textDecoration: 'none',
+                                                  whiteSpace: 'normal',
+                                                  '&:hover': {
+                                                    textDecoration: 'underline',
+                                                  },
+                                                },
+                                                '& blockquote': {
+                                                  borderLeft: '4px solid',
+                                                  borderColor: 'divider',
+                                                  mx: 0,
                                                   pl: 2,
-                                                  position: 'relative',
-                                                  '&::before': {
-                                                    content: '""',
-                                                    position: 'absolute',
-                                                    left: 0,
-                                                    top: 0,
-                                                    bottom: 0,
-                                                    width: '1px',
-                                                    bgcolor: 'divider',
+                                                  py: 1,
+                                                  my: 1.5,
+                                                  bgcolor: alpha(theme.palette.grey[500], 0.05),
+                                                  borderRadius: '0 4px 4px 0',
+                                                  color: 'text.secondary',
+                                                },
+                                                '& ul, & ol': {
+                                                  pl: 3,
+                                                  mb: 1.5,
+                                                },
+                                                '& li': {
+                                                  mb: 0.5,
+                                                },
+                                                '& hr': {
+                                                  borderColor: 'divider',
+                                                  my: 2,
+                                                },
+                                                '& pre': {
+                                                  m: '0.5rem 0',
+                                                  p: 0,
+                                                  bgcolor: 'transparent',
+                                                  borderRadius: 2,
+                                                  overflow: 'hidden',
+                                                },
+                                                // Prevent global code styles from affecting the syntax highlighter
+                                                '& pre code': {
+                                                  bgcolor: 'transparent !important',
+                                                  p: '0 !important',
+                                                  borderRadius: '0 !important',
+                                                  color: 'inherit !important',
+                                                },
+                                                '& table': {
+                                                  borderCollapse: 'collapse',
+                                                  width: '100%',
+                                                  mb: 2,
+                                                  display: 'block',
+                                                  overflowX: 'auto',
+                                                  border: '1px solid',
+                                                  borderColor: 'divider',
+                                                  borderRadius: 1,
+                                                },
+                                                '& th, & td': {
+                                                  border: '1px solid',
+                                                  borderColor: 'divider',
+                                                  p: 1.5,
+                                                  fontSize: '13px',
+                                                },
+                                                '& th': {
+                                                  bgcolor: alpha(theme.palette.grey[500], 0.05),
+                                                  fontWeight: 600,
+                                                  textAlign: 'left',
+                                                },
+                                              }}
+                                            >
+                                              <MarkDown
+                                                remarkPlugins={[remarkGfm, remarkBreaks]}
+                                                components={{
+                                                  a: (props) => <a {...props} target='_blank' rel='noopener noreferrer' />,
+                                                  code(props) {
+                                                    const { children, className, node, ref, ...rest } = props
+                                                    const match = /language-(\w+)/.exec(className || '')
+                                                    const { inline } = props as any
+                                                    const hasNewline = String(children).includes('\n')
+
+                                                    if (match || (!inline && hasNewline)) {
+                                                      return (
+                                                        <SyntaxHighlighter
+                                                          {...rest}
+                                                          PreTag="div"
+                                                          children={String(children).replace(/\n$/, '')}
+                                                          language={match ? match[1] : 'text'}
+                                                          style={oneDark}
+                                                          customStyle={{
+                                                            margin: 0,
+                                                            borderRadius: '8px',
+                                                            fontSize: '13px',
+                                                            lineHeight: '1.5',
+                                                          }}
+                                                        />
+                                                      )
+                                                    }
+
+                                                    return (
+                                                      <code ref={ref} {...rest} className={className}>
+                                                        {children}
+                                                      </code>
+                                                    )
                                                   },
                                                 }}
                                               >
-                                                {message.sources && message.sources.length > 0 ? (
-                                                  <Stack spacing={0}>
-                                                    {message.sources.map((source, idx) => (
-                                                      <Box
-                                                        key={source.id || idx}
-                                                        onClick={() => handleSourceClick(source)}
-                                                        sx={{
-                                                          py: 0.75,
-                                                          px: 1,
-                                                          borderRadius: 1,
-                                                          cursor: 'pointer',
-                                                          color: 'text.primary',
-                                                          transition: 'color 0.2s, background-color 0.2s',
-                                                          '&:hover': {
-                                                            color: 'primary.main',
-                                                            backgroundColor: 'transparent',
-                                                          },
-                                                        }}
-                                                      >
-                                                        <Typography
-                                                          variant='body2'
-                                                          sx={{
-                                                            fontSize: '14px',
-                                                            color: 'inherit',
-                                                            lineHeight: 1.5,
-                                                          }}
-                                                        >
-                                                          {source.title || '无标题'}
-                                                        </Typography>
-                                                      </Box>
-                                                    ))}
-                                                  </Stack>
-                                                ) : (
+                                                {message.content}
+                                              </MarkDown>
+                                              {/* 中断提示 - 居中显示 */}
+                                              {message.isInterrupted && (
+                                                <Box
+                                                  sx={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    mt: 2,
+                                                    pt: 2,
+                                                    borderTop: '1px dashed',
+                                                    borderColor: 'divider',
+                                                  }}
+                                                >
                                                   <Typography
                                                     variant='body2'
                                                     sx={{
                                                       color: 'text.secondary',
-                                                      fontSize: '14px',
-                                                      py: 1,
+                                                      fontSize: '0.85rem',
+                                                      display: 'flex',
+                                                      alignItems: 'center',
+                                                      gap: 0.5,
                                                     }}
                                                   >
-                                                    正在加载搜索结果...
+                                                    <StopIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+                                                    已停止生成
                                                   </Typography>
-                                                )}
-                                              </Box>
-                                            </Collapse>
-                                          </Box>
-                                        )}
+                                                </Box>
+                                              )}
+                                            </Box>
+                                          )}
 
-                                      {/* 消息内容 - 总结文本 */}
-                                      {message.content && message.content.trim() === SEARCH_LOADING_TEXT ? (
-                                        <Box
-                                          sx={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 1.5,
-                                            py: 1.5,
-                                            px: 2,
-                                            color: 'text.secondary',
-                                          }}
-                                        >
-                                          <CircularProgress size={18} thickness={4} sx={{ color: 'text.secondary' }} />
-                                          <Typography variant='body2' sx={{ fontSize: '0.9rem', color: 'text.secondary' }}>
-                                            {SEARCH_LOADING_TEXT}
-                                          </Typography>
-                                        </Box>
-                                      ) : (
-                                        <Box
-                                          sx={{
-                                            '& > *:first-of-type': { mt: 0 },
-                                            '& > *:last-child': { mb: 0 },
-                                            '& p, & h6': {
-                                              fontSize: '14px',
-                                              mb: 1,
-                                              lineHeight: 1.6,
-                                            },
-                                            '& a': {
-                                              color: theme.palette.primary.main,
-                                              textDecoration: 'none',
-                                              whiteSpace: 'normal',
-                                              '&:hover': {
-                                                textDecoration: 'underline',
-                                              },
-                                            },
-                                            '& blockquote': {
-                                              borderLeft: '4px solid',
-                                              borderColor: 'divider',
-                                              mx: 0,
-                                              pl: 2,
-                                              py: 1,
-                                              my: 1.5,
-                                              bgcolor: alpha(theme.palette.grey[500], 0.05),
-                                              borderRadius: '0 4px 4px 0',
-                                              color: 'text.secondary',
-                                            },
-                                            '& ul, & ol': {
-                                              pl: 3,
-                                              mb: 1.5,
-                                            },
-                                            '& li': {
-                                              mb: 0.5,
-                                            },
-                                            '& hr': {
-                                              borderColor: 'divider',
-                                              my: 2,
-                                            },
-                                            '& pre': {
-                                              m: '0.5rem 0',
-                                              p: 0,
-                                              bgcolor: 'transparent',
-                                              borderRadius: 2,
-                                              overflow: 'hidden',
-                                            },
-                                            // Prevent global code styles from affecting the syntax highlighter
-                                            '& pre code': {
-                                              bgcolor: 'transparent !important',
-                                              p: '0 !important',
-                                              borderRadius: '0 !important',
-                                              color: 'inherit !important',
-                                            },
-                                            '& table': {
-                                              borderCollapse: 'collapse',
-                                              width: '100%',
-                                              mb: 2,
-                                              display: 'block',
-                                              overflowX: 'auto',
-                                              border: '1px solid',
-                                              borderColor: 'divider',
-                                              borderRadius: 1,
-                                            },
-                                            '& th, & td': {
-                                              border: '1px solid',
-                                              borderColor: 'divider',
-                                              p: 1.5,
-                                              fontSize: '13px',
-                                            },
-                                            '& th': {
-                                              bgcolor: alpha(theme.palette.grey[500], 0.05),
-                                              fontWeight: 600,
-                                              textAlign: 'left',
-                                            },
-                                          }}
-                                        >
-                                          <MarkDown
-                                            remarkPlugins={[remarkGfm, remarkBreaks]}
-                                            components={{
-                                              a: (props) => <a {...props} target='_blank' rel='noopener noreferrer' />,
-                                              code(props) {
-                                                const { children, className, node, ref, ...rest } = props
-                                                const match = /language-(\w+)/.exec(className || '')
-                                                const { inline } = props as any
-                                                const hasNewline = String(children).includes('\n')
-
-                                                if (match || (!inline && hasNewline)) {
-                                                  return (
-                                                    <SyntaxHighlighter
-                                                      {...rest}
-                                                      PreTag="div"
-                                                      children={String(children).replace(/\n$/, '')}
-                                                      language={match ? match[1] : 'text'}
-                                                      style={oneDark}
-                                                      customStyle={{
-                                                        margin: 0,
-                                                        borderRadius: '8px',
-                                                        fontSize: '13px',
-                                                        lineHeight: '1.5',
-                                                      }}
-                                                    />
-                                                  )
-                                                }
-
-                                                return (
-                                                  <code ref={ref} {...rest} className={className}>
-                                                    {children}
-                                                  </code>
-                                                )
-                                              },
-                                            }}
-                                          >
-                                            {message.content}
-                                          </MarkDown>
-                                          {/* 中断提示 - 居中显示 */}
-                                          {message.isInterrupted && (
+                                          {/* 等待提示 - 优化的加载状态 */}
+                                          {waitingStatus !== null && message.id === currentMessageRef.current?.id && (
                                             <Box
                                               sx={{
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                justifyContent: 'center',
-                                                mt: 2,
-                                                pt: 2,
-                                                borderTop: '1px dashed',
-                                                borderColor: 'divider',
+                                                gap: 1.5,
+                                                py: 1.5,
+                                                px: 2,
                                               }}
                                             >
-                                              <Typography
-                                                variant='body2'
-                                                sx={{
-                                                  color: 'text.secondary',
-                                                  fontSize: '0.85rem',
-                                                  display: 'flex',
-                                                  alignItems: 'center',
-                                                  gap: 0.5,
-                                                }}
-                                              >
-                                                <StopIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
-                                                已停止生成
+                                              <CircularProgress size={18} thickness={4} sx={{ color: 'text.secondary' }} />
+                                              <Typography variant='body2' sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>
+                                                {waitingStatusText || WAITING_STATUS_TEXT.answering}
                                               </Typography>
                                             </Box>
                                           )}
-                                        </Box>
-                                      )}
 
-                                      {/* 等待提示 - 优化的加载状态 */}
-                                      {waitingStatus !== null && message.id === currentMessageRef.current?.id && (
-                                        <Box
-                                          sx={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 1.5,
-                                            py: 1.5,
-                                            px: 2,
-                                          }}
-                                        >
-                                          <CircularProgress size={18} thickness={4} sx={{ color: 'text.secondary' }} />
-                                          <Typography variant='body2' sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>
-                                            {waitingStatusText || WAITING_STATUS_TEXT.answering}
-                                          </Typography>
-                                        </Box>
-                                      )}
+                                          {/* 推荐问题：首条机器人打招呼下方展示 */}
+                                          {showSupportSuggestions && supportSuggestQuestions.length > 0 && index === 0 && (
+                                            <Box
 
-                                      {/* 推荐问题：首条机器人打招呼下方展示 */}
-                                      {showSupportSuggestions && supportSuggestQuestions.length > 0 && index === 0 && (
-                                        <Box
-
-                                        >
-                                          <Box
-                                            sx={{
-                                              mb: 1,
-                                              mt: 2,
-                                              color: 'text.secondary',
-                                              letterSpacing: '0.2px',
-                                            }}
-                                          >
-                                            你可能想问
-                                          </Box>
-                                          <Stack
-                                            direction='row'
-                                            spacing={1}
-                                            useFlexGap
-                                            flexWrap='wrap'
-                                            sx={{
-                                              '& button': {
-                                                justifyContent: 'flex-start',
-                                                border: '1px solid',
-                                                borderColor: 'rgba(15, 23, 42, 0.08)',
-                                                bgcolor: '#ffffff',
-                                                color: 'text.primary',
-                                                textTransform: 'none',
-                                                minHeight: 34,
-                                                borderRadius: 1,
-                                                px: 1.5,
-                                                py: 0.55,
-                                                fontWeight: 400,
-                                                letterSpacing: '0.1px',
-                                                transition: 'all 0.18s ease',
-                                              },
-                                              '& button:hover': {
-                                                color: 'primary.main',
-                                              },
-                                            }}
-                                          >
-                                            {supportSuggestQuestions.map((question) => (
-                                              <Button
-                                                key={question}
-                                                variant='outlined'
-                                                size='small'
-                                                onClick={() => handleSuggestClick(question)}
-                                                disabled={isLoading}
-                                                sx={{ textAlign: 'left' }}
+                                            >
+                                              <Box
+                                                sx={{
+                                                  mb: 1,
+                                                  mt: 2,
+                                                  color: 'text.secondary',
+                                                  letterSpacing: '0.2px',
+                                                }}
                                               >
-                                                {question}
-                                              </Button>
-                                            ))}
-                                          </Stack>
-                                        </Box>
+                                                你可能想问
+                                              </Box>
+                                              <Stack
+                                                direction='row'
+                                                spacing={1}
+                                                useFlexGap
+                                                flexWrap='wrap'
+                                                sx={{
+                                                  '& button': {
+                                                    justifyContent: 'flex-start',
+                                                    border: '1px solid',
+                                                    borderColor: 'rgba(15, 23, 42, 0.08)',
+                                                    bgcolor: '#ffffff',
+                                                    color: 'text.primary',
+                                                    textTransform: 'none',
+                                                    minHeight: 34,
+                                                    borderRadius: 1,
+                                                    px: 1.5,
+                                                    py: 0.55,
+                                                    fontWeight: 400,
+                                                    letterSpacing: '0.1px',
+                                                    transition: 'all 0.18s ease',
+                                                  },
+                                                  '& button:hover': {
+                                                    color: 'primary.main',
+                                                  },
+                                                }}
+                                              >
+                                                {supportSuggestQuestions.map((question) => (
+                                                  <Button
+                                                    key={question}
+                                                    variant='outlined'
+                                                    size='small'
+                                                    onClick={() => handleSuggestClick(question)}
+                                                    disabled={isLoading}
+                                                    sx={{ textAlign: 'left' }}
+                                                  >
+                                                    {question}
+                                                  </Button>
+                                                ))}
+                                              </Stack>
+                                            </Box>
+                                          )}
+
+                                          {/* 板块选择器 - 用于搜索 */}
+                                          {message.needsForumSelection &&
+                                            message.pendingQuestion &&
+                                            message.type === 'search' &&
+                                            forums &&
+                                            forums.length > 1 && (
+                                              <Box sx={{ mt: 2 }}>
+                                                <Typography
+                                                  variant='subtitle2'
+                                                  sx={{ mb: 1.5, fontWeight: 600, color: 'text.primary' }}
+                                                >
+                                                  请选择板块继续搜索
+                                                </Typography>
+                                                <Stack direction='row' spacing={1} flexWrap='wrap' sx={{ gap: 1 }}>
+                                                  {forums.map((forum) => {
+                                                    if (!forum.id) return null
+                                                    return (
+                                                      <Button
+                                                        key={forum.id}
+                                                        variant='outlined'
+                                                        size='medium'
+                                                        onClick={() =>
+                                                          handleForumSelect(forum.id!, message.pendingQuestion!, message.id)
+                                                        }
+                                                        disabled={isLoading}
+                                                        sx={{
+                                                          textTransform: 'none',
+                                                          borderRadius: 2,
+                                                          px: 2,
+                                                          py: 1,
+                                                          borderColor: 'divider',
+                                                          '&:hover': {
+                                                            borderColor: 'primary.main',
+                                                            bgcolor: alpha(theme.palette.primary.main, 0.05),
+                                                          },
+                                                          fontWeight: 500,
+                                                        }}
+                                                      >
+                                                        {forum.name}
+                                                      </Button>
+                                                    )
+                                                  })}
+                                                </Stack>
+                                              </Box>
+                                            )}
+
+                                          {/* 板块选择器 - 用于发帖 */}
+                                          {message.needsForumSelection &&
+                                            message.pendingQuestion &&
+                                            message.type !== 'search' &&
+                                            forums &&
+                                            forums.length > 1 && (
+                                              <Box sx={{ mt: 2 }}>
+                                                <Typography
+                                                  variant='subtitle2'
+                                                  sx={{ mb: 1.5, fontWeight: 600, color: 'text.primary' }}
+                                                >
+                                                  请选择板块发帖
+                                                </Typography>
+                                                <Stack direction='row' spacing={1} flexWrap='wrap' sx={{ gap: 1 }}>
+                                                  {forums.map((forum) => {
+                                                    if (!forum.id) return null
+                                                    return (
+                                                      <Button
+                                                        key={forum.id}
+                                                        variant='outlined'
+                                                        size='medium'
+                                                        onClick={() =>
+                                                          handleForumSelectForPost(forum.id!, message.pendingQuestion!, message.id)
+                                                        }
+                                                        disabled={isLoading}
+                                                        sx={{
+                                                          textTransform: 'none',
+                                                          borderRadius: 2,
+                                                          px: 2,
+                                                          py: 1,
+                                                          borderColor: 'divider',
+                                                          '&:hover': {
+                                                            borderColor: 'primary.main',
+                                                            bgcolor: alpha(theme.palette.primary.main, 0.05),
+                                                          },
+                                                          fontWeight: 500,
+                                                        }}
+                                                      >
+                                                        {forum.name}
+                                                      </Button>
+                                                    )
+                                                  })}
+                                                </Stack>
+                                              </Box>
+                                            )}
+                                        </>
                                       )}
-
-                                      {/* 板块选择器 - 用于搜索 */}
-                                      {message.needsForumSelection &&
-                                        message.pendingQuestion &&
-                                        message.type === 'search' &&
-                                        forums &&
-                                        forums.length > 1 && (
-                                          <Box sx={{ mt: 2 }}>
-                                            <Typography
-                                              variant='subtitle2'
-                                              sx={{ mb: 1.5, fontWeight: 600, color: 'text.primary' }}
-                                            >
-                                              请选择板块继续搜索
-                                            </Typography>
-                                            <Stack direction='row' spacing={1} flexWrap='wrap' sx={{ gap: 1 }}>
-                                              {forums.map((forum) => {
-                                                if (!forum.id) return null
-                                                return (
-                                                  <Button
-                                                    key={forum.id}
-                                                    variant='outlined'
-                                                    size='medium'
-                                                    onClick={() =>
-                                                      handleForumSelect(forum.id!, message.pendingQuestion!, message.id)
-                                                    }
-                                                    disabled={isLoading}
-                                                    sx={{
-                                                      textTransform: 'none',
-                                                      borderRadius: 2,
-                                                      px: 2,
-                                                      py: 1,
-                                                      borderColor: 'divider',
-                                                      '&:hover': {
-                                                        borderColor: 'primary.main',
-                                                        bgcolor: alpha(theme.palette.primary.main, 0.05),
-                                                      },
-                                                      fontWeight: 500,
-                                                    }}
-                                                  >
-                                                    {forum.name}
-                                                  </Button>
-                                                )
-                                              })}
-                                            </Stack>
-                                          </Box>
-                                        )}
-
-                                      {/* 板块选择器 - 用于发帖 */}
-                                      {message.needsForumSelection &&
-                                        message.pendingQuestion &&
-                                        message.type !== 'search' &&
-                                        forums &&
-                                        forums.length > 1 && (
-                                          <Box sx={{ mt: 2 }}>
-                                            <Typography
-                                              variant='subtitle2'
-                                              sx={{ mb: 1.5, fontWeight: 600, color: 'text.primary' }}
-                                            >
-                                              请选择板块发帖
-                                            </Typography>
-                                            <Stack direction='row' spacing={1} flexWrap='wrap' sx={{ gap: 1 }}>
-                                              {forums.map((forum) => {
-                                                if (!forum.id) return null
-                                                return (
-                                                  <Button
-                                                    key={forum.id}
-                                                    variant='outlined'
-                                                    size='medium'
-                                                    onClick={() =>
-                                                      handleForumSelectForPost(forum.id!, message.pendingQuestion!, message.id)
-                                                    }
-                                                    disabled={isLoading}
-                                                    sx={{
-                                                      textTransform: 'none',
-                                                      borderRadius: 2,
-                                                      px: 2,
-                                                      py: 1,
-                                                      borderColor: 'divider',
-                                                      '&:hover': {
-                                                        borderColor: 'primary.main',
-                                                        bgcolor: alpha(theme.palette.primary.main, 0.05),
-                                                      },
-                                                      fontWeight: 500,
-                                                    }}
-                                                  >
-                                                    {forum.name}
-                                                  </Button>
-                                                )
-                                              })}
-                                            </Stack>
-                                          </Box>
-                                        )}
                                     </Box>
                                   ) : (
                                     /* 用户消息内容 */

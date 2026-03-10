@@ -1,4 +1,4 @@
-import { ChatType, getAdminChat, getAdminSystemWebPlugin, putAdminChat, putAdminSystemWebPlugin } from '@/api';
+import { ChatType, getAdminChat, getAdminSystemWebPlugin, ModelSuggestQuestionType, putAdminChat, putAdminSystemWebPlugin } from '@/api';
 import Card from '@/components/card';
 import LoadingButton from '@/components/LoadingButton';
 import { message } from '@ctzhian/ui';
@@ -11,10 +11,42 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
+type SuggestMode = 'disabled' | 'hot' | 'custom';
+
+const HOT_SUGGEST_QUESTIONS = [
+  '如何接入 Webhook？',
+  '如何创建应用？',
+  '常见问题解答',
+];
+
+function inferSuggestMode(questions: string[]): SuggestMode {
+  if (!questions || questions.length === 0) return 'disabled';
+  const normalized = [...questions].map(s => s.trim()).filter(Boolean);
+  if (normalized.length === 0) return 'disabled';
+  const hotNormalized = HOT_SUGGEST_QUESTIONS.map(s => s.trim());
+  if (normalized.length === hotNormalized.length && normalized.every((q, i) => q === hotNormalized[i])) return 'hot';
+  return 'custom';
+}
+
+function apiQuestionTypeToSuggestMode(value: ModelSuggestQuestionType | undefined): SuggestMode {
+  if (value === ModelSuggestQuestionType.SuggestQuestionTypeDisable) return 'disabled';
+  if (value === ModelSuggestQuestionType.SuggestQuestionTypeHot) return 'hot';
+  if (value === ModelSuggestQuestionType.SuggestQuestionTypeCustomize) return 'custom';
+  return 'disabled';
+}
+
+function suggestModeToApiQuestionType(mode: SuggestMode): ModelSuggestQuestionType {
+  if (mode === 'disabled') return ModelSuggestQuestionType.SuggestQuestionTypeDisable;
+  if (mode === 'hot') return ModelSuggestQuestionType.SuggestQuestionTypeHot;
+  return ModelSuggestQuestionType.SuggestQuestionTypeCustomize;
+}
+
 interface OriginalState {
   plugin: boolean;
   enabled: boolean;
   display: boolean;
+  suggestMode: SuggestMode;
+  pluginSuggestMode: SuggestMode;
   suggestQuestions: string[];
   pluginSuggestQuestions: string[];
 }
@@ -150,6 +182,8 @@ const ChatConfig = () => {
   const [plugin, setPlugin] = useState<'enabled' | 'disabled'>('disabled');
   const [enabled, setEnabled] = useState<'enabled' | 'disabled'>('disabled');
   const [display, setDisplay] = useState<'enabled' | 'disabled'>('disabled');
+  const [suggestMode, setSuggestMode] = useState<SuggestMode>('disabled');
+  const [pluginSuggestMode, setPluginSuggestMode] = useState<SuggestMode>('disabled');
   const [suggestQuestions, setSuggestQuestions] = useState<string[]>([]);
   const [pluginSuggestQuestions, setPluginSuggestQuestions] = useState<string[]>([]);
   const [suggestInput, setSuggestInput] = useState('');
@@ -223,7 +257,7 @@ const ChatConfig = () => {
     setInputValue: (v: string) => void;
     onAdd: () => void;
     onRemove: (item: string) => void;
-    inputRef: React.RefObject<HTMLInputElement>;
+    inputRef: React.RefObject<HTMLInputElement | null>;
     keyPrefix: string;
   }) => (
     <Box sx={{ flex: 1 }}>
@@ -332,17 +366,31 @@ const ChatConfig = () => {
         // Load Web Plugin Config
         const webRes = await getAdminSystemWebPlugin();
         if (webRes) {
+          const loadedSuggest = webRes.suggest_questions || [];
+          const loadedPluginSuggest = webRes.plugin_suggest_questions || [];
+          const loadedSuggestMode =
+            webRes.question_type !== undefined && webRes.question_type !== null
+              ? apiQuestionTypeToSuggestMode(webRes.question_type)
+              : inferSuggestMode(loadedSuggest);
+          const loadedPluginSuggestMode =
+            webRes.plugin_question_type !== undefined && webRes.plugin_question_type !== null
+              ? apiQuestionTypeToSuggestMode(webRes.plugin_question_type)
+              : inferSuggestMode(loadedPluginSuggest);
           setPlugin(webRes.plugin ? 'enabled' : 'disabled');
           setEnabled(webRes.enabled ? 'enabled' : 'disabled');
           setDisplay(webRes.display ? 'enabled' : 'disabled');
-          setSuggestQuestions(webRes.suggest_questions || []);
-          setPluginSuggestQuestions(webRes.plugin_suggest_questions || []);
+          setSuggestMode(loadedSuggestMode);
+          setPluginSuggestMode(loadedPluginSuggestMode);
+          setSuggestQuestions(loadedSuggest);
+          setPluginSuggestQuestions(loadedPluginSuggest);
           setOriginalState({
             plugin: webRes.plugin || false,
             enabled: webRes.enabled || false,
             display: webRes.display || false,
-            suggestQuestions: webRes.suggest_questions || [],
-            pluginSuggestQuestions: webRes.plugin_suggest_questions || [],
+            suggestMode: loadedSuggestMode,
+            pluginSuggestMode: loadedPluginSuggestMode,
+            suggestQuestions: loadedSuggest,
+            pluginSuggestQuestions: loadedPluginSuggest,
           });
         }
 
@@ -373,18 +421,31 @@ const ChatConfig = () => {
     loadConfig();
   }, [reset]);
 
+  const getEffectiveSuggestQuestions = useMemo(() => {
+    if (suggestMode === 'disabled') return [];
+    if (suggestMode === 'hot') return HOT_SUGGEST_QUESTIONS;
+    return (suggestQuestions || []).map(s => s.trim()).filter(Boolean);
+  }, [suggestMode, suggestQuestions]);
+  const getEffectivePluginSuggestQuestions = useMemo(() => {
+    if (pluginSuggestMode === 'disabled') return [];
+    if (pluginSuggestMode === 'hot') return HOT_SUGGEST_QUESTIONS;
+    return (pluginSuggestQuestions || []).map(s => s.trim()).filter(Boolean);
+  }, [pluginSuggestMode, pluginSuggestQuestions]);
+
   // Check unsaved changes
   const webPluginChanged = useMemo(() => {
     if (!originalState) return false;
     const pluginChanged = (plugin === 'enabled') !== originalState.plugin;
     const enabledChanged = (enabled === 'enabled') !== originalState.enabled;
     const displayChanged = (display === 'enabled') !== originalState.display;
-    const suggestChanged = JSON.stringify((suggestQuestions || []).map(s => s.trim()).filter(Boolean)) !==
-      JSON.stringify((originalState.suggestQuestions || []).map(s => s.trim()).filter(Boolean));
-    const pluginSuggestChanged = JSON.stringify((pluginSuggestQuestions || []).map(s => s.trim()).filter(Boolean)) !==
-      JSON.stringify((originalState.pluginSuggestQuestions || []).map(s => s.trim()).filter(Boolean));
-    return pluginChanged || enabledChanged || displayChanged || suggestChanged || pluginSuggestChanged;
-  }, [plugin, enabled, display, suggestQuestions, pluginSuggestQuestions, originalState]);
+    const suggestModeChanged = suggestMode !== originalState.suggestMode;
+    const pluginSuggestModeChanged = pluginSuggestMode !== originalState.pluginSuggestMode;
+    const origSuggest = (originalState.suggestQuestions || []).map(s => s.trim()).filter(Boolean);
+    const origPluginSuggest = (originalState.pluginSuggestQuestions || []).map(s => s.trim()).filter(Boolean);
+    const suggestChanged = JSON.stringify(getEffectiveSuggestQuestions) !== JSON.stringify(origSuggest);
+    const pluginSuggestChanged = JSON.stringify(getEffectivePluginSuggestQuestions) !== JSON.stringify(origPluginSuggest);
+    return pluginChanged || enabledChanged || displayChanged || suggestModeChanged || pluginSuggestModeChanged || suggestChanged || pluginSuggestChanged;
+  }, [plugin, enabled, display, suggestMode, pluginSuggestMode, getEffectiveSuggestQuestions, getEffectivePluginSuggestQuestions, originalState]);
 
   const hasUnsavedChanges = webPluginChanged || isDirty;
 
@@ -398,17 +459,20 @@ const ChatConfig = () => {
           plugin: plugin === 'enabled',
           enabled: enabled === 'enabled',
           display: display === 'enabled',
-          suggest_questions: suggestQuestions.map(q => q.trim()).filter(Boolean),
-          plugin_suggest_questions: pluginSuggestQuestions.map(q => q.trim()).filter(Boolean),
+          question_type: suggestModeToApiQuestionType(suggestMode),
+          suggest_questions: getEffectiveSuggestQuestions,
+          plugin_suggest_questions: getEffectivePluginSuggestQuestions,
+          plugin_question_type: suggestModeToApiQuestionType(pluginSuggestMode),
         });
 
-        // Update original state for Web Plugin
         setOriginalState({
           plugin: plugin === 'enabled',
           enabled: enabled === 'enabled',
           display: display === 'enabled',
-          suggestQuestions: suggestQuestions.map(q => q.trim()).filter(Boolean),
-          pluginSuggestQuestions: pluginSuggestQuestions.map(q => q.trim()).filter(Boolean),
+          suggestMode,
+          pluginSuggestMode,
+          suggestQuestions: getEffectiveSuggestQuestions,
+          pluginSuggestQuestions: getEffectivePluginSuggestQuestions,
         });
       }
 
@@ -529,23 +593,39 @@ const ChatConfig = () => {
           </RadioGroup>
         </Stack>
 
-        <Stack direction="row" alignItems="flex-start" sx={{ pl: 2, mt: 1.5 }}>
-          <Typography variant="body2" sx={{ minWidth: '130px', pt: 1, color: 'text.secondary' }}>
+        <Stack direction="row" alignItems="center" sx={{ pl: 2, mt: 1.5 }}>
+          <Typography variant="body2" sx={{ minWidth: '130px', color: 'text.secondary' }}>
             推荐问题
           </Typography>
-          <Box sx={{ flex: 1 }}>
-            {renderSuggestInput({
-              placeholder: '回车添加，示例：如何接入Webhook？',
-              questions: suggestQuestions,
-              inputValue: suggestInput,
-              setInputValue: setSuggestInput,
-              onAdd: handleAddSuggest,
-              onRemove: handleRemoveSuggest,
-              inputRef: suggestInputRef,
-              keyPrefix: 'support-suggest'
-            })}
-          </Box>
+          <RadioGroup
+            row
+            value={suggestMode}
+            onChange={(e) => setSuggestMode(e.target.value as SuggestMode)}
+          >
+            <FormControlLabel value="disabled" control={<Radio size="small" />} label={<Typography variant="body2">禁用</Typography>} />
+            <FormControlLabel value="hot" control={<Radio size="small" />} label={<Typography variant="body2">使用热门问题</Typography>} />
+            <FormControlLabel value="custom" control={<Radio size="small" />} label={<Typography variant="body2">自定义</Typography>} />
+          </RadioGroup>
         </Stack>
+        {suggestMode === 'custom' && (
+          <Stack direction="row" alignItems="flex-start" sx={{ pl: 2, mt: 1.5 }}>
+            <Typography variant="body2" sx={{ minWidth: '130px', pt: 1, color: 'text.secondary' }}>
+              自定义问题
+            </Typography>
+            <Box sx={{ flex: 1 }}>
+              {renderSuggestInput({
+                placeholder: '回车添加，示例：如何接入Webhook？',
+                questions: suggestQuestions,
+                inputValue: suggestInput,
+                setInputValue: setSuggestInput,
+                onAdd: handleAddSuggest,
+                onRemove: handleRemoveSuggest,
+                inputRef: suggestInputRef,
+                keyPrefix: 'support-suggest'
+              })}
+            </Box>
+          </Stack>
+        )}
 
         {/* Section 2: Web Widget */}
         <SectionTitle title="网页挂件" />
@@ -596,23 +676,39 @@ const ChatConfig = () => {
                 </RadioGroup>
               </Stack>
 
-              <Stack direction="row" alignItems="flex-start">
-                <Typography variant="body2" sx={{ minWidth: '130px', pt: 1, color: 'text.secondary' }}>
+              <Stack direction="row" alignItems="center">
+                <Typography variant="body2" sx={{ minWidth: '130px', color: 'text.secondary' }}>
                   推荐问题
                 </Typography>
-                <Box sx={{ flex: 1 }}>
-                  {renderSuggestInput({
-                    placeholder: '回车添加，示例：如何快速接入？',
-                    questions: pluginSuggestQuestions,
-                    inputValue: pluginSuggestInput,
-                    setInputValue: setPluginSuggestInput,
-                    onAdd: handleAddPluginSuggest,
-                    onRemove: handleRemovePluginSuggest,
-                    inputRef: pluginSuggestInputRef,
-                    keyPrefix: 'plugin-suggest'
-                  })}
-                </Box>
+                <RadioGroup
+                  row
+                  value={pluginSuggestMode}
+                  onChange={(e) => setPluginSuggestMode(e.target.value as SuggestMode)}
+                >
+                  <FormControlLabel value="disabled" control={<Radio size="small" />} label={<Typography variant="body2">禁用</Typography>} />
+                  <FormControlLabel value="hot" control={<Radio size="small" />} label={<Typography variant="body2">使用热门问题</Typography>} />
+                  <FormControlLabel value="custom" control={<Radio size="small" />} label={<Typography variant="body2">自定义</Typography>} />
+                </RadioGroup>
               </Stack>
+              {pluginSuggestMode === 'custom' && (
+                <Stack direction="row" alignItems="flex-start">
+                  <Typography variant="body2" sx={{ minWidth: '130px', pt: 1, color: 'text.secondary' }}>
+                    自定义问题
+                  </Typography>
+                  <Box sx={{ flex: 1 }}>
+                    {renderSuggestInput({
+                      placeholder: '回车添加，示例：如何快速接入？',
+                      questions: pluginSuggestQuestions,
+                      inputValue: pluginSuggestInput,
+                      setInputValue: setPluginSuggestInput,
+                      onAdd: handleAddPluginSuggest,
+                      onRemove: handleRemovePluginSuggest,
+                      inputRef: pluginSuggestInputRef,
+                      keyPrefix: 'plugin-suggest'
+                    })}
+                  </Box>
+                </Stack>
+              )}
 
               <Stack direction="row" alignItems="flex-start">
                 <Typography variant="body2" sx={{ minWidth: '130px', pt: 1.5, color: 'text.secondary' }}>
