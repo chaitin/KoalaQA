@@ -29,7 +29,7 @@ async function getUserData() {
   }
 }
 
-async function getBotData(): Promise<SvcBotGetRes | null> {
+async function getBotData(): Promise<SvcBotGetRes & { avatar?: string } | null> {
   try {
     const botData = await getBot();
     return botData || null;

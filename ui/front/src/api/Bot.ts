@@ -21,7 +21,10 @@ import { ContextResponse, PutAdminBotPayload, SvcBotGetRes } from "./types";
  * @summary get bot info
  * @request GET:/admin/bot
  * @response `200` `(ContextResponse & {
-    data?: SvcBotGetRes,
+    data?: (SvcBotGetRes & {
+    avatar?: string,
+
+}),
 
 })` OK
  */
@@ -29,7 +32,9 @@ import { ContextResponse, PutAdminBotPayload, SvcBotGetRes } from "./types";
 export const getAdminBot = (params: RequestParams = {}) =>
   request<
     ContextResponse & {
-      data?: SvcBotGetRes;
+      data?: SvcBotGetRes & {
+        avatar?: string;
+      };
     }
   >({
     path: `/admin/bot`,
@@ -69,7 +74,10 @@ export const putAdminBot = (
  * @summary get bot info
  * @request GET:/bot
  * @response `200` `(ContextResponse & {
-    data?: SvcBotGetRes,
+    data?: (SvcBotGetRes & {
+    avatar?: string,
+
+}),
 
 })` OK
  */
@@ -77,7 +85,9 @@ export const putAdminBot = (
 export const getBot = (params: RequestParams = {}) =>
   request<
     ContextResponse & {
-      data?: SvcBotGetRes;
+      data?: SvcBotGetRes & {
+        avatar?: string;
+      };
     }
   >({
     path: `/bot`,

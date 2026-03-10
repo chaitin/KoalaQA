@@ -23,6 +23,7 @@ import {
   ModelRankTimeGroup,
   ModelRankTimeGroupItem,
   SvcAIInsightDiscussionItem,
+  SvcLastHotQuestionsItem,
   SvcRankContributeItem,
 } from "./types";
 
@@ -221,6 +222,36 @@ export const getRankContribute = (
     path: `/rank/contribute`,
     method: "GET",
     query: query,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags rank
+ * @name GetRankHotQuestion
+ * @summary last hot questions rank
+ * @request GET:/rank/hot_question
+ * @response `200` `(ContextResponse & {
+    data?: (ModelListRes & {
+    items?: (SvcLastHotQuestionsItem)[],
+
+}),
+
+})` OK
+ */
+
+export const getRankHotQuestion = (params: RequestParams = {}) =>
+  request<
+    ContextResponse & {
+      data?: ModelListRes & {
+        items?: SvcLastHotQuestionsItem[];
+      };
+    }
+  >({
+    path: `/rank/hot_question`,
+    method: "GET",
     format: "json",
     ...params,
   });

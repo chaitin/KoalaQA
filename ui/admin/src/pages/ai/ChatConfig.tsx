@@ -440,10 +440,16 @@ const ChatConfig = () => {
     const displayChanged = (display === 'enabled') !== originalState.display;
     const suggestModeChanged = suggestMode !== originalState.suggestMode;
     const pluginSuggestModeChanged = pluginSuggestMode !== originalState.pluginSuggestMode;
-    const origSuggest = (originalState.suggestQuestions || []).map(s => s.trim()).filter(Boolean);
-    const origPluginSuggest = (originalState.pluginSuggestQuestions || []).map(s => s.trim()).filter(Boolean);
-    const suggestChanged = JSON.stringify(getEffectiveSuggestQuestions) !== JSON.stringify(origSuggest);
-    const pluginSuggestChanged = JSON.stringify(getEffectivePluginSuggestQuestions) !== JSON.stringify(origPluginSuggest);
+    const origEffectiveSuggest =
+      originalState.suggestMode === 'disabled' ? [] :
+      originalState.suggestMode === 'hot' ? HOT_SUGGEST_QUESTIONS :
+      (originalState.suggestQuestions || []).map(s => s.trim()).filter(Boolean);
+    const origEffectivePluginSuggest =
+      originalState.pluginSuggestMode === 'disabled' ? [] :
+      originalState.pluginSuggestMode === 'hot' ? HOT_SUGGEST_QUESTIONS :
+      (originalState.pluginSuggestQuestions || []).map(s => s.trim()).filter(Boolean);
+    const suggestChanged = JSON.stringify(getEffectiveSuggestQuestions) !== JSON.stringify(origEffectiveSuggest);
+    const pluginSuggestChanged = JSON.stringify(getEffectivePluginSuggestQuestions) !== JSON.stringify(origEffectivePluginSuggest);
     return pluginChanged || enabledChanged || displayChanged || suggestModeChanged || pluginSuggestModeChanged || suggestChanged || pluginSuggestChanged;
   }, [plugin, enabled, display, suggestMode, pluginSuggestMode, getEffectiveSuggestQuestions, getEffectivePluginSuggestQuestions, originalState]);
 

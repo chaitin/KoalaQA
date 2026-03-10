@@ -1,9 +1,9 @@
 'use client'
 
-import { getDiscussionAskAskSessionId, getDiscussionAskSession, postDiscussionAskStop } from '@/api'
+import { getDiscussionAskAskSessionId, getDiscussionAskSession, getRankHotQuestion, postDiscussionAskStop } from '@/api'
 import { getCsrfToken } from '@/api/httpClient'
 
-import { ModelDiscussionListItem, ModelUserInfo, SvcBotGetRes } from '@/api/types'
+import { ModelDiscussionListItem, ModelSuggestQuestionType, ModelUserInfo, SvcBotGetRes } from '@/api/types'
 import { getSystemWebPlugin } from '@/api/WebPlugin'
 import { AuthContext } from '@/components/authProvider'
 import UserAvatar from '@/components/UserAvatar'
@@ -83,7 +83,7 @@ interface Message {
 
 interface CustomerServiceContentProps {
   readonly initialUser?: ModelUserInfo
-  readonly botData?: SvcBotGetRes | null
+  readonly botData?: SvcBotGetRes & { avatar?: string } | null
   readonly sessionId: string
   readonly onClose?: () => void
   readonly isWidgetMode?: boolean
@@ -435,11 +435,28 @@ export default function CustomerServiceContent({
         // Backend logic: service is enabled if any of Enabled, Display, or Plugin is true
         // This matches: if !webPlugin.Enabled && !webPlugin.Display && !webPlugin.Plugin { return error }
         const isEnabled = response?.enabled === true || response?.display === true || response?.plugin === true
-
         setIsServiceEnabled(isEnabled)
-        const suggestList = getSuggestListByMode(response)
-        setSupportSuggestQuestions(suggestList)
-        setShowSupportSuggestions(suggestList.length > 0)
+
+        const questionType = isWidgetMode ? response?.plugin_question_type : response?.question_type
+
+        if (questionType === ModelSuggestQuestionType.SuggestQuestionTypeHot) {
+          try {
+            const hotRes = await getRankHotQuestion({ skipAuthRedirect: true } as any)
+            const hotList = (hotRes?.items || []).map((item) => item.content || '').filter(Boolean)
+            setSupportSuggestQuestions(hotList)
+            setShowSupportSuggestions(hotList.length > 0)
+          } catch {
+            setSupportSuggestQuestions([])
+            setShowSupportSuggestions(false)
+          }
+        } else if (questionType === ModelSuggestQuestionType.SuggestQuestionTypeCustomize) {
+          const customList = getSuggestListByMode(response)
+          setSupportSuggestQuestions(customList)
+          setShowSupportSuggestions(customList.length > 0)
+        } else {
+          setSupportSuggestQuestions([])
+          setShowSupportSuggestions(false)
+        }
       } catch (error) {
         console.error('获取智能客服配置失败:', error)
         // 默认允许访问，避免因网络问题阻止用户
@@ -447,7 +464,7 @@ export default function CustomerServiceContent({
       }
     }
     checkServiceEnabled()
-  }, [isWidgetMode])
+  }, [isWidgetMode, getSuggestListByMode])
 
   // 从 props 更新机器人信息（如果服务端获取到了）
   useEffect(() => {
@@ -1606,8 +1623,13 @@ export default function CustomerServiceContent({
         // 标记为新会话（不应该加载历史对话）
         initialUrlIdRef.current = null
 
-        // 重置历史加载标记，以便新会话可以加载历史（如果有的话）
-        historyLoadedRef.current = null
+        // 立即将历史加载标记设置为新 sessionId，防止 URL 变更触发的 effect 重新载入旧会话消息
+        historyLoadedRef.current = newSessionId
+
+        // 如果是 widget 模式通过 clientSessionId 管理会话，同步更新为新 sessionId
+        if (clientSessionId) {
+          setClientSessionId(newSessionId)
+        }
 
         // 清空消息
         setMessages([])
@@ -1632,7 +1654,7 @@ export default function CustomerServiceContent({
     } catch (error) {
       console.error('创建新会话失败:', error)
     }
-  }, [router, supportSuggestQuestions])
+  }, [router, supportSuggestQuestions, clientSessionId])
 
   return (
     <Box
@@ -1754,90 +1776,6 @@ export default function CustomerServiceContent({
             }}
           >
             <Stack spacing={3}>
-              {/* 无消息时展示欢迎卡片 */}
-              {showWelcomeCard && messages.length === 0 && (
-                <Fade in timeout={400}>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      position: 'relative',
-                      overflow: 'hidden',
-                      borderRadius: 3,
-                      p: 3,
-                      width: '100%',
-                      maxWidth: 800,
-                      border: '1px solid rgba(0, 0, 0, 0.06)',
-                      ...(isInIframe
-                        ? { bgcolor: 'white' }
-                        : {
-                          bgcolor: alpha(theme.palette.primary.main, 0.06),
-                        }),
-                    }}
-                  >
-                    {!isInIframe && (
-                      <Icon type='icon-a-kefu' sx={{
-                        position: 'absolute',
-                        top: 16,
-                        right: 32,
-                        fontSize: 120,
-                        opacity: 0.06,
-                        pointerEvents: 'none',
-                        color: 'primary.main',
-                      }} />
-                    )}
-                    <Box sx={{ position: 'relative', zIndex: 1 }}>
-                      <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 500, mb: 2 }}>
-                        您好！我是{botName}，很高兴为您服务。有什么问题可以帮您？
-                      </Typography>
-                      {supportSuggestQuestions.length > 0 && (
-                        <>
-                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-                            <AutoAwesomeIcon sx={{ fontSize: 18, mr: 0.5, color: 'primary.main' }} />
-                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main' }}>
-                              你可能想问
-                            </Typography>
-                          </Box>
-                          <Grid container spacing={1.5}>
-                            {supportSuggestQuestions.map((q) => (
-                              <Grid size={{ xs: 12, sm: 6 }} key={q}>
-                                <Box
-                                  onClick={() => handleSuggestClick(q)}
-                                  sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    cursor: isLoading ? 'default' : 'pointer',
-                                    color: 'text.secondary',
-                                    '&:hover': isLoading ? {} : { color: 'primary.main' },
-                                    '&:hover .welcome-bullet': isLoading ? {} : { borderColor: 'primary.main' },
-                                  }}
-                                >
-                                  <Box
-                                    className="welcome-bullet"
-                                    sx={{
-                                      width: 6,
-                                      height: 6,
-                                      borderRadius: '50%',
-                                      border: '1px solid',
-                                      borderColor: 'grey.400',
-                                      mr: 1.5,
-                                      flexShrink: 0,
-                                      transition: 'border-color 0.2s',
-                                    }}
-                                  />
-                                  <Typography variant="body2" sx={{ flex: 1 }}>
-                                    {q}
-                                  </Typography>
-                                </Box>
-                              </Grid>
-                            ))}
-                          </Grid>
-                        </>
-                      )}
-                    </Box>
-                  </Paper>
-                </Fade>
-              )}
-
               {messages.map((message, index) => {
                 // 判断是否是最后一条机器人消息
                 // 条件：1. 当前是机器人消息 2. 之后没有机器人消息 3. 之前有用户消息
@@ -1976,8 +1914,7 @@ export default function CustomerServiceContent({
                                     position: isWelcomeMessage ? 'relative' : undefined,
                                     ...(isWelcomeMessage
                                       ? {
-                                        backgroundImage: `linear-gradient(180deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, rgba(0,156,200,0) 100%)`
-                                        ,
+                                        backgroundImage: `linear-gradient(180deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, rgba(0,156,200,0) 100%)`,
                                         borderColor: 'rgba(0, 0, 0, 0.06)'
                                       }
                                       : { bgcolor: 'white' }),

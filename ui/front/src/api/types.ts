@@ -75,6 +75,12 @@ export enum ModelTrendType {
   TrendTypeAnswer = 3,
 }
 
+export enum ModelSuggestQuestionType {
+  SuggestQuestionTypeDisable = 0,
+  SuggestQuestionTypeHot = 1,
+  SuggestQuestionTypeCustomize = 2,
+}
+
 export enum ModelStatType {
   StatTypeVisit = 1,
   StatTypeSearch = 2,
@@ -732,7 +738,9 @@ export interface ModelSystemWebPlugin {
   display?: boolean;
   enabled?: boolean;
   plugin?: boolean;
+  plugin_question_type?: ModelSuggestQuestionType;
   plugin_suggest_questions?: string[];
+  question_type?: ModelSuggestQuestionType;
   suggest_questions?: string[];
 }
 
@@ -922,8 +930,10 @@ export interface SvcAuthFrontendGetRes {
 
 export interface SvcBotGetRes {
   answer_ref?: boolean;
-  avatar?: string;
-  name?: string;
+  general_knowledge?: boolean;
+  keywords?: string;
+  keywords_enable?: boolean;
+  name: string;
   unknown_prompt?: string;
   user_id?: number;
 }
@@ -1112,6 +1122,10 @@ export interface SvcKBListItem {
 export interface SvcKBUpdateReq {
   desc?: string;
   name: string;
+}
+
+export interface SvcLastHotQuestionsItem {
+  content?: string;
 }
 
 export interface SvcListAnydocNode {
@@ -1491,6 +1505,9 @@ export interface PutAdminBotPayload {
    */
   avatar?: File;
   answer_ref?: boolean;
+  general_knowledge?: boolean;
+  keywords?: string;
+  keywords_enable?: boolean;
   name: string;
   unknown_prompt?: string;
 }

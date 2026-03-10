@@ -23,6 +23,7 @@ const formSchema = z.object({
   name: z.string().min(1, '名称不能为空').max(50, '名称不能超过50个字符'),
   unknown_prompt: z.string().optional(),
   answer_ref: z.boolean().optional(),
+  general_knowledge: z.boolean().optional(),
   keywords_enable: z.boolean().optional(),
   keywords: z.string().optional(),
   id: z.string().optional(),
@@ -47,6 +48,7 @@ const Bot: React.FC = () => {
       answer_ref: false,
       keywords_enable: false,
       keywords: '',
+      general_knowledge: false,
     },
   });
 
@@ -58,6 +60,7 @@ const Bot: React.FC = () => {
         name: data.name,
         unknown_prompt: data.unknown_prompt || '',
         answer_ref: data.answer_ref,
+        general_knowledge: data.general_knowledge,
         keywords_enable: data.keywords_enable,
         keywords: data.keywords,
       });
@@ -237,7 +240,33 @@ const Bot: React.FC = () => {
             )}
           />
         </Stack>
-
+        <Stack direction="row" sx={{ mt: 2 }} alignItems="center">
+          <Typography variant="subtitle2" sx={{ minWidth: '24%' }}>
+            结合通用知识回答
+          </Typography>
+          <Controller
+            name="general_knowledge"
+            control={control}
+            render={({ field }) => (
+              <RadioGroup
+                row
+                value={field.value ? 'enabled' : 'disabled'}
+                onChange={e => field.onChange(e.target.value === 'enabled')}
+              >
+                <FormControlLabel
+                  value="disabled"
+                  control={<Radio size="small" />}
+                  label={<Typography variant="body2">禁用</Typography>}
+                />
+                <FormControlLabel
+                  value="enabled"
+                  control={<Radio size="small" />}
+                  label={<Typography variant="body2">启用</Typography>}
+                />
+              </RadioGroup>
+            )}
+          />
+        </Stack>
         <Stack direction="row" sx={{ mt: 2 }} alignItems="center">
           <Typography variant="subtitle2" sx={{ minWidth: '24%' }}>
             敏感信息屏蔽

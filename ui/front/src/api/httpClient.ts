@@ -15,9 +15,9 @@
 // @ts-nocheck
 /*
  * ---------------------------------------------------------------
- * ## THIS FILE WAS GENERATED VIA SWAGGER-TYPESCRIPT-API ##
- * ## ##
- * ## AUTHOR: acacode ##
+ * ## THIS FILE WAS GENERATED VIA SWAGGER-TYPESCRIPT-API        ##
+ * ##                                                           ##
+ * ## AUTHOR: acacode                                           ##
  * ## SOURCE: https://github.com/acacode/swagger-typescript-api ##
  * ---------------------------------------------------------------
  */
@@ -248,7 +248,7 @@ export class HttpClient<SecurityDataType = unknown> {
           if (
             typeof window !== "undefined" &&
             Alert?.error &&
-            shouldShowError
+            (shouldShowError || res.err === "user is blocked")
           ) {
             Alert.error(this.translateErrorMessage(res.err));
           }
@@ -338,7 +338,9 @@ export class HttpClient<SecurityDataType = unknown> {
 
         // 检查请求路径，如果是 api/user 则不展示报错信息
         const requestUrl = error.config?.url || "";
-        const shouldShowError = requestUrl !== "/user" || error.response.data.err === "user is blocked";
+        const shouldShowError =
+          requestUrl !== "/user" ||
+          error.response.data.err === "user is blocked";
         // 如果是CSRF token错误且已经重试过，或者不是CSRF错误，才显示错误提示
         if (typeof window !== "undefined" && Alert?.error && shouldShowError) {
           let msg: string;
@@ -446,8 +448,9 @@ export class HttpClient<SecurityDataType = unknown> {
     });
 
     if (keysToDelete.length > 0) {
-      console.log(`[HttpClient] Cleared ${keysToDelete.length} pending requests for path:
-                          ${pathPattern}`);
+      console.log(
+        `[HttpClient] Cleared ${keysToDelete.length} pending requests for path: ${pathPattern}`,
+      );
     }
   };
 
@@ -464,7 +467,7 @@ export class HttpClient<SecurityDataType = unknown> {
       headers: {
         ...((method &&
           this.instance.defaults.headers[
-          method.toLowerCase() as keyof HeadersDefaults
+            method.toLowerCase() as keyof HeadersDefaults
           ]) ||
           {}),
         ...(params1.headers || {}),
