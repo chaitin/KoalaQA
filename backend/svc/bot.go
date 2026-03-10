@@ -136,14 +136,6 @@ func (b *Bot) Get(ctx context.Context) (*BotGetRes, error) {
 	return b.botCache, nil
 }
 
-func normalizeKeywords(raw string) string {
-	parts := splitKeywords(raw)
-	if len(parts) == 0 {
-		return ""
-	}
-	return strings.Join(parts, ",")
-}
-
 func splitKeywords(raw string) []string {
 	fields := strings.FieldsFunc(raw, func(r rune) bool {
 		return r == ',' || r == '，'

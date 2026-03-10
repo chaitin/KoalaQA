@@ -23,8 +23,9 @@ func (b *bot) Get(ctx *context.Context) {
 		return
 	}
 
-	res.UnknownPrompt = ""
-	ctx.Success(res)
+	data := *res
+	data.UnknownPrompt = ""
+	ctx.Success(data)
 }
 
 func (b *bot) Route(h server.Handler) {
