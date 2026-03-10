@@ -369,14 +369,13 @@ const ChatConfig = () => {
           const loadedSuggest = webRes.suggest_questions || [];
           const loadedPluginSuggest = webRes.plugin_suggest_questions || [];
           const loadedSuggestMode =
-const loadedSuggestMode =
-  webRes.question_type === ModelSuggestQuestionType.SuggestQuestionTypeDisable && loadedSuggest.length > 0
-    ? inferSuggestMode(loadedSuggest)
-    : apiQuestionTypeToSuggestMode(webRes.question_type);
-const loadedPluginSuggestMode =
-  webRes.plugin_question_type === ModelSuggestQuestionType.SuggestQuestionTypeDisable && loadedPluginSuggest.length > 0
-    ? inferSuggestMode(loadedPluginSuggest)
-    : apiQuestionTypeToSuggestMode(webRes.plugin_question_type);
+            webRes.question_type === ModelSuggestQuestionType.SuggestQuestionTypeDisable && loadedSuggest.length > 0
+              ? inferSuggestMode(loadedSuggest)
+              : apiQuestionTypeToSuggestMode(webRes.question_type);
+          const loadedPluginSuggestMode =
+            webRes.plugin_question_type === ModelSuggestQuestionType.SuggestQuestionTypeDisable && loadedPluginSuggest.length > 0
+              ? inferSuggestMode(loadedPluginSuggest)
+              : apiQuestionTypeToSuggestMode(webRes.plugin_question_type);
           setPlugin(webRes.plugin ? 'enabled' : 'disabled');
           setEnabled(webRes.enabled ? 'enabled' : 'disabled');
           setDisplay(webRes.display ? 'enabled' : 'disabled');
@@ -443,12 +442,12 @@ const loadedPluginSuggestMode =
     const pluginSuggestModeChanged = pluginSuggestMode !== originalState.pluginSuggestMode;
     const origEffectiveSuggest =
       originalState.suggestMode === 'disabled' ? [] :
-      originalState.suggestMode === 'hot' ? HOT_SUGGEST_QUESTIONS :
-      (originalState.suggestQuestions || []).map(s => s.trim()).filter(Boolean);
+        originalState.suggestMode === 'hot' ? HOT_SUGGEST_QUESTIONS :
+          (originalState.suggestQuestions || []).map(s => s.trim()).filter(Boolean);
     const origEffectivePluginSuggest =
       originalState.pluginSuggestMode === 'disabled' ? [] :
-      originalState.pluginSuggestMode === 'hot' ? HOT_SUGGEST_QUESTIONS :
-      (originalState.pluginSuggestQuestions || []).map(s => s.trim()).filter(Boolean);
+        originalState.pluginSuggestMode === 'hot' ? HOT_SUGGEST_QUESTIONS :
+          (originalState.pluginSuggestQuestions || []).map(s => s.trim()).filter(Boolean);
     const suggestChanged = JSON.stringify(getEffectiveSuggestQuestions) !== JSON.stringify(origEffectiveSuggest);
     const pluginSuggestChanged = JSON.stringify(getEffectivePluginSuggestQuestions) !== JSON.stringify(origEffectivePluginSuggest);
     return pluginChanged || enabledChanged || displayChanged || suggestModeChanged || pluginSuggestModeChanged || suggestChanged || pluginSuggestChanged;
@@ -616,7 +615,7 @@ const loadedPluginSuggestMode =
         </Stack>
         {suggestMode === 'custom' && (
           <Stack direction="row" alignItems="flex-start" sx={{ pl: 2, mt: 1.5 }}>
-            <Typography variant="body2" sx={{ minWidth: '130px', pt: 1, color: 'text.secondary' }}/>
+            <Typography variant="body2" sx={{ minWidth: '130px', pt: 1, color: 'text.secondary' }} />
             <Box sx={{ flex: 1 }}>
               {renderSuggestInput({
                 placeholder: '回车添加，示例：如何接入Webhook？',
@@ -698,7 +697,7 @@ const loadedPluginSuggestMode =
               {pluginSuggestMode === 'custom' && (
                 <Stack direction="row" alignItems="flex-start">
                   <Typography variant="body2" sx={{ minWidth: '130px', pt: 1, color: 'text.secondary' }}>
-                    
+
                   </Typography>
                   <Box sx={{ flex: 1 }}>
                     {renderSuggestInput({
