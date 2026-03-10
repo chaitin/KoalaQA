@@ -5146,7 +5146,19 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/svc.BotGetRes"
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/definitions/svc.BotGetRes"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "avatar": {
+                                                            "type": "string"
+                                                        }
+                                                    }
+                                                }
+                                            ]
                                         }
                                     }
                                 }
