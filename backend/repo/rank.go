@@ -160,7 +160,7 @@ func (r *Rank) ClearExpireAIInsight(ctx context.Context, before time.Time) error
 func (r *Rank) LastHotQuestions(ctx context.Context, res any, queryFuncs ...QueryOptFunc) error {
 	opt := getQueryOpt(queryFuncs...)
 	return r.model(ctx).Scopes(opt.Scopes()...).
-		Where("created_at >= (?)", r.model(ctx).Select("DATE_TRUNC('week', created_at)").Where("type = ?", model.RankTypeHotQuestion)).
+		Where("created_at >= (?)", r.model(ctx).Select("MAX(DATE_TRUNC('week', created_at))").Where("type = ?", model.RankTypeHotQuestion)).
 		Where("type = ?", model.RankTypeHotQuestion).
 		Order("created_at ASC").
 		Find(res).Error

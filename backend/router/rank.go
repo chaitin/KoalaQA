@@ -53,6 +53,7 @@ func (r *rank) LastHotQuestions(ctx *context.Context) {
 func (r *rank) Route(h server.Handler) {
 	g := h.Group("/rank")
 	g.GET("/contribute", r.Contribute)
+	g.GET("/hot_question", r.LastHotQuestions)
 }
 
 func newRank(r *svc.Rank) server.Router {
