@@ -1375,7 +1375,7 @@ func (d *KBDocument) DocReindex(ctx context.Context, req DocReindexReq) error {
 	err := d.repoDoc.Update(ctx, map[string]any{
 		"status": model.DocStatusPendingApply,
 	}, repo.QueryWithEqual("id", req.IDs, repo.EqualOPEqAny),
-		repo.QueryWithEqual("file_type", model.FileTypeFile, repo.EqualOPNE))
+		repo.QueryWithEqual("file_type", model.FileTypeFolder, repo.EqualOPNE))
 	if err != nil {
 		return err
 	}
@@ -1398,7 +1398,7 @@ func (d *KBDocument) DocReindex(ctx context.Context, req DocReindexReq) error {
 		return nil
 	},
 		repo.QueryWithEqual("id", req.IDs, repo.EqualOPEqAny),
-		repo.QueryWithEqual("file_type", model.FileTypeFile, repo.EqualOPNE),
+		repo.QueryWithEqual("file_type", model.FileTypeFolder, repo.EqualOPNE),
 		repo.QueryWithSelectColumn("id, rag_id"),
 	)
 }
