@@ -100,6 +100,10 @@ const AdminDocument = () => {
     }
   };
   const updateDoc = (item: SvcDocListItem) => {
+    if (item.status === ModelDocStatus.DocStatusPendingReview) {
+      message.warning('待审核状态不支持更新');
+      return;
+    }
     putAdminKbKbIdDocumentReindex({ kbId: kb_id }, { ids: [item.id!] })
       .then(() => {
         message.success('更新成功');
@@ -114,10 +118,18 @@ const AdminDocument = () => {
       message.warning('请先选择要更新的项目');
       return;
     }
-    putAdminKbKbIdDocumentReindex(
-      { kbId: kb_id },
-      { ids: selectedRowKeys.map(Number) }
-    )
+    const idsToUpdate = selectedRowKeys
+      .map(Number)
+      .filter(
+        id =>
+          data?.items?.find(i => i.id === id)?.status !==
+          ModelDocStatus.DocStatusPendingReview
+      );
+    if (idsToUpdate.length === 0) {
+      message.warning('待审核状态不支持更新，请选择其他项目');
+      return;
+    }
+    putAdminKbKbIdDocumentReindex({ kbId: kb_id }, { ids: idsToUpdate })
       .then(() => {
         message.success('批量更新成功');
         setSelectedRowKeys([]);
@@ -364,15 +376,17 @@ const AdminDocument = () => {
           setMenuTarget(null);
         }}
       >
-        <MenuItem
-          onClick={() => {
-            if (menuTarget) updateDoc(menuTarget);
-            setMenuAnchorEl(null);
-            setMenuTarget(null);
-          }}
-        >
-          更新
-        </MenuItem>
+        {menuTarget?.status !== ModelDocStatus.DocStatusPendingReview && (
+          <MenuItem
+            onClick={() => {
+              if (menuTarget) updateDoc(menuTarget);
+              setMenuAnchorEl(null);
+              setMenuTarget(null);
+            }}
+          >
+            更新
+          </MenuItem>
+        )}
         <MenuItem
           onClick={() => {
             if (menuTarget) deleteDoc(menuTarget);

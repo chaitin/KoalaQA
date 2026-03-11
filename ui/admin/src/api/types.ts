@@ -1798,6 +1798,15 @@ export interface GetAdminKbKbIdSpaceSpaceIdFolderFolderIdDocParams {
   folderId: string;
 }
 
+export interface PutAdminKbKbIdSpaceSpaceIdFolderFolderIdReindexParams {
+  /** kb_id */
+  kbId: number;
+  /** space_id */
+  spaceId: number;
+  /** folder_id */
+  folderId: number;
+}
+
 export interface PutAdminKbKbIdSpaceSpaceIdRefreshParams {
   /** kb_id */
   kbId: number;

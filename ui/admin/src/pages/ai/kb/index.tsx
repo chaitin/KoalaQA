@@ -17,6 +17,7 @@ import {
   postAdminKbSpaceRemote,
   putAdminKbKbIdSpaceSpaceId,
   putAdminKbKbIdSpaceSpaceIdFolderFolderId,
+  putAdminKbKbIdSpaceSpaceIdFolderFolderIdReindex,
   putAdminKbKbIdSpaceSpaceIdRefresh,
   SvcCreateSpaceReq,
   SvcDocListItem,
@@ -311,6 +312,23 @@ const KnowledgeBasePage = () => {
       refreshFolders();
     } catch {
       message.error('更新失败');
+    }
+  };
+
+  const handleReindexFolder = async () => {
+    if (!currentFolder || !selectedSpaceId) return;
+    handleMenuClose();
+
+    try {
+      await putAdminKbKbIdSpaceSpaceIdFolderFolderIdReindex({
+        kbId: kb_id,
+        spaceId: selectedSpaceId,
+        folderId: currentFolder.id!,
+      });
+      message.success('重新学习已开始');
+      refreshFolders();
+    } catch {
+      message.error('重新学习失败');
     }
   };
 
@@ -614,6 +632,9 @@ const KnowledgeBasePage = () => {
           ]}
         {currentFolder &&
           !currentSpace && [
+            <MenuItem key="reindexFolder" onClick={handleReindexFolder}>
+              重新学习
+            </MenuItem>,
             <MenuItem key="refreshFolder" onClick={handleRefreshFolder}>
               更新
             </MenuItem>,

@@ -93,6 +93,10 @@ const AdminDocument = () => {
   const [markdownContent, setMarkdownContent] = useState<string>('');
 
   const reindexDoc = (item: SvcDocListItem) => {
+    if (item.status === ModelDocStatus.DocStatusPendingReview) {
+      message.warning('待审核状态不支持重新学习');
+      return;
+    }
     putAdminKbKbIdDocumentReindex({ kbId: kb_id }, { ids: [item.id!] })
       .then(() => {
         message.success('重新学习已开始');
@@ -149,10 +153,18 @@ const AdminDocument = () => {
       message.warning('请先选择要重新学习的项目');
       return;
     }
-    putAdminKbKbIdDocumentReindex(
-      { kbId: kb_id },
-      { ids: selectedRowKeys.map(Number) }
-    )
+    const idsToReindex = selectedRowKeys
+      .map(Number)
+      .filter(
+        id =>
+          data?.items?.find(i => i.id === id)?.status !==
+          ModelDocStatus.DocStatusPendingReview
+      );
+    if (idsToReindex.length === 0) {
+      message.warning('待审核状态不支持重新学习，请选择其他项目');
+      return;
+    }
+    putAdminKbKbIdDocumentReindex({ kbId: kb_id }, { ids: idsToReindex })
       .then(() => {
         message.success('批量重新学习已开始');
         setSelectedRowKeys([]);
@@ -405,15 +417,17 @@ const AdminDocument = () => {
           setMenuTarget(null);
         }}
       >
-        <MenuItem
-          onClick={() => {
-            if (menuTarget) reindexDoc(menuTarget);
-            setMenuAnchorEl(null);
-            setMenuTarget(null);
-          }}
-        >
-          重新学习
-        </MenuItem>
+        {menuTarget?.status !== ModelDocStatus.DocStatusPendingReview && (
+          <MenuItem
+            onClick={() => {
+              if (menuTarget) reindexDoc(menuTarget);
+              setMenuAnchorEl(null);
+              setMenuTarget(null);
+            }}
+          >
+            重新学习
+          </MenuItem>
+        )}
         <MenuItem
           onClick={() => {
             if (menuTarget) deleteDoc(menuTarget);

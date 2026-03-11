@@ -478,10 +478,33 @@ const KnowledgeBaseDetailPage = () => {
     }
   };
 
+  // 从树中查找文档（用于过滤待审核状态）
+  const findDocInTree = (docId: number): SvcDocListItem | undefined => {
+    const searchInNodes = (nodes: SvcDocListItem[]): SvcDocListItem | undefined => {
+      for (const node of nodes) {
+        if (node.id === docId) return node;
+        const state = treeNodeStates.get(node.id!);
+        if (state?.children?.length) {
+          const found = searchInNodes(state.children);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    };
+    return searchInNodes(rootNodes);
+  };
+
   const handleReindexDocs = async (docIds: number[]) => {
     if (!docIds.length) return;
+    const idsToReindex = docIds.filter(
+      id => findDocInTree(id)?.status !== ModelDocStatus.DocStatusPendingReview
+    );
+    if (idsToReindex.length === 0) {
+      message.warning('待审核状态不支持重新学习，请选择其他项目');
+      return;
+    }
     try {
-      await putAdminKbKbIdDocumentReindex({ kbId: kb_id }, { ids: docIds });
+      await putAdminKbKbIdDocumentReindex({ kbId: kb_id }, { ids: idsToReindex });
       message.success('重新学习已开始');
       refreshAllNodes();
     } catch {
@@ -763,25 +786,6 @@ const KnowledgeBaseDetailPage = () => {
           <Typography variant="body2" color="text.secondary" sx={{ minWidth: 160 }}>
             {doc.updated_at ? formatDate(doc.updated_at) : '-'}
           </Typography>
-
-          {/* 重新学习 - 仅文档显示 */}
-          {!isFolder && (
-            <Tooltip title="重新学习">
-              <IconButton
-                size="small"
-                onClick={e => {
-                  e.stopPropagation();
-                  handleReindexDocs([docId]);
-                }}
-                sx={{
-                  color: 'text.secondary',
-                  '&:hover': { color: 'primary.main' },
-                }}
-              >
-                <AutorenewIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
         </Paper>
 
         {/* 子节点 - 只有文件夹才显示 */}
