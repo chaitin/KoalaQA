@@ -6,6 +6,7 @@ import {
   ModelDocType,
   ModelFileType,
   ModelKBDocumentDetail,
+  putAdminKbKbIdDocumentReindex,
   SvcDocListItem,
 } from '@/api';
 import { BatchEditCategoryButtons } from '@/components/BatchEditCategoryButtons';
@@ -23,7 +24,9 @@ import {
   Box,
   Button,
   FormControl,
+  IconButton,
   InputLabel,
+  Menu,
   MenuItem,
   Select,
   Stack,
@@ -31,6 +34,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { useRequest } from 'ahooks';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
@@ -58,6 +62,8 @@ const AdminDocument = () => {
     return Number(query.file_type) as ModelFileType;
   });
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [menuTarget, setMenuTarget] = useState<SvcDocListItem | null>(null);
 
   const {
     data,
@@ -85,6 +91,17 @@ const AdminDocument = () => {
   });
   const [detail, setDetail] = useState<ModelKBDocumentDetail | null>(null);
   const [markdownContent, setMarkdownContent] = useState<string>('');
+
+  const reindexDoc = (item: SvcDocListItem) => {
+    putAdminKbKbIdDocumentReindex({ kbId: kb_id }, { ids: [item.id!] })
+      .then(() => {
+        message.success('重新学习已开始');
+        const _query = { ...query };
+        delete _query.name;
+        fetchData(_query);
+      })
+      .catch(() => { message.error('重新学习失败'); });
+  };
 
   const viewDetail = async (item: SvcDocListItem) => {
     const docDetail = await getAdminKbKbIdDocumentDocId({ kbId: kb_id, docId: item.id! });
@@ -124,6 +141,26 @@ const AdminDocument = () => {
         });
       },
     });
+  };
+
+  // 批量重新学习
+  const handleBatchReindex = () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning('请先选择要重新学习的项目');
+      return;
+    }
+    putAdminKbKbIdDocumentReindex(
+      { kbId: kb_id },
+      { ids: selectedRowKeys.map(Number) }
+    )
+      .then(() => {
+        message.success('批量重新学习已开始');
+        setSelectedRowKeys([]);
+        const _query = { ...query };
+        delete _query.name;
+        fetchData(_query);
+      })
+      .catch(() => { message.error('批量重新学习失败'); });
   };
 
   // 批量删除
@@ -231,7 +268,6 @@ const AdminDocument = () => {
     {
       title: '',
       dataIndex: 'opt',
-      // width: 120,
       render: (_, record) => {
         return (
           <Stack direction="row" alignItems="center" spacing={1}>
@@ -243,9 +279,16 @@ const AdminDocument = () => {
             >
               查看
             </LoadingBtn>
-            <Button variant="text" size="small" color="error" onClick={() => deleteDoc(record)}>
-              删除
-            </Button>
+            <IconButton
+              size="small"
+              onClick={e => {
+                e.stopPropagation();
+                setMenuAnchorEl(e.currentTarget);
+                setMenuTarget(record);
+              }}
+            >
+              <MoreVertIcon fontSize="small" />
+            </IconButton>
           </Stack>
         );
       },
@@ -314,6 +357,9 @@ const AdminDocument = () => {
               onBatchEditComplete={() => setSelectedRowKeys([])}
               label="分类"
             />
+            <Button variant="text" size="small" color="primary" onClick={handleBatchReindex}>
+              批量重新学习 ({selectedRowKeys.length})
+            </Button>
             <Button variant="text" size="small" color="error" onClick={handleBatchDelete}>
               批量删除 ({selectedRowKeys.length})
             </Button>
@@ -350,6 +396,36 @@ const AdminDocument = () => {
           },
         }}
       />
+      {/* 更多操作菜单 */}
+      <Menu
+        anchorEl={menuAnchorEl}
+        open={Boolean(menuAnchorEl)}
+        onClose={() => {
+          setMenuAnchorEl(null);
+          setMenuTarget(null);
+        }}
+      >
+        <MenuItem
+          onClick={() => {
+            if (menuTarget) reindexDoc(menuTarget);
+            setMenuAnchorEl(null);
+            setMenuTarget(null);
+          }}
+        >
+          重新学习
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            if (menuTarget) deleteDoc(menuTarget);
+            setMenuAnchorEl(null);
+            setMenuTarget(null);
+          }}
+          sx={{ color: 'error.main' }}
+        >
+          删除
+        </MenuItem>
+      </Menu>
+
       <Modal
         open={!!detail}
         title={detail?.title || '文档详情'}

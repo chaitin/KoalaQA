@@ -5,6 +5,7 @@ import {
   ModelDocStatus,
   ModelDocType,
   ModelKBDocumentDetail,
+  putAdminKbKbIdDocumentReindex,
   SvcDocListItem,
 } from '@/api';
 import Card from '@/components/card';
@@ -18,13 +19,16 @@ import {
   Box,
   Button,
   FormControl,
+  IconButton,
   InputLabel,
+  Menu,
   MenuItem,
   Select,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { useRequest } from 'ahooks';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
@@ -45,6 +49,8 @@ const AdminDocument = () => {
     return Number(query.status) as ModelDocStatus;
   });
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [menuTarget, setMenuTarget] = useState<SvcDocListItem | null>(null);
 
   // 使用分类编辑hook
   const categoryEdit = useCategoryEdit({
@@ -78,6 +84,15 @@ const AdminDocument = () => {
   } = useRequest(params => getAdminKbKbIdQuestion({ page, size, ...params, kbId: kb_id }), {
     manual: true,
   });
+  const reindexDoc = (item: SvcDocListItem) => {
+    putAdminKbKbIdDocumentReindex({ kbId: kb_id }, { ids: [item.id!] })
+      .then(() => {
+        message.success('重新学习已开始');
+        fetchData(query);
+      })
+      .catch(() => { message.error('重新学习失败'); });
+  };
+
   const deleteDoc = (item: SvcDocListItem) => {
     Modal.confirm({
       title: '提示',
@@ -115,6 +130,24 @@ const AdminDocument = () => {
       },
     }
   );
+
+  // 批量重新学习
+  const handleBatchReindex = () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning('请先选择要重新学习的项目');
+      return;
+    }
+    putAdminKbKbIdDocumentReindex(
+      { kbId: kb_id },
+      { ids: selectedRowKeys.map(Number) }
+    )
+      .then(() => {
+        message.success('批量重新学习已开始');
+        setSelectedRowKeys([]);
+        fetchData(query);
+      })
+      .catch(() => { message.error('批量重新学习失败'); });
+  };
 
   // 批量删除
   const handleBatchDelete = () => {
@@ -206,40 +239,27 @@ const AdminDocument = () => {
     {
       title: '',
       dataIndex: 'opt',
-      // width: 120,
       render: (_, record) => {
-        const isPendingReview = record?.status === ModelDocStatus.DocStatusPendingReview;
         return (
           <Stack direction="row" alignItems="center" spacing={1}>
-            {isPendingReview ? (
-              <>
-                <LoadingBtn
-                  variant="text"
-                  size="small"
-                  color="primary"
-                  onClick={() => fetchDetail(record.id!)}
-                >
-                  查看
-                </LoadingBtn>
-                <Button variant="text" size="small" color="error" onClick={() => deleteDoc(record)}>
-                  删除
-                </Button>
-              </>
-            ) : (
-              <>
-                <LoadingBtn
-                  variant="text"
-                  size="small"
-                  color="primary"
-                  onClick={() => fetchDetail(record.id!)}
-                >
-                  编辑
-                </LoadingBtn>
-                <Button variant="text" size="small" color="error" onClick={() => deleteDoc(record)}>
-                  删除
-                </Button>
-              </>
-            )}
+            <LoadingBtn
+              variant="text"
+              size="small"
+              color="primary"
+              onClick={() => fetchDetail(record.id!)}
+            >
+              查看
+            </LoadingBtn>
+            <IconButton
+              size="small"
+              onClick={e => {
+                e.stopPropagation();
+                setMenuAnchorEl(e.currentTarget);
+                setMenuTarget(record);
+              }}
+            >
+              <MoreVertIcon fontSize="small" />
+            </IconButton>
           </Stack>
         );
       },
@@ -305,6 +325,9 @@ const AdminDocument = () => {
               selectedRowKeys={selectedRowKeys}
               onBatchEditComplete={() => setSelectedRowKeys([])}
             />
+            <Button variant="text" size="small" color="primary" onClick={handleBatchReindex}>
+              批量重新学习 ({selectedRowKeys.length})
+            </Button>
             <Button variant="text" size="small" color="error" onClick={handleBatchDelete}>
               批量删除 ({selectedRowKeys.length})
             </Button>
@@ -341,6 +364,36 @@ const AdminDocument = () => {
           },
         }}
       />
+      {/* 更多操作菜单 */}
+      <Menu
+        anchorEl={menuAnchorEl}
+        open={Boolean(menuAnchorEl)}
+        onClose={() => {
+          setMenuAnchorEl(null);
+          setMenuTarget(null);
+        }}
+      >
+        <MenuItem
+          onClick={() => {
+            if (menuTarget) reindexDoc(menuTarget);
+            setMenuAnchorEl(null);
+            setMenuTarget(null);
+          }}
+        >
+          重新学习
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            if (menuTarget) deleteDoc(menuTarget);
+            setMenuAnchorEl(null);
+            setMenuTarget(null);
+          }}
+          sx={{ color: 'error.main' }}
+        >
+          删除
+        </MenuItem>
+      </Menu>
+
       {/* 编辑单个项目分类弹窗 */}
       <Modal
         open={!!categoryEdit.editingCategoryItem}

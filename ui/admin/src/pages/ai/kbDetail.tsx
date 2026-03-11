@@ -5,6 +5,7 @@ import {
   ModelDocStatus,
   ModelDocType,
   ModelFileType,
+  putAdminKbKbIdDocumentReindex,
   putAdminKbKbIdSpaceSpaceIdFolderFolderId,
   SvcDocListItem,
   SvcListSpaceFolderItem,
@@ -477,6 +478,17 @@ const KnowledgeBaseDetailPage = () => {
     }
   };
 
+  const handleReindexDocs = async (docIds: number[]) => {
+    if (!docIds.length) return;
+    try {
+      await putAdminKbKbIdDocumentReindex({ kbId: kb_id }, { ids: docIds });
+      message.success('重新学习已开始');
+      refreshAllNodes();
+    } catch {
+      message.error('重新学习失败');
+    }
+  };
+
   const handleRetryFailedDocs = async () => {
     if (!spaceId || !folderId) return;
 
@@ -751,6 +763,25 @@ const KnowledgeBaseDetailPage = () => {
           <Typography variant="body2" color="text.secondary" sx={{ minWidth: 160 }}>
             {doc.updated_at ? formatDate(doc.updated_at) : '-'}
           </Typography>
+
+          {/* 重新学习 - 仅文档显示 */}
+          {!isFolder && (
+            <Tooltip title="重新学习">
+              <IconButton
+                size="small"
+                onClick={e => {
+                  e.stopPropagation();
+                  handleReindexDocs([docId]);
+                }}
+                sx={{
+                  color: 'text.secondary',
+                  '&:hover': { color: 'primary.main' },
+                }}
+              >
+                <AutorenewIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
         </Paper>
 
         {/* 子节点 - 只有文件夹才显示 */}
@@ -945,12 +976,23 @@ const KnowledgeBaseDetailPage = () => {
             </Button>
           )}
           {selectedRowKeys.length > 0 && (
-            <BatchEditCategoryButtons
-              categoryEdit={categoryEdit}
-              selectedRowKeys={getTopLevelSelectedIds()}
-              onBatchEditComplete={() => setSelectedRowKeys([])}
-              label="标签"
-            />
+            <>
+              <Button
+                size="small"
+                variant="outlined"
+                color="primary"
+                onClick={() => handleReindexDocs(getTopLevelSelectedIds())}
+                sx={{ flexShrink: 0 }}
+              >
+                批量重新学习 ({selectedRowKeys.length})
+              </Button>
+              <BatchEditCategoryButtons
+                categoryEdit={categoryEdit}
+                selectedRowKeys={getTopLevelSelectedIds()}
+                onBatchEditComplete={() => setSelectedRowKeys([])}
+                label="标签"
+              />
+            </>
           )}
           <TextField
             size="small"
