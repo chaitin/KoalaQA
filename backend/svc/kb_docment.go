@@ -1084,6 +1084,13 @@ func (d *KBDocument) ReindexSpaceFolder(ctx context.Context, folderID uint) erro
 		return nil
 	}
 
+	err = d.repoDoc.Update(ctx, map[string]any{
+		"updated_at": time.Now(),
+	}, repo.QueryWithEqual("id", folderID))
+	if err != nil {
+		return err
+	}
+
 	err = d.repoDoc.UpdateSpaceFolderAllDoc(ctx, folderID, nil, model.DocStatusPendingApply, "")
 	if err != nil {
 		return err

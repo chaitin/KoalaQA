@@ -782,10 +782,12 @@ const KnowledgeBaseDetailPage = () => {
             )}
           </Box>
 
-          {/* 更新时间 */}
-          <Typography variant="body2" color="text.secondary" sx={{ minWidth: 160 }}>
-            {doc.updated_at ? formatDate(doc.updated_at) : '-'}
-          </Typography>
+          {/* 更新时间 - 文件夹不展示 */}
+          {!isFolder && (
+            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 160 }}>
+              {doc.updated_at ? formatDate(doc.updated_at) : '-'}
+            </Typography>
+          )}
         </Paper>
 
         {/* 子节点 - 只有文件夹才显示 */}
