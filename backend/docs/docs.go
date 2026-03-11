@@ -2660,6 +2660,48 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/kb/{kb_id}/space/{space_id}/folder/{folder_id}/reindex": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "space"
+                ],
+                "summary": "reindex kb space folder",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "kb_id",
+                        "name": "kb_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "space_id",
+                        "name": "space_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "folder_id",
+                        "name": "folder_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/context.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/kb/{kb_id}/space/{space_id}/refresh": {
             "put": {
                 "produces": [

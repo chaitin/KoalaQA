@@ -1074,10 +1074,36 @@ func (d *KBDocument) CreateSpaceFolder(ctx context.Context, kbID uint, spaceID u
 	return nil
 }
 
-type CreateSpaceDocReq struct {
-	DocID string
-	Title string
-	Desc  string
+func (d *KBDocument) ReindexSpaceFolder(ctx context.Context, folderID uint) error {
+	docs, err := d.repoDoc.ListSpaceFolderAllDoc(ctx, model.Int64Array{int64(folderID)}, "id", "rag_id")
+	if err != nil {
+		return err
+	}
+
+	if len(docs) == 0 {
+		return nil
+	}
+
+	err = d.repoDoc.UpdateSpaceFolderAllDoc(ctx, folderID, nil, model.DocStatusPendingApply, "")
+	if err != nil {
+		return err
+	}
+
+	for _, doc := range docs {
+		err = d.rag.ReindexDocument(ctx, d.repoDataset.GetBackendID(ctx), doc.RagID)
+		if err != nil {
+			e := d.repoDoc.Update(ctx, map[string]any{
+				"status":  model.DocStatusApplyFailed,
+				"message": err.Error(),
+			}, repo.QueryWithEqual("id", doc.ID))
+			if e != nil {
+				d.logger.WithContext(ctx).WithErr(e).With("doc_id", doc.ID).Warn("reindex document failed")
+			}
+			continue
+		}
+	}
+
+	return nil
 }
 
 type ListSpaceFolderItem struct {

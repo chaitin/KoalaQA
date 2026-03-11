@@ -4122,6 +4122,34 @@ paths:
       summary: list kb space folder doc
       tags:
       - space
+  /admin/kb/{kb_id}/space/{space_id}/folder/{folder_id}/reindex:
+    put:
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: space_id
+        in: path
+        name: space_id
+        required: true
+        type: integer
+      - description: folder_id
+        in: path
+        name: folder_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: reindex kb space folder
+      tags:
+      - space
   /admin/kb/{kb_id}/space/{space_id}/refresh:
     put:
       parameters:
