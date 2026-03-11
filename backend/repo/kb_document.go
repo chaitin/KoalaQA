@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/database"
@@ -166,9 +167,9 @@ func (d *KBDocument) UpdateSpaceFolderAllDoc(ctx context.Context, folderID uint,
 	UNION
 	SELECT d.id, d.parent_id FROM kb_documents d JOIN all_folder_doc ad ON d.parent_id = ad.id)
 	
-UPDATE kb_documents SET status = ?, message = ? FROM all_folder_doc WHERE all_folder_doc.id = kb_documents.id AND kb_documents.doc_type = ? AND kb_documents.file_type != ?`
+UPDATE kb_documents SET status = ?, message = ?, updated_at = ? FROM all_folder_doc WHERE all_folder_doc.id = kb_documents.id AND kb_documents.doc_type = ? AND kb_documents.file_type != ?`
 	params := []interface{}{
-		folderID, docStatus, msg, model.DocTypeSpace, model.FileTypeFolder,
+		folderID, docStatus, msg, time.Now(), model.DocTypeSpace, model.FileTypeFolder,
 	}
 
 	if len(statusFilter) > 0 {
