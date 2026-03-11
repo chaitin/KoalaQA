@@ -1860,6 +1860,13 @@ definitions:
       updated_at:
         type: integer
     type: object
+  svc.DocReindexReq:
+    properties:
+      ids:
+        items:
+          type: integer
+        type: array
+    type: object
   svc.DocUpdateReq:
     properties:
       desc:
@@ -3447,6 +3454,32 @@ paths:
           schema:
             $ref: '#/definitions/context.Response'
       summary: update doc group_ids
+      tags:
+      - document
+  /admin/kb/{kb_id}/document/reindex:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: kb_id
+        in: path
+        name: kb_id
+        required: true
+        type: integer
+      - description: request params
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/svc.DocReindexReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/context.Response'
+      summary: reindex doc
       tags:
       - document
   /admin/kb/{kb_id}/question:

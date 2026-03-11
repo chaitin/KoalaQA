@@ -48,6 +48,7 @@ type Service interface {
 	DeleteDataset(ctx context.Context, datasetID string) error
 	DatasetProcessFinish(ctx context.Context, datasetID string) (bool, error)
 	UpdateDocumentMetadata(ctx context.Context, datasetID string, docID string, metadata Metadata) error
+	ReindexDocument(ctx context.Context, datasetID string, docID string) error
 
 	GetModelList(ctx context.Context) ([]*model.LLM, error)
 	AddModel(ctx context.Context, model *model.LLM) (string, error)

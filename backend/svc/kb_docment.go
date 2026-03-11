@@ -18,6 +18,7 @@ import (
 	"github.com/chaitin/koalaqa/pkg/glog"
 	"github.com/chaitin/koalaqa/pkg/mq"
 	"github.com/chaitin/koalaqa/pkg/oss"
+	"github.com/chaitin/koalaqa/pkg/rag"
 	"github.com/chaitin/koalaqa/pkg/topic"
 	"github.com/chaitin/koalaqa/pkg/tree"
 	"github.com/chaitin/koalaqa/pkg/util"
@@ -52,6 +53,8 @@ type KBDocument struct {
 	anydoc        anydoc.Anydoc
 	pub           mq.Publisher
 	oc            oss.Client
+	rag           rag.Service
+	repoDataset   *repo.Dataset
 	logger        *glog.Logger
 }
 
@@ -1360,18 +1363,60 @@ func (d *KBDocument) UpdateGroupIDs(ctx context.Context, req UpdateGroupIDsReq) 
 	return nil
 }
 
-func newDocument(repoDoc *repo.KBDocument, rank *repo.Rank, disc *repo.Discussion, groupItem *repo.GroupItem,
-	doc anydoc.Anydoc, pub mq.Publisher, oc oss.Client, pa *PublicAddress, kb *repo.KnowledgeBase) *KBDocument {
+type DocReindexReq struct {
+	IDs model.Int64Array `json:"ids"`
+}
+
+func (d *KBDocument) DocReindex(ctx context.Context, req DocReindexReq) error {
+	if len(req.IDs) == 0 {
+		return nil
+	}
+
+	err := d.repoDoc.Update(ctx, map[string]any{
+		"status": model.DocStatusPendingApply,
+	}, repo.QueryWithEqual("id", req.IDs, repo.EqualOPEqAny),
+		repo.QueryWithEqual("file_type", model.FileTypeFile, repo.EqualOPNE))
+	if err != nil {
+		return err
+	}
+
+	return d.repoDoc.BatchProcess(ctx, 100, func(docs []*model.KBDocument) error {
+		for _, doc := range docs {
+			err := d.rag.ReindexDocument(ctx, d.repoDataset.GetBackendID(ctx), doc.RagID)
+			if err != nil {
+				e := d.repoDoc.Update(ctx, map[string]any{
+					"status":  model.DocStatusApplyFailed,
+					"message": err.Error(),
+				}, repo.QueryWithEqual("id", doc.ID))
+				if e != nil {
+					d.logger.WithContext(ctx).WithErr(e).With("doc_id", doc.ID).Warn("reindex document failed")
+				}
+				continue
+			}
+		}
+
+		return nil
+	},
+		repo.QueryWithEqual("id", req.IDs, repo.EqualOPEqAny),
+		repo.QueryWithEqual("file_type", model.FileTypeFile, repo.EqualOPNE),
+		repo.QueryWithSelectColumn("id, rag_id"),
+	)
+}
+
+func newDocument(repoDoc *repo.KBDocument, rank *repo.Rank, disc *repo.Discussion, groupItem *repo.GroupItem, rag rag.Service,
+	doc anydoc.Anydoc, pub mq.Publisher, oc oss.Client, pa *PublicAddress, kb *repo.KnowledgeBase, dataset *repo.Dataset) *KBDocument {
 	return &KBDocument{
 		repoRank:      rank,
 		repoKB:        kb,
 		repoDisc:      disc,
 		repoDoc:       repoDoc,
 		repoGroupItem: groupItem,
+		repoDataset:   dataset,
 		anydoc:        doc,
 		pub:           pub,
 		oc:            oc,
 		svcPublicAddr: pa,
+		rag:           rag,
 		logger:        glog.Module("svc", "kb_document"),
 	}
 }
