@@ -666,16 +666,6 @@ const KnowledgeBasePage = () => {
           ]}
         {currentFolder &&
           !currentSpace && [
-            <MenuItem
-              key="viewDocs"
-              onClick={() => {
-                if (currentFolder) {
-                  handleViewFolderDocs(currentFolder);
-                }
-              }}
-            >
-              查看文档
-            </MenuItem>,
             <MenuItem key="refreshFolder" onClick={handleRefreshFolder}>
               更新
             </MenuItem>,
