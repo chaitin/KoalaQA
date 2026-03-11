@@ -5,8 +5,7 @@ import {
   ModelDocType,
   ModelKBDocumentDetail,
   ModelDocStatus,
-  PlatformPlatformType,
-  putAdminKbKbIdWebDocId,
+  putAdminKbKbIdDocumentReindex,
   SvcDocListItem,
 } from '@/api';
 import Card from '@/components/card';
@@ -23,11 +22,15 @@ import { Ellipsis, message, Modal, Table } from '@ctzhian/ui';
 import {
   Box,
   Button,
+  IconButton,
+  Menu,
+  MenuItem,
   Stack,
   TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import { useRequest } from 'ahooks';
 import { ColumnsType } from '@ctzhian/ui/dist/Table';
 import dayjs from 'dayjs';
@@ -52,6 +55,8 @@ const AdminDocument = () => {
   const kb_id = +searchParams.get('id')!;
   const [title, setTitle] = useState(query.title);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [menuTarget, setMenuTarget] = useState<SvcDocListItem | null>(null);
 
   const {
     data,
@@ -95,10 +100,42 @@ const AdminDocument = () => {
     }
   };
   const updateDoc = (item: SvcDocListItem) => {
-    putAdminKbKbIdWebDocId({ kbId: kb_id, docId: item.id! }).then(() => {
-      message.success('更新成功');
-      setParams({ page: 1 });
-    });
+    if (item.status === ModelDocStatus.DocStatusPendingReview) {
+      message.warning('待审核状态不支持更新');
+      return;
+    }
+    putAdminKbKbIdDocumentReindex({ kbId: kb_id }, { ids: [item.id!] })
+      .then(() => {
+        message.success('更新成功');
+        fetchData(query);
+      })
+      .catch(() => { message.error('更新失败'); });
+  };
+
+  // 批量更新
+  const handleBatchUpdate = () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning('请先选择要更新的项目');
+      return;
+    }
+    const idsToUpdate = selectedRowKeys
+      .map(Number)
+      .filter(
+        id =>
+          data?.items?.find(i => i.id === id)?.status !==
+          ModelDocStatus.DocStatusPendingReview
+      );
+    if (idsToUpdate.length === 0) {
+      message.warning('待审核状态不支持更新，请选择其他项目');
+      return;
+    }
+    putAdminKbKbIdDocumentReindex({ kbId: kb_id }, { ids: idsToUpdate })
+      .then(() => {
+        message.success('批量更新成功');
+        setSelectedRowKeys([]);
+        fetchData(query);
+      })
+      .catch(() => { message.error('批量更新失败'); });
   };
   const deleteDoc = (item: SvcDocListItem) => {
     Modal.confirm({
@@ -148,7 +185,7 @@ const AdminDocument = () => {
           .then(() => {
             message.success('批量删除成功');
             setSelectedRowKeys([]);
-            setParams({ page: 1 });
+            fetchData(query);
           })
           .catch(() => {
             message.error('批量删除失败');
@@ -226,7 +263,6 @@ const AdminDocument = () => {
     {
       title: '',
       dataIndex: 'opt',
-      // width: 120,
       render: (_, record) => {
         return (
           <Stack direction="row" alignItems="center" spacing={1}>
@@ -238,18 +274,16 @@ const AdminDocument = () => {
             >
               查看
             </LoadingBtn>
-            <Button
-              variant="text"
+            <IconButton
               size="small"
-              color="primary"
-              disabled={record.platform === PlatformPlatformType.PlatformFile}
-              onClick={() => updateDoc(record)}
+              onClick={e => {
+                e.stopPropagation();
+                setMenuAnchorEl(e.currentTarget);
+                setMenuTarget(record);
+              }}
             >
-              更新
-            </Button>
-            <Button variant="text" size="small" color="error" onClick={() => deleteDoc(record)}>
-              删除
-            </Button>
+              <MoreVertIcon fontSize="small" />
+            </IconButton>
           </Stack>
         );
       },
@@ -294,6 +328,9 @@ const AdminDocument = () => {
               selectedRowKeys={selectedRowKeys}
               onBatchEditComplete={() => setSelectedRowKeys([])}
             />
+            <Button variant="text" size="small" color="primary" onClick={handleBatchUpdate}>
+              批量更新 ({selectedRowKeys.length})
+            </Button>
             <Button variant="text" size="small" color="error" onClick={handleBatchDelete}>
               批量删除 ({selectedRowKeys.length})
             </Button>
@@ -330,6 +367,38 @@ const AdminDocument = () => {
           },
         }}
       />
+      {/* 更多操作菜单 */}
+      <Menu
+        anchorEl={menuAnchorEl}
+        open={Boolean(menuAnchorEl)}
+        onClose={() => {
+          setMenuAnchorEl(null);
+          setMenuTarget(null);
+        }}
+      >
+        {menuTarget?.status !== ModelDocStatus.DocStatusPendingReview && (
+          <MenuItem
+            onClick={() => {
+              if (menuTarget) updateDoc(menuTarget);
+              setMenuAnchorEl(null);
+              setMenuTarget(null);
+            }}
+          >
+            更新
+          </MenuItem>
+        )}
+        <MenuItem
+          onClick={() => {
+            if (menuTarget) deleteDoc(menuTarget);
+            setMenuAnchorEl(null);
+            setMenuTarget(null);
+          }}
+          sx={{ color: 'error.main' }}
+        >
+          删除
+        </MenuItem>
+      </Menu>
+
       <Modal
         open={!!detail}
         title={'文档详情'}

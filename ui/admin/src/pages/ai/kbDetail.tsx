@@ -5,6 +5,7 @@ import {
   ModelDocStatus,
   ModelDocType,
   ModelFileType,
+  putAdminKbKbIdDocumentReindex,
   putAdminKbKbIdSpaceSpaceIdFolderFolderId,
   SvcDocListItem,
   SvcListSpaceFolderItem,
@@ -477,6 +478,40 @@ const KnowledgeBaseDetailPage = () => {
     }
   };
 
+  // 从树中查找文档（用于过滤待审核状态）
+  const findDocInTree = (docId: number): SvcDocListItem | undefined => {
+    const searchInNodes = (nodes: SvcDocListItem[]): SvcDocListItem | undefined => {
+      for (const node of nodes) {
+        if (node.id === docId) return node;
+        const state = treeNodeStates.get(node.id!);
+        if (state?.children?.length) {
+          const found = searchInNodes(state.children);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    };
+    return searchInNodes(rootNodes);
+  };
+
+  const handleReindexDocs = async (docIds: number[]) => {
+    if (!docIds.length) return;
+    const idsToReindex = docIds.filter(
+      id => findDocInTree(id)?.status !== ModelDocStatus.DocStatusPendingReview
+    );
+    if (idsToReindex.length === 0) {
+      message.warning('待审核状态不支持重新学习，请选择其他项目');
+      return;
+    }
+    try {
+      await putAdminKbKbIdDocumentReindex({ kbId: kb_id }, { ids: idsToReindex });
+      message.success('重新学习已开始');
+      refreshAllNodes();
+    } catch {
+      message.error('重新学习失败');
+    }
+  };
+
   const handleRetryFailedDocs = async () => {
     if (!spaceId || !folderId) return;
 
@@ -945,12 +980,23 @@ const KnowledgeBaseDetailPage = () => {
             </Button>
           )}
           {selectedRowKeys.length > 0 && (
-            <BatchEditCategoryButtons
-              categoryEdit={categoryEdit}
-              selectedRowKeys={getTopLevelSelectedIds()}
-              onBatchEditComplete={() => setSelectedRowKeys([])}
-              label="标签"
-            />
+            <>
+              <Button
+                size="small"
+                variant="outlined"
+                color="primary"
+                onClick={() => handleReindexDocs(getTopLevelSelectedIds())}
+                sx={{ flexShrink: 0 }}
+              >
+                批量重新学习 ({selectedRowKeys.length})
+              </Button>
+              <BatchEditCategoryButtons
+                categoryEdit={categoryEdit}
+                selectedRowKeys={getTopLevelSelectedIds()}
+                onBatchEditComplete={() => setSelectedRowKeys([])}
+                label="标签"
+              />
+            </>
           )}
           <TextField
             size="small"

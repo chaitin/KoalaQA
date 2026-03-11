@@ -1039,6 +1039,10 @@ export interface SvcDocListItem {
   updated_at?: number;
 }
 
+export interface SvcDocReindexReq {
+  ids?: number[];
+}
+
 export interface SvcDocUpdateReq {
   desc?: string;
   markdown?: string;
@@ -1622,6 +1626,11 @@ export interface PutAdminKbKbIdDocumentGroupIdsParams {
   kbId: number;
 }
 
+export interface PutAdminKbKbIdDocumentReindexParams {
+  /** kb_id */
+  kbId: number;
+}
+
 export interface GetAdminKbKbIdDocumentDocIdParams {
   /** kb_id */
   kbId: number;
@@ -1787,6 +1796,15 @@ export interface GetAdminKbKbIdSpaceSpaceIdFolderFolderIdDocParams {
   /** space_id */
   spaceId: number;
   folderId: string;
+}
+
+export interface PutAdminKbKbIdSpaceSpaceIdFolderFolderIdReindexParams {
+  /** kb_id */
+  kbId: number;
+  /** space_id */
+  spaceId: number;
+  /** folder_id */
+  folderId: number;
 }
 
 export interface PutAdminKbKbIdSpaceSpaceIdRefreshParams {

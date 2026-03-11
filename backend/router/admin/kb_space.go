@@ -325,6 +325,31 @@ func (s *kbSpace) CreateSpaceFolder(ctx *context.Context) {
 	ctx.Success(nil)
 }
 
+// ReindexSpaceFolder
+// @Summary reindex kb space folder
+// @Tags space
+// @Param kb_id path uint true "kb_id"
+// @Param space_id path uint true "space_id"
+// @Param folder_id path uint true "folder_id"
+// @Produce json
+// @Success 200 {object} context.Response
+// @Router /admin/kb/{kb_id}/space/{space_id}/folder/{folder_id}/reindex [put]
+func (s *kbSpace) ReindexSpaceFolder(ctx *context.Context) {
+	folderID, err := ctx.ParamUint("folder_id")
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	err = s.svcDoc.ReindexSpaceFolder(ctx, folderID)
+	if err != nil {
+		ctx.InternalError(err, "reindex space folder failed")
+		return
+	}
+
+	ctx.Success(nil)
+}
+
 // DeleteSpaceFolder
 // @Summary delete kb space folder
 // @Tags space
@@ -455,6 +480,7 @@ func (s *kbSpace) Route(h server.Handler) {
 				spaceFolderDetailG := spaceFolderG.Group("/:folder_id")
 				spaceFolderDetailG.PUT("", s.UpdateSpaceFolder)
 				spaceFolderDetailG.DELETE("", s.DeleteSpaceFolder)
+				spaceFolderDetailG.PUT("/reindex", s.ReindexSpaceFolder)
 				spaceFolderDetailG.GET("/doc", s.ListSpaceFolderDoc)
 			}
 		}

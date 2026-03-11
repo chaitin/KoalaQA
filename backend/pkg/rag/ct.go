@@ -173,6 +173,16 @@ func (c *CTRag) UpdateDocumentMetadata(ctx context.Context, datasetID string, do
 	return nil
 }
 
+func (c *CTRag) ReindexDocument(ctx context.Context, datasetID string, docID string) error {
+	_, err := c.client.Documents.Reindex(ctx, datasetID, docID)
+	if err != nil {
+		return err
+	}
+
+	c.logger.WithContext(ctx).With("dataset_id", datasetID).With("doc_id", docID).Debug("reindex rag document")
+	return nil
+}
+
 func (c *CTRag) GetModelList(ctx context.Context) ([]*model.LLM, error) {
 	list, err := c.client.Models.List(ctx, &raglite.ListModelsRequest{})
 	if err != nil {

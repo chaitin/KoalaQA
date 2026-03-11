@@ -484,6 +484,32 @@ func (d *kbDocument) UpdateGroupIDs(ctx *context.Context) {
 	ctx.Success(nil)
 }
 
+// DocReindex
+// @Summary reindex doc
+// @Tags document
+// @Accept json
+// @Param kb_id path uint true "kb_id"
+// @Param req body svc.DocReindexReq true "request params"
+// @Produce json
+// @Success 200 {object} context.Response
+// @Router /admin/kb/{kb_id}/document/reindex [put]
+func (d *kbDocument) DocReindex(ctx *context.Context) {
+	var req svc.DocReindexReq
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.BadRequest(err)
+		return
+	}
+
+	err = d.svcDoc.DocReindex(ctx, req)
+	if err != nil {
+		ctx.InternalError(err, "reindex doc failed")
+		return
+	}
+
+	ctx.Success(nil)
+}
+
 func newDocument(d *svc.KBDocument) server.Router {
 	return &kbDocument{
 		svcDoc: d,
@@ -497,6 +523,7 @@ func (d *kbDocument) Route(e server.Handler) {
 		pageG.GET("/:doc_id", d.Detail)
 		pageG.DELETE("/:doc_id", d.Delete)
 		pageG.PUT("/group_ids", d.UpdateGroupIDs)
+		pageG.PUT("/reindex", d.DocReindex)
 	}
 
 	{

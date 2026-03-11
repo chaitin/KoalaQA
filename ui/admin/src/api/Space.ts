@@ -26,6 +26,7 @@ import {
   PostAdminKbKbIdSpaceParams,
   PostAdminKbKbIdSpaceSpaceIdFolderParams,
   PutAdminKbKbIdSpaceSpaceIdFolderFolderIdParams,
+  PutAdminKbKbIdSpaceSpaceIdFolderFolderIdReindexParams,
   PutAdminKbKbIdSpaceSpaceIdParams,
   PutAdminKbKbIdSpaceSpaceIdRefreshParams,
   SvcCreateSpaceFolderReq,
@@ -364,6 +365,32 @@ export const getAdminKbKbIdSpaceSpaceIdFolderFolderIdDoc = (
     path: `/admin/kb/${kbId}/space/${spaceId}/folder/${folderId}/doc`,
     method: "GET",
     query: query,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags space
+ * @name PutAdminKbKbIdSpaceSpaceIdFolderFolderIdReindex
+ * @summary reindex kb space folder
+ * @request PUT:/admin/kb/{kb_id}/space/{space_id}/folder/{folder_id}/reindex
+ * @response `200` `ContextResponse` OK
+ */
+
+export const putAdminKbKbIdSpaceSpaceIdFolderFolderIdReindex = (
+  {
+    kbId,
+    spaceId,
+    folderId,
+    ...query
+  }: PutAdminKbKbIdSpaceSpaceIdFolderFolderIdReindexParams,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/admin/kb/${kbId}/space/${spaceId}/folder/${folderId}/reindex`,
+    method: "PUT",
     format: "json",
     ...params,
   });

@@ -17,8 +17,10 @@ import {
   postAdminKbSpaceRemote,
   putAdminKbKbIdSpaceSpaceId,
   putAdminKbKbIdSpaceSpaceIdFolderFolderId,
+  putAdminKbKbIdSpaceSpaceIdFolderFolderIdReindex,
   putAdminKbKbIdSpaceSpaceIdRefresh,
   SvcCreateSpaceReq,
+  SvcDocListItem,
   SvcListRemoteReq,
   SvcListSpaceFolderItem,
   SvcListSpaceItem,
@@ -36,7 +38,6 @@ import { SpaceList } from './components/SpaceList';
 import { FolderList } from './components/FolderList';
 import { ImportModal } from './components/ImportModal';
 import { CreateSpaceModal } from './components/CreateSpaceModal';
-import { DocStatusModal } from './components/DocStatusModal';
 
 const spaceSchema = z.object({
   title: z.string().min(1, '标题必填').default(''),
@@ -58,8 +59,6 @@ const KnowledgeBasePage = () => {
   const [currentFolder, setCurrentFolder] = useState<SvcListSpaceFolderItem | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [showDocStatusModal, setShowDocStatusModal] = useState(false);
-  const [docStatusFolder, setDocStatusFolder] = useState<SvcListSpaceFolderItem | null>(null);
   const [editSpace, setEditSpace] = useState<SvcListSpaceItem | null>(null);
   const [selectedPlatform, setSelectedPlatform] = useState<number>(
     PlatformPlatformType.PlatformPandawiki
@@ -80,15 +79,8 @@ const KnowledgeBasePage = () => {
   const { folders, refreshFolders, foldersLoading } = useKBFolders(kb_id, selectedSpaceId);
   const { treeData, setTreeData, fetchRemoteSpaces } = useRemoteSpaces(kb_id);
   const {
-    folderDocs,
     folderDocListData,
-    fetchFolderDocList,
     mutateFolderDocs,
-    startPolling,
-    stopPolling,
-    pollingFolderRef,
-    pollingSpaceIdRef,
-    lastFolderDocDataRef,
   } = useFolderDocs(kb_id, selectedSpaceId);
   const feishuAuth = useFeishuAuth(kb_id, editSpace?.id);
 
@@ -99,7 +91,7 @@ const KnowledgeBasePage = () => {
     onSuccess: (updatedIds, newGroupIds) => {
       // 直接更新本地数据，不重新请求
       if (folderDocListData?.items) {
-        const newItems = folderDocListData.items.map(item => {
+        const newItems = folderDocListData.items.map((item: SvcDocListItem) => {
           if (updatedIds.includes(item.id!)) {
             return { ...item, group_ids: newGroupIds };
           }
@@ -323,6 +315,23 @@ const KnowledgeBasePage = () => {
     }
   };
 
+  const handleReindexFolder = async () => {
+    if (!currentFolder || !selectedSpaceId) return;
+    handleMenuClose();
+
+    try {
+      await putAdminKbKbIdSpaceSpaceIdFolderFolderIdReindex({
+        kbId: kb_id,
+        spaceId: selectedSpaceId,
+        folderId: currentFolder.id!,
+      });
+      message.success('重新学习已开始');
+      refreshFolders();
+    } catch {
+      message.error('重新学习失败');
+    }
+  };
+
   const handleDeleteFolder = async () => {
     if (!currentFolder || !selectedSpaceId) return;
     handleMenuClose();
@@ -346,49 +355,6 @@ const KnowledgeBasePage = () => {
         }
       },
     });
-  };
-
-  // 查看文档同步状态
-  const handleViewFolderDocs = (folder: SvcListSpaceFolderItem) => {
-    if (!folder || !selectedSpaceId) return;
-
-    setDocStatusFolder(folder);
-    pollingFolderRef.current = folder;
-    pollingSpaceIdRef.current = selectedSpaceId;
-
-    fetchFolderDocList(folder);
-    startPolling();
-
-    setShowDocStatusModal(true);
-    handleMenuClose();
-  };
-
-  const closeDocStatusModal = () => {
-    stopPolling();
-    pollingFolderRef.current = null;
-    pollingSpaceIdRef.current = null;
-    lastFolderDocDataRef.current = null;
-    setShowDocStatusModal(false);
-    setDocStatusFolder(null);
-  };
-
-  const handleRetryFailedDocs = async (docIds: number[]) => {
-    if (!docStatusFolder || !selectedSpaceId || docIds.length === 0) return;
-
-    try {
-      await putAdminKbKbIdSpaceSpaceIdFolderFolderId(
-        {
-          kbId: kb_id,
-          spaceId: selectedSpaceId,
-          folderId: docStatusFolder.id!,
-        },
-        { update_type: TopicKBSpaceUpdateType.KBSpaceUpdateTypeFailed }
-      );
-      message.success('重试同步已开始');
-      fetchFolderDocList(docStatusFolder);
-    } catch {
-      message.error('重试同步失败');
-    }
   };
 
   // 获取知识库
@@ -666,15 +632,8 @@ const KnowledgeBasePage = () => {
           ]}
         {currentFolder &&
           !currentSpace && [
-            <MenuItem
-              key="viewDocs"
-              onClick={() => {
-                if (currentFolder) {
-                  handleViewFolderDocs(currentFolder);
-                }
-              }}
-            >
-              查看文档
+            <MenuItem key="reindexFolder" onClick={handleReindexFolder}>
+              重新学习
             </MenuItem>,
             <MenuItem key="refreshFolder" onClick={handleRefreshFolder}>
               更新
@@ -732,17 +691,6 @@ const KnowledgeBasePage = () => {
         treeData={treeData}
         setTreeData={setTreeData}
         onSuccess={refreshFolders}
-      />
-
-      {/* 查看文档同步状态模态框 */}
-      <DocStatusModal
-        open={showDocStatusModal}
-        onClose={closeDocStatusModal}
-        folder={docStatusFolder}
-        folderDocs={folderDocs}
-        kbId={kb_id}
-        onRetryFailedDocs={handleRetryFailedDocs}
-        onEditCategory={categoryEdit.handleEditCategory}
       />
 
       {/* 编辑分类弹窗 */}

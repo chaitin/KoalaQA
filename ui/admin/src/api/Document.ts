@@ -22,8 +22,10 @@ import {
   PostAdminKbDocumentFileListPayload,
   PostAdminKbDocumentYuqueListPayload,
   PutAdminKbKbIdDocumentGroupIdsParams,
+  PutAdminKbKbIdDocumentReindexParams,
   SvcAnydocListRes,
   SvcDocListItem,
+  SvcDocReindexReq,
   SvcFeishuAuthURLReq,
   SvcFileExportReq,
   SvcSitemapExportReq,
@@ -379,6 +381,30 @@ export const putAdminKbKbIdDocumentGroupIds = (
 ) =>
   request<ContextResponse>({
     path: `/admin/kb/${kbId}/document/group_ids`,
+    method: "PUT",
+    body: req,
+    type: ContentType.Json,
+    format: "json",
+    ...params,
+  });
+
+/**
+ * No description
+ *
+ * @tags document
+ * @name PutAdminKbKbIdDocumentReindex
+ * @summary reindex doc
+ * @request PUT:/admin/kb/{kb_id}/document/reindex
+ * @response `200` `ContextResponse` OK
+ */
+
+export const putAdminKbKbIdDocumentReindex = (
+  { kbId, ...query }: PutAdminKbKbIdDocumentReindexParams,
+  req: SvcDocReindexReq,
+  params: RequestParams = {},
+) =>
+  request<ContextResponse>({
+    path: `/admin/kb/${kbId}/document/reindex`,
     method: "PUT",
     body: req,
     type: ContentType.Json,
