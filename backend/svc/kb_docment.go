@@ -1091,12 +1091,16 @@ func (d *KBDocument) ReindexSpaceFolder(ctx context.Context, folderID uint) erro
 		return err
 	}
 
-	err = d.repoDoc.UpdateSpaceFolderAllDoc(ctx, folderID, nil, model.DocStatusPendingApply, "")
+	err = d.repoDoc.UpdateSpaceFolderAllDoc(ctx, folderID, nil, model.DocStatusPendingApply, "", true)
 	if err != nil {
 		return err
 	}
 
 	for _, doc := range docs {
+		if doc.RagID == "" {
+			continue
+		}
+
 		err = d.rag.ReindexDocument(ctx, d.repoDataset.GetBackendID(ctx), doc.RagID)
 		if err != nil {
 			e := d.repoDoc.Update(ctx, map[string]any{
@@ -1408,7 +1412,8 @@ func (d *KBDocument) DocReindex(ctx context.Context, req DocReindexReq) error {
 	err := d.repoDoc.Update(ctx, map[string]any{
 		"status": model.DocStatusPendingApply,
 	}, repo.QueryWithEqual("id", req.IDs, repo.EqualOPEqAny),
-		repo.QueryWithEqual("file_type", model.FileTypeFolder, repo.EqualOPNE))
+		repo.QueryWithEqual("file_type", model.FileTypeFolder, repo.EqualOPNE),
+		repo.QueryWithEqual("rag_id", "", repo.EqualOPNE))
 	if err != nil {
 		return err
 	}
@@ -1432,6 +1437,7 @@ func (d *KBDocument) DocReindex(ctx context.Context, req DocReindexReq) error {
 	},
 		repo.QueryWithEqual("id", req.IDs, repo.EqualOPEqAny),
 		repo.QueryWithEqual("file_type", model.FileTypeFolder, repo.EqualOPNE),
+		repo.QueryWithEqual("rag_id", "", repo.EqualOPNE),
 		repo.QueryWithSelectColumn("id, rag_id"),
 	)
 }

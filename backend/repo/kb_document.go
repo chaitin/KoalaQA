@@ -161,7 +161,7 @@ func (d *KBDocument) UpsertSpaceFolderTree(ctx context.Context, folder *model.KB
 	})
 }
 
-func (d *KBDocument) UpdateSpaceFolderAllDoc(ctx context.Context, folderID uint, statusFilter []model.DocStatus, docStatus model.DocStatus, msg string) error {
+func (d *KBDocument) UpdateSpaceFolderAllDoc(ctx context.Context, folderID uint, statusFilter []model.DocStatus, docStatus model.DocStatus, msg string, ignoreEmptyRag bool) error {
 	sql := `WITH RECURSIVE all_folder_doc AS (
 	SELECT id, parent_id FROM kb_documents WHERE parent_id = ?
 	UNION
@@ -170,6 +170,10 @@ func (d *KBDocument) UpdateSpaceFolderAllDoc(ctx context.Context, folderID uint,
 UPDATE kb_documents SET status = ?, message = ?, updated_at = ? FROM all_folder_doc WHERE all_folder_doc.id = kb_documents.id AND kb_documents.doc_type = ? AND kb_documents.file_type != ?`
 	params := []interface{}{
 		folderID, docStatus, msg, time.Now(), model.DocTypeSpace, model.FileTypeFolder,
+	}
+
+	if ignoreEmptyRag {
+		sql += " AND kb_documents.rag_id != ''"
 	}
 
 	if len(statusFilter) > 0 {

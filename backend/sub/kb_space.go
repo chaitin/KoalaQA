@@ -351,7 +351,7 @@ func (k *kbSpace) handleUpdate(ctx context.Context, logger *glog.Logger, msg top
 		if err != nil {
 			logger.WithErr(err).Warn("list doc failed")
 
-			e := k.repoDoc.UpdateSpaceFolderAllDoc(ctx, exportFolderID, []model.DocStatus{model.DocStatusPendingExec}, model.DocStatusExportFailed, err.Error())
+			e := k.repoDoc.UpdateSpaceFolderAllDoc(ctx, exportFolderID, []model.DocStatus{model.DocStatusPendingExec}, model.DocStatusExportFailed, err.Error(), false)
 			if e != nil {
 				logger.WithErr(e).Warn("set doc export failed error")
 			}
