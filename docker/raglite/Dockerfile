@@ -1,1 +1,1 @@
-FROM chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/raglite:v2.16.0
+FROM chaitin-registry.cn-hangzhou.cr.aliyuncs.com/chaitin/raglite:v2.16.1
