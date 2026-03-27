@@ -132,12 +132,17 @@ func (t *anydocTask) Handle(ctx context.Context, msg mq.Message) error {
 			taskInfo.Err = taskInfo.Err[:200]
 		}
 
-		err = t.repoDoc.Update(ctx, map[string]any{
+		updateM := map[string]any{
 			"status":       model.DocStatusExportFailed,
 			"message":      taskInfo.Err,
 			"platform_opt": model.NewJSONB(taskInfo.PlatformOpt),
-			"file_type":    taskInfo.DocType,
-		}, repo.QueryWithEqual("id", dbDoc.ID))
+		}
+
+		if taskInfo.DocType != model.FileTypeUnknown {
+			updateM["file_type"] = taskInfo.DocType
+		}
+
+		err = t.repoDoc.Update(ctx, updateM, repo.QueryWithEqual("id", dbDoc.ID))
 		if err != nil {
 			logger.WithErr(err).With("doc_id", dbDoc.ID).Warn("create kb_document failed")
 			return err
