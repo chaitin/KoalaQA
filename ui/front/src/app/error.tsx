@@ -3,9 +3,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import error from '@/asset/img/500.png';
 import { Box, Stack, Button, Typography, Collapse, Chip, IconButton, Tooltip, Alert } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import copy from 'copy-to-clipboard';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+
+const CHUNK_RETRY_STORAGE_KEY = 'chunk-load-retry';
 
 export default function Error({
   error: err,
@@ -16,9 +18,27 @@ export default function Error({
 }) {
   // 检测是否为生产环境
   const isProduction = process.env.NODE_ENV === 'production';
+  const isChunkLoadError = /ChunkLoadError|Failed to load chunk|Loading CSS chunk/i.test(err?.message || '');
   // 生产环境默认显示详情，开发环境默认隐藏
   const [showDetail, setShowDetail] = useState(isProduction);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  useEffect(() => {
+    if (!isChunkLoadError || typeof window === 'undefined') {
+      return;
+    }
+
+    const retryKey = `${CHUNK_RETRY_STORAGE_KEY}:${window.location.pathname}${window.location.search}`;
+    const hasRetried = window.sessionStorage.getItem(retryKey) === '1';
+
+    if (hasRetried) {
+      window.sessionStorage.removeItem(retryKey);
+      return;
+    }
+
+    window.sessionStorage.setItem(retryKey, '1');
+    window.location.reload();
+  }, [isChunkLoadError]);
 
   // 复制错误信息到剪贴板
   const copyErrorInfo = async () => {
@@ -204,8 +224,18 @@ export default function Error({
           </Collapse>
         </Stack>
         <Stack direction='row' gap={2}>
-          <Button variant='contained' onClick={reset} size='large'>
-            重试
+          <Button
+            variant='contained'
+            onClick={() => {
+              if (isChunkLoadError && typeof window !== 'undefined') {
+                window.location.reload();
+                return;
+              }
+              reset();
+            }}
+            size='large'
+          >
+            {isChunkLoadError ? '刷新重试' : '重试'}
           </Button>
           <Link href='/' style={{ textDecoration: 'none' }}>
             <Button size='large'>

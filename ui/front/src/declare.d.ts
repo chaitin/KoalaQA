@@ -1,6 +1,9 @@
 declare module "cvss";
 
 declare module 'prettier-plugin-java'
+declare module 'copy-to-clipboard' {
+  export default function copy(text: string, options?: { debug?: boolean; message?: string; format?: string; onCopy?: (clipboardData: ClipboardEvent) => void }): boolean;
+}
 
 
 declare class BMap {
