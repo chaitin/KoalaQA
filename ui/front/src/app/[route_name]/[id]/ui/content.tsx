@@ -239,10 +239,11 @@ const Content = (props: { data: ModelDiscussionDetail }) => {
     setSelfAnswerModalVisible(false)
     const parts = pathname.split('/').filter(Boolean)
     const routeName = parts[0] || ''
-    if (routeName && data.uuid) {
-      router.push(`/${routeName}/edit?id=${data.uuid}&type=${data.type}`)
+    const discId = data.uuid || id
+    if (routeName && discId) {
+      router.push(`/${routeName}/edit?id=${discId}&type=${data.type}`)
     }
-  }, [pathname, data.uuid, router])
+  }, [pathname, data.uuid, data.type, id, router])
 
   const handleAcceptComment = () => {
     setAnchorEl(null)

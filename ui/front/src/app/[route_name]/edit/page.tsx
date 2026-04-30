@@ -2,7 +2,7 @@
 
 import { getDiscussionDiscId, ModelDiscussionType } from '@/api'
 import { postDiscussion, putDiscussionDiscId } from '@/api/Discussion'
-import { ModelGroupItemInfo, SvcDiscussionCreateReq, SvcDiscussionUpdateReq } from '@/api/types'
+import { ModelDiscussionDetail, ModelGroupItemInfo, SvcDiscussionCreateReq, SvcDiscussionUpdateReq } from '@/api/types'
 import { Card } from '@/components'
 import EditorWrap, { EditorWrapRef } from '@/components/editor'
 import Modal from '@/components/modal'
@@ -25,7 +25,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { useRequest } from 'ahooks'
 import { useParams, useSearchParams } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
@@ -92,8 +91,8 @@ export default function EditPage() {
   const { getFilteredGroups } = useGroupData()
   const [summaryModalOpen, setSummaryModalOpen] = useState(false)
   const [summaryDraft, setSummaryDraft] = useState('')
-  const requestedDiscussionIdRef = useRef<string | undefined>(undefined)
-  const hasUserEditedRef = useRef(false)
+  const [loading, setLoading] = useState(false)
+  const [discussion, setDiscussion] = useState<ModelDiscussionDetail | null>(null)
   const schema = useMemo(
     () =>
       z.object({
@@ -132,26 +131,39 @@ export default function EditPage() {
     },
   })
 
-  const {
-    run,
-    loading,
-    data: discussion,
-  } = useRequest((discId: string) => getDiscussionDiscId({ discId }), {
-    manual: true,
-    onSuccess: (result) => {
-      if (hasUserEditedRef.current) return
+  useEffect(() => {
+    if (!queryId) {
+      setDiscussion(null)
+      return
+    }
 
-      const discussionData = ((result as any)?.data || result) as any
+    let ignore = false
+    setLoading(true)
+    getDiscussionDiscId({ discId: queryId })
+      .then((result) => {
+        if (ignore) return
 
-      reset({
-        title: discussionData.title || '',
-        summary: discussionData.summary || '',
-        content: discussionData.content || '',
-        group_ids: discussionData.group_ids || [],
-        type: (discussionData.type as ModelDiscussionType) || ModelDiscussionType.DiscussionTypeBlog,
+        const discussionData = ((result as any)?.data || result) as ModelDiscussionDetail
+        setDiscussion(discussionData)
+        reset({
+          title: discussionData.title || '',
+          summary: discussionData.summary || '',
+          content: discussionData.content || '',
+          group_ids: discussionData.group_ids || [],
+          type: (discussionData.type as ModelDiscussionType) || ModelDiscussionType.DiscussionTypeBlog,
+        })
       })
-    },
-  })
+      .catch(() => {
+        if (!ignore) setDiscussion(null)
+      })
+      .finally(() => {
+        if (!ignore) setLoading(false)
+      })
+
+    return () => {
+      ignore = true
+    }
+  }, [queryId, reset])
 
   // summary 字段没有显式输入框，依赖侧边栏 setValue 写入；
   // 这里主动 register，确保 handleSubmit 的 vals 中能拿到最新的 summary。
@@ -193,22 +205,6 @@ export default function EditPage() {
 
     setValue('group_ids', defaultGroupIds, { shouldDirty: true, shouldValidate: true })
   }, [defaultGroupIds, queryId, getValues, setValue])
-
-  useEffect(() => {
-    if (!queryId) return
-    if (requestedDiscussionIdRef.current === queryId) return
-    requestedDiscussionIdRef.current = queryId
-    hasUserEditedRef.current = false
-    run(queryId)
-  }, [queryId, run])
-
-  useEffect(() => {
-    const subscription = watch(() => {
-      hasUserEditedRef.current = true
-    })
-
-    return () => subscription.unsubscribe()
-  }, [watch])
 
   // 当systemConfig加载完成时，如果是新建Q&A帖子且内容为空，则设置默认内容
   useEffect(() => {
@@ -271,6 +267,8 @@ export default function EditPage() {
     } finally {
     }
   })
+
+  const shouldRenderEditor = !loading && (!queryId || Boolean(discussion))
 
   return (
     <Box
@@ -433,7 +431,7 @@ export default function EditPage() {
               },
             }}
           >
-            {!loading && (
+            {shouldRenderEditor && (
               <EditorWrap
                 ref={editorRef}
                 aiWriting

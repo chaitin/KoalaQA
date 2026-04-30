@@ -73,7 +73,7 @@ const TitleCard = ({ data, menuAnchorEl, onMenuClose }: TitleCardProps) => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'))
   const forums = useForumStore((s) => s.forums)
-  const { route_name }: { route_name?: string } = (useParams() as any) || {}
+  const { route_name, id }: { route_name?: string; id?: string } = (useParams() as any) || {}
 
   // 刷新页面但不增加浏览次数
   const refreshWithoutView = useCallback(() => {
@@ -261,7 +261,7 @@ const TitleCard = ({ data, menuAnchorEl, onMenuClose }: TitleCardProps) => {
         {!(data.type === ModelDiscussionType.DiscussionTypeQA && isClosed) && (
           <MenuItem
             onClick={() => {
-              router.push(`/${route_name}/edit?id=${data.uuid}&type=${data.type}`)
+              router.push(`/${route_name}/edit?id=${data.uuid || id}&type=${data.type}`)
               menuClose()
             }}
           >
