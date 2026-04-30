@@ -50,6 +50,7 @@ const EditorWrapInternal = forwardRef<EditorWrapRef, WrapProps>(
 
     // 性能优化：缓存上次的内容和防抖定时器
     const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const lastSyncedValueRef = useRef<string | undefined>(undefined)
     // 确保只在客户端渲染编辑器
     useEffect(() => {
       setIsMounted(true)
@@ -159,6 +160,28 @@ const EditorWrapInternal = forwardRef<EditorWrapRef, WrapProps>(
         return url
       },
     } as Parameters<typeof useTiptap>[0] & ExtendedTiptapOptions)
+
+    useEffect(() => {
+      if (!editorRef.editor) return
+
+      const nextValue = value || ''
+      if (lastSyncedValueRef.current === nextValue) return
+
+      try {
+        const currentValue = editorRef.getContent()
+        if (currentValue === nextValue) {
+          lastSyncedValueRef.current = nextValue
+          return
+        }
+
+        editorRef.editor.commands.setContent(nextValue, {
+          contentType: 'markdown',
+        } as any)
+        lastSyncedValueRef.current = nextValue
+      } catch (error) {
+        console.error('同步编辑器内容失败:', error)
+      }
+    }, [editorRef.editor, editorRef.getContent, value])
 
     // 当 readonly 状态改变时，更新编辑器的可编辑状态
     useEffect(() => {
