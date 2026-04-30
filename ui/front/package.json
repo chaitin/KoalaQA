@@ -111,9 +111,6 @@
     "onlyBuiltDependencies": [
       "sharp",
       "core-js"
-    ],
-    "patchedDependencies": {
-      "@tiptap/react@3.14.0": "patches/@tiptap__react@3.14.0.patch"
-    }
+    ]
   }
 }
