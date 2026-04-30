@@ -92,23 +92,8 @@ export default function EditPage() {
   const { getFilteredGroups } = useGroupData()
   const [summaryModalOpen, setSummaryModalOpen] = useState(false)
   const [summaryDraft, setSummaryDraft] = useState('')
-
-  const {
-    run,
-    loading,
-    data: discussion,
-  } = useRequest(() => getDiscussionDiscId({ discId: queryId! }), {
-    manual: true,
-    onSuccess: (result) => {
-      reset({
-        title: result.title || '',
-        summary: result.summary || '',
-        content: result.content || '',
-        group_ids: result.group_ids || [],
-        type: (result.type as ModelDiscussionType) || ModelDiscussionType.DiscussionTypeBlog,
-      })
-    },
-  })
+  const requestedDiscussionIdRef = useRef<string | undefined>(undefined)
+  const hasUserEditedRef = useRef(false)
   const schema = useMemo(
     () =>
       z.object({
@@ -136,7 +121,7 @@ export default function EditPage() {
     resolver: zodResolver(schema),
     mode: 'onBlur',
     defaultValues: {
-      title: urlTitle ? decodeURIComponent(urlTitle) : discussion?.title || '',
+      title: urlTitle ? decodeURIComponent(urlTitle) : '',
       summary: '',
       content:
         urlType === ModelDiscussionType.DiscussionTypeQA && !queryId && systemConfig?.content_placeholder
@@ -144,6 +129,25 @@ export default function EditPage() {
           : '',
       group_ids: [],
       type: (urlType as ModelDiscussionType) || ModelDiscussionType.DiscussionTypeQA,
+    },
+  })
+
+  const {
+    run,
+    loading,
+    data: discussion,
+  } = useRequest((discId: string) => getDiscussionDiscId({ discId }), {
+    manual: true,
+    onSuccess: (result) => {
+      if (hasUserEditedRef.current) return
+
+      reset({
+        title: result.title || '',
+        summary: result.summary || '',
+        content: result.content || '',
+        group_ids: result.group_ids || [],
+        type: (result.type as ModelDiscussionType) || ModelDiscussionType.DiscussionTypeBlog,
+      })
     },
   })
 
@@ -190,8 +194,19 @@ export default function EditPage() {
 
   useEffect(() => {
     if (!queryId) return
-    run()
+    if (requestedDiscussionIdRef.current === queryId) return
+    requestedDiscussionIdRef.current = queryId
+    hasUserEditedRef.current = false
+    run(queryId)
   }, [queryId, run])
+
+  useEffect(() => {
+    const subscription = watch(() => {
+      hasUserEditedRef.current = true
+    })
+
+    return () => subscription.unsubscribe()
+  }, [watch])
 
   // 当systemConfig加载完成时，如果是新建Q&A帖子且内容为空，则设置默认内容
   useEffect(() => {
