@@ -141,12 +141,14 @@ export default function EditPage() {
     onSuccess: (result) => {
       if (hasUserEditedRef.current) return
 
+      const discussionData = ((result as any)?.data || result) as any
+
       reset({
-        title: result.title || '',
-        summary: result.summary || '',
-        content: result.content || '',
-        group_ids: result.group_ids || [],
-        type: (result.type as ModelDiscussionType) || ModelDiscussionType.DiscussionTypeBlog,
+        title: discussionData.title || '',
+        summary: discussionData.summary || '',
+        content: discussionData.content || '',
+        group_ids: discussionData.group_ids || [],
+        type: (discussionData.type as ModelDiscussionType) || ModelDiscussionType.DiscussionTypeBlog,
       })
     },
   })
