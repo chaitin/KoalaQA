@@ -1,7 +1,7 @@
 import { getAdminModelList, ModelLLM, ModelLLMStatus, ModelLLMType, putAdminModelIdActive } from '@/api';
 import Card from '@/components/card';
 import { addOpacityToColor } from '@/utils';
-import { ModelModal } from '@ctzhian/modelkit';
+import { ModelModal, type ModelService } from '@ctzhian/modelkit';
 import { message } from '@ctzhian/ui';
 import { Box, Button, CircularProgress, Stack, Switch, Tooltip, useTheme } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -24,6 +24,22 @@ interface ModelManagementModalProps {
   onConfigured?: () => void;
 }
 
+const toModelModalData = (data: ModelLLM) => {
+  const modelName = data.model || (data as ModelLLM & { model_name?: string }).model_name || '';
+
+  return {
+    ...data,
+    id: data.id != null ? String(data.id) : '',
+    model_name: modelName,
+    status: data.status !== undefined ? String(data.status) : undefined,
+    param: data.parameters,
+  };
+};
+
+const getModelName = (data: ModelLLM | null) => {
+  return data?.model || (data as (ModelLLM & { model_name?: string }) | null)?.model_name || '';
+};
+
 const ModelManagementModal = ({
   open,
   mandatory = false,
@@ -33,6 +49,22 @@ const ModelManagementModal = ({
   const [editData, setEditData] = useState<ModelLLM | null>(null);
   const [modelList, setModelList] = useState<ModelLLM[]>([]);
   const [activeLoadingMap, setActiveLoadingMap] = useState<Record<string, boolean>>({});
+  const currentModelService = useMemo<ModelService>(() => ({
+    ...modelService,
+    async listModel(data) {
+      const result = await modelService.listModel(data);
+      const currentModelName = getModelName(editData);
+
+      if (currentModelName && !result.models.some(item => item.model === currentModelName)) {
+        return {
+          ...result,
+          models: [{ model: currentModelName }, ...result.models],
+        };
+      }
+
+      return result;
+    },
+  }), [editData]);
 
   // 模型配置数组
   const modelConfigs = useMemo<ModelConfig[]>(() => {
@@ -283,19 +315,9 @@ const ModelManagementModal = ({
           setEditData(null);
         }}
         refresh={handleRefresh}
-        data={
-          editData?.id
-            ? {
-              ...editData,
-              id: editData?.id + '',
-              model_name: editData?.model,
-              status: editData.status !== undefined ? String(editData.status) : undefined,
-              param: editData.parameters,
-            }
-            : null
-        }
+        data={editData?.id ? toModelModalData(editData) : null}
         model_type={editData?.type || ''}
-        modelService={modelService}
+        modelService={currentModelService}
         language="zh-CN"
         messageComponent={message}
         is_close_model_remark={true}

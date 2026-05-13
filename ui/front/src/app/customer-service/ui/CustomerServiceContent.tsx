@@ -17,6 +17,8 @@ import SendIcon from '@mui/icons-material/Send'
 import StopIcon from '@mui/icons-material/Stop'
 import WarningAmberIcon from '@mui/icons-material/WarningAmber'
 import MarkDown from 'react-markdown'
+import rehypeRaw from 'rehype-raw'
+import rehypeSanitize, { defaultSchema, type Options as RehypeSanitizeOptions } from 'rehype-sanitize'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import remarkGfm from 'remark-gfm'
@@ -56,6 +58,33 @@ const cannotAnswerPatterns = [/^无法回答问题$/, /^无法回答$/]
 const SEARCH_LOADING_TEXT = '正在为您搜索相关帖子...'
 const AUTO_SCROLL_THRESHOLD_PX = 120
 type WaitingStatus = 'thinking' | 'searching' | 'answering'
+
+const markdownSanitizeSchema: RehypeSanitizeOptions = {
+  ...defaultSchema,
+  tagNames: [...(defaultSchema.tagNames || []), 'video', 'source'],
+  attributes: {
+    ...defaultSchema.attributes,
+    video: [
+      ...(defaultSchema.attributes?.video || []),
+      'src',
+      'controls',
+      'autoplay',
+      'muted',
+      'loop',
+      'playsinline',
+      'poster',
+      'preload',
+      'width',
+      'height',
+    ],
+    source: [...(defaultSchema.attributes?.source || []), 'src', 'type', 'media'],
+  },
+  protocols: {
+    ...defaultSchema.protocols,
+    src: [...(defaultSchema.protocols?.src || []), 'http', 'https'],
+    poster: [...(defaultSchema.protocols?.poster || []), 'http', 'https'],
+  },
+}
 
 const WAITING_STATUS_TEXT: Record<WaitingStatus, string> = {
   thinking: '正在思考...',
@@ -114,6 +143,7 @@ export default function CustomerServiceContent({
   const [waitingStatus, setWaitingStatus] = useState<WaitingStatus | null>(null)
   const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true)
   const [sessionExpiredDialogOpen, setSessionExpiredDialogOpen] = useState(false)
+  const [previewImage, setPreviewImage] = useState<{ src: string; alt: string } | null>(null)
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [isInputFocused, setIsInputFocused] = useState(false)
   const [isServiceEnabled, setIsServiceEnabled] = useState<boolean | null>(null) // null表示正在加载
@@ -2208,12 +2238,57 @@ export default function CustomerServiceContent({
                                                   fontWeight: 600,
                                                   textAlign: 'left',
                                                 },
+                                                '& video': {
+                                                  display: 'block',
+                                                  maxWidth: '100%',
+                                                  height: 'auto',
+                                                  borderRadius: 2,
+                                                  my: 1.5,
+                                                  bgcolor: 'common.black',
+                                                },
+                                                '& img': {
+                                                  display: 'block',
+                                                  maxWidth: '100%',
+                                                  height: 'auto',
+                                                  borderRadius: 2,
+                                                  my: 1.5,
+                                                  cursor: 'zoom-in',
+                                                },
                                               }}
                                             >
                                               <MarkDown
                                                 remarkPlugins={[remarkGfm, remarkBreaks]}
+                                                rehypePlugins={[
+                                                  rehypeRaw,
+                                                  [rehypeSanitize, markdownSanitizeSchema],
+                                                ]}
                                                 components={{
                                                   a: (props) => <a {...props} target='_blank' rel='noopener noreferrer' />,
+                                                  img: ({ node, ref, src, alt, ...props }) => {
+                                                    if (!src) return null
+
+                                                    const imageSrc = String(src)
+                                                    const imageAlt = typeof alt === 'string' ? alt : ''
+
+                                                    return (
+                                                      <img
+                                                        {...props}
+                                                        src={imageSrc}
+                                                        alt={imageAlt}
+                                                        ref={ref}
+                                                        role='button'
+                                                        tabIndex={0}
+                                                        onClick={() => setPreviewImage({ src: imageSrc, alt: imageAlt })}
+                                                        onKeyDown={(event) => {
+                                                          if (event.key === 'Enter' || event.key === ' ') {
+                                                            event.preventDefault()
+                                                            setPreviewImage({ src: imageSrc, alt: imageAlt })
+                                                          }
+                                                        }}
+                                                      />
+                                                    )
+                                                  },
+                                                  video: ({ node, ref, ...props }) => <video {...props} controls />,
                                                   code(props) {
                                                     const { children, className, node, ref, ...rest } = props
                                                     const match = /language-(\w+)/.exec(className || '')
@@ -2802,6 +2877,40 @@ export default function CustomerServiceContent({
                     )}
                   </Box>
                 )}
+                <Dialog
+                  open={!!previewImage}
+                  onClose={() => setPreviewImage(null)}
+                  maxWidth={false}
+                  PaperProps={{
+                    sx: {
+                      bgcolor: 'transparent',
+                      boxShadow: 'none',
+                      m: 2,
+                    },
+                  }}
+                  slotProps={{
+                    backdrop: {
+                      sx: { backgroundColor: 'rgba(0, 0, 0, 0.82)' },
+                    },
+                  }}
+                >
+                  {previewImage && (
+                    <Box
+                      component='img'
+                      src={previewImage.src}
+                      alt={previewImage.alt}
+                      onClick={() => setPreviewImage(null)}
+                      sx={{
+                        display: 'block',
+                        maxWidth: 'calc(100vw - 32px)',
+                        maxHeight: 'calc(100vh - 32px)',
+                        objectFit: 'contain',
+                        cursor: 'zoom-out',
+                        borderRadius: 1,
+                      }}
+                    />
+                  )}
+                </Dialog>
                 <Dialog
                   open={sessionExpiredDialogOpen}
                   onClose={() => setSessionExpiredDialogOpen(false)}
