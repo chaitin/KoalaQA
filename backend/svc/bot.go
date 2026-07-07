@@ -19,8 +19,9 @@ import (
 type Bot struct {
 	botCache *BotGetRes
 
-	oc      oss.Client
-	repoBot *repo.Bot
+	oc       oss.Client
+	repoBot  *repo.Bot
+	repoUser *repo.User
 }
 
 type BotSetReq struct {
@@ -69,6 +70,22 @@ func (b *Bot) Set(ctx context.Context, req BotSetReq) error {
 	err = b.repoBot.Upsert(ctx, &bot)
 	if err != nil {
 		return err
+	}
+
+	if dbBot.UserID > 0 {
+		updateUser := make(map[string]any)
+		if req.BotInfo.Avatar != "" {
+			updateUser["avatar"] = req.BotInfo.Avatar
+		}
+		if req.Name != "" {
+			updateUser["name"] = req.Name
+		}
+		if len(updateUser) > 0 {
+			err = b.repoUser.Update(ctx, updateUser, repo.QueryWithEqual("id", dbBot.UserID))
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	if req.BotInfo.Avatar == "" {
@@ -151,8 +168,8 @@ func splitKeywords(raw string) []string {
 	return res
 }
 
-func newBot(bot *repo.Bot, oc oss.Client) *Bot {
-	return &Bot{repoBot: bot, oc: oc}
+func newBot(bot *repo.Bot, user *repo.User, oc oss.Client) *Bot {
+	return &Bot{repoBot: bot, repoUser: user, oc: oc}
 }
 
 func init() {
