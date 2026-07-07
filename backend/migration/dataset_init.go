@@ -4,12 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/chaitin/koalaqa/migration/migrator"
 	"github.com/chaitin/koalaqa/model"
 	"github.com/chaitin/koalaqa/pkg/rag"
-	"github.com/chaitin/koalaqa/pkg/retry"
 	"github.com/chaitin/koalaqa/repo"
 	"gorm.io/gorm"
 )
@@ -17,7 +15,6 @@ import (
 type datasetInit struct {
 	rag  rag.Service
 	repo *repo.Dataset
-	llm  *repo.LLM
 }
 
 func (m *datasetInit) Version() int64 {
@@ -27,9 +24,6 @@ func (m *datasetInit) Version() int64 {
 func (m *datasetInit) Migrate(tx *gorm.DB) error {
 	if err := m.initRagDB(tx); err != nil {
 		return fmt.Errorf("init rag db failed: %w", err)
-	}
-	if err := m.initEmbeddingLLM(); err != nil {
-		return fmt.Errorf("init embedding llm failed: %w", err)
 	}
 	if err := m.initDataset(tx, model.DatasetBackend); err != nil {
 		return fmt.Errorf("init backend dataset failed: %w", err)
@@ -81,67 +75,6 @@ func (m *datasetInit) initRagDB(tx *gorm.DB) error {
 	return err
 }
 
-func (m *datasetInit) initEmbeddingLLM() error {
-	var count int64
-	err := m.llm.Count(context.Background(), &count)
-	if err != nil {
-		return err
-	}
-	if count > 0 {
-		return nil
-	}
-	sharedKey := "sk-r8tmBtcU1JotPDPnlgZLOY4Z6Dbb7FufcSeTkFpRWA5v4Llr"
-	baseURL := "https://model-square.app.baizhi.cloud/v1"
-	err = retry.WithExponentialBackoff(func() error {
-		_, err := m.rag.GetModelList(context.Background())
-		return err
-	}, 10, 100*time.Millisecond, 10*time.Second)
-	if err != nil {
-		return err
-	}
-	embeddingModel := &model.LLM{
-		Provider:   "BaiZhiCloud",
-		Model:      "bge-m3",
-		APIKey:     sharedKey,
-		APIHeader:  "",
-		BaseURL:    baseURL,
-		APIVersion: "",
-		Type:       model.LLMTypeEmbedding,
-	}
-	eid, err := m.rag.AddModel(context.Background(), embeddingModel)
-	if err != nil {
-		embeddingModel.Status = model.LLMStatusError
-		embeddingModel.Message = err.Error()
-	} else {
-		embeddingModel.RagID = eid
-	}
-	err = m.llm.Create(context.Background(), embeddingModel)
-	if err != nil {
-		return err
-	}
-	rerankModel := &model.LLM{
-		Provider:   "BaiZhiCloud",
-		Model:      "bge-reranker-v2-m3",
-		APIKey:     sharedKey,
-		APIHeader:  "",
-		BaseURL:    baseURL,
-		APIVersion: "",
-		Type:       model.LLMTypeRerank,
-	}
-	rid, err := m.rag.AddModel(context.Background(), rerankModel)
-	if err != nil {
-		rerankModel.Status = model.LLMStatusError
-		rerankModel.Message = err.Error()
-	} else {
-		rerankModel.RagID = rid
-	}
-	err = m.llm.Create(context.Background(), rerankModel)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func newDatasetInit(rag rag.Service, repo *repo.Dataset, llm *repo.LLM) migrator.Migrator {
-	return &datasetInit{rag: rag, repo: repo, llm: llm}
+func newDatasetInit(rag rag.Service, repo *repo.Dataset) migrator.Migrator {
+	return &datasetInit{rag: rag, repo: repo}
 }

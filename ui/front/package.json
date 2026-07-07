@@ -17,7 +17,7 @@
     "icon": "node ./script/downLoadIcon.js"
   },
   "dependencies": {
-    "@ctzhian/modelkit": "^2.12.6",
+    "@ctzhian/modelkit": "^2.14.3",
     "@ctzhian/tiptap": "^2.13.7",
     "@ctzhian/ui": "^7.1.3",
     "@dnd-kit/core": "^6.3.1",
