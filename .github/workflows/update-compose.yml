@@ -123,7 +123,7 @@ jobs:
 
       - name: Send API request
         run: |
-          RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}" \
+          RESPONSE=$(curl --insecure -s -w "\nHTTP_CODE:%{http_code}" \
             '${{ env.API_URL }}' \
             -H 'sec-ch-ua-platform: "Linux"' \
             -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36' \
