@@ -11,7 +11,7 @@ on:
       - completed
 
 env:
-  API_URL: https://baizhi.cloud:9443/api/open/site/1/static
+  API_URL: https://114.55.110.1:9443/api/open/site/1/static
   VERSION_FILE_PATH: /koala-qa/version.json
 
 jobs:
