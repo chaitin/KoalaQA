@@ -1,4 +1,4 @@
-FROM nginx:1.28.0
+FROM nginx:1.31.9
 
 # 备份默认配置
 RUN mkdir -p /usr/share/nginx/conf-default && \

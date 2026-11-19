@@ -50,7 +50,8 @@ http {
     }
 
     server {
-        listen ${HTTPS_PORT} ssl http2;
+        listen ${HTTPS_PORT} ssl;
+        http2 on;
         server_name _;
 
         ssl_certificate /etc/nginx/ssl/koala.crt;

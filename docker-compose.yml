@@ -1,7 +1,7 @@
 services:
   nginx:
     container_name: koala-qa-nginx
-    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/nginx:1.28.0
+    image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/nginx:1.31.9
     restart: always
     environment:
       - TZ=${TIMEZONE:-Asia/Shanghai}

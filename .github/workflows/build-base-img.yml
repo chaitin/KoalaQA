@@ -20,7 +20,7 @@ jobs:
           - name: nginx
             dockerfile: docker/nginx/Dockerfile
             context: docker/nginx
-            tag: "1.28.0"
+            tag: "1.31.9"
           - name: anydoc
             dockerfile: docker/anydoc/Dockerfile
             context: docker/anydoc

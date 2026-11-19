@@ -35,7 +35,7 @@ image.raglite:
 
 image.nginx:
 	cd docker/nginx && DOCKER_BUILDKIT=1 docker build \
-		-t chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/nginx:1.28.0 .
+		-t chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/nginx:1.31.9 .
 
 image.anydoc:
 	cd docker/anydoc && DOCKER_BUILDKIT=1 docker build \

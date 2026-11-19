@@ -1,4 +1,6 @@
-FROM node:20-alpine AS base
+FROM node:20-alpine AS node-runtime
+
+FROM node-runtime AS base
 
 ARG HTTPS_PROXY=${HTTPS_PROXY}
 ARG HTTP_PROXY=${HTTP_PROXY}
@@ -38,20 +40,23 @@ COPY front/ ./
 
 RUN pnpm build
 
-FROM node:20-alpine AS production
+FROM nginx:1.31.9-alpine AS runtime
 
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apk/repositories
 
-RUN apk update --no-cache && \
-    apk add --no-cache nginx wget tzdata
+RUN apk add --no-cache libstdc++ wget tzdata
+
+# 与构建阶段使用同一版本的 Node.js
+COPY --from=node-runtime /usr/local/bin/node /usr/local/bin/node
+COPY nginx.conf /etc/nginx/nginx.conf
+
+FROM runtime AS production
 
 COPY --from=admin-builder /app/admin/dist /var/www/admin
 
 COPY --from=front-builder /app/front/.next/standalone /app/front/
 COPY --from=front-builder /app/front/.next/static /app/front/.next/static
 COPY --from=front-builder /app/front/public /app/front/public
-
-COPY nginx.conf /etc/nginx/nginx.conf
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
