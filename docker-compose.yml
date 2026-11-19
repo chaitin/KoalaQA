@@ -91,6 +91,7 @@ services:
 
   oss:
     container_name: koala-qa-oss
+    # Reuse the published image; the upstream MinIO tag is no longer available.
     image: chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/oss:RELEASE.2025-04-22T22-12-26Z-cpuv1
     restart: always
     command:

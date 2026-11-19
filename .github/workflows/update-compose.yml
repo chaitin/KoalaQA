@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
@@ -45,7 +45,6 @@ jobs:
           ANYDOC_TAG=$(extract_tag "docker/anydoc/Dockerfile")
           DB_TAG=$(extract_tag "docker/db/Dockerfile")
           MQ_TAG=$(extract_tag "docker/mq/Dockerfile")
-          OSS_TAG=$(extract_tag "docker/oss/Dockerfile")
           QDRANT_TAG=$(extract_tag "docker/qdrant/Dockerfile")
           RAGLITE_TAG=$(extract_tag "docker/raglite/Dockerfile")
 
@@ -54,7 +53,6 @@ jobs:
           echo "anydoc_tag=$ANYDOC_TAG" >> $GITHUB_OUTPUT
           echo "db_tag=$DB_TAG" >> $GITHUB_OUTPUT
           echo "mq_tag=$MQ_TAG" >> $GITHUB_OUTPUT
-          echo "oss_tag=$OSS_TAG" >> $GITHUB_OUTPUT
           echo "qdrant_tag=$QDRANT_TAG" >> $GITHUB_OUTPUT
           echo "raglite_tag=$RAGLITE_TAG" >> $GITHUB_OUTPUT
 
@@ -63,7 +61,6 @@ jobs:
           echo "  anydoc: $ANYDOC_TAG"
           echo "  db: $DB_TAG"
           echo "  mq: $MQ_TAG"
-          echo "  oss: $OSS_TAG"
           echo "  qdrant: $QDRANT_TAG"
           echo "  raglite: $RAGLITE_TAG"
 
@@ -83,7 +80,6 @@ jobs:
             sed -i "s|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/anydoc:.*|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/anydoc:${{ steps.extract_tags.outputs.anydoc_tag }}|g" docker-compose-updated.yml
             sed -i "s|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/db:.*|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/db:${{ steps.extract_tags.outputs.db_tag }}|g" docker-compose-updated.yml
             sed -i "s|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/mq:.*|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/mq:${{ steps.extract_tags.outputs.mq_tag }}|g" docker-compose-updated.yml
-            sed -i "s|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/oss:.*|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/oss:${{ steps.extract_tags.outputs.oss_tag }}|g" docker-compose-updated.yml
             sed -i "s|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/qdrant:.*|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/qdrant:${{ steps.extract_tags.outputs.qdrant_tag }}|g" docker-compose-updated.yml
             sed -i "s|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/raglite:.*|chaitin-registry.cn-hangzhou.cr.aliyuncs.com/koalaqa/raglite:${{ steps.extract_tags.outputs.raglite_tag }}|g" docker-compose-updated.yml
             
