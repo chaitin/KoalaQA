@@ -99,4 +99,4 @@ SUCCESS    密码: **********************
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=chaitin/KoalaQA&type=Date)](https://www.star-history.com/#chaitin/KoalaQA&Date)
+[![Star History Chart](https://star-history.dera.page/svg?repos=chaitin/KoalaQA&type=Date)](https://star-history.dera.page/#chaitin/KoalaQA&Date)
